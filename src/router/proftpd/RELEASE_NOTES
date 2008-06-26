@@ -1,0 +1,324 @@
+                    1.3.1 Release Notes
+                  ------------------------
+
+This file contains a description of the major changes to ProFTPD for the
+1.3.1 release cycle, from the 1.3.1rc1 release to the 1.3.1-stable release.
+More information on these changes can be found in the NEWS and ChangeLog
+files.
+
+1.3.1 (stable)
+---------------
+
+  + Bugfixes:
+
+    Fixed compilation error in mod_sql_mysql.
+
+    Fixed handling of the --ipv4 and --ipv6 command-line options.
+
+    Fixed "directory not accessible" errors when using the mod_facl module
+
+    Improvements to the RPM spec file, and updated the PAM configuration
+    installed by the RPM spec.
+
+1.3.1rc3
+---------
+
+  + Bugfixes:
+
+    Fixed segfault which can occur if NLST is used twice, the first time
+    on a path which does not exist.
+
+    Fixed reporting of addresses via EPSV for IPv6 addresses.
+
+    Fixes occurrences of "ai_family not supported" for inetd-run
+    proftpd daemons.
+
+    DisplayLogin, DisplayQuit, and DisplayTransferFiles files now work
+    regardless of whether the session process is chrooted.
+
+  + New documentation:
+
+    doc/howto/Timestamps.html
+    doc/howto/Tracing.html
+
+1.3.1rc2
+---------
+
+  + Bugfixes:
+
+    Fixed mod_sql's mishandling of WHERE clauses.  This was causing
+    problems with mod_sql-based authentication, and errors containing
+    "{UNKNOWN TAG}" to appear in the SQLLogFile.
+
+    Under certain conditions, use of shared modules could lead to segfaults.
+    This usually happened after proftpd had been restarted (using SIGHUP)
+    a couple of times.
+
+    Symlinks in a skeleton directory were not being properly copied when
+    the CreateHome directive was used.
+
+  + New configuration directives:
+
+    RadiusNASIdentifier
+
+      By default, the mod_radius module sends the string "ftp" as the
+      NAS-Identifier attribute in RADIUS packets.  This string is now
+      configurable via the RadiusNASIdentifier directive.
+
+1.3.1rc1
+---------
+  + Command changes:
+
+      MDTM now always returns times in GTM, regardless of TimesGMT setting
+
+  + New configuration directives:
+
+      DisplayChdir
+
+        This directive replaces the old DisplayFirstChdir directive,
+        and will cause the configured file to be displayed whenever the
+        client changes into the directory in question, rather than only
+        once.
+
+        To get the previous behavior, use:
+
+          DisplayChdir path true
+
+        which says to display the given path only once.
+
+      DisplayFileTransfer
+
+        Whenever a file has been successfully uploaded/downloaded, the
+        configured file will be displayed to the client.
+
+      FACLEngine
+
+        The mod_facl module is used to support POSIX ACLs, and is built
+        into proftpd if the --enable-facl configure option is used.
+        To disable POSIX ACL support at runtime, use this new directive
+        in your proftpd.conf:
+
+          <IfModule mod_facl.c>
+            FACLEngine off
+          </IfModule>
+
+      QuotaOptions
+
+        The mod_quotatab module supports a new QuotaOptions directive.
+        This directive currently supports one option: "ScanOnLogin".
+        With this option enabled, mod_quotatab will perform a
+        (possibly) intensive scan of the directory into which the client
+        is logged, and update the tally for the user accordingly.
+
+      SQLOptions
+
+        The mod_sql module supports a new SQLOptions directive.  This
+        directive currently supports two options: "noDisconnectOnError"
+        and "useNormalizedGroupSchema".
+
+        The "noDisconnectOnError" option tells mod_sql not to automatically
+        disconnect the client's session whenever there is a database
+        error.
+
+        The "useNormalizedGroupSchema" option tells mod_sql to use a
+        slightly different SQL statement when retrieving information
+        from a group information table (see SQLGroupInfo).  See:
+
+          doc/contrib/mod_sql.html#SQLOptions
+
+        for details.
+
+      TLSCryptoDevice
+
+        With this directive, the mod_tls module can now make use of
+        OpenSSL's support for cryptographic accelerator cards, known
+        as "engines" in the OpenSSL documentation.
+
+      TLSPassPhraseProvider
+
+        The mod_tls module now has support for obtaining passphrases
+        for certificate keys via an external program.  This directive
+        is similiar to the Apache mod_ssl module's SSLPassPhraseDialog
+        directive (but not *quite* the same; see the documentation for
+        details.)
+
+      Trace, TraceLog
+
+        The Trace functionality is intended to be a more focused
+        type of debug logging, where components can log, at various
+        log levels, to a log "channel".  Log channels can have their
+        verbosity managed independently; all log channels write to
+        the same TraceLog.  Use of trace logging, while small now,
+        will grow in future releases.
+
+        To get an idea of what the trace logging might look like,
+        you can add the following to your proftpd.conf:
+
+          Trace ALL:9
+          TraceLog /path/to/ftpd/trace.log
+
+      UseIPv6
+
+        To disable IPv6 support in a running proftpd, you can place:
+
+          UseIPv6 on|off
+
+        at the top of your proftpd.conf.
+
+        Alternatively, there are command-line options for controlling
+        this:
+
+          -4, --ipv4     Support IPv4 functionality only
+          -6, --ipv6     Support IPv6 functionality
+
+        Instead of using the UseIPv6 configuration directive, you can
+        invoke proftpd using the -4 command-line option:
+
+          proftpd -4 ...
+
+      UseLastlog
+
+        Enables use of logging to lastlog files.
+
+      UseUTF8
+
+        Disables use of UTF8 encoding for file paths.  If the --enable-nls
+        configure option is used, then UTF8 encoding support will be
+        enabled by default.
+
+  + Enhanced configuration directives:
+
+      CreateHome uid gid
+
+        The CreateHome directive now allows creation of non-root-owned
+        parent directories in the path leading up the created home directory.
+        The optional 'uid' and 'gid' parameters for this directive can be
+        used to set the UID and GID of the owner for the parent directories.
+
+        For more details, read:
+
+          doc/howto/CreateHome.html
+
+      LogFormat %S, %{version}
+
+        The LogFormat directive now handles two new variables, %S and
+        %{version}.
+
+        The %S variable can used to log the response message, the human
+        readable message which accompanies the response code, sent to
+        clients in response to FTP commands.
+
+        The %{version} variable logs the version of ProFTPD; it is mainly
+        useful for logs collated from multiple proftpd instances which
+        may be running different versions.
+
+      SQLConnectInfo MySQL Unix domain socket
+
+        The SQLConnectInfo directive can now handle an optional path to
+        a Unix domain socket for MySQL database connections.
+
+      SQLNamedQuery
+
+        SQL statements configured using mod_sql's SQLNamedQuery directive
+        can now use environment variables using "%{env:VAR}".  The value
+        of the environment variable VAR will be substituted into the
+        SQL statement.
+
+      SQLGroupWhereClause, SQLUserWhereClause
+
+        These directives, from mod_sql, can now use the same variables as
+        supported by SQLNamedQuery directives, with the exception of "%{n}"
+        numeric references.
+
+      TLSRequired auth, auth+data
+
+        The TLSRequired directive for mod_tls supports two new settings:
+        'auth' and 'auth+data'.  These settings are documented in:
+
+          doc/contrib/mod_tls.html#TLSRequired
+
+  + New configure options:
+
+      --enable-devel=stacktrace
+
+        This configure option enables logging of the call stack trace
+        whenever a SIGSEGV signal is received.  Very very useful for
+        tracking down the cause of a segfault.
+
+      --enable-nls
+
+        This configure option enables handling of translated message
+        catalogs for response messages, and also enables handling of
+        UTF8 paths in client commands.
+
+      --with-lastlog[=PATH]
+
+        A lastlog is a binary type of log file, similar to utmp/wtmp.
+        This compile option enables logging to the lastlog file.
+ 
+  + New modules:
+
+      mod_ban
+
+        This module supports dynamic "blacklists" based on configurable
+        rules.  See the documentation for more details:
+
+          doc/contrib/mod_ban.html
+
+      mod_lang
+
+        This module is part of the internationalization/RFC2640 support,
+        handling the LANG command.  More information can be found at:
+
+          doc/modules/mod_lang.html
+
+      mod_quotatab_radius
+
+        This new module provides support for obtaining quota limits via
+        RADIUS, and is part of the mod_quotatab family.  More details
+        are available in:
+
+          doc/contrib/mod_quotatab_radius.html
+
+      mod_wrap2, mod_wrap2_file, mod_wrap2_sql
+
+        These modules are intended to replace mod_wrap, and provides ways
+        of maintaining tcpwrapper-like rules in both existing files *and*
+        SQL tables.  The documentation for these are:
+
+          doc/contrib/mod_wrap2.html
+          doc/contrib/mod_wrap2_file.html
+          doc/contrib/mod_wrap2_sql.html
+
+  + New documentation:
+
+      doc/howto/CreateHome.html
+
+  + Module enhancements:
+
+     mod_ctrls_admin
+
+       New 'scoreboard' control action, for scrubbing the ScoreboardFile
+       on demand.
+
+  + Deprecated configuration directives:
+
+      DisplayFirstChdir
+
+        This directive is deprecated in favor the new DisplayChdir
+        directive.  Support for this will be removed in future
+        releases.
+
+      HiddenStor
+
+        Use the HiddenStores instead; support for the HiddenStor directive
+        will be removed in future releases.
+
+      SQLHomedirOnDemand
+
+        The CreateHome directive would be used instead.  For more
+        information on CreateHome, see:
+
+          doc/howto/CreateHome.html
+
+Last Updated: $Date: 2007/10/04 16:24:22 $

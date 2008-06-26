@@ -1,0 +1,2125 @@
+dnl ProFTPD - FTP server daemon
+dnl Copyright (c) 1997, 1998 Public Flood Software
+dnl Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
+dnl Copyright (c) 2001-2007 The ProFTPD Project team
+dnl
+dnl This program is free software; you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation; either version 2 of the License, or
+dnl (at your option) any later version.
+dnl
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program; if not, write to the Free Software
+dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+dnl
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(include/conf.h)
+
+ac_core_modules="mod_core.o mod_xfer.o mod_auth_unix.o mod_auth_file.o mod_auth.o mod_ls.o mod_log.o mod_site.o mod_delay.o"
+ac_build_core_modules="modules/mod_core.o modules/mod_xfer.o modules/mod_auth_unix.o modules/mod_auth_file.o modules/mod_auth.o modules/mod_ls.o modules/mod_log.o modules/mod_site.o modules/mod_delay.o"
+
+dnl Get the OS type
+AC_CONFIG_AUX_DIR(./)
+AC_CANONICAL_SYSTEM
+
+ostype=`echo $build_os | sed 's/\..*$//g' | sed 's/-.*//g' | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ`
+osrel=`echo $build_os | sed 's/-.*//g' | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ | tr '.' '_'`
+
+OSTYPE="-D$ostype"
+OSREL="-D$osrel"
+platform="\"$ostype ($osrel)\""
+build_opts="\"$@\""
+
+if test "$OSTYPE" = "$OSREL" ; then
+  OSTYPE=""
+  platform="\"$ostype\""
+fi
+AC_DEFINE_UNQUOTED(PR_BUILD_OPTS, $build_opts)
+AC_DEFINE_UNQUOTED(PR_PLATFORM, $platform)
+AC_SUBST(OSREL)
+AC_SUBST(OSTYPE)
+
+dnl MacOS X requires -traditional-cpp; autodetecting it isn't impossible
+dnl AFAIK, since assuming the need for -traditional-cpp breaks the build
+dnl on other OSes. -jwm, 30 Jan 2001
+if test "$OSTYPE" = "-DRHAPSODY5"; then
+  CFLAGS="$CFLAGS -traditional-cpp -D__OT__"
+fi
+
+dnl AC_PROG_LIBTOOL relies on this variable
+top_builddir=.
+AC_LIBTOOL_DLOPEN([lib/libltdl])
+AC_LIBLTDL_CONVENIENCE([lib/libltdl])
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_MAKE_SET
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+
+dnl This test must come as early as possible after the compiler
+dnl configuration tests, because the choice of the file model can (in
+dnl principle) affect whether functions and headers are available,
+dnl whether they work, etc.
+AC_SYS_LARGEFILE  
+
+# The native HP-UX 10 compiler needs -Ae to enable Extended ANSI compliance
+# (-Ae is the default in the native compiler under HP-UX 11).
+if test $ac_cv_prog_gcc = no -a "$OSTYPE" = "-DHPUX10"; then
+  CFLAGS="$CFLAGS -Ae"
+fi
+
+LDFLAGS="-L\$(top_srcdir)/lib $LDFLAGS"
+
+# Record the current CPPFLAGS, LDFLAGS, and LIBS here
+ac_orig_cppflags="$CPPFLAGS"
+ac_orig_ldflags="$LDFLAGS"
+ac_orig_libs="$LIBS"
+
+if test $ac_cv_prog_gcc = yes; then
+  if test x"$CFLAGS" = "x-g -O2"; then
+    fullCFLAGS="-O2"
+  else
+    fullCFLAGS="$CFLAGS"
+  fi
+
+  dnl Compilation tests
+
+  dnl test for -malign-jumps=2 -malign-loops=2 -malign-functions=2
+  if echo $ac_cv_build_cpu | egrep "^i[[34567]]86$" > /dev/null 2>&1; then
+    AC_MSG_CHECKING([whether the C compiler accepts -malign-jumps -malign-loops -malign-functions])
+    CFLAGS="-malign-jumps=2 -malign-loops=2 -malign-functions=2"
+    AC_TRY_COMPILE(,,
+      AC_MSG_RESULT(yes); fullCFLAGS="$fullCFLAGS $CFLAGS",
+      AC_MSG_RESULT(no))
+  fi
+
+  dnl test for -Wall
+  AC_MSG_CHECKING([whether the C compiler accepts -Wall])
+  CFLAGS="-Wall"
+  AC_TRY_COMPILE(,,
+    AC_MSG_RESULT(yes); fullCFLAGS="$fullCFLAGS $CFLAGS",
+    AC_MSG_RESULT(no))
+
+  CFLAGS="$fullCFLAGS"
+fi
+
+dnl We substitute these in the man page templates.
+if test x$exec_prefix = xNONE ; then
+  exec_prefix=$prefix
+fi
+
+if test x$prefix = xNONE ; then
+  prefix=/usr/local
+  bindir=/usr/local/bin
+  datadir=/usr/locale/share
+  libexecdir=/usr/local/libexec
+  sbindir=/usr/local/sbin
+fi
+
+BINDIR=`eval echo $bindir`
+AC_SUBST(BINDIR)
+DATADIR=`eval echo $datadir`
+AC_SUBST(DATADIR)
+INCLUDEDIR=`eval echo $includedir`
+AC_SUBST(INCLUDEDIR)
+LIBEXECDIR=`eval echo $libexecdir`
+AC_SUBST(LIBEXECDIR)
+LOCALSTATEDIR=`eval echo $localstatedir`
+AC_SUBST(LOCALSTATEDIR)
+PREFIX=`eval echo $prefix`
+AC_SUBST(PREFIX)
+SBINDIR=`eval echo $sbindir`
+AC_SUBST(SBINDIR)
+SYSCONFDIR=`eval echo $sysconfdir`
+AC_SUBST(SYSCONFDIR)
+
+LIB_DEPS="\"\""
+
+AC_ARG_VAR(LIBS, [linker flags, e.g. -l<lib>.{a,so} if you have nonstandard libraries to link])
+
+dnl configure command line options...
+
+dnl --with options.
+
+dnl ProFTPD comes bundled with GNU's implementation of getopt, to be used
+dnl in case the host system doesn't have getopt.  However, this causes
+dnl problems for certain builds of proftpd, e.g. ProFTPD and MySQL (which
+dnl itself similarly bundles a getopt implementation).  Thus, we need to
+dnl support/handle --without-getopt, to disable use of ProFTPD's getopt.
+dnl I don't know if MySQL supports any similar option.
+LIB_OBJS="pr_fnmatch.o sstrncpy.o strsep.o vsnprintf.o glibc-glob.o glibc-hstrerror.o glibc-mkstemp.o pr-syslog.o pwgrent.o"
+
+AC_ARG_WITH(getopt,
+  [AC_HELP_STRING(
+      [--without-getopt],
+      [prevent proftpd from using its bundled getopt implementation.  This is done automatically if the host supports getopt, but may need to be explicitly used when combining proftpd with other applications, such as MySQL])
+  ],
+  [
+    if test "$withval" != "no" ; then
+      AC_CHECK_FUNCS(getopt,
+        [AC_CHECK_HEADERS(getopt.h)
+         AC_CHECK_FUNCS(getopt_long)
+         AC_DEFINE(PR_USE_SYSTEM_GETOPT, 1,
+           [Define if using system getopt support])],
+        [LIB_OBJS="$LIB_OBJS getopt.o getopt1.o"]
+      )
+    fi
+  ],
+  [
+    AC_CHECK_FUNCS(getopt,
+      [AC_CHECK_HEADERS(getopt.h)
+       AC_CHECK_FUNCS(getopt_long)
+       AC_DEFINE(PR_USE_SYSTEM_GETOPT, 1,
+         [Define if using system getopt support])],
+      [LIB_OBJS="$LIB_OBJS getopt.o getopt1.o"]
+    )
+  ])
+
+dnl Lastlog support
+AC_ARG_WITH(lastlog,
+  [AC_HELP_STRING(
+    [--with-lastlog=PATH],
+    [specify lastlog location (Default: /var/adm/lastlog)],
+  )],
+  [
+    if test "x$withval" = "xno" ; then
+      # nothing to do
+      foo=bar
+
+    elif test -n "$withval" ; then
+      AC_DEFINE(PR_USE_LASTLOG, 1, [Define if enabling lastlog support.])
+      AC_CHECK_HEADERS(lastlog.h login.h paths.h)
+
+      if test "x${withval}" != "xyes" ; then
+        pr_lastlog_path="$withval"
+
+      else
+        dnl Try to determine the correct lastlog location (be it file or
+        dnl directory) automagically.
+        AC_MSG_CHECKING([for LASTLOG_FILE])
+        AC_TRY_COMPILE([
+            #include <sys/types.h>
+            #include <utmp.h>
+            #ifdef HAVE_LASTLOG_H
+            #  include <lastlog.h>
+            #endif
+            #ifdef HAVE_PATHS_H
+            #  include <paths.h>
+            #endif
+            #ifdef HAVE_LOGIN_H
+            # include <login.h>
+            #endif
+          ],
+          [
+            char *lastlog = LASTLOG_FILE;
+          ],
+          [
+            AC_MSG_RESULT(yes)
+          ],
+          [
+            AC_MSG_RESULT(no)
+            AC_MSG_CHECKING([for _PATH_LASTLOG])
+            AC_TRY_COMPILE([
+                #include <sys/types.h>
+                #include <utmp.h>
+                #ifdef HAVE_LASTLOG_H
+                #  include <lastlog.h>
+                #endif
+                #ifdef HAVE_PATHS_H
+                #  include <paths.h>
+                #endif
+              ],
+              [
+                char *lastlog = _PATH_LASTLOG;
+              ],
+              [
+                AC_MSG_RESULT(yes)
+              ],
+              [
+                AC_MSG_RESULT(no)
+                found_lastlog_path=no
+              ])
+          ])
+
+         if test -z "$pr_lastlog_path" ; then
+           if test x"$found_lastlog_path" = x"no" ; then
+             for f in /var/log/lastlog /var/adm/lastlog /usr/adm/lastlog /etc/security/lastlog ; do
+               AC_MSG_CHECKING([for $f])
+               if (test -d "$f" || test -f "$f") ; then
+                 pr_lastlog_path=$f
+                 AC_MSG_RESULT(yes)
+
+               else
+                 AC_MSG_RESULT(no)
+               fi
+             done
+
+             if test -z "$pr_lastlog_path" ; then
+               AC_MSG_WARN([** Cannot find lastlog **])
+             fi
+          fi
+        fi
+      fi
+
+      if test -n "$pr_lastlog_path" ; then
+        AC_DEFINE_UNQUOTED(PR_LASTLOG_PATH, "`eval echo "$pr_lastlog_path"`")
+      fi
+    fi
+  ])
+
+dnl Modules...'nuff said.
+AC_ARG_WITH(includes,
+  [AC_HELP_STRING(
+    [--with-includes=LIST],
+    [add additional include paths to proftpd. LIST is a colon-separated list of include paths to add e.g. --with-includes=/some/mysql/include:/my/include])
+  ],
+  [ ac_addl_includes=`echo "$withval" | sed -e 's/:/ /g'` ;
+    for ainclude in $ac_addl_includes; do
+      if test x"$ac_build_addl_includes" = x ; then
+        ac_build_addl_includes="-I$ainclude"
+      else
+        ac_build_addl_includes="-I$ainclude $ac_build_addl_includes"
+      fi
+    done
+    CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
+  ])
+
+AC_ARG_WITH(libraries,
+  [AC_HELP_STRING(
+    [--with-libraries=LIST],
+    [add additional library paths to proftpd. LIST is a colon-separated list of include paths to add e.g. --with-libraries=/some/mysql/libdir:/my/libs])
+  ],
+  [ ac_addl_libdirs=`echo "$withval" | sed -e 's/:/ /g'` ;
+    for alibdir in $ac_addl_libdirs; do
+      if test x"$ac_build_addl_libdirs" = x ; then
+        ac_build_addl_libdirs="-L$alibdir"
+      else
+        ac_build_addl_libdirs="-L$alibdir $ac_build_addl_libdirs"
+      fi
+    done 
+    LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
+  ])
+
+AC_ARG_WITH(modules,
+  [AC_HELP_STRING(
+    [--with-modules=LIST],
+    [add additional modules to proftpd. LIST is a colon-separated list of modules to add e.g. --with-modules=mod_readme:mod_ifsession])
+  ],
+  [
+    ac_static_modules=`echo "$withval" | sed -e 's/:/.o /g'`.o ;
+    for amodule in $ac_static_modules; do
+      ac_build_static_modules="modules/$amodule $ac_build_static_modules"
+    done
+  ])
+
+dnl List of modules which are not allowed to be built as DSOs
+ac_unshareable_modules="mod_auth mod_auth_unix mod_core mod_dso mod_ls mod_xfer mod_cap"
+
+AC_ARG_WITH(shared,
+  [AC_HELP_STRING(
+    [--with-shared=LIST],
+    [build DSO modules for proftpd. LIST is a colon-separated list of modules to build as DSOs e.g. --with-shared=mod_rewrite:mod_ifsession])
+  ],
+  [
+    shared_modules=`echo "$withval" | sed -e 's/:/ /g'`;
+
+    # First double-check that the given list does not contain any
+    # unshareable modules
+    for amodule in $shared_modules; do
+      for smodule in $ac_unshareable_modules; do
+        if test x"$amodule" = x"$smodule"; then
+          AC_MSG_ERROR([cannot build $amodule as a shared module])
+        fi
+      done
+    done
+
+    ac_shared_modules=`echo "$withval" | sed -e 's/:/.la /g'`.la ;
+    for amodule in $ac_shared_modules; do
+      ac_build_shared_modules="modules/$amodule $ac_build_shared_modules"
+    done
+  ])
+
+dnl --enable/--disable options.
+
+AC_ARG_ENABLE(auth-file,
+  [AC_HELP_STRING(
+    [--disable-auth-file],
+    [omit mod_auth_file from core modules])
+  ],
+  [
+    if test "$enableval" = "no"; then
+      ac_core_modules=`echo "$ac_core_modules" | sed -e 's/mod_auth_file\.o//'`
+      ac_build_core_modules=`echo "$ac_build_core_modules" | sed -e 's/modules\/mod_auth_file\.o//'`
+    fi
+  ])
+ 
+dnl Auto-detection of shadow passwords.
+AC_ARG_ENABLE(autoshadow,
+  [AC_HELP_STRING(
+    [--enable-autoshadow],
+    [enable run-time auto-detection of shadowed passwords (requires shadow)])
+  ],
+  [
+    dnl AIX does not have shadow file/library support.  Try to prevent a
+    dnl bad build if the admin, configuring on an AIX box, uses this option.
+    if test "$enableval" = "yes" && test "$OSTYPE" = "-DAIX4"; then
+      AC_MSG_WARN(AIX does not support traditional shadowed passwords)
+      enableval="no"
+    fi
+
+    if test "$enableval" != "no" ; then
+      AC_DEFINE(PR_USE_SHADOW, 1, [Define if using /etc/shadow files.])
+      AC_DEFINE(PR_USE_AUTO_SHADOW, 1,
+      [Define if auto-detection of shadow passwords is wanted.])
+      force_shadow="yes"
+    fi ])
+
+dnl PAM support.
+AC_ARG_ENABLE(auth-pam,
+  [AC_HELP_STRING(
+    [--enable-auth-pam],
+    [enable PAM support (default=yes)])
+  ],
+  [
+    if test "$enableval" = "no"; then
+      if test `echo $ac_static_modules | grep -c mod_auth_pam` != "0"; then
+        AC_MSG_ERROR([You cannot run configure with --disable-auth-pam and include mod_auth_pam in --with-modules at the same time])
+      fi
+
+      if test `echo $ac_shared_modules | grep -c mod_auth_pam` != "0"; then
+        AC_MSG_ERROR([You cannot run configure with --disable-auth-pam and include mod_auth_pam in --with-shared at the same time])
+      fi
+    fi
+  ])
+
+dnl Optional workaround for broken getaddrinfo on some systems (e.g. HP-UX 11.x)
+AC_ARG_ENABLE(builtin-getaddrinfo,
+  [AC_HELP_STRING(
+    [--enable-builtin-getaddrinfo],
+    [force use of builtin getaddrinfo (default=no)])
+  ],
+  [
+    if test x"$enableval" = xyes; then
+      AC_DEFINE(PR_USE_GETADDRINFO, 1, [Define if using builtin getaddrinfo()])
+    fi
+  ])
+
+dnl Since getaddrinfo() is broken on HP-UX 11.x, we automatically use the
+dnl builtin version.
+if test "$OSTYPE" = "-DHPUX11"; then
+  AC_MSG_WARN([HP-UX 11 has broken getaddrinfo(), using builtin version])
+  AC_DEFINE(PR_USE_GETADDRINFO, 1, [Define if using builtin getaddrinfo()])
+fi
+
+dnl Workaround for broken getnameinfo on some systems
+AC_ARG_ENABLE(builtin-getnameinfo,
+  [AC_HELP_STRING(
+    [--enable-builtin-getnameinfo],
+    [force use of builtin getnameinfo (default=no)])
+  ],
+  [
+    if test x"$enableval" = xyes; then
+      AC_DEFINE(PR_USE_GETNAMEINFO, 1, [Define if using builtin getnameinfo()])
+    fi
+  ])
+
+dnl Capabilities support
+AC_ARG_ENABLE(cap,
+  [AC_HELP_STRING(
+    [--enable-cap],
+    [enable POSIX.1e capabilities (default=yes on Linux)])
+  ])
+
+dnl Controls support
+AC_ARG_ENABLE(ctrls,
+  [AC_HELP_STRING(
+    [--enable-ctrls],
+    [enable proftpd controls via ftpdctl (default=no)])
+  ],
+  [ if test x"$enableval" = xyes ; then
+      AC_DEFINE(PR_USE_CTRLS, 1, [Define if using controls support.])
+    fi
+  ])
+
+dnl POSIX ACL support
+AC_ARG_ENABLE(facl,
+  [AC_HELP_STRING(
+    [--enable-facl],
+    [enable support for POSIX ACLs])
+  ])
+
+dnl Curses/ncurses support
+AC_ARG_ENABLE(curses,
+  [AC_HELP_STRING(
+    [--disable-curses],
+    [disable use of curses (default=no)])
+  ])
+
+dnl DSO support
+AC_ARG_ENABLE(dso,
+  [AC_HELP_STRING(
+    [--enable-dso],
+    [add mod_dso to core modules])
+  ],
+  [
+    if test x"$enableval" = x"yes"; then
+      ac_core_modules="$ac_core_modules mod_dso.o"
+      ac_build_core_modules="$ac_build_core_modules modules/mod_dso.o"
+      ac_build_addl_includes="$INCLTDL $ac_build_addl_includes"
+
+      MAIN_LDFLAGS="-L\$(top_srcdir)/lib/libltdl -dlopen self -export-dynamic"
+      MAIN_LIBS="\$(LIBLTDL)"
+
+      MODULE_LDFLAGS="-avoid-version -export-dynamic -module"
+
+      INSTALL_DEPS="install-libltdl"
+      LIB_DEPS="libltdl"
+      MODULE_DEPS="libltdl"
+      AC_DEFINE(PR_USE_DSO, 1, [Define if using DSO support.])
+
+      dnl Run configure scripts in subdirectories
+      AC_CONFIG_SUBDIRS(lib/libltdl)
+    fi
+  ])
+
+dnl NLS support
+ENABLE_NLS="\"\""
+AC_ARG_ENABLE(nls,
+  [AC_HELP_STRING(
+    [--enable-nls],
+    [enable Native Language Support (NLS) (default=no)])
+  ],
+  [ if test x"$enableval" = x"yes" ; then
+
+      dnl The libintl library is only needed on non-GNU systems.  If it
+      dnl is not installed, and the admin enables NLS support, then we
+      dnl should abort.
+
+      AC_CHECK_LIB(intl, bindtextdomain,
+        [ac_build_addl_libs="-lintl $ac_build_addl_libs" UTILS_LIBS="-lintl"
+         AC_DEFINE(HAVE_LIBINTL, 1, [Define if libintl is present.])
+         AC_DEFINE(PR_USE_NLS, 1, [Define if using NLS support.])
+         ENABLE_NLS="1"
+        ],
+        [AC_CHECK_LIB(c, bindtextdomain,
+          [AC_DEFINE(PR_USE_NLS, 1, [Define if using NLS support.])
+           ENABLE_NLS="1"
+          ],
+          [AC_MSG_ERROR([libintl support, required for NLS, not present -- aborting])]
+        ])
+      )
+    fi
+  ])
+
+AC_ARG_ENABLE(ncurses,
+  [AC_HELP_STRING(
+    [--disable-ncurses],
+    [disable use of ncurses (default=no)])
+  ])
+
+dnl Workaround for broken setpassent on FreeBSD.
+AC_ARG_ENABLE(force-setpassent,
+  [AC_HELP_STRING(
+    [--enable-force-setpassent],
+    [force use of setpassent (default=no on FreeBSD)])
+  ])
+
+dnl IPv6 support.
+AC_ARG_ENABLE(ipv6,
+  [AC_HELP_STRING(
+    [--enable-ipv6],
+    [enable IPv6 support (default=no)])
+  ],
+  [
+    if test x"$enableval" = xyes ; then
+      AC_DEFINE(PR_USE_IPV6, 1, [Define if using IPv6 support.])
+    fi
+  ])
+
+dnl OpenSSL support
+AC_ARG_ENABLE(openssl,
+  [AC_HELP_STRING(
+    [--enable-openssl],
+    [enable OpenSSL support (default=no)])
+  ],
+  [ if test x"$enableval" = xyes ; then
+      AC_DEFINE(PR_USE_OPENSSL, 1, [Define if using OpenSSL support.])
+      ac_build_addl_libs="$ac_build_addl_libs -lssl -lcrypto"
+    fi
+  ])
+
+dnl Sendfile support.
+AC_ARG_ENABLE(sendfile,
+  [AC_HELP_STRING(
+    [--disable-sendfile],
+    [disable sendfile support (default=no)])
+  ])
+
+dnl Check for enabled shadow password support.
+AC_ARG_ENABLE(shadow,
+  [AC_HELP_STRING(
+    [--enable-shadow],
+    [force compilation of shadowed password support])
+  ],
+  [
+    dnl AIX does not have shadow file/library support.  Try to prevent a
+    dnl bad build if the admin, configuring on an AIX box, uses this option.
+    if test "$enableval" = "yes" && test "$OSTYPE" = "-DAIX4"; then
+      AC_MSG_WARN([AIX does not support traditional shadowed passwords])
+      enableval="no" 
+    fi
+
+    if test "$enableval" = "no" ; then
+      use_shadow=""
+      force_shadow="no"
+    else
+      AC_DEFINE(PR_USE_SHADOW)
+      force_shadow="yes"
+    fi ])
+
+dnl Enable support for Tru64's C2 SIA authentication
+AC_ARG_ENABLE(sia,
+  [AC_HELP_STRING(
+    [--enable-sia],
+    [enable SIA authentication support (Tru64)])
+  ],
+  [
+    if test x"$enableval" = xyes ; then
+
+      dnl Tru64's C2/SIA authentication requires these headers
+      AC_CHECK_HEADERS(sia.h siad.h sys/security.h)
+
+      AC_CHECK_LIB(security, set_auth_parameters)
+      AC_CHECK_FUNCS(set_auth_parameters)
+
+      AC_CHECK_LIB(sec, getprpwent)
+      AC_CHECK_FUNCS(getprpwent)
+
+      AC_DEFINE(PR_USE_SIA)
+    fi
+  ])
+
+dnl Trace support.
+AC_ARG_ENABLE(trace,
+  [AC_HELP_STRING(
+    [--disable-trace],
+    [disable trace support (default=no)])
+  ])
+
+dnl Enable developer code
+pr_devel_cflags="-g -Wcast-align -Wchar-subscripts -Winline -Wstrict-prototypes -Wmissing-declarations -Wnested-externs -Wpointer-arith -Wshadow -Wundef"
+pr_devel_libs=""
+
+AC_ARG_ENABLE(devel,
+  [AC_HELP_STRING(
+    [--enable-devel],
+    [enable code of interest to developers])
+  ],
+  [
+    if test x"$enableval" != xno ; then
+      devel="yes"
+
+      dnl Check to see if specific developer flags were requested
+
+      if test `echo $enableval | grep -c coredump` = "1" ; then
+        pr_devel_cflags="-DPR_DEVEL_COREDUMP $pr_devel_cflags"
+      fi
+
+      if test `echo $enableval | grep -c nodaemon` = "1" ; then
+        pr_devel_cflags="-DPR_DEVEL_NO_DAEMON $pr_devel_cflags"
+      fi
+
+      if test `echo $enableval | grep -c nofork` = "1" ; then
+        pr_devel_cflags="-DPR_DEVEL_NO_FORK $pr_devel_cflags"
+      fi
+
+      if test `echo $enableval | grep -c profile` = "1" ; then
+        pr_devel_cflags="-p -pg $pr_devel_cflags"
+        pr_devel_libs="-pg $pr_devel_libs"
+      fi
+
+      if test `echo $enableval | grep -c stacktrace` = "1"; then
+        pr_devel_cflags="-DPR_DEVEL_STACK_TRACE $pr_devel_cflags"
+      fi
+
+    else
+      devel="no"
+    fi
+  ])
+
+dnl The "tunable" options, from include/options.h
+AC_ARG_ENABLE(buffer-size,
+  [AC_HELP_STRING(
+    [--enable-buffer-size],
+    [tune the the size (in bytes) of internal buffers (default=1024)])
+  ],
+  [
+    if test "$enableval" = "yes" || test "$enableval" = "no" ; then
+      AC_MSG_WARN(buffer size defaulting to 1024 bytes)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_BUFFER_SIZE, 1024,
+      [Default buffer size])
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_BUFFER_SIZE, $enableval,
+      [Default buffer size])
+    fi
+  ])
+
+AC_ARG_ENABLE(pool-size,
+  [AC_HELP_STRING(
+    [--enable-pool-size],
+    [tune the size (in bytes) of memory pools (default=512)])
+  ],
+  [
+    if test "$enableval" = "yes" || test "$enableval" = "no" ; then
+      AC_MSG_WARN(pool size defaulting to 512 bytes)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_NEW_POOL_SIZE, 512,
+      [Default pool size])
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_NEW_POOL_SIZE, $enableval,
+      [Default pool size])
+    fi
+  ])
+
+AC_ARG_ENABLE(scoreboard-buffer-size,
+  [AC_HELP_STRING(
+    [--enable-scoreboard-buffer-size],
+    [tune the the size (in bytes) of certain scoreboard buffers (default=80)])
+  ],
+  [
+    if test "$enableval" = "yes" || test "$enableval" = "no" ; then
+      AC_MSG_WARN(scoreboard buffer size defaulting to 80 bytes)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_SCOREBOARD_BUFFER_SIZE, 80,
+      [Default scoreboard buffer size])
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_SCOREBOARD_BUFFER_SIZE, $enableval,
+      [Default scoreboard buffer size])
+    fi
+  ])
+
+AC_ARG_ENABLE(scoreboard-updates,
+  [AC_HELP_STRING(
+    [--enable-scoreboard-updates],
+    [set how often (in loops) the mod_xfer module updates the scoreboard (default=10)])
+  ],
+  [
+    if test x"$enableval" = xyes || test x"$enableval" = xno ; then
+      AC_MSG_WARN(scoreboard updates defaulting to 10)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_XFER_SCOREBOARD_UPDATES, 10)
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_XFER_SCOREBOARD_UPDATES, $enableval)
+    fi
+  ])
+
+AC_ARG_ENABLE(timeout-ident,
+  [AC_HELP_STRING(
+    [--enable-timeout-ident],
+    [set the default timeout (in secs) for RFC931 connections (default=10)])
+  ],
+  [
+    if test "$enableval" = "yes" || test "$enableval" = "no" ; then
+      AC_MSG_WARN(ident timeout defaulting to 10 secs)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTIDENT, 10,
+      [Default ident timeout])
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTIDENT, $enableval,
+      [Default ident timeout])
+    fi
+  ])
+
+AC_ARG_ENABLE(timeout-idle,
+  [AC_HELP_STRING(
+    [--enable-timeout-idle],
+    [set the default timeout (in secs) for idle connections (default=600)])
+  ],
+  [
+    if test "$enableval" = "yes" || test "$enableval" = "no" ; then
+      AC_MSG_WARN(idle timeout defaulting to 600 secs)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTIDLE, 600,
+      [Default idle timeout])
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTIDLE, $enableval,
+      [Default idle timeout])
+    fi
+  ])
+
+AC_ARG_ENABLE(timeout-linger,
+  [AC_HELP_STRING(
+    [--enable-timeout-linger],
+    [set the default timeout (in secs) for lingering closes (default=180)])
+  ],
+  [
+    if test "$enableval" = "yes" || test "$enableval" = "no" ; then
+      AC_MSG_WARN(linger timeout defaulting to 180 secs)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTLINGER, 180,
+      [Default linger timeout])
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTLINGER, $enableval,
+      [Default linger timeout])
+    fi
+  ])
+
+AC_ARG_ENABLE(timeout-login,
+  [AC_HELP_STRING(
+    [--enable-timeout-login],
+    [set the default timeout (in secs) for logging in after connecting (default=300)])
+  ],
+  [
+    if test "$enableval" = "yes" || test "$enableval" = "no" ; then
+      AC_MSG_WARN(login timeout defaulting to 300 secs)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTLOGIN, 300,
+      [Default login timeout])
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTLOGIN, $enableval,
+      [Default login timeout])
+    fi
+  ])
+
+AC_ARG_ENABLE(timeout-no-transfer,
+  [AC_HELP_STRING(
+    [--enable-timeout-no-transfer],
+    [set the default timeout (in secs) for no data transferred (default=300)])
+  ],
+  [
+    if test "$enableval" = "yes" || test "$enableval" = "no" ; then
+      AC_MSG_WARN(no data transfer timeout defaulting to 300 secs)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTNOXFER, 300,
+      [Default when no data transferred])
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTNOXFER, $enableval,
+      [Default when no data transferred])
+    fi
+  ])
+
+AC_ARG_ENABLE(timeout-stalled,
+  [AC_HELP_STRING(
+    [--enable-timeout-stalled],
+    [set the default timeout (in secs) for stalled transfers (default=3600)])
+  ],
+  [
+    if test "$enableval" = "yes" || test "$enableval" = "no" ; then
+      AC_MSG_WARN(stalled timeout defaulting to 3600 secs)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTSTALLED, 3600,
+      [Default stalled timeout])
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_TIMEOUTSTALLED, $enableval,
+      [Default stalled timeout])
+    fi
+  ])
+
+AC_ARG_ENABLE(transfer-buffer-size,
+  [AC_HELP_STRING(
+    [--enable-transfer-buffer-size],
+    [tune the the size (in bytes) of data transfer buffers (default=OS dependent)])
+  ],
+  [
+    if test "$enableval" = "yes" || test "$enableval" = "no" ; then
+      AC_MSG_WARN(transfer buffer size defaulting to regular buffer size)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_XFER_BUFFER_SIZE, 1024,
+      [Default buffer size])
+    else
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_XFER_BUFFER_SIZE, $enableval,
+      [Specified transfer buffer size])
+    fi
+  ])
+
+dnl Checks for libraries.  Yes, this is the hard way, but it's necessary.
+AC_CACHE_CHECK(for standalone crypt,pr_cv_lib_standalone_crypt,
+  AC_TRY_LINK(,[crypt();],
+  	pr_cv_lib_standalone_crypt="yes", pr_cv_lib_standalone_crypt="no" ))
+
+if test "$pr_cv_lib_standalone_crypt" = "no"; then
+  AC_CHECK_LIB(crypt,crypt)
+fi
+
+AC_CACHE_CHECK(for standalone gethostbyname,pr_cv_lib_standalone_gethost,
+  AC_TRY_LINK(,[gethostbyname();],
+  	pr_cv_lib_standalone_gethost="yes",
+	pr_cv_lib_standalone_gethost="no" ))
+
+if test "$pr_cv_lib_standalone_gethost" = "no"; then
+  AC_CHECK_LIB(resolv,gethostbyname)
+  AC_CHECK_LIB(resolv,inet_aton)
+fi
+
+AC_CACHE_CHECK(for standalone inet_aton,pr_cv_lib_standalone_aton,
+  AC_TRY_LINK(,[inet_aton();],
+  	pr_cv_lib_standalone_aton="yes",
+	pr_cv_lib_standalone_aton="no" ))
+
+if test "$pr_cv_lib_standalone_aton" = "no"; then
+  AC_CHECK_LIB(bind,inet_aton)
+fi
+
+AC_CACHE_CHECK(for standalone nsl functions,pr_cv_lib_standalone_nsl,[
+  AC_TRY_LINK(,[gethostent();],
+  pr_cv_lib_standalone_nsl="yes", pr_cv_lib_standalone_nsl="no") ])
+
+if test "$pr_cv_lib_standalone_nsl" = "no"; then
+  AC_CHECK_LIB(nsl,gethostent)
+fi
+
+AC_CACHE_CHECK(for standalone socket functions,pr_cv_lib_standalone_sockets,
+  AC_TRY_LINK(,[bind();],
+  pr_cv_lib_standalone_sockets="yes", pr_cv_lib_standalone_sockets="no"))
+
+if test "$pr_cv_lib_standalone_sockets" = "no"; then
+  AC_CHECK_LIB(socket,bind)
+fi
+
+AC_CACHE_CHECK(for _pw_stayopen variable,pr_cv_var__pw_stayopen,
+  AC_TRY_LINK(
+    [extern int _pw_stayopen; ],
+    [_pw_stayopen = 1;],
+    pr_cv_var__pw_stayopen="yes", pr_cv_var__pw_stayopen="no"))
+
+if test "$pr_cv_var__pw_stayopen" = "yes"; then
+  AC_DEFINE(HAVE__PW_STAYOPEN)
+fi
+
+AC_CHECK_HEADERS(krb.h)
+AC_CHECK_HEADERS(prot.h)
+
+dnl HP-UX's hpsecurity.h can multiply define MAXINT and confuse configure
+AC_CHECK_HEADERS(hpsecurity.h, [
+    AC_SEARCH_LIBS(getprpwnam, sec)
+  ],
+  [
+    AC_MSG_CHECKING(for hpsecurity.h workaround)
+    AC_TRY_COMPILE([
+#include <values.h>
+#undef MAXINT
+#include <hpsecurity.h>
+  ], [],
+  [
+    AC_DEFINE(HAVE_HPSECURITY_H)
+    AC_SEARCH_LIBS(getprpwnam, sec)
+    AC_MSG_RESULT(yes)
+  ], [
+    AC_MSG_RESULT(no)
+  ])
+])
+
+dnl Checks for installation user/group
+
+if test x"$install_user" = x; then
+  if test "x$target_os" = "xcygwin"; then
+    install_user=`id -u`
+  else
+    install_user=root
+  fi
+fi
+if test x"$install_group" = x ; then
+  if test "x$target_os" = "xcygwin"; then
+    install_group=`id -g`
+  else
+    install_group=`sed -n '/.*:.*:0:/{s/^\(.*\):.*:0:.*/\1/p;q;}' /etc/group 2>/dev/null`
+  fi
+fi
+
+AC_SUBST(install_user)
+AC_SUBST(install_group)
+
+dnl Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS(fcntl.h sys/ioctl.h sys/time.h junistd.h memory.h)
+if test x"$force_shadow" != xno ; then
+  AC_CHECK_HEADERS(shadow.h,
+    [ if test "$use_shadow" = "" && test -f /etc/shadow ; then
+        AC_DEFINE(PR_USE_SHADOW)
+
+        AC_CHECK_MEMBER(struct spwd.sp_warn,
+          [AC_DEFINE(HAVE_SPWD_SP_WARN)],,
+          [#include <shadow.h>])
+        AC_CHECK_MEMBER(struct spwd.sp_inact,
+          [AC_DEFINE(HAVE_SPWD_SP_INACT)],,
+          [#include <shadow.h>])
+        AC_CHECK_MEMBER(struct spwd.sp_expire,
+          [AC_DEFINE(HAVE_SPWD_SP_EXPIRE)],,
+          [#include <shadow.h>])
+
+      fi ])
+fi
+
+dnl The pam test used to disable use_shadow, and I'm not sure why, libpam
+dnl really shouldn't have anything to do with force_shadow or use_shadow.
+if test x"$enable_auth_pam" != xno ; then
+  AC_CHECK_HEADERS(security/pam_appl.h security/pam_modules.h pam/pam_appl.h,
+    [ if test `echo $ac_static_modules | grep -c mod_auth_pam` = "0"; then
+        ac_static_modules="mod_auth_pam.o $ac_static_modules"
+        ac_build_static_modules="modules/mod_auth_pam.o $ac_build_static_modules"
+      fi ])
+
+  dnl This next check looks funky due to a linker problem with some versions
+  dnl of the PAM library.  Prior to 0.72 release, the Linux PAM shared library
+  dnl omitted requiring libdl linking information. PAM-0.72 or better ships
+  dnl with RedHat 6.2 and Debian 2.2 or better.
+  dnl
+  dnl This test used to add -lpam to the libraries list, however this isn't
+  dnl necessary in light of the fact that mod_auth_pam.c has the $Library $ tag
+  dnl and is picked up at configure time.  The only thing we need is to add
+  dnl -ldl in the event of broken PAM.
+
+  if test `echo $ac_static_modules | grep -c mod_auth_pam` = "1"; then
+
+	AC_CHECK_LIB(pam, pam_start,
+		[AC_DEFINE(HAVE_PAM)],
+		[AC_CHECK_LIB(pam, pam_end,
+				[AC_DEFINE(HAVE_PAM)
+					LIBS="$LIBS -ldl"],,
+				[-ldl])])
+  fi
+
+fi
+
+ac_add_mod_cap="no"
+if test x"$enable_cap" != xno; then
+  case "$host" in
+    [*-linux-*])
+      rev=`uname -r | awk -F'[[.-]]' '{printf "%03d%03d%03d", $1, $2, $3}'`
+
+      if test $rev -ge 002001097; then
+        AC_CHECK_HEADER(linux/capability.h)
+ 
+        if test $ac_cv_header_linux_capability_h = "yes"; then
+          ac_add_mod_cap="yes"
+        fi
+      fi
+  esac
+fi
+
+AC_MSG_CHECKING([whether to enable mod_cap])
+AC_MSG_RESULT($ac_add_mod_cap)
+
+if test $ac_add_mod_cap = "yes"; then
+  ac_static_modules="$ac_static_modules mod_cap.o"
+  ac_build_static_modules="modules/mod_cap.o $ac_build_static_modules"
+fi
+
+AC_CHECK_HEADERS(bstring.h crypt.h ctype.h execinfo.h iconv.h inttypes.h langinfo.h limits.h locale.h)
+AC_CHECK_HEADERS(string.h strings.h stropts.h)
+AC_CHECK_HEADERS(sys/file.h sys/mman.h sys/types.h sys/uio.h)
+
+dnl These particular checks are done a little differently because on some
+dnl platforms, <sys/mount.h> wants <sys/param.h> to be included first.
+AC_CHECK_HEADERS(sys/param.h sys/mount.h,,,
+  [
+    [
+     #if HAVE_SYS_PARAM_H
+     # include <sys/param.h>
+     #endif
+    ]
+  ])
+
+AC_CHECK_HEADERS(netdb.h netinet/in.h)
+
+dnl On AIX, it seems that in order for hstrerror to be properly seen
+dnl from netdb.h, we need to define _USE_IRS.  And people wonder why
+dnl there's all this effort for compatibility, when "Unix is Unix,
+dnl right?"  Yeah, whatever.
+AC_MSG_CHECKING(whether netdb.h requires _USE_IRS)
+AC_EGREP_HEADER(_USE_IRS, netdb.h,
+  [
+    AC_DEFINE(_USE_IRS, 1, [if netdb.h requires _USE_IRS])
+    AC_MSG_RESULT(yes)
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+
+AC_CHECK_HEADERS(netinet/in_systm.h,,,
+  [
+    [
+     #if HAVE_SYS_TYPES_H
+     # include <sys/types.h>
+     #endif
+    ]
+  ])
+
+AC_CHECK_HEADERS(netinet/ip.h,,,
+  [
+    [
+     #if HAVE_SYS_TYPES_H
+     # include <sys/types.h>
+     #endif
+     #if HAVE_NETINET_IN_H
+     # include <netinet/in.h>
+     #endif
+     #if HAVE_NETINET_IN_SYSTM_H
+     # include <netinet/in_systm.h>
+     #endif
+    ]
+  ])
+
+AC_CHECK_HEADERS(netinet/tcp.h arpa/inet.h libintl.h)
+AC_CHECK_HEADERS(sys/stat.h errno.h sys/socket.h sys/termios.h sys/termio.h)
+AC_CHECK_HEADERS(sys/statvfs.h sys/un.h sys/vfs.h sys/select.h)
+AC_CHECK_HEADERS(dirent.h ndir.h sys/ndir.h sys/dir.h vmsdir.h)
+AC_CHECK_HEADERS(ucontext.h utime.h utmpx.h)
+AC_CHECK_HEADERS(regex.h)
+AC_CHECK_HEADER(syslog.h,have_syslog_h="yes",)
+AC_CHECK_HEADERS(curses.h ncurses.h)
+
+dnl Check for the presence of the tzname, timezone, and daylight global
+dnl variables.
+AC_MSG_CHECKING(for tzname global variable)
+AC_TRY_COMPILE([
+  #include <time.h>
+  ], [
+    char *dup[2];
+    dup[0] = tzname[0];
+    dup[1] = tzname[1];
+  ],
+  [
+    AC_DEFINE(HAVE_TZNAME)
+    AC_MSG_RESULT(yes)
+  ], [
+    AC_MSG_RESULT(no)
+  ])
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_UID_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_TYPE_MODE_T
+AC_TYPE_OFF_T
+AC_TYPE_GETGROUPS
+
+dnl Check to see if timer_t is already defined
+AC_CACHE_CHECK([for timer_t], pr_cv_header_timer_t,
+	AC_EGREP_HEADER([.*typedef.*timer_t;],sys/types.h,
+			pr_cv_header_timer_t="yes",
+	AC_EGREP_HEADER([.*typedef.*timer_t;],limits.h,
+			pr_cv_header_timer_t="yes",pr_cv_header_timer_t="no")))
+
+if test "$pr_cv_header_timer_t" = "yes"; then
+  AC_DEFINE(HAVE_TIMER_T)
+fi
+
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+AC_CHECK_SIZEOF(short, 0)
+AC_CHECK_SIZEOF(int, 0)
+AC_CHECK_SIZEOF(long, 0)
+AC_CHECK_SIZEOF(long long, 0)
+AC_CHECK_SIZEOF(off_t, 0)
+AC_CHECK_SIZEOF(size_t, 0)
+AC_CHECK_SIZEOF(time_t, 0)
+
+dnl Check for generic typedefs
+AC_CHECK_TYPE(umode_t, mode_t)
+AC_CHECK_TYPE(ino_t, ino_t)
+AC_CHECK_TYPE(intptr_t, AC_DEFINE(HAVE_INTPTR_T),, [
+  #if HAVE_INTTYPES_H
+  # include <inttypes.h>
+  #endif
+])
+
+AC_CHECK_TYPES(socklen_t, ,
+  [AC_DEFINE(socklen_t, int)],
+  [
+    #if HAVE_SYS_TYPES_H
+    # include <sys/types.h>
+    #endif
+    #if HAVE_NETDB_H
+    # include <netdb.h>
+    #endif
+    #include <sys/socket.h>
+  ])
+
+dnl See what type of utmp exists
+AC_CHECK_HEADERS(utmp.h, have_utmp=1, have_utmp=0)
+
+if test $have_utmp; then
+  AC_CACHE_CHECK(whether your struct utmp has ut_user,
+  		pr_cv_header_utmaxtype,
+	AC_EGREP_HEADER([ *ut_user.*;],utmp.h,
+			pr_cv_header_utmaxtype="yes",
+			pr_cv_header_utmaxtype="no"))
+  AC_CACHE_CHECK(whether your struct utmp has ut_host,
+  		pr_cv_header_ut_host,
+	AC_EGREP_HEADER([ *ut_host.*;],utmp.h,
+			pr_cv_header_ut_host="yes",
+			pr_cv_header_ut_host="no"))
+  AC_CACHE_CHECK(whether your struct utmp has ut_exit,
+		pr_cv_header_ut_exit,
+	AC_EGREP_HEADER([ *ut_exit.*;],utmp.h,
+			pr_cv_header_ut_exit="yes",
+			pr_cv_header_ut_exit="no"))
+  if test "$pr_cv_header_utmaxtype" = "yes"; then
+    AC_DEFINE(HAVE_UTMAXTYPE, 1, [If struct utmp has ut_user.])
+  fi
+  if test "$pr_cv_header_ut_host" = "yes"; then
+    AC_DEFINE(HAVE_UT_UT_HOST, 1, [If struct utmp has ut_host.])
+  fi
+  if test "$pr_cv_header_ut_exit" = "yes"; then
+    AC_DEFINE(HAVE_UT_UT_EXIT, 1, [If struct utmp has ut_exit.])
+  fi
+fi
+
+dnl See if various LOG_ macros are defined
+if test "$have_syslog_h" = "yes"; then
+  AC_DEFINE(HAVE_SYSLOG_H)
+
+  AC_CACHE_CHECK(whether your syslog.h defines LOG_CRON,
+  		pr_cv_header_syslog_log_cron,
+  	AC_EGREP_CPP(yes,[
+#include <syslog.h>
+#ifdef LOG_CRON
+  yes
+#endif
+	],pr_cv_header_syslog_log_cron="yes",
+	pr_cv_header_syslog_log_cron="no") )
+
+  AC_CACHE_CHECK(whether your syslog.h defines LOG_FTP,
+  		pr_cv_header_syslog_log_ftp,
+  	AC_EGREP_CPP(yes,[
+#include <syslog.h>
+#ifdef LOG_FTP
+  yes
+#endif
+	],pr_cv_header_syslog_log_ftp="yes",
+	pr_cv_header_syslog_log_ftp="no") )
+
+  if test "$pr_cv_header_syslog_log_cron" = "yes"; then
+    AC_DEFINE(HAVE_LOG_CRON)
+  fi
+  if test "$pr_cv_header_syslog_log_ftp" = "yes"; then
+    AC_DEFINE(HAVE_LOG_FTP)
+  fi
+fi
+
+dnl Check for directory file descriptor member ("d_fd", "dd_fd" or "__dd_fd")
+dnl of the DIR struct, possibly defining one of:
+dnl	HAVE_STRUCT_DIR_D_FD
+dnl	HAVE_STRUCT_DIR_DD_FD
+dnl	HAVE_STRUCT_DIR___DD_FD
+dnl Should use AC_C_STRUCT_MEMBER, when available in an official release.
+dnl The autoconf-2.14.1 floating around is NOT an official release.
+dnl Note: use of either the _POSIX_C_SOURCE or the _XOPEN_SOURCE preprocessor
+dnl macro could result in a wrong answer unless it is also defined here.
+dnl Doing so may be automatic or may take some care or reordering.
+dnl NB: autoheader won't pick up these macros, requiring acconfig.h entries.
+dnl
+for dirfd in d_fd dd_fd __dd_fd ; do
+	AC_MSG_CHECKING(for $dirfd in DIR structure)
+	AC_TRY_COMPILE([
+#include <stdio.h>
+#include <dirent.h>
+], [
+DIR *dirp;
+int i = dirp->$dirfd;
+], eval ac_cv_struct_dir_$dirfd=yes,)
+	if test "`eval echo x'$''ac_cv_struct_dir_'$dirfd`" = xyes ; then
+		ucdirfd=`echo $dirfd | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
+		AC_DEFINE_UNQUOTED(HAVE_STRUCT_DIR_$ucdirfd)
+		AC_MSG_RESULT(yes)
+		break
+	else
+		AC_MSG_RESULT(no)
+	fi
+done
+
+
+dnl Checks for library functions.
+
+AC_FUNC_ALLOCA
+
+dnl UnixWare's alloca is in libucb, in /usr/ucblib/. Muck about with
+dnl $LDFLAGS so AC_CHECK_LIB() will find it there.
+old_LDFLAGS=$LDFLAGS
+LDFLAGS="$LDFLAGS -L/usr/ucblib/"
+AC_CHECK_LIB(ucb, alloca)
+LDFLAGS=$old_LDFLAGS
+
+AC_PROG_GCC_TRADITIONAL
+AC_FUNC_SETPGRP
+AC_TYPE_SIGNAL
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(bcopy crypt fdatasync fgetgrent fgetpwent flock freeaddrinfo iconv nl_langinfo)
+AC_CHECK_FUNC(gai_strerror,
+  AC_DEFINE(HAVE_GAI_STRERROR),
+  LIB_OBJS="$LIB_OBJS glibc-gai_strerror.o"
+)
+
+dnl getaddrinfo is a #define on Tru64 Unix.  How annoying.
+AC_MSG_CHECKING([for getaddrinfo])
+AC_TRY_LINK(
+  [
+    #include <stdio.h>
+    #if HAVE_SYS_TYPES_H
+    # include <sys/types.h>
+    #endif
+    #if HAVE_SYS_SOCKET_H
+    # include <sys/socket.h>
+    #endif
+    #if HAVE_NETDB_H
+    # include <netdb.h>
+    #endif
+  ],
+  [
+    getaddrinfo(NULL, NULL, NULL, NULL);
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_GETADDRINFO, 1, [Define if you have getaddrinfo])
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ]
+)
+
+AC_CHECK_FUNCS(getcwd getenv gethostbyname2 gethostname getnameinfo)
+AC_CHECK_FUNCS(gettimeofday hstrerror inet_aton inet_ntop inet_pton)
+AC_CHECK_FUNCS(memcpy mempcpy mkdir mkstemp mlock mlockall munlock munlockall)
+AC_CHECK_FUNCS(putenv rmdir select setgroups socket statfs strchr strcoll strerror)
+AC_CHECK_FUNCS(strsep strtol strtoull setprotoent setspent endprotoent)
+# __snprintf and __vsnprintf are only on solaris and _really_ broken there.
+AC_CHECK_FUNCS(vsnprintf snprintf)
+if test x"$ac_cv_func_vsnprintf" != xyes || test x"$ac_cv_func_snprintf" != xyes
+then
+	AC_CHECK_FUNCS(fconvert fcvt)
+	AC_CHECK_HEADERS(floatingpoint.h)
+fi
+AC_CHECK_FUNCS(setsid setgroupent seteuid setegid setenv)
+AC_CHECK_FUNCS(siginterrupt setpgid)
+AC_CHECK_FUNCS(regcomp)
+AC_CHECK_FUNCS(tzset unsetenv)
+AC_CHECK_FUNCS(pathconf fpathconf)
+AC_CHECK_FUNCS(fgetspent)
+
+AC_CHECK_FUNC(setpassent,
+[case "$target_os:$enable_force_setpassent" in
+changequote(, )dnl
+  *freebsd[23]\.[0-3]*:)
+changequote([, ])dnl
+    AC_MSG_WARN(Disabling broken FreeBSD setpassent(), see README for details.)
+        ;;
+  *:no) ;;
+  *) AC_DEFINE(HAVE_SETPASSENT) ;;
+esac])
+
+dnl Controls
+if test x"$enable_ctrls" = xyes; then
+  ac_static_modules="$ac_static_modules mod_ctrls.o"
+  ac_build_static_modules="$ac_build_static_modules modules/mod_ctrls.o"
+fi
+
+dnl NLS/LANG support
+if test x"$enable_nls" = xyes; then
+  ac_static_modules="$ac_static_modules mod_lang.o"
+  ac_build_static_modules="$ac_build_static_modules modules/mod_lang.o"
+fi
+
+dnl IPv4/IPv6-related checks
+AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
+  [AC_DEFINE(SIN_LEN)],,
+  [
+    #if HAVE_SYS_TYPES_H
+    # include <sys/types.h>
+    #endif
+    #if HAVE_SYS_SOCKET_H
+    # include <sys/socket.h>
+    #endif
+    #if HAVE_NETINET_IN_H
+    # include <netinet/in.h>
+    #endif
+  ])
+
+dnl Largefile support
+if test x"$enable_largefile" = xno; then
+  AC_DEFINE(PR_USE_LARGEFILES, 0)
+else
+  AC_DEFINE(PR_USE_LARGEFILES, 1)
+fi
+
+PR_CHECK_STRUCT_ADDRINFO
+PR_CHECK_STRUCT_SS
+PR_CHECK_SS_FAMILY
+PR_CHECK_SS_LEN
+
+dnl POSIX ACL checks.  Always perform these, in case the administrator
+dnl wants to use mod_facl.
+AC_CHECK_HEADERS(sys/acl.h acl/libacl.h)
+AC_CACHE_CHECK(
+  [which POSIX ACL implementation to use],
+  pr_cv_func_facl,
+  pr_cv_func_facl="none"
+
+  dnl BSD.
+  if test "$pr_cv_func_facl" = "none"; then
+    AC_TRY_LINK(
+      [ #include <sys/types.h>
+        #ifdef HAVE_SYS_ACL_H
+        # include <sys/acl.h>
+        #endif
+      ],
+      [ acl_entry_t ae;
+        (void)acl_get_qualifier(ae);
+      ], pr_cv_func_facl="BSD")
+  fi
+
+  dnl Linux.
+  if test "$pr_cv_func_facl" = "none"; then
+    old_ldflags=$LDFLAGS
+    LDFLAGS="-lacl $LDFLAGS"
+    AC_TRY_LINK(
+      [ #include <sys/types.h>
+        #ifdef HAVE_SYS_ACL_H
+        # include <sys/acl.h>
+        #endif
+      ],
+      [ acl_entry_t ae;
+        (void)acl_get_qualifier(ae);
+      ], pr_cv_func_facl="Linux")
+    LDFLAGS=$old_ldflags
+  fi
+
+  dnl Solaris.
+  if test "$pr_cv_func_facl" = "none"; then
+    old_ldflags=$LDFLAGS
+    LDFLAGS="-lsec $LDFLAGS"
+    AC_TRY_LINK(
+      [ #include <sys/types.h>
+        #ifdef HAVE_SYS_ACL_H
+        # include <sys/acl.h>
+        #endif
+      ],
+      [ aclent_t ae;
+        (void)aclcheck(&ae,0,NULL);
+      ], pr_cv_func_facl="Solaris")
+    LDFLAGS=$old_ldflags
+  fi
+)
+
+dnl Now, set the appropriate defines based on our investigations...
+if test "$pr_cv_func_facl" != "none"; then
+  AC_DEFINE(HAVE_POSIX_ACL)
+
+  case "$pr_cv_func_facl" in
+    "BSD")
+      AC_DEFINE(HAVE_BSD_POSIX_ACL)
+      ;;
+
+    "Linux")
+      AC_DEFINE(HAVE_LIBACL, 1)
+      AC_DEFINE(HAVE_LINUX_POSIX_ACL)
+      AC_CHECK_LIB(acl, perm_copy_fd,
+        [AC_DEFINE(HAVE_PERM_COPY_FD)])
+      ;;
+
+    "Solaris")
+      AC_DEFINE(HAVE_LIBSEC, 1)
+      AC_DEFINE(HAVE_SOLARIS_POSIX_ACL)
+      ;;
+  esac
+fi
+
+if test x"$enable_facl" = xyes ; then
+  AC_DEFINE(PR_USE_FACL, 1)
+
+  case "$pr_cv_func_facl" in
+    "Linux")
+      ac_build_addl_libs="-lacl $ac_build_addl_libs"
+      ;;
+
+    "Solaris")
+      ac_build_addl_libs="-lsec $ac_build_addl_libs"
+      ;;
+  esac
+fi
+
+dnl sendfile() checks
+if test x"$enable_sendfile" != xno ; then
+  AC_CACHE_CHECK(
+    [which sendfile() implementation to use],
+    pr_cv_func_sendfile,
+    pr_cv_func_sendfile="none"
+
+    dnl Linux.
+    if test "$pr_cv_func_sendfile" = "none"; then
+      AC_TRY_LINK(
+        [ #include <sys/types.h>
+          #include <sys/sendfile.h>
+          #include <unistd.h>
+        ],
+        [ int i;
+          off_t o;
+          size_t c;
+          (void)sendfile(i,i,&o,c);
+        ], pr_cv_func_sendfile="Linux")
+    fi
+
+    dnl BSD.
+    if test "$pr_cv_func_sendfile" = "none"; then
+      AC_TRY_LINK(
+        [ #include <sys/types.h>
+          #include <sys/socket.h>
+          #include <sys/uio.h>
+        ],
+        [ int i;
+          off_t o;
+          size_t n;
+          struct sf_hdtr h;
+          (void)sendfile(i,i,o,n,&h,&o,i);
+        ], pr_cv_func_sendfile="BSD")
+    fi
+
+    dnl AIX.
+    if test "$pr_cv_func_sendfile" = "none"; then
+      AC_TRY_LINK(
+        [ #include <sys/types.h>
+          #include <sys/socket.h>
+        ],
+        [ uint f;
+          int h;
+          struct sf_parms p;
+          (void)send_file(&(h),&(p),f);
+        ], pr_cv_func_sendfile="AIX")
+    fi
+
+    dnl Solaris
+    if test "$pr_cv_func_sendfile" = "none"; then
+      old_ldflags=$LDFLAGS
+      LDFLAGS="-lsendfile $LDFLAGS"
+      AC_TRY_LINK(
+        [ #include <sys/types.h>
+          #include <sys/sendfile.h>
+          #include <unistd.h>
+        ],
+        [ int i;
+          off_t o;
+          size_t c;
+          (void)sendfile(i,i,&o,c);
+        ], pr_cv_func_sendfile="Solaris")
+      LDFLAGS=$old_ldflags
+    fi
+  )
+
+  dnl Now, set the appropriate defines based on our investigations...
+
+  if test "$pr_cv_func_sendfile" != "none"; then
+    AC_DEFINE(HAVE_SENDFILE)
+    AC_DEFINE(PR_USE_SENDFILE, 1)
+  fi
+
+  case "$pr_cv_func_sendfile" in
+    "Linux")
+      AC_CHECK_HEADERS(sys/sendfile.h)
+      AC_DEFINE(HAVE_LINUX_SENDFILE)
+      ;;
+
+    "BSD")
+      AC_DEFINE(HAVE_BSD_SENDFILE)
+      ;;
+
+    "AIX")
+      AC_DEFINE(HAVE_AIX_SENDFILE)
+      ;;
+
+    "Solaris")
+      AC_CHECK_HEADERS(sys/sendfile.h)
+      AC_DEFINE(HAVE_SOLARIS_SENDFILE)
+      ac_build_addl_libs="-lsendfile $ac_build_addl_libs"
+      ;;
+  esac
+fi
+
+dnl Trace checks
+if test x"$enable_trace" != xno ; then
+  AC_DEFINE(PR_USE_TRACE, 1, [Define for trace support])
+fi
+
+dnl Custom-rolled macro for checking return type of setgrent(3)
+PR_FUNC_SETGRENT_VOID
+
+dnl Perform checks for curses/ncurses libraries only if the corresponding
+dnl headers have been found.
+if test x"$ac_cv_header_curses_h" = xyes; then
+  AC_CHECK_LIB(curses, initscr,
+    [ CURSES_LIBS="-lcurses"
+      AC_DEFINE(HAVE_LIBCURSES, 1, [Define if you have curses])
+    ])
+fi
+
+if test x"$ac_cv_header_ncurses_h" = xyes; then
+  AC_CHECK_LIB(ncurses, initscr,
+    [ CURSES_LIBS="-lncurses"
+      AC_DEFINE(HAVE_LIBNCURSES, 1, [Define if you have ncurses])
+    ])
+fi
+
+if test x"$enable_curses" != xno ; then
+  AC_DEFINE(PR_USE_CURSES)
+fi
+
+if test x"$enable_ncurses" != xno ; then
+  AC_DEFINE(PR_USE_NCURSES)
+fi
+
+dnl Check for various argv[] replacing functions on various OSs
+AC_CHECK_FUNCS(setproctitle)
+AC_CHECK_HEADERS(libutil.h)
+AC_CHECK_LIB(util, setproctitle,
+	[AC_DEFINE(HAVE_SETPROCTITLE)
+		ac_cv_func_setproctitle="yes" ; LIBS="$LIBS -lutil"])
+
+if test "$ac_cv_func_setproctitle" = "yes"; then
+  AC_DEFINE(PF_ARGV_TYPE, PF_ARGV_NONE)
+else
+  pf_argv_set="no"
+
+  AC_CHECK_HEADERS(sys/pstat.h,have_pstat_h="yes",have_pstat_h="no")
+  if test "$have_pstat_h" = "yes"; then
+    AC_CHECK_FUNCS(pstat)
+    
+    if test "$ac_cv_func_pstat" = "yes"; then
+	AC_DEFINE(PF_ARGV_TYPE, PF_ARGV_PSTAT)
+    else
+	AC_DEFINE(PF_ARGV_TYPE, PF_ARGV_WRITEABLE)
+    fi
+
+    pf_argv_set="yes"
+  fi
+
+  if test "$pf_argv_set" = "no"; then
+    AC_EGREP_HEADER([#define.*PS_STRINGS.*],sys/exec.h,
+			have_psstrings="yes",have_psstrings="no")
+    if test "$have_psstrings" = "yes"; then
+	AC_DEFINE(PF_ARGV_TYPE, PF_ARGV_PSSTRINGS)
+	pf_argv_set="yes"
+    fi
+  fi
+
+  if test "$pf_argv_set" = "no"; then
+    AC_CACHE_CHECK(whether __progname and __progname_full are available,
+		    pf_cv_var_progname,
+		    AC_TRY_LINK([extern char *__progname, *__progname_full;],
+			[__progname = "foo"; __progname_full = "foo bar";],
+			pf_cv_var_progname="yes", pf_cv_var_progname="no"))
+
+    if test "$pf_cv_var_progname" = "yes"; then
+	AC_DEFINE(HAVE___PROGNAME)
+    fi
+
+    AC_CACHE_CHECK(which argv replacement method to use,
+		    pf_cv_argv_type,
+		    AC_EGREP_CPP(yes,[
+#if defined(__GNU_HURD__)
+  yes
+#endif
+  ],pf_cv_argv_type="new", pf_cv_argv_type="writeable"))
+
+    if test "$pf_cv_argv_type" = "new"; then
+	AC_DEFINE(PF_ARGV_TYPE, PF_ARGV_NEW)
+	pf_argv_set="yes"
+    fi
+
+    if test "$pf_argv_set" = "no"; then
+	AC_DEFINE(PF_ARGV_TYPE, PF_ARGV_WRITEABLE)
+    fi
+  fi
+fi
+
+dnl Run a small test program to see if the host's printf(3) family can
+dnl actually handle the %llu format.
+AC_MSG_CHECKING([whether printf supports %llu format]);
+AC_TRY_RUN(
+  [ #include <stdio.h>
+    int main(int argc, char *argv[]) {
+      return (fprintf(stderr, "%llu\n", (unsigned long long) 1) == 2 ? 0 : 1);
+    }
+  ],
+  AC_MSG_RESULT(yes); AC_DEFINE(HAVE_LLU),
+  AC_MSG_RESULT(no); AC_DEFINE(HAVE_LU),
+  AC_MSG_RESULT(cross-compiling); AC_DEFINE(HAVE_LU)
+)
+
+dnl Run a small test program to see which is the smaller of a TCP socket's
+dnl buffer size, its send buffer or its receive buffer.  The smaller of
+dnl of the two's size will be used as the default PR_TUNABLE_XFER_BUFFER_SIZE.
+if test -z "$enable_transfer_buffer_size" ; then
+  AC_MSG_CHECKING([for default transfer buffer sizes]);
+  AC_TRY_RUN(
+    [
+      #include <errno.h>
+      #include <stdio.h>
+      #if HAVE_UNISTD_H
+      # include <unistd.h>
+      #endif
+      #if HAVE_SYS_TYPES_H
+      # include <sys/types.h>
+      #endif
+      #if HAVE_NETDB_H
+      # include <netdb.h>
+      #endif
+      #include <sys/socket.h>
+      int main(int argc, char *argv[]) {
+        int proto, sockfd, rcvbufsz = 0, sndbufsz = 0;
+        struct protoent *p;
+        int len;
+        FILE *fp;
+        char rcvbufstr[256], sndbufstr[256], *buf;
+
+        p = getprotobyname("tcp");
+        if (!p) {
+          perror("getprotobyname()");
+          return 1;
+        }
+        proto = p->p_proto;
+
+        sockfd = socket(AF_INET, SOCK_STREAM, proto);
+        if (sockfd < 0) {
+          perror("socket()");
+          return 1;
+        }
+
+        len = sizeof(rcvbufsz);
+        if (getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (void *) &rcvbufsz,
+            &len) < 0) {
+          perror("getsockopt(SO_RCVBUF)");
+          close(sockfd);
+          return 1;
+        }
+
+        len = sizeof(sndbufsz);
+        if (getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (void *) &sndbufsz,
+            &len) < 0) {
+          perror("getsockopt(SO_SNDBUF)");
+          close(sockfd);
+          return 1;
+        }
+
+        memset(rcvbufstr, '\0', sizeof(rcvbufstr));
+        snprintf(rcvbufstr, sizeof(rcvbufstr), "%d", rcvbufsz);
+
+        memset(sndbufstr, '\0', sizeof(sndbufstr));
+        snprintf(sndbufstr, sizeof(sndbufstr), "%d", sndbufsz);
+
+        buf = sndbufsz < rcvbufsz ? sndbufstr : rcvbufstr;
+        fp = fopen("conftest.xferbufsz", "w+");
+        fwrite(buf, strlen(buf), 1, fp);
+        fclose(fp);
+
+        fp = fopen("conftest.rcvbufsz", "w+");
+        fwrite(rcvbufstr, strlen(rcvbufstr), 1, fp);
+        fclose(fp);
+
+        fp = fopen("conftest.sndbufsz", "w+");
+        fwrite(sndbufstr, strlen(sndbufstr), 1, fp);
+        fclose(fp);
+
+        return 0;
+      }
+    ],
+    [
+      rcvbufsz=`cat conftest.rcvbufsz`
+      sndbufsz=`cat conftest.sndbufsz`
+      xferbufsz=`cat conftest.xferbufsz`
+      AC_MSG_RESULT($xferbufsz)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_RCVBUFSZ, $rcvbufsz)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_SNDBUFSZ, $sndbufsz)
+      AC_DEFINE_UNQUOTED(PR_TUNABLE_XFER_BUFFER_SIZE, $xferbufsz)
+    ],
+    [
+      AC_MSG_RESULT(none)
+    ],
+    [
+      AC_MSG_RESULT(cross-compiling)
+    ]
+  )
+fi
+
+dnl Add the proftpd support library
+LIBS="-lsupp $LIBS"
+
+dnl Module handling.
+ac_shared_module_dirs=
+ac_static_module_dirs=
+
+dnl Remove any modules in the shared module list from the static module list
+for amodule in $ac_shared_modules; do
+  module=`echo "$amodule" | sed -e 's/.la//g'`.o;
+  ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//g"`;
+  ac_build_static_modules=`echo "$ac_build_static_modules" | sed -e "s/$module//g"`;
+done
+
+GLUE_MODULE_OBJS="$ac_core_modules $ac_static_modules"
+
+dnl Check for any duplicates
+my_core_modules=`echo "$ac_core_modules" | sed -e 's/\.o//g'`;
+my_static_modules=`echo "$ac_static_modules" | sed -e 's/\.o//g'`;
+my_shared_modules=`echo "$ac_shared_modules" | sed -e 's/\.la//g'`;
+all_modules="$my_core_modules $my_static_modules $my_shared_modules";
+
+AC_MSG_CHECKING([checking for duplicate module requests])
+for i in $all_modules; do
+  once=no;
+
+  dnl Make sure the OpenSSL define is set if mod_tls is being used
+  if test x"$i" = x"mod_tls"; then
+      AC_DEFINE(PR_USE_OPENSSL, 1, [Define if using OpenSSL support.])
+  fi
+
+  for j in $all_modules; do
+    if test x"$i" = x"$j"; then
+      if test x"$once" = xno; then
+        once=yes;
+
+      else
+        AC_MSG_RESULT([yes])
+        AC_MSG_ERROR([duplicate build request for $j -- aborting])
+      fi
+    fi
+  done
+done
+AC_MSG_RESULT([no])
+
+for module in $ac_shared_modules ; do
+  moduledir=`echo "$module" | sed -e 's/\.la$//'`;
+
+  if test -f $srcdir/modules/$src -o -f $srcdir/contrib/$src; then
+    continue
+
+  elif test -d $srcdir/modules/$moduledir; then
+    ac_shared_module_dirs="$ac_shared_module_dirs modules/$moduledir";
+    ac_shared_modules=`echo "$ac_shared_modules" | sed -e "s/$module//"`
+
+  elif test -d $srcdir/contrib/$moduledir; then
+    ac_shared_module_dirs="$ac_shared_module_dirs contrib/$moduledir";
+    ac_shared_modules=`echo "$ac_shared_modules" | sed -e "s/$module//"`
+  fi
+done
+
+for module in $ac_static_modules ; do
+  moduledir=`echo "$module" | sed -e 's/\.o$//'`;
+
+  if test -f $srcdir/modules/$src -o -f $srcdir/contrib/$src; then
+    continue
+
+  elif test -d $srcdir/modules/$moduledir; then
+    ac_static_module_dirs="$ac_static_module_dirs modules/$moduledir";
+    ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//"`
+
+  elif test -d $srcdir/contrib/$moduledir; then
+    ac_static_module_dirs="$ac_static_module_dirs contrib/$moduledir";
+    ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//"`
+
+    addonlibs=""
+    src=`echo "$module" | sed -e 's/\.o$//'`.c;
+    srcinc=`echo "$module" | sed -e 's/\.o$//'`.h;
+
+    if test -f $srcdir/contrib/$moduledir/$src ; then
+      srcarch=`cat $srcdir/contrib/$moduledir/$src | grep "\\\$Archive:" | sed -e 's/^.*\$Archive: \(.*\)\\$/\1/'`
+      srclib=`cat $srcdir/contrib/$moduledir/$src | grep "\\\$Libraries:" | sed -e 's/^.*\$Libraries: \(.*\)\\$/\1/'`
+    else
+      srcarch=
+      srclib=
+    fi
+
+    if test -f $srcdir/contrib/$moduledir/$srcinc ; then
+      if test -z $srcarch ; then
+        incarch=`cat $srcdir/contrib/$moduledir/$srcinc | grep "\\\$Archive:" | sed -e 's/^.*\$Archive: \(.*\)\\$/\1/'`
+      else
+        incarch=
+      fi
+
+      inclib=`cat $srcdir/contrib/$moduledir/$srcinc | grep "\\\$Libraries:" | sed -e 's/^.*\$Libraries: \(.*\)\\$/\1/'`
+    else
+      incarch= 
+      inclib= 
+    fi
+
+    dnl If the module will be providing an archive (.a file), then remove it
+    dnl from the list of static module objects (.o files).
+    for thearch in $srcarch $incarch; do
+      archive=`echo "$thearch" | sed -e 's/\.a$//'`
+
+      if test x"$archive" != x"$moduledir" ; then
+        AC_MSG_ERROR([specified archive '$thearch' does not match expected module archive name '$moduledir.a' -- aborting])
+      fi
+
+      ac_static_modules=`echo "$ac_static_modules" | sed -e "s/$module//g"`
+      ac_build_static_modules=`echo "$ac_build_static_modules" | sed -e "s/modules\/$module//g"`
+      ac_build_static_module_archives="$ac_build_static_module_archives contrib/$moduledir/$thearch"
+    done
+
+    dnl Test for duplicate libraries, just in case.
+    for thelib in $srclib $inclib; do
+      dup="no"
+
+      for somelib in $ac_addl_libs $LIBS; do
+        if test "$thelib" = "$somelib"; then
+          dup="yes"
+          break
+        fi
+      done
+	
+      if test "$dup" = "no"; then
+        addonlibs="$addonlibs $thelib"
+      fi
+    done
+
+    test x"$addonlibs" = x || ac_addl_libs="$addonlibs $ac_addl_libs"
+  fi
+done
+
+dnl Yes, I know that this is not recommended Autoconf practice.  I doubt,
+dnl though, that many users will require the use of
+dnl `./configure --help=recursive' to see all of the options.
+if test ! -z "$ac_shared_module_dirs" ; then
+  AC_CONFIG_SUBDIRS($ac_shared_module_dirs)
+else
+  ac_shared_module_dirs="\"\""
+fi
+
+if test ! -z "$ac_static_module_dirs" ; then
+  AC_CONFIG_SUBDIRS($ac_static_module_dirs)
+else
+  ac_static_module_dirs="\"\""
+fi
+
+for module in $ac_shared_modules; do
+  if test x"$enable_dso" != xyes ; then
+    AC_MSG_ERROR([cannot build shared modules without DSO support -- aborting])
+  fi
+
+  moduledir=`echo "$module" | sed -e 's/\.la$//'`;
+  src=`echo "$module" | sed -e 's/\.la$//'`.c;
+  srcinc=`echo "$module" | sed -e 's/\.la$//'`.h;
+
+  if test -f $srcdir/modules/$src -o -f $srcdir/contrib/$src; then
+    if test ! -f $srcdir/modules/$src; then
+      olddir=`pwd`
+      cd $srcdir/modules
+      ln -s ../contrib/$src $src
+      cd $olddir
+    fi
+
+    if test ! -f $srcdir/include/$srcinc -a -f $srcdir/contrib/$srcinc ; then
+      olddir=`pwd`
+      cd $srcdir/include
+      ln -s ../contrib/$srcinc $srcinc
+      cd $olddir
+    fi
+
+  elif test -d $srcdir/modules/$moduledir -o -d $srcdir/contrib/$moduledir; then
+    continue
+
+  else
+    AC_MSG_ERROR([source file '$srcdir/modules/$src' cannot be found -- aborting])
+  fi
+done
+
+for module in $ac_static_modules; do
+  addonlibs=""
+  moduledir=`echo "$module" | sed -e 's/\.o$//'`;
+  src=`echo "$module" | sed -e 's/\.o$//'`.c;
+  srcinc=`echo "$module" | sed -e 's/\.o$//'`.h;
+
+  if test -f $srcdir/modules/$src -o -f $srcdir/contrib/$src; then
+    if test ! -f $srcdir/modules/$src; then
+      olddir=`pwd`
+      cd $srcdir/modules
+      ln -s ../contrib/$src $src
+      cd $olddir
+    fi
+
+    if test ! -f $srcdir/include/$srcinc -a -f $srcdir/contrib/$srcinc ; then
+      olddir=`pwd`
+      cd $srcdir/include
+      ln -s ../contrib/$srcinc $srcinc
+      cd $olddir
+    fi
+
+    srclib=`cat $srcdir/modules/$src | grep "\\\$Libraries:" | sed -e 's/^.*\$Libraries: \(.*\)\\$/\1/'`
+
+    if test -f $srcdir/include/$srcinc ; then
+      inclib=`cat $srcdir/include/$srcinc | grep "\\\$Libraries:" | sed -e 's/^.*\$Libraries: \(.*\)\\$/\1/'`
+    else
+      inclib= 
+    fi
+
+    dnl Test for duplicate libraries, just in case.
+    for thelib in $srclib $inclib; do
+      dup="no"
+
+      for somelib in $ac_addl_libs $LIBS; do
+        if test "$thelib" = "$somelib"; then
+          dup="yes"
+          break
+        fi
+      done
+	
+      if test "$dup" = "no"; then
+        addonlibs="$addonlibs $thelib"
+      fi
+    done
+
+    test x"$addonlibs" = x || ac_addl_libs="$addonlibs $ac_addl_libs"
+
+    adir=`cat $srcdir/modules/$src | grep "\\\$Directories:" | sed -e 's/^.*\$Directories: \(.*\)\\$/\1/'`
+    test x"$adir" = x || ac_addl_dirs="$adir $ac_addl_dirs"
+
+  elif test -d $srcdir/modules/$moduledir -o -d $srcdir/contrib/$moduledir; then
+    continue
+
+  else
+    AC_MSG_ERROR([source file '$srcdir/modules/$src' cannot be found -- aborting])
+  fi
+done
+
+ac_addl_libs=`echo "$ac_addl_libs" | sed -e 's/ *\$//'`
+ac_addl_libs=`echo "$ac_addl_libs" | sed -e 's/^ *//'`
+test "x$ac_addl_libs" = x || ac_build_addl_libs="$ac_build_addl_libs $ac_addl_libs"
+ac_addl_dirs=`echo "$ac_addl_dirs" | sed -e 's/ *\$//'`
+ac_addl_dirs=`echo "$ac_addl_dirs" | sed -e 's/^ *//'`
+ADDL_DIRS="$ac_addl_dirs"
+
+# Restore the original CPPFLAGS and LDFLAGS settings
+CPPFLAGS="$ac_orig_cppflags"
+LDFLAGS="$ac_orig_ldflags"
+
+INCLUDES="$ac_build_addl_includes"
+LIBDIRS="$ac_build_addl_libdirs"
+LIBRARIES="$ac_build_addl_libs"
+SHARED_MODULE_DIRS="$ac_shared_module_dirs"
+if test ! -z "$ac_shared_modules" ; then
+  SHARED_MODULE_OBJS="$ac_shared_modules"
+else
+  SHARED_MODULE_OBJS="\"\""
+fi
+STATIC_MODULE_DIRS="$ac_static_module_dirs"
+STATIC_MODULE_OBJS="$ac_core_modules $ac_static_modules"
+BUILD_SHARED_MODULE_OBJS="$ac_build_shared_modules"
+BUILD_STATIC_MODULE_ARCHIVES="$ac_build_static_module_archives"
+BUILD_STATIC_MODULE_OBJS="$ac_build_core_modules $ac_build_static_modules"
+SHARED_MODULE_LIBS="$ac_orig_libs"
+VERSION=`cat $srcdir/include/version.h | grep "#define VERSION " | sed -e 's/^.*\"\(.*\)\"/\1/'`
+
+dnl Substitute in our configuration paths as appropriate.  We also have to
+dnl sweet talk the environment into helping us get this right, like so...
+pr_saved_prefix="$prefix"
+pr_saved_exec_prefix="$exec_prefix"
+
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+AC_DEFINE_UNQUOTED(PR_CONFIG_DIR, "`eval echo "${sysconfdir}"`")
+AC_DEFINE_UNQUOTED(PR_LIBEXEC_DIR, "`eval echo "${libexecdir}"`")
+AC_DEFINE_UNQUOTED(PR_LOCALE_DIR, "`eval echo "${datadir}/locale"`")
+AC_DEFINE_UNQUOTED(PR_RUN_DIR, "`eval echo "${localstatedir}/proftpd"`")
+AC_DEFINE_UNQUOTED(PR_CONFIG_FILE_PATH, "`eval echo "${sysconfdir}/proftpd.conf"`")
+AC_DEFINE_UNQUOTED(PR_PID_FILE_PATH, "`eval echo "${localstatedir}/proftpd.pid"`")
+
+prefix="$pr_saved_prefix"
+exec_prefix="$pr_saved_exec_prefix"
+
+if test x"$devel" = xyes ; then
+  AC_DEFINE(PR_USE_DEVEL, 1, [Define if enabling developer support])
+
+  if test x"$GCC" = xyes; then
+
+    dnl Remove optimization flags from CFLAGS
+    CFLAGS=`echo "$CFLAGS" | sed -e 's/\-O2//'`
+    CFLAGS="$CFLAGS $pr_devel_cflags"
+    LIBS="$LIBS $pr_devel_libs"
+
+    dnl Some C compilers (e.g. older gcc versions) may not accept these
+    dnl options.  Check if they are supported.  They will be added to
+    dnl CFLAGS if supported.
+    PR_CHECK_CC_OPT(Wfloat-equal)
+  fi
+
+  dnl Do not strip symbols from developer object files.
+  INSTALL_STRIP=""
+else
+
+  dnl Make sure to strip symbols from non-developer object files.
+  INSTALL_STRIP="-s"
+fi
+
+dnl Check whether the C compiler accepts -Wno-long-double. This helps to
+dnl quell unnecessary OSX compiler complaints.  Use of this macro should
+dnl be as late in the configure script as possible, for it changes the
+dnl CFLAGS environment variable (which may possible cause other autoconf
+dnl tests to fail).
+PR_CHECK_CC_OPT(Wno-long-double)
+
+my_cflags="\"$CFLAGS\""
+AC_DEFINE_UNQUOTED(PR_BUILD_CFLAGS, $my_cflags)
+my_ldflags="\"$LDFLAGS\""
+AC_DEFINE_UNQUOTED(PR_BUILD_LDFLAGS, $my_ldflags)
+my_libs="\"$LIBS\""
+AC_DEFINE_UNQUOTED(PR_BUILD_LIBS, $my_libs)
+
+dnl And finally, generate the appropriate Make* and config.h
+AC_SUBST(ENABLE_NLS)
+AC_SUBST(GLUE_MODULE_OBJS)
+AC_SUBST(INSTALL_STRIP)
+AC_SUBST(INCLTDL)
+AC_SUBST(INSTALL_DEPS)
+AC_SUBST(LIB_DEPS)
+AC_SUBST(LIB_OBJS)
+AC_SUBST(LIBTOOL_DEPS)
+AC_SUBST(LIBLTDL)
+AC_SUBST(MAIN_LDFLAGS)
+AC_SUBST(MAIN_LIBS)
+AC_SUBST(MODULE_DEPS)
+AC_SUBST(MODULE_LDFLAGS)
+AC_SUBST(SHARED_MODULE_DIRS)
+AC_SUBST(SHARED_MODULE_LIBS)
+AC_SUBST(SHARED_MODULE_OBJS)
+AC_SUBST(STATIC_MODULE_DIRS)
+AC_SUBST(STATIC_MODULE_OBJS)
+AC_SUBST(BUILD_SHARED_MODULE_OBJS)
+AC_SUBST(BUILD_STATIC_MODULE_ARCHIVES)
+AC_SUBST(BUILD_STATIC_MODULE_OBJS)
+AC_SUBST(ADDL_DIRS)
+AC_SUBST(INCLUDES)
+AC_SUBST(LIBDIRS)
+AC_SUBST(LIBRARIES)
+AC_SUBST(CURSES_LIBS)
+AC_SUBST(UTILS_LIBS)
+AC_SUBST(VERSION)
+
+AC_CONFIG_HEADER(config.h)
+
+AC_OUTPUT(include/Makefile
+          lib/Makefile
+          locale/Makefile
+          modules/Makefile
+          src/Makefile
+          src/ftpdctl.8 src/proftpd.8 src/xferlog.5
+          utils/Makefile utils/ftpcount.1 utils/ftpshut.8 utils/ftptop.1
+            utils/ftpwho.1
+          Makefile Make.rules,
+          [echo timestamp > stamp-h])
+
+dnl After everything has been generated, we need to double-check for
+dnl header files in the module directories.
+for moduledir in $ac_shared_module_dirs $ac_static_module_dirs; do
+  srcinc=`echo "$moduledir" | sed -e 's/^.*\///'`.h;
+
+  if test -d $srcdir/$moduledir ; then
+    if test ! -f $srcdir/include/$srcinc ; then
+      if test -f $srcdir/$moduledir/$srcinc ; then
+        olddir=`pwd`
+        cd $srcdir/include
+        ln -s ../$moduledir/$srcinc $srcinc
+        cd $olddir
+      fi
+    fi
+  fi
+done

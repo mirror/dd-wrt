@@ -1,0 +1,146 @@
+<!-- $Id: Directory.html,v 1.8 2007/05/21 15:30:52 castaglia Exp $ -->
+<!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Directory.html,v $ -->
+
+<html>
+<head>
+<title>ProFTPD mini-HOWTO - Configuring a &lt;Directory&gt;</title>
+</head>
+
+<body bgcolor=white>
+
+<hr>
+<center><h2><b>Configuring a <code>&lt;Directory&gt;</code></b></h2></center>
+<hr>
+
+<p>
+Use of the <code>&lt;Directory&gt;</code> configuration directive is, in
+general, straightforward.  However, there are a few caveats of which to
+be aware.
+
+<p>
+First, it is not necessary to nest <code>&lt;Directory&gt;</code>; the
+daemon will not let one do this, in fact.  The daemon will determine
+automatically the relations of <code>&lt;Directory&gt;</code> paths,
+depending on the path given and surrounding configuration context.
+
+<p>
+Always use the normal, absolute path for a <code>&lt;Directory&gt;</code>
+section, regardless of whether that directory will eventually be accessed
+during a session which has been <code>chroot</code>'d, as for
+<code>&lt;Anonymous&gt;</code> or <code>DefaultRoot</code>ed sessions.
+There are two allowed exceptions to the rule of using absolute paths:
+if the path has a <code>~</code> prefix, or if the
+<code>&lt;Directory&gt;</code> occurs within a <code>&lt;Anonymous&gt;</code>
+section.  In the latter case, the path may be relative (<i>i.e.</i> does
+not need to start with a <code>/</code>), in which case the path will be
+relative to the directory to which anonymous sessions are restricted.
+
+<p>
+If the name of the directory contains spaces, you should enclose the entire
+directory name in quotations, <i>e.g.</i>:
+<pre>
+  &lt;Directory &quot;/path/to/My Directory&quot;&gt;
+</pre>
+
+<p>
+As noted in the documentation, use of a <code>/*</code> suffix on a path
+will change the effect of a <code>&lt;Directory&gt;</code> section
+slightly.  For example:
+<pre>
+  &lt;Directory /path/to/dir&gt;
+</pre>
+applies the section's configuration directives to the <code>dir</code>
+directory and its contents, while:
+<pre>
+  &lt;Directory /path/to/dir/*&gt;
+</pre>
+applies the section's configuration directives only to the <i>contents</i>
+of <code>dir</code>, not to the directory itself.  This is a small
+distinction, but it can often cause misconfigurations.  In general, unless
+you know what you're doing, it's best not to use a <code>/*</code> suffix.
+
+<p>
+Also, a <code>*</code> within a path, such as:
+<pre>
+  &lt;Directory /path/to/*/dir&gt; 
+</pre>
+will only match that single directory level, and will not match multiple
+directory levels.  This means that the above <code>&lt;Directory&gt;</code>
+will match:
+<pre>
+  /path/to/<b>a/</b>dir
+  /path/to/<b>b/</b>dir
+</pre>
+because <code>*</code> will match the <code>a/</code> and <code>b/</code>,
+as they are on the same level in the path as <code>*</code>.  However, the
+following paths <b>will not</b> match:
+<pre>
+  /path/to/<b>some/other/</b>dir
+  /path/to/<b>some/other/level/</b>dir
+</pre>
+since <code>*</code> does not expand to <code>some/other/</code> or
+<code>/some/other/level/</code>; they cover multiple levels.
+
+<p>
+There is another case about which the administrator should know: for the
+purposes of handling the <code>APPE</code>, <code>RETR</code>,
+<code>RNTO</code>, <code>STOR</code>, and <code>STOU</code> FTP commands, the
+daemon will match a <code>&lt;Directory&gt;</code> path with the filename
+appended. As above, in most cases this will not matter much.  However,
+consider the case where the administrator specifically wants to use the
+trailing <code>/*</code>, as when she wants a particular
+<code>&lt;Limit&gt;</code> to apply to all subdirectories of a given directory,
+but not to that directory itself.  For example, the administrators wishes to
+block anonymous uploads everywhere except for subdirectories of
+<code>upload/</code>:
+<pre>
+  &lt;Anonymous ~ftp&gt;
+    User ftp
+    Group ftp
+
+    UserAlias anonymous ftp
+
+    &lt;Limit WRITE&gt;
+      DenyAll
+    &lt;/Limit&gt;
+
+    &lt;Directory upload/*&gt;
+      &lt;Limit STOR&gt;
+        AllowAll
+      &lt;/Limit&gt;
+    &lt;/Directory&gt;
+  &lt;/Anonymous&gt;
+</pre>
+This configuration <i>looks</i> like it should work, allowing files to be
+uploaded only to subdirectories of <code>upload/</code>, but not to the
+<code>upload/</code> directory itself.  As described above, though, the
+daemon will append the filename being uploaded via <code>STOR</code> to the
+path used when looking up <code>&lt;Directory&gt;</code>, meaning that
+<code>upload/<i>filename</i></code> will match <code>upload/*</code>, and
+allow files to be uploaded into <code>upload/</code>.  In this particular case,
+then, what is wanted is to use this <code>&lt;Directory&gt;</code> pattern:
+<pre>
+    &lt;Directory upload/*/*&gt;
+      &lt;Limit STOR&gt;
+        AllowAll
+      &lt;/Limit&gt;
+    &lt;/Directory&gt;
+</pre>
+which will achieve the desired effect of allowing uploads only in
+subdirectories of the given directory, <code>upload/</code>.
+
+<p>
+Also, it is good to keep in mind the <a href="http://www.castaglia.org/proftpd/doc/devel-guide/internals/ftpaccess.html">similarity</a> between a
+<code>&lt;Directory&gt;</code> section and a <code>.ftpaccess</code> file.
+In some cases, using <code>.ftpaccess</code> files might be more convenient.
+The <code>AllowOverride</code> configuration directive (which first appeared
+in the 1.2.7rc1 release) will provide fine-grained control over when
+<code>.ftpaccess</code> files will be honored.
+
+<p>
+<hr>
+Last Updated: <i>$Date: 2007/05/21 15:30:52 $</i><br>
+<hr>
+
+</body>
+</html>

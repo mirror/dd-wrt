@@ -1,0 +1,53 @@
+
+Controls
+--------
+
+A new functionality called Controls was added in ProFTPD 1.2.10rc1.
+
+Controls is a feature that provides a way for system administrators to
+communicate directly with a running proftpd daemon, making it possible to do
+on-the-fly configuration changes and other capabilities.  This feature
+includes a program called `ftpdctl', for communicating with the daemon from
+the command line, and an API that third-party modules can use to extend the
+Control commands available to `ftpdctl'.  Note, however, that this
+functionality is only available if proftpd is run in standalone mode
+(i.e. "ServerType standalone"); proftpd daemons run via inetd/xinetd cannot
+support this feature.
+
+To enable support for Controls, use the --enable-ctrls configure option:
+
+  ./configure --enable-ctrls ...
+
+This enables support for the Controls API in the core engine, and causes
+the userland program `ftpdctl' to be functional.  It also causes the
+mod_ctrls module to be automatically compiled into proftpd (hence you should
+NOT use both --enable-ctrls and --with-modules=mod_ctrls).
+
+The mod_ctrls module provides some basic ftpdctl commands:
+
+  help
+  insctrl
+  lsctrl
+  rmctrl
+
+Online documentation for these commands can currently be found here:
+
+  http://www.castaglia.org/proftpd/modules/mod_ctrls.html
+
+Additional modules that make use of Controls have been added to the contrib/
+area that extend the number of ftpdctl commands.  For example, to use
+the mod_ctrls_admin module, you would add it to your --with-modules
+configure option, in addition to enabling Controls support:
+
+  ./configure --enable-ctrls --with-modules=mod_ctrls_admin ...
+
+More information on the mod_ctrls_admin module can be found in the HTML
+documentation for that module, which can be found in the contrib/ directory
+as well as online:
+
+  http://www.castaglia.org/proftpd/modules/mod_ctrls_admin.html
+
+As always, please report any bugs or problems with the new Controls
+functionality to ProFTPD's bug tracking system:
+
+  http://bugs.proftpd.org
