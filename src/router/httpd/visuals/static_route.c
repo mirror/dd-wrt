@@ -237,4 +237,3 @@ ej_static_route_table (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
-

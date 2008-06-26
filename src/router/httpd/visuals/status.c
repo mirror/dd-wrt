@@ -32,6 +32,7 @@ ej_show_status_setting (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+
 char *
 rfctime (const time_t * timep, char *s)
 {

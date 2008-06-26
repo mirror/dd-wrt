@@ -28,7 +28,8 @@
 
 
 void (*do_ej_buffer) (char *buffer, webs_t stream) = NULL;
-int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,int type) = NULL;
+int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
+			  int type) = NULL;
 char *(*websGetVar) (webs_t wp, char *var, char *d) = NULL;
 int (*websWrite) (webs_t wp, char *fmt, ...) = NULL;
 struct wl_client_mac *wl_client_macs = NULL;
@@ -52,44 +53,46 @@ int *clone_wan_mac;
 int *generate_key;
 
 void
-initWeb (struct Webenvironment *env){
+initWeb (struct Webenvironment *env)
+{
 
-cprintf("set websgetwar %p:%p->%p:%p\n",env,env->PwebsGetVar,&websGetVar,websGetVar);
+  cprintf ("set websgetwar %p:%p->%p:%p\n", env, env->PwebsGetVar,
+	   &websGetVar, websGetVar);
   websGetVar = env->PwebsGetVar;
- httpd_filter_name = env->Phttpd_filter_name;
-cprintf("set wl_client_macs\n");
-  wl_client_macs=env->Pwl_client_macs;
-cprintf("set webswrite\n");
+  httpd_filter_name = env->Phttpd_filter_name;
+  cprintf ("set wl_client_macs\n");
+  wl_client_macs = env->Pwl_client_macs;
+  cprintf ("set webswrite\n");
   websWrite = env->PwebsWrite;
-cprintf("set do_ej_buffer\n");
+  cprintf ("set do_ej_buffer\n");
   do_ej_buffer = env->Pdo_ej_buffer;
-cprintf("set do_ej\n");
+  cprintf ("set do_ej\n");
   do_ej = env->Pdo_ej;
 #ifdef HAVE_HTTPS
-cprintf("set do_ssl\n");
+  cprintf ("set do_ssl\n");
   do_ssl = env->Pdo_ssl;
 #endif
-cprintf("set ejargs\n");
+  cprintf ("set ejargs\n");
   ejArgs = env->PejArgs;
-cprintf("set getwebsfile\n");
+  cprintf ("set getwebsfile\n");
   getWebsFile = env->PgetWebsFile;
-cprintf("set wwflush\n");
+  cprintf ("set wwflush\n");
   wfflush = env->Pwfflush;
-cprintf("set wfputs\n");
+  cprintf ("set wfputs\n");
   wfputc = env->Pwfputc;
-cprintf("set wfputs\n");
+  cprintf ("set wfputs\n");
   wfputs = env->Pwfputs;
-cprintf("set websrompageindex\n");
+  cprintf ("set websrompageindex\n");
   websRomPageIndex = env->PwebsRomPageIndex;
-cprintf("set gozila_action\n");
+  cprintf ("set gozila_action\n");
   gozila_action = env->Pgozila_action;
-cprintf("set browser_method\n");
+  cprintf ("set browser_method\n");
   browser_method = env->Pbrowser_method;
-cprintf("set clone_wan_mac\n");
+  cprintf ("set clone_wan_mac\n");
   clone_wan_mac = env->Pclone_wan_mac;
-cprintf("set generate_key\n");
+  cprintf ("set generate_key\n");
   generate_key = env->Pgenerate_key;
-cprintf("set live_translate\n");
+  cprintf ("set live_translate\n");
   live_translate = env->Plive_translate;
 }
 
@@ -118,8 +121,8 @@ ej_onload (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
-type = argv[0];
-arg = argv[1];
+  type = argv[0];
+  arg = argv[1];
 
   for (v = onloads; v < &onloads[STRUCT_LEN (onloads)]; v++)
     {
@@ -177,8 +180,8 @@ ej_prefix_ip_get (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
- name = argv[0];
- type = atoi(argv[1]);
+  name = argv[0];
+  type = atoi (argv[1]);
 
   if (type == 1)
     websWrite (wp, "%d.%d.%d.", get_single_ip (nvram_safe_get (name), 0),
@@ -279,7 +282,7 @@ ej_nvram_selget (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
-name = argv[0];
+  name = argv[0];
   if (gozila_action)
     {
       char *buf = websGetVar (wp, name, NULL);
@@ -403,7 +406,7 @@ ej_get_single_ip (webs_t wp, int argc, char_t ** argv)
       else if (!strcmp (c, PPP_PSEUDO_NM))
 	c = "255.255.255.0";
 
-      websWrite (wp, "%d", get_single_ip (c, atoi(argv[1])));
+      websWrite (wp, "%d", get_single_ip (c, atoi (argv[1])));
     }
   else
     websWrite (wp, "0");
@@ -450,7 +453,7 @@ ej_get_single_mac (webs_t wp, int argc, char_t ** argv)
   c = nvram_safe_get (argv[0]);
   if (c)
     {
-      mac = get_single_mac (c, atoi(argv[1]));
+      mac = get_single_mac (c, atoi (argv[1]));
       websWrite (wp, "%02X", mac);
     }
   else
@@ -880,7 +883,7 @@ ej_scroll (webs_t wp, int argc, char_t ** argv)
  * <% nvram_list("filter_mac", 1); %> produces "00:87:65:43:21:00"
  * <% nvram_list("filter_mac", 100); %> produces ""
  */
- void
+void
 ej_nvram_list (webs_t wp, int argc, char_t ** argv)
 {
   char *name;
@@ -1004,7 +1007,7 @@ ej_get_http_prefix (webs_t wp, int argc, char_t ** argv)
 #endif
     strcpy (http, "http");
 
-  if (browser_method==USE_LAN)
+  if (browser_method == USE_LAN)
     {				// Use LAN to browser
       if (nvram_match ("restore_defaults", "1")
 	  || nvram_match ("sv_restore_defaults", "1"))
@@ -1057,6 +1060,7 @@ ej_get_mtu (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+
 void
 ej_show_forward (webs_t wp, int argc, char_t ** argv)
 //ej_show_forward(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
@@ -1288,6 +1292,7 @@ ej_show_styles (webs_t wp, int argc, char_t ** argv)
   closedir (directory);
   return;
 }
+
 //extern websRomPageIndexType websRomPageIndex[];
 void
 ej_show_languages (webs_t wp, int argc, char_t ** argv)
@@ -1361,6 +1366,7 @@ ej_show_modules (webs_t wp, int argc, char_t ** argv)
     }
   return;
 }
+
 void
 ej_get_totaltraff (webs_t wp, int argc, char_t ** argv)
 {
@@ -1431,6 +1437,7 @@ ej_get_totaltraff (webs_t wp, int argc, char_t ** argv)
     }
   return;
 }
+
 void
 show_bwif (webs_t wp, char *ifname, char *name)
 {
@@ -1517,6 +1524,7 @@ ej_get_http_method (webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s", "post");
 }
+
 void
 ej_do_menu (webs_t wp, int argc, char_t ** argv)
 {
@@ -1914,10 +1922,10 @@ ej_show_timeoptions (webs_t wp, int argc, char_t ** argv)	//Eko
 
   char timediffs[39][8] =
     { "-12", "-11", "-10", "-09.5", "-09", "-08", "-07", "-06", "-05",
-"-04.5", "-04",
+    "-04.5", "-04",
     "-03.5", "-03", "-02", "-01", "+00",
     "+01", "+02", "+03", "+03.5", "+04", "+04.5", "+05", "+05.5", "+05.75",
-      "+06",
+    "+06",
     "+06.5", "+07", "+08", "+09", "+09.5", "+10", "+10.5", "+11", "+11.5",
     "+12", "+12.75", "+13", "+14"
   };
@@ -1925,9 +1933,9 @@ ej_show_timeoptions (webs_t wp, int argc, char_t ** argv)	//Eko
   char timezones[39][8] =
     { "-12:00", "-11:00", "-10:00", "-09:30", "-09:00", "-08:00", "-07:00",
     "-06:00", "-05:00", "-04:30", "-04:00", "-03:30", "-03:00", "-02:00",
-      "-01:00", "",
+    "-01:00", "",
     "+01:00", "+02:00", "+03:00", "+03:30", "+04:00", "+04:30", "+05:00",
-      "+05:30",
+    "+05:30",
     "+05:45", "+06:00", "+06:30", "+07:00", "+08:00", "+09:00", "+09:30",
     "+10:00", "+10:30", "+11:00", "+11:30", "+12:00", "+12:45", "+13:00",
     "+14:00"
@@ -2303,6 +2311,7 @@ showencstatus (webs_t wp, char *prefix)
   websWrite (wp, "\n</div>\n");
   return;
 }
+
 void
 ej_get_txpower (webs_t wp, int argc, char_t ** argv)
 {
@@ -2322,6 +2331,7 @@ ej_getencryptionstatus (webs_t wp, int argc, char_t ** argv)
   char *mode = nvram_safe_get ("wifi_display");
   showencstatus (wp, mode);
 }
+
 void
 ej_getwirelessstatus (webs_t wp, int argc, char_t ** argv)
 {
@@ -2363,6 +2373,7 @@ ej_getwirelessssid (webs_t wp, int argc, char_t ** argv)
   tf_webWriteESCNV (wp, ssid);
 #endif
 }
+
 void
 ej_getwirelessmode (webs_t wp, int argc, char_t ** argv)
 {

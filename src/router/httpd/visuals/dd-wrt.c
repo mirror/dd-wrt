@@ -974,7 +974,7 @@ ej_show_paypal (webs_t wp, int argc, char_t ** argv)
 	     "<a href=\"https://www.moneybookers.com/app/send.pl\" target=\"_blank\">\n");
 //#ifdef HAVE_MICRO
 //  websWrite (wp,
-//	     "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"http://www.moneybookers.com/images/banners/88_en_interpayments.gif\" alt=\"donate thru moneybookers\" />\n");
+//           "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"http://www.moneybookers.com/images/banners/88_en_interpayments.gif\" alt=\"donate thru moneybookers\" />\n");
 //#else
   websWrite (wp,
 	     "<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"images/88_en_interpayments.png\" alt=\"donate thru interpayments\" />\n");
@@ -2483,8 +2483,8 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
   sprintf (wl_mode, "%s_mode", prefix);
   char wl_net_mode[16];
   sprintf (wl_net_mode, "%s_net_mode", prefix);
-  if (nvram_match(wl_net_mode,"disabled"))
-	return;
+  if (nvram_match (wl_net_mode, "disabled"))
+    return;
   if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "wdsap")
       || nvram_match (wl_mode, "infra"))
     {
@@ -2625,7 +2625,8 @@ static char *bg_rates[] =
 //static char *g_rates[] = { "1", "2", "5.5", "11", "12", "18", "24", "36", "48", "54" };
 static char *xr_rates[] =
   { "0.25", "0.5", "1", "2", "3", "6", "9", "12", "18", "24", "36", "48",
-"54" };
+  "54"
+};
 static char *half_rates[] = { "3", "4.5", "6", "9", "12", "18", "24", "27" };
 static char *quarter_rates[] =
   { "1.5", "2", "3", "4.5", "6", "9", "12", "13.5" };
