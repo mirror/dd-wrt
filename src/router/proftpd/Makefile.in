@@ -187,7 +187,7 @@ Makefile: Makefile.in Make.rules.in config.status
 	./config.status
 
 config.status: configure
-	./config.status --recheck
+	@true
 
 libtool: $(LIBTOOL_DEPS)
-	$(SHELL) ./config.status --recheck
+	@true
