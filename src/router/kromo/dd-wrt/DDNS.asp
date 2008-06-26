@@ -393,7 +393,6 @@ addEvent(window, "unload", function() {
 					<% nvram_selmatch("ddns_enable","6","-->"); %>
 					<% nvram_selmatch("ddns_enable","7","-->"); %>
 					<% nvram_selmatch("ddns_enable","9","-->"); %>
-<!--milkfish-->
 					<% nvram_selmatch("ddns_enable","1","<!--"); %>
 					<% nvram_selmatch("ddns_enable","2","<!--"); %>
 					<% nvram_selmatch("ddns_enable","3","<!--"); %>
