@@ -1129,6 +1129,10 @@ service.syslog_ip="Remote Server";
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
+//ftp.webservices
+service.proftpd_legend="ProFtpd";
+service.proftpd_srv="ProFtpd";
+
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Client";
 service.pptpd_option="PPTP Client Options";
