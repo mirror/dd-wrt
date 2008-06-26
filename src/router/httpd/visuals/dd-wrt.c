@@ -2476,13 +2476,15 @@ showDynOption (webs_t wp, char *propname, char *nvname, char *options[],
 
 
 
-void
+static void
 show_channel (webs_t wp, char *dev, char *prefix, int type)
 {
   char wl_mode[16];
   sprintf (wl_mode, "%s_mode", prefix);
   char wl_net_mode[16];
   sprintf (wl_net_mode, "%s_net_mode", prefix);
+  if (nvram_match(wl_net_mode,"disabled"))
+	return;
   if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "wdsap")
       || nvram_match (wl_mode, "infra"))
     {
