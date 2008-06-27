@@ -60,6 +60,16 @@ getchannels (unsigned int *list, char *ifname)
 #endif
 }
 
+
+int
+wl_getbssid(char *wl, char *mac)
+{
+	int ret;
+	struct ether_addr ea;
+	wl_ioctl(wl,WLC_GET_BSSID,&ea,ETHER_ADDR_LEN);
+	ether_etoa(&ea,mac);
+}
+
 int
 getassoclist (char *name, unsigned char *list)
 {
