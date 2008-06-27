@@ -276,6 +276,9 @@ ifeq ($(CONFIG_TELNET),y)
 CFLAGS += -DHAVE_TELNET
 endif
 
+ifeq ($(CONFIG_FTP),y)
+CFLAGS += -DHAVE_FTP
+endif
 
 ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
