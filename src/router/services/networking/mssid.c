@@ -41,6 +41,7 @@
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 
+
 void
 start_config_macs (char *wlifname)	//reconfigure macs which should fix the corerev 5 and 7 problem
 {
@@ -98,18 +99,20 @@ do_mssid (char *wlifname)
 
 
 void
-set_vifsmac (char *mac)
+set_vifsmac (void) // corrects hwaddr and bssid assignment
 {
   struct ifreq ifr;
   int s;
   char *next;
   char var[80];
+  char mac[80];
   char *vifs = nvram_safe_get ("wl0_vifs");
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
+      wl_getbssid(var,mac);
       eval ("ifconfig", var, "down");
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
