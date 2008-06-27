@@ -91,6 +91,9 @@ start_services (void)
 #ifdef HAVE_TELNET
   handle = start_service_nofree ("telnetd", handle);
 #endif
+#ifdef HAVE_FTP
+  eval ("/etc/config/proftpd.startup");
+#endif
 #ifndef HAVE_WRK54G
   handle = start_service_nofree ("syslog", handle);
 #endif
@@ -210,6 +213,9 @@ stop_services (void)
   handle = stop_service_nofree ("wland", handle);
 #ifdef HAVE_TELNET
     handle = stop_service_nofree ("telnetd", handle);
+#endif
+#ifdef HAVE_FTP
+  eval ("/etc/config/proftpd.startup");
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
@@ -416,6 +422,9 @@ handle_services (void)
 #endif
 #ifdef HAVE_TELNET
     handle = startstop_nofree ("telnetd", handle);
+#endif
+#ifdef HAVE_FTP
+  eval ("/etc/config/proftpd.startup");
 #endif
 #ifdef HAVE_SNMP
   handle = startstop_nofree ("snmp", handle);
