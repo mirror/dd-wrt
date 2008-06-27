@@ -90,6 +90,9 @@ do_mssid (char *wlifname)
 	}
       else
 	{
+	  eval ("ifconfig", var, "down");
+	  ioctl (s, SIOCSIFHWADDR, &ifr);
+	  eval ("ifconfig", var, "up");
 	  ifconfig (var, IFUP, nvram_nget ("%s_ipaddr", var),
 		    nvram_nget ("%s_netmask", var));
 	}
@@ -99,14 +102,14 @@ do_mssid (char *wlifname)
 
 
 void
-set_vifsmac (void) // corrects hwaddr and bssid assignment
+set_vifsmac (char *base) // corrects hwaddr and bssid assignment
 {
   struct ifreq ifr;
   int s;
   char *next;
   char var[80];
   char mac[80];
-  char *vifs = nvram_safe_get ("wl0_vifs");
+  char *vifs = nvram_nget ("%s_vifs",base);
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
   if (vifs != NULL)
@@ -121,5 +124,10 @@ set_vifsmac (void) // corrects hwaddr and bssid assignment
       eval ("ifconfig", var, "up");
     }
   close (s);
+}
+
+void start_vifsmac(void)
+{
+set_vifsmac("wl0");
 }
 #endif

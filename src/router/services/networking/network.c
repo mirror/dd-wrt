@@ -698,6 +698,9 @@ wlconf_up (char *name)
 #ifdef HAVE_MSSID
 #ifndef HAVE_MADWIFI
   eval ("wl", "-i", name, "vlan_mode", "0");
+  char ifinst[32];
+  sprintf(ifinst,"wl%d",instance);
+  set_vifsmac(ifinst);
 #endif
 #endif
   return ret;
@@ -1305,9 +1308,6 @@ start_lan (void)
     cprintf ("Write wireless mac successfully\n");
   eval ("wl", "-i", wl_face, "up");
   start_config_macs (wl_face);
-#ifdef HAVE_MSSID
-  set_vifsmac (mac);
-#endif
 #endif
   if (nvram_match ("wl_mode", "sta") || nvram_match ("wl_mode", "apsta"))
     {
@@ -1438,9 +1438,6 @@ start_lan (void)
 #endif
 		  }
 	      }
-#ifdef HAVE_MSSID
-	    set_vifsmac (mac);
-#endif
 
 #else
 
