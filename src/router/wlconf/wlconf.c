@@ -772,17 +772,21 @@ cprintf("set mssid flags %s\n",name);
 			WL_BSSIOVAR_SET(name, "ssid", bsscfg->idx, &ssid, sizeof(ssid));
 		}
 	}
+#define MBSS_UC_IDX_MASK		(4 - 1)
+
 cprintf("set local addr %s\n",name);
 	if (!ure_enab) {
 		/* set local bit for our MBSS vif base */
 		if (mbsscap)
 		    ETHER_SET_LOCALADDR(vif_addr);
+		char newmac[32];
+		memcpy(newmac,vif_addr,sizeof(vif_addr));
 		/* construct and set other wlX.Y_hwaddr */
 		for (i = 1; i < 4; i++) {
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
 			addr = nvram_safe_get(tmp);
 				if (mbsscap)
-				    vif_addr[5]++;
+				    vif_addr[5] = (newmac[5] & ~MBSS_UC_IDX_MASK) | (MBSS_UC_IDX_MASK & (newmac[5]+i));
 
 				nvram_set(tmp, ether_etoa((uchar *)vif_addr,
 				                          eaddr));
