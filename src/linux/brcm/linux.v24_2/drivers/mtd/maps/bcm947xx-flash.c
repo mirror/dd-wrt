@@ -176,10 +176,10 @@ find_cfe_size(struct mtd_info *mtd, size_t size)
 	blocksize = mtd->erasesize;
 	if (blocksize < 0x10000)
 		blocksize = 0x10000;
-
-	for (off = (128*1024); off < size; off += blocksize) {
+//	printk(KERN_EMERG "blocksize is %d\n",blocksize);
+	for (off = 0; off < size; off += 64*1024) {
 		memset(buf, 0xe5, sizeof(buf));
-
+//		printk(KERN_EMERG "scan at 0x%08x\n",off);
 		/*
 		 * Read into buffer 
 		 */
@@ -287,8 +287,9 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 	if (blocksize < 0x10000)
 		blocksize = 0x10000;
 
-	for (off = (128*1024); off < size; off += blocksize) {
+	for (off = 0; off < size; off += 64*1024) {
 		memset(&trx, 0xe5, sizeof(trx));
+//		printk(KERN_EMERG "scan root at 0x%08x\n",off);
 
 		/*
 		 * Read into buffer 
@@ -331,6 +332,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		len +=  (mtd->erasesize - 1);
 		len &= ~(mtd->erasesize - 1);
 		part->size = len - part->offset;
+//		printk(KERN_EMERG "partition size = %d\n",part->size);
 	} else if (*((__u16 *) buf) == JFFS2_MAGIC_BITMASK) {
 		printk(KERN_EMERG  "%s: Filesystem type: jffs2\n", mtd->name);
 
@@ -344,19 +346,22 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 	if (trx.len != part->offset + part->size - off) {
 		/* Update the trx offsets and length */
 		trx.len = part->offset + part->size - off;
-	
+//		printk(KERN_EMERG "update crc32\n");
 		/* Update the trx crc32 */
 		for (i = (u32) &(((struct trx_header *)NULL)->flag_version); i <= trx.len; i += sizeof(buf)) {
+//			printk(KERN_EMERG "read from %d\n",off + i);
 			if (MTD_READ(mtd, off + i, sizeof(buf), &len, buf) || len != sizeof(buf))
 				return 0;
 			crc = crc32_le(crc, buf, min(sizeof(buf), trx.len - i));
 		}
 		trx.crc32 = crc;
 
+//			printk(KERN_EMERG "malloc\n",off + i);
 		/* read first eraseblock from the trx */
-		trx2 = block = kmalloc(mtd->erasesize, GFP_KERNEL);
+		trx2 = block = vmalloc(mtd->erasesize);
 		if (MTD_READ(mtd, off, mtd->erasesize, &len, block) || len != mtd->erasesize) {
 			printk(KERN_EMERG "Error accessing the first trx eraseblock\n");
+			vfree(block);
 			return 0;
 		}
 		
@@ -371,7 +376,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		erase_write(mtd, off, mtd->erasesize, block);
 		if (mtd->sync)
 			mtd->sync(mtd);
-		kfree(block);
+		vfree(block);
 		printk(KERN_EMERG "Done\n");
 	}
 	
