@@ -209,6 +209,7 @@ main_loop (int argc, char **argv)
   system ("/bin/echo 1 > /proc/sys/net/ipv4/tcp_vegas_cong_avoid");
   system ("/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_alpha");
   system ("/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_beta");
+  system ("/bin/echo vegas > /proc/sys/net/ipv4/tcp_congestion_control");
 
 #ifdef HAVE_JFFS2
   start_service ("jffs2");
