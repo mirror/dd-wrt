@@ -1168,6 +1168,14 @@ old_way:;
       return ROUTER_WRT54G_V8;
     }
 
+  if (boardnum == 8 &&
+      nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x11"))
+    {
+      cprintf ("router is ALLNET01\n");
+      setRouter ("ALLNET01");
+      return ROUTER_ALLNET01;
+    }
+
   if (boardnum == 1 &&
       nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x11"))
     {

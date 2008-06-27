@@ -707,7 +707,9 @@ start_sysinit (void)
       if (nvram_match ("vlan1ports", "0 5u"))
 	nvram_set ("vlan1ports", "0 5");
       break;
-
+    case ROUTER_ALLNET01:
+	nvram_set("wl0_ifname","eth1");
+      break;
     case ROUTER_LINKSYS_WTR54GS:
       eval ("gpio", "enable", "3");	//prevent reboot loop on reset
       break;

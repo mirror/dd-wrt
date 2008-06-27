@@ -297,6 +297,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // U.S.Robotics USR5465 (BCM5354 cpu, fccid: Universal Scientific Industrial Co. IXM-RTGBR03)
 #define ROUTER_USR_5465 0x570f
 
+#define ROUTER_ALLNET01 0x5813
 
 #define NVROUTER "DD_BOARD"
 
