@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////
-//  French translation DD-WRT by Botho & GaLaGaNN 14/06/2008 version - svn 9712  //
+//  French translation DD-WRT by Botho & GaLaGaNN 14/06/2008 version - svn 9825  //
 ///////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -1041,6 +1041,10 @@ service.syslog_ip="Serveur distant";
 //telnet.webservices
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
+
+//ftp.webservices
+service.proftpd_legend="ProFTPD";
+service.proftpd_srv="Serveur ProFTPD";
 
 //pptpd_client.webservices
 service.pptpd_legend="Client PPTP";
