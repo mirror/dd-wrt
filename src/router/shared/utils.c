@@ -1051,10 +1051,18 @@ old_way:;
 
   if (boardnum == 10496 && nvram_match ("boardtype", "0x456"))
     {
+      cprintf ("router is U.S. Robotics USR5461\n");
       setRouter ("U.S.Robotics USR5461");
       return ROUTER_USR_5461;
     }
-
+    
+  if (boardnum == 10500 && nvram_match ("boardtype", "0x456"))
+    {
+      cprintf ("router is U.S. Robotics USR5432\n");
+      setRouter ("U.S.Robotics USR5432");
+      return ROUTER_USR_5461;	//should work in the same way
+    }
+    
   if (boardnum == 10506 && nvram_match ("boardtype", "0x456"))
     {
       cprintf ("router is U.S. Robotics USR5451\n");
