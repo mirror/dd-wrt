@@ -106,6 +106,191 @@ call (void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2003
 }
 
 
+void
+do_ej_file (FILE *fp,int filelen, webs_t stream)	// jimmy, https, 8/4/2003
+{
+  void *handle = NULL;
+  int c;
+  char *pattern, *asp = NULL, *func = NULL, *end = NULL;
+  int len = 0;
+  int filecount = 0;
+
+  pattern = (char *) malloc (PATTERN_BUFFER + 1);
+  while (((c = getc(fp)) != EOF) && filecount<filelen)
+    {
+      filecount++;
+      /* Add to pattern space */
+      pattern[len++] = c;
+      pattern[len] = '\0';
+      if (len == (PATTERN_BUFFER - 1))
+	goto release;
+
+
+      /* Look for <% ... */
+//      LOG("look start");
+
+      if (!asp && pattern[0] == '{')
+	{
+
+	  if (!strncmp (pattern, "{i}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<input type=");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{c}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<input class=");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{d}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<input id=");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{e}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<div class=");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{n}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<div id=");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{j}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<a href=\"");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{o}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<option value=");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{s}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<select name=");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{u}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<span class=");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{z}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<input name=");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{x}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "document.write(\"");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{y}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<document.");
+		  len = 0;
+		}
+	      continue;
+	    }
+	  if (!strncmp (pattern, "{m}", len))
+	    {
+	      if (len == 3)
+		{
+		  websWrite (stream, "<script type=\"text/javascript\">");
+		  len = 0;
+		}
+	      continue;
+	    }
+	}
+      if (!asp && !strncmp (pattern, "<%", len))
+	{
+	  if (len == 2)
+	    asp = pattern + 2;
+	  continue;
+	}
+
+      /* Look for ... %> */
+//      LOG("look end");
+      if (asp)
+	{
+	  if (unqstrstr (asp, "%>"))
+	    {
+	      for (func = asp; func < &pattern[len]; func = end)
+		{
+		  /* Skip initial whitespace */
+		  for (; isspace ((int) *func); func++);
+		  if (!(end = uqstrchr (func, ';')))
+		    break;
+		  *end++ = '\0';
+
+		  /* Call function */
+		  handle = call (handle, func, stream);
+		}
+	      asp = NULL;
+	      len = 0;
+	    }
+	  continue;
+	}
+
+    release:
+      /* Release pattern space */
+      //fputs(pattern, stream);
+      wfputs (pattern, stream);	//jimmy, https, 8/4/2003
+      len = 0;
+    }
+  free (pattern);
+  if (handle)
+    dlclose (handle);
+}
+
 
 void
 do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
@@ -384,6 +569,7 @@ if (web!=NULL)
   return len;
 }
 
+
 void
 do_ej (char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
 {
@@ -401,11 +587,6 @@ do_ej (char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
     log = fopen ("/tmp/log.tmp", "wb");
 #endif
 
-#ifdef HAVE_VFS
-  e = vfsopen (path, "rb");
-  if (e == NULL)
-    {
-#endif
       i = 0;
       len = 0;
       while (websRomPageIndex[i].path != NULL)
@@ -420,61 +601,24 @@ do_ej (char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
 	    }
 	  i++;
 	}
-      int le = 0;
       if (fp == NULL)
 	{
-	  le = 1;
-	  FILE *in = fopen (path, "rb");
-	  if (in == NULL)
+	  fp = fopen (path, "rb");
+	  if (fp == NULL)
 	    return;
-	  fseek (in, 0, SEEK_END);
-	  len = ftell (in);
-	  rewind (in);
-	  buffer = (char *) malloc (len + 1);
-	  fread (buffer, 1, len, in);
-	  buffer[len] = 0;
-	  fclose (in);
+	  fseek (fp, 0, SEEK_END);
+	  len = ftell (fp);
+	  rewind (fp);
+	  do_ej_file(fp,len,stream);
 	}
       else
 	{
-	  le = 1;
-	  buffer = (char *) malloc (len + 1);
-	  fread (buffer, 1, len, fp);
-	  buffer[len] = 0;
-	  fclose (fp);
+	  do_ej_file(fp,len,stream);
 	}
-      /*if (x)
-         {
-         for (i = 0;i<len;i++)
-         buffer[i]^='d';
-         char b;
-         for (i = 0;i<len/2;i++)
-         {
-         b = buffer[i];
-         buffer[i]=buffer[(len-1)-i];
-         buffer[(len-1)-i]=b;
-         }
-         } */
+fclose (fp);
 
 
-#ifdef HAVE_VFS
-    }
-  else
-    {
 
-      len = e->filelen;
-      buffer = (char *) malloc (len + 1 + PATTERN_BUFFER);
-      vfsread (buffer, 1, len, e);
-      for (i = len; i < len + PATTERN_BUFFER; i++)
-	buffer[i] = 0;
-      vfsclose (e);
-
-    }
-#endif
-
-  do_ej_buffer (buffer, stream);
-  if (le)
-    free (buffer);
 }
 
 int
