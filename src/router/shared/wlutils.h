@@ -143,6 +143,6 @@ extern int wl_bssiovar_set (char *ifname, char *iovar, int bssidx,
 extern int wl_bssiovar_setint (char *ifname, char *iovar, int bssidx,
 			       int val);
 
-int wl_getbssid(char *wl, char *mac);
+int wl_getbssid (char *wl, char *mac);
 
 #endif /* _wlutils_h_ */
