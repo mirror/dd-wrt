@@ -1111,7 +1111,8 @@ start_restore_defaults (void)
   nvram_unset ("sputnik_mjid");
   nvram_unset ("sputnik_rereg");
 #endif
-
+  nvram_unset ("probe_blacklist");
+  
   if (nvram_get ("overclocking") == NULL)
     nvram_set ("overclocking", nvram_safe_get ("clkfreq"));
   cprintf ("start overclocking\n");
