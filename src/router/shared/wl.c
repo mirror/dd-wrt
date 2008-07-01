@@ -62,12 +62,12 @@ getchannels (unsigned int *list, char *ifname)
 
 
 int
-wl_getbssid(char *wl, char *mac)
+wl_getbssid (char *wl, char *mac)
 {
-	int ret;
-	struct ether_addr ea;
-	wl_ioctl(wl,WLC_GET_BSSID,&ea,ETHER_ADDR_LEN);
-	ether_etoa(&ea,mac);
+  int ret;
+  struct ether_addr ea;
+  wl_ioctl (wl, WLC_GET_BSSID, &ea, ETHER_ADDR_LEN);
+  ether_etoa (&ea, mac);
 }
 
 int
@@ -1091,7 +1091,7 @@ get_wl_instance (char *name)
   int ret;
   if (!ifexists (name))
     return -1;
-  if (wl_probe(name))
+  if (wl_probe (name))
     return -1;
   ret = wl_ioctl (name, WLC_GET_INSTANCE, &unit, sizeof (unit));
   if (ret == 0)
@@ -1126,39 +1126,39 @@ int
 wl_probe (char *name)
 {
   int ret, val;
-  if (isListed("probe_blacklist",name))
+  if (isListed ("probe_blacklist", name))
     return -1;
 
 #if defined(linux)
   char buf[DEV_TYPE_LEN];
   if ((ret = wl_get_dev_type (name, buf, DEV_TYPE_LEN)) < 0)
     {
-    addList("probe_blacklist",name);
-    return ret;
+      addList ("probe_blacklist", name);
+      return ret;
     }
   /* Check interface */
   if (strncmp (buf, "wl", 2))
     {
-    addList("probe_blacklist",name);
-    return -1;
+      addList ("probe_blacklist", name);
+      return -1;
     }
 #else
   /* Check interface */
   if ((ret = wl_ioctl (name, WLC_GET_MAGIC, &val, sizeof (val))))
     {
-    addList("probe_blacklist",name);
-    return ret;
+      addList ("probe_blacklist", name);
+      return ret;
     }
 #endif
   if ((ret = wl_ioctl (name, WLC_GET_VERSION, &val, sizeof (val))))
     {
-    addList("probe_blacklist",name);
-    return ret;
+      addList ("probe_blacklist", name);
+      return ret;
     }
   if (val > WLC_IOCTL_VERSION)
     {
-    addList("probe_blacklist",name);
-    return -1;
+      addList ("probe_blacklist", name);
+      return -1;
     }
   return ret;
 }
