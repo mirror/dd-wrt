@@ -1055,14 +1055,14 @@ old_way:;
       setRouter ("U.S.Robotics USR5461");
       return ROUTER_USR_5461;
     }
-    
+
   if (boardnum == 10500 && nvram_match ("boardtype", "0x456"))
     {
       cprintf ("router is U.S. Robotics USR5432\n");
       setRouter ("U.S.Robotics USR5432");
       return ROUTER_USR_5461;	//should work in the same way
     }
-    
+
   if (boardnum == 10506 && nvram_match ("boardtype", "0x456"))
     {
       cprintf ("router is U.S. Robotics USR5451\n");
@@ -1917,36 +1917,38 @@ get_mac_from_ip (char *ip)
 }
 
 
-int isListed(char *listname, char *value)
+int
+isListed (char *listname, char *value)
 {
-char *next, word[32];
-char *list = nvram_get(listname);
-if (!list)
+  char *next, word[32];
+  char *list = nvram_get (listname);
+  if (!list)
     return 0;
   foreach (word, list, next)
   {
-  if (!strcmp(word,value))
-    return 1;
+    if (!strcmp (word, value))
+      return 1;
   }
-return 0;
+  return 0;
 }
 
-void addList(char *listname, char *value)
+void
+addList (char *listname, char *value)
 {
-int listlen=0;
-if (isListed(listname,value))
+  int listlen = 0;
+  if (isListed (listname, value))
     return;
-char *list = nvram_get(listname);
-char *newlist;
-if (list)
-    listlen=strlen(list);
-newlist = malloc(strlen(value+2)+listlen);
-if (list)
-sprintf(newlist,"%s %s",list,value);    
-else
-sprintf(newlist,"%s",value);    
-nvram_set(listname,newlist);
-free(newlist);
+  char *list = nvram_get (listname);
+  char *newlist;
+  if (list)
+    listlen = strlen (list);
+  newlist = malloc (strlen (value + 2) + listlen);
+  if (list)
+    sprintf (newlist, "%s %s", list, value);
+  else
+    sprintf (newlist, "%s", value);
+  nvram_set (listname, newlist);
+  free (newlist);
 }
 
 struct dns_lists *
