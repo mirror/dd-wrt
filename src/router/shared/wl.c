@@ -1091,23 +1091,12 @@ get_wl_instance (char *name)
   int ret;
   if (!ifexists (name))
     return -1;
+  if (wl_probe(name))
+    return -1;
   ret = wl_ioctl (name, WLC_GET_INSTANCE, &unit, sizeof (unit));
   if (ret == 0)
     return unit;
   return ret;
-/*if (!strcmp(name,"eth0") && !wl_probe("eth0"))
-    return 0;
-if (!strcmp(name,"eth1") && !wl_probe("eth1"))
-    {
-    if (!wl_probe("eth0"))return 1;
-    else return 0;
-    }
-if (!strcmp(name,"eth2") && !wl_probe("eth2"))
-    {
-    if (!wl_probe("eth1"))return 1;
-    else return 0;
-    }
-return -1;*/
 }
 
     /* return wireless interface */
@@ -1137,24 +1126,40 @@ int
 wl_probe (char *name)
 {
   int ret, val;
+  if (isListed("probe_blacklist",name))
+    return -1;
 
 #if defined(linux)
   char buf[DEV_TYPE_LEN];
   if ((ret = wl_get_dev_type (name, buf, DEV_TYPE_LEN)) < 0)
+    {
+    addList("probe_blacklist",name);
     return ret;
+    }
   /* Check interface */
   if (strncmp (buf, "wl", 2))
+    {
+    addList("probe_blacklist",name);
     return -1;
+    }
 #else
   /* Check interface */
   if ((ret = wl_ioctl (name, WLC_GET_MAGIC, &val, sizeof (val))))
+    {
+    addList("probe_blacklist",name);
     return ret;
+    }
 #endif
   if ((ret = wl_ioctl (name, WLC_GET_VERSION, &val, sizeof (val))))
+    {
+    addList("probe_blacklist",name);
     return ret;
+    }
   if (val > WLC_IOCTL_VERSION)
+    {
+    addList("probe_blacklist",name);
     return -1;
-
+    }
   return ret;
 }
 

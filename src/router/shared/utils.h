@@ -601,4 +601,7 @@ struct wl_client_mac
 
 int endswith (char *str, char *cmp);
 
+int isListed(char *listname, char *value);
+void addList(char *listname, char *value);
+
 #endif

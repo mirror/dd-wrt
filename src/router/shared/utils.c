@@ -1916,6 +1916,39 @@ get_mac_from_ip (char *ip)
   return "";
 }
 
+
+int isListed(char *listname, char *value)
+{
+char *next, word[32];
+char *list = nvram_get(listname);
+if (!list)
+    return 0;
+  foreach (word, list, next)
+  {
+  if (!strcmp(word,value))
+    return 1;
+  }
+return 0;
+}
+
+void addList(char *listname, char *value)
+{
+int listlen=0;
+if (isListed(listname,value))
+    return;
+char *list = nvram_get(listname);
+char *newlist;
+if (list)
+    listlen=strlen(list);
+newlist = malloc(strlen(value+2)+listlen);
+if (list)
+sprintf(newlist,"%s %s",list,value);    
+else
+sprintf(newlist,"%s",value);    
+nvram_set(listname,newlist);
+free(newlist);
+}
+
 struct dns_lists *
 get_dns_list (void)
 {
