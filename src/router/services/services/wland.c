@@ -256,16 +256,6 @@ do_aqos_check (void)
 	  continue;
 	}
 
-      if (!cmac && strlen (mac_buf) > 0)
-	{
-
-	  sysprintf( "echo \"%s\" >>/tmp/aqos_macs", mac_buf);
-	  //create default rule for mac
-	  //fprintf(stderr,"add usermac\n");
-	  add_usermac (mac_buf, qosidx, defaulup, defauldown);
-	  //fprintf(stderr,"done\n");
-	  qosidx += 2;
-	}
       if (!cip && strlen (ip_buf) > 0)
 	{
 	  char ipnet[32];
@@ -274,6 +264,19 @@ do_aqos_check (void)
 	  //create default rule for ip
 	  //fprintf(stderr,"add userip\n");
 	  add_userip (ipnet, qosidx, defaulup, defauldown);
+	  //fprintf(stderr,"done\n");
+	  qosidx += 2;
+      memset (ip_buf, 0, 32);
+      memset (mac_buf, 0, 32);
+	continue;
+	}
+      if (!cmac && strlen (mac_buf) > 0)
+	{
+
+	  sysprintf( "echo \"%s\" >>/tmp/aqos_macs", mac_buf);
+	  //create default rule for mac
+	  //fprintf(stderr,"add usermac\n");
+	  add_usermac (mac_buf, qosidx, defaulup, defauldown);
 	  //fprintf(stderr,"done\n");
 	  qosidx += 2;
 	}
