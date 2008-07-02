@@ -402,8 +402,10 @@ start_overclock (void)		// hidden feature. must be called with "startservice ove
   fprintf (stderr, "board is now clocked at %d mhz, please reboot\n", clk);
 }
 
+/*
 int
 main (int argc, char *argv[])
 {
   start_overclock ();
 }
+*/
