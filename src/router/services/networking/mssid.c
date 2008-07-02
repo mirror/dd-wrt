@@ -41,7 +41,6 @@
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 
-
 void
 start_config_macs (char *wlifname)	//reconfigure macs which should fix the corerev 5 and 7 problem
 {
@@ -99,7 +98,7 @@ do_mssid (char *wlifname)
     }
   close (s);
 }
-
+#ifndef HAVE_MADWIFI
 
 void
 set_vifsmac (char *base) // corrects hwaddr and bssid assignment
@@ -130,4 +129,6 @@ void start_vifsmac(void)
 {
 set_vifsmac("wl0");
 }
+#endif
+
 #endif
