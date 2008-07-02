@@ -955,9 +955,32 @@ set_netmode (char *wif, char *dev, char *use)
   else
     eval ("iwpriv", use, "ff", "0");
 
-  eval ("iwpriv", use, "protmode", "0");	//avoid throughput problems (CTS disabled for now)
+  char rts[32];
 
+  sprintf(rts,"%s_protmode",use);
+  nvram_default_get(rts,"None");
 
+  sprintf(rts,"%s_rts",use);
+  nvram_default_get(rts,"0");
+
+  sprintf(rts,"%s_rtsvalue",use);
+  nvram_default_get(rts,"2346");
+
+  if (nvram_nmatch("1","%s_rts",use))
+    {
+    eval("iwconfig",use,"rts",nvram_nget("%s_rtsvalue",use));
+    }
+    else
+    {
+    eval("iwconfig",use,"rts","off");
+    }
+    
+  if (nvram_nmatch("None","%s_protmode",use))
+    eval ("iwpriv", use, "protmode", "0");	//avoid throughput problems (CTS disabled for now)
+  if (nvram_nmatch("CTS","%s_protmode",use))
+    eval ("iwpriv", use, "protmode", "1");
+  if (nvram_nmatch("RTS/CTS","%s_protmode",use))
+    eval ("iwpriv", use, "protmode", "2");
 }
 
 static
