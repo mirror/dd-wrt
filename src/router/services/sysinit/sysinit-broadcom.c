@@ -572,7 +572,7 @@ start_sysinit (void)
       nvram_set ("pci/1/1/boardtype", "0x46d");
       nvram_set ("pci/1/1/boardflags2", "0x0013");
       nvram_set ("pci/1/1/ofdm2gpo", "0");
-      nvram_set ("pci/1/1/ledbh0", "0x82");
+      nvram_set ("pci/1/1/ledbh0", "0x8");
       nvram_set ("pci/1/1/ledbh1", "-1");
       nvram_set ("pci/1/1/ledbh2", "-1");
       nvram_set ("pci/1/1/ledbh3", "-1");
