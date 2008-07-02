@@ -172,6 +172,7 @@ static struct mtd_partition dir_parts[] = {
         { name: "RedBoot", offset: 0, size: 0x30000, },//, mask_flags: MTD_WRITEABLE, },
         { name: "linux", offset: 0x30000, size: 0x390000, },
         { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
+        { name: "ddwrt", offset: 0x0, size: 0x2b0000,}, //must be detected
         { name: "mampf", offset: 0x3d0000, size: 0x10000, },
         { name: "nvram", offset: 0x3d0000, size: 0x10000, },
         { name: "FIS directory", offset: 0x3e0000, size: 0x10000, },
@@ -328,17 +329,17 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		    printk(KERN_EMERG "Compex WP188 detected!\n");
 		    dir_parts[0].size=0x40000;
 		    dir_parts[0].offset=0;
-		    dir_parts[6].size=0x1000;
-		    dir_parts[6].offset = mtd->size-0x1000;
-		    dir_parts[5].size=mtd->erasesize;
-		    dir_parts[5].offset = mtd->size-mtd->erasesize;
-
-		    long highest=dir_parts[5].offset;
-		    dir_parts[2].size=(highest - (mtd->erasesize*2)) - dir_parts[2].offset;
-		    dir_parts[3].offset=highest - mtd->erasesize*2;
-		    dir_parts[3].size=mtd->erasesize;
-		    dir_parts[4].offset=highest - mtd->erasesize;
+		    dir_parts[7].size=0x1000;
+		    dir_parts[7].offset = mtd->size-0x1000;
 		    dir_parts[4].size=mtd->erasesize;
+		    dir_parts[4].offset = mtd->size-mtd->erasesize;
+
+		    long highest=dir_parts[6].offset;
+		    dir_parts[2].size=(highest - (mtd->erasesize*2)) - dir_parts[2].offset;
+		    dir_parts[4].offset=highest - mtd->erasesize*2;
+		    dir_parts[4].size=mtd->erasesize;
+		    dir_parts[5].offset=highest - mtd->erasesize;
+		    dir_parts[5].size=mtd->erasesize;
 
 		    dir_parts[1].offset=0x40000;
 		    dir_parts[1].size=dir_parts[2].offset-dir_parts[1].offset+dir_parts[2].size;
@@ -364,18 +365,18 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		if (!strncmp(fis->name,"RedBoot config",14))
 		    {
 		    printk(KERN_EMERG "found RedBoot config partition at [0x%08lX]\n",fis->flash_base);
-		    dir_parts[6].size=mtd->erasesize;
-		    dir_parts[6].offset=fis->flash_base&(mtd->size-1);
+		    dir_parts[7].size=mtd->erasesize;
+		    dir_parts[7].offset=fis->flash_base&(mtd->size-1);
 		    if (foundfis)
 		    {
 		    long highest=dir_parts[5].offset;
 		    if (dir_parts[6].offset<highest)
 			highest=dir_parts[6].offset;
 		    dir_parts[2].size=(highest - (mtd->erasesize*2)) - dir_parts[2].offset;
-		    dir_parts[3].offset=highest - mtd->erasesize*2;
-		    dir_parts[3].size=mtd->erasesize;
-		    dir_parts[4].offset=highest - mtd->erasesize;
+		    dir_parts[4].offset=highest - mtd->erasesize*2;
 		    dir_parts[4].size=mtd->erasesize;
+		    dir_parts[5].offset=highest - mtd->erasesize;
+		    dir_parts[5].size=mtd->erasesize;
 		    }
 		    foundconfig=1;
 		    }
@@ -388,18 +389,18 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		if (!strncmp(fis->name,"FIS directory",13))
 		    {
 		    printk(KERN_EMERG "found config partition at [0x%08lX]\n",fis->flash_base);
-		    dir_parts[5].offset=(fis->flash_base&(mtd->size-1));
-		    dir_parts[5].size=mtd->erasesize;
+		    dir_parts[6].offset=(fis->flash_base&(mtd->size-1));
+		    dir_parts[6].size=mtd->erasesize;
 		    if (foundconfig)
 		    {
-		    long highest=dir_parts[5].offset;
-		    if (dir_parts[6].offset<highest)
-			highest=dir_parts[6].offset;
+		    long highest=dir_parts[6].offset;
+		    if (dir_parts[7].offset<highest)
+			highest=dir_parts[7].offset;
 		    dir_parts[2].size=(highest - (mtd->erasesize*2)) - dir_parts[2].offset;
-		    dir_parts[3].offset=highest - mtd->erasesize*2;
-		    dir_parts[3].size=mtd->erasesize;
-		    dir_parts[4].offset=highest - mtd->erasesize;
+		    dir_parts[4].offset=highest - mtd->erasesize*2;
 		    dir_parts[4].size=mtd->erasesize;
+		    dir_parts[5].offset=highest - mtd->erasesize;
+		    dir_parts[5].size=mtd->erasesize;
 		    }
 		    foundfis=1;
 		    }
@@ -413,7 +414,9 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	    }
 	def:;
 	info->partitions=dir_parts;
-	err = add_mtd_partitions(mtd, dir_parts, 7);
+	dir_parts[3].offset = dir_parts[1].offset+dir_parts[1].size;
+	dir_parts[3].size = dir_parts[4].offset-dir_parts[3].offset;
+	err = add_mtd_partitions(mtd, dir_parts, 8);
 
 /*#ifndef CONFIG_NOP8670
 	err = parse_mtd_partitions(info->mtd, probes, &info->partitions, dev->resource->start);
