@@ -124,8 +124,11 @@ compareNet (char *ip, char *net, char *dest)
 
   unsigned int fullip = (ip1 << 24) | (ip2 << 16) | (ip3 << 8) | ip4;
   unsigned int dfullip = (dip1 << 24) | (dip2 << 16) | (dip3 << 8) | dip4;
-  unsigned long long n = (unsigned long long) 1 << (unsigned long long) atoi (net);	//convert net to full mask
+  int bit = atoi(net);
+  unsigned long long n = (unsigned long long) 1 << (unsigned long long) bit;	//convert net to full mask
+  int shift = 32-bit;
   n--;
+  n<<=shift;
   if ((dfullip & n) == (fullip & n))
     return 1;
   return 0;
@@ -151,14 +154,14 @@ containsIP (char *ip)
       //fprintf(stderr,"begin\n");
       i = (char *) &buf_ip[0];
       net = strsep (&i, "/");
-      //fprintf(stderr,"found %s/%s\n", net, i);
+//      fprintf(stderr,"found %s/%s\n", net, i);
       if (compareNet (net, i, cip))
 	{
-	  //fprintf (stderr,"%s/%s fits to %s\n", net, i, ip);
+//	  fprintf (stderr,"%s/%s fits to %s\n", net, i, ip);
 	  fclose (in);
 	  return 1;
 	}
-      //fprintf (stderr,"%s/%s dosnt fit to %s\n", net, i, ip);
+//      fprintf (stderr,"%s/%s dosnt fit to %s\n", net, i, ip);
       memset (buf_ip, 0, 32);
     }
   fclose (in);
@@ -638,3 +641,9 @@ wland_main (int argc, char **argv)
 
   return 0;
 }				// end main
+
+
+void main(int argc, char **argv)
+{
+wland_main(argc,argv);
+}

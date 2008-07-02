@@ -588,6 +588,7 @@ install: all
 services.so: $(OBJS)
 #	$(AR) arc -o $@.a $^
 	$(CC) --shared $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)
 	$(AR) arc -o  $@ $^
