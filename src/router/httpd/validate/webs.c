@@ -2452,7 +2452,19 @@ save_prefix (webs_t wp, char *prefix)
     }
   if (tw)
     nvram_set (turbo, tw);
-
+  copytonv (wp, "%s_rts",prefix);
+  if (nvram_nmatch("1","%s_rts",prefix))
+  {
+  sprintf (turbo, "%s_rtsvalue", prefix);
+  tw = websGetVar (wp, turbo, NULL);
+    if (tw)
+	{
+	if (atoi(tw)<1)tw="1";
+	if (atoi(tw)>2346)tw="2346";
+	nvram_nset(tw,"%s_rtsvalue",prefix);
+	}
+  }
+  copytonv (wp, "%s_protmode", prefix);
   copytonv (wp, "%s_minrate", prefix);
   copytonv (wp, "%s_maxrate", prefix);
   copytonv (wp, "%s_xr", prefix);

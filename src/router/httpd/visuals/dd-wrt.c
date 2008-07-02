@@ -2905,8 +2905,45 @@ show_netmode (webs_t wp, char *prefix)
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 }
+static void
+showrtssettings (webs_t wp, char *var)
+{
+  websWrite (wp,
+	     "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rts)</script></div>\n");
+  char ssid[32];
+  sprintf (ssid, "%s_rts", var);
+  websWrite (wp,
+	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disabled)</script></input>&nbsp;\n",
+	     var, var, nvram_default_match (ssid, "0",
+					     "0") ? "checked=\"checked\"" :
+	     "");
+  websWrite (wp,
+	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enabled)</script></input>\n",
+	     var, var, nvram_default_match (ssid, "1",
+					     "0") ? "checked=\"checked\"" :
+	     "");
+  websWrite (wp, "</div>\n");
 
-void
+  websWrite (wp, "<div id=\"%s_idrts\">\n", var);
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rtsvalue)</script></div>\n");
+  char ip[32];
+  sprintf (ip, "%s_rtsvalue", var);
+  websWrite (wp,"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_rtsvalue\" value=\"%d\" />.",
+	     var,nvram_safe_get(ip));
+  websWrite (wp, "</div>\n");
+  websWrite (wp, "</div>\n");
+
+  websWrite (wp, "<script>\n//<![CDATA[\n ");
+  websWrite (wp,
+	     "show_layer_ext(document.getElementsByName(\"%s_rts\"), \"%s_idrts\", %s);\n",
+	     var, var, nvram_match (ssid, "0") ? "true" : "false");
+  websWrite (wp, "//]]>\n</script>\n");
+
+
+}
+static void
 showbridgesettings (webs_t wp, char *var, int mcast)
 {
 
@@ -3377,8 +3414,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_intmit[32];
   char wl_noise_immunity[32];
   char wl_ofdm_weak_det[32];
+  char wl_protmode[32];
+  sprintf (wl_protmode, "%s_protmode", prefix);
   sprintf (wl_turbo, "%s_turbo", prefix);
-//  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
   sprintf (wl_outdoor, "%s_outdoor", prefix);
   sprintf (wl_diversity, "%s_diversity", prefix);
   sprintf (wl_rxantenna, "%s_rxantenna", prefix);
@@ -3429,7 +3467,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
   showOption (wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
-
+  showOptionsLabel(wp, "wl_basic.protmode",wl_protmode,"None CTS RTS/CTS",nvram_default_get(wl_protmode,"None"));
+  showrtssettings(wp,prefix);
   show_rates (wp, prefix, 0);
   show_rates (wp, prefix, 1);
 //#if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
