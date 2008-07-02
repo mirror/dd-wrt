@@ -42,7 +42,6 @@ function port_grey(sw_disabled,F) {
 	F.svqos_port2prio.disabled = sw_disabled;
 	F.svqos_port3prio.disabled = sw_disabled;
 	F.svqos_port4prio.disabled = sw_disabled;
-
 	F.svqos_port1bw.disabled = sw_disabled;
 	F.svqos_port2bw.disabled = sw_disabled;
 	F.svqos_port3bw.disabled = sw_disabled;
@@ -60,7 +59,7 @@ function qos_grey(num,F) {
 	F.qos_type.disabled = sw_disabled;
 	F.add_svc_button.disabled = sw_disabled;
 	F.edit_svc_button.disabled = sw_disabled;
-	port_grey(sw_disabled, F);
+	<% nvram_match("portprio_support","0","//"); %>port_grey(sw_disabled, F);
 	macs_grey(sw_disabled, F);
 	ips_grey(sw_disabled, F);
 	svcs_grey(sw_disabled, F);
