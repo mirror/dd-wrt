@@ -4363,8 +4363,20 @@ ej_get_currate (webs_t wp, int argc, char_t ** argv)
     websWrite (wp, "%s", live_translate ("share.unknown"));
 
   return;
-
 }
+
+void
+ej_show_acktiming (webs_t wp, int argc, char_t ** argv)
+{
+  return;
+}
+
+void
+ej_update_acktiming (webs_t wp, int argc, char_t ** argv)
+{
+  return;
+}
+
 #else
 
 int
