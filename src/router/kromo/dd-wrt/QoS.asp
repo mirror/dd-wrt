@@ -59,7 +59,7 @@ function qos_grey(num,F) {
 	F.qos_type.disabled = sw_disabled;
 	F.add_svc_button.disabled = sw_disabled;
 	F.edit_svc_button.disabled = sw_disabled;
-	<% nvram_match("portprio_support","0","//"); %>port_grey(sw_disabled, F);
+	<% nvram_match("portprio_support","0","/"); %><% nvram_match("portprio_support","0","/"); %>port_grey(sw_disabled, F);
 	macs_grey(sw_disabled, F);
 	ips_grey(sw_disabled, F);
 	svcs_grey(sw_disabled, F);
