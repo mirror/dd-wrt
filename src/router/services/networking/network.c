@@ -3017,8 +3017,9 @@ start_wan_done (char *wan_ifname)
 //  cprintf ("start cron\n");
 //  start_cron ();
   cprintf ("start wshaper\n");
+  stop_wland();
   start_wshaper ();
-
+  start_wland();
   if (nvram_match ("wan_proto", "pptp"))
     {
 

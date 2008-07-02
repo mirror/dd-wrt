@@ -868,9 +868,9 @@ start_pptp (int status)
 	  eval ("listen", nvram_safe_get ("lan_ifname"));
 	}
     }
-
+  stop_wland();
   start_wshaper ();
-
+  start_wland();
   cprintf ("done\n");
   return ret;
 }
