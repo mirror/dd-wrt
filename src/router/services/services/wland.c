@@ -261,6 +261,8 @@ do_aqos_check (void)
 	  char ipnet[32];
 	  sprintf (ipnet, "%s/32", ip_buf);
 	  sysprintf("echo \"%s\" >>/tmp/aqos_ips", ipnet);
+	  if (strlen(mac_buf))
+	    sysprintf( "echo \"%s\" >>/tmp/aqos_macs", mac_buf);
 	  //create default rule for ip
 	  //fprintf(stderr,"add userip\n");
 	  add_userip (ipnet, qosidx, defaulup, defauldown);
@@ -274,6 +276,8 @@ do_aqos_check (void)
 	{
 
 	  sysprintf( "echo \"%s\" >>/tmp/aqos_macs", mac_buf);
+	  if (strlen(ip_buf))
+	    sysprintf( "echo \"%s\" >>/tmp/aqos_macs", ip_buf);
 	  //create default rule for mac
 	  //fprintf(stderr,"add usermac\n");
 	  add_usermac (mac_buf, qosidx, defaulup, defauldown);
