@@ -255,9 +255,11 @@ stop_splashd (void)
       ret = killall ("splashd", SIGTERM);
       eval ("/usr/libexec/nocat/clear.fw");
       stop_firewall ();		// evil
+      stop_wland();
       stop_wshaper ();
       start_firewall ();
       start_wshaper ();
+      start_wland();
       cprintf ("done\n");
     }
   return ret;
