@@ -112,8 +112,8 @@ start_services (void)
   handle = start_service_nofree ("olsrd", handle);
 #endif
 
-  handle = start_service_nofree ("wland", handle);
   handle = start_service_nofree ("wshaper", handle);
+  handle = start_service_nofree ("wland", handle);
   handle = start_service_nofree ("cron", handle);
 
 #ifdef HAVE_PPTPD
@@ -248,6 +248,7 @@ stop_services (void)
 #ifdef HAVE_WOL
   handle = stop_service_nofree ("wol", handle);
 #endif
+  handle = stop_service_nofree ("wland", handle);
   handle = stop_service_nofree ("wshaper", handle);
 
 #ifdef HAVE_PPTPD
@@ -491,7 +492,9 @@ handle_management (void)
   handle = start_service_nofree ("zebra", handle);
 #endif
   handle = startstop_nofree ("firewall", handle);
+  handle = stop_service_nofree ("wland", handle);
   handle = startstop_nofree ("wshaper", handle);
+  handle = start_service_nofree ("wland", handle);
   handle = startstop_nofree ("httpd", handle);
 
 #ifdef HAVE_WOL
@@ -577,7 +580,9 @@ handle_filters (void)
 #ifndef HAVE_WRK54G
   handle = startstop_nofree ("syslog", handle);
 #endif
+  handle = stop_service_nofree ("wland", handle);
   handle = startstop_nofree ("wshaper", handle);
+  handle = start_service_nofree ("wland", handle);
   handle = start_service_nofree ("cron", handle);
 #ifdef HAVE_MULTICAST
   handle = startstop_nofree ("igmp_proxy", handle);
@@ -624,12 +629,14 @@ static void
 handle_forward (void)
 {
   void *handle = NULL;
+  handle = stop_service_nofree ("wland", handle);
   handle = stop_service_nofree ("wshaper", handle);
   handle = stop_service_nofree ("upnp", handle);
   handle = stop_service_nofree ("firewall", handle);
   handle = start_service_nofree ("firewall", handle);
   handle = start_service_nofree ("upnp", handle);
   handle = start_service_nofree ("wshaper", handle);
+  handle = start_service_nofree ("wland", handle);
   handle = start_service_nofree ("anchorfreednat", handle);
   if (handle)
     dlclose (handle);
@@ -639,6 +646,7 @@ static void
 handle_qos (void)
 {
   startstop ("wshaper");
+  startstop ("wland");
 }
 
 static void
@@ -653,7 +661,9 @@ handle_forwardupnp (void)
   handle = start_service_nofree ("upnp", handle);
 #endif
   handle = start_service_nofree ("firewall", handle);
+  handle = stop_service_nofree ("wland", handle);
   handle = startstop_nofree ("wshaper", handle);
+  handle = start_service_nofree ("wland", handle);
   handle = start_service_nofree ("anchorfreednat", handle);
   if (handle)
     dlclose (handle);
