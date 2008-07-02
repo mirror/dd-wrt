@@ -279,7 +279,9 @@ bound (void)
       stop_udhcpd ();
       start_udhcpd ();
       start_firewall ();
+      stop_wland();
       start_wshaper ();
+      start_wland();
       start_heartbeat_boot ();
     }
 #else
