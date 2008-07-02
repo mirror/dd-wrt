@@ -1551,6 +1551,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 		if (chain_trusted)
 			continue;
 
+#if 0 //brainslayer patch
 		if ((unsigned long) now.sec <
 		    (unsigned long) cert->not_before ||
 		    (unsigned long) now.sec >
@@ -1561,6 +1562,16 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 			*reason = X509_VALIDATE_CERTIFICATE_EXPIRED;
 			return -1;
 		}
+#else
+		if ((unsigned long) now.sec >
+		    (unsigned long) cert->not_after) {
+			wpa_printf(MSG_INFO, "X509: Certificate not valid "
+				   "(now=%lu not_before=%lu not_after=%lu)",
+				   now.sec, cert->not_before, cert->not_after);
+			*reason = X509_VALIDATE_CERTIFICATE_EXPIRED;
+			return -1;
+		}
+#endif
 
 		if (cert->next) {
 			if (x509_name_compare(&cert->issuer,
