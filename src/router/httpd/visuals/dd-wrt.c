@@ -2802,7 +2802,7 @@ show_rates (webs_t wp, char *prefix, int maxrate)
 
 }
 #endif
-void
+static void
 show_netmode (webs_t wp, char *prefix)
 {
   char wl_net_mode[16];
@@ -3026,7 +3026,7 @@ showbridgesettings (webs_t wp, char *var, int mcast)
 
 }
 
-int
+static int
 show_virtualssid (webs_t wp, char *prefix)
 {
   char *next;
