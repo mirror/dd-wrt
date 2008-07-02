@@ -2913,12 +2913,12 @@ showrtssettings (webs_t wp, char *var)
   char ssid[32];
   sprintf (ssid, "%s_rts", var);
   websWrite (wp,
-	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disabled)</script></input>&nbsp;\n",
+	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disabled)</script></input>&nbsp;\n",
 	     var, var, nvram_default_match (ssid, "0",
 					     "0") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp,
-	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enabled)</script></input>\n",
+	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enabled)</script></input>\n",
 	     var, var, nvram_default_match (ssid, "1",
 					     "0") ? "checked=\"checked\"" :
 	     "");
@@ -2930,15 +2930,15 @@ showrtssettings (webs_t wp, char *var)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rtsvalue)</script></div>\n");
   char ip[32];
   sprintf (ip, "%s_rtsvalue", var);
-  websWrite (wp,"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_rtsvalue\" value=\"%d\" />.",
-	     var,nvram_safe_get(ip));
+  websWrite (wp,"<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_rtsvalue\" value=\"%s\" />.",
+	     var,nvram_default_get(ip,"2346"));
   websWrite (wp, "</div>\n");
   websWrite (wp, "</div>\n");
 
   websWrite (wp, "<script>\n//<![CDATA[\n ");
   websWrite (wp,
 	     "show_layer_ext(document.getElementsByName(\"%s_rts\"), \"%s_idrts\", %s);\n",
-	     var, var, nvram_match (ssid, "0") ? "true" : "false");
+	     var, var, nvram_match (ssid, "1") ? "true" : "false");
   websWrite (wp, "//]]>\n</script>\n");
 
 
