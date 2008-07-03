@@ -699,8 +699,8 @@ wlconf_up (char *name)
 #ifndef HAVE_MADWIFI
   eval ("wl", "-i", name, "vlan_mode", "0");
   char ifinst[32];
-  sprintf(ifinst,"wl%d",instance);
-  set_vifsmac(ifinst);
+  sprintf (ifinst, "wl%d", instance);
+  set_vifsmac (ifinst);
 #endif
 #endif
   return ret;
@@ -1968,11 +1968,11 @@ start_lan (void)
 	      char *wdsnm;
 	      char wdsbc[32] = { 0 };
 #ifdef HAVE_MADWIFI
-	      wdsip = nvram_nget("ath%d_wds%d_ipaddr",c,s);
-	      wdsnm = nvram_nget("ath%d_wds%d_netmask", c, s);
+	      wdsip = nvram_nget ("ath%d_wds%d_ipaddr", c, s);
+	      wdsnm = nvram_nget ("ath%d_wds%d_netmask", c, s);
 #else
-	      wdsip = nvram_nget("wl%d_wds%d_ipaddr",c,s);
-	      wdsnm = nvram_nget("wl%d_wds%d_netmask", c, s);
+	      wdsip = nvram_nget ("wl%d_wds%d_ipaddr", c, s);
+	      wdsnm = nvram_nget ("wl%d_wds%d_netmask", c, s);
 #endif
 
 	      snprintf (wdsbc, 31, "%s", wdsip);
@@ -3017,9 +3017,9 @@ start_wan_done (char *wan_ifname)
 //  cprintf ("start cron\n");
 //  start_cron ();
   cprintf ("start wshaper\n");
-  stop_wland();
+  stop_wland ();
   start_wshaper ();
-  start_wland();
+  start_wland ();
   if (nvram_match ("wan_proto", "pptp"))
     {
 
