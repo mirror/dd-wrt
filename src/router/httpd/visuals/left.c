@@ -1,5 +1,5 @@
 extern struct variable variables[];
-																																																																																																																																																																			    /* channel info structure *///from 11.9
+																																																																																																																																																																							/* channel info structure *///from 11.9
 
 /* Hook to write wl_* default set through to wl%d_* variable set */
 void

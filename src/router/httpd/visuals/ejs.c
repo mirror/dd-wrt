@@ -203,7 +203,6 @@ ej_prefix_ip_get (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_get (webs_t wp, int argc, char_t ** argv)
 {
-  char *name;
 
 #ifndef FASTWEB
   if (argc < 1)
@@ -249,7 +248,6 @@ ej_nvram_get (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_real_get (webs_t wp, int argc, char_t ** argv)
 {
-  char *name;
 
 #ifndef FASTWEB
   if (argc < 1)
@@ -438,8 +436,7 @@ get_single_mac (char *macaddr, int which)
 void
 ej_get_single_mac (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *c;
-  int which;
+  char *c;
   int mac;
 
 #ifndef FASTWEB
@@ -495,21 +492,17 @@ nvram_selmatch (webs_t wp, char *name, char *match)
 void
 ej_nvram_selmatch (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match, *output;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
-#else
-  if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
+#ifndef FASTWEB
+  if (argv < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-
-  if (nvram_selmatch (wp, name, match))
+  if (nvram_selmatch (wp, argv[0], argv[1]))
     {
-      websWrite (wp, output);
+      websWrite (wp, argv[2]);
     }
   return;
 }
@@ -517,39 +510,35 @@ ej_nvram_selmatch (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_else_selmatch (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match, *output1, *output2;
   char *type;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s %s %s", &name, &match, &output1, &output2);
-#else
-  if (ejArgs (argc, argv, "%s %s %s %s", &name, &match, &output1, &output2) <
-      4)
+#ifndef FASTWEB
+  if (argc < 4)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
 
-  type = GOZILA_GET (name);
+  type = GOZILA_GET (argv[0]);
 
   if (!type)
     {
-      if (nvram_match (name, match))
+      if (nvram_match (argv[0], argv[1]))
 	{
-	  websWrite (wp, output1);
+	  websWrite (wp, argv[2]);
 	}
       else
-	websWrite (wp, output2);
+	websWrite (wp, argv[3]);
     }
   else
     {
-      if (!strcmp (type, match))
+      if (!strcmp (type, argv[1]))
 	{
-	  websWrite (wp, output1);
+	  websWrite (wp, argv[2]);
 	}
       else
-	websWrite (wp, output2);
+	websWrite (wp, argv[3]);
     }
 
   return;
@@ -564,23 +553,19 @@ ej_nvram_else_selmatch (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_else_match (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match, *output1, *output2;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s %s %s", &name, &match, &output1, &output2);
-#else
-  if (ejArgs (argc, argv, "%s %s %s %s", &name, &match, &output1, &output2) <
-      4)
+#ifndef FASTWEB
+  if (argc < 4)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
 
-  if (nvram_match (name, match))
-    websWrite (wp, output1);
+  if (nvram_match (argv[0], argv[1]))
+    websWrite (wp, argv[2]);
   else
-    websWrite (wp, output2);
+    websWrite (wp, argv[3]);
 
   return;
 }
@@ -590,19 +575,16 @@ ej_nvram_else_match (webs_t wp, int argc, char_t ** argv)
 void
 ej_startswith (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match, *output;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
-#else
-  if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
+#ifndef FASTWEB
+  if (argc < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-  if (startswith (nvram_safe_get (name), match))
-    websWrite (wp, output);
+  if (startswith (nvram_safe_get (argv[0]), argv[1]))
+    websWrite (wp, argv[2]);
 
   return;
 }
@@ -612,16 +594,15 @@ ej_ifdef (webs_t wp, int argc, char_t ** argv)
 {
   char *name, *output;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s", &name, &output);
-#else
-  if (ejArgs (argc, argv, "%s %s", &name, &output) < 2)
+#ifndef FASTWEB
+  if (argc < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-
+  name = argv[0];
+  output = argv[1];
 #ifdef HAVE_MICRO
   if (!strcmp (name, "MICRO"))
     {
@@ -689,15 +670,15 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 {
   char *name, *output;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s", &name, &output);
-#else
-  if (ejArgs (argc, argv, "%s %s", &name, &output) < 2)
+#ifndef FASTWEB
+  if (argc < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
+  name = argv[0];
+  output = argv[1];
 
 #ifdef HAVE_MICRO
   if (!strcmp (name, "MICRO"))
@@ -807,20 +788,17 @@ ej_ifndef (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_match (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match, *output;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
-#else
-  if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
+#ifndef FASTWEB
+  if (argc < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
 
-  if (nvram_match (name, match))
-    websWrite (wp, output);
+  if (nvram_match (argv[0], argv[1]))
+    websWrite (wp, argv[2]);
 
   return;
 }
@@ -886,21 +864,19 @@ ej_scroll (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_list (webs_t wp, int argc, char_t ** argv)
 {
-  char *name;
   int which;
   char word[256], *next;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %d", &name, &which);
-#else
-  if (ejArgs (argc, argv, "%s %d", &name, &which) < 2)
+#ifndef FASTWEB
+  if (argc < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-
-  foreach (word, nvram_safe_get (name), next)
+  which = atoi (argv[1]);
+  char *list = nvram_safe_get (argv[0]);
+  foreach (word, list, next)
   {
     if (which-- == 0)
       websWrite (wp, word);
@@ -919,8 +895,8 @@ get_dns_ip (char *name, int which, int count)
   static char word[256];
   char *next;
   int ip;
-
-  foreach (word, nvram_safe_get (name), next)
+  char *list = nvram_safe_get (name);
+  foreach (word, list, next)
   {
     if (which-- == 0)
       {
@@ -939,25 +915,23 @@ get_dns_ip (char *name, int which, int count)
 void
 ej_get_dns_ip (webs_t wp, int argc, char_t ** argv)
 {
-  char *name;
-  int count, which;
+  int which;
   char word[256], *next;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %d %d", &name, &which, &count);
-#else
-  if (ejArgs (argc, argv, "%s %d %d", &name, &which, &count) < 3)
+#ifndef FASTWEB
+  if (argc < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-
-  foreach (word, nvram_safe_get (name), next)
+  which = atoi (argv[1]);
+  char *list = nvram_safe_get (argv[0]);
+  foreach (word, list, next)
   {
     if (which-- == 0)
       {
-	websWrite (wp, "%d", get_single_ip (word, count));
+	websWrite (wp, "%d", get_single_ip (word, atoi (argv[2])));
 	return;
       }
   }
@@ -1044,12 +1018,14 @@ ej_get_mtu (webs_t wp, int argc, char_t ** argv)
   struct mtu_lists *mtu_list;
   char *type;
   char *proto = GOZILA_GET ("wan_proto");
-
-  if (ejArgs (argc, argv, "%s", &type) < 1)
+  type = argv[1];
+#ifndef FASTWEB
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
+#endif
 
   mtu_list = get_mtu (proto);
 
@@ -1376,15 +1352,14 @@ ej_get_totaltraff (webs_t wp, int argc, char_t ** argv)
   unsigned long rcvd, sent, megcounti, megcounto;
   FILE *in;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &type);
-#else
-  if (ejArgs (argc, argv, "%s", &type) < 1)
+#ifndef FASTWEB
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
+  type = argv[0];
 
   if (!nvram_match ("ttraff_enable", "1"))
     return;
@@ -1530,15 +1505,15 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 {
   char *mainmenu, *submenu;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s", &mainmenu, &submenu);
-#else
-  if (ejArgs (argc, argv, "%s %s", &mainmenu, &submenu) < 2)
+#ifndef FASTWEB
+  if (argc < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
+  mainmenu = argv[0];
+  submenu = argv[1];
 
   int vlan_supp = check_vlan_support ();
 #ifdef HAVE_SPUTNIK_APD
@@ -1814,17 +1789,15 @@ void
 ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 {
   char *style = nvram_get ("router_style");
-  char *title;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &title);
-#else
-  if (ejArgs (argc, argv, "%s", &title) < 1)
+#ifndef FASTWEB
+  if (argc < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
+
 
   /*websWrite (wp,
      "<\?xml version=\"1.0\" encoding=\"%s\"\?>\n",
@@ -1871,9 +1844,9 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
   websWrite (wp, "\t\t<title>%s", nvram_get ("router_name"));
-  if (strlen (title) != 0)
+  if (strlen (argv[0]) != 0)
     {
-      websWrite (wp, " - %s", live_translate (title));
+      websWrite (wp, " - %s", live_translate (argv[0]));
     }
   websWrite (wp, "</title>\n");
 
@@ -2010,19 +1983,16 @@ ej_show_wanipinfo (webs_t wp, int argc, char_t ** argv)	//Eko
 void
 ej_nvram_selected (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s", &name, &match);
-#else
-  if (ejArgs (argc, argv, "%s %s", &name, &match) < 2);
+#ifndef FASTWEB
+  if (argc < 2);
   {
     websError (wp, 400, "Insufficient args\n");
     return;
   }
 #endif
 
-  if (nvram_match (name, match))
+  if (nvram_match (argv[0], argv[1]))
     {
       websWrite (wp, "selected=\"selected\"");
     }
@@ -2032,19 +2002,16 @@ ej_nvram_selected (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_selected_js (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s", &name, &match);
-#else
-  if (ejArgs (argc, argv, "%s %s", &name, &match) < 2);
+#ifndef FASTWEB
+  if (argc < 2);
   {
     websError (wp, 400, "Insufficient args\n");
     return;
   }
 #endif
 
-  if (nvram_match (name, match))
+  if (nvram_match (argv[0], argv[1]))
     {
       websWrite (wp, "selected=\\\"selected\\\"");
     }
@@ -2086,16 +2053,13 @@ ej_getrebootflags (webs_t wp, int argc, char_t ** argv)
 void
 ej_tran (webs_t wp, int argc, char_t ** argv)
 {
-  char *name;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &name);
-#else
-  if (ejArgs (argc, argv, "%s", &name) != 1)
+#ifndef FASTWEB
+  if (argc != 1)
     return;
 #endif
   websWrite (wp, "<script type=\"text/javascript\">Capture(%s)</script>",
-	     name);
+	     argv[0]);
   return;
 }
 
@@ -2109,19 +2073,16 @@ ej_tran (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_checked (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match;
 
 #ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s", &name, &match);
-#else
-  if (ejArgs (argc, argv, "%s %s", &name, &match) < 2)
+  if (argc < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
 
-  if (nvram_match (name, match))
+  if (nvram_match (argv[0], argv[1]))
     {
       websWrite (wp, "checked=\"checked\"");
     }
@@ -2132,19 +2093,16 @@ ej_nvram_checked (webs_t wp, int argc, char_t ** argv)
 void
 ej_nvram_checked_js (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s", &name, &match);
-#else
-  if (ejArgs (argc, argv, "%s %s", &name, &match) < 2)
+#ifndef FASTWEB
+  if (argc < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
 
-  if (nvram_match (name, match))
+  if (nvram_match (argv[0], argv[1]))
     {
       websWrite (wp, "checked=\\\"checked\\\"");
     }
@@ -2155,28 +2113,25 @@ ej_nvram_checked_js (webs_t wp, int argc, char_t ** argv)
 void
 ej_make_time_list (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *start, *end;
   int i, st, en;
   char ic[16];
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s %s", &name, &start, &end);
-#else
-  if (ejArgs (argc, argv, "%s %s %s", &name, &start, &end) < 3)
+#ifndef FASTWEB
+  if (argc < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
 
-  st = atoi (start);
-  en = atoi (end);
+  st = atoi (argv[1]);
+  en = atoi (argv[2]);
 
   for (i = st; i <= en; i++)
     {
       sprintf (ic, "%d", i);
       websWrite (wp, "<option value=\"%d\" %s >%02d</option>\n", i,
-		 nvram_match (name, ic) ? "selected=\"selected\"" : "", i);
+		 nvram_match (argv[0], ic) ? "selected=\"selected\"" : "", i);
     }
 
   return;

@@ -97,28 +97,3 @@ ej_dump_ping_log (webs_t wp, int argc, char_t ** argv)
 
   return;
 }
-
-/* OBSOLETE
-void
-ej_dump_traceroute_log (int eid, webs_t wp, int argc, char_t ** argv)
-{
-  int count = 0;
-  FILE *fp;
-  char line[254];
-
-  if ((fp = fopen (TRACEROUTE_TMP, "r")) != NULL)
-    {				// show result
-      while (fgets (line, sizeof (line), fp) != NULL)
-	{
-	  line[strlen (line) - 1] = '\0';
-	  if (!strcmp (line, ""))
-	    continue;
-	  websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', line);
-	  count++;
-	}
-      fclose (fp);
-    }
-
-  return;
-}
-END OBSOLETE */
