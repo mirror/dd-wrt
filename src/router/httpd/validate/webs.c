@@ -2461,8 +2461,8 @@ save_prefix (webs_t wp, char *prefix)
 	{
 	  if (atoi (tw) < 1)
 	    tw = "1";
-	  if (atoi (tw) > 2346)
-	    tw = "2346";
+	  if (atoi (tw) > 2345)
+	    tw = "2345";
 	  nvram_nset (tw, "%s_rtsvalue", prefix);
 	}
     }
