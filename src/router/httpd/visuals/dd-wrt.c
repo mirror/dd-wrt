@@ -2931,8 +2931,8 @@ showrtssettings (webs_t wp, char *var)
   char ip[32];
   sprintf (ip, "%s_rtsvalue", var);
   websWrite (wp,
-	     "<input class=\"num\" maxlength=\"4\" size=\"4\" onblur=\"valid_range(this,1,2346,share.ip)\" name=\"%s_rtsvalue\" value=\"%s\" />",
-	     var, nvram_default_get (ip, "2346"));
+	     "<input class=\"num\" maxlength=\"4\" size=\"4\" onblur=\"valid_range(this,1,2345,share.ip)\" name=\"%s_rtsvalue\" value=\"%s\" />",
+	     var, nvram_default_get (ip, "2345"));
   websWrite (wp, "</div>\n");
   websWrite (wp, "</div>\n");
 
