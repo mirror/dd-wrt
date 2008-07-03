@@ -582,8 +582,8 @@ clean:
 	rm -f *.h~ services/*.h~ networking/*.h~ tools/*.h~ sysinit/*.h~
 
 install: all
-	install -d $(INSTALLDIR)/usr/lib	
-	install services.so $(INSTALLDIR)/usr/lib
+	install -d $(INSTALLDIR)/services/usr/lib	
+	install services.so $(INSTALLDIR)/services/usr/lib
 
 services.so: $(OBJS)
 #	$(AR) arc -o $@.a $^

@@ -94,17 +94,17 @@ endif
 	rm -f *.o *~ $(UTILS)
 
 install: all
-	install -d $(INSTALLDIR)/usr/sbin
-#	install -d $(INSTALLDIR)/usr/lib
+	install -d $(INSTALLDIR)/utils/usr/sbin
+#	install -d $(INSTALLDIR)/utils/usr/lib
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-	install $(UTILS) $(INSTALLDIR)/usr/sbin
+	install $(UTILS) $(INSTALLDIR)/utils/usr/sbin
 endif
 endif
-	#install $(LIBS) $(INSTALLDIR)/usr/lib
+	#install $(LIBS) $(INSTALLDIR)/utils/usr/lib
 #	$(STRIP) $(foreach file,$(UTILS),$(INSTALLDIR)/usr/sbin/$(file))
 ifeq ($(ARCH),armeb)
-	install -d $(INSTALLDIR)/sbin
+	install -d $(INSTALLDIR)/utils/sbin
 #	install jffs2root $(INSTALLDIR)/sbin	
 else
 
@@ -112,17 +112,17 @@ ifneq ($(CONFIG_MADWIFI),y)
 
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
-	install -D wl.bcm $(INSTALLDIR)/usr/sbin/wl
+	install -D wl.bcm $(INSTALLDIR)/utils/usr/sbin/wl
 else
 
 ifneq ($(CONFIG_BCM5354),y)
-	install -D wl $(INSTALLDIR)/usr/sbin/wl
+	install -D wl $(INSTALLDIR)/utils/usr/sbin/wl
 else
-	install -D wl $(INSTALLDIR)/usr/sbin/wl
+	install -D wl $(INSTALLDIR)/utils/usr/sbin/wl
 endif
 endif
 else
-	install -D wl.v23 $(INSTALLDIR)/usr/sbin/wl
+	install -D wl.v23 $(INSTALLDIR)/utils/usr/sbin/wl
 endif
 
 endif
