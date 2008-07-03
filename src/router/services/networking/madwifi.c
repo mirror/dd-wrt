@@ -973,7 +973,7 @@ setRTS (char *use)
   nvram_default_get (rts, "0");
 
   sprintf (rts, "%s_rtsvalue", use);
-  nvram_default_get (rts, "2345");
+  nvram_default_get (rts, "2346");
 
   if (nvram_nmatch ("1", "%s_rts", use))
     {
