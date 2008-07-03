@@ -174,9 +174,9 @@ svqos_set_ports (void)
   if (nvram_match ("portprio_support", "1"))
     {
       int loop = 1;
-      char nvram_var[32] =
-      {
-      0}, *level;
+      char nvram_var[32] = {
+	0
+      }, *level;
 
       svqos_reset_ports ();
 
@@ -185,14 +185,19 @@ svqos_set_ports (void)
 	  snprintf (nvram_var, 31, "svqos_port%dbw", loop);
 
 	  if (strcmp ("0", nvram_safe_get (nvram_var)))
-		sysprintf ("echo %s > /proc/switch/eth0/port/%d/bandwidth 2>&1 > /dev/null",nvram_safe_get (nvram_var), loop);
-	    else
-		sysprintf ("echo 0 > /proc/switch/eth0/port/%d/enable",loop);
+	    sysprintf
+	      ("echo %s > /proc/switch/eth0/port/%d/bandwidth 2>&1 > /dev/null",
+	       nvram_safe_get (nvram_var), loop);
+	  else
+	    sysprintf ("echo 0 > /proc/switch/eth0/port/%d/enable", loop);
 
-	  sysprintf ("echo 1 > /proc/switch/eth0/port/%d/prio-enable 2>&1 > /dev/null",
-		    loop);
-	  level = nvram_nget ("svqos_port%dprio",loop);
-	  sysprintf ("echo %d > /proc/switch/eth0/port/%d/prio 2>&1 > /dev/null",atoi (level) / 10 - 1, loop);
+	  sysprintf
+	    ("echo 1 > /proc/switch/eth0/port/%d/prio-enable 2>&1 > /dev/null",
+	     loop);
+	  level = nvram_nget ("svqos_port%dprio", loop);
+	  sysprintf
+	    ("echo %d > /proc/switch/eth0/port/%d/prio 2>&1 > /dev/null",
+	     atoi (level) / 10 - 1, loop);
 	}
     }
 #endif
@@ -279,22 +284,27 @@ svqos_iptables (void)
   system2 ("/usr/sbin/iptables -t mangle -N SVQOS_IN");
 
 
-  sysprintf ("/usr/sbin/iptables -t mangle -D PREROUTING -i %s -j SVQOS_IN",dev);
+  sysprintf ("/usr/sbin/iptables -t mangle -D PREROUTING -i %s -j SVQOS_IN",
+	     dev);
 
-  sysprintf ("/usr/sbin/iptables -t mangle -I PREROUTING -i %s -j SVQOS_IN",dev);
+  sysprintf ("/usr/sbin/iptables -t mangle -I PREROUTING -i %s -j SVQOS_IN",
+	     dev);
 
   // enable IMQ device for ingress policing
   eval ("insmod", "imq");
   eval ("insmod", "ipt_IMQ");
-  sysprintf("/usr/sbin/iptables -t mangle -D PREROUTING -i %s -j IMQ --todev 0",dev);
+  sysprintf
+    ("/usr/sbin/iptables -t mangle -D PREROUTING -i %s -j IMQ --todev 0",
+     dev);
 
-  sysprintf("/usr/sbin/iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
-	    dev);
-  
-  sysprintf("/usr/sbin/iptables -t mangle -D POSTROUTING -o %s -j SVQOS_OUT",
-	    dev);
-  sysprintf("/usr/sbin/iptables -t mangle -I POSTROUTING -o %s -j SVQOS_OUT",
-	    dev);
+  sysprintf
+    ("/usr/sbin/iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
+     dev);
+
+  sysprintf ("/usr/sbin/iptables -t mangle -D POSTROUTING -o %s -j SVQOS_OUT",
+	     dev);
+  sysprintf ("/usr/sbin/iptables -t mangle -I POSTROUTING -o %s -j SVQOS_OUT",
+	     dev);
   eval ("insmod", "ipt_mark");
   eval ("insmod", "xt_mark");
   eval ("insmod", "ipt_CONNMARK");
@@ -356,44 +366,56 @@ svqos_iptables (void)
 	{
 	  eval ("insmod", "ipt_mac");
 	  eval ("insmod", "xt_mac");
-	  sysprintf("/usr/sbin/iptables -t mangle -D PREROUTING -m mac --mac-source %s -j MARK --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -D PREROUTING -m mac --mac-source %s -j MARK --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/iptables -t mangle -A PREROUTING -m mac --mac-source %s -j MARK --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A PREROUTING -m mac --mac-source %s -j MARK --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/iptables -t mangle -D PREROUTING -j CONNMARK --save-mark");
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -D PREROUTING -j CONNMARK --save-mark");
 
-	  sysprintf("/usr/sbin/iptables -t mangle -A PREROUTING -j CONNMARK --save-mark");
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A PREROUTING -j CONNMARK --save-mark");
 	}
       else
 	{
 #ifndef HAVE_EBTABLES
-	  sysprintf("/usr/sbin/iptables -t nat -D PREROUTING -s %s -j mark --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t nat -D PREROUTING -s %s -j mark --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/iptables -t nat -A PREROUTING -s %s -j mark --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t nat -A PREROUTING -s %s -j mark --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/iptables -t nat -D POSTROUTING -d %s -j mark --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t nat -D POSTROUTING -d %s -j mark --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/iptables -t nat -A POSTROUTING -d %s -j mark --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t nat -A POSTROUTING -d %s -j mark --set-mark %s",
+	     data, level);
 #else
 
 
-	  sysprintf("/usr/sbin/ebtables -t nat -D PREROUTING -s %s -j mark --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/ebtables -t nat -D PREROUTING -s %s -j mark --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/ebtables -t nat -A PREROUTING -s %s -j mark --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/ebtables -t nat -A PREROUTING -s %s -j mark --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/ebtables -t nat -D POSTROUTING -d %s -j mark --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/ebtables -t nat -D POSTROUTING -d %s -j mark --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/ebtables -t nat -A POSTROUTING -d %s -j mark --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/ebtables -t nat -A POSTROUTING -d %s -j mark --set-mark %s",
+	     data, level);
 #endif
 	}
 
@@ -408,17 +430,21 @@ svqos_iptables (void)
 
       if (sscanf (qos_ipaddr, "%31s %31s |", data, level) < 2)
 	break;
-      sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_OUT -s %s -m mark --mark 0 -j MARK --set-mark %s",
-		data, level);
+      sysprintf
+	("/usr/sbin/iptables -t mangle -A SVQOS_OUT -s %s -m mark --mark 0 -j MARK --set-mark %s",
+	 data, level);
 
-      sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_OUT -d %s -m mark --mark 0 -j MARK --set-mark %s",
-		data, level);
+      sysprintf
+	("/usr/sbin/iptables -t mangle -A SVQOS_OUT -d %s -m mark --mark 0 -j MARK --set-mark %s",
+	 data, level);
 
-      sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_IN -s %s -m mark --mark 0 -j MARK --set-mark %s",
-		data, level);
+      sysprintf
+	("/usr/sbin/iptables -t mangle -A SVQOS_IN -s %s -m mark --mark 0 -j MARK --set-mark %s",
+	 data, level);
 
-      sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_IN -d %s -m mark --mark 0 -j MARK --set-mark %s",
-		data, level);
+      sysprintf
+	("/usr/sbin/iptables -t mangle -A SVQOS_IN -d %s -m mark --mark 0 -j MARK --set-mark %s",
+	 data, level);
 
 
     }
@@ -436,37 +462,45 @@ svqos_iptables (void)
       // udp is managed on egress only
       if (strstr (type, "udp") || strstr (type, "both"))
 	{
-	  sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p udp -m udp --dport %s -m mark --mark 0 -j MARK --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p udp -m udp --dport %s -m mark --mark 0 -j MARK --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p udp -m udp --sport %s -m mark --mark 0 -j MARK --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p udp -m udp --sport %s -m mark --mark 0 -j MARK --set-mark %s",
+	     data, level);
 	}
 
       // tcp and L7 is managed on both ingress and egress
       if (strstr (type, "tcp") || strstr (type, "both"))
 	{
-	  sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m tcp --dport %s -m mark --mark 0 -j MARK --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m tcp --dport %s -m mark --mark 0 -j MARK --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m tcp --sport %s -m mark --mark 0 -j MARK --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m tcp --sport %s -m mark --mark 0 -j MARK --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_IN -p tcp -m tcp --dport %s -m mark --mark 0 -j MARK --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A SVQOS_IN -p tcp -m tcp --dport %s -m mark --mark 0 -j MARK --set-mark %s",
+	     data, level);
 
-	  sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_IN -p tcp -m tcp --sport %s -m mark --mark 0 -j MARK --set-mark %s",
-		    data, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A SVQOS_IN -p tcp -m tcp --sport %s -m mark --mark 0 -j MARK --set-mark %s",
+	     data, level);
 	}
 
       if (strstr (type, "l7"))
 	{
 	  eval ("insmod", "ipt_layer7");
-	  sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_OUT -m layer7 --l7proto %s -m mark --mark 0 -j MARK --set-mark %s",
-		    name, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -m layer7 --l7proto %s -m mark --mark 0 -j MARK --set-mark %s",
+	     name, level);
 
-	  sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_IN -m layer7 --l7proto %s -m mark --mark 0 -j MARK --set-mark %s",
-		    name, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A SVQOS_IN -m layer7 --l7proto %s -m mark --mark 0 -j MARK --set-mark %s",
+	     name, level);
 	}
 
       if (strstr (type, "p2p"))
@@ -501,11 +535,13 @@ svqos_iptables (void)
 	    proto = "xdcc";
 
 	  eval ("insmod", "ipt_ipp2p");
-	  sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
-		    proto, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
+	     proto, level);
 
-	  sysprintf("/usr/sbin/iptables -t mangle -A SVQOS_IN -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
-		    proto, level);
+	  sysprintf
+	    ("/usr/sbin/iptables -t mangle -A SVQOS_IN -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
+	     proto, level);
 	}
 
 

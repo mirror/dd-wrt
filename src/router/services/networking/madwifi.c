@@ -185,7 +185,7 @@ static int
 setsysctrl (const char *dev, const char *control, u_long value)
 {
   char buffer[256];
-  sysprintf ("echo %li > /proc/sys/dev/%s/%s", value,dev, control);
+  sysprintf ("echo %li > /proc/sys/dev/%s/%s", value, dev, control);
 
   return 0;
 }
@@ -578,7 +578,7 @@ setupHostAP (char *prefix, int iswan)
       FILE *fp = fopen (fstr, "wb");
       fprintf (fp, "interface=%s\n", prefix);
       //sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
-      if (nvram_nmatch ("1","%s_bridged", prefix))
+      if (nvram_nmatch ("1", "%s_bridged", prefix))
 	fprintf (fp, "bridge=%s\n", getBridge (prefix));
 
       fprintf (fp, "driver=madwifi\n");
@@ -603,7 +603,8 @@ setupHostAP (char *prefix, int iswan)
       if (nvram_match (akm, "psk") ||
 	  nvram_match (akm, "psk2") || nvram_match (akm, "psk psk2"))
 	{
-	  fprintf (fp, "wpa_passphrase=%s\n", nvram_nget ("%s_wpa_psk", prefix));
+	  fprintf (fp, "wpa_passphrase=%s\n",
+		   nvram_nget ("%s_wpa_psk", prefix));
 	  fprintf (fp, "wpa_key_mgmt=WPA-PSK\n");
 	}
       else
@@ -619,8 +620,10 @@ setupHostAP (char *prefix, int iswan)
 	  fprintf (fp, "eap_server=0\n");
 	  fprintf (fp, "auth_algs=1\n");
 	  fprintf (fp, "radius_retry_primary_interval=60\n");
-	  fprintf (fp, "auth_server_addr=%s\n", nvram_nget ("%s_radius_ipaddr", prefix));
-	  fprintf (fp, "auth_server_port=%s\n", nvram_nget ("%s_radius_port", prefix));
+	  fprintf (fp, "auth_server_addr=%s\n",
+		   nvram_nget ("%s_radius_ipaddr", prefix));
+	  fprintf (fp, "auth_server_port=%s\n",
+		   nvram_nget ("%s_radius_port", prefix));
 	  fprintf (fp, "auth_server_shared_secret=%s\n",
 		   nvram_nget ("%s_radius_key", prefix));
 	}
@@ -633,7 +636,8 @@ setupHostAP (char *prefix, int iswan)
 	    fprintf (fp, "wpa_pairwise=TKIP\n");
 	  if (nvram_match (psk, "tkip+aes"))
 	    fprintf (fp, "wpa_pairwise=TKIP CCMP\n");
-	  fprintf (fp, "wpa_group_rekey=%s\n", nvram_nget ("%s_wpa_gtk_rekey", prefix));
+	  fprintf (fp, "wpa_group_rekey=%s\n",
+		   nvram_nget ("%s_wpa_gtk_rekey", prefix));
 	}
 //      fprintf (fp, "jumpstart_p1=1\n");
       fclose (fp);
@@ -660,7 +664,7 @@ setupHostAP (char *prefix, int iswan)
 	pragma = "";
       sleep (1);		//some delay is usefull
       sysprintf ("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, prefix,
-	       server, port, share);
+		 server, port, share);
     }
   else
     {
@@ -955,31 +959,36 @@ set_netmode (char *wif, char *dev, char *use)
   else
     eval ("iwpriv", use, "ff", "0");
 
+}
+
+static
+setRTS (char *use)
+{
   char rts[32];
 
-  sprintf(rts,"%s_protmode",use);
-  nvram_default_get(rts,"None");
+  sprintf (rts, "%s_protmode", use);
+  nvram_default_get (rts, "None");
 
-  sprintf(rts,"%s_rts",use);
-  nvram_default_get(rts,"0");
+  sprintf (rts, "%s_rts", use);
+  nvram_default_get (rts, "0");
 
-  sprintf(rts,"%s_rtsvalue",use);
-  nvram_default_get(rts,"2346");
+  sprintf (rts, "%s_rtsvalue", use);
+  nvram_default_get (rts, "2346");
 
-  if (nvram_nmatch("1","%s_rts",use))
+  if (nvram_nmatch ("1", "%s_rts", use))
     {
-    eval("iwconfig",use,"rts",nvram_nget("%s_rtsvalue",use));
+      eval ("iwconfig", use, "rts", nvram_nget ("%s_rtsvalue", use));
     }
-    else
+  else
     {
-    eval("iwconfig",use,"rts","off");
+      eval ("iwconfig", use, "rts", "off");
     }
-    
-  if (nvram_nmatch("None","%s_protmode",use))
+
+  if (nvram_nmatch ("None", "%s_protmode", use))
     eval ("iwpriv", use, "protmode", "0");	//avoid throughput problems (CTS disabled for now)
-  if (nvram_nmatch("CTS","%s_protmode",use))
+  if (nvram_nmatch ("CTS", "%s_protmode", use))
     eval ("iwpriv", use, "protmode", "1");
-  if (nvram_nmatch("RTS/CTS","%s_protmode",use))
+  if (nvram_nmatch ("RTS/CTS", "%s_protmode", use))
     eval ("iwpriv", use, "protmode", "2");
 }
 
@@ -1271,6 +1280,7 @@ configure_single (int count)
   if (useif)
     set_netmode (wif, dev, useif);
   set_netmode (wif, dev, dev);
+  setRTS (dev);
 
 
   char macaddr[32];
@@ -1288,18 +1298,20 @@ configure_single (int count)
     }
   else
     setsysctrl (wif, "dynack_count", 20);
-  
+
   char wl_intmit[32];
   char wl_noise_immunity[32];
   char wl_ofdm_weak_det[32];
   sprintf (wl_intmit, "%s_intmit", dev);
   sprintf (wl_noise_immunity, "%s_noise_immunity", dev);
   sprintf (wl_ofdm_weak_det, "%s_ofdm_weak_det", dev);
-  setsysctrl(wif,"intmit",atoi(nvram_default_get(wl_intmit,"-1")));
-  setsysctrl(wif,"noise_immunity",atoi(nvram_default_get(wl_noise_immunity,"-1")));
-  setsysctrl(wif,"ofdm_weak_det",atoi(nvram_default_get(wl_ofdm_weak_det,"1")));
-  
-  
+  setsysctrl (wif, "intmit", atoi (nvram_default_get (wl_intmit, "-1")));
+  setsysctrl (wif, "noise_immunity",
+	      atoi (nvram_default_get (wl_noise_immunity, "-1")));
+  setsysctrl (wif, "ofdm_weak_det",
+	      atoi (nvram_default_get (wl_ofdm_weak_det, "1")));
+
+
 #ifdef HAVE_NS5
   char *gpio = "1";
 #endif
@@ -1360,6 +1372,7 @@ configure_single (int count)
 #ifndef OLD_MADWIFI
       set_scanlist (dev, wif);
 #endif
+      setRTS (var);
 
       if (strcmp (m, "sta") && strcmp (m, "wdssta") && strcmp (m, "wet"))
 	{

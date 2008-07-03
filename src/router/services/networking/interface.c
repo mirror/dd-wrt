@@ -53,7 +53,7 @@ ifconfig (char *name, int flags, char *addr, char *netmask)
 //char *down="down";
 //if (flags == IFUP)
 //    down = "up";
-cprintf("ifconfig %s = %s/%s\n",name,addr,netmask);
+  cprintf ("ifconfig %s = %s/%s\n", name, addr, netmask);
   if (!ifexists (name))
     {
       cprintf ("interface %s does not exists, ignoring\n", name);
@@ -175,9 +175,9 @@ start_config_vlan (void)
       if (nvram_get (vlanb) == NULL || nvram_match (vlanb, ""))
 	continue;
       sysprintf ("echo %s > /proc/switch/%s/vlan/%d/ports",
-	       nvram_safe_get (vlanb), phy, i);
+		 nvram_safe_get (vlanb), phy, i);
       sysprintf ("echo %s > /proc/switch/%s/vlan/%d/ports",
-	       nvram_safe_get (vlanb), phy, i);
+		 nvram_safe_get (vlanb), phy, i);
     }
 
   /* set vlan i/f name to style "vlan<ID>" */
@@ -192,12 +192,12 @@ start_config_vlan (void)
     {
       char vlan_id[16];
       char *hwname, *hwaddr;
-      if (!(hwname = nvram_nget ("vlan%dhwname",i)))
+      if (!(hwname = nvram_nget ("vlan%dhwname", i)))
 	continue;
       if (!(hwaddr = nvram_nget ("%smacaddr", hwname)))
 	continue;
-      if (strlen(hwname)==0 || strlen(hwaddr)==0)
-        continue;
+      if (strlen (hwname) == 0 || strlen (hwaddr) == 0)
+	continue;
       ether_atoe (hwaddr, ea);
       for (j = 1; j <= MAX_DEV_IFINDEX; j++)
 	{
@@ -377,13 +377,11 @@ start_setup_vlans (void)
 	  }
 	  if (mask & 8 && use < 5)
 	    {
-	      sysprintf ("echo 0 > /proc/switch/eth0/port/%d/enable",
-		       use);
+	      sysprintf ("echo 0 > /proc/switch/eth0/port/%d/enable", use);
 	    }
 	  else
 	    {
-	      sysprintf ("echo 1 > /proc/switch/eth0/port/%d/enable",
-		       use);
+	      sysprintf ("echo 1 > /proc/switch/eth0/port/%d/enable", use);
 	    }
 	  snprintf (buff, 69, "/proc/switch/eth0/port/%d/media", use);
 	  if ((fp = fopen (buff, "r+")))
@@ -445,13 +443,13 @@ start_setup_vlans (void)
     }
   for (i = 0; i < 16; i++)
     {
-      sysprintf("echo " " > /proc/switch/eth0/vlan/%d/ports", i);
+      sysprintf ("echo " " > /proc/switch/eth0/vlan/%d/ports", i);
     }
   for (i = 0; i < 16; i++)
     {
       fprintf (stderr, "configure vlan ports to %s\n", portsettings[i]);
       sysprintf ("echo %s > /proc/switch/eth0/vlan/%d/ports",
-	       portsettings[i], i);
+		 portsettings[i], i);
     }
   return ret;
 #endif
