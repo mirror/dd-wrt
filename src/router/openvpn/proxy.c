@@ -28,8 +28,6 @@
 #include "config.h"
 #endif
 
-#ifdef ENABLE_HTTP_PROXY
-
 #include "syshead.h"
 
 #include "common.h"
@@ -41,7 +39,13 @@
 #include "base64.h"
 #include "ntlm.h"
 
+#ifdef WIN32
+#include "ieproxy.h"
+#endif
+
 #include "memdbg.h"
+
+#ifdef ENABLE_HTTP_PROXY
 
 /* cached proxy username/password */
 static struct user_pass static_proxy_user_pass;
@@ -217,18 +221,67 @@ username_password_as_base64 (const struct http_proxy_info *p,
   return (const char *)make_base64_string ((const uint8_t*)BSTR (&out), gc);
 }
 
+static void
+get_user_pass_http (struct http_proxy_info *p, const bool force)
+{
+  if (!static_proxy_user_pass.defined || force)
+    {
+      get_user_pass (&static_proxy_user_pass,
+		     p->options.auth_file,
+		     "HTTP Proxy",
+		     GET_USER_PASS_MANAGEMENT);
+      p->up = static_proxy_user_pass;
+    }
+}
+
 struct http_proxy_info *
 new_http_proxy (const struct http_proxy_options *o,
+		struct auto_proxy_info *auto_proxy_info,
 		struct gc_arena *gc)
 {
   struct http_proxy_info *p;
-  ALLOC_OBJ_CLEAR_GC (p, struct http_proxy_info, gc);
+  struct http_proxy_options opt;
 
-  if (!o->server)
+  if (auto_proxy_info)
+    {
+      if (o && o->server)
+	{
+	  /* if --http-proxy explicitly given, disable auto-proxy */
+	  auto_proxy_info = NULL;
+	}
+      else
+	{
+	  /* if no --http-proxy explicitly given and no auto settings, fail */
+	  if (!auto_proxy_info->http.server)
+	    return NULL;
+
+	  if (o)
+	    {
+	      opt = *o;
+	    }
+	  else
+	    {
+	      CLEAR (opt);
+	  
+	      /* These settings are only used for --auto-proxy */
+	      opt.timeout = 5;
+	      opt.http_version = "1.0";
+	    }
+
+	  opt.server = auto_proxy_info->http.server;
+	  opt.port = auto_proxy_info->http.port;
+	  opt.auth_retry = true;
+
+	  o = &opt;
+	}
+    }
+
+  if (!o || !o->server)
     msg (M_FATAL, "HTTP_PROXY: server not specified");
 
   ASSERT (legal_ipv4_port (o->port));
 
+  ALLOC_OBJ_CLEAR_GC (p, struct http_proxy_info, gc);
   p->options = *o;
 
   /* parse authentication method */
@@ -249,12 +302,7 @@ new_http_proxy (const struct http_proxy_options *o,
   /* only basic and NTLM authentication supported so far */
   if (p->auth_method == HTTP_AUTH_BASIC || p->auth_method == HTTP_AUTH_NTLM)
     {
-      get_user_pass (&static_proxy_user_pass,
-		     o->auth_file,
-		     false,
-		     "HTTP Proxy",
-		     GET_USER_PASS_MANAGEMENT);
-      p->up = static_proxy_user_pass;
+      get_user_pass_http (p, true);
     }
 
 #if !NTLM
@@ -266,7 +314,7 @@ new_http_proxy (const struct http_proxy_options *o,
   return p;
 }
 
-void
+bool
 establish_http_proxy_passthru (struct http_proxy_info *p,
 			       socket_descriptor_t sd, /* already open to proxy */
 			       const char *host,       /* openvpn server remote */
@@ -280,6 +328,12 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
   char get[80];
   int status;
   int nparms;
+  bool ret = false;
+
+  /* get user/pass if not previously given or if --auto-proxy is being used */
+  if (p->auth_method == HTTP_AUTH_BASIC
+      || p->auth_method == HTTP_AUTH_NTLM)
+    get_user_pass_http (p, false);
 
   /* format HTTP CONNECT message */
   openvpn_snprintf (buf, sizeof(buf), "CONNECT %s:%d HTTP/%s",
@@ -437,7 +491,21 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
 	  ASSERT (0); /* No NTLM support */
 #endif
 	}
-      else goto error;
+      else if (p->auth_method == HTTP_AUTH_NONE && p->options.auth_retry)
+	{
+	  /*
+	   * Proxy needs authentication, but we don't have a user/pass.
+	   * Now we will change p->auth_method and return true so that
+	   * our caller knows to call us again on a newly opened socket.
+	   * JYFIXME: This code needs to check proxy error output and set
+	   * JYFIXME: p->auth_method = HTTP_AUTH_NTLM if necessary.
+	   */
+	  p->auth_method = HTTP_AUTH_BASIC;
+	  ret = true;
+	  goto done;
+	}
+      else
+	goto error;
     }
 
 
@@ -445,7 +513,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
   if (nparms < 1 || status != 200)
     {
       msg (D_LINK_ERRORS, "HTTP proxy returned bad status");
-#if 0 
+#if 0
       /* DEBUGGING -- show a multi-line HTTP error response */
       while (true)
 	{
@@ -474,17 +542,221 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
     msg (M_INFO, "HTTP PROXY: lookahead: %s", format_hex (BPTR (lookahead), BLEN (lookahead), 0));
 #endif
 
+ done:
   gc_free (&gc);
-  return;
+  return ret;
 
  error:
   /* on error, should we exit or restart? */
   if (!*signal_received)
     *signal_received = (p->options.retry ? SIGUSR1 : SIGTERM); /* SOFT-SIGUSR1 -- HTTP proxy error */
   gc_free (&gc);
-  return;
+  return ret;
 }
 
 #else
 static void dummy(void) {}
 #endif /* ENABLE_HTTP_PROXY */
+
+#ifdef GENERAL_PROXY_SUPPORT
+
+#ifdef WIN32
+
+#if 0
+char *
+get_windows_internet_string (const DWORD dwOption, struct gc_arena *gc)
+{
+  DWORD size = 0;
+  char *ret = NULL;
+
+  /* Initially, get size of return buffer */
+  InternetQueryOption (NULL, dwOption, NULL, &size);
+  if (size)
+    {
+      /* Now get actual info */
+      ret = (INTERNET_PROXY_INFO *) gc_malloc (size, false, gc);
+      if (!InternetQueryOption (NULL, dwOption, (LPVOID) ret, &size))
+	ret = NULL;
+    }
+  return ret;
+}
+#endif
+
+static INTERNET_PROXY_INFO *
+get_windows_proxy_settings (struct gc_arena *gc)
+{
+  DWORD size = 0;
+  INTERNET_PROXY_INFO *ret = NULL;
+
+  /* Initially, get size of return buffer */
+  InternetQueryOption (NULL, INTERNET_OPTION_PROXY, NULL, &size);
+  if (size)
+    {
+      /* Now get actual info */
+      ret = (INTERNET_PROXY_INFO *) gc_malloc (size, false, gc);
+      if (!InternetQueryOption (NULL, INTERNET_OPTION_PROXY, (LPVOID) ret, &size))
+	ret = NULL;
+    }
+  return ret;
+}
+
+static const char *
+parse_windows_proxy_setting (const char *str, struct auto_proxy_info_entry *e, struct gc_arena *gc)
+{
+  char buf[128];
+  const char *ret = NULL;
+  struct buffer in;
+
+  CLEAR (*e);
+
+  buf_set_read (&in, (const uint8_t *)str, strlen (str));
+
+  if (strchr (str, '=') != NULL)
+    {
+      if (buf_parse (&in, '=', buf, sizeof (buf)))
+	ret = string_alloc (buf, gc);
+    }
+	
+  if (buf_parse (&in, ':', buf, sizeof (buf)))
+    e->server = string_alloc (buf, gc);
+
+  if (e->server && buf_parse (&in, '\0', buf, sizeof (buf)))
+    e->port = atoi (buf);
+
+  return ret;
+}
+
+static void
+parse_windows_proxy_setting_list (const char *str, const char *type, struct auto_proxy_info_entry *e, struct gc_arena *gc)
+{
+  struct gc_arena gc_local = gc_new ();
+  struct auto_proxy_info_entry el;
+
+  CLEAR (*e);
+  if (type)
+    {
+      char buf[128];
+      struct buffer in;
+
+      buf_set_read (&in, (const uint8_t *)str, strlen (str));
+      if (strchr (str, '=') != NULL)
+	{
+	  while (buf_parse (&in, ' ', buf, sizeof (buf)))
+	    {
+	      const char *t = parse_windows_proxy_setting (buf, &el, &gc_local);
+	      if (t && !strcmp (t, type))
+		goto found;
+	    }
+	}
+    }
+  else
+    {
+      if (!parse_windows_proxy_setting (str, &el, &gc_local))
+	goto found;
+    }
+  goto done;
+
+ found:
+  if (el.server && el.port > 0)
+    {
+      e->server = string_alloc (el.server, gc);
+      e->port = el.port;
+    }
+
+ done:
+  gc_free (&gc_local);
+}
+
+static const char *
+win_proxy_access_type (const DWORD dwAccessType)
+{
+  switch (dwAccessType)
+    {
+    case INTERNET_OPEN_TYPE_DIRECT:
+      return "INTERNET_OPEN_TYPE_DIRECT";
+    case INTERNET_OPEN_TYPE_PROXY:
+      return "INTERNET_OPEN_TYPE_PROXY";
+    default:
+      return "[UNKNOWN]";
+    }
+}
+
+void
+show_win_proxy_settings (const int msglevel)
+{
+  INTERNET_PROXY_INFO *info;
+  struct gc_arena gc = gc_new ();
+
+  info = get_windows_proxy_settings (&gc);
+  msg (msglevel, "PROXY INFO: %s %s",
+       win_proxy_access_type (info->dwAccessType),
+       info->lpszProxy ? info->lpszProxy : "[NULL]");
+
+  gc_free (&gc);
+}
+
+struct auto_proxy_info *
+get_proxy_settings (char **err, struct gc_arena *gc)
+{
+  struct gc_arena gc_local = gc_new ();
+  INTERNET_PROXY_INFO *info;
+  struct auto_proxy_info *pi;
+
+  ALLOC_OBJ_CLEAR_GC (pi, struct auto_proxy_info, gc);
+
+  if (err)
+    *err = NULL;
+
+  info = get_windows_proxy_settings (&gc_local);
+
+  if (!info)
+    {
+      if (err)
+	*err = "PROXY: failed to obtain windows proxy info";
+      goto done;
+    }
+
+  switch (info->dwAccessType)
+    {
+    case INTERNET_OPEN_TYPE_DIRECT:
+      break;
+    case INTERNET_OPEN_TYPE_PROXY:
+      if (!info->lpszProxy)
+	break;
+      parse_windows_proxy_setting_list (info->lpszProxy, NULL, &pi->http, gc);
+      if (!pi->http.server)
+	parse_windows_proxy_setting_list (info->lpszProxy, "http", &pi->http, gc);
+      parse_windows_proxy_setting_list (info->lpszProxy, "socks", &pi->socks, gc);
+      break;
+    default:
+      if (err)
+	*err = "PROXY: unknown proxy type";
+      break;
+    }
+
+ done:
+  gc_free (&gc_local);
+  return pi;
+}
+
+#else
+
+struct auto_proxy_info *
+get_proxy_settings (char **err, struct gc_arena *gc)
+{
+#if 1
+  if (err)
+    *err = string_alloc ("PROXY: automatic detection not supported on this OS", gc);
+  return NULL;
+#else /* test --auto-proxy feature */
+  struct auto_proxy_info *pi;
+  ALLOC_OBJ_CLEAR_GC (pi, struct auto_proxy_info, gc);
+  pi->http.server = "10.10.0.2";
+  pi->http.port = 4000;
+  return pi;
+#endif
+}
+
+#endif
+
+#endif /* GENERAL_PROXY_SUPPORT */

@@ -100,6 +100,14 @@ throw_signal (const int signum)
   siginfo_static.hard = true;
 }
 
+void
+throw_signal_soft (const int signum, const char *signal_text)
+{
+  siginfo_static.signal_received = signum;
+  siginfo_static.hard = false;
+  siginfo_static.signal_text = signal_text;
+}
+
 static void
 signal_reset (struct signal_info *si)
 {
@@ -167,6 +175,7 @@ signal_restart_status (const struct signal_info *si)
 	management_set_state (management,
 			      state,
 			      si->signal_text ? si->signal_text : signal_name (si->signal_received, true),
+			      (in_addr_t)0,
 			      (in_addr_t)0);
     }
 #endif
@@ -193,13 +202,23 @@ signal_handler_exit (const int signum)
 
 #endif
 
+/* set handlers for unix signals */
+
+#ifdef HAVE_SIGNAL_H
+#define SM_UNDEF     0
+#define SM_PRE_INIT  1
+#define SM_POST_INIT 2
+static int signal_mode; /* GLOBAL */
+#endif
+
 void
 pre_init_signal_catch (void)
 {
 #ifdef HAVE_SIGNAL_H
+  signal_mode = SM_PRE_INIT;
   signal (SIGINT, signal_handler);
   signal (SIGTERM, signal_handler);
-  signal (SIGHUP, signal_handler);
+  signal (SIGHUP, SIG_IGN);
   signal (SIGUSR1, SIG_IGN);
   signal (SIGUSR2, SIG_IGN);
   signal (SIGPIPE, SIG_IGN);
@@ -210,6 +229,7 @@ void
 post_init_signal_catch (void)
 {
 #ifdef HAVE_SIGNAL_H
+  signal_mode = SM_POST_INIT;
   signal (SIGINT, signal_handler);
   signal (SIGTERM, signal_handler);
   signal (SIGHUP, signal_handler);
@@ -217,6 +237,18 @@ post_init_signal_catch (void)
   signal (SIGUSR2, signal_handler);
   signal (SIGPIPE, SIG_IGN);
 #endif /* HAVE_SIGNAL_H */
+}
+
+/* called after daemonization to retain signal settings */
+void
+restore_signal_state (void)
+{
+#ifdef HAVE_SIGNAL_H
+  if (signal_mode == SM_PRE_INIT)
+    pre_init_signal_catch ();
+  else if (signal_mode == SM_POST_INIT)
+    post_init_signal_catch ();
+#endif
 }
 
 /*
@@ -239,8 +271,14 @@ print_status (const struct context *c, struct status_output *so)
   status_printf (so, "TCP/UDP write bytes," counter_format, c->c2.link_write_bytes);
   status_printf (so, "Auth read bytes," counter_format, c->c2.link_read_bytes_auth);
 #ifdef USE_LZO
-  if (c->options.comp_lzo)
+  if (lzo_defined (&c->c2.lzo_compwork))
     lzo_print_stats (&c->c2.lzo_compwork, so);
+#endif
+#ifdef PACKET_TRUNCATION_CHECK
+  status_printf (so, "TUN read truncations," counter_format, c->c2.n_trunc_tun_read);
+  status_printf (so, "TUN write truncations," counter_format, c->c2.n_trunc_tun_write);
+  status_printf (so, "Pre-encrypt truncations," counter_format, c->c2.n_trunc_pre_encrypt);
+  status_printf (so, "Post-decrypt truncations," counter_format, c->c2.n_trunc_post_decrypt);
 #endif
 #ifdef WIN32
   if (tuntap_defined (c->c1.tuntap))

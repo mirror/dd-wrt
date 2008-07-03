@@ -105,6 +105,10 @@
 #include <errno.h>
 #endif
 
+#ifdef HAVE_ERR_H
+#include <err.h>
+#endif
+
 #ifdef HAVE_SYSLOG_H
 #include <syslog.h>
 #endif
@@ -179,6 +183,10 @@
 
 #ifdef HAVE_LINUX_ERRQUEUE_H
 #include <linux/errqueue.h>
+#endif
+
+#ifdef HAVE_NETINET_TCP_H
+#include <netinet/tcp.h>
 #endif
 
 #endif /* TARGET_LINUX */
@@ -258,10 +266,15 @@
 #include <net/if_tun.h>
 #endif
 
+#ifdef HAVE_NETINET_TCP_H
+#include <netinet/tcp.h>
+#endif
+
 #endif /* TARGET_NETBSD */
 
 #ifdef WIN32
 #include <iphlpapi.h>
+#include <WinInet.h>
 #endif
 
 #ifdef HAVE_SYS_MMAN_H
@@ -303,6 +316,15 @@
 #define EXTENDED_SOCKET_ERROR_CAPABILITY 1
 #else
 #define EXTENDED_SOCKET_ERROR_CAPABILITY 0
+#endif
+
+/*
+ * Does this platform support linux-style IP_PKTINFO?
+ */
+#if defined(ENABLE_MULTIHOME) && defined(HAVE_IN_PKTINFO) && defined(IP_PKTINFO) && defined(HAVE_MSGHDR) && defined(HAVE_CMSGHDR) && defined(HAVE_IOVEC) && defined(CMSG_FIRSTHDR) && defined(CMSG_NXTHDR) && defined(HAVE_RECVMSG) && defined(HAVE_SENDMSG)
+#define ENABLE_IP_PKTINFO 1
+#else
+#define ENABLE_IP_PKTINFO 0
 #endif
 
 /*
@@ -387,6 +409,15 @@ socket_defined (const socket_descriptor_t sd)
 #endif
 
 /*
+ * HTTPS port sharing capability
+ */
+#if defined(ENABLE_PORT_SHARE) && P2MP_SERVER && defined(SCM_RIGHTS) && defined(HAVE_MSGHDR) && defined(HAVE_CMSGHDR) && defined(HAVE_IOVEC) && defined(CMSG_FIRSTHDR) && defined(CMSG_NXTHDR) && defined(HAVE_RECVMSG) && defined(HAVE_SENDMSG)
+#define PORT_SHARE 1
+#else
+#define PORT_SHARE 0
+#endif
+
+/*
  * Do we have a plug-in capability?
  */
 #if defined(USE_LIBDL) || defined(USE_LOAD_LIBRARY)
@@ -428,6 +459,20 @@ socket_defined (const socket_descriptor_t sd)
 #endif
 
 /*
+ * Should we include code common to all proxy methods?
+ */
+#if defined(ENABLE_HTTP_PROXY) || defined(ENABLE_SOCKS)
+#define GENERAL_PROXY_SUPPORT
+#endif
+
+/*
+ * Do we have PKCS11 capability?
+ */
+#if defined(USE_PKCS11) && defined(USE_CRYPTO) && defined(USE_SSL)
+#define ENABLE_PKCS11
+#endif
+
+/*
  * Is poll available on this platform?
  */
 #if defined(HAVE_POLL) && defined(HAVE_SYS_POLL_H)
@@ -449,6 +494,34 @@ socket_defined (const socket_descriptor_t sd)
 #if 0
 #undef EPOLL
 #define EPOLL 0
+#endif
+
+/*
+ * Should we allow ca/cert/key files to be
+ * included inline, in the configuration file?
+ */
+#define ENABLE_INLINE_FILES 1
+
+/*
+ * Reduce sensitivity to system clock instability
+ * and backtracks.
+ */
+#define TIME_BACKTRACK_PROTECTION 1
+
+/*
+ * Is non-blocking connect() supported?
+ */
+#if defined(HAVE_GETSOCKOPT) && defined(SOL_SOCKET) && defined(SO_ERROR) && defined(EINPROGRESS) && defined(ETIMEDOUT)
+#define CONNECT_NONBLOCK
+#endif
+
+/*
+ * Do we have the capability to support the AUTO_USERID feature? 
+ */
+#if defined(ENABLE_AUTO_USERID)
+#define AUTO_USERID 1
+#else
+#define AUTO_USERID 0
 #endif
 
 #endif

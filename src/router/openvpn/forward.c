@@ -36,6 +36,7 @@
 #include "gremlin.h"
 #include "mss.h"
 #include "event.h"
+#include "ps.h"
 
 #include "memdbg.h"
 
@@ -194,6 +195,7 @@ check_connection_established_dowork (struct context *c)
 		  management_set_state (management,
 					OPENVPN_STATE_GET_CONFIG,
 					NULL,
+					0,
 					0);
 		}
 #endif
@@ -252,7 +254,7 @@ send_control_channel_string (struct context *c, const char *str, int msglevel)
 static void
 check_add_routes_action (struct context *c, const bool errors)
 {
-  do_route (&c->options, c->c1.route_list, c->c1.tuntap, c->c1.plugins, c->c2.es);
+  do_route (&c->options, c->c1.route_list, c->c1.tuntap, c->plugins, c->c2.es);
   update_time ();
   event_timeout_clear (&c->c2.route_wakeup);
   event_timeout_clear (&c->c2.route_wakeup_expire);
@@ -273,8 +275,23 @@ check_add_routes_dowork (struct context *c)
   else
     {
       msg (D_ROUTE, "Route: Waiting for TUN/TAP interface to come up...");
+      if (c->c1.tuntap)
+	{
+	  if (!tun_standby (c->c1.tuntap))
+	    {
+	      c->sig->signal_received = SIGHUP;
+	      c->sig->signal_text = "ip-fail";
+	      c->persist.restart_sleep_seconds = 10;
+#ifdef WIN32
+	      show_routes (M_INFO|M_NOPREFIX);
+	      show_adapters (M_INFO|M_NOPREFIX);
+#endif
+	    }
+	}
+      update_time ();
       if (c->c2.route_wakeup.n != 1)
 	event_timeout_init (&c->c2.route_wakeup, 1, now);
+      event_timeout_reset (&c->c2.ping_rec_interval);
     }
 }
 
@@ -398,7 +415,7 @@ encrypt_sign (struct context *c, bool comp_frag)
     {
 #ifdef USE_LZO
       /* Compress the packet. */
-      if (c->options.comp_lzo)
+      if (lzo_defined (&c->c2.lzo_compwork))
 	lzo_compress (&c->c2.buf, b->lzo_compress_buf, &c->c2.lzo_compwork, &c->c2.frame);
 #endif
 #ifdef ENABLE_FRAGMENT
@@ -572,12 +589,12 @@ socks_postprocess_incoming_link (struct context *c)
 
 static inline void
 socks_preprocess_outgoing_link (struct context *c,
-				struct sockaddr_in **to_addr,
+				struct link_socket_actual **to_addr,
 				int *size_delta)
 {
   if (c->c2.link_socket->socks_proxy && c->c2.link_socket->info.proto == PROTO_UDPv4)
     {
-      *size_delta += socks_process_outgoing_udp (&c->c2.to_link, &c->c2.to_link_addr);
+      *size_delta += socks_process_outgoing_udp (&c->c2.to_link, c->c2.to_link_addr);
       *to_addr = &c->c2.link_socket->socks_relay;
     }
 }
@@ -616,22 +633,39 @@ read_incoming_link (struct context *c)
 
   c->c2.buf = c->c2.buffers->read_link_buf;
   ASSERT (buf_init (&c->c2.buf, FRAME_HEADROOM_ADJ (&c->c2.frame, FRAME_HEADROOM_MARKER_READ_LINK)));
-  status = link_socket_read (c->c2.link_socket, &c->c2.buf, MAX_RW_SIZE_LINK (&c->c2.frame), &c->c2.from);
+
+  status = link_socket_read (c->c2.link_socket,
+			     &c->c2.buf,
+			     MAX_RW_SIZE_LINK (&c->c2.frame),
+			     &c->c2.from);
 
   if (socket_connection_reset (c->c2.link_socket, status))
     {
-      /* received a disconnect from a connection-oriented protocol */
-      if (c->options.inetd)
+#if PORT_SHARE
+      if (port_share && socket_foreign_protocol_detected (c->c2.link_socket))
 	{
+	  const struct buffer *fbuf = socket_foreign_protocol_head (c->c2.link_socket);
+	  const int sd = socket_foreign_protocol_sd (c->c2.link_socket);
+	  port_share_redirect (port_share, fbuf, sd);
 	  c->sig->signal_received = SIGTERM;
-	  msg (D_STREAM_ERRORS, "Connection reset, inetd/xinetd exit [%d]", status);
+	  c->sig->signal_text = "port-share-redirect";
 	}
       else
-	{
-	  c->sig->signal_received = SIGUSR1; /* SOFT-SIGUSR1 -- TCP connection reset */
-	  msg (D_STREAM_ERRORS, "Connection reset, restarting [%d]", status);
-	}
-      c->sig->signal_text = "connection-reset";
+#endif
+      {
+	/* received a disconnect from a connection-oriented protocol */
+	if (c->options.inetd)
+	  {
+	    c->sig->signal_received = SIGTERM;
+	    msg (D_STREAM_ERRORS, "Connection reset, inetd/xinetd exit [%d]", status);
+	  }
+	else
+	  {
+	    c->sig->signal_received = SIGUSR1; /* SOFT-SIGUSR1 -- TCP connection reset */
+	    msg (D_STREAM_ERRORS, "Connection reset, restarting [%d]", status);
+	  }
+	c->sig->signal_text = "connection-reset";
+      }
       perf_pop ();
       return;
     }
@@ -666,6 +700,10 @@ process_incoming_link (struct context *c)
     {
       c->c2.link_read_bytes += c->c2.buf.len;
       c->c2.original_recv_size = c->c2.buf.len;
+#ifdef ENABLE_MANAGEMENT
+      if (management)
+	management_bytes_in (management, c->c2.buf.len);
+#endif
     }
   else
     c->c2.original_recv_size = 0;
@@ -687,7 +725,7 @@ process_incoming_link (struct context *c)
   msg (D_LINK_RW, "%s READ [%d] from %s: %s",
        proto2ascii (lsi->proto, true),
        BLEN (&c->c2.buf),
-       print_sockaddr (&c->c2.from, &gc),
+       print_link_socket_actual (&c->c2.from, &gc),
        PROTO_DUMP (&c->c2.buf, &gc));
 
   /*
@@ -764,9 +802,19 @@ process_incoming_link (struct context *c)
 
 #ifdef USE_LZO
       /* decompress the incoming packet */
-      if (c->options.comp_lzo)
+      if (lzo_defined (&c->c2.lzo_compwork))
 	lzo_decompress (&c->c2.buf, c->c2.buffers->lzo_decompress_buf, &c->c2.lzo_compwork, &c->c2.frame);
 #endif
+
+#ifdef PACKET_TRUNCATION_CHECK
+      /* if (c->c2.buf.len > 1) --c->c2.buf.len; */
+      ipv4_packet_size_verify (BPTR (&c->c2.buf),
+			       BLEN (&c->c2.buf),
+			       TUNNEL_TYPE (c->c1.tuntap),
+			       "POST_DECRYPT",
+			       &c->c2.n_trunc_post_decrypt);
+#endif
+
       /*
        * Set our "official" outgoing address, since
        * if buf.len is non-zero, we know the packet
@@ -793,7 +841,7 @@ process_incoming_link (struct context *c)
       /* Did we just receive an openvpn ping packet? */
       if (is_ping_msg (&c->c2.buf))
 	{
-	  dmsg (D_PACKET_CONTENT, "RECEIVED PING PACKET");
+	  dmsg (D_PING, "RECEIVED PING PACKET");
 	  c->c2.buf.len = 0; /* drop packet */
 	}
 
@@ -839,6 +887,14 @@ read_incoming_tun (struct context *c)
   ASSERT (buf_init (&c->c2.buf, FRAME_HEADROOM (&c->c2.frame)));
   ASSERT (buf_safe (&c->c2.buf, MAX_RW_SIZE_TUN (&c->c2.frame)));
   c->c2.buf.len = read_tun (c->c1.tuntap, BPTR (&c->c2.buf), MAX_RW_SIZE_TUN (&c->c2.frame));
+#endif
+
+#ifdef PACKET_TRUNCATION_CHECK
+  ipv4_packet_size_verify (BPTR (&c->c2.buf),
+			   BLEN (&c->c2.buf),
+			   TUNNEL_TYPE (c->c1.tuntap),
+			   "READ_TUN",
+			   &c->c2.n_trunc_tun_read);
 #endif
 
   /* Was TUN/TAP interface stopped? */
@@ -887,6 +943,16 @@ process_incoming_tun (struct context *c)
        * us to examine the IPv4 header.
        */
       process_ipv4_header (c, PIPV4_PASSTOS|PIPV4_MSSFIX, &c->c2.buf);
+
+#ifdef PACKET_TRUNCATION_CHECK
+      /* if (c->c2.buf.len > 1) --c->c2.buf.len; */
+      ipv4_packet_size_verify (BPTR (&c->c2.buf),
+			       BLEN (&c->c2.buf),
+			       TUNNEL_TYPE (c->c1.tuntap),
+			       "PRE_ENCRYPT",
+			       &c->c2.n_trunc_pre_encrypt);
+#endif
+
       encrypt_sign (c, true);
     }
   else
@@ -954,7 +1020,7 @@ process_outgoing_link (struct context *c)
        * packet to remote over the TCP/UDP port.
        */
       int size = 0;
-      ASSERT (addr_defined (&c->c2.to_link_addr));
+      ASSERT (link_socket_actual_defined (c->c2.to_link_addr));
 
 #ifdef ENABLE_DEBUG
       /* In gremlin-test mode, we may choose to drop this packet */
@@ -989,12 +1055,12 @@ process_outgoing_link (struct context *c)
 	  msg (D_LINK_RW, "%s WRITE [%d] to %s: %s",
 	       proto2ascii (c->c2.link_socket->info.proto, true),
 	       BLEN (&c->c2.to_link),
-	       print_sockaddr (&c->c2.to_link_addr, &gc),
+	       print_link_socket_actual (c->c2.to_link_addr, &gc),
 	       PROTO_DUMP (&c->c2.to_link, &gc));
 
 	  /* Packet send complexified by possible Socks5 usage */
 	  {
-	    struct sockaddr_in *to_addr = &c->c2.to_link_addr;
+	    struct link_socket_actual *to_addr = c->c2.to_link_addr;
 #ifdef ENABLE_SOCKS
 	    int size_delta = 0;
 #endif
@@ -1004,7 +1070,9 @@ process_outgoing_link (struct context *c)
 	    socks_preprocess_outgoing_link (c, &to_addr, &size_delta);
 #endif
 	    /* Send packet */
-	    size = link_socket_write (c->c2.link_socket, &c->c2.to_link, to_addr);
+	    size = link_socket_write (c->c2.link_socket,
+				      &c->c2.to_link,
+				      to_addr);
 
 #ifdef ENABLE_SOCKS
 	    /* Undo effect of prepend */
@@ -1016,6 +1084,10 @@ process_outgoing_link (struct context *c)
 	    {
 	      c->c2.max_send_size_local = max_int (size, c->c2.max_send_size_local);
 	      c->c2.link_write_bytes += size;
+#ifdef ENABLE_MANAGEMENT
+	      if (management)
+		management_bytes_out (management, size);
+#endif
 	    }
 	}
 
@@ -1028,16 +1100,19 @@ process_outgoing_link (struct context *c)
 	  if (size != BLEN (&c->c2.to_link))
 	    msg (D_LINK_ERRORS,
 		 "TCP/UDP packet was truncated/expanded on write to %s (tried=%d,actual=%d)",
-		 print_sockaddr (&c->c2.to_link_addr, &gc),
+		 print_link_socket_actual (c->c2.to_link_addr, &gc),
 		 BLEN (&c->c2.to_link),
 		 size);
 	}
+
+      /* indicate activity regarding --inactive parameter */
+      register_activity (c, size);
     }
   else
     {
       if (c->c2.to_link.len > 0)
 	msg (D_LINK_ERRORS, "TCP/UDP packet too large on write to %s (tried=%d,max=%d)",
-	     print_sockaddr (&c->c2.to_link_addr, &gc),
+	     print_link_socket_actual (c->c2.to_link_addr, &gc),
 	     c->c2.to_link.len,
 	     EXPANDED_SIZE (&c->c2.frame));
     }
@@ -1070,7 +1145,7 @@ process_outgoing_tun (struct context *c)
    * The --mssfix option requires
    * us to examine the IPv4 header.
    */
-  process_ipv4_header (c, PIPV4_MSSFIX, &c->c2.to_tun);
+  process_ipv4_header (c, PIPV4_MSSFIX|PIPV4_OUTGOING, &c->c2.to_tun);
 
   if (c->c2.to_tun.len <= MAX_RW_SIZE_TUN (&c->c2.frame))
     {
@@ -1084,6 +1159,14 @@ process_outgoing_tun (struct context *c)
 	fprintf (stderr, "w");
 #endif
       dmsg (D_TUN_RW, "TUN WRITE [%d]", BLEN (&c->c2.to_tun));
+
+#ifdef PACKET_TRUNCATION_CHECK
+      ipv4_packet_size_verify (BPTR (&c->c2.to_tun),
+			       BLEN (&c->c2.to_tun),
+			       TUNNEL_TYPE (c->c1.tuntap),
+			       "WRITE_TUN",
+			       &c->c2.n_trunc_tun_write);
+#endif
 
 #ifdef TUN_PASS_BUFFER
       size = write_tun_buffered (c->c1.tuntap, &c->c2.to_tun);
@@ -1105,6 +1188,9 @@ process_outgoing_tun (struct context *c)
 		 c->c1.tuntap->actual_name,
 		 BLEN (&c->c2.to_tun),
 		 size);
+
+	  /* indicate activity regarding --inactive parameter */
+	  register_activity (c, size);
 	}
     }
   else
@@ -1117,13 +1203,6 @@ process_outgoing_tun (struct context *c)
 	   c->c2.to_tun.len,
 	   MAX_RW_SIZE_TUN (&c->c2.frame));
     }
-
-  /*
-   * Putting the --inactive timeout reset here, ensures that we will timeout
-   * if the remote goes away, even if we are trying to send data to the
-   * remote and failing.
-   */
-  register_activity (c);
 
   buf_reset (&c->c2.to_tun);
 

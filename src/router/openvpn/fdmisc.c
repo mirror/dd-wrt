@@ -36,25 +36,43 @@
 #include "memdbg.h"
 
 /* Set a file descriptor to non-blocking */
-void
-set_nonblock (int fd)
+bool
+set_nonblock_action (int fd)
 {
 #ifdef WIN32
   u_long arg = 1;
   if (ioctlsocket (fd, FIONBIO, &arg))
-    msg (M_SOCKERR, "Set socket to non-blocking mode failed");
+    return false;
 #else
   if (fcntl (fd, F_SETFL, O_NONBLOCK) < 0)
-    msg (M_ERR, "Set file descriptor to non-blocking mode failed");
+    return false;
 #endif
+  return true;
+}
+
+/* Set a file descriptor to not be passed across execs */
+bool
+set_cloexec_action (int fd)
+{
+#ifndef WIN32
+  if (fcntl (fd, F_SETFD, FD_CLOEXEC) < 0)
+    return false;
+#endif
+  return true;
+}
+
+/* Set a file descriptor to non-blocking */
+void
+set_nonblock (int fd)
+{
+  if (!set_nonblock_action (fd))
+    msg (M_SOCKERR, "Set socket to non-blocking mode failed");
 }
 
 /* Set a file descriptor to not be passed across execs */
 void
 set_cloexec (int fd)
 {
-#ifndef WIN32
-  if (fcntl (fd, F_SETFD, FD_CLOEXEC) < 0)
+  if (!set_cloexec_action (fd))
     msg (M_ERR, "Set FD_CLOEXEC flag on file descriptor failed");
-#endif
 }

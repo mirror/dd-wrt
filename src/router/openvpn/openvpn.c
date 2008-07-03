@@ -122,6 +122,9 @@ main (int argc, char *argv[])
        */
       do
 	{
+	  /* enter pre-initialization mode with regard to signal handling */
+	  pre_init_signal_catch ();
+
 	  /* zero context struct but leave first_time member alone */
 	  context_clear_all_except_first_time (&c);
 
@@ -145,6 +148,13 @@ main (int argc, char *argv[])
 
 	  /* parse command line options, and read configuration file */
 	  parse_argv (&c.options, argc, argv, M_USAGE, OPT_P_DEFAULT, NULL, c.es);
+
+#ifdef ENABLE_PLUGIN
+	  /* plugins may contribute options configuration */
+	  init_verb_mute (&c, IVM_LEVEL_1);
+	  init_plugins (&c);
+	  open_plugins (&c, true, OPENVPN_PLUGIN_INIT_PRE_CONFIG_PARSE);
+#endif
 
 	  /* init verbosity and mute levels */
 	  init_verb_mute (&c, IVM_LEVEL_1);
@@ -185,7 +195,7 @@ main (int argc, char *argv[])
 	  if (!open_management (&c))
 	    break;
 #endif
-	  
+
 	  /* set certain options as environmental variables */
 	  setenv_settings (c.es, &c.options);
 

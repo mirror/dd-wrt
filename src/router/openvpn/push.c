@@ -99,7 +99,7 @@ incoming_push_message (struct context *c, const struct buffer *buffer)
   status = process_incoming_push_msg (c,
 				      buffer,
 				      c->options.pull,
-				      pull_permission_mask (),
+				      pull_permission_mask (c),
 				      &option_types_found);
 
   if (status == PUSH_MSG_ERROR)
@@ -176,6 +176,14 @@ push_option (struct options *o, const char *opt, int msglevel)
 	  strcat (o->push_list->options, opt);
 	}
     }
+}
+
+void
+push_options (struct options *o, char **p, int msglevel, struct gc_arena *gc)
+{
+  const char **argv = make_extended_arg_array (p, gc);
+  char *opt = print_argv (argv, gc, 0);
+  push_option (o, opt, msglevel);
 }
 
 void
@@ -273,12 +281,12 @@ remove_iroutes_from_push_route_list (struct options *o)
 	  if (parse_line (line, p, SIZE (p), "[PUSH_ROUTE_REMOVE]", 1, D_ROUTE_DEBUG, &gc))
 	    {
 	      /* is the push item a route directive? */
-	      if (p[0] && p[1] && p[2] && !strcmp (p[0], "route"))
+	      if (p[0] && !strcmp (p[0], "route") && !p[3])
 		{
 		  /* get route parameters */
 		  bool status1, status2;
 		  const in_addr_t network = getaddr (GETADDR_HOST_ORDER, p[1], 0, &status1, NULL);
-		  const in_addr_t netmask = getaddr (GETADDR_HOST_ORDER, p[2], 0, &status2, NULL);
+		  const in_addr_t netmask = getaddr (GETADDR_HOST_ORDER, p[2] ? p[2] : "255.255.255.255", 0, &status2, NULL);
 
 		  /* did route parameters parse correctly? */
 		  if (status1 && status2)
@@ -288,7 +296,7 @@ remove_iroutes_from_push_route_list (struct options *o)
 		      /* does route match an iroute? */
 		      for (ir = o->iroutes; ir != NULL; ir = ir->next)
 			{
-			  if (network == ir->network && netmask == netbits_to_netmask (ir->netbits))
+			  if (network == ir->network && netmask == netbits_to_netmask (ir->netbits >= 0 ? ir->netbits : 32))
 			    {
 			      copy = false;
 			      break;
