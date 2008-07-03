@@ -26,8 +26,8 @@ ej_show_routeif (webs_t wp, int argc, char_t ** argv)
   if (!page)
     page = "0";
   which = atoi (page);
-
-  foreach (word, nvram_safe_get ("static_route"), next)
+  char *sroute = nvram_safe_get ("static_route");
+  foreach (word, sroute, next)
   {
     if (which-- == 0)
       {
@@ -114,7 +114,8 @@ ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
 
   if (!strcmp (arg, "name"))
     {
-      foreach (word, nvram_safe_get ("static_route_name"), next)
+      char *sroutename = nvram_safe_get ("static_route_name");
+      foreach (word, sroutename, next)
       {
 	if (which-- == 0)
 	  {
@@ -126,8 +127,8 @@ ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
 
       }
     }
-
-  foreach (word, nvram_safe_get ("static_route"), next)
+  char *sroute = nvram_safe_get ("static_route");
+  foreach (word, sroute, next)
   {
     if (which-- == 0)
       {
@@ -185,7 +186,6 @@ ej_static_route_setting (webs_t wp, int argc, char_t ** argv)
     websWrite (wp, "0");
   else if (!strcmp (arg, "metric"))
     websWrite (wp, "0");
-
   return;
 }
 
@@ -198,7 +198,6 @@ ej_static_route_table (webs_t wp, int argc, char_t ** argv)
   int which;
   char *type;
   char word[256], *next;
-
 #ifdef FASTWEB
   ejArgs (argc, argv, "%s", &type);
 #else
@@ -210,16 +209,16 @@ ej_static_route_table (webs_t wp, int argc, char_t ** argv)
 #endif
 
   page = atoi (websGetVar (wp, "route_page", "0"));	// default to 0
-
   if (!strcmp (type, "select"))
     {
+      char *sroutename = nvram_safe_get ("static_route_name");
       for (i = 0; i < STATIC_ROUTE_PAGE; i++)
 	{
 	  char name[50] = " ";
 	  char new_name[80] = " ";
 	  char buf[80] = "";
 	  which = i;
-	  foreach (word, nvram_safe_get ("static_route_name"), next)
+	  foreach (word, sroutename, next)
 	  {
 	    if (which-- == 0)
 	      {
@@ -228,8 +227,6 @@ ej_static_route_table (webs_t wp, int argc, char_t ** argv)
 	      }
 	  }
 	  snprintf (buf, sizeof (buf), "(%s)", new_name);
-
-
 	  websWrite (wp, "\t\t<option value=\"%d\" %s> %d %s</option>\n", i,
 		     (i == page) ? "selected=\"selected\"" : "", i + 1, buf);
 	}
