@@ -513,6 +513,7 @@ clean:
 	rm -f modules/*.o
 	rm -f modules/*.*~
 	rm -f validate/*.*~
+	rm -f visuals/*.*~
 	rm -f *.a 
 	#Added by Daniel(2004-07-29)
 	#cp ../shared/ezc.o ./
