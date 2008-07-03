@@ -99,13 +99,13 @@ endif
 	
 	make  -C busybox clean
 	rm -f busybox/busybox
-	$(MAKE) -C busybox STRIPTOOL=$(STRIP)
+	$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox 
 
 busybox-install:
 	$(MAKE) -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox install
 
 busybox-clean: busybox-config
-	$(MAKE) -C busybox clean
+	$(MAKE) -C busybox clean PREFIX=$(INSTALLDIR)/busybox 
 
 busybox-distclean: busybox-config
 	$(MAKE) -C busybox clean
