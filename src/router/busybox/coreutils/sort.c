@@ -59,7 +59,8 @@ static struct sort_key {
 
 static char *get_key(char *str, struct sort_key *key, int flags)
 {
-	int start = 0, end = 0, len, i, j;
+	int start = 0, end = 0, len, j;
+	unsigned i;
 
 	/* Special case whole string, so we don't have to make a copy */
 	if (key->range[0] == 1 && !key->range[1] && !key->range[2] && !key->range[3]
@@ -150,9 +151,9 @@ static struct sort_key *add_key(void)
 #define GET_LINE(fp) \
 	((option_mask32 & FLAG_z) \
 	? bb_get_chunk_from_file(fp, NULL) \
-	: xmalloc_getline(fp))
+	: xmalloc_fgetline(fp))
 #else
-#define GET_LINE(fp) xmalloc_getline(fp)
+#define GET_LINE(fp) xmalloc_fgetline(fp)
 #endif
 
 /* Iterate through keys list and perform comparisons */
@@ -313,7 +314,7 @@ int sort_main(int argc ATTRIBUTE_UNUSED, char **argv)
 			0
 		};
 		struct sort_key *key = add_key();
-		char *str_k = lst_k->data;
+		char *str_k = llist_pop(&lst_k);
 		const char *temp2;
 
 		i = 0; /* i==0 before comma, 1 after (-k3,6) */
@@ -343,8 +344,6 @@ int sort_main(int argc ATTRIBUTE_UNUSED, char **argv)
 				str_k++;
 			}
 		}
-		/* leaking lst_k... */
-		lst_k = lst_k->link;
 	}
 #endif
 	/* global b strips leading and trailing spaces */

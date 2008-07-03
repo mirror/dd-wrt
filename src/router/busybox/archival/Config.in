@@ -78,6 +78,14 @@ config CPIO
 	  Unless you have a specific application which requires cpio, you should
 	  probably say N here.
 
+config FEATURE_CPIO_O
+	bool "Support for archive creation"
+	default n
+	depends on CPIO
+	help
+	  This implementation of cpio can create cpio archives in the "newc"
+	  format only.
+
 config DPKG
 	bool "dpkg"
 	default n
@@ -279,7 +287,7 @@ config UNLZMA
 	  should probably say N here.
 
 config FEATURE_LZMA_FAST
-	bool "Optimze unlzma for speed"
+	bool "Optimize unlzma for speed"
 	default n
 	depends on UNLZMA
 	help
@@ -298,13 +306,6 @@ config UNZIP
 
 comment "Common options for cpio and tar"
 	depends on CPIO || TAR
-
-config FEATURE_UNARCHIVE_TAPE
-	bool "Enable tape drive support"
-	default n
-	depends on CPIO || TAR
-	help
-	  I don't think this is needed anymore.
 
 comment "Common options for dpkg and dpkg_deb"
 	depends on DPKG || DPKG_DEB

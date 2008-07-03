@@ -36,6 +36,13 @@
 #include "inet_common.h"
 #include "libbb.h"
 
+
+#if ENABLE_FEATURE_HWIB
+/* #include <linux/if_infiniband.h> */
+#undef INFINIBAND_ALEN
+#define INFINIBAND_ALEN 20
+#endif
+
 #if ENABLE_FEATURE_IPV6
 # define HAVE_AFINET6 1
 #else
@@ -321,23 +328,23 @@ struct user_net_device_stats {
 
 struct interface {
 	struct interface *next, *prev;
-	char name[IFNAMSIZ];	/* interface name        */
-	short type;			/* if type               */
-	short flags;		/* various flags         */
-	int metric;			/* routing metric        */
-	int mtu;			/* MTU value             */
-	int tx_queue_len;	/* transmit queue length */
-	struct ifmap map;	/* hardware setup        */
-	struct sockaddr addr;	/* IP address            */
-	struct sockaddr dstaddr;	/* P-P IP address        */
-	struct sockaddr broadaddr;	/* IP broadcast address  */
-	struct sockaddr netmask;	/* IP network mask       */
+	char name[IFNAMSIZ];                    /* interface name        */
+	short type;                             /* if type               */
+	short flags;                            /* various flags         */
+	int metric;                             /* routing metric        */
+	int mtu;                                /* MTU value             */
+	int tx_queue_len;                       /* transmit queue length */
+	struct ifmap map;                       /* hardware setup        */
+	struct sockaddr addr;                   /* IP address            */
+	struct sockaddr dstaddr;                /* P-P IP address        */
+	struct sockaddr broadaddr;              /* IP broadcast address  */
+	struct sockaddr netmask;                /* IP network mask       */
 	int has_ip;
-	char hwaddr[32];	/* HW address            */
+	char hwaddr[32];                        /* HW address            */
 	int statistics_valid;
-	struct user_net_device_stats stats;	/* statistics            */
-	int keepalive;		/* keepalive value for SLIP */
-	int outfill;		/* outfill value for SLIP */
+	struct user_net_device_stats stats;     /* statistics            */
+	int keepalive;                          /* keepalive value for SLIP */
+	int outfill;                            /* outfill value for SLIP */
 };
 
 
@@ -388,7 +395,7 @@ static struct interface *add_interface(char *name)
 	}
 
 	new = xzalloc(sizeof(*new));
-	safe_strncpy(new->name, name, IFNAMSIZ);
+	strncpy(new->name, name, IFNAMSIZ);
 	nextp = ife ? &ife->next : &int_list;
 	new->prev = ife;
 	new->next = *nextp;
@@ -525,7 +532,7 @@ static int if_readconf(void)
 		if (ioctl_or_warn(skfd, SIOCGIFCONF, &ifc) < 0) {
 			goto out;
 		}
-		if (ifc.ifc_len == sizeof(struct ifreq) * numreqs) {
+		if (ifc.ifc_len == (int)(sizeof(struct ifreq) * numreqs)) {
 			/* assume it overflowed and try again */
 			numreqs += 10;
 			continue;
@@ -673,7 +680,6 @@ static int if_fetch(struct interface *ife)
 	return 0;
 }
 
-
 static int do_if_fetch(struct interface *ife)
 {
 	if (if_fetch(ife) < 0) {
@@ -805,6 +811,17 @@ static const struct hwtype sit_hwtype = {
 	.suppress_null_addr =	1
 };
 #endif
+#if ENABLE_FEATURE_HWIB
+static const struct hwtype ib_hwtype = {
+	.name =			"infiniband",
+	.title =		"InfiniBand",
+	.type =			ARPHRD_INFINIBAND,
+	.alen =			INFINIBAND_ALEN,
+	.print =		UNSPEC_print,
+	.input =		in_ib,
+};
+#endif
+
 
 static const struct hwtype *const hwtypes[] = {
 	&loop_hwtype,
@@ -813,6 +830,9 @@ static const struct hwtype *const hwtypes[] = {
 	&unspec_hwtype,
 #if ENABLE_FEATURE_IPV6
 	&sit_hwtype,
+#endif
+#if ENABLE_FEATURE_HWIB
+	&ib_hwtype,
 #endif
 	NULL
 };
@@ -862,7 +882,7 @@ const struct hwtype *get_hwntype(int type)
 /* return 1 if address is all zeros */
 static int hw_null_address(const struct hwtype *hw, void *ap)
 {
-	unsigned int i;
+	int i;
 	unsigned char *address = (unsigned char *) ap;
 
 	for (i = 0; i < hw->alen; i++)
@@ -1191,6 +1211,66 @@ static int if_print(char *ifname)
 		ife_print(ife);
 	return res;
 }
+
+#if ENABLE_FEATURE_HWIB
+/* Input an Infiniband address and convert to binary. */
+int in_ib(const char *bufp, struct sockaddr *sap)
+{
+	unsigned char *ptr;
+	char c;
+	const char *orig;
+	int i;
+	unsigned val;
+
+	sap->sa_family = ib_hwtype.type;
+	ptr = (unsigned char *) sap->sa_data;
+
+	i = 0;
+	orig = bufp;
+	while ((*bufp != '\0') && (i < INFINIBAND_ALEN)) {
+		val = 0;
+		c = *bufp++;
+		if (isdigit(c))
+			val = c - '0';
+		else if (c >= 'a' && c <= 'f')
+			val = c - 'a' + 10;
+		else if (c >= 'A' && c <= 'F')
+			val = c - 'A' + 10;
+		else {
+			errno = EINVAL;
+			return -1;
+		}
+		val <<= 4;
+		c = *bufp;
+		if (isdigit(c))
+			val |= c - '0';
+		else if (c >= 'a' && c <= 'f')
+			val |= c - 'a' + 10;
+		else if (c >= 'A' && c <= 'F')
+			val |= c - 'A' + 10;
+		else if (c == ':' || c == 0)
+			val >>= 4;
+		else {
+			errno = EINVAL;
+			return -1;
+		}
+		if (c != 0)
+			bufp++;
+		*ptr++ = (unsigned char) (val & 0377);
+		i++;
+
+		/* We might get a semicolon here - not required. */
+		if (*bufp == ':') {
+			bufp++;
+		}
+	}
+#ifdef DEBUG
+	fprintf(stderr, "in_ib(%s): %s\n", orig, UNSPEC_print(sap->sa_data));
+#endif
+	return 0;
+}
+#endif
+
 
 int display_interfaces(char *ifname)
 {

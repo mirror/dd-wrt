@@ -46,15 +46,20 @@ ifneq ($(strip $(DO_INSTALL_LIBS)),n)
 	done
 endif
 
+# Not very elegant: copies testsuite to objdir...
+# (cp -pPR is POSIX-compliant (cp -dpR or cp -a would not be))
+.PHONY: check
+.PHONY: test
 check test: busybox busybox.links
-	bindir=$(objtree) srcdir=$(srctree)/testsuite SED="$(SED)" \
-	$(SHELL) $(srctree)/testsuite/runtest $(if $(KBUILD_VERBOSE:0=),-v)
+	test -d $(objtree)/testsuite || cp -pPR $(srctree)/testsuite $(objtree)
+	bindir=$(objtree) srcdir=$(srctree)/testsuite \
+	$(SHELL) -c "cd $(objtree)/testsuite && $(srctree)/testsuite/runtest $(if $(KBUILD_VERBOSE:0=),-v)"
 
 .PHONY: release
 release: distclean
 	cd ..; \
 	rm -r -f busybox-$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION); \
-	cp -a busybox busybox-$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION) && { \
+	cp -pPR busybox busybox-$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION) && { \
 	find busybox-$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)/ -type d \
 		-name .svn \
 		-print \
@@ -94,7 +99,7 @@ stksizes: busybox_unstripped
 
 .PHONY: bigdata
 bigdata: busybox_unstripped
-	$(CROSS_COMPILE)nm --size-sort busybox_unstripped | grep -vi ' [tr] '
+	$(CROSS_COMPILE)nm --size-sort busybox_unstripped | grep -vi ' [trw] '
 
 # Documentation Targets
 .PHONY: doc

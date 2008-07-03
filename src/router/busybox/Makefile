@@ -1,6 +1,6 @@
 VERSION = 1
-PATCHLEVEL = 10
-SUBLEVEL = 3
+PATCHLEVEL = 11
+SUBLEVEL = 0
 EXTRAVERSION =
 NAME = Unnamed
 
@@ -142,17 +142,6 @@ VPATH		:= $(srctree)$(if $(KBUILD_EXTMOD),:$(KBUILD_EXTMOD))
 export srctree objtree VPATH TOPDIR
 
 
-# SUBARCH tells the usermode build what the underlying arch is.  That is set
-# first, and if a usermode build is happening, the "ARCH=um" on the command
-# line overrides the setting of ARCH below.  If a native build is happening,
-# then ARCH is assigned, getting whatever value it gets normally, and
-# SUBARCH is subsequently ignored.
-
-SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
-				  -e s/arm.*/arm/ -e s/sa110/arm/ \
-				  -e s/s390x/s390/ -e s/parisc64/parisc/ \
-				  -e s/ppc.*/powerpc/ -e s/mips.*/mips/ )
-
 # Cross compiling and selecting different set of gcc/bin-utils
 # ---------------------------------------------------------------------------
 #
@@ -172,8 +161,32 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Default value for CROSS_COMPILE is not to prefix executables
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 
-ARCH		?= $(SUBARCH)
-CROSS_COMPILE	?=
+CROSS_COMPILE ?=
+# bbox: we may have CONFIG_CROSS_COMPILER_PREFIX in .config,
+# and it has not been included yet... thus using an awkward syntax.
+ifeq ($(CROSS_COMPILE),)
+CROSS_COMPILE := $(shell grep ^CONFIG_CROSS_COMPILER_PREFIX .config 2>/dev/null)
+CROSS_COMPILE := $(subst CONFIG_CROSS_COMPILER_PREFIX=,,$(CROSS_COMPILE))
+CROSS_COMPILE := $(subst ",,$(CROSS_COMPILE))
+endif
+
+# SUBARCH tells the usermode build what the underlying arch is.  That is set
+# first, and if a usermode build is happening, the "ARCH=um" on the command
+# line overrides the setting of ARCH below.  If a native build is happening,
+# then ARCH is assigned, getting whatever value it gets normally, and
+# SUBARCH is subsequently ignored.
+
+ifneq ($(CROSS_COMPILE),)
+SUBARCH := $(shell echo $(CROSS_COMPILE) | cut -d- -f1)
+else
+SUBARCH := $(shell uname -m)
+endif
+SUBARCH := $(shell echo $(SUBARCH) | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
+					 -e s/arm.*/arm/ -e s/sa110/arm/ \
+					 -e s/s390x/s390/ -e s/parisc64/parisc/ \
+					 -e s/ppc.*/powerpc/ -e s/mips.*/mips/ )
+
+ARCH ?= $(SUBARCH)
 
 # Architecture as present in compile.h
 UTS_MACHINE := $(ARCH)
@@ -302,6 +315,8 @@ AFLAGS_KERNEL	=
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
 CFLAGS		:= $(CFLAGS)
+# Added only to final link stage of busybox binary
+CFLAGS_busybox	:= $(CFLAGS_busybox)
 CPPFLAGS	:= $(CPPFLAGS)
 AFLAGS		:= $(AFLAGS)
 LDFLAGS		:= $(LDFLAGS)
@@ -361,7 +376,8 @@ endif
 # of make so .config is not included in this case either (for *config).
 
 no-dot-config-targets := clean mrproper distclean \
-			 cscope TAGS tags help %docs check%
+			 cscope TAGS tags help %docs
+#bbox# check% is removed from above
 
 config-targets := 0
 mixed-targets  := 0
@@ -501,12 +517,6 @@ all: busybox
 #bbox# NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
 CHECKFLAGS += $(NOSTDINC_FLAGS)
 
-# warn about C99 declaration after statement
-CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
-
-# disable pointer signedness warnings in gcc 4.0
-CFLAGS += $(call cc-option,-Wno-pointer-sign,)
-
 # Default kernel image to build when no specific target is given.
 # KBUILD_IMAGE may be overruled on the commandline or
 # set in the environment
@@ -576,7 +586,7 @@ quiet_cmd_busybox__ ?= LINK    $@
       cmd_busybox__ ?= $(srctree)/scripts/trylink \
       "$@" \
       "$(CC)" \
-      "$(CFLAGS)" \
+      "$(CFLAGS) $(CFLAGS_busybox)" \
       "$(LDFLAGS) $(EXTRA_LDFLAGS)" \
       "$(core-y)" \
       "$(libs-y) $(LIBRARIES)" \
@@ -692,6 +702,8 @@ ifeq ($(SKIP_STRIP),y)
 else
 	$(Q)$(STRIP) -s --remove-section=.note --remove-section=.comment \
 		busybox_unstripped -o $@
+# strip is confused by PIE executable and does not set exec bits
+	$(Q)chmod a+x $@
 endif
 
 # The actual objects are generated when descending,
@@ -925,7 +937,7 @@ endif # CONFIG_MODULES
 
 # Directories & files removed with 'make clean'
 CLEAN_DIRS  += $(MODVERDIR)
-CLEAN_FILES +=	busybox* System.map .kernelrelease \
+CLEAN_FILES +=	busybox busybox_unstripped* System.map .kernelrelease \
                 .tmp_kallsyms* .tmp_version .tmp_busybox* .tmp_System.map
 
 # Directories & files removed with 'make mrproper'

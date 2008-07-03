@@ -137,7 +137,7 @@ const char *opt_complementary
         opt_complementary = "vv:b::b-c:c-b";
         f = getopt32(argv, "vb:c", &my_b, &verbose_level);
         if (f & 2)       // -c after -b unsets -b flag
-                while (my_b) { dosomething_with(my_b->data); my_b = my_b->link; }
+                while (my_b) dosomething_with(llist_pop(&my_b));
         if (my_b)        // but llist is stored if -b is specified
                 free_llist(my_b);
         if (verbose_level) printf("verbose level is %d\n", verbose_level);
@@ -285,6 +285,10 @@ const char *const bb_argv_dash[] = { "-", NULL };
 
 const char *opt_complementary;
 
+/* Many small applets don't want to suck in stdio.h only because
+ * they need to parse options by calling us */
+#define DONT_USE_PRINTF 1
+
 enum {
 	PARAM_STRING,
 	PARAM_LIST,
@@ -335,7 +339,8 @@ getopt32(char **argv, const char *applet_opts, ...)
 #define SHOW_USAGE_IF_ERROR     1
 #define ALL_ARGV_IS_OPTS        2
 #define FIRST_ARGV_IS_OPT       4
-#define FREE_FIRST_ARGV_IS_OPT  8
+#define FREE_FIRST_ARGV_IS_OPT  (8 * !DONT_USE_PRINTF)
+
 	int spec_flgs = 0;
 
 	argc = 0;
@@ -490,9 +495,15 @@ getopt32(char **argv, const char *applet_opts, ...)
 
 	if (spec_flgs & FIRST_ARGV_IS_OPT) {
 		if (argv[1] && argv[1][0] != '-' && argv[1][0] != '\0') {
+#if DONT_USE_PRINTF
+			char *pp = alloca(strlen(argv[1]) + 2);
+			*pp = '-';
+			strcpy(pp + 1, argv[1]);
+			argv[1] = pp;
+#else
 			argv[1] = xasprintf("-%s", argv[1]);
-			if (ENABLE_FEATURE_CLEAN_UP)
-				spec_flgs |= FREE_FIRST_ARGV_IS_OPT;
+			spec_flgs |= FREE_FIRST_ARGV_IS_OPT;
+#endif
 		}
 	}
 
@@ -549,6 +560,7 @@ getopt32(char **argv, const char *applet_opts, ...)
 				llist_add_to_end((llist_t **)(on_off->optarg), optarg);
 		} else if (on_off->param_type == PARAM_INT) {
 			if (optarg)
+//TODO: xatoi_u indirectly pulls in printf machinery
 				*(unsigned*)(on_off->optarg) = xatoi_u(optarg);
 		} else if (on_off->optarg) {
 			if (optarg)
@@ -573,10 +585,9 @@ getopt32(char **argv, const char *applet_opts, ...)
 		}
 	}
 
-#if (ENABLE_AR || ENABLE_TAR) && ENABLE_FEATURE_CLEAN_UP
 	if (spec_flgs & FREE_FIRST_ARGV_IS_OPT)
 		free(argv[1]);
-#endif
+
 	/* check depending requires for given options */
 	for (on_off = complementary; on_off->opt_char; on_off++) {
 		if (on_off->requires && (flags & on_off->switch_on) &&

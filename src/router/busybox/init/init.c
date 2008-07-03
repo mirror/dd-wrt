@@ -175,7 +175,7 @@ static void message(int where, const char *fmt, ...)
 
 	if (where & L_CONSOLE) {
 		/* Send console messages to console so people will see them. */
-		full_write(2, msg, l);
+		full_write(STDERR_FILENO, msg, l);
 	}
 }
 
@@ -231,8 +231,8 @@ static void console_init(void)
 			/* Give me _ANY_ open descriptor! */
 			fd = xopen("/", O_RDONLY); /* we don't believe this can fail */
 		}
-    		while ((unsigned)fd < 2)
-            		fd = dup(fd);
+		while ((unsigned)fd < 2)
+			fd = dup(fd);
 		if (fd > 2)
 			close(fd);
 	}
@@ -301,7 +301,7 @@ static void open_stdio_to_tty(const char* tty_name, int exit_on_failure)
 			message(L_LOG | L_CONSOLE, "Can't open %s: %s",
 				tty_name, strerror(errno));
 			if (exit_on_failure)
-				_exit(1);
+				_exit(EXIT_FAILURE);
 			if (ENABLE_DEBUG_INIT)
 				_exit(2);
 		/* NB: we don't reach this if we were called after vfork.
@@ -415,7 +415,7 @@ static pid_t run(const struct init_action *a)
 		pid = fork();
 		if (pid < 0) {
 			message(L_LOG | L_CONSOLE, "Can't fork");
-			_exit(1);
+			_exit(EXIT_FAILURE);
 		}
 
 		if (pid > 0) {
@@ -430,21 +430,21 @@ static pid_t run(const struct init_action *a)
 			waitfor(pid);
 			/* See if stealing the controlling tty back is necessary */
 			if (tcgetpgrp(0) != getpid())
-				_exit(0);
+				_exit(EXIT_SUCCESS);
 
 			/* Use a temporary process to steal the controlling tty. */
 			pid = fork();
 			if (pid < 0) {
 				message(L_LOG | L_CONSOLE, "Can't fork");
-				_exit(1);
+				_exit(EXIT_FAILURE);
 			}
 			if (pid == 0) {
 				setsid();
 				ioctl(0, TIOCSCTTY, 1);
-				_exit(0);
+				_exit(EXIT_SUCCESS);
 			}
 			waitfor(pid);
-			_exit(0);
+			_exit(EXIT_SUCCESS);
 		}
 
 		/* Child - fall though to actually execute things */
@@ -471,8 +471,8 @@ static pid_t run(const struct init_action *a)
 		messageD(L_LOG, "waiting for enter to start '%s'"
 					"(pid %d, tty '%s')\n",
 				a->command, getpid(), a->terminal);
-		full_write(1, press_enter, sizeof(press_enter) - 1);
-		while (safe_read(0, &c, 1) == 1 && c != '\n')
+		full_write(STDOUT_FILENO, press_enter, sizeof(press_enter) - 1);
+		while (safe_read(STDIN_FILENO, &c, 1) == 1 && c != '\n')
 			continue;
 	}
 
@@ -531,13 +531,13 @@ static void run_actions(int action_type)
 static void init_reboot(unsigned long magic)
 {
 	pid_t pid;
-	/* We have to fork here, since the kernel calls do_exit(0) in
+	/* We have to fork here, since the kernel calls do_exit(EXIT_SUCCESS) in
 	 * linux/kernel/sys.c, which can cause the machine to panic when
 	 * the init process is killed.... */
 	pid = vfork();
 	if (pid == 0) { /* child */
 		reboot(magic);
-		_exit(0);
+		_exit(EXIT_SUCCESS);
 	}
 	waitfor(pid);
 }
@@ -821,7 +821,7 @@ static void reload_signal(int sig ATTRIBUTE_UNUSED)
 					kill(pid, SIGKILL);
 				}
 			}
-			_exit(0);
+			_exit(EXIT_SUCCESS);
 		}
 #endif
 	}
@@ -936,7 +936,7 @@ int init_main(int argc ATTRIBUTE_UNUSED, char **argv)
 			/* SELinux in enforcing mode but load_policy failed */
 			message(L_CONSOLE, "Cannot load SELinux Policy. "
 				"Machine is in enforcing mode. Halting now.");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 	}
 #endif /* CONFIG_SELINUX */

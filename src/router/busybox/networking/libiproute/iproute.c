@@ -24,7 +24,7 @@
 
 typedef struct filter_t {
 	int tb;
-	int flushed;
+	smallint flushed;
 	char *flushb;
 	int flushp;
 	int flushe;
@@ -78,7 +78,7 @@ static unsigned get_hz(void)
 	return hz_internal;
 }
 
-static int print_route(struct sockaddr_nl *who ATTRIBUTE_UNUSED,
+static int print_route(const struct sockaddr_nl *who ATTRIBUTE_UNUSED,
 		struct nlmsghdr *n, void *arg)
 {
 	FILE *fp = (FILE*)arg;
@@ -189,7 +189,7 @@ static int print_route(struct sockaddr_nl *who ATTRIBUTE_UNUSED,
 		fn->nlmsg_flags = NLM_F_REQUEST;
 		fn->nlmsg_seq = ++filter.rth->seq;
 		filter.flushp = (((char*)fn) + n->nlmsg_len) - filter.flushb;
-		filter.flushed++;
+		filter.flushed = 1;
 		return 0;
 	}
 
@@ -576,8 +576,16 @@ static int iproute_list_or_flush(char **argv, int flush)
 				filter.tb = -1;
 			else if (parm == KW_all)
 				filter.tb = 0;
-			else if (parm != KW_main)
+			else if (parm != KW_main) {
+#if ENABLE_FEATURE_IP_RULE
+				uint32_t tid;
+				if (rtnl_rttable_a2n(&tid, *argv))
+					invarg(*argv, "table");
+				filter.tb = tid;
+#else
 				invarg(*argv, "table");
+#endif
+			}
 		} else if (arg == KW_cache) {
 			/* The command 'ip route flush cache' is used by OpenSWAN.
 			 * Assuming it's a synonym for 'ip route flush table cache' */

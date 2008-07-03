@@ -19,253 +19,236 @@
  *   - Reject file isnt saved
  */
 
-#include <getopt.h>
-
 #include "libbb.h"
 
-static unsigned int copy_lines(FILE *src_stream, FILE *dest_stream, const unsigned int lines_count)
+static unsigned copy_lines(FILE *src_stream, FILE *dst_stream, unsigned lines_count)
 {
-	unsigned int i = 0;
-
-	while (src_stream && (i < lines_count)) {
+	while (src_stream && lines_count) {
 		char *line;
 		line = xmalloc_fgets(src_stream);
 		if (line == NULL) {
 			break;
 		}
-		if (fputs(line, dest_stream) == EOF) {
+		if (fputs(line, dst_stream) == EOF) {
 			bb_perror_msg_and_die("error writing to new file");
 		}
 		free(line);
-
-		i++;
+		lines_count--;
 	}
-	return i;
+	return lines_count;
 }
 
 /* If patch_level is -1 it will remove all directory names
  * char *line must be greater than 4 chars
  * returns NULL if the file doesnt exist or error
  * returns malloc'ed filename
+ * NB: frees 1st argument!
  */
-
-static char *extract_filename(char *line, int patch_level)
+static char *extract_filename(char *line, int patch_level, const char *pat)
 {
-	char *temp, *filename_start_ptr = line + 4;
-	int i;
+	char *temp = NULL, *filename_start_ptr = line + 4;
 
-	/* Terminate string at end of source filename */
-	temp = strchrnul(filename_start_ptr, '\t');
-	*temp = '\0';
+	if (strncmp(line, pat, 4) == 0) {
+		/* Terminate string at end of source filename */
+		line[strcspn(line,"\t\n\r")] = '\0';
 
-	/* Skip over (patch_level) number of leading directories */
-	if (patch_level == -1)
-		patch_level = INT_MAX;
-	for (i = 0; i < patch_level; i++) {
-		temp = strchr(filename_start_ptr, '/');
-		if (!temp)
-			break;
-		filename_start_ptr = temp + 1;
+		/* Skip over (patch_level) number of leading directories */
+		while (patch_level--) {
+			temp = strchr(filename_start_ptr, '/');
+			if (!temp)
+				break;
+			filename_start_ptr = temp + 1;
+		}
+		temp = xstrdup(filename_start_ptr);
 	}
-
-	return xstrdup(filename_start_ptr);
+	free(line);
+	return temp;
 }
 
 int patch_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int patch_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
-	int patch_level = -1;
-	char *patch_line;
-	int ret;
-	FILE *patch_file = NULL;
 	struct stat saved_stat;
-	
+	char *patch_line;
+	FILE *patch_file;
+	int patch_level;
+	int ret = 0;
+	char plus = '+';
+
+	xfunc_error_retval = 2;
 	{
-		char *p, *i;
-		ret = getopt32(argv, "p:i:", &p, &i);
-		if (ret & 1)
-			patch_level = xatol_range(p, -1, USHRT_MAX);
-		if (ret & 2) {
-			patch_file = xfopen(i, "r");
-		} else {
-			patch_file = stdin;
-		}
-		ret = 0;
+		const char *p = "-1";
+		const char *i = "-"; /* compat */
+		if (getopt32(argv, "p:i:R", &p, &i) & 4)
+			plus = '-';
+		patch_level = xatoi(p); /* can be negative! */
+		patch_file = xfopen_stdin(i);
 	}
 
-	patch_line = xmalloc_getline(patch_file);
+	patch_line = xmalloc_fgetline(patch_file);
 	while (patch_line) {
 		FILE *src_stream;
 		FILE *dst_stream;
-		char *original_filename;
+		//char *old_filename;
 		char *new_filename;
 		char *backup_filename;
-		unsigned int src_cur_line = 1;
-		unsigned int dest_cur_line = 0;
-		unsigned int dest_beg_line;
-		unsigned int bad_hunk_count = 0;
-		unsigned int hunk_count = 0;
-		char copy_trailing_lines_flag = 0;
+		unsigned src_cur_line = 1;
+		unsigned dst_cur_line = 0;
+		unsigned dst_beg_line;
+		unsigned bad_hunk_count = 0;
+		unsigned hunk_count = 0;
+		smallint copy_trailing_lines_flag = 0;
 
 		/* Skip everything upto the "---" marker
 		 * No need to parse the lines "Only in <dir>", and "diff <args>"
 		 */
-		while (patch_line && strncmp(patch_line, "--- ", 4) != 0) {
-			free(patch_line);
-			patch_line = xmalloc_getline(patch_file);
-		}
-		/* FIXME: patch_line NULL check?? */
+		do {
+			/* Extract the filename used before the patch was generated */
+			new_filename = extract_filename(patch_line, patch_level, "--- ");
+			// was old_filename above
+			patch_line = xmalloc_fgetline(patch_file);
+			if (!patch_line) goto quit;
+		} while (!new_filename);
+		free(new_filename); // "source" filename is irrelevant
 
-		/* Extract the filename used before the patch was generated */
-		original_filename = extract_filename(patch_line, patch_level);
-		free(patch_line);
-
-		patch_line = xmalloc_getline(patch_file);
-		/* FIXME: NULL check?? */
-		if (strncmp(patch_line, "+++ ", 4) != 0) {
-			ret = 2;
-			bb_error_msg("invalid patch");
-			continue;
+		new_filename = extract_filename(patch_line, patch_level, "+++ ");
+		if (!new_filename) {
+			bb_error_msg_and_die("invalid patch");
 		}
-		new_filename = extract_filename(patch_line, patch_level);
-		free(patch_line);
-		
-		/* Get access rights from the file to be patched, -1 file does not exist */
-		if (stat(new_filename, &saved_stat)) {
-			char *line_ptr;
-			/* Create leading directories */
-			line_ptr = strrchr(new_filename, '/');
-			if (line_ptr) {
-				*line_ptr = '\0';
+
+		/* Get access rights from the file to be patched */
+		if (stat(new_filename, &saved_stat) != 0) {
+			char *slash = strrchr(new_filename, '/');
+			if (slash) {
+				/* Create leading directories */
+				*slash = '\0';
 				bb_make_directory(new_filename, -1, FILEUTILS_RECUR);
-				*line_ptr = '/';
+				*slash = '/';
 			}
-			dst_stream = xfopen(new_filename, "w+");
 			backup_filename = NULL;
-		} else {
-			backup_filename = xmalloc(strlen(new_filename) + 6);
-			strcpy(backup_filename, new_filename);
-			strcat(backup_filename, ".orig");
-			xrename(new_filename, backup_filename);
-			dst_stream = xfopen(new_filename, "w");
-			fchmod(fileno(dst_stream), saved_stat.st_mode);
-		}
-
-		if ((backup_filename == NULL) || stat(original_filename, &saved_stat)) {
 			src_stream = NULL;
+			saved_stat.st_mode = 0644;
 		} else {
-			if (strcmp(original_filename, new_filename) == 0) {
-				src_stream = xfopen(backup_filename, "r");
-			} else {
-				src_stream = xfopen(original_filename, "r");
-			}
+			backup_filename = xasprintf("%s.orig", new_filename);
+			xrename(new_filename, backup_filename);
+			src_stream = xfopen(backup_filename, "r");
 		}
+		dst_stream = xfopen(new_filename, "w");
+		fchmod(fileno(dst_stream), saved_stat.st_mode);
 
 		printf("patching file %s\n", new_filename);
 
-		/* Handle each hunk */
+		/* Handle all hunks for this file */
 		patch_line = xmalloc_fgets(patch_file);
 		while (patch_line) {
-			unsigned int count;
-			unsigned int src_beg_line;
-			unsigned int unused;
-			unsigned int hunk_offset_start = 0;
-			int hunk_error = 0;
+			unsigned count;
+			unsigned src_beg_line;
+			unsigned hunk_offset_start;
+			unsigned src_last_line = 1;
+			unsigned dst_last_line = 1;
 
-			/* This bit should be improved */
-			if ((sscanf(patch_line, "@@ -%d,%d +%d,%d @@", &src_beg_line, &unused, &dest_beg_line, &unused) != 4) &&
-				(sscanf(patch_line, "@@ -%d,%d +%d @@", &src_beg_line, &unused, &dest_beg_line) != 3) &&
-				(sscanf(patch_line, "@@ -%d +%d,%d @@", &src_beg_line, &dest_beg_line, &unused) != 3)) {
+			if ((sscanf(patch_line, "@@ -%d,%d +%d,%d", &src_beg_line, &src_last_line, &dst_beg_line, &dst_last_line) < 3)
+			 && (sscanf(patch_line, "@@ -%d +%d,%d", &src_beg_line, &dst_beg_line, &dst_last_line) < 2)
+			) {
 				/* No more hunks for this file */
 				break;
 			}
-			free(patch_line);
+			if (plus != '+') {
+				/* reverse patch */
+				unsigned tmp = src_last_line;
+				src_last_line = dst_last_line;
+				dst_last_line = tmp;
+				tmp = src_beg_line;
+				src_beg_line = dst_beg_line;
+				dst_beg_line = tmp;
+			}
 			hunk_count++;
 
-			if (src_beg_line && dest_beg_line) {
+			if (src_beg_line && dst_beg_line) {
 				/* Copy unmodified lines upto start of hunk */
-				/* src_beg_line will be 0 if its a new file */
+				/* src_beg_line will be 0 if it's a new file */
 				count = src_beg_line - src_cur_line;
-				if (copy_lines(src_stream, dst_stream, count) != count) {
+				if (copy_lines(src_stream, dst_stream, count)) {
 					bb_error_msg_and_die("bad src file");
 				}
 				src_cur_line += count;
-				dest_cur_line += count;
+				dst_cur_line += count;
 				copy_trailing_lines_flag = 1;
 			}
-			hunk_offset_start = src_cur_line;
+			src_last_line += hunk_offset_start = src_cur_line;
+			dst_last_line += dst_cur_line;
 
-			while ((patch_line = xmalloc_fgets(patch_file)) != NULL) {
-				if ((*patch_line == '-') || (*patch_line == ' ')) {
+			while (1) {
+				free(patch_line);
+				patch_line = xmalloc_fgets(patch_file);
+				if (patch_line == NULL)
+					break; /* EOF */
+				if ((*patch_line != '-') && (*patch_line != '+')
+				 && (*patch_line != ' ')
+				) {
+					break; /* End of hunk */
+				}
+				if (*patch_line != plus) { /* '-' or ' ' */
 					char *src_line = NULL;
+					if (src_cur_line == src_last_line)
+						break;
 					if (src_stream) {
 						src_line = xmalloc_fgets(src_stream);
-						if (!src_line) {
-							hunk_error++;
-							break;
-						} else {
+						if (src_line) {
+							int diff = strcmp(src_line, patch_line + 1);
 							src_cur_line++;
+							free(src_line);
+							if (diff)
+								src_line = NULL;
 						}
-						if (strcmp(src_line, patch_line + 1) != 0) {
-							bb_error_msg("hunk #%d FAILED at %d", hunk_count, hunk_offset_start);
-							hunk_error++;
-							free(patch_line);
-							/* Probably need to find next hunk, etc... */
-							/* but for now we just bail out */
-							patch_line = NULL;
-							break;
-						}
-						free(src_line);
 					}
-					if (*patch_line == ' ') {
-						fputs(patch_line + 1, dst_stream);
-						dest_cur_line++;
+					if (!src_line) {
+						bb_error_msg("hunk #%u FAILED at %u", hunk_count, hunk_offset_start);
+						bad_hunk_count++;
+						break;
 					}
-				} else if (*patch_line == '+') {
-					fputs(patch_line + 1, dst_stream);
-					dest_cur_line++;
-				} else {
-					break;
+					if (*patch_line != ' ') { /* '-' */
+						continue;
+					}
 				}
-				free(patch_line);
-			}
-			if (hunk_error) {
-				bad_hunk_count++;
-			}
-		}
+				if (dst_cur_line == dst_last_line)
+					break;
+				fputs(patch_line + 1, dst_stream);
+				dst_cur_line++;
+			} /* end of while loop handling one hunk */
+		} /* end of while loop handling one file */
 
 		/* Cleanup last patched file */
 		if (copy_trailing_lines_flag) {
-			copy_lines(src_stream, dst_stream, -1);
+			copy_lines(src_stream, dst_stream, (unsigned)(-1));
 		}
 		if (src_stream) {
 			fclose(src_stream);
 		}
-		if (dst_stream) {
-			fclose(dst_stream);
-		}
+		fclose(dst_stream);
 		if (bad_hunk_count) {
-			if (!ret) {
-				ret = 1;
-			}
-			bb_error_msg("%d out of %d hunk FAILED", bad_hunk_count, hunk_count);
+			ret = 1;
+			bb_error_msg("%u out of %u hunk FAILED", bad_hunk_count, hunk_count);
 		} else {
 			/* It worked, we can remove the backup */
 			if (backup_filename) {
 				unlink(backup_filename);
 			}
-			if ((dest_cur_line == 0) || (dest_beg_line == 0)) {
+			if ((dst_cur_line == 0) || (dst_beg_line == 0)) {
 				/* The new patched file is empty, remove it */
 				xunlink(new_filename);
-				if (strcmp(new_filename, original_filename) != 0)
-					xunlink(original_filename);
+				// /* old_filename and new_filename may be the same file */
+				// unlink(old_filename);
 			}
 		}
-	}
-
+		free(backup_filename);
+		//free(old_filename);
+		free(new_filename);
+	} /* end of "while there are patch lines" */
+ quit:
 	/* 0 = SUCCESS
 	 * 1 = Some hunks failed
-	 * 2 = More serious problems
+	 * 2 = More serious problems (exited earlier)
 	 */
 	return ret;
 }

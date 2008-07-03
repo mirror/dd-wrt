@@ -19,7 +19,6 @@
 
 #include <sys/utsname.h>
 #include <fnmatch.h>
-#include <getopt.h>
 
 #include "libbb.h"
 
@@ -477,7 +476,8 @@ static const struct dhcp_client_t ext_dhcp_clients[] = {
 		"pump -i %iface% -k",
 	},
 	{ "udhcpc",
-		"udhcpc -R -n -p /var/run/udhcpc.%iface%.pid -i %iface%[[ -H %hostname%]][[ -c %clientid%]][[ -s %script%]]",
+		"udhcpc -R -n -p /var/run/udhcpc.%iface%.pid -i %iface%[[ -H %hostname%]][[ -c %clientid%]]"
+				"[[ -s %script%]][[ %udhcpc_opts%]]",
 		"kill `cat /var/run/udhcpc.%iface%.pid` 2>/dev/null",
 	},
 };
@@ -486,7 +486,7 @@ static const struct dhcp_client_t ext_dhcp_clients[] = {
 #if ENABLE_FEATURE_IFUPDOWN_EXTERNAL_DHCP
 static int dhcp_up(struct interface_defn_t *ifd, execfn *exec)
 {
-	int i;
+	unsigned i;
 #if ENABLE_FEATURE_IFUPDOWN_IP
 	/* ip doesn't up iface when it configures it (unlike ifconfig) */
 	if (!execute("ip link set %iface% up", ifd, exec))
@@ -508,7 +508,7 @@ static int dhcp_up(struct interface_defn_t *ifd, execfn *exec)
 		return 0;
 #endif
 	return execute("udhcpc -R -n -p /var/run/udhcpc.%iface%.pid "
-			"-i %iface%[[ -H %hostname%]][[ -c %clientid%]][[ -s %script%]]",
+			"-i %iface%[[ -H %hostname%]][[ -c %clientid%]][[ -s %script%]][[ %udhcpc_opts%]]",
 			ifd, exec);
 }
 #else
@@ -522,7 +522,7 @@ static int dhcp_up(struct interface_defn_t *ifd ATTRIBUTE_UNUSED,
 #if ENABLE_FEATURE_IFUPDOWN_EXTERNAL_DHCP
 static int dhcp_down(struct interface_defn_t *ifd, execfn *exec)
 {
-	int i;
+	unsigned i;
 	for (i = 0; i < ARRAY_SIZE(ext_dhcp_clients); i++) {
 		if (exists_execable(ext_dhcp_clients[i].name))
 			return execute(ext_dhcp_clients[i].stopcmd, ifd, exec);
@@ -694,13 +694,13 @@ static struct interfaces_file_t *read_interfaces(const char *filename)
 	defn = xzalloc(sizeof(*defn));
 	f = xfopen(filename, "r");
 
-	while ((buf = xmalloc_getline(f)) != NULL) {
+	while ((buf = xmalloc_fgetline(f)) != NULL) {
 #if ENABLE_DESKTOP
 		/* Trailing "\" concatenates lines */
 		char *p;
 		while ((p = last_char_is(buf, '\\')) != NULL) {
 			*p = '\0';
-			rest_of_line = xmalloc_getline(f);
+			rest_of_line = xmalloc_fgetline(f);
 			if (!rest_of_line)
 				break;
 			p = xasprintf("%s%s", buf, rest_of_line);
@@ -1052,7 +1052,7 @@ static char *run_mapping(char *physical, struct mapping_defn_t *map)
 		/* If the mapping script exited successfully, try to
 		 * grab a line of output and use that as the name of the
 		 * logical interface. */
-		char *new_logical = xmalloc_getline(out);
+		char *new_logical = xmalloc_fgetline(out);
 
 		if (new_logical) {
 			/* If we are able to read a line of output from the script,
@@ -1154,7 +1154,7 @@ int ifupdown_main(int argc, char **argv)
 		char *liface;
 		char *pch;
 		bool okay = 0;
-		unsigned cmds_ret;
+		int cmds_ret;
 
 		iface = xstrdup(target_list->data);
 		target_list = target_list->link;

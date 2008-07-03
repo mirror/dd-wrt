@@ -121,8 +121,9 @@ enum { version2 = 0 };
 
 enum { MAX_DEPTH = 32 };
 
+enum { dev_fd = 3 };
+
 struct globals {
-	int dev_fd;
 #if ENABLE_FEATURE_MINIX2
 	smallint version2;
 #endif
@@ -158,7 +159,6 @@ struct globals {
 };
 
 #define G (*ptr_to_globals)
-#define dev_fd             (G.dev_fd             )
 #if ENABLE_FEATURE_MINIX2
 #define version2           (G.version2           )
 #endif
@@ -244,15 +244,15 @@ static ALWAYS_INLINE unsigned div_roundup(unsigned size, unsigned n)
 	return (size + n-1) / n;
 }
 
-#if ENABLE_FEATURE_MINIX2
-#define INODE_BLOCKS div_roundup(INODES, (version2 ? MINIX2_INODES_PER_BLOCK \
-				    : MINIX1_INODES_PER_BLOCK))
+#if !ENABLE_FEATURE_MINIX2
+#define INODE_BLOCKS            div_roundup(INODES, MINIX1_INODES_PER_BLOCK)
 #else
-#define INODE_BLOCKS div_roundup(INODES, MINIX1_INODES_PER_BLOCK)
+#define INODE_BLOCKS            div_roundup(INODES, \
+                                (version2 ? MINIX2_INODES_PER_BLOCK : MINIX1_INODES_PER_BLOCK))
 #endif
 
-#define INODE_BUFFER_SIZE (INODE_BLOCKS * BLOCK_SIZE)
-#define NORM_FIRSTZONE    (2 + IMAPS + ZMAPS + INODE_BLOCKS)
+#define INODE_BUFFER_SIZE       (INODE_BLOCKS * BLOCK_SIZE)
+#define NORM_FIRSTZONE          (2 + IMAPS + ZMAPS + INODE_BLOCKS)
 
 /* Before you ask "where they come from?": */
 /* setbit/clrbit are supplied by sys/param.h */
@@ -378,7 +378,7 @@ static void check_mount(void)
 	struct mntent *mnt;
 	int cont;
 	int fd;
-
+//XXX:FIXME use find_mount_point()
 	f = setmntent(MOUNTED, "r");
 	if (f == NULL)
 		return;
@@ -405,7 +405,7 @@ static void check_mount(void)
 		cont = ask("Do you really want to continue", 0);
 	if (!cont) {
 		printf("Check aborted\n");
-		exit(0);
+		exit(EXIT_SUCCESS);
 	}
 }
 
@@ -1223,7 +1223,7 @@ int fsck_minix_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		if (!isatty(0) || !isatty(1))
 			die("need terminal for interactive repairs");
 	}
-	dev_fd = xopen(device_name, OPT_repair ? O_RDWR : O_RDONLY);
+	xmove_fd(xopen(device_name, OPT_repair ? O_RDWR : O_RDONLY), dev_fd);
 
 	/*sync(); paranoia? */
 	read_superblock();

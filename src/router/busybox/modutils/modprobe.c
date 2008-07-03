@@ -24,17 +24,18 @@ struct mod_opt_t {	/* one-way list of options to pass to a module */
 
 struct dep_t {	/* one-way list of dependency rules */
 	/* a dependency rule */
-	char *  m_name;                         /* the module name*/
-	char *  m_path;                         /* the module file path */
-	struct mod_opt_t *  m_options;	        /* the module options */
+	char *  m_name;                     /* the module name*/
+	char *  m_path;                     /* the module file path */
+	struct mod_opt_t *  m_options;	    /* the module options */
 
-	int     m_isalias  : 1;                 /* the module is an alias */
-	int     m_reserved : 15;                /* stuffin' */
+	unsigned int m_isalias      :1;     /* the module is an alias */
+	unsigned int m_isblacklisted:1;     /* the module is blacklisted */
+	unsigned int m_reserved     :14;    /* stuffin' */
 
-	int     m_depcnt   : 16;                /* the number of dependable module(s) */
-	char ** m_deparr;                       /* the list of dependable module(s) */
+	unsigned int m_depcnt       :16;    /* the number of dependable module(s) */
+	char ** m_deparr;                   /* the list of dependable module(s) */
 
-	struct dep_t * m_next;                  /* the next dependency rule */
+	struct dep_t * m_next;              /* the next dependency rule */
 };
 
 struct mod_list_t {	/* two-way list of modules to process */
@@ -230,6 +231,13 @@ static char *parse_command_string(char *src, char **dst)
 #define parse_command_string(src, dst)	(0)
 #endif /* ENABLE_FEATURE_MODPROBE_MULTIPLE_OPTIONS */
 
+static int is_conf_command(char *buffer, const char *command)
+{
+	int len = strlen(command);
+	return ((strstr(buffer, command) == buffer) &&
+			isspace(buffer[len]));
+}
+
 /*
  * This function reads aliases and default module options from a configuration file
  * (/etc/modprobe.conf syntax). It supports includes (only files, no directories).
@@ -260,7 +268,7 @@ static void include_conf(struct dep_t **first, struct dep_t **current, char *buf
 		if (continuation_line)
 			continue;
 
-		if ((strncmp(buffer, "alias", 5) == 0) && isspace(buffer[5])) {
+		if (is_conf_command(buffer, "alias")) {
 			char *alias, *mod;
 
 			if (parse_tag_value(buffer + 6, &alias, &mod)) {
@@ -284,7 +292,7 @@ static void include_conf(struct dep_t **first, struct dep_t **current, char *buf
 				}
 				/*(*current)->m_next = NULL; - done by xzalloc */
 			}
-		} else if ((strncmp(buffer, "options", 7) == 0) && isspace(buffer[7])) {
+		} else if (is_conf_command(buffer, "options")) {
 			char *mod, *opt;
 
 			/* split the line in the module/alias name, and options */
@@ -307,7 +315,7 @@ static void include_conf(struct dep_t **first, struct dep_t **current, char *buf
 					}
 				}
 			}
-		} else if ((strncmp(buffer, "include", 7) == 0) && isspace(buffer[7])) {
+		} else if (is_conf_command(buffer, "include")) {
 			int fdi;
 			char *filename;
 
@@ -317,6 +325,18 @@ static void include_conf(struct dep_t **first, struct dep_t **current, char *buf
 				include_conf(first, current, buffer, buflen, fdi);
 				close(fdi);
 			}
+		} else if (ENABLE_FEATURE_MODPROBE_BLACKLIST &&
+				(is_conf_command(buffer, "blacklist"))) {
+			char *mod;
+			struct dep_t *dt;
+
+			mod = skip_whitespace(buffer + 10);
+			for (dt = *first; dt; dt = dt->m_next) {
+				if (strcmp(dt->m_name, mod) == 0)
+					break;
+			}
+			if (dt)
+				dt->m_isblacklisted = 1;
 		}
 	} /* while (reads(...)) */
 }
@@ -344,15 +364,15 @@ static struct dep_t *build_dep(void)
 		k_version = un.release[2] - '0';
 	}
 
-	filename = xasprintf("/lib/modules/%s/modules.dep", un.release);
+	filename = xasprintf(CONFIG_DEFAULT_MODULES_DIR"/%s/"CONFIG_DEFAULT_DEPMOD_FILE, un.release);
 	fd = open(filename, O_RDONLY);
 	if (ENABLE_FEATURE_CLEAN_UP)
 		free(filename);
 	if (fd < 0) {
 		/* Ok, that didn't work.  Fall back to looking in /lib/modules */
-		fd = open("/lib/modules/modules.dep", O_RDONLY);
+		fd = open(CONFIG_DEFAULT_MODULES_DIR"/"CONFIG_DEFAULT_DEPMOD_FILE, O_RDONLY);
 		if (fd < 0) {
-			bb_error_msg_and_die("cannot parse modules.dep");
+			bb_error_msg_and_die("cannot parse " CONFIG_DEFAULT_DEPMOD_FILE);
 		}
 	}
 
@@ -423,11 +443,8 @@ static struct dep_t *build_dep(void)
 			/* It's a dep description continuation */
 			p = line_buffer;
 
-		while (p && *p && isblank(*p))
-			p++;
-
 		/* p points to the first dependable module; if NULL, no dependable module */
-		if (p && *p) {
+		if (p && (p = skip_whitespace(p))[0] != '\0') {
 			char *end = &line_buffer[l-1];
 			const char *deps;
 			char *dep;
@@ -448,10 +465,8 @@ static struct dep_t *build_dep(void)
 
 				/* find the beginning of the module file name */
 				deps = bb_basename(p);
-				if (deps == p) {
-					while (isblank(*deps))
-						deps++;
-				}
+				if (deps == p)
+					deps = skip_whitespace(deps);
 
 				/* find the end of the module name in the file name */
 				if (ENABLE_FEATURE_2_6_MODULES
@@ -502,11 +517,11 @@ static struct dep_t *build_dep(void)
 	/* Only 2.6 has a modules.alias file */
 	if (ENABLE_FEATURE_2_6_MODULES) {
 		/* Parse kernel-declared module aliases */
-		filename = xasprintf("/lib/modules/%s/modules.alias", un.release);
+		filename = xasprintf(CONFIG_DEFAULT_MODULES_DIR"/%s/modules.alias", un.release);
 		fd = open(filename, O_RDONLY);
 		if (fd < 0) {
 			/* Ok, that didn't work.  Fall back to looking in /lib/modules */
-			fd = open("/lib/modules/modules.alias", O_RDONLY);
+			fd = open(CONFIG_DEFAULT_MODULES_DIR"/modules.alias", O_RDONLY);
 		}
 		if (ENABLE_FEATURE_CLEAN_UP)
 			free(filename);
@@ -517,11 +532,11 @@ static struct dep_t *build_dep(void)
 		}
 
 		/* Parse kernel-declared symbol aliases */
-		filename = xasprintf("/lib/modules/%s/modules.symbols", un.release);
+		filename = xasprintf(CONFIG_DEFAULT_MODULES_DIR"/%s/modules.symbols", un.release);
 		fd = open(filename, O_RDONLY);
 		if (fd < 0) {
 			/* Ok, that didn't work.  Fall back to looking in /lib/modules */
-			fd = open("/lib/modules/modules.symbols", O_RDONLY);
+			fd = open(CONFIG_DEFAULT_MODULES_DIR"/modules.symbols", O_RDONLY);
 		}
 		if (ENABLE_FEATURE_CLEAN_UP)
 			free(filename);
@@ -732,7 +747,9 @@ static void check_dep(char *mod, struct mod_list_t **head, struct mod_list_t **t
 			struct dep_t *adt;
 
 			for (adt = depend; adt; adt = adt->m_next) {
-				if (check_pattern(adt->m_name, dt->m_deparr[0]) == 0)
+				if (check_pattern(adt->m_name, dt->m_deparr[0]) == 0 &&
+						!(ENABLE_FEATURE_MODPROBE_BLACKLIST &&
+							adt->m_isblacklisted))
 					break;
 			}
 			if (adt) {
@@ -873,13 +890,13 @@ int modprobe_main(int argc, char **argv)
 	depend = build_dep();
 
 	if (!depend)
-		bb_error_msg_and_die("cannot parse modules.dep");
+		bb_error_msg_and_die("cannot parse "CONFIG_DEFAULT_DEPMOD_FILE);
 
 	if (remove_opt) {
 		do {
 			/* argv[optind] can be NULL here */
 			if (mod_remove(argv[optind])) {
-				bb_error_msg("failed to remove module %s",
+				bb_error_msg("failed to %s module %s", "remove",
 						argv[optind]);
 				rc = EXIT_FAILURE;
 			}
@@ -889,7 +906,7 @@ int modprobe_main(int argc, char **argv)
 			bb_error_msg_and_die("no module or pattern provided");
 
 		if (mod_insert(argv[optind], argc - optind - 1, argv + optind + 1))
-			bb_error_msg_and_die("failed to load module %s", argv[optind]);
+			bb_error_msg_and_die("failed to %s module %s", "load", argv[optind]);
 	}
 
 	/* Here would be a good place to free up memory allocated during the dependencies build. */

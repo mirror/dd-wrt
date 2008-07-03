@@ -404,6 +404,8 @@ int conf_write(const char *name)
 			if (ret == 0)
 				strftime(buf, sizeof(buf), "#define AUTOCONF_TIMESTAMP "
 					"\"%Y-%m-%d %H:%M:%S\"\n", localtime(&now));
+		} else { /* bbox */
+			strcpy(buf, "#define AUTOCONF_TIMESTAMP \"\"\n");
 		}
 		fprintf(out_h, "/*\n"
 			       " * Automatically generated C config: don't edit\n"
@@ -435,7 +437,7 @@ int conf_write(const char *name)
 					       " */\n", str);
 		} else if (!(sym->flags & SYMBOL_CHOICE)) {
 			sym_calc_value(sym);
-/* bbox: we want to all syms
+/* bbox: we want to see all syms
 			if (!(sym->flags & SYMBOL_WRITE))
 				goto next;
 */

@@ -21,7 +21,7 @@ static unsigned char *hash_bin_to_hex(unsigned char *hash_value,
 	/* xzalloc zero-terminates */
 	char *hex_value = xzalloc((hash_length * 2) + 1);
 	bin2hex(hex_value, (char*)hash_value, hash_length);
-	return hex_value;
+	return (unsigned char *)hex_value;
 }
 
 static uint8_t *hash_file(const char *filename, hash_algo_t hash_algo)
@@ -115,7 +115,7 @@ int md5_sha1_sum_main(int argc ATTRIBUTE_UNUSED, char **argv)
 
 		pre_computed_stream = xfopen_stdin(argv[0]);
 
-		while ((line = xmalloc_getline(pre_computed_stream)) != NULL) {
+		while ((line = xmalloc_fgetline(pre_computed_stream)) != NULL) {
 			char *filename_ptr;
 
 			count_total++;

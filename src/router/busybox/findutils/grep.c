@@ -35,7 +35,7 @@
 enum {
 	OPTBIT_l, /* list matched file names only */
 	OPTBIT_n, /* print line# */
-	OPTBIT_q, /* quiet - exit(0) of first match */
+	OPTBIT_q, /* quiet - exit(EXIT_SUCCESS) of first match */
 	OPTBIT_v, /* invert the match, to select non-matching lines */
 	OPTBIT_s, /* suppress errors about file open errors */
 	OPTBIT_c, /* count matches per file (suppresses normal output) */
@@ -103,12 +103,11 @@ struct globals {
 	const char *cur_file;    /* the current file we are reading */
 };
 #define G (*(struct globals*)&bb_common_bufsiz1)
-#define INIT_G() \
-	do { \
-		struct G_sizecheck { \
-			char G_sizecheck[sizeof(G) > COMMON_BUFSIZE ? -1 : 1]; \
-		}; \
-	} while (0)
+#define INIT_G() do { \
+	struct G_sizecheck { \
+		char G_sizecheck[sizeof(G) > COMMON_BUFSIZE ? -1 : 1]; \
+	}; \
+} while (0)
 #define max_matches       (G.max_matches         )
 #define reflags           (G.reflags             )
 #define invert_search     (G.invert_search       )
@@ -126,7 +125,7 @@ struct globals {
 typedef struct grep_list_data_t {
 	char *pattern;
 	regex_t preg;
-#define PATTERN_MEM_A 1
+#define ALLOCATED 1
 #define COMPILED 2
 	int flg_mem_alocated_compiled;
 } grep_list_data_t;
@@ -172,7 +171,7 @@ static int grep_file(FILE *file)
 	enum { print_n_lines_after = 0 };
 #endif /* ENABLE_FEATURE_GREP_CONTEXT */
 
-	while ((line = xmalloc_getline(file)) != NULL) {
+	while ((line = xmalloc_fgetline(file)) != NULL) {
 		llist_t *pattern_ptr = pattern_head;
 		grep_list_data_t *gl = gl; /* for gcc */
 
@@ -224,7 +223,7 @@ static int grep_file(FILE *file)
 					 * "exit immediately with zero status
 					 * if any match is found,
 					 * even if errors were detected" */
-					exit(0);
+					exit(EXIT_SUCCESS);
 				}
 				/* if we're just printing filenames, we stop after the first match */
 				if (PRINT_FILES_WITH_MATCHES) {
@@ -363,10 +362,10 @@ static void load_regexes_from_file(llist_t *fopt)
 
 		fopt = cur->link;
 		free(cur);
-		f = xfopen(ffile, "r");
-		while ((line = xmalloc_getline(f)) != NULL) {
+		f = xfopen_stdin(ffile);
+		while ((line = xmalloc_fgetline(f)) != NULL) {
 			llist_add_to(&pattern_head,
-				new_grep_list_data(line, PATTERN_MEM_A));
+				new_grep_list_data(line, ALLOCATED));
 		}
 	}
 }
@@ -486,7 +485,7 @@ int grep_main(int argc, char **argv)
 		argc--;
 	}
 
-	/* argv[(optind)..(argc-1)] should be names of file to grep through. If
+	/* argv[0..(argc-1)] should be names of file to grep through. If
 	 * there is more than one file to grep, we will print the filenames. */
 	if (argc > 1)
 		print_filename = 1;
@@ -535,9 +534,9 @@ int grep_main(int argc, char **argv)
 			grep_list_data_t *gl = (grep_list_data_t *)pattern_head_ptr->data;
 
 			pattern_head = pattern_head->link;
-			if ((gl->flg_mem_alocated_compiled & PATTERN_MEM_A))
+			if (gl->flg_mem_alocated_compiled & ALLOCATED)
 				free(gl->pattern);
-			if ((gl->flg_mem_alocated_compiled & COMPILED))
+			if (gl->flg_mem_alocated_compiled & COMPILED)
 				regfree(&(gl->preg));
 			free(gl);
 			free(pattern_head_ptr);
