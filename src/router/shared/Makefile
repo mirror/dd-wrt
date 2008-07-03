@@ -355,11 +355,11 @@ all: libshared.so libshared.a
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
-	install -d $(INSTALLDIR)/lib
-	install -m 755 libshared.so $(INSTALLDIR)/lib
+	install -d $(INSTALLDIR)/shared/lib
+	install -m 755 libshared.so $(INSTALLDIR)/shared/lib
 else
-	install -d $(INSTALLDIR)/usr/lib
-	install -m 755 libshared.so $(INSTALLDIR)/usr/lib
+	install -d $(INSTALLDIR)/shared/usr/lib
+	install -m 755 libshared.so $(INSTALLDIR)/shared/usr/lib
 endif
 
 clean:
