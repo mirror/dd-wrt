@@ -244,6 +244,8 @@ setRouter (char *name)
 #elif HAVE_OMNI
   nvram_set (NVROUTER, "Omni Wifi Router");
 #elif HAVE_MAKSAT
+  if (name)
+    nvram_set ("DD_BOARD2", name);
   nvram_set (NVROUTER, "MAKSAT");
 #else
   if (name)
