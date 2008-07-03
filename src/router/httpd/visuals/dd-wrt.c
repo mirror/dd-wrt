@@ -3066,11 +3066,13 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 	       var, nvram_safe_get (ssid));
 
+#ifdef HAVE_MADWIFI
     sprintf (wl_protmode, "%s_protmode", var);
     showOptionsLabel (wp, "wl_basic.protmode", wl_protmode,
 		      "None CTS RTS/CTS", nvram_default_get (wl_protmode,
 							     "None"));
     showrtssettings (wp, var);
+#endif
 
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
