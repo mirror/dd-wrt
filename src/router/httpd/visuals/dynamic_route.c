@@ -16,7 +16,6 @@ void
 ej_dump_route_table (webs_t wp, int argc, char_t ** argv)
 {
   int count = 0;
-  char *format;
   FILE *fp, *fp1;
   int flgs, ref, use, metric;
   unsigned long dest, gw, netmask;
@@ -27,15 +26,6 @@ ej_dump_route_table (webs_t wp, int argc, char_t ** argv)
   char sdest[16], sgw[16];
   int debug = 0, blank = 1;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &format);
-#else
-  if (ejArgs (argc, argv, "%s", &format) < 1)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
 
   /* open route table */
   if ((fp = fopen ("/proc/net/route", "r")) == NULL)
