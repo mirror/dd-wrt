@@ -2915,12 +2915,12 @@ showrtssettings (webs_t wp, char *var)
   websWrite (wp,
 	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disabled)</script></input>&nbsp;\n",
 	     var, var, nvram_default_match (ssid, "0",
-					     "0") ? "checked=\"checked\"" :
+					    "0") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp,
 	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enabled)</script></input>\n",
 	     var, var, nvram_default_match (ssid, "1",
-					     "0") ? "checked=\"checked\"" :
+					    "0") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp, "</div>\n");
 
@@ -2930,7 +2930,9 @@ showrtssettings (webs_t wp, char *var)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rtsvalue)</script></div>\n");
   char ip[32];
   sprintf (ip, "%s_rtsvalue", var);
-  websWrite (wp,"<input class=\"num\" maxlength=\"4\" size=\"4\" onblur=\"valid_range(this,1,2346,share.ip)\" name=\"%s_rtsvalue\" value=\"%s\" />",var,nvram_default_get(ip,"2346"));
+  websWrite (wp,
+	     "<input class=\"num\" maxlength=\"4\" size=\"4\" onblur=\"valid_range(this,1,2346,share.ip)\" name=\"%s_rtsvalue\" value=\"%s\" />",
+	     var, nvram_default_get (ip, "2346"));
   websWrite (wp, "</div>\n");
   websWrite (wp, "</div>\n");
 
@@ -3466,8 +3468,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
   showOption (wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
-  showOptionsLabel(wp, "wl_basic.protmode",wl_protmode,"None CTS RTS/CTS",nvram_default_get(wl_protmode,"None"));
-  showrtssettings(wp,prefix);
+  showOptionsLabel (wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS",
+		    nvram_default_get (wl_protmode, "None"));
+  showrtssettings (wp, prefix);
   show_rates (wp, prefix, 0);
   show_rates (wp, prefix, 1);
 //#if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)

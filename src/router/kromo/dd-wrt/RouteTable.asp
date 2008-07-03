@@ -15,7 +15,7 @@
 				<script type="text/javascript">
 				//<![CDATA[
 
-					var table = new Array(<% dump_route_table(""); %>);
+					var table = new Array(<% dump_route_table(); %>);
 					
 					if(table.length == 0) {
 						document.write("<tr><td align=\"center\" colspan=\"4\">- " + share.none + " -</td></tr>");

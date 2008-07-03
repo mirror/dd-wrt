@@ -15,7 +15,7 @@
 
 
 
-void
+static void
 show_chaps_table (webs_t wp, char *type, int which)
 {
 
