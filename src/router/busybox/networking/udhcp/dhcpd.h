@@ -4,6 +4,10 @@
 #ifndef _DHCPD_H
 #define _DHCPD_H
 
+#if __GNUC_PREREQ(4,1)
+# pragma GCC visibility push(hidden)
+#endif
+
 /************************************/
 /* Defaults _you_ may want to tweak */
 /************************************/
@@ -100,9 +104,9 @@ void printStaticLeases(struct static_lease **lease_struct);
 
 /*** serverpacket.h ***/
 
-int sendOffer(struct dhcpMessage *oldpacket);
-int sendNAK(struct dhcpMessage *oldpacket);
-int sendACK(struct dhcpMessage *oldpacket, uint32_t yiaddr);
+int send_offer(struct dhcpMessage *oldpacket);
+int send_NAK(struct dhcpMessage *oldpacket);
+int send_ACK(struct dhcpMessage *oldpacket, uint32_t yiaddr);
 int send_inform(struct dhcpMessage *oldpacket);
 
 
@@ -113,5 +117,9 @@ void write_leases(void);
 void read_leases(const char *file);
 struct option_set *find_option(struct option_set *opt_list, uint8_t code);
 
+
+#if __GNUC_PREREQ(4,1)
+# pragma GCC visibility pop
+#endif
 
 #endif

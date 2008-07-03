@@ -146,6 +146,15 @@ int run_nofork_applet_prime(struct nofork_save_area *old, int applet_no, char **
 		memcpy(tmp_argv, argv, (argc+1) * sizeof(tmp_argv[0]));
 		/* Finally we can call NOFORK applet's main() */
 		rc = applet_main[applet_no](argc, tmp_argv);
+
+	/* The whole reason behind nofork_save_area is that <applet>_main
+	 * may exit non-locally! For example, in hush Ctrl-Z tries
+	 * (modulo bugs) to dynamically create a child (backgrounded task)
+	 * if it detects that Ctrl-Z was pressed when a NOFORK was running.
+	 * Testcase: interactive "rm -i".
+	 * Don't fool yourself into thinking "and <applet>_main() returns
+	 * quickly here" and removing "useless" nofork_save_area code. */
+
 	} else { /* xfunc died in NOFORK applet */
 		/* in case they meant to return 0... */
 		if (rc == -2222)
@@ -154,7 +163,7 @@ int run_nofork_applet_prime(struct nofork_save_area *old, int applet_no, char **
 
 	/* Restoring globals */
 	restore_nofork_data(old);
-	return rc;
+	return rc & 0xff; /* don't confuse people with "exitcodes" >255 */
 }
 
 int run_nofork_applet(int applet_no, char **argv)
@@ -221,7 +230,7 @@ void forkexit_or_rexec(char **argv)
 	if (pid < 0) /* wtf? */
 		bb_perror_msg_and_die("vfork");
 	if (pid) /* parent */
-		exit(0);
+		exit(EXIT_SUCCESS);
 	/* child - re-exec ourself */
 	re_exec(argv);
 }
@@ -235,7 +244,7 @@ void forkexit_or_rexec(void)
 	if (pid < 0) /* wtf? */
 		bb_perror_msg_and_die("fork");
 	if (pid) /* parent */
-		exit(0);
+		exit(EXIT_SUCCESS);
 	/* child */
 }
 #define forkexit_or_rexec(argv) forkexit_or_rexec()

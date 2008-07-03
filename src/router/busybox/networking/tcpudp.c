@@ -31,6 +31,7 @@
 
 #include "libbb.h"
 /* Wants <limits.h> etc, thus included after libbb.h: */
+#include <linux/types.h> /* for __be32 etc */
 #include <linux/netfilter_ipv4.h>
 
 // TODO: move into this file:
@@ -58,11 +59,10 @@ struct globals {
 #define cmax         (G.cmax        )
 #define env_cur      (G.env_cur     )
 #define env_var      (G.env_var     )
-#define INIT_G() \
-	do { \
-		cmax = 30; \
-		env_cur = &env_var[0]; \
-	} while (0)
+#define INIT_G() do { \
+	cmax = 30; \
+	env_cur = &env_var[0]; \
+} while (0)
 
 
 /* We have to be careful about leaking memory in repeated setenv's */

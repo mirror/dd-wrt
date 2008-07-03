@@ -628,7 +628,7 @@ static int do_subst_command(sed_cmd_t *sed_cmd, char **line)
 {
 	char *oldline = *line;
 	int altered = 0;
-	int match_count = 0;
+	unsigned match_count = 0;
 	regex_t *current_regex;
 
 	/* Handle empty regex. */
@@ -665,7 +665,9 @@ static int do_subst_command(sed_cmd_t *sed_cmd, char **line)
 
 		/* If we aren't interested in this match, output old line to
 		   end of match and continue */
-		if (sed_cmd->which_match && sed_cmd->which_match != match_count) {
+		if (sed_cmd->which_match
+		 && (sed_cmd->which_match != match_count)
+		) {
 			for (i = 0; i < G.regmatch[0].rm_eo; i++)
 				pipe_putc(*oldline++);
 			continue;
@@ -1028,7 +1030,7 @@ static void process_files(void)
 				if (rfile) {
 					char *line;
 
-					while ((line = xmalloc_getline(rfile))
+					while ((line = xmalloc_fgetline(rfile))
 							!= NULL)
 						append(line);
 					xprint_and_close_file(rfile);
@@ -1265,21 +1267,17 @@ int sed_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	if (opt & 0x2) G.regex_type |= REG_EXTENDED; // -r
 	//if (opt & 0x4) G.be_quiet++; // -n
 	while (opt_e) { // -e
-		add_cmd_block(opt_e->data);
-		opt_e = opt_e->link;
-		/* we leak opt_e here... */
+		add_cmd_block(llist_pop(&opt_e));
 	}
 	while (opt_f) { // -f
 		char *line;
 		FILE *cmdfile;
-		cmdfile = xfopen(opt_f->data, "r");
-		while ((line = xmalloc_getline(cmdfile)) != NULL) {
+		cmdfile = xfopen(llist_pop(&opt_f), "r");
+		while ((line = xmalloc_fgetline(cmdfile)) != NULL) {
 			add_cmd(line);
 			free(line);
 		}
 		fclose(cmdfile);
-		opt_f = opt_f->link;
-		/* we leak opt_f here... */
 	}
 	/* if we didn't get a pattern from -e or -f, use argv[0] */
 	if (!(opt & 0x18)) {

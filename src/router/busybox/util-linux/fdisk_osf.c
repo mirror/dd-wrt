@@ -413,7 +413,8 @@ bsd_select(void)
 			xbsd_print_disklabel(0);
 			break;
 		case 'q':
-			close(fd);
+			if (ENABLE_FEATURE_CLEAN_UP)
+				close_dev_fd();
 			exit(EXIT_SUCCESS);
 		case 'r':
 			return;
@@ -501,6 +502,8 @@ xbsd_print_disklabel(int show_all)
 	int i, j;
 
 	if (show_all) {
+		static const int d_masks[] = { BSD_D_REMOVABLE, BSD_D_ECC, BSD_D_BADSECT };
+
 #if defined(__alpha__)
 		printf("# %s:\n", disk_device);
 #else
@@ -512,13 +515,8 @@ xbsd_print_disklabel(int show_all)
 			printf("type: %d\n", lp->d_type);
 		printf("disk: %.*s\n", (int) sizeof(lp->d_typename), lp->d_typename);
 		printf("label: %.*s\n", (int) sizeof(lp->d_packname), lp->d_packname);
-		printf("flags:");
-		if (lp->d_flags & BSD_D_REMOVABLE)
-			printf(" removable");
-		if (lp->d_flags & BSD_D_ECC)
-			printf(" ecc");
-		if (lp->d_flags & BSD_D_BADSECT)
-			printf(" badsect");
+		printf("flags: ");
+		print_flags_separated(d_masks, "removable\0""ecc\0""badsect\0", lp->d_flags, " ");
 		bb_putchar('\n');
 		/* On various machines the fields of *lp are short/int/long */
 		/* In order to avoid problems, we cast them all to long. */
@@ -627,12 +625,13 @@ xbsd_create_disklabel(void)
 #else
 				xbsd_part
 #endif
-				) == 1) {
+			) == 1) {
 				xbsd_print_disklabel(1);
 				return 1;
-			} else
-				return 0;
-		} else if (c == 'n')
+			}
+			return 0;
+		}
+		if (c == 'n')
 			return 0;
 	}
 }
@@ -766,9 +765,9 @@ xbsd_write_bootstrap(void)
 	sector = get_start_sect(xbsd_part);
 #endif
 
-	if (lseek(fd, sector * SECTOR_SIZE, SEEK_SET) == -1)
+	if (lseek(dev_fd, sector * SECTOR_SIZE, SEEK_SET) == -1)
 		fdisk_fatal(unable_to_seek);
-	if (BSD_BBSIZE != write(fd, disklabelbuffer, BSD_BBSIZE))
+	if (BSD_BBSIZE != write(dev_fd, disklabelbuffer, BSD_BBSIZE))
 		fdisk_fatal(unable_to_write);
 
 #if defined(__alpha__)
@@ -939,9 +938,9 @@ xbsd_readlabel(struct partition *p)
 	sector = 0;
 #endif
 
-	if (lseek(fd, sector * SECTOR_SIZE, SEEK_SET) == -1)
+	if (lseek(dev_fd, sector * SECTOR_SIZE, SEEK_SET) == -1)
 		fdisk_fatal(unable_to_seek);
-	if (BSD_BBSIZE != read(fd, disklabelbuffer, BSD_BBSIZE))
+	if (BSD_BBSIZE != read(dev_fd, disklabelbuffer, BSD_BBSIZE))
 		fdisk_fatal(unable_to_read);
 
 	memmove(d, &disklabelbuffer[BSD_LABELSECTOR * SECTOR_SIZE + BSD_LABELOFFSET],
@@ -985,14 +984,14 @@ xbsd_writelabel(struct partition *p)
 
 #if defined(__alpha__) && BSD_LABELSECTOR == 0
 	alpha_bootblock_checksum(disklabelbuffer);
-	if (lseek(fd, 0, SEEK_SET) == -1)
+	if (lseek(dev_fd, 0, SEEK_SET) == -1)
 		fdisk_fatal(unable_to_seek);
-	if (BSD_BBSIZE != write(fd, disklabelbuffer, BSD_BBSIZE))
+	if (BSD_BBSIZE != write(dev_fd, disklabelbuffer, BSD_BBSIZE))
 		fdisk_fatal(unable_to_write);
 #else
-	if (lseek(fd, sector * SECTOR_SIZE + BSD_LABELOFFSET, SEEK_SET) == -1)
+	if (lseek(dev_fd, sector * SECTOR_SIZE + BSD_LABELOFFSET, SEEK_SET) == -1)
 		fdisk_fatal(unable_to_seek);
-	if (sizeof(struct xbsd_disklabel) != write(fd, d, sizeof(struct xbsd_disklabel)))
+	if (sizeof(struct xbsd_disklabel) != write(dev_fd, d, sizeof(struct xbsd_disklabel)))
 		fdisk_fatal(unable_to_write);
 #endif
 	sync_disks();

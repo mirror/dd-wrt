@@ -321,6 +321,13 @@ config FEATURE_MDEV_RENAME
 
 	  For more information, please see docs/mdev.txt
 
+config FEATURE_MDEV_RENAME_REGEXP
+	bool "Support regular expressions substitutions when renaming device"
+	default n
+	depends on FEATURE_MDEV_RENAME
+	help
+	  Add support for regular expressions substitutions when renaming device.
+
 config FEATURE_MDEV_EXEC
 	bool "Support command execution at device addition/removal"
 	default n
@@ -525,7 +532,7 @@ config FEATURE_VOLUMEID_SYSV
 ###	depends on VOLUMEID
 ###	help
 ###	  TODO
-### 
+###
 ### config FEATURE_VOLUMEID_MSDOS
 ###	bool "msdos filesystem"
 ###	default n
@@ -710,6 +717,12 @@ config RTCWAKE
 	help
 	  Enter a system sleep state until specified wakeup time.
 
+config SCRIPT
+	bool "script"
+	default n
+	help
+	  The script makes typescript of terminal session.
+
 config SETARCH
 	bool "setarch"
 	default n
@@ -729,6 +742,13 @@ config SWAPONOFF
 	  utility is used, typically at system shutdown, to disable any swap
 	  space.  If you are not using any swap space, you can leave this
 	  option disabled.
+
+config FEATURE_SWAPON_PRI
+	bool "Support priority option -p"
+	default n
+	depends on SWAPONOFF
+	help
+	  Enable support for setting swap device priority in swapon.
 
 config SWITCH_ROOT
 	bool "switch_root"

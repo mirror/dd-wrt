@@ -24,7 +24,6 @@
  */
 
 #include <fnmatch.h>
-#include <getopt.h>
 #include "libbb.h"
 #include "unarchive.h"
 
@@ -85,26 +84,26 @@ struct TarHeader {		  /* byte offset */
 */
 typedef struct HardLinkInfo HardLinkInfo;
 struct HardLinkInfo {
-	HardLinkInfo *next;	/* Next entry in list */
-	dev_t dev;			/* Device number */
-	ino_t ino;			/* Inode number */
-	short linkCount;	/* (Hard) Link Count */
-	char name[1];		/* Start of filename (must be last) */
+	HardLinkInfo *next;     /* Next entry in list */
+	dev_t dev;              /* Device number */
+	ino_t ino;              /* Inode number */
+	short linkCount;        /* (Hard) Link Count */
+	char name[1];           /* Start of filename (must be last) */
 };
 
 /* Some info to be carried along when creating a new tarball */
 typedef struct TarBallInfo TarBallInfo;
 struct TarBallInfo {
-	int tarFd;				/* Open-for-write file descriptor
-							   for the tarball */
-	struct stat statBuf;	/* Stat info for the tarball, letting
-							   us know the inode and device that the
-							   tarball lives, so we can avoid trying
-							   to include the tarball into itself */
-	int verboseFlag;		/* Whether to print extra stuff or not */
-	const llist_t *excludeList;	/* List of files to not include */
-	HardLinkInfo *hlInfoHead;	/* Hard Link Tracking Information */
-	HardLinkInfo *hlInfo;	/* Hard Link Info for the current file */
+	int tarFd;                      /* Open-for-write file descriptor
+	                                 * for the tarball */
+	struct stat statBuf;            /* Stat info for the tarball, letting
+	                                 * us know the inode and device that the
+	                                 * tarball lives, so we can avoid trying
+	                                 * to include the tarball into itself */
+	int verboseFlag;                /* Whether to print extra stuff or not */
+	const llist_t *excludeList;     /* List of files to not include */
+	HardLinkInfo *hlInfoHead;       /* Hard Link Tracking Information */
+	HardLinkInfo *hlInfo;           /* Hard Link Info for the current file */
 };
 
 /* A nice enum with all the possible tar file content types */
@@ -504,11 +503,90 @@ static int writeFileToTarball(const char *fileName, struct stat *statbuf,
 	return TRUE;
 }
 
-static int writeTarFile(const int tar_fd, const int verboseFlag,
-	const unsigned long dereferenceFlag, const llist_t *include,
-	const llist_t *exclude, const int gzip)
+#if ENABLE_FEATURE_TAR_GZIP || ENABLE_FEATURE_TAR_BZIP2
+#if !(ENABLE_FEATURE_TAR_GZIP && ENABLE_FEATURE_TAR_BZIP2)
+#define vfork_compressor(tar_fd, gzip) vfork_compressor(tar_fd)
+#endif
+/* Don't inline: vfork scares gcc and pessimizes code */
+static void NOINLINE vfork_compressor(int tar_fd, int gzip)
 {
-	pid_t gzipPid = 0;
+	pid_t gzipPid;
+#if ENABLE_FEATURE_TAR_GZIP && ENABLE_FEATURE_TAR_BZIP2
+	const char *zip_exec = (gzip == 1) ? "gzip" : "bzip2";
+#elif ENABLE_FEATURE_TAR_GZIP
+	const char *zip_exec = "gzip";
+#else /* only ENABLE_FEATURE_TAR_BZIP2 */
+	const char *zip_exec = "bzip2";
+#endif
+	// On Linux, vfork never unpauses parent early, although standard
+	// allows for that. Do we want to waste bytes checking for it?
+#define WAIT_FOR_CHILD 0
+	volatile int vfork_exec_errno = 0;
+	struct fd_pair gzipDataPipe;
+#if WAIT_FOR_CHILD
+	struct fd_pair gzipStatusPipe;
+	xpiped_pair(gzipStatusPipe);
+#endif
+	xpiped_pair(gzipDataPipe);
+
+	signal(SIGPIPE, SIG_IGN); /* we only want EPIPE on errors */
+
+#if defined(__GNUC__) && __GNUC__
+	/* Avoid vfork clobbering */
+	(void) &zip_exec;
+#endif
+
+	gzipPid = vfork();
+	if (gzipPid < 0)
+		bb_perror_msg_and_die("can't vfork");
+
+	if (gzipPid == 0) {
+		/* child */
+		/* NB: close _first_, then move fds! */
+		close(gzipDataPipe.wr);
+#if WAIT_FOR_CHILD
+		close(gzipStatusPipe.rd);
+		/* gzipStatusPipe.wr will close only on exec -
+		 * parent waits for this close to happen */
+		fcntl(gzipStatusPipe.wr, F_SETFD, FD_CLOEXEC);
+#endif
+		xmove_fd(gzipDataPipe.rd, 0);
+		xmove_fd(tar_fd, 1);
+		/* exec gzip/bzip2 program/applet */
+		BB_EXECLP(zip_exec, zip_exec, "-f", NULL);
+		vfork_exec_errno = errno;
+		_exit(EXIT_FAILURE);
+	}
+
+	/* parent */
+	xmove_fd(gzipDataPipe.wr, tar_fd);
+	close(gzipDataPipe.rd);
+#if WAIT_FOR_CHILD
+	close(gzipStatusPipe.wr);
+	while (1) {
+		char buf;
+		int n;
+
+		/* Wait until child execs (or fails to) */
+		n = full_read(gzipStatusPipe.rd, &buf, 1);
+		if (n < 0 /* && errno == EAGAIN */)
+			continue;	/* try it again */
+	}
+	close(gzipStatusPipe.rd);
+#endif
+	if (vfork_exec_errno) {
+		errno = vfork_exec_errno;
+		bb_perror_msg_and_die("cannot exec %s", zip_exec);
+	}
+}
+#endif /* ENABLE_FEATURE_TAR_GZIP || ENABLE_FEATURE_TAR_BZIP2 */
+
+
+/* gcc 4.2.1 inlines it, making code bigger */
+static NOINLINE int writeTarFile(int tar_fd, int verboseFlag,
+	int dereferenceFlag, const llist_t *include,
+	const llist_t *exclude, int gzip)
+{
 	int errorFlag = FALSE;
 	struct TarBallInfo tbInfo;
 
@@ -524,80 +602,8 @@ static int writeTarFile(const int tar_fd, const int verboseFlag,
 		bb_perror_msg_and_die("cannot stat tar file");
 
 #if ENABLE_FEATURE_TAR_GZIP || ENABLE_FEATURE_TAR_BZIP2
-	if (gzip) {
-#if ENABLE_FEATURE_TAR_GZIP && ENABLE_FEATURE_TAR_BZIP2
-		const char *zip_exec = (gzip == 1) ? "gzip" : "bzip2";
-#elif ENABLE_FEATURE_TAR_GZIP
-		const char *zip_exec = "gzip";
-#else /* only ENABLE_FEATURE_TAR_BZIP2 */
-		const char *zip_exec = "bzip2";
-#endif
-	// On Linux, vfork never unpauses parent early, although standard
-	// allows for that. Do we want to waste bytes checking for it?
-#define WAIT_FOR_CHILD 0
-		volatile int vfork_exec_errno = 0;
-#if WAIT_FOR_CHILD
-		struct fd_pair gzipStatusPipe;
-#endif
-		struct fd_pair gzipDataPipe;
-		xpiped_pair(gzipDataPipe);
-#if WAIT_FOR_CHILD
-		xpiped_pair(gzipStatusPipe);
-#endif
-
-		signal(SIGPIPE, SIG_IGN); /* we only want EPIPE on errors */
-
-#if defined(__GNUC__) && __GNUC__
-		/* Avoid vfork clobbering */
-		(void) &include;
-		(void) &errorFlag;
-		(void) &zip_exec;
-#endif
-
-		gzipPid = vfork();
-		if (gzipPid < 0)
-			bb_perror_msg_and_die("vfork gzip");
-
-		if (gzipPid == 0) {
-			/* child */
-			/* NB: close _first_, then move fds! */
-			close(gzipDataPipe.wr);
-#if WAIT_FOR_CHILD
-			close(gzipStatusPipe.rd);
-			/* gzipStatusPipe.wr will close only on exec -
-			 * parent waits for this close to happen */
-			fcntl(gzipStatusPipe.wr, F_SETFD, FD_CLOEXEC);
-#endif
-			xmove_fd(gzipDataPipe.rd, 0);
-			xmove_fd(tbInfo.tarFd, 1);
-			/* exec gzip/bzip2 program/applet */
-			BB_EXECLP(zip_exec, zip_exec, "-f", NULL);
-			vfork_exec_errno = errno;
-			_exit(1);
-		}
-
-		/* parent */
-		xmove_fd(gzipDataPipe.wr, tbInfo.tarFd);
-		close(gzipDataPipe.rd);
-#if WAIT_FOR_CHILD
-		close(gzipStatusPipe.wr);
-		while (1) {
-			char buf;
-			int n;
-
-			/* Wait until child execs (or fails to) */
-			n = full_read(gzipStatusPipe.rd, &buf, 1);
-			if (n < 0 /* && errno == EAGAIN */)
-				continue;	/* try it again */
-
-		}
-		close(gzipStatusPipe.rd);
-#endif
-		if (vfork_exec_errno) {
-			errno = vfork_exec_errno;
-			bb_perror_msg_and_die("cannot exec %s", zip_exec);
-		}
-	}
+	if (gzip)
+		vfork_compressor(tbInfo.tarFd, gzip);
 #endif
 
 	tbInfo.excludeList = exclude;
@@ -631,37 +637,34 @@ static int writeTarFile(const int tar_fd, const int verboseFlag,
 	if (errorFlag)
 		bb_error_msg("error exit delayed from previous errors");
 
-	if (gzipPid) {
+#if ENABLE_FEATURE_TAR_GZIP || ENABLE_FEATURE_TAR_BZIP2
+	if (gzip) {
 		int status;
-		if (safe_waitpid(gzipPid, &status, 0) == -1)
+		if (safe_waitpid(-1, &status, 0) == -1)
 			bb_perror_msg("waitpid");
 		else if (!WIFEXITED(status) || WEXITSTATUS(status))
 			/* gzip was killed or has exited with nonzero! */
 			errorFlag = TRUE;
 	}
+#endif
 	return errorFlag;
 }
 #else
-int writeTarFile(const int tar_fd, const int verboseFlag,
-	const unsigned long dereferenceFlag, const llist_t *include,
-	const llist_t *exclude, const int gzip);
+int writeTarFile(int tar_fd, int verboseFlag,
+	int dereferenceFlag, const llist_t *include,
+	const llist_t *exclude, int gzip);
 #endif /* FEATURE_TAR_CREATE */
 
 #if ENABLE_FEATURE_TAR_FROM
 static llist_t *append_file_list_to_list(llist_t *list)
 {
 	FILE *src_stream;
-	llist_t *cur = list;
-	llist_t *tmp;
 	char *line;
 	llist_t *newlist = NULL;
 
-	while (cur) {
-		src_stream = xfopen(cur->data, "r");
-		tmp = cur;
-		cur = cur->link;
-		free(tmp);
-		while ((line = xmalloc_getline(src_stream)) != NULL) {
+	while (list) {
+		src_stream = xfopen(llist_pop(&list), "r");
+		while ((line = xmalloc_fgetline(src_stream)) != NULL) {
 			/* kill trailing '/' unless the string is just "/" */
 			char *cp = last_char_is(line, '/');
 			if (cp > line)
@@ -797,7 +800,7 @@ static const char tar_longopts[] ALIGN1 =
 #endif
 
 int tar_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int tar_main(int argc, char **argv)
+int tar_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	char (*get_header_ptr)(archive_handle_t *) = get_header_tar;
 	archive_handle_t *tar_handle;
@@ -847,6 +850,7 @@ int tar_main(int argc, char **argv)
 		, &verboseFlag // combined count for -t and -v
 		, &verboseFlag // combined count for -t and -v
 		);
+	argv += optind;
 
 	if (verboseFlag) tar_handle->action_header = header_verbose_list;
 	if (verboseFlag == 1) tar_handle->action_header = header_list;
@@ -892,21 +896,15 @@ int tar_main(int argc, char **argv)
 	tar_handle->accept = append_file_list_to_list(tar_handle->accept);
 #endif
 
-	/* Check if we are reading from stdin */
-	if (argv[optind] && *argv[optind] == '-') {
-		/* Default is to read from stdin, so just skip to next arg */
-		optind++;
-	}
-
 	/* Setup an array of filenames to work with */
 	/* TODO: This is the same as in ar, separate function ? */
-	while (optind < argc) {
+	while (*argv) {
 		/* kill trailing '/' unless the string is just "/" */
-		char *cp = last_char_is(argv[optind], '/');
-		if (cp > argv[optind])
+		char *cp = last_char_is(*argv, '/');
+		if (cp > *argv)
 			*cp = '\0';
-		llist_add_to_end(&tar_handle->accept, argv[optind]);
-		optind++;
+		llist_add_to_end(&tar_handle->accept, *argv);
+		argv++;
 	}
 
 	if (tar_handle->accept || tar_handle->reject)

@@ -147,7 +147,7 @@ static const char *normalize(const char *arg)
 static int generate_output(char **argv, int argc, const char *optstr, const struct option *longopts)
 {
 	int exit_code = 0; /* We assume everything will be OK */
-	unsigned opt;
+	int opt;
 #if ENABLE_GETOPT_LONG
 	int longindex;
 #endif
@@ -158,10 +158,10 @@ static int generate_output(char **argv, int argc, const char *optstr, const stru
 
 	/* Reset getopt(3) (see libbb/getopt32.c for long rant) */
 #ifdef __GLIBC__
-        optind = 0;
+	optind = 0;
 #else /* BSD style */
-        optind = 1;
-        /* optreset = 1; */
+	optind = 1;
+	/* optreset = 1; */
 #endif
 
 	while (1) {
@@ -173,7 +173,7 @@ static int generate_output(char **argv, int argc, const char *optstr, const stru
 #else
 			getopt(argc, argv, optstr);
 #endif
-		if (opt == EOF)
+		if (opt == -1)
 			break;
 		if (opt == '?' || opt == ':' )
 			exit_code = 1;
@@ -190,7 +190,7 @@ static int generate_output(char **argv, int argc, const char *optstr, const stru
 				printf(" %s", normalize(optarg));
 			else {
 				printf(" -%c", opt);
-				charptr = strchr(optstr,opt);
+				charptr = strchr(optstr, opt);
 				if (charptr != NULL && *++charptr == ':')
 					printf(" %s",
 						normalize(optarg ? optarg : ""));
@@ -329,8 +329,7 @@ int getopt_main(int argc, char **argv)
 					&optstr, &name, &s_arg, &l_arg);
 	/* Effectuate the read options for the applet itself */
 	while (l_arg) {
-		long_options = add_long_options(long_options, l_arg->data);
-		l_arg = l_arg->link;
+		long_options = add_long_options(long_options, llist_pop(&l_arg));
 	}
 #endif
 

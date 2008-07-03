@@ -26,13 +26,11 @@ static int read_ip(const char *line, void *arg)
 
 static int read_mac(const char *line, void *arg)
 {
-	uint8_t *mac_bytes = arg;
 	struct ether_addr *temp_ether_addr;
 
-	temp_ether_addr = ether_aton(line);
+	temp_ether_addr = ether_aton_r(line, (struct ether_addr *)arg);
 	if (temp_ether_addr == NULL)
 		return 0;
-	memcpy(mac_bytes, temp_ether_addr, 6);
 	return 1;
 }
 
@@ -95,7 +93,7 @@ static void attach_option(struct option_set **opt_list,
 #if ENABLE_FEATURE_RFC3397
 		if ((option->flags & TYPE_MASK) == OPTION_STR1035)
 			/* reuse buffer and length for RFC1035-formatted string */
-			buffer = dname_enc(NULL, 0, buffer, &length);
+			buffer = (char *)dname_enc(NULL, 0, buffer, &length);
 #endif
 
 		/* make a new option */
@@ -124,7 +122,7 @@ static void attach_option(struct option_set **opt_list,
 #if ENABLE_FEATURE_RFC3397
 		if ((option->flags & TYPE_MASK) == OPTION_STR1035)
 			/* reuse buffer and length for RFC1035-formatted string */
-			buffer = dname_enc(existing->data + 2,
+			buffer = (char *)dname_enc(existing->data + 2,
 					existing->data[OPT_LEN], buffer, &length);
 #endif
 		if (existing->data[OPT_LEN] + length <= 255) {
@@ -321,7 +319,7 @@ void read_config(const char *file)
 {
 	FILE *in;
 	char buffer[READ_CONFIG_BUF_SIZE], *token, *line;
-	int i, lineno;
+	unsigned i, lineno;
 
 	for (i = 0; i < KWS_WITH_DEFAULTS; i++)
 		keywords[i].handler(keywords[i].def, keywords[i].var);
@@ -346,7 +344,7 @@ void read_config(const char *file)
 		for (i = 0; i < ARRAY_SIZE(keywords); i++) {
 			if (!strcasecmp(token, keywords[i].keyword)) {
 				if (!keywords[i].handler(line, keywords[i].var)) {
-					bb_error_msg("can't parse line %d in %s at '%s'",
+					bb_error_msg("can't parse line %u in %s at '%s'",
 							lineno, file, line);
 					/* reset back to the default value */
 					keywords[i].handler(keywords[i].def, keywords[i].var);
@@ -396,6 +394,7 @@ void write_leases(void)
 	close(fp);
 
 	if (server_config.notify_file) {
+// TODO: vfork-based child creation
 		char *cmd = xasprintf("%s %s", server_config.notify_file, server_config.lease_file);
 		system(cmd);
 		free(cmd);
@@ -406,7 +405,7 @@ void write_leases(void)
 void read_leases(const char *file)
 {
 	int fp;
-	unsigned int i = 0;
+	unsigned i;
 	struct dhcpOfferedAddr lease;
 
 	fp = open_or_warn(file, O_RDONLY);
@@ -414,6 +413,7 @@ void read_leases(const char *file)
 		return;
 	}
 
+	i = 0;
 	while (i < server_config.max_leases
 	 && full_read(fp, &lease, sizeof(lease)) == sizeof(lease)
 	) {
@@ -422,7 +422,7 @@ void read_leases(const char *file)
 		if (y >= server_config.start_ip && y <= server_config.end_ip) {
 			lease.expires = ntohl(lease.expires);
 			if (!server_config.remaining)
-				lease.expires -= time(0);
+				lease.expires -= time(NULL);
 			if (!(add_lease(lease.chaddr, lease.yiaddr, lease.expires))) {
 				bb_error_msg("too many leases while loading %s", file);
 				break;

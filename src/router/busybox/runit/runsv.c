@@ -103,10 +103,9 @@ struct globals {
 #define logpipe      (G.logpipe     )
 #define dir          (G.dir         )
 #define svd          (G.svd         )
-#define INIT_G() \
-	do { \
-		pidchanged = 1; \
-	} while (0)
+#define INIT_G() do { \
+	pidchanged = 1; \
+} while (0)
 
 static void fatal2_cannot(const char *m1, const char *m2)
 {
@@ -640,7 +639,7 @@ int runsv_main(int argc ATTRIBUTE_UNUSED, char **argv)
 
 		if (svd[0].want == W_EXIT && svd[0].state == S_DOWN) {
 			if (svd[1].pid == 0)
-				_exit(0);
+				_exit(EXIT_SUCCESS);
 			if (svd[1].want != W_EXIT) {
 				svd[1].want = W_EXIT;
 				/* stopservice(&svd[1]); */

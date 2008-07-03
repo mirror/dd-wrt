@@ -9,6 +9,10 @@
 
 #include "libbb.h"
 
+#if __GNUC_PREREQ(4,1)
+# pragma GCC visibility push(hidden)
+#endif
+
 /* order matters: used as index into "install_dir[]" in appletlib.c */
 typedef enum bb_install_loc_t {
 	_BB_DIR_ROOT = 0,
@@ -59,9 +63,6 @@ extern const uint8_t applet_install_loc[];
 /* Length of these names has effect on size of libbusybox
  * and "individual" binaries. Keep them short.
  */
-void lbb_prepare(const char *applet
-	USE_FEATURE_INDIVIDUAL(, char **argv)
-	) MAIN_EXTERNALLY_VISIBLE;
 #if ENABLE_BUILD_LIBBUSYBOX
 #if ENABLE_FEATURE_SHARED_BUSYBOX
 int lbb_main(char **argv) EXTERNALLY_VISIBLE;
@@ -70,5 +71,8 @@ int lbb_main(char **argv);
 #endif
 #endif
 
+#if __GNUC_PREREQ(4,1)
+# pragma GCC visibility pop
+#endif
 
 #endif	/* _BB_INTERNAL_H_ */

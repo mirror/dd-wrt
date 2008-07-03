@@ -53,7 +53,7 @@ typedef struct jiffy_counts_t {
    the next. Used for finding deltas. */
 typedef struct save_hist {
 	unsigned long ticks;
-	unsigned pid;
+	pid_t pid;
 } save_hist;
 
 typedef int (*cmp_funcp)(top_status_t *P, top_status_t *Q);
@@ -89,12 +89,11 @@ struct globals {
 enum { LINE_BUF_SIZE = COMMON_BUFSIZE - offsetof(struct globals, line_buf) };
 
 #define G (*(struct globals*)&bb_common_bufsiz1)
-#define INIT_G() \
-	do { \
-		struct G_sizecheck { \
-			char G_sizecheck[sizeof(G) > COMMON_BUFSIZE ? -1 : 1]; \
-		}; \
-	} while (0)
+#define INIT_G() do { \
+	struct G_sizecheck { \
+		char G_sizecheck[sizeof(G) > COMMON_BUFSIZE ? -1 : 1]; \
+	}; \
+} while (0)
 #define top              (G.top               )
 #define ntop             (G.ntop              )
 #define sort_field       (G.sort_field        )
@@ -317,7 +316,7 @@ static unsigned long display_header(int scr_width)
 	fclose(fp);
 
 	/* output memory info */
-	if (scr_width > sizeof(scrbuf))
+	if (scr_width > (int)sizeof(scrbuf))
 		scr_width = sizeof(scrbuf);
 	snprintf(scrbuf, scr_width,
 		"Mem: %luK used, %luK free, %luK shrd, %luK buff, %luK cached",
@@ -481,7 +480,7 @@ static NOINLINE void display_process_list(int count, int scr_width)
 				, SHOW_STAT(pcpu)
 #endif
 		);
-		if (col + 1 < scr_width)
+		if ((int)(col + 1) < scr_width)
 			read_cmdline(line_buf + col, scr_width - col - 1, s->pid, s->comm);
 		fputs(line_buf, stdout);
 		/* printf(" %d/%d %lld/%lld", s->pcpu, total_pcpu,
@@ -523,7 +522,7 @@ static void reset_term(void)
 static void sig_catcher(int sig ATTRIBUTE_UNUSED)
 {
 	reset_term();
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 #endif /* FEATURE_USE_TERMIOS */
 
@@ -584,7 +583,7 @@ static char *grab_number(char *str, const char *match, unsigned sz)
 static void display_topmem_header(int scr_width)
 {
 	char linebuf[128];
-	int i;
+	unsigned i;
 	FILE *fp;
 	union {
 		struct {
@@ -703,7 +702,7 @@ static NOINLINE void display_topmem_process_list(int count, int scr_width)
 		ulltoa6_and_space(s->dirty_sh, &line_buf[6*6]);
 		ulltoa6_and_space(s->stack   , &line_buf[7*6]);
 		line_buf[8*6] = '\0';
-		if (scr_width > MIN_WIDTH) {
+		if (scr_width > (int)MIN_WIDTH) {
 			read_cmdline(&line_buf[8*6], scr_width - MIN_WIDTH, s->pid, s->comm);
 		}
 		printf("\n""%.*s", scr_width, line_buf);
@@ -742,9 +741,10 @@ enum {
 int top_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int top_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
-	int count, lines, col;
-	unsigned interval;
+	int count;
 	int iterations;
+	unsigned lines, col;
+	unsigned interval;
 	char *sinterval;
 	SKIP_FEATURE_TOPMEM(const) unsigned scan_mask = TOP_MASK;
 #if ENABLE_FEATURE_USE_TERMIOS
@@ -887,7 +887,7 @@ int top_main(int argc ATTRIBUTE_UNUSED, char **argv)
 			 /* batch mode, or EOF on stdin ("top </dev/null") */
 			sleep(interval);
 		else if (safe_poll(pfd, 1, interval * 1000) > 0) {
-			if (safe_read(0, &c, 1) != 1) { /* error/EOF? */
+			if (safe_read(STDIN_FILENO, &c, 1) != 1) { /* error/EOF? */
 				option_mask32 |= OPT_EOF;
 				continue;
 			}

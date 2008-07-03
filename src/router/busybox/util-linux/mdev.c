@@ -12,8 +12,6 @@
 #include "libbb.h"
 #include "xregex.h"
 
-#define ENABLE_FEATURE_MDEV_RENAME_REGEXP 1
-
 struct globals {
 	int root_major, root_minor;
 };
@@ -48,6 +46,7 @@ static void make_device(char *path, int delete)
 	char *dev_maj_min = path + strlen(path);
 	char *command = NULL;
 	char *alias = NULL;
+	char aliaslink = aliaslink; /* for compiler */
 
 	/* Force the configuration file settings exactly. */
 	umask(0);
@@ -91,7 +90,7 @@ static void make_device(char *path, int delete)
 		if (!fp)
 			goto end_parse;
 
-		while ((line = xmalloc_getline(fp)) != NULL) {
+		while ((line = xmalloc_fgetline(fp)) != NULL) {
 			regmatch_t off[1+9*ENABLE_FEATURE_MDEV_RENAME_REGEXP];
 
 			++lineno;
@@ -122,8 +121,11 @@ static void make_device(char *path, int delete)
 
 				/* If not this device, skip rest of line */
 				/* (regexec returns whole pattern as "range" 0) */
-				if (result || off[0].rm_so || off[0].rm_eo != strlen(device_name))
+				if (result || off[0].rm_so
+				 || ((int)off[0].rm_eo != (int)strlen(device_name))
+				) {
 					goto next_line;
+				}
 			}
 
 			/* This line matches: stop parsing the file
@@ -164,45 +166,48 @@ static void make_device(char *path, int delete)
 			mode = strtoul(val, NULL, 8);
 
 			/* 4th field (opt): >alias */
-			if (ENABLE_FEATURE_MDEV_RENAME) {
-				if (!next)
-					break;
-				if (*next == '>') {
+#if ENABLE_FEATURE_MDEV_RENAME
+			if (!next)
+				break;
+			if (*next == '>' || *next == '=') {
 #if ENABLE_FEATURE_MDEV_RENAME_REGEXP
-					char *s, *p;
-					unsigned i, n;
-#endif
-					val = next;
-					next = next_field(val);
-#if ENABLE_FEATURE_MDEV_RENAME_REGEXP
-					/* substitute %1..9 with off[1..9], if any */
-					n = 0;
-					s = val;
-					while (*s)
-						if (*s++ == '%')
-							n++;
+				char *s, *p;
+				unsigned i, n;
 
-					p = alias = xzalloc(strlen(val) + n * strlen(device_name));
-					s = val + 1;
-					while (*s) {
-						*p = *s;
-						if ('%' == *s) {
-							i = (s[1] - '0');
-							if (i <= 9 && off[i].rm_so >= 0) {
-								n = off[i].rm_eo - off[i].rm_so;
-								strncpy(p, device_name + off[i].rm_so, n);
-								p += n - 1;
-								s++;
-							}
+				aliaslink = *next;
+				val = next;
+				next = next_field(val);
+				/* substitute %1..9 with off[1..9], if any */
+				n = 0;
+				s = val;
+				while (*s)
+					if (*s++ == '%')
+						n++;
+
+				p = alias = xzalloc(strlen(val) + n * strlen(device_name));
+				s = val + 1;
+				while (*s) {
+					*p = *s;
+					if ('%' == *s) {
+						i = (s[1] - '0');
+						if (i <= 9 && off[i].rm_so >= 0) {
+							n = off[i].rm_eo - off[i].rm_so;
+							strncpy(p, device_name + off[i].rm_so, n);
+							p += n - 1;
+							s++;
 						}
-						p++;
-						s++;
 					}
-#else
-					alias = xstrdup(val + 1);
-#endif
+					p++;
+					s++;
 				}
+#else
+				aliaslink = *next;
+				val = next;
+				next = next_field(val);
+				alias = xstrdup(val + 1);
+#endif
 			}
+#endif /* ENABLE_FEATURE_MDEV_RENAME */
 
 			/* The rest (opt): command to run */
 			if (!next)
@@ -267,10 +272,10 @@ static void make_device(char *path, int delete)
 					}
 				}
 
-				/* recreate device_name as a symlink to moved device node */
-				if (rename(device_name, alias) == 0) {
+				/* move the device, and optionally
+				 * make a symlink to moved device node */
+				if (rename(device_name, alias) == 0 && aliaslink == '>')
 					symlink(alias, device_name);
-				}
 
 				free(alias);
 			}
@@ -295,9 +300,9 @@ static void make_device(char *path, int delete)
 
 /* File callback for /sys/ traversal */
 static int fileAction(const char *fileName,
-                      struct stat *statbuf ATTRIBUTE_UNUSED,
-                      void *userData,
-                      int depth ATTRIBUTE_UNUSED)
+		struct stat *statbuf ATTRIBUTE_UNUSED,
+		void *userData,
+		int depth ATTRIBUTE_UNUSED)
 {
 	size_t len = strlen(fileName) - 4; /* can't underflow */
 	char *scratch = userData;
@@ -315,9 +320,9 @@ static int fileAction(const char *fileName,
 
 /* Directory callback for /sys/ traversal */
 static int dirAction(const char *fileName ATTRIBUTE_UNUSED,
-                      struct stat *statbuf ATTRIBUTE_UNUSED,
-                      void *userData ATTRIBUTE_UNUSED,
-                      int depth)
+		struct stat *statbuf ATTRIBUTE_UNUSED,
+		void *userData ATTRIBUTE_UNUSED,
+		int depth)
 {
 	return (depth >= MAX_SYSFS_DEPTH ? SKIP : TRUE);
 }
@@ -386,6 +391,15 @@ int mdev_main(int argc, char **argv)
 	char *action;
 	char *env_path;
 	RESERVE_CONFIG_BUFFER(temp, PATH_MAX + SCRATCH_SIZE);
+
+#ifdef YOU_WANT_TO_DEBUG_HOTPLUG_EVENTS
+	/* Kernel cannot provide suitable stdio fds for us, do it ourself */
+	/* Replace LOGFILE by other file or device name if you need */
+#define LOGFILE "/dev/console"
+	xmove_fd(xopen("/dev/null", O_RDONLY), STDIN_FILENO);
+	xmove_fd(xopen(LOGFILE, O_WRONLY|O_APPEND), STDOUT_FILENO);
+	xmove_fd(xopen(LOGFILE, O_WRONLY|O_APPEND), STDERR_FILENO);
+#endif
 
 	xchdir("/dev");
 
