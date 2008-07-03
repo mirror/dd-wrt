@@ -160,12 +160,15 @@ void setenv_str_ex (struct env_set *es,
 
 void setenv_counter (struct env_set *es, const char *name, counter_type value);
 void setenv_int (struct env_set *es, const char *name, int value);
+void setenv_unsigned (struct env_set *es, const char *name, unsigned int value);
 void setenv_str (struct env_set *es, const char *name, const char *value);
+void setenv_str_safe (struct env_set *es, const char *name, const char *value);
 void setenv_del (struct env_set *es, const char *name);
 
 /* struct env_set functions */
 
 struct env_set *env_set_create (struct gc_arena *gc);
+void env_set_destroy (struct env_set *es);
 bool env_set_del (struct env_set *es, const char *str);
 void env_set_add (struct env_set *es, const char *str);
 
@@ -180,6 +183,7 @@ void env_set_remove_from_environment (const struct env_set *es);
 
 const char **make_env_array (const struct env_set *es, struct gc_arena *gc);
 const char **make_arg_array (const char *first, const char *parms, struct gc_arena *gc);
+const char **make_extended_arg_array (char **p, struct gc_arena *gc);
 
 /* convert netmasks for iproute2 */
 int count_netmask_bits(const char *);
@@ -230,12 +234,17 @@ struct user_pass
 
 bool get_console_input (const char *prompt, const bool echo, char *input, const int capacity);
 
-#define GET_USER_PASS_MANAGEMENT  (1<<0)
-#define GET_USER_PASS_SENSITIVE   (1<<1)
+/*
+ * Flags for get_user_pass and management_query_user_pass
+ */
+#define GET_USER_PASS_MANAGEMENT    (1<<0)
+#define GET_USER_PASS_SENSITIVE     (1<<1)
+#define GET_USER_PASS_PASSWORD_ONLY (1<<2)
+#define GET_USER_PASS_NEED_OK       (1<<3)
+#define GET_USER_PASS_NOFATAL       (1<<4)
 
-void get_user_pass (struct user_pass *up,
+bool get_user_pass (struct user_pass *up,
 		    const char *auth_file,
-		    const bool password_only,
 		    const char *prefix,
 		    const unsigned int flags);
 
@@ -253,5 +262,18 @@ const char *safe_print (const char *str, struct gc_arena *gc);
  * seconds rather than doing nothing.
  */
 void openvpn_sleep (const int n);
+
+void configure_path (void);
+
+#if AUTO_USERID
+void get_user_pass_auto_userid (struct user_pass *up, const char *tag);
+#endif
+
+/*
+ * /sbin/ip path, may be overridden
+ */
+#ifdef CONFIG_FEATURE_IPROUTE
+extern const char *iproute_path;
+#endif
 
 #endif

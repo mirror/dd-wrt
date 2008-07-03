@@ -52,6 +52,7 @@
 #include "perf.h"
 #include "status.h"
 #include "gremlin.h"
+#include "pkcs11.h"
 
 #ifdef WIN32
 #include "cryptoapi.h"
@@ -265,7 +266,7 @@ void
 pem_password_setup (const char *auth_file)
 {
   if (!strlen (passbuf.password))
-    get_user_pass (&passbuf, auth_file, true, UP_TYPE_PRIVATE_KEY, GET_USER_PASS_MANAGEMENT|GET_USER_PASS_SENSITIVE);
+    get_user_pass (&passbuf, auth_file, UP_TYPE_PRIVATE_KEY, GET_USER_PASS_MANAGEMENT|GET_USER_PASS_SENSITIVE|GET_USER_PASS_PASSWORD_ONLY);
 }
 
 int
@@ -295,7 +296,13 @@ auth_user_pass_setup (const char *auth_file)
 {
   auth_user_pass_enabled = true;
   if (!auth_user_pass.defined)
-    get_user_pass (&auth_user_pass, auth_file, false, UP_TYPE_AUTH, GET_USER_PASS_MANAGEMENT|GET_USER_PASS_SENSITIVE);
+    {
+#if AUTO_USERID
+      get_user_pass_auto_userid (&auth_user_pass, auth_file);
+#else
+      get_user_pass (&auth_user_pass, auth_file, UP_TYPE_AUTH, GET_USER_PASS_MANAGEMENT|GET_USER_PASS_SENSITIVE);
+#endif
+    }
 }
 
 /*
@@ -314,9 +321,10 @@ ssl_set_auth_nocache (void)
 void
 ssl_purge_auth (void)
 {
-#if 1 /* JYFIXME -- todo: bad private key should trigger a signal, then this code can be included */
-  purge_user_pass (&passbuf, true);
+#ifdef USE_PKCS11
+  pkcs11_logout ();
 #endif
+  purge_user_pass (&passbuf, true);
   purge_user_pass (&auth_user_pass, true);
 }
 
@@ -370,10 +378,55 @@ extract_x509_field (const char *x509, const char *field_name, char *out, int siz
     }
 }
 
+/*
+ * Extract a field from an X509 subject name.
+ *
+ * Example:
+ *
+ * /C=US/ST=CO/L=Denver/O=ORG/CN=First-CN/CN=Test-CA/Email=jim@yonan.net
+ *
+ * The common name is 'Test-CA'
+ */
+static void
+extract_x509_field_ssl (X509_NAME *x509, const char *field_name, char *out, int size)
+{
+  int lastpos = -1;
+  int tmp = -1;
+  X509_NAME_ENTRY *x509ne = 0;
+  ASN1_STRING *asn1 = 0;
+  unsigned char *buf = 0;
+  int nid = OBJ_txt2nid(field_name);
+
+  ASSERT (size > 0);
+  *out = '\0';
+  do {
+    lastpos = tmp;
+    tmp = X509_NAME_get_index_by_NID(x509, nid, lastpos);
+  } while (tmp > 0);
+
+  /* Nothing found */
+  if (lastpos == -1)
+    return;
+
+  x509ne = X509_NAME_get_entry(x509, lastpos);
+  if (!x509ne)
+    return;
+
+  asn1 = X509_NAME_ENTRY_get_data(x509ne);
+  if (!asn1)
+    return;
+  tmp = ASN1_STRING_to_UTF8(&buf, asn1);
+  if (tmp <= 0)
+    return;
+
+  strncpynt(out, (char *)buf, size);
+  OPENSSL_free(buf);
+}
+
 static void
 setenv_untrusted (struct tls_session *session)
 {
-  setenv_sockaddr (session->opt->es, "untrusted", &session->untrusted_sockaddr, SA_IP_PORT);
+  setenv_link_socket_actual (session->opt->es, "untrusted", &session->untrusted_addr, SA_IP_PORT);
 }
 
 static void
@@ -389,6 +442,91 @@ set_common_name (struct tls_session *session, const char *common_name)
       session->common_name = string_alloc (common_name, NULL);
     }
 }
+
+#if OPENSSL_VERSION_NUMBER >= 0x00907000L
+
+bool verify_cert_eku (X509 *x509, const char * const expected_oid) {
+
+	EXTENDED_KEY_USAGE *eku = NULL;
+	bool fFound = false;
+
+	if ((eku = (EXTENDED_KEY_USAGE *)X509_get_ext_d2i (x509, NID_ext_key_usage, NULL, NULL)) == NULL) {
+		msg (D_HANDSHAKE, "Certificate does not have extended key usage extension");
+	}
+	else {
+		int i;
+
+		msg (D_HANDSHAKE, "Validating certificate extended key usage");
+		for(i = 0; !fFound && i < sk_ASN1_OBJECT_num (eku); i++) {
+			ASN1_OBJECT *oid = sk_ASN1_OBJECT_value (eku, i);
+			char szOid[1024];
+
+			if (!fFound && OBJ_obj2txt (szOid, sizeof (szOid), oid, 0) != -1) {
+				msg (D_HANDSHAKE, "++ Certificate has EKU (str) %s, expects %s", szOid, expected_oid);
+				if (!strcmp (expected_oid, szOid)) {
+					fFound = true;
+				}
+			}
+			if (!fFound && OBJ_obj2txt (szOid, sizeof (szOid), oid, 1) != -1) {
+				msg (D_HANDSHAKE, "++ Certificate has EKU (oid) %s, expects %s", szOid, expected_oid);
+				if (!strcmp (expected_oid, szOid)) {
+					fFound = true;
+				}
+			}
+		}
+	}
+
+	if (eku != NULL) {
+		sk_ASN1_OBJECT_pop_free (eku, ASN1_OBJECT_free);
+	}
+
+	return fFound;
+}
+
+bool verify_cert_ku (X509 *x509, const unsigned * const expected_ku, int expected_len) {
+
+	ASN1_BIT_STRING *ku = NULL;
+	bool fFound = false;
+
+	if ((ku = (ASN1_BIT_STRING *)X509_get_ext_d2i (x509, NID_key_usage, NULL, NULL)) == NULL) {
+		msg (D_HANDSHAKE, "Certificate does not have key usage extension");
+	}
+	else {
+		unsigned nku = 0;
+		int i;
+		for (i=0;i<8;i++) {
+			if (ASN1_BIT_STRING_get_bit (ku, i)) {
+				nku |= 1<<(7-i);
+			}
+		}
+
+		/*
+		 * Fixup if no LSB bits
+		 */
+		if ((nku & 0xff) == 0) {
+			nku >>= 8;
+		}
+
+		msg (D_HANDSHAKE, "Validating certificate key usage");
+		for (i=0;!fFound && i<expected_len;i++) {
+			if (expected_ku[i] != 0) {
+				msg (D_HANDSHAKE, "++ Certificate has key usage  %04x, expects %04x", nku, expected_ku[i]);
+
+				if (nku == expected_ku[i]) {
+					fFound = true;
+				}
+			}
+		}
+	}
+
+	if (ku != NULL) {
+		ASN1_BIT_STRING_free (ku);
+	}
+
+	return fFound;
+}
+
+#endif	/* OPENSSL_VERSION_NUMBER */
 
 /*
  * nsCertType checking
@@ -445,7 +583,8 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
   string_mod (subject, X509_NAME_CHAR_CLASS, 0, '_');
 
   /* extract the common name */
-  extract_x509_field (subject, "CN", common_name, TLS_CN_LEN);
+  extract_x509_field_ssl (X509_get_subject_name (ctx->current_cert), "CN", common_name, TLS_CN_LEN);
+  //extract_x509_field (subject, "CN", common_name, TLS_CN_LEN);
   string_mod (common_name, COMMON_NAME_CHAR_CLASS, 0, '_');
 
 #if 0 /* print some debugging info */
@@ -507,6 +646,38 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
 	}
     }
 
+#if OPENSSL_VERSION_NUMBER >= 0x00907000L
+
+  /* verify certificate ku */
+  if (opt->remote_cert_ku[0] != 0 &&  ctx->error_depth == 0)
+    {
+      if (verify_cert_ku (ctx->current_cert, opt->remote_cert_ku, MAX_PARMS))
+	{
+	  msg (D_HANDSHAKE, "VERIFY KU OK");
+	}
+        else
+        {
+	  msg (D_HANDSHAKE, "VERIFY KU ERROR");
+          goto err;		/* Reject connection */
+	}
+    }
+
+  /* verify certificate eku */
+  if (opt->remote_cert_eku != NULL && ctx->error_depth == 0)
+    {
+      if (verify_cert_eku (ctx->current_cert, opt->remote_cert_eku))
+        {
+	  msg (D_HANDSHAKE, "VERIFY EKU OK");
+	}
+      else
+	{
+	  msg (D_HANDSHAKE, "VERIFY EKU ERROR");
+          goto err;		/* Reject connection */
+	}
+    }
+
+#endif	/* OPENSSL_VERSION_NUMBER */
+
   /* verify X509 name or common name against --tls-remote */
   if (opt->verify_x509name && strlen (opt->verify_x509name) > 0 && ctx->error_depth == 0)
     {
@@ -533,7 +704,7 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
 		  ctx->error_depth,
 		  subject);
 
-      ret = plugin_call (opt->plugins, OPENVPN_PLUGIN_TLS_VERIFY, command, opt->es);
+      ret = plugin_call (opt->plugins, OPENVPN_PLUGIN_TLS_VERIFY, command, NULL, opt->es);
 
       if (!ret)
 	{
@@ -735,6 +906,170 @@ info_callback (INFO_CALLBACK_SSL_CONST SSL * s, int where, int ret)
     }
 }
 
+#if ENABLE_INLINE_FILES
+
+static int
+use_inline_load_verify_locations (SSL_CTX *ctx, const char *ca_string)
+{
+  X509_STORE *store = NULL;
+  X509* cert = NULL;
+  BIO *in = NULL;
+  int ret = 0;
+
+  in = BIO_new_mem_buf ((char *)ca_string, -1);
+  if (!in)
+    goto err;
+
+  for (;;)
+    {
+      if (!PEM_read_bio_X509 (in, &cert, 0, NULL))
+	{
+	  ret = 1;
+	  break;
+	}
+      if (!cert)
+	break;
+
+      store = SSL_CTX_get_cert_store (ctx);
+      if (!store)
+	break;
+
+      if (!X509_STORE_add_cert (store, cert))
+	break;
+
+      if (cert)
+	{
+	  X509_free (cert);
+	  cert = NULL;
+	}
+    }
+
+ err:
+  if (cert)
+    X509_free (cert);
+  if (in)
+    BIO_free (in);
+  return ret;  
+}
+
+static int
+xname_cmp(const X509_NAME * const *a, const X509_NAME * const *b)
+{
+  return(X509_NAME_cmp(*a,*b));
+}
+
+static STACK_OF(X509_NAME) *
+use_inline_load_client_CA_file (SSL_CTX *ctx, const char *ca_string)
+{
+  BIO *in = NULL;
+  X509 *x = NULL;
+  X509_NAME *xn = NULL;
+  STACK_OF(X509_NAME) *ret = NULL, *sk;
+
+  sk=sk_X509_NAME_new(xname_cmp);
+
+  in = BIO_new_mem_buf ((char *)ca_string, -1);
+  if (!in)
+    goto err;
+
+  if ((sk == NULL) || (in == NULL))
+    goto err;
+	
+  for (;;)
+    {
+      if (PEM_read_bio_X509(in,&x,NULL,NULL) == NULL)
+	break;
+      if (ret == NULL)
+	{
+	  ret = sk_X509_NAME_new_null();
+	  if (ret == NULL)
+	    goto err;
+	}
+      if ((xn=X509_get_subject_name(x)) == NULL) goto err;
+      /* check for duplicates */
+      xn=X509_NAME_dup(xn);
+      if (xn == NULL) goto err;
+      if (sk_X509_NAME_find(sk,xn) >= 0)
+	X509_NAME_free(xn);
+      else
+	{
+	  sk_X509_NAME_push(sk,xn);
+	  sk_X509_NAME_push(ret,xn);
+	}
+    }
+
+  if (0)
+    {
+    err:
+      if (ret != NULL) sk_X509_NAME_pop_free(ret,X509_NAME_free);
+      ret=NULL;
+    }
+  if (sk != NULL) sk_X509_NAME_free(sk);
+  if (in != NULL) BIO_free(in);
+  if (x != NULL) X509_free(x);
+  if (ret != NULL)
+    ERR_clear_error();
+  return(ret);
+}
+
+static int
+use_inline_certificate_file (SSL_CTX *ctx, const char *cert_string)
+{
+  BIO *in = NULL;
+  X509 *x = NULL;
+  int ret = 0;
+
+  in = BIO_new_mem_buf ((char *)cert_string, -1);
+  if (!in)
+    goto end;
+
+  x = PEM_read_bio_X509 (in,
+			 NULL,
+			 ctx->default_passwd_callback,
+			 ctx->default_passwd_callback_userdata);
+  if (!x)
+    goto end;
+
+  ret = SSL_CTX_use_certificate(ctx, x);
+
+ end:
+  if (x)
+    X509_free (x);
+  if (in)
+    BIO_free (in);
+  return ret;
+}
+
+static int
+use_inline_PrivateKey_file (SSL_CTX *ctx, const char *key_string)
+{
+  BIO *in = NULL;
+  EVP_PKEY *pkey = NULL;
+  int ret = 0;
+
+  in = BIO_new_mem_buf ((char *)key_string, -1);
+  if (!in)
+    goto end;
+
+  pkey = PEM_read_bio_PrivateKey (in,
+				  NULL,
+				  ctx->default_passwd_callback,
+				  ctx->default_passwd_callback_userdata);
+  if (!pkey)
+    goto end;
+
+  ret = SSL_CTX_use_PrivateKey (ctx, pkey);
+
+ end:
+  if (pkey)
+    EVP_PKEY_free (pkey);
+  if (in)
+    BIO_free (in);
+  return ret;
+}
+
+#endif
+
 /*
  * Initialize SSL context.
  * All files are in PEM format.
@@ -757,9 +1092,20 @@ init_ssl (const struct options *options)
 
       SSL_CTX_set_tmp_rsa_callback (ctx, tmp_rsa_cb);
 
-      /* Get Diffie Hellman Parameters */
-      if (!(bio = BIO_new_file (options->dh_file, "r")))
-	msg (M_SSLERR, "Cannot open %s for DH parameters", options->dh_file);
+#if ENABLE_INLINE_FILES
+      if (!strcmp (options->dh_file, INLINE_FILE_TAG) && options->dh_file_inline)
+	{
+	  if (!(bio = BIO_new_mem_buf ((char *)options->dh_file_inline, -1)))
+	    msg (M_SSLERR, "Cannot open memory BIO for inline DH parameters");
+	}
+      else
+#endif
+	{
+	  /* Get Diffie Hellman Parameters */
+	  if (!(bio = BIO_new_file (options->dh_file, "r")))
+	    msg (M_SSLERR, "Cannot open %s for DH parameters", options->dh_file);
+	}
+
       dh = PEM_read_bio_DHparams (bio, NULL, NULL, NULL);
       BIO_free (bio);
       if (!dh)
@@ -832,20 +1178,36 @@ init_ssl (const struct options *options)
         msg (M_SSLERR, "Private key does not match the certificate");
 
       /* Set Certificate Verification chain */
-      if (ca && sk_num(ca))
+      if (!options->ca_file)
         {
-          for (i = 0; i < sk_X509_num(ca); i++)
+          if (ca && sk_num(ca))
             {
-	      if (!X509_STORE_add_cert(ctx->cert_store,sk_X509_value(ca, i)))
-                 msg (M_SSLERR, "Cannot add certificate to certificate chain (X509_STORE_add_cert)");
-              if (!SSL_CTX_add_client_CA(ctx, sk_X509_value(ca, i)))
-                msg (M_SSLERR, "Cannot add certificate to client CA list (SSL_CTX_add_client_CA)");
+              for (i = 0; i < sk_X509_num(ca); i++)
+                {
+	          if (!X509_STORE_add_cert(ctx->cert_store,sk_X509_value(ca, i)))
+                    msg (M_SSLERR, "Cannot add certificate to certificate chain (X509_STORE_add_cert)");
+                  if (!SSL_CTX_add_client_CA(ctx, sk_X509_value(ca, i)))
+                    msg (M_SSLERR, "Cannot add certificate to client CA list (SSL_CTX_add_client_CA)");
+                }
             }
         }
     }
   else
     {
       /* Use seperate PEM files for key, cert and CA certs */
+
+#ifdef ENABLE_PKCS11
+      if (options->pkcs11_providers[0])
+        {
+         /* Load Certificate and Private Key */
+	 if (!SSL_CTX_use_pkcs11 (ctx, options->pkcs11_id))
+	   {
+	     msg (M_WARN, "Cannot load certificate \"%s\" using PKCS#11 interface", options->pkcs11_id);
+	     goto err;
+	   }
+        }
+      else
+#endif
 
 #ifdef WIN32
       if (options->cryptoapi_cert)
@@ -861,15 +1223,37 @@ init_ssl (const struct options *options)
 	  /* Load Certificate */
 	  if (options->cert_file)
 	    {
-	      using_cert_file = true;
-	      if (!SSL_CTX_use_certificate_file (ctx, options->cert_file, SSL_FILETYPE_PEM))
-		msg (M_SSLERR, "Cannot load certificate file %s", options->cert_file);
+#if ENABLE_INLINE_FILES
+	      if (!strcmp (options->cert_file, INLINE_FILE_TAG) && options->cert_file_inline)
+		{
+		  if (!use_inline_certificate_file (ctx, options->cert_file_inline))
+		    msg (M_SSLERR, "Cannot load inline certificate file");
+		}
+	      else
+#endif
+		{
+		  if (!SSL_CTX_use_certificate_file (ctx, options->cert_file, SSL_FILETYPE_PEM))
+		    msg (M_SSLERR, "Cannot load certificate file %s", options->cert_file);
+		  using_cert_file = true;
+		}
 	    }
 
 	  /* Load Private Key */
 	  if (options->priv_key_file)
 	    {
-	      if (!SSL_CTX_use_PrivateKey_file (ctx, options->priv_key_file, SSL_FILETYPE_PEM))
+	      int status;
+	      
+#if ENABLE_INLINE_FILES
+	      if (!strcmp (options->priv_key_file, INLINE_FILE_TAG) && options->priv_key_file_inline)
+		{
+		  status = use_inline_PrivateKey_file (ctx, options->priv_key_file_inline);
+		}
+	      else
+#endif
+	      {
+		status = SSL_CTX_use_PrivateKey_file (ctx, options->priv_key_file, SSL_FILETYPE_PEM);
+	      }
+	      if (!status)
 		{
 #ifdef ENABLE_MANAGEMENT
 		  if (management && (ERR_GET_REASON (ERR_peek_error()) == EVP_R_BAD_DECRYPT))
@@ -885,23 +1269,67 @@ init_ssl (const struct options *options)
 		msg (M_SSLERR, "Private key does not match the certificate");
 	    }
 	}
+    }
 
-      /* Load CA file for verifying peer supplied certificate */
-      ASSERT (options->ca_file);
-      if (!SSL_CTX_load_verify_locations (ctx, options->ca_file, NULL))
-        msg (M_SSLERR, "Cannot load CA certificate file %s (SSL_CTX_load_verify_locations)", options->ca_file);
+  if (options->ca_file || options->ca_path)
+    {
+      int status;
+
+#if ENABLE_INLINE_FILES
+      if (options->ca_file && !strcmp (options->ca_file, INLINE_FILE_TAG) && options->ca_file_inline)
+	{
+	  status = use_inline_load_verify_locations (ctx, options->ca_file_inline);
+	}
+      else
+#endif
+	{
+	  /* Load CA file for verifying peer supplied certificate */
+	  status = SSL_CTX_load_verify_locations (ctx, options->ca_file, options->ca_path);
+	}
+      
+      if (!status)
+	msg (M_SSLERR, "Cannot load CA certificate file %s path %s (SSL_CTX_load_verify_locations)", options->ca_file, options->ca_path);
+
+      /* Set a store for certs (CA & CRL) with a lookup on the "capath" hash directory */
+      if (options->ca_path) {
+        X509_STORE *store = SSL_CTX_get_cert_store(ctx);
+
+        if (store)
+	  {
+	    X509_LOOKUP *lookup = X509_STORE_add_lookup(store, X509_LOOKUP_hash_dir());
+	    if (!X509_LOOKUP_add_dir(lookup, options->ca_path, X509_FILETYPE_PEM))
+	      X509_LOOKUP_add_dir(lookup, NULL, X509_FILETYPE_DEFAULT);
+	    else
+	      msg(M_WARN, "WARNING: experimental option --capath %s", options->ca_path);
+#if OPENSSL_VERSION_NUMBER >= 0x00907000L
+	    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+#else
+	    msg(M_WARN, "WARNING: this version of OpenSSL cannot handle CRL files in capath");
+#endif
+	  }
+	else
+          msg(M_SSLERR, "Cannot get certificate store (SSL_CTX_get_cert_store)");
+      }
 
       /* Load names of CAs from file and use it as a client CA list */
-      {
-        STACK_OF(X509_NAME) *cert_names;
-        cert_names = SSL_load_client_CA_file (options->ca_file);
+      if (options->ca_file) {
+        STACK_OF(X509_NAME) *cert_names = NULL;
+#if ENABLE_INLINE_FILES
+	if (!strcmp (options->ca_file, INLINE_FILE_TAG) && options->ca_file_inline)
+	  {
+	    cert_names = use_inline_load_client_CA_file (ctx, options->ca_file_inline);
+	  }
+	else
+#endif
+	  {
+	    cert_names = SSL_load_client_CA_file (options->ca_file);
+	  }
         if (!cert_names)
           msg (M_SSLERR, "Cannot load CA certificate file %s (SSL_load_client_CA_file)", options->ca_file);
         SSL_CTX_set_client_CA_list (ctx, cert_names);
       }
-
     }
-  
+
   /* Enable the use of certificate chains */
   if (using_cert_file)
     {
@@ -1420,9 +1848,11 @@ key_state_init (struct tls_session *session, struct key_state *ks)
   ks->plaintext_write_buf = alloc_buf (PLAINTEXT_BUFFER_SIZE);
   ks->ack_write_buf = alloc_buf (BUF_SIZE (&session->opt->frame));
   reliable_init (ks->send_reliable, BUF_SIZE (&session->opt->frame),
-		 FRAME_HEADROOM (&session->opt->frame), TLS_RELIABLE_N_SEND_BUFFERS);
+		 FRAME_HEADROOM (&session->opt->frame), TLS_RELIABLE_N_SEND_BUFFERS,
+		 ks->key_id ? false : session->opt->xmit_hold);
   reliable_init (ks->rec_reliable, BUF_SIZE (&session->opt->frame),
-		 FRAME_HEADROOM (&session->opt->frame), TLS_RELIABLE_N_REC_BUFFERS);
+		 FRAME_HEADROOM (&session->opt->frame), TLS_RELIABLE_N_REC_BUFFERS,
+		 false);
   reliable_set_timeout (ks->send_reliable, session->opt->packet_timeout);
 
   /* init packet ID tracker */
@@ -1814,7 +2244,7 @@ static void
 write_control_auth (struct tls_session *session,
 		    struct key_state *ks,
 		    struct buffer *buf,
-		    struct sockaddr_in *to_link_addr,
+		    struct link_socket_actual **to_link_addr,
 		    int opcode,
 		    int max_ack,
 		    bool prepend_ack)
@@ -1822,7 +2252,7 @@ write_control_auth (struct tls_session *session,
   uint8_t *header;
   struct buffer null = clear_buf ();
 
-  ASSERT (addr_defined (&ks->remote_addr));
+  ASSERT (link_socket_actual_defined (&ks->remote_addr));
   ASSERT (reliable_ack_write
 	  (ks->rec_ack, buf, &ks->session_id_remote, max_ack, prepend_ack));
   ASSERT (session_id_write_prepend (&session->session_id, buf));
@@ -1834,7 +2264,7 @@ write_control_auth (struct tls_session *session,
       openvpn_encrypt (buf, null, &session->tls_auth, NULL);
       ASSERT (swap_hmac (buf, &session->tls_auth, false));
     }
-  *to_link_addr = ks->remote_addr;
+  *to_link_addr = &ks->remote_addr;
 }
 
 /*
@@ -1843,7 +2273,7 @@ write_control_auth (struct tls_session *session,
 static bool
 read_control_auth (struct buffer *buf,
 		   const struct crypto_options *co,
-		   const struct sockaddr_in *from)
+		   const struct link_socket_actual *from)
 {
   struct gc_arena gc = gc_new ();
 
@@ -1856,7 +2286,7 @@ read_control_auth (struct buffer *buf,
 	{
 	  msg (D_TLS_ERRORS,
 	       "TLS Error: cannot locate HMAC in incoming packet from %s",
-	       print_sockaddr (from, &gc));
+	       print_link_socket_actual (from, &gc));
 	  gc_free (&gc);
 	  return false;
 	}
@@ -1868,7 +2298,7 @@ read_control_auth (struct buffer *buf,
 	{
 	  msg (D_TLS_ERRORS,
 	       "TLS Error: incoming packet authentication failed from %s",
-	       print_sockaddr (from, &gc));
+	       print_link_socket_actual (from, &gc));
 	  gc_free (&gc);
 	  return false;
 	}
@@ -2384,7 +2814,7 @@ verify_user_pass_plugin (struct tls_session *session, const struct user_pass *up
       setenv_untrusted (session);
 
       /* call command */
-      retval = plugin_call (session->opt->plugins, OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY, NULL, session->opt->es);
+      retval = plugin_call (session->opt->plugins, OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY, NULL, NULL, session->opt->es);
 
       if (!retval)
 	ret = true;
@@ -2716,7 +3146,17 @@ key_method_2_read (struct buffer *buf, struct tls_multi *multi, struct tls_sessi
   buf_clear (buf);
 
   /*
-   * generate tunnel keys if client
+   * Call OPENVPN_PLUGIN_TLS_FINAL plugin if defined, for final
+   * veto opportunity over authentication decision.
+   */
+  if (ks->authenticated && plugin_defined (session->opt->plugins, OPENVPN_PLUGIN_TLS_FINAL))
+    {
+      if (plugin_call (session->opt->plugins, OPENVPN_PLUGIN_TLS_FINAL, NULL, NULL, session->opt->es))
+	ks->authenticated = false;
+    }
+
+  /*
+   * Generate tunnel keys if client
    */
   if (!session->opt->server)
     {
@@ -2757,7 +3197,7 @@ static bool
 tls_process (struct tls_multi *multi,
 	     struct tls_session *session,
 	     struct buffer *to_link,
-	     struct sockaddr_in *to_link_addr,
+	     struct link_socket_actual **to_link_addr,
 	     struct link_socket_info *to_link_socket_info,
 	     interval_t *wakeup)
 {
@@ -2841,6 +3281,7 @@ tls_process (struct tls_multi *multi,
 		      management_set_state (management,
 					    OPENVPN_STATE_WAIT,
 					    NULL,
+					    0,
 					    0);
 		    }
 #endif
@@ -3151,7 +3592,7 @@ error:
 bool
 tls_multi_process (struct tls_multi *multi,
 		   struct buffer *to_link,
-		   struct sockaddr_in *to_link_addr,
+		   struct link_socket_actual **to_link_addr,
 		   struct link_socket_info *to_link_socket_info,
 		   interval_t *wakeup)
 {
@@ -3177,7 +3618,7 @@ tls_multi_process (struct tls_multi *multi,
 
       /* set initial remote address */
       if (i == TM_ACTIVE && ks->state == S_INITIAL &&
-	  addr_defined (&to_link_socket_info->lsa->actual))
+	  link_socket_actual_defined (&to_link_socket_info->lsa->actual))
 	ks->remote_addr = to_link_socket_info->lsa->actual;
 
       dmsg (D_TLS_DEBUG,
@@ -3186,15 +3627,28 @@ tls_multi_process (struct tls_multi *multi,
 	   state_name (ks->state),
 	   session_id_print (&session->session_id, &gc),
 	   session_id_print (&ks->session_id_remote, &gc),
-	   print_sockaddr (&ks->remote_addr, &gc));
+	   print_link_socket_actual (&ks->remote_addr, &gc));
 
-      if (ks->state >= S_INITIAL && addr_defined (&ks->remote_addr))
+      if (ks->state >= S_INITIAL && link_socket_actual_defined (&ks->remote_addr))
 	{
+	  struct link_socket_actual *tla = NULL;
+
 	  update_time ();
 
-	  if (tls_process (multi, session, to_link, to_link_addr,
+	  if (tls_process (multi, session, to_link, &tla,
 			   to_link_socket_info, wakeup))
 	    active = true;
+
+	  /*
+	   * If tls_process produced an outgoing packet,
+	   * return the link_socket_actual object (which
+	   * contains the outgoing address).
+	   */
+	  if (tla)
+	    {
+	      multi->to_link_addr = *tla;
+	      *to_link_addr = &multi->to_link_addr;
+	    }
 
 	  /*
 	   * If tls_process hits an error:
@@ -3315,7 +3769,7 @@ tls_multi_process (struct tls_multi *multi,
 
 bool
 tls_pre_decrypt (struct tls_multi *multi,
-		 struct sockaddr_in *from,
+		 const struct link_socket_actual *from,
 		 struct buffer *buf,
 		 struct crypto_options *opt)
 {
@@ -3357,7 +3811,7 @@ tls_pre_decrypt (struct tls_multi *multi,
 	      if (DECRYPT_KEY_ENABLED (multi, ks)
 		  && key_id == ks->key_id
 		  && ks->authenticated
-		  && addr_port_match(from, &ks->remote_addr))
+		  && link_socket_actual_match (from, &ks->remote_addr))
 		{
 		  /* return appropriate data channel decrypt key in opt */
 		  opt->key_ctx_bi = &ks->key;
@@ -3370,7 +3824,7 @@ tls_pre_decrypt (struct tls_multi *multi,
 		  ks->n_bytes += buf->len;
 		  dmsg (D_TLS_DEBUG,
 		       "TLS: data channel, key_id=%d, IP=%s",
-		       key_id, print_sockaddr (from, &gc));
+		       key_id, print_link_socket_actual (from, &gc));
 		  gc_free (&gc);
 		  return ret;
 		}
@@ -3383,14 +3837,14 @@ tls_pre_decrypt (struct tls_multi *multi,
 		       key_id,
 		       ks->key_id,
 		       ks->authenticated,
-		       addr_port_match (from, &ks->remote_addr));
+		       link_socket_actual_match (from, &ks->remote_addr));
 		}
 #endif
 	    }
 
 	  msg (D_TLS_ERRORS,
 	       "TLS Error: local/remote TLS keys are out of sync: %s [%d]",
-	       print_sockaddr (from, &gc), key_id);
+	       print_link_socket_actual (from, &gc), key_id);
 	  goto error;
 	}
       else			  /* control channel packet */
@@ -3404,7 +3858,7 @@ tls_pre_decrypt (struct tls_multi *multi,
 	    {
 	      msg (D_TLS_ERRORS,
 		   "TLS Error: unknown opcode received from %s op=%d",
-		   print_sockaddr (from, &gc), op);
+		   print_link_socket_actual (from, &gc), op);
 	      goto error;
 	    }
 
@@ -3419,7 +3873,7 @@ tls_pre_decrypt (struct tls_multi *multi,
 		{
 		  msg (D_TLS_ERRORS,
 		       "TLS Error: client->client or server->server connection attempted from %s",
-		       print_sockaddr (from, &gc));
+		       print_link_socket_actual (from, &gc));
 		  goto error;
 		}
 	    }
@@ -3428,7 +3882,7 @@ tls_pre_decrypt (struct tls_multi *multi,
 	   * Authenticate Packet
 	   */
 	  dmsg (D_TLS_DEBUG, "TLS: control channel, op=%s, IP=%s",
-	       packet_opcode_name (op), print_sockaddr (from, &gc));
+	       packet_opcode_name (op), print_link_socket_actual (from, &gc));
 
 	  /* get remote session-id */
 	  {
@@ -3438,7 +3892,7 @@ tls_pre_decrypt (struct tls_multi *multi,
 	      {
 		msg (D_TLS_ERRORS,
 		     "TLS Error: session-id not found in packet from %s",
-		     print_sockaddr (from, &gc));
+		     print_link_socket_actual (from, &gc));
 		goto error;
 	      }
 	  }
@@ -3455,9 +3909,9 @@ tls_pre_decrypt (struct tls_multi *multi,
 		   state_name (ks->state),
 		   session_id_print (&session->session_id, &gc),
 		   session_id_print (&sid, &gc),
-		   print_sockaddr (from, &gc),
+		   print_link_socket_actual (from, &gc),
 		   session_id_print (&ks->session_id_remote, &gc),
-		   print_sockaddr (&ks->remote_addr, &gc));
+		   print_link_socket_actual (&ks->remote_addr, &gc));
 
 	      if (session_id_equal (&ks->session_id_remote, &sid))
 		/* found a match */
@@ -3502,7 +3956,7 @@ tls_pre_decrypt (struct tls_multi *multi,
 		    {
 		      msg (D_TLS_ERRORS,
 			   "TLS Error: Cannot accept new session request from %s due to session context expire or --single-session [1]",
-			   print_sockaddr (from, &gc));
+			   print_link_socket_actual (from, &gc));
 		      goto error;
 		    }
 
@@ -3512,19 +3966,20 @@ tls_pre_decrypt (struct tls_multi *multi,
 		      management_set_state (management,
 					    OPENVPN_STATE_AUTH,
 					    NULL,
+					    0,
 					    0);
 		    }
 #endif
 
 		  msg (D_TLS_DEBUG_LOW,
 		       "TLS: Initial packet from %s, sid=%s",
-		       print_sockaddr (from, &gc),
+		       print_link_socket_actual (from, &gc),
 		       session_id_print (&sid, &gc));
 
 		  do_burst = true;
 		  new_link = true;
 		  i = TM_ACTIVE;
-		  session->untrusted_sockaddr = *from;
+		  session->untrusted_addr = *from;
 		}
 	    }
 
@@ -3544,7 +3999,7 @@ tls_pre_decrypt (struct tls_multi *multi,
 		{
 		  msg (D_TLS_ERRORS,
 		       "TLS Error: Cannot accept new session request from %s due to session context expire or --single-session [2]",
-		       print_sockaddr (from, &gc));
+		       print_link_socket_actual (from, &gc));
 		  goto error;
 		}
 	      
@@ -3567,11 +4022,11 @@ tls_pre_decrypt (struct tls_multi *multi,
 	       */
 	      msg (D_TLS_DEBUG_LOW,
 		   "TLS: new session incoming connection from %s",
-		   print_sockaddr (from, &gc));
+		   print_link_socket_actual (from, &gc));
 
 	      new_link = true;
 	      i = TM_UNTRUSTED;
-	      session->untrusted_sockaddr = *from;
+	      session->untrusted_addr = *from;
 	    }
 	  else
 	    {
@@ -3585,7 +4040,7 @@ tls_pre_decrypt (struct tls_multi *multi,
 		{
 		  msg (D_TLS_ERRORS,
 		       "TLS Error: Unroutable control packet received from %s (si=%d op=%s)",
-		       print_sockaddr (from, &gc),
+		       print_link_socket_actual (from, &gc),
 		       i,
 		       packet_opcode_name (op));
 		  goto error;
@@ -3594,10 +4049,10 @@ tls_pre_decrypt (struct tls_multi *multi,
 	      /*
 	       * Verify remote IP address
 	       */
-	      if (!new_link && !addr_port_match (&ks->remote_addr, from))
+	      if (!new_link && !link_socket_actual_match (&ks->remote_addr, from))
 		{
 		  msg (D_TLS_ERRORS, "TLS Error: Received control packet from unexpected IP addr: %s",
-		      print_sockaddr (from, &gc));
+		      print_link_socket_actual (from, &gc));
 		  goto error;
 		}
 
@@ -3659,11 +4114,11 @@ tls_pre_decrypt (struct tls_multi *multi,
 		ks->remote_addr = *from;
 		++multi->n_sessions;
 	      }
-	    else if (!addr_port_match (&ks->remote_addr, from))
+	    else if (!link_socket_actual_match (&ks->remote_addr, from))
 	      {
 		msg (D_TLS_ERRORS,
 		     "TLS Error: Existing session control channel packet from unknown IP address: %s",
-		     print_sockaddr (from, &gc));
+		     print_link_socket_actual (from, &gc));
 		goto error;
 	      }
 
@@ -3761,8 +4216,9 @@ tls_pre_decrypt (struct tls_multi *multi,
  */
 bool
 tls_pre_decrypt_lite (const struct tls_auth_standalone *tas,
-		      const struct sockaddr_in *from,
+		      const struct link_socket_actual *from,
 		      const struct buffer *buf)
+
 {
   struct gc_arena gc = gc_new ();
   bool ret = false;
@@ -3789,7 +4245,7 @@ tls_pre_decrypt_lite (const struct tls_auth_standalone *tas,
 	   */
 	  dmsg (D_TLS_STATE_ERRORS,
 	       "TLS State Error: No TLS state for client %s, opcode=%d",
-	       print_sockaddr (from, &gc),
+	       print_link_socket_actual (from, &gc),
 	       op);
 	  goto error;
 	}
@@ -3799,7 +4255,7 @@ tls_pre_decrypt_lite (const struct tls_auth_standalone *tas,
 	  dmsg (D_TLS_STATE_ERRORS,
 	       "TLS State Error: Unknown key ID (%d) received from %s -- 0 was expected",
 	       key_id,
-	       print_sockaddr (from, &gc));
+	       print_link_socket_actual (from, &gc));
 	  goto error;
 	}
 
@@ -3808,7 +4264,7 @@ tls_pre_decrypt_lite (const struct tls_auth_standalone *tas,
 	  dmsg (D_TLS_STATE_ERRORS,
 	       "TLS State Error: Large packet (size %d) received from %s -- a packet no larger than %d bytes was expected",
 	       buf->len,
-	       print_sockaddr (from, &gc),
+	       print_link_socket_actual (from, &gc),
 	       EXPANDED_SIZE_DYNAMIC (&tas->frame));
 	  goto error;
 	}

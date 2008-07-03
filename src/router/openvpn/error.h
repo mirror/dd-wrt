@@ -97,6 +97,7 @@ extern int x_msg_line_num;
 #define M_USAGE_SMALL     (1<<13)        /* fatal options error, call usage_small */
 #define M_MSG_VIRT_OUT    (1<<14)        /* output message through msg_status_output callback */
 #define M_OPTERR          (1<<15)        /* print "Options error:" prefix */
+#define M_NOLF            (1<<16)        /* don't print new line */
 
 /* flag combinations which are frequently used */
 #define M_ERR     (M_FATAL | M_ERRNO)
@@ -111,7 +112,7 @@ extern int x_msg_line_num;
  *
  * A mute level of 0 is always printed.
  */
-#define MUTE_LEVEL_SHIFT 16
+#define MUTE_LEVEL_SHIFT 24
 #define MUTE_LEVEL_MASK 0xFF
 
 #define ENCODE_MUTE_LEVEL(mute_level) (((mute_level) & MUTE_LEVEL_MASK) << MUTE_LEVEL_SHIFT)
@@ -194,6 +195,10 @@ FILE *msg_fp(void);
 
 void assert_failed (const char *filename, int line);
 
+#ifdef ENABLE_DEBUG
+void crash (void); /* force a segfault (debugging only) */
+#endif
+
 /* Inline functions */
 
 static inline bool
@@ -201,6 +206,9 @@ check_debug_level (unsigned int level)
 {
   return (level & M_DEBUG_LEVEL) <= x_debug_level;
 }
+
+/* Call if we forked */
+void msg_forked (void);
 
 /* syslog output */
 
