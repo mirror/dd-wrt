@@ -41,8 +41,10 @@ madwifi-clean:
 
 madwifi-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+ifneq ($(CONFIG_NOWIFI),y)
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=xscale-boese-be-elf install
+endif
 endif
 
 

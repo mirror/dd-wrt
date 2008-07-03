@@ -64,7 +64,7 @@
 #define SERVICE_MODULE "/usr/lib/validate.so"
 #define VISSERVICE_MODULE "/usr/lib/visuals.so"
 //#define SERVICE_MODULE "/tmp/validate.so"
-#define cprintf(fmt, args...)
+//#define cprintf(fmt, args...)
 
 
 #ifndef cprintf

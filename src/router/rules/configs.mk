@@ -1,4 +1,4 @@
-obj-$(CONFIG_OPENSSL) += openssl
+obj-$(CONFIG_OPENSSL) += openssl openssl-shared openssl-apps
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_CTORRENT) += ctorrent
 obj-$(CONFIG_HTTPD) += httpd
@@ -161,6 +161,7 @@ obj-$(CONFIG_WGETS) += wgets
 obj-$(CONFIG_USB) += usb
 obj-$(CONFIG_ASTERISK) += asterisk
 obj-$(CONFIG_ZAPTEL) += zaptel
+obj-$(CONFIG_WAVESAT) += wavesat
 obj-y+=anchorfree
 obj-y+=ttraff
 
