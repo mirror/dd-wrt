@@ -2455,6 +2455,15 @@
        "/tmp/foo/bar/baz: No such file or directory\n" \
        "$ mkdir -p /tmp/foo/bar/baz\n"
 
+#define e2label_trivial_usage " none "
+#define e2label_full_usage " none "
+
+#define fsck_ext2_trivial_usage " none "
+#define fsck_ext2_full_usage " none "
+
+#define fsck_ext3_trivial_usage " none "
+#define fsck_ext3_full_usage " none "
+
 #define mke2fs_trivial_usage \
        "[-c|-l filename] [-b block-size] [-f fragment-size] [-g blocks-per-group] " \
        "[-i bytes-per-inode] [-j] [-J journal-options] [-N number-of-inodes] [-n] " \
