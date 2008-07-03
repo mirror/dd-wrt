@@ -79,13 +79,13 @@ do_mssid (char *wlifname)
       ether_atoe (nvram_nget ("%s_hwaddr", var), ifr.ifr_hwaddr.sa_data);
       strncpy (ifr.ifr_name, var, IFNAMSIZ);
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-      if (!nvram_nmatch ("0","%s_bridged", var))
+      if (!nvram_nmatch ("0", "%s_bridged", var))
 	{
 	  //  ifconfig (var, IFUP, NULL, NULL);
 	  eval ("ifconfig", var, "down");
 	  ioctl (s, SIOCSIFHWADDR, &ifr);
 	  eval ("ifconfig", var, "up");
-	  br_add_interface (getBridge(var), var);
+	  br_add_interface (getBridge (var), var);
 	}
       else
 	{
@@ -98,23 +98,24 @@ do_mssid (char *wlifname)
     }
   close (s);
 }
+
 #ifndef HAVE_MADWIFI
 
 void
-set_vifsmac (char *base) // corrects hwaddr and bssid assignment
+set_vifsmac (char *base)	// corrects hwaddr and bssid assignment
 {
   struct ifreq ifr;
   int s;
   char *next;
   char var[80];
   char mac[80];
-  char *vifs = nvram_nget ("%s_vifs",base);
+  char *vifs = nvram_nget ("%s_vifs", base);
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-      wl_getbssid(var,mac);
+      wl_getbssid (var, mac);
       eval ("ifconfig", var, "down");
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
@@ -125,9 +126,10 @@ set_vifsmac (char *base) // corrects hwaddr and bssid assignment
   close (s);
 }
 
-void start_vifsmac(void)
+void
+start_vifsmac (void)
 {
-set_vifsmac("wl0");
+  set_vifsmac ("wl0");
 }
 #endif
 
