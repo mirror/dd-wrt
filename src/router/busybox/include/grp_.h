@@ -21,14 +21,12 @@
  *	POSIX Standard: 9.2.1 Group Database Access	<grp.h>
  */
 
-#if !ENABLE_USE_BB_PWD_GRP
-
-#include <grp.h>
-
-#else
-
 #ifndef	_GRP_H
 #define	_GRP_H 1
+
+#if __GNUC_PREREQ(4,1)
+# pragma GCC visibility push(hidden)
+#endif
 
 /* The group structure.	 */
 struct group {
@@ -37,11 +35,6 @@ struct group {
 	gid_t gr_gid;           /* Group ID.    */
 	char **gr_mem;          /* Member list. */
 };
-
-/* We don't reimplement this, just supplying prototype */
-/* The function itself is in libc */
-/* Set the group set for the current user to GROUPS (N of them).  */
-extern int setgroups(size_t __n, __const gid_t *__groups);
 
 
 #define setgrent     bb_internal_setgrent
@@ -128,6 +121,8 @@ extern int getgrouplist(__const char *__user, gid_t __group,
    of which USER is a member.  Also include GROUP.  */
 extern int initgroups(__const char *__user, gid_t __group);
 
+#if __GNUC_PREREQ(4,1)
+# pragma GCC visibility pop
+#endif
 
-#endif /* grp.h  */
 #endif

@@ -9,8 +9,6 @@
 #include "libbb.h"
 
 #if ENABLE_GETOPT_LONG
-#include <getopt.h>
-
 static const char chpasswd_longopts[] ALIGN1 =
 	"encrypted\0" No_argument "e"
 	"md5\0"       No_argument "m"
@@ -35,7 +33,7 @@ int chpasswd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	USE_GETOPT_LONG(applet_long_options = chpasswd_longopts;)
 	opt = getopt32(argv, "em");
 
-	while ((name = xmalloc_getline(stdin)) != NULL) {
+	while ((name = xmalloc_fgetline(stdin)) != NULL) {
 		pass = strchr(name, ':');
 		if (!pass)
 			bb_error_msg_and_die("missing new password");
@@ -49,7 +47,7 @@ int chpasswd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 				strcpy(salt, "$1$");
 				rnd = crypt_make_salt(salt + 3, 4, rnd);
 			}
-			pass = pw_encrypt(pass, salt);
+			pass = pw_encrypt(pass, salt, 0);
 		}
 
 		/* This is rather complex: if user is not found in /etc/shadow,
@@ -67,6 +65,7 @@ int chpasswd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 			bb_info_msg("Password for '%s' changed", name);
 		logmode = LOGMODE_STDIO;
 		free(name);
+		free(pass);
 	}
 
 	return 0;

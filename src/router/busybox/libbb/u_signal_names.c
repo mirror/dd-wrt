@@ -123,7 +123,7 @@ static const char signals[][7] = {
 
 int get_signum(const char *name)
 {
-	int i;
+	unsigned i;
 
 	i = bb_strtou(name, NULL, 10);
 	if (!errno)
@@ -170,7 +170,7 @@ const char *get_signame(int number)
 
 void print_signames(void)
 {
-	int signo;
+	unsigned signo;
 
 	for (signo = 1; signo < ARRAY_SIZE(signals); signo++) {
 		const char *name = signals[signo];

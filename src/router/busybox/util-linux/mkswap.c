@@ -23,7 +23,7 @@ static void mkswap_selinux_setcontext(int fd, const char *path)
 		security_context_t oldcon = NULL;
 		context_t context;
 
-		if (fgetfilecon_raw(fd, &oldcon) < 0) {
+		if (fgetfilecon(fd, &oldcon) < 0) {
 			if (errno != ENODATA)
 				goto error;
 			if (matchpathcon(path, stbuf.st_mode, &oldcon) < 0)
@@ -35,7 +35,8 @@ static void mkswap_selinux_setcontext(int fd, const char *path)
 		newcon = context_str(context);
 		if (!newcon)
 			goto error;
-		if (strcmp(oldcon, newcon) != 0 && fsetfilecon_raw(fd, newcon) < 0)
+		/* fsetfilecon_raw is hidden */
+		if (strcmp(oldcon, newcon) != 0 && fsetfilecon(fd, newcon) < 0)
 			goto error;
 		if (ENABLE_FEATURE_CLEAN_UP) {
 			context_free(context);

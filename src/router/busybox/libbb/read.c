@@ -111,7 +111,7 @@ void xread(int fd, void *buf, size_t count)
 {
 	if (count) {
 		ssize_t size = full_read(fd, buf, count);
-		if (size != count)
+		if ((size_t)size != count)
 			bb_error_msg_and_die("short read");
 	}
 }
@@ -141,7 +141,7 @@ char *reads(int fd, char *buffer, size_t size)
 		off_t offset;
 		*p++ = '\0';
 		// avoid incorrect (unsigned) widening
-		offset = (off_t)(p-buffer) - (off_t)size;
+		offset = (off_t)(p - buffer) - (off_t)size;
 		// set fd position right after '\n'
 		if (offset && lseek(fd, offset, SEEK_CUR) == (off_t)-1)
 			return NULL;
@@ -149,17 +149,18 @@ char *reads(int fd, char *buffer, size_t size)
 	return buffer;
 }
 
-// Read one line a-la fgets. Reads byte-by-byte.
-// Useful when it is important to not read ahead.
+// Reads one line a-la fgets (but doesn't save terminating '\n').
+// Reads byte-by-byte. Useful when it is important to not read ahead.
 // Bytes are appended to pfx (which must be malloced, or NULL).
-char *xmalloc_reads(int fd, char *buf)
+char *xmalloc_reads(int fd, char *buf, size_t *maxsz_p)
 {
 	char *p;
-	int sz = buf ? strlen(buf) : 0;
+	size_t sz = buf ? strlen(buf) : 0;
+	size_t maxsz = maxsz_p ? *maxsz_p : MAXINT(size_t);
 
 	goto jump_in;
-	while (1) {
-		if (p - buf == sz) {
+	while (sz < maxsz) {
+		if ((size_t)(p - buf) == sz) {
  jump_in:
 			buf = xrealloc(buf, sz + 128);
 			p = buf + sz;
@@ -177,7 +178,10 @@ char *xmalloc_reads(int fd, char *buf)
 			break;
 		p++;
 	}
-	*p++ = '\0';
+	*p = '\0';
+	if (maxsz_p)
+		*maxsz_p  = p - buf;
+	p++;
 	return xrealloc(buf, p - buf);
 }
 
@@ -199,29 +203,91 @@ ssize_t open_read_close(const char *filename, void *buf, size_t size)
 	return read_close(fd, buf, size);
 }
 
+// Read (potentially big) files in one go. File size is estimated
+// by stat.
+void *xmalloc_open_read_close(const char *filename, size_t *sizep)
+{
+	char *buf;
+	size_t size;
+	int fd;
+	off_t len;
+	struct stat st;
+
+	fd = open(filename, O_RDONLY);
+	if (fd < 0)
+		return NULL;
+
+	st.st_size = 0; /* in case fstat fail, define to 0 */
+	fstat(fd, &st);
+	/* /proc/N/stat files report len 0 here */
+	/* In order to make such files readable, we add small const */
+	len = st.st_size | 0x3ff; /* read only 1k on unseekable files */
+	size = sizep ? *sizep : INT_MAX;
+	if (len < size)
+		size = len;
+	buf = xmalloc(size + 1);
+	size = read_close(fd, buf, size);
+	if ((ssize_t)size < 0) {
+		free(buf);
+		return NULL;
+	}
+	xrealloc(buf, size + 1);
+	buf[size] = '\0';
+
+	if (sizep)
+		*sizep = size;
+	return buf;
+}
+
+#ifdef USING_LSEEK_TO_GET_SIZE
+/* Alternatively, file size can be obtained by lseek to the end.
+ * The code is slightly bigger. Retained in case fstat approach
+ * will not work for some weird cases (/proc, block devices, etc).
+ * (NB: lseek also can fail to work for some weird files) */
+
 // Read (potentially big) files in one go. File size is estimated by
 // lseek to end.
 void *xmalloc_open_read_close(const char *filename, size_t *sizep)
 {
 	char *buf;
-	size_t size = sizep ? *sizep : INT_MAX;
+	size_t size;
 	int fd;
 	off_t len;
 
-	fd = xopen(filename, O_RDONLY);
+	fd = open(filename, O_RDONLY);
+	if (fd < 0)
+		return NULL;
+
 	/* /proc/N/stat files report len 0 here */
 	/* In order to make such files readable, we add small const */
-	len = xlseek(fd, 0, SEEK_END) | 0x3ff; /* + up to 1k */
-	xlseek(fd, 0, SEEK_SET);
-	if (len < size)
-		size = len;
+	size = 0x3ff; /* read only 1k on unseekable files */
+	len = lseek(fd, 0, SEEK_END) | 0x3ff; /* + up to 1k */
+	if (len != (off_t)-1) {
+		xlseek(fd, 0, SEEK_SET);
+		size = sizep ? *sizep : INT_MAX;
+		if (len < size)
+			size = len;
+	}
+
 	buf = xmalloc(size + 1);
 	size = read_close(fd, buf, size);
-	if ((ssize_t)size < 0)
-		bb_perror_msg_and_die("'%s'", filename);
+	if ((ssize_t)size < 0) {
+		free(buf);
+		return NULL;
+	}
 	xrealloc(buf, size + 1);
 	buf[size] = '\0';
+
 	if (sizep)
 		*sizep = size;
+	return buf;
+}
+#endif
+
+void *xmalloc_xopen_read_close(const char *filename, size_t *sizep)
+{
+	void *buf = xmalloc_open_read_close(filename, sizep);
+	if (!buf)
+		bb_perror_msg_and_die("can't read '%s'", filename);
 	return buf;
 }

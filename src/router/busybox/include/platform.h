@@ -17,7 +17,7 @@
 #endif
 
 /* __restrict is known in EGCS 1.2 and above. */
-#if !__GNUC_PREREQ (2,92)
+#if !__GNUC_PREREQ(2,92)
 # ifndef __restrict
 #  define __restrict     /* Ignore */
 # endif
@@ -27,7 +27,7 @@
    macros freely, and know that they will come into play for the
    version of gcc in which they are supported.  */
 
-#if !__GNUC_PREREQ (2,7)
+#if !__GNUC_PREREQ(2,7)
 # ifndef __attribute__
 #  define __attribute__(x)
 # endif
@@ -37,7 +37,7 @@
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ > 199901L
 /* it's a keyword */
 #else
-# if __GNUC_PREREQ (2,7)
+# if __GNUC_PREREQ(2,7)
 #  define inline __inline__
 # else
 #  define inline
@@ -48,49 +48,49 @@
 # define __const const
 #endif
 
-# define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
-# define ATTRIBUTE_NORETURN __attribute__ ((__noreturn__))
-# define ATTRIBUTE_PACKED __attribute__ ((__packed__))
-# define ATTRIBUTE_ALIGNED(m) __attribute__ ((__aligned__(m)))
+#define ATTRIBUTE_UNUSED __attribute__ ((__unused__))
+#define ATTRIBUTE_NORETURN __attribute__ ((__noreturn__))
+#define ATTRIBUTE_PACKED __attribute__ ((__packed__))
+#define ATTRIBUTE_ALIGNED(m) __attribute__ ((__aligned__(m)))
 /* __NO_INLINE__: some gcc's do not honor inlining! :( */
-# if __GNUC_PREREQ (3,0) && !defined(__NO_INLINE__)
-#  define ALWAYS_INLINE __attribute__ ((always_inline)) inline
+#if __GNUC_PREREQ(3,0) && !defined(__NO_INLINE__)
+# define ALWAYS_INLINE __attribute__ ((always_inline)) inline
 /* I've seen a toolchain where I needed __noinline__ instead of noinline */
-#  define NOINLINE      __attribute__((__noinline__))
-#  if !ENABLE_WERROR
-#   define ATTRIBUTE_DEPRECATED __attribute__ ((__deprecated__))
-#   define ATTRIBUTE_UNUSED_RESULT __attribute__ ((warn_unused_result))
-#  else
-#   define ATTRIBUTE_DEPRECATED /* n/a */
-#   define ATTRIBUTE_UNUSED_RESULT /* n/a */
-#  endif
+# define NOINLINE      __attribute__((__noinline__))
+# if !ENABLE_WERROR
+#  define ATTRIBUTE_DEPRECATED __attribute__ ((__deprecated__))
+#  define ATTRIBUTE_UNUSED_RESULT __attribute__ ((warn_unused_result))
 # else
-#  define ALWAYS_INLINE inline /* n/a */
-#  define NOINLINE /* n/a */
 #  define ATTRIBUTE_DEPRECATED /* n/a */
 #  define ATTRIBUTE_UNUSED_RESULT /* n/a */
 # endif
+#else
+# define ALWAYS_INLINE inline /* n/a */
+# define NOINLINE /* n/a */
+# define ATTRIBUTE_DEPRECATED /* n/a */
+# define ATTRIBUTE_UNUSED_RESULT /* n/a */
+#endif
 
 /* -fwhole-program makes all symbols local. The attribute externally_visible
    forces a symbol global.  */
-# if __GNUC_PREREQ (4,1)
-#  define EXTERNALLY_VISIBLE __attribute__(( visibility("default") ));
+#if __GNUC_PREREQ(4,1)
+# define EXTERNALLY_VISIBLE __attribute__(( visibility("default") ))
 //__attribute__ ((__externally_visible__))
-# else
-#  define EXTERNALLY_VISIBLE
-# endif /* GNUC >= 4.1 */
+#else
+# define EXTERNALLY_VISIBLE
+#endif /* GNUC >= 4.1 */
 
 /* We use __extension__ in some places to suppress -pedantic warnings
    about GCC extensions.  This feature didn't work properly before
    gcc 2.8.  */
-#if !__GNUC_PREREQ (2,8)
+#if !__GNUC_PREREQ(2,8)
 # ifndef __extension__
 #  define __extension__
 # endif
 #endif
 
 /* gcc-2.95 had no va_copy but only __va_copy. */
-#if !__GNUC_PREREQ (3,0)
+#if !__GNUC_PREREQ(3,0)
 # include <stdarg.h>
 # if !defined va_copy && defined __va_copy
 #  define va_copy(d,s) __va_copy((d),(s))
@@ -135,7 +135,18 @@
 #define SWAP_LE64(x) (x)
 #endif
 
+/* ---- Unaligned access ------------------------------------ */
+
+/* parameter is supposed to be an uint32_t* ptr */
+#if defined(i386) || defined(__x86_64__) /* + other arches? */
+#define get_unaligned_u32p(u32p) (*(u32p))
+#else
+/* performs reasonably well (gcc usually inlines memcpy here) */
+#define get_unaligned_u32p(u32p) ({ uint32_t __t; memcpy(&__t, (u32p), 4); __t; })
+#endif
+
 /* ---- Networking ------------------------------------------ */
+
 #ifndef __APPLE__
 # include <arpa/inet.h>
 # ifndef __socklen_t_defined
@@ -146,6 +157,7 @@ typedef int socklen_t;
 #endif
 
 /* ---- Compiler dependent settings ------------------------- */
+
 #if (defined __digital__ && defined __unix__) || defined __APPLE__
 # undef HAVE_MNTENT_H
 # undef HAVE_SYS_STATFS_H
@@ -163,9 +175,10 @@ __extension__ typedef unsigned long long __u64;
 #endif
 
 /*----- Kernel versioning ------------------------------------*/
+
 #define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
 
-/* ---- miscellaneous --------------------------------------- */
+/* ---- Miscellaneous --------------------------------------- */
 
 #if defined(__GNU_LIBRARY__) && __GNU_LIBRARY__ < 5 && \
 	!defined(__dietlibc__) && \
@@ -235,12 +248,10 @@ typedef unsigned smalluint;
     (defined __UCLIBC__ && __UCLIBC_MAJOR__ >= 0 && __UCLIBC_MINOR__ >= 9 && \
     __UCLIBC_SUBLEVEL__ > 28 && !defined __ARCH_USE_MMU__)
 #define BB_MMU 0
-#define BB_NOMMU 1
 #define USE_FOR_NOMMU(...) __VA_ARGS__
 #define USE_FOR_MMU(...)
 #else
 #define BB_MMU 1
-/* BB_NOMMU is not defined in this case! */
 #define USE_FOR_NOMMU(...)
 #define USE_FOR_MMU(...) __VA_ARGS__
 #endif

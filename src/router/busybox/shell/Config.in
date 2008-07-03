@@ -36,7 +36,6 @@ endchoice
 config ASH
 	bool "ash"
 	default n
-	select TEST
 	help
 	  Tha 'ash' shell adds about 60k in the default configuration and is
 	  the most complete and most pedantically correct shell included with
@@ -46,6 +45,13 @@ config ASH
 
 comment "Ash Shell Options"
 	depends on ASH
+
+config ASH_BASH_COMPAT
+	bool "bash-compatible extensions"
+	default y
+	depends on ASH
+	help
+	  Enable bash-conpatible extensions.
 
 config ASH_JOB_CONTROL
 	bool "Job control"
@@ -104,15 +110,20 @@ config ASH_GETOPTS
 config ASH_BUILTIN_ECHO
 	bool "Builtin version of 'echo'"
 	default y
-	select ECHO
 	depends on ASH
 	help
 	  Enable support for echo, builtin to ash.
 
+config ASH_BUILTIN_PRINTF
+	bool "Builtin version of 'printf'"
+	default y
+	depends on ASH
+	help
+	  Enable support for printf, builtin to ash.
+
 config ASH_BUILTIN_TEST
 	bool "Builtin version of 'test'"
 	default y
-	select TEST
 	depends on ASH
 	help
 	  Enable support for test, builtin to ash.
@@ -163,10 +174,6 @@ config ASH_EXPAND_PRMT
 config HUSH
 	bool "hush"
 	default n
-	select TRUE
-	select FALSE
-	select TEST
-	select ECHO
 	help
 	  hush is a very small shell (just 18k) and it has fairly complete
 	  Bourne shell grammar.  It even handles all the normal flow control
@@ -233,13 +240,9 @@ config LASH
 	help
 	  lash is deprecated and will be removed, please migrate to hush.
 
-
 config MSH
 	bool "msh"
 	default n
-	select TRUE
-	select FALSE
-	select TEST
 	help
 	  The minix shell (adds just 30k) is quite complete and handles things
 	  like for/do/done, case/esac and all the things you expect a Bourne
@@ -290,6 +293,23 @@ config FEATURE_SH_STANDALONE
 #	  run '/bin/busybox'.  If you do not have the busybox binary sitting in
 #	  that exact location with that exact name, this option will not work at
 #	  all.
+
+config FEATURE_SH_NOFORK
+	bool "Run 'nofork' applets directly"
+	default n
+	depends on (MSH || LASH || HUSH || ASH) && FEATURE_PREFER_APPLETS
+	help
+	  This option causes busybox shells [currently only ash]
+	  to not execute typical fork/exec/wait sequence, but call <applet>_main
+	  directly, if possible. (Sometimes it is not possible: for example,
+	  this is not possible in pipes).
+
+	  This will be done only for some applets (those which are marked
+	  NOFORK in include/applets.h).
+
+	  This may significantly speed up some shell scripts.
+
+	  This feature is relatively new. Use with care.
 
 config CTTYHACK
 	bool "cttyhack"

@@ -233,7 +233,7 @@ static xlist_t *process_stdin(xlist_t *list_arg,
 		}
 		if (s == NULL)
 			s = p = buf;
-		if ((p - buf) >= mc)
+		if ((size_t)(p - buf) >= mc)
 			bb_error_msg_and_die("argument line too long");
 		*p++ = (c == EOF ? '\0' : c);
 		if (c == EOF) { /* word's delimiter or EOF detected */
@@ -502,7 +502,7 @@ int xargs_main(int argc, char **argv)
 		if (child_error > 0 && child_error != 123) {
 			break;
 		}
-	}
+	} /* while */
 	if (ENABLE_FEATURE_CLEAN_UP)
 		free(max_chars);
 	return child_error;
@@ -517,7 +517,7 @@ void bb_show_usage(void)
 {
 	fprintf(stderr, "Usage: %s [-p] [-r] [-t] -[x] [-n max_arg] [-s max_chars]\n",
 		applet_name);
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
 int main(int argc, char **argv)

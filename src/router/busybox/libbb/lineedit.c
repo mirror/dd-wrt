@@ -74,16 +74,15 @@ static const char null_str[] ALIGN1 = "";
 #endif
 
 /* We try to minimize both static and stack usage. */
-struct statics {
+struct lineedit_statics {
 	line_input_t *state;
 
 	volatile unsigned cmdedit_termw; /* = 80; */ /* actual terminal width */
 	sighandler_t previous_SIGWINCH_handler;
 
-
-	int cmdedit_x;           /* real x terminal position */
-	int cmdedit_y;           /* pseudoreal y terminal position */
-	int cmdedit_prmt_len;    /* length of prompt (without colors etc) */
+	unsigned cmdedit_x;        /* real x terminal position */
+	unsigned cmdedit_y;        /* pseudoreal y terminal position */
+	unsigned cmdedit_prmt_len; /* length of prompt (without colors etc) */
 
 	unsigned cursor;
 	unsigned command_len;
@@ -120,11 +119,10 @@ struct statics {
 #endif
 };
 
-/* Make it reside in writable memory, yet make compiler understand
- * that it is not going to change. */
-static struct statics *const ptr_to_statics __attribute__ ((section (".data")));
+/* See lineedit_ptr_hack.c */
+extern struct lineedit_statics *const lineedit_ptr_to_statics;
 
-#define S (*ptr_to_statics)
+#define S (*lineedit_ptr_to_statics)
 #define state            (S.state           )
 #define cmdedit_termw    (S.cmdedit_termw   )
 #define previous_SIGWINCH_handler (S.previous_SIGWINCH_handler)
@@ -145,7 +143,7 @@ static struct statics *const ptr_to_statics __attribute__ ((section (".data")));
 #define delbuf           (S.delbuf          )
 
 #define INIT_S() do { \
-	(*(struct statics**)&ptr_to_statics) = xzalloc(sizeof(S)); \
+	(*(struct lineedit_statics**)&lineedit_ptr_to_statics) = xzalloc(sizeof(S)); \
 	barrier(); \
 	cmdedit_termw = 80; \
 	USE_FEATURE_EDITING_FANCY_PROMPT(num_ok_lines = 1;) \
@@ -163,14 +161,21 @@ static void deinit_S(void)
 	if (home_pwd_buf != null_str)
 		free(home_pwd_buf);
 #endif
-	free(ptr_to_statics);
+	free(lineedit_ptr_to_statics);
 }
 #define DEINIT_S() deinit_S()
+
 
 /* Put 'command_ps[cursor]', cursor++.
  * Advance cursor on screen. If we reached right margin, scroll text up
  * and remove terminal margin effect by printing 'next_char' */
+#define HACK_FOR_WRONG_WIDTH 1
+#if HACK_FOR_WRONG_WIDTH
+static void cmdedit_set_out_char(void)
+#define cmdedit_set_out_char(next_char) cmdedit_set_out_char()
+#else
 static void cmdedit_set_out_char(int next_char)
+#endif
 {
 	int c = (unsigned char)command_ps[cursor];
 
@@ -197,9 +202,21 @@ static void cmdedit_set_out_char(int next_char)
 		/* terminal is scrolled down */
 		cmdedit_y++;
 		cmdedit_x = 0;
+#if HACK_FOR_WRONG_WIDTH
+		/* This works better if our idea of term width is wrong
+		 * and it is actually wider (often happens on serial lines).
+		 * Printing CR,LF *forces* cursor to next line.
+		 * OTOH if terminal width is correct AND terminal does NOT
+		 * have automargin (IOW: it is moving cursor to next line
+		 * by itself (which is wrong for VT-10x terminals)),
+		 * this will break things: there will be one extra empty line */
+		puts("\r"); /* + implicit '\n' */
+#else
+		/* Works ok only if cmdedit_termw is correct */
 		/* destroy "(auto)margin" */
 		bb_putchar(next_char);
 		bb_putchar('\b');
+#endif
 	}
 // Huh? What if command_ps[cursor] == '\0' (we are at the end already?)
 	cursor++;
@@ -248,8 +265,8 @@ static void input_backward(unsigned num)
 		cmdedit_x -= num;
 		if (num <= 4) {
 			/* This is longer by 5 bytes on x86.
-			 * Also gets mysteriously
-			 * miscompiled for some ARM users.
+			 * Also gets miscompiled for ARM users
+			 * (busybox.net/bugs/view.php?id=2274).
 			 * printf(("\b\b\b\b" + 4) - num);
 			 * return;
 			 */
@@ -264,9 +281,12 @@ static void input_backward(unsigned num)
 
 	/* Need to go one or more lines up */
 	num -= cmdedit_x;
-	count_y = 1 + (num / cmdedit_termw);
-	cmdedit_y -= count_y;
-	cmdedit_x = cmdedit_termw * count_y - num;
+	{
+		unsigned w = cmdedit_termw; /* volatile var */
+		count_y = 1 + (num / w);
+		cmdedit_y -= count_y;
+		cmdedit_x = w * count_y - num;
+	}
 	/* go to 1st column; go up; go to correct column */
 	printf("\r" "\033[%dA" "\033[%dC", count_y, cmdedit_x);
 }
@@ -274,10 +294,12 @@ static void input_backward(unsigned num)
 static void put_prompt(void)
 {
 	out1str(cmdedit_prompt);
-	cmdedit_x = cmdedit_prmt_len;
 	cursor = 0;
-// Huh? what if cmdedit_prmt_len >= width?
-	cmdedit_y = 0;                  /* new quasireal y */
+	{
+		unsigned w = cmdedit_termw; /* volatile var */
+		cmdedit_y = cmdedit_prmt_len / w; /* new quasireal y */
+		cmdedit_x = cmdedit_prmt_len % w;
+	}
 }
 
 /* draw prompt, editor line, and clear tail */
@@ -303,7 +325,7 @@ static void input_delete(int save)
 {
 	int j = cursor;
 
-	if (j == command_len)
+	if (j == (int)command_len)
 		return;
 
 #if ENABLE_FEATURE_EDITING_VI
@@ -812,7 +834,7 @@ static void input_tab(smallint *lastWasTab)
 
 	if (!*lastWasTab) {
 		char *tmp, *tmp1;
-		int len_found;
+		size_t len_found;
 /*		char matchBuf[MAX_LINELEN]; */
 #define matchBuf (S.input_tab__matchBuf)
 		int find_type;
@@ -843,7 +865,8 @@ static void input_tab(smallint *lastWasTab)
 			exe_n_cwd_tab_completion(matchBuf, find_type);
 		/* Sort, then remove any duplicates found */
 		if (matches) {
-			int i, n = 0;
+			unsigned i;
+			int n = 0;
 			qsort_string_vector(matches, num_matches);
 			for (i = 0; i < num_matches - 1; ++i) {
 				if (matches[i] && matches[i+1]) { /* paranoia */
@@ -961,16 +984,18 @@ static void load_history(const char *fromfile)
 	FILE *fp;
 	int hi;
 
-	/* cleanup old */
-	for (hi = state->cnt_history; hi > 0;) {
-		hi--;
-		free(state->history[hi]);
-	}
+	/* NB: do not trash old history if file can't be opened */
 
 	fp = fopen(fromfile, "r");
 	if (fp) {
+		/* clean up old history */
+		for (hi = state->cnt_history; hi > 0;) {
+			hi--;
+			free(state->history[hi]);
+		}
+
 		for (hi = 0; hi < MAX_HISTORY;) {
-			char *hl = xmalloc_getline(fp);
+			char *hl = xmalloc_fgetline(fp);
 			int l;
 
 			if (!hl)
@@ -985,8 +1010,8 @@ static void load_history(const char *fromfile)
 			state->history[hi++] = hl;
 		}
 		fclose(fp);
+		state->cur_history = state->cnt_history = hi;
 	}
-	state->cur_history = state->cnt_history = hi;
 }
 
 /* state->flags is already checked to be nonzero */
@@ -1297,7 +1322,7 @@ static void cmdedit_setwidth(unsigned w, int redraw_flg)
 
 static void win_changed(int nsig)
 {
-	int width;
+	unsigned width;
 	get_terminal_width_height(0, &width, NULL);
 	cmdedit_setwidth(width, nsig /* - just a yes/no flag */);
 	if (nsig == SIGWINCH)
@@ -1332,7 +1357,7 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 #if ENABLE_FEATURE_TAB_COMPLETION
 	smallint lastWasTab = FALSE;
 #endif
-	unsigned int ic;
+	unsigned ic;
 	unsigned char c;
 	smallint break_out = 0;
 #if ENABLE_FEATURE_EDITING_VI
@@ -1767,7 +1792,7 @@ int read_line_input(const char *prompt, char *command, int maxsize, line_input_t
 			if (vi_cmdmode)  /* Don't self-insert */
 				break;
 #endif
-			if (command_len >= (maxsize - 2))        /* Need to leave space for enter */
+			if ((int)command_len >= (maxsize - 2))        /* Need to leave space for enter */
 				break;
 
 			command_len++;

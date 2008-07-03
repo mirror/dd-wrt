@@ -26,7 +26,9 @@ testing "grep - (specify stdin)" "grep two -" "two\n" "" \
 testing "grep input (specify file)" "grep two input" "two\n" \
 	"one\ntwo\nthree\nthree\nthree\n" ""
 
-testing "grep (no newline at EOL)" "grep bug" "bug" "bug" ""
+# GNU grep 2.5.3 outputs a new line character after the located string
+# even if there is no new line character in the input
+testing "grep (no newline at EOL)" "grep bug input" "bug\n" "bug" ""
 
 >empty
 testing "grep two files" "grep two input empty 2>/dev/null" \
@@ -75,6 +77,10 @@ testing "grep handles multiple regexps" "grep -e one -e two input ; echo \$?" \
 	"one\ntwo\n0\n" "one\ntwo\n" ""
 testing "grep -F handles multiple expessions" "grep -F -e one -e two input ; echo \$?" \
 	"one\ntwo\n0\n" "one\ntwo\n" ""
+
+# -f file/-
+testing "grep can read regexps from stdin" "grep -f - input ; echo \$?" \
+	"two\nthree\n0\n" "tw\ntwo\nthree\n" "tw.\nthr\n"
 
 optional FEATURE_GREP_EGREP_ALIAS
 testing "grep -E supports extended regexps" "grep -E fo+" "foo\n" "" \

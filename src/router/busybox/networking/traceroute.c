@@ -413,7 +413,7 @@ ifaddrlist(struct IFADDRLIST **ipaddrp)
 	ifc.ifc_buf = (caddr_t)ibuf;
 
 	if (ioctl(fd, SIOCGIFCONF, (char *)&ifc) < 0
-	 || ifc.ifc_len < sizeof(struct ifreq)
+	 || ifc.ifc_len < (int)sizeof(struct ifreq)
 	) {
 		if (errno == EINVAL)
 			bb_error_msg_and_die(
@@ -1001,17 +1001,11 @@ int traceroute_main(int argc, char **argv)
 
 #if ENABLE_FEATURE_TRACEROUTE_SOURCE_ROUTE
 	if (source_route_list) {
-		llist_t *l_sr;
-
-		l_sr = source_route_list;
-		while (l_sr) {
+		while (source_route_list) {
 			if (lsrr >= NGATEWAYS)
 				bb_error_msg_and_die("no more than %d gateways", NGATEWAYS);
-			getaddr(gwlist + lsrr, l_sr->data);
+			getaddr(gwlist + lsrr, llist_pop(&source_route_list));
 			++lsrr;
-			l_sr = l_sr->link;
-			free(source_route_list);
-			source_route_list = l_sr;
 		}
 		optlen = (lsrr + 1) * sizeof(gwlist[0]);
 	}

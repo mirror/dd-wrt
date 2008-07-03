@@ -366,7 +366,7 @@ static len_and_sockaddr *xzalloc_lsa(int family)
 	lsa = xzalloc(LSA_LEN_SIZE + sz);
 	lsa->len = sz;
 	lsa->u.sa.sa_family = family;
-	return lsa;	
+	return lsa;
 }
 
 static void rearm_alarm(void)
@@ -750,7 +750,7 @@ static NOINLINE servtab_t *parse_one_line(void)
 			if (*p == '-') {
 				p++;
 				n = bb_strtou(p, &p, 10);
-				if (n > INT_MAX || n < sep->se_rpcver_lo)
+				if (n > INT_MAX || (int)n < sep->se_rpcver_lo)
 					goto bad_ver_spec;
 				sep->se_rpcver_hi = n;
 			}
@@ -812,7 +812,7 @@ static NOINLINE servtab_t *parse_one_line(void)
 	 && (sep->se_socktype == SOCK_STREAM
 	     || sep->se_socktype == SOCK_DGRAM)
 	) {
-		int i;
+		unsigned i;
 		for (i = 0; i < ARRAY_SIZE(builtins); i++)
 			if (strncmp(builtins[i].bi_service7, sep->se_service, 7) == 0)
 				goto found_bi;
@@ -1124,7 +1124,7 @@ static void clean_up_and_exit(int sig ATTRIBUTE_UNUSED)
 			close(sep->se_fd);
 	}
 	remove_pidfile(_PATH_INETDPID);
-	exit(0);
+	exit(EXIT_SUCCESS);
 }
 
 int inetd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -1344,7 +1344,7 @@ int inetd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 				else
 					sep->se_builtin->bi_dgram_fn(ctrl, sep);
 				if (pid) /* we did vfork */
-					_exit(1);
+					_exit(EXIT_FAILURE);
 				maybe_close(accepted_fd);
 				continue; /* -> check next fd in fd set */
 			}
@@ -1357,7 +1357,7 @@ int inetd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 				/* peek at the packet and remember peer addr */
 				int r = recvfrom(ctrl, NULL, 0, MSG_PEEK|MSG_DONTWAIT,
 					&lsa->u.sa, &lsa->len);
-                    		if (r < 0)
+				if (r < 0)
 					goto do_exit1;
 				/* make this socket "connected" to peer addr:
 				 * only packets from this peer will be recv'ed,
@@ -1408,10 +1408,14 @@ int inetd_main(int argc ATTRIBUTE_UNUSED, char **argv)
 			/* eat packet in udp case */
 			if (sep->se_socktype != SOCK_STREAM)
 				recv(0, line, LINE_SIZE, MSG_DONTWAIT);
-			_exit(1);
+			_exit(EXIT_FAILURE);
 		} /* for (sep = servtab...) */
 	} /* for (;;) */
 }
+
+#if !BB_MMU
+static const char *const cat_args[] = { "cat", NULL };
+#endif
 
 /*
  * Internet services provided internally by inetd:
@@ -1430,14 +1434,14 @@ static void echo_stream(int s, servtab_t *sep ATTRIBUTE_UNUSED)
 	}
 #else
 	/* We are after vfork here! */
-	static const char *const args[] = { "cat", NULL };
-	/* move network socket to stdin */
+	/* move network socket to stdin/stdout */
 	xmove_fd(s, STDIN_FILENO);
 	xdup2(STDIN_FILENO, STDOUT_FILENO);
 	/* no error messages please... */
-	xmove_fd(xopen("/dev/null", O_WRONLY), STDERR_FILENO);
-	BB_EXECVP("cat", (char**)args);
-	/* on failure we return to main, which does exit(1) */
+	close(STDERR_FILENO);
+	xopen("/dev/null", O_WRONLY);
+	BB_EXECVP("cat", (char**)cat_args);
+	/* on failure we return to main, which does exit(EXIT_FAILURE) */
 #endif
 }
 static void echo_dg(int s, servtab_t *sep)
@@ -1467,14 +1471,15 @@ static void discard_stream(int s, servtab_t *sep ATTRIBUTE_UNUSED)
 		continue;
 #else
 	/* We are after vfork here! */
-	static const char *const args[] = { "dd", "of=/dev/null", NULL };
 	/* move network socket to stdin */
 	xmove_fd(s, STDIN_FILENO);
-	xdup2(STDIN_FILENO, STDOUT_FILENO);
-	/* no error messages */
-	xmove_fd(xopen("/dev/null", O_WRONLY), STDERR_FILENO);
-	BB_EXECVP("dd", (char**)args);
-	/* on failure we return to main, which does exit(1) */
+	/* discard output */
+	close(STDOUT_FILENO);
+	xopen("/dev/null", O_WRONLY);
+	/* no error messages please... */
+	xdup2(STDOUT_FILENO, STDERR_FILENO);
+	BB_EXECVP("cat", (char**)cat_args);
+	/* on failure we return to main, which does exit(EXIT_FAILURE) */
 #endif
 }
 /* ARGSUSED */

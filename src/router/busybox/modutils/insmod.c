@@ -184,6 +184,7 @@ static int insmod_ng_main(int argc, char **argv);
 /* Microblaze */
 #if defined(__microblaze__)
 #define USE_SINGLE
+#include <linux/elf-em.h>
 #define MATCH_MACHINE(x) (x == EM_XILINX_MICROBLAZE)
 #define SHT_RELM	SHT_RELA
 #define Elf32_RelM	Elf32_Rela
@@ -451,7 +452,7 @@ enum {
 /* The system calls unchanged between 2.0 and 2.1.  */
 
 unsigned long create_module(const char *, size_t);
-int delete_module(const char *);
+int delete_module(const char *module, unsigned int flags);
 
 
 #endif /* module.h */
@@ -672,8 +673,6 @@ static int obj_gpl_license(struct obj_file *f, const char **license);
 #define SPFX	""
 #endif
 
-
-#define _PATH_MODULES	"/lib/modules"
 enum { STRVERSIONLEN = 64 };
 
 /*======================================================================*/
@@ -843,11 +842,17 @@ arch_apply_relocation(struct obj_file *f,
 	struct arch_file *ifile = (struct arch_file *) f;
 	enum obj_reloc ret = obj_reloc_ok;
 	ElfW(Addr) *loc = (ElfW(Addr) *) (targsec->contents + rel->r_offset);
+#if defined(__arm__) || defined(__H8300H__) || defined(__H8300S__) \
+ || defined(__i386__) || defined(__mc68000__) || defined(__microblaze__) \
+ || defined(__mips__) || defined(__nios2__) || defined(__powerpc__) \
+ || defined(__s390__) || defined(__sh__) || defined(__x86_64__)
 	ElfW(Addr) dot = targsec->header.sh_addr + rel->r_offset;
+#endif
 #if defined(USE_GOT_ENTRIES) || defined(USE_PLT_ENTRIES)
 	struct arch_symbol *isym = (struct arch_symbol *) sym;
 #endif
-#if defined(__arm__) || defined(__i386__) || defined(__mc68000__) || defined(__sh__) || defined(__s390__)
+#if defined(__arm__) || defined(__i386__) || defined(__mc68000__) \
+ || defined(__sh__) || defined(__s390__)
 #if defined(USE_GOT_ENTRIES)
 	ElfW(Addr) got = ifile->got ? ifile->got->header.sh_addr : 0;
 #endif
@@ -945,6 +950,7 @@ arch_apply_relocation(struct obj_file *f,
 
 		case R_386_PLT32:
 		case R_386_PC32:
+		case R_386_GOTOFF:
 			*loc += v - dot;
 			break;
 
@@ -963,9 +969,6 @@ arch_apply_relocation(struct obj_file *f,
 
 		case R_386_GOT32:
 			goto bb_use_got;
-
-		case R_386_GOTOFF:
-			*loc += v - got;
 			break;
 
 #elif defined(__microblaze__)
@@ -2032,7 +2035,7 @@ obj_add_symbol(struct obj_file *f, const char *name,
 	int n_type = ELF_ST_TYPE(info);
 	int n_binding = ELF_ST_BIND(info);
 
-	for (sym = f->symtab[hash]; sym; sym = sym->next)
+	for (sym = f->symtab[hash]; sym; sym = sym->next) {
 		if (f->symbol_cmp(sym->name, name) == 0) {
 			int o_secidx = sym->secidx;
 			int o_info = sym->info;
@@ -2091,14 +2094,14 @@ obj_add_symbol(struct obj_file *f, const char *name,
 				return sym;
 			}
 		}
+	}
 
 	/* Completely new symbol.  */
 	sym = arch_new_symbol();
 	sym->next = f->symtab[hash];
 	f->symtab[hash] = sym;
 	sym->ksymidx = -1;
-
-	if (ELF_ST_BIND(info) == STB_LOCAL && symidx != -1) {
+	if (ELF_ST_BIND(info) == STB_LOCAL && symidx != (unsigned long)(-1)) {
 		if (symidx >= f->local_symtab_size)
 			bb_error_msg("local symbol %s with index %ld exceeds local_symtab_size %ld",
 					name, (long) symidx, (long) f->local_symtab_size);
@@ -3306,7 +3309,7 @@ static struct obj_file *obj_load(FILE * fp, int loadprogbits ATTRIBUTE_UNUSED)
 {
 	struct obj_file *f;
 	ElfW(Shdr) * section_headers;
-	int shnum, i;
+	size_t shnum, i;
 	char *shstrtab;
 
 	/* Read the file header.  */
@@ -3578,7 +3581,7 @@ static int obj_gpl_license(struct obj_file *f, const char **license)
 		while (ptr < endptr) {
 			value = strchr(ptr, '=');
 			if (value && strncmp(ptr, "license", value-ptr) == 0) {
-				int i;
+				unsigned i;
 				if (license)
 					*license = value+1;
 				for (i = 0; i < ARRAY_SIZE(gpl_licenses); ++i) {
@@ -3717,7 +3720,8 @@ add_ksymoops_symbols(struct obj_file *f, const char *filename,
 	struct obj_symbol *sym;
 	char *name, *absolute_filename;
 	char str[STRVERSIONLEN];
-	int i, l, lm_name, lfilename, use_ksymtab, version;
+	unsigned i;
+	int l, lm_name, lfilename, use_ksymtab, version;
 	struct stat statbuf;
 
 	/* WARNING: was using realpath, but replaced by readlink to stop using
@@ -3992,7 +3996,7 @@ int insmod_main(int argc, char **argv)
 			char *module_dir;
 			char *tmdn;
 
-			tmdn = concat_path_file(_PATH_MODULES, myuname.release);
+			tmdn = concat_path_file(CONFIG_DEFAULT_MODULES_DIR, myuname.release);
 			/* Jump through hoops in case /lib/modules/`uname -r`
 			 * is a symlink.  We do not want recursive_action to
 			 * follow symlinks, but we do want to follow the
@@ -4014,9 +4018,9 @@ int insmod_main(int argc, char **argv)
 
 			free(m_filename);
 			m_filename = NULL;
-			module_dir = xmalloc_readlink(_PATH_MODULES);
+			module_dir = xmalloc_readlink(CONFIG_DEFAULT_MODULES_DIR);
 			if (!module_dir)
-				module_dir = xstrdup(_PATH_MODULES);
+				module_dir = xstrdup(CONFIG_DEFAULT_MODULES_DIR);
 			/* No module found under /lib/modules/`uname -r`, this
 			 * time cast the net a bit wider.  Search /lib/modules/ */
 			r = recursive_action(module_dir, ACTION_RECURSE,
@@ -4120,7 +4124,7 @@ int insmod_main(int argc, char **argv)
 	m_size = obj_load_size(f);
 
 	m_addr = create_module(m_name, m_size);
-	if (m_addr == -1) switch (errno) {
+	if (m_addr == (ElfW(Addr))(-1)) switch (errno) {
 		case EEXIST:
 			bb_error_msg_and_die("a module named %s already exists", m_name);
 		case ENOMEM:
@@ -4136,18 +4140,18 @@ int insmod_main(int argc, char **argv)
 	 * now we can load them directly into the kernel memory
 	 */
 	if (!obj_load_progbits(fp, f, (char*)m_addr)) {
-		delete_module(m_name);
+		delete_module(m_name, 0);
 		goto out;
 	}
 #endif
 
 	if (!obj_relocate(f, m_addr)) {
-		delete_module(m_name);
+		delete_module(m_name, 0);
 		goto out;
 	}
 
 	if (!new_init_module(m_name, f, m_size)) {
-		delete_module(m_name);
+		delete_module(m_name, 0);
 		goto out;
 	}
 
@@ -4177,8 +4181,15 @@ int insmod_main(int argc, char **argv)
 #if ENABLE_FEATURE_2_6_MODULES
 
 #include <sys/mman.h>
+
+#if defined __UCLIBC__ && !ENABLE_FEATURE_2_4_MODULES
+/* big time suckage. The old prototype above renders our nice fwd-decl wrong */
+extern int init_module(void *module, unsigned long len, const char *options);
+#else
 #include <asm/unistd.h>
 #include <sys/syscall.h>
+#define init_module(mod, len, opts) syscall(__NR_init_module, mod, len, opts)
+#endif
 
 /* We use error numbers in a loose translation... */
 static const char *moderror(int err)
@@ -4204,7 +4215,6 @@ int insmod_main(int argc ATTRIBUTE_UNUSED, char **argv)
 static int insmod_ng_main(int argc ATTRIBUTE_UNUSED, char **argv)
 #endif
 {
-	long ret;
 	size_t len;
 	int optlen;
 	void *map;
@@ -4224,7 +4234,15 @@ static int insmod_ng_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	}
 
 #if 0
-	/* Any special reason why mmap? It isn't performace critical... */
+	/* Any special reason why mmap? It isn't performance critical. -vda */
+	/* Yes, xmalloc'ing can use *alot* of RAM. Don't forget that there are
+	 * modules out there that are half a megabyte! mmap()ing is way nicer
+	 * for small mem boxes, i guess. */
+	/* But after load, these modules will take up that 0.5mb in kernel
+	 * anyway. Using malloc here causes only a transient spike to 1mb,
+	 * after module is loaded, we go back to normal 0.5mb usage
+	 * (in kernel). Also, mmap isn't magic - when we touch mapped data,
+	 * we use memory. -vda */
 	int fd;
 	struct stat st;
 	unsigned long len;
@@ -4246,12 +4264,9 @@ static int insmod_ng_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	map = xmalloc_open_read_close(filename, &len);
 #endif
 
-	ret = syscall(__NR_init_module, map, len, options);
-	if (ret != 0) {
+	if (init_module(map, len, options) != 0)
 		bb_error_msg_and_die("cannot insert '%s': %s",
 				filename, moderror(errno));
-	}
-
 	return 0;
 }
 
