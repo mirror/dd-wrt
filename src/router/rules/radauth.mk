@@ -1,4 +1,4 @@
-radauth:
+radauth: nvram shared
 	$(MAKE) -C radauth
 
 radauth-install:

@@ -174,6 +174,11 @@ include rules/strace.mk
 include rules/asterisk.mk
 include rules/zaptel.mk
 include rules/iperf.mk
+include rules/wavesat.mk
+include rules/libshared.mk
+include rules/upnp.mk
+include rules/services.mk
+include rules/utils.mk
 
 # Generic rules
 #
@@ -189,6 +194,7 @@ include rules/iperf.mk
 
 %-install:
 	[ ! -d $* ] || $(MAKE) -C $* install INSTALLDIR=$(INSTALLDIR)/$*
+
 
 $(obj-y) $(obj-m) $(obj-n) $(obj-clean) $(obj-install): dummy
 

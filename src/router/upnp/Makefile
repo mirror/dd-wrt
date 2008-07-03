@@ -23,9 +23,9 @@ endif
 all: upnp
 
 install: all
-	install -d $(INSTALLDIR)/usr/sbin
-	install -m 755 upnp $(INSTALLDIR)/usr/sbin
-	$(STRIP) $(INSTALLDIR)/usr/sbin/upnp
+	install -d $(INSTALLDIR)/upnp/usr/sbin
+	install -m 755 upnp $(INSTALLDIR)/upnp/usr/sbin
+	$(STRIP) $(INSTALLDIR)/upnp/usr/sbin/upnp
 
 clean:
 	rm -f upnp
