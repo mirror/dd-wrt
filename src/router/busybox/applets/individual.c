@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 #ifndef HAVE_NOMESSAGE
 void bb_show_usage(void)
 {
-	printf(APPLET_full_usage "\n");
+ 	fputs(APPLET_full_usage "\n", stdout);
 
 	exit(EXIT_FAILURE);
 }
