@@ -75,10 +75,21 @@ typedef struct status_node_s {
 	unsigned status:16; /* was:14 */        /* has to fit STATUS_HASH_PRIME */
 } status_node_t;
 
-/* Were statically declared here, but such a big bss is nommu-unfriendly */
-static char **name_hashtable;             /* [NAME_HASH_PRIME + 1] */
-static common_node_t **package_hashtable; /* [PACKAGE_HASH_PRIME + 1] */
-static status_node_t **status_hashtable;  /* [STATUS_HASH_PRIME + 1] */
+
+/* Globals */
+struct globals {
+	char          *name_hashtable[NAME_HASH_PRIME + 1];
+	common_node_t *package_hashtable[PACKAGE_HASH_PRIME + 1];
+	status_node_t *status_hashtable[STATUS_HASH_PRIME + 1];
+};
+#define G (*ptr_to_globals)
+#define name_hashtable    (G.name_hashtable   )
+#define package_hashtable (G.package_hashtable)
+#define status_hashtable  (G.status_hashtable )
+#define INIT_G() do { \
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
+} while (0)
+
 
 /* Even numbers are for 'extras', like ored dependencies or null */
 enum edge_type_e {
@@ -124,7 +135,7 @@ static void make_hash(const char *key, unsigned *start, unsigned *decrement, con
 		 * shift amount is mod 24 because long int is 32 bit and data
 		 * to be shifted is 8, don't want to shift data to where it has
 		 * no effect*/
-		hash_num += ((key[i] + key[i-1]) << ((key[i] * i) % 24));
+		hash_num += (key[i] + key[i-1]) << ((key[i] * i) % 24);
 	}
 	*start = (unsigned) hash_num % hash_prime;
 	*decrement = (unsigned) 1 + (hash_num % (hash_prime - 1));
@@ -133,8 +144,8 @@ static void make_hash(const char *key, unsigned *start, unsigned *decrement, con
 /* this adds the key to the hash table */
 static int search_name_hashtable(const char *key)
 {
-	unsigned probe_address = 0;
-	unsigned probe_decrement = 0;
+	unsigned probe_address;
+	unsigned probe_decrement;
 
 	make_hash(key, &probe_address, &probe_decrement, NAME_HASH_PRIME);
 	while (name_hashtable[probe_address] != NULL) {
@@ -155,8 +166,8 @@ static int search_name_hashtable(const char *key)
  */
 static unsigned search_status_hashtable(const char *key)
 {
-	unsigned probe_address = 0;
-	unsigned probe_decrement = 0;
+	unsigned probe_address;
+	unsigned probe_decrement;
 
 	make_hash(key, &probe_address, &probe_decrement, STATUS_HASH_PRIME);
 	while (status_hashtable[probe_address] != NULL) {
@@ -312,11 +323,10 @@ static int test_version(const unsigned version1, const unsigned version2, const 
 	return FALSE;
 }
 
-
 static int search_package_hashtable(const unsigned name, const unsigned version, const unsigned operator)
 {
-	unsigned probe_address = 0;
-	unsigned probe_decrement = 0;
+	unsigned probe_address;
+	unsigned probe_decrement;
 
 	make_hash(name_hashtable[name], &probe_address, &probe_decrement, PACKAGE_HASH_PRIME);
 	while (package_hashtable[probe_address] != NULL) {
@@ -410,10 +420,10 @@ static void add_split_dependencies(common_node_t *parent_node, const char *whole
 		if ((edge_type == EDGE_DEPENDS || edge_type == EDGE_PRE_DEPENDS)
 		 && (strcmp(field, field2) != 0)
 		) {
-			or_edge = xmalloc(sizeof(edge_t));
+			or_edge = xzalloc(sizeof(edge_t));
 			or_edge->type = edge_type + 1;
 			or_edge->name = search_name_hashtable(field);
-			or_edge->version = 0; // tracks the number of alternatives
+			//or_edge->version = 0; // tracks the number of alternatives
 			add_edge_to_node(parent_node, or_edge);
 		}
 
@@ -439,17 +449,13 @@ static void add_split_dependencies(common_node_t *parent_node, const char *whole
 				if (offset_ch > 0) {
 					if (strncmp(version, "=", offset_ch) == 0) {
 						edge->operator = VER_EQUAL;
-					}
-					else if (strncmp(version, "<<", offset_ch) == 0) {
+					} else if (strncmp(version, "<<", offset_ch) == 0) {
 						edge->operator = VER_LESS;
-					}
-					else if (strncmp(version, "<=", offset_ch) == 0) {
+					} else if (strncmp(version, "<=", offset_ch) == 0) {
 						edge->operator = VER_LESS_EQUAL;
-					}
-					else if (strncmp(version, ">>", offset_ch) == 0) {
+					} else if (strncmp(version, ">>", offset_ch) == 0) {
 						edge->operator = VER_MORE;
-					}
-					else if (strncmp(version, ">=", offset_ch) == 0) {
+					} else if (strncmp(version, ">=", offset_ch) == 0) {
 						edge->operator = VER_MORE_EQUAL;
 					} else {
 						bb_error_msg_and_die("illegal operator");
@@ -734,7 +740,6 @@ static const char *describe_status(int status_num)
 
 	return "is not installed or flagged to be installed";
 }
-
 
 static void index_status_file(const char *filename)
 {
@@ -1152,9 +1157,9 @@ static int check_deps(deb_file_t **deb_file, int deb_start /*, int dep_max_count
 static char **create_list(const char *filename)
 {
 	FILE *list_stream;
-	char **file_list = NULL;
-	char *line = NULL;
-	int count = 0;
+	char **file_list;
+	char *line;
+	int count;
 
 	/* don't use [xw]fopen here, handle error ourself */
 	list_stream = fopen(filename, "r");
@@ -1162,17 +1167,15 @@ static char **create_list(const char *filename)
 		return NULL;
 	}
 
-	while ((line = xmalloc_getline(list_stream)) != NULL) {
+	file_list = NULL;
+	count = 0;
+	while ((line = xmalloc_fgetline(list_stream)) != NULL) {
 		file_list = xrealloc(file_list, sizeof(char *) * (count + 2));
-		file_list[count] = line;
-		count++;
+		file_list[count++] = line;
+		file_list[count] = NULL;
 	}
 	fclose(list_stream);
 
-	if (count == 0) {
-		return NULL;
-	}
-	file_list[count] = NULL;
 	return file_list;
 }
 
@@ -1209,24 +1212,54 @@ static int remove_file_array(char **remove_names, char **exclude_names)
 	return (remove_flag == 0);
 }
 
-static int run_package_script(const char *package_name, const char *script_type)
+static void run_package_script_or_die(const char *package_name, const char *script_type)
 {
-	struct stat path_stat;
 	char *script_path;
 	int result;
 
 	script_path = xasprintf("/var/lib/dpkg/info/%s.%s", package_name, script_type);
 
-	/* If the file doesnt exist is isnt a fatal */
-	result = lstat(script_path, &path_stat) < 0 ? EXIT_SUCCESS : system(script_path);
+	/* If the file doesnt exist is isnt fatal */
+	result = access(script_path, F_OK) ? EXIT_SUCCESS : system(script_path);
 	free(script_path);
-	return result;
+	if (result)
+		bb_error_msg_and_die("%s failed, exit code %d", script_type, result);
 }
 
+/*
+The policy manual defines what scripts get called when and with
+what arguments. I realize that busybox does not support all of
+these scenarios, but it does support some of them; it does not,
+however, run them with any parameters in run_package_script_or_die().
+Here are the scripts:
+
+preinst install
+preinst install <old_version>
+preinst upgrade <old_version>
+preinst abort_upgrade <new_version>
+postinst configure <most_recent_version>
+postinst abort-upgade <new_version>
+postinst abort-remove
+postinst abort-remove in-favour <package> <version>
+postinst abort-deconfigure in-favor <failed_install_package> removing <conflicting_package> <version>
+prerm remove
+prerm upgrade <new_version>
+prerm failed-upgrade <old_version>
+prerm remove in-favor <package> <new_version>
+prerm deconfigure in-favour <package> <version> removing <package> <version>
+postrm remove
+postrm purge
+postrm upgrade <new_version>
+postrm failed-upgrade <old_version>
+postrm abort-install
+postrm abort-install <old_version>
+postrm abort-upgrade <old_version>
+postrm disappear <overwriter> <version>
+*/
 static const char *const all_control_files[] = {
 	"preinst", "postinst", "prerm", "postrm",
 	"list", "md5sums", "shlibs", "conffiles",
-	"config", "templates", NULL
+	"config", "templates"
 };
 
 static char **all_control_list(const char *package_name)
@@ -1235,9 +1268,10 @@ static char **all_control_list(const char *package_name)
 	char **remove_files;
 
 	/* Create a list of all /var/lib/dpkg/info/<package> files */
-	remove_files = xzalloc(sizeof(all_control_files));
-	while (all_control_files[i]) {
-		remove_files[i] = xasprintf("/var/lib/dpkg/info/%s.%s", package_name, all_control_files[i]);
+	remove_files = xzalloc(sizeof(all_control_files) + sizeof(char*));
+	while (i < ARRAY_SIZE(all_control_files)) {
+		remove_files[i] = xasprintf("/var/lib/dpkg/info/%s.%s",
+				package_name, all_control_files[i]);
 		i++;
 	}
 
@@ -1310,27 +1344,26 @@ static void remove_package(const unsigned package_num, int noisy)
 	if (noisy)
 		printf("Removing %s (%s)...\n", package_name, package_version);
 
-	/* run prerm script */
-	if (run_package_script(package_name, "prerm") != 0) {
-		bb_error_msg_and_die("script failed, prerm failure");
-	}
+	/* Run prerm script */
+	run_package_script_or_die(package_name, "prerm");
 
 	/* Create a list of files to remove, and a separate list of those to keep */
-	sprintf(list_name, "/var/lib/dpkg/info/%s.list", package_name);
+	sprintf(list_name, "/var/lib/dpkg/info/%s.%s", package_name, "list");
 	remove_files = create_list(list_name);
 
-	sprintf(conffile_name, "/var/lib/dpkg/info/%s.conffiles", package_name);
+	sprintf(conffile_name, "/var/lib/dpkg/info/%s.%s", package_name, "conffiles");
 	exclude_files = create_list(conffile_name);
 
 	/* Some directories can't be removed straight away, so do multiple passes */
-	while (remove_file_array(remove_files, exclude_files)) /*repeat */;
+	while (remove_file_array(remove_files, exclude_files))
+		continue;
 	free_array(exclude_files);
 	free_array(remove_files);
 
 	/* Create a list of files in /var/lib/dpkg/info/<package>.* to keep  */
 	exclude_files = xzalloc(sizeof(char*) * 3);
 	exclude_files[0] = xstrdup(conffile_name);
-	exclude_files[1] = xasprintf("/var/lib/dpkg/info/%s.postrm", package_name);
+	exclude_files[1] = xasprintf("/var/lib/dpkg/info/%s.%s", package_name, "postrm");
 
 	/* Create a list of all /var/lib/dpkg/info/<package> files */
 	remove_files = all_control_list(package_name);
@@ -1339,8 +1372,10 @@ static void remove_package(const unsigned package_num, int noisy)
 	free_array(remove_files);
 	free_array(exclude_files);
 
-	/* rename <package>.conffile to <package>.list */
-	xrename(conffile_name, list_name);
+	/* rename <package>.conffiles to <package>.list
+	 * The conffiles control file isn't required in Debian packages, so don't
+	 * error out if it's missing.  */
+	rename(conffile_name, list_name);
 
 	/* Change package status */
 	set_status(status_num, "config-files", 3);
@@ -1357,13 +1392,11 @@ static void purge_package(const unsigned package_num)
 
 	printf("Purging %s (%s)...\n", package_name, package_version);
 
-	/* run prerm script */
-	if (run_package_script(package_name, "prerm") != 0) {
-		bb_error_msg_and_die("script failed, prerm failure");
-	}
+	/* Run prerm script */
+	run_package_script_or_die(package_name, "prerm");
 
 	/* Create a list of files to remove */
-	sprintf(list_name, "/var/lib/dpkg/info/%s.list", package_name);
+	sprintf(list_name, "/var/lib/dpkg/info/%s.%s", package_name, "list");
 	remove_files = create_list(list_name);
 
 	exclude_files = xzalloc(sizeof(char*));
@@ -1378,10 +1411,8 @@ static void purge_package(const unsigned package_num)
 	free_array(remove_files);
 	free(exclude_files);
 
-	/* run postrm script */
-	if (run_package_script(package_name, "postrm") != 0) {
-		bb_error_msg_and_die("postrm failure.. set status to what?");
-	}
+	/* Run postrm script */
+	run_package_script_or_die(package_name, "postrm");
 
 	/* Change package status */
 	set_status(status_num, "not-installed", 3);
@@ -1471,8 +1502,8 @@ static void unpack_package(deb_file_t *deb_file)
 	char *list_filename;
 	archive_handle_t *archive_handle;
 	FILE *out_stream;
-	llist_t *accept_list = NULL;
-	int i = 0;
+	llist_t *accept_list;
+	int i;
 
 	/* If existing version, remove it first */
 	if (strcmp(name_hashtable[get_status(status_num, 3)], "installed") == 0) {
@@ -1486,11 +1517,13 @@ static void unpack_package(deb_file_t *deb_file)
 	}
 
 	/* Extract control.tar.gz to /var/lib/dpkg/info/<package>.filename */
-	info_prefix = xasprintf("/var/lib/dpkg/info/%s.", package_name);
+	info_prefix = xasprintf("/var/lib/dpkg/info/%s.%s", package_name, "");
 	archive_handle = init_archive_deb_ar(deb_file->filename);
 	init_archive_deb_control(archive_handle);
 
-	while (all_control_files[i]) {
+	accept_list = NULL;
+	i = 0;
+	while (i < ARRAY_SIZE(all_control_files)) {
 		char *c = xasprintf("./%s", all_control_files[i]);
 		llist_add_to(&accept_list, c);
 		i++;
@@ -1503,10 +1536,7 @@ static void unpack_package(deb_file_t *deb_file)
 	unpack_ar_archive(archive_handle);
 
 	/* Run the preinst prior to extracting */
-	if (run_package_script(package_name, "preinst") != 0) {
-		/* when preinst returns exit code != 0 then quit installation process */
-		bb_error_msg_and_die("subprocess pre-installation script returned error");
-	}
+	run_package_script_or_die(package_name, "preinst");
 
 	/* Extract data.tar.gz to the root directory */
 	archive_handle = init_archive_deb_ar(deb_file->filename);
@@ -1517,7 +1547,7 @@ static void unpack_package(deb_file_t *deb_file)
 	unpack_ar_archive(archive_handle);
 
 	/* Create the list file */
-	list_filename = xasprintf("/var/lib/dpkg/info/%s.list", package_name);
+	list_filename = xasprintf("/var/lib/dpkg/info/%s.%s", package_name, "list");
 	out_stream = xfopen(list_filename, "w");
 	while (archive_handle->sub_archive->passed) {
 		/* the leading . has been stripped by data_extract_all_prefix already */
@@ -1544,17 +1574,16 @@ static void configure_package(deb_file_t *deb_file)
 	printf("Setting up %s (%s)...\n", package_name, package_version);
 
 	/* Run the postinst script */
-	if (run_package_script(package_name, "postinst") != 0) {
-		/* TODO: handle failure gracefully */
-		bb_error_msg_and_die("postinst failure.. set status to what?");
-	}
+	/* TODO: handle failure gracefully */
+	run_package_script_or_die(package_name, "postinst");
+
 	/* Change status to reflect success */
 	set_status(status_num, "install", 1);
 	set_status(status_num, "installed", 3);
 }
 
 int dpkg_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int dpkg_main(int argc, char **argv)
+int dpkg_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	deb_file_t **deb_file = NULL;
 	status_node_t *status_node;
@@ -1575,6 +1604,8 @@ int dpkg_main(int argc, char **argv)
 		OPT_unpack = 0x40,
 	};
 
+	INIT_G();
+
 	opt = getopt32(argv, "CF:ilPru", &str_f);
 	//if (opt & OPT_configure) ... // -C
 	if (opt & OPT_force_ignore_depends) { // -F (--force in official dpkg)
@@ -1586,15 +1617,10 @@ int dpkg_main(int argc, char **argv)
 	//if (opt & OPT_purge) ... // -P
 	//if (opt & OPT_remove) ... // -r
 	//if (opt & OPT_unpack) ... // -u (--unpack in official dpkg)
-	argc -= optind;
 	argv += optind;
 	/* check for non-option argument if expected  */
-	if (!opt || (!argc && !(opt && OPT_list_installed)))
+	if (!opt || (!argv[0] && !(opt && OPT_list_installed)))
 		bb_show_usage();
-
-	name_hashtable = xzalloc(sizeof(name_hashtable[0]) * (NAME_HASH_PRIME + 1));
-	package_hashtable = xzalloc(sizeof(package_hashtable[0]) * (PACKAGE_HASH_PRIME + 1));
-	status_hashtable = xzalloc(sizeof(status_hashtable[0]) * (STATUS_HASH_PRIME + 1));
 
 /*	puts("(Reading database ... xxxxx files and directories installed.)"); */
 	index_status_file("/var/lib/dpkg/status");

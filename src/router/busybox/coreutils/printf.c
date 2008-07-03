@@ -107,28 +107,28 @@ static void print_esc_string(char *str)
 	}
 }
 
-static void print_direc(char *start, size_t length, int field_width, int precision,
+static void print_direc(char *format, unsigned fmt_length,
+		int field_width, int precision,
 		const char *argument)
 {
-	char *p;		/* Null-terminated copy of % directive. */
+	char saved;
 
-	p = xmalloc((unsigned) (length + 1));
-	strncpy(p, start, length);
-	p[length] = 0;
+	saved = format[fmt_length];
+	format[fmt_length] = '\0';
 
-	switch (p[length - 1]) {
+	switch (format[fmt_length - 1]) {
 	case 'd':
 	case 'i':
 		if (field_width < 0) {
 			if (precision < 0)
-				printf(p, my_xstrtol(argument));
+				printf(format, my_xstrtol(argument));
 			else
-				printf(p, precision, my_xstrtol(argument));
+				printf(format, precision, my_xstrtol(argument));
 		} else {
 			if (precision < 0)
-				printf(p, field_width, my_xstrtol(argument));
+				printf(format, field_width, my_xstrtol(argument));
 			else
-				printf(p, field_width, precision, my_xstrtol(argument));
+				printf(format, field_width, precision, my_xstrtol(argument));
 		}
 		break;
 	case 'o':
@@ -137,14 +137,14 @@ static void print_direc(char *start, size_t length, int field_width, int precisi
 	case 'X':
 		if (field_width < 0) {
 			if (precision < 0)
-				printf(p, my_xstrtoul(argument));
+				printf(format, my_xstrtoul(argument));
 			else
-				printf(p, precision, my_xstrtoul(argument));
+				printf(format, precision, my_xstrtoul(argument));
 		} else {
 			if (precision < 0)
-				printf(p, field_width, my_xstrtoul(argument));
+				printf(format, field_width, my_xstrtoul(argument));
 			else
-				printf(p, field_width, precision, my_xstrtoul(argument));
+				printf(format, field_width, precision, my_xstrtoul(argument));
 		}
 		break;
 	case 'f':
@@ -154,51 +154,48 @@ static void print_direc(char *start, size_t length, int field_width, int precisi
 	case 'G':
 		if (field_width < 0) {
 			if (precision < 0)
-				printf(p, my_xstrtod(argument));
+				printf(format, my_xstrtod(argument));
 			else
-				printf(p, precision, my_xstrtod(argument));
+				printf(format, precision, my_xstrtod(argument));
 		} else {
 			if (precision < 0)
-				printf(p, field_width, my_xstrtod(argument));
+				printf(format, field_width, my_xstrtod(argument));
 			else
-				printf(p, field_width, precision, my_xstrtod(argument));
+				printf(format, field_width, precision, my_xstrtod(argument));
 		}
 		break;
 	case 'c':
-		printf(p, *argument);
+		printf(format, *argument);
 		break;
 	case 's':
 		if (field_width < 0) {
 			if (precision < 0)
-				printf(p, argument);
+				printf(format, argument);
 			else
-				printf(p, precision, argument);
+				printf(format, precision, argument);
 		} else {
 			if (precision < 0)
-				printf(p, field_width, argument);
+				printf(format, field_width, argument);
 			else
-				printf(p, field_width, precision, argument);
+				printf(format, field_width, precision, argument);
 		}
 		break;
 	}
 
-	free(p);
+	format[fmt_length] = saved;
 }
 
-/* Print the text in FORMAT, using ARGV (with ARGC elements) for
-   arguments to any '%' directives.
-   Return the number of elements of ARGV used.  */
-
-static int print_formatted(char *format, int argc, char **argv)
+/* Print the text in FORMAT, using ARGV for arguments to any '%' directives.
+   Return advanced ARGV.  */
+static char **print_formatted(char *f, char **argv)
 {
-	int save_argc = argc;   /* Preserve original value.  */
-	char *f;                /* Pointer into 'format'.  */
 	char *direc_start;      /* Start of % directive.  */
-	size_t direc_length;    /* Length of % directive.  */
+	unsigned direc_length;  /* Length of % directive.  */
 	int field_width;        /* Arg to first '*', or -1 if none.  */
 	int precision;          /* Arg to second '*', or -1 if none.  */
+	char **saved_argv = argv;
 
-	for (f = format; *f; ++f) {
+	for (; *f; ++f) {
 		switch (*f) {
 		case '%':
 			direc_start = f++;
@@ -209,10 +206,9 @@ static int print_formatted(char *format, int argc, char **argv)
 				break;
 			}
 			if (*f == 'b') {
-				if (argc > 0) {
+				if (*argv) {
 					print_esc_string(*argv);
 					++argv;
-					--argc;
 				}
 				break;
 			}
@@ -223,10 +219,9 @@ static int print_formatted(char *format, int argc, char **argv)
 			if (*f == '*') {
 				++f;
 				++direc_length;
-				if (argc > 0) {
+				if (*argv) {
 					field_width = my_xstrtoul(*argv);
 					++argv;
-					--argc;
 				} else
 					field_width = 0;
 			} else {
@@ -241,10 +236,9 @@ static int print_formatted(char *format, int argc, char **argv)
 				if (*f == '*') {
 					++f;
 					++direc_length;
-					if (argc > 0) {
+					if (*argv) {
 						precision = my_xstrtoul(*argv);
 						++argv;
-						--argc;
 					} else
 						precision = 0;
 				} else
@@ -262,18 +256,18 @@ static int print_formatted(char *format, int argc, char **argv)
 			fprintf(stderr, "%%%c: invalid directive", *f);
 			*/
 			++direc_length;
-			if (argc > 0) {
+			if (*argv) {
 				print_direc(direc_start, direc_length, field_width,
 							precision, *argv);
 				++argv;
-				--argc;
 			} else
 				print_direc(direc_start, direc_length, field_width,
 							precision, "");
 			break;
 		case '\\':
-			if (*++f == 'c')
-				exit(0);
+			if (*++f == 'c') {
+				return saved_argv; /* causes main() to exit */
+			}
 			bb_putchar(bb_process_escape_sequence((const char **)&f));
 			f--;
 			break;
@@ -282,32 +276,45 @@ static int print_formatted(char *format, int argc, char **argv)
 		}
 	}
 
-	return save_argc - argc;
+	return argv;
 }
 
-int printf_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int printf_main(int argc, char **argv)
+int printf_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
 	char *format;
-	int args_used;
+	char **argv2;
 
-	if (argc <= 1 || argv[1][0] == '-') {
+	/* We must check that stdout is not closed.
+	 * The reason for this is highly non-obvious. printf_main is used from shell.
+	 * Shell must correctly handle 'printf "%s" foo'
+	 * if stdout is closed. With stdio, output gets shoveled into
+	 * stdout buffer, and even fflush cannot clear it out. It seems that
+	 * even if libc receives EBADF on write attempts, it feels determined
+	 * to output data no matter what. So it will try later,
+	 * and possibly will clobber future output. Not good. */
+	if (dup2(1, 1) != 1)
+		return -1;
+
+	/* bash builtin errors out on "printf '-%s-\n' foo",
+	 * coreutils-6.9 works. Both work with "printf -- '-%s-\n' foo".
+	 * We will mimic coreutils. */
+	if (argv[1] && argv[1][0] == '-' && argv[1][1] == '-' && argv[1][2] == '\0')
+		argv++;
+	if (!argv[1])
 		bb_show_usage();
-	}
 
 	format = argv[1];
-	argc -= 2;
-	argv += 2;
+	argv2 = argv + 2;
 
 	do {
-		args_used = print_formatted(format, argc, argv);
-		argc -= args_used;
-		argv += args_used;
-	} while (args_used > 0 && argc > 0);
+		argv = argv2;
+		argv2 = print_formatted(format, argv);
+	} while (argv2 != argv && *argv2);
 
-/*	if (argc > 0)
+	/* coreutils compat (bash doesn't do this):
+	if (*argv)
 		fprintf(stderr, "excess args ignored");
-*/
+	*/
 
 	return EXIT_SUCCESS;
 }

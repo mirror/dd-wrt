@@ -10,8 +10,6 @@
  *	Laszlo Valko <valko@linux.karinthy.hu> 990223: address label must be zero terminated
  */
 
-//#include <sys/socket.h>
-//#include <sys/ioctl.h>
 #include <fnmatch.h>
 #include <net/if.h>
 #include <net/if_arp.h>
@@ -20,39 +18,42 @@
 #include "rt_names.h"
 #include "utils.h"
 
+#ifndef IFF_LOWER_UP
+/* from linux/if.h */
+#define IFF_LOWER_UP	0x10000		/* driver signals L1 up*/
+#endif
 
 typedef struct filter_t {
-	int ifindex;
-	int family;
-	int oneline;
-	int showqueue;
-	inet_prefix pfx;
+	char *label;
+	char *flushb;
+	struct rtnl_handle *rth;
 	int scope, scopemask;
 	int flags, flagmask;
-	int up;
-	char *label;
-	int flushed;
-	char *flushb;
 	int flushp;
 	int flushe;
-	struct rtnl_handle *rth;
+	int ifindex;
+	family_t family;
+	smallint showqueue;
+	smallint oneline;
+	smallint up;
+	smallint flushed;
+	inet_prefix pfx;
 } filter_t;
 
 #define filter (*(filter_t*)&bb_common_bufsiz1)
 
 
-static void print_link_flags(FILE *fp, unsigned flags, unsigned mdown)
+static void print_link_flags(unsigned flags, unsigned mdown)
 {
-	fprintf(fp, "<");
+	static const int flag_masks[] = {
+		IFF_LOOPBACK, IFF_BROADCAST, IFF_POINTOPOINT,
+		IFF_MULTICAST, IFF_NOARP, IFF_UP, IFF_LOWER_UP };
+	static const char flag_labels[] ALIGN1 =
+		"LOOPBACK\0""BROADCAST\0""POINTOPOINT\0"
+		"MULTICAST\0""NOARP\0""UP\0""LOWER_UP\0";
+
+	bb_putchar('<');
 	flags &= ~IFF_RUNNING;
-#define _PF(f) if (flags&IFF_##f) { \
-		  flags &= ~IFF_##f; \
-		  fprintf(fp, #f "%s", flags ? "," : ""); }
-	_PF(LOOPBACK);
-	_PF(BROADCAST);
-	_PF(POINTOPOINT);
-	_PF(MULTICAST);
-	_PF(NOARP);
 #if 0
 	_PF(ALLMULTI);
 	_PF(PROMISC);
@@ -64,13 +65,12 @@ static void print_link_flags(FILE *fp, unsigned flags, unsigned mdown)
 	_PF(PORTSEL);
 	_PF(NOTRAILERS);
 #endif
-	_PF(UP);
-#undef _PF
+	flags = print_flags_separated(flag_masks, flag_labels, flags, ",");
 	if (flags)
-		fprintf(fp, "%x", flags);
+		printf("%x", flags);
 	if (mdown)
-		fprintf(fp, ",M-DOWN");
-	fprintf(fp, "> ");
+		printf(",M-DOWN");
+	printf("> ");
 }
 
 static void print_queuelen(char *name)
@@ -94,10 +94,8 @@ static void print_queuelen(char *name)
 		printf("qlen %d", ifr.ifr_qlen);
 }
 
-static int print_linkinfo(struct sockaddr_nl ATTRIBUTE_UNUSED *who,
-		const struct nlmsghdr *n, void ATTRIBUTE_UNUSED *arg)
+static int print_linkinfo(const struct nlmsghdr *n)
 {
-	FILE *fp = (FILE*)arg;
 	struct ifinfomsg *ifi = NLMSG_DATA(n);
 	struct rtattr * tb[IFLA_MAX+1];
 	int len = n->nlmsg_len;
@@ -112,7 +110,7 @@ static int print_linkinfo(struct sockaddr_nl ATTRIBUTE_UNUSED *who,
 
 	if (filter.ifindex && ifi->ifi_index != filter.ifindex)
 		return 0;
-	if (filter.up && !(ifi->ifi_flags&IFF_UP))
+	if (filter.up && !(ifi->ifi_flags & IFF_UP))
 		return 0;
 
 	memset(tb, 0, sizeof(tb));
@@ -129,34 +127,34 @@ static int print_linkinfo(struct sockaddr_nl ATTRIBUTE_UNUSED *who,
 	}
 
 	if (n->nlmsg_type == RTM_DELLINK)
-		fprintf(fp, "Deleted ");
+		printf("Deleted ");
 
-	fprintf(fp, "%d: %s", ifi->ifi_index,
+	printf("%d: %s", ifi->ifi_index,
 		tb[IFLA_IFNAME] ? (char*)RTA_DATA(tb[IFLA_IFNAME]) : "<nil>");
 
 	if (tb[IFLA_LINK]) {
 		SPRINT_BUF(b1);
 		int iflink = *(int*)RTA_DATA(tb[IFLA_LINK]);
 		if (iflink == 0)
-			fprintf(fp, "@NONE: ");
+			printf("@NONE: ");
 		else {
-			fprintf(fp, "@%s: ", ll_idx_n2a(iflink, b1));
+			printf("@%s: ", ll_idx_n2a(iflink, b1));
 			m_flag = ll_index_to_flags(iflink);
 			m_flag = !(m_flag & IFF_UP);
 		}
 	} else {
-		fprintf(fp, ": ");
+		printf(": ");
 	}
-	print_link_flags(fp, ifi->ifi_flags, m_flag);
+	print_link_flags(ifi->ifi_flags, m_flag);
 
 	if (tb[IFLA_MTU])
-		fprintf(fp, "mtu %u ", *(int*)RTA_DATA(tb[IFLA_MTU]));
+		printf("mtu %u ", *(int*)RTA_DATA(tb[IFLA_MTU]));
 	if (tb[IFLA_QDISC])
-		fprintf(fp, "qdisc %s ", (char*)RTA_DATA(tb[IFLA_QDISC]));
+		printf("qdisc %s ", (char*)RTA_DATA(tb[IFLA_QDISC]));
 #ifdef IFLA_MASTER
 	if (tb[IFLA_MASTER]) {
 		SPRINT_BUF(b1);
-		fprintf(fp, "master %s ", ll_idx_n2a(*(int*)RTA_DATA(tb[IFLA_MASTER]), b1));
+		printf("master %s ", ll_idx_n2a(*(int*)RTA_DATA(tb[IFLA_MASTER]), b1));
 	}
 #endif
 	if (filter.showqueue)
@@ -164,27 +162,27 @@ static int print_linkinfo(struct sockaddr_nl ATTRIBUTE_UNUSED *who,
 
 	if (!filter.family || filter.family == AF_PACKET) {
 		SPRINT_BUF(b1);
-		fprintf(fp, "%c    link/%s ", _SL_, ll_type_n2a(ifi->ifi_type, b1, sizeof(b1)));
+		printf("%c    link/%s ", _SL_, ll_type_n2a(ifi->ifi_type, b1, sizeof(b1)));
 
 		if (tb[IFLA_ADDRESS]) {
 			fputs(ll_addr_n2a(RTA_DATA(tb[IFLA_ADDRESS]),
 						      RTA_PAYLOAD(tb[IFLA_ADDRESS]),
 						      ifi->ifi_type,
-						      b1, sizeof(b1)), fp);
+						      b1, sizeof(b1)), stdout);
 		}
 		if (tb[IFLA_BROADCAST]) {
 			if (ifi->ifi_flags & IFF_POINTOPOINT)
-				fprintf(fp, " peer ");
+				printf(" peer ");
 			else
-				fprintf(fp, " brd ");
+				printf(" brd ");
 			fputs(ll_addr_n2a(RTA_DATA(tb[IFLA_BROADCAST]),
 						      RTA_PAYLOAD(tb[IFLA_BROADCAST]),
 						      ifi->ifi_type,
-						      b1, sizeof(b1)), fp);
+						      b1, sizeof(b1)), stdout);
 		}
 	}
-	fputc('\n', fp);
-	fflush(fp);
+	bb_putchar('\n');
+	/*fflush(stdout);*/
 	return 0;
 }
 
@@ -198,10 +196,9 @@ static int flush_update(void)
 	return 0;
 }
 
-static int print_addrinfo(struct sockaddr_nl ATTRIBUTE_UNUSED *who,
-		struct nlmsghdr *n, void ATTRIBUTE_UNUSED *arg)
+static int print_addrinfo(const struct sockaddr_nl *who ATTRIBUTE_UNUSED,
+		struct nlmsghdr *n, void *arg ATTRIBUTE_UNUSED)
 {
-	FILE *fp = (FILE*)arg;
 	struct ifaddrmsg *ifa = NLMSG_DATA(n);
 	int len = n->nlmsg_len;
 	struct rtattr * rta_tb[IFA_MAX+1];
@@ -229,9 +226,9 @@ static int print_addrinfo(struct sockaddr_nl ATTRIBUTE_UNUSED *who,
 
 	if (filter.ifindex && filter.ifindex != ifa->ifa_index)
 		return 0;
-	if ((filter.scope^ifa->ifa_scope)&filter.scopemask)
+	if ((filter.scope ^ ifa->ifa_scope) & filter.scopemask)
 		return 0;
-	if ((filter.flags^ifa->ifa_flags)&filter.flagmask)
+	if ((filter.flags ^ ifa->ifa_flags) & filter.flagmask)
 		return 0;
 	if (filter.label) {
 		const char *label;
@@ -265,33 +262,33 @@ static int print_addrinfo(struct sockaddr_nl ATTRIBUTE_UNUSED *who,
 		fn->nlmsg_flags = NLM_F_REQUEST;
 		fn->nlmsg_seq = ++filter.rth->seq;
 		filter.flushp = (((char*)fn) + n->nlmsg_len) - filter.flushb;
-		filter.flushed++;
+		filter.flushed = 1;
 		return 0;
 	}
 
 	if (n->nlmsg_type == RTM_DELADDR)
-		fprintf(fp, "Deleted ");
+		printf("Deleted ");
 
 	if (filter.oneline)
-		fprintf(fp, "%u: %s", ifa->ifa_index, ll_index_to_name(ifa->ifa_index));
+		printf("%u: %s", ifa->ifa_index, ll_index_to_name(ifa->ifa_index));
 	if (ifa->ifa_family == AF_INET)
-		fprintf(fp, "    inet ");
+		printf("    inet ");
 	else if (ifa->ifa_family == AF_INET6)
-		fprintf(fp, "    inet6 ");
+		printf("    inet6 ");
 	else
-		fprintf(fp, "    family %d ", ifa->ifa_family);
+		printf("    family %d ", ifa->ifa_family);
 
 	if (rta_tb[IFA_LOCAL]) {
 		fputs(rt_addr_n2a(ifa->ifa_family,
 					      RTA_PAYLOAD(rta_tb[IFA_LOCAL]),
 					      RTA_DATA(rta_tb[IFA_LOCAL]),
-					      abuf, sizeof(abuf)), fp);
+					      abuf, sizeof(abuf)), stdout);
 
 		if (rta_tb[IFA_ADDRESS] == NULL ||
 		    memcmp(RTA_DATA(rta_tb[IFA_ADDRESS]), RTA_DATA(rta_tb[IFA_LOCAL]), 4) == 0) {
-			fprintf(fp, "/%d ", ifa->ifa_prefixlen);
+			printf("/%d ", ifa->ifa_prefixlen);
 		} else {
-			fprintf(fp, " peer %s/%d ",
+			printf(" peer %s/%d ",
 				rt_addr_n2a(ifa->ifa_family,
 					    RTA_PAYLOAD(rta_tb[IFA_ADDRESS]),
 					    RTA_DATA(rta_tb[IFA_ADDRESS]),
@@ -301,44 +298,44 @@ static int print_addrinfo(struct sockaddr_nl ATTRIBUTE_UNUSED *who,
 	}
 
 	if (rta_tb[IFA_BROADCAST]) {
-		fprintf(fp, "brd %s ",
+		printf("brd %s ",
 			rt_addr_n2a(ifa->ifa_family,
 				    RTA_PAYLOAD(rta_tb[IFA_BROADCAST]),
 				    RTA_DATA(rta_tb[IFA_BROADCAST]),
 				    abuf, sizeof(abuf)));
 	}
 	if (rta_tb[IFA_ANYCAST]) {
-		fprintf(fp, "any %s ",
+		printf("any %s ",
 			rt_addr_n2a(ifa->ifa_family,
 				    RTA_PAYLOAD(rta_tb[IFA_ANYCAST]),
 				    RTA_DATA(rta_tb[IFA_ANYCAST]),
 				    abuf, sizeof(abuf)));
 	}
-	fprintf(fp, "scope %s ", rtnl_rtscope_n2a(ifa->ifa_scope, b1, sizeof(b1)));
-	if (ifa->ifa_flags&IFA_F_SECONDARY) {
+	printf("scope %s ", rtnl_rtscope_n2a(ifa->ifa_scope, b1, sizeof(b1)));
+	if (ifa->ifa_flags & IFA_F_SECONDARY) {
 		ifa->ifa_flags &= ~IFA_F_SECONDARY;
-		fprintf(fp, "secondary ");
+		printf("secondary ");
 	}
-	if (ifa->ifa_flags&IFA_F_TENTATIVE) {
+	if (ifa->ifa_flags & IFA_F_TENTATIVE) {
 		ifa->ifa_flags &= ~IFA_F_TENTATIVE;
-		fprintf(fp, "tentative ");
+		printf("tentative ");
 	}
-	if (ifa->ifa_flags&IFA_F_DEPRECATED) {
+	if (ifa->ifa_flags & IFA_F_DEPRECATED) {
 		ifa->ifa_flags &= ~IFA_F_DEPRECATED;
-		fprintf(fp, "deprecated ");
+		printf("deprecated ");
 	}
-	if (!(ifa->ifa_flags&IFA_F_PERMANENT)) {
-		fprintf(fp, "dynamic ");
+	if (!(ifa->ifa_flags & IFA_F_PERMANENT)) {
+		printf("dynamic ");
 	} else
 		ifa->ifa_flags &= ~IFA_F_PERMANENT;
 	if (ifa->ifa_flags)
-		fprintf(fp, "flags %02x ", ifa->ifa_flags);
+		printf("flags %02x ", ifa->ifa_flags);
 	if (rta_tb[IFA_LABEL])
-		fputs((char*)RTA_DATA(rta_tb[IFA_LABEL]), fp);
+		fputs((char*)RTA_DATA(rta_tb[IFA_LABEL]), stdout);
 	if (rta_tb[IFA_CACHEINFO]) {
 		struct ifa_cacheinfo *ci = RTA_DATA(rta_tb[IFA_CACHEINFO]);
 		char buf[128];
-		fputc(_SL_, fp);
+		bb_putchar(_SL_);
 		if (ci->ifa_valid == 0xFFFFFFFFU)
 			sprintf(buf, "valid_lft forever");
 		else
@@ -347,10 +344,10 @@ static int print_addrinfo(struct sockaddr_nl ATTRIBUTE_UNUSED *who,
 			sprintf(buf+strlen(buf), " preferred_lft forever");
 		else
 			sprintf(buf+strlen(buf), " preferred_lft %dsec", ci->ifa_prefered);
-		fprintf(fp, "       %s", buf);
+		printf("       %s", buf);
 	}
-	fputc('\n', fp);
-	fflush(fp);
+	bb_putchar('\n');
+	/*fflush(stdout);*/
 	return 0;
 }
 
@@ -361,7 +358,7 @@ struct nlmsg_list
 	struct nlmsghdr	  h;
 };
 
-static int print_selected_addrinfo(int ifindex, struct nlmsg_list *ainfo, FILE *fp)
+static int print_selected_addrinfo(int ifindex, struct nlmsg_list *ainfo)
 {
 	for (; ainfo; ainfo = ainfo->next) {
 		struct nlmsghdr *n = &ainfo->h;
@@ -377,13 +374,13 @@ static int print_selected_addrinfo(int ifindex, struct nlmsg_list *ainfo, FILE *
 		    (filter.family && filter.family != ifa->ifa_family))
 			continue;
 
-		print_addrinfo(NULL, n, fp);
+		print_addrinfo(NULL, n, NULL);
 	}
 	return 0;
 }
 
 
-static int store_nlmsg(struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
+static int store_nlmsg(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 {
 	struct nlmsg_list **linfo = (struct nlmsg_list**)arg;
 	struct nlmsg_list *h;
@@ -396,7 +393,8 @@ static int store_nlmsg(struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 	memcpy(&h->h, n, n->nlmsg_len);
 	h->next = NULL;
 
-	for (lp = linfo; *lp; lp = &(*lp)->next) /* NOTHING */;
+	for (lp = linfo; *lp; lp = &(*lp)->next)
+		continue;
 	*lp = h;
 
 	ll_remember_index(who, n, NULL);
@@ -499,7 +497,7 @@ int ipaddr_list_or_flush(char **argv, int flush)
 		for (;;) {
 			xrtnl_wilddump_request(&rth, filter.family, RTM_GETADDR);
 			filter.flushed = 0;
-			xrtnl_dump_filter(&rth, print_addrinfo, stdout);
+			xrtnl_dump_filter(&rth, print_addrinfo, NULL);
 			if (filter.flushed == 0) {
 				return 0;
 			}
@@ -575,10 +573,10 @@ int ipaddr_list_or_flush(char **argv, int flush)
 	}
 
 	for (l = linfo; l; l = l->next) {
-		if (no_link || print_linkinfo(NULL, &l->h, stdout) == 0) {
+		if (no_link || print_linkinfo(&l->h) == 0) {
 			struct ifinfomsg *ifi = NLMSG_DATA(&l->h);
 			if (filter.family != AF_PACKET)
-				print_selected_addrinfo(ifi->ifi_index, ainfo, stdout);
+				print_selected_addrinfo(ifi->ifi_index, ainfo);
 		}
 	}
 

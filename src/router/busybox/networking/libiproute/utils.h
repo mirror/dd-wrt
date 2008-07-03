@@ -6,6 +6,10 @@
 #include "ll_map.h"
 #include "rtm_map.h"
 
+#if __GNUC_PREREQ(4,1)
+# pragma GCC visibility push(hidden)
+#endif
+
 extern family_t preferred_family;
 extern smallint show_stats;    /* UNUSED */
 extern smallint show_details;  /* UNUSED */
@@ -28,8 +32,7 @@ extern void incomplete_command(void) ATTRIBUTE_NORETURN;
 
 #define NEXT_ARG() do { if (!*++argv) incomplete_command(); } while (0)
 
-typedef struct
-{
+typedef struct {
 	uint8_t family;
 	uint8_t bytelen;
 	int16_t bitlen;
@@ -83,5 +86,9 @@ int dnet_pton(int af, const char *src, void *addr);
 
 const char *ipx_ntop(int af, const void *addr, char *str, size_t len);
 int ipx_pton(int af, const char *src, void *addr);
+
+#if __GNUC_PREREQ(4,1)
+# pragma GCC visibility pop
+#endif
 
 #endif /* __UTILS_H__ */

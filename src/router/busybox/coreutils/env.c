@@ -29,7 +29,6 @@
  * - use xfunc_error_retval
  */
 
-#include <getopt.h> /* struct option */
 #include "libbb.h"
 
 #if ENABLE_FEATURE_ENV_LONG_OPTIONS
@@ -63,8 +62,7 @@ int env_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		environ = cleanenv;
 	} else {
 		while (unset_env) {
-			unsetenv(unset_env->data);
-			unset_env = unset_env->link;
+			unsetenv(llist_pop(&unset_env));
 		}
 	}
 
@@ -86,7 +84,7 @@ int env_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		puts(*ep);
 	}
 
-	fflush_stdout_and_exit(0);
+	fflush_stdout_and_exit(EXIT_SUCCESS);
 }
 
 /*

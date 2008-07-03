@@ -93,17 +93,17 @@
 /*  Never change this otherwise the binary interface will change   */
 
 struct devfsd_notify_struct
-{   /*  Use native C types to ensure same types in kernel and user space     */
-    unsigned int type;           /*  DEVFSD_NOTIFY_* value                   */
-    unsigned int mode;           /*  Mode of the inode or device entry       */
-    unsigned int major;          /*  Major number of device entry            */
-    unsigned int minor;          /*  Minor number of device entry            */
-    unsigned int uid;            /*  Uid of process, inode or device entry   */
-    unsigned int gid;            /*  Gid of process, inode or device entry   */
-    unsigned int overrun_count;  /*  Number of lost events                   */
-    unsigned int namelen;        /*  Number of characters not including '\0' */
-    /*  The device name MUST come last                                       */
-    char devname[DEVFS_PATHLEN]; /*  This will be '\0' terminated            */
+{	/*  Use native C types to ensure same types in kernel and user space     */
+	unsigned int type;           /*  DEVFSD_NOTIFY_* value                   */
+	unsigned int mode;           /*  Mode of the inode or device entry       */
+	unsigned int major;          /*  Major number of device entry            */
+	unsigned int minor;          /*  Minor number of device entry            */
+	unsigned int uid;            /*  Uid of process, inode or device entry   */
+	unsigned int gid;            /*  Gid of process, inode or device entry   */
+	unsigned int overrun_count;  /*  Number of lost events                   */
+	unsigned int namelen;        /*  Number of characters not including '\0' */
+	/*  The device name MUST come last                                       */
+	char devname[DEVFS_PATHLEN]; /*  This will be '\0' terminated            */
 };
 
 #define BUFFER_SIZE 16384
@@ -283,9 +283,9 @@ static const char bb_msg_variable_not_found[] ALIGN1 = "variable: %s not found";
 #else
 #define info_logger(p, fmt, args...)
 #define msg_logger(p, fmt, args...)
-#define msg_logger_and_die(p, fmt, args...)           exit(1)
+#define msg_logger_and_die(p, fmt, args...)           exit(EXIT_FAILURE)
 #define error_logger(p, fmt, args...)
-#define error_logger_and_die(p, fmt, args...)         exit(1)
+#define error_logger_and_die(p, fmt, args...)         exit(EXIT_FAILURE)
 #endif
 
 static void safe_memcpy(char *dest, const char *src, int len)
@@ -402,7 +402,7 @@ int devfsd_main(int argc, char **argv)
 	dir_operation(SERVICE, mount_point, 0, NULL);
 
 	if (ENABLE_DEVFSD_FG_NP && no_polling)
-		exit(0);
+		exit(EXIT_SUCCESS);
 
 	if (ENABLE_DEVFSD_VERBOSE || ENABLE_DEBUG)
 		logmode = LOGMODE_BOTH;

@@ -58,21 +58,38 @@ CFLAGS += $(call cc-option,-falign-functions=1 -falign-jumps=1 -falign-labels=1 
 # be fixed..
 #CFLAGS+=$(call cc-option,-Wconversion,)
 
-ifeq ($(CONFIG_DEBUG),y)
-CFLAGS += $(call cc-option,-g)
+ifneq ($(CONFIG_DEBUG),y)
+CFLAGS += $(call cc-option,-Os,)
+else
+CFLAGS += $(call cc-option,-g,)
+ifeq ($(CONFIG_DEBUG_PESSIMIZE),y)
+CFLAGS += $(call cc-option,-O0,)
+else
+CFLAGS += $(call cc-option,-Os,)
 endif
+endif
+
+# If arch/$(ARCH)/Makefile did not override it (with, say, -fPIC)...
+ARCH_FPIC ?= -fpic
+ARCH_FPIE ?= -fpie
+ARCH_PIE ?= -pie
 
 ifeq ($(CONFIG_BUILD_LIBBUSYBOX),y)
 # on i386: 14% smaller libbusybox.so
 # (code itself is 9% bigger, we save on relocs/PLT/GOT)
-CFLAGS += -fpic
+CFLAGS += $(ARCH_FPIC)
 # and another 4% reduction of libbusybox.so:
 # (external entry points must be marked EXTERNALLY_VISIBLE)
 CFLAGS += $(call cc-option,-fvisibility=hidden)
 endif
 
 ifeq ($(CONFIG_STATIC),y)
-LDFLAGS += -static
+CFLAGS_busybox += -static
+endif
+
+ifeq ($(CONFIG_PIE),y)
+CFLAGS_busybox += $(ARCH_PIE)
+CFLAGS += $(ARCH_FPIE)
 endif
 
 LDLIBS += m crypt

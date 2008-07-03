@@ -170,7 +170,7 @@ static int smtp_checkp(const char *fmt, const char *param, int code)
 	// if code = -1 then just return this number
 	// if code != -1 then checks whether the number equals the code
 	// if not equal -> die saying msg
-	while ((answer = xmalloc_getline(stdin)) != NULL)
+	while ((answer = xmalloc_fgetline(stdin)) != NULL)
 		if (strlen(answer) <= 3 || '-' != answer[3])
 			break;
 	if (answer) {
@@ -187,7 +187,7 @@ static int smtp_checkp(const char *fmt, const char *param, int code)
 	bb_error_msg_and_die("%s failed", msg);
 }
 
-static int inline smtp_check(const char *fmt, int code)
+static inline int smtp_check(const char *fmt, int code)
 {
 	return smtp_checkp(fmt, NULL, code);
 }
@@ -211,7 +211,7 @@ static char *sane(char *str)
 static void pop3_checkr(const char *fmt, const char *param, char **ret)
 {
 	const char *msg = command(fmt, param);
-	char *answer = xmalloc_getline(stdin);
+	char *answer = xmalloc_fgetline(stdin);
 	if (answer && '+' == *answer) {
 		alarm(0);
 		if (ret)
@@ -224,7 +224,7 @@ static void pop3_checkr(const char *fmt, const char *param, char **ret)
 	bb_error_msg_and_die("%s failed", msg);
 }
 
-static void inline pop3_check(const char *fmt, const char *param)
+static inline void pop3_check(const char *fmt, const char *param)
 {
 	pop3_checkr(fmt, param, NULL);
 }
@@ -273,6 +273,7 @@ int sendgetmail_main(int argc ATTRIBUTE_UNUSED, char **argv)
 
 		OPTS_c = 1 << 6,        // sendmail: assumed charset
 		OPTS_t = 1 << 7,        // sendmail: recipient(s)
+		OPTS_i = 1 << 8,        // sendmail: ignore lone dots in message body (implied)
 	};
 
 	const char *options;
@@ -288,8 +289,8 @@ int sendgetmail_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		// SENDMAIL
 		// save initial stdin (body or attachements can be piped!)
 		xdup2(STDIN_FILENO, INITIAL_STDIN_FILENO);
-		opt_complementary = "-2:w+:t:t::"; // count(-t) > 0
-		options = "w:U:P:X" "ns:c:t:";
+		opt_complementary = "-2:w+:t::";
+		options = "w:U:P:X" "ns:c:t:i";
 	} else {
 		// FETCHMAIL
 		opt_after_connect = NULL;
@@ -345,6 +346,29 @@ int sendgetmail_main(int argc ATTRIBUTE_UNUSED, char **argv)
 
 		// get the sender
 		opt_from = sane(*argv++);
+
+		// if no recipients _and_ no body files specified -> enter all-included mode
+		// i.e. scan stdin for To: and Subject: lines ...
+		// ... and then use the rest of stdin as message body
+		if (!opt_recipients && !*argv) {
+			// fetch recipients and (optionally) subject
+			char *s;
+			while ((s = xmalloc_reads(INITIAL_STDIN_FILENO, NULL, NULL)) != NULL) {
+				if (0 == strncmp("To: ", s, 4)) {
+					llist_add_to_end(&opt_recipients, s+4);
+				} else if (0 == strncmp("Subject: ", s, 9)) {
+					opt_subject = s+9;
+					opts |= OPTS_s;
+				} else {
+					char first = s[0];
+					free(s);
+					if (!first)
+						break; // empty line
+				}
+			}
+			// order to read body from stdin
+			*--argv = (char *)"-";
+		}
 
 		// introduce to server
 		// we should start with modern EHLO
@@ -408,7 +432,7 @@ int sendgetmail_main(int argc ATTRIBUTE_UNUSED, char **argv)
 
 		// make a random string -- it will delimit message parts
 		srand(monotonic_us());
- 		boundary = xasprintf("%d-%d-%d", rand(), rand(), rand());
+		boundary = xasprintf("%d-%d-%d", rand(), rand(), rand());
 
 		// put common headers and body start
 		printf(
@@ -457,7 +481,7 @@ int sendgetmail_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		printf("\r\n--%s--\r\n" "\r\n", boundary);
 
 		// leave "put message" mode
- 		smtp_check(".", 250);
+		smtp_check(".", 250);
 		// ... and say goodbye
 		smtp_check("QUIT", 221);
 
@@ -482,7 +506,7 @@ int sendgetmail_main(int argc ATTRIBUTE_UNUSED, char **argv)
 
 		// cache postprocess program
 		*fargs = *argv;
-		
+
 		// authenticate
 		if (!(opts & OPT_U)) {
 			//opts |= OPT_U;
@@ -509,7 +533,7 @@ int sendgetmail_main(int argc ATTRIBUTE_UNUSED, char **argv)
 			// so we reuse md5 space instead of xzalloc(16*2+1)
 #define md5_hex ((uint8_t *)&md5)
 //			uint8_t *md5_hex = (uint8_t *)&md5;
-			*bin2hex(md5_hex, s, 16) = '\0';
+			*bin2hex((char *)md5_hex, s, 16) = '\0';
 			// APOP
 			s = xasprintf("%s %s", opt_user, md5_hex);
 #undef md5_hex
@@ -537,7 +561,7 @@ int sendgetmail_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		// NOTE: we don't use xatou(buf) since buf is "nmsg nbytes"
 		// we only need nmsg and atoi is just exactly what we need
 		// if atoi fails to convert buf into number it returns 0
-		// in this case the following loop simply will not be executed 
+		// in this case the following loop simply will not be executed
 		nmsg = atoi(buf);
 		if (ENABLE_FEATURE_CLEAN_UP)
 			free(buf-4); // buf is "+OK " away from malloc'ed string

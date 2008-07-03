@@ -12,7 +12,6 @@
  * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
  */
 
-#include <getopt.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
@@ -176,15 +175,12 @@ int ipcalc_main(int argc, char **argv)
 
 		if (opt & HOSTNAME) {
 			struct hostent *hostinfo;
-			int x;
 
 			hostinfo = gethostbyaddr((char *) &ipaddr, sizeof(ipaddr), AF_INET);
 			if (!hostinfo) {
 				bb_herror_msg_and_die("cannot find hostname for %s", argv[0]);
 			}
-			for (x = 0; hostinfo->h_name[x]; x++) {
-				hostinfo->h_name[x] = tolower(hostinfo->h_name[x]);
-			}
+			str_tolower(hostinfo->h_name);
 
 			printf("HOSTNAME=%s\n", hostinfo->h_name);
 		}

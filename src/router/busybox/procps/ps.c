@@ -310,7 +310,7 @@ static ps_out_t* new_out_t(void)
 
 static const ps_out_t* find_out_spec(const char *name)
 {
-	int i;
+	unsigned i;
 	for (i = 0; i < ARRAY_SIZE(out_spec); i++) {
 		if (!strcmp(name, out_spec[i].name))
 			return &out_spec[i];
@@ -443,8 +443,7 @@ int ps_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	USE_SELINUX(opt =) getopt32(argv, "Zo:aAdefl", &opt_o);
 	if (opt_o) {
 		do {
-			parse_o(opt_o->data);
-			opt_o = opt_o->link;
+			parse_o(llist_pop(&opt_o));
 		} while (opt_o);
 	} else {
 		/* Below: parse_o() needs char*, NOT const char*... */
@@ -493,7 +492,7 @@ int ps_main(int argc ATTRIBUTE_UNUSED, char **argv ATTRIBUTE_UNUSED)
 #if !ENABLE_FEATURE_PS_WIDE
 	enum { terminal_width = 79 };
 #else
-	int terminal_width;
+	unsigned terminal_width;
 	int w_count = 0;
 #endif
 

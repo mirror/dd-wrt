@@ -13,22 +13,6 @@ menu "Busybox Settings"
 
 menu "General Configuration"
 
-config NITPICK
-	bool "See lots more (probably unnecessary) configuration options."
-	default n
-	help
-	  Some BusyBox applets have more configuration options than anyone
-	  will ever care about.  To avoid drowining people in complexity, most
-	  of the applet features that can be set to a sane default value are
-	  hidden, unless you hit the above switch.
-
-	  This is better than to telling people to edit the busybox source
-	  code, but not by much.
-
-	  See http://en.wikipedia.org/wiki/Fibber_McGee_and_Molly#The_Closet
-
-	  You have been warned.
-
 config DESKTOP
 	bool "Enable options for full-blown desktop systems"
 	default n
@@ -37,10 +21,21 @@ config DESKTOP
 	  Select this only if you plan to use busybox on full-blown
 	  desktop machine with common Linux distro, not on an embedded box.
 
+config FEATURE_ASSUME_UNICODE
+	bool "Assume that 1:1 char/glyph correspondence is not true"
+	default n
+	help
+	  This makes various applets aware that one byte is not
+	  one character on screen.
+
+	  Busybox aims to eventually work correctly with Unicode displays.
+	  Any older encodings are not guaranteed to work.
+	  Probably by the time when busybox will be fully Unicode-clean,
+	  other encodings will be mainly of historic interest.
+
 choice
 	prompt "Buffer allocation policy"
 	default FEATURE_BUFFERS_USE_MALLOC
-	depends on NITPICK
 	help
 	  There are 3 ways BusyBox can handle buffer allocations:
 	  - Use malloc. This costs code size for the call to xmalloc.
@@ -130,7 +125,6 @@ config FEATURE_DEVPTS
 config FEATURE_CLEAN_UP
 	bool "Clean up all memory before exiting (usually not needed)"
 	default n
-	depends on NITPICK
 	help
 	  As a size optimization, busybox normally exits without explicitly
 	  freeing dynamically allocated memory or closing files.  This saves
@@ -280,6 +274,14 @@ config STATIC
 
 	  Most people will leave this set to 'N'.
 
+config PIE
+	bool "Build BusyBox as a position independent executable"
+	default n
+	depends on !STATIC
+	help
+	  (TODO: what is it and why/when is it useful?)
+	  Most people will leave this set to 'N'.
+
 config NOMMU
 	bool "Force NOMMU build"
 	default n
@@ -291,10 +293,12 @@ config NOMMU
 
 	  Most people will leave this set to 'N'.
 
+# PIE can be made to work with BUILD_LIBBUSYBOX, but currently
+# build system does not support that
 config BUILD_LIBBUSYBOX
 	bool "Build shared libbusybox"
 	default n
-	depends on !FEATURE_PREFER_APPLETS
+	depends on !FEATURE_PREFER_APPLETS && !PIE
 	help
 	  Build a shared library libbusybox.so.N.N.N which contains all
 	  busybox code.
@@ -381,6 +385,16 @@ config LFS
 	  cp, mount, tar, and many others.  If you want to access files larger
 	  than 2 Gigabytes, enable this option.  Otherwise, leave it set to 'N'.
 
+config CROSS_COMPILER_PREFIX
+	string "Cross Compiler prefix"
+	default ""
+	help
+	  If you want to build BusyBox with a cross compiler, then you
+	  will need to set this to the cross-compiler prefix, for example,
+	  "i386-uclibc-". Note that CROSS_COMPILE environment variable
+	  or "make CROSS_COMPILE=xxx ..." will override this selection.
+	  For native build leave it empty.
+
 endmenu
 
 menu 'Debugging Options'
@@ -396,6 +410,17 @@ config DEBUG
 
 	  Most people should answer N.
 
+config DEBUG_PESSIMIZE
+	bool "Disable compiler optimizations."
+	default n
+	depends on DEBUG
+	help
+	  The compiler's optimization of source code can eliminate and reorder
+	  code, resulting in an executable that's hard to understand when
+	  stepping through it with a debugger.  This switches it off, resulting
+	  in a much bigger executable that more closely matches the source
+	  code.
+
 config WERROR
 	bool "Abort compilation on any warning"
 	default n
@@ -403,18 +428,6 @@ config WERROR
 	  Selecting this will add -Werror to gcc command line.
 
 	  Most people should answer N.
-
-# Seems to be unused
-#config DEBUG_PESSIMIZE
-#	bool "Disable compiler optimizations."
-#	default n
-#	depends on DEBUG
-#	help
-#	  The compiler's optimization of source code can eliminate and reorder
-#	  code, resulting in an executable that's hard to understand when
-#	  stepping through it with a debugger.  This switches it off, resulting
-#	  in a much bigger executable that more closely matches the source
-#	  code.
 
 choice
 	prompt "Additional debugging library"

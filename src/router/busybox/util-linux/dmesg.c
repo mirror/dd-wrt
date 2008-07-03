@@ -18,17 +18,22 @@ int dmesg_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	int len;
 	char *buf;
 	char *size, *level;
-	int flags = getopt32(argv, "cs:n:", &size, &level);
+	unsigned flags = getopt32(argv, "cs:n:", &size, &level);
+	enum {
+		OPT_c = 1<<0,
+		OPT_s = 1<<1,
+		OPT_n = 1<<2
+	};
 
-	if (flags & 4) {
+	if (flags & OPT_n) {
 		if (klogctl(8, NULL, xatoul_range(level, 0, 10)))
 			bb_perror_msg_and_die("klogctl");
 		return EXIT_SUCCESS;
 	}
 
-	len = (flags & 2) ? xatoul_range(size, 2, INT_MAX) : 16384;
+	len = (flags & OPT_s) ? xatoul_range(size, 2, INT_MAX) : 16384;
 	buf = xmalloc(len);
-	len = klogctl(3 + (flags & 1), buf, len);
+	len = klogctl(3 + (flags & OPT_c), buf, len);
 	if (len < 0)
 		bb_perror_msg_and_die("klogctl");
 	if (len == 0)

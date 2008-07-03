@@ -19,8 +19,7 @@ enum { STACK_SIZE = (COMMON_BUFSIZE - offsetof(struct globals, stack)) / sizeof(
 #define pointer   (G.pointer   )
 #define base      (G.base      )
 #define stack     (G.stack     )
-#define INIT_G() do { \
-} while (0)
+#define INIT_G() do { } while (0)
 
 
 static void push(double a)
@@ -204,7 +203,7 @@ int dc_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		char *line;
 		char *cursor;
 		char *token;
-		while ((line = xmalloc_getline(stdin)) != NULL) {
+		while ((line = xmalloc_fgetline(stdin)) != NULL) {
 			cursor = line;
 			while (1) {
 				token = get_token(&cursor);

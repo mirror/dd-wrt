@@ -8,8 +8,53 @@
  * Licensed under GPLv2 or later, see file LICENSE in this tarball for details.
  */
 
-/* NB: we have a problem here with /proc/NN/exe usage, similar to
- * one fixed in killall/pidof */
+/*
+This is how it is supposed to work:
+
+start-stop-daemon [OPTIONS] [--start|--stop] [[--] arguments...]
+
+One (only) of these must be given:
+        -S,--start              Start
+        -K,--stop               Stop
+
+Search for matching processes.
+If --stop is given, stop all matching processes (by sending a signal).
+If --start is given, start a new process unless a matching process was found.
+
+Options controlling process matching
+(if multiple conditions are specified, all must match):
+        -u,--user USERNAME|UID  Only consider this user's processes
+        -n,--name PROCESS_NAME  Look for processes by matching PROCESS_NAME
+                                with comm field in /proc/$PID/stat.
+                                Only basename is compared:
+                                "ntpd" == "./ntpd" == "/path/to/ntpd".
+[TODO: can PROCESS_NAME be a full pathname? Should we require full match then
+with /proc/$PID/exe or argv[0] (comm can't be matched, it never contains path)]
+        -x,--exec EXECUTABLE    Look for processes that were started with this
+                                command in /proc/$PID/cmdline.
+                                Unlike -n, we match against the full path:
+                                "ntpd" != "./ntpd" != "/path/to/ntpd"
+        -p,--pidfile PID_FILE   Look for processes with PID from this file
+
+Options which are valid for --start only:
+        -x,--exec EXECUTABLE    Program to run (1st arg of execvp). Mandatory.
+        -a,--startas NAME       argv[0] (defaults to EXECUTABLE)
+        -b,--background         Put process into background
+        -N,--nicelevel N        Add N to process' nice level
+        -c,--chuid USER[:[GRP]] Change to specified user [and group]
+        -m,--make-pidfile       Write PID to the pidfile
+                                (both -m and -p must be given!)
+
+Options which are valid for --stop only:
+        -s,--signal SIG         Signal to send (default:TERM)
+        -t,--test               Exit with status 0 if process is found
+                                (we don't actually start or stop daemons)
+
+Misc options:
+        -o,--oknodo             Exit with status 0 if nothing is done
+        -q,--quiet              Quiet
+        -v,--verbose            Verbose
+*/
 
 #include <sys/resource.h>
 
@@ -22,6 +67,26 @@ struct pid_list {
 	pid_t pid;
 };
 
+enum {
+	CTX_STOP       = (1 <<  0),
+	CTX_START      = (1 <<  1),
+	OPT_BACKGROUND = (1 <<  2), // -b
+	OPT_QUIET      = (1 <<  3), // -q
+	OPT_TEST       = (1 <<  4), // -t
+	OPT_MAKEPID    = (1 <<  5), // -m
+	OPT_a          = (1 <<  6), // -a
+	OPT_n          = (1 <<  7), // -n
+	OPT_s          = (1 <<  8), // -s
+	OPT_u          = (1 <<  9), // -u
+	OPT_c          = (1 << 10), // -c
+	OPT_x          = (1 << 11), // -x
+	OPT_p          = (1 << 12), // -p
+	OPT_OKNODO     = (1 << 13) * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -o
+	OPT_VERBOSE    = (1 << 14) * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -v
+	OPT_NICELEVEL  = (1 << 15) * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -N
+};
+#define QUIET (option_mask32 & OPT_QUIET)
+#define TEST  (option_mask32 & OPT_TEST)
 
 struct globals {
 	struct pid_list *found;
@@ -30,9 +95,7 @@ struct globals {
 	char *execname;
 	char *pidfile;
 	int user_id;
-	smallint quiet;
 	smallint signal_nr;
-	struct stat execstat;
 };
 #define G (*(struct globals*)&bb_common_bufsiz1)
 #define found             (G.found               )
@@ -41,22 +104,23 @@ struct globals {
 #define execname          (G.execname            )
 #define pidfile           (G.pidfile             )
 #define user_id           (G.user_id             )
-#define quiet             (G.quiet               )
 #define signal_nr         (G.signal_nr           )
-#define execstat          (G.execstat            )
-#define INIT_G() \
-        do { \
-		user_id = -1; \
-		signal_nr = 15; \
-        } while (0)
+#define INIT_G() do { \
+	user_id = -1; \
+	signal_nr = 15; \
+} while (0)
 
-
+#ifdef OLDER_VERSION_OF_X
+/* -x,--exec EXECUTABLE
+ * Look for processes with matching /proc/$PID/exe.
+ * Match is performed using device+inode.
+ */
 static int pid_is_exec(pid_t pid)
 {
 	struct stat st;
 	char buf[sizeof("/proc//exe") + sizeof(int)*3];
 
-	sprintf(buf, "/proc/%u/exe", pid);
+	sprintf(buf, "/proc/%u/exe", (unsigned)pid);
 	if (stat(buf, &st) < 0)
 		return 0;
 	if (st.st_dev == execstat.st_dev
@@ -64,24 +128,29 @@ static int pid_is_exec(pid_t pid)
 		return 1;
 	return 0;
 }
+#endif
 
-static int pid_is_user(int pid)
+static int pid_is_exec(pid_t pid)
 {
-	struct stat sb;
-	char buf[sizeof("/proc/") + sizeof(int)*3];
+	ssize_t bytes;
+	char buf[PATH_MAX];
 
-	sprintf(buf, "/proc/%u", pid);
-	if (stat(buf, &sb) != 0)
-		return 0;
-	return (sb.st_uid == user_id);
+	sprintf(buf, "/proc/%u/cmdline", (unsigned)pid);
+	bytes = open_read_close(buf, buf, sizeof(buf) - 1);
+	if (bytes > 0) {
+		buf[bytes] = '\0';
+		return strcmp(buf, execname) == 0;
+	}
+	return 0;
 }
 
-static int pid_is_cmd(pid_t pid)
+static int pid_is_name(pid_t pid)
 {
-	char buf[256]; /* is it big enough? */
+	/* /proc/PID/stat is "PID (comm_15_bytes_max) ..." */
+	char buf[32]; /* should be enough */
 	char *p, *pe;
 
-	sprintf(buf, "/proc/%u/stat", pid);
+	sprintf(buf, "/proc/%u/stat", (unsigned)pid);
 	if (open_read_close(buf, buf, sizeof(buf) - 1) < 0)
 		return 0;
 	buf[sizeof(buf) - 1] = '\0'; /* paranoia */
@@ -92,7 +161,23 @@ static int pid_is_cmd(pid_t pid)
 	if (!pe)
 		return 0;
 	*pe = '\0';
-	return !strcmp(p, cmdname);
+	/* we require comm to match and to not be truncated */
+	/* in Linux, if comm is 15 chars, it may be a truncated
+	 * name, so we don't allow that to match */
+	if (strlen(p) >= COMM_LEN - 1) /* COMM_LEN is 16 */
+		return 0;
+	return strcmp(p, cmdname) == 0;
+}
+
+static int pid_is_user(int pid)
+{
+	struct stat sb;
+	char buf[sizeof("/proc/") + sizeof(int)*3];
+
+	sprintf(buf, "/proc/%u", (unsigned)pid);
+	if (stat(buf, &sb) != 0)
+		return 0;
+	return (sb.st_uid == (uid_t)user_id);
 }
 
 static void check(int pid)
@@ -102,10 +187,10 @@ static void check(int pid)
 	if (execname && !pid_is_exec(pid)) {
 		return;
 	}
-	if (userspec && !pid_is_user(pid)) {
+	if (cmdname && !pid_is_name(pid)) {
 		return;
 	}
-	if (cmdname && !pid_is_cmd(pid)) {
+	if (userspec && !pid_is_user(pid)) {
 		return;
 	}
 	p = xmalloc(sizeof(*p));
@@ -142,10 +227,11 @@ static void do_procinit(void)
 	procdir = xopendir("/proc");
 
 	pid = 0;
-	while(1) {
+	while (1) {
 		errno = 0; /* clear any previous error */
 		entry = readdir(procdir);
-// TODO: check for exact errno(s) which mean that we got stale entry
+// TODO: this check is too generic, it's better
+// to check for exact errno(s) which mean that we got stale entry
 		if (errno) /* Stale entry, process has died after opendir */
 			continue;
 		if (!entry) /* EOF, no more entries */
@@ -172,32 +258,33 @@ static int do_stop(void)
 	} else if (execname) {
 		if (ENABLE_FEATURE_CLEAN_UP) what = xstrdup(execname);
 		if (!ENABLE_FEATURE_CLEAN_UP) what = execname;
-	} else if (pidfile)
+	} else if (pidfile) {
 		what = xasprintf("process in pidfile '%s'", pidfile);
-	else if (userspec)
+	} else if (userspec) {
 		what = xasprintf("process(es) owned by '%s'", userspec);
-	else
+	} else {
 		bb_error_msg_and_die("internal error, please report");
+	}
 
 	if (!found) {
-		if (!quiet)
+		if (!QUIET)
 			printf("no %s found; none killed\n", what);
 		killed = -1;
 		goto ret;
 	}
 	for (p = found; p; p = p->next) {
-		if (kill(p->pid, signal_nr) == 0) {
-			p->pid = - p->pid;
+		if (TEST || kill(p->pid, signal_nr) == 0) {
 			killed++;
 		} else {
-			bb_perror_msg("warning: killing process %u", p->pid);
+			p->pid = 0;
+			bb_perror_msg("warning: killing process %u", (unsigned)p->pid);
 		}
 	}
-	if (!quiet && killed) {
+	if (!QUIET && killed) {
 		printf("stopped %s (pid", what);
 		for (p = found; p; p = p->next)
-			if (p->pid < 0)
-				printf(" %u", - p->pid);
+			if (p->pid)
+				printf(" %u", (unsigned)p->pid);
 		puts(")");
 	}
  ret:
@@ -212,6 +299,7 @@ static const char start_stop_daemon_longopts[] ALIGN1 =
 	"start\0"        No_argument       "S"
 	"background\0"   No_argument       "b"
 	"quiet\0"        No_argument       "q"
+	"test\0"         No_argument       "t"
 	"make-pidfile\0" No_argument       "m"
 #if ENABLE_FEATURE_START_STOP_DAEMON_FANCY
 	"oknodo\0"       No_argument       "o"
@@ -231,24 +319,6 @@ static const char start_stop_daemon_longopts[] ALIGN1 =
 	;
 #endif
 
-enum {
-	CTX_STOP       = 0x1,
-	CTX_START      = 0x2,
-	OPT_BACKGROUND = 0x4, // -b
-	OPT_QUIET      = 0x8, // -q
-	OPT_MAKEPID    = 0x10, // -m
-	OPT_a          = 0x20, // -a
-	OPT_n          = 0x40, // -n
-	OPT_s          = 0x80, // -s
-	OPT_u          = 0x100, // -u
-	OPT_c          = 0x200, // -c
-	OPT_x          = 0x400, // -x
-	OPT_p          = 0x800, // -p
-	OPT_OKNODO     = 0x1000 * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -o
-	OPT_VERBOSE    = 0x2000 * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -v
-	OPT_NICELEVEL  = 0x4000 * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -N
-};
-
 int start_stop_daemon_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int start_stop_daemon_main(int argc ATTRIBUTE_UNUSED, char **argv)
 {
@@ -256,6 +326,7 @@ int start_stop_daemon_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	char *signame;
 	char *startas;
 	char *chuid;
+	struct stat execstat;
 #if ENABLE_FEATURE_START_STOP_DAEMON_FANCY
 //	char *retry_arg = NULL;
 //	int retries = -1;
@@ -268,17 +339,20 @@ int start_stop_daemon_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	applet_long_options = start_stop_daemon_longopts;
 #endif
 
-	/* Check required one context option was given */
-	opt_complementary = "K:S:K--S:S--K:m?p:K?xpun:S?xa";
-	opt = getopt32(argv, "KSbqma:n:s:u:c:x:p:"
+	/* -K or -S is required; they are mutually exclusive */
+	/* -p is required if -m is given */
+	/* -xpun (at least one) is required if -K is given */
+	/* -xa (at least one) is required if -S is given */
+	/* -q turns off -v */
+	opt_complementary = "K:S:K--S:S--K:m?p:K?xpun:S?xa"
+		USE_FEATURE_START_STOP_DAEMON_FANCY("q-v");
+	opt = getopt32(argv, "KSbqtma:n:s:u:c:x:p:"
 		USE_FEATURE_START_STOP_DAEMON_FANCY("ovN:"),
 //		USE_FEATURE_START_STOP_DAEMON_FANCY("ovN:R:"),
 		&startas, &cmdname, &signame, &userspec, &chuid, &execname, &pidfile
 		USE_FEATURE_START_STOP_DAEMON_FANCY(,&opt_N)
 //		USE_FEATURE_START_STOP_DAEMON_FANCY(,&retry_arg)
 	);
-
-	quiet = (opt & OPT_QUIET) && !(opt & OPT_VERBOSE);
 
 	if (opt & OPT_s) {
 		signal_nr = get_signum(signame);
@@ -300,9 +374,6 @@ int start_stop_daemon_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		if (errno)
 			user_id = xuname2uid(userspec);
 	}
-	if (execname)
-		xstat(execname, &execstat);
-
 	do_procinit(); /* Both start and stop needs to know current processes */
 
 	if (opt & CTX_STOP) {
@@ -311,10 +382,14 @@ int start_stop_daemon_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	}
 
 	if (found) {
-		if (!quiet)
+		if (!QUIET)
 			printf("%s already running\n%d\n", execname, found->pid);
 		return !(opt & OPT_OKNODO);
 	}
+
+	if (execname)
+		xstat(execname, &execstat);
+
 	*--argv = startas;
 	if (opt & OPT_BACKGROUND) {
 #if BB_MMU
@@ -327,7 +402,7 @@ int start_stop_daemon_main(int argc ATTRIBUTE_UNUSED, char **argv)
 			/* parent */
 			/* why _exit? the child may have changed the stack,
 			 * so "return 0" may do bad things */
-			_exit(0);
+			_exit(EXIT_SUCCESS);
 		}
 		/* child */
 		setsid(); /* detach from controlling tty */

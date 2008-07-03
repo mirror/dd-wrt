@@ -65,17 +65,25 @@
 #define setlocale(x,y) ((void)0)
 #endif
 
-#include "pwd_.h"
-#include "grp_.h"
-/* ifdef it out, because it may include <shadow.h> */
-/* and we may not even _have_ <shadow.h>! */
-#if ENABLE_FEATURE_SHADOWPASSWDS
-#include "shadow_.h"
+#ifdef DMALLOC
+#include <dmalloc.h>
 #endif
 
-/* Some libc's don't declare it, help them */
+#if !ENABLE_USE_BB_PWD_GRP
+# include <pwd.h>
+# include <grp.h>
+#endif
+#if ENABLE_FEATURE_SHADOWPASSWDS
+# if !ENABLE_USE_BB_SHADOW
+#  include <shadow.h>
+# endif
+#endif
+
+/* Some libc's forget to declare these, do it ourself */
 extern char **environ;
 
+/* Set the group set for the current user to GROUPS (N of them).  */
+int setgroups(size_t n, const gid_t *groups);
 #if defined(__GLIBC__) && __GLIBC__ < 2
 int vdprintf(int d, const char *format, va_list ap);
 #endif
@@ -105,6 +113,23 @@ struct sysinfo {
 };
 int sysinfo(struct sysinfo* info);
 
+
+/* Make all declarations hidden (-fvisibility flag only affects definitions) */
+/* (don't include system headers after this until corresponding pop!) */
+#if __GNUC_PREREQ(4,1)
+# pragma GCC visibility push(hidden)
+#endif
+
+
+#if ENABLE_USE_BB_PWD_GRP
+# include "pwd_.h"
+# include "grp_.h"
+#endif
+#if ENABLE_FEATURE_SHADOWPASSWDS
+# if ENABLE_USE_BB_SHADOW
+#  include "shadow_.h"
+# endif
+#endif
 
 /* Tested to work correctly with all int types (IIRC :]) */
 #define MAXINT(T) (T)( \
@@ -219,12 +244,33 @@ extern void chomp(char *s);
 extern void trim(char *s);
 extern char *skip_whitespace(const char *);
 extern char *skip_non_whitespace(const char *);
+extern char *strrstr(const char *haystack, const char *needle);
 
 //TODO: supply a pointer to char[11] buffer (avoid statics)?
 extern const char *bb_mode_string(mode_t mode);
 extern int is_directory(const char *name, int followLinks, struct stat *statBuf);
+enum {	/* DO NOT CHANGE THESE VALUES!  cp.c, mv.c, install.c depend on them. */
+	FILEUTILS_PRESERVE_STATUS = 1,
+	FILEUTILS_DEREFERENCE = 2,
+	FILEUTILS_RECUR = 4,
+	FILEUTILS_FORCE = 8,
+	FILEUTILS_INTERACTIVE = 0x10,
+	FILEUTILS_MAKE_HARDLINK = 0x20,
+	FILEUTILS_MAKE_SOFTLINK = 0x40,
+	FILEUTILS_DEREF_SOFTLINK = 0x80,
+#if ENABLE_SELINUX
+	FILEUTILS_PRESERVE_SECURITY_CONTEXT = 0x100,
+	FILEUTILS_SET_SECURITY_CONTEXT = 0x200
+#endif
+};
+#define FILEUTILS_CP_OPTSTR "pdRfilsL" USE_SELINUX("c")
 extern int remove_file(const char *path, int flags);
+/* NB: without FILEUTILS_RECUR in flags, it will basically "cat"
+ * the source, not copy (unless "source" is a directory).
+ * This makes "cp /dev/null file" and "install /dev/null file" (!!!)
+ * work coreutils-compatibly. */
 extern int copy_file(const char *source, const char *dest, int flags);
+
 enum {
 	ACTION_RECURSE        = (1 << 0),
 	ACTION_FOLLOWLINKS    = (1 << 1),
@@ -238,8 +284,9 @@ extern int recursive_action(const char *fileName, unsigned flags,
 	void* userData, unsigned depth);
 extern int device_open(const char *device, int mode);
 enum { GETPTY_BUFSIZE = 16 }; /* more than enough for "/dev/ttyXXX" */
-extern int getpty(char *line);
+extern int xgetpty(char *line);
 extern int get_console_fd(void);
+extern void console_make_active(int fd, const int vt_num);
 extern char *find_block_device(const char *path);
 /* bb_copyfd_XX print read/write errors and return -1 if they occur */
 extern off_t bb_copyfd_eof(int fd1, int fd2);
@@ -287,6 +334,10 @@ enum {
 	 * SIGPROF  Profiling timer expired
 	 * SIGSYS   Bad argument to routine
 	 * SIGTRAP  Trace/breakpoint trap
+	 *
+	 * The only known arch with some of these sigs not fitting
+	 * into 32 bits is parisc (SIGXCPU=33, SIGXFSZ=34, SIGSTKFLT=36).
+	 * Dance around with long long to guard against that...
 	 */
 	BB_FATAL_SIGS = (int)(0
 		+ (1LL << SIGHUP)
@@ -524,32 +575,37 @@ extern ssize_t nonblock_safe_read(int fd, void *buf, size_t count);
 extern ssize_t full_read(int fd, void *buf, size_t count);
 extern void xread(int fd, void *buf, size_t count);
 extern unsigned char xread_char(int fd);
-// Read one line a-la fgets. Uses one read(), works only on seekable streams
+// Reads one line a-la fgets (but doesn't save terminating '\n').
+// Uses single full_read() call, works only on seekable streams.
 extern char *reads(int fd, char *buf, size_t count);
-// Read one line a-la fgets. Reads byte-by-byte.
-// Useful when it is important to not read ahead.
+// Reads one line a-la fgets (but doesn't save terminating '\n').
+// Reads byte-by-byte. Useful when it is important to not read ahead.
 // Bytes are appended to pfx (which must be malloced, or NULL).
-extern char *xmalloc_reads(int fd, char *pfx);
-extern ssize_t read_close(int fd, void *buf, size_t count);
-extern ssize_t open_read_close(const char *filename, void *buf, size_t count);
-extern void *xmalloc_open_read_close(const char *filename, size_t *sizep);
+extern char *xmalloc_reads(int fd, char *pfx, size_t *maxsz_p);
+extern ssize_t read_close(int fd, void *buf, size_t maxsz);
+extern ssize_t open_read_close(const char *filename, void *buf, size_t maxsz);
+/* Returns NULL if file can't be opened */
+extern void *xmalloc_open_read_close(const char *filename, size_t *maxsz_p);
+/* Never returns NULL */
+extern void *xmalloc_xopen_read_close(const char *filename, size_t *maxsz_p);
 
 extern ssize_t safe_write(int fd, const void *buf, size_t count);
 // NB: will return short write on error, not -1,
 // if some data was written before error occurred
 extern ssize_t full_write(int fd, const void *buf, size_t count);
 extern void xwrite(int fd, const void *buf, size_t count);
+extern void xopen_xwrite_close(const char* file, const char *str);
 
 /* Reads and prints to stdout till eof, then closes FILE. Exits on error: */
 extern void xprint_and_close_file(FILE *file);
 /* Reads up to (and including) TERMINATING_STRING: */
 extern char *xmalloc_fgets_str(FILE *file, const char *terminating_string);
-/* Chops off TERMINATING_STRING: from the end: */
+/* Chops off TERMINATING_STRING from the end: */
 extern char *xmalloc_fgetline_str(FILE *file, const char *terminating_string);
-/* Reads up to (and including) "\n" or NUL byte */
+/* Reads up to (and including) "\n" or NUL byte: */
 extern char *xmalloc_fgets(FILE *file);
 /* Chops off '\n' from the end, unlike fgets: */
-extern char *xmalloc_getline(FILE *file);
+extern char *xmalloc_fgetline(FILE *file);
 extern char *bb_get_chunk_from_file(FILE *file, int *end);
 extern void die_if_ferror(FILE *file, const char *msg);
 extern void die_if_ferror_stdout(void);
@@ -644,7 +700,7 @@ void die_if_bad_username(const char* name);
 #endif
 
 int execable_file(const char *name);
-char *find_execable(const char *filename);
+char *find_execable(const char *filename, char **PATHp);
 int exists_execable(const char *filename);
 
 /* BB_EXECxx always execs (it's not doing NOFORK/NOEXEC stuff),
@@ -838,25 +894,25 @@ extern void bb_verror_msg(const char *s, va_list p, const char *strerr);
 #endif
 
 
-/* applets which are useful from another applets */
+/* Applets which are useful from another applets */
 int bb_cat(char** argv);
-int echo_main(int argc, char** argv) MAIN_EXTERNALLY_VISIBLE;
-int test_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int kill_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-#if ENABLE_ROUTE
-void bb_displayroutes(int noresolve, int netstatfmt);
-#endif
-int chown_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-#if ENABLE_GUNZIP
+/* If shell needs them, they exist even if not enabled as applets */
+int echo_main(int argc, char** argv) USE_ECHO(MAIN_EXTERNALLY_VISIBLE);
+int printf_main(int argc, char **argv) USE_PRINTF(MAIN_EXTERNALLY_VISIBLE);
+int test_main(int argc, char **argv) USE_TEST(MAIN_EXTERNALLY_VISIBLE);
+int kill_main(int argc, char **argv) USE_KILL(MAIN_EXTERNALLY_VISIBLE);
+/* Similar, but used by chgrp, not shell */
+int chown_main(int argc, char **argv) USE_CHOWN(MAIN_EXTERNALLY_VISIBLE);
+/* Don't need USE_xxx() guard for these */
 int gunzip_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-#endif
-#if ENABLE_BUNZIP2
 int bunzip2_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-#endif
 int bbunpack(char **argv,
 	char* (*make_new_name)(char *filename),
 	USE_DESKTOP(long long) int (*unpacker)(void)
 );
+#if ENABLE_ROUTE
+void bb_displayroutes(int noresolve, int netstatfmt);
+#endif
 
 
 /* Networking */
@@ -892,6 +948,11 @@ struct hwtype {
 };
 extern smallint interface_opt_a;
 int display_interfaces(char *ifname);
+#if ENABLE_FEATURE_HWIB
+int in_ib(const char *bufp, struct sockaddr *sap);
+#else
+#define in_ib(a, b) 1 /* fail */
+#endif
 const struct aftype *get_aftype(const char *name);
 const struct hwtype *get_hwtype(const char *name);
 const struct hwtype *get_hwntype(int type);
@@ -929,6 +990,10 @@ int bb_ask_confirmation(void);
 
 extern int bb_parse_mode(const char* s, mode_t* theMode);
 
+/* Concatenate path and filename to new allocated buffer.
+ * Add "/" only as needed (no duplicate "//" are produced).
+ * If path is NULL, it is assumed to be "/".
+ * filename should not be NULL. */
 char *concat_path_file(const char *path, const char *filename);
 char *concat_subpath_file(const char *path, const char *filename);
 const char *bb_basename(const char *name);
@@ -982,19 +1047,12 @@ extern int restricted_shell(const char *shell);
  */
 extern void setup_environment(const char *shell, int clear_env, int change_env, const struct passwd *pw);
 extern int correct_password(const struct passwd *pw);
-/* Returns a ptr to static storage */
-extern char *pw_encrypt(const char *clear, const char *salt);
+/* Returns a malloced string */
+#if !ENABLE_USE_BB_CRYPT
+#define pw_encrypt(clear, salt, cleanup) pw_encrypt(clear, salt)
+#endif
+extern char *pw_encrypt(const char *clear, const char *salt, int cleanup);
 extern int obscure(const char *old, const char *newval, const struct passwd *pwdp);
-
-int index_in_str_array(const char *const string_array[], const char *key);
-int index_in_strings(const char *strings, const char *key);
-int index_in_substr_array(const char *const string_array[], const char *key);
-int index_in_substrings(const char *strings, const char *key);
-const char *nth_string(const char *strings, int n);
-
-extern void print_login_issue(const char *issue_file, const char *tty);
-extern void print_login_prompt(void);
-
 /* rnd is additional random input. New one is returned.
  * Useful if you call crypt_make_salt many times in a row:
  * rnd = crypt_make_salt(buf1, 4, 0);
@@ -1008,11 +1066,20 @@ extern int crypt_make_salt(char *p, int cnt, int rnd);
 extern int update_passwd(const char *filename, const char *username,
 			const char *new_pw);
 
-/* NB: typically you want to pass fd 0, not 1. Think 'applet | grep something' */
-int get_terminal_width_height(int fd, int *width, int *height);
+int index_in_str_array(const char *const string_array[], const char *key);
+int index_in_strings(const char *strings, const char *key);
+int index_in_substr_array(const char *const string_array[], const char *key);
+int index_in_substrings(const char *strings, const char *key);
+const char *nth_string(const char *strings, int n);
+
+extern void print_login_issue(const char *issue_file, const char *tty);
+extern void print_login_prompt(void);
+
+  /* NB: typically you want to pass fd 0, not 1. Think 'applet | grep something' */
+int get_terminal_width_height(int fd, unsigned *width, unsigned *height);
 
 int ioctl_or_perror(int fd, unsigned request, void *argp, const char *fmt,...) __attribute__ ((format (printf, 4, 5)));
-void ioctl_or_perror_and_die(int fd, unsigned request, void *argp, const char *fmt,...) __attribute__ ((format (printf, 4, 5)));
+int ioctl_or_perror_and_die(int fd, unsigned request, void *argp, const char *fmt,...) __attribute__ ((format (printf, 4, 5)));
 #if ENABLE_IOCTL_HEX2STR_ERROR
 int bb_ioctl_or_warn(int fd, unsigned request, void *argp, const char *ioctl_name);
 int bb_xioctl(int fd, unsigned request, void *argp, const char *ioctl_name);
@@ -1185,21 +1252,6 @@ void *md5_end(void *resbuf, md5_ctx_t *ctx);
 uint32_t *crc32_filltable(uint32_t *tbl256, int endian);
 
 
-enum {	/* DO NOT CHANGE THESE VALUES!  cp.c, mv.c, install.c depend on them. */
-	FILEUTILS_PRESERVE_STATUS = 1,
-	FILEUTILS_DEREFERENCE = 2,
-	FILEUTILS_RECUR = 4,
-	FILEUTILS_FORCE = 8,
-	FILEUTILS_INTERACTIVE = 0x10,
-	FILEUTILS_MAKE_HARDLINK = 0x20,
-	FILEUTILS_MAKE_SOFTLINK = 0x40,
-#if ENABLE_SELINUX
-	FILEUTILS_PRESERVE_SECURITY_CONTEXT = 0x80,
-	FILEUTILS_SET_SECURITY_CONTEXT = 0x100
-#endif
-};
-
-#define FILEUTILS_CP_OPTSTR "pdRfils" USE_SELINUX("c")
 extern const char *applet_name;
 /* "BusyBox vN.N.N (timestamp or extra_version)" */
 extern const char bb_banner[];
@@ -1252,7 +1304,7 @@ struct globals;
  * If you want to assign a value, use SET_PTR_TO_GLOBALS(x) */
 extern struct globals *const ptr_to_globals;
 /* At least gcc 3.4.6 on mipsel system needs optimization barrier */
-#define barrier() asm volatile("":::"memory")
+#define barrier() __asm__ __volatile__("":::"memory")
 #define SET_PTR_TO_GLOBALS(x) do { \
 	(*(struct globals**)&ptr_to_globals) = (x); \
 	barrier(); \
@@ -1269,6 +1321,14 @@ extern const char bb_default_login_shell[];
 /* "sh" */
 #define DEFAULT_SHELL_SHORT_NAME     (bb_default_login_shell+6)
 
+typedef struct masks_labels_t {
+	const char *labels;
+	const int masks[];
+} masks_labels_t;
+
+int print_flags_separated(const int *masks, const char *labels,
+		int flags, const char *separator);
+extern int print_flags(const masks_labels_t *ml, int flags);
 
 #if ENABLE_FEATURE_DEVFS
 # define CURRENT_VC "/dev/vc/0"
@@ -1345,11 +1405,12 @@ extern const char bb_default_login_shell[];
 #undef isdigit
 #define isdigit(a) ((unsigned)((a) - '0') <= 9)
 
+#define ARRAY_SIZE(x) ((unsigned)(sizeof(x) / sizeof((x)[0])))
 
-#ifdef DMALLOC
-#include <dmalloc.h>
+
+#if __GNUC_PREREQ(4,1)
+# pragma GCC visibility pop
 #endif
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #endif /* __LIBBUSYBOX_H__ */

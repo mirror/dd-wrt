@@ -69,10 +69,7 @@ int script_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		shell = DEFAULT_SHELL;
 	}
 
-	pty = getpty(pty_line);
-	if (pty < 0) {
-		bb_perror_msg_and_die("can't get pty");
-	}
+	pty = xgetpty(pty_line);
 
 	/* get current stdin's tty params */
 	attr_ok = tcgetattr(0, &tt);
@@ -99,13 +96,12 @@ int script_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		/* parent */
 #define buf bb_common_bufsiz1
 		struct pollfd pfd[2];
-		struct pollfd *ppfd = pfd;
 		int outfd, count, loop;
 
 		outfd = xopen(fname, mode);
-		pfd[0].fd = 0;
+		pfd[0].fd = pty;
 		pfd[0].events = POLLIN;
-		pfd[1].fd = pty;
+		pfd[1].fd = 0;
 		pfd[1].events = POLLIN;
 		ndelay_on(pty); /* this descriptor is not shared, can do this */
 		/* ndelay_on(0); - NO, stdin can be shared! Pity :( */
@@ -115,32 +111,34 @@ int script_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		/* TODO: don't use full_write's, use proper write buffering */
 		while (fd_count) {
 			/* not safe_poll! we want SIGCHLD to EINTR poll */
-			poll(ppfd, fd_count, -1);
-			if (pfd[0].revents) {
-				count = safe_read(0, buf, sizeof(buf));
-				if (count <= 0) {
-					/* err/eof: don't read anymore */
-					pfd[0].revents = 0;
-					ppfd++;
-					fd_count--;
-				} else {
-					full_write(pty, buf, count);
-				}
+			if (poll(pfd, fd_count, -1) < 0 && errno != EINTR) {
+				/* If child exits too quickly, we may get EIO:
+				 * for example, try "script -c true" */
+				break;
 			}
-			if (pfd[1].revents) {
+			if (pfd[0].revents) {
 				errno = 0;
 				count = safe_read(pty, buf, sizeof(buf));
 				if (count <= 0 && errno != EAGAIN) {
-					/* err/eof: don't read anymore */
-					pfd[1].revents = 0;
-					fd_count--;
+					/* err/eof from pty: exit */
+					goto restore;
 				}
 				if (count > 0) {
-					full_write(1, buf, count);
+					full_write(STDOUT_FILENO, buf, count);
 					full_write(outfd, buf, count);
 					if (opt & 4) { /* -f */
 						fsync(outfd);
 					}
+				}
+			}
+			if (pfd[1].revents) {
+				count = safe_read(STDIN_FILENO, buf, sizeof(buf));
+				if (count <= 0) {
+					/* err/eof from stdin: don't read stdin anymore */
+					pfd[1].revents = 0;
+					fd_count--;
+				} else {
+					full_write(pty, buf, count);
 				}
 			}
 		}
@@ -154,10 +152,10 @@ int script_main(int argc ATTRIBUTE_UNUSED, char **argv)
 		loop = 999;
 		/* pty is in O_NONBLOCK mode, we exit as soon as buffer is empty */
 		while (--loop && (count = safe_read(pty, buf, sizeof(buf))) > 0) {
-			full_write(1, buf, count);
+			full_write(STDOUT_FILENO, buf, count);
 			full_write(outfd, buf, count);
 		}
-
+ restore:
 		if (attr_ok == 0)
 			tcsetattr(0, TCSAFLUSH, &tt);
 		if (!(opt & 8)) /* not -q */
@@ -168,7 +166,7 @@ int script_main(int argc ATTRIBUTE_UNUSED, char **argv)
 	/* child: make pty slave to be input, output, error; run shell */
 	close(pty); /* close pty master */
 	/* open pty slave to fd 0,1,2 */
-	close(0);               
+	close(0);
 	xopen(pty_line, O_RDWR); /* uses fd 0 */
 	xdup2(0, 1);
 	xdup2(0, 2);

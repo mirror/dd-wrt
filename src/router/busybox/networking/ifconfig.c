@@ -220,7 +220,7 @@ static const struct options OptArray[] = {
 	{ "netmask",     N_ARG,         ARG_NETMASK,     0 },
 	{ "broadcast",   N_ARG | M_CLR, ARG_BROADCAST,   IFF_BROADCAST },
 #if ENABLE_FEATURE_IFCONFIG_HW
-	{ "hw",          N_ARG, ARG_HW,                  0 },
+	{ "hw",          N_ARG,         ARG_HW,          0 },
 #endif
 	{ "pointopoint", N_ARG | M_CLR, ARG_POINTOPOINT, IFF_POINTOPOINT },
 #ifdef SIOCSKEEPALIVE
@@ -252,7 +252,6 @@ static const struct options OptArray[] = {
 /*
  * A couple of prototypes.
  */
-
 #if ENABLE_FEATURE_IFCONFIG_HW
 static int in_ether(const char *bufp, struct sockaddr *sap);
 #endif
@@ -260,7 +259,6 @@ static int in_ether(const char *bufp, struct sockaddr *sap);
 /*
  * Our main function.
  */
-
 int ifconfig_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int ifconfig_main(int argc, char **argv)
 {
@@ -315,7 +313,7 @@ int ifconfig_main(int argc, char **argv)
 	sockfd = xsocket(AF_INET, SOCK_DGRAM, 0);
 
 	/* get interface name */
-	safe_strncpy(ifr.ifr_name, *argv, IFNAMSIZ);
+	strncpy(ifr.ifr_name, *argv, IFNAMSIZ);
 
 	/* Process the remaining arguments. */
 	while (*++argv != (char *) NULL) {
@@ -425,11 +423,13 @@ int ifconfig_main(int argc, char **argv)
 #if ENABLE_FEATURE_IFCONFIG_HW
 					} else {	/* A_CAST_HOST_COPY_IN_ETHER */
 						/* This is the "hw" arg case. */
-						if (strcmp("ether", *argv) || !*++argv)
+						smalluint hw_class= index_in_substrings("ether\0"
+								USE_FEATURE_HWIB("infiniband\0"), *argv) + 1;
+						if (!hw_class || !*++argv)
 							bb_show_usage();
 						/*safe_strncpy(host, *argv, sizeof(host));*/
 						host = *argv;
-						if (in_ether(host, &sa))
+						if (hw_class == 1 ? in_ether(host, &sa) : in_ib(host, &sa))
 							bb_error_msg_and_die("invalid hw-addr %s", host);
 						p = (char *) &sa;
 					}
@@ -506,7 +506,7 @@ static int in_ether(const char *bufp, struct sockaddr *sap)
 	unsigned char c;
 
 	sap->sa_family = ARPHRD_ETHER;
-	ptr = sap->sa_data;
+	ptr = (char *) sap->sa_data;
 
 	i = 0;
 	do {

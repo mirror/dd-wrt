@@ -627,11 +627,10 @@ struct globals {
 	char buf[10];
 };
 #define G (*(struct globals*)&bb_common_bufsiz1)
-#define INIT_G() \
-	do { \
-		G.device_name = bb_msg_standard_input; \
-		G.max_col = 80; \
-	} while (0)
+#define INIT_G() do { \
+	G.device_name = bb_msg_standard_input; \
+	G.max_col = 80; \
+} while (0)
 
 
 /* Return a string that is the printable representation of character CH */
@@ -710,7 +709,7 @@ static void wrapf(const char *message, ...)
 {
 	char buf[128];
 	va_list args;
-	int buflen;
+	unsigned buflen;
 
 	va_start(args, message);
 	buflen = vsnprintf(buf, sizeof(buf), message, args);
