@@ -383,6 +383,20 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 {
 	int cfe_size;
 
+	int board_data_size = 0; // Netgear 0x003e0000-0x003f0000 : "board_data", we exclude this part from our mapping
+	
+	if (nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1") && nvram_match ("boardnum", "8")) {
+		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WNR834B
+	}
+
+	if (nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1") && nvram_match ("boardnum", "01")) {
+		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WNR834Bv2
+	}
+
+	if (nvram_match ("boardtype", "0x48E") && nvram_match ("boardrev", "0x10") && nvram_match ("boardnum", "83258")) {
+		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WGR614L, WGR614v8
+	}
+
 	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
 		return NULL;
 
@@ -404,7 +418,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	if (cfe_size != 384 * 1024) {
 		bcm947xx_parts[1].offset = bcm947xx_parts[0].size;
 		bcm947xx_parts[1].size   = bcm947xx_parts[3].offset - 
-			bcm947xx_parts[1].offset;
+			bcm947xx_parts[1].offset - board_data_size;
 	} else {
 		/* do not count the elf loader, which is on one block */
 		bcm947xx_parts[1].offset = bcm947xx_parts[0].size + 
@@ -412,7 +426,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		bcm947xx_parts[1].size   = size - 
 			bcm947xx_parts[0].size - 
 			(2*bcm947xx_parts[3].size) - 
-			mtd->erasesize;
+			mtd->erasesize - board_data_size;
 	}
 
 	/* find and size rootfs */
@@ -432,7 +446,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 					(bcm947xx_parts[4].offset % mtd->erasesize);
 			}
 			bcm947xx_parts[4].size = bcm947xx_parts[3].offset - 
-				bcm947xx_parts[4].offset;
+				bcm947xx_parts[4].offset - board_data_size;
 		} else {
 			bcm947xx_parts[4].offset = bcm947xx_parts[2].offset + 
 				bcm947xx_parts[2].size;
@@ -441,7 +455,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 					(bcm947xx_parts[4].offset % mtd->erasesize);
 			}
 			bcm947xx_parts[4].size = size - bcm947xx_parts[3].size - 
-				bcm947xx_parts[4].offset;
+				bcm947xx_parts[4].offset - board_data_size;
 		}
 	}
 
