@@ -31,11 +31,11 @@
 
 
 void
-beep (int gpio, int time)
+beep (int gpio, int time,int polarity)
 {
-  set_gpio (gpio, 1);
+  set_gpio (gpio, 1-polarity);
   usleep (time*1000);
-  set_gpio (gpio, 0);
+  set_gpio (gpio, 0+polarity);
   usleep (time*1000);
 }
 
@@ -44,14 +44,16 @@ beep_main (int argc, char **argv)
 {
 
   unsigned int gpio;
+  unsigned int polarity;
   unsigned char assoclist[1024];
 
-  if (argc != 3)
+  if (argc != 4)
     {
-      fprintf (stderr, "%s <interface> <gpio>\n", argv[0]);
+      fprintf (stderr, "%s <interface> <gpio> <polarity>\n", argv[0]);
       exit (1);
     }
   gpio = atoi (argv[2]);
+  polarity = atoi(argv[3]);
   while (1)
     {
       int cnt = getassoclist (argv[1], assoclist);
@@ -78,13 +80,13 @@ beep_main (int argc, char **argv)
       if (snr > 30)
 	{
 	  fprintf (stderr, "snr perfect, full beep (%d)\n", snr);
-	  set_gpio (gpio, 1);	//snr perfect
+	  set_gpio (gpio, 1-polarity);	//snr perfect
 	  continue;
 	}
       int beeptime = 66 * (31 - snr);
      fprintf (stderr, "snr is %d, beep interval %d\n", snr, beeptime);
       
-      beep (gpio, beeptime);
+      beep (gpio, beeptime,polarity);
     }
 
   return 0;
