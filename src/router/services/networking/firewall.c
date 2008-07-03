@@ -1348,7 +1348,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
     }
   }
   /* p2p catchall */
-  if (nvram_nmatch ("1","filter_p2p_grp%d", seq))
+  if (nvram_nmatch ("1", "filter_p2p_grp%d", seq))
     {
       eval ("insmod", "ipt_ipp2p");
       save2file ("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,

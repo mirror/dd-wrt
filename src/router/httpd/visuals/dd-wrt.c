@@ -3036,6 +3036,7 @@ show_virtualssid (webs_t wp, char *prefix)
   char ssid[80];
   char wmm[32];
   char vif[16];
+  char wl_protmode[32];
 
   sprintf (vif, "%s_vifs", prefix);
   char *vifs = nvram_safe_get (vif);
@@ -3064,6 +3065,13 @@ show_virtualssid (webs_t wp, char *prefix)
     websWrite (wp,
 	       "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 	       var, nvram_safe_get (ssid));
+
+    sprintf (wl_protmode, "%s_protmode", var);
+    showOptionsLabel (wp, "wl_basic.protmode", wl_protmode,
+		      "None CTS RTS/CTS", nvram_default_get (wl_protmode,
+							     "None"));
+    showrtssettings (wp, var);
+
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label5)</script></div>");
@@ -3468,6 +3476,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
   showOption (wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
+
   showOptionsLabel (wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS",
 		    nvram_default_get (wl_protmode, "None"));
   showrtssettings (wp, prefix);
