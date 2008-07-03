@@ -38,6 +38,9 @@
 #include "otime.h"
 #include "pool.h"
 #include "gremlin.h"
+#include "pkcs11.h"
+#include "ps.h"
+#include "lladdr.h"
 
 #include "memdbg.h"
 
@@ -74,8 +77,10 @@ void
 context_clear_all_except_first_time (struct context *c)
 {
   const bool first_time_save = c->first_time;
+  const struct context_persist cpsave = c->persist;
   context_clear (c);
   c->first_time = first_time_save;
+  c->persist = cpsave;
 }
 
 /*
@@ -112,16 +117,20 @@ init_query_passwords (struct context *c)
   
 #if P2MP
   /* Auth user/pass input */
- {
-   if (c->options.auth_user_pass_file)
-     auth_user_pass_setup (c->options.auth_user_pass_file);
- }
+  if (c->options.auth_user_pass_file)
+    auth_user_pass_setup (c->options.auth_user_pass_file);
 #endif
 }
 
 void
 context_init_1 (struct context *c)
 {
+#ifdef ENABLE_HTTP_PROXY
+  bool did_http = false;
+#else
+  const bool did_http = false;
+#endif
+
   context_clear_1 (c);
 
   packet_id_persist_init (&c->c1.pid_persist);
@@ -129,21 +138,49 @@ context_init_1 (struct context *c)
 
   init_query_passwords (c);
 
+#if defined(ENABLE_PKCS11)
+  if (c->first_time) {
+    int i;
+    pkcs11_initialize (true, c->options.pkcs11_pin_cache_period);
+    for (i=0;i<MAX_PARMS && c->options.pkcs11_providers[i] != NULL;i++)
+     pkcs11_addProvider (c->options.pkcs11_providers[i], c->options.pkcs11_protected_authentication[i],
+       c->options.pkcs11_private_mode[i], c->options.pkcs11_cert_private[i]);
+  }
+#endif
+
+#if 0 /* test get_user_pass with GET_USER_PASS_NEED_OK flag */
+ {
+   /*
+    * In the management interface, you can okay the request by entering "needok token-insertion-request ok"
+    */
+   struct user_pass up;
+   CLEAR (up);
+   strcpy (up.username, "Please insert your cryptographic token"); /* put the high-level message in up.username */
+   get_user_pass (&up, NULL, "token-insertion-request", GET_USER_PASS_MANAGEMENT|GET_USER_PASS_NEED_OK);
+   msg (M_INFO, "RET:%s", up.password); /* will return the third argument to management interface
+                                           'needok' command, usually 'ok' or 'cancel'. */
+ }
+#endif
+
 #ifdef ENABLE_HTTP_PROXY
-  if (c->options.http_proxy_options)
+  if (c->options.http_proxy_options || c->options.auto_proxy_info)
     {
       /* Possible HTTP proxy user/pass input */
       c->c1.http_proxy = new_http_proxy (c->options.http_proxy_options,
+					 c->options.auto_proxy_info,
 					 &c->gc);
+      if (c->c1.http_proxy)
+	did_http = true;
     }
 #endif
 
 #ifdef ENABLE_SOCKS
-  if (c->options.socks_proxy_server)
+  if (!did_http && (c->options.socks_proxy_server || c->options.auto_proxy_info))
     {
       c->c1.socks_proxy = new_socks_proxy (c->options.socks_proxy_server,
 					   c->options.socks_proxy_port,
 					   c->options.socks_proxy_retry,
+					   c->options.auto_proxy_info,
 					   &c->gc);
     }
 #endif
@@ -157,9 +194,37 @@ context_gc_free (struct context *c)
   gc_free (&c->gc);
 }
 
+#if PORT_SHARE
+
+static void
+close_port_share (void)
+{
+  if (port_share)
+    {
+      port_share_close (port_share);
+      port_share = NULL;
+    }
+}
+
+static void
+init_port_share (struct context *c)
+{
+  if (!port_share && (c->options.port_share_host && c->options.port_share_port))
+    {
+      port_share = port_share_open (c->options.port_share_host,
+				    c->options.port_share_port);
+      if (port_share == NULL)
+	msg (M_FATAL, "Fatal error: Port sharing failed");
+    }
+}
+
+#endif
+
 bool
 init_static (void)
 {
+  configure_path ();
+
 #if defined(USE_CRYPTO) && defined(DMALLOC)
   openssl_dmalloc_init ();
 #endif
@@ -222,6 +287,11 @@ init_static (void)
   return false;
 #endif
 
+#ifdef TIME_TEST
+  time_test ();
+  return false;
+#endif
+
   return true;
 }
 
@@ -232,6 +302,14 @@ uninit_static (void)
 
 #ifdef USE_CRYPTO
   free_ssl_lib ();
+#endif
+
+#ifdef ENABLE_PKCS11
+  pkcs11_terminate ();
+#endif
+
+#if PORT_SHARE
+  close_port_share ();
 #endif
 
 #if defined(MEASURE_TLS_HANDSHAKE_STATS) && defined(USE_CRYPTO) && defined(USE_SSL)
@@ -347,7 +425,10 @@ do_persist_tuntap (const struct options *options)
 	msg (M_FATAL|M_OPTERR,
 	     "options --mktun or --rmtun should only be used together with --dev");
       tuncfg (options->dev, options->dev_type, options->dev_node,
-	      options->tun_ipv6, options->persist_mode);
+	      options->tun_ipv6, options->persist_mode,
+	      options->username, options->groupname, &options->tuntap_options);
+      if (options->persist_mode && options->lladdr)
+        set_lladdr(options->dev, options->lladdr, NULL);
       return true;
     }
 #endif
@@ -367,8 +448,14 @@ possibly_become_daemon (const struct options *options, const bool first_time)
       ASSERT (!options->inetd);
       if (daemon (options->cd_dir != NULL, options->log) < 0)
 	msg (M_ERR, "daemon() failed");
+      restore_signal_state ();
       if (options->log)
 	set_std_files_to_null (true);
+
+#if defined(ENABLE_PKCS11)
+      pkcs11_forkFixup ();
+#endif
+
       ret = true;
     }
   return ret;
@@ -552,15 +639,19 @@ do_init_route_list (const struct options *options,
 {
   const char *gw = NULL;
   int dev = dev_type_enum (options->dev, options->dev_type);
+  int metric = 0;
 
-  if (dev == DEV_TYPE_TUN)
+  if (dev == DEV_TYPE_TUN && (options->topology == TOP_NET30 || options->topology == TOP_P2P))
     gw = options->ifconfig_remote_netmask;
   if (options->route_default_gateway)
     gw = options->route_default_gateway;
+  if (options->route_default_metric)
+    metric = options->route_default_metric;
 
   if (!init_route_list (route_list,
 			options->routes,
 			gw,
+			metric,
 			link_socket_current_remote (link_socket_info),
 			es))
     {
@@ -587,11 +678,15 @@ initialization_sequence_completed (struct context *c, const unsigned int flags)
 
   /* Test if errors */
   if (flags & ISC_ERRORS)
+    {
 #ifdef WIN32
-    msg (M_INFO, "%s With Errors ( see http://openvpn.net/faq.html#dhcpclientserv )", message);
+      show_routes (M_INFO|M_NOPREFIX);
+      show_adapters (M_INFO|M_NOPREFIX);
+      msg (M_INFO, "%s With Errors ( see http://openvpn.net/faq.html#dhcpclientserv )", message);
 #else
-    msg (M_INFO, "%s With Errors", message);
+      msg (M_INFO, "%s With Errors", message);
 #endif
+    }
   else
     msg (M_INFO, "%s", message);
 
@@ -604,15 +699,18 @@ initialization_sequence_completed (struct context *c, const unsigned int flags)
   if (management)
     {
       in_addr_t tun_local = 0;
+      in_addr_t tun_remote = 0; /* FKS */
       const char *detail = "SUCCESS";
       if (c->c1.tuntap)
 	tun_local = c->c1.tuntap->local;
+      tun_remote = htonl (c->c1.link_socket_addr.actual.dest.sa.sin_addr.s_addr);
       if (flags & ISC_ERRORS)
 	detail = "ERROR";
       management_set_state (management,
 			    OPENVPN_STATE_CONNECTED,
 			    detail,
-			    tun_local);
+			    tun_local,
+			    tun_remote);
       if (tun_local)
 	management_post_tunnel_open (management, tun_local);
     }
@@ -636,7 +734,7 @@ do_route (const struct options *options,
 
   if (plugin_defined (plugins, OPENVPN_PLUGIN_ROUTE_UP))
     {
-      if (plugin_call (plugins, OPENVPN_PLUGIN_ROUTE_UP, NULL, es))
+      if (plugin_call (plugins, OPENVPN_PLUGIN_ROUTE_UP, NULL, NULL, es))
 	msg (M_WARN, "WARNING: route-up plugin call failed");
     }
 
@@ -686,6 +784,7 @@ do_init_tun (struct context *c)
 {
   c->c1.tuntap = init_tun (c->options.dev,
 			   c->options.dev_type,
+			   c->options.topology,
 			   c->options.ifconfig_local,
 			   c->options.ifconfig_remote_netmask,
 			   addr_host (&c->c1.link_socket_addr.local),
@@ -722,7 +821,7 @@ do_open_tun (struct context *c)
       do_alloc_route_list (c);
 
       /* parse and resolve the route option list */
-      if (c->c1.route_list && c->c2.link_socket)
+      if (c->options.routes && c->c1.route_list && c->c2.link_socket)
 	do_init_route_list (&c->options, c->c1.route_list, &c->c2.link_socket->info, false, c->c2.es);
 
       /* do ifconfig */
@@ -742,6 +841,10 @@ do_open_tun (struct context *c)
       open_tun (c->options.dev, c->options.dev_type, c->options.dev_node,
 		c->options.tun_ipv6, c->c1.tuntap);
 
+      /* set the hardware address */
+      if (c->options.lladdr)
+	  set_lladdr(c->c1.tuntap->actual_name, c->options.lladdr, c->c2.es);
+
       /* do ifconfig */
       if (!c->options.ifconfig_noexec
 	  && ifconfig_order () == IFCONFIG_AFTER_TUN_OPEN)
@@ -751,7 +854,7 @@ do_open_tun (struct context *c)
 
       /* run the up script */
       run_up_down (c->options.up_script,
-		   c->c1.plugins,
+		   c->plugins,
 		   OPENVPN_PLUGIN_UP,
 		   c->c1.tuntap->actual_name,
 		   TUN_MTU_SIZE (&c->c2.frame),
@@ -765,7 +868,7 @@ do_open_tun (struct context *c)
 
       /* possibly add routes */
       if (!c->options.route_delay_defined)
-	do_route (&c->options, c->c1.route_list, c->c1.tuntap, c->c1.plugins, c->c2.es);
+	do_route (&c->options, c->c1.route_list, c->c1.tuntap, c->plugins, c->c2.es);
 
       /*
        * Did tun/tap driver give us an MTU?
@@ -785,7 +888,7 @@ do_open_tun (struct context *c)
       /* run the up script if user specified --up-restart */
       if (c->options.up_restart)
 	run_up_down (c->options.up_script,
-		     c->c1.plugins,
+		     c->plugins,
 		     OPENVPN_PLUGIN_UP,
 		     c->c1.tuntap->actual_name,
 		     TUN_MTU_SIZE (&c->c2.frame),
@@ -846,7 +949,7 @@ do_close_tun (struct context *c, bool force)
 	  /* Run the down script -- note that it will run at reduced
 	     privilege if, for example, "--user nobody" was used. */
 	  run_up_down (c->options.down_script,
-		       c->c1.plugins,
+		       c->plugins,
 		       OPENVPN_PLUGIN_DOWN,
 		       tuntap_actual,
 		       TUN_MTU_SIZE (&c->c2.frame),
@@ -868,7 +971,7 @@ do_close_tun (struct context *c, bool force)
 	  /* run the down script on this restart if --up-restart was specified */
 	  if (c->options.up_restart)
 	    run_up_down (c->options.down_script,
-			 c->c1.plugins,
+			 c->plugins,
 			 OPENVPN_PLUGIN_DOWN,
 			 tuntap_actual,
 			 TUN_MTU_SIZE (&c->c2.frame),
@@ -937,6 +1040,8 @@ do_up (struct context *c, bool pulled_options, unsigned int option_types_found)
 	    {
 	      event_timeout_init (&c->c2.route_wakeup, c->options.route_delay, now);
 	      event_timeout_init (&c->c2.route_wakeup_expire, c->options.route_delay + c->options.route_delay_window, now);
+	      if (c->c1.tuntap)
+		tun_standby_init (c->c1.tuntap);
 	    }
 	  else
 	    {
@@ -956,17 +1061,28 @@ do_up (struct context *c, bool pulled_options, unsigned int option_types_found)
  * These are the option categories which will be accepted by pull.
  */
 unsigned int
-pull_permission_mask (void)
+pull_permission_mask (const struct context *c)
 {
-  return (  OPT_P_UP
-	  | OPT_P_ROUTE
-	  | OPT_P_IPWIN32
-	  | OPT_P_SHAPER
-	  | OPT_P_TIMER
-	  | OPT_P_PERSIST
-	  | OPT_P_MESSAGES
-	  | OPT_P_EXPLICIT_NOTIFY
-	  | OPT_P_ECHO);
+  unsigned int flags =
+      OPT_P_UP
+    | OPT_P_ROUTE_EXTRAS
+    | OPT_P_IPWIN32
+    | OPT_P_SOCKBUF
+    | OPT_P_SOCKFLAGS
+    | OPT_P_SETENV
+    | OPT_P_SHAPER
+    | OPT_P_TIMER
+    | OPT_P_COMP
+    | OPT_P_PERSIST
+    | OPT_P_MESSAGES
+    | OPT_P_EXPLICIT_NOTIFY
+    | OPT_P_ECHO
+    | OPT_P_PULL_MODE;
+
+  if (!c->options.route_nopull)
+    flags |= OPT_P_ROUTE;
+
+  return flags;
 }
 
 /*
@@ -999,10 +1115,33 @@ do_deferred_options (struct context *c, const unsigned int found)
     }
 #endif
 
+#ifdef USE_LZO
+  if (found & OPT_P_COMP)
+    {
+      if (lzo_defined (&c->c2.lzo_compwork))
+	{
+	  msg (D_PUSH, "OPTIONS IMPORT: LZO parms modified");
+	  lzo_modify_flags (&c->c2.lzo_compwork, c->options.lzo);
+	}
+    }
+#endif
+
   if (found & OPT_P_SHAPER)
     {
       msg (D_PUSH, "OPTIONS IMPORT: traffic shaper enabled");
       do_init_traffic_shaper (c);
+    }
+
+  if (found & OPT_P_SOCKBUF)
+    {
+      msg (D_PUSH, "OPTIONS IMPORT: --sndbuf/--rcvbuf options modified");
+      link_socket_update_buffer_sizes (c->c2.link_socket, c->options.rcvbuf, c->options.sndbuf);
+    }
+
+  if (found & OPT_P_SOCKFLAGS)
+    {
+      msg (D_PUSH, "OPTIONS IMPORT: --socket-flags option modified");
+      link_socket_update_flags (c->c2.link_socket, c->options.sockflags);
     }
 
   if (found & OPT_P_PERSIST)
@@ -1011,6 +1150,8 @@ do_deferred_options (struct context *c, const unsigned int found)
     msg (D_PUSH, "OPTIONS IMPORT: --ifconfig/up options modified");
   if (found & OPT_P_ROUTE)
     msg (D_PUSH, "OPTIONS IMPORT: route options modified");
+  if (found & OPT_P_ROUTE_EXTRAS)
+    msg (D_PUSH, "OPTIONS IMPORT: route-related options modified");
   if (found & OPT_P_IPWIN32)
     msg (D_PUSH, "OPTIONS IMPORT: --ip-win32 and/or --dhcp-option options modified");
   if (found & OPT_P_SETENV)
@@ -1080,6 +1221,11 @@ socket_restart_pause (struct context *c)
     sec = 10;
 #endif
 
+  if (c->persist.restart_sleep_seconds > 0 && c->persist.restart_sleep_seconds > sec)
+    sec = c->persist.restart_sleep_seconds;
+  c->persist.restart_sleep_seconds = 0;
+
+  /* do managment hold on context restart, i.e. second, third, fourth, etc. initialization */
   if (do_hold (NULL))
     sec = 0;
 
@@ -1099,7 +1245,7 @@ do_startup_pause (struct context *c)
   if (!c->first_time)
     socket_restart_pause (c);
   else
-    do_hold (NULL);
+    do_hold (NULL); /* do management hold on first context initialization */
 }
 
 /*
@@ -1209,7 +1355,19 @@ do_init_crypto_static (struct context *c, const unsigned int flags)
 		     options->test_crypto, true);
 
       /* Read cipher and hmac keys from shared secret file */
-      read_key_file (&key2, options->shared_secret_file, true);
+      {
+	unsigned int rkf_flags = RKF_MUST_SUCCEED;
+	const char *rkf_file = options->shared_secret_file;
+
+#if ENABLE_INLINE_FILES
+	if (options->shared_secret_file_inline)
+	  {
+	    rkf_file = options->shared_secret_file_inline;
+	    rkf_flags |= RKF_INLINE;
+	  }
+#endif
+	read_key_file (&key2, rkf_file, rkf_flags);
+      }
 
       /* Check for and fix highly unlikely key problems */
       verify_fix_key2 (&key2, &c->c1.ks.key_type,
@@ -1294,10 +1452,31 @@ do_init_crypto_tls_c1 (struct context *c)
 
       /* TLS handshake authentication (--tls-auth) */
       if (options->tls_auth_file)
-	get_tls_handshake_key (&c->c1.ks.key_type,
-			       &c->c1.ks.tls_auth_key,
-			       options->tls_auth_file,
-			       options->key_direction);
+	{
+	  unsigned int flags = 0;
+	  const char *file = options->tls_auth_file;
+
+#if ENABLE_INLINE_FILES
+	  if (options->tls_auth_file_inline)
+	    {
+	      flags |= GHK_INLINE;
+	      file = options->tls_auth_file_inline;
+	    }
+#endif
+	  get_tls_handshake_key (&c->c1.ks.key_type,
+				 &c->c1.ks.tls_auth_key,
+				 file,
+				 options->key_direction,
+				 flags);
+	}
+
+#if ENABLE_INLINE_FILES
+      if (options->priv_key_file_inline)
+	{
+	  string_clear (c->options.priv_key_file_inline);
+	  c->options.priv_key_file_inline = NULL;
+	}
+#endif
     }
   else
     {
@@ -1362,6 +1541,11 @@ do_init_crypto_tls (struct context *c, const unsigned int flags)
   to.renegotiate_seconds = options->renegotiate_seconds;
   to.single_session = options->single_session;
 
+  /* should we not xmit any packets until we get an initial
+     response from client? */
+  if (to.server && options->proto == PROTO_TCPv4_SERVER)
+    to.xmit_hold = true;
+
 #ifdef ENABLE_OCC
   to.disable_occ = !options->occ;
 #endif
@@ -1370,13 +1554,15 @@ do_init_crypto_tls (struct context *c, const unsigned int flags)
   to.verify_x509name = options->tls_remote;
   to.crl_file = options->crl_file;
   to.ns_cert_type = options->ns_cert_type;
+  memmove (to.remote_cert_ku, options->remote_cert_ku, sizeof (to.remote_cert_ku));
+  to.remote_cert_eku = options->remote_cert_eku;
   to.es = c->c2.es;
 
 #ifdef ENABLE_DEBUG
   to.gremlin = c->options.gremlin;
 #endif
 
-  to.plugins = c->c1.plugins;
+  to.plugins = c->plugins;
 
 #if P2MP_SERVER
   to.auth_user_pass_verify_script = options->auth_user_pass_verify_script;
@@ -1473,7 +1659,7 @@ do_init_frame (struct context *c)
   /*
    * Initialize LZO compression library.
    */
-  if (c->options.comp_lzo)
+  if (c->options.lzo & LZO_SELECTED)
     {
       lzo_adjust_frame_parameters (&c->c2.frame);
 
@@ -1492,7 +1678,7 @@ do_init_frame (struct context *c)
       lzo_adjust_frame_parameters (&c->c2.frame_fragment_omit);	/* omit LZO frame delta from final frame_fragment */
 #endif
     }
-#endif
+#endif /* USE_LZO */
 
 #ifdef ENABLE_SOCKS
   /*
@@ -1563,8 +1749,17 @@ do_option_warnings (struct context *c)
   if (o->ping_send_timeout && !o->ping_rec_timeout)
     msg (M_WARN, "WARNING: --ping should normally be used with --ping-restart or --ping-exit");
 
-  if ((o->username || o->groupname || o->chroot_dir) && (!o->persist_tun || !o->persist_key))
-    msg (M_WARN, "WARNING: you are using user/group/chroot without persist-key/persist-tun -- this may cause restarts to fail");
+  if (o->username || o->groupname || o->chroot_dir)
+   {
+    if (!o->persist_tun)
+     msg (M_WARN, "WARNING: you are using user/group/chroot without persist-tun -- this may cause restarts to fail");
+    if (!o->persist_key
+#ifdef ENABLE_PKCS11
+	&& !o->pkcs11_id
+#endif
+	)
+     msg (M_WARN, "WARNING: you are using user/group/chroot without persist-key -- this may cause restarts to fail");
+   }
 
 #if P2MP
   if (o->pull && o->ifconfig_local && c->first_time)
@@ -1593,10 +1788,15 @@ do_option_warnings (struct context *c)
   if (o->tls_client
       && !o->tls_verify
       && !o->tls_remote
-      && !(o->ns_cert_type & NS_SSL_SERVER))
+      && !(o->ns_cert_type & NS_SSL_SERVER)
+      && !o->remote_cert_eku)
     msg (M_WARN, "WARNING: No server certificate verification method has been enabled.  See http://openvpn.net/howto.html#mitm for more info.");
 #endif
+#endif
 
+#ifndef CONNECT_NONBLOCK
+  if (o->connect_timeout_defined)
+    msg (M_WARN, "NOTE: --connect-timeout option is not supported on this OS");
 #endif
 }
 
@@ -1710,8 +1910,15 @@ do_link_socket_new (struct context *c)
  * bind the TCP/UDP socket
  */
 static void
-do_init_socket_1 (struct context *c, int mode)
+do_init_socket_1 (struct context *c, const int mode)
 {
+  unsigned int sockflags = c->options.sockflags;
+
+#if PORT_SHARE
+  if (c->options.port_share_host && c->options.port_share_port)
+    sockflags |= SF_PORT_SHARE;
+#endif
+
   link_socket_init_phase1 (c->c2.link_socket,
 			   c->options.local,
 			   c->c1.remote_list,
@@ -1733,12 +1940,15 @@ do_init_socket_1 (struct context *c, int mode)
 			   c->options.inetd,
 			   &c->c1.link_socket_addr,
 			   c->options.ipchange,
-			   c->c1.plugins,
+			   c->plugins,
 			   c->options.resolve_retry_seconds,
 			   c->options.connect_retry_seconds,
+			   c->options.connect_timeout,
+			   c->options.connect_retry_max,
 			   c->options.mtu_discover_type,
 			   c->options.rcvbuf,
-			   c->options.sndbuf);
+			   c->options.sndbuf,
+			   sockflags);
 }
 
 /*
@@ -2062,8 +2272,20 @@ do_close_ifconfig_pool_persist (struct context *c)
 static void
 do_inherit_env (struct context *c, const struct env_set *src)
 {
-  c->c2.es = env_set_create (&c->c2.gc);
+  c->c2.es = env_set_create (NULL);
+  c->c2.es_owned = true;
   env_set_inherit (c->c2.es, src);
+}
+
+static void
+do_env_set_destroy (struct context *c)
+{
+  if (c->c2.es && c->c2.es_owned)
+    {
+      env_set_destroy (c->c2.es);
+      c->c2.es = NULL;
+      c->c2.es_owned = false;
+    }
 }
 
 /*
@@ -2086,9 +2308,11 @@ do_setup_fast_io (struct context *c)
 	msg (M_INFO, "NOTE: --fast-io is disabled since we are not using UDP");
       else
 	{
+#ifdef HAVE_GETTIMEOFDAY
 	  if (c->options.shaper)
 	    msg (M_INFO, "NOTE: --fast-io is disabled since we are using --shaper");
 	  else
+#endif
 	    {
 	      c->c2.fast_io = true;
 	    }
@@ -2108,31 +2332,75 @@ do_signal_on_tls_errors (struct context *c)
 #endif
 }
 
-
-static void
-do_open_plugins (struct context *c)
-{
 #ifdef ENABLE_PLUGIN
-  if (c->options.plugin_list && !c->c1.plugins)
+
+void
+init_plugins (struct context *c)
+{
+  if (c->options.plugin_list && !c->plugins)
     {
-      c->c1.plugins = plugin_list_open (c->options.plugin_list, c->c2.es);
-      c->c1.plugins_owned = true;
+      c->plugins = plugin_list_init (c->options.plugin_list);
+      c->plugins_owned = true;
     }
-#endif
+}
+
+void
+open_plugins (struct context *c, const bool import_options, int init_point)
+{
+  if (c->plugins && c->plugins_owned)
+    {
+      if (import_options)
+	{
+	  struct plugin_return pr, config;
+	  plugin_return_init (&pr);
+	  plugin_list_open (c->plugins, c->options.plugin_list, &pr, c->c2.es, init_point);
+	  plugin_return_get_column (&pr, &config, "config");
+	  if (plugin_return_defined (&config))
+	    {
+	      int i;
+	      for (i = 0; i < config.n; ++i)
+		{
+		  unsigned int option_types_found = 0;
+		  if (config.list[i] && config.list[i]->value)
+		    options_plugin_import (&c->options,
+					   config.list[i]->value,
+					   D_IMPORT_ERRORS|M_OPTERR,
+					   OPT_P_DEFAULT & ~OPT_P_PLUGIN,
+					   &option_types_found,
+					   c->es);
+		}
+	    }
+	  plugin_return_free (&pr);
+	}
+      else
+	{
+	  plugin_list_open (c->plugins, c->options.plugin_list, NULL, c->c2.es, init_point);
+	}
+    }
 }
 
 static void
 do_close_plugins (struct context *c)
 {
-#ifdef ENABLE_PLUGIN
-  if (c->c1.plugins && c->c1.plugins_owned && !(c->sig->signal_received == SIGUSR1))
+  if (c->plugins && c->plugins_owned && !(c->sig->signal_received == SIGUSR1))
     {
-      plugin_list_close (c->c1.plugins);
-      c->c1.plugins = NULL;
-      c->c1.plugins_owned = false;
+      plugin_list_close (c->plugins);
+      c->plugins = NULL;
+      c->plugins_owned = false;
     }
-#endif
 }
+
+static void
+do_inherit_plugins (struct context *c, const struct context *src)
+{
+  if (!c->plugins && src->plugins)
+    {
+      c->plugins = plugin_list_inherit (src->plugins);
+      c->plugins_owned = true;
+    }
+}
+
+#endif
 
 #ifdef ENABLE_MANAGEMENT
 
@@ -2199,15 +2467,21 @@ open_management (struct context *c)
 			       c->options.management_log_history_cache,
 			       c->options.management_echo_buffer_size,
 			       c->options.management_state_buffer_size,
-			       c->options.management_hold))
+			       c->options.management_hold,
+			       c->options.management_signal,
+			       c->options.management_forget_disconnect,
+			       c->options.management_client,
+			       c->options.management_write_peer_info_file,
+			       c->options.remap_sigusr1))
 	    {
 	      management_set_state (management,
 				    OPENVPN_STATE_CONNECTING,
 				    NULL,
+				    (in_addr_t)0,
 				    (in_addr_t)0);
 	    }
 
-	  /* possible wait */
+	  /* initial management hold, called early, before first context initialization */
 	  do_hold (c);
 	  if (IS_SIG (c))
 	    {
@@ -2255,6 +2529,17 @@ init_instance_handle_signals (struct context *c, const struct env_set *env, cons
   pre_init_signal_catch ();
   init_instance (c, env, flags);
   post_init_signal_catch ();
+
+  /*
+   * This is done so that signals thrown during
+   * initialization can bring us back to
+   * a management hold.
+   */
+  if (IS_SIG (c))
+    {
+      remap_signal (c);
+      uninit_management_callback ();  
+    }
 }
 
 /*
@@ -2319,9 +2604,11 @@ init_instance (struct context *c, const struct env_set *env, const unsigned int 
   if (env)
     do_inherit_env (c, env);
 
+#ifdef ENABLE_PLUGIN
   /* initialize plugins */
   if (c->mode == CM_P2P || c->mode == CM_TOP)
-    do_open_plugins (c);
+    open_plugins (c, false, OPENVPN_PLUGIN_INIT_PRE_DAEMON);
+#endif
 
   /* should we enable fast I/O? */
   if (c->mode == CM_P2P || c->mode == CM_TOP)
@@ -2376,8 +2663,8 @@ init_instance (struct context *c, const struct env_set *env, const unsigned int 
 
 #ifdef USE_LZO
   /* initialize LZO compression library. */
-  if (options->comp_lzo && (c->mode == CM_P2P || child))
-    lzo_compress_init (&c->c2.lzo_compwork, options->comp_lzo_adaptive);
+  if ((options->lzo & LZO_SELECTED) && (c->mode == CM_P2P || child))
+    lzo_compress_init (&c->c2.lzo_compwork, options->lzo);
 #endif
 
   /* initialize MTU variables */
@@ -2424,6 +2711,12 @@ init_instance (struct context *c, const struct env_set *env, const unsigned int 
   /* do one-time inits, and possibily become a daemon here */
   do_init_first_time (c);
 
+#ifdef ENABLE_PLUGIN
+  /* initialize plugins */
+  if (c->mode == CM_P2P || c->mode == CM_TOP)
+    open_plugins (c, false, OPENVPN_PLUGIN_INIT_POST_DAEMON);
+#endif
+
   /*
    * Actually do UID/GID downgrade, and chroot, if requested.
    * May be delayed by --client, --pull, or --up-delay.
@@ -2438,6 +2731,18 @@ init_instance (struct context *c, const struct env_set *env, const unsigned int 
   if (c->mode == CM_P2P || child)
     do_init_timers (c, false);
 
+#ifdef ENABLE_PLUGIN
+  /* initialize plugins */
+  if (c->mode == CM_P2P || c->mode == CM_TOP)
+    open_plugins (c, false, OPENVPN_PLUGIN_INIT_POST_UID_CHANGE);
+#endif
+
+#if PORT_SHARE
+  /* share OpenVPN port with foreign (such as HTTPS) server */
+  if (c->first_time && (c->mode == CM_P2P || c->mode == CM_TOP))
+    init_port_share (c);
+#endif
+	  
   /* Check for signals */
   if (IS_SIG (c))
     goto sig;
@@ -2445,7 +2750,8 @@ init_instance (struct context *c, const struct env_set *env, const unsigned int 
   return;
 
  sig:
-  c->sig->signal_text = "init_instance";
+  if (!c->sig->signal_text)
+    c->sig->signal_text = "init_instance";
   close_context (c, -1, flags);
   return;
 }
@@ -2468,7 +2774,7 @@ close_instance (struct context *c)
 	do_close_check_if_restart_permitted (c);
 
 #ifdef USE_LZO
-	if (c->options.comp_lzo)
+	if (lzo_defined (&c->c2.lzo_compwork))
 	  lzo_compress_uninit (&c->c2.lzo_compwork);
 #endif
 
@@ -2487,8 +2793,10 @@ close_instance (struct context *c)
 	/* close TUN/TAP device */
 	do_close_tun (c, false);
 
+#ifdef ENABLE_PLUGIN
 	/* call plugin close functions and unload */
 	do_close_plugins (c);
+#endif
 
 	/* close packet-id persistance file */
 	do_close_packet_id (c);
@@ -2503,6 +2811,9 @@ close_instance (struct context *c)
 
 	/* close --ifconfig-pool-persist obj */
 	do_close_ifconfig_pool_persist (c);
+
+	/* free up environmental variable store */
+	do_env_set_destroy (c);
 
 	/* garbage collect */
 	gc_free (&c->c2.gc);
@@ -2556,8 +2867,10 @@ inherit_context_child (struct context *dest,
       dest->c2.accept_from = src->c2.link_socket;
     }
 
+#ifdef ENABLE_PLUGIN
   /* inherit plugins */
-  dest->c1.plugins = src->c1.plugins;
+  do_inherit_plugins (dest, src);
+#endif
 
   /* context init */
   init_instance (dest, src->c2.es, CC_NO_CLOSE | CC_USR1_TO_HUP);
@@ -2608,18 +2921,25 @@ inherit_context_top (struct context *dest,
   gc_detach (&dest->gc);
   gc_detach (&dest->c2.gc);
 
+  /* detach plugins */
+  dest->plugins_owned = false;
+
 #if defined(USE_CRYPTO) && defined(USE_SSL)
   dest->c2.tls_multi = NULL;
 #endif
 
+  /* detach c1 ownership */
   dest->c1.tuntap_owned = false;
   dest->c1.status_output_owned = false;
 #if P2MP_SERVER
   dest->c1.ifconfig_pool_persist_owned = false;
 #endif
+
+  /* detach c2 ownership */
   dest->c2.event_set_owned = false;
   dest->c2.link_socket_owned = false;
   dest->c2.buffers_owned = false;
+  dest->c2.es_owned = false;
 
   dest->c2.event_set = NULL;
   if (src->options.proto == PROTO_UDPv4)
@@ -2738,7 +3058,7 @@ do_test_crypto (const struct options *o)
       /* print version number */
       msg (M_INFO, "%s", title_string);
 
-     context_clear (&c);
+      context_clear (&c);
       c.options = *o;
       options_detach (&c.options);
       c.first_time = true;

@@ -92,13 +92,15 @@
 #define D_MANAGEMENT         LOGLEV(3, 41, 0)        /* show --management info */
 #define D_SCHED_EXIT         LOGLEV(3, 42, 0)        /* show arming of scheduled exit */
 #define D_ROUTE_QUOTA        LOGLEV(3, 43, 0)        /* show route quota exceeded messages */
+#define D_OSBUF              LOGLEV(3, 44, 0)        /* show socket/tun/tap buffer sizes */
+#define D_PS_PROXY           LOGLEV(3, 45, 0)        /* messages related to --port-share option */
 
 #define D_SHOW_PARMS         LOGLEV(4, 50, 0)        /* show all parameters on program initiation */
 #define D_SHOW_OCC           LOGLEV(4, 51, 0)        /* show options compatibility string */
 #define D_LOW                LOGLEV(4, 52, 0)        /* miscellaneous low-frequency debug info */
 #define D_DHCP_OPT           LOGLEV(4, 53, 0)        /* show DHCP options binary string */
-#define D_OSBUF              LOGLEV(4, 54, 0)        /* show socket/tun/tap buffer sizes */
-#define D_MBUF               LOGLEV(4, 55, 0)        /* mbuf.[ch] routines */
+#define D_MBUF               LOGLEV(4, 54, 0)        /* mbuf.[ch] routines */
+#define D_PACKET_TRUNC_ERR   LOGLEV(4, 55, 0)        /* PACKET_TRUNCATION_CHECK */
 
 #define D_LOG_RW             LOGLEV(5, 0,  0)        /* Print 'R' or 'W' to stdout for read/write */
 
@@ -127,7 +129,12 @@
 #define D_MANAGEMENT_DEBUG   LOGLEV(7, 70, M_DEBUG)  /* show --management debug info */
 #define D_PLUGIN_DEBUG       LOGLEV(7, 70, M_DEBUG)  /* show verbose plugin calls */
 #define D_SOCKET_DEBUG       LOGLEV(7, 70, M_DEBUG)  /* show socket.[ch] debugging info */
+#define D_SHOW_PKCS11        LOGLEV(7, 70, M_DEBUG)  /* show PKCS#11 actions */
 #define D_ALIGN_DEBUG        LOGLEV(7, 70, M_DEBUG)  /* show verbose struct alignment info */
+#define D_PACKET_TRUNC_DEBUG LOGLEV(7, 70, M_DEBUG)  /* PACKET_TRUNCATION_CHECK verbose */
+#define D_PING               LOGLEV(7, 70, M_DEBUG)  /* PING send/receive messages */
+#define D_PS_PROXY_DEBUG     LOGLEV(7, 70, M_DEBUG)  /* port share proxy debug */
+#define D_AUTO_USERID        LOGLEV(7, 70, M_DEBUG)  /* AUTO_USERID debugging */
 
 #define D_HANDSHAKE_VERBOSE  LOGLEV(8, 70, M_DEBUG)  /* show detailed description of each handshake */
 #define D_TLS_DEBUG_MED      LOGLEV(8, 70, M_DEBUG)  /* limited info from tls_session routines */
@@ -149,13 +156,13 @@
 #define D_LINK_RW_VERBOSE    LOGLEV(9, 70, M_DEBUG)  /* show link reads/writes with greater verbosity */
 #define D_STREAM_DEBUG       LOGLEV(9, 70, M_DEBUG)  /* show TCP stream debug info */
 #define D_WIN32_IO           LOGLEV(9, 70, M_DEBUG)  /* win32 I/O debugging info */
+#define D_PKCS11_DEBUG       LOGLEV(9, 70, M_DEBUG)  /* show PKCS#11 debugging */
 
 #define D_SHAPER_DEBUG       LOGLEV(10, 70, M_DEBUG) /* show traffic shaper info */
 
 #define D_REGISTRY           LOGLEV(11, 70, M_DEBUG) /* win32 registry debugging info */
 #define D_OPENSSL_LOCK       LOGLEV(11, 70, M_DEBUG) /* show OpenSSL locks */
 
-#define D_THREAD_DEBUG       LOGLEV(4, 70, M_DEBUG)  /* JYFIXME -- show pthread debug information */
-
+/*#define D_THREAD_DEBUG       LOGLEV(4, 70, M_DEBUG)*/  /* show pthread debug information */
 
 #endif

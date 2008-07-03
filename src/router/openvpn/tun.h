@@ -40,6 +40,10 @@
 
 #ifdef WIN32
 
+/* time constants for --ip-win32 adaptive */
+#define IPW32_SET_ADAPTIVE_DELAY_WINDOW 300
+#define IPW32_SET_ADAPTIVE_TRY_NETSH    20
+
 struct tuntap_options {
   /* --ip-win32 options */
   bool ip_win32_defined;
@@ -48,7 +52,8 @@ struct tuntap_options {
 # define IPW32_SET_NETSH        1  /* "--ip-win32 netsh" */
 # define IPW32_SET_IPAPI        2  /* "--ip-win32 ipapi" */
 # define IPW32_SET_DHCP_MASQ    3  /* "--ip-win32 dynamic" */
-# define IPW32_SET_N            4
+# define IPW32_SET_ADAPTIVE     4  /* "--ip-win32 adaptive" */
+# define IPW32_SET_N            5
   int ip_win32_type;
 
   /* --ip-win32 dynamic options */
@@ -119,6 +124,9 @@ struct tuntap
 # define TUNNEL_TYPE(tt) ((tt) ? ((tt)->type) : DEV_TYPE_UNDEF)
   int type; /* DEV_TYPE_x as defined in proto.h */
 
+# define TUNNEL_TOPOLOGY(tt) ((tt) ? ((tt)->topology) : TOP_UNDEF)
+  int topology; /* one of the TOP_x values */
+
   bool did_ifconfig_setup;
   bool did_ifconfig;
 
@@ -152,6 +160,8 @@ struct tuntap
   /* Windows adapter index for TAP-Win32 adapter,
      ~0 if undefined */
   DWORD adapter_index;
+
+  int standby_iter;
 #else
   int fd;   /* file descriptor for TUN/TAP dev */
 #endif
@@ -194,7 +204,8 @@ int write_tun (struct tuntap* tt, uint8_t *buf, int len);
 int read_tun (struct tuntap* tt, uint8_t *buf, int len);
 
 void tuncfg (const char *dev, const char *dev_type, const char *dev_node,
-	     bool ipv6, int persist_mode);
+	     bool ipv6, int persist_mode, const char *username,
+	     const char *groupname, const struct tuntap_options *options);
 
 const char *guess_tuntap_dev (const char *dev,
 			      const char *dev_type,
@@ -203,6 +214,7 @@ const char *guess_tuntap_dev (const char *dev,
 
 struct tuntap *init_tun (const char *dev,       /* --dev option */
 			 const char *dev_type,  /* --dev-type option */
+			 int topology,          /* one of the TOP_x values */
 			 const char *ifconfig_local_parm,          /* --ifconfig parm 1 */
 			 const char *ifconfig_remote_netmask_parm, /* --ifconfig parm 2 */
 			 in_addr_t local_public,
@@ -226,6 +238,8 @@ int dev_type_enum (const char *dev, const char *dev_type);
 const char *dev_type_string (const char *dev, const char *dev_type);
 
 const char *ifconfig_options_string (const struct tuntap* tt, bool remote, bool disable, struct gc_arena *gc);
+
+bool is_tun_p2p (const struct tuntap *tt);
 
 /*
  * Inline functions
@@ -292,12 +306,19 @@ void verify_255_255_255_252 (in_addr_t local, in_addr_t remote);
 
 const IP_ADAPTER_INFO *get_adapter_info_list (struct gc_arena *gc);
 const IP_ADAPTER_INFO *get_tun_adapter (const struct tuntap *tt, const IP_ADAPTER_INFO *list);
+
+const IP_ADAPTER_INFO *get_adapter_info (DWORD index, struct gc_arena *gc);
+const IP_PER_ADAPTER_INFO *get_per_adapter_info (const DWORD index, struct gc_arena *gc);
+const IP_ADAPTER_INFO *get_adapter (const IP_ADAPTER_INFO *ai, DWORD index);
+
 bool is_adapter_up (const struct tuntap *tt, const IP_ADAPTER_INFO *list);
 bool is_ip_in_adapter_subnet (const IP_ADAPTER_INFO *ai, const in_addr_t ip, in_addr_t *highest_netmask);
 DWORD adapter_index_of_ip (const IP_ADAPTER_INFO *list, const in_addr_t ip, int *count);
 
 void show_tap_win32_adapters (int msglev, int warnlev);
 void show_adapters (int msglev);
+
+void tap_allow_nonadmin_access (const char *dev_node);
 
 void show_valid_win32_tun_subnets (void);
 const char *tap_win32_getinfo (const struct tuntap *tt, struct gc_arena *gc);
@@ -306,11 +327,12 @@ void tun_show_debug (struct tuntap *tt);
 bool dhcp_release (const struct tuntap *tt);
 bool dhcp_renew (const struct tuntap *tt);
 
+void tun_standby_init (struct tuntap *tt);
+bool tun_standby (struct tuntap *tt);
+
 int tun_read_queue (struct tuntap *tt, int maxsize);
 int tun_write_queue (struct tuntap *tt, struct buffer *buf);
 int tun_finalize (HANDLE h, struct overlapped_io *io, struct buffer *buf);
-
-const char *get_netsh_id (const char *dev_node, struct gc_arena *gc);
 
 static inline bool
 tuntap_stop (int status)
@@ -365,6 +387,17 @@ static inline bool
 tuntap_stop (int status)
 {
   return false;
+}
+
+static inline void
+tun_standby_init (struct tuntap *tt)
+{
+}
+
+static inline bool
+tun_standby (struct tuntap *tt)
+{
+  return true;
 }
 
 #endif

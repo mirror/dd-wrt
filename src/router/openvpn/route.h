@@ -38,15 +38,23 @@
 /*
  * Windows route methods
  */
-#define ROUTE_METHOD_IPAPI  0  /* use IP helper API */
-#define ROUTE_METHOD_EXE    1  /* use route.exe */
-#define ROUTE_METHOD_MASK   1
+#define ROUTE_METHOD_ADAPTIVE  0  /* try IP helper first then route.exe */
+#define ROUTE_METHOD_IPAPI     1  /* use IP helper API */
+#define ROUTE_METHOD_EXE       2  /* use route.exe */
+#define ROUTE_METHOD_MASK      3
 #endif
 
 /*
  * Route add flags (must stay clear of ROUTE_METHOD bits)
  */
-#define ROUTE_DELETE_FIRST  2
+#define ROUTE_DELETE_FIRST  4
+
+struct route_bypass
+{
+# define N_ROUTE_BYPASS 8
+  int n_bypass;
+  in_addr_t bypass[N_ROUTE_BYPASS];
+};
 
 struct route_special_addr
 {
@@ -56,6 +64,9 @@ struct route_special_addr
   bool net_gateway_defined;
   in_addr_t remote_host;
   bool remote_host_defined;
+  struct route_bypass bypass;
+  int default_metric;
+  bool default_metric_defined;
 };
 
 struct route_option {
@@ -65,11 +76,16 @@ struct route_option {
   const char *metric;
 };
 
+/* redirect-gateway flags */
+#define RG_ENABLE         (1<<0)
+#define RG_LOCAL          (1<<1)
+#define RG_DEF1           (1<<2)
+#define RG_BYPASS_DHCP    (1<<3)
+#define RG_BYPASS_DNS     (1<<4)
+
 struct route_option_list {
   int n;
-  bool redirect_default_gateway;
-  bool redirect_local;
-  bool redirect_def1;
+  unsigned int flags;
   struct route_option routes[MAX_ROUTES];
 };
 
@@ -86,11 +102,8 @@ struct route {
 struct route_list {
   bool routes_added;
   struct route_special_addr spec;
-  bool redirect_default_gateway;
-  bool redirect_local;
-  bool redirect_def1;
+  unsigned int flags;
   bool did_redirect_default_gateway;
-
   int n;
   struct route routes[MAX_ROUTES];
 };
@@ -108,6 +121,8 @@ struct route_option_list *new_route_option_list (struct gc_arena *a);
 
 struct route_list *new_route_list (struct gc_arena *a);
 
+void add_route (struct route *r, const struct tuntap *tt, unsigned int flags, const struct env_set *es);
+
 void add_route_to_option_list (struct route_option_list *l,
 			       const char *network,
 			       const char *netmask,
@@ -119,6 +134,7 @@ void clear_route_list (struct route_list *rl);
 bool init_route_list (struct route_list *rl,
 		      const struct route_option_list *opt,
 		      const char *remote_endpoint,
+		      int default_metric,
 		      in_addr_t remote_host,
 		      struct env_set *es);
 
@@ -133,6 +149,10 @@ void delete_routes (struct route_list *rl,
 		    const struct env_set *es);
 
 void setenv_routes (struct env_set *es, const struct route_list *rl);
+
+#if AUTO_USERID
+bool get_default_gateway_mac_addr (unsigned char *macaddr);
+#endif
 
 #ifdef ENABLE_DEBUG
 void print_route_options (const struct route_option_list *rol,

@@ -34,7 +34,49 @@
 
 #include "memdbg.h"
 
-volatile time_t now; /* GLOBAL */
+time_t now = 0;            /* GLOBAL */
+
+#if TIME_BACKTRACK_PROTECTION && defined(HAVE_GETTIMEOFDAY)
+
+static time_t now_adj = 0; /* GLOBAL */
+time_t now_usec = 0;       /* GLOBAL */
+
+/*
+ * Try to filter out time instability caused by the system
+ * clock backtracking or jumping forward.
+ */
+
+void
+update_now (const time_t system_time)
+{
+  const int forward_threshold = 86400; /* threshold at which to dampen forward jumps */
+  const int backward_trigger  = 10;    /* backward jump must be >= this many seconds before we adjust */
+  time_t real_time = system_time + now_adj;
+
+  if (real_time > now)
+    {
+      const time_t overshoot = real_time - now - 1;
+      if (overshoot > forward_threshold && now_adj >= overshoot)
+        {
+          now_adj -= overshoot;
+          real_time -= overshoot;
+        }
+      now = real_time;
+    }
+  else if (real_time < now - backward_trigger)
+    now_adj += (now - real_time);
+}
+
+void
+update_now_usec (struct timeval *tv)
+{
+  const time_t last = now;
+  update_now (tv->tv_sec);
+  if (now > last || (now == last && tv->tv_usec > now_usec))
+    now_usec = tv->tv_usec;
+}
+
+#endif /* TIME_BACKTRACK_PROTECTION && defined(HAVE_GETTIMEOFDAY) */
 
 /* 
  * Return a numerical string describing a struct timeval.
@@ -88,7 +130,8 @@ time_string (time_t t, int usec, bool show_usec, struct gc_arena *gc)
     }
 
   mutex_lock_static (L_CTIME);
-  buf_printf (&out, "%s", ctime ((const time_t *)&tv.tv_sec));
+  t = tv.tv_sec;
+  buf_printf (&out, "%s", ctime(&t));
   mutex_unlock_static (L_CTIME);
   buf_rmtail (&out, '\n');
 
@@ -146,53 +189,93 @@ frequency_limit_event_allowed (struct frequency_limit *f)
 
 #ifdef WIN32
 
-static double counterPerMicrosecond = -1.0;            /* GLOBAL */
-static unsigned __int64 frequency = 0;                 /* GLOBAL */
-static unsigned __int64 timeSecOffset = 0;             /* GLOBAL */
-static unsigned __int64 startPerformanceCounter = 0;   /* GLOBAL */
+static time_t gtc_base = 0;
+static DWORD gtc_last = 0;
+static time_t last_sec = 0;
+static unsigned int last_msec = 0;
+static bool bt_last = false;
+
+static void
+gettimeofday_calibrate (void)
+{
+  const time_t t = time(NULL);
+  const DWORD gtc = GetTickCount();
+  gtc_base = t - gtc/1000;
+  gtc_last = gtc;
+}
 
 /*
- * gettimeofday for windows
- *
- * CounterPerMicrosecond is the number of counts per microsecond.
- * Double is required if we have less than 1 counter per microsecond.  This has not been tested.
- * On a PIII 700, I get about 3.579545.  This is guaranteed not to change while the processor is running.
- * We really don't need to check for loop detection.  On my machine it would take about 59645564 days to loop.
- * (2^64) / frequency / 60 / 60 / 24.
- *
+ * Rewritten by JY for OpenVPN 2.1, after I realized that
+ * QueryPerformanceCounter takes nearly 2 orders of magnitude
+ * more processor cycles than GetTickCount.
  */
 int
-gettimeofday(struct timeval *tv, void *tz)
+gettimeofday (struct timeval *tv, void *tz)
 {
-  unsigned __int64 counter;
+  const DWORD gtc = GetTickCount();
+  bool bt = false;
+  time_t sec;
+  unsigned int msec;
+  const int backtrack_hold_seconds = 10;
 
-  QueryPerformanceCounter((LARGE_INTEGER *) &counter);
+  /* recalibrate at the dreaded 49.7 day mark */
+  if (!gtc_base || gtc < gtc_last)
+    gettimeofday_calibrate ();
+  gtc_last = gtc;
 
-  if (counter < startPerformanceCounter || counterPerMicrosecond == -1.0)
+  sec = gtc_base + gtc / 1000;
+  msec = gtc % 1000;
+
+  if (sec == last_sec)
     {
-      time_t t;
-      mutex_lock (L_GETTIMEOFDAY);
-
-      QueryPerformanceFrequency((LARGE_INTEGER *) &frequency);
-
-      counterPerMicrosecond = (double) ((__int64) frequency) / 1000000.0f;
-
-      time(&t);
-      QueryPerformanceCounter((LARGE_INTEGER *) &counter);
-      startPerformanceCounter = counter;
-
-      counter /= frequency;
-
-      timeSecOffset = t - counter;
-
-      mutex_unlock (L_GETTIMEOFDAY);
-      QueryPerformanceCounter((LARGE_INTEGER *) &counter);
+      if (msec < last_msec)
+	{
+	  msec = last_msec;
+	  bt = true;
+	}
+    }
+  else if (sec < last_sec)
+    {
+      /* We try to dampen out backtracks of less than backtrack_hold_seconds.
+	 Larger backtracks will be passed through and dealt with by the
+	 TIME_BACKTRACK_PROTECTION code (if enabled) */
+      if (sec > last_sec - backtrack_hold_seconds)
+	{
+	  sec = last_sec;
+	  msec = last_msec;
+	}
+      bt = true;
     }
 
-  tv->tv_sec = (counter / frequency) + timeSecOffset;
-  tv->tv_usec = ((__int64) (((__int64) counter) / counterPerMicrosecond) % 1000000);
+  tv->tv_sec = last_sec = sec;
+  tv->tv_usec = (last_msec = msec) * 1000;
+
+  if (bt && !bt_last)
+    gettimeofday_calibrate ();
+  bt_last = bt;
 
   return 0;
 }
 
 #endif /* WIN32 */
+
+#ifdef TIME_TEST
+void
+time_test (void)
+{
+  struct timeval tv;
+  time_t t;
+  int i;
+  for (i = 0; i < 10000; ++i)
+    {
+      t = time(NULL);
+      gettimeofday (&tv, NULL);
+#if 1
+      msg (M_INFO, "t=%u s=%u us=%u",
+	       (unsigned int)t,
+	       (unsigned int)tv.tv_sec,
+	       (unsigned int)tv.tv_usec);
+#endif
+    }
+}
+#endif

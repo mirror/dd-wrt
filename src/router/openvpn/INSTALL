@@ -7,6 +7,16 @@ as published by the Free Software Foundation.
 
 *************************************************************************
 
+QUICK START:
+
+  Unix:
+    ./configure && make && make-install
+
+  Windows:
+    ./domake-win (see comments in the script for more info)
+
+*************************************************************************
+
 To download OpenVPN, go to:
 
 	http://openvpn.net/download.html
@@ -60,6 +70,18 @@ OPTIONAL (for developers only):
 
 *************************************************************************
 
+CHECK OUT SOURCE FROM SUBVERSION REPOSITORY:
+
+  Check out stable version:
+
+    svn checkout http://svn.openvpn.net/projects/openvpn/trunk/openvpn openvpn
+
+  Check out beta21 branch:
+
+    svn checkout http://svn.openvpn.net/projects/openvpn/branches/BETA21/openvpn openvpn
+
+*************************************************************************
+
 BUILD COMMANDS FROM TARBALL:
 
 	./configure
@@ -68,7 +90,7 @@ BUILD COMMANDS FROM TARBALL:
 
 *************************************************************************
 
-BUILD COMMANDS FROM CVS:
+BUILD COMMANDS FROM SUBVERSION REPOSITORY CHECKOUT:
 
 	autoreconf -i -v
 	./configure
@@ -77,7 +99,7 @@ BUILD COMMANDS FROM CVS:
 
 *************************************************************************
 
-BUILD A TARBALL FROM CVS:
+BUILD A TARBALL FROM SUBVERSION REPOSITORY CHECKOUT:
 
 	autoreconf -i -v
 	./configure
@@ -255,9 +277,10 @@ TUN/TAP Driver Configuration:
   needs to be manually copied to /kernel/drv/sparcv9/ and then a 
   reconfiguration reboot. (boot -r).
 
-* Windows 2000 and XP
+* Windows 2000/XP/2003/Vista
 
-  See INSTALL-win32.txt for more info
+  See domake-win for building instructions.
+  See INSTALL-win32.txt for usage info.
 
  See the man page for more information, usage examples, and
  information on firewall configuration.
@@ -290,3 +313,28 @@ CAVEATS & BUGS:
   IV for OFB and CFB modes.  This is not an issue if you are
   using CBC cipher mode (the default), or if you are using OFB or CFB
   cipher mode with SSL/TLS authentication.
+
+******************************************************************************
+
+Subject: [Openvpn-users] Re: Windows XP 64 bit
+From: Hypherion
+Date: Thu, 14 Apr 2005 07:01:17 +0000 (UTC)
+
+Well I managed to build a Windows XP 64 bit driver myself and it's working
+great, I can connect to my server again :)
+
+I had to use the WinDDK for Windows 2003 Service Pack 1 and just built the
+driver in the Windows 2003 AMD64 environment.  I had to comment out the
+MAPINFO:FIXUPS directive in the SOURCES file. 
+ 
+Then I copied and renamed (devcon.exe/tapinstall.exe) from
+C:\WINDDK\3790.1830\tools\devcon\amd64. 
+ 
+I had to edit the file OemWin2k.inf and change the Manufactured + Product
+Section to:
+
+[Manufacturer]
+   %Provider% = tap0901, NTamd64
+
+[tap0901.NTamd64]
+   %DeviceDescription% = tap0901.ndi, tap0901

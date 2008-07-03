@@ -34,12 +34,13 @@
 #########################################################
 # Change these to point to your OpenSSL, LZO, and
 # (optionally) dmalloc top-level directories.
-# If you are using the prebuild script, set the OpenSSL
-# lib path in the prebuild script, not here.
-
-OPENSSL = /c/src/openssl-0.9.7k
-LZO = /c/src/lzo-1.08
-DMALLOC = /c/src/dmalloc-5.4.2
+# Normally set as environmental variables before calling
+# make.
+#
+#OPENSSL_DIR = 
+#LZO_DIR = 
+#DMALLOC_DIR = 
+#PKCS11_HELPER_DIR =
 
 #########################################################
 
@@ -47,19 +48,19 @@ CC = gcc -g -O2 -Wall -Wno-unused-function -Wno-unused-variable -mno-cygwin
 
 CC_DMALLOC = gcc -g -O2 -Wall -Wno-unused-function -Wno-unused-variable -mno-cygwin -fno-inline -DDMALLOC
 
-INCLUDE_DIRS = -I${OPENSSL}/include -I${LZO}/include
+INCLUDE_DIRS = -I${OPENSSL_DIR}/include -I${LZO_DIR}/include -I${PKCS11_HELPER_DIR}/include
 
-INCLUDE_DIRS_DMALLOC = ${INCLUDE_DIRS} -I${DMALLOC}
+INCLUDE_DIRS_DMALLOC = ${INCLUDE_DIRS} -I${DMALLOC_DIR}
 
-LIBS = -llzo -lcrypt32 -lws2_32 -lgdi32 -liphlpapi -lwinmm
+LIBS = -llzo2 -lcrypt32 -lWinInet -lws2_32 -lgdi32 -liphlpapi -lwinmm -lpkcs11-helper
 
 LIBS_DMALLOC = ${LIBS} -ldmalloc
 
-LIB_DIRS = -L${OPENSSL}/out -L${LZO}
+LIB_DIRS = -L${OPENSSL_DIR}/out -L${LZO_DIR} -L${PKCS11_HELPER_DIR}/lib
 
-LIB_DIRS_DMALLOC = ${LIB_DIRS} -L${DMALLOC}
+LIB_DIRS_DMALLOC = ${LIB_DIRS} -L${DMALLOC_DIR}
 
-EXE = openvpn.exe
+EXE = ${PRODUCT_UNIX_NAME}.exe
 
 HEADERS = \
 	base64.h \
@@ -84,6 +85,7 @@ HEADERS = \
 	integer.h \
 	interval.h \
 	list.h \
+	lladdr.h \
 	lzo.h \
 	manage.h \
 	mbuf.h \
@@ -98,6 +100,7 @@ HEADERS = \
 	ntlm.h \
 	occ-inline.h \
 	occ.h \
+	pkcs11.h \
         openvpn.h \
 	openvpn-plugin.h \
 	options.h \
@@ -140,6 +143,7 @@ OBJS =  base64.o \
 	init.o \
 	interval.o \
         list.o \
+	lladdr.o \
 	lzo.o \
 	manage.o \
 	mbuf.o \
@@ -152,6 +156,7 @@ OBJS =  base64.o \
 	multi.o \
 	ntlm.o \
 	occ.o \
+	pkcs11.o \
         openvpn.o \
 	options.o \
 	otime.o \
