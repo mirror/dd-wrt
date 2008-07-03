@@ -39,8 +39,14 @@
 #include "plugin.h"
 #include "options.h"
 #include "manage.h"
+#include "crypto.h"
+#include "route.h"
 
 #include "memdbg.h"
+
+#ifdef CONFIG_FEATURE_IPROUTE
+const char *iproute_path = IPROUTE_PATH;
+#endif
 
 /* Redefine the top level directory of the filesystem
    to restrict access to files for security */
@@ -206,7 +212,7 @@ run_up_down (const char *command,
 		  ifconfig_local, ifconfig_remote,
 		  context);
 
-      if (plugin_call (plugins, plugin_type, BSTR (&cmd), es))
+      if (plugin_call (plugins, plugin_type, BSTR (&cmd), NULL, es))
 	msg (M_FATAL, "ERROR: up/down plugin call failed");
     }
 
@@ -433,15 +439,20 @@ void
 warn_if_group_others_accessible (const char* filename)
 {
 #ifdef HAVE_STAT
-  struct stat st;
-  if (stat (filename, &st))
+#if ENABLE_INLINE_FILES
+  if (strcmp (filename, INLINE_FILE_TAG))
+#endif
     {
-      msg (M_WARN | M_ERRNO, "WARNING: cannot stat file '%s'", filename);
-    }
-  else
-    {
-      if (st.st_mode & (S_IRWXG|S_IRWXO))
-	msg (M_WARN, "WARNING: file '%s' is group or others accessible", filename);
+      struct stat st;
+      if (stat (filename, &st))
+	{
+	  msg (M_WARN | M_ERRNO, "WARNING: cannot stat file '%s'", filename);
+	}
+      else
+	{
+	  if (st.st_mode & (S_IRWXG|S_IRWXO))
+	    msg (M_WARN, "WARNING: file '%s' is group or others accessible", filename);
+	}
     }
 #endif
 }
@@ -683,13 +694,13 @@ add_env_item (char *str, const bool do_alloc, struct env_item **list, struct gc_
 static bool
 env_set_del_nolock (struct env_set *es, const char *str)
 {
-  return remove_env_item (str, false, &es->list);
+  return remove_env_item (str, es->gc == NULL, &es->list);
 }
 
 static void
 env_set_add_nolock (struct env_set *es, const char *str)
 {
-  remove_env_item (str, false, &es->list);  
+  remove_env_item (str, es->gc == NULL, &es->list);  
   add_env_item ((char *)str, true, &es->list, es->gc);
 }
 
@@ -697,13 +708,31 @@ struct env_set *
 env_set_create (struct gc_arena *gc)
 {
   struct env_set *es;
-  ASSERT (gc);
   mutex_lock_static (L_ENV_SET);
   ALLOC_OBJ_CLEAR_GC (es, struct env_set, gc);
   es->list = NULL;
   es->gc = gc;
   mutex_unlock_static (L_ENV_SET);
   return es;
+}
+
+void
+env_set_destroy (struct env_set *es)
+{
+  mutex_lock_static (L_ENV_SET);
+  if (es && es->gc == NULL)
+    {
+      struct env_item *e = es->list;
+      while (e)
+	{
+	  struct env_item *next = e->next;
+	  free (e->string);
+	  free (e);
+	  e = next;
+	}
+      free (es);
+    }
+  mutex_unlock_static (L_ENV_SET);
 }
 
 bool
@@ -859,9 +888,25 @@ setenv_int (struct env_set *es, const char *name, int value)
 }
 
 void
+setenv_unsigned (struct env_set *es, const char *name, unsigned int value)
+{
+  char buf[64];
+  openvpn_snprintf (buf, sizeof(buf), "%u", value);
+  setenv_str (es, name, buf);
+}
+
+void
 setenv_str (struct env_set *es, const char *name, const char *value)
 {
   setenv_str_ex (es, name, value, CC_NAME, 0, 0, CC_PRINT, 0, 0);
+}
+
+void
+setenv_str_safe (struct env_set *es, const char *name, const char *value)
+{
+  char buf[64];
+  openvpn_snprintf (buf, sizeof(buf), "OPENVPN_%s", name);
+  setenv_str (es, buf, value);
 }
 
 void
@@ -1160,10 +1205,9 @@ get_console_input (const char *prompt, const bool echo, char *input, const int c
  * Get and store a username/password
  */
 
-void
+bool
 get_user_pass (struct user_pass *up,
 	       const char *auth_file,
-	       const bool password_only,
 	       const char *prefix,
 	       const unsigned int flags)
 {
@@ -1181,15 +1225,36 @@ get_user_pass (struct user_pass *up,
 	  && ((auth_file && streq (auth_file, "management")) || (from_stdin && (flags & GET_USER_PASS_MANAGEMENT)))
 	  && management_query_user_pass_enabled (management))
 	{
-	  if (!management_query_user_pass (management, up, prefix, password_only))
-	    msg (M_FATAL, "ERROR: could not read %s username/password from management interface", prefix);
+	  if (!management_query_user_pass (management, up, prefix, flags))
+	    {
+	      if ((flags & GET_USER_PASS_NOFATAL) != 0)
+		return false;
+	      else
+		msg (M_FATAL, "ERROR: could not read %s username/password/ok from management interface", prefix);
+	    }
 	}
       else
 #endif
       /*
+       * Get NEED_OK confirmation from the console
+       */
+      if (flags & GET_USER_PASS_NEED_OK)
+	{
+	  struct buffer user_prompt = alloc_buf_gc (128, &gc);
+
+	  buf_printf (&user_prompt, "NEED-OK|%s|%s:", prefix, up->username);
+	  
+	  if (!get_console_input (BSTR (&user_prompt), true, up->password, USER_PASS_LEN))
+	    msg (M_FATAL, "ERROR: could not read %s ok-confirmation from stdin", prefix);
+	  
+	  if (!strlen (up->password))
+	    strcpy (up->password, "ok");
+	}
+	  
+      /*
        * Get username/password from standard input?
        */
-      if (from_stdin)
+      else if (from_stdin)
 	{
 	  struct buffer user_prompt = alloc_buf_gc (128, &gc);
 	  struct buffer pass_prompt = alloc_buf_gc (128, &gc);
@@ -1197,7 +1262,7 @@ get_user_pass (struct user_pass *up,
 	  buf_printf (&user_prompt, "Enter %s Username:", prefix);
 	  buf_printf (&pass_prompt, "Enter %s Password:", prefix);
 
-	  if (!password_only)
+	  if (!(flags & GET_USER_PASS_PASSWORD_ONLY))
 	    {
 	      if (!get_console_input (BSTR (&user_prompt), true, up->username, USER_PASS_LEN))
 		msg (M_FATAL, "ERROR: could not read %s username from stdin", prefix);
@@ -1230,7 +1295,7 @@ get_user_pass (struct user_pass *up,
 	  if (!fp)
 	    msg (M_ERR, "Error opening '%s' auth file: %s", prefix, auth_file);
 
-	  if (password_only)
+	  if (flags & GET_USER_PASS_PASSWORD_ONLY)
 	    {
 	      if (fgets (up->password, USER_PASS_LEN, fp) == NULL)
 		msg (M_FATAL, "Error reading password from %s authfile: %s",
@@ -1251,7 +1316,7 @@ get_user_pass (struct user_pass *up,
 	  chomp (up->username);
 	  chomp (up->password);
       
-	  if (!password_only && strlen (up->username) == 0)
+	  if (!(flags & GET_USER_PASS_PASSWORD_ONLY) && strlen (up->username) == 0)
 	    msg (M_FATAL, "ERROR: username from %s authfile '%s' is empty", prefix, auth_file);
 	}
 
@@ -1266,7 +1331,69 @@ get_user_pass (struct user_pass *up,
 #endif
 
   gc_free (&gc);
+
+  return true;
 }
+
+#if AUTO_USERID
+
+static const char *
+get_platform_prefix (void)
+{
+#if defined(TARGET_LINUX)
+  return "L";
+#elif defined(TARGET_SOLARIS)
+  return "S";
+#elif defined(TARGET_OPENBSD)
+  return "O";
+#elif defined(TARGET_DARWIN)
+  return "M";
+#elif defined(TARGET_NETBSD)
+  return "N";
+#elif defined(TARGET_FREEBSD)
+  return "F";
+#elif defined(WIN32)
+  return "W";
+#else
+  return "X";
+#endif
+}
+
+void
+get_user_pass_auto_userid (struct user_pass *up, const char *tag)
+{
+  struct gc_arena gc = gc_new ();
+  MD5_CTX ctx;
+  struct buffer buf;
+  uint8_t macaddr[6];
+  static uint8_t digest [MD5_DIGEST_LENGTH];
+  static const uint8_t hashprefix[] = "AUTO_USERID_DIGEST";
+
+  CLEAR (*up);
+  buf_set_write (&buf, (uint8_t*)up->username, USER_PASS_LEN);
+  buf_printf (&buf, "%s", get_platform_prefix ());
+  if (get_default_gateway_mac_addr (macaddr))
+    {
+      dmsg (D_AUTO_USERID, "GUPAU: macaddr=%s", format_hex_ex (macaddr, sizeof (macaddr), 0, 1, ":", &gc));
+      MD5_Init (&ctx);
+      MD5_Update (&ctx, hashprefix, sizeof (hashprefix) - 1);
+      MD5_Update (&ctx, macaddr, sizeof (macaddr));
+      MD5_Final (digest, &ctx);
+      buf_printf (&buf, "%s", format_hex_ex (digest, sizeof (digest), 0, 256, " ", &gc));
+    }
+  else
+    {
+      buf_printf (&buf, "UNKNOWN");
+    }
+  if (tag && strcmp (tag, "stdin"))
+    buf_printf (&buf, "-%s", tag);
+  up->defined = true;
+  gc_free (&gc);
+
+  dmsg (D_AUTO_USERID, "GUPAU: AUTO_USERID: '%s'", up->username);
+}
+
+#endif
 
 void
 purge_user_pass (struct user_pass *up, const bool force)
@@ -1353,6 +1480,73 @@ make_arg_array (const char *first, const char *parms, struct gc_arena *gc)
   return (const char **)ret;
 }
 
+#if ENABLE_INLINE_FILES
+static const char **
+make_inline_array (const char *str, struct gc_arena *gc)
+{
+  char line[OPTION_LINE_SIZE];
+  struct buffer buf;
+  int len = 0;
+  char **ret = NULL;
+  int i = 0;
+
+  buf_set_read (&buf, (const uint8_t *) str, strlen (str));
+  while (buf_parse (&buf, '\n', line, sizeof (line)))
+    ++len;
+
+  /* alloc return array */
+  ALLOC_ARRAY_CLEAR_GC (ret, char *, len + 1, gc);
+
+  buf_set_read (&buf, (const uint8_t *) str, strlen(str));
+  while (buf_parse (&buf, '\n', line, sizeof (line)))
+    {
+      chomp (line);
+      ASSERT (i < len);
+      ret[i] = string_alloc (skip_leading_whitespace (line), gc);
+      ++i;
+    }  
+  ASSERT (i <= len);
+  ret[i] = NULL;
+  return (const char **)ret;
+}
+#endif
+
+static const char **
+make_arg_copy (char **p, struct gc_arena *gc)
+{
+  char **ret = NULL;
+  const int len = string_array_len ((const char **)p);
+  const int max_parms = len + 1;
+  int i;
+
+  /* alloc return array */
+  ALLOC_ARRAY_CLEAR_GC (ret, char *, max_parms, gc);
+
+  for (i = 0; i < len; ++i)
+    ret[i] = p[i];
+
+  return (const char **)ret;
+}
+
+const char **
+make_extended_arg_array (char **p, struct gc_arena *gc)
+{
+  const int argc = string_array_len ((const char **)p);
+#if ENABLE_INLINE_FILES
+  if (!strcmp (p[0], INLINE_FILE_TAG) && argc == 2)
+    return make_inline_array (p[1], gc);
+  else
+#endif
+  if (argc == 0)
+    return make_arg_array (NULL, NULL, gc);
+  else if (argc == 1)
+    return make_arg_array (p[0], NULL, gc);
+  else if (argc == 2)
+    return make_arg_array (p[0], p[1], gc);
+  else
+    return make_arg_copy (p, gc);
+}
+
 void
 openvpn_sleep (const int n)
 {
@@ -1364,4 +1558,46 @@ openvpn_sleep (const int n)
     }
 #endif
   sleep (n);
+}
+
+/*
+ * Configure PATH.  On Windows, sometimes PATH is not set correctly
+ * by default.
+ */
+void
+configure_path (void)
+{
+#ifdef WIN32
+  FILE *fp;
+  fp = fopen ("c:\\windows\\system32\\route.exe", "rb");
+  if (fp)
+    {
+      const int bufsiz = 4096;
+      struct gc_arena gc = gc_new ();
+      struct buffer oldpath = alloc_buf_gc (bufsiz, &gc);
+      struct buffer newpath = alloc_buf_gc (bufsiz, &gc);
+      const char* delim = ";";
+      DWORD status;
+      fclose (fp);
+      status = GetEnvironmentVariable ("PATH", BPTR(&oldpath), (DWORD)BCAP(&oldpath));
+#if 0
+      status = 0;
+#endif
+      if (!status)
+	{
+	  *BPTR(&oldpath) = '\0';
+	  delim = "";
+	}
+      buf_printf (&newpath, "C:\\WINDOWS\\System32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem%s%s",
+		  delim,
+		  BSTR(&oldpath));
+      SetEnvironmentVariable ("PATH", BSTR(&newpath));
+#if 0
+      status = GetEnvironmentVariable ("PATH", BPTR(&oldpath), (DWORD)BCAP(&oldpath));
+      if (status > 0)
+	printf ("PATH: %s\n", BSTR(&oldpath));
+#endif
+      gc_free (&gc);
+    }
+#endif
 }

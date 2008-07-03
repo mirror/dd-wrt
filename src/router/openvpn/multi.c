@@ -64,6 +64,7 @@ learn_address_script (const struct multi_context *m,
   struct gc_arena gc = gc_new ();
   struct env_set *es;
   bool ret = true;
+  struct plugin_list *plugins;
 
   /* get environmental variable source */
   if (mi && mi->context.c2.es)
@@ -71,7 +72,13 @@ learn_address_script (const struct multi_context *m,
   else
     es = env_set_create (&gc);
 
-  if (plugin_defined (m->top.c1.plugins, OPENVPN_PLUGIN_LEARN_ADDRESS))
+  /* get plugin source */
+  if (mi)
+    plugins = mi->context.plugins;
+  else
+    plugins = m->top.plugins;
+
+  if (plugin_defined (plugins, OPENVPN_PLUGIN_LEARN_ADDRESS))
     {
       struct buffer cmd = alloc_buf_gc (256, &gc);
 
@@ -81,7 +88,7 @@ learn_address_script (const struct multi_context *m,
       if (mi)
 	buf_printf (&cmd, " \"%s\"", tls_common_name (mi->context.c2.tls_multi, false));
 
-      if (plugin_call (m->top.c1.plugins, OPENVPN_PLUGIN_LEARN_ADDRESS, BSTR (&cmd), es))
+      if (plugin_call (plugins, OPENVPN_PLUGIN_LEARN_ADDRESS, BSTR (&cmd), NULL, es))
 	{
 	  msg (M_WARN, "WARNING: learn-address plugin call failed");
 	  ret = false;
@@ -278,7 +285,7 @@ multi_init (struct multi_context *m, struct context *t, bool tcp_mode, int threa
    */
   if (t->options.ifconfig_pool_defined)
     {
-      if (dev == DEV_TYPE_TAP || t->options.ifconfig_pool_linear)
+      if (dev == DEV_TYPE_TAP)
 	{
 	  m->ifconfig_pool = ifconfig_pool_init (IFCONFIG_POOL_INDIV,
 						 t->options.ifconfig_pool_start,
@@ -287,10 +294,11 @@ multi_init (struct multi_context *m, struct context *t, bool tcp_mode, int threa
 	}
       else if (dev == DEV_TYPE_TUN)
 	{
-	  m->ifconfig_pool = ifconfig_pool_init (IFCONFIG_POOL_30NET,
-						 t->options.ifconfig_pool_start,
-						 t->options.ifconfig_pool_end,
-						 t->options.duplicate_cn);
+	  m->ifconfig_pool = ifconfig_pool_init (
+	    (t->options.topology == TOP_NET30) ? IFCONFIG_POOL_30NET : IFCONFIG_POOL_INDIV,
+	    t->options.ifconfig_pool_start,
+	    t->options.ifconfig_pool_end,
+	    t->options.duplicate_cn);
 	}
       else
 	{
@@ -399,6 +407,11 @@ multi_client_disconnect_setenv (struct multi_context *m,
   setenv_counter (mi->context.c2.es, "bytes_received", mi->context.c2.link_read_bytes);
   setenv_counter (mi->context.c2.es, "bytes_sent", mi->context.c2.link_write_bytes);
 
+  /* setenv connection duration */
+  {
+    const unsigned int duration = (unsigned int) now - mi->created;
+    setenv_unsigned (mi->context.c2.es, "time_duration", duration);
+  }
 }
 
 static void
@@ -410,9 +423,9 @@ multi_client_disconnect_script (struct multi_context *m,
     {
       multi_client_disconnect_setenv (m, mi);
 
-      if (plugin_defined (m->top.c1.plugins, OPENVPN_PLUGIN_CLIENT_DISCONNECT))
+      if (plugin_defined (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_DISCONNECT))
 	{
-	  if (plugin_call (m->top.c1.plugins, OPENVPN_PLUGIN_CLIENT_DISCONNECT, NULL, mi->context.c2.es))
+	  if (plugin_call (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_DISCONNECT, NULL, NULL, mi->context.c2.es))
 	    msg (M_WARN, "WARNING: client-disconnect plugin call failed");
 	}
 
@@ -760,6 +773,31 @@ multi_print_status (struct multi_context *m, struct status_output *so, const int
 	{
 	  status_printf (so, "ERROR: bad status format version number");
 	}
+
+#ifdef PACKET_TRUNCATION_CHECK
+      {
+	status_printf (so, "HEADER,ERRORS,Common Name,TUN Read Trunc,TUN Write Trunc,Pre-encrypt Trunc,Post-decrypt Trunc");
+	hash_iterator_init (m->hash, &hi, true);
+	while ((he = hash_iterator_next (&hi)))
+	    {
+	      struct gc_arena gc = gc_new ();
+	      const struct multi_instance *mi = (struct multi_instance *) he->value;
+
+	      if (!mi->halt)
+		{
+		  status_printf (so, "ERRORS,%s," counter_format "," counter_format "," counter_format "," counter_format,
+				 tls_common_name (mi->context.c2.tls_multi, false),
+				 m->top.c2.n_trunc_tun_read,
+				 mi->context.c2.n_trunc_tun_write,
+				 mi->context.c2.n_trunc_pre_encrypt,
+				 mi->context.c2.n_trunc_post_decrypt);
+		}
+	      gc_free (&gc);
+	    }
+	hash_iterator_free (&hi);
+      }
+#endif
+
       status_flush (so);
       gc_free (&gc_top);
     }
@@ -950,13 +988,13 @@ multi_learn_in_addr_t (struct multi_context *m,
 		       in_addr_t a,
 		       int netbits) /* -1 if host route, otherwise # of network bits in address */
 {
-  struct sockaddr_in remote_si;
+  struct openvpn_sockaddr remote_si;
   struct mroute_addr addr;
 
   CLEAR (remote_si);
-  remote_si.sin_family = AF_INET;
-  remote_si.sin_addr.s_addr = htonl (a);
-  ASSERT (mroute_extract_sockaddr_in (&addr, &remote_si, false));
+  remote_si.sa.sin_family = AF_INET;
+  remote_si.sa.sin_addr.s_addr = htonl (a);
+  ASSERT (mroute_extract_openvpn_sockaddr (&addr, &remote_si, false));
 
   if (netbits >= 0)
     {
@@ -1040,6 +1078,20 @@ multi_delete_dup (struct multi_context *m, struct multi_instance *new_mi)
 }
 
 /*
+ * Ensure that endpoint to be pushed to client
+ * complies with --ifconfig-push-constraint directive.
+ */
+static bool
+ifconfig_push_constraint_satisfied (const struct context *c)
+{
+  const struct options *o = &c->options;
+  if (o->push_ifconfig_constraint_defined && c->c2.push_ifconfig_defined)
+    return (o->push_ifconfig_constraint_netmask & c->c2.push_ifconfig_local) == o->push_ifconfig_constraint_network;
+  else
+    return true;
+}
+
+/*
  * Select a virtual address for a new client instance.
  * Use an --ifconfig-push directive, if given (static IP).
  * Otherwise use an --ifconfig-pool address (dynamic IP). 
@@ -1078,27 +1130,30 @@ multi_select_virtual_addr (struct multi_context *m, struct multi_instance *mi)
       mi->vaddr_handle = ifconfig_pool_acquire (m->ifconfig_pool, &local, &remote, cn);
       if (mi->vaddr_handle >= 0)
 	{
-	  /* use pool ifconfig address(es) */
+	  const int tunnel_type = TUNNEL_TYPE (mi->context.c1.tuntap);
+	  const int tunnel_topology = TUNNEL_TOPOLOGY (mi->context.c1.tuntap);
+
+	  /* set push_ifconfig_remote_netmask from pool ifconfig address(es) */
 	  mi->context.c2.push_ifconfig_local = remote;
-	  if (TUNNEL_TYPE (mi->context.c1.tuntap) == DEV_TYPE_TUN)
-	    {
-	      if (mi->context.options.ifconfig_pool_linear)		    
-		mi->context.c2.push_ifconfig_remote_netmask = mi->context.c1.tuntap->local;
-	      else
-		mi->context.c2.push_ifconfig_remote_netmask = local;
-	      mi->context.c2.push_ifconfig_defined = true;
-	    }
-	  else if (TUNNEL_TYPE (mi->context.c1.tuntap) == DEV_TYPE_TAP)
+	  if (tunnel_type == DEV_TYPE_TAP || (tunnel_type == DEV_TYPE_TUN && tunnel_topology == TOP_SUBNET))
 	    {
 	      mi->context.c2.push_ifconfig_remote_netmask = mi->context.options.ifconfig_pool_netmask;
 	      if (!mi->context.c2.push_ifconfig_remote_netmask)
 		mi->context.c2.push_ifconfig_remote_netmask = mi->context.c1.tuntap->remote_netmask;
-	      if (mi->context.c2.push_ifconfig_remote_netmask)
-		mi->context.c2.push_ifconfig_defined = true;
-	      else
-		msg (D_MULTI_ERRORS, "MULTI: no --ifconfig-pool netmask parameter is available to push to %s",
-		     multi_instance_string (mi, false, &gc));
 	    }
+	  else if (tunnel_type == DEV_TYPE_TUN)
+	    {
+	      if (tunnel_topology == TOP_P2P)		    
+		mi->context.c2.push_ifconfig_remote_netmask = mi->context.c1.tuntap->local;
+	      else if (tunnel_topology == TOP_NET30)		    
+		mi->context.c2.push_ifconfig_remote_netmask = local;
+	    }
+
+	  if (mi->context.c2.push_ifconfig_remote_netmask)
+	    mi->context.c2.push_ifconfig_defined = true;
+	  else
+	    msg (D_MULTI_ERRORS, "MULTI: no --ifconfig-pool netmask parameter is available to push to %s",
+		 multi_instance_string (mi, false, &gc));
 	}
       else
 	{
@@ -1120,22 +1175,25 @@ multi_set_virtual_addr_env (struct multi_context *m, struct multi_instance *mi)
 
   if (mi->context.c2.push_ifconfig_defined)
     {
+      const int tunnel_type = TUNNEL_TYPE (mi->context.c1.tuntap);
+      const int tunnel_topology = TUNNEL_TOPOLOGY (mi->context.c1.tuntap);
+
       setenv_in_addr_t (mi->context.c2.es,
 			"ifconfig_pool_remote_ip",
 			mi->context.c2.push_ifconfig_local,
 			SA_SET_IF_NONZERO);
 
-      if (TUNNEL_TYPE (mi->context.c1.tuntap) == DEV_TYPE_TUN)
-	{
-	  setenv_in_addr_t (mi->context.c2.es,
-			    "ifconfig_pool_local_ip",
-			    mi->context.c2.push_ifconfig_remote_netmask,
-			    SA_SET_IF_NONZERO);
-	}
-      else if (TUNNEL_TYPE (mi->context.c1.tuntap) == DEV_TYPE_TAP)
+      if (tunnel_type == DEV_TYPE_TAP || (tunnel_type == DEV_TYPE_TUN && tunnel_topology == TOP_SUBNET))
 	{
 	  setenv_in_addr_t (mi->context.c2.es,
 			    "ifconfig_pool_netmask",
+			    mi->context.c2.push_ifconfig_remote_netmask,
+			    SA_SET_IF_NONZERO);
+	}
+      else if (tunnel_type == DEV_TYPE_TUN)
+	{
+	  setenv_in_addr_t (mi->context.c2.es,
+			    "ifconfig_pool_local_ip",
 			    mi->context.c2.push_ifconfig_remote_netmask,
 			    SA_SET_IF_NONZERO);
 	}
@@ -1143,7 +1201,7 @@ multi_set_virtual_addr_env (struct multi_context *m, struct multi_instance *mi)
 }
 
 /*
- * Called after client-connect script or plug-in is called
+ * Called after client-connect script is called
  */
 static void
 multi_client_connect_post (struct multi_context *m,
@@ -1177,6 +1235,75 @@ multi_client_connect_post (struct multi_context *m,
     }
 }
 
+#ifdef ENABLE_PLUGIN
+
+/*
+ * Called after client-connect plug-in is called
+ */
+static void
+multi_client_connect_post_plugin (struct multi_context *m,
+				  struct multi_instance *mi,
+				  const struct plugin_return *pr,
+				  unsigned int option_permissions_mask,
+				  unsigned int *option_types_found)
+{
+  struct plugin_return config;
+
+  plugin_return_get_column (pr, &config, "config");
+
+  /* Did script generate a dynamic config file? */
+  if (plugin_return_defined (&config))
+    {
+      int i;
+      for (i = 0; i < config.n; ++i)
+	{
+	  if (config.list[i] && config.list[i]->value)
+	    options_plugin_import (&mi->context.options,
+				   config.list[i]->value,
+				   D_IMPORT_ERRORS|M_OPTERR,
+				   option_permissions_mask,
+				   option_types_found,
+				   mi->context.c2.es);
+	}
+
+      /*
+       * If the --client-connect script generates a config file
+       * with an --ifconfig-push directive, it will override any
+       * --ifconfig-push directive from the --client-config-dir
+       * directory or any --ifconfig-pool dynamic address.
+       */
+      multi_select_virtual_addr (m, mi);
+      multi_set_virtual_addr_env (m, mi);
+    }
+}
+
+#endif
+
+static void
+multi_client_connect_setenv (struct multi_context *m,
+			     struct multi_instance *mi)
+{
+  struct gc_arena gc = gc_new ();
+
+  /* setenv incoming cert common name for script */
+  setenv_str (mi->context.c2.es, "common_name", tls_common_name (mi->context.c2.tls_multi, true));
+
+  /* setenv client real IP address */
+  setenv_trusted (mi->context.c2.es, get_link_socket_info (&mi->context));
+
+  /* setenv client virtual IP address */
+  multi_set_virtual_addr_env (m, mi);
+
+  /* setenv connection time */
+  {
+    const char *created_ascii = time_string (mi->created, 0, false, &gc);
+    setenv_str (mi->context.c2.es, "time_ascii", created_ascii);
+    setenv_unsigned (mi->context.c2.es, "time_unix", (unsigned int)mi->created);
+  }
+
+  gc_free (&gc);
+}
+
 /*
  * Called as soon as the SSL/TLS connection authenticates.
  *
@@ -1193,7 +1320,17 @@ multi_connection_established (struct multi_context *m, struct multi_instance *mi
     {
       struct gc_arena gc = gc_new ();
       unsigned int option_types_found = 0;
-      const unsigned int option_permissions_mask = OPT_P_INSTANCE|OPT_P_INHERIT|OPT_P_PUSH|OPT_P_TIMER|OPT_P_CONFIG|OPT_P_ECHO;
+
+      const unsigned int option_permissions_mask =
+	  OPT_P_INSTANCE
+	| OPT_P_INHERIT
+	| OPT_P_PUSH
+	| OPT_P_TIMER
+	| OPT_P_CONFIG
+	| OPT_P_ECHO
+	| OPT_P_COMP
+	| OPT_P_SOCKFLAGS;
+
       int cc_succeeded = true; /* client connect script status */
       int cc_succeeded_count = 0;
 
@@ -1258,25 +1395,22 @@ multi_connection_established (struct multi_context *m, struct multi_instance *mi
        */
       multi_select_virtual_addr (m, mi);
 
-      /* setenv incoming cert common name for script */
-      setenv_str (mi->context.c2.es, "common_name", tls_common_name (mi->context.c2.tls_multi, true));
+      /* do --client-connect setenvs */
+      multi_client_connect_setenv (m, mi);
 
-      /* setenv client real IP address */
-      setenv_trusted (mi->context.c2.es, get_link_socket_info (&mi->context));
-
-      /* setenv client virtual IP address */
-      multi_set_virtual_addr_env (m, mi);
-
+#ifdef ENABLE_PLUGIN
       /*
        * Call client-connect plug-in.
        */
-      if (plugin_defined (m->top.c1.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT))
+
+      /* deprecated callback, use a file for passing back return info */
+      if (plugin_defined (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT))
 	{
 	  const char *dc_file = create_temp_filename (mi->context.options.tmp_dir, &gc);
 
 	  delete_file (dc_file);
 
-	  if (plugin_call (m->top.c1.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT, dc_file, mi->context.c2.es))
+	  if (plugin_call (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT, dc_file, NULL, mi->context.c2.es))
 	    {
 	      msg (M_WARN, "WARNING: client-connect plugin call failed");
 	      cc_succeeded = false;
@@ -1287,6 +1421,28 @@ multi_connection_established (struct multi_context *m, struct multi_instance *mi
 	      ++cc_succeeded_count;
 	    }
 	}
+
+      /* V2 callback, use a plugin_return struct for passing back return info */
+      if (plugin_defined (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT_V2))
+	{
+	  struct plugin_return pr;
+
+	  plugin_return_init (&pr);
+
+	  if (plugin_call (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT_V2, NULL, &pr, mi->context.c2.es))
+	    {
+	      msg (M_WARN, "WARNING: client-connect-v2 plugin call failed");
+	      cc_succeeded = false;
+	    }
+	  else
+	    {
+	      multi_client_connect_post_plugin (m, mi, &pr, option_permissions_mask, &option_types_found);
+	      ++cc_succeeded_count;
+	    }
+
+	  plugin_return_free (&pr);
+	}
+#endif
 
       /*
        * Run --client-connect script.
@@ -1339,6 +1495,19 @@ multi_connection_established (struct multi_context *m, struct multi_instance *mi
 	    {
 	      msg (D_MULTI_ERRORS, "MULTI: no dynamic or static remote --ifconfig address is available for %s",
 		   multi_instance_string (mi, false, &gc));
+	    }
+
+	  /*
+	   * make sure that ifconfig settings comply with constraints
+	   */
+	  if (!ifconfig_push_constraint_satisfied (&mi->context))
+	    {
+	      /* JYFIXME -- this should cause the connection to fail */
+	      msg (D_MULTI_ERRORS, "MULTI ERROR: primary virtual IP for %s (%s) violates tunnel network/netmask constraint (%s/%s)",
+		   multi_instance_string (mi, false, &gc),
+		   print_in_addr_t (mi->context.c2.push_ifconfig_local, 0, &gc),
+		   print_in_addr_t (mi->context.options.push_ifconfig_constraint_network, 0, &gc),
+		   print_in_addr_t (mi->context.options.push_ifconfig_constraint_netmask, 0, &gc));
 	    }
 
 	  /*
@@ -1522,7 +1691,7 @@ multi_process_post (struct multi_context *m, struct multi_instance *mi, const un
       if (!IS_SIG (&mi->context))
 	{
 	  /* calculate an absolute wakeup time */
-	  ASSERT (!gettimeofday (&mi->wakeup, NULL));
+	  ASSERT (!openvpn_gettimeofday (&mi->wakeup, NULL));
 	  tv_add (&mi->wakeup, &mi->context.c2.timeval);
 
 	  /* tell scheduler to wake us up at some point in the future */
@@ -1656,7 +1825,7 @@ multi_process_incoming_link (struct multi_context *m, struct multi_instance *ins
 		      if (mi)
 			{
 			  multi_unicast (m, &c->c2.to_tun, mi);
-			  register_activity (c);
+			  register_activity (c, BLEN(&c->c2.to_tun));
 			  c->c2.to_tun.len = 0;
 			}
 		    }
@@ -1689,7 +1858,7 @@ multi_process_incoming_link (struct multi_context *m, struct multi_instance *ins
 			      if (mi)
 				{
 				  multi_unicast (m, &c->c2.to_tun, mi);
-				  register_activity (c);
+				  register_activity (c, BLEN(&c->c2.to_tun));
 				  c->c2.to_tun.len = 0;
 				}
 			    }
@@ -2052,15 +2221,15 @@ management_callback_kill_by_addr (void *arg, const in_addr_t addr, const int por
   struct multi_context *m = (struct multi_context *) arg;
   struct hash_iterator hi;
   struct hash_element *he;
-  struct sockaddr_in saddr;
+  struct openvpn_sockaddr saddr;
   struct mroute_addr maddr;
   int count = 0;
 
   CLEAR (saddr);
-  saddr.sin_family = AF_INET;
-  saddr.sin_addr.s_addr = htonl (addr);
-  saddr.sin_port = htons (port);
-  if (mroute_extract_sockaddr_in (&maddr, &saddr, true))
+  saddr.sa.sin_family = AF_INET;
+  saddr.sa.sin_addr.s_addr = htonl (addr);
+  saddr.sa.sin_port = htons (port);
+  if (mroute_extract_openvpn_sockaddr (&maddr, &saddr, true))
     {
       hash_iterator_init (m->iter, &hi, true);
       while ((he = hash_iterator_next (&hi)))

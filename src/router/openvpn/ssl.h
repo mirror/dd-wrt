@@ -282,7 +282,7 @@
 
 /* Legal characters in an X509 or common name */
 #define X509_NAME_CHAR_CLASS   (CC_ALNUM|CC_UNDERBAR|CC_DASH|CC_DOT|CC_AT|CC_COLON|CC_SLASH|CC_EQUAL)
-#define COMMON_NAME_CHAR_CLASS (CC_ALNUM|CC_UNDERBAR|CC_DASH|CC_DOT|CC_AT)
+#define COMMON_NAME_CHAR_CLASS (CC_ALNUM|CC_UNDERBAR|CC_DASH|CC_DOT|CC_AT|CC_SLASH)
 
 /* Maximum length of OCC options string passed as part of auth handshake */
 #define TLS_OPTIONS_LEN 512
@@ -344,8 +344,8 @@ struct key_state
   time_t must_die;		/* this object is destroyed at this time */
 
   int initial_opcode;		/* our initial P_ opcode */
-  struct session_id session_id_remote; /* peer's random session ID */
-  struct sockaddr_in remote_addr;      /* peer's IP addr */
+  struct session_id session_id_remote;   /* peer's random session ID */
+  struct link_socket_actual remote_addr; /* peer's IP addr */
   struct packet_id packet_id;	       /* for data channel, to prevent replay attacks */
 
   struct key_ctx_bi key;	       /* data channel keys for encrypt/decrypt/hmac */
@@ -384,6 +384,9 @@ struct tls_options
   /* true if we are a TLS server, client otherwise */
   bool server;
 
+  /* if true, don't xmit until first packet from peer is received */
+  bool xmit_hold;
+
 #ifdef ENABLE_OCC
   /* local and remote options strings
      that must match between client and server */
@@ -410,6 +413,8 @@ struct tls_options
   const char *verify_x509name;
   const char *crl_file;
   int ns_cert_type;
+  unsigned remote_cert_ku[MAX_PARMS];
+  const char *remote_cert_eku;
 
   /* allow openvpn config info to be
      passed over control channel */
@@ -488,7 +493,7 @@ struct tls_session
   bool verified;                /* true if peer certificate was verified against CA */
 
   /* not-yet-authenticated incoming client */
-  struct sockaddr_in untrusted_sockaddr;
+  struct link_socket_actual untrusted_addr;
 
   struct key_state key[KS_SIZE];
 };
@@ -533,6 +538,12 @@ struct tls_multi
    * to tls_post_encrypt()
    */
   struct key_state *save_ks;	/* temporary pointer used between pre/post routines */
+
+  /*
+   * Used to return outgoing address from
+   * tls_multi_process.
+   */
+  struct link_socket_actual to_link_addr;
 
   /*
    * Number of sessions negotiated thus far.
@@ -590,19 +601,19 @@ void tls_multi_init_set_options(struct tls_multi* multi,
 
 bool tls_multi_process (struct tls_multi *multi,
 			struct buffer *to_link,
-			struct sockaddr_in *to_link_addr,
+			struct link_socket_actual **to_link_addr,
 			struct link_socket_info *to_link_socket_info,
 			interval_t *wakeup);
 
 void tls_multi_free (struct tls_multi *multi, bool clear);
 
 bool tls_pre_decrypt (struct tls_multi *multi,
-		      struct sockaddr_in *from,
+		      const struct link_socket_actual *from,
 		      struct buffer *buf,
 		      struct crypto_options *opt);
 
 bool tls_pre_decrypt_lite (const struct tls_auth_standalone *tas,
-			   const struct sockaddr_in *from,
+			   const struct link_socket_actual *from,
 			   const struct buffer *buf);
 
 void tls_pre_encrypt (struct tls_multi *multi,

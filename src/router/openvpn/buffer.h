@@ -83,7 +83,11 @@ void free_buf (struct buffer *buf);
 
 bool buf_assign (struct buffer *dest, const struct buffer *src);
 
+void string_clear (char *str);
+int string_array_len (const char **array);
 
+#define PA_BRACKET (1<<0)
+char *print_argv (const char **p, struct gc_arena *gc, const unsigned int flags);
 
 /* for dmalloc debugging */
 
@@ -179,9 +183,9 @@ strncpynt (char *dest, const char *src, size_t maxlen)
 
 /* return true if string contains at least one numerical digit */
 static inline bool
-has_digit (const char* src)
+has_digit (const unsigned char* src)
 {
-  char c;
+  unsigned char c;
   while ((c = *src++))
     {
       if (isdigit(c))
@@ -220,6 +224,7 @@ void buf_rmtail (struct buffer *buf, uint8_t remove);
  * non-buffer string functions
  */
 void chomp (char *str);
+const char *skip_leading_whitespace (const char *str);
 void string_null_terminate (char *str, int len, int capacity);
 
 /*
@@ -548,8 +553,9 @@ xor (uint8_t *dest, const uint8_t *src, int len)
 }
 
 /*
- * Classify and mutate strings based on character types.
+ * Print a string which might be NULL
  */
+const char *np (const char *str);
 
 /*#define CHARACTER_CLASS_DEBUG*/
 
@@ -589,7 +595,7 @@ xor (uint8_t *dest, const uint8_t *src, int len)
 #define CC_NAME               (CC_ALNUM|CC_UNDERBAR)
 #define CC_CRLF               (CC_CR|CC_NEWLINE)
 
-bool char_class (const char c, const unsigned int flags);
+bool char_class (const unsigned char c, const unsigned int flags);
 bool string_class (const char *str, const unsigned int inclusive, const unsigned int exclusive);
 bool string_mod (char *str, const unsigned int inclusive, const unsigned int exclusive, const char replace);
 

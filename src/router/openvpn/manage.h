@@ -89,6 +89,7 @@ void output_list_advance (struct output_list *ol, int n);
 union log_entry_union {
   unsigned int msg_flags;
   int state;
+  int intval;
 };
 
 struct log_entry
@@ -96,6 +97,7 @@ struct log_entry
   time_t timestamp;
   const char *string;
   in_addr_t local_ip;
+  in_addr_t remote_ip;
   union log_entry_union u;
 };
 
@@ -110,6 +112,12 @@ struct log_entry
 
 #define LOG_PRINT_CRLF         (1<<7)
 #define LOG_FATAL_NOTIFY       (1<<8)
+
+#define LOG_PRINT_INTVAL       (1<<9)
+
+#define LOG_PRINT_REMOTE_IP    (1<<10)
+
+#define LOG_ECHO_TO_LOG        (1<<11)
 
 const char *log_entry_print (const struct log_entry *e, unsigned int flags, struct gc_arena *gc);
 
@@ -181,11 +189,14 @@ struct man_persist {
   bool hold_release;
 
   const char *special_state_msg;
+
+  counter_type bytes_in;
+  counter_type bytes_out;
 };
 
 struct man_settings {
   bool defined;
-  struct sockaddr_in local;
+  struct openvpn_sockaddr local;
   bool up_query_passwords;
   bool management_over_tunnel;
   struct user_pass up;
@@ -194,12 +205,23 @@ struct man_settings {
   int state_buffer_size;
   bool server;
   bool hold;
+  bool signal_on_disconnect;
+  bool management_forget_disconnect;
+  bool connect_as_client;
+  char *write_peer_info_file;
+
+/* flags for handling the management interface "signal" command */
+# define MANSIG_IGNORE_USR1_HUP  (1<<0)
+# define MANSIG_MAP_USR1_TO_HUP  (1<<1)
+# define MANSIG_MAP_USR1_TO_TERM (1<<2)
+  unsigned int mansig;
 };
 
 /* up_query modes */
 #define UP_QUERY_DISABLED  0
 #define UP_QUERY_USER_PASS 1
 #define UP_QUERY_PASS      2
+#define UP_QUERY_NEED_OK   3
 
 /* states */
 #define MS_INITIAL          0  /* all sockets are closed */
@@ -212,7 +234,7 @@ struct man_connection {
 
   socket_descriptor_t sd_top;
   socket_descriptor_t sd_cli;
-  struct sockaddr_in remote;
+  struct openvpn_sockaddr remote;
 
 #ifdef WIN32
   struct net_event_win32 ne32;
@@ -230,6 +252,8 @@ struct man_connection {
   bool state_realtime;
   bool log_realtime;
   bool echo_realtime;
+  int bytecount_update_seconds;
+  time_t bytecount_last_update;
 
   const char *up_query_type;
   int up_query_mode;
@@ -258,8 +282,12 @@ bool management_open (struct management *man,
 		      const int log_history_cache,
 		      const int echo_buffer_size,
 		      const int state_buffer_size,
-		      const bool hold);
-
+		      const bool hold,
+		      const bool signal_on_disconnect,
+		      const bool management_forget_disconnect,
+		      const bool connect_as_client,
+		      const char *write_peer_info_file,
+		      const int remap_sigusr1);
 
 void management_close (struct management *man);
 
@@ -279,7 +307,7 @@ void management_set_callback (struct management *man,
 
 void management_clear_callback (struct management *man);
 
-bool management_query_user_pass (struct management *man, struct user_pass *up, const char *type, const bool password_only);
+bool management_query_user_pass (struct management *man, struct user_pass *up, const char *type, const unsigned int flags);
 
 bool management_should_daemonize (struct management *man);
 bool management_would_hold (struct management *man);
@@ -316,25 +344,57 @@ management_query_user_pass_enabled (const struct management *man)
 #define OPENVPN_STATE_WAIT          7  /* Waiting for initial response from server */
 #define OPENVPN_STATE_AUTH          8  /* Authenticating with server */
 #define OPENVPN_STATE_GET_CONFIG    9  /* Downloading configuration from server */
+#define OPENVPN_STATE_RESOLVE       10 /* DNS lookup */
+#define OPENVPN_STATE_TCP_CONNECT   11 /* Connecting to TCP server */
 
 #define OPENVPN_STATE_CLIENT_BASE   7  /* Base index of client-only states */
 
 void management_set_state (struct management *man,
 			   const int state,
 			   const char *detail,
-			   const in_addr_t tun_local_ip);
+			   const in_addr_t tun_local_ip,
+			   const in_addr_t tun_remote_ip);
 
 /*
  * The management object keeps track of OpenVPN --echo
  * parameters.
  */
-void management_echo (struct management *man, const char *string);
+void management_echo (struct management *man, const char *string, const bool pull);
 
 /*
  * OpenVPN calls here to indicate a password failure
  */
 
 void management_auth_failure (struct management *man, const char *type);
+
+/*
+ * These functions drive the bytecount in/out counters.
+ */
+
+void man_bytecount_output (struct management *man);
+
+static inline void
+man_bytecount_possible_output (struct management *man)
+{
+  if (man->connection.bytecount_update_seconds > 0
+      && now >= man->connection.bytecount_last_update
+      + man->connection.bytecount_update_seconds)
+    man_bytecount_output (man);
+}
+
+static inline void
+management_bytes_out (struct management *man, const int size)
+{
+  man->persist.bytes_out += size;
+  man_bytecount_possible_output (man);
+}
+
+static inline void
+management_bytes_in (struct management *man, const int size)
+{
+  man->persist.bytes_in += size;
+  man_bytecount_possible_output (man);
+}
 
 #endif
 

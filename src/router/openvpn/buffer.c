@@ -398,6 +398,19 @@ buf_chomp (struct buffer *buf)
   buf_null_terminate (buf);
 }
 
+const char *
+skip_leading_whitespace (const char *str)
+{
+  while (*str)
+    {
+      const char c = *str;
+      if (!(c == ' ' || c == '\t'))
+	break;
+      ++str;
+    }
+  return str;
+}
+
 /*
  * like buf_null_terminate, but operate on strings
  */
@@ -458,6 +471,56 @@ string_alloc (const char *str, struct gc_arena *gc)
     }
   else
     return NULL;
+}
+
+/*
+ * Erase all characters in a string
+ */
+void
+string_clear (char *str)
+{
+  if (str)
+    {
+      const int len = strlen (str);
+      if (len > 0)
+	memset (str, 0, len);
+    }
+}
+
+/*
+ * Return the length of a string array
+ */
+int
+string_array_len (const char **array)
+{
+  int i = 0;
+  if (array)
+    {
+      while (array[i])
+        ++i;
+    }
+  return i;
+}
+
+char *
+print_argv (const char **p, struct gc_arena *gc, const unsigned int flags)
+{
+  struct buffer out = alloc_buf_gc (256, gc);
+  int i = 0;
+  for (;;)
+    {
+      const char *cp = *p++;
+      if (!cp)
+	break;
+      if (i)
+	buf_printf (&out, " ");
+      if (flags & PA_BRACKET)
+	buf_printf (&out, "[%s]", cp);
+      else
+	buf_printf (&out, "%s", cp);
+      ++i;
+    }
+  return BSTR (&out);
 }
 
 /*
@@ -558,11 +621,23 @@ buf_parse (struct buffer *buf, const int delim, char *line, const int size)
 }
 
 /*
+ * Print a string which might be NULL
+ */
+const char *
+np (const char *str)
+{
+  if (str)
+    return str;
+  else
+    return "[NULL]";
+}
+
+/*
  * Classify and mutate strings based on character types.
  */
 
 bool
-char_class (const char c, const unsigned int flags)
+char_class (const unsigned char c, const unsigned int flags)
 {
   if (!flags)
     return false;

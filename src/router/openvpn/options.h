@@ -39,6 +39,7 @@
 #include "plugin.h"
 #include "manage.h"
 #include "proxy.h"
+#include "lzo.h"
 
 /*
  * Maximum number of parameters associated with an option,
@@ -119,10 +120,13 @@ struct options
   struct remote_list *remote_list;
   bool remote_random;
   const char *ipchange;
+  bool bind_defined;
   bool bind_local;
   const char *dev;
   const char *dev_type;
   const char *dev_node;
+  const char *lladdr;
+  int topology; /* one of the TOP_x values from proto.h */
   const char *ifconfig_local;
   const char *ifconfig_remote_netmask;
   bool ifconfig_noexec;
@@ -140,7 +144,10 @@ struct options
   /* Protocol type (PROTO_UDP or PROTO_TCP) */
   int proto;
   int connect_retry_seconds;
+  int connect_retry_max;
   bool connect_retry_defined;
+  int connect_timeout;
+  bool connect_timeout_defined;
 
   /* Advanced MTU negotiation and datagram fragmentation options */
   int mtu_discover_type; /* used if OS supports setting Path MTU discovery options on socket */
@@ -156,7 +163,9 @@ struct options
   int keepalive_ping;           /* a proxy for ping/ping-restart */
   int keepalive_timeout;
 
-  int inactivity_timeout;
+  int inactivity_timeout;       /* --inactive */
+  int inactivity_minimum_bytes;
+
   int ping_send_timeout;        /* Send a TCP/UDP ping to remote every n seconds */
   int ping_rec_timeout;         /* Expect a TCP/UDP ping from remote at least once every n seconds */
   bool ping_timer_remote;       /* Run ping timer only if we have a remote address */
@@ -223,22 +232,31 @@ struct options
   bool fast_io;
 
 #ifdef USE_LZO
-  bool comp_lzo;
-  bool comp_lzo_adaptive;
+  /* LZO_x flags from lzo.h */
+  unsigned int lzo;
 #endif
 
   /* buffer sizes */
   int rcvbuf;
   int sndbuf;
 
+  /* socket flags */
+  unsigned int sockflags;
+
   /* route management */
   const char *route_script;
   const char *route_default_gateway;
+  int route_default_metric;
   bool route_noexec;
   int route_delay;
   int route_delay_window;
   bool route_delay_defined;
   struct route_option_list *routes;
+  bool route_nopull;
+
+#ifdef GENERAL_PROXY_SUPPORT
+  struct auto_proxy_info *auto_proxy_info;
+#endif
 
 #ifdef ENABLE_HTTP_PROXY
   struct http_proxy_options *http_proxy_options;
@@ -265,6 +283,10 @@ struct options
   int management_state_buffer_size;
   bool management_query_passwords;
   bool management_hold;
+  bool management_signal;
+  bool management_forget_disconnect;
+  bool management_client;
+  const char *management_write_peer_info_file;
 #endif
 
 #ifdef ENABLE_PLUGIN
@@ -283,6 +305,9 @@ struct options
   in_addr_t server_network;
   in_addr_t server_netmask;
 
+# define SF_NOPOOL (1<<0)
+  unsigned int server_flags;
+
   bool server_bridge_defined;
   in_addr_t server_bridge_ip;
   in_addr_t server_bridge_netmask;
@@ -296,7 +321,6 @@ struct options
   in_addr_t ifconfig_pool_netmask;
   const char *ifconfig_pool_persist_filename;
   int ifconfig_pool_persist_refresh_freq;
-  bool ifconfig_pool_linear;
   int real_hash_size;
   int virtual_hash_size;
   const char *client_connect_script;
@@ -312,6 +336,9 @@ struct options
   bool push_ifconfig_defined;
   in_addr_t push_ifconfig_local;
   in_addr_t push_ifconfig_remote_netmask;
+  bool push_ifconfig_constraint_defined;
+  in_addr_t push_ifconfig_constraint_network;
+  in_addr_t push_ifconfig_constraint_netmask;
   bool enable_c2c;
   bool duplicate_cn;
   int cf_max;
@@ -323,6 +350,10 @@ struct options
   bool username_as_common_name;
   const char *auth_user_pass_verify_script;
   bool auth_user_pass_verify_script_via_file;
+#if PORT_SHARE
+  char *port_share_host;
+  int port_share_port;
+#endif
 #endif
 
   bool client;
@@ -337,6 +368,9 @@ struct options
 #ifdef USE_CRYPTO
   /* Cipher parms */
   const char *shared_secret_file;
+#if ENABLE_INLINE_FILES
+  const char *shared_secret_file_inline;
+#endif
   int key_direction;
   bool ciphername_defined;
   const char *ciphername;
@@ -357,6 +391,7 @@ struct options
   bool tls_server;
   bool tls_client;
   const char *ca_file;
+  const char *ca_path;
   const char *dh_file;
   const char *cert_file;
   const char *priv_key_file;
@@ -365,7 +400,27 @@ struct options
   const char *tls_verify;
   const char *tls_remote;
   const char *crl_file;
+
+#if ENABLE_INLINE_FILES
+  const char *ca_file_inline;
+  const char *cert_file_inline;
+  char *priv_key_file_inline;
+  const char *dh_file_inline;
+#endif
+
   int ns_cert_type; /* set to 0, NS_SSL_SERVER, or NS_SSL_CLIENT */
+  unsigned remote_cert_ku[MAX_PARMS];
+  const char *remote_cert_eku;
+
+#ifdef ENABLE_PKCS11
+  const char *pkcs11_providers[MAX_PARMS];
+  unsigned pkcs11_private_mode[MAX_PARMS];
+  bool pkcs11_protected_authentication[MAX_PARMS];
+  bool pkcs11_cert_private[MAX_PARMS];
+  int pkcs11_pin_cache_period;
+  const char *pkcs11_id;
+#endif
+
 #ifdef WIN32
   const char *cryptoapi_cert;
 #endif
@@ -390,6 +445,9 @@ struct options
 
   /* Special authentication MAC for TLS control channel */
   const char *tls_auth_file;		/* shared secret */
+#if ENABLE_INLINE_FILES
+  const char *tls_auth_file_inline;
+#endif
 
   /* Allow only one session */
   bool single_session;
@@ -437,8 +495,13 @@ struct options
 #define OPT_P_EXPLICIT_NOTIFY (1<<19)
 #define OPT_P_ECHO            (1<<20)
 #define OPT_P_INHERIT         (1<<21)
+#define OPT_P_ROUTE_EXTRAS    (1<<22)
+#define OPT_P_PULL_MODE       (1<<23)
+#define OPT_P_PLUGIN          (1<<24)
+#define OPT_P_SOCKBUF         (1<<25)
+#define OPT_P_SOCKFLAGS       (1<<26)
 
-#define OPT_P_DEFAULT   (~OPT_P_INSTANCE)
+#define OPT_P_DEFAULT   (~(OPT_P_INSTANCE|OPT_P_PULL_MODE))
 
 #if P2MP
 #define PULL_DEFINED(opt) ((opt)->pull)
@@ -546,6 +609,13 @@ int parse_line (const char *line,
 		struct gc_arena *gc);
 
 /*
+ * parse/print topology coding
+ */
+
+int parse_topology (const char *str, const int msglevel);
+const char *print_topology (const int topology);
+
+/*
  * Manage auth-retry variable
  */
 
@@ -558,6 +628,17 @@ int parse_line (const char *line,
 int auth_retry_get (void);
 bool auth_retry_set (const int msglevel, const char *option);
 const char *auth_retry_print (void);
+
+#endif
+
+#ifdef ENABLE_PLUGIN
+
+void options_plugin_import (struct options *options,
+			    const char *config,
+			    const int msglevel,
+			    const unsigned int permission_mask,
+			    unsigned int *option_types_found,
+			    struct env_set *es);
 
 #endif
 

@@ -34,6 +34,9 @@
 
 #include "buffer.h"
 
+struct openvpn_sockaddr;
+struct link_socket_actual;
+
 struct socks_proxy_info {
   bool defined;
   bool retry;
@@ -47,6 +50,7 @@ void socks_adjust_frame_parameters (struct frame *frame, int proto);
 struct socks_proxy_info *new_socks_proxy (const char *server,
 					  int port,
 					  bool retry,
+					  struct auto_proxy_info *auto_proxy_info,
 					  struct gc_arena *gc);
 
 void establish_socks_proxy_passthru (struct socks_proxy_info *p,
@@ -58,14 +62,14 @@ void establish_socks_proxy_passthru (struct socks_proxy_info *p,
 void establish_socks_proxy_udpassoc (struct socks_proxy_info *p,
 				     socket_descriptor_t ctrl_sd, /* already open to proxy */
 				     socket_descriptor_t udp_sd,
-				     struct sockaddr_in *relay_addr,
+				     struct openvpn_sockaddr *relay_addr,
 				     volatile int *signal_received);
 
 void socks_process_incoming_udp (struct buffer *buf,
-				struct sockaddr_in *from);
+				struct link_socket_actual *from);
 
 int socks_process_outgoing_udp (struct buffer *buf,
-				struct sockaddr_in *to);
+				const struct link_socket_actual *to);
 
 #endif
 #endif
