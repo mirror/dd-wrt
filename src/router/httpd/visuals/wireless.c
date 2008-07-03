@@ -432,7 +432,8 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
 	}
 
       nv_count = 0;		// init mac list
-      foreach (word, nvram_safe_get ("wl_mac_list"), next)
+      char *list = nvram_safe_get ("wl_mac_list");
+      foreach (word, list, next)
       {
 	snprintf (wl_client_macs[nv_count].hwaddr,
 		  sizeof (wl_client_macs[nv_count].hwaddr), "%s", word);
@@ -991,24 +992,21 @@ ej_wl_ioctl (webs_t wp, int argc, char_t ** argv)
 void
 ej_wme_match_op (webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match, *output;
   char word[256], *next;
 
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s %s %s", &name, &match, &output);
-#else
-  if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
+#ifndef FASTWEB
+  if (argc < 3)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 #endif
-
-  foreach (word, nvram_safe_get (name), next)
+  char *list = nvram_safe_get (argv[0]);
+  foreach (word, list, next)
   {
-    if (!strcmp (word, match))
+    if (!strcmp (word, argv[1]))
       {
-	websWrite (wp, output);
+	websWrite (wp, argv[2]);
 	return;
       }
   }
