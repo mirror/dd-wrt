@@ -2911,20 +2911,23 @@ showrtssettings (webs_t wp, char *var)
   websWrite (wp,
 	     "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rts)</script></div>\n");
   char ssid[32];
+  char vvar[32];
+  strcpy (vvar, var);
+  rep (vvar, '.', 'X');
   sprintf (ssid, "%s_rts", var);
   websWrite (wp,
 	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disabled)</script></input>&nbsp;\n",
-	     var, var, nvram_default_match (ssid, "0",
+	     vvar, var, nvram_default_match (ssid, "0",
 					    "0") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp,
 	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enabled)</script></input>\n",
-	     var, var, nvram_default_match (ssid, "1",
+	     vvar, var, nvram_default_match (ssid, "1",
 					    "0") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp, "</div>\n");
 
-  websWrite (wp, "<div id=\"%s_idrts\">\n", var);
+  websWrite (wp, "<div id=\"%s_idrts\">\n", vvar);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rtsvalue)</script></div>\n");
@@ -2939,7 +2942,7 @@ showrtssettings (webs_t wp, char *var)
   websWrite (wp, "<script>\n//<![CDATA[\n ");
   websWrite (wp,
 	     "show_layer_ext(document.getElementsByName(\"%s_rts\"), \"%s_idrts\", %s);\n",
-	     var, var, nvram_match (ssid, "1") ? "true" : "false");
+	     var, vvar, nvram_match (ssid, "1") ? "true" : "false");
   websWrite (wp, "//]]>\n</script>\n");
 
 
