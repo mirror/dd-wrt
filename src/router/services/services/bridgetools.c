@@ -54,6 +54,10 @@ brctl_main (int argc, char **argv)
     {
       br_add_bridge (argv[2]);
     }
+  if (!strcmp (argv[1], "stp"))
+    {
+      br_set_stp_state(argv[2],atoi(argv[3]));
+    }
   if (!strcmp (argv[1], "delbr"))
     {
       if (!ifexists (argv[2]))
