@@ -299,6 +299,88 @@ do_aqos_check (void)
 #endif
 #ifndef HAVE_MADWIFI
 
+
+void
+start_wds_check (void)
+{
+  int s, sock;
+  if ((sock = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+    return;
+
+  /* Sveasoft - Bring up and configure wds interfaces */
+  /* logic - if separate ip defined bring it up */
+  /*         else if flagged for br1 and br1 is enabled add to br1 */
+  /*         else add it to the br0 bridge */
+  int cnt = get_wl_instances ();
+  int c;
+  for (c = 0; c < cnt; c++)
+    {
+      for (s = 1; s <= MAX_WDS_DEVS; s++)
+	{
+	  char *dev;
+	  struct ifreq ifr;
+
+
+	  dev = nvram_nget ("wl%d_wds%d_if", c, s);
+
+	  if (nvram_nmatch ("0", "wl%d_wds%d_enable", c, s))	// wds_s disabled
+	    continue;
+
+	  memset (&ifr, 0, sizeof (struct ifreq));
+
+	  snprintf (ifr.ifr_name, IFNAMSIZ, dev);
+	  ioctl (sock, SIOCGIFFLAGS, &ifr);
+
+	  if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) ==
+	      (IFF_RUNNING | IFF_UP))
+	    continue;
+
+	  /* P2P WDS type */
+	  if (nvram_nmatch ("1", "wl%d_wds%d_enable", c, s))	// wds_s disabled
+	    {
+	      char wdsbc[32] = { 0 };
+	      char *wdsip = nvram_nget ("wl%d_wds%d_ipaddr", c, s);
+	      char *wdsnm = nvram_nget ("wl%d_wds%d_netmask", c, s);
+	      snprintf (wdsbc, 31, "%s", wdsip);
+	      get_broadcast (wdsbc, wdsnm);
+	      eval ("ifconfig", dev, wdsip, "broadcast",
+		    wdsbc, "netmask", wdsnm, "up");
+	    }
+	  /* Subnet WDS type */
+	  else if (nvram_nmatch ("2", "wl%d_wds%d_enable", c, s)
+		   && nvram_nmatch ("1", "wl%d_br1_enable", c))
+	    {
+	      eval ("ifconfig", dev, "up");
+	      eval ("brctl","addif","br1",dev);
+	    }
+	  /* LAN WDS type */
+	  else if (nvram_nmatch ("3", "wl%d_wds%d_enable", c, s))	// wds_s disabled
+	    {
+	      eval ("ifconfig", dev, "up");
+	      eval ("brctl","addif","br0",dev);
+
+//        notify_nas ("lan", "br0", "up");
+	    }
+
+	}
+    }
+  close (sock);
+  if (nvram_match ("lan_stp", "0"))
+    {
+
+     eval("brctl","stp","br0","0");
+
+    }
+  else
+    {
+     eval("brctl","stp","br0","1");
+
+    }
+
+
+  return;
+}
+
 static void
 do_ap_check (void)
 {
