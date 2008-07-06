@@ -5,7 +5,7 @@
 #include <utils.h>
 #include <wlutils.h>
 #include <errno.h>
-
+#ifndef HAVE_MICRO
 
 static void
 watchdog (void)
@@ -82,3 +82,4 @@ watchdog_main (int argc, char *argv[])
     }
   return 0;
 }
+#endif
