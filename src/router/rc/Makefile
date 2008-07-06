@@ -478,9 +478,9 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ses_led	
 	cd $(INSTALLDIR)/sbin && ln -sf rc setpasswd
 	cd $(INSTALLDIR)/sbin && ln -sf rc wland
-#ifeq ($(CONFIG_MAGICBOX),y)
+ifeq ($(CONFIG_MICRO),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
-#endif
+endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc switch
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice

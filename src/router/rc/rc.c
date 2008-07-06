@@ -604,7 +604,9 @@ static struct MAIN maincalls[] = {
   {"getbridgeprio", "getbridgeprio", NULL},
   {"setuserpasswd", "setuserpasswd", NULL},
   {"getbridge", "getbridge", NULL},
+#ifndef HAVE_MICRO
   {"watchdog", NULL, &watchdog_main},
+#endif
   {"nvram", NULL, &nvram_main},
 #ifdef HAVE_ROAMING
   {"roaming_daemon", NULL, &roaming_daemon_main},
