@@ -764,7 +764,7 @@ start_lan (void)
 {
   if (strlen (nvram_safe_get ("wan_default")) > 0)
   {
-	PORTSETUPWAN(nvram_safe_get("wan_default"));
+	PORTSETUPWAN(nvram_safe_get("wan_default")); //setup default wan ports, or reassign wan if required by network setup
 	set_fullswitch ();	//for broadcom - add wan to switch ...
   }		
   struct ifreq ifr;
