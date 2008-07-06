@@ -577,7 +577,7 @@ static struct MAIN maincalls[] = {
 #ifndef HAVE_RB500
   {"resetbutton", NULL, &resetbutton_main},
 #endif
-  {"wland", "wland", NULL},
+  {"wland", NULL, &wland_main},
   {"hb_connect", "hb_connect", NULL},
   {"hb_disconnect", "hb_disconnect", NULL},
   {"gpio", "gpio", NULL},
