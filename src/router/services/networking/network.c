@@ -752,7 +752,8 @@ set_fullswitch (void)
     }
 
   nvram_set ("lan_ifnames", lanifnames);
-  PORTSETUPWAN (wanifname);
+  nvram_set ("wan_ifname", wanifname);
+  nvram_set ("wan_ifnames", wanifname );
   nvram_set ("pppoe_wan_ifname", wanifname);
   nvram_set ("pppoe_ifname", wanifname);
 
@@ -762,14 +763,16 @@ set_fullswitch (void)
 void
 start_lan (void)
 {
+  if (strlen (nvram_safe_get ("wan_default")) > 0)
+		set_fullswitch ();	//for broadcom - add wan to switch ...
+		
   struct ifreq ifr;
   unsigned char mac[20];
   int s;
   char eabuf[32];
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
-  if (nvram_get ("wan_default"))
-		set_fullswitch ();	//for broadcom - add wan to switch ...
+
 #ifdef HAVE_RB500
   if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
