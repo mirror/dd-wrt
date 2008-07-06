@@ -237,7 +237,8 @@ vlan_configure (void)
       /* use in creating vlans and create list w/o lan member, which will */
       /* have vlan group members added below */
       buf_index = 0;
-      foreach (name, nvram_safe_get ("lan_ifnames"), next)
+      char *ifnames = nvram_safe_get ("lan_ifnames");
+      foreach (name, ifnames, next)
       {
 	if (strncmp (name, lan_ifbase, 4) == 0)
 	  {
@@ -620,8 +621,9 @@ vlan_deconfigure (void)
       /* now lan vlan */
       if (brcm_tag_driver_enabled)
 	{
+    	char *ifnames = nvram_safe_get ("lan_ifnames");
 	  /* default mode, just bring down brcm tag devices per port */
-	  foreach (name, nvram_safe_get ("lan_ifnames"), next)
+	  foreach (name, ifnames, next)
 	  {
 	    /* check to see if has suffix  '.port' before removing */
 	    if (strrchr (name, '.') != NULL)
@@ -631,7 +633,8 @@ vlan_deconfigure (void)
 	}
       else
 	/* no brcm tags, bring down lan vlan */
-	foreach (name, nvram_safe_get ("lan_ifnames"), next)
+      char *ifnames = nvram_safe_get ("lan_ifnames");
+	foreach (name, ifnames, next)
 	{
 	  /* check to see if has suffix  '.port' before removing */
 	  if (strrchr (name, '.') != NULL)

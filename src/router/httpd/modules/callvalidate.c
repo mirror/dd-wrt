@@ -78,8 +78,17 @@
 } while (0)
 #endif
 
+int websWrite (webs_t wp, char *fmt, ...);
+char *websGetVar (webs_t wp, char *var, char *d)
+{
+  return get_cgi (var) ? : d;
+}
 
 
+char *GOZILA_GET(webs_t wp,char *name)
+{
+return gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
+}
 
 void *
 load_visual_service (char *name)
@@ -175,6 +184,7 @@ initWeb (void *handle)
   env->Pclone_wan_mac = &clone_wan_mac;
   env->Pgenerate_key = &generate_key;
   env->Plive_translate = live_translate;
+  env->PGOZILA_GET = GOZILA_GET;
   cprintf ("call initWeb\n");
   init (env);
   free (env);

@@ -106,12 +106,7 @@ typedef char char_t;
 
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
-int websWrite (webs_t wp, char *fmt, ...);
-static char *
-websGetVar (webs_t wp, char *var, char *d)
-{
-  return get_cgi (var) ? : d;
-}
+char *websGetVar (webs_t wp, char *var, char *d);
 #endif
 #endif
 
@@ -131,6 +126,7 @@ struct Webenvironment
   int (*Pwfflush) (FILE * fp);
   int (*Pwfputc) (char c, FILE * fp);
   int (*Pwfputs) (char *buf, FILE * fp);
+  char *(*PGOZILA_GET)(webs_t wp,char *name);
   char *(*Plive_translate) (char *tran);
   websRomPageIndexType *PwebsRomPageIndex;
 #ifdef HAVE_HTTPS

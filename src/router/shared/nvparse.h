@@ -25,10 +25,10 @@
  * the expectation of one or more inbound connections which may be
  * optionally remapped to a different port range.
  */
-extern bool valid_autofw_port (const netconf_app_t * app);
-extern bool get_autofw_port (int which, netconf_app_t * app);
-extern bool set_autofw_port (int which, const netconf_app_t * app);
-extern bool del_autofw_port (int which);
+//extern bool valid_autofw_port (const netconf_app_t * app);
+//extern bool get_autofw_port (int which, netconf_app_t * app);
+//extern bool set_autofw_port (int which, const netconf_app_t * app);
+//extern bool del_autofw_port (int which);
 
 /* 
  * Persistent (static) port forwards are described by a netconf_nat_t
@@ -45,14 +45,15 @@ extern bool del_forward_port (int which);
  * Client filters are described by two netconf_filter_t structures that
  * differ in match.src.ipaddr alone (to support IP address ranges)
  */
-extern bool valid_filter_client (const netconf_filter_t * start,
+
+/*extern bool valid_filter_client (const netconf_filter_t * start,
 				 const netconf_filter_t * end);
 extern bool get_filter_client (int which, netconf_filter_t * start,
 			       netconf_filter_t * end);
 extern bool set_filter_client (int which, const netconf_filter_t * start,
 			       const netconf_filter_t * end);
 extern bool del_filter_client (int which);
-
+*/
 /*
 * WPA/WDS per link configuration. Parameters after 'auth' are
 * authentication algorithm dependant:
@@ -69,6 +70,6 @@ extern bool set_wds_wsec (int unit, int which, char *mac, char *role,
 extern bool del_wds_wsec (int unit, int which);
 
 /* Conversion routine for deprecated variables */
-extern void convert_deprecated (void);
+//extern void convert_deprecated (void);
 
 #endif /* _nvparse_h_ */

@@ -697,11 +697,11 @@ ej_get_wep_value (webs_t wp, int argc, char_t ** argv)
 #endif
   cprintf ("get wep value %s\n", type);
 #ifdef HAVE_MADWIFI
-  bit = GOZILA_GET ("ath0_wep_bit");
+  bit = GOZILA_GET (wp,"ath0_wep_bit");
 
   value = get_wep_value (type, bit, "ath0");
 #else
-  bit = GOZILA_GET ("wl_wep_bit");
+  bit = GOZILA_GET (wp,"wl_wep_bit");
   cprintf ("bit = %s\n", bit);
   value = get_wep_value (type, bit, "wl");
 #endif
@@ -877,7 +877,7 @@ ej_show_wpa_setting (webs_t wp, int argc, char_t ** argv, char *prefix)
     }
 #endif
   rep (var, '.', 'X');
-  security_mode = GOZILA_GET (var);
+  security_mode = GOZILA_GET (wp,var);
   rep (var, 'X', '.');
   cprintf ("security mode %s = %s\n", security_mode, var);
   if (!strcmp (security_mode, "psk")
@@ -918,7 +918,7 @@ ej_show_wpa_setting (webs_t wp, int argc, char_t ** argv)
     }
 #endif
 
-  security_mode = GOZILA_GET ("security_mode");
+  security_mode = GOZILA_GET (wp,"security_mode");
 
   if (!strcmp (security_mode, "psk")
       || !strcmp (security_mode, "psk2")

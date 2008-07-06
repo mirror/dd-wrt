@@ -41,7 +41,7 @@ int (*wfputc) (char c, FILE * fp) = NULL;
 int (*wfputs) (char *buf, FILE * fp) = NULL;
 char *(*live_translate) (char *tran) = NULL;
 websRomPageIndexType *websRomPageIndex = NULL;
-
+char *(*GOZILA_GET)(webs_t wp,char *name) = NULL;
 
 
 #ifdef HAVE_HTTPS
@@ -94,6 +94,7 @@ initWeb (struct Webenvironment *env)
   generate_key = env->Pgenerate_key;
   cprintf ("set live_translate\n");
   live_translate = env->Plive_translate;
+  GOZILA_GET = env->PGOZILA_GET;
 }
 
 
@@ -352,7 +353,7 @@ ej_nvram_gozila_get (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
-  type = GOZILA_GET (argv[0]);
+  type = GOZILA_GET (wp,argv[0]);
 
   websWrite (wp, "%s", type);
 }
@@ -471,7 +472,7 @@ ej_get_single_mac (webs_t wp, int argc, char_t ** argv)
 int
 nvram_selmatch (webs_t wp, char *name, char *match)
 {
-  char *type = GOZILA_GET (name);
+  char *type = GOZILA_GET (wp,name);
   if (!type)
     {
       if (nvram_match (name, match))
@@ -520,7 +521,7 @@ ej_nvram_else_selmatch (webs_t wp, int argc, char_t ** argv)
     }
 #endif
 
-  type = GOZILA_GET (argv[0]);
+  type = GOZILA_GET (wp,argv[0]);
 
   if (!type)
     {
@@ -1017,7 +1018,7 @@ ej_get_mtu (webs_t wp, int argc, char_t ** argv)
 {
   struct mtu_lists *mtu_list;
   char *type;
-  char *proto = GOZILA_GET ("wan_proto");
+  char *proto = GOZILA_GET (wp,"wan_proto");
   type = argv[1];
 #ifndef FASTWEB
   if (argc < 1)

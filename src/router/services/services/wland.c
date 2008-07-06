@@ -129,7 +129,13 @@ compareNet (char *ip, char *net, char *dest)
   int shift = 32-bit;
   n--;
   n<<=shift;
-  if ((dfullip & n) == (fullip & n))
+/*  fprintf(stderr, "compare %08X with %08X\n",(unsigned int)(dfullip&(unsigned int)n),(unsigned int)fullip&(unsigned int)n);
+  fprintf(stderr, "fullip %08X\n",fullip);
+  fprintf(stderr, "dfullip %08X\n",dfullip);
+  fprintf(stderr, "n %08X\n",(unsigned int)n);
+  fprintf(stderr, "nl %08lX\n",n);
+  */
+  if ((unsigned int)(dfullip & (unsigned int)n) == (unsigned int)(fullip & (unsigned int)n))
     return 1;
   return 0;
 }
@@ -649,8 +655,9 @@ wland_main (int argc, char **argv)
   return 0;
 }				// end main
 
-
+/*
 void main(int argc, char **argv)
 {
 wland_main(argc,argv);
 }
+*/
