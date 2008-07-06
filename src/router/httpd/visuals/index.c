@@ -14,7 +14,7 @@ ej_show_index_setting (webs_t wp, int argc, char_t ** argv)
 {
   char *type;
 
-  type = GOZILA_GET ("wan_proto");
+  type = GOZILA_GET (wp,"wan_proto");
 
   //cprintf("change to %s mode\n",type);
 

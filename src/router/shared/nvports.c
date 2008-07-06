@@ -36,7 +36,8 @@ nvExistsPortAttrib (char *attrib, uint portno)
 
   snprintf (port, sizeof (port), "port%d", portno);
   hasAttrib = 0;
-  foreach (port_attrib, nvram_safe_get (port), next)
+  char *p = nvram_safe_get(port);
+  foreach (port_attrib, p, next)
   {
     if (strncmp (port_attrib, attrib, strlen (attrib)) == 0)
       hasAttrib = 1;
@@ -95,7 +96,8 @@ nvUnsetPortAttrib (char *attrib, uint portno)
   buf_index = 0;
   strcpy (new_attribs, "");
   snprintf (port, sizeof (port), "port%d", portno);
-  foreach (port_attrib, nvram_safe_get (port), next)
+  char *p=nvram_safe_get(port);
+  foreach (port_attrib, p, next)
   {
     if (strncmp (port_attrib, attrib, strlen (attrib)))
       {

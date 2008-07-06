@@ -4049,16 +4049,10 @@ add_userip (char *ip, int idx, char *upstream, char *downstream)
   sprintf (downs, "%skbit", downstream);
   if (nvram_match ("qos_type", "0"))
     {
-      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:",
-	    "classid", up, "htb", "rate", ups, "ceil", ups);
-      eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:",
-	    "protocol", "ip", "prio", "1", "u32", "match", "ip", "src", ip,
-	    "flowid", up);
-      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",
-	    down, "htb", "rate", downs, "ceil", downs);
-      eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol",
-	    "ip", "prio", "1", "u32", "match", "ip", "dst", ip, "flowid",
-	    down);
+      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:","classid", up, "htb", "rate", ups, "ceil", ups);
+      eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:","protocol", "ip", "prio", "1", "u32", "match", "ip", "src", ip,"flowid", up);
+      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",down, "htb", "rate", downs, "ceil", downs);
+      eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol","ip", "prio", "1", "u32", "match", "ip", "dst", ip, "flowid",down);
     }
   else
     {
@@ -4374,7 +4368,8 @@ doMultiCast (void)
     {
       ifcount++;
     }
-  foreach (name, nvram_safe_get ("lan_ifnames"), next)
+  char *lan_ifnames = nvram_safe_get("lan_ifnames");
+  foreach (name, lan_ifnames, next)
   {
     if (nvram_nmatch ("1", "%s_multicast", name)
 	&& nvram_nmatch ("0", "%s_bridged", name))
@@ -4582,3 +4577,4 @@ endswith (char *str, char *cmp)
     }
   return (1);
 }
+

@@ -127,13 +127,7 @@ extern int get_ifname_unit (const char *ifname, int *unit, int *subunit);
  * @param	buf	buffer large enough to hold both strings
  * @return	buf
  */
-static inline char *
-strcat_r (const char *s1, const char *s2, char *buf)
-{
-  strcpy (buf, s1);
-  strcat (buf, s2);
-  return buf;
-}
+char *strcat_r (const char *s1, const char *s2, char *buf);
 
 /* Check for a blank character; that is, a space or a tab */
 #define isblank(c) ((c) == ' ' || (c) == '\t')
@@ -174,8 +168,8 @@ strcat_r (const char *s1, const char *s2, char *buf)
 })
 
 /* Copy each token in wordlist delimited by space into word */
-#define foreach(word, wordlist, next) \
-	for (next = &wordlist[strspn(wordlist, " ")], \
+#define foreach(word, foreachwordlist, next) \
+	for (next = &foreachwordlist[strspn(foreachwordlist, " ")], \
 	     strncpy(word, next, sizeof(word)), \
 	     word[strcspn(word, " ")] = '\0', \
 	     word[sizeof(word) - 1] = '\0', \
@@ -185,7 +179,7 @@ strcat_r (const char *s1, const char *s2, char *buf)
 	     strncpy(word, next, sizeof(word)), \
 	     word[strcspn(word, " ")] = '\0', \
 	     word[sizeof(word) - 1] = '\0', \
-	     next = strchr(next, ' '))
+	     next = strchr(next, ' ')) \
 
 /* Return NUL instead of NULL if undefined */
 #define safe_getenv(s) (getenv(s) ? : "")
