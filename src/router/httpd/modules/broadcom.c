@@ -1926,7 +1926,7 @@ extern int getdevicecount (void);
 #endif
 
 
-
+#ifdef HAVE_LANGUAGE
 static void
 do_language (char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
 {
@@ -1935,6 +1935,7 @@ do_language (char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
   free (lang);
   return;
 }
+#endif
 
 extern int issuperchannel (void);
 
@@ -1976,8 +1977,9 @@ struct mime_handler mime_handlers[] = {
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
 //  {"style.css", "text/css", NULL, NULL, do_style, NULL},
   {"common.js", "text/javascript", NULL, NULL, do_file, NULL},
+#ifdef HAVE_LANGUAGE
   {"lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL},
-
+#endif
   {"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth},
 #ifdef HAVE_SKYTRON
   {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2},
@@ -2294,7 +2296,9 @@ struct ej_handler ej_handlers[] = {
   {"get_clone_wmac", ej_get_clone_wmac},
   {"show_modules", ej_show_modules},
   {"show_styles", ej_show_styles},
+#ifdef HAVE_LANGUAGE
   {"show_languages", ej_show_languages},
+#endif
   {"show_forward", ej_show_forward},
   {"show_forward_spec", ej_show_forward_spec},
   {"show_triggering", ej_show_triggering},
