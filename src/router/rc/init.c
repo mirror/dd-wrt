@@ -184,13 +184,15 @@ shutdown_system (void)
 
   cprintf ("Sending SIGTERM to all processes\n");
   kill (-1, SIGTERM);
+  sync ();
   sleep (5);
 
   cprintf ("Sending SIGKILL to all processes\n");
   kill (-1, SIGKILL);
-  sleep (1);
-
   sync ();
+  sleep (1);
+  
+
 #ifdef HAVE_RB500
   eval ("umount", "/");
 #endif

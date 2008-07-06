@@ -28,7 +28,7 @@
 #define sys_stats(url) eval("stats", (url))
 #define ARGV(args...) ((char *[]) { args, NULL })
 #define STRUCT_LEN(name)    sizeof(name)/sizeof(name[0])
-#define GOZILA_GET(name)	gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
+char *GOZILA_GET(webs_t wp,char *name);
 
 #define SWAP(AA,BB)  { \
 	char *CC; \
@@ -673,6 +673,8 @@ extern char *(*Ulive_translate) (char *tran);
 #define live_translate Ulive_translate
 extern websRomPageIndexType *UwebsRomPageIndex;
 #define websRomPageIndex UwebsRomPageIndex
+extern char * (*UGOZILA_GET) (webs_t wp,char *name);
+#define GOZILA_GET UGOZILA_GET
 #endif
 
 
@@ -686,6 +688,8 @@ extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
 #define websGetVar UwebsGetVar
 extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
 #define websWrite UwebsWrite
+extern char * (*UGOZILA_GET) (webs_t wp,char *name);
+#define GOZILA_GET UGOZILA_GET
 extern struct wl_client_mac *Uwl_client_macs;
 #define wl_client_macs Uwl_client_macs
 extern int *Uclone_wan_mac;

@@ -713,7 +713,7 @@ do_portsetup (char *lan, char *ifname)
 	  else \
 	    { \
 		nvram_set ("wan_ifname",a); \
-		nvram_set ("wan_ifnames",a ); \
+		nvram_set ("wan_ifnames",a); \
 	    }
 
  /* add wan ifname to lan_ifnames if we use fullswitch */

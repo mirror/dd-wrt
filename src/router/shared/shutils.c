@@ -627,3 +627,10 @@ indexof (char *str, char c)
       return (slen - 1) - i;
   return -1;
 }
+
+char *strcat_r (const char *s1, const char *s2, char *buf)
+{
+  strcpy (buf, s1);
+  strcat (buf, s2);
+  return buf;
+}
