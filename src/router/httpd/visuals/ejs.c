@@ -1269,6 +1269,7 @@ ej_show_styles (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+#ifdef HAVE_LANGUAGE
 //extern websRomPageIndexType websRomPageIndex[];
 void
 ej_show_languages (webs_t wp, int argc, char_t ** argv)
@@ -1299,6 +1300,8 @@ ej_show_languages (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "//]]>\n</script>\n");
   return;
 }
+#endif
+
 static char *directories[] = {
   "/etc/config",
   "/jffs/etc/config",
@@ -1820,8 +1823,10 @@ ej_do_pagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 	     "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
   websWrite (wp,
 	     "\t\t<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
+#ifdef HAVE_LANGUAGE	     
   websWrite (wp,
 	     "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
+#endif
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n",
 	     style);
@@ -1879,8 +1884,10 @@ ej_do_hpagehead (webs_t wp, int argc, char_t ** argv)	//Eko
 	     "\t\t<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
   websWrite (wp,
 	     "\t\t<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
+#ifdef HAVE_LANGUAGE
   websWrite (wp,
 	     "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
+#endif
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
   websWrite (wp, "\t\t<title>%s", live_translate ("share.help"));
