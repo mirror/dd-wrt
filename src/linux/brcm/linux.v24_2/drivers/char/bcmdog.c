@@ -185,14 +185,14 @@ static int __init watchdog_init(void)
 	/* Set watchdog interval in ms */
 
 	/* Please set the watchdog to 3 sec if it is less than 3 but not equal to 0 */
-	watchdog_timer = 30 * HZ;
+//	watchdog_timer = 30 * HZ;
 
 	ret = misc_register(&softdog_miscdev);
 
 	if (ret)
 		return ret;
 
-	printk(banner, watchdog_timer/HZ);
+//	printk(banner, watchdog_timer/HZ);
 
 	return 0;
 }
