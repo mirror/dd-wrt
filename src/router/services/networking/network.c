@@ -722,13 +722,12 @@ set_fullswitch (void)
 {
 	char wanifname[8];
 	char lanifnames[128];
-
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (lanifnames, nvram_safe_get ("lan_ifnames"));
 
 
   if (nvram_match ("fullswitch", "1")
-      && (nvram_invmatch ("wl0_mode", "ap")
+      && (getSTA() || getWET()
 	  || nvram_match ("wan_proto", "disabled")))
     {
       if (!nvram_match ("fullswitch_set", "1"))
@@ -764,8 +763,10 @@ void
 start_lan (void)
 {
   if (strlen (nvram_safe_get ("wan_default")) > 0)
-		set_fullswitch ();	//for broadcom - add wan to switch ...
-		
+  {
+	PORTSETUPWAN(nvram_safe_get("wan_default"));
+	set_fullswitch ();	//for broadcom - add wan to switch ...
+  }		
   struct ifreq ifr;
   unsigned char mac[20];
   int s;
