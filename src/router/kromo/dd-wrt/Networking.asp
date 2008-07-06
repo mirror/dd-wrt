@@ -63,6 +63,13 @@ function setBRCTLTable() {
 	var table = document.getElementById("Bridging_table");
 	var val = arguments;
 	cleanTable(table);
+	if(!val.length) {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 3;
+		cell.align = "center";
+		cell.innerHTML = "- " + status_router.notavail + " -";
+		return;
+	}
 	for(var i = 0; i < val.length; i = i + 3) {
 		
 		var row = table.insertRow(-1);
