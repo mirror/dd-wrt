@@ -32,8 +32,9 @@ char bcm5700_date[] = "(11/2/05)";
 #include "etioctl.h"
 #include "bcmrobo.h"
 #include "robo_register.c"
-extern void robo_config_qos(robo_info_t *robo);
-#include "robo_qos.c"
+//extern void robo_config_qos(robo_info_t *robo);
+//#include "robo_qos.c"
+#include "lm.h"
 
 /* this is needed to get good and stable performances */
 #define EXTRA_HDR BCMEXTRAHDROOM
@@ -1152,7 +1153,7 @@ __devinit bcm5700_init_board(struct pci_dev *pdev, struct net_device **dev_out, 
 	if (pDevice->Flags & ROBO_SWITCH_FLAG) {
 		robo_info_t	*robo;
 
-		if ((robo = bcm_robo_attach(sbh, pDevice, NULL,
+		if ((robo = bcm_robo_attach(sbh, pDevice, dev->name, NULL,
 		                            robo_miird, robo_miiwr)) == NULL) {
 			B57_ERR(("robo_setup: failed to attach robo switch \n"));
 			goto robo_fail;
@@ -1170,9 +1171,6 @@ __devinit bcm5700_init_board(struct pci_dev *pdev, struct net_device **dev_out, 
 			goto robo_fail;
 		}
 
-		/* 5397 power mode setting */
-		robo_set_power_mode(robo->h);
-
 		/* Enable the switch */
 		if (bcm_robo_enable_switch(robo)) {
 			B57_ERR(("robo_setup: robo_enable_switch failed\n"));
@@ -1181,6 +1179,7 @@ robo_fail:
 			rc = -ENODEV;
 			goto err_out_unmap;
 		}
+
 		pUmDevice->robo = (void *)robo;
 	}
 	
@@ -1188,6 +1187,7 @@ robo_fail:
 #ifdef linux
                 	//robo_config_qos(pUmDevice->robo);
 #endif
+norobo:
 
 	if ((pDevice->Flags & JUMBO_CAPABLE_FLAG) == 0) {
 		if (dev->mtu > 1500) {
@@ -1515,7 +1515,8 @@ bcm5700_remove_one (struct pci_dev *pdev)
 {
 	struct net_device *dev = pci_get_drvdata (pdev);
 	PUM_DEVICE_BLOCK pUmDevice = (PUM_DEVICE_BLOCK)dev->priv;
-
+	if (pUmDevice->robo)
+	    bcm_robo_detach(pUmDevice->robo);
 #ifdef BCM_PROC_FS
 	bcm5700_proc_remove_dev(dev);
 #endif
@@ -2287,10 +2288,11 @@ bcm5700_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	LM_UINT32 mss = 0 ;
 	uint16_t ip_tcp_len, tcp_opt_len, tcp_seg_flags;
 #endif
-
+//	printk(KERN_EMERG "LinkStatus %X, %X, %X\n",pDevice->LinkStatus,pDevice->InitDone,pUmDevice->suspended);
 	if ((pDevice->LinkStatus == LM_STATUS_LINK_DOWN) ||
 		!pDevice->InitDone || pUmDevice->suspended)
 	{
+//	        printk(KERN_EMERG "link down, drop it\n");
 		dev_kfree_skb(skb);
 		return 0;
 	}
@@ -4100,6 +4102,8 @@ b57_dump(struct net_device *dev, struct bcmstrbuf *b)
 	bcm_bprintf(b, "\n");
 }
 #endif	/* BCMDBG */
+extern LM_VOID __LM_ReadPhy(PLM_DEVICE_BLOCK pDevice,unsigned int phy_addr, LM_UINT32 PhyReg,PLM_UINT32 pData32);
+extern LM_VOID __LM_WritePhy(PLM_DEVICE_BLOCK pDevice,unsigned int phy_addr,LM_UINT32 PhyReg,LM_UINT32 Data32);
 
 /* Provide ioctl() calls to examine the MII xcvr state. */
 STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
@@ -4872,6 +4876,7 @@ STATIC int bcm5700_set_mac_addr(struct net_device *dev, void *p)
 	    memcpy(dev->dev_addr, addr->sa_data,dev->addr_len);
 	    if (pUmDevice->opened)
 	        LM_SetMacAddress(pDevice, dev->dev_addr);
+//			bcm_robo_set_macaddr(pUmDevice->robo, dev->dev_addr);
             return 0;
         }
 	return -EINVAL;

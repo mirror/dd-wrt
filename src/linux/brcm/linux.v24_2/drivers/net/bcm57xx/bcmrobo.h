@@ -53,7 +53,7 @@ struct robo_info_s {
 	miiwr_f	miiwr;
 };
 
-extern robo_info_t *bcm_robo_attach(sb_t *sbh, void *h, char *vars, miird_f miird, miiwr_f miiwr);
+extern robo_info_t *bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr_f miiwr);
 extern void bcm_robo_detach(robo_info_t *robo);
 extern int bcm_robo_enable_device(robo_info_t *robo);
 extern int bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr);
