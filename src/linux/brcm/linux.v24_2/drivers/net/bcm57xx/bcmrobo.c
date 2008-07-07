@@ -669,11 +669,11 @@ static dev_ops_t mdcmdio = {
 
 /* Get access to the RoboSwitch */
 robo_info_t *
-bcm_robo_attach(sb_t *sbh, void *h, char *vars, miird_f miird, miiwr_f miiwr)
+bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr_f miiwr)
 {
 	robo_info_t *robo;
 	uint32 reset, idx;
-
+	int rreset=8;
 	/* Allocate and init private state */
 	if (!(robo = MALLOC(sb_osh(sbh), sizeof(robo_info_t)))) {
 		ET_ERROR(("robo_attach: out of memory, malloced %d bytes", MALLOCED(sb_osh(sbh))));
@@ -687,9 +687,12 @@ bcm_robo_attach(sb_t *sbh, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	robo->miird = miird;
 	robo->miiwr = miiwr;
 	robo->page = -1;
+	
+	char *boothwmodel = nvram_get("boot_hw_model");
+	if (boothwmodel==NULL || strcmp(boothwmodel,"WRT300N"))rreset = GPIO_PIN_NOTDEFINED;
 
 	/* Trigger external reset by nvram variable existance */
-	if ((reset = getgpiopin(robo->vars, "robo_reset", GPIO_PIN_NOTDEFINED)) !=
+	if ((reset = getgpiopin(robo->vars, "robo_reset", rreset)) !=
 	    GPIO_PIN_NOTDEFINED) {
 		/*
 		 * Reset sequence: RESET low(50ms)->high(20ms)
@@ -697,7 +700,7 @@ bcm_robo_attach(sb_t *sbh, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		 * We have to perform a full sequence for we don't know how long
 		 * it has been from power on till now.
 		 */
-		ET_MSG(("%s: Using external reset in gpio pin %d\n", __FUNCTION__, reset));
+//		printk(KERN_EMERG "%s: Using external reset in gpio pin %d\n", __FUNCTION__, reset);
 		reset = 1 << reset;
 
 		/* Keep RESET low for 50 ms */
@@ -714,7 +717,7 @@ bcm_robo_attach(sb_t *sbh, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 
 		if (sb_setcore(robo->sbh, SB_ROBO, 0)) {
 			/* If we have an internal robo core, reset it using sb_core_reset */
-			ET_MSG(("%s: Resetting internal robo core\n", __FUNCTION__));
+//			printk(KERN_EMERG "%s: Resetting internal robo core\n", __FUNCTION__);
 			sb_core_reset(robo->sbh, 0, 0);
 		}
 
@@ -728,25 +731,33 @@ bcm_robo_attach(sb_t *sbh, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		/* Read the PHY ID */
 		tmp = miird(h, PSEUDO_PHYAD, 2);
 		if (tmp != 0xffff) {
-			do {
+//			do {
 				rc = mii_rreg(robo, PAGE_MMR, REG_DEVICE_ID, \
 							  &robo->devid, sizeof(uint16));
-				if (rc != 0)
-					break;
-				retry_count++;
-			} while ((robo->devid == 0) && (retry_count < 10));
+//				if (rc != 0)
+//					break;
+//				retry_count++;
+//			} while ((robo->devid == 0) && (retry_count < 10));
 
-			ET_MSG(("%s: devid read %ssuccesfully via mii: 0x%x\n", __FUNCTION__, \
-			        rc ? "un" : "", robo->devid));
-			ET_MSG(("%s: mii access to switch works\n", __FUNCTION__));
+//			printk(KERN_EMERG "%s: devid read %ssuccesfully via mii: 0x%x\n", __FUNCTION__, \
+//			        rc ? "un" : "", robo->devid);
+//			printk(KERN_EMERG "%s: mii access to switch works\n", __FUNCTION__);
 			robo->ops = &mdcmdio;
 			if ((rc != 0) || (robo->devid == 0)) {
-				ET_MSG(("%s: error reading devid, assuming 5325e\n", __FUNCTION__));
+//				printk(KERN_EMERG "%s: error reading devid, assuming 5325e\n", __FUNCTION__);
 				robo->devid = DEVID5325;
 			}
-			ET_MSG(("%s: devid: 0x%x\n", __FUNCTION__, robo->devid));
+//			printk(KERN_EMERG "%s: devid: 0x%x\n", __FUNCTION__, robo->devid);
 		}
 	}
+		if (robo->devid == DEVID5395)
+			nvram_set("switch_type", "BCM5395");
+		else if(robo->devid == DEVID5397)
+			nvram_set("switch_type", "BCM5397");
+		else if(robo->devid == DEVID5325)
+			nvram_set("switch_type", "BCM5325");
+		else
+			nvram_set("switch_type", "unknown");						
 
 	if ((robo->devid == DEVID5395) ||
 	    (robo->devid == DEVID5397) ||
@@ -754,7 +765,7 @@ bcm_robo_attach(sb_t *sbh, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 		uint8 srst_ctrl;
 
 		/* If it is a 539x switch, use the soft reset register */
-		ET_MSG(("%s: Resetting 539x robo switch\n", __FUNCTION__));
+		printk("%s: Resetting 539x robo switch\n", __FUNCTION__);
 
 		/* Reset the 539x switch core and register file */
 		srst_ctrl = 0x83;
@@ -763,12 +774,6 @@ bcm_robo_attach(sb_t *sbh, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	    bcm_mdelay(500);
 //	---	Gemtek, For reset issue
 //	+++ Gemtek, To distinguish switch 5397 and 5395
-		if (robo->devid == DEVID5395)
-			nvram_set("switch_type", "BCM5395");
-		else if(robo->devid == DEVID5397)
-			nvram_set("switch_type", "BCM5397");
-		else
-			nvram_set("switch_type", "unknown");						
 //	--- Gemtek, To distinguish switch 5397 and 5395
 		srst_ctrl = 0x00;
 		mii_wreg(robo, PAGE_CTRL, REG_CTRL_SRST, &srst_ctrl, sizeof(uint8));
@@ -836,7 +841,7 @@ bcm_robo_detach(robo_info_t *robo)
 int
 bcm_robo_enable_device(robo_info_t *robo)
 {
-	uint8 reg_offset, reg_val;
+	uint8 reg_offset, reg_val=0;
 	int ret = 0;
 
 	/* Enable management interface access */
@@ -858,7 +863,7 @@ bcm_robo_enable_device(robo_info_t *robo)
 
 		/* MII port state override (page 0 register 14) */
 		robo->ops->read_reg(robo, PAGE_CTRL, REG_CTRL_MIIPO, &reg_val, sizeof(reg_val));
-
+//		printk(KERN_EMERG "reg val %X\n",reg_val);
 		/* Bit 4 enables reverse MII mode */
 		if (!(reg_val & (1 << 4))) {
 			/* Enable RvMII */
@@ -869,8 +874,9 @@ bcm_robo_enable_device(robo_info_t *robo)
 			/* Read back */
 			robo->ops->read_reg(robo, PAGE_CTRL, REG_CTRL_MIIPO, &reg_val,
 			                    sizeof(reg_val));
+//			printk(KERN_EMERG "reg val %X\n",reg_val);
 			if (!(reg_val & (1 << 4))) {
-				ET_ERROR(("robo_enable_device: enabling RvMII mode failed\n"));
+				printk(KERN_EMERG "robo_enable_device: enabling RvMII mode failed\n");
 				ret = -1;
 			}
 		}
@@ -1224,6 +1230,11 @@ bcm_robo_enable_switch(robo_info_t *robo)
 	uint8 val8;
 	uint16 mode16;
 
+	/* 5397 power mode setting */
+	if (robo->devid != DEVID5325)
+	    robo_set_power_mode(robo->h);
+
+
 	/* Enable management interface access */
 	if (robo->ops->enable_mgmtif)
 		robo->ops->enable_mgmtif(robo);
@@ -1258,9 +1269,10 @@ bcm_robo_enable_switch(robo_info_t *robo)
 char *boardnum=nvram_get("boardnum");
 char *boardtype=nvram_get("boardtype");
 char *cardbus=nvram_get("cardbus");
+char *boot=nvram_get("boot_hw_model");
 
 if (boardnum!=NULL && boardtype!=NULL && cardbus!=NULL)
-if (!strcmp(boardnum,"42") && !strcmp(boardtype,"0x478") && !strcmp(cardbus,"1"))
+if (!strcmp(boardnum,"42") && !strcmp(boardtype,"0x478") && !strcmp(cardbus,"1") && (!boot || strcmp(boot, "WRT300N")))
     {
         printk(KERN_EMERG "Enable WRT350 LED fix\n");
 	/* WAN port LED */
@@ -1276,941 +1288,5 @@ if (!strcmp(boardnum,"42") && !strcmp(boardtype,"0x478") && !strcmp(cardbus,"1")
 	return ret;
 }
 
-
-// +++ Gemtek, Configure the switch to support Ethernet Port QoS
-int
-bcm_robo_config_fw_enabled(robo_info_t *robo)
-{
-	uint8 val8, ori8;
-	uint16 val16;
-	
-	val8 = 0;
-	ori8 = 0;
-	robo->ops->read_reg(robo, PAGE_PORT_TC, REG_TC_PORT0, &ori8, sizeof(ori8));
-	val8 = ori8 & ~(BIT06|BIT01|BIT00);
-	val8 = val8 | BIT07 | BIT05;
-	robo->ops->write_reg(robo, PAGE_PORT_TC, REG_TC_PORT0, &val8, sizeof(val8));
-
-	val8 = 0;
-	ori8 = 0;
-	robo->ops->read_reg(robo, PAGE_PORT_TC, REG_TC_PORT1, &ori8, sizeof(ori8));
-	val8 = ori8 & ~(BIT06|BIT01|BIT00);
-	val8 = val8 | BIT07 | BIT05;
-	robo->ops->write_reg(robo, PAGE_PORT_TC, REG_TC_PORT1, &val8, sizeof(val8));
-	
-	val8 = 0;
-	ori8 = 0;
-	robo->ops->read_reg(robo, PAGE_PORT_TC, REG_TC_PORT2, &ori8, sizeof(ori8));
-	val8 = ori8 & ~(BIT06|BIT01|BIT00);
-	val8 = val8 | BIT07 | BIT05;
-	robo->ops->write_reg(robo, PAGE_PORT_TC, REG_TC_PORT2, &val8, sizeof(val8));
-	
-	val8 = 0;
-	ori8 = 0;
-	robo->ops->read_reg(robo, PAGE_PORT_TC, REG_TC_PORT3, &ori8, sizeof(ori8));
-	val8 = ori8 & ~(BIT06|BIT01|BIT00);
-	val8 = val8 | BIT07 | BIT05;
-	robo->ops->write_reg(robo, PAGE_PORT_TC, REG_TC_PORT3, &val8, sizeof(val8));
-	
-	val8 = 0;
-	ori8 = 0;
-	robo->ops->read_reg(robo, PAGE_PORT_TC, REG_TC_PORT4, &ori8, sizeof(ori8));
-	val8 = ori8 & ~(BIT06|BIT01|BIT00);
-	val8 = val8 | BIT07 | BIT05;
-	robo->ops->write_reg(robo, PAGE_PORT_TC, REG_TC_PORT4, &val8, sizeof(val8));
-
-/*
-	val8 = 0;
-	ori8 = 0;
-	robo->ops->read_reg(robo, PAGE_PORT_TC, REG_TC_PORT5, &ori8, sizeof(ori8));
-	val8 = ori8 & ~(BIT06|BIT01|BIT00);
-	val8 = val8 | BIT07 | BIT05;
-	robo->ops->write_reg(robo, PAGE_PORT_TC, REG_TC_PORT5, &val8, sizeof(val8));
-*/
-	
-	val8 = 0;
-	ori8 = 0;
-  robo->ops->read_reg(robo, PAGE_PORT_TC, REG_CTRL_MODE, &ori8, sizeof(ori8));
-  val8 = ori8 & ~(BIT00);
-  val8 = val8 | BIT01;
-	robo->ops->write_reg(robo, PAGE_PORT_TC, REG_CTRL_MODE, &val8, sizeof(val8));
-
-	/*
-		Fix Hardware LED Power leak issue
-	 */
-	val16 = 0;
-	
-	val16 = 0x3042;
-	robo->ops->write_reg(robo, PAGE_PORT_TC, REG_LED_POWER, &val16, sizeof(val16));
-	return 0;
-}
-
-int
-bcm_robo_config_qos(robo_info_t *robo)
-{
-	uint8 val8, ori8;
-	uint16 val16, ori16;
-	uint32 val32, ori32;
-	
-	int i=0, ether_qos=0;
-	
-	char *val_qos_type, *val_qos_pri, *val_qos_name;
-	char *val_qos_enabled = getvar(NULL, "qos_enabled");
-	char  qos_type[] = "qos_typeXX";
-	char	qos_pri[]  = "qos_priorityXX";
-	char  qos_name[] = "qos_nameXX";
-		
-	if (val_qos_enabled && bcm_atoi(val_qos_enabled)==1)
-	{
-		for (i=0; i<6; i++)
-		{
-			sprintf(qos_type, "qos_type%d", i);
-			val_qos_type = getvar(NULL, qos_type);
-			
-			if (val_qos_type && bcm_atoi(val_qos_type)==3)
-			{	
-				ether_qos=1;
-				break;
-			}
-		}	
-	}
-	
-	if (ether_qos==1)
-	{
-		if (robo->devid == DEVID5397)
-		{
-			// Configure Global Rate Control Register
-			/*
-				Set the default ingress rate for P1~P4, PI, P7 
-		   */
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_GRATE_CONTROL, &ori32, sizeof(ori32));
-			val32 = (ori32 | BIT14 | BIT11 | BIT10 | BIT09 | BIT08 | BIT06 | BIT03 | BIT02 | BIT01 | BIT00 ) & ~(BIT07) ;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_GRATE_CONTROL, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLPI, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLPI, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP7, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP7, &val32, sizeof(val32));
-				
-			/*
-					Set the default egress rate for P1~P4
-			*/
-			val16 = 0;
-			ori16 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &ori16, sizeof(ori16));
-			val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL) ;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &val16, sizeof(val16));
-				
-			val16 = 0;
-			ori16 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &ori16, sizeof(ori16));
-			val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL);
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &val16, sizeof(val16));
-				
-			val16 = 0;
-			ori16 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &ori16, sizeof(ori16));
-			val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL);
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &val16, sizeof(val16));
-				
-			val16 = 0;
-			ori16 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &ori16, sizeof(ori16));
-			val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL);
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &val16, sizeof(val16));		
-						
-			for (i=0; i<6; i++)
-			{
-				sprintf(qos_type, "qos_type%d", i);
-				sprintf(qos_pri,  "qos_priority%d", i);
-				sprintf(qos_name, "qos_name%d", i);
-					
-				val_qos_type = getvar(NULL, qos_type);
-				val_qos_pri  = getvar(NULL, qos_pri);
-				val_qos_name = getvar(NULL, qos_name);
-					
-				if (val_qos_type && bcm_atoi(val_qos_type)==3 && val_qos_pri && val_qos_name)
-				{
-					if (strrchr(val_qos_name, '1'))
-					{
-						switch(bcm_atoi(val_qos_pri))
-						{
-							case 0:
-								val32 = 0;
-								ori32 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &val16, sizeof(val16));
-								break;
-							case 1:
-								val32 = 0;
-								ori32 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &val16, sizeof(val16));						
-								break;
-							case 2:
-							default:							
-								val32 = 0;
-								ori32 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &val16, sizeof(val16));
-								break;
-							case 3:
-								val32 = 0;
-								ori32 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &val16, sizeof(val16));							
-								break;
-						}
-					} 
-					else if (strrchr(val_qos_name, '2'))
-					{
-						switch(bcm_atoi(val_qos_pri))
-						{
-							case 0:
-								// Do nothing
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &val16, sizeof(val16));
-								break;
-							case 1:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &val16, sizeof(val16));					
-								break;
-							case 2:
-							default:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &val16, sizeof(val16));							
-								break;
-							case 3:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &val16, sizeof(val16));								
-								break;
-						}
-					}
-					else if (strrchr(val_qos_name, '3'))
-					{
-						switch(bcm_atoi(val_qos_pri))
-						{
-							case 0:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &val16, sizeof(val16));
-								break;
-							case 1:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &val16, sizeof(val16));						
-								break;
-							case 2:
-							default:	
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &val16, sizeof(val16));					
-								break;
-							case 3:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &val16, sizeof(val16));								
-								break;
-						}
-					}	
-					else if (strrchr(val_qos_name, '4'))
-					{
-						switch(bcm_atoi(val_qos_pri))
-						{
-							case 0:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &val16, sizeof(val16));
-								break;
-							case 1:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &val16, sizeof(val16));
-								break;
-							case 2:
-							default:	
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &val16, sizeof(val16));							
-								break;
-							case 3:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &val16, sizeof(val16));							
-								break;
-						}	
-					}
-				}
-			}	
-		}
-		else if (robo->devid == DEVID5395)
-		{
-			// Configure Global Rate Control Register
-			/*
-				Set the default ingress rate for P1~P4, PI, P7 
-		   */
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_GRATE_CONTROL, &ori32, sizeof(ori32));
-			val32 = (ori32 | BIT12 | BIT10 | BIT09 | BIT03 | BIT01 | BIT00 ) & ~(BIT08) ;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_GRATE_CONTROL, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLPI, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLPI, &val32, sizeof(val32));
-				
-			val32 = 0;
-			ori32 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP7, &ori32, sizeof(ori32));
-			val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP7, &val32, sizeof(val32));
-				
-			/*
-					Set the default egress rate for P1~P4
-			*/
-			val16 = 0;
-			ori16 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &ori16, sizeof(ori16));
-			val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL) ;
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &val16, sizeof(val16));
-				
-			val16 = 0;
-			ori16 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &ori16, sizeof(ori16));
-			val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL);
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &val16, sizeof(val16));
-				
-			val16 = 0;
-			ori16 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &ori16, sizeof(ori16));
-			val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL);
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &val16, sizeof(val16));
-				
-			val16 = 0;
-			ori16 = 0;
-			robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &ori16, sizeof(ori16));
-			val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL);
-			robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &val16, sizeof(val16));		
-						
-			for (i=0; i<6; i++)
-			{
-				sprintf(qos_type, "qos_type%d", i);
-				sprintf(qos_pri,  "qos_priority%d", i);
-				sprintf(qos_name, "qos_name%d", i);
-					
-				val_qos_type = getvar(NULL, qos_type);
-				val_qos_pri  = getvar(NULL, qos_pri);
-				val_qos_name = getvar(NULL, qos_name);
-					
-				if (val_qos_type && bcm_atoi(val_qos_type)==3 && val_qos_pri && val_qos_name)
-				{
-					if (strrchr(val_qos_name, '1'))
-					{
-						switch(bcm_atoi(val_qos_pri))
-						{
-							case 0:
-								val32 = 0;
-								ori32 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &val16, sizeof(val16));
-								break;
-							case 1:
-								val32 = 0;
-								ori32 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &val16, sizeof(val16));						
-								break;
-							case 2:
-							default:							
-								val32 = 0;
-								ori32 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &val16, sizeof(val16));
-								break;
-							case 3:
-								val32 = 0;
-								ori32 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP1, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-			 					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP1, &val16, sizeof(val16));							
-								break;
-						}
-					} 
-					else if (strrchr(val_qos_name, '2'))
-					{
-						switch(bcm_atoi(val_qos_pri))
-						{
-							case 0:
-								// Do nothing
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &val16, sizeof(val16));
-								break;
-							case 1:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &val16, sizeof(val16));					
-								break;
-							case 2:
-							default:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &val16, sizeof(val16));							
-								break;
-							case 3:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP2, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP2, &val16, sizeof(val16));								
-								break;
-						}
-					}
-					else if (strrchr(val_qos_name, '3'))
-					{
-						switch(bcm_atoi(val_qos_pri))
-						{
-							case 0:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &val16, sizeof(val16));
-								break;
-							case 1:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &val16, sizeof(val16));						
-								break;
-							case 2:
-							default:	
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &val16, sizeof(val16));					
-								break;
-							case 3:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP3, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP3, &val16, sizeof(val16));								
-								break;
-						}
-					}	
-					else if (strrchr(val_qos_name, '4'))
-					{
-						switch(bcm_atoi(val_qos_pri))
-						{
-							case 0:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_HIGH) & RATE_CONTROL_HIGH_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &val16, sizeof(val16));
-								break;
-							case 1:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_MEDIUM) & RATE_CONTROL_MEDIUM_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &val16, sizeof(val16));
-								break;
-							case 2:
-							default:	
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_NORMAL) & RATE_CONTROL_NORMAL_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &val16, sizeof(val16));							
-								break;
-							case 3:
-								val32 = 0;
-								ori32 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &ori32, sizeof(ori32));
-								val32 = (ori32 | RATE_CONTROL_ENABLED | RATE_CONTROL_BSIZE | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_IRATE_CONTROLP4, &val32, sizeof(val32));
-								val16 = 0;
-								ori16 = 0;
-		  					robo->ops->read_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &ori16, sizeof(ori16));
-								val16 = (ori16 | BIT11 | BIT10 | BIT09 | BIT08 | RATE_CONTROL_LOW) & RATE_CONTROL_LOW_N  ;
-								robo->ops->write_reg(robo, PAGE_RATE_CONTROL, REG_ERATE_CONTROLP4, &val16, sizeof(val16));							
-								break;
-						}	
-					}
-				}
-			}	
-		}
-		else
-		{
-			printk("<1>ERROR : bcm_robo_config_qos : Unknow Switch Type!!!\n");
-		}
-	}		
-	return 0;
-}
-
-#if 0
-struct proc_dir_entry *create_proc_read_write_entry(const char *name,
-	mode_t mode, struct proc_dir_entry *base, 
-	read_proc_t *read_proc, write_proc_t *write_proc, void * data)
-{
-	struct proc_dir_entry *res=create_proc_entry(name,mode,base);
-	if (res) {
-		res->read_proc=read_proc;
-		res->write_proc=write_proc;
-		res->data=data;
-	}
-	return res;
-}
-
-int write_proc_linkstatus(struct file *file, const char *buffer, unsigned long count, void *data)
-{
-	int len = 0;
-	char buf[16];
-		
-	if(count >= 15)
-		len = 15;
-	else
-		len = count;
-
-	if(copy_from_user(buf, buffer, len))
-	{
-		printk(KERN_EMERG "GPIO_write_proc : fail.\n");		
-		return -EFAULT;
-	}
-	printk(KERN_EMERG "write data = %s\n", buf);
-	return len;
-}  
-			   
-          
-int read_proc_linkstatus(char *buf, char **start, off_t off, int count, int *eof, void *data)
-{
-	int len = 0;
-	uint16 val16 = 0;
-	robo_info_t *robo = (robo_info_t *)data;
-
-	robo->ops->read_reg(robo, PAGE_STATUS, REG_LINK_STATUS, &val16, sizeof(val16));
-	if (val16 & 0x01)
-		nvram_set("ethlink_status_port0", "1");
-	else
-		nvram_set("ethlink_status_port0", "0");
-	
-	if (val16 & 0x02)
-		nvram_set("ethlink_status_port1", "1");
-	else
-		nvram_set("ethlink_status_port1", "0");
-	
-	if (val16 & 0x04)
-		nvram_set("ethlink_status_port2", "1");
-	else
-		nvram_set("ethlink_status_port2", "0");
-	
-	if (val16 & 0x08)
-		nvram_set("ethlink_status_port3", "1");
-	else
-		nvram_set("ethlink_status_port3", "0");
-	
-	if (val16 & 0x10)
-		nvram_set("ethlink_status_port4", "1");
-	else
-		nvram_set("ethlink_status_port4", "0");
-	return len;
-}
-#endif	// #if 0
-
-#define HWCTL_DELAY				1000	/* msec */
-static struct timer_list	hwctl_timer;
-
-
-static void linkstatus_monitor(unsigned long d)
-{
-	uint16 val16 = 0;
-	robo_info_t *robo = (robo_info_t *)hwctl_timer.data;
-
-	robo->ops->read_reg(robo, PAGE_STATUS, REG_LINK_STATUS, &val16, sizeof(val16));
-		
-	if (val16 & 0x01)
-		nvram_set("ethlink_status_port0", "1");
-	else
-		nvram_set("ethlink_status_port0", "0");
-/* detect Wan-Port coneect speed for upnpd IGD
-	wan_port_speed  : 0-->illeagle, 1-->1000M, 2-->100M, 3-->10M*/
-		
-	uint32 val32 = 0;
-	//robo_info_t *robo = (robo_info_t *)hwctl_timer.data;
-
-	robo->ops->read_reg(robo, 0x01, 0x04, &val32, sizeof(val32));
-	
-	if (val32 & 0x02){
-		if (val32 & 0x01)
-			nvram_set("wan_port_speed", "0");
-		else
-			nvram_set("wan_port_speed", "1");
-		}
-	else{
-		if (val32 & 0x01)
-			nvram_set("wan_port_speed", "2");
-		else
-			nvram_set("wan_port_speed", "3");
-		}
-	
-/*	
-	if (val16 & 0x02)
-		nvram_set("ethlink_status_port1", "1");
-	else
-		nvram_set("ethlink_status_port1", "0");
-	
-	if (val16 & 0x04)
-		nvram_set("ethlink_status_port2", "1");
-	else
-		nvram_set("ethlink_status_port2", "0");
-	
-	if (val16 & 0x08)
-		nvram_set("ethlink_status_port3", "1");
-	else
-		nvram_set("ethlink_status_port3", "0");
-	
-	if (val16 & 0x10)
-		nvram_set("ethlink_status_port4", "1");
-	else
-		nvram_set("ethlink_status_port4", "0");
-*/
-		
-	hwctl_timer.expires  = jiffies + (HWCTL_DELAY * HZ / 1000);
- 	add_timer(&hwctl_timer);	
-}
-
-int
-bcm_robo_link_status(robo_info_t *robo)
-{
-	memset(&hwctl_timer, 0, sizeof(hwctl_timer));
-	hwctl_timer.function = linkstatus_monitor;
-	hwctl_timer.expires  = jiffies + (HWCTL_DELAY * HZ / 1000);
-	hwctl_timer.data = (unsigned long) robo;
- 	add_timer(&hwctl_timer);
-
-#if 0 	
-	if(create_proc_read_write_entry("LinkStatus",0,NULL,read_proc_linkstatus,write_proc_linkstatus, (void *)robo) == NULL)
-		printk("b57_robo_register_proc : fail\n");
-	else
-		printk("b57_robo_register_proc : success\n");			
-#endif
-}	
-
-int
-bcm_robo_protect_port_sel(robo_info_t *robo, uint16 mask)
-{
-	int ret = 0;
-	uint8 length = 1;
-	uint8 port = 0x24;
-	uint16 mode16 = 0;
-
-
-	/* Enable management interface access */
-	if (robo->ops->enable_mgmtif)
-		robo->ops->enable_mgmtif(robo);
-
-	/*For 5398, Bit 8:0 is the port want to be protect. For 5397, Bit 4:0*/
-	if (robo->devid == DEVID5398)
-	{
-		length = 2;
-		port = REG_CTRL_PPSEL;
-	}
-	else if (robo->devid == DEVID5397)
-	{
-		length = 1;
-		port = REG_CTRL_PPSEL;
-	}
-	else if (robo->devid == DEVID5325)
-	{
-		length = 1;
-		port = REG_CTRL_PPSEL + 2;//For 5325, it's 0x26
-	}
-
-	/* Switch Mode register (Page 0, Address 0x0B) */
-	robo->ops->read_reg(robo, PAGE_CTRL, port, &mode16, length);
-	ET_ERROR(("Protect port sel, port=%x,mode16=%x,length=%x\n",port,mode16,length));
-	if(length == 2)
-		mask &= 0x1ff;
-	else
-		mask &= 0x1f;
-	mode16 = mask;
-
-	robo->ops->write_reg(robo, PAGE_CTRL, port, &mode16, length);
-
-	/* Read back */
-	mode16 = 0;
-	robo->ops->read_reg(robo, PAGE_CTRL, port, &mode16, length);
-	//ET_ERROR(("Alex:protect port sel read back reg=%x\n",mode16));
-	if (mode16 != (mask & 0xff) ) {
-		ET_ERROR(("robo_protect_port_sel: protect port select failed\n"));
-		ret = -1;
-	}
-
-	/* Disable management interface access */
-	/*
-	if (robo->ops->disable_mgmtif)
-		robo->ops->disable_mgmtif(robo);
-	*/
-	return ret;
-}
 
 

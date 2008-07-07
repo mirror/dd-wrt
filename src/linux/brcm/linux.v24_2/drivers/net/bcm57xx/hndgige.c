@@ -17,6 +17,7 @@
 #include <pcicfg.h>
 #include <sbconfig.h>
 #include <bcmutils.h>
+#include <bcmnvram.h>
 #include <sbutils.h>
 #include <sbgige.h>
 #include <hndpci.h>
@@ -38,11 +39,13 @@ sb_gige_init(sb_t *sbh, uint32 unit, bool *rgmii)
 	uint32 base;
 	uint32 idx;
 	void *regs;
+	int reset;
 
 	/* Sanity checks */
 	ASSERT(sbh);
 	ASSERT(rgmii);
 
+	
 	idx = sb_coreidx(sbh);
 
 	/* point to the gige core registers */
