@@ -130,6 +130,12 @@ _export(nvram_commit)
 _export(srom_write)
 _export(srom_read)
 
+/*_export(bcm_robo_attach)
+_export(bcm_robo_detach)
+_export(bcm_robo_config_vlan)
+_export(bcm_robo_enable_device)
+_export(bcm_robo_enable_switch)
+*/
 _export(hndcrc32)
 
 _export(bcm_mdelay)

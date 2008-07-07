@@ -3,6 +3,7 @@
 #
 
 USE_STANDARD_AS_RULE := true
+#EXTRA_CFLAGS := -DCONFIG_NOPRINTK
 
 L_TARGET = lib.a
 
