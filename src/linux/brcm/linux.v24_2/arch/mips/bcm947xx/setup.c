@@ -214,6 +214,8 @@ char *boothwver = nvram_get("boot_hw_ver");
 if (boardtype==NULL || strcmp(boardtype,"0x478"))iswrt350n=0;
 if (boothwmodel==NULL || strcmp(boothwmodel,"WRT300N"))iswrt300n11=0;
 if (boothwver==NULL || strcmp(boothwver,"1.1"))iswrt300n11=0;
+if (iswrt300n11)
+    iswrt350n=0;
 #if defined(CONFIG_BLK_DEV_IDE) || defined(CONFIG_BLK_DEV_IDE_MODULE)
 	ide_ops = &std_ide_ops;
 #endif

@@ -174,7 +174,7 @@ gpio_init(void)
 
 if (iswrt350n)
 {
-//	printk(KERN_EMERG "WRT350N GPIO Init\n");
+	printk(KERN_EMERG "WRT350N GPIO Init\n");
 	/* For WRT350N USB LED control */
 	sb_gpioreserve(gpio_sbh, 0x400, GPIO_HI_PRIORITY);
 	sb_gpioouten(gpio_sbh, 0x400, 0x400, GPIO_HI_PRIORITY);
@@ -195,15 +195,16 @@ if (iswrt350n)
 		sb_gpioouten(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
 		sb_gpioout(gpio_sbh, 0x4, 0x4, GPIO_HI_PRIORITY);
 }
-if (iswrt300n11)
+/*if (iswrt300n11)
 {
+	printk(KERN_EMERG "WRT300N v1.1 GPIO Init\n");
 		int reset = 1 << 8;
 		sb_gpioout(gpio_sbh, reset, 0, GPIO_DRV_PRIORITY);
 		sb_gpioouten(gpio_sbh, reset, reset, GPIO_DRV_PRIORITY);
 		bcm_mdelay(50);
 		sb_gpioout(gpio_sbh, reset, reset, GPIO_DRV_PRIORITY);
 		bcm_mdelay(20);	
-}
+}*/
 	return 0;
 }
 
