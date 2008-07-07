@@ -225,7 +225,7 @@ sflash_mtd_init(void)
 	
   if (nvram_match ("boardnum", "83258") && nvram_match ("boardtype", "0x48E") && nvram_match ("boardrev", "0x10"))
 	{
-	do_support = 1;  //Netgear WGR614L
+	do_support = 1;  //Netgear WGR614v8, Netgear WGR614v9, Netgear WGR614L,
 	}
 	
   if (!do_support)
