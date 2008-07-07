@@ -277,7 +277,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_WRT54G_V81 0x5117
 
 // Netgear WGR614L (BCM5354 cpu, serial flash, fccid: Netgear PY306400057)
-// NEtgear WGR614 v8 - same - 
+// Netgear WGR614 v8 - same -
+// Netgear WGR614 v9 - same - half flash, half ram
 #define ROUTER_NETGEAR_WGR614L 0x5217
 
 // Netgear WNR834Bv2 (BCM4704 cpu, BCM5325 switch, fccid: Netgear PY307100061)
