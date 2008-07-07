@@ -1247,8 +1247,8 @@ old_way:;
   if (boardnum == 83258 &&
       nvram_match ("boardtype", "0x48E") && nvram_match ("boardrev", "0x10"))
     {
-      cprintf ("router is Netgear WGR614L\n");
-      setRouter ("Netgear WGR614L");
+      cprintf ("router is Netgear WGR614v8/v9/L\n");
+      setRouter ("Netgear WGR614v8/v9/L");
       return ROUTER_NETGEAR_WGR614L;
     }
 
