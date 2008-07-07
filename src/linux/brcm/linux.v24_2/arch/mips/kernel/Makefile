@@ -7,6 +7,7 @@
 #
 
 USE_STANDARD_AS_RULE := true
+#EXTRA_CFLAGS := -DCONFIG_NOPRINTK
 
 all:	kernel.o head.o init_task.o
 

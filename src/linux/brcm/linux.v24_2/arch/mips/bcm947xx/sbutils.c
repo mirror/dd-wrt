@@ -325,7 +325,6 @@ static bool ksi_attached = FALSE;
 sb_t * BCMINITFN(sb_kattach)(osl_t *osh)
 {
 	uint32 *regs;
-//printk(KERN_EMERG "sb_kattach\n");
 	if (!ksi_attached) {
 		uint32 cid;
 
@@ -410,7 +409,6 @@ static sb_info_t *BCMINITFN (sb_doattach) (sb_info_t * si, uint devid,
 
 
 	/* initialize current core index value */
-//printk(KERN_EMERG "sb_doattach->coreidx\n");
 	si->curidx = _sb_coreidx(si);
 
 	if (si->curidx == BADIDX) {
@@ -533,6 +531,8 @@ static sb_info_t *BCMINITFN (sb_doattach) (sb_info_t * si, uint devid,
       /* do a pci config read to get subsystem id and subvendor id */
       w = OSL_PCI_READ_CONFIG (si->osh, PCI_CFG_SVID, sizeof (uint32));
       /* Let nvram variables override subsystem Vend/ID */
+      //brainslayer: todo WRT300N v1.1 quirk
+
       if ((si->sb.boardvendor =
 	   (uint16) sb_getdevpathintvar (&si->sb, "boardvendor")) == 0)
 	si->sb.boardvendor = w & 0xffff;
@@ -545,6 +545,8 @@ static sb_info_t *BCMINITFN (sb_doattach) (sb_info_t * si, uint devid,
       else
 	SB_ERROR (("Overriding boardtype: 0x%x instead of 0x%x\n",
 		   si->sb.boardtype, (w >> 16) & 0xffff));
+//	si->sb.boardvendor = w & 0xffff;
+//	si->sb.boardtype = (w >> 16) & 0xffff;
       break;
 
     case PCMCIA_BUS:
@@ -2892,7 +2894,6 @@ sb_gpioouten (sb_t * sbh, uint32 mask, uint32 val, uint8 priority)
 
   si = SB_INFO (sbh);
   regoff = 0;
-
   /* gpios could be shared on router platforms
    * ignore reservation if it's high priority (e.g., test apps)
    */
