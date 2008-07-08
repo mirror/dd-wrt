@@ -35,6 +35,14 @@ OBJS := utils.o shutils.o wl.o linux_timer.o wl_linux.o gpio.o
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -fpic
 endif
+ifeq ($(CONFIG_SUPERCHANNEL),y)
+CFLAGS += -DHAVE_SUPERCHANNEL
+OBJS += ../shared/register.o
+endif
+ifeq ($(CONFIG_REGISTER),y)
+CFLAGS += -DHAVE_REGISTER
+OBJS +=  ../shared/register.o
+endif
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
   CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD
@@ -43,6 +51,7 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 OBJS += ../wireless-tools/libiw.so.29 
+OBJS += ../shared/countrycode/countrycode_$(ARCH).o
 endif
 
 
