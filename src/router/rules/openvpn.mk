@@ -22,13 +22,18 @@ endif
 
 openvpn-install:
 	install -D openvpn/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
-#ifneq ($(CONFIG_NEWMEDIA),y)	
+
+ifeq ($(CONFIG_AIRNET),y)
+	install -D openvpn/config-airnet/openvpncl.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpncl.nvramconfig
+	install -D openvpn/config-airnet/openvpncl.webservices $(INSTALLDIR)/openvpn/etc/config/openvpncl.webservices
+	install -D openvpn/config-airnet/openvpn.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpn.nvramconfig
+	install -D openvpn/config-airnet/openvpn.webservices $(INSTALLDIR)/openvpn/etc/config/openvpn.webservices
+else
 	install -D openvpn/config/openvpncl.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpncl.nvramconfig
 	install -D openvpn/config/openvpncl.webservices $(INSTALLDIR)/openvpn/etc/config/openvpncl.webservices
-#else
 	install -D openvpn/config2/openvpn.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpn.nvramconfig
 	install -D openvpn/config2/openvpn.webservices $(INSTALLDIR)/openvpn/etc/config/openvpn.webservices
-#endif
+endif
 
 openvpn-clean:
 	if test -e "openvpn/Makefile"; then make -C openvpn clean; fi

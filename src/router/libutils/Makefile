@@ -19,36 +19,27 @@ endif
 
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
-CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/
+CFLAGS	= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/
 else
-CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
+CFLAGS	= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
 endif
 else
-CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
+CFLAGS	= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
 
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -fpic 
 LDFLAGS += -L.
-OBJS := nvparse.o shutils.o wl_macfuncs.o utils.o linux_osl.o md5c.o gpio.o
+OBJS := utils.o shutils.o wl.o linux_timer.o wl_linux.o gpio.o 
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
 CFLAGS += -fpic
-
 endif
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
   CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD
 endif
 
-ifeq ($(CONFIG_SUPERCHANNEL),y)
-CFLAGS += -DHAVE_SUPERCHANNEL
-OBJS += register.o
-endif
-ifeq ($(CONFIG_REGISTER),y)
-CFLAGS += -DHAVE_REGISTER
-OBJS += register.o
-endif
 
 ifeq ($(CONFIG_SILENCE),y)
   CFLAGS += -DHAVE_SILENCE
@@ -216,11 +207,6 @@ ifeq ($(CONFIG_WILLIAM),y)
 CFLAGS += -DWILLIAM=1
 endif
 
-ifeq ($(CONFIG_MADWIFI),y)
-CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
-OBJS += ../wireless-tools/libiw.so.29 
-endif
-OBJS += countrycode/countrycode_$(ARCH).o
 
 ifeq ($(CONFIG_GGEW),y)
   CFLAGS += -DHAVE_NEWMEDIA
@@ -349,17 +335,17 @@ CFLAGS += -DHAVE_MATRIXSSL
 endif
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
-all: libshared.so libshared.a
+all: libutils.so libutils.a
 #	gcc -o defaults $(HFLAGS) defaults.c
 #	./defaults
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
-	install -d $(INSTALLDIR)/shared/lib
-	install -m 755 libshared.so $(INSTALLDIR)/shared/lib
+	install -d $(INSTALLDIR)/libutils/lib
+	install -m 755 libutils.so $(INSTALLDIR)/libutils/lib
 else
-	install -d $(INSTALLDIR)/shared/usr/lib
-	install -m 755 libshared.so $(INSTALLDIR)/shared/usr/lib
+	install -d $(INSTALLDIR)/libutils/usr/lib
+	install -m 755 libutils.so $(INSTALLDIR)/libutils/usr/lib
 endif
 
 clean:
@@ -369,11 +355,10 @@ clean:
 	rm -f *.h~
 	rm -f *.c~
 
-libshared.so: $(OBJS)
-#	$(CC) -shared -o $@ $(CFLAGS) $(OBJS) 
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -L../libutils -lutils -lcrypt -lnvram
+libutils.so: $(OBJS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram
 
-libshared.a: $(OBJS)
+libutils.a: $(OBJS)
 	$(AR) arc -o  $@ $^
 
 *.o: $(CY_DEPS)

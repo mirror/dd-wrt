@@ -18,7 +18,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-CFLAGS	= $(COPTS) -fpic
+CFLAGS	= $(COPTS) 
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -Imodules
@@ -35,7 +35,7 @@ LDFLAGS += -L$(TOP)/vfs
 endif
 
 #CFLAGS += -Ilzma
-LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(INSTALLDIR)/shared/usr/lib -lshared -lcrypt -ldl
+LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lshared -lcrypt -ldl -lutils
 
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections -DLINUX 
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections

@@ -527,12 +527,12 @@ period_check (int sig)
 #endif
 		  if (pidof ("nas") > 0 || pidof ("wrt-radauth") > 0)
 		  {
-		  stop_service ("nas");
+		  eval("stopservice","nas");
 		  }
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "on");
 	      eval ("startservice", "nas");
 #ifdef HAVE_MSSID
-	      start_service ("guest_nas");
+	      eval ("startservice", "guest_nas");
 #endif
 	    }
 #endif
@@ -555,7 +555,7 @@ period_check (int sig)
 #endif
 		  if (pidof ("nas") > 0 || pidof ("wrt-radauth") > 0)
 		  {
-		  stop_service ("nas");
+		  eval("stopservice","nas");
 		  }
 		  eval ("wl", "-i", get_wl_instance_name(0), "radio", "off");
 	    }
@@ -636,8 +636,7 @@ period_check (int sig)
     }
 }
 
-int
-resetbutton_main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
 
   brand = getRouterBrand ();

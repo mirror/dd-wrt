@@ -24,7 +24,7 @@ LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 all: wrt-radauth radius-client macupd
 
 wrt-radauth: wrt-radauth.o md5.o radius.o
-	$(CC) $(LDFLAGS) -L../shared -L../nvram -lshared -lnvram $^ -o $@
+	$(CC) $(LDFLAGS) -L../libutils -L../shared -L../nvram -lshared -lutils -lnvram $^ -o $@
 
 radius-client: radius-client.o md5.o radius.o
 

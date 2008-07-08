@@ -179,6 +179,7 @@ include rules/libshared.mk
 include rules/upnp.mk
 include rules/services.mk
 include rules/utils.mk
+include rules/libutils.mk
 
 # Generic rules
 #
