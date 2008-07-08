@@ -255,6 +255,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_BUFFALO_WZRG300N:
     case ROUTER_NETGEAR_WNR834B:
     case ROUTER_NETGEAR_WNR834BV2:
+    case ROUTER_NETGEAR_WNDR3300:
     case ROUTER_ASUS_WL500W:
       eval ("insmod", "wl");	//load module
       break;
@@ -532,6 +533,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_SITECOM_WL111:
+    case ROUTER_NETGEAR_WNDR3300:
       nvram_set ("lan_ifnames", "eth0 eth2");
       nvram_set ("wl0_ifname", "eth2");
       nvram_set ("wan_ifname", "eth1");
