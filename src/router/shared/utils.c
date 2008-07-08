@@ -1878,19 +1878,6 @@ doMultiCast (void)
   return ifcount;
 }
 
-int
-getMTD (char *name)
-{
-  char buf[128];
-  int device;
-  sprintf (buf, "cat /proc/mtd|grep \"%s\"", name);
-  FILE *fp = popen (buf, "rb");
-  fscanf (fp, "%s", &buf[0]);
-  device = buf[3] - '0';
-  pclose (fp);
-  return device;
-}
-
 static int
 sockaddr_to_dotted (struct sockaddr *saddr, char *buf)
 {
