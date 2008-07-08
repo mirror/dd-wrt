@@ -43,11 +43,9 @@ endif
 
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
-OBJS += register.o
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
-OBJS += register.o
 endif
 
 ifeq ($(CONFIG_SILENCE),y)
@@ -220,7 +218,7 @@ ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 OBJS += ../wireless-tools/libiw.so.29 
 endif
-OBJS += countrycode/countrycode_$(ARCH).o
+#OBJS += countrycode/countrycode_$(ARCH).o
 
 ifeq ($(CONFIG_GGEW),y)
   CFLAGS += -DHAVE_NEWMEDIA
