@@ -394,7 +394,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WNR834B, Netgear WNR834Bv2
 	}
 
-	if (nvram_match ("boardtype", "0x0472") && nvram_match ("boardrev", "0x23") && (nvram_match ("boardnum", "01") || nvram_match ("boardnum", "1"))) {
+	if (nvram_match ("boardtype", "0x0472") && nvram_match ("boardrev", "0x23") && nvram_match ("boardnum", "01")) {
 		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WNDR-3300
 	}	
 	
