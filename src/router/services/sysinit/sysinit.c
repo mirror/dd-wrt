@@ -648,6 +648,7 @@ start_restore_defaults (void)
     case ROUTER_WRT300N:
     case ROUTER_NETGEAR_WNR834B:
     case ROUTER_NETGEAR_WNR834BV2:
+    case ROUTER_NETGEAR_WNDR3300:
     case ROUTER_ASUS_WL500G:
     case ROUTER_ASUS_WL500W:
 #endif
