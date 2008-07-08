@@ -34,10 +34,20 @@
 #include <cy_conf.h>
 #include <bcmdevs.h>
 #include <linux/if_ether.h>
-#include <linux/mii.h>
+//#include <linux/mii.h>
 #include <linux/sockios.h>
 #include <cymac.h>
 #include <broadcom.h>
+#define SIOCGMIIREG	0x8948	/* Read MII PHY register.       */
+#define SIOCSMIIREG	0x8949	/* Write MII PHY register.      */
+
+struct mii_ioctl_data
+{
+  unsigned short phy_id;
+  unsigned short reg_num;
+  unsigned short val_in;
+  unsigned short val_out;
+};
 
 int
 count_processes (char *pidName)
