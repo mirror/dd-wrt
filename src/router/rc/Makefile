@@ -15,20 +15,20 @@ else
 CFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/ 
 endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
-CFLAGS  += $(COPTS) -fpic
+CFLAGS  += $(COPTS)
 ifeq ($(ARCH),i386)
-LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lcrypt -L../libnet/lib -lnet -lshared  -ldl
+LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils  -ldl
 CFLAGS += -I$(LINUXDIR)
 else
-LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lcrypt -L../libnet/lib -lnet -lshared  -ldl
+LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils  -ldl
 CFLAGS += -I$(LINUXDIR)
 endif
 
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-OBJS := rc.o init.o servicemanager.o services.o crc.o 
+OBJS := rc.o servicemanager.o crc.o 
 #http.o stats.o
-OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o radio_timer.o watchdog.o event.o nvram.o ledtool.o ttraff.o wland.o
+OBJS += listen.o check_ps.o radio_timer.o watchdog.o event.o nvram.o ledtool.o services.o
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -422,8 +422,13 @@ install: all
 	install -d $(INSTALLDIR)/usr/sbin
 	install -d $(INSTALLDIR)/sbin
 	install rc $(INSTALLDIR)/sbin	
+	install ttraff $(INSTALLDIR)/sbin	
+	install wland $(INSTALLDIR)/sbin	
+	install process_monitor $(INSTALLDIR)/sbin	
+	install resetbutton $(INSTALLDIR)/sbin	
+	install init $(INSTALLDIR)/sbin	
 	$(STRIP) $(INSTALLDIR)/sbin/rc
-	cd $(INSTALLDIR)/sbin && ln -sf rc init
+#	cd $(INSTALLDIR)/sbin && ln -sf rc init
 #ifneq ($(CONFIG_TW6600),y)
 #ifeq ($(CONFIG_DIST),"micro")
 #	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
@@ -442,7 +447,7 @@ install: all
 	cd $(INSTALLDIR)/sbin && ln -sf rc event
 	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
 	cd $(INSTALLDIR)/sbin && ln -sf rc filter
-	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
+#	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
 	cd $(INSTALLDIR)/sbin && ln -sf rc filtersync
 	cd $(INSTALLDIR)/sbin && ln -sf rc ntpd
 	cd $(INSTALLDIR)/sbin && ln -sf rc getbridge
@@ -462,10 +467,10 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc supplicant
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ps
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_success
-	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
+#	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
 	cd $(INSTALLDIR)/sbin && ln -sf rc site_survey
 	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
-	cd $(INSTALLDIR)/sbin && ln -sf rc ttraff	
+#	cd $(INSTALLDIR)/sbin && ln -sf rc ttraff	
 ifeq ($(CONFIG_WIVIZ),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_wiviz
 	cd $(INSTALLDIR)/sbin && ln -sf rc autokill_wiviz
@@ -477,13 +482,17 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc misc	
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ses_led	
 	cd $(INSTALLDIR)/sbin && ln -sf rc setpasswd
-	cd $(INSTALLDIR)/sbin && ln -sf rc wland
+#	cd $(INSTALLDIR)/sbin && ln -sf rc wland
 ifeq ($(CONFIG_MICRO),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc switch
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
+	cd $(INSTALLDIR)/sbin && ln -sf rc startservices
+	cd $(INSTALLDIR)/sbin && ln -sf rc start_single_service
+	cd $(INSTALLDIR)/sbin && ln -sf rc stopservices
+	cd $(INSTALLDIR)/sbin && ln -sf rc startstop
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd
 #ifeq ($(CONFIG_BIRD),y)
@@ -525,6 +534,11 @@ endif
 
 rc: $(OBJS)
 #	$(AR) arc -o $@.a $^
-	$(CC) $(CFLAGS) -s -o $@ $^ $(LDFLAGS) -lshared
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o ttraff ttraff.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o process_monitor process_monitor.c ntp.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o init init.c $(LDFLAGS)
 
 $(OBJS): $(CY_DEPS)
