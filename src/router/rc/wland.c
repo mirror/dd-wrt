@@ -403,7 +403,7 @@ checkbssid (void)
   if (ifname == NULL)
     ifname = getWET ();
   if (ifname == NULL)
-    return;
+    return 0;
   if ((WL_IOCTL (ifname, WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN)) == 0)
     {
       *(uint32 *) buf = WLC_IOCTL_MAXLEN;
