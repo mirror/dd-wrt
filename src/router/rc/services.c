@@ -81,7 +81,7 @@ del_routes (char *route)
 }
 
 int
-start_services (void)
+start_services_main (int argc,char **argv)
 {
   void *handle = NULL;
   nvram_set ("qos_done", "0");
@@ -174,7 +174,7 @@ start_services (void)
 }
 
 int
-stop_services (void)
+stop_services_main (int argc,char **argv)
 {
   void *handle = NULL;
   //stop_ses();
@@ -950,7 +950,7 @@ static struct SERVICES services_def[] = {
 };
 
 int
-start_single_service (void)
+start_single_service_main (int argc,char **argv)
 {
 
   sleep (3);
@@ -1024,116 +1024,3 @@ is_running (char *process_name)
 }
 
 
-/*
- * Call when keepalive mode
- */
-int
-redial_main (int argc, char **argv)
-{
-  int need_redial = 0;
-  int status;
-  pid_t pid;
-  int count = 1;
-  int num;
-
-  while (1)
-    {
-
-      sleep (atoi (argv[1]));
-      num = 0;
-      count++;
-
-      //fprintf(stderr, "check PPPoE %d\n", num);
-      if (!check_wan_link (num))
-	{
-	  //fprintf(stderr, "PPPoE %d need to redial\n", num);
-	  need_redial = 1;
-	}
-      else
-	{
-	  //fprintf(stderr, "PPPoE %d not need to redial\n", num);
-	  continue;
-	}
-
-
-#if 0
-      cprintf ("Check pppx if exist: ");
-      if ((fp = fopen ("/proc/net/dev", "r")) == NULL)
-	{
-	  return -1;
-	}
-
-      while (fgets (line, sizeof (line), fp) != NULL)
-	{
-	  if (strstr (line, "ppp"))
-	    {
-	      match = 1;
-	      break;
-	    }
-	}
-      fclose (fp);
-      cprintf ("%s", match == 1 ? "have exist\n" : "ready to dial\n");
-#endif
-
-      if (need_redial)
-	{
-	  pid = fork ();
-	  switch (pid)
-	    {
-	    case -1:
-	      perror ("fork failed");
-	      exit (1);
-	    case 0:
-#ifdef HAVE_PPPOE
-	      if (nvram_match ("wan_proto", "pppoe"))
-		{
-		  sleep (1);
-		  start_service ("wan_redial");
-		}
-#endif
-#ifdef HAVE_PPTP
-	      else if (nvram_match ("wan_proto", "pptp"))
-		{
-		  stop_service ("pptp");
-		  sleep (1);
-		  start_service ("wan_redial");
-		}
-#endif
-#ifdef HAVE_L2TP
-#if defined(HAVE_PPTP) || defined(HAVE_PPPOE)
-	      else
-#endif
-	      if (nvram_match ("wan_proto", "l2tp"))
-		{
-		  stop_service ("l2tp");
-		  sleep (1);
-		  start_service ("l2tp_redial");
-		}
-#endif
-//      Moded by Boris Bakchiev
-//      We dont need this at all.
-//      But if this code is executed by any of pppX programs we might have to do this.
-
-#ifdef HAVE_HEARTBEAT
-	      else if (nvram_match ("wan_proto", "heartbeat"))
-		{
-		  if (is_running ("bpalogin") == 0)
-		    {
-		      stop_service ("heartbeat");
-		      sleep (1);
-		      start_service ("heartbeat_redial");
-		    }
-
-		}
-#endif
-
-	      exit (0);
-	      break;
-	    default:
-	      waitpid (pid, &status, 0);
-	      //dprintf("parent\n");
-	      break;
-	    }			// end switch
-	}			// end if
-    }				// end while
-}				// end main

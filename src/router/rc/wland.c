@@ -700,8 +700,7 @@ do_wlan_check (void)
 }
 
 
-int
-wland_main (int argc, char **argv)
+int main (int argc, char **argv)
 {
   /* Run it in the background */
   switch (fork ())

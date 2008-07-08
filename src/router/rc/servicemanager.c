@@ -300,6 +300,12 @@ startstop (char *name)
     dlclose (handle);
 }
 
+void
+startstop_main (int argc,char **argv)
+{
+startstop(argv[0]);
+}
+
 void *
 startstop_nofree (char *name, void *handle)
 {
