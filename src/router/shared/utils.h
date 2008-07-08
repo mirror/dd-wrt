@@ -6,6 +6,7 @@
 #include <malloc.h>
 #include <cy_conf.h>
 #endif
+#include <string.h>
 
 /* 2 byte router ID number; Eko 4.jul.06
 
@@ -302,6 +303,13 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define NVROUTER "DD_BOARD"
 
+static inline int
+startswith (char *source, char *cmp)
+{
+  return !strncmp (source, cmp, strlen (cmp));
+}
+
+
 extern char *getBridge (char *ifname);
 extern char *getRealBridge (char *ifname);
 extern char *getSTA (void);
@@ -310,6 +318,8 @@ extern int contains (const char *string, char value);
 extern int getcpurev (void);
 extern int cpu_plltype (void);
 extern int check_vlan_support (void);
+
+
 extern int startswith (char *source, char *cmp);
 extern int count_occurences (char *source, int cmp);
 extern int pos_nthoccurence (char *source, int cmp, int which);
@@ -324,6 +334,8 @@ extern char *get_mac_from_ip (char *ip);
 extern struct dns_lists *get_dns_list (void);
 extern int dns_to_resolv (void);
 extern char *get_wan_face (void);
+
+
 extern int check_wan_link (int num);
 extern char *get_complete_lan_ip (char *ip);
 extern int get_int_len (int num);

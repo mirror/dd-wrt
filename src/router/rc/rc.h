@@ -75,8 +75,7 @@ extern int start_dhcpfwd (void);
 extern void stop_dhcpfwd (void);
 extern int start_ntpc (void);
 extern int stop_ntpc (void);
-extern int start_services (void);
-extern int stop_services (void);
+extern int start_services_main (int argc,char **argv);
 
 extern int config_vlan (void);
 extern void config_loopback (void);
@@ -271,7 +270,7 @@ extern int start_service (char *name);
 extern int stop_service (char *name);
 extern void *start_service_nofree (char *name,void *handle);
 extern void *stop_service_nofree (char *name,void *handle);
-extern void startstop (char *name);
+extern void startstop_main (int argc,char **argv);
 extern void *startstop_nofree (char *name,void *handle);
 extern int start_main (char *name, int argc, char **argv);
 extern int start_servicei (char *name, int param);
@@ -300,7 +299,7 @@ extern int redial_main (int argc, char **argv);
 
 extern void del_routes (char *route);
 
-extern int start_single_service (void);
+extern int start_single_service_main (int argc,char **argv);
 
 extern int write_boot (const char *path, const char *mtd);
 extern void do_mssid (char *wlname);
@@ -312,6 +311,7 @@ extern char *range (char *start, char *end);
 //static int start_heartbeat (int status);
 extern int stop_heartbeat (void);
 extern int hb_connect_main (int argc, char **argv);
+extern int stop_services_main (int argc, char **argv);
 extern int hb_disconnect_main (int argc, char **argv);
 extern int check_ps_main (int argc, char **argv);
 extern int listen_main (int argc, char **argv);
