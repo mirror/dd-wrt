@@ -34,7 +34,7 @@
 #include <cy_conf.h>
 #include <bcmdevs.h>
 #include <linux/if_ether.h>
-//#include <linux/mii.h>
+#include <linux/mii.h>
 #include <linux/sockios.h>
 #include <cymac.h>
 #include <broadcom.h>
