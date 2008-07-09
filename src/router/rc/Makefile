@@ -507,9 +507,6 @@ endif
 #ifeq ($(CONFIG_DDNS),y)
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox ez-ipupdate
 #endif
-ifeq ($(CONFIG_DHCPFORWARD),y)
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dhcpfwd
-endif
 #ifeq ($(CONFIG_PPPD),y)
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox pppd
 #endif
