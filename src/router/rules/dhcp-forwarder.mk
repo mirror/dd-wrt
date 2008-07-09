@@ -5,9 +5,7 @@ dhcpforwarder:
 	$(MAKE) -C dhcpforwarder
 
 dhcpforwarder-install:
-	#install -D dhcpforwarder/dhcp-fwd $(INSTALLDIR)/dhcpforwarder/usr/sbin/dhcp-fwd
-	#$(STRIP) $(INSTALLDIR)/dhcpforwarder/usr/sbin/dhcp-fwd
-	@true
+	install -D dhcpforwarder/dhcpfwd $(INSTALLDIR)/dhcpforwarder/usr/sbin/dhcpfwd
 	
 dhcpforwarder-clean:
 	if test -e "dhcpforwarder/Makefile"; then $(MAKE) -C dhcpforwarder clean; fi

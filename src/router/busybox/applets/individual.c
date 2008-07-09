@@ -20,14 +20,6 @@ int main(int argc, char **argv)
 {
   char *base = strrchr (argv[0], '/');
   base = base ? base + 1 : argv[0];
-#ifdef HAVE_DHCPFWD
-
-  if (strstr (base, "dhcpfwd"))
-    return dhcpforward_main(argc,argv);
-#else
-  if (strstr (base, "blahblah"))
-    return puts(base);
-#endif
 	applet_name = argv[0];
 
 	return APPLET_main(argc,argv);

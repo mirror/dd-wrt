@@ -744,16 +744,6 @@ int lbb_main(char **argv)
 int main(int argc ATTRIBUTE_UNUSED, char **argv)
 #endif
 {
-  char *base = strrchr (argv[0], '/');
-  base = base ? base + 1 : argv[0];
-#ifdef HAVE_DHCPFWD
-
-  if (strstr (base, "dhcpfwd"))
-    return dhcpforward_main(argc,argv);
-#else
-  if (strstr (base, "blahblah"))
-    return puts(base);
-#endif
 #if defined(SINGLE_APPLET_MAIN)
 	/* Only one applet is selected by the user! */
 	/* applet_names in this case is just "applet\0\0" */
