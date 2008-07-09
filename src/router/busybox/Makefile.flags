@@ -70,7 +70,7 @@ endif
 endif
 
 # If arch/$(ARCH)/Makefile did not override it (with, say, -fPIC)...
-ARCH_FPIC ?= -fpic
+ARCH_FPIC ?= 
 ARCH_FPIE ?= -fpie
 ARCH_PIE ?= -pie
 
@@ -113,17 +113,9 @@ endif
 #LDFLAGS += -nostdlib
 
 
-LDFLAGS	+= -L../nvram -L../mipsel-uclibc/install/nvram/usr/lib -L../shared -L../mipsel-uclibc/install/shared/usr/lib -L../libnet/lib  
-ifeq ($(CONFIG_DHCPFORWARD),y)
-CFLAGS += -DHAVE_DHCPFWD
-LIBRARIES += $(TOP)/dhcpforwarder/dhcpfwd.a
-endif
 ifeq ($(CONFIG_NOMESSAGE),y)
 CFLAGS += -DHAVE_NOMESSAGE
 endif
-ifeq ($(CONFIG_BRANDING),y)
-CFLAGS += -DHAVE_BRANDING
-endif 
 CFLAGS += -DNEED_PRINTF
 CFLAGS += $(COPTS)
 
