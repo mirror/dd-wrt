@@ -732,8 +732,7 @@ execRelay()
   }
 }
 
-int
-dhcpforward_main(int argc, char *argv[])
+int main(int argc, char *argv[])
     /*@globals fds, servers, internalState, fileSystem@*/
     /*@modifies fds, servers, internalState, fileSystem@*/
 {
