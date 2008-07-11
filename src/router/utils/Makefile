@@ -33,7 +33,7 @@ vpath %.c $(SRCBASE)/tools/misc
 
 vpath %.c $(SRCBASE)/et/freebsd
 ifeq ($(ARCHITECTURE),gateworx)
-UTILS += showmac
+UTILS += showmac setmac fischecksum
 endif
 ifeq ($(CONFIG_NOP8670),y)
 UTILS += fischecksum
