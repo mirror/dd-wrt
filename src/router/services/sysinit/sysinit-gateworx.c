@@ -45,6 +45,12 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/if.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
+
 
 static int
 detect (char *devicename)
@@ -367,7 +373,24 @@ Configure mac addresses by reading data from eeprom
 	}
       fclose (file);
     }
-
+  if (nvram_match("DD_BOARD","ADI Engineering Pronghorn Metro"))
+    {
+    fprintf(stderr,"Pronghorn Metro detected\n");
+    eval("setmac","-f","/dev/mtdblock/7","-n","1","-i","0","-r","npe_eth0_esa");
+    eval("setmac","-f","/dev/mtdblock/7","-n","1","-i","1","-r","npe_eth1_esa");
+  struct ifreq ifr;
+  int s;
+  if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
+    {
+      char eabuf[32];
+      strncpy (ifr.ifr_name, "ixp0", IFNAMSIZ);
+      ioctl (s, SIOCGIFHWADDR, &ifr);
+      nvram_set ("et0macaddr_safe",
+		 ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,
+			     eabuf));
+      close (s);
+    }
+    }
 
   /* Set a sane date */
   stime (&tm);
