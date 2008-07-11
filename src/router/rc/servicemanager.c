@@ -303,7 +303,7 @@ startstop (char *name)
 void
 startstop_main (int argc,char **argv)
 {
-startstop(argv[0]);
+startstop(argv[1]);
 }
 
 void *

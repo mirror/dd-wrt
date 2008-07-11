@@ -483,7 +483,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ses_led	
 	cd $(INSTALLDIR)/sbin && ln -sf rc setpasswd
 #	cd $(INSTALLDIR)/sbin && ln -sf rc wland
-ifeq ($(CONFIG_MICRO),y)
+ifneq ($(CONFIG_MICRO),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
