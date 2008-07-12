@@ -315,11 +315,24 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	buf = info->map.virt;
 	int foundconfig=0;
 	int foundfis=0;
+	int filesyssize=0;
+	int tmplen;
 	while((offset+mtd->erasesize)<mtd->size)
 	    {
 	    printk(KERN_EMERG "[0x%08X]\n",offset);
 	    if (*((__u32 *) buf) == SQUASHFS_MAGIC || *((__u16 *) buf) == 0x1985) 
 		{
+	        struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
+		if (*((__u16 *) buf) != 0x1985)
+			{
+			filesyssize = sb->bytes_used;
+			tmplen = offset + filesyssize;
+			tmplen +=  (mtd->erasesize - 1);
+			tmplen &= ~(mtd->erasesize - 1);
+			filesyssize = tmplen - offset;
+			}
+
+
 		printk(KERN_EMERG "\nfound squashfs/jffs2 at %X\n",offset);
 		dir_parts[2].offset = offset;
 		//detect now compex board
@@ -414,8 +427,15 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	    }
 	def:;
 	info->partitions=dir_parts;
-	dir_parts[3].offset = dir_parts[1].offset+dir_parts[1].size;
+	if (filesyssize)
+	    {
+	    dir_parts[2].size = filesyssize;    
+	    }
+	dir_parts[3].offset = dir_parts[2].offset+dir_parts[2].size;
 	dir_parts[3].size = dir_parts[4].offset-dir_parts[3].offset;
+
+
+
 	err = add_mtd_partitions(mtd, dir_parts, 8);
 
 /*#ifndef CONFIG_NOP8670

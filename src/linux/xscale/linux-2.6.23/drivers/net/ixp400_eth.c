@@ -542,9 +542,9 @@ static struct platform_device ixp400_eth_devices[IX_ETH_ACC_NUMBER_OF_PORTS] = {
     },
     {
 	.name 	= MODULE_NAME,
-#ifdef CONFIG_MACH_KIXRP435
+#if defined(CONFIG_MACH_KIXRP435)
 	.id   	= IX_ETH_PORT_3,
-#elif CONFIG_MACH_CAMBRIA
+#elif defined(CONFIG_MACH_CAMBRIA)
 	.id			= IX_ETH_PORT_3,
 #else
 	.id   	= IX_ETH_PORT_2,
@@ -624,19 +624,19 @@ static struct sk_buff *skQueue[SKB_QSIZE];
  */
 static int phyAddresses[IXP400_ETH_ACC_MII_MAX_ADDR] =
 {
-#if defined(CONFIG_ARCH_ADI_COYOTE)
-    4, /* Port 1 (IX_ETH_PORT_1) - Connected to PHYs 1-4      */
-    5, /* Port 2 (IX_ETH_PORT_2) - Only connected to PHY 5    */
-
-    3,  /******************************************************/
-    2,  /* PHY addresses on Coyote platform (physical layout) */
-    1   /* (4 LAN ports, switch)  (1 WAN port)                */
+//#if defined(CONFIG_ARCH_ADI_COYOTE)
+//    4, /* Port 1 (IX_ETH_PORT_1) - Connected to PHYs 1-4      */
+//    5, /* Port 2 (IX_ETH_PORT_2) - Only connected to PHY 5    */
+//
+//    3,  /******************************************************/
+//    2,  /* PHY addresses on Coyote platform (physical layout) */
+//    1   /* (4 LAN ports, switch)  (1 WAN port)                */
         /*       ixp0              ixp1                       */
         /*  ________________       ____                       */
         /* /_______________/|     /___/|                      */
 	/* | 1 | 2 | 3 | 4 |      | 5 |                       */
         /* ----------------------------------------           */
-#elif defined(CONFIG_ARCH_IXDP425)
+#if defined(CONFIG_ARCH_IXDP425)
     /* 1 PHY per NPE port */
     0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
     1  /* Port 2 (IX_ETH_PORT_2 / NPE C) */
@@ -712,13 +712,13 @@ static long portIdPhyIndexMap[] =
  */
 static phy_cfg_t default_phy_cfg[] =
 {
-#if defined(CONFIG_ARCH_ADI_COYOTE)
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},/* Port 0: NO link */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 1: monitor the link */
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
-    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}
-#elif defined(CONFIG_ARCH_IXDP425)
+//#if defined(CONFIG_ARCH_ADI_COYOTE)
+//    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE},/* Port 0: NO link */
+//    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 1: monitor the link */
+//    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
+//    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
+//    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}
+#if defined(CONFIG_ARCH_IXDP425)
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 0: monitor the phy */
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}  /* Port 1: monitor the link */
 
@@ -3216,7 +3216,7 @@ static int phy_init(void)
 	if (port_id == IX_ETH_PORT_1) npe_id = "B";
 	if (port_id == IX_ETH_PORT_2) npe_id = "C";
 	if (port_id == IX_ETH_PORT_3) npe_id = "A";
-#ifdef CONFIG_MACH_CAMBRIA
+#if defined(CONFIG_MACH_CAMBRIA)
 	P_INFO("%s%d is using NPE%s and the PHY at address %d\n",
 	       DEVICE_NAME, port_id-1, npe_id,
 	       phyAddresses[portIdPhyIndexMap[port_id]]);
@@ -4121,7 +4121,7 @@ static int __devinit dev_eth_probe(struct device *dev)
     /* set the private port ID */
     priv->port_id  = portId;
 
-#ifdef CONFIG_MACH_CAMBRIA
+#if defined(CONFIG_MACH_CAMBRIA)
     /* set device name */
     sprintf(ndev->name, DEVICE_NAME"%d", priv->port_id-1);
 #else
@@ -4198,6 +4198,14 @@ static int __devinit dev_eth_probe(struct device *dev)
 if (machine_is_pronghorn() || machine_is_pronghorn_metro())
     {
     get_otp_MACAddress(ndev, priv);
+	P_WARN("try MAC address %2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x for port %d\n",
+	       (unsigned)ndev->dev_addr[0],
+	       (unsigned)ndev->dev_addr[1],
+	       (unsigned)ndev->dev_addr[2],
+	       (unsigned)ndev->dev_addr[3],
+	       (unsigned)ndev->dev_addr[4],
+	       (unsigned)ndev->dev_addr[5],
+	       priv->port_id);
     }else{
 //printk(KERN_EMERG "read eeprom mac\n");
 /*    eeprom_read((0x100 + (priv->port_id * 6)), eeprom_mac, 6);
