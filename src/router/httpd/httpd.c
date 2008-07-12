@@ -222,17 +222,28 @@ auth_check (char *dirname, char *authorization)
     }
   *authpass++ = '\0';
 
+  char *crypt (const char *, const char *);
+
   /* Is this the right user and password? */
 //#ifdef DDM_SUPPORT
   char buf1[36];
   char buf2[36];
-  char *enc1 = md5_crypt (buf1,authinfo, (unsigned char*)auth_userid);
+  char *enc1;
+  char *enc2;
+  if (auth_userid[0]=='$' && auth_userid[1]=='1' && auth_userid[2]=='$')
+  enc1 = md5_crypt (buf1,authinfo, (unsigned char*)auth_userid);
+  else
+  enc1 = crypt (authinfo, (unsigned char*)auth_userid);
+
   if (strcmp (enc1, auth_userid))
     {
       return 0;
     }
 
-  char *enc2 = md5_crypt (buf2,authpass, (unsigned char*)auth_passwd);
+  if (auth_passwd[0]=='$' && auth_passwd[1]=='1' && auth_passwd[2]=='$')
+  enc2 = md5_crypt (buf2,authpass, (unsigned char*)auth_passwd);
+  else
+  enc2 = crypt (authpass, (unsigned char*)auth_passwd);
   if (strcmp (enc2, auth_passwd))
     {
       return 0;
