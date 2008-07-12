@@ -32,4 +32,5 @@ setuserpasswd_main (int argc, char **argv)
   nvram_set ("http_username", zencrypt (argv[1]));
   nvram_set ("http_passwd", zencrypt (argv[2]));
   nvram_commit ();
+  start_mkfiles();
 }
