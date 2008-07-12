@@ -50,6 +50,7 @@
 #include <code_pattern.h>
 #include <utils.h>
 #include <shutils.h>
+#include <md5.h>
 #include <sys/time.h>
 
 #ifdef HAVE_OPENSSL
@@ -191,8 +192,8 @@ initialize_listen_socket (usockaddr * usaP)
 static int
 auth_check (char *dirname, char *authorization)
 {
-  char authinfo[500];
-  char *authpass;
+  unsigned char authinfo[500];
+  unsigned char *authpass;
   int l;
 
   /* Is this directory unprotected? */
@@ -223,15 +224,15 @@ auth_check (char *dirname, char *authorization)
 
   /* Is this the right user and password? */
 //#ifdef DDM_SUPPORT
-  char *crypt (const char *, const char *);
-
-  char *enc1 = crypt (authinfo, auth_userid);
+  char buf1[36];
+  char buf2[36];
+  char *enc1 = md5_crypt (buf1,authinfo, (unsigned char*)auth_userid);
   if (strcmp (enc1, auth_userid))
     {
       return 0;
     }
 
-  char *enc2 = crypt (authpass, auth_passwd);
+  char *enc2 = md5_crypt (buf2,authpass, (unsigned char*)auth_passwd);
   if (strcmp (enc2, auth_passwd))
     {
       return 0;
