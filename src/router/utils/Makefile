@@ -35,9 +35,6 @@ vpath %.c $(SRCBASE)/et/freebsd
 ifeq ($(ARCHITECTURE),gateworx)
 UTILS += showmac setmac fischecksum
 endif
-ifeq ($(CONFIG_NOP8670),y)
-UTILS += fischecksum
-endif
 ifeq ($(CONFIG_MADWIFI),y)
 UTILS += wl_atheros
 endif
