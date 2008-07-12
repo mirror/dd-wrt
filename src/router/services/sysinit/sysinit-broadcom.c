@@ -613,14 +613,14 @@ start_sysinit (void)
     case ROUTER_NETGEAR_WNDR3300:
       basic_params = generic1;
       
-      if (nvram_get ("pci/1/1/macaddr") == NULL || nvram_get ("pci/3/1/macaddr") == NULL)
+      if (nvram_get ("pci/1/1/macaddr") == NULL || nvram_get ("pci/1/3/macaddr") == NULL)
 	need_reboot = 1;
 	
     unsigned char mac[20];	
 	strcpy (mac, nvram_safe_get ("et0macaddr"));
+	nvram_set ("pci/1/3/macaddr", mac);
+	MAC_SUB (mac);
 	nvram_set ("pci/1/1/macaddr", mac);
-	MAC_ADD (mac);
-	nvram_set ("pci/3/1/macaddr", mac);
 	
     struct nvram_tuple wndr3300_pci_1_1_params[] = {
       {"stbcpo", "0", 0},
@@ -756,7 +756,7 @@ start_sysinit (void)
 	  nvram_nset (extra_params->value, "pci/1/1/%s", extra_params->name);
 	}    
 
-    struct nvram_tuple wndr3300_pci_3_1_params[] = {
+    struct nvram_tuple wndr3300_pci_1_3_params[] = {
       {"ag0", "0x02", 0},
       {"boardflags", "0xAA48", 0},
       {"ccode", "0", 0},
@@ -776,10 +776,10 @@ start_sysinit (void)
       {0, 0, 0}
     };
   /* set router's extra parameters */
-    extra_params = wndr3300_pci_3_1_params;
+    extra_params = wndr3300_pci_1_3_params;
 	for (extra_params; extra_params && extra_params->name; extra_params++)
 	{
-	  nvram_nset (extra_params->value, "pci/3/1/%s", extra_params->name);
+	  nvram_nset (extra_params->value, "pci/1/3/%s", extra_params->name);
 	}		       
       break;      
       
