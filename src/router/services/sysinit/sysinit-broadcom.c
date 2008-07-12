@@ -420,14 +420,30 @@ start_sysinit (void)
 
   int need_reboot = 0;
 
+  struct nvram_tuple *basic_params;
+  struct nvram_tuple *extra_params;
+
+  struct nvram_tuple generic1[] = {
+    {"lan_ifnames", "eth0 eth2", 0},
+    {"wan_ifname", "eth1", 0},
+    {"wl0_ifname", "eth2", 0},    
+    {0, 0, 0}
+  };
+  
+  struct nvram_tuple generic1_wantolan[] = {
+    {"lan_ifnames", "eth2", 0},
+    {"wan_ifname", "eth0", 0},
+    {"wl0_ifname", "eth2", 0},
+    {0, 0, 0}
+  };
+  
+  
   switch (brand)
     {
     case ROUTER_BUFFALO_WZRRSG54:
       check_brcm_cpu_type ();
       setup_4712 ();
-      nvram_set ("lan_ifnames", "eth0 eth2");
-      nvram_set ("wan_ifname", "eth1");
-      nvram_set ("wl0_ifname", "eth2");
+      basic_params = generic1;
       eval ("gpio", "init", "0");	//AOSS button
       eval ("gpio", "init", "4");	//reset button
       break;
@@ -452,9 +468,7 @@ start_sysinit (void)
 
     case ROUTER_RT210W:
     case ROUTER_ASKEY_RT220XD:
-      nvram_set ("lan_ifnames", "eth0 eth2");
-      nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
-      nvram_set ("wl0_ifname", "eth2");
+      basic_params = generic1;
 
       if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
 	{
@@ -469,9 +483,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_BRCM4702_GENERIC:
-      nvram_set ("lan_ifnames", "eth0 eth2");
-      nvram_set ("wan_ifname", "eth1");
-      nvram_set ("wl0_ifname", "eth2");
+      basic_params = generic1;
 
       if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
 	{
@@ -486,9 +498,7 @@ start_sysinit (void)
       break;
 
     case ROUTER_ASUS_WL500G:
-      nvram_set ("lan_ifnames", "eth0 eth2");
-      nvram_set ("wan_ifname", "eth1");
-      nvram_set ("wl0_ifname", "eth2");
+      basic_params = generic1;
 
       if (nvram_get ("et0macaddr") == NULL || nvram_get ("et0macaddr") == "")
 	{
@@ -508,12 +518,10 @@ start_sysinit (void)
       break;
 
     case ROUTER_BUFFALO_WBR54G:	//for WLA-G54
-      nvram_set ("lan_ifnames", "eth0 eth2");
-      nvram_set ("wan_ifname", "eth1");
+      basic_params = generic1;
       if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch ("wan_proto", "disabled"))	// = no lan
 	{
-	  nvram_set ("lan_ifnames", "eth2");
-	  nvram_set ("wan_ifname", "eth0");
+      basic_params = generic1_wantolan;
 	}
       break;
 
@@ -533,69 +541,248 @@ start_sysinit (void)
       break;
 
     case ROUTER_SITECOM_WL111:
-    case ROUTER_NETGEAR_WNDR3300:
-      nvram_set ("lan_ifnames", "eth0 eth2");
-      nvram_set ("wl0_ifname", "eth2");
-      nvram_set ("wan_ifname", "eth1");
+      basic_params = generic1;
       break;
 
     case ROUTER_NETGEAR_WNR834BV2:
-      nvram_set ("lan_ifnames", "eth0 eth2");
-      nvram_set ("wl0_ifname", "eth2");
-      nvram_set ("wan_ifname", "eth1");
-
+      basic_params = generic1;
+      
       if (nvram_get ("pci/1/1/macaddr") == NULL)
 	need_reboot = 1;
-      nvram_set ("pci/1/1/macaddr", nvram_safe_get ("et0macaddr"));
-      nvram_set ("pci/1/1/stbcpo", "0");
-      nvram_set ("pci/1/1/pa2gw1a0", "0");
-      nvram_set ("pci/1/1/pa2gw1a1", "0");
-      nvram_set ("pci/1/1/ag0", "2");
-      nvram_set ("pci/1/1/ag1", "2");
-      nvram_set ("pci/1/1/ag2", "2");
-      nvram_set ("pci/1/1/ccdpo", "0");
-      nvram_set ("pci/1/1/txpid2ga0", "71");
-      nvram_set ("pci/1/1/txpid2ga1", "79");
-      nvram_set ("pci/1/1/txpt2g", "0x38");
-      nvram_set ("pci/1/1/pa2gw0a0", "0");
-      nvram_set ("pci/1/1/pa2gw0a1", "0");
-      nvram_set ("pci/1/1/boardflags", "0x200");
-      nvram_set ("pci/1/1/boardvendor", "0x14e4");
-      nvram_set ("pci/1/1/bw40po", "0");
-      nvram_set ("pci/1/1/sromrev", "4");
-      nvram_set ("pci/1/1/venid", "0x14e4");
-      nvram_set ("pci/1/1/boardrev", "0x4b");
-      nvram_set ("pci/1/1/itt2ga0", "0");
-      nvram_set ("pci/1/1/itt2ga1", "0");
-      nvram_set ("pci/1/1/pa2gw3a0", "0");
-      nvram_set ("pci/1/1/pa2gw3a1", "0");
-      nvram_set ("pci/1/1/maxp2ga0", "0");
-      nvram_set ("pci/1/1/maxp2ga1", "0");
-      nvram_set ("pci/1/1/boardtype", "0x46d");
-      nvram_set ("pci/1/1/boardflags2", "0x0013");
-      nvram_set ("pci/1/1/ofdm2gpo", "0");
-      nvram_set ("pci/1/1/ledbh0", "0x8");
-      nvram_set ("pci/1/1/ledbh1", "-1");
-      nvram_set ("pci/1/1/ledbh2", "-1");
-      nvram_set ("pci/1/1/ledbh3", "-1");
-      nvram_set ("pci/1/1/mcs2gpo0", "0");
-      nvram_set ("pci/1/1/mcs2gpo1", "0");
-      nvram_set ("pci/1/1/mcs2gpo2", "0");
-      nvram_set ("pci/1/1/mcs2gpo3", "0");
-      nvram_set ("pci/1/1/mcs2gpo4", "0");
-      nvram_set ("pci/1/1/mcs2gpo5", "0");
-      nvram_set ("pci/1/1/mcs2gpo6", "0");
-      nvram_set ("pci/1/1/mcs2gpo7", "0");
-      nvram_set ("pci/1/1/bwduppo", "0");
-      nvram_set ("pci/1/1/aa2g", "7");
-      nvram_set ("pci/1/1/pa2gw2a0", "0");
-      nvram_set ("pci/1/1/pa2gw2a1", "0");
-      nvram_set ("pci/1/1/ccode", "all");
-      nvram_set ("pci/1/1/regrev", "0");
-      nvram_set ("pci/1/1/devid", "0x4329");
-      nvram_set ("pci/1/1/cck2gpo", "0");
+	
+	nvram_set ("pci/1/1/macaddr", nvram_safe_get ("et0macaddr"));
+	
+    struct nvram_tuple wnr834bv2_pci_1_1_params[] = {
+      {"stbcpo", "0", 0},
+      {"pa2gw1a0", "0", 0},
+      {"pa2gw1a1", "0", 0},
+      {"ag0", "2", 0},
+      {"ag1", "2", 0},
+      {"ag2", "2", 0},
+      {"ccdpo", "0", 0},
+      {"txpid2ga0", "71", 0},
+      {"txpid2ga1", "79", 0},
+      {"txpt2g", "0x38", 0},
+      {"pa2gw0a0", "0", 0},
+      {"pa2gw0a1", "0", 0},
+      {"boardflags", "0x200", 0},
+      {"boardvendor", "0x14e4", 0},
+      {"bw40po", "0", 0},
+      {"sromrev", "4", 0},
+      {"venid", "0x14e4", 0},
+      {"boardrev", "0x4b", 0},
+      {"itt2ga0", "0", 0},
+      {"itt2ga1", "0", 0},
+      {"pa2gw3a0", "0", 0},
+      {"pa2gw3a1", "0", 0},
+      {"maxp2ga0", "0", 0},
+      {"maxp2ga1", "0", 0},
+      {"boardtype", "0x46d", 0},
+      {"boardflags2", "0x0013", 0},
+      {"ofdm2gpo", "0", 0},
+      {"ledbh0", "0x8", 0},
+      {"ledbh1", "-1", 0},
+      {"ledbh2", "-1", 0},
+      {"ledbh3", "-1", 0},
+      {"mcs2gpo0", "0", 0},
+      {"mcs2gpo1", "0", 0},
+      {"mcs2gpo2", "0", 0},
+      {"mcs2gpo3", "0", 0},
+      {"mcs2gpo4", "0", 0},
+      {"mcs2gpo5", "0", 0},
+      {"mcs2gpo6", "0", 0},
+      {"mcs2gpo7", "0", 0},
+      {"bwduppo", "0", 0},
+      {"aa2g", "7", 0},
+      {"pa2gw2a0", "0", 0},
+      {"pa2gw2a1", "0", 0},
+      {"ccode", "all", 0},
+      {"regrev", "0", 0},
+      {"devid", "0x4329", 0},
+      {"cck2gpo", "0", 0},
+      {0, 0, 0}
+    };
+  /* set router's extra parameters */
+    extra_params = wnr834bv2_pci_1_1_params;
+	for (extra_params; extra_params && extra_params->name; extra_params++)
+	{
+	  nvram_nset (extra_params->value, "pci/1/1/%s", extra_params->name);
+	}
       break;
 
+    case ROUTER_NETGEAR_WNDR3300:
+      basic_params = generic1;
+      
+      if (nvram_get ("pci/1/1/macaddr") == NULL || nvram_get ("pci/3/1/macaddr") == NULL)
+	need_reboot = 1;
+	
+    unsigned char mac[20];	
+	strcpy (mac, nvram_safe_get ("et0macaddr"));
+	nvram_set ("pci/1/1/macaddr", mac);
+	MAC_ADD (mac);
+	nvram_set ("pci/3/1/macaddr", mac);
+	
+    struct nvram_tuple wndr3300_pci_1_1_params[] = {
+      {"stbcpo", "0", 0},
+      {"mcs5gpo0", "0x4200", 0},
+      {"pa2gw1a0", "0x13EA", 0},
+      {"mcs5gpo1", "0x6664", 0},
+      {"pa2gw1a1", "0x14DA", 0},
+      {"mcs5gpo2", "0x4200", 0},
+      {"maxp5gha0", "0x4A", 0},
+      {"mcs5gpo3", "0x6664", 0},
+      {"maxp5gha1", "0x4A", 0},
+      {"mcs5gpo4", "0", 0},
+      {"mcs5gpo5", "0", 0},
+      {"mcs5gpo6", "0", 0},
+      {"aa5g", "7", 0},
+      {"mcs5gpo7", "0", 0},
+      {"pa5glw2a0", "0xFB81", 0},
+      {"pa5glw2a1", "0xFBC7", 0},
+      {"ag0", "2", 0},
+      {"ag1", "2", 0},
+      {"ag2", "2", 0},
+      {"pa5gw2a0", "0xFBD2", 0},
+      {"pa5gw2a1", "0xFC11", 0},
+      {"pa5ghw2a0", "0xFB92", 0},
+      {"pa5ghw2a1", "0xFBC0", 0},
+      {"ccdpo", "0", 0},
+      {"txpid2ga0", "59", 0},
+      {"itt5ga0", "0x3C", 0},
+      {"rxchain", "3", 0},
+      {"txpid2ga1", "51", 0},
+      {"itt5ga1", "0x3C", 0},
+      {"maxp5ga0", "0x4A", 0},
+      {"maxp5ga1", "0x4A", 0},
+      {"txpt2g", "0x48", 0},
+      {"pa2gw0a0", "0xFEFC", 0},
+      {"pa2gw0a1", "0xFF03", 0},
+      {"boardflags", "0x0A00", 0},
+      {"mcs5glpo0", "0x4200", 0},
+      {"pa5glw1a0", "0x130E", 0},
+      {"mcs5glpo1", "0x6664", 0},
+      {"ofdm5gpo", "0x88888888", 0},
+      {"pa5glw1a1", "0x13BE", 0},
+      {"mcs5glpo2", "0x4200", 0},
+      {"mcs5glpo3", "0x6664", 0},
+      {"mcs5glpo4", "0", 0},
+      {"mcs5glpo5", "0", 0},
+      {"mcs5glpo6", "0", 0},
+      {"mcs5glpo7", "0", 0},
+      {"boardvendor", "0x14e4", 0},
+      {"bw40po", "0", 0},
+      {"sromrev", "4", 0},
+      {"venid", "0x14e4", 0},
+      {"pa5gw1a0", "0x1238", 0},
+      {"pa5gw1a1", "0x14A4", 0},
+      {"pa5ghw1a0", "0x12C3", 0},
+      {"pa5ghw1a1", "0x1375", 0},
+      {"boardrev", "0x13", 0},
+      {"itt2ga0", "0x3E", 0},
+      {"itt2ga1", "0x3E", 0},
+      {"pa2gw3a0", "0", 0},
+      {"pa2gw3a1", "0", 0},
+      {"maxp2ga0", "0x4A", 0},
+      {"maxp2ga1", "0x4A", 0},
+      {"boardtype", "0x49C", 0},
+      {"boardflags2", "0x0014", 0},
+      {"ofdm2gpo", "0x66666666", 0},
+      {"ledbh0", "11", 0},
+      {"ledbh1", "11", 0},
+      {"pa5glw0a0", "0xFEFB", 0},
+      {"ledbh2", "11", 0},
+      {"pa5glw0a1", "0xFF5B", 0},
+      {"ledbh3", "11", 0},
+      {"ledbh4", "11", 0},
+      {"ledbh5", "5", 0},
+      {"ledbh6", "0x82", 0},
+      {"ledbh7", "11", 0},
+      {"mcs2gpo0", "0x6666", 0},
+      {"mcs2gpo1", "0x6666", 0},
+      {"mcs2gpo2", "0x6666", 0},
+      {"mcs2gpo3", "0x6666", 0},
+      {"txpid5gla0", "22", 0},
+      {"mcs2gpo4", "0", 0},
+      {"txpid5gla1", "26", 0},
+      {"mcs2gpo5", "0", 0},
+      {"txpt5g", "0x3C", 0},
+      {"mcs2gpo6", "0", 0},
+      {"mcs2gpo7", "0", 0},
+      {"mcs5ghpo0", "0x4200", 0},
+      {"mcs5ghpo1", "0x6664", 0},
+      {"bwduppo", "0", 0},
+      {"mcs5ghpo2", "0x4200", 0},
+      {"mcs5ghpo3", "0x6664", 0},
+      {"txchain", "3", 0},
+      {"mcs5ghpo4", "0", 0},
+      {"mcs5ghpo5", "0", 0},
+      {"txpid5gha0", "38", 0},
+      {"mcs5ghpo6", "0", 0},
+      {"ofdm5glpo", "0x88888888", 0},
+      {"txpid5gha1", "34", 0},
+      {"mcs5ghpo7", "0", 0},
+      {"antswitch", "2", 0},
+      {"aa2g", "7", 0},
+      {"pa5gw0a0", "0xFF3C", 0},
+      {"pa5gw0a1", "0xFFEC", 0},
+      {"ofdm5ghpo", "0x88888888", 0},
+      {"pa5ghw0a0", "0xFEE8", 0},
+      {"pa5ghw0a1", "0xFF72", 0},
+      {"leddc", "0xFFFF", 0},
+      {"pa2gw2a0", "0xFB44", 0},
+      {"pa2gw2a1", "0xFB28", 0},
+      {"pa5glw3a0", "0", 0},
+      {"pa5glw3a1", "0", 0},
+      {"ccode", "0", 0},
+      {"pa5gw3a0", "0", 0},
+      {"regrev", "0", 0},
+      {"pa5gw3a1", "0", 0},
+      {"devid", "0x4328", 0},
+      {"pa5ghw3a0", "0", 0},
+      {"pa5ghw3a1", "0", 0},
+      {"txpt5gh", "0x3C", 0},
+      {"cck2gpo", "0x0000", 0},
+      {"txpt5gl", "0x30", 0},
+      {"maxp5gla0", "0x4A", 0},
+      {"txpid5ga0", "39", 0},
+      {"maxp5gla1", "0x4A", 0},
+      {"txpid5ga1", "39", 0},
+      {0, 0, 0}
+    };
+  /* set router's extra parameters */
+    extra_params = wndr3300_pci_1_1_params;   
+	for (extra_params; extra_params && extra_params->name; extra_params++)
+	{
+	  nvram_nset (extra_params->value, "pci/1/1/%s", extra_params->name);
+	}    
+
+    struct nvram_tuple wndr3300_pci_3_1_params[] = {
+      {"ag0", "0x02", 0},
+      {"boardflags", "0xAA48", 0},
+      {"ccode", "0", 0},
+      {"aa0", "0x03", 0},
+      {"devid", "0x4318", 0},
+      {"pa0b0", "0x14ed", 0},
+      {"pa0b1", "0xfac7", 0},
+      {"pa0b2", "0xfe8a", 0},
+      {"pa0itssit", "62", 0},
+      {"pa0maxpwr", "0x0042", 0},
+      {"opo", "0", 0},
+      {"wl0gpio0", "11", 0},
+      {"wl0gpio1", "11", 0},
+      {"wl0gpio2", "11", 0},
+      {"wl0gpio3", "0x82", 0},
+      {"sromrev", "2", 0},
+      {0, 0, 0}
+    };
+  /* set router's extra parameters */
+    extra_params = wndr3300_pci_3_1_params;
+	for (extra_params; extra_params && extra_params->name; extra_params++)
+	{
+	  nvram_nset (extra_params->value, "pci/3/1/%s", extra_params->name);
+	}		       
+      break;      
+      
     case ROUTER_MOTOROLA_WE800G:
       nvram_set ("lan_ifnames", "eth1 eth2");
       nvram_set ("wl0_ifname", "eth2");
@@ -742,6 +929,13 @@ start_sysinit (void)
   MAC_ADD (mac);
   nvram_set ("il0macaddr", mac);
 #endif
+
+  /* set router's basic parameters */    
+	for (basic_params; basic_params && basic_params->name; basic_params++)
+	{
+	  nvram_set (basic_params->name, basic_params->value);
+	}
+
   /* ifnames */
   strcpy (wanifname, nvram_safe_get ("wan_ifname"));
   strcpy (wlifname, nvram_safe_get ("wl0_ifname"));
@@ -787,6 +981,7 @@ start_sysinit (void)
       break;
     }
 
+    
   if (need_reboot)
     {
       cprintf ("Need reboot now to set some mac addresses\n");
