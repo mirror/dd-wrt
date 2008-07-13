@@ -2357,6 +2357,10 @@ led_control (int type, int act)
       diag_gpio = 0x03;		//power led amber   
       connected_gpio = 0x07;	//WAN led green  
       break;
+    case ROUTER_NETGEAR_WNDR3300:
+      power_gpio = 0x05;
+      diag_gpio = 0x15;		//power led blink /off to indicate factory defaults
+      break;
     case ROUTER_ASKEY_RT220XD:
       wlan_gpio = 0x10;
       dmz_gpio = 0x11;		//not soldered  
