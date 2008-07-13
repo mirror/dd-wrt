@@ -364,6 +364,8 @@ static bool AreStringsEqual(const wchar_t *base, const wchar_t *testString)
   }
 }
 
+#include <stdio.h>
+
 static int FindMatchFinder(const wchar_t *s)
 {
   for (int m = 0; m < (int)(sizeof(kMatchFinderIDs) / sizeof(kMatchFinderIDs[0])); m++)
