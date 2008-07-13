@@ -269,15 +269,39 @@ unsigned char pbmatrix[3]={0,1,2};
 unsigned char lcmatrix[4]={0,1,2,3};
 unsigned char lpmatrix[4]={0,1,2,3};
 
+struct MATRIXENTRY
+{
+int pb;
+int lc;
+int lp;
+};
+
+struct MATRIXENTRY matrix[]={
+{2,0,0},
+{2,0,1},
+{2,0,2},
+{2,1,0},
+{2,1,2},
+{2,2,0},
+{2,3,0},
+{0,2,0},
+{0,2,1},
+{0,3,0},
+{0,0,0},
+{0,0,2},
+{1,0,1},
+{1,2,0},
+{1,3,0}
+};
+
+
 
 int pbsave = -1;
 int lcsave = -1;
 int lpsave = -1;
 
 
-int pbtest=0;
-int lctest=0;
-int lptest=0;
+int testcount=0;
 
 int testlevel;
 int testfb;
@@ -297,21 +321,11 @@ extern "C" void *brute(void *arg)
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldstate);
 
 pthread_mutex_lock(&pos_mutex);
-int takelcvalue = lctest;
-int takepbvalue = pbtest;
-int takelpvalue = lptest;
-lctest++;
-if (lctest==4)
-    {
-    lctest=0;
-    lptest++;
-    }
-if (lptest==4)
-    {
-    lptest=0;
-    pbtest++;
-    }
-if (pbtest==3)
+int takelcvalue = matrix[testcount].lc;
+int takepbvalue = matrix[testcount].pb;
+int takelpvalue = matrix[testcount].lp;
+testcount++;
+if (testcount==(sizeof(matrix)/sizeof(struct MATRIXENTRY)))
     {
     running--;
     pthread_mutex_unlock(&pos_mutex);
@@ -320,7 +334,7 @@ if (pbtest==3)
 pthread_mutex_unlock(&pos_mutex);
 Bytef *test2 = (Bytef*)malloc(test2len);
 //fprintf(stderr,"try method [pb:%d lc:%d lp:%d fb:%d]\n",pbtest,lctest,lptest,testfb);
-int ret =  compress2_lzma_test(test2,&test3len,testsource,testsourcelen,testlevel,testfb,lcmatrix[takelcvalue],lpmatrix[takelpvalue],pbmatrix[takepbvalue]);
+int ret =  compress2_lzma_test(test2,&test3len,testsource,testsourcelen,testlevel,testfb,takelcvalue,takelpvalue,takepbvalue);
 //fprintf(stderr,"test return %d\n",ret);
 pthread_mutex_lock(&pos_mutex);
 if (test3len<test1len)
@@ -353,12 +367,10 @@ testsource = source;
 testfb = fb;
 testsourcelen = sourceLen;
 testlevel = level;
-pbtest=0;
-lctest=0;
-lptest=0;
+testcount=0;
 	if((thread = (pthread_t *)malloc((8) * sizeof(pthread_t))) == NULL)
 		fprintf(stderr,"Out of memory allocating thread descriptors\n");
-for (a=0;a<6;a++)
+for (a=0;a<2;a++)
 {
 running=8;
 	for(i = 0; i < 8; i++) {
