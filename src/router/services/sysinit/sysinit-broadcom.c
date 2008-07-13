@@ -611,7 +611,10 @@ start_sysinit (void)
       break;
 
     case ROUTER_NETGEAR_WNDR3300:
-      basic_params = generic1;
+      nvram_set ("lan_ifnames", "eth0 eth2 eth3");  //dual radio
+      nvram_set ("wan_ifname", "eth1");
+      nvram_set ("wl0_ifname", "eth2");
+      nvram_set ("wl1_ifname", "eth3");
       
       if (nvram_get ("pci/1/1/macaddr") == NULL || nvram_get ("pci/1/3/macaddr") == NULL)
 	need_reboot = 1;
