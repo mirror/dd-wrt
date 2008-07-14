@@ -420,8 +420,8 @@ start_sysinit (void)
 
   int need_reboot = 0;
 
-  struct nvram_tuple *basic_params;
-  struct nvram_tuple *extra_params;
+  struct nvram_tuple *basic_params=NULL;
+  struct nvram_tuple *extra_params=NULL;
 
   struct nvram_tuple generic1[] = {
     {"lan_ifnames", "eth0 eth2", 0},
