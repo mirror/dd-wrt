@@ -2833,10 +2833,6 @@ tf_webWriteESCNV (webs_t wp, const char *nvname)
   wfflush (wp);
   return r;
 }
-
-#ifdef HAVE_UPNP
-// changed by steve
-// writes javascript-string safe text
 static int
 tf_webWriteJS (webs_t wp, const char *s)
 {
@@ -2848,7 +2844,7 @@ tf_webWriteJS (webs_t wp, const char *s)
   r = 0;
   for (; *s; s++)
     {
-      if ((*s != '"') && (*s != '\\') && (*s != '\'') && (isprint (*s)))
+      if ((*s != '"') && (*s != '\\') && (*s != '/') && (*s != '*') && (*s != '\'') && (isprint (*s)))
 	{
 	  buf[n++] = *s;
 	}
@@ -2872,6 +2868,10 @@ tf_webWriteJS (webs_t wp, const char *s)
   wfflush (wp);
   return r;
 }
+
+#ifdef HAVE_UPNP
+// changed by steve
+// writes javascript-string safe text
 
 
 //      <% tf_upnp(); %>
