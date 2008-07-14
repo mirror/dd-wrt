@@ -150,10 +150,10 @@ if (!nvram_match("dir400pre","1"))
   fread (block, 65536, 1, fp);
   fclose (fp);
   unsigned char in_addr[6];
-  ether_atoe(mac,&in_addr);
-  memcpy(block+102,&in_addr,6);
+  ether_atoe(mac,&in_addr[0]);
+  memcpy(block+102,&in_addr[0],6);
   in_addr[5]++;
-  memcpy(block+108,&in_addr,6);
+  memcpy(block+108,&in_addr[0],6);
   fp = fopen ("/tmp/radio", "wb");
   fwrite (block, 65536, 1, fp);
   fclose(fp);
