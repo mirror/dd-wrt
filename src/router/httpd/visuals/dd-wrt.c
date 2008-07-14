@@ -1610,17 +1610,14 @@ ej_show_wifiselect (webs_t wp, int argc, char_t ** argv)
   int i;
   for (i = 0; i < count; i++)
     {
-      sprintf (var, "ath%d", i);
-      websWrite (wp, "<option value=\"%s\" %s >%s</option>\n</script>\n",
-		 var, nvram_match ("wifi_display",
-				   var) ? "selected=\"selected\"" : "", var);
-      char *names = nvram_nget ("ath%d_vifs", i);
-      foreach (var, names, next)
-      {
-	websWrite (wp, "<option value=\"%s\" %s >%s</option>\n</script>\n",
-		   var, nvram_match ("wifi_display",
-				     var) ? "selected=\"selected\"" : "",
-		   var);
+	  sprintf (var, "ath%d", i);
+	  websWrite (wp, "<option value=\"%s\" %s >%s</option>\n",
+			  var, nvram_match ("wifi_display", var) ? "selected=\"selected\"" : "", var);
+	  char *names = nvram_nget ("ath%d_vifs", i);
+	  foreach (var, names, next)
+	  {
+		websWrite (wp, "<option value=\"%s\" %s >%s</option>\n",
+			var, nvram_match ("wifi_display", var) ? "selected=\"selected\"" : "", var);
       }
     }
   websWrite (wp, "</select>\n");
@@ -1654,6 +1651,19 @@ showOption (webs_t wp, char *propname, char *nvname)
 				  "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
 
+}
+
+static void
+showRadio (webs_t wp, char *propname, char *nvname)
+{
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>\n",
+		  propname);
+  websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+		  nvname, nvram_default_match (nvname, "1", "0") ? "checked=\"checked\"" : "");
+  websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+		  nvname, nvram_default_match (nvname, "0", "0") ? "checked=\"checked\"" : "");
+  websWrite (wp, "</div>\n");
 }
 
 static void
@@ -3491,19 +3501,19 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   show_rates (wp, prefix, 0);
   show_rates (wp, prefix, 1);
 //#if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
-  showOption (wp, "wl_basic.turbo", wl_turbo);
+  showRadio (wp, "wl_basic.turbo", wl_turbo);
 //#endif
-  showOption (wp, "wl_basic.preamble", wl_preamble);
-  showOption (wp, "wl_basic.extrange", wl_xr);
-  showOption (wp, "wl_basic.supergcomp", wl_comp);
-  showOption (wp, "wl_basic.supergff", wl_ff);
+  showRadio (wp, "wl_basic.preamble", wl_preamble);
+  showRadio (wp, "wl_basic.extrange", wl_xr);
+  showRadio (wp, "wl_basic.supergcomp", wl_comp);
+  showRadio (wp, "wl_basic.supergff", wl_ff);
 
 
 //  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
   if (nvram_match ("ath_regulatory", "1") || !issuperchannel ())
     {
-      showOption (wp, "wl_basic.outband", wl_outdoor);
+	  showRadio (wp, "wl_basic.outband", wl_outdoor);
     }
 #endif
   websWrite (wp,
@@ -3553,7 +3563,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
 #else
-  showOption (wp, "wl_basic.diversity", wl_diversity);
+  showRadio (wp, "wl_basic.diversity", wl_diversity);
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label12)</script></div><select name=\"%s\" >\n",
 	     wl_txantenna);
@@ -3597,7 +3607,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #endif
 #ifdef HAVE_MADWIFI
   sprintf (wl_isolate, "%s_ap_isolate", prefix);
-  showOption (wp, "wl_adv.label11", wl_isolate);
+  showRadio (wp, "wl_adv.label11", wl_isolate);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.sifstime)</script></div>\n");
@@ -3614,7 +3624,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     wl_preambletime, nvram_default_get (wl_preambletime, "20"));
   websWrite (wp, "</div>\n");
   sprintf (wmm, "%s_wmm", prefix);
-  showOption (wp, "wl_adv.label18", wmm);
+  showRadio (wp, "wl_adv.label18", wmm);
 #endif
 
   websWrite (wp, "<div class=\"setting\">\n");
@@ -5350,7 +5360,7 @@ ej_get_clone_wmac (webs_t wp, int argc, char_t ** argv)
 //         else
 //         {
 //           c = strdup (nvram_safe_get ("il0macaddr"));
-//         }   
+//         }
 //         dofree = 1;
 
       if (nvram_match ("port_swap", "1"))
@@ -5980,7 +5990,7 @@ string_search (char *string, char *search)
     }
   int slen = strlen (string);
   for (i = 0; i < slen - searchLen; i++)
-    {				//+1 removed. 
+    {				//+1 removed.
       if (!strncasecmp ((char *) &string[i], search, searchLen))
 	{
 	  return (1);		// we got hit
@@ -6254,7 +6264,7 @@ ej_statfs (webs_t wp, int argc, char_t ** argv)
 	Copyright (C) 2006 Jonathan Zarate
 
 	Licensed under GNU GPL v2 or later.
-	
+
 */
 
 void
