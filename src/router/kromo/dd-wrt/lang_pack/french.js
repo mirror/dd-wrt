@@ -500,7 +500,7 @@ hdmz.right2="L'activation de cette option va exposer l'hôte à Internet. Tous les
 factdef.titl="Paramètres usine";
 factdef.h2="Paramètres usine";
 factdef.legend="Réinitialiser les réglages du routeur";
-factdef.restore="Réinitialiser les paramètres usine";
+factdef.restore="Réinitialiser les paramètres par défaut";
 factdef.mess1="Attention ! Si vous cliquez sur OK, le routeur va réinitialiser les paramètres usine et tous les réglages seront effacés.";
 
 //help container
@@ -639,9 +639,9 @@ hotspot.smtp_legend="Redirection SMTP";
 hotspot.smtp_srv="Redirection SMTP";
 hotspot.smtp_ip="IP SMTP de Destination";
 hotspot.smtp_net="Réseau SMTP de départ";
-hotspot.shat_legend="Configuration de Zero IP";
-hotspot.shat_srv="Configuration de Zero IP";
-hotspot.shat_srv2="Configuration de Zero IP activé";
+hotspot.shat_legend="Configuration Zero IP";
+hotspot.shat_srv="Configuration Zero IP";
+hotspot.shat_srv2="Configuration Zero IP activé";
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Agent Sputnik";
 hotspot.sputnik_mode="Mode";
@@ -1095,7 +1095,7 @@ service.snmp_write="Communauté accès complet";
 
 //openvpn.webservices
 service.vpn_legend="Client OpenVPN";
-service.vpn_srv="Début OpenVPN";
+service.vpn_srv="Démarrer OpenVPN";
 service.vpn_ipname="Serveur IP/Nom";
 service.vpn_mtu="TUN MTU Configuration";
 service.vpn_mru="TUN MTU Extra";
