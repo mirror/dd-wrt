@@ -128,7 +128,40 @@ start_sysinit (void)
 	}
       fclose (fp);
     }
+#else
+if (!nvram_match("dir400pre","1"))
+{
+  nvram_set("dir400pre","1");
+  nvram_commit();
+  int mtd = getMTD ("fullflash");
+  char mtdpath[64];
+  char mac[18];
+  sprintf (mtdpath, "/dev/mtdblock/%d", mtd);
+  FILE *fp = fopen (mtdpath, "rb");
+  fseek(fp,0x78,SEEK_SET);
+  mac[17]=0;
+  fread(mac,17,1,fp);
+  fclose(fp);
+  mtd = getMTD ("board_config");
+  sprintf (mtdpath, "/dev/mtdblock/%d", mtd);
+  fp = fopen (mtdpath, "rb");
+  fseek (fp, 0, SEEK_SET);
+  char *block = (char *) malloc (65536);
+  fread (block, 65536, 1, fp);
+  fclose (fp);
+  unsigned char in_addr[6];
+  ether_atoe(mac,&in_addr);
+  memcpy(block+102,&in_addr,6);
+  in_addr[5]++;
+  memcpy(block+108,&in_addr,6);
+  fp = fopen ("/tmp/radio", "wb");
+  fwrite (block, 65536, 1, fp);
+  fclose(fp);
+  eval ("mtd", "-f", "write", "/tmp/radio", "board_config");	//writes back new config and reboots
+  eval ("event", "5", "1", "15");
+}
 #endif
+
 
   /* Modules */
   uname (&name);
