@@ -72,9 +72,9 @@ ej_list_fbn (webs_t wp, int argc, char_t ** argv)
       if (startswith (site_survey_lists[i].SSID, "www.fbn-dd.de"))
 	{
 	  websWrite (wp, "<option value=\"");
-	  websWrite (wp, site_survey_lists[i].SSID);
+	  tf_webWriteJS (wp, site_survey_lists[i].SSID);
 	  websWrite (wp, "\">");
-	  websWrite (wp, site_survey_lists[i].SSID);
+	  tf_webWriteJS  (wp, site_survey_lists[i].SSID);
 	  websWrite (wp, "</option>\n");
 	}
 
@@ -169,9 +169,10 @@ ej_dump_site_survey (webs_t wp, int argc, char_t ** argv)
 	netmode = live_translate ("share.unknown");
 
       websWrite (wp,
-		 "%c\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
-		 i ? ',' : ' ',
-		 tssid, netmode,
+		 "%c\"",i ? ',' : ' ');
+      tf_webWriteJS(wp,tssid);
+      websWrite (wp,"\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%s\",\"%d\",\"%s\"\n",
+		 netmode,
 		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
 		 site_survey_lists[i].beacon_period, open,
