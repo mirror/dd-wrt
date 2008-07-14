@@ -193,26 +193,42 @@ start_config_vlan (void)
       char vlan_id[16];
       char *hwname, *hwaddr;
       if (!(hwname = nvram_nget ("vlan%dhwname", i)))
+        {
 	continue;
+	}
       if (!(hwaddr = nvram_nget ("%smacaddr", hwname)))
+        {
 	continue;
+	}
       if (strlen (hwname) == 0 || strlen (hwaddr) == 0)
+        {
 	continue;
+	}
       ether_atoe (hwaddr, ea);
       for (j = 1; j <= MAX_DEV_IFINDEX; j++)
 	{
 	  ifr.ifr_ifindex = j;
 	  if (ioctl (s, SIOCGIFNAME, &ifr))
+	    {
 	    continue;
+	    }
 	  if (ioctl (s, SIOCGIFHWADDR, &ifr))
+	    {
 	    continue;
+	    }
 	  if (ifr.ifr_hwaddr.sa_family != ARPHRD_ETHER)
+	    {
 	    continue;
+	    }
 	  if (!bcmp (ifr.ifr_hwaddr.sa_data, ea, ETHER_ADDR_LEN))
+	    {
 	    break;
+	    }
 	}
       if (j > MAX_DEV_IFINDEX)
+        {
 	continue;
+	}
       if (ioctl (s, SIOCGIFFLAGS, &ifr))
 	continue;
       if (!(ifr.ifr_flags & IFF_UP))
