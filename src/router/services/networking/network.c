@@ -3104,6 +3104,8 @@ start_wan_done (char *wan_ifname)
   cprintf ("trigger gpio");
 
   led_control (LED_CONNECTED, LED_ON);
+  syslog (LOG_INFO,
+	      "WAN is up. IP: %s\n", nvram_safe_get ("wan_ipaddr"));
 
   float sys_uptime;
   FILE *up;
