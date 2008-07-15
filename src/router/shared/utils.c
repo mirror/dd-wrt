@@ -1903,3 +1903,21 @@ endswith (char *str, char *cmp)
   return (1);
 }
 
+
+int searchfor(FILE *fp, char *str,int scansize)
+{
+char *buffer=malloc(scansize);
+int len = fread(buffer,scansize,1,fp);
+int i;
+for (i=0;i<len-strlen(str);i++)
+    {
+    if (memcmp(buffer+i,str,strlen(str))==0)
+	{
+	fseek(fp,i+strlen(str),SEEK_SET);
+	free(buffer);
+	return 0;
+	}
+    }
+free(buffer);
+return -1;
+}
