@@ -129,9 +129,9 @@ start_sysinit (void)
       fclose (fp);
     }
 #else
-  if (!nvram_match ("dir400pre", "1"))
+  if (!nvram_match ("dir400preconfig", "1"))
     {
-      nvram_set ("dir400pre", "1");
+      nvram_set ("dir400preconfig", "1");
       nvram_commit ();
       int mtd = getMTD ("fullflash");
       char mtdpath[64];
@@ -158,6 +158,8 @@ start_sysinit (void)
 	  fclose (fp);
 	  unsigned char in_addr[6];
 	  ether_atoe (mac, &in_addr[0]);
+	  memcpy (block + 96, &in_addr[0], 6);
+	  in_addr[5]++;
 	  memcpy (block + 102, &in_addr[0], 6);
 	  in_addr[5]++;
 	  memcpy (block + 108, &in_addr[0], 6);
