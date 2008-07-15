@@ -2833,7 +2833,7 @@ tf_webWriteESCNV (webs_t wp, const char *nvname)
   wfflush (wp);
   return r;
 }
-static int
+int
 tf_webWriteJS (webs_t wp, const char *s)
 {
   char buf[512];
