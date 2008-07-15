@@ -2844,6 +2844,18 @@ tf_webWriteJS (webs_t wp, const char *s)
   r = 0;
   for (; *s; s++)
     {
+      if (*s == '<')
+        {
+        sprintf (buf + n, "&lt;");
+	  n += 4;
+        }
+        else
+      if (*s == '>')
+        {
+        sprintf (buf + n, "&gt;");
+	  n += 4;
+        }
+        else
       if ((*s != '"') && (*s != '\\') && (*s != '/') && (*s != '*') && (*s != '\'') && (isprint (*s)))
 	{
 	  buf[n++] = *s;
