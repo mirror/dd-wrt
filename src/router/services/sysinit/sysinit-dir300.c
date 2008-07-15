@@ -158,11 +158,13 @@ start_sysinit (void)
 	  fclose (fp);
 	  unsigned char in_addr[6];
 	  ether_atoe (mac, &in_addr[0]);
-	  memcpy (block + 96, &in_addr[0], 6);
+	  memcpy (block + 96, &in_addr[0], 6); // wlan mac
 	  in_addr[5]++;
-	  memcpy (block + 102, &in_addr[0], 6);
+	  memcpy (block + 102, &in_addr[0], 6); // eth0 mac
 	  in_addr[5]++;
-	  memcpy (block + 108, &in_addr[0], 6);
+	  memcpy (block + 108, &in_addr[0], 6); // eth1 mac
+	  in_addr[5]++;
+	  memcpy (block + 118, &in_addr[0], 6); // wlan1 mac
 	  fp = fopen ("/tmp/radio", "wb");
 	  fwrite (block, 65536, 1, fp);
 	  fclose (fp);
