@@ -157,19 +157,47 @@ start_sysinit (void)
 	  fread (block, 65536, 1, fp);
 	  fclose (fp);
 	  unsigned char in_addr[6];
+	  int changed = 0;
 	  ether_atoe (mac, &in_addr[0]);
-	  memcpy (block + 96, &in_addr[0], 6); // wlan mac
+	  if (memcmp (block + 96, &in_addr[0], 6))
+	    {
+	      changed++;
+	      memcpy (block + 96, &in_addr[0], 6);	// wlan mac
+	    }
 	  in_addr[5]++;
-	  memcpy (block + 102, &in_addr[0], 6); // eth0 mac
+	  if (memcmp (block + 102, &in_addr[0], 6))
+	    {
+	      changed++;
+	      memcpy (block + 102, &in_addr[0], 6);	// eth0 mac
+	    }
 	  in_addr[5]++;
-	  memcpy (block + 108, &in_addr[0], 6); // eth1 mac
+	  if (memcmp (block + 108, &in_addr[0], 6))
+	    {
+	      changed++;
+	      memcpy (block + 108, &in_addr[0], 6);	// eth1 mac
+	    }
 	  in_addr[5]++;
-	  memcpy (block + 118, &in_addr[0], 6); // wlan1 mac
-	  fp = fopen ("/tmp/radio", "wb");
-	  fwrite (block, 65536, 1, fp);
-	  fclose (fp);
-	  eval ("mtd", "-f", "write", "/tmp/radio", "board_config");	//writes back new config and reboots
-	  eval ("event", "5", "1", "15");
+	  if (memcmp (block + 118, &in_addr[0], 6))
+	    {
+	      changed++;
+	      memcpy (block + 118, &in_addr[0], 6);	// wlan1 mac
+	    }
+	  if (changed)
+	    {
+	      fprintf (stderr,
+		       "radio config needs to be adjusted, system will reboot after flashing\n");
+	      fp = fopen ("/tmp/radio", "wb");
+	      fwrite (block, 65536, 1, fp);
+	      fclose (fp);
+	      eval ("mtd", "-f", "write", "/tmp/radio", "board_config");	//writes back new config and reboots
+	      eval ("event", "5", "1", "15");
+	    }
+	  else
+	    {
+	      fprintf (stderr,
+		       "no change required, radio config remains unchanged\n");
+	    }
+	  free (block);
 	}
     }
 #endif
