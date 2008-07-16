@@ -233,7 +233,7 @@ addEvent(window, "unload", function() {
 						<dd class="definition"><% tran("hwl_basic.right4"); %></dd>
 <% ifndef("ACK", "-->"); %>
 					</dl><br />
-					<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
+					<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
 				</div>
 			</div>
 			<div id="floatKiller"></div>

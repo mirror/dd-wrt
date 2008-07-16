@@ -40,7 +40,9 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
 	cp -a help_jp $(INSTALLDIR)/www
 	mv $(INSTALLDIR)/www/help_jp $(INSTALLDIR)/www/help 
 else
+ifneq ($(CONFIG_EXTHELP),y)
 	cp -a help $(INSTALLDIR)/www
+endif
 endif
 	rm -f $(INSTALLDIR)/www/common_micro.js
 	mkdir -p $(INSTALLDIR)/www/js

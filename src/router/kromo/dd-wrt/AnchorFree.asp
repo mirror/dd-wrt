@@ -324,7 +324,7 @@ No amendment or modification hereof shall be valid or binding upon the parties u
 							<dt class="term"><% tran("hanchorfree.right8"); %></dt>
 							<dd class="definition"><% tran("hanchorfree.right9"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HAnchorFree.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HAnchorFree.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
