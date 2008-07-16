@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -102,8 +101,8 @@ checknas (void)			//for broadcom v24 only
 
   if (strlen (buf) != count_processes ("nas"))	//restart all nas processes
     {
-      stop_service ("nas");
-      start_service ("nas");
+      eval("stop_service","nas");
+      eval("start_service","nas");
     }
 
   return;
@@ -140,43 +139,39 @@ do_mon (void)
   struct mon *v;
   checkupgrade ();
   checknas ();
-  void *handle = NULL;
 
-  for (v = mons; v < &mons[sizeof (mons) / sizeof (*v)]; v++)
+  for (v = mons; v < &mons[sizeof (mons) / sizeof (struct mon)]; v++)
     {
       if (v->name == NULL)
 	break;
-      cprintf ("checking %s\n", v->name);
+      printf ("checking %s\n", v->name);
       if (v->type == M_WAN)
 	if (!check_wan_link (0))
 	  {
-	    cprintf ("process is wan, but wan is not up\n");
+	    printf ("process is wan, but wan is not up\n");
 	    continue;
 	  }
       if (!search_process (v->name, v->count))
 	{
 
-	  cprintf ("Maybe %s had died, we need to re-exec it\n", v->name);
-	  handle = stop_service_nofree (v->name, handle);
+	  printf ("Maybe %s had died, we need to re-exec it\n", v->name);
+	  eval("stop_service",v->name);
 	  killall (v->name, SIGKILL);
-	  handle = start_service_nofree (v->name, handle);
+	  eval("start_service",v->name);
 	}
-      cprintf ("checking for %s done\n", v->name);
+      printf ("checking for %s done\n", v->name);
     }
-  if (handle);
-  dlclose (handle);
 
   return 1;
 }
 
-int
-check_ps_main (int argc, char **argv)
+int main (int argc, char **argv)
 {
   pid_t pid;
 
   if (check_action () != ACT_IDLE)
     {				// Don't execute during upgrading
-      cprintf ("check_ps: nothing to do...\n");
+      printf ("check_ps: nothing to do...\n");
       return 1;
     }
 

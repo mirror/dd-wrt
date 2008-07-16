@@ -17,8 +17,11 @@
 #include <utils.h>
 #include <wlutils.h>
 
-int
-radio_timer_main (int argc, char **argv)
+#define start_service(a) eval("startservice",a);
+#define stop_service(a) eval("stopservice",a);
+
+
+int main (int argc, char **argv)
 {
 
   long radiotime0;		//4 byte int number (24 bits from gui + 1 bit for midnight)
