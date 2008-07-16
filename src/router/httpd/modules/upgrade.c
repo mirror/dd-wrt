@@ -153,7 +153,11 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
 #ifdef HAVE_NOP8670
   eval ("fischecksum");
 #endif
+#ifdef HAVE_MAKSAT
+  if (nvram_match("DD_BOARD2","ADI Engineering Pronghorn Metro"))
+#else
   if (nvram_match("DD_BOARD","ADI Engineering Pronghorn Metro"))
+#endif
 	eval ("fischecksum");
 
 
