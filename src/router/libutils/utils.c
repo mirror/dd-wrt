@@ -407,7 +407,7 @@ old_way:;
       setRouter ("Avila GW2348-4/2");
       return ROUTER_BOARD_GATEWORX;
     }
-  else if (reg1 == 0x143 && reg2 == 0xbc31)
+  else if (reg1 == 0x143 && reg2 == 0xbc31) // broadcom phy
     {
       setRouter ("ADI Engineering Pronghorn Metro");
       return ROUTER_BOARD_GATEWORX;
