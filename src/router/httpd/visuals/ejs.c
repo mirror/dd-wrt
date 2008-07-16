@@ -611,6 +611,13 @@ ej_ifdef (webs_t wp, int argc, char_t ** argv)
       return;
     }
 #endif
+#ifdef HAVE_EXTHELP
+  if (!strcmp (name, "EXTHELP"))
+    {
+      websWrite (wp, output);
+      return;
+    }
+#endif
   if (!strcmp (name, "MINI"))	//to include mini + mini-special
     {
       if (startswith (nvram_safe_get ("dist_type"), "mini"))
