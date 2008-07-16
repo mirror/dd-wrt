@@ -57,13 +57,24 @@ CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 ifeq ($(CONFIG_NOAD),y)
 CFLAGS += -DHAVE_NOAD
 endif
+
 ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
+CFLAGS += -DHAVE_EXTHELP
 endif
 ifeq ($(CONFIG_DIST),"micro-special")
 CFLAGS += -DHAVE_MICRO
+CFLAGS += -DHAVE_EXTHELP
 endif
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
+ifeq ($(CONFIG_EXTHELP),y)
+CFLAGS += -DHAVE_EXTHELP
+endif
+endif
+endif
+
 endif
 ifeq ($(CONFIG_LANGUAGE),y)
 CFLAGS += -DHAVE_LANGUAGE
@@ -357,7 +368,7 @@ CFLAGS += -DHAVE_OPENVPN
 endif
 
 ifeq ($(CONFIG_MSSID),y)
-  CFLAGS += -DHAVE_MSSID
+CFLAGS += -DHAVE_MSSID
 endif
 
 ifeq ($(CONFIG_BOESE),y)
@@ -476,6 +487,7 @@ ifeq ($(CONFIG_MILKFISH),y)
 CFLAGS += -DHAVE_MILKFISH
 VISOBJS += milkfish.o
 endif
+
 
 #use this do disable number of arguments checking (less code and faster exec)
 CFLAGS += -DFASTWEB
