@@ -213,7 +213,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("status_inet.traff_mon"); %>: </dt>
 							<dd class="definition"><% tran("hstatus_inet.right6"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HStatus.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HStatus.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

@@ -165,7 +165,7 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<br/>
-						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HPPTP.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HPPTP.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

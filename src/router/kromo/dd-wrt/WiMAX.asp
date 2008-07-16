@@ -111,7 +111,7 @@ addEvent(window, "unload", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div><br />
-						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HWiMAX.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HWiMAX.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
