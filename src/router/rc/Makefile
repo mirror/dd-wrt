@@ -28,7 +28,7 @@ endif
 
 OBJS := rc.o servicemanager.o crc.o 
 #http.o stats.o
-OBJS += listen.o check_ps.o radio_timer.o watchdog.o event.o nvram.o ledtool.o services.o
+OBJS += watchdog.o services.o
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -427,6 +427,12 @@ install: all
 	install process_monitor $(INSTALLDIR)/sbin	
 	install resetbutton $(INSTALLDIR)/sbin	
 	install init $(INSTALLDIR)/sbin	
+	install check_ps $(INSTALLDIR)/sbin	
+	install nvram $(INSTALLDIR)/sbin	
+	install ledtool $(INSTALLDIR)/sbin	
+	install event $(INSTALLDIR)/sbin	
+	install radio_timer $(INSTALLDIR)/sbin	
+	install listen $(INSTALLDIR)/sbin	
 	$(STRIP) $(INSTALLDIR)/sbin/rc
 #	cd $(INSTALLDIR)/sbin && ln -sf rc init
 #ifneq ($(CONFIG_TW6600),y)
@@ -440,11 +446,11 @@ install: all
 	cd $(INSTALLDIR)/sbin && ln -sf rc erase
 	cd $(INSTALLDIR)/sbin && ln -sf rc roaming_daemon
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_wanface
-	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
+#	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
 #	cd $(INSTALLDIR)/sbin && ln -sf rc stats
-	cd $(INSTALLDIR)/sbin && ln -sf rc event
+#	cd $(INSTALLDIR)/sbin && ln -sf rc event
 	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
 	cd $(INSTALLDIR)/sbin && ln -sf rc filter
 #	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
@@ -455,7 +461,7 @@ install: all
 	cd $(INSTALLDIR)/sbin && ln -sf rc ipupdated
 	cd $(INSTALLDIR)/sbin && ln -sf rc redial
 	cd $(INSTALLDIR)/sbin && ln -sf rc setuserpasswd
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /sbin/rc nvram
+#	cd $(INSTALLDIR)/usr/sbin && ln -sf /sbin/rc nvram
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_connect
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_disconnect
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpio
@@ -463,13 +469,13 @@ install: all
 ifeq ($(CONFIG_REGISTER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc regshell
 endif
-	cd $(INSTALLDIR)/sbin && ln -sf rc listen
+#	cd $(INSTALLDIR)/sbin && ln -sf rc listen
 	cd $(INSTALLDIR)/sbin && ln -sf rc supplicant
-	cd $(INSTALLDIR)/sbin && ln -sf rc check_ps
+#	cd $(INSTALLDIR)/sbin && ln -sf rc check_ps
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_success
 #	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
 	cd $(INSTALLDIR)/sbin && ln -sf rc site_survey
-	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
+#	cd $(INSTALLDIR)/sbin && ln -sf rc radio_timer
 #	cd $(INSTALLDIR)/sbin && ln -sf rc ttraff	
 ifeq ($(CONFIG_WIVIZ),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_wiviz
@@ -537,5 +543,11 @@ rc: $(OBJS)
 	$(CC) $(CFLAGS) -o process_monitor process_monitor.c ntp.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o init init.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram
+	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o event event.c
+	$(CC) $(CFLAGS) -o radio_timer radio_timer.c $(LDFLAGS)
+	$(CC) $(CFLAGS) -o listen listen.c $(LDFLAGS)
 
 $(OBJS): $(CY_DEPS)
