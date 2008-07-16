@@ -52,6 +52,8 @@ enum
 
 # define DEBUG1(args...) do {;} while(0)
 
+#define start_service(a) eval("startservice",a);
+#define stop_service(a) eval("stopservice",a);
 
 struct iphdr
 {
@@ -415,8 +417,7 @@ Exit:
 
 
 
-int
-listen_main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
 
   char *interface = argv[1];

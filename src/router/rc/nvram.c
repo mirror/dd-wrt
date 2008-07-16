@@ -15,8 +15,7 @@ usage (void)
 }
 
 /* NVRAM utility */
-int
-nvram_main (int argc, char **argv)
+int main (int argc, char **argv)
 {
   char *name, *value, buf[NVRAM_SPACE];
   int size;

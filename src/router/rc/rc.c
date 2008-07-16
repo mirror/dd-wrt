@@ -190,11 +190,11 @@ static struct MAIN maincalls[] = {
   {"hb_disconnect", "hb_disconnect", NULL},
   {"gpio", "gpio", NULL},
   {"beep", "beep", NULL},
-  {"listen", NULL, &listen_main},
-  {"check_ps", NULL, &check_ps_main},
+//  {"listen", NULL, &listen_main},
+//  {"check_ps", NULL, &check_ps_main},
   {"ddns_success", "ddns_success", NULL},
 //  {"process_monitor", NULL, &process_monitor_main},
-  {"radio_timer", NULL, &radio_timer_main},
+//  {"radio_timer", NULL, &radio_timer_main},
 //  {"ttraf", NULL, &ttraff_main},
 #ifdef HAVE_WIVIZ
   {"run_wiviz", NULL, &run_wiviz_main},
@@ -204,7 +204,7 @@ static struct MAIN maincalls[] = {
 #ifdef HAVE_WOL
   {"wol", NULL, &wol_main},
 #endif
-  {"event", NULL, &event_main},
+//  {"event", NULL, &event_main},
   {"switch", "switch", NULL},
 //#ifdef HAVE_MICRO
 //  {"brctl", "brctl", NULL},
@@ -219,14 +219,14 @@ static struct MAIN maincalls[] = {
 #ifndef HAVE_MICRO
   {"watchdog", NULL, &watchdog_main},
 #endif
-  {"nvram", NULL, &nvram_main},
+//  {"nvram", NULL, &nvram_main},
 #ifdef HAVE_ROAMING
   {"roaming_daemon", NULL, &roaming_daemon_main},
   {"supplicant", "supplicant", NULL},
 #endif
   {"get_wanface", NULL, &get_wanface},
 #ifndef HAVE_XSCALE
-  {"ledtool", NULL, &ledtool_main},
+//  {"ledtool", NULL, &ledtool_main},
 #endif
 #ifdef HAVE_REGISTER
   {"regshell", NULL, &reg_main}
