@@ -254,7 +254,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("share.subnet"); %>:</dt>
 							<dd class="definition"><% tran("hroute.right10"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HRouting.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HRouting.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

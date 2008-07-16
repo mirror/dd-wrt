@@ -117,7 +117,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("share.end"); %>:</dt>
 							<dd class="definition"><% tran("htrforward.right10"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HTrigger.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HTrigger.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

@@ -236,7 +236,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("firewall.legend"); %>:</dt>
 							<dd class="definition"><% tran("hfirewall.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% ifdef("MICRO","Ext"); %>('HFirewall.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HFirewall.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 			<div id="floatKiller"></div>
