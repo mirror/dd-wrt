@@ -373,7 +373,11 @@ Configure mac addresses by reading data from eeprom
 	}
       fclose (file);
     }
+#ifdef HAVE_MAKSAT
+  if (nvram_match("DD_BOARD2","ADI Engineering Pronghorn Metro"))
+#else
   if (nvram_match("DD_BOARD","ADI Engineering Pronghorn Metro"))
+#endif
     {
     fprintf(stderr,"Pronghorn Metro detected\n");
     eval("setmac","-f","/dev/mtdblock/7","-n","1","-i","0","-r","npe_eth0_esa");

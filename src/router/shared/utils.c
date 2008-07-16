@@ -1550,20 +1550,6 @@ int crypt_make_salt(char *p, int cnt, int x)
 }
 
 
-/*static void
-to64 (char *s, long v, int n)
-{
-
-  unsigned char itoa64[] =
-    "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-
-  while (--n >= 0)
-    {
-      *s++ = itoa64[v & 0x3f];
-      v >>= 6;
-    }
-}
-*/
 
 #define MD5_OUT_BUFSIZE 36
 
