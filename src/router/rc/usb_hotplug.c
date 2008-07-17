@@ -88,12 +88,12 @@ usb_process_path(char *path)
 	struct stat tmp_stat;
 
 	eval("/bin/mount", "-t", "vfat", path, "/mnt");
-	if (stat("/mnt/SMRTNTKY/WSETTING.WFC", &tmp_stat) == 0) {
+/*	if (stat("/mnt/SMRTNTKY/WSETTING.WFC", &tmp_stat) == 0) {
 		eval("/usr/sbin/wcnparse", "-C", "/mnt", "SMRTNTKY/WSETTING.WFC");
 		ret = 0;
 	}
 	eval("/bin/umount", "/mnt");
-
+*/
 	return ret;
 }
 
