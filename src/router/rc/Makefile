@@ -428,7 +428,7 @@ install: all
 	install resetbutton $(INSTALLDIR)/sbin	
 	install init $(INSTALLDIR)/sbin	
 	install check_ps $(INSTALLDIR)/sbin	
-	install nvram $(INSTALLDIR)/sbin	
+	install nvram $(INSTALLDIR)/usr/sbin	
 	install ledtool $(INSTALLDIR)/sbin	
 	install event $(INSTALLDIR)/sbin	
 	install radio_timer $(INSTALLDIR)/sbin	
