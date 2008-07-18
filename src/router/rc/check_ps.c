@@ -101,8 +101,8 @@ checknas (void)			//for broadcom v24 only
 
   if (strlen (buf) != count_processes ("nas"))	//restart all nas processes
     {
-      eval("stop_service","nas");
-      eval("start_service","nas");
+      eval("stopservice","nas");
+      eval("startservice","nas");
     }
 
   return;
@@ -155,9 +155,9 @@ do_mon (void)
 	{
 
 	  printf ("Maybe %s had died, we need to re-exec it\n", v->name);
-	  eval("stop_service",v->name);
+	  eval("stopservice",v->name);
 	  killall (v->name, SIGKILL);
-	  eval("start_service",v->name);
+	  eval("startservice",v->name);
 	}
       printf ("checking for %s done\n", v->name);
     }
