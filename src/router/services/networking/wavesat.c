@@ -70,7 +70,9 @@ configure_wimax (void)
     mode = "1";
   if (nvram_match ("ofdm_mode", "disabled"))
     return;
-  eval ("/sub/lm_scripts/go_ss", nvram_safe_get ("ofdm_width"), mode);
+  char width[32];
+  sprintf(width,"%smhz",nvram_safe_get ("ofdm_width"));
+  eval ("/sub/lm_scripts/go_ss", width,"0", mode);
   if (!nvram_match ("ofdm_mode", "sta"))
     {
       char bridged[32];
