@@ -109,17 +109,17 @@ add_userip (char *ip, int idx, char *upstream, char *downstream)
   sprintf (downs, "%skbit", downstream);
   if (nvram_match ("qos_type", "0"))
     {
-      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:","classid", up, "htb", "rate", ups, "ceil", ups);
-      eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:","protocol", "ip", "prio", "0", "u32", "match", "ip", "src", ip,"flowid", up);
-      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",down, "htb", "rate", downs, "ceil", downs);
-      eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol","ip", "prio", "0", "u32", "match", "ip", "dst", ip, "flowid",down);
+      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:","classid", up, "htb", "rate", ups, "ceil", ups, "prio","1");
+      eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:","protocol", "ip", "prio", "1", "u32", "match", "ip", "src", ip,"flowid", up);
+      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",down, "htb", "rate", downs, "ceil", downs, "prio","1");
+      eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol","ip", "prio", "1", "u32", "match", "ip", "dst", ip, "flowid",down);
     }
   else
     {
-      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:","classid", up, "htb", "rate", ups, "ceil", ups);
-      eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:","protocol", "ip", "prio", "0", "u32", "match", "ip", "src", ip,"flowid", up);
-      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",down, "htb", "rate", downs, "ceil", downs);
-      eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol","ip", "prio", "0", "u32", "match", "ip", "dst", ip, "flowid",down);
+      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:","classid", up, "htb", "rate", ups, "ceil", ups, "prio","1");
+      eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:","protocol", "ip", "prio", "1", "u32", "match", "ip", "src", ip,"flowid", up);
+      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",down, "htb", "rate", downs, "ceil", downs, "prio","1");
+      eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol","ip", "prio", "1", "u32", "match", "ip", "dst", ip, "flowid",down);
     }
 
 }
@@ -153,30 +153,30 @@ add_usermac (char *mac, int idx, char *upstream, char *downstream)
   if (nvram_match ("qos_type", "0"))
     {
       eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:",
-	    "classid", up, "htb", "rate", ups, "ceil", ups);
+	    "classid", up, "htb", "rate", ups, "ceil", ups, "prio","1");
       eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:",
-	    "protocol", "ip", "prio", "0", "u32", "match", "u16", "0x0800",
+	    "protocol", "ip", "prio", "1", "u32", "match", "u16", "0x0800",
 	    "0xFFFF", "at", "-2", "match", "u16", oct2, "0xFFFF", "at", "-4",
 	    "match", "u32", oct4, "0xFFFFFFFF", "at", "-8", "flowid", up);
       eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",
-	    down, "htb", "rate", downs, "ceil", downs);
+	    down, "htb", "rate", downs, "ceil", downs, "prio","1");
       eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol",
-	    "ip", "prio", "0", "u32", "match", "u16", "0x0800", "0xFFFF",
+	    "ip", "prio", "1", "u32", "match", "u16", "0x0800", "0xFFFF",
 	    "at", "-2", "match", "u32", doct4, "0xFFFFFFFF", "at", "-12",
 	    "match", "u16", doct2, "0xFFFF", "at", "-14", "flowid", down);
     }
   else
     {
       eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:",
-	    "classid", up, "htb", "rate", ups, "ceil", ups);
+	    "classid", up, "htb", "rate", ups, "ceil", ups, "prio","1");
       eval ("tc", "filter", "add", "dev", get_wshaper_dev (), "parent", "1:",
-	    "protocol", "ip", "prio", "0", "u32", "match", "u16", "0x0800",
+	    "protocol", "ip", "prio", "1", "u32", "match", "u16", "0x0800",
 	    "0xFFFF", "at", "-2", "match", "u16", oct2, "0xFFFF", "at", "-4",
 	    "match", "u32", oct4, "0xFFFFFFFF", "at", "-8", "flowid", up);
       eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",
-	    down, "htb", "rate", downs, "ceil", downs);
+	    down, "htb", "rate", downs, "ceil", downs, "prio","1");
       eval ("tc", "filter", "add", "dev", "imq0", "parent", "1:", "protocol",
-	    "ip", "prio", "0", "u32", "match", "u16", "0x0800", "0xFFFF",
+	    "ip", "prio", "1", "u32", "match", "u16", "0x0800", "0xFFFF",
 	    "at", "-2", "match", "u32", doct4, "0xFFFFFFFF", "at", "-12",
 	    "match", "u16", doct2, "0xFFFF", "at", "-14", "flowid", down);
     }
