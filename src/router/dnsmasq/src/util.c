@@ -16,81 +16,87 @@
 
 /* Some code in this file contributed by Rob Funk. */
 
+/* The SURF random number generator was taken from djbdns-1.05, by 
+   Daniel J Berstein, which is public domain. */
+
+
 #include "dnsmasq.h"
 
 #ifdef HAVE_BROKEN_RTC
 #include <sys/times.h>
 #endif
 
-/* Prefer arc4random(3) over random(3) over rand(3) */
-/* Also prefer /dev/urandom over /dev/random, to preserve the entropy pool */
+
 #ifdef HAVE_ARC4RANDOM
-# define rand()		arc4random()
-# define srand(s)	(void)0
-# define RANDFILE	(NULL)
-#else
-# ifdef HAVE_RANDOM
-#  define rand()	random()
-#  define srand(s)	srandom(s)
-# endif
-# ifdef HAVE_DEV_URANDOM
-#  define RANDFILE	"/dev/urandom"
-# else
-#  ifdef HAVE_DEV_RANDOM
-#   define RANDFILE	"/dev/random"
-#  else
-#   define RANDFILE	(NULL)
-#  endif
-# endif
-#endif
+void rand_init(void)
+{
+  return;
+}
 
 unsigned short rand16(void)
 {
-  static int been_seeded = 0;
-  const char *randfile = RANDFILE;
-  
-  if (! been_seeded) 
-    {
-      int fd, n = 0;
-      unsigned int c = 0, seed = 0, badseed;
-      char sbuf[sizeof(seed)];
-      char *s;
-      struct timeval now;
-
-      /* get the bad seed as a backup */
-      /* (but we'd rather have something more random) */
-      gettimeofday(&now, NULL);
-      badseed = now.tv_sec ^ now.tv_usec ^ (getpid() << 16);
-      
-      fd = open(randfile, O_RDONLY);
-      if (fd < 0) 
-	seed = badseed;
-      else
-	{
-	  s = (char *) &seed;
-	  while ((c < sizeof(seed)) &&
-		 ((n = read(fd, sbuf, sizeof(seed)) > 0))) 
-	    {
-	      memcpy(s, sbuf, n);
-	      s += n;
-	      c += n;
-	    }
-	  if (n < 0)
-	    seed = badseed;
-	  close(fd);
-	}
-
-      srand(seed);
-      been_seeded = 1;
-    }
-  
-  /* Some rand() implementations have less randomness in low bits
-   * than in high bits, so we only pay attention to the high ones.
-   * But most implementations don't touch the high bit, so we 
-   * ignore that one.
-   */
-  return( (unsigned short) (rand() >> 15) );
+   return (unsigned short) (arc4random() >> 15);
 }
+
+#else
+
+/* SURF random number generator */
+
+typedef unsigned int uint32;
+
+static uint32 seed[32];
+static uint32 in[12];
+static uint32 out[8];
+
+void rand_init()
+{
+  int fd = open(RANDFILE, O_RDONLY);
+  
+  if (fd == -1 ||
+      !read_write(fd, (unsigned char *)&seed, sizeof(seed), 1) ||
+      !read_write(fd, (unsigned char *)&in, sizeof(in), 1))
+    die(_("failed to seed the random number generator: %s"), NULL, EC_MISC);
+  
+  close(fd);
+}
+
+#define ROTATE(x,b) (((x) << (b)) | ((x) >> (32 - (b))))
+#define MUSH(i,b) x = t[i] += (((x ^ seed[i]) + sum) ^ ROTATE(x,b));
+
+static void surf(void)
+{
+  uint32 t[12]; uint32 x; uint32 sum = 0;
+  int r; int i; int loop;
+
+  for (i = 0;i < 12;++i) t[i] = in[i] ^ seed[12 + i];
+  for (i = 0;i < 8;++i) out[i] = seed[24 + i];
+  x = t[11];
+  for (loop = 0;loop < 2;++loop) {
+    for (r = 0;r < 16;++r) {
+      sum += 0x9e3779b9;
+      MUSH(0,5) MUSH(1,7) MUSH(2,9) MUSH(3,13)
+      MUSH(4,5) MUSH(5,7) MUSH(6,9) MUSH(7,13)
+      MUSH(8,5) MUSH(9,7) MUSH(10,9) MUSH(11,13)
+    }
+    for (i = 0;i < 8;++i) out[i] ^= t[i + 4];
+  }
+}
+
+unsigned short rand16(void)
+{
+  static int outleft = 0;
+
+  if (!outleft) {
+    if (!++in[0]) if (!++in[1]) if (!++in[2]) ++in[3];
+    surf();
+    outleft = 8;
+  }
+
+  return (unsigned short) out[--outleft];
+}
+
+#endif
+
 
 int legal_char(char c)
 {
@@ -161,6 +167,14 @@ void *safe_malloc(size_t size)
      
   return ret;
 }    
+
+void safe_pipe(int *fd, int read_noblock)
+{
+  if (pipe(fd) == -1 || 
+      !fix_fd(fd[1]) ||
+      (read_noblock && !fix_fd(fd[0])))
+    die(_("cannot create pipe: %s"), NULL, EC_MISC);
+}
 
 void *whine_malloc(size_t size)
 {
@@ -429,3 +443,4 @@ int read_write(int fd, unsigned char *packet, int size, int rw)
     }
   return 1;
 }
+

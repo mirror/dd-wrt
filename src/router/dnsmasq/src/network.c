@@ -27,8 +27,8 @@ int iface_check(int family, struct all_addr *addr,
 
   if (indexp)
     {
-#if defined(__FreeBSD__) || defined(__DragonFly__)
-      /* One form of bridging on FreeBSD has the property that packets
+#ifdef HAVE_BSD_BRIDGE
+      /* One form of bridging on BSD has the property that packets
 	 can be recieved on bridge interfaces which do not have an IP address.
 	 We allow these to be treated as aliases of another interface which does have
 	 an IP address with --dhcp-bridge=interface,alias,alias */
@@ -438,6 +438,68 @@ struct listener *create_bound_listeners(void)
   return listeners;
 }
 
+
+/* return a UDP socket bound to a random port, have to coper with straying into
+   occupied port nos and reserved ones. */
+int random_sock(int family)
+{
+  int fd;
+
+  if ((fd = socket(family, SOCK_DGRAM, 0)) != -1)
+    {
+      union mysockaddr addr;
+      unsigned int ports_avail = 65536u - (unsigned short)daemon->min_port;
+      int i, tries = 3 * ports_avail;
+
+      if (tries > 100)
+	tries = 100;
+
+      memset(&addr, 0, sizeof(addr));
+      addr.sa.sa_family = family;
+
+      /* don't loop forever if all ports in use. */
+
+      if (fix_fd(fd))
+	for (i = tries; i != 0; i--)
+	  {
+	    unsigned short port = rand16();
+	    
+	    if (daemon->min_port != 0)
+	      port = htons(daemon->min_port + (port % ((unsigned short)ports_avail)));
+	    
+	    if (family == AF_INET) 
+	      {
+		addr.in.sin_addr.s_addr = INADDR_ANY;
+		addr.in.sin_port = port;
+#ifdef HAVE_SOCKADDR_SA_LEN
+		addr.in.sin_len = sizeof(struct sockaddr_in);
+#endif
+	      }
+#ifdef HAVE_IPV6
+	    else
+	      {
+		addr.in6.sin6_addr = in6addr_any; 
+		addr.in6.sin6_port = port;
+#ifdef HAVE_SOCKADDR_SA_LEN
+		addr.in6.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+	      }
+#endif
+	    
+	    if (bind(fd, (struct sockaddr *)&addr, sa_len(&addr)) == 0)
+	      return fd;
+	    
+	    if (errno != EADDRINUSE && errno != EACCES)
+	      break;
+	  }
+
+      close(fd);
+    }
+
+  return -1; 
+}
+  
+
 int local_bind(int fd, union mysockaddr *addr, char *intname, int is_tcp)
 {
   union mysockaddr addr_copy = *addr;
@@ -469,7 +531,26 @@ static struct serverfd *allocate_sfd(union mysockaddr *addr, char *intname)
   {
    struct serverfd *sfd;
    int errsave;
-  
+
+   /* when using random ports, servers which would otherwise use
+      the INADDR_ANY/port0 socket have sfd set to NULL */
+   if (!daemon->osport)
+     {
+       errno = 0;
+       
+       if (addr->sa.sa_family == AF_INET &&
+ 	  addr->in.sin_addr.s_addr == INADDR_ANY &&
+ 	  addr->in.sin_port == htons(0)) 
+ 	return NULL;
+ 
+#ifdef HAVE_IPV6
+       if (addr->sa.sa_family == AF_INET6 &&
+ 	  memcmp(&addr->in6.sin6_addr, &in6addr_any, sizeof(in6addr_any)) == 0 &&
+ 	  addr->in6.sin6_port == htons(0)) 
+ 	return NULL;
+#endif
+     }
+
     /* may have a suitable one already */
   for (sfd = daemon->sfds; sfd; sfd = sfd->next )
    if (sockaddr_isequal(&sfd->source_addr, addr) &&
@@ -535,6 +616,7 @@ void pre_allocate_sfds(void)
   for (srv = daemon->servers; srv; srv = srv->next)
     if (!(srv->flags & (SERV_LITERAL_ADDRESS | SERV_NO_ADDR)) &&
 	!allocate_sfd(&srv->source_addr, srv->interface) &&
+	errno != 0 &&
 	(daemon->options & OPT_NOWILD))
       {
 	prettyprint_addr(&srv->addr, daemon->namebuff);
@@ -582,7 +664,9 @@ void check_servers(void)
 	    }
 	  
 	  /* Do we need a socket set? */
-	  if (!new->sfd && !(new->sfd = allocate_sfd(&new->source_addr, new->interface)))
+	  if (!new->sfd && 
+	      !(new->sfd = allocate_sfd(&new->source_addr, new->interface)) &&
+	      errno != 0)
 	    {
 	      my_syslog(LOG_WARNING, 
 			_("ignoring nameserver %s - cannot make/bind socket: %s"),

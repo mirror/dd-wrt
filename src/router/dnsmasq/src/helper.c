@@ -50,22 +50,18 @@ struct script_data
 static struct script_data *buf = NULL;
 static size_t bytes_in_buf = 0, buf_size = 0;
 
-int create_helper(int event_fd, long max_fd)
+int create_helper(int event_fd, int err_fd, uid_t uid, gid_t gid, long max_fd)
 {
   pid_t pid;
   int i, pipefd[2];
   struct sigaction sigact;
 
-  if (!daemon->dhcp || !daemon->lease_change_command)
-    return -1;
-  
   /* create the pipe through which the main program sends us commands,
-     then fork our process. By now it's too late to die(), we just log 
-     any failure via the main process. */
+     then fork our process. */
   if (pipe(pipefd) == -1 || !fix_fd(pipefd[1]) || (pid = fork()) == -1)
     {
-      send_event(event_fd, EVENT_PIPE_ERR, errno);
-      return -1;
+      send_event(err_fd, EVENT_PIPE_ERR, errno);
+      _exit(0);
     }
 
   if (pid != 0)
@@ -82,7 +78,29 @@ int create_helper(int event_fd, long max_fd)
   sigaction(SIGTERM, &sigact, NULL);
   sigaction(SIGALRM, &sigact, NULL);
 
-  /* close all the sockets etc, we don't need them here */
+  if (!(daemon->options & OPT_DEBUG) && uid != 0)
+    {
+      gid_t dummy;
+      if (setgroups(0, &dummy) == -1 || 
+	  setgid(gid) == -1 || 
+	  setuid(uid) == -1)
+	{
+	  if (daemon->options & OPT_NO_FORK)
+	    /* send error to daemon process if no-fork */
+	    send_event(event_fd, EVENT_HUSER_ERR, errno);
+	  else
+	    {
+	      /* kill daemon */
+	      send_event(event_fd, EVENT_DIE, 0);
+	      /* return error */
+	      send_event(err_fd, EVENT_HUSER_ERR, errno);;
+	    }
+	  _exit(0);
+	}
+    }
+
+  /* close all the sockets etc, we don't need them here. This closes err_fd, so that
+     main process can return. */
   for (max_fd--; max_fd > 0; max_fd--)
     if (max_fd != STDOUT_FILENO && max_fd != STDERR_FILENO && 
 	max_fd != STDIN_FILENO && max_fd != pipefd[0] && max_fd != event_fd)

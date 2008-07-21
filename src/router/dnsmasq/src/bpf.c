@@ -69,7 +69,7 @@ int iface_enumerate(void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
 	 an aligned buffer to avoid nasty complaints about 
 	 unaligned accesses. */
 #ifdef HAVE_SOCKADDR_SA_LEN
-      len = ((struct ifreq *)ptr)->ifr_addr.sa_len + IF_NAMESIZE;
+      len = ((struct ifreq *)ptr)->ifr_addr.sa_len + offsetof(struct ifreq, ifr_ifru);
 #else
       len = sizeof(struct ifreq);
 #endif
@@ -212,8 +212,8 @@ void send_via_bpf(struct dhcp_packet *mess, size_t len,
     sum = (sum & 0xffff) + (sum >> 16);  
   ip.ip_sum = (sum == 0xffff) ? sum : ~sum;
   
-  udp.uh_sport = htons(DHCP_SERVER_PORT);
-  udp.uh_dport = htons(DHCP_CLIENT_PORT);
+  udp.uh_sport = htons(daemon->dhcp_server_port);
+  udp.uh_dport = htons(daemon->dhcp_client_port);
   if (len & 1)
     ((char *)mess)[len] = 0; /* for checksum, in case length is odd. */
   udp.uh_sum = 0;
