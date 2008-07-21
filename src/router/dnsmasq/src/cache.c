@@ -45,6 +45,7 @@ static const struct {
   { 25,  "KEY" },
   { 28,  "AAAA" },
   { 33,  "SRV" },
+  { 35,  "NAPTR" },
   { 36,  "KX" },
   { 37,  "CERT" },
   { 38,  "A6" },
@@ -63,7 +64,6 @@ static const struct {
 static void cache_free(struct crec *crecp);
 static void cache_unlink(struct crec *crecp);
 static void cache_link(struct crec *crecp);
-static char *record_source(struct hostsfile *add_hosts, int index);
 static void rehash(int size);
 static void cache_hash(struct crec *crecp);
 
@@ -359,8 +359,9 @@ struct crec *cache_insert(char *name, struct all_addr *addr,
   struct crec *new;
   union bigname *big_name = NULL;
   int freed_all = flags & F_REVERSE;
+  int free_avail = 0;
 
-  log_query(flags | F_UPSTREAM, name, addr, 0, NULL, 0);
+  log_query(flags | F_UPSTREAM, name, addr, NULL);
 
   /* CONFIG bit no needed except for logging */
   flags &= ~F_CONFIG;
@@ -392,8 +393,19 @@ struct crec *cache_insert(char *name, struct all_addr *addr,
     
     if (new->flags & (F_FORWARD | F_REVERSE))
       { 
+	/* If free_avail set, we believe that an entry has been freed.
+	   Bugs have been known to make this not true, resulting in
+	   a tight loop here. If that happens, abandon the
+	   insert. Once in this state, all inserts will probably fail. */
+	if (free_avail)
+	  {
+	    insert_error = 1;
+	    return NULL;
+	  }
+		
 	if (freed_all)
 	  {
+	    free_avail = 1; /* Must be free space now. */
 	    cache_scan_free(cache_get_name(new), &new->addr.addr, now, new->flags);
 	    cache_live_freed++;
 	  }
@@ -516,18 +528,21 @@ struct crec *cache_find_by_name(struct crec *crecp, char *name, time_t now, unsi
 		     Make sure that re-ordering doesn't break the hash-chain
 		     order invariants. 
 		  */
-		  if (!insert)
-		    {
-		      insert = up;
-		      ins_flags = crecp->flags & (F_REVERSE | F_IMMORTAL);
-		      up = &crecp->hash_next; 
-		    }
-		  else if ((crecp->flags & (F_REVERSE | F_IMMORTAL)) == ins_flags)
+		  if (insert && (crecp->flags & (F_REVERSE | F_IMMORTAL)) == ins_flags)
 		    {
 		      *up = crecp->hash_next;
 		      crecp->hash_next = *insert;
 		      *insert = crecp;
 		      insert = &crecp->hash_next;
+		    }
+		  else
+		    {
+		      if (!insert)
+			{
+			  insert = up;
+			  ins_flags = crecp->flags & (F_REVERSE | F_IMMORTAL);
+			}
+		      up = &crecp->hash_next; 
 		    }
 		}
 	      else
@@ -988,7 +1003,7 @@ void dump_cache(time_t now)
     }
 }
 
-static char *record_source(struct hostsfile *addn_hosts, int index)
+char *record_source(struct hostsfile *addn_hosts, int index)
 {
   char *source = HOSTSFILE;
   while (addn_hosts)
@@ -1004,12 +1019,20 @@ static char *record_source(struct hostsfile *addn_hosts, int index)
   return source;
 }
 
-void log_query(unsigned short flags, char *name, struct all_addr *addr, 
-	       unsigned short type, struct hostsfile *addn_hosts, int index)
+void querystr(char *str, unsigned short type)
+{
+  unsigned int i;
+  
+  sprintf(str, "query[type=%d]", type); 
+  for (i = 0; i < (sizeof(typestr)/sizeof(typestr[0])); i++)
+    if (typestr[i].type == type)
+      sprintf(str,"query[%s]", typestr[i].name);
+}
+
+void log_query(unsigned short flags, char *name, struct all_addr *addr, char *arg)
 {
   char *source, *dest = addrbuff;
   char *verb = "is";
-  char types[20];
   
   if (!(daemon->options & OPT_LOG))
     return;
@@ -1053,15 +1076,9 @@ void log_query(unsigned short flags, char *name, struct all_addr *addr,
     }
   else if (flags & F_CNAME)
     {
-      /* nasty abuse of IPV4 and IPV6 flags */
-      if (flags & F_IPV4)
-	dest = "<MX>";
-      else if (flags & F_IPV6)
-	dest = "<SRV>";
-      else if (flags & F_NXDOMAIN)
-	dest = "<TXT>";
-      else if (flags & F_BIGNAME)
-	dest = "<PTR>";
+      /* nasty abuse of NXDOMAIN and CNAME flags */
+      if (flags & F_NXDOMAIN)
+	dest = arg;
       else
 	dest = "<CNAME>";
     }
@@ -1069,7 +1086,7 @@ void log_query(unsigned short flags, char *name, struct all_addr *addr,
   if (flags & F_DHCP)
     source = "DHCP";
   else if (flags & F_HOSTS)
-    source = record_source(addn_hosts, index);
+    source = arg;
   else if (flags & F_CONFIG)
     source = "config";
   else if (flags & F_UPSTREAM)
@@ -1081,16 +1098,7 @@ void log_query(unsigned short flags, char *name, struct all_addr *addr,
     }
   else if (flags & F_QUERY)
     {
-      unsigned int i;
-      
-      if (type != 0)
-        {
-          sprintf(types, "query[type=%d]", type); 
-          for (i = 0; i < (sizeof(typestr)/sizeof(typestr[0])); i++)
-	    if (typestr[i].type == type)
-	      sprintf(types,"query[%s]", typestr[i].name);
-	}
-      source = types;
+      source = arg;
       verb = "from";
     }
   else

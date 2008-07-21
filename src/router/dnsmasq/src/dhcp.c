@@ -71,7 +71,7 @@ void dhcp_init(void)
   
   memset(&saddr, 0, sizeof(saddr));
   saddr.sin_family = AF_INET;
-  saddr.sin_port = htons(DHCP_SERVER_PORT);
+  saddr.sin_port = htons(daemon->dhcp_server_port);
   saddr.sin_addr.s_addr = INADDR_ANY;
 #ifdef HAVE_SOCKADDR_SA_LEN
   saddr.sin_len = sizeof(struct sockaddr_in);
@@ -264,7 +264,7 @@ void dhcp_packet(time_t now)
   if (mess->giaddr.s_addr)
     {
       /* Send to BOOTP relay  */
-      dest.sin_port = htons(DHCP_SERVER_PORT);
+      dest.sin_port = htons(daemon->dhcp_server_port);
       dest.sin_addr = mess->giaddr; 
     }
   else if (mess->ciaddr.s_addr)
@@ -276,7 +276,7 @@ void dhcp_packet(time_t now)
       if ((!is_inform && dest.sin_addr.s_addr != mess->ciaddr.s_addr) ||
 	  dest.sin_port == 0 || dest.sin_addr.s_addr == 0)
 	{
-	  dest.sin_port = htons(DHCP_CLIENT_PORT); 
+	  dest.sin_port = htons(daemon->dhcp_client_port); 
 	  dest.sin_addr = mess->ciaddr;
 	}
     } 
@@ -296,7 +296,7 @@ void dhcp_packet(time_t now)
       cmptr->cmsg_level = SOL_IP;
       cmptr->cmsg_type = IP_PKTINFO;  
       dest.sin_addr.s_addr = INADDR_BROADCAST;
-      dest.sin_port = htons(DHCP_CLIENT_PORT);
+      dest.sin_port = htons(daemon->dhcp_client_port);
     }
   else
     {
@@ -304,7 +304,7 @@ void dhcp_packet(time_t now)
 	 struct sockaddr limits size to 14 bytes. */
       struct arpreq req;
       dest.sin_addr = mess->yiaddr;
-      dest.sin_port = htons(DHCP_CLIENT_PORT);
+      dest.sin_port = htons(daemon->dhcp_client_port);
       *((struct sockaddr_in *)&req.arp_pa) = dest;
       req.arp_ha.sa_family = mess->htype;
       memcpy(req.arp_ha.sa_data, mess->chaddr, mess->hlen);
@@ -317,7 +317,7 @@ void dhcp_packet(time_t now)
     {
       /* broadcast to 255.255.255.255 (or mac address invalid) */
       dest.sin_addr.s_addr = INADDR_BROADCAST;
-      dest.sin_port = htons(DHCP_CLIENT_PORT);
+      dest.sin_port = htons(daemon->dhcp_client_port);
       /* note that we don't specify the interface here: that's done by the
 	 IP_XMIT_IF sockopt lower down. */
     }
@@ -329,7 +329,7 @@ void dhcp_packet(time_t now)
 	 mysteriously. Bah. Fall back to broadcast for other net types. */
       struct arpreq req;
       dest.sin_addr = mess->yiaddr;
-      dest.sin_port = htons(DHCP_CLIENT_PORT);
+      dest.sin_port = htons(daemon->dhcp_client_port);
       *((struct sockaddr_in *)&req.arp_pa) = dest;
       req.arp_ha.sa_family = AF_UNSPEC;
       memcpy(req.arp_ha.sa_data, mess->chaddr, mess->hlen);
@@ -895,7 +895,7 @@ void dhcp_update_configs(struct dhcp_config *configs)
  		crec = cache_find_by_name(crec, config->hostname, 0, F_IPV4);
  	      if (!crec)
  		continue; /* should be never */
- 	      my_syslog(LOG_WARNING, _("%s has more then one address in hostsfile, using %s for DHCP"), 
+ 	      my_syslog(LOG_WARNING, _("%s has more than one address in hostsfile, using %s for DHCP"), 
  			config->hostname, inet_ntoa(crec->addr.addr.addr.addr4));
  	    }
  

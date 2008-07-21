@@ -16,15 +16,28 @@
 
 #define COPYRIGHT "Copyright (C) 2000-2008 Simon Kelley" 
 
+#ifndef NO_LARGEFILE
+/* Ensure we can use files >2GB (log files may grow this big) */
+#  define _LARGEFILE_SOURCE 1
+#  define _FILE_OFFSET_BITS 64
+#endif
+
+/* Get linux C library versions. */
+#ifdef __linux__
+#  define _GNU_SOURCE
+#  include <features.h> 
+#endif
+
 /* get these before config.h  for IPv6 stuff... */
 #include <sys/types.h> 
 #include <netinet/in.h>
 
 #ifdef __APPLE__
-/* need this before arpa/nameser.h */
-#  define BIND_8_COMPAT
+#  include <nameser.h>
+#  include <arpa/nameser_compat.h>
+#else
+#  include <arpa/nameser.h>
 #endif
-#include <arpa/nameser.h>
 
 /* and this. */
 #include <getopt.h>
@@ -60,12 +73,13 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <signal.h>
+#include <stddef.h>
 #include <time.h>
 #include <errno.h>
 #include <pwd.h>
 #include <grp.h>
 #include <stdarg.h>
-#if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__sun__)
+#if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__sun__) || defined (__sun)
 #  include <netinet/if_ether.h>
 #else
 #  include <net/ethernet.h>
@@ -84,8 +98,13 @@
 #if defined(HAVE_LINUX_NETWORK)
 #include <linux/capability.h>
 /* There doesn't seem to be a universally-available 
-   userpace header for this. */
+   userpace header for these. */
 extern int capset(cap_user_header_t header, cap_user_data_t data);
+extern int capget(cap_user_header_t header, cap_user_data_t data);
+#define LINUX_CAPABILITY_VERSION_1  0x19980330
+#define LINUX_CAPABILITY_VERSION_2  0x20071026
+#define LINUX_CAPABILITY_VERSION_3  0x20080522
+
 #include <sys/prctl.h>
 #elif defined(HAVE_SOLARIS_PRIVS)
 #include <priv.h>
@@ -109,6 +128,13 @@ struct event_desc {
 #define EVENT_KILLED    8
 #define EVENT_EXEC_ERR  9
 #define EVENT_PIPE_ERR  10
+#define EVENT_USER_ERR  11
+#define EVENT_CAP_ERR   12
+#define EVENT_PIDFILE   13
+#define EVENT_HUSER_ERR 14
+#define EVENT_GROUP_ERR 15
+#define EVENT_DIE       16
+#define EVENT_LOG_ERR   17
 
 /* Exit codes. */
 #define EC_GOOD        0
@@ -126,41 +152,40 @@ struct event_desc {
 */
 #define DNSMASQ_PACKETSZ PACKETSZ+MAXDNAME+RRFIXEDSZ
 
-#define OPT_BOGUSPRIV      (1<<0)
-#define OPT_FILTER         (1<<1)
-#define OPT_LOG            (1<<2)
-#define OPT_SELFMX         (1<<3)
-#define OPT_NO_HOSTS       (1<<4)
-#define OPT_NO_POLL        (1<<5)
-#define OPT_DEBUG          (1<<6)
-#define OPT_ORDER          (1<<7)
-#define OPT_NO_RESOLV      (1<<8)
-#define OPT_EXPAND         (1<<9)
-#define OPT_LOCALMX        (1<<10)
-#define OPT_NO_NEG         (1<<11)
-#define OPT_NODOTS_LOCAL   (1<<12)
-#define OPT_NOWILD         (1<<13)
-#define OPT_ETHERS         (1<<14)
-#define OPT_RESOLV_DOMAIN  (1<<15)
-#define OPT_NO_FORK        (1<<16)
-#define OPT_AUTHORITATIVE  (1<<17)
-#define OPT_LOCALISE       (1<<18)
-#define OPT_DBUS           (1<<19)
-#define OPT_BOOTP_DYNAMIC  (1<<20)
-#define OPT_NO_PING        (1<<21)
-#define OPT_LEASE_RO       (1<<22)
-#define OPT_ALL_SERVERS    (1<<23)
-#define OPT_RELOAD         (1<<24)
-
-#define OPT_LOG_OPTS       (1<<28)
-#define OPT_TFTP           (1<<25)
+#define OPT_BOGUSPRIV      (1u<<0)
+#define OPT_FILTER         (1u<<1)
+#define OPT_LOG            (1u<<2)
+#define OPT_SELFMX         (1u<<3)
+#define OPT_NO_HOSTS       (1u<<4)
+#define OPT_NO_POLL        (1u<<5)
+#define OPT_DEBUG          (1u<<6)
+#define OPT_ORDER          (1u<<7)
+#define OPT_NO_RESOLV      (1u<<8)
+#define OPT_EXPAND         (1u<<9)
+#define OPT_LOCALMX        (1u<<10)
+#define OPT_NO_NEG         (1u<<11)
+#define OPT_NODOTS_LOCAL   (1u<<12)
+#define OPT_NOWILD         (1u<<13)
+#define OPT_ETHERS         (1u<<14)
+#define OPT_RESOLV_DOMAIN  (1u<<15)
+#define OPT_NO_FORK        (1u<<16)
+#define OPT_AUTHORITATIVE  (1u<<17)
+#define OPT_LOCALISE       (1u<<18)
+#define OPT_DBUS           (1u<<19)
+#define OPT_BOOTP_DYNAMIC  (1u<<20)
+#define OPT_NO_PING        (1u<<21)
+#define OPT_LEASE_RO       (1u<<22)
+#define OPT_ALL_SERVERS    (1u<<23)
+#define OPT_RELOAD         (1u<<24)
+#define OPT_TFTP           (1u<<25)
 #ifdef HAVE_TFTP
-#define OPT_TFTP_SECURE    (1<<26)
-#define OPT_TFTP_NOBLOCK   (1<<27)
-#define OPT_TFTP_APREF     (1<<29)
+#define OPT_TFTP_SECURE    (1u<<26)
+#define OPT_TFTP_NOBLOCK   (1u<<27)
 #endif
-#define OPT_NO_OVERRIDE    (1<<30)
-#define OPT_NO_REBIND      (1<<31)
+#define OPT_LOG_OPTS       (1u<<28)
+#define OPT_TFTP_APREF     (1u<<29)
+#define OPT_NO_OVERRIDE    (1u<<30)
+#define OPT_NO_REBIND      (1u<<31)
 
 struct all_addr {
   union {
@@ -187,6 +212,12 @@ struct mx_srv_record {
   int issrv, srvport, priority, weight;
   unsigned int offset;
   struct mx_srv_record *next;
+};
+
+struct naptr {
+  char *name, *replace, *regexp, *services, *flags;
+  unsigned int order, pref;
+  struct naptr *next;
 };
 
 struct txt_record {
@@ -289,6 +320,11 @@ struct serverfd {
   struct serverfd *next;
 };
 
+struct randfd {
+  int fd;
+  unsigned short refcount, family;
+};
+  
 struct server {
   union mysockaddr addr, source_addr;
   char interface[IF_NAMESIZE+1];
@@ -339,6 +375,10 @@ struct frec {
   union mysockaddr source;
   struct all_addr dest;
   struct server *sentto; /* NULL means free */
+  struct randfd *rfd4;
+#ifdef HAVE_IPV6
+  struct randfd *rfd6;
+#endif
   unsigned int iface;
   unsigned short orig_id, new_id;
   int fd, forwardall;
@@ -370,7 +410,7 @@ struct dhcp_lease {
 #endif
   int hwaddr_len, hwaddr_type;
   unsigned char hwaddr[DHCP_CHADDR_MAX]; 
-  struct in_addr addr;
+  struct in_addr addr, override;
   unsigned char *vendorclass, *userclass;
   unsigned int vendorclass_len, userclass_len;
   int last_interface;
@@ -458,7 +498,7 @@ struct dhcp_mac {
   struct dhcp_mac *next;
 };
 
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#ifdef HAVE_BSD_BRIDGE
 struct dhcp_bridge {
   char iface[IF_NAMESIZE];
   struct dhcp_bridge *alias, *next;
@@ -513,9 +553,10 @@ struct tftp_transfer {
   int sockfd;
   time_t timeout;
   int backoff;
-  unsigned int block, blocksize;
+  unsigned int block, blocksize, expansion;
+  off_t offset;
   struct sockaddr_in peer;
-  char opt_blocksize, opt_transize;
+  char opt_blocksize, opt_transize, netascii, carrylf;
   struct tftp_file *file;
   struct tftp_transfer *next;
 };
@@ -529,12 +570,14 @@ extern struct daemon {
   unsigned int options;
   struct resolvc default_resolv, *resolv_files;
   struct mx_srv_record *mxnames;
+  struct naptr *naptr;
   struct txt_record *txt;
   struct ptr_record *ptr;
   struct interface_name *int_names;
   char *mxtarget;
   char *lease_file; 
-  char *username, *groupname;
+  char *username, *groupname, *scriptuser;
+  int group_set, osport;
   char *domain_suffix;
   char *runfile; 
   char *lease_change_command;
@@ -545,7 +588,7 @@ extern struct daemon {
   char *log_file; /* optional log file */
   int max_logs;  /* queue limit */
   int cachesize, ftabsize;
-  int port, query_port;
+  int port, query_port, min_port;
   unsigned long local_ttl, neg_ttl;
   struct hostsfile *addn_hosts;
   struct dhcp_context *dhcp;
@@ -557,7 +600,7 @@ extern struct daemon {
   struct dhcp_netid_list *dhcp_ignore, *dhcp_ignore_names, *force_broadcast;
   char *dhcp_hosts_file, *dhcp_opts_file;
   int dhcp_max;
-
+  int dhcp_server_port, dhcp_client_port;
 #ifdef HAVE_TFTP
   int tftp_max; 
   int start_tftp_port, end_tftp_port; 
@@ -572,14 +615,17 @@ extern struct daemon {
   int packet_buff_sz; /* size of above */
   char *namebuff; /* MAXDNAME size buffer */
   unsigned int local_answer, queries_forwarded;
- struct serverfd *sfds;
+  struct frec *frec_list;
+  struct serverfd *sfds;
   struct irec *interfaces;
   struct listener *listeners;
   struct server *last_server;
   struct server *srv_save; /* Used for resend on DoD */
   size_t packet_len;       /*      "        "        */
+  struct randfd *rfd_save; /*      "        "        */
   pid_t tcp_pids[MAX_PROCS];
- 
+  struct randfd randomsocks[RANDOM_SOCKS];
+
   /* DHCP state */
   int dhcpfd, helperfd; 
 #ifdef HAVE_LINUX_NETWORK
@@ -591,7 +637,7 @@ extern struct daemon {
   char *dhcp_buff, *dhcp_buff2;
   struct ping_result *ping_results;
   FILE *lease_stream;
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#ifdef HAVE_BSD_BRIDGE
   struct dhcp_bridge *bridges;
 #endif
 
@@ -611,8 +657,9 @@ extern struct daemon {
 
 /* cache.c */
 void cache_init(void);
-void log_query(unsigned short flags, char *name, struct all_addr *addr, 
-	       unsigned short type, struct hostsfile *addn_hosts, int index);
+void log_query(unsigned short flags, char *name, struct all_addr *addr, char *arg); 
+char *record_source(struct hostsfile *addn_hosts, int index);
+void querystr(char *str, unsigned short type);
 struct crec *cache_find_by_addr(struct crec *crecp,
 				struct all_addr *addr, time_t now, 
 				unsigned short prot);
@@ -647,11 +694,13 @@ size_t resize_packet(HEADER *header, size_t plen,
 		  unsigned char *pheader, size_t hlen);
 
 /* util.c */
+void rand_init(void);
 unsigned short rand16(void);
 int legal_char(char c);
 int canonicalise(char *s);
 unsigned char *do_rfc1035_name(unsigned char *p, char *sval);
 void *safe_malloc(size_t size);
+void safe_pipe(int *fd, int read_noblock);
 void *whine_malloc(size_t size);
 int sa_len(union mysockaddr *addr);
 int sockaddr_isequal(union mysockaddr *s1, union mysockaddr *s2);
@@ -673,7 +722,7 @@ int read_write(int fd, unsigned char *packet, int size, int rw);
 /* log.c */
 void die(char *message, char *arg1, int exit_code);
 #ifndef NO_LOG
-void log_start(struct passwd *ent_pw);
+int log_start(struct passwd *ent_pw, int errfd);
 int log_reopen(char *log_file);
 #endif
 #ifdef NEED_PRINTF
@@ -691,7 +740,7 @@ char *option_string(unsigned char opt);
 void reread_dhcp(void);
 
 /* forward.c */
-void reply_query(struct serverfd *sfd, time_t now);
+void reply_query(int fd, int family, time_t now);
 void receive_query(struct listener *listen, time_t now);
 unsigned char *tcp_request(int confd, time_t now,
 			   struct in_addr local_addr, struct in_addr netmask);
@@ -700,6 +749,7 @@ struct frec *get_new_frec(time_t now, int *wait);
 
 /* network.c */
 int local_bind(int fd, union mysockaddr *addr, char *intname, int is_tcp);
+int random_sock(int family);
 void pre_allocate_sfds(void);
 int reload_servers(char *fname);
 void check_servers(void);
@@ -796,7 +846,7 @@ void set_dbus_listeners(int *maxfdp, fd_set *rset, fd_set *wset, fd_set *eset);
 
 /* helper.c */
 #ifndef NO_FORK
-int create_helper(int log_fd, long max_fd);
+int create_helper(int event_fd, int err_fd, uid_t uid, gid_t gid, long max_fd);
 void helper_write(void);
 void queue_script(int action, struct dhcp_lease *lease, 
 		  char *hostname, time_t now);

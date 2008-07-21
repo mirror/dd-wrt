@@ -132,12 +132,20 @@ máximo recomendado en RFC2671 para ethernet.
 .TP
 .B \-Q, --query-port=<puerto>
 Enviar búsquedas outbound desde, y escuchar por respuestas en,
-el puerto UDP <puerto> en vez de usar uno escojido a la hora
-de inicio. Esto es útil para simplificar las reglas del firewall;
-sin esto, su firewall tendría que permitir conecciones desde
-servidores DNS foráneos hacia un rango de puertos UDP, o
-adaptarse dinámicamente al puerto siendo usado por la actual
-instancia de dnsmasq.
+el puerto UDP <puerto> en vez de usar puertos aleatorios. Nótese
+que usar esta opción hace que dnsmasq sea menos seguro contra
+ataques de spoofing DNS, pero puede ser más rápido y usar menos
+recursos.
+Fijar esta opción a zero hace que dnsmasq use un solo puerto,
+asignado por el sistema operativo (esto era el comportamiento
+predeterminado en versiones anteriores a 2.43).
+.TP
+.B --min-port=<puerto>
+No usar puertos menores a <puerto> como remitentes para búsquedas
+DNS outbound. Dnsmasq escoje puertos aleatorios como remitentes
+para búsquedas DNS outbound. Cuando esta opción es brindada, los
+puertos usados siempre serán mayores que el especificado. Esto es
+útil para sistemas detras de firewalls.
 .TP
 .B \-i, --interface=<nombre de interface>
 Escuchar solo en las interfaces especificadas. Dnsmasq automáticamente
@@ -402,6 +410,9 @@ comas.
 .TP
 .B --ptr-record=<nombre>[,<target>]
 Retornar un récord DNS PTR.
+.TP
+.B --naptr-record=<nombre>,<orden>,<preferencia>,<opciones>,<servicio>,<regexp>[,<remplazo>]
+Retornar un récord DNS NAPTR, como especificado en RFC3403.
 .TP
 .B --interface-name=<nombre>,<interface>
 Retornar un récord DNS, asociando el nombre con la dirección primaria
@@ -709,8 +720,16 @@ servidor DHCP en la red. Cambia el comportamiento de RFC de tal manera
 que pedidos desde hosts no conocidos no serán ignorados. Esto permite que
 hosts nuevos puedan conseguir un arriendo sin sin un timeout bajo toda
 circunstancia. También permite que dnsmasq reconstruya su base de datos
-de arriendos sin que cada cliente requiera un arriendo, si la base de datos
-es perdida.
+de arriendos sin que cada cliente necesite readquirir un arriendo
+si la base de datos es perdida.
+.TP
+.B --dhcp-alternate-port[=<puerto de servidor>[,<puerto de cliente>]]
+Cambiar del predeterminado los puertos usados para DHCP. Si esta opción
+es brindada sola, sin argumentos, cambia los puertos usados para DHCP
+de 67 y 68 a 1067 y 1068. Si un solo argumento es brindado, ese puerto
+es usado para el servidor y el número de puerto mas uno es usado
+para el cliente. Finalmente, dos números permiten que se especifiquen
+ambos los puertos de servidor y cliente para DHCP.
 .TP
 .B \-3, --bootp-dynamic
 Habilitar alocación dinámica de direcciones IP a clientes BOOTP. Usar
@@ -784,6 +803,11 @@ con "del" y otros con "old". <path> debe ser un path absoluto, ninguna
 búsqueda PATH ocurre. Cuando dnsmasq recibe una señal HUP, el guión será
 invocado para arriendos existentes con un evento "old".
 .TP
+.B --dhcp-scriptuser
+Especificar el usuario como el cual se debe correr el archivo
+guión de cambio de arriendos. Este es root por predeterminado,
+pero puede ser cambiado a otro usuario mediante esta opción.
+.TP
 .B \-9, --leasefile-ro
 Suprimir completamente el uso del archivo de arriendos. El archivo no será
 creado, leído, ni escrito. Cambiar la manera en la cuál el archivo guión de
@@ -801,7 +825,7 @@ cuando hay cambios hechos a el client-id y tiempos de arriendo y vencimiento.
 .B --bridge-interface=<nombre de interface>,<alias>[,<alias>]
 Tratar paquetes de pedidos DHCP que llegan a cualquiera de las interfaces <alias>
 como si hubieran llegado a la interface <nombre de interface>. Esta opción solo
-está disponible en FreeBSD y Dragonfly BSD, y es necesaria cuando se usan
+está disponible en plataformas BSD, y es necesaria cuando se usan
 puentes "estilo viejo", ya que los paquetes llegan a interfaces tap que no
 tienen una dirección IP.
 .TP
@@ -830,9 +854,9 @@ en /etc/resolv.conf (o equivalente).
 .TP
 .B --enable-tftp
 Habilitar la función de servidor TFTP. Esto está deliberadamente limitado
-a lo necesario para hacerle a un cliente un inicio vía red: solo lectura es
-permitida, y solo en modo binario/octeto. Las extensiones "tsize" y "blksize"
-están soportadas.
+a lo necesario para hacerle a un cliente un inicio vía red. Solo lectura es
+permitida; las extensiones tsize y blksize son soportadas (tsize solo es
+soportada en modo octeto).
 .TP
 .B --tftp-root=<directorio>
 Buscar, relativo al directorio brindado, archivos para transferir mediante el

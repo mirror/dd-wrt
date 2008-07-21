@@ -77,7 +77,7 @@ Log the results of DNS queries handled by dnsmasq. Enable a full cache dump on r
 .B \-8, --log-facility=<facility>
 Set the facility to which dnsmasq will send syslog entries, this
 defaults to DAEMON, and to LOCAL0 when debug mode is in operation. If
-the facilty given contains at least one '/' character, it is taken to
+the facility given contains at least one '/' character, it is taken to
 be a filename, and dnsmasq logs to the given file, instead of
 syslog. (Errors whilst reading configuration will still go to syslog,
 but all output from a successful startup, and all output whilst
@@ -122,9 +122,18 @@ forwarder. Defaults to 1280, which is the RFC2671-recommended maximum
 for ethernet.
 .TP
 .B \-Q, --query-port=<query_port>
-Send outbound DNS queries from, and listen for their replies on, the specific UDP port <query_port> instead of using one chosen at runtime.  Useful to simplify your
-firewall rules; without this, your firewall would have to allow connections from outside DNS servers to a range of UDP ports, or dynamically adapt to the
-port being used by the current dnsmasq instance.
+Send outbound DNS queries from, and listen for their replies on, the
+specific UDP port <query_port> instead of using random ports. NOTE
+that using this option will make dnsmasq less secure against DNS
+spoofing attacks but it may be faster and use less resources.  Setting this option
+to zero makes dnsmasq use a single port allocated to it by the
+OS: this was the default behaviour in versions prior to 2.43. 
+.TP
+.B --min-port=<port>
+Do not use ports less than that given as source for outbound DNS
+queries. Dnsmasq picks random ports as source for outbound queries:
+when this option is given, the ports used will always to larger
+than that specified. Useful for systems behind firewalls. 
 .TP
 .B \-i, --interface=<interface name>
 Listen only on the specified interface(s). Dnsmasq automatically adds
@@ -373,12 +382,15 @@ so  any number may be included, split by commas.
 .B --ptr-record=<name>[,<target>]
 Return a PTR DNS record.
 .TP
+.B --naptr-record=<name>,<order>,<preference>,<flags>,<service>,<regexp>[,<replacement>]
+Return an NAPTR DNS record, as specified in RFC3403.
+.TP
 .B --interface-name=<name>,<interface>
 Return a DNS record associating the name with the primary address on
 the given interface. This flag specifies an A record for the given
 name in the same way as an /etc/hosts line, except that the address is
 not constant, but taken from the given interface. If the interface is
-down, not configured or non-existant, an empty record is returned. The
+down, not configured or non-existent, an empty record is returned. The
 matching PTR record is also created, mapping the interface address to
 the name. More than one name may be associated with an interface
 address by repeating the flag; in that case the first instance is used
@@ -406,7 +418,7 @@ in
 options. If the lease time is given, then leases
 will be given for that length of time. The lease time is in seconds,
 or minutes (eg 45m) or hours (eg 1h) or the literal "infinite". The
-minimum lease time is two minutres. This
+minimum lease time is two minutes. This
 option may be repeated, with different addresses, to enable DHCP
 service to more than one network. For directly connected networks (ie,
 networks on which the machine running dnsmasq has an interface) the
@@ -635,7 +647,7 @@ not allocate it a DHCP lease.
 .B --dhcp-ignore-names[=<network-id>[,<network-id>]]
 When all the given network-ids match the set of network-ids derived
 from the net, host, vendor and user classes, ignore any hostname
-provided by the host. Note that, unlike dhcp-ignore, it is permissable
+provided by the host. Note that, unlike dhcp-ignore, it is permissible
 to supply no netid tags, in which case DHCP-client supplied hostnames
 are always ignored, and DHCP hosts are added to the DNS using only
 dhcp-host configuration in dnsmasq and the contents of /etc/hosts and
@@ -671,7 +683,15 @@ It changes the behaviour from strict RFC compliance so that DHCP requests on
 unknown leases from unknown hosts are not ignored. This allows new hosts
 to get a lease without a tedious timeout under all circumstances. It also 
 allows dnsmasq to rebuild its lease database without each client needing to 
-reaquire a lease, if the database is lost.
+reacquire a lease, if the database is lost.
+.TP
+.B --dhcp-alternate-port[=<server port>[,<client port>]]
+Change the ports used for DHCP from the default. If this option is
+given alone, without arguments, it changes the ports used for DHCP
+from 67 and 68 to 1067 and 1068. If a single argument is given, that
+port number is used for the server and the port number plus one used
+for the client. Finally, two port numbers allows arbitrary
+specification of both server and client ports for DHCP.
 .TP
 .B \-3, --bootp-dynamic
 Enable dynamic allocation of IP addresses to BOOTP clients. Use this
@@ -728,9 +748,9 @@ If a lease used to have a hostname, which is
 removed, an "old" event is generated with the new state of the lease, 
 ie no name, and the former name is provided in the environment 
 variable DNSMASQ_OLD_HOSTNAME. DNSMASQ_INTERFACE stores the name of
-the interface on which the reuest arrived; this is not set for "old"
+the interface on which the request arrived; this is not set for "old"
 actions when dnsmasq restarts.
-All file decriptors are
+All file descriptors are
 closed except stdin, stdout and stderr which are open to /dev/null
 (except in debug mode).
 The script is not invoked concurrently: if subsequent lease 
@@ -740,7 +760,10 @@ all existing leases as they are read from the lease file. Expired
 leases will be called with "del" and others with "old". <path>
 must be an absolute pathname, no PATH search occurs. When dnsmasq
 receives a HUP signal, the script will be invoked for existing leases
-with an "old " event. 
+with an "old " event.
+.TP
+.B --dhcp-scriptuser
+Specify the user as which to run the lease-change script. This defaults to root, but can be changed to another user using this flag. 
 .TP 
 .B \-9, --leasefile-ro
 Completely suppress use of the lease database file. The file will not
@@ -759,7 +782,7 @@ to the client-id and lease length and expiry time.
 .B --bridge-interface=<interface>,<alias>[,<alias>]
 Treat DHCP request packets arriving at any of the <alias> interfaces
 as if they had arrived at <interface>. This option is only available
-on FreeBSD and Dragonfly BSD, and is necessary when using "old style" bridging, since
+on BSD platforms, and is necessary when using "old style" bridging, since
 packets arrive at tap interfaces which don't have an IP address.
 .TP
 .B \-s, --domain=<domain>
@@ -784,8 +807,8 @@ in /etc/resolv.conf (or equivalent).
 .TP
 .B --enable-tftp
 Enable the TFTP server function. This is deliberately limited to that
-needed to net-boot a client: Only reading is allowed, and only in
-binary/octet mode. The tsize and blksize extensions are supported.
+needed to net-boot a client. Only reading is allowed; the tsize and
+blksize extensions are supported (tsize is only supported in octet mode).
 .TP
 .B --tftp-root=<directory>
 Look for files to transfer using TFTP relative to the given
@@ -902,7 +925,7 @@ will close and reopen the log file. Note that during this operation,
 dnsmasq will not be running as root. When it first creates the logfile
 dnsmasq changes the ownership of the file to the non-root user it will run
 as. Logrotate should be configured to create a new log file with
-the ownership which matches the exising one before sending SIGUSR2.
+the ownership which matches the existing one before sending SIGUSR2.
 If TCP DNS queries are in progress, the old logfile will remain open in
 child processes which are handling TCP queries and may continue to be
 written. There is a limit of 150 seconds, after which all existing TCP
@@ -1027,7 +1050,7 @@ normally if backgrounding is not enabled.
 2 - A problem with network access occurred (address in use, attempt
 to use privileged ports without permission).
 .PP
-3 - A problem occured with a filesystem operation (missing
+3 - A problem occurred with a filesystem operation (missing
 file/directory, permissions).
 .PP
 4 - Memory allocation failure.

@@ -151,8 +151,10 @@ void tftp_request(struct listener *listen, time_t now)
   transfer->backoff = 1;
   transfer->block = 1;
   transfer->blocksize = daemon->tftp_blocksize;
+  transfer->offset = 0;
   transfer->file = NULL;
   transfer->opt_blocksize = transfer->opt_transize = 0;
+  transfer->netascii = transfer->carrylf = 0;
 
   /* if we have a nailed-down range, iterate until we find a free one. */
   while (1)
@@ -184,10 +186,13 @@ void tftp_request(struct listener *listen, time_t now)
   if (ntohs(*((unsigned short *)packet)) != OP_RRQ ||
       !(filename = next(&p, end)) ||
       !(mode = next(&p, end)) ||
-      strcasecmp(mode, "octet") != 0)
+      (strcasecmp(mode, "octet") != 0 && strcasecmp(mode, "netascii") != 0))
     len = tftp_err(ERR_ILL, packet, _("unsupported request from %s"), inet_ntoa(peer.sin_addr));
   else
     {
+      if (strcasecmp(mode, "netascii") == 0)
+	transfer->netascii = 1;
+      
       while ((opt = next(&p, end)))
 	{
 	  if (strcasecmp(opt, "blksize") == 0 &&
@@ -203,7 +208,7 @@ void tftp_request(struct listener *listen, time_t now)
 	      transfer->block = 0;
 	    }
 	  
-	  if (strcasecmp(opt, "tsize") == 0 && next(&p, end))
+	  if (strcasecmp(opt, "tsize") == 0 && next(&p, end) && !transfer->netascii)
 	    {
 	      transfer->opt_transize = 1;
 	      transfer->block = 0;
@@ -378,7 +383,8 @@ void check_tftp_listeners(fd_set *rset, time_t now)
 		  /* Got ack, ensure we take the (re)transmit path */
 		  transfer->timeout = now;
 		  transfer->backoff = 0;
-		  transfer->block++;
+		  if (transfer->block++ != 0)
+		    transfer->offset += transfer->blocksize - transfer->expansion;
 		}
 	      else if (ntohs(mess->op) == OP_ERR)
 		{
@@ -532,24 +538,52 @@ static ssize_t get_block(char *packet, struct tftp_transfer *transfer)
 	unsigned char data[];
       } *mess = (struct datamess *)packet;
       
-      off_t offset = transfer->blocksize * (transfer->block - 1);
-      size_t size = transfer->file->size - offset; 
+      size_t size = transfer->file->size - transfer->offset; 
       
-      if (offset > transfer->file->size)
+      if (transfer->offset > transfer->file->size)
 	return 0; /* finished */
       
       if (size > transfer->blocksize)
 	size = transfer->blocksize;
       
-      lseek(transfer->file->fd, offset, SEEK_SET);
-      
       mess->op = htons(OP_DATA);
       mess->block = htons((unsigned short)(transfer->block));
       
-      if (!read_write(transfer->file->fd, mess->data, size, 1))
+      if (lseek(transfer->file->fd, transfer->offset, SEEK_SET) == (off_t)-1 ||
+	  !read_write(transfer->file->fd, mess->data, size, 1))
 	return -1;
-      else
-	return size + 4;
+      
+      transfer->expansion = 0;
+      
+      /* Map '\n' to CR-LF in netascii mode */
+      if (transfer->netascii)
+	{
+	  size_t i;
+	  int newcarrylf;
+
+	  for (i = 0, newcarrylf = 0; i < size; i++)
+	    if (mess->data[i] == '\n' && ( i != 0 || !transfer->carrylf))
+	      {
+		if (size == transfer->blocksize)
+		  {
+		    transfer->expansion++;
+		    if (i == size - 1)
+		      newcarrylf = 1; /* don't expand LF again if it moves to the next block */
+		  }
+		else
+		  size++; /* room in this block */
+	      
+		/* make space and insert CR */
+		memmove(&mess->data[i+1], &mess->data[i], size - (i + 1));
+		mess->data[i] = '\r';
+		
+		i++;
+	      }
+	  transfer->carrylf = newcarrylf;
+	  
+	}
+
+      return size + 4;
     }
 }
 

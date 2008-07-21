@@ -74,7 +74,7 @@ install-i18n : all-i18n install-common
 merge :
 	$(MAKE) I18N=-DLOCALEDIR='\"$(LOCALEDIR)\"' -f ../bld/Makefile -C $(SRC) dnsmasq.pot
 	cd $(PO); for f in *.po; do \
-		msgmerge -U $$f ../$(SRC)/dnsmasq.pot; \
+		msgmerge --no-wrap -U $$f ../$(SRC)/dnsmasq.pot; \
 	done
 
 

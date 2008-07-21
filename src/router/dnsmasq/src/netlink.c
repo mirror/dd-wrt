@@ -240,10 +240,20 @@ static void nl_routechange(struct nlmsghdr *h)
   if (h->nlmsg_type == RTM_NEWROUTE && daemon->srv_save)
     {
       struct rtmsg *rtm = NLMSG_DATA(h);
-      if (rtm->rtm_type == RTN_UNICAST &&
-	  rtm->rtm_scope == RT_SCOPE_LINK) 
-	while(sendto(daemon->srv_save->sfd->fd, daemon->packet, daemon->packet_len, 0,
-		     &daemon->srv_save->addr.sa, sa_len(&daemon->srv_save->addr)) == -1 && retry_send()); 
+      int fd;
+
+      if (rtm->rtm_type != RTN_UNICAST || rtm->rtm_scope != RT_SCOPE_LINK)
+	return;
+
+      if (daemon->srv_save->sfd)
+	fd = daemon->srv_save->sfd->fd;
+      else if (daemon->rfd_save && daemon->rfd_save->refcount != 0)
+	fd = daemon->rfd_save->fd;
+      else
+	return;
+
+      while(sendto(fd, daemon->packet, daemon->packet_len, 0,
+		   &daemon->srv_save->addr.sa, sa_len(&daemon->srv_save->addr)) == -1 && retry_send()); 
     }
 }
 #endif
