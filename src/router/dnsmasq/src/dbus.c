@@ -118,7 +118,7 @@ static void dbus_read_servers(DBusMessage *message)
 	    {
 	      memcpy(&addr.in6.sin6_addr, p, sizeof(struct in6_addr));
 #ifdef HAVE_SOCKADDR_SA_LEN
-              source_addr.in6.sin6_len = addr.in6.sin6_len = sizeof(stuct sockaddr_in6);
+              source_addr.in6.sin6_len = addr.in6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
               source_addr.in6.sin6_family = addr.in6.sin6_family = AF_INET6;
               addr.in6.sin6_port = htons(NAMESERVER_PORT);
@@ -167,8 +167,11 @@ static void dbus_read_servers(DBusMessage *message)
 	    if (!serv && (serv = whine_malloc(sizeof (struct server))))
 	      {
 		/* Not found, create a new one. */
+		memset(serv, 0, sizeof(struct server));
+		
 		if (domain)
 		  serv->domain = whine_malloc(strlen(domain)+1);
+		
 		if (domain && !serv->domain)
 		  {
 		    free(serv);
@@ -179,7 +182,6 @@ static void dbus_read_servers(DBusMessage *message)
 		    serv->next = daemon->servers;
 		    daemon->servers = serv;
 		    serv->flags = SERV_FROM_DBUS;
-		    serv->sfd = NULL;
 		    if (domain)
 		      {
 			strcpy(serv->domain, domain);

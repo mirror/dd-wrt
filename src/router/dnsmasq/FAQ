@@ -226,7 +226,7 @@ A: What is happening is this: The boot process sends a DHCP
 Q: What network types are supported by the DHCP server?
   
 A: Ethernet (and 802.11 wireless) are supported on all platforms. On
-   Linux Token Ring is also supported.
+   Linux all network types (including FireWire) are supported.
 
 Q: What is this strange "bind-interface" option?
 
@@ -387,12 +387,12 @@ A: This a variant on the iptables problem. Explicit details on how to
    http://lists.thekelleys.org.uk/pipermail/dnsmasq-discuss/2007q4/001764.html
 
 
-Q: Dnsmasq logs "running as root because setting capabilities failed"
-   when it starts up. Why did that happen and what can do to fix it?
+Q: Dnsmasq fails to start up with a message about capabilities.
+   Why did that happen and what can do to fix it?
 
 A: Change your kernel configuration: either deselect CONFIG_SECURITY
-   _or_ select CONFIG_SECURITY_CAPABILITIES.
-
+   _or_ select CONFIG_SECURITY_CAPABILITIES. Alternatively, you can 
+   remove the need to set capabilities by running dnsmasq as root.
 
 Q: Where can I get .rpms Suitable for Suse?
 
