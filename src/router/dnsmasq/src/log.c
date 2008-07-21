@@ -50,8 +50,9 @@ static struct log_entry *entries = NULL;
 static struct log_entry *free_entries = NULL;
 
 #ifndef NO_LOG
-void log_start(struct passwd *ent_pw)
+int log_start(struct passwd *ent_pw, int errfd)
 {
+  int ret = 0;
   log_stderr = !!(daemon->options & OPT_DEBUG);
 
   if (daemon->log_fac != -1)
@@ -70,8 +71,11 @@ void log_start(struct passwd *ent_pw)
   max_logs = daemon->max_logs;
 
   if (!log_reopen(daemon->log_file))
-    die(_("cannot open %s: %s"), daemon->log_file ? daemon->log_file : "log", EC_FILE);
-  
+    {
+      send_event(errfd, EVENT_LOG_ERR, errno);
+      _exit(0);
+    }
+
   /* if queuing is inhibited, make sure we allocate
      the one required buffer now. */
   if (max_logs == 0)
@@ -85,8 +89,11 @@ void log_start(struct passwd *ent_pw)
      change the ownership here so that the file is always owned by
      the dnsmasq user. Then logrotate can just copy the owner.
      Failure of the chown call is OK, (for instance when started as non-root) */
-  if (log_to_file && ent_pw && ent_pw->pw_uid != 0 && fchown(log_fd, ent_pw->pw_uid, -1) != 0)
-    my_syslog(LOG_WARNING, _("warning: failed to change owner of %s: %s"), daemon->log_file, strerror(errno));
+  if (log_to_file && ent_pw && ent_pw->pw_uid != 0 && 
+      fchown(log_fd, ent_pw->pw_uid, -1) != 0)
+    ret = errno;
+
+  return ret;
 }
 
 int log_reopen(char *log_file)

@@ -2459,10 +2459,153 @@ version 2.41
 	    SIP, XMPP and Google-talk to the example config file.
 	    
 	    Fix va_list abuse in log.c. This fixes crashes on powerpc
-	    when debug mode is set. Thanks to cedric Duval for the
+	    when debug mode is set. Thanks to Cedric Duval for the
 	    patch. 
 
+version 2.42
+            Define _GNU_SOURCE to avoid problems with later glibc
+            headers. Thanks to Jima for spotting the problem.
+
+	    Add --dhcp-alternate-port option. Thanks to Jan Psota for
+	    the suggestion.
+
+	    Fix typo in code which is only used on BSD, when Dbus and
+	    IPv6 support is enabled. Thanks to Roy Marples.
+	    
+	    Updated Polish translations - thank to Jan Psota.
+
+	    Fix OS detection logic to cope with GNU/FreeBSD.
+
+	    Fix unitialised variable in DBus code - thanks to Roy
+	    Marples.
+
+	    Fix network enumeration code to work on later NetBSD -
+	    thanks to Roy Marples.
+	    
+	    Provide --dhcp-bridge on all BSD variants.
+
+	    Define _LARGEFILE_SOURCE which removes an arbitrary 2GB
+            limit on logfiles. Thanks to Paul Chambers for spotting 
+            the problem.
+
+	    Fix RFC3046 agent-id echo code, broken for many
+	    releases. Thanks to Jeremy Laine for spotting the problem
+	    and providing a patch.
+
+	    Added Solaris 10 service manifest from David Connelly in
+	    contrib/Solaris10
+ 	    	     
+	    Add --dhcp-scriptuser option.	    
+
+	    Support new capability interface on suitable Linux 
+	    kernels, removes "legacy support in use" messages. Thanks 
+            to Jorge Bastos for pointing this out. 
+
+	    Fix subtle bug in cache code which could cause dnsmasq to
+	    lock spinning CPU in rare circumstances. Thanks to Alex
+	    Chekholko for bug reports and help debugging. 
+
+	    Support netascii transfer mode for TFTP.
+
+
+version 2.43
+	    Updated Polish translation. Thanks to Jan Psota.
+
+	    Flag errors when configuration options are repeated
+	    illegally.
+
+	    Further tweaks for GNU/kFreeBSD
+
+	    Add --no-wrap to msgmerge call - provides nicer .po file
+	    format.
+
+	    Honour lease-time spec in dhcp-host lines even for
+	    BOOTP. The user is assumed to known what they are doing in
+	    this case. (Hosts without the time spec still get infinite
+	    leases for BOOTP, over-riding the default in the
+	    dhcp-range.) Thanks to Peter Katzmann for uncovering this.
+
+	    Fix problem matching relay-agent ids. Thanks to Michael
+	    Rack for the bug report.
+
+	    Add --naptr-record option. Suggestion from Johan
+	    Bergquist.
+
+	    Implement RFC 5107 server-id-override DHCP relay agent
+	    option.
+
+	    Apply patches from Stefan Kruger for compilation on
+	    Solaris 10 under Sun studio.
+
+	    Yet more tweaking of Linux capability code, to suppress
+	    pointless wingeing from kernel 2.6.25 and above.
+
+	    Improve error checking during startup. Previously, some
+	    errors which occurred during startup would be worked
+	    around, with dnsmasq still starting up. Some were logged,
+            some silent. Now, they all cause a fatal error and dnsmasq 
+            terminates with a non-zero exit code. The errors are those
+            associated with changing uid and gid, setting process 
+            capabilities and writing the pidfile. Thanks to Uwe
+	    Gansert and the Suse security team for pointing out 
+	    this improvement, and Bill Reimers for good implementation
+	    suggestions.
+
+	    Provide NO_LARGEFILE compile option to switch off largefile
+	    support when compiling against versions of uclibc which
+	    don't support it. Thanks to Stephane Billiart for the patch.
+  
+            Implement random source ports for interactions with
+            upstream nameservers. New spoofing attacks have been found
+            against nameservers which do not do this, though it is not
+            clear if dnsmasq is vulnerable, since to doesn't implement
+            recursion. By default dnsmasq will now use a different
+            source port (and socket) for each query it sends
+            upstream. This behaviour can suppressed using the
+            --query-port option, and the old default behaviour
+            restored using --query-port=0. Explicit source-port
+            specifications in --server configs are still honoured.
+
+	    Replace the random number generator, for better
+	    security. On most BSD systems, dnsmasq uses the
+	    arc4random() RNG, which is secure, but on other platforms,
+	    it relied on the C-library RNG, which may be
+	    guessable and therefore allow spoofing. This release
+	    replaces the libc RNG with the SURF RNG, from Daniel
+	    J. Berstein's DJBDNS package.  
+
+	    Don't attempt to change user or group or set capabilities
+	    if dnsmasq is run as a non-root user. Without this, the
+	    change from soft to hard errors when these fail causes
+	    problems for non-root daemons listening on high
+	    ports. Thanks to Patrick McLean for spotting this.
+
+	    Updated French translation. Thanks to Gildas Le Nadan.
+
+version 2.44
+            Fix  crash when unknown client attempts to renew a DHCP
+            lease, problem introduced in version 2.43. Thanks to
+            Carlos Carvalho for help chasing this down.
+
+	    Fix potential crash when a host which doesn't have a lease
+	    does DHCPINFORM. Again introduced in 2.43. This bug has
+	    never been reported in the wild.
+
+            Fix crash in netlink code introduced in 2.43. Thanks to
+            Jean Wolter for finding this.
+
+	    Change implementation of min_port to work even if min-port
+	    as large.
+
+	    Patch to enable compilation of latest Mac OS X. Thanks to
+	    David Gilman.
+
+	    Update Spanish translation. Thanks to Christopher Chatham.
+
+version 2.45
+            Fix total DNS failure in release 2.43 unless --min-port 
+            specified. Thanks to Steven Barth and Grant Coady for
+            bugreport. Also reject out-of-range port spec, which could
+            break things too: suggestion from Gilles Espinasse.
 
  
-
-	    

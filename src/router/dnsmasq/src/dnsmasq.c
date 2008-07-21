@@ -33,6 +33,9 @@ static char *compile_opts =
 #ifdef NO_FORK
 "no-MMU "
 #endif
+#ifdef HAVE_BSD_BRIDGE
+"BSD-bridge "
+#endif
 #ifndef HAVE_ISC_READER
 "no-"
 #endif
@@ -57,18 +60,27 @@ static int set_dns_listeners(time_t now, fd_set *set, int *maxfdp);
 static void check_dns_listeners(fd_set *set, time_t now);
 static void sig_handler(int sig);
 static void async_event(int pipe, time_t now);
+static void fatal_event(struct event_desc *ev);
 static void poll_resolv(void);
 
 int main (int argc, char **argv)
 {
   int bind_fallback = 0;
-  int bad_capabilities = 0;
   time_t now, last = 0;
   struct sigaction sigact;
   struct iname *if_tmp;
-  int piperead, pipefd[2];
-  struct passwd *ent_pw;
+  int piperead, pipefd[2], err_pipe[2];
+  struct passwd *ent_pw = NULL;
+  uid_t script_uid = 0;
+  gid_t script_gid = 0;
+  struct group *gp= NULL;
   long i, max_fd = sysconf(_SC_OPEN_MAX);
+  char *baduser = NULL;
+  int log_err;
+#if defined(HAVE_LINUX_NETWORK)
+  cap_user_header_t hdr = NULL;
+  cap_user_data_t data = NULL;
+#endif 
 
 #ifdef LOCALEDIR
   setlocale(LC_ALL, "");
@@ -99,7 +111,7 @@ int main (int argc, char **argv)
   daemon->packet_buff_sz = daemon->edns_pktsz > DNSMASQ_PACKETSZ ? 
     daemon->edns_pktsz : DNSMASQ_PACKETSZ;
   daemon->packet = safe_malloc(daemon->packet_buff_sz);
-  
+
   if (!daemon->lease_file)
     {
       if (daemon->dhcp)
@@ -136,6 +148,8 @@ int main (int argc, char **argv)
   if (daemon->max_logs != 0)
     die(_("asychronous logging is not available under Solaris"), NULL, EC_BADCONF);
 #endif
+  
+  rand_init();
   
   now = dnsmasq_time();
   
@@ -181,7 +195,7 @@ int main (int argc, char **argv)
   
   if (daemon->port != 0)
     cache_init();
-
+    
   if (daemon->options & OPT_DBUS)
 #ifdef HAVE_DBUS
     {
@@ -197,35 +211,113 @@ int main (int argc, char **argv)
   
   if (daemon->port != 0)
     pre_allocate_sfds();
+
+  /* Note getpwnam returns static storage */
+  if (daemon->dhcp && daemon->lease_change_command && daemon->scriptuser)
+    {
+      if ((ent_pw = getpwnam(daemon->scriptuser)))
+	{
+	  script_uid = ent_pw->pw_uid;
+	  script_gid = ent_pw->pw_gid;
+	 }
+      else
+	baduser = daemon->scriptuser;
+    }
   
+  if (daemon->username && !(ent_pw = getpwnam(daemon->username)))
+    baduser = daemon->username;
+  else if (daemon->groupname && !(gp = getgrnam(daemon->groupname)))
+    baduser = daemon->groupname;
+
+  if (baduser)
+    die(_("unknown user or group: %s"), baduser, EC_BADCONF);
+   
+  /* implement group defaults, "dip" if available, or group associated with uid */
+  if (!daemon->group_set && !gp)
+    {
+      if (!(gp = getgrnam(CHGRP)) && ent_pw)
+	gp = getgrgid(ent_pw->pw_gid);
+      
+      /* for error message */
+      if (gp)
+	daemon->groupname = gp->gr_name; 
+    }
+
+#if defined(HAVE_LINUX_NETWORK)
+  /* determine capability API version here, while we can still
+     call safe_malloc */
+  if (ent_pw && ent_pw->pw_uid != 0)
+    {
+      int capsize = 1; /* for header version 1 */
+      hdr = safe_malloc(sizeof(*hdr));
+
+      /* find version supported by kernel */
+      memset(hdr, 0, sizeof(*hdr));
+      capget(hdr, NULL);
+      
+      if (hdr->version != LINUX_CAPABILITY_VERSION_1)
+	{
+	  /* if unknown version, use largest supported version (3) */
+	  if (hdr->version != LINUX_CAPABILITY_VERSION_2)
+	    hdr->version = LINUX_CAPABILITY_VERSION_3;
+	  capsize = 2;
+	}
+      
+      data = safe_malloc(sizeof(*data) * capsize);
+      memset(data, 0, sizeof(*data) * capsize);
+    }
+#endif
+
   /* Use a pipe to carry signals and other events back to the event loop 
-     in a race-free manner */
-  if (pipe(pipefd) == -1 || !fix_fd(pipefd[0]) || !fix_fd(pipefd[1])) 
-    die(_("cannot create pipe: %s"), NULL, EC_MISC);
+     in a race-free manner and another to carry errors to daemon-invoking process */
+  safe_pipe(pipefd, 1);
   
   piperead = pipefd[0];
   pipewrite = pipefd[1];
   /* prime the pipe to load stuff first time. */
   send_event(pipewrite, EVENT_RELOAD, 0); 
+
+  err_pipe[1] = -1;
   
   if (!(daemon->options & OPT_DEBUG))   
     {
-      FILE *pidfile;
       int nullfd;
 
       /* The following code "daemonizes" the process. 
 	 See Stevens section 12.4 */
+      
+      if (chdir("/") != 0)
+	die(_("cannot chdir to filesystem root: %s"), NULL, EC_MISC); 
 
 #ifndef NO_FORK      
       if (!(daemon->options & OPT_NO_FORK))
 	{
 	  pid_t pid;
 	  
+	  /* pipe to carry errors back to original process.
+	     When startup is complete we close this and the process terminates. */
+	  safe_pipe(err_pipe, 0);
+	  
 	  if ((pid = fork()) == -1 )
 	    die(_("cannot fork into background: %s"), NULL, EC_MISC);
-	  
+	   
 	  if (pid != 0)
-	    _exit(EC_GOOD);
+	    {
+	      struct event_desc ev;
+	      
+	      /* close our copy of write-end */
+	      close(err_pipe[1]);
+	      
+	      /* check for errors after the fork */
+	      if (read_write(err_pipe[0], (unsigned char *)&ev, sizeof(ev), 1))
+		fatal_event(&ev);
+	      
+	      _exit(EC_GOOD);
+	    } 
+	  
+	  close(err_pipe[0]);
+
+	  /* NO calls to die() from here on. */
 	  
 	  setsid();
 	  pid = fork();
@@ -234,17 +326,25 @@ int main (int argc, char **argv)
 	    _exit(0);
 	}
 #endif
-      
-      if (chdir("/") != 0)
-	die(_("cannot chdir to filesystem root: %s"), NULL, EC_MISC);
-      
+            
       /* write pidfile _after_ forking ! */
-      if (daemon->runfile && (pidfile = fopen(daemon->runfile, "w")))
-      	{
-	  fprintf(pidfile, "%d\n", (int) getpid());
-	  fclose(pidfile);
+      if (daemon->runfile)
+	{
+	  FILE *pidfile;
+	  
+	  /* only complain if started as root */
+	  if ((pidfile = fopen(daemon->runfile, "w")))
+	    {
+	      fprintf(pidfile, "%d\n", (int) getpid());
+	      fclose(pidfile);
+	    }
+	  else if (getuid() == 0)
+	    {
+	      send_event(err_pipe[1], EVENT_PIDFILE, errno);
+	      _exit(0);
+	    }
 	}
-      
+         
       /* open  stdout etc to /dev/null */
       nullfd = open("/dev/null", O_RDWR);
       dup2(nullfd, STDOUT_FILENO);
@@ -253,47 +353,37 @@ int main (int argc, char **argv)
       close(nullfd);
     }
   
-  /* if we are to run scripts, we need to fork a helper before dropping root. */
+    log_err = log_start(ent_pw, err_pipe[1]); 
+    
+    /* if we are to run scripts, we need to fork a helper before dropping root. */
+   daemon->helperfd = -1;
 #ifndef NO_FORK
-  daemon->helperfd = create_helper(pipewrite, max_fd);
+   if (daemon->dhcp && daemon->lease_change_command)
+     daemon->helperfd = create_helper(pipewrite, err_pipe[1], script_uid, script_gid, max_fd);
 #endif
    
-  ent_pw = daemon->username ? getpwnam(daemon->username) : NULL;
-
-  /* before here, we should only call die(), after here, only call syslog() */
-#ifndef NO_LOG
-  log_start(ent_pw); 
-#endif
-  if (!(daemon->options & OPT_DEBUG))   
-    {
-      /* UID changing, etc */
-      if (daemon->groupname || ent_pw)
-	{
-	  gid_t dummy;
-	  struct group *gp;
-	  
-	  /* change group for /etc/ppp/resolv.conf otherwise get the group for "nobody" */
-	  if ((daemon->groupname && (gp = getgrnam(daemon->groupname))) || 
-	      (ent_pw && (gp = getgrgid(ent_pw->pw_gid))))
-	    {
-	      /* remove all supplimentary groups */
-	      setgroups(0, &dummy);
-	      setgid(gp->gr_gid);
-	    } 
-	}
+   if (!(daemon->options & OPT_DEBUG) && getuid() == 0)   
+      {
+       int bad_capabilities = 0;
+       gid_t dummy;
+       
+       /* remove all supplimentary groups */
+       if (gp && 
+ 	  (setgroups(0, &dummy) == -1 ||
+ 	   setgid(gp->gr_gid) == -1))
+  	{
+ 	  send_event(err_pipe[1], EVENT_GROUP_ERR, errno);
+ 	  _exit(0);
+  	}
+   
       
       if (ent_pw && ent_pw->pw_uid != 0)
 	{     
 #if defined(HAVE_LINUX_NETWORK)
 	  /* On linux, we keep CAP_NETADMIN (for ARP-injection) and
 	     CAP_NET_RAW (for icmp) if we're doing dhcp */
-	  cap_user_header_t hdr = safe_malloc(sizeof(*hdr));
-	  cap_user_data_t data = safe_malloc(sizeof(*data));
-	  hdr->version = _LINUX_CAPABILITY_VERSION;
-	  hdr->pid = 0; /* this process */
 	  data->effective = data->permitted = data->inheritable =
-	    (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW) |
-	    (1 << CAP_SETGID) | (1 << CAP_SETUID);
+	    (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW) | (1 << CAP_SETUID);
 	  
 	  /* Tell kernel to not clear capabilities when dropping root */
 	  if (capset(hdr, data) == -1 || prctl(PR_SET_KEEPCAPS, 1) == -1)
@@ -324,20 +414,32 @@ int main (int argc, char **argv)
 	  bad_capabilities = ENOTSUP;
 #endif    
 
-	  if (bad_capabilities == 0) 
+	  if (bad_capabilities != 0)
 	    {
-	      /* finally drop root */
-	      setuid(ent_pw->pw_uid);
-	      
-#ifdef HAVE_LINUX_NETWORK
-	      data->effective = data->permitted = 
-		(1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW);
-	      data->inheritable = 0;
-	      
-	      /* lose the setuid and setgid capbilities */
-	      capset(hdr, data);
-#endif
+	      send_event(err_pipe[1], EVENT_CAP_ERR, bad_capabilities);
+	      _exit(0);
 	    }
+	  
+	  /* finally drop root */
+	  if (setuid(ent_pw->pw_uid) == -1)
+	    {
+	      send_event(err_pipe[1], EVENT_USER_ERR, errno);
+	      _exit(0);
+	    }     
+
+#ifdef HAVE_LINUX_NETWORK
+	  data->effective = data->permitted = 
+	    (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW);
+	  data->inheritable = 0;
+	  
+	  /* lose the setuid and setgid capbilities */
+	  if (capset(hdr, data) == -1)
+	    {
+	      send_event(err_pipe[1], EVENT_CAP_ERR, errno);
+	      _exit(0);
+	    }
+#endif
+	  
 	}
     }
   
@@ -369,6 +471,10 @@ int main (int argc, char **argv)
 	my_syslog(LOG_INFO, _("DBus support enabled: bus connection pending"));
     }
 #endif
+
+  if (log_err != 0)
+    my_syslog(LOG_WARNING, _("warning: failed to change owner of %s: %s"), 
+	      daemon->log_file, strerror(log_err));
 
   if (bind_fallback)
     my_syslog(LOG_WARNING, _("setting --bind-interfaces option because of OS limitations"));
@@ -449,13 +555,9 @@ int main (int argc, char **argv)
     }
 #endif
 
-  if (!(daemon->options & OPT_DEBUG) && (getuid() == 0 || geteuid() == 0))
-    {
-      if (bad_capabilities)
-	my_syslog(LOG_WARNING, _("warning: setting capabilities failed: %s"), strerror(bad_capabilities));
-
-      my_syslog(LOG_WARNING, _("running as root"));
-    }
+  /* finished start-up - release original process */
+  if (err_pipe[1] != -1)
+    close(err_pipe[1]);
   
   if (daemon->port != 0)
     check_servers();
@@ -638,11 +740,48 @@ void send_event(int fd, int event, int data)
   
   ev.event = event;
   ev.data = data;
-  /* pipe is non-blocking and struct event_desc is smaller than
-     PIPE_BUF, so this either fails or writes everything */
-  while (write(fd, &ev, sizeof(ev)) == -1 && errno == EINTR);
+  
+  /* error pipe, debug mode. */
+  if (fd == -1)
+    fatal_event(&ev);
+  else
+    /* pipe is non-blocking and struct event_desc is smaller than
+       PIPE_BUF, so this either fails or writes everything */
+    while (write(fd, &ev, sizeof(ev)) == -1 && errno == EINTR);
 }
 
+static void fatal_event(struct event_desc *ev)
+{
+  errno = ev->data;
+  
+  switch (ev->event)
+    {
+    case EVENT_DIE:
+      exit(0);
+  
+    case EVENT_PIPE_ERR:
+      die(_("failed to create helper: %s"), NULL, EC_MISC);
+  
+    case EVENT_CAP_ERR:
+      die(_("setting capabilities failed: %s"), NULL, EC_MISC);
+
+    case EVENT_USER_ERR:
+    case EVENT_HUSER_ERR:
+      die(_("failed to change user-id to %s: %s"), 
+	  ev->event == EVENT_USER_ERR ? daemon->username : daemon->scriptuser,
+	  EC_MISC);
+
+    case EVENT_GROUP_ERR:
+      die(_("failed to change group-id to %s: %s"), daemon->groupname, EC_MISC);
+      
+    case EVENT_PIDFILE:
+      die(_("failed to open pidfile %s: %s"), daemon->runfile, EC_FILE);
+
+    case EVENT_LOG_ERR:
+      die(_("cannot open %s: %s"), daemon->log_file ? daemon->log_file : "log", EC_FILE);
+    }
+}	
+      
 static void async_event(int pipe, time_t now)
 {
   pid_t p;
@@ -698,11 +837,14 @@ static void async_event(int pipe, time_t now)
 	break;
 
       case EVENT_EXEC_ERR:
-	my_syslog(LOG_ERR, _("failed to execute %s: %s"), daemon->lease_change_command, strerror(ev.data));
+	my_syslog(LOG_ERR, _("failed to execute %s: %s"), 
+		  daemon->lease_change_command, strerror(ev.data));
 	break;
 
-      case EVENT_PIPE_ERR:
-	my_syslog(LOG_ERR, _("failed to create helper: %s"), strerror(ev.data));
+	/* necessary for fatal errors in helper */
+      case EVENT_HUSER_ERR:
+      case EVENT_DIE:
+	fatal_event(&ev);
 	break;
 
       case EVENT_REOPEN:
@@ -842,7 +984,15 @@ static int set_dns_listeners(time_t now, fd_set *set, int *maxfdp)
       FD_SET(serverfdp->fd, set);
       bump_maxfd(serverfdp->fd, maxfdp);
     }
-	  
+
+  if (daemon->port != 0 && !daemon->osport)
+    for (i = 0; i < RANDOM_SOCKS; i++)
+      if (daemon->randomsocks[i].refcount != 0)
+	{
+	  FD_SET(daemon->randomsocks[i].fd, set);
+	  bump_maxfd(daemon->randomsocks[i].fd, maxfdp);
+	}
+  
   for (listener = daemon->listeners; listener; listener = listener->next)
     {
       /* only listen for queries if we have resources */
@@ -879,17 +1029,24 @@ static int set_dns_listeners(time_t now, fd_set *set, int *maxfdp)
 static void check_dns_listeners(fd_set *set, time_t now)
 {
   struct serverfd *serverfdp;
-  struct listener *listener;	  
-  
+  struct listener *listener;
+  int i;
+
   for (serverfdp = daemon->sfds; serverfdp; serverfdp = serverfdp->next)
     if (FD_ISSET(serverfdp->fd, set))
-      reply_query(serverfdp, now);
+      reply_query(serverfdp->fd, serverfdp->source_addr.sa.sa_family, now);
+  
+  if (daemon->port != 0 && !daemon->osport)
+    for (i = 0; i < RANDOM_SOCKS; i++)
+      if (daemon->randomsocks[i].refcount != 0 && 
+	  FD_ISSET(daemon->randomsocks[i].fd, set))
+	reply_query(daemon->randomsocks[i].fd, daemon->randomsocks[i].family, now);
   
   for (listener = daemon->listeners; listener; listener = listener->next)
     {
       if (listener->fd != -1 && FD_ISSET(listener->fd, set))
 	receive_query(listener, now); 
- 
+      
 #ifdef HAVE_TFTP     
       if (listener->tftpfd != -1 && FD_ISSET(listener->tftpfd, set))
 	tftp_request(listener, now);

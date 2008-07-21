@@ -92,6 +92,11 @@ struct myoption {
 #define LOPT_BROADCAST 282
 #define LOPT_NEGTTL    283
 #define LOPT_BLOCKSIZE 284
+#define LOPT_ALTPORT   285
+#define LOPT_SCRIPTUSR 286
+#define LOPT_LOCAL     287
+#define LOPT_NAPTR     288
+#define LOPT_MINPORT   289
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -129,7 +134,7 @@ static const struct myoption opts[] =
     {"pid-file", 2, 0, 'x'},
     {"strict-order", 0, 0, 'o'},
     {"server", 1, 0, 'S'},
-    {"local", 1, 0, 'S' },
+    {"local", 1, 0, LOPT_LOCAL },
     {"address", 1, 0, 'A' },
     {"conf-file", 2, 0, 'C'},
     {"no-resolv", 0, 0, 'R'},
@@ -175,12 +180,14 @@ static const struct myoption opts[] =
     {"tftp-max", 1, 0, LOPT_TFTP_MAX },
 #endif
     {"ptr-record", 1, 0, LOPT_PTR },
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+    {"naptr-record", 1, 0, LOPT_NAPTR },
+#ifdef HAVE_BSD_BRIDGE
     {"bridge-interface", 1, 0 , LOPT_BRIDGE },
 #endif
     {"dhcp-option-force", 1, 0, LOPT_FORCE },
 #ifdef HAVE_TFTP
     {"tftp-no-blocksize", 0, 0, LOPT_NOBLOCK },
+    {"tftp-port-range", 1, 0, LOPT_TFTPPORTS },
 #endif
     {"log-dhcp", 0, 0, LOPT_LOG_OPTS },
     {"log-async", 2, 0, LOPT_MAX_LOGS },
@@ -191,159 +198,129 @@ static const struct myoption opts[] =
     {"dhcp-hostsfile", 1, 0, LOPT_DHCP_HOST },
     {"dhcp-optsfile", 1, 0, LOPT_DHCP_OPTS },
     {"dhcp-no-override", 0, 0, LOPT_OVERRIDE },
-    {"tftp-port-range", 1, 0, LOPT_TFTPPORTS },
     {"stop-dns-rebind", 0, 0, LOPT_REBIND },
     {"all-servers", 0, 0, LOPT_NOLAST}, 
     {"dhcp-match", 1, 0, LOPT_MATCH }, 
     {"dhcp-broadcast", 1, 0, LOPT_BROADCAST },
     {"neg-ttl", 1, 0, LOPT_NEGTTL },
+    {"dhcp-alternate-port", 2, 0, LOPT_ALTPORT },
+    {"dhcp-scriptuser", 1, 0, LOPT_SCRIPTUSR },
+    {"min-port", 1, 0, LOPT_MINPORT },
     { NULL, 0, 0, 0 }
   };
 
-struct optflags {
-  int c;
-  unsigned int flag; 
-};
 
-static const struct optflags optmap[] = {
-  { 'b',            OPT_BOGUSPRIV },
-  { 'f',            OPT_FILTER },
-  { 'q',            OPT_LOG },
-  { 'e',            OPT_SELFMX },
-  { 'h',            OPT_NO_HOSTS },
-  { 'n',            OPT_NO_POLL },
-  { 'd',            OPT_DEBUG },
-  { 'k',            OPT_NO_FORK },
-  { 'K',            OPT_AUTHORITATIVE },
-  { 'o',            OPT_ORDER },
-  { 'R',            OPT_NO_RESOLV },
-  { 'E',            OPT_EXPAND },
-  { 'L',            OPT_LOCALMX },
-  { 'N',            OPT_NO_NEG },
-  { 'D',            OPT_NODOTS_LOCAL },
-  { 'z',            OPT_NOWILD },
-  { 'Z',            OPT_ETHERS },
-  { 'y',            OPT_LOCALISE },
-  { '1',            OPT_DBUS },
-  { '3',            OPT_BOOTP_DYNAMIC },
-  { '5',            OPT_NO_PING },
-  { '9',            OPT_LEASE_RO },
-  { LOPT_RELOAD,    OPT_RELOAD },
-  { LOPT_LOG_OPTS,  OPT_LOG_OPTS },
-#ifdef HAVE_TFTP
-  { LOPT_TFTP,      OPT_TFTP },
-  { LOPT_SECURE,    OPT_TFTP_SECURE },
-  { LOPT_NOBLOCK,   OPT_TFTP_NOBLOCK },
-  { LOPT_APREF,     OPT_TFTP_APREF },
-#endif
-  { LOPT_OVERRIDE,  OPT_NO_OVERRIDE },
-  { LOPT_REBIND,    OPT_NO_REBIND },
-  { LOPT_NOLAST,    OPT_ALL_SERVERS },
-  { 'v',            0},
-  { 'w',            0},
-  { 0, 0 }
-};
-
-static const struct {
-  char * const flag;
+ /* These must have more the one '1' bit */
+#define ARG_DUP       3
+#define ARG_ONE       5
+#define ARG_USED_CL   7
+#define ARG_USED_FILE 9
+ 
+static struct {
+  int opt;
+  unsigned int rept;
+  char * const flagdesc;
   char * const desc;
   char * const arg;
 } usage[] = {
-  { "-a, --listen-address=ipaddr",  gettext_noop("Specify local address(es) to listen on."), NULL },
-  { "-A, --address=/domain/ipaddr", gettext_noop("Return ipaddr for all hosts in specified domains."), NULL },
-  { "-b, --bogus-priv", gettext_noop("Fake reverse lookups for RFC1918 private address ranges."), NULL },
-  { "-B, --bogus-nxdomain=ipaddr", gettext_noop("Treat ipaddr as NXDOMAIN (defeats Verisign wildcard)."), NULL }, 
-  { "-c, --cache-size=cachesize", gettext_noop("Specify the size of the cache in entries (defaults to %s)."), "$" },
-  { "-C, --conf-file=path", gettext_noop("Specify configuration file (defaults to %s)."), CONFFILE },
-  { "-d, --no-daemon", gettext_noop("Do NOT fork into the background: run in debug mode."), NULL },
-  { "-D, --domain-needed", gettext_noop("Do NOT forward queries with no domain part."), NULL }, 
-  { "-e, --selfmx", gettext_noop("Return self-pointing MX records for local hosts."), NULL },
-  { "-E, --expand-hosts", gettext_noop("Expand simple names in /etc/hosts with domain-suffix."), NULL },
-  { "-f, --filterwin2k", gettext_noop("Don't forward spurious DNS requests from Windows hosts."), NULL },
-  { "-F, --dhcp-range=ipaddr,ipaddr,time", gettext_noop("Enable DHCP in the range given with lease duration."), NULL },
-  { "-g, --group=groupname", gettext_noop("Change to this group after startup (defaults to %s)."), CHGRP },
-  { "-G, --dhcp-host=<hostspec>", gettext_noop("Set address or hostname for a specified machine."), NULL },
-  { "    --dhcp-hostsfile=<filename>", gettext_noop("Read DHCP host specs from file"), NULL },
-  { "    --dhcp-optsfile=<filename>", gettext_noop("Read DHCP option specs from file"), NULL },
-  { "-h, --no-hosts", gettext_noop("Do NOT load %s file."), HOSTSFILE },
-  { "-H, --addn-hosts=path", gettext_noop("Specify a hosts file to be read in addition to %s."), HOSTSFILE },
-  { "-i, --interface=interface", gettext_noop("Specify interface(s) to listen on."), NULL },
-  { "-I, --except-interface=int", gettext_noop("Specify interface(s) NOT to listen on.") , NULL },
-  { "-j, --dhcp-userclass=<tag>,<class>", gettext_noop("Map DHCP user class to tag."), NULL },
-  { "    --dhcp-circuitid=<tag>,<circuit>", gettext_noop("Map RFC3046 circuit-id to tag."), NULL },
-  { "    --dhcp-remoteid=<tag>,<remote>", gettext_noop("Map RFC3046 remote-id to tag."), NULL },
-  { "    --dhcp-subscrid=<tag>,<remote>", gettext_noop("Map RFC3993 subscriber-id to tag."), NULL },
-  { "-J, --dhcp-ignore=<tag>", gettext_noop("Don't do DHCP for hosts with tag set."), NULL },
-  { "    --dhcp-broadcast=<tag>", gettext_noop("Force broadcast replies for hosts with tag set."), NULL }, 
-  { "-k, --keep-in-foreground", gettext_noop("Do NOT fork into the background, do NOT run in debug mode."), NULL },
-  { "-K, --dhcp-authoritative", gettext_noop("Assume we are the only DHCP server on the local network."), NULL },
-  { "-l, --dhcp-leasefile=path", gettext_noop("Specify where to store DHCP leases (defaults to %s)."), LEASEFILE },
-  { "-L, --localmx", gettext_noop("Return MX records for local hosts."), NULL },
-  { "-m, --mx-host=host_name,target,pref", gettext_noop("Specify an MX record."), NULL },
-  { "-M, --dhcp-boot=<bootp opts>", gettext_noop("Specify BOOTP options to DHCP server."), NULL },
-  { "-n, --no-poll", gettext_noop("Do NOT poll %s file, reload only on SIGHUP."), RESOLVFILE }, 
-  { "-N, --no-negcache", gettext_noop("Do NOT cache failed search results."), NULL },
-  { "-o, --strict-order", gettext_noop("Use nameservers strictly in the order given in %s."), RESOLVFILE },
-  { "-O, --dhcp-option=<optspec>", gettext_noop("Specify options to be sent to DHCP clients."), NULL },
-  { "    --dhcp-option-force=<optspec>", gettext_noop("DHCP option sent even if the client does not request it."), NULL},
-  { "-p, --port=number", gettext_noop("Specify port to listen for DNS requests on (defaults to 53)."), NULL },
-  { "-P, --edns-packet-max=<size>", gettext_noop("Maximum supported UDP packet size for EDNS.0 (defaults to %s)."), "*" },
-  { "-q, --log-queries", gettext_noop("Log DNS queries."), NULL },
-  { "-Q, --query-port=number", gettext_noop("Force the originating port for upstream DNS queries."), NULL },
-  { "-R, --no-resolv", gettext_noop("Do NOT read resolv.conf."), NULL },
-  { "-r, --resolv-file=path", gettext_noop("Specify path to resolv.conf (defaults to %s)."), RESOLVFILE }, 
-  { "-S, --server=/domain/ipaddr", gettext_noop("Specify address(es) of upstream servers with optional domains."), NULL },
-  { "    --local=/domain/", gettext_noop("Never forward queries to specified domains."), NULL },
-  { "-s, --domain=domain", gettext_noop("Specify the domain to be assigned in DHCP leases."), NULL },
-  { "-t, --mx-target=host_name", gettext_noop("Specify default target in an MX record."), NULL },
-  { "-T, --local-ttl=time", gettext_noop("Specify time-to-live in seconds for replies from /etc/hosts."), NULL },
-  { "    --neg-ttl=time", gettext_noop("Specify time-to-live in seconds for negative caching."), NULL },
-  { "-u, --user=username", gettext_noop("Change to this user after startup. (defaults to %s)."), CHUSER }, 
-  { "-U, --dhcp-vendorclass=<id>,<class>", gettext_noop("Map DHCP vendor class to tag."), NULL },
-  { "-v, --version", gettext_noop("Display dnsmasq version and copyright information."), NULL },
-  { "-V, --alias=addr,addr,mask", gettext_noop("Translate IPv4 addresses from upstream servers."), NULL },
-  { "-W, --srv-host=name,target,...", gettext_noop("Specify a SRV record."), NULL },
-  { "-w, --help", gettext_noop("Display this message. Use --help dhcp for known DHCP options."), NULL },
-  { "-x, --pid-file=path", gettext_noop("Specify path of PID file (defaults to %s)."), RUNFILE },
-  { "-X, --dhcp-lease-max=number", gettext_noop("Specify maximum number of DHCP leases (defaults to %s)."), "&" },
-  { "-y, --localise-queries", gettext_noop("Answer DNS queries based on the interface a query was sent to."), NULL },
-  { "-Y  --txt-record=name,txt....", gettext_noop("Specify TXT DNS record."), NULL },
-  { "    --ptr-record=name,target", gettext_noop("Specify PTR DNS record."), NULL },
-  { "    --interface-name=name,interface", gettext_noop("Give DNS name to IPv4 address of interface."), NULL },
-  { "-z, --bind-interfaces", gettext_noop("Bind only to interfaces in use."), NULL },
-  { "-Z, --read-ethers", gettext_noop("Read DHCP static host information from %s."), ETHERSFILE },
-  { "-1, --enable-dbus", gettext_noop("Enable the DBus interface for setting upstream servers, etc."), NULL },
-  { "-2, --no-dhcp-interface=interface", gettext_noop("Do not provide DHCP on this interface, only provide DNS."), NULL },
-  { "-3, --bootp-dynamic", gettext_noop("Enable dynamic address allocation for bootp."), NULL },
-  { "-4, --dhcp-mac=<id>,<mac address>", gettext_noop("Map MAC address (with wildcards) to option set."), NULL },
-#if defined(__FreeBSD__) || defined(__DragonFly__)
-  { "    --bridge-interface=iface,alias,..", gettext_noop("Treat DHCP requests on aliases as arriving from interface."), NULL },
+   { 'a', ARG_DUP, "ipaddr",  gettext_noop("Specify local address(es) to listen on."), NULL },
+   { 'A', ARG_DUP, "/domain/ipaddr", gettext_noop("Return ipaddr for all hosts in specified domains."), NULL },
+   { 'b', OPT_BOGUSPRIV, NULL, gettext_noop("Fake reverse lookups for RFC1918 private address ranges."), NULL },
+   { 'B', ARG_DUP, "ipaddr", gettext_noop("Treat ipaddr as NXDOMAIN (defeats Verisign wildcard)."), NULL }, 
+   { 'c', ARG_ONE, "cachesize", gettext_noop("Specify the size of the cache in entries (defaults to %s)."), "$" },
+   { 'C', ARG_DUP, "path", gettext_noop("Specify configuration file (defaults to %s)."), CONFFILE },
+   { 'd', OPT_DEBUG, NULL, gettext_noop("Do NOT fork into the background: run in debug mode."), NULL },
+   { 'D', OPT_NODOTS_LOCAL, NULL, gettext_noop("Do NOT forward queries with no domain part."), NULL }, 
+   { 'e', OPT_SELFMX, NULL, gettext_noop("Return self-pointing MX records for local hosts."), NULL },
+   { 'E', OPT_EXPAND, NULL, gettext_noop("Expand simple names in /etc/hosts with domain-suffix."), NULL },
+   { 'f', OPT_FILTER, NULL, gettext_noop("Don't forward spurious DNS requests from Windows hosts."), NULL },
+   { 'F', ARG_DUP, "ipaddr,ipaddr,time", gettext_noop("Enable DHCP in the range given with lease duration."), NULL },
+   { 'g', ARG_ONE, "groupname", gettext_noop("Change to this group after startup (defaults to %s)."), CHGRP },
+   { 'G', ARG_DUP, "<hostspec>", gettext_noop("Set address or hostname for a specified machine."), NULL },
+   { LOPT_DHCP_HOST, ARG_ONE, "<filename>", gettext_noop("Read DHCP host specs from file"), NULL },
+   { LOPT_DHCP_OPTS, ARG_ONE, "<filename>", gettext_noop("Read DHCP option specs from file"), NULL },
+   { 'h', OPT_NO_HOSTS, NULL, gettext_noop("Do NOT load %s file."), HOSTSFILE },
+   { 'H', ARG_DUP, "path", gettext_noop("Specify a hosts file to be read in addition to %s."), HOSTSFILE },
+   { 'i', ARG_DUP, "interface", gettext_noop("Specify interface(s) to listen on."), NULL },
+   { 'I', ARG_DUP, "int", gettext_noop("Specify interface(s) NOT to listen on.") , NULL },
+   { 'j', ARG_DUP, "<tag>,<class>", gettext_noop("Map DHCP user class to tag."), NULL },
+   { LOPT_CIRCUIT, ARG_DUP, "<tag>,<circuit>", gettext_noop("Map RFC3046 circuit-id to tag."), NULL },
+   { LOPT_REMOTE, ARG_DUP, "<tag>,<remote>", gettext_noop("Map RFC3046 remote-id to tag."), NULL },
+   { LOPT_SUBSCR, ARG_DUP, "<tag>,<remote>", gettext_noop("Map RFC3993 subscriber-id to tag."), NULL },
+   { 'J', ARG_DUP, "<tag>", gettext_noop("Don't do DHCP for hosts with tag set."), NULL },
+   { LOPT_BROADCAST, ARG_DUP, "<tag>", gettext_noop("Force broadcast replies for hosts with tag set."), NULL }, 
+   { 'k', OPT_NO_FORK, NULL, gettext_noop("Do NOT fork into the background, do NOT run in debug mode."), NULL },
+   { 'K', OPT_AUTHORITATIVE, NULL, gettext_noop("Assume we are the only DHCP server on the local network."), NULL },
+   { 'l', ARG_ONE, "path", gettext_noop("Specify where to store DHCP leases (defaults to %s)."), LEASEFILE },
+   { 'L', OPT_LOCALMX, NULL, gettext_noop("Return MX records for local hosts."), NULL },
+   { 'm', ARG_DUP, "host_name,target,pref", gettext_noop("Specify an MX record."), NULL },
+   { 'M', ARG_DUP, "<bootp opts>", gettext_noop("Specify BOOTP options to DHCP server."), NULL },
+   { 'n', OPT_NO_POLL, NULL, gettext_noop("Do NOT poll %s file, reload only on SIGHUP."), RESOLVFILE }, 
+   { 'N', OPT_NO_NEG, NULL, gettext_noop("Do NOT cache failed search results."), NULL },
+   { 'o', OPT_ORDER, NULL, gettext_noop("Use nameservers strictly in the order given in %s."), RESOLVFILE },
+   { 'O', ARG_DUP, "<optspec>", gettext_noop("Specify options to be sent to DHCP clients."), NULL },
+   { LOPT_FORCE, ARG_DUP, "<optspec>", gettext_noop("DHCP option sent even if the client does not request it."), NULL},
+   { 'p', ARG_ONE, "number", gettext_noop("Specify port to listen for DNS requests on (defaults to 53)."), NULL },
+   { 'P', ARG_ONE, "<size>", gettext_noop("Maximum supported UDP packet size for EDNS.0 (defaults to %s)."), "*" },
+   { 'q', OPT_LOG, NULL, gettext_noop("Log DNS queries."), NULL },
+   { 'Q', ARG_ONE, "number", gettext_noop("Force the originating port for upstream DNS queries."), NULL },
+   { 'R', OPT_NO_RESOLV, NULL, gettext_noop("Do NOT read resolv.conf."), NULL },
+   { 'r', ARG_DUP, "path", gettext_noop("Specify path to resolv.conf (defaults to %s)."), RESOLVFILE }, 
+   { 'S', ARG_DUP, "/domain/ipaddr", gettext_noop("Specify address(es) of upstream servers with optional domains."), NULL },
+   { LOPT_LOCAL, ARG_DUP, "/domain/", gettext_noop("Never forward queries to specified domains."), NULL },
+   { 's', ARG_ONE, "<domain>", gettext_noop("Specify the domain to be assigned in DHCP leases."), NULL },
+   { 't', ARG_ONE, "host_name", gettext_noop("Specify default target in an MX record."), NULL },
+   { 'T', ARG_ONE, "time", gettext_noop("Specify time-to-live in seconds for replies from /etc/hosts."), NULL },
+   { LOPT_NEGTTL, ARG_ONE, "time", gettext_noop("Specify time-to-live in seconds for negative caching."), NULL },
+   { 'u', ARG_ONE, "username", gettext_noop("Change to this user after startup. (defaults to %s)."), CHUSER }, 
+   { 'U', ARG_DUP, "<id>,<class>", gettext_noop("Map DHCP vendor class to tag."), NULL },
+   { 'v', 0, NULL, gettext_noop("Display dnsmasq version and copyright information."), NULL },
+   { 'V', ARG_DUP, "addr,addr,mask", gettext_noop("Translate IPv4 addresses from upstream servers."), NULL },
+   { 'W', ARG_DUP, "name,target,...", gettext_noop("Specify a SRV record."), NULL },
+   { 'w', 0, NULL, gettext_noop("Display this message. Use --help dhcp for known DHCP options."), NULL },
+   { 'x', ARG_ONE, "path", gettext_noop("Specify path of PID file (defaults to %s)."), RUNFILE },
+   { 'X', ARG_ONE, "number", gettext_noop("Specify maximum number of DHCP leases (defaults to %s)."), "&" },
+   { 'y', OPT_LOCALISE, NULL, gettext_noop("Answer DNS queries based on the interface a query was sent to."), NULL },
+   { 'Y', ARG_DUP, "name,txt....", gettext_noop("Specify TXT DNS record."), NULL },
+   { LOPT_PTR, ARG_DUP, "name,target", gettext_noop("Specify PTR DNS record."), NULL },
+   { LOPT_INTNAME, ARG_DUP, "name,interface", gettext_noop("Give DNS name to IPv4 address of interface."), NULL },
+   { 'z', OPT_NOWILD, NULL, gettext_noop("Bind only to interfaces in use."), NULL },
+   { 'Z', OPT_ETHERS, NULL, gettext_noop("Read DHCP static host information from %s."), ETHERSFILE },
+   { '1', OPT_DBUS, NULL, gettext_noop("Enable the DBus interface for setting upstream servers, etc."), NULL },
+   { '2', ARG_DUP, "interface", gettext_noop("Do not provide DHCP on this interface, only provide DNS."), NULL },
+   { '3', OPT_BOOTP_DYNAMIC, NULL, gettext_noop("Enable dynamic address allocation for bootp."), NULL },
+   { '4', ARG_DUP, "<id>,<mac address>", gettext_noop("Map MAC address (with wildcards) to option set."), NULL },
+#ifdef HAVE_BSD_BRIDGE
+   { LOPT_BRIDGE, ARG_DUP, "iface,alias,..", gettext_noop("Treat DHCP requests on aliases as arriving from interface."), NULL },
 #endif
-  { "-5, --no-ping", gettext_noop("Disable ICMP echo address checking in the DHCP server."), NULL },
-  { "-6, --dhcp-script=path", gettext_noop("Script to run on DHCP lease creation and destruction."), NULL },
-  { "-7, --conf-dir=path", gettext_noop("Read configuration from all the files in this directory."), NULL },
-  { "-8, --log-facility=facilty|file", gettext_noop("Log to this syslog facility or file. (defaults to DAEMON)"), NULL },
-  { "-9, --leasefile-ro", gettext_noop("Read leases at startup, but never write the lease file."), NULL },
-  { "-0, --dns-forward-max=<queries>", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
-  { "    --clear-on-reload", gettext_noop("Clear DNS cache when reloading %s."), RESOLVFILE },
-  { "    --dhcp-ignore-names[=<id>]", gettext_noop("Ignore hostnames provided by DHCP clients."), NULL },
-  { "    --dhcp-no-override", gettext_noop("Do NOT reuse filename and server fields for extra DHCP options."), NULL },
+   { '5', OPT_NO_PING, NULL, gettext_noop("Disable ICMP echo address checking in the DHCP server."), NULL },
+   { '6', ARG_ONE, "path", gettext_noop("Script to run on DHCP lease creation and destruction."), NULL },
+   { '7', ARG_DUP, "path", gettext_noop("Read configuration from all the files in this directory."), NULL },
+   { '8', ARG_ONE, "<facilty>|<file>", gettext_noop("Log to this syslog facility or file. (defaults to DAEMON)"), NULL },
+   { '9', OPT_LEASE_RO, NULL, gettext_noop("Do not use leasefile."), NULL },
+   { '0', ARG_ONE, "<queries>", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
+   { LOPT_RELOAD, OPT_RELOAD, NULL, gettext_noop("Clear DNS cache when reloading %s."), RESOLVFILE },
+   { LOPT_NO_NAMES, ARG_DUP, "[=<id>]", gettext_noop("Ignore hostnames provided by DHCP clients."), NULL },
+   { LOPT_OVERRIDE, OPT_NO_OVERRIDE, NULL, gettext_noop("Do NOT reuse filename and server fields for extra DHCP options."), NULL },
 #ifdef HAVE_TFTP
-  { "    --enable-tftp", gettext_noop("Enable integrated read-only TFTP server."), NULL },
-  { "    --tftp-root=<directory>", gettext_noop("Export files by TFTP only from the specified subtree."), NULL },
-  { "    --tftp-unique-root", gettext_noop("Add client IP address to tftp-root."), NULL },
-  { "    --tftp-secure", gettext_noop("Allow access only to files owned by the user running dnsmasq."), NULL },
-  { "    --tftp-max=<connections>", gettext_noop("Maximum number of conncurrent TFTP transfers (defaults to %s)."), "#" },
-  { "    --tftp-blocksize", gettext_noop("Configures the default TFTP blocksize"), NULL },
-  { "    --tftp-no-blocksize", gettext_noop("Disable the TFTP blocksize extension."), NULL },
-  { "    --tftp-port-range=<start>,<end>", gettext_noop("Ephemeral port range for use by TFTP transfers."), NULL },
+   { LOPT_TFTP, OPT_TFTP, NULL, gettext_noop("Enable integrated read-only TFTP server."), NULL },
+   { LOPT_PREFIX, ARG_ONE, "<directory>", gettext_noop("Export files by TFTP only from the specified subtree."), NULL },
+   { LOPT_APREF, OPT_TFTP_APREF, NULL, gettext_noop("Add client IP address to tftp-root."), NULL },
+   { LOPT_SECURE, OPT_TFTP_SECURE, NULL, gettext_noop("Allow access only to files owned by the user running dnsmasq."), NULL },
+   { LOPT_TFTP_MAX, ARG_ONE, "<connections>", gettext_noop("Maximum number of conncurrent TFTP transfers (defaults to %s)."), "#" },
+   { LOPT_NOBLOCK, OPT_TFTP_NOBLOCK, NULL, gettext_noop("Disable the TFTP blocksize extension."), NULL },
+   { LOPT_TFTPPORTS, ARG_ONE, "<start>,<end>", gettext_noop("Ephemeral port range for use by TFTP transfers."), NULL },
 #endif
-  { "    --log-dhcp", gettext_noop("Extra logging for DHCP."), NULL },
-  { "    --log-async[=<log lines>]", gettext_noop("Enable async. logging; optionally set queue length."), NULL },
-  { "    --stop-dns-rebind", gettext_noop("Stop DNS rebinding. Filter private IP ranges when resolving."), NULL },
-  { "    --all-servers", gettext_noop("Always perform DNS queries to all servers."), NULL },
-  { "    --dhcp-match=<netid>,<opt-no>", gettext_noop("Set tag if client includes option in request."), NULL },
-  { NULL, NULL, NULL }
+   { LOPT_LOG_OPTS, OPT_LOG_OPTS, NULL, gettext_noop("Extra logging for DHCP."), NULL },
+   { LOPT_MAX_LOGS, ARG_ONE, "[=<log lines>]", gettext_noop("Enable async. logging; optionally set queue length."), NULL },
+   { LOPT_REBIND, OPT_NO_REBIND, NULL, gettext_noop("Stop DNS rebinding. Filter private IP ranges when resolving."), NULL },
+   { LOPT_NOLAST, OPT_ALL_SERVERS, NULL, gettext_noop("Always perform DNS queries to all servers."), NULL },
+   { LOPT_MATCH, ARG_DUP, "<netid>,<opt-no>", gettext_noop("Set tag if client includes option in request."), NULL },
+   { LOPT_ALTPORT, ARG_ONE, "[=<ports>]", gettext_noop("Use alternative ports for DHCP."), NULL },
+   { LOPT_SCRIPTUSR, ARG_ONE, "<username>", gettext_noop("Run lease-change script as this user."), NULL },
+   { LOPT_NAPTR, ARG_DUP, "<name>,<naptr>", gettext_noop("Specify NAPTR DNS record."), NULL },
+   { LOPT_MINPORT, ARG_ONE, "<port>", gettext_noop("Specify lowest port available for DNS query transmission."), NULL },
+   { 0, 0, NULL, NULL, NULL }
 }; 
 
 /* makes options which take a list of addresses */
@@ -407,8 +384,8 @@ static const struct {
   { "client-id", 61,OT_INTERNAL },
   { "nis-domain", 64, 0 },
   { "nis-server", 65, OT_ADDR_LIST },
-  { "tftp-server", 66, OT_INTERNAL },
-  { "bootfile-name", 67, OT_INTERNAL },
+  { "tftp-server", 66, 0 },
+  { "bootfile-name", 67, 0 },
   { "mobile-ip-home", 68, OT_ADDR_LIST }, 
   { "smtp-server", 69, OT_ADDR_LIST }, 
   { "pop3-server", 70, OT_ADDR_LIST }, 
@@ -561,6 +538,16 @@ static int atoi_check(char *a, int *res)
   return 1;
 }
 
+static int atoi_check16(char *a, int *res)
+{
+  if (!(atoi_check(a, res)) ||
+      *res < 0 ||
+      *res > 0xffff)
+    return 0;
+
+  return 1;
+}
+	
 static void add_txt(char *name, char *txt)
 {
   size_t len = strlen(txt);
@@ -597,10 +584,30 @@ static void do_usage(void)
 #ifndef HAVE_GETOPT_LONG
   printf(_("Use short options only on the command line.\n"));
 #endif
-  printf(_("Valid options are :\n"));
+  printf(_("Valid options are:\n"));
   
-  for (i = 0; usage[i].flag; i++)
+  for (i = 0; usage[i].opt != 0; i++)
     {
+      char *desc = usage[i].flagdesc; 
+      char *eq = "=";
+      
+      if (!desc || *desc == '[')
+	eq = "";
+      
+      if (!desc)
+	desc = "";
+
+      for ( j = 0; opts[j].name; j++)
+	if (opts[j].val == usage[i].opt)
+	  break;
+      if (usage[i].opt < 256)
+	sprintf(buff, "-%c, ", usage[i].opt);
+      else
+	sprintf(buff, "    ");
+      
+      sprintf(buff+4, "--%s%s%s", opts[j].name, eq, desc);
+      printf("%-36.36s", buff);
+	     
       if (usage[i].arg)
 	{
 	  strcpy(buff, usage[i].arg);
@@ -608,7 +615,6 @@ static void do_usage(void)
 	    if (tab[j].handle == *(usage[i].arg))
 	      sprintf(buff, "%d", tab[j].val);
 	}
-      printf("%-36.36s", usage[i].flag);
       printf(_(usage[i].desc), buff);
       printf("\n");
     }
@@ -923,13 +929,37 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
   if (option == '?')
     return gen_prob;
   
-  for (i=0; optmap[i].c; i++)
-    if (option == optmap[i].c)
+  for (i=0; usage[i].opt != 0; i++)
+    if (usage[i].opt == option)
       {
-	daemon->options |= optmap[i].flag;
-	return NULL;
+	 int rept = usage[i].rept;
+	 
+	 if (nest == 0)
+	   {
+	     /* command line */
+	     if (rept == ARG_USED_CL)
+	       return _("illegal repeated flag");
+	     if (rept == ARG_ONE)
+	       usage[i].rept = ARG_USED_CL;
+	   }
+	 else
+	   {
+	     /* allow file to override command line */
+	     if (rept == ARG_USED_FILE)
+	       return _("illegal repeated keyword");
+	     if (rept == ARG_USED_CL || rept == ARG_ONE)
+	       usage[i].rept = ARG_USED_FILE;
+	   }
+
+	 if (rept != ARG_DUP && rept != ARG_ONE && rept != ARG_USED_CL) 
+	   {
+	     daemon->options |= rept;
+	     return NULL;
+	   }
+       
+	 break;
       }
-    
+  
   switch (option)
     { 
     case 'C': /* --conf-file */
@@ -1056,7 +1086,7 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
 	if ((comma = split(arg)))
 	  {
 	    char *prefstr;
-	    if ((prefstr=split(comma)) && !atoi_check(prefstr, &pref))
+	    if ((prefstr=split(comma)) && !atoi_check16(prefstr, &pref))
 	      problem = _("bad MX preference");
 	  }
 	
@@ -1118,6 +1148,11 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
       
     case 'g':  /* --group */
       daemon->groupname = opt_string_alloc(arg);
+      daemon->group_set = 1;
+      break;
+
+    case LOPT_SCRIPTUSR: /* --scriptuser */
+      daemon->scriptuser = opt_string_alloc(arg);
       break;
       
     case 'i':  /* --interface */
@@ -1205,8 +1240,9 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
       } while (arg);
       break;
       
-    case 'S':  /*  --server */
-    case 'A':  /*  --address */
+    case 'S':        /*  --server */
+    case LOPT_LOCAL: /*  --local */
+    case 'A':        /*  --address */
       {
 	struct server *serv, *newlist = NULL;
 	
@@ -1272,7 +1308,7 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
 		if ((portno = strchr(source+1, '#')))
 		  { 
 		    *portno = 0;
-		    if (!atoi_check(portno+1, &source_port))
+		    if (!atoi_check16(portno+1, &source_port))
 		      problem = _("bad port");
 		  }
 	      }
@@ -1280,7 +1316,7 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
 	    if ((portno = strchr(arg, '#'))) /* is there a port no. */
 	      {
 		*portno = 0;
-		if (!atoi_check(portno+1, &serv_port))
+		if (!atoi_check16(portno+1, &serv_port))
 		  problem = _("bad port");
 	      }
 	    
@@ -1373,10 +1409,15 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
       }
       
     case 'p':  /* --port */
-      if (!atoi_check(arg, &daemon->port))
+      if (!atoi_check16(arg, &daemon->port))
 	option = '?';
       break;
     
+    case LOPT_MINPORT:  /* --min-port */
+      if (!atoi_check16(arg, &daemon->min_port))
+	option = '?';
+      break;
+
     case '0':  /* --dns-forward-max */
       if (!atoi_check(arg, &daemon->ftabsize))
 	option = '?';
@@ -1400,8 +1441,12 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
       }
       
     case 'Q':  /* --query-port */
-      if (!atoi_check(arg, &daemon->query_port))
+      if (!atoi_check16(arg, &daemon->query_port))
 	option = '?';
+      /* if explicitly set to zero, use single OS ephemeral port
+	 and disable random ports */
+      if (daemon->query_port == 0)
+	daemon->osport = 1;
       break;
       
     case 'T':         /* --local-ttl */
@@ -1432,8 +1477,8 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
       break;
     case LOPT_TFTPPORTS: /* --tftp-port-range */
        if (!(comma = split(arg)) || 
- 	  !atoi_check(arg, &daemon->start_tftp_port) ||
- 	  !atoi_check(comma, &daemon->end_tftp_port))
+ 	  !atoi_check16(arg, &daemon->start_tftp_port) ||
+ 	  !atoi_check16(comma, &daemon->end_tftp_port))
  	problem = _("bad port range");
        
        if (daemon->start_tftp_port > daemon->end_tftp_port)
@@ -1450,7 +1495,7 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
       break;
 #endif
 
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#ifdef HAVE_BSD_BRIDGE
     case LOPT_BRIDGE:   /* --bridge-interface */
       {
  	struct dhcp_bridge *new = opt_malloc(sizeof(struct dhcp_bridge));
@@ -1884,6 +1929,7 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
 		break;
 	      case LOPT_MATCH:
 		new->match_type = MATCH_OPTION;
+		break;
 	      }
 	    new->next = daemon->dhcp_vendors;
 	    daemon->dhcp_vendors = new;
@@ -1891,6 +1937,23 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
 	break;
       }
       
+    case LOPT_ALTPORT:   /* --dhcp-alternate-port */
+      if (!arg)
+	{
+	  daemon->dhcp_server_port = DHCP_SERVER_ALTPORT;
+	  daemon->dhcp_client_port = DHCP_CLIENT_ALTPORT;
+	}
+      else
+	{
+	  comma = split(arg);
+	  if (!atoi_check16(arg, &daemon->dhcp_server_port) || 
+	      (comma && !atoi_check16(comma, &daemon->dhcp_client_port)))
+	    problem = _("invalid port number");
+	  if (!comma)
+	    daemon->dhcp_client_port = daemon->dhcp_server_port+1; 
+	}
+      break;
+
     case 'J':            /* --dhcp-ignore */
     case LOPT_NO_NAMES:  /* --dhcp-ignore-names */
     case LOPT_BROADCAST: /* --dhcp-broadcast */
@@ -2003,6 +2066,42 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
 	break;
       }
 
+    case LOPT_NAPTR: /* --naptr-record */
+      {
+	char *a[7] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+	int k = 0;
+	struct naptr *new;
+	int order, pref;
+
+	if ((a[0] = arg))
+	  for (k = 1; k < 7; k++)
+	    if (!(a[k] = split(a[k-1])))
+	      break;
+	
+	
+	if (k < 6 || 
+	    !canonicalise_opt(a[0]) ||
+	    !atoi_check16(a[1], &order) || 
+	    !atoi_check16(a[2], &pref) ||
+	    (k == 7 && !canonicalise_opt(a[6])))
+	  problem = _("bad NAPTR record");
+	else
+	  {
+	    new = opt_malloc(sizeof(struct naptr));
+	    new->next = daemon->naptr;
+	    daemon->naptr = new;
+	    new->name = opt_string_alloc(a[0]);
+	    new->flags = opt_string_alloc(a[3]);
+	    new->services = opt_string_alloc(a[4]);
+	    new->regexp = opt_string_alloc(a[5]);
+	    if (k == 7)
+	      new->replace = opt_string_alloc(a[6]);
+	    new->order = order;
+	    new->pref = pref;
+	  }
+	break;
+      }
+       
     case 'Y':  /* --txt-record */
       {
 	struct txt_record *new;
@@ -2091,21 +2190,21 @@ static char *one_opt(int option, char *arg, char *gen_prob, int nest)
 	      {
 		arg = comma;
 		comma = split(arg);
-		if (!atoi_check(arg, &port))
+		if (!atoi_check16(arg, &port))
 		  problem = _("invalid port number");
 		
 		if (comma)
 		  {
 		    arg = comma;
 		    comma = split(arg);
-		    if (!atoi_check(arg, &priority))
+		    if (!atoi_check16(arg, &priority))
 		      problem = _("invalid priority");
 			
 		    if (comma)
 		      {
 			arg = comma;
 			comma = split(arg);
-			if (!atoi_check(arg, &weight))
+			if (!atoi_check16(arg, &weight))
 			  problem = _("invalid weight");
 		      }
 		  }
@@ -2369,11 +2468,12 @@ void read_opts(int argc, char **argv, char *compile_opts)
   daemon->cachesize = CACHESIZ;
   daemon->ftabsize = FTABSIZ;
   daemon->port = NAMESERVER_PORT;
+  daemon->dhcp_client_port = DHCP_CLIENT_PORT;
+  daemon->dhcp_server_port = DHCP_SERVER_PORT;
   daemon->default_resolv.is_default = 1;
   daemon->default_resolv.name = RESOLVFILE;
   daemon->resolv_files = &daemon->default_resolv;
   daemon->username = CHUSER;
-  daemon->groupname = CHGRP;
   daemon->runfile =  RUNFILE;
   daemon->dhcp_max = MAXLEASES;
 #ifdef HAVE_TFTP      
@@ -2445,7 +2545,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
   if (conffile)
     one_file(conffile, nest, 0);
 
-  /* port might no be known when the address is parsed - fill in here */
+  /* port might not be known when the address is parsed - fill in here */
   if (daemon->servers)
     {
       struct server *tmp;
@@ -2559,6 +2659,3 @@ void read_opts(int argc, char **argv, char *compile_opts)
 	  }
     }
 }  
-     
-      
-
