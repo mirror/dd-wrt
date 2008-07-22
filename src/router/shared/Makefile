@@ -63,6 +63,9 @@ endif
 ifeq ($(CONFIG_GEMTEK),y)
   CFLAGS += -DHAVE_GEMTEK
 endif
+ifeq ($(CONFIG_TONZE),y)
+  CFLAGS += -DHAVE_TONZE
+endif
 ifeq ($(CONFIG_WAVESAT),y)
   CFLAGS += -DHAVE_WAVESAT
 endif

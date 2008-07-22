@@ -150,7 +150,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   if (url)
     return eval ("write", url, "rootfs");
 #else
-#ifdef HAVE_NOP8670
+#if defined(HAVE_NOP8670) || defined(HAVE_TONZE)
   eval ("fischecksum");
 #endif
 #ifdef HAVE_MAKSAT
