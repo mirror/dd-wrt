@@ -395,6 +395,22 @@ Configure mac addresses by reading data from eeprom
       close (s);
     }
     }
+#ifdef HAVE_TONZE
+ {
+  struct ifreq ifr;
+  int s;
+  if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
+    {
+      char eabuf[32];
+      strncpy (ifr.ifr_name, "ixp0", IFNAMSIZ);
+      ioctl (s, SIOCGIFHWADDR, &ifr);
+      nvram_set ("et0macaddr_safe",
+		 ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,
+			     eabuf));
+      close (s);
+    } 
+ }
+#endif
 
   /* Set a sane date */
   stime (&tm);
