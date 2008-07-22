@@ -169,11 +169,11 @@ add_usermac (char *mac, int idx, char *upstream, char *downstream)
     {
       sysprintf("tc class add dev %s parent 1: classid 1:%d htb rate %skbit burst5k",get_wshaper_dev(),base,upstream);
       sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq perturb 10",get_wshaper_dev(),base,base);
-      sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 %s 0xFFFFFFFF at -8 flowid 1:%d",get_wshaper_dev(),oct2,oct4,base);
+      sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",get_wshaper_dev(),oct2,oct4,base);
 
       sysprintf("tc class add dev imq0 parent 1: classid 1:%d htb rate %skbit burst5k",base+1,downstream);
       sysprintf("tc qdisc add dev imq0 parent 1:%d handle %d: sfq perturb 10",base+1,base+1);
-      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -4 match u16 %s 0xFFFF at -8 flowid 1:%d",doct4,doct2,base+1);
+      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -4 match u16 0x%s 0xFFFF at -8 flowid 1:%d",doct4,doct2,base+1);
 
 
 //      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:","classid", up, "htb", "rate", ups, "ceil", ups);
