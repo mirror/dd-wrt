@@ -107,21 +107,28 @@ add_userip (char *ip, int idx, char *upstream, char *downstream)
   sprintf (down, "1:%d", base + 1);
   sprintf (ups, "%skbit", upstream);
   sprintf (downs, "%skbit", downstream);
-  if (nvram_match ("qos_type", "0"))
-    {
+//  if (nvram_match ("qos_type", "0"))
+//    {
       sysprintf("tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",get_wshaper_dev(),base,upstream,upstream);
       sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq perturb 10",get_wshaper_dev(),base,base);
-      sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 u32 match ip src %s flowid 1:%d",get_wshaper_dev(),ip,base);
+//      sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 u32 match ip src %s flowid 1:%d",get_wshaper_dev(),ip,base);
+
+      sysprintf("iptables -t mangle -A SVQOS_OUT -s %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base);
+      sysprintf("iptables -t mangle -A SVQOS_IN -s %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base);
+      sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 handle %d fw flowid 1:%d",get_wshaper_dev(),base,base);
 
       sysprintf("tc class add dev imq0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",base+1,downstream,downstream);
       sysprintf("tc qdisc add dev imq0 parent 1:%d handle %d: sfq perturb 10",base+1,base+1);
-      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 u32 match ip dst %s flowid 1:%d",ip,base+1);
+      sysprintf("iptables -t mangle -A SVQOS_IN -d %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base+1);
+      sysprintf("iptables -t mangle -A SVQOS_OUT -d %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base+1);
+//      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 u32 match ip dst %s flowid 1:%d",ip,base+1);
+      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 handle %d fw flowid 1:%d",base+1,base+1);
       
 //      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:","classid", up, "htb", "rate", ups, "burst", "5k");
 //      eval ("tc", "filter", "add", "dev", get_wshaper_dev (),"protocol", "ip", "parent", "1:", "prio", "1", "u32", "match", "ip", "src", ip,"flowid", up);
 //      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",down, "htb", "rate", downs, "burst", "10k");
 //      eval ("tc", "filter", "add", "dev", "imq0", "protocol","ip", "parent", "1:", "prio", "1", "u32", "match", "ip", "dst", ip, "flowid",down);
-    }
+/*    }
   else
     {
       sysprintf("tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",get_wshaper_dev(),base,upstream,upstream);
@@ -136,7 +143,7 @@ add_userip (char *ip, int idx, char *upstream, char *downstream)
 //      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",down, "htb", "rate", downs, "ceil", downs);
 //      eval ("tc", "filter", "add", "dev", "imq0", "protocol","ip", "parent", "1:", "prio", "1", "u32", "match", "ip", "dst", ip, "flowid",down);
     }
-
+*/
 }
 
 void
@@ -159,13 +166,30 @@ add_usermac (char *mac, int idx, char *upstream, char *downstream)
   sprintf (ups, "%skbit", upstream);
   sprintf (downs, "%skbit", downstream);
 
-  sprintf (oct2, "%02X%02X", octet[4], octet[5]);
+/*  sprintf (oct2, "%02X%02X", octet[4], octet[5]);
   sprintf (oct4, "%02X%02X%02X%02X", octet[0], octet[1], octet[2], octet[3]);
 
   sprintf (doct4, "%02X%02X%02X%02X", octet[2], octet[3], octet[4], octet[5]);
   sprintf (doct2, "%02X%02X", octet[0], octet[1]);
+*/
+ // if (nvram_match ("qos_type", "0"))
+    {
+      sysprintf("tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",get_wshaper_dev(),base,upstream,upstream);
+      sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq perturb 10",get_wshaper_dev(),base,base);
 
-  if (nvram_match ("qos_type", "0"))
+      sysprintf("iptables -t mangle -A PREROUTING -m mac --mac-source %s -j MARK --set-mark %d",mac,base);
+      sysprintf("iptables -t mangle -A POSTROUTING -m mac --mac-source %s -j MARK --set-mark %d",mac,base);
+      sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 handle %d fw flowid 1:%d",get_wshaper_dev(),base,base);
+//    sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",get_wshaper_dev(),oct2,oct4,base);
+
+      sysprintf("tc class add dev imq0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",base+1,downstream,downstream);
+      sysprintf("tc qdisc add dev imq0 parent 1:%d handle %d: sfq perturb 10",base+1,base+1);
+      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 handle %d fw flowid 1:%d",base,base+1);
+//      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",doct4,doct2,base+1);
+
+
+    }
+/*  else
     {
       sysprintf("tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",get_wshaper_dev(),base,upstream,upstream);
       sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq perturb 10",get_wshaper_dev(),base,base);
@@ -174,28 +198,8 @@ add_usermac (char *mac, int idx, char *upstream, char *downstream)
       sysprintf("tc class add dev imq0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",base+1,downstream,downstream);
       sysprintf("tc qdisc add dev imq0 parent 1:%d handle %d: sfq perturb 10",base+1,base+1);
       sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",doct4,doct2,base+1);
-
-
-//      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:","classid", up, "htb", "rate", ups, "ceil", ups);
-//      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",down, "htb", "rate", downs, "ceil", downs);
-//     eval ("tc", "filter", "add", "dev", get_wshaper_dev (),"protocol", "ip", "parent", "1:", "prio", "1", "u32", "match", "u16", "0x0800","0xFFFF", "at", "-2", "match", "u16", oct2, "0xFFFF", "at", "-4","match", "u32", oct4, "0xFFFFFFFF", "at", "-8", "flowid", up);
-//     eval ("tc", "filter", "add", "dev", "imq0"           , "protocol", "ip", "parent", "1:", "prio", "1", "u32", "match", "u16", "0x0800", "0xFFFF","at", "-2", "match", "u32", doct4, "0xFFFFFFFF", "at", "-12","match", "u16", doct2, "0xFFFF", "at", "-14", "flowid", down);
     }
-  else
-    {
-      sysprintf("tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",get_wshaper_dev(),base,upstream,upstream);
-      sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq perturb 10",get_wshaper_dev(),base,base);
-      sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",get_wshaper_dev(),oct2,oct4,base);
-
-      sysprintf("tc class add dev imq0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",base+1,downstream,downstream);
-      sysprintf("tc qdisc add dev imq0 parent 1:%d handle %d: sfq perturb 10",base+1,base+1);
-      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",doct4,doct2,base+1);
-//      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:","classid", up, "htb", "rate", ups, "ceil", ups);
-//      eval ("tc", "filter", "add", "dev", get_wshaper_dev (),"protocol", "ip", "parent", "1:", "prio", "1", "u32", "match", "u16", "0x0800","0xFFFF", "at", "-2", "match", "u16", oct2, "0xFFFF", "at", "-4","match", "u32", oct4, "0xFFFFFFFF", "at", "-8", "flowid", up);
-//      eval ("tc", "class", "add", "dev", "imq0", "parent", "1:", "classid",down, "htb", "rate", downs, "ceil", downs);
-//      eval ("tc", "filter", "add", "dev", "imq0", "protocol","ip", "parent", "1:", "prio", "1", "u32", "match", "u16", "0x0800", "0xFFFF","at", "-2", "match", "u32", doct4, "0xFFFFFFFF", "at", "-12","match", "u16", doct2, "0xFFFF", "at", "-14", "flowid", down);
-    }
-
+*/
 }
 
 
@@ -309,6 +313,32 @@ check_vlan_support (void)
     return 0;
 #endif
 }
+void
+setRouter (char *name)
+{
+#ifdef HAVE_POWERNOC_WORT54G
+  nvram_set (NVROUTER, "WORT54G");
+#elif HAVE_POWERNOC_WOAP54G
+  nvram_set (NVROUTER, "WOAP54G");
+#elif HAVE_OMNI
+  nvram_set (NVROUTER, "Omni Wifi Router");
+#elif HAVE_MAKSAT
+  if (name)
+    nvram_set ("DD_BOARD2", name);
+  nvram_set (NVROUTER, "MAKSAT");
+#else
+  if (name)
+    nvram_set (NVROUTER, name);
+#endif
+}
+
+char *
+getRouter ()
+{
+  char *n = nvram_get (NVROUTER);
+  return n != NULL ? n : "Unknown Model";
+}
+
 int
 internal_getRouterBrand ()
 {
@@ -2038,31 +2068,6 @@ getIfList (char *buffer, const char *ifprefix)
       if (ifcount < 30)
 	ifname[ifcount++] = c;
     }
-}
-void
-setRouter (char *name)
-{
-#ifdef HAVE_POWERNOC_WORT54G
-  nvram_set (NVROUTER, "WORT54G");
-#elif HAVE_POWERNOC_WOAP54G
-  nvram_set (NVROUTER, "WOAP54G");
-#elif HAVE_OMNI
-  nvram_set (NVROUTER, "Omni Wifi Router");
-#elif HAVE_MAKSAT
-  if (name)
-    nvram_set ("DD_BOARD2", name);
-  nvram_set (NVROUTER, "MAKSAT");
-#else
-  if (name)
-    nvram_set (NVROUTER, name);
-#endif
-}
-
-char *
-getRouter ()
-{
-  char *n = nvram_get (NVROUTER);
-  return n != NULL ? n : "Unknown Model";
 }
 /* Example:
  * legal_hwaddr("00:11:22:33:44:aB"); return true;
