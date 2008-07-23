@@ -328,6 +328,18 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 			writel(tmp, (uintptr)regs + 0x304);
 			tmp = readl((uintptr)regs + 0x304);
 			printk("USB20H shim cr: 0x%x\n", tmp);
+			
+			tmp = 0x00fe00fe;
+			writel(tmp, (uintptr)regs + 0x894);
+			tmp = readl((uintptr)regs + 0x894);
+			printk("USB20H syn01 register : 0x%x\n", tmp);
+
+			tmp = readl((uintptr)regs + 0x89c);
+			tmp |= 0x1;
+			writel(tmp, (uintptr)regs + 0x89c);
+			tmp = readl((uintptr)regs + 0x89c);
+			printk("USB20H syn03 register : 0x%x\n", tmp);
+
                 }
 
 	} else
