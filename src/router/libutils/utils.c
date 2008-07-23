@@ -109,20 +109,20 @@ add_userip (char *ip, int idx, char *upstream, char *downstream)
   sprintf (downs, "%skbit", downstream);
 //  if (nvram_match ("qos_type", "0"))
 //    {
-      sysprintf("tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",get_wshaper_dev(),base,upstream,upstream);
-      sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq perturb 10",get_wshaper_dev(),base,base);
-//      sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 u32 match ip src %s flowid 1:%d",get_wshaper_dev(),ip,base);
+      sysprintf("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",get_wshaper_dev(),base,upstream,upstream);
+      sysprintf("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",get_wshaper_dev(),base);
+      sysprintf("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match ip src %s flowid 1:%d",get_wshaper_dev(),ip,base);
 
-      sysprintf("iptables -t mangle -A SVQOS_OUT -s %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base);
-      sysprintf("iptables -t mangle -A SVQOS_IN -s %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base);
-      sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 handle %d fw flowid 1:%d",get_wshaper_dev(),base,base);
+//      sysprintf("iptables -t mangle -A SVQOS_OUT -s %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base);
+//      sysprintf("iptables -t mangle -A SVQOS_IN -s %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base);
+//      sysprintf("tc filter add dev %s protocol ip parent 1:0 prio 1 handle %d fw flowid 1:%d",get_wshaper_dev(),base,base);
 
-      sysprintf("tc class add dev imq0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",base+1,downstream,downstream);
-      sysprintf("tc qdisc add dev imq0 parent 1:%d handle %d: sfq perturb 10",base+1,base+1);
-      sysprintf("iptables -t mangle -A SVQOS_IN -d %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base+1);
-      sysprintf("iptables -t mangle -A SVQOS_OUT -d %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base+1);
-//      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 u32 match ip dst %s flowid 1:%d",ip,base+1);
-      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 handle %d fw flowid 1:%d",base+1,base+1);
+      sysprintf("tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",base+1,downstream,downstream);
+      sysprintf("tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",base+1,base+1);
+//      sysprintf("iptables -t mangle -A SVQOS_IN -d %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base+1);
+//      sysprintf("iptables -t mangle -A SVQOS_OUT -d %s -m mark  --mark 0 -j MARK --set-mark %d",ip,base+1);
+      sysprintf("tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match ip dst %s flowid 1:%d",ip,base+1);
+//      sysprintf("tc filter add dev imq0 protocol ip parent 1:0 prio 1 handle %d fw flowid 1:%d",base+1,base+1);
       
 //      eval ("tc", "class", "add", "dev", get_wshaper_dev (), "parent", "1:","classid", up, "htb", "rate", ups, "burst", "5k");
 //      eval ("tc", "filter", "add", "dev", get_wshaper_dev (),"protocol", "ip", "parent", "1:", "prio", "1", "u32", "match", "ip", "src", ip,"flowid", up);
@@ -174,7 +174,7 @@ add_usermac (char *mac, int idx, char *upstream, char *downstream)
 */
  // if (nvram_match ("qos_type", "0"))
     {
-      sysprintf("tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",get_wshaper_dev(),base,upstream,upstream);
+      sysprintf("tc class add dev %s parent 1:30 classid 1:%d htb rate %skbit ceil %skbit",get_wshaper_dev(),base,upstream,upstream);
       sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq perturb 10",get_wshaper_dev(),base,base);
 
       sysprintf("iptables -t mangle -A PREROUTING -m mac --mac-source %s -j MARK --set-mark %d",mac,base);
@@ -182,7 +182,7 @@ add_usermac (char *mac, int idx, char *upstream, char *downstream)
       sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 handle %d fw flowid 1:%d",get_wshaper_dev(),base,base);
 //    sysprintf("tc filter add dev %s protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",get_wshaper_dev(),oct2,oct4,base);
 
-      sysprintf("tc class add dev imq0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",base+1,downstream,downstream);
+      sysprintf("tc class add dev imq0 parent 1:30 classid 1:%d htb rate %skbit ceil %skbit",base+1,downstream,downstream);
       sysprintf("tc qdisc add dev imq0 parent 1:%d handle %d: sfq perturb 10",base+1,base+1);
       sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 handle %d fw flowid 1:%d",base,base+1);
 //      sysprintf("tc filter add dev imq0 protocol ip parent 1: prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",doct4,doct2,base+1);
