@@ -23,7 +23,7 @@ PO = po
 MAN = man
 
 PKG_CONFIG = pkg-config
-AWK = nawk
+AWK = awk
 INSTALL = install
 
 DBUS_MINOR=" `echo $(COPTS) | ../bld/pkg-wrapper $(PKG_CONFIG) --modversion dbus-1 | $(AWK) -F . -- '{ if ($$(NF-1)) print \"-DDBUS_MINOR=\"$$(NF-1) }'`" 
