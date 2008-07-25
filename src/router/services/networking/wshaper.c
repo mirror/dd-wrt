@@ -232,6 +232,20 @@ aqos_tables (void)
     {
      system2("tc qdisc del dev br0 root");
      system2("tc qdisc add dev br0 root handle 1: htb");  //fixup for br0 class
+     //enumerate other possible interface
+     char iflist[256];
+     getIfList (iflist, NULL);
+     static char word[256];
+     char *next, *wordlist;
+     foreach (word, iflist, next)
+	{
+	if (nvram_nmatch("0","%s_bridged",word))
+	    {
+    	    sysprintf("tc qdisc del dev %s root",word);
+    	    sysprintf("tc qdisc add dev %s root handle 1: htb",word); 
+	    }
+	}
+
     }
   outips = fopen ("/tmp/aqos_ips", "wb");
   outmacs = fopen ("/tmp/aqos_macs", "wb");
@@ -306,12 +320,23 @@ svqos_iptables (void)
       sysprintf
 	("/usr/sbin/iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
 	 "br0");
-      sysprintf
-	("/usr/sbin/iptables -t mangle -D FORWARD -i %s -j IMQ --todev 0",
+      sysprintf("/usr/sbin/iptables -t mangle -D FORWARD -i %s -j IMQ --todev 0",
 	 dev);
       sysprintf
 	("/usr/sbin/iptables -t mangle -I FORWARD -i %s -j IMQ --todev 0",
 	 dev);
+     char iflist[256];
+     getIfList (iflist, NULL);
+     static char word[256];
+     char *next, *wordlist;
+     foreach (word, iflist, next)
+	{
+	if (nvram_nmatch("0","%s_bridged",word))
+	    {
+    	    sysprintf("/usr/sbin/iptables -t mangle -D FORWARD -i %s -j IMQ --todev 0",word);
+    	    sysprintf("/usr/sbin/iptables -t mangle -I FORWARD -i %s -j IMQ --todev 0",word);
+	    }
+	}
     }
   else
     {
