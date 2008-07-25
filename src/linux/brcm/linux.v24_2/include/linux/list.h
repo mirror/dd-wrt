@@ -253,7 +253,6 @@ static inline void list_splice_init(struct list_head *list,
 	     &pos->member != (head);					\
 	     pos = list_entry(pos->member.next, typeof(*pos), member),	\
 		     prefetch(pos->member.next))
-
 /*
  * Double linked lists with a single pointer list head.
  * Mostly useful for hash tables where the two pointer list head is
@@ -400,6 +399,8 @@ static inline void hlist_add_after(struct hlist_node *n,
 	     pos && ({ n = pos->next; 1; }) && 				 \
 		({ tpos = hlist_entry(pos, typeof(*tpos), member); 1;}); \
 	     pos = n)
+
+
 
 
 
