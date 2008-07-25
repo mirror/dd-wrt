@@ -73,7 +73,7 @@ SEDFLAGS	= s/TEXT_START/$(ZTEXTADDR)/;s/BSS_START/$(ZBSSADDR)/
 
 targets       := vmlinux vmlinux.lds piggy.lzma piggy.o font.o font.c \
 		 head.o misc_lzma.o print.o $(OBJS)
-EXTRA_CFLAGS  := -fpic -fno-builtin -Os
+EXTRA_CFLAGS  := -fpic -fno-builtin -O2
 EXTRA_AFLAGS  :=
 
 # Supply ZRELADDR, INITRD_PHYS and PARAMS_PHYS to the decompressor via

@@ -125,10 +125,10 @@ static ulg free_mem_ptr;
 static ulg free_mem_ptr_end;
 
 #define _LZMA_IN_CB
-#include "LzmaDecode.h"
-#include "LzmaDecode.c"
 
-static int read_byte(void *object, const unsigned char **buffer, SizeT *bufferSize);
+#include "LzmaDecode.h"
+static __inline__ int read_byte(unsigned char **buffer, UInt32 *bufferSize);
+#include "LzmaDecode.c"
 
 
 /*
@@ -138,16 +138,14 @@ static int lzma_unzip(void)
 {
 
 	unsigned int i;
-        CLzmaDecoderState state;
 	unsigned int uncompressedSize = 0;
-        
-        ILzmaInCallback callback;
-        callback.Read = read_byte;
+        unsigned char *workspace;
+        unsigned int lc,lp,pb;
 
 	// lzma args
 	i = get_byte();
-	state.Properties.lc = i % 9, i = i / 9;
-        state.Properties.lp = i % 5, state.Properties.pb = i / 5;
+	lc = i % 9, i = i / 9;
+	lp = i % 5, pb = i / 5;
         
         // skip dictionary size
         for (i = 0; i < 4; i++) 
@@ -157,15 +155,14 @@ static int lzma_unzip(void)
 		(get_byte() << 8) +
 		(get_byte() << 16) +
 		(get_byte() << 24);
-            
+        workspace = output_data + uncompressedSize;
         // skip high order bytes
         for (i = 0; i < 4; i++) 
         	get_byte();
-        // point it beyond uncompresedSize
-        state.Probs = (CProb*) (output_data + uncompressedSize);
 	// decompress kernel
-	if (LzmaDecode( &state, &callback,
-	   (unsigned char*)output_data, uncompressedSize, &i) == LZMA_RESULT_OK)
+//	if (LzmaDecode(workspace, ~0, lc, lp, pb,
+//		(unsigned char*)LOADADDR, osize, &i) == LZMA_RESULT_OK)
+	if (LzmaDecode(workspace, ~0, lc,lp,pb,(unsigned char*)output_data, uncompressedSize, &i) == LZMA_RESULT_OK)
 	{
 		if ( i != uncompressedSize )
 		   error( "kernel corrupted!\n");
@@ -179,7 +176,7 @@ static int lzma_unzip(void)
 
 
 static unsigned int icnt = 0;
-static int read_byte(void *object, const unsigned char **buffer, SizeT *bufferSize)
+static __inline__ int read_byte(unsigned char **buffer, UInt32 *bufferSize)
 {
 	static unsigned char val;
 	*bufferSize = 1;
