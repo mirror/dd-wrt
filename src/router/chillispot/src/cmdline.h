@@ -46,7 +46,7 @@ struct gengetopt_args_info
   char * dns1_orig;	/* Primary DNS server IP address original value given at command line.  */
   char * dns2_arg;	/* Secondary DNS server IP address.  */
   char * dns2_orig;	/* Secondary DNS server IP address original value given at command line.  */
-  char * domain_arg;	/* Domain to use for DNS lookups (default='key.chillispot.org').  */
+  char * domain_arg;	/* Domain to use for DNS lookups (default='key.chillispot.info').  */
   char * domain_orig;	/* Domain to use for DNS lookups original value given at command line.  */
   char * ipup_arg;	/* Script to run after link-up.  */
   char * ipup_orig;	/* Script to run after link-up original value given at command line.  */

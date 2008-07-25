@@ -136,7 +136,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->dns1_orig = NULL;
   args_info->dns2_arg = NULL;
   args_info->dns2_orig = NULL;
-  args_info->domain_arg = gengetopt_strdup ("key.chillispot.org");
+  args_info->domain_arg = gengetopt_strdup ("key.chillispot.info");
   args_info->domain_orig = NULL;
   args_info->ipup_arg = NULL;
   args_info->ipup_orig = NULL;
@@ -233,7 +233,7 @@ cmdline_parser_print_help (void)
   printf("%s\n","      --statip=STRING           Static IP address pool");
   printf("%s\n","      --dns1=STRING             Primary DNS server IP address");
   printf("%s\n","      --dns2=STRING             Secondary DNS server IP address");
-  printf("%s\n","      --domain=STRING           Domain to use for DNS lookups  \n                                  (default=`key.chillispot.org')");
+  printf("%s\n","      --domain=STRING           Domain to use for DNS lookups  \n                                  (default=`key.chillispot.info')");
   printf("%s\n","      --ipup=STRING             Script to run after link-up");
   printf("%s\n","      --ipdown=STRING           Script to run after link-down");
   printf("%s\n","      --conup=STRING            Script to run after user logon");
