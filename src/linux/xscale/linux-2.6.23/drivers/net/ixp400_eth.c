@@ -154,9 +154,12 @@ static u32 npe_error_handler_initialized = 0;
 static int npe_learning = 0;      /* default : NPE learning & filtering enable */
 static int log_level = 0;         /* default : no log */
 static int no_ixp400_sw_init = 0; /* default : init core components of the IXP400 Software */
-#ifdef CONFIG_MACH_CAMBRIA
+#if defined(CONFIG_MACH_CAMBRIA)
 static int no_phy_scan = 1;       /* default : do phy discovery */
 static int hss_coexist = 1;	  /* default : HSS coexist disabled */
+#elif  defined(CONFIG_TONZE)
+static int no_phy_scan = 0;       /* default : do phy discovery */
+static int hss_coexist = 0;	  /* default : HSS coexist disabled */
 #else
 static int no_phy_scan = 0;       /* default : do phy discovery */
 static int hss_coexist = 0;	  /* default : HSS coexist disabled */
@@ -173,7 +176,7 @@ static int dev_max_count = 1; /* only NPEC is used */
 #elif defined (CONFIG_IXP400_ETH_NPEB_ONLY)
 static int dev_max_count = 1; /* only NPEB is used */
 #elif defined (CONFIG_ARCH_IXDP425) || defined(CONFIG_ARCH_IXDPG425)\
-      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_MACH_AVILA) || defined (CONFIG_MACH_CAMBRIA) || defined (CONFIG_MACH_KIXRP435) \
+      || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_MACH_AVILA) || defined (CONFIG_MACH_CAMBRIA) || defined (CONFIG_TONZE) || defined (CONFIG_MACH_KIXRP435) \
       || defined (CONFIG_MACH_PRONGHORNMETRO) \
       || defined (CONFIG_MACH_PRONGHORN)
 
@@ -636,7 +639,10 @@ static int phyAddresses[IXP400_ETH_ACC_MII_MAX_ADDR] =
         /* /_______________/|     /___/|                      */
 	/* | 1 | 2 | 3 | 4 |      | 5 |                       */
         /* ----------------------------------------           */
-#if defined(CONFIG_ARCH_IXDP425)
+#if defined(CONFIG_TONZE)
+    0,
+    1
+#elif defined(CONFIG_ARCH_IXDP425)
     /* 1 PHY per NPE port */
     0, /* Port 1 (IX_ETH_PORT_1 / NPE B) */
     1  /* Port 2 (IX_ETH_PORT_2 / NPE C) */
@@ -718,7 +724,10 @@ static phy_cfg_t default_phy_cfg[] =
 //    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
 //    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE},
 //    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}
-#if defined(CONFIG_ARCH_IXDP425)
+#if defined(CONFIG_TONZE)
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}, /* Port 0: monitor the link*/
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}  /* Port 1: monitor the link*/
+#elif defined(CONFIG_ARCH_IXDP425)
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 0: monitor the phy */
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}  /* Port 1: monitor the link */
 

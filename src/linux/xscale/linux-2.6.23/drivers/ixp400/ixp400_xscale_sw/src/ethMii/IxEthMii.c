@@ -420,7 +420,7 @@ ixEthMiiLinkStatus(UINT32 phyAddr,
     {
 	if ((ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT971_PHY_ID)	||
 	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT972_PHY_ID)	||
-//            (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_RTL8021_PHY_ID)	||      
+            (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_RTL8021_PHY_ID)	||      
 	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT9785_PHY_ID)       ||
 		(ixEthMiiPhyId[phyAddr] == IX_ETH_MII_MARVELL_PHY_ID)
 		)
