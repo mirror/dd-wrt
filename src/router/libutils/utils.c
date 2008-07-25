@@ -151,16 +151,33 @@ add_usermac (char *mac, int idx, char *upstream, char *downstream)
   sysprintf("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d","imq0", oct2, oct4, base);
 
   // down
-  if (strcmp(get_wshaper_dev(),"br0"))
+  if (strcmp(get_wshaper_dev(),"br0")) 
     {
+        /* use separate root class, since no other class is created for br0 if qos is wan based */
 	sysprintf("tc class add dev br0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",base + 1, downstream, downstream);
 	sysprintf("tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",base + 1, base + 1);
 	sysprintf("tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",doct4, doct2, base + 1);
     }else{
+	/* use root class of br0 interface which was created by the wshaper */
 	sysprintf("tc class add dev br0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",base + 1, downstream, downstream);
 	sysprintf("tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",base + 1, base + 1);
 	sysprintf("tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",doct4, doct2, base + 1);
     }
+    
+     /* mac downstream matching can only be made directly on the connected interface */
+     char iflist[256];
+     getIfList (iflist, NULL);
+     static char word[256];
+     char *next, *wordlist;
+     foreach (word, iflist, next)
+	{
+	if (nvram_nmatch("0","%s_bridged",word))
+	    {
+	    sysprintf("tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",word,base + 1, downstream, downstream);
+	    sysprintf("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",word,base + 1, base + 1);
+	    sysprintf("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",word,doct4, doct2, base + 1);
+	    }
+	}
 
 
 }
