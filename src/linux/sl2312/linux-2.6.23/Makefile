@@ -181,7 +181,7 @@ SUBARCH := arm
 
 
 ARCH		= $(SUBARCH)
-CROSS_COMPILE	= armeb-linux-uclibc-
+CROSS_COMPILE	= arm-linux-uclibc-
 
 # Architecture as present in compile.h
 UTS_MACHINE := $(ARCH)
