@@ -5,11 +5,7 @@
 #define PSCHED_JIFFIES 		2
 #define PSCHED_CPU 		3
 
-#ifdef __mips__
-#define PSCHED_CLOCK_SOURCE	PSCHED_CPU
-#else
 #define PSCHED_CLOCK_SOURCE	PSCHED_JIFFIES
-#endif
 
 #include <linux/config.h>
 #include <linux/types.h>
@@ -63,11 +59,8 @@ struct Qdisc_ops
 	int 			(*enqueue)(struct sk_buff *, struct Qdisc *);
 	struct sk_buff *	(*dequeue)(struct Qdisc *);
 	int 			(*requeue)(struct sk_buff *, struct Qdisc *);
-#ifdef CONFIG_BCM4710
-	int			(*drop)(struct Qdisc *);
-#else
-	unsigned int            (*drop)(struct Qdisc *);
-#endif
+	unsigned int		(*drop)(struct Qdisc *);
+
 	int			(*init)(struct Qdisc *, struct rtattr *arg);
 	void			(*reset)(struct Qdisc *);
 	void			(*destroy)(struct Qdisc *);
@@ -87,19 +80,12 @@ struct Qdisc
 #define TCQ_F_THROTTLED	2
 #define TCQ_F_INGRESS	4
 	struct Qdisc_ops	*ops;
-#ifdef CONFIG_BCM4710
-	struct Qdisc            *next;
-#endif
 	u32			handle;
-#ifndef CONFIG_BCM4710
-	u32                     parent;
-#endif
+	u32			parent;
 	atomic_t		refcnt;
 	struct sk_buff_head	q;
 	struct net_device	*dev;
-#ifndef CONFIG_BCM4710
-	struct list_head        list;
-#endif
+	struct list_head	list;
 
 	struct tc_stats		stats;
 	int			(*reshape_fail)(struct sk_buff *skb, struct Qdisc *q);
@@ -275,7 +261,7 @@ extern int psched_clock_scale;
 #define PSCHED_US2JIFFIE(delay) (((delay)+psched_clock_per_hz-1)/psched_clock_per_hz)
 #define PSCHED_JIFFIE2US(delay) ((delay)*psched_clock_per_hz)
 
-#if defined(CONFIG_X86_TSC) || defined(__mips__)
+#ifdef CONFIG_X86_TSC
 
 #define PSCHED_GET_TIME(stamp) \
 ({ u64 __cur; \
