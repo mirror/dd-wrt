@@ -452,6 +452,7 @@ handle_services (void)
     handle = startstop_nofree ("sshd", handle);
 #endif
   handle = startstop_nofree ("firewall", handle);
+  handle = startstop_nofree ("wshaper", handle);
 #ifndef HAVE_WRK54G
   handle = startstop_nofree ("syslog", handle);
 #endif
