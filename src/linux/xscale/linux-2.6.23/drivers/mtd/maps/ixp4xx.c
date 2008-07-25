@@ -317,9 +317,13 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	int foundfis=0;
 	int filesyssize=0;
 	int tmplen;
-	while((offset+mtd->erasesize)<mtd->size)
+	int erasesize = mtd->erasesize;
+	#ifdef CONFIG_TONZE
+	erasesize=0x20000;
+	#endif
+	while((offset+erasesize)<mtd->size)
 	    {
-	    printk(KERN_EMERG "[0x%08X]\n",offset);
+	    printk(KERN_EMERG "[0x%08X]\r",offset);
 	    if (*((__u32 *) buf) == SQUASHFS_MAGIC || *((__u16 *) buf) == 0x1985) 
 		{
 	        struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
@@ -327,8 +331,8 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 			{
 			filesyssize = sb->bytes_used;
 			tmplen = offset + filesyssize;
-			tmplen +=  (mtd->erasesize - 1);
-			tmplen &= ~(mtd->erasesize - 1);
+			tmplen +=  (erasesize - 1);
+			tmplen &= ~(erasesize - 1);
 			filesyssize = tmplen - offset;
 			}
 
@@ -344,16 +348,18 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		    dir_parts[0].offset=0;
 		    dir_parts[7].size=0x1000;
 		    dir_parts[7].offset = mtd->size-0x1000;
-		    dir_parts[4].size=mtd->erasesize;
-		    dir_parts[4].offset = mtd->size-mtd->erasesize;
+		    dir_parts[4].size=erasesize;
+		    dir_parts[4].offset = mtd->size-erasesize;
 
 		    long highest=dir_parts[6].offset;
-		    dir_parts[2].size=(highest - (mtd->erasesize*2)) - dir_parts[2].offset;
-		    dir_parts[4].offset=highest - mtd->erasesize*2;
-		    dir_parts[4].size=mtd->erasesize;
-		    dir_parts[5].offset=highest - mtd->erasesize;
-		    dir_parts[5].size=mtd->erasesize;
-
+		    #ifdef CONFIG_TONZE
+		    highest&= ~(erasesize-1); 
+		    #endif
+		    dir_parts[2].size=(highest - (erasesize*2)) - dir_parts[2].offset;
+		    dir_parts[4].offset=highest - erasesize*2;
+		    dir_parts[4].size=erasesize;
+		    dir_parts[5].offset=highest - erasesize;
+		    dir_parts[5].size=erasesize;
 		    dir_parts[1].offset=0x40000;
 		    dir_parts[1].size=dir_parts[2].offset-dir_parts[1].offset+dir_parts[2].size;
 		    goto def;
@@ -362,8 +368,13 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		
 		
 		//now scan for linux offset
-		p=(unsigned char*)(info->map.virt+mtd->size-mtd->erasesize);
+#ifdef CONFIG_TONZE
+    		p=(unsigned char*)(info->map.virt+mtd->size-0x8000);
+#else
+    		p=(unsigned char*)(info->map.virt+mtd->size-erasesize);
+#endif
 		fis = (struct fis_image_desc*)p;
+		printk(KERN_EMERG "scan redboot from %p\n",fis);
 		while(1)
 		{
 		if (fis->name[0]==0xff)
@@ -380,16 +391,22 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		    printk(KERN_EMERG "found RedBoot config partition at [0x%08lX]\n",fis->flash_base);
 		    dir_parts[7].size=mtd->erasesize;
 		    dir_parts[7].offset=fis->flash_base&(mtd->size-1);
+#ifdef CONFIG_TONZE
+		    dir_parts[7].offset&= ~(erasesize-1);
+#endif		    
 		    if (foundfis)
 		    {
 		    long highest=dir_parts[5].offset;
 		    if (dir_parts[6].offset<highest)
 			highest=dir_parts[6].offset;
-		    dir_parts[2].size=(highest - (mtd->erasesize*2)) - dir_parts[2].offset;
-		    dir_parts[4].offset=highest - mtd->erasesize*2;
-		    dir_parts[4].size=mtd->erasesize;
-		    dir_parts[5].offset=highest - mtd->erasesize;
-		    dir_parts[5].size=mtd->erasesize;
+#ifdef CONFIG_TONZE
+		    highest&= ~(erasesize-1); 
+#endif
+		    dir_parts[2].size=(highest - (erasesize*2)) - dir_parts[2].offset;
+		    dir_parts[4].offset=highest - erasesize*2;
+		    dir_parts[4].size=erasesize;
+		    dir_parts[5].offset=highest - erasesize;
+		    dir_parts[5].size=erasesize;
 		    }
 		    foundconfig=1;
 		    }
@@ -404,16 +421,22 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		    printk(KERN_EMERG "found config partition at [0x%08lX]\n",fis->flash_base);
 		    dir_parts[6].offset=(fis->flash_base&(mtd->size-1));
 		    dir_parts[6].size=mtd->erasesize;
+#ifdef CONFIG_TONZE
+		    dir_parts[6].offset&= ~(erasesize-1);
+#endif		    
 		    if (foundconfig)
 		    {
 		    long highest=dir_parts[6].offset;
 		    if (dir_parts[7].offset<highest)
 			highest=dir_parts[7].offset;
-		    dir_parts[2].size=(highest - (mtd->erasesize*2)) - dir_parts[2].offset;
-		    dir_parts[4].offset=highest - mtd->erasesize*2;
-		    dir_parts[4].size=mtd->erasesize;
-		    dir_parts[5].offset=highest - mtd->erasesize;
-		    dir_parts[5].size=mtd->erasesize;
+#ifdef CONFIG_TONZE
+		    highest&= ~(erasesize-1); 
+#endif
+		    dir_parts[2].size=(highest - (erasesize*2)) - dir_parts[2].offset;
+		    dir_parts[4].offset=highest - erasesize*2;
+		    dir_parts[4].size=erasesize;
+		    dir_parts[5].offset=highest - erasesize;
+		    dir_parts[5].size=erasesize;
 		    }
 		    foundfis=1;
 		    }
@@ -422,8 +445,13 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		}
 		break;
 		}
-	    offset+=mtd->erasesize;
-	    buf+=mtd->erasesize;
+#ifdef CONFIG_TONZE
+	    offset+=0x1000;
+	    buf+=0x1000;
+#else
+	    offset+=erasesize;
+	    buf+=erasesize;
+#endif
 	    }
 	def:;
 	info->partitions=dir_parts;
