@@ -1,4 +1,4 @@
-"nstxd_enable" "OpenVPN Enable" "CHOICE" "2" "0" "1" "FALSE" "0"
+"nstxd_enable" "NSTX DNS Tunnel Enable" "CHOICE" "2" "0" "1" "FALSE" "0"
 "nstx_ipenable" "Enable IP to bind" "CHOICE" "2" "0" "1" "FALSE" "0"
 "nstx_ip" "ip to bind (bind to port 53 on this IP only)" "NULL" "FALSE" "0"
 "nstx_log" "enable debug messages" "CHOICE" "2" "0" "1" "FALSE" "0"
