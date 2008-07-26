@@ -60,6 +60,8 @@ struct term_entry
   const char *name;
   /* The feature flags defined above.  */
   unsigned long flags;
+  /* Default for maximum number of lines if not specified */
+  unsigned short max_lines;
   /* Put a character.  */
   void (*putchar) (int c);
   /* Check if any input character is available.  */
@@ -79,6 +81,10 @@ struct term_entry
   void (*setcolor) (int normal_color, int highlight_color);
   /* Turn on/off the cursor.  */
   int (*setcursor) (int on);
+  /* function to start a terminal */
+  int (*startup) (void);
+  /* function to use to shutdown a terminal */
+  void (*shutdown) (void);
 };
 
 /* This lists up available terminals.  */
@@ -123,5 +129,25 @@ void hercules_setcolorstate (color_state state);
 void hercules_setcolor (int normal_color, int highlight_color);
 int hercules_setcursor (int on);
 #endif
+
+#ifdef SUPPORT_GRAPHICS
+extern int foreground, background, window_border, graphics_inited, saved_videomode;
+
+void graphics_set_splash(char *splashfile);
+int set_videomode(int mode);
+int get_videomode(void);
+void graphics_putchar (int c);
+int graphics_getxy(void);
+void graphics_gotoxy(int x, int y);
+void graphics_cls(void);
+void graphics_setcolorstate (color_state state);
+void graphics_setcolor (int normal_color, int highlight_color);
+int graphics_setcursor (int on);
+int graphics_init(void);
+void graphics_end(void);
+
+int hex(int v);
+void graphics_set_palette(int idx, int red, int green, int blue);
+#endif /* SUPPORT_GRAPHICS */
 
 #endif /* ! GRUB_TERM_HEADER */

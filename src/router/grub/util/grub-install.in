@@ -81,6 +81,50 @@ Report bugs to <bug-grub@gnu.org>.
 EOF
 }
 
+# Usage: getraid_mdadm mddevice
+# Routine to find a physical device from an md device
+# If found, the first grub BIOS device (from device.map) is returned 
+# If no BIOS drives match the RAID devices, the first device returned
+# from mdadm -D is returned
+getraid_mdadm() {
+	device=$1
+	mdadm=$(mdadm -D "$device") || {
+		echo "$PROG: mdadm -D $device failed" >&2
+		exit 1
+	}
+	eval "$(
+		echo "$mdadm" | awk '
+			$1 == "Number" && $2 == "Major" { start = 1; next }
+			$1 == "UUID" { print "uuid=" $3; start = 0; next }
+			!start { next }
+			$2 == 0 && $3 == 0 { next }
+			{ devices = devices "\n" $NF }
+			END { print "devices='\''" devices "'\''" }
+		'
+	)"
+
+	# Convert RAID devices list into a list of disks
+	tmp_disks=`echo "$devices" | sed -e 's%\([sh]d[a-z]\)[0-9]*$%\1%' \
+					 -e 's%\(d[0-9]*\)p[0-9]*$%\1%' \
+					 -e 's%\(fd[0-9]*\)$%\1%' \
+					 -e 's%/part[0-9]*$%/disc%' \
+					 -e 's%\(c[0-7]d[0-9]*\).*$%\1%' \
+					 -e '/^$/d' |
+				     sed -n '1h;2,$H;${g;s/\n/|/g;p}'`
+
+	# Find first BIOS disk that's a member of the RAID array
+	# Default to first RAID member if no tmp_disks are BIOS devices
+	set -- `egrep $tmp_disks $device_map | \
+		sort | \
+		sed -n 1p `
+	device=${2:-${tmp_disks%%|*}}
+
+	# Return first partition on BIOS disk that's part of the RAID
+	echo "$devices" | \
+		sed -n "\:${device}:p" | \
+		sed -n 1p
+}
+
 # Usage: convert os_device
 # Convert an OS device to the corresponding GRUB drive.
 # This part is OS-specific.
@@ -96,6 +140,10 @@ convert () {
     # Break the device name into the disk part and the partition part.
     case "$host_os" in
     linux*)
+	# Find an actual physical device if we're passed a RAID device
+	case $1 in
+		/dev/md*)  set -- `getraid_mdadm $1`
+	esac
 	tmp_disk=`echo "$1" | sed -e 's%\([sh]d[a-z]\)[0-9]*$%\1%' \
 				  -e 's%\(d[0-9]*\)p[0-9]*$%\1%' \
 				  -e 's%\(fd[0-9]*\)$%\1%' \
@@ -112,8 +160,8 @@ convert () {
 	tmp_disk=`echo "$1" | sed 's%\([sh]d[0-9]*\).*%\1%'`
 	tmp_part=`echo "$1" | sed "s%$tmp_disk%%"` ;;
     freebsd* | kfreebsd*-gnu)
-	tmp_disk=`echo "$1" | sed 's%r\{0,1\}\([saw]d[0-9]*\).*$%r\1%' \
-			    | sed 's%r\{0,1\}\(da[0-9]*\).*$%r\1%'`
+	tmp_disk=`echo "$1" | sed 's%r\{0,1\}\([saw]d[0-9]*\).*$%\1%' \
+			    | sed 's%r\{0,1\}\(da[0-9]*\).*$%\1%'`
 	tmp_part=`echo "$1" \
 	    | sed "s%.*/r\{0,1\}[saw]d[0-9]\(s[0-9]*[a-h]\)%\1%" \
        	    | sed "s%.*/r\{0,1\}da[0-9]\(s[0-9]*[a-h]\)%\1%"`
@@ -131,7 +179,7 @@ convert () {
 
     # Get the drive name.
     tmp_drive=`grep -v '^#' $device_map | grep "$tmp_disk *$" \
-	| sed 's%.*\(([hf]d[0-9][a-g0-9,]*)\).*%\1%'`
+	| sed 's%.*\(([hf]d[0-9][a-z0-9,]*)\).*%\1%'`
 
     # If not found, print an error message and exit.
     if test "x$tmp_drive" = x; then
@@ -148,13 +196,13 @@ convert () {
 	gnu*)
 	    if echo $tmp_part | grep "^s" >/dev/null; then
 		tmp_pc_slice=`echo $tmp_part \
-		    | sed "s%s\([0-9]*\)[a-g]*$%\1%"`
+		    | sed "s%s\([0-9]*\)[a-z]*$%\1%"`
 		tmp_drive=`echo "$tmp_drive" \
 		    | sed "s%)%,\`expr "$tmp_pc_slice" - 1\`)%"`
 	    fi
-	    if echo $tmp_part | grep "[a-g]$" >/dev/null; then
+	    if echo $tmp_part | grep "[a-z]$" >/dev/null; then
 		tmp_bsd_partition=`echo "$tmp_part" \
-		    | sed "s%[^a-g]*\([a-g]\)$%\1%"`
+		    | sed "s%[^a-z]*\([a-z]\)$%\1%"`
 		tmp_drive=`echo "$tmp_drive" \
 		    | sed "s%)%,$tmp_bsd_partition)%"`
 	    fi
@@ -336,6 +384,10 @@ else
     # Create a safe temporary file.
     test -n "$mklog" && log_file=`$mklog`
 
+    # Before all invocations of the grub shell, call sync to make sure
+    # the raw device is in sync with any bufferring in filesystems.
+    sync
+ 
     $grub_shell --batch $no_floppy --device-map=$device_map <<EOF >$log_file
 quit
 EOF
@@ -450,12 +502,34 @@ rm -f $log_file
 # Create a safe temporary file.
 test -n "$mklog" && log_file=`$mklog`
 
+# Sync to prevent GRUB from not finding stage files (notably, on XFS)
+sync
+
+# XFS needs special magic
+xfs_frozen=false
+if which xfs_freeze > /dev/null ; then
+  cat << EOF
+Due to a bug in xfs_freeze, the following command might produce a segmentation
+fault when ${grubdir} is not in an XFS filesystem. This error is harmless and
+can be ignored.
+EOF
+  if xfs_freeze -f ${grubdir} ; then xfs_frozen=true ; fi
+fi
+
+# Before all invocations of the grub shell, call sync to make sure
+# the raw device is in sync with any bufferring in filesystems.
+sync
+
 # Now perform the installation.
 $grub_shell --batch $no_floppy --device-map=$device_map <<EOF >$log_file
 root $root_drive
 setup $force_lba --stage2=$grubdir/stage2 --prefix=$grub_prefix $install_drive
 quit
 EOF
+
+if ${xfs_frozen} ; then
+  xfs_freeze -u ${grubdir}
+fi
 
 if grep "Error [0-9]*: " $log_file >/dev/null || test $debug = yes; then
     cat $log_file 1>&2

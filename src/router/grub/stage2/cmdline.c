@@ -50,10 +50,11 @@ skip_to (int after_equal, char *cmdline)
 void
 print_cmdline_message (int forever)
 {
-  printf (" [ Minimal BASH-like line editing is supported.  For the first word, TAB\n"
-	  "   lists possible command completions.  Anywhere else TAB lists the possible\n"
-	  "   completions of a device/filename.%s ]\n",
-	  (forever ? "" : "  ESC at any time exits."));
+  grub_printf("       [ Minimal BASH-like line editing is supported.   For\n"
+              "         the   first   word,  TAB  lists  possible  command\n"
+              "         completions.  Anywhere else TAB lists the possible\n"
+              "         completions of a device/filename.%s ]\n",
+              (forever ? "" : "  ESC at any time\n         exits."));
 }
 
 /* Find the builtin whose command name is COMMAND and return the
