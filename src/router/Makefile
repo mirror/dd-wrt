@@ -68,10 +68,15 @@ endif
 ifeq ($(CONFIG_BRANDING),y)
 export CFLAGS += -DCONFIG_BRANDING 
 endif
+ifeq ($(CONFIG_SPEED),y)
+export BASEOPT:=-O2
+else
+export BASEOPT:=-Os
+endif
+
 
 export ARCH:= mipsel
 export ARCHITECTURE:= broadcom
-export BASEOPT:=-Os
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time
 export CC := $(CROSS_COMPILE)gcc
 export AR := $(CROSS_COMPILE)ar
@@ -83,7 +88,7 @@ export STRIP := @true
 export SIZE := $(CROSS_COMPILE)size
 
 export CFLAGS :=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time
-export LDFLAGS := -s
+export LDFLAGS := 
 
 #
 # Install and target directories
@@ -137,10 +142,10 @@ endif
 #endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) zImage ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) zImage ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) modules ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules ; \
 	fi
 	/opt/3.3.4/bin/$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d21 > lzma-loader/broadcom/vmlinux.lzma
@@ -152,10 +157,10 @@ endif
 bootloader:
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) zImage ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) zImage ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -C $(LINUXDIR) modules ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules ; \
 	fi
 	/opt/3.3.4/bin/$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d21 > lzma-loader/broadcom/vmlinux.lzma
@@ -255,6 +260,7 @@ ifeq ($(CONFIG_MSSID),y)
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
 	cp bcm57xx/bcm57xx.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xxlsys.o
+#	cp bcm57xx/bcm57xx300.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xx300.o
 endif
 endif
 #endif
@@ -269,6 +275,9 @@ ifeq ($(CONFIG_SAMBA),y)
 endif
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
+endif
+ifneq ($(CONFIG_E2FSPROGS),y)
+	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/ext2*
 endif
 ifeq ($(CONFIG_DIST),"mini")
 	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/cifs*
@@ -341,6 +350,9 @@ endif
 ifeq ($(CONFIG_MMC),y)	
 	cp ./mmc/mmc.o $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
+#	tar -cvf $(TARGETDIR)/lib/modules/modules.tar $(TARGETDIR)/lib/modules/$(LINUXVER)/* 
+#	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)
+
         # Prepare filesystem
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
         # Make sure mksquashfs-2.0 is used
