@@ -481,17 +481,26 @@ olsr_wallclock_string(void)
   static int idx = 0;
   char *ret;
   struct timeval now;
-  int sec, usec;
+  time_t sec, usec;
 
   ret = buf[idx];
   idx = (idx + 1) & 3;
 
   gettimeofday(&now, NULL);
 
-  sec = (int)now.tv_sec + olsr_get_timezone();
-  usec = (int)now.tv_usec;
+  if (now.tv_sec>(60*60*24))
+  sec = now.tv_sec + olsr_get_timezone();
+  else
+  sec = now.tv_sec;
+  
+  usec = now.tv_usec;
+  
+  if (sec<0)
+    sec=0;
+  if (usec<0)
+    usec=0;
 
-  snprintf(ret, sizeof(buf)/4, "%02u:%02u:%02u.%06u",
+  snprintf(ret, sizeof(buf)/4, "%02lu:%02lu:%02lu.%06lu",
 	   (sec % 86400) / 3600, (sec % 3600) / 60, sec % 60, usec);
 
   return ret;
@@ -512,15 +521,16 @@ olsr_clock_string(clock_t clock)
   static char buf[4][sizeof("00:00:00.000")];
   static int idx = 0;
   char *ret;
-  unsigned int sec, msec;
+  clock_t sec, msec;
 
   ret = buf[idx];
   idx = (idx + 1) & 3;
 
   /* On most systems a clocktick is a 10ms quantity. */
-  msec = olsr_cnf->system_tick_divider * (unsigned int)(clock - now_times);
+  msec = olsr_cnf->system_tick_divider * (clock_t)(clock - now_times);
   sec = msec / MSEC_PER_SEC;
-
+  if ((long)sec<0)
+    sec = 0;
   snprintf(ret, sizeof(buf) / 4, "%02u:%02u:%02u.%03u",
 	   sec / 3600, (sec % 3600) / 60, (sec % 60), (msec % MSEC_PER_SEC));
 
