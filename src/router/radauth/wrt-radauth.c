@@ -649,7 +649,7 @@ main (int argc, char **argv)
 
       /* Immediately continue after a statechange */
       if (!statechange)
-	sleep (10);
+	sleep (1);
 
     }
 
