@@ -42,6 +42,12 @@ int grub_stage2 (void);
 #include <sys/time.h>
 #include <termios.h>
 #include <signal.h>
+#include <sys/mman.h>
+
+#include <limits.h>
+#ifndef PAGESIZE
+#define PAGESIZE 4096
+#endif
 
 #ifdef __linux__
 # include <sys/ioctl.h>		/* ioctl */
@@ -54,6 +60,10 @@ int grub_stage2 (void);
 #  define BLKFLSBUF	_IO (0x12,97)	/* flush buffer cache */
 # endif /* ! BLKFLSBUF */
 #endif /* __linux__ */
+
+#if defined(__FreeBSD_kernel__) || defined(__FreeBSD__)
+# include <sys/sysctl.h>
+#endif
 
 /* We want to prevent any circularararity in our stubs, as well as
    libc name clashes. */
@@ -144,6 +154,22 @@ grub_stage2 (void)
   assert (grub_scratch_mem == 0);
   scratch = malloc (0x100000 + EXTENDED_MEMSIZE + 15);
   assert (scratch);
+
+  {
+    char *p;
+    int ret;
+
+    /* Align to a multiple of PAGESIZE, assumed to be a power of two. */
+    p = (char *) (((long) scratch) & ~(PAGESIZE - 1));
+
+    /* The simulated stack needs to be executable, since GCC uses stack
+     * trampolines to implement nested functions.
+     */
+    ret = mprotect (p, 0x100000 + EXTENDED_MEMSIZE + 15,
+		    PROT_READ | PROT_WRITE | PROT_EXEC);
+    assert (ret == 0);
+  }
+
   grub_scratch_mem = (char *) ((((int) scratch) >> 4) << 4);
 
   /* FIXME: simulate the memory holes using mprot, if available. */
@@ -777,7 +803,39 @@ get_diskinfo (int drive, struct geometry *geometry)
 
       /* Open read/write, or read-only if that failed. */
       if (! read_only)
-	disks[drive].flags = open (devname, O_RDWR);
+	{
+/* By default, kernel of FreeBSD does not allow overwriting MBR */
+#if defined(__FreeBSD_kernel__) || defined(__FreeBSD__)
+#define GEOM_SYSCTL	"kern.geom.debugflags"
+	  int old_flags, flags;
+	  size_t sizeof_int = sizeof (int);
+
+	  if (sysctlbyname (GEOM_SYSCTL, &old_flags, &sizeof_int, NULL, 0) != 0)
+	    grub_printf ("failed to get " GEOM_SYSCTL "sysctl: %s\n", strerror (errno));
+
+	  if ((old_flags & 0x10) == 0)
+	    {
+	      /* "allow foot shooting", see geom(4) */
+	      flags = old_flags | 0x10;
+
+	      if (sysctlbyname (GEOM_SYSCTL, NULL, NULL, &flags, sizeof (int)) != 0)
+		{
+		  flags = old_flags;
+		  grub_printf ("failed to set " GEOM_SYSCTL "sysctl: %s\n", strerror (errno));
+		}
+	    }
+	  else
+	    flags = old_flags;
+#endif
+	  disks[drive].flags = open (devname, O_RDWR);
+#if defined(__FreeBSD_kernel__) || defined(__FreeBSD__)
+	  if (flags != old_flags)
+	    {
+	      if (sysctlbyname (GEOM_SYSCTL, NULL, NULL, &old_flags, sizeof (int)) != 0)
+	        grub_printf ("failed to set " GEOM_SYSCTL "sysctl: %s\n", strerror (errno));
+	    }
+#endif
+	}
 
       if (disks[drive].flags == -1)
 	{

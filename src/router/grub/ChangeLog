@@ -1,3 +1,51 @@
+2006-05-02  Pavel Roskin  <proski@gnu.org>
+
+	* stage2/stage2.c (run_menu): Fix "savedefault" to save only top
+	level menu positions.  Remember current position when calling a
+	submenu.  Don't recalculate it when booting from a submenu.
+
+	* grub/main.c (main): Make sure the boot drive number doesn't
+	exceed 255.
+
+2006-05-02  Vesa Jaaskelainen  <chaac@nic.fi>
+
+	* stage2/shared.h (vbe_mode): Back ported aligment fix from GRUB 2
+	to GRUB Legacy.  Problem reported by Gerardo Richarte.
+
+2006-04-23  Robert Millan  <robertmh@gnu.org>
+
+	* grub/asmstub.c (get_diskinfo): Optimize sysctl routine.
+
+2006-04-20  Robert Millan  <robertmh@gnu.org>
+
+	Fixes for kernel of FreeBSD:
+	* grub/asmstub.c (get_diskinfo): Toggle "kern.geom.debugflags" sysctl
+	before opening a device for writing.
+	* util/grub-install.in: Devices don't have this "r" prefix anymore.
+
+2006-04-16  Yoshinori K. Okuji  <okuji@enbug.org>
+
+	* docs/multiboot.texi: Correct the offset of address
+	fields. Reported by Jeroen Dekkers.
+
+2006-03-21  Yoshinori K. Okuji  <okuji@enbug.org>
+
+	* stage2/builtins.c (setup_func): Specify the size of DEVICE to
+	grub_strncat instead of a strange number 256. Reported by Vitaly
+	Fertman <vitaly@namesys.com>.
+
+2005-09-29  Yoshinori K. Okuji  <okuji@enbug.org>
+
+	* docs/multiboot.texi: Fix a bug in the byte order of
+	boot_device. I hope this won't affect any OS image.
+	Increased the version number to 0.6.94.
+
+2005-09-28  Yoshinori K. Okuji  <okuji@enbug.org>
+
+	* stage2/boot.c (load_image): Even if an OS image is an ELF
+	object, use the a.out kludge if MULTIBOOT_AOUT_KLUDGE is
+	specified.
+
 2005-05-08  Yoshinori K. Okuji  <okuji@enbug.org>
 
 	* configure.ac (AC_INIT): Upgraded to 0.97.

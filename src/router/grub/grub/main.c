@@ -32,6 +32,7 @@ int grub_stage2 (void);
 #define WITHOUT_LIBC_STUBS 1
 #include <shared.h>
 #include <term.h>
+#include <device.h>
 
 char *program_name = 0;
 int use_config_file = 1;
@@ -190,6 +191,12 @@ main (int argc, char **argv)
 	  if (boot_drive == ULONG_MAX)
 	    {
 	      perror ("strtoul");
+	      exit (1);
+	    }
+	  if (boot_drive >= NUM_DISKS)
+	    {
+	      fprintf (stderr, "boot_drive should be from 0 to %d\n",
+		       NUM_DISKS - 1);
 	      exit (1);
 	    }
 	  break;

@@ -1,7 +1,7 @@
 
 /*
  *  GRUB  --  GRand Unified Bootloader
- *  Copyright (C) 2001  Free Software Foundation, Inc.
+ *  Copyright (C) 2001, 2004  Free Software Foundation, Inc.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@
 #define RB_CDROM        0x2000	/* use cdrom as root */
 #define RB_GDB		0x8000	/* use GDB remote debugger instead of DDB */
 #define RB_MUTE		0x10000	/* Come up with the console muted */
+#define RB_SELFTEST	0x20000 /* don't complete the boot; do selftest */
+#define RB_RESERVED1	0x40000 /* reserved for internal use of boot blocks */
+#define RB_RESERVED2	0x80000 /* reserved for internal use of boot blocks */
+#define RB_PAUSE	0x100000 /* pause after each output line during probe */
 #define RB_MULTIPLE	0x20000000	/* Use multiple consoles */
 
 #define RB_BOOTINFO     0x80000000	/* have `struct bootinfo *' arg */
@@ -70,6 +74,9 @@
 
 #define N_BIOS_GEOM             8
 
+typedef unsigned char u8_t;
+typedef unsigned int u32_t;
+
 /*
  * A zero bootinfo field often means that there is no info available.
  * Flags are used to indicate the validity of fields where zero is a
@@ -77,19 +84,33 @@
  */
 struct bootinfo
   {
-    unsigned int bi_version;
-    unsigned char *bi_kernelname;
-    struct nfs_diskless *bi_nfs_diskless;
+    u32_t bi_version;
+    u8_t *bi_kernelname;
+    u32_t bi_nfs_diskless;
     /* End of fields that are always present. */
 #define bi_endcommon            bi_n_bios_used
-    unsigned int bi_n_bios_used;
-    unsigned long bi_bios_geom[N_BIOS_GEOM];
-    unsigned int bi_size;
-    unsigned char bi_memsizes_valid;
-    unsigned char bi_bios_dev;
-    unsigned char bi_pad[2];
-    unsigned long bi_basemem;
-    unsigned long bi_extmem;
-    unsigned long bi_symtab;
-    unsigned long bi_esymtab;
+    u32_t bi_n_bios_used;
+    u32_t bi_bios_geom[N_BIOS_GEOM];
+    u32_t bi_size;
+    u8_t bi_memsizes_valid;
+    u8_t bi_bios_dev;
+    u8_t bi_pad[2];
+    u32_t bi_basemem;
+    u32_t bi_extmem;
+    u32_t bi_symtab;
+    u32_t bi_esymtab;
+    /* Items below only from advanced bootloader */
+    u32_t bi_kernend;
+    u32_t bi_envp;
+    u32_t bi_modulep;
   };
+
+#define MODINFO_END		0x0000		/* End of list */
+#define MODINFO_NAME		0x0001		/* Name of module (string) */
+#define MODINFO_TYPE		0x0002		/* Type of module (string) */
+#define MODINFO_ADDR		0x0003		/* Loaded address */
+#define MODINFO_SIZE		0x0004		/* Size of module */
+#define MODINFO_EMPTY		0x0005		/* Has been deleted */
+#define MODINFO_ARGS		0x0006		/* Parameters string */
+#define MODINFO_METADATA	0x8000		/* Module-specfic */
+
