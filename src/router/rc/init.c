@@ -427,7 +427,7 @@ main (int argc, char **argv)
   nvram_set ("vlan1ports", "");
 #else
 
-  if (brand == ROUTER_WRT600N)
+  if (brand == ROUTER_WRT600N || brand == ROUTER_WRT610N)
     {
       nvram_set ("vlan2hwname", "et0");
     }
@@ -446,6 +446,7 @@ main (int argc, char **argv)
   switch (brand)
     {
     case ROUTER_WRT600N:
+    case ROUTER_WRT610N:
     case ROUTER_ASUS_WL500GD:
     case ROUTER_ASUS_WL550GE:
     case ROUTER_MOTOROLA:
