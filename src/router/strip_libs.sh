@@ -11,6 +11,8 @@ export ARCH=$1
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/iptables/*
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/l2tp/*
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/ser/modules/*
+./sstrip/sstrip $ARCH-uclibc/target/usr/lib/openser/modules/*
+./sstrip/sstrip $ARCH-uclibc/target/usr/lib/asterisk/modules/*
 ./sstrip/sstrip $ARCH-uclibc/target/usr/lib/l2tp/*
 ./sstrip/sstrip $ARCH-uclibc/target/lib/*.so
 ./sstrip/sstrip $ARCH-uclibc/target/lib/*.so.1
