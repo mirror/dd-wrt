@@ -1086,12 +1086,20 @@ old_way:;
       setRouter ("Linksys WRT600N v1.1");
       return ROUTER_WRT600N;
     }
+
   if (nvram_match ("boardnum", "20070615") &&
       nvram_match ("boardtype", "0x478") && nvram_match ("cardbus", "0"))
     {
       cprintf ("router is Linksys WRT600N\n");
       setRouter ("Linksys WRT600N");
       return ROUTER_WRT600N;
+    }
+
+  if (nvram_match("boot_hw_model","WRT610N"))
+    {
+      cprintf ("router is Linksys WRT600N\n");
+      setRouter ("Linksys WRT610N");
+      return ROUTER_WRT610N;
     }
 
   if (boardnum == 42 && nvram_match ("boardtype", "bcm94710dev"))
