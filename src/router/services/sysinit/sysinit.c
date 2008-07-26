@@ -679,6 +679,9 @@ start_restore_defaults (void)
       else
 	linux_overrides = wrt600vlan;
       break;
+    case ROUTER_WRT610N:
+	linux_overrides = wrt60011vlan;
+    break;
 #endif
     case ROUTER_BUFFALO_WZRG144NH:
       linux_overrides = wzr144nhvlan;
@@ -931,6 +934,19 @@ start_restore_defaults (void)
 	      nvram_set ("vlan2ports", "0 8*");
 	    }
 	}
+    }
+  else if (brand == ROUTER_WRT610N)
+    {    
+	  if (!nvram_get ("vlan1ports") || nvram_match ("vlan1ports", ""))
+	    {
+	      nvram_set ("vlan1ports", "1 2 3 4 8*");
+	      nvram_set ("vlan2ports", "0 8");
+	    }
+	  if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
+	    {
+	      nvram_set ("vlan0ports", "1 2 3 4 8*");
+	      nvram_set ("vlan2ports", "0 8");
+	    }
     }
   else if (brand == ROUTER_WRT350N)
     {

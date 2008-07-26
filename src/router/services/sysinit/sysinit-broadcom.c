@@ -177,6 +177,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_WRT160N:
     case ROUTER_WRT300N:
     case ROUTER_WRT600N:
+    case ROUTER_WRT610N:
     case ROUTER_WRT350N:
     case ROUTER_WRT310N:
     case ROUTER_NETGEAR_WG602_V4:
@@ -260,8 +261,9 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       eval ("insmod", "wl");	//load module
       break;
     case ROUTER_WRT600N:
+    case ROUTER_WRT610N:
       eval ("insmod", "wl");	//load module
-      wl_hwaddr ("eth1", macbuf);
+      wl_hwaddr ("eth0", macbuf);
       ether_etoa ((uchar *) macbuf, eaddr);
       nvram_set ("wl0_hwaddr", eaddr);
       MAC_SUB (eaddr);
@@ -272,7 +274,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 	  kill (1, SIGTERM);
 	  exit (0);
 	}
-      wl_hwaddr ("eth2", macbuf);
+      wl_hwaddr ("eth1", macbuf);
       ether_etoa ((uchar *) macbuf, eaddr);
       nvram_set ("wl1_hwaddr", eaddr);
       break;
@@ -830,6 +832,7 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "vlan2");
       break;
     case ROUTER_WRT600N:
+    case ROUTER_WRT610N:
       nvram_set ("wan_ifname", "vlan2");
       break;
 
@@ -1011,6 +1014,7 @@ start_sysinit (void)
 	    case ROUTER_WRT310N:
 	    case ROUTER_WRT350N:
 	    case ROUTER_WRT600N:
+	    case ROUTER_WRT610N:
 	    case ROUTER_WRT300NV11:
 	    case ROUTER_BUFFALO_WZRG144NH:
 	      nvram_set ("portprio_support", "0");
@@ -1077,6 +1081,7 @@ start_sysinit (void)
 	    case ROUTER_WRT310N:
 	    case ROUTER_WRT350N:
 	    case ROUTER_WRT600N:
+	    case ROUTER_WRT610N:
 	    case ROUTER_BUFFALO_WZRG144NH:
 	      nvram_set ("portprio_support", "0");
 	      modules = "bcm57xxlsys";
@@ -1590,7 +1595,7 @@ enable_dtag_vlan (int enable)
       if (vlanswap)
 	save_ports2 = nvram_safe_get ("vlan1ports");
 #ifndef HAVE_MADWIFI
-      if (getRouterBrand () == ROUTER_WRT600N)
+      if (getRouterBrand () == ROUTER_WRT600N || getRouterBrand () == ROUTER_WRT610N)
 	eth = "eth2";
 #endif
       if (donothing)

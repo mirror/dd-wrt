@@ -301,6 +301,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_ALLNET01 0x5813
 
+#define ROUTER_WRT610N 0x591f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int
