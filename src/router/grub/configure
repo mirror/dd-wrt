@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar build build_cpu build_vendor build_os host host_cpu host_vendor host_os MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT PERL CC ac_ct_CC CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CCAS RANLIB ac_ct_RANLIB STAGE1_CFLAGS STAGE2_CFLAGS GRUB_CFLAGS OBJCOPY ac_ct_OBJCOPY GRUB_LIBS CPP EGREP NETBOOT_SUPPORT_TRUE NETBOOT_SUPPORT_FALSE DISKLESS_SUPPORT_TRUE DISKLESS_SUPPORT_FALSE HERCULES_SUPPORT_TRUE HERCULES_SUPPORT_FALSE SERIAL_SUPPORT_TRUE SERIAL_SUPPORT_FALSE SERIAL_SPEED_SIMULATION_TRUE SERIAL_SPEED_SIMULATION_FALSE BUILD_EXAMPLE_KERNEL_TRUE BUILD_EXAMPLE_KERNEL_FALSE FSYS_CFLAGS NET_CFLAGS NET_EXTRAFLAGS NETBOOT_DRIVERS CCASFLAGS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar build build_cpu build_vendor build_os host host_cpu host_vendor host_os MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT PERL CC ac_ct_CC CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CCAS RANLIB ac_ct_RANLIB STAGE1_CFLAGS STAGE2_CFLAGS GRUB_CFLAGS OBJCOPY ac_ct_OBJCOPY GRUB_LIBS CPP EGREP NETBOOT_SUPPORT_TRUE NETBOOT_SUPPORT_FALSE DISKLESS_SUPPORT_TRUE DISKLESS_SUPPORT_FALSE GRAPHICS_SUPPORT_TRUE GRAPHICS_SUPPORT_FALSE HERCULES_SUPPORT_TRUE HERCULES_SUPPORT_FALSE SERIAL_SUPPORT_TRUE SERIAL_SUPPORT_FALSE SERIAL_SPEED_SIMULATION_TRUE SERIAL_SPEED_SIMULATION_FALSE BUILD_EXAMPLE_KERNEL_TRUE BUILD_EXAMPLE_KERNEL_FALSE FSYS_CFLAGS NET_CFLAGS NET_EXTRAFLAGS NETBOOT_DRIVERS CCASFLAGS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -914,6 +914,7 @@ Optional Features:
                           set the default memory location for WD/SMC
   --enable-cs-scan=LIST   probe for CS89x0 base address using LIST
   --enable-diskless       enable diskless support
+  --disable-graphics      disable graphics terminal support
   --disable-hercules      disable hercules terminal support
   --disable-serial        disable serial terminal support
   --enable-serial-speed-simulation
@@ -5966,6 +5967,22 @@ else
 fi
 
 
+# Check whether --enable-graphics or --disable-graphics was given.
+if test "${enable_graphics+set}" = set; then
+  enableval="$enable_graphics"
+
+fi;
+
+
+if test "x$enable_graphics" != xno; then
+  GRAPHICS_SUPPORT_TRUE=
+  GRAPHICS_SUPPORT_FALSE='#'
+else
+  GRAPHICS_SUPPORT_TRUE='#'
+  GRAPHICS_SUPPORT_FALSE=
+fi
+
+
 # Check whether --enable-hercules or --disable-hercules was given.
 if test "${enable_hercules+set}" = set; then
   enableval="$enable_hercules"
@@ -6267,6 +6284,13 @@ if test -z "${DISKLESS_SUPPORT_TRUE}" && test -z "${DISKLESS_SUPPORT_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"DISKLESS_SUPPORT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"DISKLESS_SUPPORT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${GRAPHICS_SUPPORT_TRUE}" && test -z "${GRAPHICS_SUPPORT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"GRAPHICS_SUPPORT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"GRAPHICS_SUPPORT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -6907,6 +6931,8 @@ s,@NETBOOT_SUPPORT_TRUE@,$NETBOOT_SUPPORT_TRUE,;t t
 s,@NETBOOT_SUPPORT_FALSE@,$NETBOOT_SUPPORT_FALSE,;t t
 s,@DISKLESS_SUPPORT_TRUE@,$DISKLESS_SUPPORT_TRUE,;t t
 s,@DISKLESS_SUPPORT_FALSE@,$DISKLESS_SUPPORT_FALSE,;t t
+s,@GRAPHICS_SUPPORT_TRUE@,$GRAPHICS_SUPPORT_TRUE,;t t
+s,@GRAPHICS_SUPPORT_FALSE@,$GRAPHICS_SUPPORT_FALSE,;t t
 s,@HERCULES_SUPPORT_TRUE@,$HERCULES_SUPPORT_TRUE,;t t
 s,@HERCULES_SUPPORT_FALSE@,$HERCULES_SUPPORT_FALSE,;t t
 s,@SERIAL_SUPPORT_TRUE@,$SERIAL_SUPPORT_TRUE,;t t

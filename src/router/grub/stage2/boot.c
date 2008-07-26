@@ -1,7 +1,7 @@
 /* boot.c - load and bootstrap a kernel */
 /*
  *  GRUB  --  GRand Unified Bootloader
- *  Copyright (C) 1999,2000,2001,2002,2003,2004  Free Software Foundation, Inc.
+ *  Copyright (C) 1999,2000,2001,2002,2003,2004,2005  Free Software Foundation, Inc.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -29,6 +29,8 @@ static int cur_addr;
 entry_func entry_addr;
 static struct mod_list mll[99];
 static int linux_mem_size;
+static int elf_kernel_addr;
+static int elf_kernel_size;
 
 /*
  *  The next two functions, 'load_image' and 'load_module', are the building
@@ -96,7 +98,7 @@ load_image (char *kernel, char *arg, kernel_t suggested_type,
   lh = (struct linux_kernel_header *) buffer;
   
   /* ELF loading supported if multiboot, FreeBSD and NetBSD.  */
-  if ((type == KERNEL_TYPE_MULTIBOOT
+  if (((type == KERNEL_TYPE_MULTIBOOT && ! (flags & MULTIBOOT_AOUT_KLUDGE))
        || pu.elf->e_ident[EI_OSABI] == ELFOSABI_FREEBSD
        || grub_strcmp (pu.elf->e_ident + EI_BRAND, "FreeBSD") == 0
        || suggested_type == KERNEL_TYPE_NETBSD)
@@ -594,6 +596,7 @@ load_image (char *kernel, char *arg, kernel_t suggested_type,
 
       /* reset this to zero for now */
       cur_addr = 0;
+      elf_kernel_addr = ~0;
 
       /* scan for program segments */
       for (i = 0; i < pu.elf->e_phnum; i++)
@@ -630,6 +633,8 @@ load_image (char *kernel, char *arg, kernel_t suggested_type,
 	      /* mark memory as used */
 	      if (cur_addr < memaddr + memsiz)
 		cur_addr = memaddr + memsiz;
+	      if (elf_kernel_addr > cur_addr)
+		elf_kernel_addr = cur_addr;
 	      printf (", <0x%x:0x%x:0x%x>", memaddr, filesiz,
 		      memsiz - filesiz);
 	      /* increment number of segments */
@@ -646,6 +651,8 @@ load_image (char *kernel, char *arg, kernel_t suggested_type,
 		break;
 	    }
 	}
+
+      elf_kernel_size = cur_addr - elf_kernel_addr;
 
       if (! errnum)
 	{
@@ -824,8 +831,11 @@ load_initrd (char *initrd)
     moveto = (mbi.mem_upper + 0x400) << 10;
   
   moveto = (moveto - len) & 0xfffff000;
-  max_addr = (lh->header == LINUX_MAGIC_SIGNATURE && lh->version >= 0x0203
-	      ? lh->initrd_addr_max : LINUX_INITRD_MAX_ADDRESS);
+  max_addr = LINUX_INITRD_MAX_ADDRESS;
+  if (lh->header == LINUX_MAGIC_SIGNATURE &&
+      lh->version >= 0x0203 &&
+      lh->initrd_addr_max < max_addr)
+    max_addr = lh->initrd_addr_max;
   if (moveto + len >= max_addr)
     moveto = (max_addr - len) & 0xfffff000;
   
@@ -864,6 +874,129 @@ bsd_boot_entry (int flags, int bootdev, int sym_start, int sym_end,
 }
 #endif
 
+#define mem_align4k(p)	((p) + 0xFFF) & 0xFFFFF000
+
+static void
+kfreebsd_setenv (char *env, const char *var, const char *value)
+{
+  while (1)
+    {
+      if (env[0] == '\0' && env[1] == '\0')
+	{
+	  env++;
+	  break;
+	}
+      else
+        env++;
+    }
+
+  grub_sprintf (env, "%s=%s", var, value);
+  env[grub_strlen (env) + 1] = '\0';
+}
+
+static char *
+kfreebsd_read_hints (char *buf)
+{
+  char *buf_end = buf;
+
+  if (grub_open ("/boot/device.hints"))
+    {
+      char *line_start;
+      int line_len = 0;
+      char *envp;
+      int env_len;
+
+      env_len = grub_read (buf, -1);
+      if (env_len)
+	{
+	  buf_end += env_len;
+	  *(buf_end++) = '\0';
+	}
+      else
+	return buf_end;
+
+      grub_close ();
+
+      envp = line_start = buf;
+      while (*envp)
+	{
+	  char *envp_current = envp;
+	
+	  switch (*envp)
+	    {
+	      case ' ':
+		while (*envp == ' ')
+		  {
+		    envp++;
+		    env_len--;
+		  }
+		grub_memmove (envp_current, envp, env_len + 1);
+		envp = envp_current;
+		break;
+	      case '#':
+		while (*envp != '\n')
+		  {
+		    envp++;
+		    env_len--;
+		  }
+		if (!line_len)
+		  envp++;
+		grub_memmove (envp_current, envp, env_len + 1);
+		envp = envp_current;
+		break;
+	      case '\n':
+		if (!line_len)
+		  {
+		    env_len--;
+		    grub_memmove (line_start, envp, env_len + 1);
+		  }
+		*(envp++) = '\0';
+		line_len = 0;
+		line_start = envp;
+	      default:
+		envp++;
+		line_len++;
+		break;
+	    }
+	}
+
+      buf_end = buf + env_len;
+      *(buf_end++) = '\0';
+    }
+
+  return buf_end;
+}
+
+static u32_t *
+kfreebsd_set_module_string (u32_t type, u32_t *dst, char *src)
+{
+  int size;
+
+  *(dst++) = type;
+  *(dst++) = size = grub_strlen (src) + 1;
+  grub_strcpy ((void *) dst, src);
+
+  return dst + (size + sizeof(u32_t) - 1) / sizeof(u32_t);
+}
+
+static u32_t *
+kfreebsd_set_module_var (u32_t type, u32_t *dst, u32_t src)
+{
+  *(dst++) = type;
+  *(dst++) = sizeof(u32_t);
+  *(dst++) = src;
+
+  return dst;
+}
+
+static u32_t *
+kfreebsd_set_modules (u32_t *modulep)
+{
+  /* XXX: Need to copy the whole module structure.  */
+  /* XXX: How to pass the module name ?  */
+
+  return modulep;
+}
 
 /*
  *  All "*_boot" commands depend on the images being loaded into memory
@@ -877,7 +1010,10 @@ void
 bsd_boot (kernel_t type, int bootdev, char *arg)
 {
   char *str;
-  int clval = 0, i;
+  char *kernelname;
+  char *bsd_root;
+  int clval = 0;
+  int i;
   struct bootinfo bi;
 
 #ifdef GRUB_UTIL
@@ -886,8 +1022,21 @@ bsd_boot (kernel_t type, int bootdev, char *arg)
   stop_floppy ();
 #endif
 
+  while (*arg != '/')
+    arg++;
+  kernelname = arg;
+
   while (*(++arg) && *arg != ' ');
+  *(arg++) = 0;
   str = arg;
+
+  bsd_root = grub_strstr (str, "root=");
+  if (bsd_root)
+    {
+      bsd_root += 5;
+      /* XXX: should copy the str or terminate it.  */
+    }
+
   while (*str)
     {
       if (*str == '-')
@@ -910,6 +1059,8 @@ bsd_boot (kernel_t type, int bootdev, char *arg)
 		clval |= RB_GDB;
 	      if (*str == 'h')
 		clval |= RB_SERIAL;
+	      if (*str == 'p')
+		clval |= RB_PAUSE;
 	      if (*str == 'm')
 		clval |= RB_MUTE;
 	      if (*str == 'r')
@@ -927,14 +1078,17 @@ bsd_boot (kernel_t type, int bootdev, char *arg)
 
   if (type == KERNEL_TYPE_FREEBSD)
     {
+      char *envp;
+      u32_t *modp;
+
       clval |= RB_BOOTINFO;
 
       bi.bi_version = BOOTINFO_VERSION;
 
-      *arg = 0;
-      while ((--arg) > (char *) MB_CMDLINE_BUF && *arg != '/');
-      if (*arg == '/')
-	bi.bi_kernelname = arg + 1;
+      bi.bi_pad[0] = bi.bi_pad[1] = 0;
+
+      if (*kernelname == '/')
+	bi.bi_kernelname = kernelname;
       else
 	bi.bi_kernelname = 0;
 
@@ -961,6 +1115,30 @@ bsd_boot (kernel_t type, int bootdev, char *arg)
       bi.bi_basemem = mbi.mem_lower;
       bi.bi_extmem = extended_memory;
 
+      /* Setup the environment.  */
+      bi.bi_envp = cur_addr = mem_align4k (cur_addr);
+      grub_memset ((void *) cur_addr, 0, 2);
+      cur_addr = (int) kfreebsd_read_hints ((void *) cur_addr);
+
+      envp = (char *) bi.bi_envp;
+      kfreebsd_setenv (envp, "kernelname", kernelname);
+      kfreebsd_setenv (envp, "vfs.root.mountfrom", bsd_root);
+
+      /* Setup the modules list.  */
+      bi.bi_modulep = cur_addr = mem_align4k (cur_addr);
+      modp = (u32_t *) bi.bi_modulep;
+      /* The first module is the kernel.  */
+      modp = kfreebsd_set_module_string (MODINFO_NAME, modp, kernelname);
+      modp = kfreebsd_set_module_string (MODINFO_TYPE, modp, "elf kernel");
+      modp = kfreebsd_set_module_string (MODINFO_ARGS, modp, arg);
+      modp = kfreebsd_set_module_var (MODINFO_ADDR, modp, elf_kernel_addr);
+      modp = kfreebsd_set_module_var (MODINFO_SIZE, modp, elf_kernel_size);
+      /* Now the real modules.  */
+      modp = kfreebsd_set_modules(modp);
+
+      /* Set the kernel end.  */
+      bi.bi_kernend = cur_addr = mem_align4k (((int) modp) + 1);
+
       if (mbi.flags & MB_INFO_AOUT_SYMS)
 	{
 	  bi.bi_symtab = mbi.syms.a.addr;
@@ -970,8 +1148,9 @@ bsd_boot (kernel_t type, int bootdev, char *arg)
 #if 0
       else if (mbi.flags & MB_INFO_ELF_SHDR)
 	{
-	  /* FIXME: Should check if a symbol table exists and, if exists,
-	     pass the table to BI.  */
+	  bi.bi_symtab = mbi.syms.e.addr;
+	  bi.bi_esymtab = mbi.syms.e.addr
+	    + mbi.syms.e.size * mbi.syms.e.num * mbi.syms.e.shndx;
 	}
 #endif
       else

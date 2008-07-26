@@ -131,6 +131,152 @@ get_kfreebsd_version ()
 #include <shared.h>
 #include <device.h>
 
+#if defined(__linux__)
+/* The 2.6 kernel has removed all of the geometry handling for IDE drives
+ * that did fixups for LBA, etc.  This means that the geometry we get
+ * with the ioctl has a good chance of being wrong.  So, we get to 
+ * also know about partition tables and try to read what the geometry
+ * is there. *grumble*   Very closely based on code from cfdisk
+ */
+static void get_kernel_geometry(int fd, long long *cyl, int *heads, int *sectors) {
+    struct hd_geometry hdg;
+    
+    if (ioctl (fd, HDIO_GETGEO, &hdg))
+        return;
+
+    *cyl = hdg.cylinders;
+    *heads = hdg.heads;
+    *sectors = hdg.sectors;
+}
+
+struct partition {
+        unsigned char boot_ind;         /* 0x80 - active */
+        unsigned char head;             /* starting head */
+        unsigned char sector;           /* starting sector */
+        unsigned char cyl;              /* starting cylinder */
+        unsigned char sys_ind;          /* What partition type */
+        unsigned char end_head;         /* end head */
+        unsigned char end_sector;       /* end sector */
+        unsigned char end_cyl;          /* end cylinder */
+        unsigned char start4[4];        /* starting sector counting from 0 */
+        unsigned char size4[4];         /* nr of sectors in partition */
+};
+
+#define ALIGNMENT 2
+typedef union {
+    struct {
+	unsigned char align[ALIGNMENT];
+	unsigned char b[SECTOR_SIZE];
+    } c;
+    struct {
+	unsigned char align[ALIGNMENT];
+	unsigned char buffer[0x1BE];
+	struct partition part[4];
+	unsigned char magicflag[2];
+    } p;
+} partition_table;
+
+#define PART_TABLE_FLAG0 0x55
+#define PART_TABLE_FLAG1 0xAA
+
+static void
+get_partition_table_geometry(partition_table *bufp, long long *cyl, int *heads, 
+                             int *sectors) {
+    struct partition *p;
+    int i,h,s,hh,ss;
+    int first = 1;
+    int bad = 0;
+
+    if (bufp->p.magicflag[0] != PART_TABLE_FLAG0 ||
+	bufp->p.magicflag[1] != PART_TABLE_FLAG1) {
+	    /* Matthew Wilcox: slightly friendlier version of
+	       fatal(_("Bad signature on partition table"), 3);
+	    */
+            fprintf(stderr, "Unknown partition table signature\n");
+	    return;
+    }
+
+    hh = ss = 0;
+    for (i=0; i<4; i++) {
+	p = &(bufp->p.part[i]);
+	if (p->sys_ind != 0) {
+	    h = p->end_head + 1;
+	    s = (p->end_sector & 077);
+	    if (first) {
+		hh = h;
+		ss = s;
+		first = 0;
+	    } else if (hh != h || ss != s)
+		bad = 1;
+	}
+    }
+
+    if (!first && !bad) {
+	*heads = hh;
+	*sectors = ss;
+    }
+}
+
+static long long my_lseek (unsigned int fd, long long offset, 
+                           unsigned int origin)
+{
+#if defined(__linux__) && (!defined(__GLIBC__) || \
+        ((__GLIBC__ < 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ < 1))))
+  /* Maybe libc doesn't have large file support.  */
+  loff_t offset, result;
+  static int _llseek (uint filedes, ulong hi, ulong lo,
+                      loff_t *res, uint wh);
+  _syscall5 (int, _llseek, uint, filedes, ulong, hi, ulong, lo,
+             loff_t *, res, uint, wh);
+  
+  if (_llseek (fd, offset >> 32, offset & 0xffffffff, &result, SEEK_SET) < 0)
+    return (long long) -1;
+  return result;
+#else
+  return lseek(fd, offset, SEEK_SET);
+#endif
+}
+
+static void get_linux_geometry (int fd, struct geometry *geom) {
+    long long kern_cyl = 0; int kern_head = 0, kern_sectors = 0;
+    long long pt_cyl = 0; int pt_head = 0, pt_sectors = 0;
+    partition_table bufp;
+    char *buff, *buf_unaligned;
+
+    buf_unaligned = malloc(sizeof(partition_table) + 4095);
+    buff = (char *) (((unsigned long)buf_unaligned + 4096 - 1) &
+                     (~(4096-1)));
+
+    get_kernel_geometry(fd, &kern_cyl, &kern_head, &kern_sectors);
+
+    if (my_lseek (fd, 0*SECTOR_SIZE, SEEK_SET) < 0) {
+        fprintf(stderr, "Unable to seek");
+    }
+
+    if (read(fd, buff, SECTOR_SIZE) == SECTOR_SIZE) {
+        memcpy(bufp.c.b, buff, SECTOR_SIZE);
+        get_partition_table_geometry(&bufp, &pt_cyl, &pt_head, &pt_sectors);
+    } else {
+        fprintf(stderr, "Unable to read partition table: %s\n", strerror(errno));
+    }
+
+    if (pt_head && pt_sectors) {
+        int cyl_size;
+
+        geom->heads = pt_head;
+        geom->sectors = pt_sectors;
+        cyl_size = pt_head * pt_sectors;
+        geom->cylinders = geom->total_sectors/cyl_size;
+    } else {
+        geom->heads = kern_head;
+        geom->sectors = kern_sectors;
+        geom->cylinders = kern_cyl;
+    }
+
+    return;
+}
+#endif
+
 /* Get the geometry of a drive DRIVE.  */
 void
 get_drive_geometry (struct geometry *geom, char **map, int drive)
@@ -151,21 +297,16 @@ get_drive_geometry (struct geometry *geom, char **map, int drive)
 #if defined(__linux__)
   /* Linux */
   {
-    struct hd_geometry hdg;
     unsigned long nr;
-    
-    if (ioctl (fd, HDIO_GETGEO, &hdg))
-      goto fail;
 
     if (ioctl (fd, BLKGETSIZE, &nr))
       goto fail;
     
     /* Got the geometry, so save it. */
-    geom->cylinders = hdg.cylinders;
-    geom->heads = hdg.heads;
-    geom->sectors = hdg.sectors;
     geom->total_sectors = nr;
-    
+    get_linux_geometry(fd, geom);
+    if (!geom->heads && !geom->cylinders && !geom->sectors)
+        goto fail;
     goto success;
   }
 
@@ -400,6 +541,18 @@ static void
 get_dac960_disk_name (char *name, int controller, int drive)
 {
   sprintf (name, "/dev/rd/c%dd%d", controller, drive);
+}
+
+static void
+get_cciss_disk_name (char *name, int controller, int drive)
+{
+  sprintf (name, "/dev/cciss/c%dd%d", controller, drive);
+}
+
+static void
+get_ida_disk_name (char *name, int controller, int drive)
+{
+  sprintf (name, "/dev/ida/c%dd%d", controller, drive);
 }
 
 static void
@@ -801,6 +954,74 @@ init_device_map (char ***map, const char *map_file, int floppy_disks)
 	  }
       }
   }
+
+  /* This is for CCISS, its like the DAC960  - we have
+     /dev/cciss/<controller>d<logical drive>p<partition> 
+
+     It currently supports up to 3 controllers, 10 logical volumes
+     and 10 partitions
+
+     Code gratuitously copied from DAC960 above.
+     Horms <horms@verge.net.au> 23rd July 2004
+  */
+  {
+    int controller, drive;
+    
+    for (controller = 0; controller < 2; controller++)
+      {
+	for (drive = 0; drive < 9; drive++)
+	  {
+	    char name[24];
+	    
+	    get_cciss_disk_name (name, controller, drive);
+	    if (check_device (name))
+	      {
+		(*map)[num_hd + 0x80] = strdup (name);
+		assert ((*map)[num_hd + 0x80]);
+		
+		/* If the device map file is opened, write the map.  */
+		if (fp)
+		  fprintf (fp, "(hd%d)\t%s\n", num_hd, name);
+		
+		num_hd++;
+	      }
+	  }
+      }
+  }
+
+  /* This is for Compaq Smart Array, its like the DAC960  - we have
+     /dev/ida/<controller>d<logical drive>p<partition> 
+
+     It currently supports up to 3 controllers, 10 logical volumes
+     and 15 partitions
+
+     Code gratuitously copied from DAC960 above.
+     Piotr Roszatycki <dexter@debian.org>
+  */
+  {
+    int controller, drive;
+    
+    for (controller = 0; controller < 2; controller++)
+      {
+	for (drive = 0; drive < 9; drive++)
+	  {
+	    char name[24];
+	    
+	    get_ida_disk_name (name, controller, drive);
+	    if (check_device (name))
+	      {
+		(*map)[num_hd + 0x80] = strdup (name);
+		assert ((*map)[num_hd + 0x80]);
+		
+		/* If the device map file is opened, write the map.  */
+		if (fp)
+		  fprintf (fp, "(hd%d)\t%s\n", num_hd, name);
+		
+		num_hd++;
+	      }
+	  }
+      }
+  }
 #endif /* __linux__ */
   
   /* OK, close the device map file if opened.  */
@@ -844,6 +1065,7 @@ write_to_partition (char **map, int drive, int partition,
 {
   char dev[PATH_MAX];	/* XXX */
   int fd;
+  off_t offset = (off_t) sector * (off_t) SECTOR_SIZE;
   
   if ((partition & 0x00FF00) != 0x00FF00)
     {
@@ -861,8 +1083,14 @@ write_to_partition (char **map, int drive, int partition,
       if (strcmp (dev + strlen(dev) - 5, "/disc") == 0)
 	strcpy (dev + strlen(dev) - 5, "/part");
     }
-  sprintf (dev + strlen(dev), "%d", ((partition >> 16) & 0xFF) + 1);
-  
+  sprintf (dev + strlen(dev), "%s%d", 
+   /* Compaq smart and others */
+   (strncmp(dev, "/dev/ida/", 9) == 0 ||
+   strncmp(dev, "/dev/ataraid/", 13) == 0 ||
+   strncmp(dev, "/dev/cciss/", 11) == 0 ||
+   strncmp(dev, "/dev/rd/", 8) == 0) ? "p" : "",
+   ((partition >> 16) & 0xFF) + 1);
+
   /* Open the partition.  */
   fd = open (dev, O_RDWR);
   if (fd < 0)
@@ -870,35 +1098,13 @@ write_to_partition (char **map, int drive, int partition,
       errnum = ERR_NO_PART;
       return 0;
     }
-  
-#if defined(__linux__) && (!defined(__GLIBC__) || \
-        ((__GLIBC__ < 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ < 1))))
-  /* Maybe libc doesn't have large file support.  */
-  {
-    loff_t offset, result;
-    static int _llseek (uint filedes, ulong hi, ulong lo,
-                        loff_t *res, uint wh);
-    _syscall5 (int, _llseek, uint, filedes, ulong, hi, ulong, lo,
-               loff_t *, res, uint, wh);
 
-    offset = (loff_t) sector * (loff_t) SECTOR_SIZE;
-    if (_llseek (fd, offset >> 32, offset & 0xffffffff, &result, SEEK_SET))
-      {
-	errnum = ERR_DEV_VALUES;
-	return 0;
-      }
-  }
-#else
-  {
-    off_t offset = (off_t) sector * (off_t) SECTOR_SIZE;
 
-    if (lseek (fd, offset, SEEK_SET) != offset)
-      {
-	errnum = ERR_DEV_VALUES;
-	return 0;
-      }
-  }
-#endif
+  if (my_lseek(fd, offset, SEEK_SET) != offset)
+    {
+      errnum = ERR_DEV_VALUES;
+      return 0;
+    }
   
   if (write (fd, buf, size * SECTOR_SIZE) != (size * SECTOR_SIZE))
     {

@@ -1,5 +1,5 @@
 default 0
-timeout 5
+timeout 0
 
 title   DD-WRT
 root    (hd0,0)

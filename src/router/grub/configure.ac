@@ -595,6 +595,11 @@ AC_ARG_ENABLE(diskless,
   [  --enable-diskless       enable diskless support])
 AM_CONDITIONAL(DISKLESS_SUPPORT, test "x$enable_diskless" = xyes)
 
+dnl Graphical splashscreen support
+AC_ARG_ENABLE(graphics,
+  [  --disable-graphics      disable graphics terminal support])
+AM_CONDITIONAL(GRAPHICS_SUPPORT, test "x$enable_graphics" != xno)
+
 dnl Hercules terminal
 AC_ARG_ENABLE(hercules,
   [  --disable-hercules      disable hercules terminal support])
