@@ -112,7 +112,7 @@ WARNINGS :=	$(shell CC="$(CC)" $(TOPDIR)/gcc-warnings $(WARNINGS))
 endif
 CFLAGS +=	$(WARNINGS)
 CFLAGS +=	$(OPTIMIZE)
-CFLAGS +=	$(EXTRA_CFLAGS)  -DNEED_PRINTF
+CFLAGS +=	$(EXTRA_CFLAGS)
 
 # Must be specified along with -lpthread on linux
 CPPFLAGS +=	$(OS_CFLAG_PTHREAD)
