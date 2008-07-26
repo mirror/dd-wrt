@@ -5,7 +5,7 @@
 #
 
 # activate debugging with 1 or deactivate with 0
-DEBUG ?= 0
+DEBUG = 0
 
 # compile OLSR_PRINTF out
 NO_DEBUG_MESSAGES ?= 0
@@ -112,13 +112,13 @@ WARNINGS :=	$(shell CC="$(CC)" $(TOPDIR)/gcc-warnings $(WARNINGS))
 endif
 CFLAGS +=	$(WARNINGS)
 CFLAGS +=	$(OPTIMIZE)
-CFLAGS +=	$(EXTRA_CFLAGS)
+CFLAGS +=	$(EXTRA_CFLAGS)  -DNEED_PRINTF
 
 # Must be specified along with -lpthread on linux
 CPPFLAGS +=	$(OS_CFLAG_PTHREAD)
 endif
 ifneq ($(MUDFLAP),0)
-CFLAGS +=	-fmudflapth
+CFLAGS +=	-fmudflapth 
 endif
 
 ifdef OLSRD_PLUGIN
@@ -176,7 +176,7 @@ OBJS +=		$(SRCS:%.c=%.o)
 
 # debugging or non-debugging flags
 ifeq ($(DEBUG),1)
-CPPFLAGS +=	-DDEBUG
+CPPFLAGS +=	-DDEBUG -DNEED_PRINTF
 CFLAGS +=	-g
 else
 CPPFLAGS +=	-DNDEBUG
