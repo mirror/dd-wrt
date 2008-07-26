@@ -2199,6 +2199,7 @@ Commands usable anywhere in the menu and in the command-line.
 * rarp::                        Initialize a network device via RARP
 * serial::                      Set up a serial device
 * setkey::                      Configure the key map
+* splashimage::                 Use a splash image
 * terminal::                    Choose a terminal
 * terminfo::                    Define escape sequences for a terminal
 * tftpserver::                  Specify a TFTP server
@@ -2578,6 +2579,16 @@ character each of the symbols corresponds:
 @end deffn
 
 
+@node splashimage
+@subsection splashimage
+
+@deffn Command splashimage file
+Select an image to use as the background image.  This should be
+specified using normal GRUB device naming syntax.  The format of the
+file is a gzipped xpm which is 640x480 with a 14 color palette.
+@end deffn
+
+
 @node terminal
 @subsection terminal
 
@@ -2685,6 +2696,7 @@ you forget a command, you can run the command @command{help}
 * module::                      Load a module
 * modulenounzip::               Load a module without decompression
 * pause::                       Wait for a key press
+* print::                       Print a message
 * quit::                        Exit from the grub shell
 * reboot::                      Reboot your computer
 * read::                        Read data from memory
@@ -3088,6 +3100,16 @@ Print the @var{message}, then wait until a key is pressed. Note that
 placing @key{^G} (ASCII code 7) in the message will cause the speaker to
 emit the standard beep sound, which is useful when prompting the user to
 change floppies.
+@end deffn
+
+
+@node print
+@subsection print
+
+@deffn Command print message @dots{}
+Print the @var{message}. Note that placing @key{^G} (ASCII code 7) in the
+message will cause the speaker to emit the standard beep sound, which is
+useful for visually impaired people.
 @end deffn
 
 

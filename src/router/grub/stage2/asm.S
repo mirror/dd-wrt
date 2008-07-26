@@ -1651,7 +1651,29 @@ ENTRY(gateA20)
 	jnz	3f
 	ret
 
-3:	/* use keyboard controller */
+3:	/*
+	 * try to switch gateA20 using PORT92, the "Fast A20 and Init"
+	 * register
+	*/
+	mov $0x92, %dx
+	inb %dx, %al
+	/* skip the port92 code if it's unimplemented (read returns 0xff) */
+	cmpb $0xff, %al
+	jz 6f
+	
+	/* set or clear bit1, the ALT_A20_GATE bit */
+	movb 4(%esp), %ah
+	testb %ah, %ah
+	jz 4f
+	orb $2, %al
+	jmp 5f
+4:	and $0xfd, %al
+	
+	/* clear the INIT_NOW bit don't accidently reset the machine */
+5:	and $0xfe, %al
+	outb %al, %dx
+	
+6:	/* use keyboard controller */
 	pushl	%eax
 
 	call    gloop1
@@ -1661,9 +1683,12 @@ ENTRY(gateA20)
 
 gloopint1:
 	inb	$K_STATUS
+	cmpb	$0xff, %al
+	jz	gloopint1_done
 	andb	$K_IBUF_FUL, %al
 	jnz	gloopint1
 
+gloopint1_done:	
 	movb	$KB_OUTPUT_MASK, %al
 	cmpb	$0, 0x8(%esp)
 	jz	gdoit
@@ -1684,6 +1709,8 @@ gdoit:
 
 gloop1:
 	inb	$K_STATUS
+	cmpb	$0xff, %al
+	jz	gloop2ret
 	andb	$K_IBUF_FUL, %al
 	jnz	gloop1
 
@@ -1991,6 +2018,11 @@ ENTRY(ascii_key_map)
 ENTRY(console_getkey)
 	push	%ebp
 
+wait_for_key:
+	call	EXT_C(console_checkkey)
+	incl	%eax
+	jz	wait_for_key
+	
 	call	EXT_C(prot_to_real)
 	.code16
 
@@ -2216,7 +2248,304 @@ ENTRY(console_setcursor)
 	pop	%ebx
 	pop	%ebp
 	ret
-		
+
+
+/* graphics mode functions */
+#ifdef SUPPORT_GRAPHICS
+VARIABLE(cursorX)
+.word	0
+VARIABLE(cursorY)
+.word	0
+VARIABLE(cursorCount)
+.word 0
+VARIABLE(cursorBuf)
+.byte	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+
+
+/*
+ * set_int1c_handler(void)
+ */
+ENTRY(set_int1c_handler)
+	pushl   %edi
+
+	/* save the original int1c handler */
+	movl    $0x70, %edi
+	movw    (%edi), %ax
+	movw    %ax, ABS(int1c_offset)
+	movw    2(%edi), %ax
+	movw    %ax, ABS(int1c_segment)
+
+	/* save the new int1c handler */
+	movw    $ABS(int1c_handler), %ax
+	movw    %ax, (%edi)
+	xorw    %ax, %ax
+	movw    %ax, 2(%edi)
+
+	popl    %edi
+	ret
+
+
+/*
+ * unset_int1c_handler(void)
+ */
+ENTRY(unset_int1c_handler)
+	pushl   %edi
+
+	/* check if int1c_handler is set */
+	movl    $0x70, %edi
+	movw    $ABS(int1c_handler), %ax
+	cmpw    %ax, (%edi)
+	jne     int1c_1
+	xorw    %ax, %ax
+	cmpw    %ax, 2(%edi)
+	jne     int1c_1
+
+	/* restore the original */
+	movw    ABS(int1c_offset), %ax
+	movw    %ax, (%edi)
+	movw    ABS(int1c_segment), %ax
+	movw    %ax, 2(%edi)
+
+int1c_1:
+	popl    %edi
+	ret
+
+
+/*
+ * blinks graphics cursor
+ */
+	.code16
+write_data:
+	movw    $0, %ax
+	movw    %ax, %ds
+
+	mov     $0xA000, %ax            /* video in es:di */
+	mov     %ax, %es
+	mov     $80, %ax
+	movw    $ABS(cursorY), %si
+	mov     %ds:(%si), %bx
+	mul     %bx
+	movw    $ABS(cursorX), %si
+	mov     %ds:(%si), %bx
+	shr     $3, %bx                 /* %bx /= 8 */
+	add     %bx, %ax
+	mov     %ax, %di
+
+	movw    $ABS(cursorBuf), %si    /* fontBuf in ds:si */
+
+	/* prepare for data moving */
+	mov     $16, %dx                /* altura da fonte */
+	mov     $80, %bx                /* bytes por linha */
+
+write_loop:
+	movb    %ds:(%si), %al
+	xorb    $0xff, %al
+	movb    %al, %ds:(%si)          /* invert cursorBuf */
+	movb    %al, %es:(%di)          /* write to video */
+	add     %bx, %di
+	inc     %si
+	dec     %dx
+	jg      write_loop
+	ret
+
+int1c_handler:
+	pusha
+	mov     $0, %ax
+	mov     %ax, %ds
+	mov     $ABS(cursorCount), %si
+	mov     %ds:(%si), %ax
+	inc     %ax
+	mov     %ax, %ds:(%si)
+	cmp     $9, %ax
+	jne     int1c_done
+
+	mov     $0, %ax
+	mov     %ax, %ds:(%si)
+	call    write_data
+
+int1c_done:
+	popa
+	iret
+	/* call previous int1c handler */
+	/* ljmp */
+	.byte   0xea
+int1c_offset:  .word   0
+int1c_segment: .word   0
+	.code32
+
+
+/*
+ * unsigned char set_videomode(unsigned char mode)
+ * BIOS call "INT 10H Function 0h" to set video mode
+ *	Call with	%ah = 0x0
+ *			%al = video mode
+ *  Returns old videomode.
+ */
+ENTRY(set_videomode)
+	pushl	%ebp
+	movl	%esp,%ebp
+	pushl	%ebx
+	pushl	%ecx
+
+	movb	8(%ebp), %cl
+
+	call	EXT_C(prot_to_real)
+	.code16
+
+	xorb	%al, %al
+	movb	$0xf, %ah
+	int	$0x10			/* Get Current Video mode */
+	movb	%al, %ch
+	xorb	%ah, %ah
+	movb	%cl, %al
+	int	$0x10			/* Set Video mode */
+
+	DATA32	call	EXT_C(real_to_prot)
+	.code32
+
+	xorl	%eax, %eax
+	movb	%ch, %al
+
+	popl	%ecx
+	popl	%ebx
+	popl	%ebp
+	ret
+
+
+/*
+ * int get_videomode()
+ * BIOS call "INT 10H Function 0Fh" to get current video mode
+ *	Call with	%al = 0x0
+ *			%ah = 0xF
+ *	Returns current videomode.
+ */
+ENTRY(get_videomode)
+	pushl	%ebp
+	movl	%esp,%ebp
+	pushl	%ebx
+	pushl	%ecx
+
+	call	EXT_C(prot_to_real)
+	.code16
+
+	xorb	%al, %al
+	movb	$0xF, %ah
+	int	$0x10			/* Get Current Video mode */
+	movb	%al, %cl	/* For now we only want display mode */
+
+	DATA32	call	EXT_C(real_to_prot)
+	.code32
+
+	xorl	%eax, %eax
+	movb	%cl, %al
+
+	popl	%ecx
+	popl	%ebx
+	popl	%ebp
+	ret
+
+
+/*
+ * unsigned char * graphics_get_font()
+ * BIOS call "INT 10H Function 11h" to set font
+ *      Call with       %ah = 0x11
+ */
+ENTRY(graphics_get_font)
+	push	%ebp
+	push	%ebx
+	push	%ecx
+	push	%edx
+
+	call	EXT_C(prot_to_real)
+	.code16
+
+	movw	$0x1130, %ax
+	movb	$6, %bh		/* font 8x16 */
+	int	$0x10
+	movw	%bp, %dx
+	movw	%es, %cx
+
+	DATA32	call	EXT_C(real_to_prot)
+	.code32
+
+	xorl	%eax, %eax
+	movw	%cx, %ax
+	shll	$4, %eax
+	movw	%dx, %ax
+
+	pop	%edx
+	pop	%ecx
+	pop	%ebx
+	pop	%ebp
+	ret
+
+
+/*
+ * graphics_set_palette(index, red, green, blue)
+ * BIOS call "INT 10H Function 10h" to set individual dac register
+ *	Call with	%ah = 0x10
+ *			%bx = register number
+ *			%ch = new value for green (0-63)
+ *			%cl = new value for blue (0-63)
+ *			%dh = new value for red (0-63)
+ */
+
+ENTRY(graphics_set_palette)
+	push	%ebp
+	push	%eax
+	push	%ebx
+	push	%ecx
+	push	%edx
+
+	movw	$0x3c8, %bx		/* address write mode register */
+
+	/* wait vertical retrace */
+	movw	$0x3da, %dx
+l1b:
+	inb	%dx, %al	/* wait vertical active display */
+	test	$8, %al
+	jnz	l1b
+
+l2b:
+	inb	%dx, %al	/* wait vertical retrace */
+	test	$8, %al
+	jnz	l2b
+
+	mov	%bx, %dx
+	movb	0x18(%esp), %al		/* index */
+	outb	%al, %dx
+	inc	%dx
+
+	movb	0x1c(%esp), %al		/* red */
+	outb	%al, %dx
+
+	movb	0x20(%esp), %al		/* green */
+	outb	%al, %dx
+
+	movb	0x24(%esp), %al		/* blue */
+	outb	%al, %dx
+
+	movw	0x18(%esp), %bx
+
+	call	EXT_C(prot_to_real)
+	.code16
+
+	movb	%bl, %bh
+	movw	$0x1000, %ax
+	int	$0x10
+
+	DATA32	call	EXT_C(real_to_prot)
+	.code32
+
+	pop	%edx
+	pop	%ecx
+	pop	%ebx
+	pop	%eax
+	pop	%ebp
+	ret
+#endif /* SUPPORT_GRAPHICS */
+
+
 /*
  * getrtsecs()
  *	if a seconds value can be read, read it and return it (BCD),

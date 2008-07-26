@@ -29,12 +29,17 @@
 # include <serial.h>
 #endif
 
+#ifdef SUPPORT_GRAPHICS
+# include <graphics.h>
+#endif
+
 #ifndef STAGE1_5
 struct term_entry term_table[] =
   {
     {
       "console",
       0,
+      24,
       console_putchar,
       console_checkkey,
       console_getkey,
@@ -43,13 +48,16 @@ struct term_entry term_table[] =
       console_cls,
       console_setcolorstate,
       console_setcolor,
-      console_setcursor
+      console_setcursor,
+      0, 
+      0
     },
 #ifdef SUPPORT_SERIAL
     {
       "serial",
       /* A serial device must be initialized.  */
       TERM_NEED_INIT,
+      24,
       serial_putchar,
       serial_checkkey,
       serial_getkey,
@@ -58,6 +66,8 @@ struct term_entry term_table[] =
       serial_cls,
       serial_setcolorstate,
       0,
+      0,
+      0, 
       0
     },
 #endif /* SUPPORT_SERIAL */
@@ -65,6 +75,7 @@ struct term_entry term_table[] =
     {
       "hercules",
       0,
+      24,
       hercules_putchar,
       console_checkkey,
       console_getkey,
@@ -73,11 +84,30 @@ struct term_entry term_table[] =
       hercules_cls,
       hercules_setcolorstate,
       hercules_setcolor,
-      hercules_setcursor
+      hercules_setcursor,
+      0,
+      0
     },      
 #endif /* SUPPORT_HERCULES */
+#ifdef SUPPORT_GRAPHICS
+    { "graphics",
+      TERM_NEED_INIT, /* flags */
+      30, /* number of lines */
+      graphics_putchar, /* putchar */
+      console_checkkey, /* checkkey */
+      console_getkey, /* getkey */
+      graphics_getxy, /* getxy */
+      graphics_gotoxy, /* gotoxy */
+      graphics_cls, /* cls */
+      graphics_setcolorstate, /* setcolorstate */
+      graphics_setcolor, /* setcolor */
+      graphics_setcursor, /* nocursor */
+      graphics_init, /* initialize */
+      graphics_end /* shutdown */
+    },
+#endif /* SUPPORT_GRAPHICS */
     /* This must be the last entry.  */
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
   };
 
 /* This must be console.  */
@@ -305,9 +335,10 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
 
   /* XXX: These should be defined in shared.h, but I leave these here,
      until this code is freezed.  */
-#define CMDLINE_WIDTH	78
 #define CMDLINE_MARGIN	10
-  
+
+  /* command-line limits */
+  int cmdline_width = 78, col_start = 0;
   int xpos, lpos, c, section;
   /* The length of PROMPT.  */
   int plen;
@@ -338,7 +369,7 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
       
       /* If the cursor is in the first section, display the first section
 	 instead of the second.  */
-      if (section == 1 && plen + lpos < CMDLINE_WIDTH)
+      if (section == 1 && plen + lpos < cmdline_width)
 	cl_refresh (1, 0);
       else if (xpos - count < 1)
 	cl_refresh (1, 0);
@@ -354,7 +385,7 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
 		grub_putchar ('\b');
 	    }
 	  else
-	    gotoxy (xpos, getxy () & 0xFF);
+	    gotoxy (xpos + col_start, getxy () & 0xFF);
 	}
     }
 
@@ -364,7 +395,7 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
       lpos += count;
 
       /* If the cursor goes outside, scroll the screen to the right.  */
-      if (xpos + count >= CMDLINE_WIDTH)
+      if (xpos + count >= cmdline_width)
 	cl_refresh (1, 0);
       else
 	{
@@ -383,7 +414,7 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
 		}
 	    }
 	  else
-	    gotoxy (xpos, getxy () & 0xFF);
+	    gotoxy (xpos + col_start, getxy () & 0xFF);
 	}
     }
 
@@ -398,14 +429,14 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
       if (full)
 	{
 	  /* Recompute the section number.  */
-	  if (lpos + plen < CMDLINE_WIDTH)
+	  if (lpos + plen < cmdline_width)
 	    section = 0;
 	  else
-	    section = ((lpos + plen - CMDLINE_WIDTH)
-		       / (CMDLINE_WIDTH - 1 - CMDLINE_MARGIN) + 1);
+	    section = ((lpos + plen - cmdline_width)
+		       / (cmdline_width - 1 - CMDLINE_MARGIN) + 1);
 
 	  /* From the start to the end.  */
-	  len = CMDLINE_WIDTH;
+	  len = cmdline_width;
 	  pos = 0;
 	  grub_putchar ('\r');
 
@@ -445,8 +476,8 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
 	  if (! full)
 	    offset = xpos - 1;
 	  
-	  start = ((section - 1) * (CMDLINE_WIDTH - 1 - CMDLINE_MARGIN)
-		   + CMDLINE_WIDTH - plen - CMDLINE_MARGIN);
+	  start = ((section - 1) * (cmdline_width - 1 - CMDLINE_MARGIN)
+		   + cmdline_width - plen - CMDLINE_MARGIN);
 	  xpos = lpos + 1 - start;
 	  start += offset;
 	}
@@ -471,7 +502,7 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
       
       /* If the cursor is at the last position, put `>' or a space,
 	 depending on if there are more characters in BUF.  */
-      if (pos == CMDLINE_WIDTH)
+      if (pos == cmdline_width)
 	{
 	  if (start + len < llen)
 	    grub_putchar ('>');
@@ -488,7 +519,7 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
 	    grub_putchar ('\b');
 	}
       else
-	gotoxy (xpos, getxy () & 0xFF);
+	gotoxy (xpos + col_start, getxy () & 0xFF);
     }
 
   /* Initialize the command-line.  */
@@ -518,10 +549,10 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
 	  
 	  llen += l;
 	  lpos += l;
-	  if (xpos + l >= CMDLINE_WIDTH)
+	  if (xpos + l >= cmdline_width)
 	    cl_refresh (1, 0);
-	  else if (xpos + l + llen - lpos > CMDLINE_WIDTH)
-	    cl_refresh (0, CMDLINE_WIDTH - xpos);
+	  else if (xpos + l + llen - lpos > cmdline_width)
+	    cl_refresh (0, cmdline_width - xpos);
 	  else
 	    cl_refresh (0, l + llen - lpos);
 	}
@@ -533,11 +564,21 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
       grub_memmove (buf + lpos, buf + lpos + count, llen - count + 1);
       llen -= count;
       
-      if (xpos + llen + count - lpos > CMDLINE_WIDTH)
-	cl_refresh (0, CMDLINE_WIDTH - xpos);
+      if (xpos + llen + count - lpos > cmdline_width)
+	cl_refresh (0, cmdline_width - xpos);
       else
 	cl_refresh (0, llen + count - lpos);
     }
+
+  max_lines = current_term->max_lines;
+#ifdef SUPPORT_GRAPHICS
+  if (grub_memcmp (current_term->name, "graphics", sizeof ("graphics") - 1) == 0)
+    {
+      cmdline_width = (view_x1 - view_x0) - 2;
+      col_start = view_x0;
+      max_lines = view_y1 - view_y0;
+    }
+#endif
 
   plen = grub_strlen (prompt);
   llen = grub_strlen (cmdline);
@@ -1006,6 +1047,48 @@ checkkey (void)
 }
 #endif /* ! STAGE1_5 */
 
+#ifndef STAGE1_5
+/* Internal pager.  */
+int
+do_more (void)
+{
+  if (count_lines >= 0)
+    {
+      count_lines++;
+      if (count_lines >= max_lines - 2)
+        {
+          int tmp;
+
+          /* It's important to disable the feature temporarily, because
+             the following grub_printf call will print newlines.  */
+          count_lines = -1;
+
+          grub_printf("\n");
+          if (current_term->setcolorstate)
+            current_term->setcolorstate (COLOR_STATE_HIGHLIGHT);
+
+          grub_printf ("[Hit return to continue]");
+
+          if (current_term->setcolorstate)
+            current_term->setcolorstate (COLOR_STATE_NORMAL);
+
+
+          do
+            {
+              tmp = ASCII_CHAR (getkey ());
+            }
+          while (tmp != '\n' && tmp != '\r');
+          grub_printf ("\r                        \r");
+
+          /* Restart to count lines.  */
+          count_lines = 0;
+          return 1;
+        }
+    }
+  return 0;
+}
+#endif
+
 /* Display an ASCII character.  */
 void
 grub_putchar (int c)
@@ -1034,38 +1117,11 @@ grub_putchar (int c)
 
   if (c == '\n')
     {
+      int flag;
       /* Internal `more'-like feature.  */
-      if (count_lines >= 0)
-	{
-	  count_lines++;
-	  if (count_lines >= max_lines - 2)
-	    {
-	      int tmp;
-	      
-	      /* It's important to disable the feature temporarily, because
-		 the following grub_printf call will print newlines.  */
-	      count_lines = -1;
-
-	      if (current_term->setcolorstate)
-		current_term->setcolorstate (COLOR_STATE_HIGHLIGHT);
-	      
-	      grub_printf ("\n[Hit return to continue]");
-
-	      if (current_term->setcolorstate)
-		current_term->setcolorstate (COLOR_STATE_NORMAL);
-	      
-	      do
-		{
-		  tmp = ASCII_CHAR (getkey ());
-		}
-	      while (tmp != '\n' && tmp != '\r');
-	      grub_printf ("\r                        \r");
-	      
-	      /* Restart to count lines.  */
-	      count_lines = 0;
-	      return;
-	    }
-	}
+      flag = do_more ();
+      if (flag)
+        return;
     }
 
   current_term->putchar (c);
@@ -1090,7 +1146,7 @@ void
 cls (void)
 {
   /* If the terminal is dumb, there is no way to clean the terminal.  */
-  if (current_term->flags & TERM_DUMB)
+  if (current_term->flags & TERM_DUMB) 
     grub_putchar ('\n');
   else
     current_term->cls ();
@@ -1175,13 +1231,13 @@ grub_strlen (const char *str)
 #endif /* ! STAGE1_5 */
 
 int
-memcheck (int addr, int len)
+memcheck (unsigned long int addr, unsigned long int len)
 {
 #ifdef GRUB_UTIL
-  auto int start_addr (void);
-  auto int end_addr (void);
+  auto unsigned long int start_addr (void);
+  auto int unsigned long end_addr (void);
   
-  auto int start_addr (void)
+  auto unsigned long int start_addr (void)
     {
       int ret;
 # if defined(HAVE_START_SYMBOL)
@@ -1192,7 +1248,7 @@ memcheck (int addr, int len)
       return ret;
     }
 
-  auto int end_addr (void)
+  auto unsigned long int end_addr (void)
     {
       int ret;
 # if defined(HAVE_END_SYMBOL)
@@ -1215,6 +1271,16 @@ memcheck (int addr, int len)
     errnum = ERR_WONT_FIT;
 
   return ! errnum;
+}
+
+void
+grub_memcpy(void *dest, const void *src, int len)
+{
+  int i;
+  register char *d = (char*)dest, *s = (char*)src;
+
+  for (i = 0; i < len; i++)
+    d[i] = s[i];
 }
 
 void *
