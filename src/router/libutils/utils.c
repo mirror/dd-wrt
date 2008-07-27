@@ -547,7 +547,7 @@ old_way:;
   setRouter ("Ubiquiti LSX");
   return ROUTER_BOARD_PB42;
 #elif HAVE_TW6600
-  setRouter ("AW-6600");
+  setRouter ("AW-6660");
   return ROUTER_BOARD_TW6600;
 #elif HAVE_USR5453
   setRouter ("US Robotics USR5453");
