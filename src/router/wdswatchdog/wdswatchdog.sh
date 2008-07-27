@@ -15,8 +15,14 @@ do
       sleep 10
       if ! ping -c 1 $ip > /tmp/null
       then
-        echo "$ip dropped two, Restarting Router"
-        /sbin/reboot &
+        echo "$ip dropped two"
+        sleep 10
+        if ! ping -c 1 $ip > /tmp/null
+        then
+    	    echo "$ip dropped three, Restarting Router"
+    	    /usr/sbin/nvram commit
+    	    /sbin/reboot &
+        fi
       fi
     fi
   done
