@@ -3426,6 +3426,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_turbo[16];
 //  char wl_xchanmode[16];
   char wl_outdoor[16];
+  char wl_chanshift[16];
   char wl_diversity[16];
   char wl_rxantenna[16];
   char wl_txantenna[16];
@@ -3443,6 +3444,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_ofdm_weak_det[32];
   char wl_protmode[32];
   sprintf (wl_protmode, "%s_protmode", prefix);
+  sprintf (wl_chanshift, "%s_chanshift", prefix);
   sprintf (wl_turbo, "%s_turbo", prefix);
   sprintf (wl_outdoor, "%s_outdoor", prefix);
   sprintf (wl_diversity, "%s_diversity", prefix);
@@ -3632,6 +3634,27 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 	     wl_ssid, nvram_safe_get (wl_ssid));
 
+#ifdef HAVE_MADWIFI
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.chanshift)</script></div>\n<select name=\"%s\">\n",
+	     wl_chanshift);
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"-1\\\" %s >-1</option>\");\n",
+	     nvram_default_match (wl_chanshift, "-1",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
+	     nvram_default_match (wl_chanshift, "0",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
+	     nvram_default_match (wl_chanshift, "1",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
+
+#endif
   if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "wdsap")
       || nvram_match (wl_mode, "infra"))
     {
