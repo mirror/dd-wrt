@@ -279,6 +279,7 @@ check_vlan_support (void)
     case ROUTER_BRCM4702_GENERIC:
     case ROUTER_ASUS_WL500G:
     case ROUTER_BELKIN_F5D7230_V2000:
+    case ROUTER_BELKIN_F5D7230_V3000:
 #endif
       return 0;
       break;
@@ -865,7 +866,12 @@ old_way:;
 	  return ROUTER_RT480W;
 	}
     }
-
+  if (nvram_match ("boardtype", "0x456") && nvram_match("cpu_id","5350") && nvram_match("test_led_gpio","2") && nvram_match("boardflags","0xf58"))
+    {
+	  cprintf ("router is Belkin F5D7230-4 v3000\n");
+	  setRouter ("Belkin F5D7230-4 v3000");
+	  return ROUTER_BELKIN_F5D7230_V3000;    
+    }
   if (nvram_match ("boardtype", "0x456")
       && nvram_match ("hw_model", "F5D7231-4"))
     {

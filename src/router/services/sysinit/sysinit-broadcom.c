@@ -199,6 +199,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_unset ("wl0gpio0");
       break;
     case ROUTER_BELKIN_F5D7230_V2000:
+    case ROUTER_BELKIN_F5D7230_V3000:
     case ROUTER_BELKIN_F5D7231:
       nvram_set ("wl0gpio3", "136");
       break;
@@ -236,6 +237,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_unset ("wl0gpio0");
       break;
     case ROUTER_BELKIN_F5D7230_V2000:
+    case ROUTER_BELKIN_F5D7230_V3000:
       nvram_set ("wl0gpio3", "2");
       break;
     }
@@ -862,6 +864,7 @@ start_sysinit (void)
     case ROUTER_USR_5430:
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
     case ROUTER_BELKIN_F5D7230_V2000:
+    case ROUTER_BELKIN_F5D7230_V3000:
     case ROUTER_NETGEAR_WG602_V3:
     case ROUTER_NETGEAR_WG602_V4:
       nvram_set ("lan_ifnames", "eth0 eth1");
