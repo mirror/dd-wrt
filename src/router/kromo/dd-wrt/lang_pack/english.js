@@ -1796,6 +1796,7 @@ wl_basic.outband="Outdoor Band";
 wl_basic.channel_width="Channel Width";
 wl_basic.channel_wide="Wide Channel";
 wl_basic.regulatory="SuperChannel";
+wl_basic.chanshift="Channel Shifting";
 wl_basic.specialmode="2.3 Ghz Mode";
 wl_basic.wifi_bonding="Wifi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
