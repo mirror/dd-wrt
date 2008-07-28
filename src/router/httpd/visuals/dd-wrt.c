@@ -3471,27 +3471,27 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp,
 	     "document.write(\"<option value=\\\"-1\\\" %s >\" + share.auto + \"</option>\");\n",
 	     nvram_default_match (wl_noise_immunity, "-1",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
+				  "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
 	     "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
 	     nvram_default_match (wl_noise_immunity, "0",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
+				  "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
 	     "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
 	     nvram_default_match (wl_noise_immunity, "1",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
+				  "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
 	     "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n",
 	     nvram_default_match (wl_noise_immunity, "2",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
+				  "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
 	     "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n",
 	     nvram_default_match (wl_noise_immunity, "3",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
+				  "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
 	     "document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n",
 	     nvram_default_match (wl_noise_immunity, "4",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
+				  "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
 
 
