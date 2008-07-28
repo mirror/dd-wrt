@@ -700,6 +700,7 @@ start_restore_defaults (void)
     case ROUTER_VIEWSONIC_WAPBR_100:
     case ROUTER_USR_5430:
     case ROUTER_BELKIN_F5D7230_V2000:
+    case ROUTER_BELKIN_F5D7230_V3000:
     case ROUTER_NETGEAR_WG602_V3:
     case ROUTER_NETGEAR_WG602_V4:
 #endif
