@@ -1610,14 +1610,17 @@ ej_show_wifiselect (webs_t wp, int argc, char_t ** argv)
   int i;
   for (i = 0; i < count; i++)
     {
-	  sprintf (var, "ath%d", i);
-	  websWrite (wp, "<option value=\"%s\" %s >%s</option>\n",
-			  var, nvram_match ("wifi_display", var) ? "selected=\"selected\"" : "", var);
-	  char *names = nvram_nget ("ath%d_vifs", i);
-	  foreach (var, names, next)
-	  {
-		websWrite (wp, "<option value=\"%s\" %s >%s</option>\n",
-			var, nvram_match ("wifi_display", var) ? "selected=\"selected\"" : "", var);
+      sprintf (var, "ath%d", i);
+      websWrite (wp, "<option value=\"%s\" %s >%s</option>\n",
+		 var, nvram_match ("wifi_display",
+				   var) ? "selected=\"selected\"" : "", var);
+      char *names = nvram_nget ("ath%d_vifs", i);
+      foreach (var, names, next)
+      {
+	websWrite (wp, "<option value=\"%s\" %s >%s</option>\n",
+		   var, nvram_match ("wifi_display",
+				     var) ? "selected=\"selected\"" : "",
+		   var);
       }
     }
   websWrite (wp, "</select>\n");
@@ -1657,12 +1660,17 @@ static void
 showRadio (webs_t wp, char *propname, char *nvname)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>\n",
-		  propname);
-  websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  nvname, nvram_default_match (nvname, "0", "0") ? "checked=\"checked\"" : "");
-  websWrite (wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  nvname, nvram_default_match (nvname, "1", "0") ? "checked=\"checked\"" : "");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>\n",
+	     propname);
+  websWrite (wp,
+	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+	     nvname, nvram_default_match (nvname, "0",
+					  "0") ? "checked=\"checked\"" : "");
+  websWrite (wp,
+	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+	     nvname, nvram_default_match (nvname, "1",
+					  "0") ? "checked=\"checked\"" : "");
   websWrite (wp, "</div>\n");
 }
 
@@ -2264,7 +2272,7 @@ ej_show_bridgenames (webs_t wp, int argc, char_t ** argv)
 void
 ej_show_bridgetable (webs_t wp, int argc, char_t ** argv)
 {
-#ifdef HAVE_MICRO  //brctl N/A in micro
+#ifdef HAVE_MICRO		//brctl N/A in micro
   return;
 #endif
 
@@ -2931,12 +2939,12 @@ showrtssettings (webs_t wp, char *var)
   websWrite (wp,
 	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disabled)</script></input>&nbsp;\n",
 	     vvar, var, nvram_default_match (ssid, "0",
-					    "0") ? "checked=\"checked\"" :
+					     "0") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp,
 	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enabled)</script></input>\n",
 	     vvar, var, nvram_default_match (ssid, "1",
-					    "0") ? "checked=\"checked\"" :
+					     "0") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp, "</div>\n");
 
@@ -3044,6 +3052,31 @@ showbridgesettings (webs_t wp, char *var, int mcast)
 
 }
 
+#ifdef HAVE_MADWIFI
+static void
+show_chanshift (webs_t * wp, char *wl_chanshift)
+{
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.chanshift)</script></div>\n<select name=\"%s\">\n",
+	     wl_chanshift);
+  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"-1\\\" %s >-1</option>\");\n",
+	     nvram_default_match (wl_chanshift, "-1",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
+	     nvram_default_match (wl_chanshift, "0",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
+	     nvram_default_match (wl_chanshift, "1",
+				  "-1") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
+
+}
+#endif
 static int
 show_virtualssid (webs_t wp, char *prefix)
 {
@@ -3085,25 +3118,8 @@ show_virtualssid (webs_t wp, char *prefix)
 	       var, nvram_safe_get (ssid));
 
 #ifdef HAVE_MADWIFI
-  sprintf (wl_chanshift, "%s_chanshift", var);
-  websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.chanshift)</script></div>\n<select name=\"%s\">\n",
-	     wl_chanshift);
-  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"-1\\\" %s >-1</option>\");\n",
-	     nvram_default_match (wl_chanshift, "-1",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
-	     nvram_default_match (wl_chanshift, "0",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
-	     nvram_default_match (wl_chanshift, "1",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
+    sprintf (wl_chanshift, "%s_chanshift", var);
+    show_chanshift (wp, wl_chanshift);
 
     sprintf (wl_protmode, "%s_protmode", var);
     showOptionsLabel (wp, "wl_basic.protmode", wl_protmode,
@@ -3537,7 +3553,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
   if (nvram_match ("ath_regulatory", "1") || !issuperchannel ())
     {
-	  showRadio (wp, "wl_basic.outband", wl_outdoor);
+      showRadio (wp, "wl_basic.outband", wl_outdoor);
     }
 #endif
   websWrite (wp,
@@ -3657,25 +3673,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     wl_ssid, nvram_safe_get (wl_ssid));
 
 #ifdef HAVE_MADWIFI
-  websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.chanshift)</script></div>\n<select name=\"%s\">\n",
-	     wl_chanshift);
-  websWrite (wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"-1\\\" %s >-1</option>\");\n",
-	     nvram_default_match (wl_chanshift, "-1",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
-	     nvram_default_match (wl_chanshift, "0",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp,
-	     "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
-	     nvram_default_match (wl_chanshift, "1",
-				  "-1") ? "selected=\\\"selected\\\"" : "");
-  websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
-
+  show_chanshift (wp, wl_chanshift);
 #endif
   if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "wdsap")
       || nvram_match (wl_mode, "infra"))
