@@ -211,6 +211,9 @@ endif
 ifeq ($(CONFIG_LSX),y)
 CFLAGS += -DHAVE_LSX
 endif
+ifeq ($(CONFIG_DANUBE),y)
+CFLAGS += -DHAVE_DANUBE
+endif
 ifeq ($(CONFIG_TW6600),y)
 CFLAGS += -DHAVE_TW6600
 endif
