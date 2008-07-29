@@ -40,6 +40,9 @@ endif
 ifeq ($(CONFIG_LSX),y)
 MODULE:=conntrack.26
 endif
+ifeq ($(CONFIG_DANUBE),y)
+MODULE:=conntrack.26
+endif
 ifeq ($(CONFIG_TW6600),y)
 MODULE:=conntrack.26
 endif
