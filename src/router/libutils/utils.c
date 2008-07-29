@@ -866,12 +866,13 @@ old_way:;
 	  return ROUTER_RT480W;
 	}
     }
-  if (nvram_match ("boardtype", "0x456") && nvram_match("cpu_id","5350") && nvram_match("test_led_gpio","2") && nvram_match("boardflags","0xf58"))
+  if (boardnum == 1 && nvram_match ("boardtype", "0x456") && nvram_match ("test_led_gpio", "2"))
     {
 	  cprintf ("router is Belkin F5D7230-4 v3000\n");
 	  setRouter ("Belkin F5D7230-4 v3000");
 	  return ROUTER_BELKIN_F5D7230_V3000;    
     }
+
   if (nvram_match ("boardtype", "0x456")
       && nvram_match ("hw_model", "F5D7231-4"))
     {
@@ -1123,7 +1124,7 @@ old_way:;
     }
 
 
-  if (boardnum == 1 && nvram_match ("boardtype", "0x456"))
+  if (boardnum == 1 && nvram_match ("boardtype", "0x456") && nvram_match ("test_led_gpio", "0"))
     {
       cprintf ("router is Netgear WG602 v3\n");
       setRouter ("Netgear WG602 v3");
