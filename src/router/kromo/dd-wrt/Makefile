@@ -222,6 +222,11 @@ endif
 ifeq ($(CONFIG_SPUTNIK),y)
 	cp -f sputnik/logo.png $(INSTALLDIR)/www/style
 endif
+
+ifeq ($(CONFIG_TELCOM),y)
+	cp -f telcom/logo.png $(INSTALLDIR)/www/style
+endif
+
 ifeq ($(CONFIG_GLAUCO),y)
 	cp -f glauco/logo.png $(INSTALLDIR)/www/style
 	cp -f glauco/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
