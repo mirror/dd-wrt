@@ -175,6 +175,9 @@ endif
 ifeq ($(CONFIG_DANUBE),y)
   CFLAGS += -DHAVE_DANUBE
 endif
+ifeq ($(CONFIG_STORM),y)
+  CFLAGS += -DHAVE_STORM
+endif
 ifeq ($(CONFIG_TW6600),y)
   CFLAGS += -DHAVE_TW6600
 endif
