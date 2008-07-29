@@ -301,6 +301,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_ALLNET01 0x5813
 
+// Linksys WRT610N (BCM4785 cpu, Gigabit switch, dual radio 2.4 and 5 GHz Broadcom, fccid: Linksys Q87-WRT610N)
 #define ROUTER_WRT610N 0x591f
 
 // Belkin F5D7230 v2000 (BCM4712 cpu, 5325E switch, serial flash, fccid: Belkin K7SF5D7234A)
