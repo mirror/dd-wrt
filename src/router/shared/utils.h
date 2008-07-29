@@ -309,6 +309,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 
 #define ROUTER_BOARD_DANUBE 0x610f
 
+#define ROUTER_BOARD_STORM 0x620f
+
 
 
 #define NVROUTER "DD_BOARD"

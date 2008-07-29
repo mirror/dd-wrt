@@ -80,6 +80,10 @@ ifeq ($(ARCH),armeb)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
+ifeq ($(ARCH),arm)
+libnvram.so: nvram_linux.o nvram_convert.o
+	$(LD) -shared -o $@ $^
+endif
 ifeq ($(ARCH),mips)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
