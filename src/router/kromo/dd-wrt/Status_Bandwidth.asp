@@ -54,6 +54,8 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
+							<dt class="term"><% tran("status_band.h2"); %>:</dt>
+							<dd class="definition"><% tran("hstatus_band.svg"); %></dd>
 							<dt class="term"><% tran("status_band.chg_unit"); %>:</dt>
 							<dd class="definition"><% tran("hstatus_band.right1"); %></dd>
 							<dt class="term"><% tran("status_band.chg_scale"); %>:</dt>
