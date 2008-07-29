@@ -1146,6 +1146,7 @@ status_band.follow="követ";
 status_band.up="fel";
 
 //help container
+hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
 hstatus_band.right1="Kattintson a szövegre mérték változtatáshoz (bytes/s vagy bits/s).";
 hstatus_band.right2="Kattintson a szövegre a grafikus skála változtatásához.";
 

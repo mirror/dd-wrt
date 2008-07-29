@@ -1339,6 +1339,7 @@ status_band.up="up";
 
 //help container
 //
+hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
 hstatus_band.right1="按 SWITCH TO 選擇 (bytes/s 或 bits/s).";
 hstatus_band.right2="按 AUTOSCALE 調整顯示範圍.";
 
