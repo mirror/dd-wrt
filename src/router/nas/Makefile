@@ -11,10 +11,10 @@ clean:
 	@true
 
 install:
-ifeq ($(CONFIG_BCM5354),y)
+#ifeq ($(CONFIG_BCM5354),y)
 	if test -e "src/Makefile"; then make -C src install; else install -D nas $(INSTALLDIR)/nas/usr/sbin/nas; fi
 	@true
-else
-	if test -e "src/Makefile"; then make -C src install; else install -D nas.r9068 $(INSTALLDIR)/nas/usr/sbin/nas; fi
-	@true
-endif
+#else
+#	if test -e "src/Makefile"; then make -C src install; else install -D nas.r9068 $(INSTALLDIR)/nas/usr/sbin/nas; fi
+#	@true
+#endif
