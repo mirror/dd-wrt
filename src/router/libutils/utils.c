@@ -1101,9 +1101,9 @@ old_way:;
       return ROUTER_WRT600N;
     }
 
-  if (nvram_match("boot_hw_model","WRT610N"))
+  if (nvram_match("boot_hw_model", "WRT610N"))
     {
-      cprintf ("router is Linksys WRT600N\n");
+      cprintf ("router is Linksys WRT610N\n");
       setRouter ("Linksys WRT610N");
       return ROUTER_WRT610N;
     }
@@ -2384,6 +2384,11 @@ led_control (int type, int act)
     case ROUTER_ASKEY_RT220XD:
       wlan_gpio = 0x10;
       dmz_gpio = 0x11;		//not soldered  
+      break;
+    case ROUTER_WRT610N:
+      power_gpio = 0x01;
+      connected_gpio = 0x13;
+      ses_gpio = 0x19;
       break;
 #endif
     }
