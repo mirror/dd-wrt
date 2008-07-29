@@ -864,7 +864,6 @@ start_sysinit (void)
     case ROUTER_USR_5430:
     case ROUTER_BUFFALO_WLI_TX4_G54HP:
     case ROUTER_BELKIN_F5D7230_V2000:
-    case ROUTER_BELKIN_F5D7230_V3000:
     case ROUTER_NETGEAR_WG602_V3:
     case ROUTER_NETGEAR_WG602_V4:
       nvram_set ("lan_ifnames", "eth0 eth1");
@@ -876,6 +875,11 @@ start_sysinit (void)
 	  nvram_set ("wan_ifname", "eth0");
 	}
       break;
+      
+    case ROUTER_BELKIN_F5D7230_V3000:
+      if (nvram_match ("vlan1ports", "4 5u"))
+	nvram_set ("vlan1ports", "4 5");
+	  break;
 
     case ROUTER_DELL_TRUEMOBILE_2300_V2:	//we must fix cfe defaults with CR added
       nvram_set ("vlan0hwname", "et0");
