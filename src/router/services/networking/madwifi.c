@@ -1358,7 +1358,9 @@ configure_single (int count)
   setsysctrl (wif, "txantenna", tx);
 #endif
 //setup vif interfaces first
-
+  char chanshift[32];
+  sprintf (chanshift, "%s_chanshift", dev);
+  eval ("iwpriv", dev, "channelshift", nvram_default_get (chanshift, "0"));
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
@@ -1368,6 +1370,9 @@ configure_single (int count)
 	continue;
       sprintf (ssid, "%s_ssid", var);
       sprintf (mode, "%s_mode", var);
+      sprintf (chanshift, "%s_chanshift", dev);
+      eval ("iwpriv", var, "channelshift",
+	    nvram_default_get (chanshift, "0"));
       m = nvram_default_get (mode, "ap");
 #ifndef OLD_MADWIFI
       set_scanlist (dev, wif);
