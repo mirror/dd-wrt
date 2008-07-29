@@ -112,6 +112,7 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
 #ifndef HAVE_CA8
 #ifndef HAVE_PB42
 #ifndef HAVE_LSX
+#ifndef HAVE_DANUBE
 #ifndef HAVE_TW6600
   if (nvram_match ("portprio_support", "1"))
     {
@@ -155,6 +156,7 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
 #endif
 #endif
 #endif
+#endif
 }
 
 int
@@ -171,6 +173,7 @@ svqos_set_ports (void)
 #ifndef HAVE_TW6600
 #ifndef HAVE_PB42
 #ifndef HAVE_LSX
+#ifndef HAVE_DANUBE
   if (nvram_match ("portprio_support", "1"))
     {
       int loop = 1;
@@ -200,6 +203,7 @@ svqos_set_ports (void)
 	     atoi (level) / 10 - 1, loop);
 	}
     }
+#endif
 #endif
 #endif
 #endif
@@ -693,6 +697,9 @@ stop_wshaper (void)
 #elif HAVE_LSX
   ret = eval (script_name, "stop", "XX", "eth0");
   ret = eval (script_name, "stop", "XX", "eth1");
+  ret = eval (script_name, "stop", "XX", "ath0");
+#elif HAVE_DANUBE
+  ret = eval (script_name, "stop", "XX", "eth0");
   ret = eval (script_name, "stop", "XX", "ath0");
 #elif HAVE_TW6600
   ret = eval (script_name, "stop", "XX", "eth0");
