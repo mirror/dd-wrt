@@ -4586,7 +4586,7 @@ ej_get_uptime (webs_t wp, int argc, char_t ** argv)
   char line[256];
   FILE *fp;
 
-  if (fp = popen ("uptime", "r"))
+  if ((fp = popen ("uptime", "r")))
     {
       fgets (line, sizeof (line), fp);
       line[strlen (line) - 1] = '\0';	// replace new line with null
