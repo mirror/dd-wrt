@@ -592,7 +592,7 @@ ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "unknown");
   return;
 }
-#elif defined(HAVE_PB42) || defined(HAVE_LSX)
+#elif defined(HAVE_PB42) || defined(HAVE_LSX) || defined(HAVE_DANUBE)
 void
 ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
 {

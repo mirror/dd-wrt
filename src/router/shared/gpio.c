@@ -18,7 +18,7 @@
 #include <fcntl.h>
 
 
-#if  defined(HAVE_AR531X) || defined(HAVE_LSX)
+#if  defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE)
 
 void
 set_gpio (int gpio, int value)

@@ -307,6 +307,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Belkin F5D7230 v2000 (BCM4712 cpu, 5325E switch, serial flash, fccid: Belkin K7SF5D7234A)
 #define ROUTER_BELKIN_F5D7230_V3000 0x600f
 
+#define ROUTER_BOARD_DANUBE 0x610f
+
 
 
 #define NVROUTER "DD_BOARD"
