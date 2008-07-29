@@ -165,6 +165,9 @@ endif
 ifeq ($(CONFIG_LSX),y)
   CFLAGS += -DHAVE_LSX
 endif
+ifeq ($(CONFIG_DANUBE),y)
+  CFLAGS += -DHAVE_DANUBE
+endif
 ifeq ($(CONFIG_TW6600),y)
   CFLAGS += -DHAVE_TW6600
 endif
@@ -222,6 +225,10 @@ CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -
 OBJS += ../wireless-tools/libiw.so.29 
 endif
 #OBJS += countrycode/countrycode_$(ARCH).o
+
+ifeq ($(CONFIG_TELCOM),y)
+CFLAGS += -DHAVE_TELCOM
+endif
 
 ifeq ($(CONFIG_GGEW),y)
   CFLAGS += -DHAVE_NEWMEDIA

@@ -264,6 +264,9 @@ endif
 ifeq ($(CONFIG_GGEW),y)
 CFLAGS += -DHAVE_GGEW
 endif
+ifeq ($(CONFIG_TELCOM),y)
+CFLAGS += -DHAVE_TELCOM
+endif
 
 
 ifeq ($(CONFIG_PPPOE),y)
@@ -457,6 +460,9 @@ CFLAGS += -DHAVE_PB42
 endif
 ifeq ($(CONFIG_LSX),y)
 CFLAGS += -DHAVE_LSX
+endif
+ifeq ($(CONFIG_DANUBE),y)
+CFLAGS += -DHAVE_DANUBE
 endif
 
 ifeq ($(SAMBA_SUPPORT),1)
