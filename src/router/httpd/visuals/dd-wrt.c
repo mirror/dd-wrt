@@ -3054,7 +3054,7 @@ showbridgesettings (webs_t wp, char *var, int mcast)
 
 #ifdef HAVE_MADWIFI
 static void
-show_chanshift (webs_t * wp, char *wl_chanshift)
+show_chanshift (webs_t wp, char *wl_chanshift)
 {
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
