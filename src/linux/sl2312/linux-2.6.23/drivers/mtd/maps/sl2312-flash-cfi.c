@@ -33,6 +33,7 @@
 #include <asm/arch/sl2312.h>
 #include <linux/mtd/kvctl.h>
 #include "sl2312_flashmap.h"
+#include <linux/squashfs_fs.h>
 
 
 //extern int parse_afs_partitions(struct mtd_info *, struct mtd_partition **);
@@ -129,6 +130,9 @@ static int __init sl2312flash_init(void)
 	struct mtd_partition *parts;
 	int nr_parts = 0;
 	int ret;
+	char *buf;
+	unsigned char *p;
+	int offset=0;
 #ifndef CONFIG_SL2312_SHARE_PIN
     unsigned int    reg_val;
 #endif
@@ -168,6 +172,7 @@ static int __init sl2312flash_init(void)
 
 //	simple_map_init(&sl2312flash_map);
 
+    printk("probe cfi\n");
 	mtd = do_map_probe("cfi_probe", &sl2312flash_map);
 	if (!mtd)
 	{
@@ -181,8 +186,37 @@ static int __init sl2312flash_init(void)
 //    mtd->read = flash_read;
 //    mtd->write = flash_write;
 
-    parts = sl2312_partitions;
+    printk("scan for squashfs\n");
+       parts = sl2312_partitions;
 	nr_parts = sizeof(sl2312_partitions)/sizeof(*parts);
+	buf = sl2312flash_map.virt;
+	int erasesize = mtd->erasesize;
+	int filesyssize=0;
+	int tmplen=0;
+	while((offset+erasesize)<mtd->size)
+	    {
+	    printk(KERN_EMERG "[0x%08X]\n",offset);
+	    if (*((__u32 *) buf) == SQUASHFS_MAGIC) 
+		{
+	        struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
+		if (*((__u16 *) buf))
+			{
+			filesyssize = sb->bytes_used;
+			tmplen = offset + filesyssize;
+			tmplen +=  (erasesize - 1);
+			tmplen &= ~(erasesize - 1);
+			filesyssize = tmplen - offset;
+			}
+		parts[2].size = filesyssize;
+		parts[2].offset = offset;
+		parts[3].size = parts[1].size-filesyssize;
+		parts[3].offset = offset+filesyssize;
+		break;
+		}
+	    offset+=erasesize;
+	    buf+=erasesize;
+	    }
+
 	ret = add_mtd_partitions(mtd, parts, nr_parts);
 	/*If we got an error, free all resources.*/
 	if (ret < 0) {
