@@ -899,6 +899,25 @@ start_lan (void)
   nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 #endif
+#ifdef HAVE_DANUBE
+  if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
+      || nvram_match ("wan_proto", "disabled"))
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "eth0 ath0");
+      PORTSETUPWAN ("");
+    }
+  else
+    {
+      nvram_set ("lan_ifname", "br0");
+      nvram_set ("lan_ifnames", "ath0");
+      PORTSETUPWAN ("eth0");
+    }
+  strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
+  ioctl (s, SIOCGIFHWADDR, &ifr);
+  nvram_set ("et0macaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+  strcpy (mac, nvram_safe_get ("et0macaddr"));
+#endif
 #ifdef HAVE_MR3202A
   if (getSTA () || getWET () || nvram_match ("ath0_mode", "wdssta")
       || nvram_match ("wan_proto", "disabled"))
@@ -1350,7 +1369,7 @@ start_lan (void)
 	  continue;
 	if (!ifexists (name))
 	  continue;
-#if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX)
+#if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE)
 	if (!strcmp (name, "eth2"))
 	  {
 	    strcpy (realname, "ath0");
@@ -1757,6 +1776,9 @@ start_lan (void)
 #ifdef HAVE_LSX
       nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
 #endif
+#ifdef HAVE_DANUBE
+      nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
+#endif
 #ifdef HAVE_TW6600
       nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
 #endif
@@ -1837,6 +1859,14 @@ start_lan (void)
     }
 #endif
 #ifdef HAVE_LSX
+  strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
+  if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
+    {
+      char eabuf[32];
+      nvram_set ("wl0_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+    }
+#endif
+#ifdef HAVE_DANUBE
   strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
     {
@@ -2004,6 +2034,9 @@ start_lan (void)
 #define HAVE_RB500
 #endif
 #ifdef HAVE_LSX
+#define HAVE_RB500
+#endif
+#ifdef HAVE_DANUBE
 #define HAVE_RB500
 #endif
 #ifdef HAVE_MAGICBOX
@@ -2263,6 +2296,10 @@ start_wan (int status)
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "vlan0";
 #elif HAVE_LSX
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+#elif HAVE_DANUBE
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "eth0";

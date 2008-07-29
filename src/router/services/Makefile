@@ -350,6 +350,9 @@ endif
 ifeq ($(CONFIG_LSX),y)
 CFLAGS += -DHAVE_LSX
 endif
+ifeq ($(CONFIG_DANUBE),y)
+CFLAGS += -DHAVE_DANUBE
+endif
 ifeq ($(CONFIG_TW6600),y)
 CFLAGS += -DHAVE_TW6600
 endif
@@ -399,6 +402,10 @@ endif
 ifeq ($(CONFIG_IPROUTE2),y)
 CFLAGS += -DHAVE_IPROUTE2
 endif
+ifeq ($(CONFIG_TELCOM),y)
+CFLAGS += -DHAVE_TELCOM
+endif
+
 ifeq ($(CONFIG_GGEW),y)
 CFLAGS += -DHAVE_GGEW
 CFLAGS += -DHAVE_NEWMEDIA
