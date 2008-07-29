@@ -1252,6 +1252,7 @@ status_band.follow="folgen";
 status_band.up="oben";
 
 //help container
+hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
 hstatus_band.right1="Klicken Sie den Text an um die Einheiten zu wechseln (bytes/s oder bits/s).";
 hstatus_band.right2="Klicken Sie den Text an um die Art der Skalierung zu wechseln.";
 

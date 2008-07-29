@@ -1344,6 +1344,7 @@ status_band.up="gor";
 
 //help container
 
+hstatus_band.svg="Adobe SVG plugin je potreben za prikaz grafov pasovne ¹irine.";
 hstatus_band.right1="Klikni na oznako za preklop enote (bytes/s ali bits/s).";
 hstatus_band.right2="Klikni na oznako za izbiro merila.";
 

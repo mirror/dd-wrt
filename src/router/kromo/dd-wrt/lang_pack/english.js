@@ -1348,6 +1348,7 @@ status_band.up="up";
 
 //help container
 var hstatus_band = new Object();
+hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
 hstatus_band.right1="Click the label to switch unit (bytes/s or bits/s).";
 hstatus_band.right2="Click the label to choose graph scale type.";
 

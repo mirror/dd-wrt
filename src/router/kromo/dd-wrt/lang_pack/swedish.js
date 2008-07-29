@@ -1282,6 +1282,7 @@ status_band.follow="Följ upp";
 status_band.up="upp";
 
 //help container
+hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
 hstatus_band.right1="Klicka namnet för att byta enhet (bytes/s eller bits/s).";
 hstatus_band.right2="Klicka namnet för att byta graf skalan.";
 
