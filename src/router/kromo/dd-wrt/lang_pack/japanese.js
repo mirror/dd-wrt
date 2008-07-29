@@ -1254,6 +1254,7 @@ status_band.up="up";
 
 //help container
 
+hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
 hstatus_band.right1="単位を切り替えることができます(bytes/s もしくは bits/s).";
 hstatus_band.right2="帯域軸の基準を変更する個とができます";
 
