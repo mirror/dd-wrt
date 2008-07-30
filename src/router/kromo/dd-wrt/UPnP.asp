@@ -13,7 +13,7 @@ function parseForwards(upnpForwards) {
 	// wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc
 	data = [];
 	for (var i = 0; i < upnpForwards.length; ++i) {
-		if (upnpForwards[i] == '' || !upnpForwards[i].match(/^(\d+-\d+)>(.*?):(\d+-\d+),(.*?),(.*?),(.*)/)) continue;
+		if (upnpForwards[i] == '' || !upnpForwards[i].match(/^(\d+-\d+)&gt;(.*?):(\d+-\d+),(.*?),(.*?),(.*)/)) continue;
 		var e = {};
 		e.index = i;
 		e.wanPorts = RegExp.$1;
