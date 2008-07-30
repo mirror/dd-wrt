@@ -2450,7 +2450,7 @@ ej_show_openvpn_status (webs_t wp, int argc, char_t ** argv)
 	wfputc (b, wp);
     }
   fclose (in);
-  websWrite (wp, "</fieldset>");
+  websWrite (wp, "</fieldset><br />");
   websWrite (wp,
 	     "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
   system2 ("/etc/openvpnstatus.sh > /tmp/.temp");
@@ -2462,7 +2462,7 @@ ej_show_openvpn_status (webs_t wp, int argc, char_t ** argv)
 	wfputc (b, wp);
     }
   fclose (in);
-  websWrite (wp, "</fieldset>");
+  websWrite (wp, "</fieldset><br />");
   websWrite (wp,
 	     "<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
   system2 ("/etc/openvpnlog.sh > /tmp/.temp");
@@ -2474,7 +2474,7 @@ ej_show_openvpn_status (webs_t wp, int argc, char_t ** argv)
 	wfputc (b, wp);
     }
   fclose (in);
-  websWrite (wp, "</fieldset>");
+  websWrite (wp, "</fieldset><br />");
 
 }
 
