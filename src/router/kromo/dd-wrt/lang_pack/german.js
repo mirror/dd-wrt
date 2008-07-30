@@ -771,6 +771,7 @@ idx.summt_opt3="letzter Son Mär - letzter Son Okt";
 idx.summt_opt4="letzter Son Okt - letzter Son Mär";
 idx.summt_opt5="zweiter Son Mär - erster Son Nov";
 idx.summt_opt6="erster Son Oct - dritter Son Mär";
+idx.summt_opt7="letzter Son Sep - erster Son Apr";
 idx.ntp_client="NTP-Client";
 
 //help container
