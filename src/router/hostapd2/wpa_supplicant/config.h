@@ -97,6 +97,12 @@ struct wpa_config {
 	int ap_scan;
 
 	/**
+	 * scan_cache - controls the time in seconds after the last scan results
+	 * before a new scan may be initiated
+	 */
+	int scan_cache;
+
+	/**
 	 * ctrl_interface - Parameters for the control interface
 	 *
 	 * If this is specified, %wpa_supplicant will open a control interface
