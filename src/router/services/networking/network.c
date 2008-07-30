@@ -3588,42 +3588,39 @@ start_hotplug_net (void)
 #ifdef HAVE_MADWIFI
   char *interface, *action, *devaction;
 // fprintf(stderr,"Hotplug\n");
-  if (!(interface = getenv ("INTERFACE")) || !(action = getenv ("ACTION"))
-      || !(devaction = getenv ("DEVACTION")))
+  if (!(interface = getenv ("INTERFACE")))
     return 0;
-// fprintf(stderr,"Hotplug %s\n",action);
-  if (!strcmp (action, "change"))
-    {
-      char *vlan = getenv ("VLAN");
+  action = getenv("ACTION");
+  if (!action)
+    return 0;
+ fprintf(stderr,"Hotplug %s\n",action);
+  if (strncmp(interface,"ath",3))
+    return 0;
+  //try to parse
+  int ifnum;
+  int stanum;
+  int count = sscanf(interface,"ath%d.sta%d",&ifnum,&stanum);
+  char ifname[32];
+  sprintf(ifname,"ath%d",ifnum);
+  if (count!=2)
+    return 0;
       char bridged[32];
-      sprintf (bridged, "%s_bridged", interface);
-      if (!strcmp (devaction, "wds_add"))
+      sprintf (bridged, "ath%d_bridged", ifnum);
+    
+      if (!strcmp (devaction, "add"))
 	{
-
-	  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
-	  eval ("vconfig", "add", interface, vlan);
-	  char devname[32];
-	  sprintf (devname, "%s.%04d", interface, atoi (vlan));
-
-	  syslog (LOG_INFO, "adding WDS Interface %s for Station %s\n",
-		  devname, getenv ("WDSNODE"));
-	  eval ("ifconfig", devname, "up");
+	  fprintf(stderr,"adding WDS %s\n",interface);
+	  eval ("ifconfig", interface, "up");
 	  if (nvram_match (bridged, "1"))
-	    br_add_interface (getBridge (interface), devname);
+	    br_add_interface (getBridge (ifname), interface);
 	}
-      if (!strcmp (devaction, "wds_del"))
+      if (!strcmp (devaction, "del"))
 	{
-	  eval ("vconfig", "set_name_type", "DEV_PLUS_VID");
-	  char devname[32];
-	  sprintf (devname, "%s.%04d", interface, atoi (vlan));
-	  syslog (LOG_INFO, "removing WDS Interface %s for Station %s\n",
-		  devname, getenv ("WDSNODE"));
-	  eval ("ifconfig", devname, "down");
+	  fprintf(stderr,"removing WDS %s\n",interface);
+	  eval ("ifconfig", interface, "down");
 	  if (nvram_match (bridged, "1"))
-	    br_del_interface (getBridge (interface), devname);
-	  eval ("vconfig", "rem", devname);
+	    br_del_interface (getBridge (ifname), interface);
 	}
-    }
   return 0;
 #else
 
