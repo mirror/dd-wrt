@@ -411,6 +411,7 @@ period_check (int sig)
       sesgpio = 0x0f;		//gpio 15, normal
       break;
     case ROUTER_WRT350N:
+    case ROUTER_WRT610N:
       sesgpio = 0x18;		//gpio 8, inversed
       break;
     case ROUTER_ASUS_WL500W:
@@ -429,6 +430,7 @@ period_check (int sig)
     case ROUTER_WRT54G_V81:
       sesgpio = 0x16;		//gpio 6, inversed
       break;
+
 #endif
     default:
       sesgpio = 0xff;		//gpio unknown, disabled
