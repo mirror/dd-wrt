@@ -46,6 +46,9 @@
 #include <bcmdevs.h>
 #include <cymac.h>
 
+#define sys_restart() eval("event","3","1","1")
+#define sys_reboot() eval("sync"); eval("event","3","1","15")
+
 static void
 check_brcm_cpu_type (void)
 {
@@ -552,7 +555,7 @@ start_sysinit (void)
       basic_params = generic1;
       
       if (nvram_get ("pci/1/1/macaddr") == NULL)
-	need_reboot = 1;
+	    need_reboot = 1;
 	
 	nvram_set ("pci/1/1/macaddr", nvram_safe_get ("et0macaddr"));
 	
@@ -621,7 +624,7 @@ start_sysinit (void)
       nvram_set ("wl1_ifname", "eth3");
       
       if (nvram_get ("pci/1/1/macaddr") == NULL || nvram_get ("pci/1/3/macaddr") == NULL)
-	need_reboot = 1;
+	    need_reboot = 1;
 	
     unsigned char mac[20];	
 	strcpy (mac, nvram_safe_get ("et0macaddr"));
@@ -976,6 +979,7 @@ start_sysinit (void)
 	  nvram_set ("buffalo_hp", "1");
 #ifndef HAVE_BUFFALO		// if HAVE_BUFFALO not used to be FCC/CE valid
 	  nvram_set ("boardflags", "0x3658");	// enable high gain PA
+	  need_reboot = 1;
 #endif
 	}
       break;
@@ -987,6 +991,7 @@ start_sysinit (void)
 	  nvram_set ("buffalo_hp", "1");
 #ifndef HAVE_BUFFALO		// if HAVE_BUFFALO not used to be FCC/CE valid
 	  nvram_set ("boardflags", "0x3758");	// enable high gain PA
+	  need_reboot = 1;
 #endif
 	}
       break;
@@ -995,10 +1000,9 @@ start_sysinit (void)
     
   if (need_reboot)
     {
-      cprintf ("Need reboot now to set some mac addresses\n");
       nvram_commit ();
-      kill (1, SIGTERM);
-      exit (0);
+      cprintf ("Need reboot now .....\n");
+      sys_reboot ();
     }
 
   /* Modules */
@@ -1403,8 +1407,7 @@ check_cfe_nv (void)
     {
       cprintf ("Some error found, we want to reboot!.....................\n");
       nvram_commit ();
-      kill (1, SIGTERM);
-      exit (0);
+      sys_reboot ();
     }
 
 
@@ -1546,8 +1549,7 @@ start_overclocking (void)
       nvram_set ("clkfreq", clkfr);
       nvram_commit ();
       cprintf ("Overclocking done, rebooting...\n");
-      kill (1, SIGTERM);
-      exit (0);
+      sys_reboot ();
     }
 #endif
 }
