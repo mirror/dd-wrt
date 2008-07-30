@@ -199,7 +199,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_unset ("wl0gpio0");
       break;
     case ROUTER_BELKIN_F5D7230_V2000:
-    case ROUTER_BELKIN_F5D7230_V3000:
+//    case ROUTER_BELKIN_F5D7230_V3000:
     case ROUTER_BELKIN_F5D7231:
       nvram_set ("wl0gpio3", "136");
       break;
@@ -237,7 +237,7 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       nvram_unset ("wl0gpio0");
       break;
     case ROUTER_BELKIN_F5D7230_V2000:
-    case ROUTER_BELKIN_F5D7230_V3000:
+//    case ROUTER_BELKIN_F5D7230_V3000:
       nvram_set ("wl0gpio3", "2");
       break;
     }
@@ -831,8 +831,6 @@ start_sysinit (void)
 
     case ROUTER_WRT350N:
     case ROUTER_WRT310N:
-      nvram_set ("wan_ifname", "vlan2");
-      break;
     case ROUTER_WRT600N:
     case ROUTER_WRT610N:
       nvram_set ("wan_ifname", "vlan2");
@@ -903,7 +901,7 @@ start_sysinit (void)
       if (nvram_match ("vlan1ports", "4 5u"))
 	nvram_set ("vlan1ports", "4 5");
       break;
-
+      
     case ROUTER_ASUS_WL520GUGC:
     case ROUTER_NETGEAR_WGR614L:
       if (nvram_match ("vlan1ports", "0 5u"))
