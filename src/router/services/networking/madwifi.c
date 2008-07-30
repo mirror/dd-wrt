@@ -1429,7 +1429,7 @@ configure_single (int count)
       if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
 	eval ("iwpriv", var, "wds", "1");
       if (!strcmp (m, "wdsap"))
-	eval ("iwpriv", var, "wdsvlan", "0");
+	eval ("iwpriv", var, "wdssep", "1");
 #ifdef OLD_MADWIFI
       if (disablescan)
 	eval ("iwpriv", var, "scandisable", "1");
@@ -1444,7 +1444,7 @@ configure_single (int count)
     eval ("iwpriv", dev, "wds", "1");
 
   if (!strcmp (m, "wdsap"))
-    eval ("iwpriv", dev, "wdsvlan", "0");
+    eval ("iwpriv", dev, "wdssep", "1");
 
   char isolate[32];
   sprintf (isolate, "%s_ap_isolate", dev);
