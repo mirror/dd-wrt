@@ -279,7 +279,6 @@ check_vlan_support (void)
     case ROUTER_BRCM4702_GENERIC:
     case ROUTER_ASUS_WL500G:
     case ROUTER_BELKIN_F5D7230_V2000:
-    case ROUTER_BELKIN_F5D7230_V3000:
 #endif
       return 0;
       break;
@@ -1108,7 +1107,7 @@ old_way:;
       return ROUTER_WRT600N;
     }
 
-  if (nvram_match("boot_hw_model", "WRT610N"))
+  if (nvram_match ("boardtype", "0x478") && nvram_match("boot_hw_model", "WRT610N"))
     {
       cprintf ("router is Linksys WRT610N\n");
       setRouter ("Linksys WRT610N");
@@ -2394,8 +2393,9 @@ led_control (int type, int act)
       break;
     case ROUTER_WRT610N:
       power_gpio = 0x01;
-      connected_gpio = 0x13;
-      ses_gpio = 0x19;
+      connected_gpio = 0x13;  //ses amber
+      ses_gpio = 0x19;        //ses blue
+      usb_gpio = 0x10;
       break;
 #endif
     }
