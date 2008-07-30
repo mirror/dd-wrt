@@ -244,7 +244,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Netgear WG602 v4 (BCM5354 cpu, fccid: Netgear PY3WG602V4)
 #define ROUTER_NETGEAR_WG602_V4 0x4617
 
-// Linksys WRT600N (BCM4704 cpu, Gigabit switch, dual radio 2.4 and 5 GHz Broadcom, fccid: Linksys Q87-WRT600NV1, Q87-WRT600NV11)
+// Linksys WRT600N (BCM4705 cpu, Gigabit switch, dual radio 2.4 and 5 GHz Broadcom, fccid: Linksys Q87-WRT600NV1, Q87-WRT600NV11)
 #define ROUTER_WRT600N 0x4717
 
 // Linksys WRH54G (BCM5354 cpu, fccid: Linksys Q87-WRH54G)
@@ -302,10 +302,10 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_ALLNET01 0x5813
 
 // Linksys WRT610N (BCM4785 cpu, Gigabit switch, dual radio 2.4 and 5 GHz Broadcom, fccid: Linksys Q87-WRT610N)
-#define ROUTER_WRT610N 0x591f
+#define ROUTER_WRT610N 0x5916
 
-// Belkin F5D7230 v2000 (BCM4712 cpu, 5325E switch, serial flash, fccid: Belkin K7SF5D7234A)
-#define ROUTER_BELKIN_F5D7230_V3000 0x600f
+// Belkin F5D7230 v3000 (BCM5350 cpu, flash ?? , fccid: Belkin PD5F5D72304)
+#define ROUTER_BELKIN_F5D7230_V3000 0x6011
 
 #define ROUTER_BOARD_DANUBE 0x610f
 
