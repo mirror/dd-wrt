@@ -3600,10 +3600,10 @@ start_hotplug_net (void)
   int ifnum;
   int stanum;
   int count = sscanf(interface,"ath%d.sta%d",&ifnum,&stanum);
-  char ifname[32];
-  sprintf(ifname,"ath%d",ifnum);
   if (count!=2)
     return 0;
+  char ifname[32];
+  sprintf(ifname,"ath%d",ifnum);
       char bridged[32];
       sprintf (bridged, "ath%d_bridged", ifnum);
     
