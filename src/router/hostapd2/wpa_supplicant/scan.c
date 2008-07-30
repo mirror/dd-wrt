@@ -40,6 +40,18 @@ static void wpa_supplicant_gen_assoc_event(struct wpa_supplicant *wpa_s)
 	wpa_supplicant_event(wpa_s, EVENT_ASSOC, &data);
 }
 
+int wpa_supplicant_may_scan(struct wpa_supplicant *wpa_s)
+{
+	struct os_time time;
+
+	if (wpa_s->conf->scan_cache > 0) {
+		os_get_time(&time);
+		time.sec -= wpa_s->conf->scan_cache;
+		if (os_time_before(&time, &wpa_s->last_scan_results))
+			return 0;
+	}
+	return 1;
+}
 
 static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 {
@@ -134,8 +146,9 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 	} else
 		wpa_s->prev_scan_ssid = BROADCAST_SSID_SCAN;
 
-	if (wpa_s->scan_res_tried == 0 && wpa_s->conf->ap_scan == 1 &&
-	    !wpa_s->use_client_mlme) {
+	if (!wpa_supplicant_may_scan(wpa_s) ||
+		(wpa_s->scan_res_tried == 0 && wpa_s->conf->ap_scan == 1 &&
+	    !wpa_s->use_client_mlme)) {
 		wpa_s->scan_res_tried++;
 		wpa_printf(MSG_DEBUG, "Trying to get current scan results "
 			   "first without requesting a new scan to speed up "
