@@ -696,6 +696,7 @@ start_restore_defaults (void)
 #ifndef HAVE_BUFFALO
     case ROUTER_ASUS_WL500GD:
     case ROUTER_ASUS_WL550GE:
+    case ROUTER_BELKIN_F5D7230_V3000:
       linux_overrides = vlan;
       break;
     case ROUTER_WRT350N:
@@ -734,7 +735,6 @@ start_restore_defaults (void)
     case ROUTER_VIEWSONIC_WAPBR_100:
     case ROUTER_USR_5430:
     case ROUTER_BELKIN_F5D7230_V2000:
-    case ROUTER_BELKIN_F5D7230_V3000:
     case ROUTER_NETGEAR_WG602_V3:
     case ROUTER_NETGEAR_WG602_V4:
 #endif
