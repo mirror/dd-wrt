@@ -550,7 +550,7 @@ old_way:;
   setRouter ("Infineon Danube");
   return ROUTER_BOARD_DANUBE;
 #elif HAVE_STORM
-  setRouter ("Wilibox WB-111");
+  setRouter ("Wiligear WB-111");
   return ROUTER_BOARD_STORM;
 #elif HAVE_TW6600
   setRouter ("AW-6660");
