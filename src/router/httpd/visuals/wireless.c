@@ -432,8 +432,8 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
 	}
 
       nv_count = 0;		// init mac list
-      char *list = nvram_safe_get ("wl_mac_list");
-      foreach (word, list, next)
+      char *maclist = nvram_safe_get ("wl_mac_list");
+      foreach (word, maclist, next)
       {
 	snprintf (wl_client_macs[nv_count].hwaddr,
 		  sizeof (wl_client_macs[nv_count].hwaddr), "%s", word);
