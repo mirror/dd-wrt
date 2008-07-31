@@ -53,12 +53,6 @@
 #define LZMA_RESULT_DATA_ERROR 1
 #define LZMA_RESULT_NOT_ENOUGH_MEM 2
 
-#ifdef _LZMA_IN_CB
-typedef struct _ILzmaInCallback
-{
-  int (*Read)(void *object, unsigned char **buffer, UInt32 *bufferSize);
-} ILzmaInCallback;
-#endif
 
 #define LZMA_BASE_SIZE 1846
 #define LZMA_LIT_SIZE 768
@@ -75,11 +69,6 @@ int LzmaDecoderInit(
     unsigned char *buffer, UInt32 bufferSize,
     int lc, int lp, int pb,
     unsigned char *dictionary, UInt32 dictionarySize,
-  #ifdef _LZMA_IN_CB
-    ILzmaInCallback *inCallback
-  #else
-    unsigned char *inStream, UInt32 inSize
-  #endif
 );
 #endif
 
@@ -88,11 +77,6 @@ int LzmaDecode(
   #ifndef _LZMA_OUT_READ
     UInt32 bufferSize,
     int lc, int lp, int pb,
-  #ifdef _LZMA_IN_CB
-    ILzmaInCallback *inCallback,
-  #else
-    unsigned char *inStream, UInt32 inSize,
-  #endif
   #endif
     unsigned char *outStream, UInt32 outSize,
     UInt32 *outSizeProcessed);

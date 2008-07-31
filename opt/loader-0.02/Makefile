@@ -47,6 +47,7 @@ install:
 
 loader.gz: loader
 	gzip -nc9 $< > $@
+	echo "DD-WRT v24-sp1 (c) 2004 - 2008 Sebastian Gottschall / NewMedia-NET GmbH" >> loader.gz
 
 loader: loader.o
 	$(OBJCOPY) $< $@
@@ -66,8 +67,8 @@ data.lds:
 decompress.image: decompress
 	$(OBJCOPY) $< $@
 
-decompress: decompress.lds decompress.o LzmaDecode.o
-	$(LD) -static --gc-sections -no-warn-mismatch -T decompress.lds -o $@ decompress.o LzmaDecode.o
+decompress: decompress.lds decompress.o 
+	$(LD) -static --gc-sections -no-warn-mismatch -T decompress.lds -o $@ decompress.o
 
 decompress.lds: decompress.lds.in Makefile
 	@sed "$(SEDFLAGS)" < $< > $@
