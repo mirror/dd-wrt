@@ -75,7 +75,9 @@ addEvent(window, "unload", function() {
 								<script type="text/javascript">
 								//<![CDATA[
 								document.write("<option value=\"1.75\" <% nvram_selmatch("ofdm_width", "1.75", "selected"); %> >1.75</option>");
+								document.write("<option value=\"3\" <% nvram_selmatch("ofdm_width", "3", "selected"); %> >3</option>");
 								document.write("<option value=\"3.5\" <% nvram_selmatch("ofdm_width", "3.5", "selected"); %> >3.5</option>");
+								document.write("<option value=\"5\" <% nvram_selmatch("ofdm_width", "5", "selected"); %> >5</option>");
 								document.write("<option value=\"7\" <% nvram_selmatch("ofdm_width", "7", "selected"); %> >7</option>");
 								document.write("<option value=\"10\" <% nvram_selmatch("ofdm_width", "10", "selected"); %> >10</option>");
 								//]]>
