@@ -464,6 +464,9 @@ endif
 ifeq ($(CONFIG_DANUBE),y)
 CFLAGS += -DHAVE_DANUBE
 endif
+ifeq ($(CONFIG_STORM),y)
+CFLAGS += -DHAVE_STORM
+endif
 
 ifeq ($(SAMBA_SUPPORT),1)
 OBJS  += samba.o
