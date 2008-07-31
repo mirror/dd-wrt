@@ -39,7 +39,6 @@ typedef struct _CRangeDecoder
   UInt32 Range;
   UInt32 Code;
   #ifdef _LZMA_IN_CB
-  ILzmaInCallback *InCallback;
   int Result;
   #endif
   int ExtraBytes;
@@ -51,7 +50,7 @@ Byte RangeDecoderReadByte(CRangeDecoder *rd)
   {
     #ifdef _LZMA_IN_CB
     UInt32 size;
-    rd->Result = rd->InCallback->Read(rd->InCallback, &rd->Buffer, &size);
+    rd->Result = read_byte(&rd->Buffer, &size);
     rd->BufferLim = rd->Buffer + size;
     if (size == 0)
     #endif
@@ -66,17 +65,10 @@ Byte RangeDecoderReadByte(CRangeDecoder *rd)
 /* #define ReadByte (*rd->Buffer++) */
 #define ReadByte (RangeDecoderReadByte(rd))
 
-void RangeDecoderInit(CRangeDecoder *rd,
-  #ifdef _LZMA_IN_CB
-    ILzmaInCallback *inCallback
-  #else
-    Byte *stream, UInt32 bufferSize
-  #endif
-    )
+void RangeDecoderInit(CRangeDecoder *rd)
 {
   int i;
   #ifdef _LZMA_IN_CB
-  rd->InCallback = inCallback;
   rd->Buffer = rd->BufferLim = 0;
   #else
   rd->Buffer = stream;
@@ -92,6 +84,7 @@ void RangeDecoderInit(CRangeDecoder *rd,
 #define RC_INIT_VAR UInt32 range = rd->Range; UInt32 code = rd->Code;        
 #define RC_FLUSH_VAR rd->Range = range; rd->Code = code;
 #define RC_NORMALIZE if (range < kTopValue) { range <<= 8; code = (code << 8) | ReadByte; }
+
 
 UInt32 RangeDecoderDecodeDirectBits(CRangeDecoder *rd, int numTotalBits)
 {
@@ -155,7 +148,8 @@ int RangeDecoderBitDecode(CProb *prob, CRangeDecoder *rd)
     { A0; range = bound; *prob += (kBitModelTotal - *prob) >> kNumMoveBits; mi <<= 1; } \
   else \
     { A1; range -= bound; code -= bound; *prob -= (*prob) >> kNumMoveBits; mi = (mi + mi) + 1; } \
-  RC_NORMALIZE
+      RC_NORMALIZE
+
 
 #define RC_GET_BIT(prob, mi) RC_GET_BIT2(prob, mi, ; , ;)               
 
@@ -351,11 +345,6 @@ int LzmaDecoderInit(
     unsigned char *buffer, UInt32 bufferSize,
     int lc, int lp, int pb,
     unsigned char *dictionary, UInt32 dictionarySize,
-    #ifdef _LZMA_IN_CB
-    ILzmaInCallback *inCallback
-    #else
-    unsigned char *inStream, UInt32 inSize
-    #endif
     )
 {
   LzmaVarState *vs = (LzmaVarState *)buffer;
@@ -379,11 +368,6 @@ int LzmaDecoderInit(
   for (i = 0; i < numProbs; i++)
     p[i] = kBitModelTotal >> 1; 
   RangeDecoderInit(&vs->RangeDecoder, 
-      #ifdef _LZMA_IN_CB
-      inCallback
-      #else
-      inStream, inSize
-      #endif
   );
   return LZMA_RESULT_OK;
 }
@@ -435,11 +419,6 @@ int LzmaDecode(unsigned char *buffer,
 int LzmaDecode(
     Byte *buffer, UInt32 bufferSize,
     int lc, int lp, int pb,
-    #ifdef _LZMA_IN_CB
-    ILzmaInCallback *inCallback,
-    #else
-    unsigned char *inStream, UInt32 inSize,
-    #endif
     unsigned char *outStream, UInt32 outSize,
     UInt32 *outSizeProcessed)
 {
@@ -459,13 +438,7 @@ int LzmaDecode(
     return LZMA_RESULT_NOT_ENOUGH_MEM;
   for (i = 0; i < numProbs; i++)
     p[i] = kBitModelTotal >> 1; 
-  RangeDecoderInit(&rd, 
-      #ifdef _LZMA_IN_CB
-      inCallback
-      #else
-      inStream, inSize
-      #endif
-      );
+  RangeDecoderInit(&rd);
 #endif
 
   *outSizeProcessed = 0;

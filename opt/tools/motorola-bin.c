@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 
 	if (argc != 4)
 		usage("wrong number of arguments");
-
+	
 	// mmap trx file
 	if ((fd = open(argv[2], O_RDONLY))  < 0
 	|| (len = lseek(fd, 0, SEEK_END)) < 0
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-
+	unlink(argv[3]);
 		// create a firmware image in memory
 		// and copy the trx to it
 		firmware = malloc(sizeof(struct motorola) + len);

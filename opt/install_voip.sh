@@ -3,9 +3,7 @@ cd ../src
 #cp cy_voip.h cy_conf.h
 #make clean
 cd router
-make shared-clean
-make rc-clean
-make httpd-clean
+make clean
 
 cp .config_voip .config
 #cp Makefile.standard Makefile
@@ -65,10 +63,5 @@ cd ../../../../../opt
 ./tools/addpattern -4 -p W54s -v v1.05.0 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrt54gsv4.bin -g
 
 
-cp dd-wrt.v23_voip_asus.trx /GruppenLW
-cp dd-wrt.v23_voip_wrt54g.bin /GruppenLW
-cp dd-wrt.v23_voip_wrt54gs.bin /GruppenLW
-cp dd-wrt.v23_voip_wrtsl54gs.bin /GruppenLW
-cp dd-wrt.v23_voip_wrt54gsv4.bin /GruppenLW
-cp dd-wrt.v23_voip.trx /GruppenLW/dd-wrt.v23_voip.bin
-#cp dd-wrt.v23.prefinal5_asus.trx /GruppenLW
+cp dd-wrt.v23_voip.trx ~/GruppenLW/dd-wrt.v23_voip.bin
+#cp dd-wrt.v23.prefinal5_asus.trx ~/GruppenLW

@@ -11,6 +11,7 @@ cp .config_micro.v24_bcm5354 .config
 
 #copy config.normal .config
 rm -rf mipsel-uclibc/install
+make clean
 make rc-clean
 make services-clean
 make shared-clean
@@ -93,7 +94,7 @@ export TARGETDIR=../src/router/mipsel-uclibc/target
 #cp dd-wrt.v23_wrtsl54gs.bin ~/GruppenLW/dd-wrt.v24_wrtsl54gs.bin
 
 #cp dd-wrt.v23_wrt54gsv4.bin ~/GruppenLW/dd-wrt.v24_wrt54gsv4.bin
-cp dd-wrt.v23.trx /GruppenLW/dd-wrt.v24_micro_wrt54gv8.bin
+cp dd-wrt.v23.trx ~/GruppenLW/dd-wrt.v24_micro_wrt54gv8.bin
 cp dd-wrt.v23_wrh54g.bin /GruppenLW/dd-wrt.v24_micro_wrh54g.bin
 
 
