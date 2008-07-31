@@ -87,16 +87,16 @@ rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/ipv6.o
 #./tools/addpattern -i dd-wrt.v23_mini.trx -o dd-wrt.v23_mini_wrt54gs.bin -2 -g
 #sed -e  1s,^W54S,W54G, < dd-wrt.v23_mini_wrt54gs.bin > dd-wrt.v23_mini_wrt54g.bin 
 
-cp dd-wrt.v23_mini_asus.trx /GruppenLW
-cp dd-wrt.v23_mini_wrt54g.bin /GruppenLW
-cp dd-wrt.v23_mini_wrt54gs.bin /GruppenLW
-cp dd-wrt.v23_mini_wrt54gsv4.bin /GruppenLW
-cp dd-wrt.v23_mini_wrtsl54gs.bin /GruppenLW
+cp dd-wrt.v23_mini_asus.trx ~/GruppenLW
+cp dd-wrt.v23_mini_wrt54g.bin ~/GruppenLW
+cp dd-wrt.v23_mini_wrt54gs.bin ~/GruppenLW
+cp dd-wrt.v23_mini_wrt54gsv4.bin ~/GruppenLW
+cp dd-wrt.v23_mini_wrtsl54gs.bin ~/GruppenLW
 
-cp dd-wrt.v23_mini.trx /GruppenLW/dd-wrt.v23_mini_generic.bin
+cp dd-wrt.v23_mini.trx ~/GruppenLW/dd-wrt.v23_mini_generic.bin
 ./tools/motorola-bin -1 dd-wrt.v23_mini.trx dd-wrt.bin
-cp dd-wrt.bin /GruppenLW/dd-wrt.v23_mini_wr850g.bin
+cp dd-wrt.bin ~/GruppenLW/dd-wrt.v23_mini_wr850g.bin
 ./tools/motorola-bin -3 dd-wrt.v23_mini.trx dd-wrt.bin
-cp dd-wrt.bin /GruppenLW/dd-wrt.v23_mini_we800g.bin
+cp dd-wrt.bin ~/GruppenLW/dd-wrt.v23_mini_we800g.bin
 
-#cp dd-wrt.v23.prefinal5_asus.trx /GruppenLW
+#cp dd-wrt.v23.prefinal5_asus.trx ~/GruppenLW

@@ -70,10 +70,5 @@ cd ../../../../../opt
 #./tools/addpattern -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gs.bin -2 -g
 #sed -e  1s,^W54S,W54G, < dd-wrt.v23_wrt54gs.bin > dd-wrt.v23_wrt54g.bin 
 
-cp dd-wrt.v23_asus.trx /GruppenLW/dd-wrt.v23_vpn_asus.trx
-cp dd-wrt.v23_wrt54g.bin /GruppenLW/dd-wrt.v23_vpn_wrt54g.bin
-cp dd-wrt.v23_wrt54gs.bin /GruppenLW/dd-wrt.v23_vpn_wrt54gs.bin
-cp dd-wrt.v23_wrtsl54gs.bin /GruppenLW/dd-wrt.v23_vpn_wrtsl54gs.bin
-cp dd-wrt.v23_wrt54gsv4.bin /GruppenLW/dd-wrt.v23_vpn_wrt54gsv4.bin
-cp dd-wrt.v23.trx /GruppenLW/dd-wrt.v23_vpn_generic.bin
-#cp dd-wrt.v23.prefinal5_asus.trx /GruppenLW
+cp dd-wrt.v23.trx ~/GruppenLW/dd-wrt.v23_vpn_generic.bin
+#cp dd-wrt.v23.prefinal5_asus.trx ~/GruppenLW

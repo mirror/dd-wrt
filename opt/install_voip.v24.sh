@@ -55,7 +55,7 @@ cd ../../../../../opt
 #cp ./lang/* ../src/router/mipsel-uclibc/target/etc/langpack
 ../src/linux/brcm/linux.v23/scripts/squashfs/mksquashfs-lzma ../src/router/mipsel-uclibc/target target.squashfs -noappend -root-owned -le
 ./make_kernel.sh
-../tools/trx -o dd-wrt.v23_voip.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz -a 1024 target.squashfs
+../tools/trx -o dd-wrt.v23_voip.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 ../tools/trx_gs -o dd-wrt.v23_voip_gs.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 ./asus/asustrx -p WL500gx -v 1.9.2.7 -o dd-wrt.v23_voip_asus.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 #add pattern
@@ -63,14 +63,13 @@ cd ../../../../../opt
 
 ./tools/addpattern -4 -p W54U -v v4.20.6 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrtsl54gs.bin -g
 ./tools/addpattern -4 -p W54G -v v4.20.6 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrt54g.bin -g
+./tools/addpattern -4 -p EWCG -v v4.20.6 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrt350n.bin -g
+./tools/addpattern -4 -p EWCB -v v4.20.6 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrt300n.bin -g
 ./tools/addpattern -4 -p W54S -v v4.70.6 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrt54gs.bin -g
 ./tools/addpattern -4 -p W54s -v v1.05.0 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrt54gsv4.bin -g
 
 
-cp dd-wrt.v23_voip_asus.trx /GruppenLW/dd-wrt.v24_voip_asus.trx
-cp dd-wrt.v23_voip_wrt54g.bin /GruppenLW/dd-wrt.v24_voip_wrt54g.bin
-cp dd-wrt.v23_voip_wrt54gs.bin /GruppenLW/dd-wrt.v24_voip_wrt54gs.bin
-cp dd-wrt.v23_voip_wrtsl54gs.bin /GruppenLW/dd-wrt.v24_voip_wrtsl54gs.bin
-cp dd-wrt.v23_voip_wrt54gsv4.bin /GruppenLW/dd-wrt.v24_voip_gsv4.bin
-cp dd-wrt.v23_voip.trx /GruppenLW/dd-wrt.v24_voip_generic.bin
-#cp dd-wrt.v23.prefinal5_asus.trx /GruppenLW
+cp dd-wrt.v23_voip.trx ~/GruppenLW/dd-wrt.v24_voip_generic.bin
+../tools/mkimage dd-wrt.v23_voip.trx
+cp Trailed* ~/GruppenLW/dd-wrt.v24_voip_wrt600n.bin
+#cp dd-wrt.v23.prefinal5_asus.trx ~/GruppenLW
