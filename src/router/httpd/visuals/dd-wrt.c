@@ -312,7 +312,8 @@ ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
 void
 ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
 {
-  FILE *fp = fopen ("/proc/cpuinfo", "rb");
+websWrite(wp,"300");
+/*  FILE *fp = fopen ("/proc/cpuinfo", "rb");
   if (fp == NULL)
     {
       websWrite (wp, "unknown");
@@ -340,7 +341,7 @@ ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
     }
 
   fclose (fp);
-  websWrite (wp, "unknown");
+  websWrite (wp, "unknown");*/
   return;
 }
 #elif HAVE_XSCALE
