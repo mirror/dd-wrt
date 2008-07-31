@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <errno.h>
 
 
 #if  defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE)
@@ -96,7 +97,7 @@ set_gpio (int gpio, int value)
   if ((file = open (filename, O_RDWR)) == -1)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
-//      fprintf (stderr, "Error: could not open %s (%d)\n", filename, errno);
+      fprintf (stderr, "Error: could not open %s (%d)\n", filename, errno);
       return;
     }
 
@@ -106,8 +107,8 @@ set_gpio (int gpio, int value)
   if (ioctl (file, GPIO_SET_CONFIG, (long) &_bit) < 0)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
-//      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
-//             errno);
+      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+             errno);
       return;
     }
 
@@ -117,8 +118,8 @@ set_gpio (int gpio, int value)
   if (ioctl (file, GPIO_SET_BIT, (unsigned long) &_bit) < 0)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
-//      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
-//             errno);
+      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+             errno);
       return;
     }
 
@@ -136,6 +137,8 @@ get_gpio (int gpio)
   if ((file = open (filename, O_RDONLY)) == -1)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
+      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+             errno);
       return 1;
     }
 
@@ -145,6 +148,8 @@ get_gpio (int gpio)
   if (ioctl (file, GPIO_SET_CONFIG, (long) &_bit) < 0)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
+      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+             errno);
       return 1;
     }
 
@@ -153,6 +158,8 @@ get_gpio (int gpio)
   if (ioctl (file, GPIO_GET_BIT, (long) &_bit) < 0)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
+      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+             errno);
       return 1;
     }
 
@@ -202,7 +209,7 @@ set_gpio (int gpio, int value)
   if ((file = open (filename, O_RDWR)) == -1)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
-//      fprintf (stderr, "Error: could not open %s (%d)\n", filename, errno);
+      fprintf (stderr, "Error: could not open %s (%d)\n", filename, errno);
       return;
     }
 
@@ -212,8 +219,8 @@ set_gpio (int gpio, int value)
   if (ioctl (file, GPIO_SET_CONFIG, (long) &_bit) < 0)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
-//      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
-//             errno);
+     fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+             errno);
       return;
     }
 
@@ -223,8 +230,8 @@ set_gpio (int gpio, int value)
   if (ioctl (file, GPIO_SET_BIT, (unsigned long) &_bit) < 0)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
-//      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
-//             errno);
+      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+             errno);
       return;
     }
 
@@ -242,6 +249,7 @@ get_gpio (int gpio)
   if ((file = open (filename, O_RDONLY)) == -1)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
+      fprintf (stderr, "Error: could not open %s (%d)\n", filename, errno);
       return 1;
     }
 
@@ -251,6 +259,8 @@ get_gpio (int gpio)
   if (ioctl (file, GPIO_SET_CONFIG, (long) &_bit) < 0)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
+      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+             errno);
       return 1;
     }
 
@@ -259,6 +269,8 @@ get_gpio (int gpio)
   if (ioctl (file, GPIO_GET_BIT, (long) &_bit) < 0)
     {
       /* ERROR HANDLING; you can check errno to see what went wrong */
+      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+             errno);
       return 1;
     }
 
