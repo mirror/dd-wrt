@@ -46,7 +46,7 @@ sl2312_fixup(struct machine_desc *desc, struct tag *tags,
 #ifdef CONFIG_GEMINI_IPI
         mi->bank[0].size  = (64*1024*1024);  // 128M
 #else
-        mi->bank[0].size  = (128*1024*1024);  // 128M
+        mi->bank[0].size  = (32*1024*1024);  // 128M
 #endif
         mi->bank[0].node  = 0;
 }
