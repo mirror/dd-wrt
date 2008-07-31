@@ -18,7 +18,7 @@
 #include <fcntl.h>
 
 
-#if  defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM)
+#if  defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE)
 
 void
 set_gpio (int gpio, int value)
@@ -159,6 +159,114 @@ get_gpio (int gpio)
   close (file);
   return _bit.state;
 }
+
+
+
+
+#elif HAVE_STORM
+#include <linux/mii.h>
+#include <linux/sockios.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
+#define u8 unsigned char
+#define u32 unsigned long
+
+#define GPIO_GET_BIT	0x0000001
+#define GPIO_SET_BIT	0x0000002
+#define GPIO_GET_CONFIG	0x0000003
+#define GPIO_SET_CONFIG 0x0000004
+
+#define IXP4XX_GPIO_OUT 		0x1
+#define IXP4XX_GPIO_IN  		0x2
+
+struct gpio_bit
+{
+  unsigned char bit;
+  unsigned char state;
+};
+
+
+
+char *filename = "/dev/misc/gpio";
+
+void
+set_gpio (int gpio, int value)
+{
+  int file;
+  struct gpio_bit _bit;
+
+  /* open device */
+  if ((file = open (filename, O_RDWR)) == -1)
+    {
+      /* ERROR HANDLING; you can check errno to see what went wrong */
+//      fprintf (stderr, "Error: could not open %s (%d)\n", filename, errno);
+      return;
+    }
+
+  /* Config bit as output */
+  _bit.bit = gpio;
+  _bit.state = IXP4XX_GPIO_OUT;
+  if (ioctl (file, GPIO_SET_CONFIG, (long) &_bit) < 0)
+    {
+      /* ERROR HANDLING; you can check errno to see what went wrong */
+//      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+//             errno);
+      return;
+    }
+
+  /* Write data */
+  _bit.bit = gpio;
+  _bit.state = value;
+  if (ioctl (file, GPIO_SET_BIT, (unsigned long) &_bit) < 0)
+    {
+      /* ERROR HANDLING; you can check errno to see what went wrong */
+//      fprintf (stderr, "Error: ioctl failed: %s (%d)\n", strerror (errno),
+//             errno);
+      return;
+    }
+
+  close (file);
+
+}
+
+int
+get_gpio (int gpio)
+{
+  int file;
+  struct gpio_bit _bit;
+
+  /* open device */
+  if ((file = open (filename, O_RDONLY)) == -1)
+    {
+      /* ERROR HANDLING; you can check errno to see what went wrong */
+      return 1;
+    }
+
+  /* Config pin as input */
+  _bit.bit = gpio;
+  _bit.state = IXP4XX_GPIO_IN;
+  if (ioctl (file, GPIO_SET_CONFIG, (long) &_bit) < 0)
+    {
+      /* ERROR HANDLING; you can check errno to see what went wrong */
+      return 1;
+    }
+
+  /* Read data */
+  _bit.bit = gpio;
+  if (ioctl (file, GPIO_GET_BIT, (long) &_bit) < 0)
+    {
+      /* ERROR HANDLING; you can check errno to see what went wrong */
+      return 1;
+    }
+
+  close (file);
+  return _bit.state;
+}
+
+
 
 
 #else
