@@ -12,9 +12,10 @@
 
 static struct mtd_partition sl2312_partitions[] = {
 	{ name: "RedBoot", 	 offset: 0x00000000, size: 0x00020000, },
-	{ name: "linux", 	 offset: 0x00020000, size: 0x00760000, },
+	{ name: "linux", 	 offset: 0x00020000, size: 0x007A0000, },
 	{ name: "rootfs", 	 offset: 0x00000000, size: 0x00000000, }, // variable size
 	{ name: "ddwrt", 	 offset: 0x00000000, size: 0x00000000, }, // variable size
-	{ name: "nvram", 	 offset: 0x007E0000, size: 0x00010000, },
+	{ name: "VCTL", 	 offset: 0x007C0000, size: 0x00010000, },
+	{ name: "nvram", 	 offset: 0x007D0000, size: 0x00020000, },
 	{ name: "FIS directory", offset: 0x007F0000, size: 0x00010000, }
 };

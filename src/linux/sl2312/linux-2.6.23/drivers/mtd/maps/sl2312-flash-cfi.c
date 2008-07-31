@@ -199,18 +199,15 @@ static int __init sl2312flash_init(void)
 	    if (*((__u32 *) buf) == SQUASHFS_MAGIC) 
 		{
 	        struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
-		if (*((__u16 *) buf))
-			{
-			filesyssize = sb->bytes_used;
-			tmplen = offset + filesyssize;
-			tmplen +=  (erasesize - 1);
-			tmplen &= ~(erasesize - 1);
-			filesyssize = tmplen - offset;
-			}
+		filesyssize = sb->bytes_used;
+		tmplen = offset + filesyssize;
+		tmplen +=  (erasesize - 1);
+		tmplen &= ~(erasesize - 1);
+		filesyssize = tmplen - offset;
 		parts[2].size = filesyssize;
 		parts[2].offset = offset;
-		parts[3].size = parts[1].size-filesyssize;
 		parts[3].offset = offset+filesyssize;
+		parts[3].size = (parts[1].offset+parts[1].size)-parts[3].offset;
 		break;
 		}
 	    offset+=erasesize;
