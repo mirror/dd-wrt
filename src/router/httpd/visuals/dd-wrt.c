@@ -308,6 +308,41 @@ ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+#elif HAVE_STORM
+void
+ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)
+{
+  FILE *fp = fopen ("/proc/cpuinfo", "rb");
+  if (fp == NULL)
+    {
+      websWrite (wp, "unknown");
+      return;
+    }
+  int cnt = 0;
+  int b = 0;
+  while (b != EOF)
+    {
+      b = getc (fp);
+      if (b == ':')
+	cnt++;
+      if (cnt == 2)
+	{
+	  getc (fp);
+	  char cpuclk[4];
+	  cpuclk[0] = getc (fp);
+	  cpuclk[1] = getc (fp);
+	  cpuclk[2] = getc (fp);
+	  cpuclk[3] = 0;
+	  websWrite (wp, cpuclk);
+	  fclose (fp);
+	  return;
+	}
+    }
+
+  fclose (fp);
+  websWrite (wp, "unknown");
+  return;
+}
 #elif HAVE_XSCALE
 void
 ej_get_clkfreq (webs_t wp, int argc, char_t ** argv)

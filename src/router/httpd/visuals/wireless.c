@@ -410,17 +410,8 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
   char list[2][20];
   char line[80];
   int dhcp_table_count;
-#ifdef FASTWEB
-  ejArgs (argc, argv, "%s", &type);
-#else
-  if (ejArgs (argc, argv, "%s", &type) < 1)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return;
-    }
-#endif
 
-  if (!strcmp (type, "online"))
+  if (!strcmp (argv[0], "online"))
     {
       for (i = 0; i < MAX_LEASES; i++)
 	{			// init value
@@ -478,7 +469,7 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
 	    }
 	  fclose (fp);
 	}
-      if (!strcmp (type, "online"))
+      if (!strcmp (argv[0], "online"))
 	{
 	  dhcp_table_count = dhcp_lease_table_init ();	// init dhcp lease table and get count
 	  get_hostname_ip ("online", LEASES_NAME_IP);
@@ -486,12 +477,12 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
       save_hostname_ip ();
     }
 
-  if (!strcmp (type, "offline"))
+  if (!strcmp (argv[0], "offline"))
     {
       get_hostname_ip ("offline", OLD_NAME_IP);
     }
 
-  if (!strcmp (type, "online"))
+  if (!strcmp (argv[0], "online"))
     {
       for (i = 0; i < nv_count; i++)
 	{
@@ -506,7 +497,7 @@ ej_wireless_active_table (webs_t wp, int argc, char_t ** argv)
  </tr>\n", wl_client_macs[i].hostname, wl_client_macs[i].ipaddr, wl_client_macs[i].hwaddr, flag++, i, wl_client_macs[i].check ? "checked=\"checked\"" : "");
 	}
     }
-  else if (!strcmp (type, "offline"))
+  else if (!strcmp (argv[0], "offline"))
     {
       for (i = 0; i < nv_count; i++)
 	{
