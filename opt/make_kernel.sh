@@ -5,4 +5,4 @@
 #./loader-0.02/lzma e ../src/linux/linux/arch/mips/bcm947xx/compressed/piggy ../src/router/mipsel-uclibc/vmlinuz
 ./loader-0.02/lzma e ../src/linux/brcm/linux.v23/arch/mips/bcm947xx/compressed/piggy vmlinuz
 ./loader-0.02/lzma e ../src/linux/brcm/linux.v23/arch/mips/bcm947xx/compressed/piggy vmlinuzmicro
-#./loader-0.02/lzma e piggymicro vmlinuzmicro
+

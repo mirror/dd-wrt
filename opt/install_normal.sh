@@ -10,6 +10,7 @@ cp .config_std .config
 
 #copy config.normal .config
 rm -rf mipsel-uclibc/install
+make clean
 make rc-clean
 make services-clean
 make shared-clean
@@ -64,6 +65,7 @@ cd ../../../../../opt
 ./tools/addpattern -4 -p W54G -v v4.20.6 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54g.bin -g
 ./tools/addpattern -4 -p W54S -v v4.70.6 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gs.bin -g
 ./tools/addpattern -4 -p W54s -v v1.05.0 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gsv4.bin -g
+./tools/addpattern -4 -p W3GS -v v3.00.0 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54g3g.bin -g
 
 rm -f *.chk
 ./tools/packet -k dd-wrt.v23_wrt54g.bin -f emptyfile -b comp-wgr614v8.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i emptyfile && \
@@ -76,6 +78,9 @@ rm -f *.chk
 #./tools/addpattern -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gs.bin -2 -g
 #sed -e  1s,^W54S,W54G, < dd-wrt.v23_wrt54gs.bin > dd-wrt.v23_wrt54g.bin 
 
+<<<<<<< .mine
+cp dd-wrt.v23.trx ~/GruppenLW/dd-wrt.v23_std_generic.bin
+#cp dd-wrt.v23.prefinal5_asus.trx ~/GruppenLW=======
 cp dd-wrt.v23_asus.trx /GruppenLW/dd-wrt.v23_asus.trx
 cp dd-wrt.v23_wrt54g.bin /GruppenLW/dd-wrt.v23_wrt54g.bin
 cp dd-wrt.v23_wrt54gs.bin /GruppenLW/dd-wrt.v23_wrt54gs.bin
@@ -84,3 +89,4 @@ cp dd-wrt.v23_wrtsl54gs.bin /GruppenLW/dd-wrt.v23_wrtsl54gs.bin
 cp dd-wrt.v23_wrt54gsv4.bin /GruppenLW/dd-wrt.v23_wrt54gsv4.bin
 cp dd-wrt.v23.trx /GruppenLW/dd-wrt.v23_generic.bin
 #cp dd-wrt.v23.prefinal5_asus.trx /GruppenLW
+>>>>>>> .r9620

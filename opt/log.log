@@ -1,40 +1,869 @@
 langstr
 read desc
 entry
-<li><a href="DDNS.asp"><% tran("bmenu.setupddns"); %></a></li>
- 
+Sys-Info
+System Info
 entry
-<li><a href="WanMAC.asp"><% tran("bmenu.setupmacclone"); %></a></li>
- 
+Disconnected
+Nicht Verbunden
 entry
-<li><a href="Wireless_radauth.asp"><% tran("bmenu.wirelessRadius"); %></a></li>
- 
+Wireless-G Broadband Router
+Wireless-G Breitband Router
 entry
-<li><a href="Wireless_WDS.asp"><% tran("bmenu.wirelessWds"); %></a></li>
- 
+Mode</div>
+Modus</div>
 entry
-<li><a href="Wireless_MAC.asp"><% tran("bmenu.wirelessMac"); %></a></li>
- 
+Network</div>
+Netzwerk</div>
 entry
-<li><a href="Management.asp"><% tran("bmenu.adminManagement"); %></a></li>
- 
+B-Only
+Nur B
 entry
-<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
-<li><a href="Services.asp"><% tran("bmenu.admin"); %></a></li>
+G-Only
+Nur G
 entry
-<li><a href="Hotspot.asp"><% tran("bmenu.adminHotspot"); %></a></li>
- 
+> Enabled
+> An
 entry
-<li><a href="Log.asp"><% tran("bmenu.adminLog"); %></a></li>
- 
+> Disabled
+> Aus
 entry
-<li><a href="Diagnostics.asp"><% tran("bmenu.adminDiag"); %></a></li>
- 
-translate
-write
-translate
-write
-translate
-write
-translate
-write
+>Enabled
+>An
+entry
+>Disabled
+>Aus
+entry
+Channel</div>
+Kanal</div>
+entry
+Rate (mbps)</div>
+Rate (Mbps)</div>
+entry
+ Active
+ Aktiv
+entry
+>Active
+>Aktiv
+entry
+Connected AP
+Verbundener AP
+entry
+Connected Clients
+Verbundene Clients
+entry
+Level
+Pegel
+entry
+DHCP Client List
+DHCP Client Liste
+entry
+Duration
+Dauer
+entry
+>None<
+>Nichts<
+entry
+Mem Info&nbsp;:
+Speicher Infos&nbsp;:
+entry
+GUI Setup
+Einstellungen
+entry
+This firmware was developed under GPL and is free or donation ware. Selling is strictly forbidden
+Diese Firmware wurde unter der GPL Lizenz entwickelt und ist Frei oder Spendenunterstützt. Der Verkauf ist strikt untersagt
+entry
+programming:
+Programmierung:
+entry
+webinterface:
+Webinterface:
+entry
+testing:
+Tests:
+entry
+Everyone
+Jeder
+entry
+>Setup<
+>Konfiguration<
+entry
+> Setup<
+> Konfiguration<
+entry
+>Security<
+>Sicherheit<
+entry
+>Access Restrictions<
+>Zugriffsrechte<
+entry
+>Applications
+>Anwendungen
+entry
+ Gaming
+ Spiele
+entry
+<BR>&amp; Gaming<
+<BR>&amp; Spiele<
+entry
+>Basic Setup<
+>Grundlegendes Setup<
+entry
+>MAC Address Clone<
+>MAC Addressen Klonen<
+entry
+>Advanced Routing<
+>Erweitertes Routing<
+entry
+>Internet Connection Type<
+>Internet Verbindungs Typ<
+entry
+>Enable
+>An
+entry
+>Disable
+>Aus
+entry
+> Enable
+> An
+entry
+> Disable
+> Aus
+entry
+(disable for COMCAST ISP)
+(Für den Provider COMCAST abschalten)
+entry
+More...
+Mehr...
+entry
+Size:
+Grösse:
+entry
+Local IP Address:
+Lokale IP Addresse:
+entry
+Local DNS:
+Lokaler DNS:
+entry
+Starting IP Address:
+Start IP Adresse:
+entry
+Maximum Number of &nbsp;DHCP Users:
+Maximale Anzahl von DHCP Nutzern:
+entry
+Client Lease Time:
+Client Verfallszeit:
+entry
+minutes<
+Minuten<
+entry
+Static DNS
+Statischer DNS
+entry
+Time Zone
+Zeitzone
+entry
+>Network Address</B><BR><B>Server Settings (DHCP)<
+>Netzwerk Addresse</B><BR><B>Server Einstellungen (DHCP)<
+entry
+Network Setup
+Netzwerk Einstellungen
+entry
+Optional Settings</B><BR><B>(required by some ISPs)
+Optionale Einstellungen</B><BR><B>(Von einigen Providern benötigt)
+entry
+Internet Connection Type
+Internet Verbindungstyp
+entry
+Automatically adjust clock for daylight saving changes
+Zeit und Datumseinstellungen automatisch anpassem
+entry
+Save Settings
+Speichern
+entry
+Cancel Changes
+Abbrechen
+entry
+mbps&nbsp;
+Mbps&nbsp;
+entry
+"Continue"
+"Weiter"
+entry
+Encryption:
+Verschlüsselung:
+entry
+Local Network
+Lokales Netzwerk
+entry
+Router Information
+Router Information
+entry
+Configuration Type
+Konfigurationstyp
+entry
+Login Type
+Logintyp
+entry
+value=Refresh
+value=Erneuern
+entry
+DHCP Clients Table
+DHCP Clients Tabelle
+entry
+Automatic Configuration - DHCP
+Automatische Konfiguration - DHCP
+entry
+Clone WAN MAC
+Klone WAN MAC
+entry
+Clone Wireless MAC
+Klone Wireless MAC
+entry
+Get Current PC MAC Address
+Ermittle aktuelle PC MAC Addresse
+entry
+Operating Mode
+Arbeitsmodus
+entry
+Dynamic Routing
+Dynamisches Routing
+entry
+Let OSPF determine the default route
+OSPF die standard Route ermitteln lassen
+entry
+Zebra manual config
+Manuelle Zebra Einstellungen <br>
+entry
+(leave blank for autogen):
+(frei lassen für automatische erkennung):<br>
+entry
+OSPF manual config
+Manuelle OSPF Konfiguration
+entry
+>Both<
+>Beide<
+entry
+>Replace<
+>Ersetzen<
+entry
+>Append<
+>Anhängen<
+entry
+Select set number:
+Setze Set Nummer:
+entry
+Enter Route Name:
+Router Name eingeben:
+entry
+Static Routing
+Statisches Routing
+entry
+Destination LAN IP:
+Ziel LAN IP:
+entry
+Show Routing Table
+Zeige Routing Tabelle
+entry
+Delete This Entry
+Diesen Eintrag löschen
+entry
+Assigned To<br>Bridge
+Zugewiesen zu<br>Brücke
+entry
+>Port Range
+>Port Bereich
+entry
+Forward<
+Weiterleiten<
+entry
+Basic Settings
+Einfache Einstellungen
+entry
+WRT-radauth
+WRT-Radius
+entry
+Works only in AP-mode!
+Funktioniert nur im Accesspoint Modus
+entry
+Wireless Security
+Wireless Sicherheit
+entry
+Advanced Settings
+Erweiterte Einstellungen
+entry
+Wireless Network
+Wireless Netzwerk
+entry
+Wireless Mode
+Wireless Modus
+entry
+Network Mode:
+Netzwerk Modus:
+entry
+Network Name (SSID):
+Netzwerk Name (SSID):
+entry
+Channel:</font></TD>
+Kanal:</font></TD>
+entry
+>Mixed<
+>Gemischt<
+entry
+>B-Only<
+>Nur-B<
+entry
+>G-Only<
+>Nur-G<
+entry
+Enable Portal:
+Aktiviere Portal:
+entry
+Portal Site:
+Portal Seite:
+entry
+>Allownet:<
+>Freigeschaltetes Netz:<
+entry
+Maximum Authenticated Users:
+Maximal Authentifizierte Nutzer:
+entry
+Password Format:
+Passwort Format
+entry
+RADIUS Shared Secret:
+Radius Shared Schlüssel:
+entry
+><b>Type
+><b>Typ
+entry
+WRT radauth
+WRT Radius
+entry
+Security Mode:
+Sicherheits Modus:
+entry
+WPA Pre-Shared Key
+WPA (PSK) Schlüssel
+entry
+Prevent:
+Verhindern:
+entry
+Permit only:
+Nur erlauben für:
+entry
+Prevent</b> PCs listed from accessing the wireless
+Verbiete</b> gelisteten PCs den Zugriff auf das Wireless Netzwerk
+entry
+</span>&nbsp;network
+</span>&nbsp;Netzwerk
+entry
+Permit only</b> PCs listed to access the wireless network
+Erlaube nur</b> PCs dieser Liste den Zugriff auf das Wireless Netzwerk
+entry
+Edit MAC Filter List
+MAC Filter Liste editieren
+entry
+Default:
+Normal:
+entry
+Authentication Type:
+Authentifizierungs Typ:
+entry
+Basic Rate:
+Basis Rate:
+entry
+Transmission Rate:
+Übertragungsrate:
+entry
+CTS Protection Mode:
+CTS Absicherungs Modus:
+entry
+Beacon Interval:
+Beacon Intervall:
+entry
+TX Antenna:
+Sende Antenne:
+entry
+RX Antenna:
+Empfangs Antenne:
+entry
+Xmit Power:
+Sende Leistung:
+entry
+Firewall Protection:
+Firewall Schutz:
+entry
+Additional Filters
+Zusätzliche Filter
+entry
+Block WAN Requests
+WAN Anfragen Blockieren
+entry
+Block Anonymous Internet Requests
+Anonyme Internet anfragen blockieren
+entry
+Internet NAT Redirection
+Internet NAT Weiterleitung
+entry
+Firewall Protection: </b>Enable or disable the SPI firewall.
+Firewall Schutz: </b>Schaltet den SPI Firewall Ein oder Aus.
+entry
+VPN Passthrough
+VPN Durchleiten
+entry
+IPSec Passthrough
+IPSec durchleiten
+entry
+PPTP Passthrough
+PPTP durchleiten
+entry
+L2TP Passthrough
+L2TP durchleiten
+entry
+Port Range
+Port Bereich
+entry
+Application
+Anwendung
+entry
+<B>End
+<B>Ende
+entry
+<B>IP Address
+<B>IP Addresse
+entry
+Reboot Router
+Router Neustart
+entry
+Milliseconds
+Millisekunden
+entry
+Summary
+Zusammenfassung
+entry
+Internet Access Policy:
+Internet Zugriffsrichtlinie:
+entry
+Enter Policy Name:
+Name der Richtlinie:
+entry
+>Deny
+>Verweigern
+entry
+>Allow
+>Erlauben
+entry
+Days
+Tage
+entry
+Everyday
+täglich
+entry
+Sun&nbsp;
+So&nbsp;
+entry
+Mon&nbsp;
+Mo&nbsp;
+entry
+Tue&nbsp;
+Di&nbsp;
+entry
+Wed&nbsp;
+Mi&nbsp;
+entry
+Thu&nbsp;
+Do&nbsp;
+entry
+Fri&nbsp;
+Fr&nbsp;
+entry
+Sat&nbsp;
+Sa&nbsp;
+entry
+Sunday
+Sontag
+entry
+Monday
+Montag
+entry
+Tuesday
+Dienstag
+entry
+Wednesday
+Mittwoch
+entry
+Thursday
+Donnerstag
+entry
+Friday
+Freitag
+entry
+Saturday
+Samstag
+entry
+Times
+Zeiten
+entry
+24 Hours
+24 Stunden
+entry
+From:
+Von:
+entry
+To:
+Bis:
+entry
+Blocked Services
+Blockierte Dienste
+entry
+Edit List of PCs
+Liste der PCs ändern
+entry
+Internet access during selected days and hours.
+Internetzugriff während der ausgewählten Tage und Stunden.
+entry
+Add/Edit Service
+Hinzufügen/Editiere Dienst
+entry
+Website Blocking<BR>by URL Address
+Webseite Blockieren<BR>mit URL Adresse
+entry
+Website Blocking<BR>by Keyword
+Website Blockieren<BR>nach Schlagwort
+entry
+Internet Access
+Internetzugriff
+entry
+Port Range Forward
+Port Bereich Weiterleitung
+entry
+Port Triggering
+Portauslösung
+entry
+UPnP Forward
+UPnP Weiterleitung
+entry
+<B>Enable
+<B>An
+entry
+End Port</B>
+Ende Port</B>
+entry
+Triggered Range
+Auslösungs Bereich
+entry
+Forwarded Range
+Weiterleitungs Bereich
+entry
+DMZ Host IP Address:
+DMZ Host IP Addresse
+entry
+Current Time:
+Aktuelle Zeit:
+entry
+DHCP Clients Table
+DHCP Client Tabelle
+entry
+Diagnostics</A>
+Diagnose</A>
+entry
+Factory Defaults
+Fabrikeinstellungen
+entry
+Incoming Log
+Eingehendes Log
+entry
+Outgoing Log
+Ausgehendes Log
+entry
+Router Password:
+Router Passwort:
+entry
+Router Password
+Router Passwort
+entry
+Connection Status
+Verbindungs Status
+entry
+Re-enter to confirm
+Zur Ueberprüfung neu Eingeben:
+entry
+Remote Management:
+Fern Verwaltung:
+entry
+Management Port:
+Verwaltungsport:
+entry
+Use https:
+Nutze HTTPS:
+entry
+Info-onStart:
+Informationsanzeige:
+entry
+Interval&nbsp;
+Intervall:&nbsp;
+entry
+Local Router Access
+Lokaler Router Zugriff
+entry
+Remote</span> Rout<span >er Access
+Fern</span> Rout<span >er Zugriff
+entry
+Used Domain
+Benutzte Domäne
+entry
+LAN Domain
+LAN Domäne
+entry
+Static Allocations:
+Statische Reservierung:
+entry
+Additional DHCPD Options:
+Zusätzliche DHCPD Optionen:
+entry
+DNS Masq:
+DNS Maske:
+entry
+Local DNS:
+Lokaler DNS:
+entry
+JFFS2 enabled:
+JFFS2 einschalten
+entry
+Clean JFFS2:
+JFFS2 Löschen
+entry
+Kaid enabled:
+Kaid einschalten
+entry
+SMBFS enabled:
+SMBFS einschalten
+entry
+Startscript
+Startskript
+entry
+Time in Sec Eg: 1 Hour = 3600
+Zeit in Sek. z.B.: 1 Stunde = 3600
+entry
+At a set Time&nbsp;(Cron must be enabled)
+Zu einem bestimmten Zeitpunkt&nbsp;(Cron muss angeschaltet sein)
+entry
+The values you entered are invalid. Please try again.
+Die Werte die Sie eingegeben haben sind ungültig. Bitte versuchen Sie es noch einmal.
+entry
+Upgrade are failed.
+Upgrade Fehlgeschlagen.
+entry
+Log Level:
+Log Ebene:
+entry
+Log Type:
+Log Typ:
+entry
+Wireless-G Broadband</span> Router&nbsp;&nbsp;
+Wireless-G Breitband</span> Router&nbsp;&nbsp;
+entry
+Wireless-G Broadband Router&nbsp;&nbsp;
+Wireless-G Breitband Router&nbsp;&nbsp;
+entry
+Language<
+Sprache:<
+entry
+Maximum Ports
+Maximale Anzahl Ports
+entry
+The IPs need to be separated by a SPACE.<BR>Maximum of three IPs
+Die IPs müssen durch Leerzeichen voneinander getrennt sein.<BR>Maximal drei IPs
+entry
+WDS/Connection Watchdog
+WDS/Connection Überwachung
+entry
+Schedule Reboot
+Reboot Planung
+entry
+IP Filter Settings
+IP Filter Einstellungen
+entry
+JFFS2 Support
+JFFS2 Unterstützung
+entry
+Commands:
+Kommandos:
+entry
+>Restore
+>Wiederherstellen
+entry
+Yes
+Ja
+entry
+Upgrade Firmware
+Firmware Aktualisieren
+entry
+Reset after flashing to:
+Einstellungen nach dem Flashen zurücksetzen zu:
+entry
+No reset
+Kein rücksetzen
+entry
+Firmware Defaults
+Firmware vorgaben
+entry
+Please select a file to upgrade:
+Bitte wählen sie eine Datei für das Upgrade aus:
+entry
+<B>Warning: </B>Upgrading firmware may take a few minutes, please don't <BR>turn off the power or press the reset button.
+<B>Warnung: </B>Die Firmware aktualisierung kann einige Minuten in Anspruch nehmen. <BR>Bitte schalten sie keinesfalls den Router aus.
+entry
+>Upgrade must
+>Upgrade darf
+entry
+NOT be interrupted ! (do wait 2 min.)
+NIEMALS unterbrochen werden ! (Bitte warten Sie 2 min.)
+entry
+Backup & Restore
+Backup & Wiederherstellung
+entry
+Restore "
+Wiederherstellen "
+entry
+Please select a file to restore:
+Bitte wählen Sie eine Datei für die Wiederherstellung aus:
+entry
+<B>Warning: </B>Only upload files backed up using DD-WRT firmware.
+<B>Warnung:</B>Bitte verwenden sie nur Backups dieser DD-WRT Firmware version.
+entry
+Do not upload any file that wasn't created by this interface!
+Bitte uploaden Sie keine Datei, die nicht mit dieser Firmware erstellt wurde!
+entry
+Click <FONT face=Arial size=2><a style="COLOR: red" href="nvrambak.tgz">HERE</a></FONT> to download a config backup file.
+Klicken Sie <FONT face=Arial size=2><a style="COLOR: red" href="nvrambak.tgz">HIER</a></FONT> um das Backup File zu downloaden. value="Download"></a></FONT>
+entry
+Routing Table Entry List
+Routen Tabelle
+entry
+value=Close>
+value=Schliessen>
+entry
+Refresh ">
+Erneuern ">
+entry
+Table<
+Tabelle<
+entry
+>Destination
+>Ziel
+entry
+Port Number
+Port Nummer
+entry
+Source IP
+Ursprungs IP
+entry
+Time of Day
+Uhrzeit
+entry
+Policy Name
+Richtlinien Name
+entry
+DHCP Active IP
+DHCP Aktive IP
+entry
+DHCP Server IP Address:
+DHCP Server IP Addresse:
+entry
+Enable MAC Filter
+MAC Filter einschalten
+entry
+Active PC
+Aktive PC
+entry
+Inactive PC
+Inaktive PC
+entry
+Wireless Client MAC List
+Wireless Client MAC Liste
+entry
+Update Filter List
+Filter Liste erneuern
+entry
+value is out of range
+Der Wert ist außerhalb des zulässigen Bereichs
+entry
+List of PCs
+Liste der PCs
+entry
+Enter MAC Address of the PCs in this format: xxxxxxxxxxxx
+Geben Sie die MAC Adresse in diesem Format ein: xxxxxxxxxxxx
+entry
+Enter the IP Address of the PCs
+Geben Sie die IP Adressen der PCs ein
+entry
+The WAN MAC Address is out of range
+Die WAN MAC Adresse ist außerhalb des zulässigen Bereichs
+entry
+The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E]
+Der zweite Wert der MAC Adresse muß ein gerader Wert sein : [0, 2, 4, 6, 8, A, C, E]
+entry
+The MAC Address is not correct!!
+Die MAC Adresse ist nicht richtig!!
+entry
+The MAC Address length is not correct
+Die länge der MAC Adresse ist nicht richtig
+entry
+The MAC Address cannot be the broadcast address
+Die MAC Adresse darf keine Broadcast Adresse sein
+entry
+value is illegal
+Der Wert ist nicht zulässig
+entry
+IP address and gateway is not at same subnet mask
+Die IP Adresse und das Gateway befinden sich nicht um selben Subnetz
+entry
+IP address and gateway can't be same
+Die IP Adresse und das Gateway dürfen nicht identisch sein
+entry
+You must input a username
+Sie müssen einen Nutzernamen angeben
+entry
+You must input a passwd
+Sie müssen ein Passwort angeben
+entry
+You must input a hostname
+Sie müssen einen Hostnamen definieren
+entry
+Illegal DMZ IP Address
+Nicht gültige DMZ IP Adresse
+entry
+You must at least select a day.
+Sie müssen mindestens einen Tag definieren.
+entry
+The end time must be bigger than start time
+Die End Zeit muß größer als die Startzeit seinl
+entry
+Confirmed password did not match Entered Password.  Please re-enter password
+Das Passwort zur Überprüfung entspricht nicht dem Eingegebenen Passwort. Bitte geben Sie es nochmal ein.
+entry
+Password confirmation is not matched.
+Die Passwort überprüfung ist fehlgeschlagen
+entry
+Out of range, please adjust start IP address or user's numbers
+Außerhalb des gültigen Bereichs, bitte verändern sie die Start IP Adresse oder die maximale Anzahl der Nutzer
+entry
+You must input a command to run
+Sie müssen eine Kommando eingeben welches Ausgeführt werden soll
+entry
+You must input a Service Name
+Sie müssen einen Dienstnamen angeben
+entry
+The Service Name exists
+Der Dienstname existiert bereits
+entry
+Service Name
+Dienstname
+entry
+Settings are successful.
+Die Einstellungen wurden übernommen.
+entry
+Upgrade successful
+Das Upgrade war erfolgreich

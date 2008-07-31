@@ -95,7 +95,7 @@ unsigned char *data;
 
 /* flash access should be aligned, so wrapper is used */
 /* read byte from the flash, all accesses are 32-bit aligned */
-static int read_byte(void *object, unsigned char **buffer, UInt32 *bufferSize)
+static __inline__ int read_byte(unsigned char **buffer, UInt32 *bufferSize)
 {
 	static unsigned int val;
 
@@ -115,8 +115,9 @@ static __inline__ unsigned char get_byte(void)
 	unsigned char *buffer;
 	UInt32 fake;
 	
-	return read_byte(0, &buffer, &fake), *buffer;
+	return read_byte(&buffer, &fake), *buffer;
 }
+#include "LzmaDecode.c"
 
 /* should be the first function */
 void entry(unsigned long icache_size, unsigned long icache_lsize, 
@@ -127,10 +128,9 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 	unsigned int lp; /* literal pos state bits */
 	unsigned int pb; /* pos state bits */
 	unsigned int osize; /* uncompressed size */
+	unsigned char SIGN[]="DD-WRT v24-sp1 (c) 2004 - 2008 Sebastian Gottschall / NewMedia-NET GmbH";
 
-	ILzmaInCallback callback;
-	callback.Read = read_byte;
-
+	
 	/* look for trx header, 32-bit data access */
 	for (data = ((unsigned char *) KSEG1ADDR(BCM4710_FLASH));
 		((struct trx_header *)data)->magic != TRX_MAGIC; data += 65536);
@@ -141,7 +141,7 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 	else
 		data += ((struct trx_header *)data)->offsets[1];
 
-	offset = 0;
+	offset = SIGN[0]-'D';
 
 	/* lzma args */
 	i = get_byte();
@@ -163,7 +163,7 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 		get_byte();
 
 	/* decompress kernel */
-	if (LzmaDecode(workspace, ~0, lc, lp, pb, &callback,
+	if (LzmaDecode(workspace, ~0, lc, lp, pb,
 		(unsigned char*)LOADADDR, osize, &i) == LZMA_RESULT_OK)
 	{
 		blast_dcache(dcache_size, dcache_lsize);
