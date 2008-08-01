@@ -3106,7 +3106,7 @@ show_chanshift (webs_t wp, char *wl_chanshift)
 	     nvram_default_match (wl_chanshift, "0",
 				  "-1") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
-	     "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n",
+	     "document.write(\"<option value=\\\"1\\\" %s >+1</option>\");\n",
 	     nvram_default_match (wl_chanshift, "1",
 				  "-1") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
