@@ -1983,8 +1983,6 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_GGEW
   {"ral", "212.65.2.116 194.231.229.20 172.16.0.0/28", 0},
-#else
-  {"ral", "212.65.2.116 194.231.229.20", 0},
 #endif
 #endif
 #ifdef HAVE_34TELECOM
