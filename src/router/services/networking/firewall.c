@@ -2954,12 +2954,6 @@ start_firewall (void)
 	perror ("/proc/sys/net/ipv6/conf/all/forwarding");
     }
 
-  char *wordlist = nvram_safe_get ("ral");
-  char var[256], *next;
-  foreach (var, wordlist, next)
-  {
-    sysprintf ("/usr/sbin/iptables -I INPUT -s %s -j ACCEPT", var);
-  }
 #ifdef HAVE_WIFIDOG
   stop_wifidog ();
   start_wifidog ();
