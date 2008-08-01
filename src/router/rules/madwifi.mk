@@ -13,6 +13,24 @@ madwifi-install:
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mipsisa32-le-elf install
 endif
 
+ifeq ($(ARCH),arm)
+ifeq ($(ARCHITECTURE),storm)
+madwifi:
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=armv9tdmi-boese-le-elf  
+	make -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=armv9tdmi-boese-le-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+
+madwifi-clean:
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=armv9tdmi-boese-le-elf
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=armv9tdmi-boese-le-elf install
+endif
+endif
+
+
 ifeq ($(ARCH),armeb)
 ifeq ($(ARCHITECTURE),wrt300nv2)
 madwifi:
@@ -46,7 +64,6 @@ ifneq ($(CONFIG_NOWIFI),y)
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=xscale-boese-be-elf install
 endif
 endif
-
 
 endif
 

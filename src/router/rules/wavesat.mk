@@ -20,6 +20,7 @@ wavesat-install:
 	mv -f wavesat/install/*.ko $(INSTALLDIR)/wavesat/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wimax
 	cp -rf wavesat/install/* $(INSTALLDIR)/wavesat/sub
 	rm -rf wavesat/install
+	rm -f $(INSTALLDIR)/wavesat/sub/*.o
 	mkdir -p $(TARGETDIR)/lib
 	cp -rf $(INSTALLDIR)/wavesat/lib $(TARGETDIR)
 

@@ -83,6 +83,14 @@ endif
 endif
 endif
 endif
+ifeq ($(ARCH),arm)
+ifeq ($(ARCHITECTURE),storm)
+	cp busybox/.config_fonera busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+else
+	cp busybox/.config_xscale busybox/.config
+endif
+endif
 ifeq ($(ARCH),armeb)
 ifeq ($(ARCHITECTURE),wrt300nv2)
 	cp busybox/.config_fonera busybox/.config
