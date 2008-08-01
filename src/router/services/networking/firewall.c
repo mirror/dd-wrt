@@ -2970,13 +2970,14 @@ stop_firewall (void)
   stop_anchorfree ();
   /* Make sure the DMZ-LED is off (from service.c) */
   diag_led (DMZ, STOP_LED);
-
+#ifdef HAVE_GGEW
   char *wordlist = nvram_safe_get ("ral");
   char var[256], *next;
   foreach (var, wordlist, next)
   {
     sysprintf ("/usr/sbin/iptables -D INPUT -s %s -j ACCEPT", var);
   }
+#endif
   char num[32];
   int i;
   for (i = 0; i < 10; i++)
