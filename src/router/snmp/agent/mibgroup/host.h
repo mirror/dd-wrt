@@ -13,7 +13,6 @@
 	config_require(host/hr_disk)
 	config_require(host/hr_partition)
 	config_require(host/hr_filesys)
-	config_require(host/hr_swrun)
 	config_require(host/hr_swinst)
 
 /* add the host resources mib to the default mibs to load */

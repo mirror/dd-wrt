@@ -5,7 +5,7 @@ else
 ifeq ($(CONFIG_WRK54G),y)
 	$(MAKE) -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 else
-	$(MAKE) -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	$(MAKE) -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" 
 endif
 endif
 	$(MAKE) -C dnsmasq/contrib/wrt CFLAGS="$(COPTS)"
