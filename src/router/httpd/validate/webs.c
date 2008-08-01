@@ -2185,6 +2185,16 @@ del_vlan (webs_t wp)
       {
 	strcat (newwordlist, word);
 	strcat (newwordlist, " ");
+      }else
+      {
+	char *port = word;
+	char *tag = strsep (&port, ">");
+	if (!tag || !port)
+    	    break;
+    	char names[32];
+    	sprintf(names,"%s.%s",tag,port);
+        eval("ifconfig",names,"down");
+        eval("vconfig","rem",names);
       }
     count++;
   }
@@ -2279,6 +2289,16 @@ del_bridge (webs_t wp)
       {
 	strcat (newwordlist, word);
 	strcat (newwordlist, " ");
+      }else
+      {
+	char *port = word;
+	char *tag = strsep (&port, ">");
+	char *prio = port;
+	strsep (&prio, ">");
+	if (!tag || !port)
+    	    continue;        
+    	eval("ifconfig", tag, "down");
+        eval("brctl", "delbr" ,tag);
       }
     count++;
   }
