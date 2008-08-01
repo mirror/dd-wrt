@@ -1251,7 +1251,7 @@ status_band.follow="Suivre";
 status_band.up="Haut";
 
 //help container
-hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
+hstatus_band.svg="Le plugin Adobe SVG est nécessaire pour afficher les graphiques de bande passante.";
 hstatus_band.right1="Cliquez sur l'étiquette \"<em>"+status_band.chg_unit+" ...</em>\" pour changer d'unité ("+share.bytes+"/s ou bits/s).";
 hstatus_band.right2="Cliquer sur \"<em>"+status_band.chg_scale+" ...</em>\" permet de modifier le type d'échelle (<em>"+status_band.follow+"</em> ajuste l'échelle en permanence tandis que <em>"+status_band.up+"</em> ajuste l'échelle sur le pic maximum constaté).";
 
