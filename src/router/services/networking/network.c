@@ -3588,33 +3588,42 @@ start_hotplug_net (void)
 #ifdef HAVE_MADWIFI
   char *interface, *action, *devaction;
 // fprintf(stderr,"Hotplug\n");
-  if (!(interface = getenv ("INTERFACE")))
+  interface = getenv ("INTERFACE");
+  if (!interface)
     return 0;
   action = getenv("ACTION");
   if (!action)
     return 0;
- fprintf(stderr,"Hotplug %s\n",action);
+ sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
   if (strncmp(interface,"ath",3))
-    return 0;
+    return 0; 
+  
   //try to parse
-  int ifnum;
-  int stanum;
-  int count = sscanf(interface,"ath%d.sta%d",&ifnum,&stanum);
-  if (count!=2)
-    return 0;
   char ifname[32];
-  sprintf(ifname,"ath%d",ifnum);
+  memset(ifname,0,32);
+  int index = indexof(interface,'.');
+  if (index==-1)
+    return 0;
+  strncpy(ifname,interface+index+1,strlen(interface)-(index+1));
+  fprintf(stderr,"substa = %s\n",ifname);
+  if (strncmp(ifname,"sta",3))
+   {
+    return 0; 
+   }
+  memset(ifname,0,32);
+  strncpy(ifname,interface,index);
+  fprintf(stderr,"base = %s\n",ifname);
       char bridged[32];
-      sprintf (bridged, "ath%d_bridged", ifnum);
+      sprintf (bridged, "%s_bridged", ifname);
     
-      if (!strcmp (devaction, "add"))
+      if (!strcmp (action, "add"))
 	{
 	  fprintf(stderr,"adding WDS %s\n",interface);
 	  eval ("ifconfig", interface, "up");
 	  if (nvram_match (bridged, "1"))
 	    br_add_interface (getBridge (ifname), interface);
 	}
-      if (!strcmp (devaction, "del"))
+      if (!strcmp (action, "remove"))
 	{
 	  fprintf(stderr,"removing WDS %s\n",interface);
 	  eval ("ifconfig", interface, "down");
