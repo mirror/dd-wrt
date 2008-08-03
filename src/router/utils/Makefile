@@ -20,8 +20,7 @@ include $(TOP)/.config
 #LIBS := libbb.so libbcm.so libbcmcrypto.so
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-UTILS := mtd
-UTILS += epi_ttcp
+UTILS = epi_ttcp
 endif
 endif
 
