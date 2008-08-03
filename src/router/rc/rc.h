@@ -23,6 +23,7 @@ extern void shutdown_system (void);
 extern void start_dhcpc (char *wan_ifname);
 
 /* ppp scripts */
+extern int mtd_main (int argc, char **argv);
 extern int ipup_main (int argc, char **argv);
 extern int ipdown_main (int argc, char **argv);
 extern int set_pppoepid_to_nv_main(int argc, char **argv); // tallest 1219
