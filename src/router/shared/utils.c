@@ -1406,6 +1406,9 @@ getIfLists (char *eths, int size)
   getIfList (eths2, "wl");
   sprintf (eths, "%s %s", eths, eths2);
 #endif
+  memset (eths2, 0, 256);
+  getIfList (eths2, "br");
+  sprintf (eths, "%s %s", eths, eths2);
 #ifdef HAVE_WAVESAT
   memset (eths2, 0, 256);
   getIfList (eths2, "ofdm");
