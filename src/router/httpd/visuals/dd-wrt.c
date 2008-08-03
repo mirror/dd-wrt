@@ -6425,6 +6425,8 @@ ej_portsetup (webs_t wp, int argc, char_t ** argv)
   {
     if (!strcmp (get_wan_face (), var))
       continue;
+    if (!strcmp (nvram_safe_get("lan_ifname"), var))
+      continue;
 
     sprintf (ssid, "%s_bridged", var);
     websWrite (wp,

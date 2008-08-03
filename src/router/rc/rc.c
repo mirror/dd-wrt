@@ -178,6 +178,7 @@ static struct MAIN maincalls[] = {
   {"ip-down", "ipdown", NULL},
   {"ipdown", "disconnected_pppoe", NULL},
   {"udhcpc", "udhcpc", NULL},
+  {"mtd", NULL, mtd_main},
 #ifdef HAVE_PPTPD
   {"poptop", NULL, &pptpd_main},
 #endif

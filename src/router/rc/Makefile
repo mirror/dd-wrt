@@ -30,7 +30,7 @@ endif
 
 OBJS := rc.o servicemanager.o crc.o 
 #http.o stats.o
-OBJS += watchdog.o services.o
+OBJS += watchdog.o services.o mtd_main.o
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -476,6 +476,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_connect
 	cd $(INSTALLDIR)/sbin && ln -sf rc hb_disconnect
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpio
+	cd $(INSTALLDIR)/sbin && ln -sf rc mtd
 	cd $(INSTALLDIR)/sbin && ln -sf rc beep
 ifeq ($(CONFIG_REGISTER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc regshell
