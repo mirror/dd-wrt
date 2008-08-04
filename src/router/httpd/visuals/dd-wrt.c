@@ -3684,6 +3684,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
   sprintf (wl_isolate, "%s_ap_isolate", prefix);
   showRadio (wp, "wl_adv.label11", wl_isolate);
+
+#if 0
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.sifstime)</script></div>\n");
@@ -3699,6 +3701,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,99999999,wl_basic.preambletime)\" value=\"%s\" />\n",
 	     wl_preambletime, nvram_default_get (wl_preambletime, "20"));
   websWrite (wp, "</div>\n");
+#endif
   sprintf (wmm, "%s_wmm", prefix);
   showRadio (wp, "wl_adv.label18", wmm);
 #endif
