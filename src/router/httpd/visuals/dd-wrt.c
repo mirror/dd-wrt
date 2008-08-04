@@ -4217,7 +4217,7 @@ show_wep (webs_t wp, char *prefix)
   websWrite (wp,
 	     "<input type=\"hidden\" value=\"Null\" name=\"generateButton\" />\n");
 
-  if (strcmp (bit, "64"))
+  if (!strcmp (bit, "64"))
     websWrite (wp,
 	       "<input class=\"button\" type=\"button\" value=\"Generate\" onclick=generateKey64(this.form,\"%s\") name=wepGenerate />\n</div>",
 	       prefix);
