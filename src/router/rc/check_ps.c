@@ -19,6 +19,7 @@
 #include <cy_conf.h>
 #include <code_pattern.h>
 #include <rc.h>
+#include <wlutils.h>
 
 struct mon
 {
@@ -111,6 +112,53 @@ checknas (void)			//for broadcom v24 only
 #endif
 }
 
+
+/* software wlan led control */
+void
+softcontrol_wlan_led (void)  //done in watchdog.c for non-micro builds.
+{
+#ifdef HAVE_MICRO
+
+  int brand;
+  int radiostate = -1;
+  int oldstate = -1;
+
+#ifdef HAVE_MADWIFI
+      radiostate = get_radiostate ("ath0");
+#else
+      wl_ioctl (get_wdev (), WLC_GET_RADIO, &radiostate, sizeof (int));
+#endif
+
+      if (radiostate != oldstate)
+	{
+#ifdef HAVE_MADWIFI
+	  if (radiostate == 1)
+#else
+	  if (radiostate == 0)
+#endif
+	    led_control (LED_WLAN, LED_ON);
+	  else
+	    {
+	    led_control (LED_WLAN, LED_OFF);
+#ifndef HAVE_MADWIFI
+	    brand = getRouterBrand ();
+	      /* Disable wireless will cause diag led blink, so we want to stop it. */
+	      if (brand == ROUTER_WRT54G)
+		diag_led (DIAG, STOP_LED);
+	      /* Disable wireless will cause power led off, so we want to turn it on. */
+	      if (brand == ROUTER_WRT54G_V8)
+		led_control (LED_POWER, LED_ON);
+#endif
+	    }
+
+	  oldstate = radiostate;
+	}
+	return;
+
+#endif
+}
+/* end software wlan led control */
+
 void
 checkupgrade (void)
 {
@@ -139,6 +187,8 @@ do_mon (void)
   struct mon *v;
   checkupgrade ();
   checknas ();
+  softcontrol_wlan_led ();
+
 
   for (v = mons; v < &mons[sizeof (mons) / sizeof (struct mon)]; v++)
     {
