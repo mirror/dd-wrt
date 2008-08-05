@@ -228,6 +228,9 @@ endif
 ifeq ($(CONFIG_CA8),y)
 CFLAGS += -DHAVE_CA8
 endif
+ifeq ($(CONFIG_ALPHA),y)
+CFLAGS += -DHAVE_ALPHA
+endif
 ifeq ($(CONFIG_USR5453),y)
 CFLAGS += -DHAVE_USR5453
 endif
