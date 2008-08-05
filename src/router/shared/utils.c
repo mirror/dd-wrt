@@ -757,7 +757,7 @@ check_hw_type (void)
     return BCM4704_BCM5325F_CHIP;
   else if (btype == 0x478 && strstr (vlan0, "5*"))	/* WRT300NV1.1 */
     return BCM4705L_BCM5325E_EWC_CHIP;
-  else if ((btype == 0x478 && (strstr (vlan0, "8*") || strstr (vlan1, "8*"))) || nvram_match ("boot_hw_model", "WRT350N"))	/* WRT350N */
+  else if ((btype == 0x478 && (strstr (vlan0, "8*") || strstr (vlan1, "8*"))) || nvram_match ("boot_hw_model", "WRT350N") || nvram_match ("boot_hw_model", "WRT610N"))	/* WRT350N */
     return BCM4705_BCM5397_EWC_CHIP;
   else if (btype == 0x489 || nvram_match ("boot_hw_model", "WRT310N"))	/* WRT310N, temporal boardtype 0x478, wait for braodcom's txt file */
     return BCM4705G_BCM5395S_EWC_CHIP;

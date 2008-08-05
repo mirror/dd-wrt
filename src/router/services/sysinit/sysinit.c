@@ -980,7 +980,7 @@ start_restore_defaults (void)
 	    }
 	  if (!nvram_get ("vlan2ports") || nvram_match ("vlan2ports", ""))
 	    {
-	      nvram_set ("vlan0ports", "1 2 3 4 8*");
+	      nvram_set ("vlan1ports", "1 2 3 4 8*");
 	      nvram_set ("vlan2ports", "0 8");
 	    }
     }
