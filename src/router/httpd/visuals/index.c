@@ -69,7 +69,7 @@ ej_get_clone_mac (webs_t wp, int argc, char_t ** argv)
     }
 #endif
 
-  if (*clone_wan_mac == 1)
+  if (nvram_match("clone_wan_mac","1"))
     c = nvram_safe_get ("http_client_mac");
   else
     {
@@ -104,7 +104,7 @@ void
 macclone_onload (webs_t wp, char *arg)
 {
 
-  if (*clone_wan_mac == 1)
+  if (nvram_match("clone_wan_mac","1"))
     websWrite (wp, arg);
 
   return;

@@ -49,8 +49,6 @@ int do_ssl;
 #endif
 int gozila_action;
 int browser_method;
-int *clone_wan_mac;
-int *generate_key;
 
 void
 initWeb (struct Webenvironment *env)
@@ -88,10 +86,6 @@ initWeb (struct Webenvironment *env)
   gozila_action = env->Pgozila_action;
   cprintf ("set browser_method\n");
   browser_method = env->Pbrowser_method;
-  cprintf ("set clone_wan_mac\n");
-  clone_wan_mac = env->Pclone_wan_mac;
-  cprintf ("set generate_key\n");
-  generate_key = env->Pgenerate_key;
   cprintf ("set live_translate\n");
   live_translate = env->Plive_translate;
   GOZILA_GET = env->PGOZILA_GET;

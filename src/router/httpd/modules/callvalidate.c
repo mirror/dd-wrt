@@ -143,8 +143,6 @@ struct wl_client_mac wl_client_macs[MAX_LEASES];
 
 extern int gozila_action;
 extern int browser_method;
-extern int clone_wan_mac;
-extern int generate_key;
 extern char *live_translate (char *tran);
 
 
@@ -181,8 +179,6 @@ initWeb (void *handle)
   env->PwebsRomPageIndex = websRomPageIndex;
   env->Pgozila_action = gozila_action;
   env->Pbrowser_method = browser_method;
-  env->Pclone_wan_mac = &clone_wan_mac;
-  env->Pgenerate_key = &generate_key;
   env->Plive_translate = live_translate;
   env->PGOZILA_GET = GOZILA_GET;
   cprintf ("call initWeb\n");
