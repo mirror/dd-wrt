@@ -428,7 +428,7 @@ validate_services_port (webs_t wp)
 
   // segment filter_services into <= 1024 byte lengths
   cur = buf;
-  fprintf (stderr, "cur=%s\n", cur);
+//  fprintf (stderr, "cur=%s\n", cur);
 
   memcpy (word, cur, 1024);
   word[1025] = 0;
@@ -736,7 +736,6 @@ save_secprefix (webs_t wp, char *prefix)
   if (contains(prefix,'.'))
     rep (p2, '.', 'X');  // replace invalid characters for sub ifs
 
- fprintf(stderr,"save for prefix %s\n",prefix);
 #ifdef HAVE_WPA_SUPPLICANT
 /*_8021xtype
 _8021xuser
@@ -866,7 +865,6 @@ security_save (webs_t wp)
     {
       char b[16];
       sprintf (b, "wl%d", i);
-      fprintf(stderr,"save for %s\n",b);
       security_save_prefix (wp, b);
     }
 #endif
