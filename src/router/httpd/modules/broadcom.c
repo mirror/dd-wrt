@@ -52,9 +52,7 @@
 #include <dlfcn.h>
 
 
-int gozila_action = 0;
 int debug_value = 0;
-int browser_method = 0;
 
 //static char * rfctime(const time_t *timep);
 //static char * reltime(unsigned int seconds);
@@ -941,7 +939,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   int sleep_time;
   struct gozila_action *act;
 
-  gozila_action = 1;
+  nvram_set("gozila_action","1");
   my_next_page[0] = '\0';
   submit_button = websGetVar (wp, "submit_button", NULL);	/* every html must have the name */
   submit_type = websGetVar (wp, "submit_type", NULL);	/* add, del, renew, release ..... */
@@ -1016,7 +1014,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     do_ej (path, wp, NULL);	//refresh
   websDone (wp, 200);
 
-  gozila_action = 0;		//reset gozila_action
+  nvram_set("gozila_action","0");
   nvram_set("generate_key","0");
   nvram_set("clone_wan_mac","0");
 
@@ -1157,9 +1155,9 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   if (legal_ip_netmask
       ("lan_ipaddr", "lan_netmask",
        nvram_safe_get ("http_client_ip")) == TRUE)
-    browser_method = USE_LAN;
+    nvram_set("browser_method","USE_LAN");
   else
-    browser_method = USE_WAN;
+    nvram_set("browser_method","USE_WAN");
 
   /**********   get all webs var **********/
 
