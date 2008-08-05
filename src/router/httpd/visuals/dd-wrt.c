@@ -6647,40 +6647,20 @@ ej_show_chilliif (webs_t wp, int argc, char_t ** argv)
 	     "selected=\"selected\"" : "");
   char *next;
   char var[80];
-#ifndef HAVE_MADWIFI
-  websWrite (wp, "<option value=\"%s\" %s >WLAN</option>\n",
-	     nvram_safe_get ("wl0_ifname"), nvram_match ("chilli_interface",
-							 nvram_safe_get
-							 ("wl0_ifname")) ?
-	     "selected=\"selected\"" : "");
-  sprintf (var, "wl0_vifs");
-  char *names = nvram_safe_get (var);
-  foreach (var, names, next)
-  {
-    websWrite (wp, "<option value=\"%s\" %s >WLAN</option>\n", var,
-	       nvram_match ("chilli_interface",
-			    var) ? "selected=\"selected\"" : "");
-  }
-#else
-  int i;
-  int c = getdevicecount ();
-  for (i = 0; i < c; i++)
-    {
-      char ifname[32];
-      sprintf (ifname, "ath%d", i);
-      websWrite (wp, "<option value=\"%s\" %s >%s</option>\n", ifname,
-		 nvram_match ("chilli_interface", ifname) ? "selected" : "",
-		 ifname);
-      sprintf (var, "ath%d_vifs", i);
-      char *names = nvram_safe_get (var);
-      foreach (var, names, next)
+  char eths[256];
+
+  memset (eths, 0, 256);
+  getIfLists (eths, 256);
+  foreach (var, eths, next)
       {
+        if (!strcmp (get_wan_face (), var))
+          continue;
+        if (!strcmp (nvram_safe_get("lan_ifname"), var))
+          continue;
 	websWrite (wp, "<option value=\"%s\" %s >%s</option>\n", var,
 		   nvram_match ("chilli_interface", var) ? "selected" : "",
 		   var);
       }
-    }
-#endif
 
   websWrite (wp, "</select>\n");
 }
