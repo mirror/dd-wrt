@@ -326,11 +326,13 @@ period_check (int sig)
   else
     val=1;
 #endif
+#ifndef HAVE_ALPHA
 #ifdef HAVE_USR5453
   if (val)
     val=0;
   else
     val=1;
+#endif
 #endif
 
 
