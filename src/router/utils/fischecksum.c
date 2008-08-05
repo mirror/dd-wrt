@@ -197,6 +197,6 @@ if (flash)
   in=fopen("/tmp/fisdir","wb");
   fwrite(mem,esize,1,in);
   fclose(in);
-  system("/usr/sbin/mtd -f write /tmp/fisdir \"FIS directory\"");
+  system("/sbin/mtd -f write /tmp/fisdir \"FIS directory\"");
 }
 }
