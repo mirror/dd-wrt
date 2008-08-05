@@ -87,7 +87,7 @@ char *websGetVar (webs_t wp, char *var, char *d)
 
 char *GOZILA_GET(webs_t wp,char *name)
 {
-return gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
+return nvram_match("gozila_action","1") ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
 
 void *
@@ -141,8 +141,6 @@ extern websRomPageIndexType websRomPageIndex[];
 struct wl_client_mac wl_client_macs[MAX_LEASES];
 //extern struct wl_client_mac *wl_client_macs;
 
-extern int gozila_action;
-extern int browser_method;
 extern char *live_translate (char *tran);
 
 
@@ -177,8 +175,6 @@ initWeb (void *handle)
   env->Pwfputs = wfputs;
   env->Pwfflush = wfflush;
   env->PwebsRomPageIndex = websRomPageIndex;
-  env->Pgozila_action = gozila_action;
-  env->Pbrowser_method = browser_method;
   env->Plive_translate = live_translate;
   env->PGOZILA_GET = GOZILA_GET;
   cprintf ("call initWeb\n");

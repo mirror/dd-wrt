@@ -47,8 +47,6 @@ char *(*GOZILA_GET)(webs_t wp,char *name) = NULL;
 #ifdef HAVE_HTTPS
 int do_ssl;
 #endif
-int gozila_action;
-int browser_method;
 
 void
 initWeb (struct Webenvironment *env)
@@ -82,10 +80,6 @@ initWeb (struct Webenvironment *env)
   wfputs = env->Pwfputs;
   cprintf ("set websrompageindex\n");
   websRomPageIndex = env->PwebsRomPageIndex;
-  cprintf ("set gozila_action\n");
-  gozila_action = env->Pgozila_action;
-  cprintf ("set browser_method\n");
-  browser_method = env->Pbrowser_method;
   cprintf ("set live_translate\n");
   live_translate = env->Plive_translate;
   GOZILA_GET = env->PGOZILA_GET;
@@ -276,7 +270,7 @@ ej_nvram_selget (webs_t wp, int argc, char_t ** argv)
     }
 #endif
   name = argv[0];
-  if (gozila_action)
+  if (nvram_match("gozila_action","1"))
     {
       char *buf = websGetVar (wp, name, NULL);
       if (buf)
@@ -983,7 +977,7 @@ ej_get_http_prefix (webs_t wp, int argc, char_t ** argv)
 #endif
     strcpy (http, "http");
 
-  if (browser_method == USE_LAN)
+  if (nvram_match("browser_method","USE_LAN"))
     {				// Use LAN to browser
       if (nvram_match ("restore_defaults", "1")
 	  || nvram_match ("sv_restore_defaults", "1"))
