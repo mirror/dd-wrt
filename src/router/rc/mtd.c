@@ -397,6 +397,8 @@ fail:
   if (fp)
     fclose (fp);
 #ifdef HAVE_CA8
+#ifndef HAVE_ALPHA
+#ifndef HAVE_USR5453
 buf = malloc(65536);
 FILE *in=fopen("/dev/mtdblock/2","rb");
 fread(buf,65536,1,in);
@@ -410,6 +412,8 @@ fwrite(buf,65536,1,in);
 fclose(in);
 fprintf(stderr,"fixup CRC %X and LEN %X\n",crc_data,data_len);
 eval("mtd","-f","write","/tmp/bdata","bdata");
+#endif
+#endif
 #endif
 //    eval("fischecksum");
 
