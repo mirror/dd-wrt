@@ -610,7 +610,7 @@ generate_wep_key (webs_t wp)
 {
   int i;
   char buf[256];
-  char *prefix; *passphrase, *bit, *tx;
+  char *prefix, *passphrase, *bit, *tx;
 #ifdef HAVE_MADWIFI
   prefix = websGetVar (wp, "security_varname", "ath0");
 #else
