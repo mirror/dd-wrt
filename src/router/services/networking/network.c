@@ -3587,14 +3587,13 @@ start_hotplug_net (void)
 {
 #ifdef HAVE_MADWIFI
   char *interface, *action, *devaction;
-// fprintf(stderr,"Hotplug\n");
   interface = getenv ("INTERFACE");
   if (!interface)
     return 0;
   action = getenv("ACTION");
   if (!action)
     return 0;
- sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
+// sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
   if (strncmp(interface,"ath",3))
     return 0; 
   
