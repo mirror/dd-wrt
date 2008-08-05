@@ -616,8 +616,6 @@ get_wep_value (char *type, char *_bit, char *prefix)
       snprintf (wl_wep, sizeof (wl_wep), "%s_wep_buf", prefix);
     }
 
-  fprintf (stderr,"get %s from %s with bit %s and prefix %s\n", type, wl_wep, _bit,
-	   prefix);
 
   wordlist = nvram_safe_get (wl_wep);
 
@@ -627,7 +625,6 @@ get_wep_value (char *type, char *_bit, char *prefix)
 
   cnt = count_occurences (wordlist, ':');
 
-  fprintf (stderr,"wordlist = %s\n", wordlist);
 
 
   if (!strcmp (type, "passphrase"))
