@@ -631,7 +631,7 @@ generate_wep_key (webs_t wp)
 
   gen_key (passphrase, atoi (bit));
   
-  *generate_key = 1;
+  nvram_set("generate_key","1");
   
   if (atoi (bit) == 64)
     {
