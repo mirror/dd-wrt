@@ -4216,19 +4216,11 @@ show_wep (webs_t wp, char *prefix)
   nvram_unset ("passphrase_temp");
 
   websWrite (wp, "\" />");
-
   websWrite (wp,
 	     "<input type=\"hidden\" value=\"Null\" name=\"generateButton\" />\n");
-
-  if (!strcmp (bit, "64"))
-    websWrite (wp,
-	       "<input class=\"button\" type=\"button\" value=\"Generate\" onclick=generateKey64(this.form,\"%s\") name=wepGenerate />\n</div>",
+  websWrite (wp,
+	       "<input class=\"button\" type=\"button\" value=\"Generate\" onclick=generateKey(this.form,\"%s\") name=wepGenerate />\n</div>",
 	       prefix);
-  else
-    websWrite (wp,
-	       "<input class=\"button\" type=\"button\" value=\"Generate\" onclick=generateKey128(this.form,\"%s\") name=wepGenerate />\n</div>",
-	       prefix);
-
 
   char *mlen = "10";
   char *mlen2 = "12";
