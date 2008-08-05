@@ -152,7 +152,7 @@ static struct {
 	{ WLC_EUR, ((char *[]) { "Europe", "EUR", NULL }), "DE" },
 	{ WLC_USL, ((char *[]) { "USA Low", "USALow", "USL", NULL }), "US" },
 	{ WLC_JPH, ((char *[]) { "Japan High", "JapanHigh", "JPH", NULL }), "JP" },
-	{ WLC_ALL, ((char *[]) { "All", "AllTheChannels", NULL }), "All" },
+	{ WLC_ALL, ((char *[]) { "ALL", "AllTheChannels", NULL }), "ALL" },
 	};
 
 /* validate/restore all per-interface related variables */
@@ -905,15 +905,15 @@ cprintf("get phy type %s\n",name);
 #ifdef HAVE_BUFFALO
 	country = BUFFALO_COUNTRY;
 #else
-	if (nvram_match("wl0_phytype","a"))
-	    country="US";
-	else
-	    country="JP";
-	if (phytype == PHY_TYPE_N)
+//	if (nvram_match("wl0_phytype","a"))
+//	    country="US";
+//	else
+	    country="ALL";
+/*	if (phytype == PHY_TYPE_N)
 	    {
 	    if (nvram_default_match(strcat_r(prefix, "net_mode", tmp),"n-only","mixed") || nvram_match(strcat_r(prefix, "net_mode", tmp),"mixed"))
 		country="DE";
-	    }
+	    }*/
 	//country = nvram_get(tmp);
 #endif
 cprintf("set country %s\n",name);
@@ -1102,7 +1102,8 @@ cprintf("set channel %s\n",name);
 		channel = val;
 		/* Get BW */
 		val = atoi(nvram_safe_get(strcat_r(prefix, "nbw", tmp)));
-		if (nvram_match(strcat_r(prefix, "net_mode", tmp),"b-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"g-only") || nvram_match(strcat_r(prefix, "net_mode", tmp),"a-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"bg-mixed"));
+		fprintf(stderr,"nbw = %d\n",val);
+		if (nvram_match(strcat_r(prefix, "net_mode", tmp),"b-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"g-only") || nvram_match(strcat_r(prefix, "net_mode", tmp),"a-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"bg-mixed"))
 			val = 20;
 		
 		fprintf(stderr,"channel %d, val %d\n",channel,val);
