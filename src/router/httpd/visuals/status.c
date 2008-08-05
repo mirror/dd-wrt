@@ -258,7 +258,7 @@ ej_show_status (webs_t wp, int argc, char_t ** argv)
 
 	  /* press [ Connect | Disconnect ] button */
 	  /* set retry count */
-	  if (gozila_action)
+	  if (nvram_match("gozila_action","1"))
 	    retry_count = STATUS_RETRY_COUNT;	// retry 3 times
 
 	  /* set refresh time */
@@ -278,7 +278,7 @@ ej_show_status (webs_t wp, int argc, char_t ** argv)
       else if (!strcmp (type, "onload"))
 	{
 	  if (retry_count == 0
-	      || (!submit_type && !wan_link && gozila_action))
+	      || (!submit_type && !wan_link && nvram_match("gozila_action","1")))
 	    {			//After refresh 2 times, if the status is disconnect, show Alert message.
 	      websWrite (wp, "ShowAlert(\"TIMEOUT\");");
 	      retry_count = -1;
