@@ -259,6 +259,9 @@ int
 wifi_gettxpower (char *ifname)
 {
   int poweroffset = 0;
+#ifdef HAVE_ALPHA
+  poweroffset = 10;
+#else
   int vendor;
   int devcount;
   char readid[64];
@@ -298,7 +301,7 @@ wifi_gettxpower (char *ifname)
       poweroffset = 0;
       break;
     }
-
+#endif
   struct iwreq wrq;
   strncpy (wrq.ifr_name, ifname, IFNAMSIZ);
   ioctl (getsocket (), SIOCGIWTXPOW, &wrq);
@@ -331,6 +334,9 @@ int
 wifi_gettxpoweroffset (char *ifname)
 {
   int poweroffset = 0;
+#ifdef HAVE_ALPHA
+  poweroffset = 10;
+#else
   int vendor;
   int devcount;
   char readid[64];
@@ -371,7 +377,7 @@ wifi_gettxpoweroffset (char *ifname)
       poweroffset = 0;
       break;
     }
-
+#endif
   return poweroffset;
 }
 
