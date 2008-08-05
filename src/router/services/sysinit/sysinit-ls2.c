@@ -81,7 +81,7 @@ start_sysinit (void)
     {
       fclose (in);
       eval ("/usr/sbin/convertnvram");
-      eval ("/usr/sbin/mtd", "erase", "nvram");
+      eval ("/sbin/mtd", "erase", "nvram");
       nvram_commit ();
     }
   cprintf ("sysinit() var\n");
