@@ -18,25 +18,7 @@ function keyMode(F) {
 function generateKey(F,PREFIX) {
 	F.change_action.value="gozila_cgi";
 	F.security_varname.value = PREFIX;
-	if(F.wl_wep_bit.value == 64) {
-		F.submit_type.value = "key_64";
-	} else {
-		F.submit_type.value = "key_128";
-	}
-	F.submit();
-}
-
-function generateKey64(F,PREFIX) {
-	F.change_action.value="gozila_cgi";
-	F.security_varname.value = PREFIX;
-	F.submit_type.value = "key_64";
-	F.submit();
-}
-
-function generateKey128(F,PREFIX) {
-	F.change_action.value="gozila_cgi";
-	F.security_varname.value = PREFIX;
-	F.submit_type.value = "key_128";
+	F.submit_type.value = "wep_key_generate";
 	F.submit();
 }
 
