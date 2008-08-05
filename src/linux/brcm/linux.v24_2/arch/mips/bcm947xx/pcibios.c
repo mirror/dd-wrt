@@ -189,7 +189,7 @@ pcibios_fixup_bus(struct pci_bus *b)
 	else {
 		for (ln = b->devices.next; ln != &b->devices; ln = ln->next) {
 			d = pci_dev_b(ln);
-			sbpci_arb_park(sbh, PCI_SLOT(d->devfn));
+//			sbpci_arb_park(sbh, PCI_SLOT(d->devfn));
 			/* Fix up resource bases */
 			for (pos = 0; pos < 6; pos++) {
 				res = &d->resource[pos];
@@ -213,7 +213,7 @@ pcibios_fixup_bus(struct pci_bus *b)
 				d->irq = (pci_find_device(VENDOR_BROADCOM, SB_PCI, NULL))->irq;
 			pci_write_config_byte(d, PCI_INTERRUPT_LINE, d->irq);
 		}
-		sbpci_arb_park(sbh, PCI_PARK_NVRAM);
+//		sbpci_arb_park(sbh, PCI_PARK_NVRAM);
 	}
 }
 
