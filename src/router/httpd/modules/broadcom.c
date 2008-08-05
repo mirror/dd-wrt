@@ -811,10 +811,7 @@ static struct gozila_action gozila_actions[] = {
    "delete_static_route"},
   {"RouteStatic", "del", "static_route_del", 1, REFRESH,
    "delete_static_route"},
-//  {"WL_WEPTable", "key_64", "", 1, REFRESH, generate_key_64}, //OBSOLETE
-//  {"WL_WEPTable", "key_128", "", 1, REFRESH, generate_key_128}, //OBSOLETE
-  {"WL_WPATable", "key_64", "", 1, REFRESH, "generate_key_64"},
-  {"WL_WPATable", "key_128", "", 1, REFRESH, "generate_key_128"},
+  {"WL_WPATable", "wep_key_generate", "", 1, REFRESH, "generate_wep_key"},
   {"WL_WPATable", "security", "", 1, REFRESH, "set_security"},
 #ifdef HAVE_MSSID
   {"WL_WPATable", "save", "", 1, REFRESH, "security_save"},

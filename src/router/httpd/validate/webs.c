@@ -605,25 +605,34 @@ extern void gen_key (char *genstr, int weptype);
 extern unsigned char key128[4][13];
 extern unsigned char key64[4][5];
 
-int
-generate_wep_key (webs_t wp, int key, char *prefix)
+void
+generate_wep_key (webs_t wp)
 {
   int i;
   char buf[256];
-  char *passphrase, *bit, *tx;
+  char *prefix; *passphrase, *bit, *tx;
+#ifdef HAVE_MADWIFI
+  prefix = websGetVar (wp, "security_varname", "ath0");
+#else
+  prefix = websGetVar (wp, "security_varname", "wl");
+#endif
   char var[80];
   sprintf (var, "%s_wep_bit", prefix);
   bit = websGetVar (wp, var, NULL);
+  if (bit != NULL)
+    nvram_set ("wl_wep_bit", bit);
   sprintf (var, "%s_passphrase", prefix);
   passphrase = websGetVar (wp, var, NULL);
   sprintf (var, "%s_key", prefix);
   tx = websGetVar (wp, var, NULL);
-  cprintf ("bits = %s\n", bit);
-  if (!bit || !passphrase || !tx)
-    return 0;
+  cprintf ("gen wep key: bits = %s\n", bit);
+  if (!prefix || !bit || !passphrase || !tx)
+    return;
 
   gen_key (passphrase, atoi (bit));
-
+  
+  *generate_key = 1;
+  
   if (atoi (bit) == 64)
     {
       char key1[27] = "";
@@ -685,40 +694,7 @@ generate_wep_key (webs_t wp, int key, char *prefix)
       nvram_set (var, buf);
     }
 
-  return 1;
-}
-
-void
-generate_key_64 (webs_t wp)
-{
-  char *var = websGetVar (wp, "wl_wep_bit", NULL);
-  if (var != NULL)
-    nvram_set ("wl_wep_bit", var);
-
-  int ret;
-  cprintf ("gen wep key 64");
-  *generate_key = 1;
-#ifdef HAVE_MADWIFI
-  generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "ath0"));
-#else
-  generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "wl"));
-#endif
-}
-
-void
-generate_key_128 (webs_t wp)
-{
-  char *var = websGetVar (wp, "wl_wep_bit", NULL);
-  if (var != NULL)
-    nvram_set ("wl_wep_bit", var);
-
-  cprintf ("gen wep key 128");
-  *generate_key = 1;
-#ifdef HAVE_MADWIFI
-  generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "ath0"));
-#else
-  generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "wl"));
-#endif
+  return;
 }
 
 #ifndef HAVE_MSSID
