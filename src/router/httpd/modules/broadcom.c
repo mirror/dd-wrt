@@ -54,8 +54,6 @@
 
 int gozila_action = 0;
 int debug_value = 0;
-int clone_wan_mac = 0;
-int generate_key = 0;
 int browser_method = 0;
 
 //static char * rfctime(const time_t *timep);
@@ -1019,8 +1017,8 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   websDone (wp, 200);
 
   gozila_action = 0;		//reset gozila_action
-  generate_key = 0;
-  clone_wan_mac = 0;
+  nvram_set("generate_key","0");
+  nvram_set("clone_wan_mac","0");
 
   return 1;
 }

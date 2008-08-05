@@ -134,8 +134,6 @@ struct Webenvironment
 #endif
   int Pgozila_action;
   int Pbrowser_method;
-  int *Pclone_wan_mac;
-  int *Pgenerate_key;
 };
 
 #define websSetVar(wp, var, value) set_cgi(var, value)

@@ -82,7 +82,7 @@ void execute (webs_t wp);
 void
 clone_mac (webs_t wp)
 {
-  *clone_wan_mac = 1;
+  nvram_set("clone_wan_mac","1");
 }
 
 /* Delete lease */
@@ -733,10 +733,10 @@ save_secprefix (webs_t wp, char *prefix)
   char radius[80];
   char p2[80];
   strcpy (p2, prefix);
-  if (strcmp (prefix, "wl0"))
-    rep (p2, '.', 'X');
+  if (contains(prefix,'.'))
+    rep (p2, '.', 'X');  // replace invalid characters for sub ifs
 
-
+ fprintf(stderr,"save for prefix %s\n",prefix);
 #ifdef HAVE_WPA_SUPPLICANT
 /*_8021xtype
 _8021xuser
@@ -866,6 +866,7 @@ security_save (webs_t wp)
     {
       char b[16];
       sprintf (b, "wl%d", i);
+      fprintf(stderr,"save for %s\n",b);
       security_save_prefix (wp, b);
     }
 #endif

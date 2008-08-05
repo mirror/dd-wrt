@@ -607,7 +607,7 @@ get_wep_value (char *type, char *_bit, char *prefix)
   char wl_wep[] = "wlX.XX_wep_XXXXXX";
   char temp[256] = "";
 
-  if (*generate_key)
+  if (nvram_match("generate_key","1"))
     {
       snprintf (wl_wep, sizeof (wl_wep), "%s_wep_gen", prefix);
     }
@@ -616,7 +616,7 @@ get_wep_value (char *type, char *_bit, char *prefix)
       snprintf (wl_wep, sizeof (wl_wep), "%s_wep_buf", prefix);
     }
 
-  cprintf ("get %s from %s with bit %s and prefix %s\n", type, wl_wep, _bit,
+  fprintf (stderr,"get %s from %s with bit %s and prefix %s\n", type, wl_wep, _bit,
 	   prefix);
 
   wordlist = nvram_safe_get (wl_wep);
@@ -627,7 +627,7 @@ get_wep_value (char *type, char *_bit, char *prefix)
 
   cnt = count_occurences (wordlist, ':');
 
-  cprintf ("wordlist = %s\n", wordlist);
+  fprintf (stderr,"wordlist = %s\n", wordlist);
 
 
   if (!strcmp (type, "passphrase"))
