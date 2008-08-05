@@ -104,13 +104,12 @@ extern sslKeys_t *keys;
 #endif
 
 #define DEFAULT_HTTP_PORT 80
-#ifdef HAVE_HTTPS
-int do_ssl;
-#endif
 int server_port;
 char pid_file[80];
 char *server_dir = NULL;
-
+#ifdef HAVE_HTTPS
+int do_ssl=0;
+#endif
 #ifdef SAMBA_SUPPORT
 extern int smb_getlock;
 extern int httpd_fork;

@@ -132,8 +132,6 @@ struct Webenvironment
 #ifdef HAVE_HTTPS
   int Pdo_ssl;
 #endif
-  int Pgozila_action;
-  int Pbrowser_method;
 };
 
 #define websSetVar(wp, var, value) set_cgi(var, value)
