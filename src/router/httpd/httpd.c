@@ -1002,7 +1002,6 @@ get_client_ip_mac (int conn_fp)
   nvram_safe_set ("http_client_ip", inet_ntoa (sa.sin_addr));
   //if(strcmp(nvram_safe_get("http_client_ip"), inet_ntoa(sa.sin_addr)))
   //      nvram_set("http_client_ip", inet_ntoa(sa.sin_addr));
-  //fprintf(stderr, "Client ip=[%s]\n", inet_ntoa(sa.sin_addr));
   m = get_mac_from_ip (inet_ntoa (sa.sin_addr));
   nvram_safe_set ("http_client_mac", m);
   //if(m){
