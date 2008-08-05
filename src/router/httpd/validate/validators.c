@@ -103,7 +103,6 @@ int (*httpd_filter_name) (char *old_name, char *new_name, size_t size,
 char *(*websGetVar) (webs_t wp, char *var, char *d);
 int (*websWrite) (webs_t wp, char *fmt, ...);
 struct wl_client_mac *wl_client_macs;
-int *generate_key;
 
 void
 initWeb (struct Webenvironment *env)
