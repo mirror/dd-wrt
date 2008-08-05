@@ -229,6 +229,9 @@ endif
 ifeq ($(CONFIG_WILLIAM),y)
 CFLAGS += -DWILLIAM=1
 endif
+ifeq ($(CONFIG_ALPHA),y)
+CFLAGS += -DHAVE_ALPHA
+endif
 
 ifeq ($(CONFIG_TELCOM),y)
 CFLAGS += -DHAVE_TELCOM
