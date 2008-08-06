@@ -64,6 +64,9 @@ install: all
 ifeq ($(ARCH),armeb)
 	install -D convertnvram $(INSTALLDIR)/usr/sbin/convertnvram
 endif
+ifeq ($(ARCH),powerpc)
+	install -D convertnvram $(INSTALLDIR)/usr/sbin/convertnvram
+endif
 ifeq ($(ARCH),mips)
 	install -D convertnvram $(INSTALLDIR)/usr/sbin/convertnvram
 endif
@@ -84,12 +87,12 @@ ifeq ($(ARCH),arm)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
-ifeq ($(ARCH),mips)
+ifeq ($(ARCH),powerpc)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
-ifeq ($(ARCH),powerpc)
-libnvram.so: nvram_linux_gen.o nvram_convert.o
+ifeq ($(ARCH),mips)
+libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
 ifeq ($(ARCH),mipsel)
