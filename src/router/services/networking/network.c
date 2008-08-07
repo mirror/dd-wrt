@@ -137,7 +137,7 @@ getMacAddr (char *ifname, char *mac)
     return NULL;
   sprintf (mac, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1],
 	   hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
-
+  retutnr mac;
 }
 
 #ifdef HAVE_MSSID
@@ -3631,13 +3631,16 @@ start_hotplug_net (void)
 	  strcpy (macaddr,
 		  ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,
 			      eabuf));
+	  fprintf(stderr,"interface number is %s\n",nr);
 	  int count = atoi(nr);
 	  int i;
 	  if (count>=0)
 	    for (i=0;i<count+1;i++)
 		MAC_ADD (macaddr);
+	 fprintf(stderr,"set %s mac addr to %s\n",interface,macaddr);
 	  ether_atoe (macaddr, (unsigned char *) ifr.ifr_hwaddr.sa_data);
 	  strncpy (ifr.ifr_name, interface, IFNAMSIZ);
+	  eval ("ifconfig", interface, "down");
 	  ioctl (s, SIOCSIFHWADDR, &ifr);
 	  close (s);
 	}
