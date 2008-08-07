@@ -3586,7 +3586,7 @@ int
 start_hotplug_net (void)
 {
 #ifdef HAVE_MADWIFI
-  char *interface, *action, *devaction;
+  char *interface, *action;
   interface = getenv ("INTERFACE");
   if (!interface)
     return 0;
@@ -3604,7 +3604,6 @@ start_hotplug_net (void)
   if (index==-1)
     return 0;
   strncpy(ifname,interface+index+1,strlen(interface)-(index+1));
-  //fprintf(stderr,"substa = %s\n",ifname);
   if (strncmp(ifname,"sta",3))
    {
     return 0; 
@@ -3614,9 +3613,6 @@ start_hotplug_net (void)
   strcpy(nr,((unsigned char *)&ifname[0])+3);
   memset(ifname,0,32);
   strncpy(ifname,interface,index);
-  
-  //fprintf(stderr,"base = %s\n",ifname);
- 
       char bridged[32];
       sprintf (bridged, "%s_bridged", ifname);
     
@@ -3636,6 +3632,7 @@ start_hotplug_net (void)
 		  ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,
 			      eabuf));
 	  int count = atoi(nr);
+	  int i;
 	  if (count>=0)
 	    for (i=0;i<count+1;i++)
 		MAC_ADD (macaddr);
