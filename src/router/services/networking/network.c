@@ -137,7 +137,7 @@ getMacAddr (char *ifname, char *mac)
     return NULL;
   sprintf (mac, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1],
 	   hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
-  retutnr mac;
+  return mac;
 }
 
 #ifdef HAVE_MSSID
