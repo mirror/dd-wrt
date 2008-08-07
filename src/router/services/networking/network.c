@@ -3604,20 +3604,47 @@ start_hotplug_net (void)
   if (index==-1)
     return 0;
   strncpy(ifname,interface+index+1,strlen(interface)-(index+1));
-  fprintf(stderr,"substa = %s\n",ifname);
+  //fprintf(stderr,"substa = %s\n",ifname);
   if (strncmp(ifname,"sta",3))
    {
     return 0; 
    }
+  char nr[32];
+  memset(nr,0,32);
+  strcpy(nr,((unsigned char *)&ifname[0])+3);
   memset(ifname,0,32);
   strncpy(ifname,interface,index);
-  fprintf(stderr,"base = %s\n",ifname);
+  
+  //fprintf(stderr,"base = %s\n",ifname);
+ 
       char bridged[32];
       sprintf (bridged, "%s_bridged", ifname);
     
       if (!strcmp (action, "add"))
 	{
 	  fprintf(stderr,"adding WDS %s\n",interface);
+      struct ifreq ifr;
+      int s;
+      if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
+	{
+	  char eabuf[32];
+	  strncpy (ifr.ifr_name, ifname, IFNAMSIZ);
+	  ioctl (s, SIOCGIFHWADDR, &ifr);
+	  char macaddr[32];
+	  ifr.ifr_hwaddr.sa_data[0]|=0x02; // mask first byte to 0x02
+	  strcpy (macaddr,
+		  ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,
+			      eabuf));
+	  int count = atoi(nr);
+	  if (count>=0)
+	    for (i=0;i<count+1;i++)
+		MAC_ADD (macaddr);
+	  ether_atoe (macaddr, (unsigned char *) ifr.ifr_hwaddr.sa_data);
+	  strncpy (ifr.ifr_name, interface, IFNAMSIZ);
+	  ioctl (s, SIOCSIFHWADDR, &ifr);
+	  close (s);
+	}
+
 	  eval ("ifconfig", interface, "up");
 	  if (nvram_match (bridged, "1"))
 	    br_add_interface (getBridge (ifname), interface);
