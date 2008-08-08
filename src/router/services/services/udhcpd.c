@@ -212,6 +212,10 @@ start_udhcpd (void)
       && nvram_invmatch ("lan_netmask", "0.0.0.0"))
     fprintf (fp, "option subnet %s\n", nvram_safe_get ("lan_netmask"));
 
+  if (nvram_invmatch ("dhcp_gateway", "")
+      && nvram_invmatch ("dhcp_gateway", "0.0.0.0"))
+    fprintf (fp, "option router %s\n", nvram_safe_get ("dhcp_gateway"));
+  else
   if (nvram_invmatch ("lan_ipaddr", "")
       && nvram_invmatch ("lan_ipaddr", "0.0.0.0"))
     fprintf (fp, "option router %s\n", nvram_safe_get ("lan_ipaddr"));
