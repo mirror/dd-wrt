@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-//Chinese (Traditional) translation file - DD-WRT V23/V24 2008/06/15 UTF-8    //
+//Chinese (Traditional) translation file - DD-WRT V23/V24 2008/08/02 UTF-8    //
 ////////////////////////////////////////////////////////////////////////////////
 // ** COMMON SHARE LABEL **//
 
@@ -1035,7 +1035,7 @@ routetbl.th1="目的地 LAN IP";
 //
 route.titl="路由器設定";
 route.h2="進階路由器設定";
-route.metric="公尺";
+route.metric="路徑值";
 route.mod="工作模式";
 route.bgp_legend="BGP 設定";
 route.bgp_ip="鄰近 IP";
@@ -1201,7 +1201,7 @@ service.radiooff_bootoff="Turn radio off at boot";
 service.ses_legend="SES / AOSS / EZ-SETUP 按鈕";
 service.ses_srv="SES / AOSS / EZ-SETUP 按鈕啟用";
 service.ses_toggleradio="無線開關（Toggle Wireless）";
-service.ses_script="自訂";
+service.ses_script="自訂Script";
 
 //hwmon.webservices
 service.hwmon_legend="硬體監控";
@@ -1339,7 +1339,7 @@ status_band.up="up";
 
 //help container
 //
-hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
+hstatus_band.svg="顯示頻寬監控,需安裝 Adobe's SVG plugin .";
 hstatus_band.right1="按 SWITCH TO 選擇 (bytes/s 或 bits/s).";
 hstatus_band.right2="按 AUTOSCALE 調整顯示範圍.";
 
@@ -1357,11 +1357,11 @@ status_router.legend2="CPU";
 status_router.cpu="CPU型號";
 status_router.clock="CPU頻率";
 status_router.legend3="記憶體";
-status_router.mem_tot="所有可用的";
+status_router.mem_tot="可用的";
 status_router.mem_free="未使用";
 status_router.mem_used="已使用";
 status_router.mem_buf="緩衝";
-status_router.mem_cached="已緩衝";
+status_router.mem_cached="已快取";
 status_router.mem_active="使用中";
 status_router.mem_inactive="非使用中";
 status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus (BrainSlayer)
@@ -1370,7 +1370,7 @@ status_router.net_maxports="最大連接數";
 status_router.net_conntrack="使用中";
 status_router.notavail="伺服器未連線";
 status_router.legend6="空間使用";
-status_router.inpvolt="板輸入電壓";
+status_router.inpvolt="輸入電壓";
 status_router.cputemp="CPU 溫度";
 
 //help container
@@ -1460,7 +1460,7 @@ hstatus_wireless.right4="正如您在在無線標籤裏所設定的,這裏將顯
 
 // ** Status_OpenVPN.asp **//
 //
-status_openvpn.titl="OpenVPN Status";
+status_openvpn.titl="OpenVPN 資訊";
 
 
 // ** Triggering.asp **//
@@ -1539,7 +1539,7 @@ vlan.bridge="被指定到<br />橋接";
 vlan.tagged="已標記的";
 vlan.negociate="自動協商";
 vlan.aggregation="鏈路聚合<br>3號與4號埠";
-vlan.trunk="主幹（Trunk）";
+vlan.trunk="Trunk";
 
 
 // ** WEP.asp **//
@@ -1708,6 +1708,7 @@ wl_adv.label20="Shortslot Override";
 wl_adv.label21="Transmission Maximum Rate";
 wl_adv.label23="Transmission Minimum Rate";
 wl_adv.label22="Bluetooth Coexistence Mode";
+wl_adv.label24="天線對準";
 wl_adv.table1="EDCA AP 參數（AP到用戶端）";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
