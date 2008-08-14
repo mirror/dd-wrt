@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -117,17 +117,15 @@ void warn_if_group_others_accessible(const char* filename);
 #define S_SCRIPT (1<<0)
 #define S_FATAL  (1<<1)
 
-/* wrapper around the system() call. */
-int openvpn_system (const char *command, const struct env_set *es, unsigned int flags);
-
-/* interpret the status code returned by system() */
+/* interpret the status code returned by system()/execve() */
 bool system_ok(int);
 int system_executed (int stat);
 const char *system_error_message (int, struct gc_arena *gc);
 
-/* run system() with error check, return true if success,
-   false if error, exit if error and fatal==true */
-bool system_check (const char *command, const struct env_set *es, unsigned int flags, const char *error_message);
+/* wrapper around the execve() call */
+int openvpn_execve (const struct argv *a, const struct env_set *es, const unsigned int flags);
+bool openvpn_execve_check (const struct argv *a, const struct env_set *es, const unsigned int flags, const char *error_message);
+bool openvpn_execve_allowed (const unsigned int flags);
 
 #ifdef HAVE_STRERROR
 /* a thread-safe version of strerror */
@@ -165,6 +163,9 @@ void setenv_str (struct env_set *es, const char *name, const char *value);
 void setenv_str_safe (struct env_set *es, const char *name, const char *value);
 void setenv_del (struct env_set *es, const char *name);
 
+void setenv_int_i (struct env_set *es, const char *name, const int value, const int i);
+void setenv_str_i (struct env_set *es, const char *name, const char *value, const int i);
+
 /* struct env_set functions */
 
 struct env_set *env_set_create (struct gc_arena *gc);
@@ -181,7 +182,10 @@ void env_set_remove_from_environment (const struct env_set *es);
 
 /* Make arrays of strings */
 
-const char **make_env_array (const struct env_set *es, struct gc_arena *gc);
+const char **make_env_array (const struct env_set *es,
+			     const bool check_allowed,
+			     struct gc_arena *gc);
+
 const char **make_arg_array (const char *first, const char *parms, struct gc_arena *gc);
 const char **make_extended_arg_array (char **p, struct gc_arena *gc);
 
@@ -206,13 +210,16 @@ long int get_random(void);
 bool test_file (const char *filename);
 
 /* create a temporary filename in directory */
-const char *create_temp_filename (const char *directory, struct gc_arena *gc);
+const char *create_temp_filename (const char *directory, const char *prefix, struct gc_arena *gc);
 
 /* put a directory and filename together */
 const char *gen_path (const char *directory, const char *filename, struct gc_arena *gc);
 
 /* delete a file, return true if succeeded */
 bool delete_file (const char *filename);
+
+/* return true if pathname is absolute */
+bool absolute_pathname (const char *pathname);
 
 /* return the next largest power of 2 */
 unsigned int adjust_power_of_2 (unsigned int u);
@@ -227,7 +234,11 @@ struct user_pass
   bool nocache;
 
 /* max length of username/password */
-# define USER_PASS_LEN 128
+# ifdef ENABLE_PKCS11
+#   define USER_PASS_LEN 4096
+# else
+#   define USER_PASS_LEN 128
+# endif
   char username[USER_PASS_LEN];
   char password[USER_PASS_LEN];
 };
@@ -242,6 +253,7 @@ bool get_console_input (const char *prompt, const bool echo, char *input, const 
 #define GET_USER_PASS_PASSWORD_ONLY (1<<2)
 #define GET_USER_PASS_NEED_OK       (1<<3)
 #define GET_USER_PASS_NOFATAL       (1<<4)
+#define GET_USER_PASS_NEED_STR      (1<<5)
 
 bool get_user_pass (struct user_pass *up,
 		    const char *auth_file,
@@ -256,6 +268,12 @@ void purge_user_pass (struct user_pass *up, const bool force);
  * Assumes that string has been null terminated.
  */
 const char *safe_print (const char *str, struct gc_arena *gc);
+
+/* returns true if environmental variable safe to print to log */
+bool env_safe_to_print (const char *str);
+
+/* returns true if environmental variable may be passed to an external program */
+bool env_allowed (const char *str);
 
 /*
  * A sleep function that services the management layer for n
@@ -275,5 +293,11 @@ void get_user_pass_auto_userid (struct user_pass *up, const char *tag);
 #ifdef CONFIG_FEATURE_IPROUTE
 extern const char *iproute_path;
 #endif
+
+#define SSEC_NONE      0 /* strictly no calling of external programs */
+#define SSEC_BUILT_IN  1 /* only call built-in programs such as ifconfig, route, netsh, etc.*/
+#define SSEC_SCRIPTS   2 /* allow calling of built-in programs and user-defined scripts */
+#define SSEC_PW_ENV    3 /* allow calling of built-in programs and user-defined scripts that may receive a password as an environmental variable */
+extern int script_security; /* GLOBAL */
 
 #endif

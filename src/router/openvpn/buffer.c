@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -22,12 +22,6 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
-
 #include "syshead.h"
 
 #include "common.h"
@@ -37,6 +31,22 @@
 #include "thread.h"
 
 #include "memdbg.h"
+
+size_t
+array_mult_safe (const size_t m1, const size_t m2)
+{
+  const size_t limit = 0xFFFFFFFF;
+  unsigned long long res = (unsigned long long)m1 * (unsigned long long)m2;
+  if (unlikely(m1 > limit) || unlikely(m2 > limit) || unlikely(res > (unsigned long long)limit))
+    msg (M_FATAL, "attemped allocation of excessively large array");
+  return (size_t) res;
+}
+
+void
+buf_size_error (size_t size)
+{
+  msg (M_FATAL, "fatal buffer size error, size=%lu", (unsigned long)size);
+}
 
 struct buffer
 #ifdef DMALLOC
@@ -60,6 +70,8 @@ alloc_buf_gc (size_t size, struct gc_arena *gc)
 #endif
 {
   struct buffer buf;
+  if (!buf_size_valid (size))
+    buf_size_error (size);
   buf.capacity = (int)size;
   buf.offset = 0;
   buf.len = 0;
@@ -178,9 +190,10 @@ buf_sub (struct buffer *buf, int size, bool prepend)
 /*
  * printf append to a buffer with overflow check
  */
-void
+bool
 buf_printf (struct buffer *buf, const char *format, ...)
 {
+  int ret = false;
   if (buf_defined (buf))
     {
       va_list arglist;
@@ -189,13 +202,17 @@ buf_printf (struct buffer *buf, const char *format, ...)
 
       if (cap > 0)
 	{
+	  int stat;
 	  va_start (arglist, format);
-	  vsnprintf ((char *)ptr, cap, format, arglist);
+	  stat = vsnprintf ((char *)ptr, cap, format, arglist);
 	  va_end (arglist);
 	  *(buf->data + buf->capacity - 1) = 0; /* windows vsnprintf needs this */
 	  buf->len += (int) strlen ((char *)ptr);
+	  if (stat >= 0 && stat < cap)
+	    ret = true;
 	}
     }
+  return ret;
 }
 
 /*
@@ -215,6 +232,258 @@ int openvpn_snprintf(char *str, size_t size, const char *format, ...)
       str[size - 1] = 0;
     }
   return ret;
+}
+
+/*
+ * A printf-like function (that only recognizes a subset of standard printf
+ * format operators) that prints arguments to an argv list instead
+ * of a standard string.  This is used to build up argv arrays for passing
+ * to execve.
+ */
+
+void
+argv_init (struct argv *a)
+{
+  a->argc = 0;
+  a->argv = NULL;
+}
+
+struct argv
+argv_new (void)
+{
+  struct argv ret;
+  argv_init (&ret);
+  return ret;
+}
+
+void
+argv_reset (struct argv *a)
+{
+  size_t i;
+  for (i = 0; i < a->argc; ++i)
+    free (a->argv[i]);
+  free (a->argv);
+  a->argc = 0;
+  a->argv = NULL;
+}
+
+size_t
+argv_argc (const char *format)
+{
+  char *term;
+  const char *f = format;
+  size_t argc = 0;
+
+  while ((term = argv_term (&f)) != NULL) 
+    {
+      ++argc;
+      free (term);
+    }
+  return argc;
+}
+
+struct argv
+argv_insert_head (const struct argv *a, const char *head)
+{
+  struct argv r;
+  size_t i;
+
+  r.argc = (a ? a->argc : 0) + 1;
+  ALLOC_ARRAY_CLEAR (r.argv, char *, r.argc + 1);
+  r.argv[0] = string_alloc (head, NULL);
+  if (a)
+    {
+      for (i = 0; i < a->argc; ++i)
+	r.argv[i+1] = string_alloc (a->argv[i], NULL);
+    }
+  return r;
+}
+
+char *
+argv_term (const char **f)
+{
+  const char *p = *f;
+  const char *term = NULL;
+  size_t termlen = 0;
+
+  if (*p == '\0')
+    return NULL;
+
+  while (true)
+    {
+      const int c = *p;
+      if (c == '\0')
+	break;
+      if (term)
+	{
+	  if (!isspace (c))
+	    ++termlen;
+	  else
+	    break;
+	}
+      else
+	{
+	  if (!isspace (c))
+	    {
+	      term = p;
+	      termlen = 1;
+	    }
+	}
+      ++p;
+    }
+  *f = p;
+
+  if (term)
+    {
+      char *ret;
+      ASSERT (termlen > 0);
+      ret = malloc (termlen + 1);
+      check_malloc_return (ret);
+      memcpy (ret, term, termlen);
+      ret[termlen] = '\0';
+      return ret;
+    }
+  else
+    return NULL;
+}
+
+const char *
+argv_str (const struct argv *a, struct gc_arena *gc, const unsigned int flags)
+{
+  if (a->argv)
+    return print_argv ((const char **)a->argv, gc, flags);
+  else
+    return "";
+}
+
+void
+argv_msg (const int msglev, const struct argv *a)
+{
+  struct gc_arena gc = gc_new ();
+  msg (msglev, "%s", argv_str (a, &gc, 0));
+  gc_free (&gc);
+}
+
+void
+argv_msg_prefix (const int msglev, const struct argv *a, const char *prefix)
+{
+  struct gc_arena gc = gc_new ();
+  msg (msglev, "%s: %s", prefix, argv_str (a, &gc, 0));
+  gc_free (&gc);
+}
+
+void
+argv_printf (struct argv *a, const char *format, ...)
+{
+  va_list arglist;
+  va_start (arglist, format);
+  argv_printf_arglist (a, format, 0, arglist);
+  va_end (arglist);
+ }
+
+void
+argv_printf_cat (struct argv *a, const char *format, ...)
+{
+  va_list arglist;
+  va_start (arglist, format);
+  argv_printf_arglist (a, format, APA_CAT, arglist);
+  va_end (arglist);
+}
+
+void
+argv_printf_arglist (struct argv *a, const char *format, const unsigned int flags, va_list arglist)
+{
+  char *term;
+  const char *f = format;
+  size_t argc = 0;
+
+  if (flags & APA_CAT)
+    {
+      char **old_argv = a->argv;
+      size_t i;
+      argc = a->argc;
+      a->argc += argv_argc (format);
+      ALLOC_ARRAY_CLEAR (a->argv, char *, a->argc + 1);
+      for (i = 0; i < argc; ++i)
+	a->argv[i] = old_argv[i];
+      free (old_argv);
+    }
+  else
+    {
+      argv_reset (a);
+      a->argc = argv_argc (format);
+      ALLOC_ARRAY_CLEAR (a->argv, char *, a->argc + 1);
+    }
+
+  while ((term = argv_term (&f)) != NULL) 
+    {
+      ASSERT (argc < a->argc);
+      if (term[0] == '%')
+	{
+	  if (!strcmp (term, "%s"))
+	    {
+	      char *s = va_arg (arglist, char *);
+	      if (!s)
+		s = "";
+	      a->argv[argc++] = string_alloc (s, NULL);
+	    }
+	  else if (!strcmp (term, "%d"))
+	    {
+	      char numstr[64];
+	      openvpn_snprintf (numstr, sizeof (numstr), "%d", va_arg (arglist, int));
+	      a->argv[argc++] = string_alloc (numstr, NULL);
+	    }
+	  else if (!strcmp (term, "%u"))
+	    {
+	      char numstr[64];
+	      openvpn_snprintf (numstr, sizeof (numstr), "%u", va_arg (arglist, unsigned int));
+	      a->argv[argc++] = string_alloc (numstr, NULL);
+	    }
+	  else if (!strcmp (term, "%s/%d"))
+	    {
+	      char numstr[64];
+	      char *s = va_arg (arglist, char *);
+
+	      if (!s)
+		s = "";
+
+	      openvpn_snprintf (numstr, sizeof (numstr), "%d", va_arg (arglist, int));
+
+	      {
+		const size_t len = strlen(s) + strlen(numstr) + 2;
+		char *combined = (char *) malloc (len);
+		check_malloc_return (combined);
+
+		strcpy (combined, s);
+		strcat (combined, "/");
+		strcat (combined, numstr);
+		a->argv[argc++] = combined;
+	      }
+	    }
+	  else if (!strcmp (term, "%s%s"))
+	    {
+	      char *s1 = va_arg (arglist, char *);
+	      char *s2 = va_arg (arglist, char *);
+	      char *combined;
+
+	      if (!s1) s1 = "";
+	      if (!s2) s2 = "";
+	      combined = (char *) malloc (strlen(s1) + strlen(s2) + 1);
+	      check_malloc_return (combined);
+	      strcpy (combined, s1);
+	      strcat (combined, s2);
+	      a->argv[argc++] = combined;
+	    }
+	  else
+	    ASSERT (0);
+	  free (term);
+	}
+      else
+	{
+	  a->argv[argc++] = term;
+	}
+    }
+  ASSERT (argc == a->argc);
 }
 
 /*
@@ -317,6 +586,26 @@ x_gc_free (struct gc_arena *a)
       struct gc_entry *next = e->next;
       free (e);
       e = next;
+    }
+}
+
+/*
+ * Transfer src arena to dest, resetting src to an empty arena.
+ */
+void
+gc_transfer (struct gc_arena *dest, struct gc_arena *src)
+{
+  if (dest && src)
+    {
+      struct gc_entry *e = src->list;
+      if (e)
+	{
+	  while (e->next != NULL)
+	    e = e->next;
+	  e->next = dest->list;
+	  dest->list = src->list;
+	  src->list = NULL;
+	}
     }
 }
 
@@ -430,6 +719,15 @@ string_null_terminate (char *str, int len, int capacity)
 void
 chomp (char *str)
 {
+  rm_trailing_chars (str, "\r\n");
+}
+
+/*
+ * Remove trailing chars
+ */
+void
+rm_trailing_chars (char *str, const char *what_to_delete)
+{
   bool modified;
   do {
     const int len = strlen (str);
@@ -437,7 +735,7 @@ chomp (char *str)
     if (len > 0)
       {
 	char *cp = str + (len - 1);
-	if (*cp == '\n' || *cp == '\r')
+	if (strchr (what_to_delete, *cp) != NULL)
 	  {
 	    *cp = '\0';
 	    modified = true;
@@ -771,6 +1069,20 @@ string_mod_const (const char *str,
     return NULL;
 }
 
+void
+string_replace_leading (char *str, const char match, const char replace)
+{
+  ASSERT (match != '\0');
+  while (*str)
+    {
+      if (*str == match)
+	*str = replace;
+      else
+	break;
+      ++str;
+    }
+}
+
 #ifdef CHARACTER_CLASS_DEBUG
 
 #define CC_INCLUDE    (CC_PRINT)
@@ -815,4 +1127,131 @@ valign4 (const struct buffer *buf, const char *file, const int line)
 	   buf_debug_line (buf));
     }
 }
+#endif
+
+/*
+ * struct buffer_list
+ */
+
+#ifdef ENABLE_BUFFER_LIST
+
+struct buffer_list *
+buffer_list_new (const int max_size)
+{
+  struct buffer_list *ret;
+  ALLOC_OBJ_CLEAR (ret, struct buffer_list);
+  ret->max_size = max_size;
+  ret->size = 0;
+  return ret;
+}
+
+void
+buffer_list_free (struct buffer_list *ol)
+{
+  buffer_list_reset (ol);
+  free (ol);
+}
+
+bool
+buffer_list_defined (const struct buffer_list *ol)
+{
+  return ol->head != NULL;
+}
+
+void
+buffer_list_reset (struct buffer_list *ol)
+{
+  struct buffer_entry *e = ol->head;
+  while (e)
+    {
+      struct buffer_entry *next = e->next;
+      free_buf (&e->buf);
+      free (e);
+      e = next;
+    }
+  ol->head = ol->tail = NULL;
+  ol->size = 0;
+}
+
+void
+buffer_list_push (struct buffer_list *ol, const unsigned char *str)
+{
+  if (!ol->max_size || ol->size < ol->max_size)
+    {
+      struct buffer_entry *e;
+      ALLOC_OBJ_CLEAR (e, struct buffer_entry);
+
+      ++ol->size;
+      if (ol->tail)
+	{
+	  ASSERT (ol->head);
+	  ol->tail->next = e;
+	}
+      else
+	{
+	  ASSERT (!ol->head);
+	  ol->head = e;
+	}
+      e->buf = string_alloc_buf ((const char *) str, NULL);
+      ol->tail = e;
+    }
+}
+
+const struct buffer *
+buffer_list_peek (struct buffer_list *ol)
+{
+  if (ol->head)
+    return &ol->head->buf;
+  else
+    return NULL;
+}
+
+static void
+buffer_list_pop (struct buffer_list *ol)
+{
+  if (ol->head)
+    {
+      struct buffer_entry *e = ol->head->next;
+      free_buf (&ol->head->buf);
+      free (ol->head);
+      ol->head = e;
+      --ol->size;
+      if (!e)
+	ol->tail = NULL;
+    }
+}
+
+void
+buffer_list_advance (struct buffer_list *ol, int n)
+{
+  if (ol->head)
+    {
+      struct buffer *buf = &ol->head->buf;
+      ASSERT (buf_advance (buf, n));
+      if (!BLEN (buf))
+	buffer_list_pop (ol);
+    }
+}
+
+struct buffer_list *
+buffer_list_file (const char *fn, int max_line_len)
+{
+  FILE *fp = fopen (fn, "r");
+  struct buffer_list *bl = NULL;
+
+  if (fp)
+    {
+      char *line = (char *) malloc (max_line_len);
+      if (line)
+	{
+	  bl = buffer_list_new (0);
+	  while (fgets (line, max_line_len, fp) != NULL)
+	    buffer_list_push (bl, (unsigned char *)line);
+	  free (line);
+	}
+      fclose (fp);
+    }
+  return bl;
+}
+
 #endif

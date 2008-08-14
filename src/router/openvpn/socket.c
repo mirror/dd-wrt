@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -21,12 +21,6 @@
  *  distribution); if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
 
 #include "syshead.h"
 
@@ -138,6 +132,9 @@ getaddr (unsigned int flags,
       while (true)
 	{
 	  /* try hostname lookup */
+#if defined(HAVE_RES_INIT)
+	  res_init ();
+#endif
 	  h = gethostbyname (hostname);
 
 	  if (signal_received)
@@ -255,6 +252,48 @@ openvpn_inet_aton (const char *dotted_quad, struct in_addr *addr)
     return OIA_HOSTNAME; /* probably a hostname */
 }
 
+bool
+ip_addr_dotted_quad_safe (const char *dotted_quad)
+{
+  /* verify non-NULL */
+  if (!dotted_quad)
+    return false;
+
+  /* verify length is within limits */
+  if (strlen (dotted_quad) > 15)
+    return false;
+
+  /* verify that all chars are either numeric or '.' and that no numeric
+     substring is greater than 3 chars */
+  {
+    int nnum = 0;
+    const char *p = dotted_quad;
+    int c;
+
+    while ((c = *p++))
+      {
+	if (c >= '0' && c <= '9')
+	  {
+	    ++nnum;
+	    if (nnum > 3)
+	      return false;
+	  }
+	else if (c == '.')
+	  {
+	    nnum = 0;
+	  }
+	else
+	  return false;
+      }
+  }
+
+  /* verify that string will convert to IP address */
+  {
+    struct in_addr a;
+    return openvpn_inet_aton (dotted_quad, &a) == OIA_IP;
+  }
+}
+
 static void
 update_remote (const char* host,
 	       struct openvpn_sockaddr *addr,
@@ -295,9 +334,12 @@ static void
 socket_set_sndbuf (int sd, int size)
 {
 #if defined(HAVE_SETSOCKOPT) && defined(SOL_SOCKET) && defined(SO_SNDBUF)
-  if (setsockopt (sd, SOL_SOCKET, SO_SNDBUF, (void *) &size, sizeof (size)) != 0)
+  if (size > 0 && size < SOCKET_SND_RCV_BUF_MAX)
     {
-      msg (M_WARN, "NOTE: setsockopt SO_SNDBUF=%d failed", size);
+      if (setsockopt (sd, SOL_SOCKET, SO_SNDBUF, (void *) &size, sizeof (size)) != 0)
+	{
+	  msg (M_WARN, "NOTE: setsockopt SO_SNDBUF=%d failed", size);
+	}
     }
 #endif
 }
@@ -321,10 +363,13 @@ static bool
 socket_set_rcvbuf (int sd, int size)
 {
 #if defined(HAVE_SETSOCKOPT) && defined(SOL_SOCKET) && defined(SO_RCVBUF)
-  if (setsockopt (sd, SOL_SOCKET, SO_RCVBUF, (void *) &size, sizeof (size)) != 0)
+  if (size > 0 && size < SOCKET_SND_RCV_BUF_MAX)
     {
-      msg (M_WARN, "NOTE: setsockopt SO_RCVBUF=%d failed", size);
-      return false;
+      if (setsockopt (sd, SOL_SOCKET, SO_RCVBUF, (void *) &size, sizeof (size)) != 0)
+	{
+	  msg (M_WARN, "NOTE: setsockopt SO_RCVBUF=%d failed", size);
+	  return false;
+	}
     }
   return true;
 #endif
@@ -403,77 +448,6 @@ link_socket_update_buffer_sizes (struct link_socket *ls, int rcvbuf, int sndbuf)
       ls->socket_buffer_sizes.rcvbuf = rcvbuf;
       socket_set_buffers (ls->sd, &ls->socket_buffer_sizes);
     }
-}
-
-/*
- * Remote list code allows clients to specify a list of
- * potential remote server addresses.
- */
-
-static void
-remote_list_next (struct remote_list *l)
-{
-  if (l)
-    {
-      if (l->no_advance && l->current >= 0)
-	{
-	  l->no_advance = false;
-	}
-      else
-	{
-	  int i;
-	  if (++l->current >= l->len)
-	    l->current = 0;
-
-	  dmsg (D_REMOTE_LIST, "REMOTE_LIST len=%d current=%d",
-		l->len, l->current);
-	  for (i = 0; i < l->len; ++i)
-	    {
-	      dmsg (D_REMOTE_LIST, "[%d] %s:%d",
-		    i,
-		    l->array[i].hostname,
-		    l->array[i].port);
-	    }
-	}
-    }
-}
-
-void
-remote_list_randomize (struct remote_list *l)
-{
-  int i;
-  if (l)
-    {
-      for (i = 0; i < l->len; ++i)
-	{
-	  const int j = get_random () % l->len;
-	  if (i != j)
-	    {
-	      struct remote_entry tmp;
-	      tmp = l->array[i];
-	      l->array[i] = l->array[j];
-	      l->array[j] = tmp;
-	    }
-	}
-    }
-}
-
-static const char *
-remote_list_host (const struct remote_list *rl)
-{
-  if (rl)
-    return rl->array[rl->current].hostname;
-  else
-    return NULL;
-}
-
-static int
-remote_list_port (const struct remote_list *rl)
-{
-  if (rl)
-    return rl->array[rl->current].port;
-  else
-    return 0;
 }
 
 /*
@@ -816,7 +790,7 @@ socket_connect (socket_descriptor_t *sd,
                 struct openvpn_sockaddr *local,
                 bool bind_local,
 		struct openvpn_sockaddr *remote,
-		struct remote_list *remote_list,
+		const bool connection_profiles_defined,
 		const char *remote_dynamic,
 		bool *remote_changed,
 		const int connect_retry_seconds,
@@ -868,7 +842,7 @@ socket_connect (socket_descriptor_t *sd,
       openvpn_close_socket (*sd);
       *sd = SOCKET_UNDEFINED;
 
-      if (connect_retry_max > 0 && ++retry >= connect_retry_max)
+      if ((connect_retry_max > 0 && ++retry >= connect_retry_max) || connection_profiles_defined)
 	{
 	  *signal_received = SIGUSR1;
 	  goto done;
@@ -879,14 +853,6 @@ socket_connect (socket_descriptor_t *sd,
       get_signal (signal_received);
       if (*signal_received)
 	goto done;
-
-      if (remote_list)
-	{
-	  remote_list_next (remote_list);
-	  remote_dynamic = remote_list_host (remote_list);
-	  remote->sa.sin_port = htons (remote_list_port (remote_list));
-	  *remote_changed = true;
-	}
 
       *sd = create_socket_tcp ();
       if (bind_local)
@@ -999,7 +965,7 @@ resolve_remote (struct link_socket *sock,
 	      int retry = 0;
 	      bool status = false;
 
-	      if (remote_list_len (sock->remote_list) > 1 && sock->resolve_retry_seconds == RESOLV_RETRY_INFINITE)
+	      if (sock->connection_profiles_defined && sock->resolve_retry_seconds == RESOLV_RETRY_INFINITE)
 		{
 		  if (phase == 2)
 		    flags |= (GETADDR_TRY_ONCE | GETADDR_FATAL);
@@ -1102,9 +1068,11 @@ link_socket_new (void)
 /* bind socket if necessary */
 void
 link_socket_init_phase1 (struct link_socket *sock,
+			 const bool connection_profiles_defined,
 			 const char *local_host,
-			 struct remote_list *remote_list,
 			 int local_port,
+			 const char *remote_host,
+			 int remote_port,
 			 int proto,
 			 int mode,
 			 const struct link_socket *accept_from,
@@ -1132,18 +1100,14 @@ link_socket_init_phase1 (struct link_socket *sock,
 			 int sndbuf,
 			 unsigned int sockflags)
 {
-  const char *remote_host;
-  int remote_port;
-
   ASSERT (sock);
 
-  sock->remote_list = remote_list;
-  remote_list_next (remote_list);
-  remote_host = remote_list_host (remote_list);
-  remote_port = remote_list_port (remote_list);
+  sock->connection_profiles_defined = connection_profiles_defined;
 
   sock->local_host = local_host;
   sock->local_port = local_port;
+  sock->remote_host = remote_host;
+  sock->remote_port = remote_port;
 
 #ifdef ENABLE_HTTP_PROXY
   sock->http_proxy = http_proxy;
@@ -1201,10 +1165,6 @@ link_socket_init_phase1 (struct link_socket *sock,
       /* the OpenVPN server we will use the proxy to connect to */
       sock->proxy_dest_host = remote_host;
       sock->proxy_dest_port = remote_port;
-
-      /* this is needed so that connection retries will go to the proxy server,
-	 not the remote OpenVPN address */
-      sock->remote_list = NULL;
     }
 #endif
 #ifdef ENABLE_SOCKS
@@ -1221,10 +1181,6 @@ link_socket_init_phase1 (struct link_socket *sock,
       /* the OpenVPN server we will use the proxy to connect to */
       sock->proxy_dest_host = remote_host;
       sock->proxy_dest_port = remote_port;
-
-      /* this is needed so that connection retries will go to the proxy server,
-	 not the remote OpenVPN address */
-      sock->remote_list = NULL;
     }
 #endif
   else
@@ -1360,7 +1316,7 @@ link_socket_init_phase2 (struct link_socket *sock,
 			    &sock->info.lsa->local,
 			    sock->bind_local,
 			    &sock->info.lsa->actual.dest,
-			    sock->remote_list,
+			    sock->connection_profiles_defined,
 			    remote_dynamic,
 			    &remote_changed,
 			    sock->connect_retry_seconds,
@@ -1408,7 +1364,7 @@ link_socket_init_phase2 (struct link_socket *sock,
                           &sock->info.lsa->local,
                           sock->bind_local,
 			  &sock->info.lsa->actual.dest,
-			  NULL,
+			  sock->connection_profiles_defined,
 			  remote_dynamic,
 			  &remote_changed,
 			  sock->connect_retry_seconds,
@@ -1566,6 +1522,22 @@ setenv_trusted (struct env_set *es, const struct link_socket_info *info)
   setenv_link_socket_actual (es, "trusted", &info->lsa->actual, SA_IP_PORT);
 }
 
+static void
+ipchange_fmt (const bool include_cmd, struct argv *argv, const struct link_socket_info *info, struct gc_arena *gc)
+{
+  const char *ip = print_sockaddr_ex (&info->lsa->actual.dest, NULL, 0, gc);
+  const char *port = print_sockaddr_ex (&info->lsa->actual.dest, NULL, PS_DONT_SHOW_ADDR|PS_SHOW_PORT, gc);
+  if (include_cmd)
+    argv_printf (argv, "%s %s %s",
+		 info->ipchange_command,
+		 ip,
+		 port);
+  else
+    argv_printf (argv, "%s %s",
+		 ip,
+		 port);
+}
+
 void
 link_socket_connection_initiated (const struct buffer *buf,
 				  struct link_socket_info *info,
@@ -1594,20 +1566,21 @@ link_socket_connection_initiated (const struct buffer *buf,
   /* Process --ipchange plugin */
   if (plugin_defined (info->plugins, OPENVPN_PLUGIN_IPCHANGE))
     {
-      const char *addr_ascii = print_sockaddr_ex (&info->lsa->actual.dest, " ", PS_SHOW_PORT, &gc);
-      if (plugin_call (info->plugins, OPENVPN_PLUGIN_IPCHANGE, addr_ascii, NULL, es))
+      struct argv argv = argv_new ();
+      ipchange_fmt (false, &argv, info, &gc);
+      if (plugin_call (info->plugins, OPENVPN_PLUGIN_IPCHANGE, &argv, NULL, es) != OPENVPN_PLUGIN_FUNC_SUCCESS)
 	msg (M_WARN, "WARNING: ipchange plugin call failed");
+      argv_reset (&argv);
     }
 
   /* Process --ipchange option */
   if (info->ipchange_command)
     {
-      struct buffer out = alloc_buf_gc (256, &gc);
+      struct argv argv = argv_new ();
       setenv_str (es, "script_type", "ipchange");
-      buf_printf (&out, "%s %s",
-		  info->ipchange_command,
-		  print_sockaddr_ex (&info->lsa->actual.dest, " ", PS_SHOW_PORT, &gc));
-      system_check (BSTR (&out), es, S_SCRIPT, "ip-change command failed");
+      ipchange_fmt (true, &argv, info, &gc);
+      openvpn_execve_check (&argv, es, S_SCRIPT, "ip-change command failed");
+      argv_reset (&argv);
     }
 
   gc_free (&gc);
@@ -1877,7 +1850,8 @@ print_sockaddr_ex (const struct openvpn_sockaddr *addr,
       const int port = ntohs (addr->sa.sin_port);
 
       mutex_lock_static (L_INET_NTOA);
-      buf_printf (&out, "%s", (addr_defined (addr) ? inet_ntoa (addr->sa.sin_addr) : "[undef]"));
+      if (!(flags & PS_DONT_SHOW_ADDR))
+	buf_printf (&out, "%s", (addr_defined (addr) ? inet_ntoa (addr->sa.sin_addr) : "[undef]"));
       mutex_unlock_static (L_INET_NTOA);
 
       if (((flags & PS_SHOW_PORT) || (addr_defined (addr) && (flags & PS_SHOW_PORT_IF_DEFINED)))
@@ -2121,11 +2095,13 @@ link_socket_read_tcp (struct link_socket *sock,
 
 #if ENABLE_IP_PKTINFO
 
+#pragma pack(1) /* needed to keep structure size consistent for 32 vs. 64-bit architectures */
 struct openvpn_pktinfo
 {
   struct cmsghdr cmsghdr;
   struct in_pktinfo in_pktinfo;
 };
+#pragma pack()
 
 static socklen_t
 link_socket_read_udp_posix_recvmsg (struct link_socket *sock,

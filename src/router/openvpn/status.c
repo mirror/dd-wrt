@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -21,12 +21,6 @@
  *  distribution); if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
 
 #include "syshead.h"
 
@@ -218,7 +212,7 @@ status_close (struct status_output *so)
   return ret;
 }
 
-#define STATUS_PRINTF_MAXLEN 256
+#define STATUS_PRINTF_MAXLEN 512
 
 void
 status_printf (struct status_output *so, const char *format, ...)
@@ -227,28 +221,32 @@ status_printf (struct status_output *so, const char *format, ...)
     {
       char buf[STATUS_PRINTF_MAXLEN+2]; /* leave extra bytes for CR, LF */
       va_list arglist;
+      int stat;
 
       va_start (arglist, format);
-      vsnprintf (buf, STATUS_PRINTF_MAXLEN, format, arglist);
+      stat = vsnprintf (buf, STATUS_PRINTF_MAXLEN, format, arglist);
       va_end (arglist);
       buf[STATUS_PRINTF_MAXLEN - 1] = 0;
 
-      if (so->msglevel >= 0)
+      if (stat < 0 || stat >= STATUS_PRINTF_MAXLEN)
+	so->errors = true;
+
+      if (so->msglevel >= 0 && !so->errors)
 	msg (so->msglevel, "%s", buf);
 
-      if (so->fd >= 0)
+      if (so->fd >= 0 && !so->errors)
 	{
 	  int len;
 	  strcat (buf, "\n");
 	  len = strlen (buf);
 	  if (len > 0)
 	    {
-	      if (write (so->fd, buf, len) < 0)
+	      if (write (so->fd, buf, len) != len)
 		so->errors = true;
 	    }
 	}
 
-      if (so->vout)
+      if (so->vout && !so->errors)
 	{
 	  chomp (buf);
 	  (*so->vout->func) (so->vout->arg, so->vout->flags_default, buf);

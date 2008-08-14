@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -46,6 +46,7 @@
 #include "pool.h"
 #include "plugin.h"
 #include "manage.h"
+#include "pf.h"
 
 /*
  * Our global key schedules, packaged thusly
@@ -157,9 +158,6 @@ struct context_1
   /* persist crypto sequence number to/from file */
   struct packet_id_persist pid_persist;
 
-  /* array of remote addresses */
-  struct remote_list *remote_list;
-
   /* TUN/TAP interface */
   struct tuntap *tuntap;
   bool tuntap_owned;
@@ -174,11 +172,13 @@ struct context_1
 #ifdef ENABLE_HTTP_PROXY
   /* HTTP proxy object */
   struct http_proxy_info *http_proxy;
+  bool http_proxy_owned;
 #endif
 
 #ifdef ENABLE_SOCKS
   /* SOCKS proxy object */
   struct socks_proxy_info *socks_proxy;
+  bool socks_proxy_owned;
 #endif
 
 #if P2MP
@@ -430,7 +430,15 @@ struct context_2
   const char *pulled_options_string;
 
   struct event_timeout scheduled_exit;
+#endif
 
+  /* packet filter */
+#ifdef ENABLE_PF
+  struct pf_context pf;
+#endif
+
+#ifdef MANAGEMENT_DEF_AUTH
+  struct man_def_auth_context mda_context;
 #endif
 };
 

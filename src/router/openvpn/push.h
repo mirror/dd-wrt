@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -59,7 +59,7 @@ bool send_push_reply (struct context *c);
 
 void remove_iroutes_from_push_route_list (struct options *o);
 
-bool send_auth_failed (struct context *c);
+void send_auth_failed (struct context *c);
 
 #endif
 #endif

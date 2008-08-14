@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -21,12 +21,6 @@
  *  distribution); if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
 
 #include "syshead.h"
 
@@ -235,9 +229,8 @@ get_user_pass_http (struct http_proxy_info *p, const bool force)
 }
 
 struct http_proxy_info *
-new_http_proxy (const struct http_proxy_options *o,
-		struct auto_proxy_info *auto_proxy_info,
-		struct gc_arena *gc)
+http_proxy_new (const struct http_proxy_options *o,
+		struct auto_proxy_info *auto_proxy_info)
 {
   struct http_proxy_info *p;
   struct http_proxy_options opt;
@@ -281,7 +274,7 @@ new_http_proxy (const struct http_proxy_options *o,
 
   ASSERT (legal_ipv4_port (o->port));
 
-  ALLOC_OBJ_CLEAR_GC (p, struct http_proxy_info, gc);
+  ALLOC_OBJ_CLEAR (p, struct http_proxy_info);
   p->options = *o;
 
   /* parse authentication method */
@@ -294,24 +287,32 @@ new_http_proxy (const struct http_proxy_options *o,
 	p->auth_method = HTTP_AUTH_BASIC;
       else if (!strcmp (o->auth_method_string, "ntlm"))
 	p->auth_method = HTTP_AUTH_NTLM;
+      else if (!strcmp (o->auth_method_string, "ntlm2"))
+	p->auth_method = HTTP_AUTH_NTLM2;
       else
-	msg (M_FATAL, "ERROR: unknown HTTP authentication method: '%s' -- only the 'none', 'basic', or 'ntlm' methods are currently supported",
+	msg (M_FATAL, "ERROR: unknown HTTP authentication method: '%s' -- only the 'none', 'basic', 'ntlm', or 'ntlm2' methods are currently supported",
 	     o->auth_method_string);
     }
 
-  /* only basic and NTLM authentication supported so far */
-  if (p->auth_method == HTTP_AUTH_BASIC || p->auth_method == HTTP_AUTH_NTLM)
+  /* only basic and NTLM/NTLMv2 authentication supported so far */
+  if (p->auth_method == HTTP_AUTH_BASIC || p->auth_method == HTTP_AUTH_NTLM || p->auth_method == HTTP_AUTH_NTLM2)
     {
       get_user_pass_http (p, true);
     }
 
 #if !NTLM
-  if (p->auth_method == HTTP_AUTH_NTLM)
+  if (p->auth_method == HTTP_AUTH_NTLM || p->auth_method == HTTP_AUTH_NTLM2)
     msg (M_FATAL, "Sorry, this version of " PACKAGE_NAME " was built without NTLM Proxy support.");
 #endif
 
   p->defined = true;
   return p;
+}
+
+void
+http_proxy_close (struct http_proxy_info *hp)
+{
+  free (hp);
 }
 
 bool
@@ -374,6 +375,12 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
 
 #if NTLM
     case HTTP_AUTH_NTLM:
+    case HTTP_AUTH_NTLM2:
+      /* keep-alive connection */
+      openvpn_snprintf (buf, sizeof(buf), "Proxy-Connection: Keep-Alive");
+      if (!send_line_crlf (sd, buf))
+	goto error;
+
       openvpn_snprintf (buf, sizeof(buf), "Proxy-Authorization: NTLM %s",
 			ntlm_phase_1 (p, &gc));
       msg (D_PROXY, "Attempting NTLM Proxy-Authorization phase 1");
@@ -411,7 +418,7 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
       msg (D_PROXY, "Proxy requires authentication");
 
       /* check for NTLM */
-      if (p->auth_method == HTTP_AUTH_NTLM)
+      if (p->auth_method == HTTP_AUTH_NTLM || p->auth_method == HTTP_AUTH_NTLM2)
         {
 #if NTLM
           /* look for the phase 2 response */
@@ -456,6 +463,12 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
           if (!send_line_crlf (sd, buf))
             goto error;
 
+          /* keep-alive connection */
+          openvpn_snprintf (buf, sizeof(buf), "Proxy-Connection: Keep-Alive");
+          if (!send_line_crlf (sd, buf))
+            goto error;
+
+          
           /* send HOST etc, */
           openvpn_sleep (1);
           openvpn_snprintf (buf, sizeof(buf), "Host: %s", host);
@@ -463,9 +476,17 @@ establish_http_proxy_passthru (struct http_proxy_info *p,
           if (!send_line_crlf (sd, buf))
             goto error;
 
-          openvpn_snprintf (buf, sizeof(buf), "Proxy-Authorization: NTLM %s",
-			    ntlm_phase_3 (p, buf2, &gc));
           msg (D_PROXY, "Attempting NTLM Proxy-Authorization phase 3");
+	  {
+	    const char *np3 = ntlm_phase_3 (p, buf2, &gc);
+	    if (!np3)
+	      {
+		msg (D_PROXY, "NTLM Proxy-Authorization phase 3 failed: received corrupted data from proxy server");
+		goto error;
+	      }
+	    openvpn_snprintf (buf, sizeof(buf), "Proxy-Authorization: NTLM %s", np3);
+	  }
+
           msg (D_PROXY, "Send to HTTP proxy: '%s'", buf);
           openvpn_sleep (1);
           if (!send_line_crlf (sd, buf))

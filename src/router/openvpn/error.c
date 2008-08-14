@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -21,12 +21,6 @@
  *  distribution); if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
 
 #include "syshead.h"
 
@@ -84,7 +78,9 @@ static bool use_syslog;     /* GLOBAL */
 static bool suppress_timestamps; /* GLOBAL */
 
 /* The program name passed to syslog */
+#if SYSLOG_CAPABILITY
 static char *pgmname_syslog;  /* GLOBAL */
+#endif
 
 /* If non-null, messages should be written here (used for debugging only) */
 static FILE *msgfp;         /* GLOBAL */
@@ -274,7 +270,10 @@ void x_msg (const unsigned int flags, const char *format, ...)
 #endif
 
   /* set up client prefix */
-  prefix = msg_get_prefix ();
+  if (flags & M_NOIPREFIX)
+    prefix = NULL;
+  else
+    prefix = msg_get_prefix ();
   prefix_sep = " ";
   if (!prefix)
     prefix_sep = prefix = "";

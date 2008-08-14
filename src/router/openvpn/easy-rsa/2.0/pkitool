@@ -6,7 +6,7 @@
 #             packet encryption, packet authentication, and
 #             packet compression.
 #
-#  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+#  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License version 2
@@ -117,6 +117,11 @@ usage()
     echo "  source ./vars"
     echo "  ./$PROGNAME client-new"
 }
+
+# Set tool defaults
+[ -n "$OPENSSL" ] || export OPENSSL="openssl"
+[ -n "$PKCS11TOOL" ] || export PKCS11TOOL="pkcs11-tool"
+[ -n "$GREP" ] || export GREP="grep"
 
 # Set defaults
 DO_REQ="1"

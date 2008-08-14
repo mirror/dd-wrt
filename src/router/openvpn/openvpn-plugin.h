@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -27,6 +27,63 @@
 /*
  * Plug-in types.  These types correspond to the set of script callbacks
  * supported by OpenVPN.
+ *
+ * This is the general call sequence to expect when running in server mode:
+ *
+ * Initial Server Startup:
+ *
+ * FUNC: openvpn_plugin_open_v1
+ * FUNC: openvpn_plugin_client_constructor_v1 (this is the top-level "generic"
+ *                                             client template)
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_UP
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_ROUTE_UP
+ *
+ * New Client Connection:
+ *
+ * FUNC: openvpn_plugin_client_constructor_v1
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_TLS_VERIFY (called once for every cert
+ *                                                     in the server chain)
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_TLS_FINAL
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_IPCHANGE
+ *
+ * [If OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY returned OPENVPN_PLUGIN_FUNC_DEFERRED,
+ * we don't proceed until authentication is verified via auth_control_file]
+ *
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_CLIENT_CONNECT_V2
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_LEARN_ADDRESS
+ * 
+ * [Client session ensues]
+ *
+ * For each "TLS soft reset", according to reneg-sec option (or similar):
+ *
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_ENABLE_PF
+ *
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_TLS_VERIFY (called once for every cert
+ *                                                     in the server chain)
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_TLS_FINAL
+ * 
+ * [If OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY returned OPENVPN_PLUGIN_FUNC_DEFERRED,
+ * we expect that authentication is verified via auth_control_file within
+ * the number of seconds defined by the "hand-window" option.  Data channel traffic
+ * will continue to flow uninterrupted during this period.]
+ *
+ * [Client session continues]
+ *
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_CLIENT_DISCONNECT
+ * FUNC: openvpn_plugin_client_constructor_v1
+ *
+ * [ some time may pass ]
+ *
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_LEARN_ADDRESS (this coincides with a
+ *                                                            lazy free of initial
+ *                                                            learned addr object)
+ * Server Shutdown:
+ *
+ * FUNC: openvpn_plugin_func_v1 OPENVPN_PLUGIN_DOWN
+ * FUNC: openvpn_plugin_client_destructor_v1 (top-level "generic" client)
+ * FUNC: openvpn_plugin_close_v1
  */
 #define OPENVPN_PLUGIN_UP                    0
 #define OPENVPN_PLUGIN_DOWN                  1
@@ -39,7 +96,8 @@
 #define OPENVPN_PLUGIN_LEARN_ADDRESS         8
 #define OPENVPN_PLUGIN_CLIENT_CONNECT_V2     9
 #define OPENVPN_PLUGIN_TLS_FINAL             10
-#define OPENVPN_PLUGIN_N                     11
+#define OPENVPN_PLUGIN_ENABLE_PF             11
+#define OPENVPN_PLUGIN_N                     12
 
 /*
  * Build a mask out of a set of plug-in types.
@@ -57,6 +115,7 @@ typedef void *openvpn_plugin_handle_t;
  */
 #define OPENVPN_PLUGIN_FUNC_SUCCESS  0
 #define OPENVPN_PLUGIN_FUNC_ERROR    1
+#define OPENVPN_PLUGIN_FUNC_DEFERRED 2
 
 /*
  * For Windows (needs to be modified for MSVC)
@@ -202,6 +261,64 @@ OPENVPN_PLUGIN_DEF openvpn_plugin_handle_t OPENVPN_PLUGIN_FUNC(openvpn_plugin_op
  * RETURN VALUE
  *
  * OPENVPN_PLUGIN_FUNC_SUCCESS on success, OPENVPN_PLUGIN_FUNC_ERROR on failure
+ *
+ * In addition, OPENVPN_PLUGIN_FUNC_DEFERRED may be returned by
+ * OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY.  This enables asynchronous
+ * authentication where the plugin (or one of its agents) may indicate
+ * authentication success/failure some number of seconds after the return
+ * of the OPENVPN_PLUGIN_AUTH_USER_PASS_VERIFY handler by writing a single
+ * char to the file named by auth_control_file in the environmental variable
+ * list (envp).
+ *
+ * first char of auth_control_file:
+ * '0' -- indicates auth failure
+ * '1' -- indicates auth success
+ *
+ * OpenVPN will delete the auth_control_file after it goes out of scope.
+ *
+ * If an OPENVPN_PLUGIN_ENABLE_PF handler is defined and returns success
+ * for a particular client instance, packet filtering will be enabled for that
+ * instance.  OpenVPN will then attempt to read the packet filter configuration
+ * from the temporary file named by the environmental variable pf_file.  This
+ * file may be generated asynchronously and may be dynamically updated during the
+ * client session, however the client will be blocked from sending or receiving
+ * VPN tunnel packets until the packet filter file has been generated.  OpenVPN
+ * will periodically test the packet filter file over the life of the client
+ * instance and reload when modified.  OpenVPN will delete the packet filter file
+ * when the client instance goes out of scope.
+ *
+ * Packet filter file grammar:
+ *
+ * [CLIENTS DROP|ACCEPT]
+ * {+|-}common_name1
+ * {+|-}common_name2
+ * . . .
+ * [SUBNETS DROP|ACCEPT]
+ * {+|-}subnet1
+ * {+|-}subnet2
+ * . . .
+ * [END]
+ *
+ * Subnet: IP-ADDRESS | IP-ADDRESS/NUM_NETWORK_BITS
+ *
+ * CLIENTS refers to the set of clients (by their common-name) which
+ * this instance is allowed ('+') to connect to, or is excluded ('-')
+ * from connecting to.  Note that in the case of client-to-client
+ * connections, such communication must be allowed by the packet filter
+ * configuration files of both clients.
+ *
+ * SUBNETS refers to IP addresses or IP address subnets which this
+ * instance may connect to ('+') or is excluded ('-') from connecting
+ * to.
+ *
+ * DROP or ACCEPT defines default policy when there is no explicit match
+ * for a common-name or subnet.  The [END] tag must exist.  A special
+ * purpose tag called [KILL] will immediately kill the client instance.
+ * A given client or subnet rule applies to both incoming and outgoing
+ * packets.
+ *
+ * See plugin/defer/simple.c for an example on using asynchronous
+ * authentication and client-specific packet filtering.
  */
 OPENVPN_PLUGIN_DEF int OPENVPN_PLUGIN_FUNC(openvpn_plugin_func_v2)
      (openvpn_plugin_handle_t handle,

@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -22,15 +22,9 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
+#include "syshead.h"
 
 #ifdef USE_CRYPTO
-
-#include "syshead.h"
 
 #include "crypto.h"
 #include "error.h"
@@ -1058,13 +1052,15 @@ read_key_file (struct key2 *key2, const char *file, const unsigned int flags)
       if (fd == -1)
 	msg (M_ERR, "Cannot open file key file '%s'", file);
       size = read (fd, in.data, in.capacity);
+      if (size < 0)
+	msg (M_FATAL, "Read error on key file ('%s')", file);
       if (size == in.capacity)
 	msg (M_FATAL, "Key file ('%s') can be a maximum of %d bytes", file, (int)in.capacity);
       close (fd);
     }
 
   cp = (unsigned char *)in.data;
-  while (size)
+  while (size > 0)
     {
       const unsigned char c = *cp;
 
