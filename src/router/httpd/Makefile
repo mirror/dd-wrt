@@ -525,6 +525,13 @@ CFLAGS += -DHAVE_HTTPS
 OBJS += matrixssl_xface.o
 endif
 
+ifeq ($(CONFIG_XYSSL),y)
+CFLAGS += -I$(TOP)/httpd/xyssl/include
+LDFLAGS += -L$(TOP)/httpd/xyssl/library -lxyssl -lpthread
+CFLAGS += -DHAVE_XYSSL
+CFLAGS += -DHAVE_HTTPS
+endif
+
 endif
 
 #OBJS  += common.o server.o
@@ -565,6 +572,9 @@ cert:
 httpd: cgi.o ej.o httpd.o broadcom.o \
        $(ADDOBJ) nvramsr.o callvalidate.o $(OBJS)
 	gcc -o write_web write_web.c
+ifeq ($(CONFIG_XYSSL),y)
+	cd xyssl && make static
+endif
 	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
 #	ar arc -o $@ $^

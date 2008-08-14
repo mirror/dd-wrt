@@ -62,6 +62,16 @@
 # include <matrixssl_xface.h>
 #endif
 
+#ifdef HAVE_XYSSL
+#include <xyssl/havege.h>
+#include <xyssl/certs.h>
+#include <xyssl/x509.h>
+#include <xyssl/ssl.h>
+#include <xyssl/net.h>
+//#include <xyssl_xface.h>
+#endif
+
+
 #ifdef HAVE_VFS
 #include <vfs.h>
 #endif
@@ -91,7 +101,7 @@ static SSL *ssl;
 FILE *debout;
 #endif
 
-#if defined(HAVE_OPENSSL) || defined(HAVE_MATRIXSSL)
+#if defined(HAVE_OPENSSL) || defined(HAVE_MATRIXSSL) || defined(HAVE_XYSSL)
 
 #define DEFAULT_HTTPS_PORT 443
 #define CERT_FILE "/etc/cert.pem"
@@ -102,6 +112,33 @@ FILE *debout;
 extern ssl_t *ssl;
 extern sslKeys_t *keys;
 #endif
+
+#ifdef HAVE_XYSSL
+ssl_context ssl;
+int my_ciphers[] =
+{
+  TLS1_EDH_RSA_AES_256_SHA,
+  SSL3_EDH_RSA_DES_168_SHA,
+  TLS1_RSA_AES_256_SHA,
+  SSL3_RSA_DES_168_SHA,
+  SSL3_RSA_RC4_128_SHA,
+  SSL3_RSA_RC4_128_MD5,
+  0
+};
+char *dhm_P =
+    "E4004C1F94182000103D883A448B3F80" \
+    "2CE4B44A83301270002C20D0321CFD00" \
+    "11CCEF784C26A400F43DFB901BCA7538" \
+    "F2C6B176001CF5A0FD16D2C48B1D0C1C" \
+    "F6AC8E1DA6BCC3B4E1F96B0564965300" \
+    "FFA1D0B601EB2800F489AA512C4B248C" \
+    "01F76949A60BB7F00A40B1EAB64BDD48" \
+    "E8A700D60B7F1200FA8E77B0A979DABF";
+                                                                                                                             
+char *dhm_G = "4";
+unsigned char session_table[SSL_SESSION_TBL_LEN];
+#endif
+
 
 #define DEFAULT_HTTP_PORT 80
 int server_port;
@@ -1155,6 +1192,12 @@ main (int argc, char **argv)
   int r;
   BIO *ssl_bio;
 #endif
+#ifdef HAVE_XYSSL
+        int ret, len;
+        x509_cert srvcert;
+        rsa_context rsa;
+        havege_state hs;
+#endif
 
   strcpy (pid_file, "/var/run/httpd.pid");
   server_port = DEFAULT_HTTP_PORT;
@@ -1264,6 +1307,26 @@ main (int argc, char **argv)
 	  exit (1);
 	}
 #endif
+#ifdef HAVE_XYSSL
+        memset(&ssl, 0, sizeof(ssl));
+        memset(&srvcert, 0, sizeof(x509_cert));
+        ret = x509_read_crtfile(&srvcert, CERT_FILE);
+        if(ret != 0)
+        {
+                printf("x509_read_crtfile failed\n");
+                exit(0);
+        }
+        ret = x509_read_keyfile(&rsa, KEY_FILE, NULL);
+        if(ret != 0)
+        {
+                printf("x509_read_keyfile failed\n");
+                exit(0);
+        }
+//              if (0 != xysslReadKeys(CERT_FILE, KEY_FILE)) {
+//                      fprintf(stderr, "Error reading or parsing %s.\n",KEY_FILE);
+//                      exit(0);
+//              }
+#endif
 
 #ifdef HAVE_MATRIXSSL
       matrixssl_init ();
@@ -1354,6 +1417,36 @@ main (int argc, char **argv)
 	  matrixssl_new_session (conn_fd);
 	  conn_fp = (FILE *) conn_fd;
 #endif
+#ifdef HAVE_XYSSL
+                ssl_free(&ssl);
+                havege_init(&hs);
+                if(ret = ssl_init(&ssl, 0) != 0)
+                {
+                        printf("ssl_init failed\n");
+                        close(conn_fd);
+                        continue;
+                }
+//              ret = xyssl_new_session(conn_fd);
+                ssl_set_endpoint(&ssl, SSL_IS_SERVER);
+                ssl_set_authmode(&ssl, SSL_VERIFY_NONE);
+                ssl_set_rng_func(&ssl, havege_rand, &hs);
+                ssl_set_io_files(&ssl, conn_fd, conn_fd);
+                ssl_set_ciphlist(&ssl, my_ciphers);
+                ssl_set_ca_chain(&ssl, srvcert.next, NULL);
+                ssl_set_rsa_cert(&ssl, &srvcert, &rsa);
+                ssl_set_sidtable(&ssl, session_table);
+                ssl_set_dhm_vals(&ssl, dhm_P, dhm_G);
+                                                                                                                             
+                ret = ssl_server_start(&ssl);
+                if(ret != 0)
+                {
+                        printf("ssl_server_start failed\n");
+                        close(conn_fd);
+                        continue;
+                }
+//              conn_fp = (FILE *)conn_fd;
+                conn_fp = (webs_t)(&ssl);
+#endif
 	}
       else
 #endif
@@ -1374,6 +1467,11 @@ main (int argc, char **argv)
       get_client_ip_mac (conn_fd);
       handle_request ();
       wfflush (conn_fp);	// jimmy, https, 8/4/2003
+#ifdef HAVE_HTTPS
+#ifdef XYSSL_SUPPORT
+                ssl_close_notify(&ssl);
+#endif
+#endif
       wfclose (conn_fp);	// jimmy, https, 8/4/2003
       close (conn_fd);
     }
@@ -1396,6 +1494,11 @@ wfgets (char *buf, int len, FILE * fp)
   if (do_ssl)
     return (char *) matrixssl_gets (fp, buf, len);
   else
+#elif defined(HAVE_XYSSL)
+        if(do_ssl)
+//              return (char *)xyssl_gets(fp, buf, len);
+                return (char *)ssl_read_line((ssl_context *)fp, buf, &len);
+        else
 #endif
 #endif
     return fgets (buf, len, fp);
@@ -1413,6 +1516,11 @@ wfputc (char c, FILE * fp)
   if (do_ssl)
     return matrixssl_putc (fp, c);
   else
+#elif defined(HAVE_XYSSL)
+        if(do_ssl)
+//              return  xyssl_putc(fp, c);
+                return  ssl_printf((ssl_context *)fp, "%c", c);
+        else
 #endif
 #endif
     return fputc (c, fp);
@@ -1430,6 +1538,11 @@ wfputs (char *buf, FILE * fp)
   if (do_ssl)
     return matrixssl_puts (fp, buf);
   else
+#elif defined(HAVE_XYSSL)
+        if(do_ssl)
+//              return  xyssl_puts(fp, buf);
+                return  ssl_write((ssl_context *)fp, buf, strlen(buf));
+        else
 #endif
 #endif
     return fputs (buf, fp);
@@ -1453,6 +1566,11 @@ wfprintf (FILE * fp, char *fmt, ...)
   if (do_ssl)
     ret = matrixssl_printf (fp, "%s", buf);
   else
+#elif defined(HAVE_XYSSL)
+        if(do_ssl)
+//              ret =  xyssl_printf(fp, "%s", buf);
+                ret =  ssl_printf((ssl_context *)fp, "%s", buf);
+        else
 #endif
 #endif
     ret = fprintf (fp, "%s", buf);
@@ -1482,6 +1600,11 @@ websWrite (webs_t wp, char *fmt, ...)
   if (do_ssl)
     ret = matrixssl_printf (fp, "%s", buf);
   else
+#elif defined(HAVE_XYSSL)
+        if(do_ssl)
+//              return  xyssl_write(fp, buf , n * size);
+                ret =  ssl_printf((ssl_context *)fp, "%s", buf);
+        else
 #endif
 #endif
     ret = fprintf (fp, "%s", buf);
@@ -1502,6 +1625,11 @@ wfwrite (char *buf, int size, int n, FILE * fp)
   if (do_ssl)
     return matrixssl_write (fp, buf, n * size);
   else
+#elif defined(HAVE_XYSSL)
+        if(do_ssl)
+//              return  xyssl_write(fp, buf , n * size);
+                return  ssl_write((ssl_context *)fp, buf , n * size);
+        else
 #endif
 #endif
     return fwrite (buf, size, n, fp);
@@ -1532,6 +1660,14 @@ wfread (char *buf, int size, int n, FILE * fp)
       return len;
     }
   else
+#elif defined(HAVE_XYSSL)
+        if(do_ssl)
+        {
+                int len = n*size;
+//              return  xyssl_read(fp, buf , n * size);
+                return  ssl_read((ssl_context *)fp, buf , &len);
+        }
+        else
 #endif
 #endif
     return fread (buf, size, n, fp);
@@ -1552,6 +1688,14 @@ wfflush (FILE * fp)
   if (do_ssl)
     return matrixssl_flush (fp);
   else
+#elif defined(HAVE_XYSSL)
+        if(do_ssl)
+        {
+//              return  xyssl_flush(fp);
+                ssl_flush((ssl_context *)fp);
+                return 1;
+        }
+        else
 #endif
 #endif
     return fflush (fp);
@@ -1572,6 +1716,14 @@ wfclose (FILE * fp)
   if (do_ssl)
     return matrixssl_free_session (fp);
   else
+#elif defined(HAVE_XYSSL)
+        if(do_ssl)
+        {
+//              return  xyssl_free_session(fp);
+                ssl_free((ssl_context *)fp);
+                return 1;
+        }
+        else
 #endif
 #endif
     return fclose (fp);
