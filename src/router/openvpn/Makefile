@@ -21,7 +21,7 @@
 #             packet encryption, packet authentication, and
 #             packet compression.
 #
-#  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+#  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License version 2
@@ -37,6 +37,8 @@
 #  distribution); if not, write to the Free Software Foundation, Inc.,
 #  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
+
+
 
 
 srcdir = .
@@ -63,11 +65,15 @@ build_triplet = x86_64-unknown-linux-gnu
 host_triplet = mipsel-unknown-linux-gnu
 target_triplet = mipsel-unknown-linux-gnu
 sbin_PROGRAMS = openvpn$(EXEEXT)
-DIST_COMMON = README $(am__configure_deps) $(dist_noinst_SCRIPTS) \
+#am__append_1 = openvpn.8
+DIST_COMMON = README $(am__configure_deps) \
+	$(am__dist_noinst_DATA_DIST) $(dist_man_MANS) \
+	$(dist_noinst_HEADERS) $(dist_noinst_SCRIPTS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/config.h.in $(srcdir)/openvpn.spec.in \
-	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
-	config.guess config.sub depcomp install-sh memcmp.c missing
+	$(srcdir)/config-win32.h.in $(srcdir)/config.h.in \
+	$(srcdir)/openvpn.spec.in $(top_srcdir)/configure AUTHORS \
+	COPYING ChangeLog INSTALL NEWS config.guess config.sub depcomp \
+	install-sh memcmp.c missing
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
@@ -78,8 +84,9 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES = openvpn.spec
-am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)"
+CONFIG_CLEAN_FILES = openvpn.spec config-win32.h
+am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)" \
+	"$(DESTDIR)$(htmldir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
 am_openvpn_OBJECTS = base64.$(OBJEXT) buffer.$(OBJEXT) \
@@ -92,14 +99,14 @@ am_openvpn_OBJECTS = base64.$(OBJEXT) buffer.$(OBJEXT) \
 	mudp.$(OBJEXT) multi.$(OBJEXT) ntlm.$(OBJEXT) occ.$(OBJEXT) \
 	pkcs11.$(OBJEXT) openvpn.$(OBJEXT) options.$(OBJEXT) \
 	otime.$(OBJEXT) packet_id.$(OBJEXT) perf.$(OBJEXT) \
-	ping.$(OBJEXT) plugin.$(OBJEXT) pool.$(OBJEXT) proto.$(OBJEXT) \
-	proxy.$(OBJEXT) ps.$(OBJEXT) push.$(OBJEXT) reliable.$(OBJEXT) \
-	route.$(OBJEXT) schedule.$(OBJEXT) session_id.$(OBJEXT) \
-	shaper.$(OBJEXT) sig.$(OBJEXT) socket.$(OBJEXT) \
-	socks.$(OBJEXT) ssl.$(OBJEXT) status.$(OBJEXT) \
-	thread.$(OBJEXT) tun.$(OBJEXT)
-nodist_openvpn_OBJECTS =
-openvpn_OBJECTS = $(am_openvpn_OBJECTS) $(nodist_openvpn_OBJECTS)
+	pf.$(OBJEXT) ping.$(OBJEXT) plugin.$(OBJEXT) pool.$(OBJEXT) \
+	proto.$(OBJEXT) proxy.$(OBJEXT) ieproxy.$(OBJEXT) ps.$(OBJEXT) \
+	push.$(OBJEXT) reliable.$(OBJEXT) route.$(OBJEXT) \
+	schedule.$(OBJEXT) session_id.$(OBJEXT) shaper.$(OBJEXT) \
+	sig.$(OBJEXT) socket.$(OBJEXT) socks.$(OBJEXT) ssl.$(OBJEXT) \
+	status.$(OBJEXT) thread.$(OBJEXT) tun.$(OBJEXT) \
+	win32.$(OBJEXT) cryptoapi.$(OBJEXT)
+openvpn_OBJECTS = $(am_openvpn_OBJECTS)
 openvpn_LDADD = $(LDADD)
 openvpn_DEPENDENCIES =  ${LIBOBJDIR}memcmp$U.o
 SCRIPTS = $(dist_noinst_SCRIPTS)
@@ -110,13 +117,31 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(openvpn_SOURCES) $(nodist_openvpn_SOURCES)
+SOURCES = $(openvpn_SOURCES)
 DIST_SOURCES = $(openvpn_SOURCES)
+RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
+	html-recursive info-recursive install-data-recursive \
+	install-exec-recursive install-info-recursive \
+	install-recursive installcheck-recursive installdirs-recursive \
+	pdf-recursive ps-recursive uninstall-info-recursive \
+	uninstall-recursive
 man8dir = $(mandir)/man8
 NROFF = nroff
-MANS = $(man_MANS)
+MANS = $(dist_man_MANS)
+am__dist_noinst_DATA_DIST = openvpn.spec COPYRIGHT.GPL PORTS \
+	INSTALL-win32.txt openvpn.8
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
+nodist_htmlDATA_INSTALL = $(INSTALL_DATA)
+DATA = $(dist_noinst_DATA) $(nodist_html_DATA)
+HEADERS = $(dist_noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -161,13 +186,14 @@ LIBOBJS =  ${LIBOBJDIR}memcmp$U.o
 LIBS = -lssl -lcrypto -llzo 
 LTLIBOBJS =  ${LIBOBJDIR}memcmp$U.lo
 MAKEINFO = ${SHELL} /home/seg/DEV/broadcom/src/router/openvpn/missing --run makeinfo
+MAN2HTML = 
 OBJEXT = o
 PACKAGE = openvpn
 PACKAGE_BUGREPORT = openvpn-users@lists.sourceforge.net
 PACKAGE_NAME = OpenVPN
-PACKAGE_STRING = OpenVPN 2.1_rc7
+PACKAGE_STRING = OpenVPN 2.1_rc9
 PACKAGE_TARNAME = openvpn
-PACKAGE_VERSION = 2.1_rc7
+PACKAGE_VERSION = 2.1_rc9
 PATH_SEPARATOR = :
 PTHREAD_CC = 
 PTHREAD_CFLAGS = 
@@ -176,7 +202,12 @@ ROUTE = /sbin/route
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = @true
-VERSION = 2.1_rc7
+TAP_ID = tap0901
+TAP_WIN32_MIN_MAJOR = 9
+TAP_WIN32_MIN_MINOR = 1
+VERSION = 2.1_rc9
+WIN32_FALSE = 
+WIN32_TRUE = #
 ac_ct_CC = 
 am__fastdepCC_FALSE = #
 am__fastdepCC_TRUE = 
@@ -224,13 +255,49 @@ target_alias =
 target_cpu = mipsel
 target_os = linux-gnu
 target_vendor = unknown
+win32datadir = ${datadir}/openvpn-win32
+LDADD =  ${LIBOBJDIR}memcmp$U.o
 
 # This option prevents autoreconf from overriding our COPYING and
 # INSTALL targets:
 AUTOMAKE_OPTIONS = foreign
-nodist_openvpn_SOURCES = config.h
+MAINTAINERCLEANFILES = \
+	config.log config.status \
+	$(srcdir)/Makefile.in \
+	$(srcdir)/config.h.in $(srcdir)/config.h.in~ $(srcdir)/configure \
+	$(srcdir)/install-sh $(srcdir)/ltmain.sh $(srcdir)/missing \
+	$(srcdir)/depcomp $(srcdir)/aclocal.m4 \
+	$(srcdir)/config.guess $(srcdir)/config.sub \
+	$(srcdir)/config-win32.h $(srcdir)/openvpn.spec
+
+CLEANFILES = openvpn.8.html
+EXTRA_DIST = \
+	easy-rsa \
+	sample-config-files \
+	sample-keys \
+	sample-scripts \
+	suse \
+	tap-win32 \
+	contrib \
+	debug \
+	plugin
+
+SUBDIRS = \
+	images \
+	service-win32 \
+	install-win32
+
 TESTS = t_lpback.sh t_cltsrv.sh
-dist_noinst_SCRIPTS = $(TESTS)
+dist_noinst_HEADERS = \
+	config-win32.h
+
+dist_noinst_SCRIPTS = \
+	$(TESTS) \
+	doclean \
+	domake-win
+
+dist_noinst_DATA = openvpn.spec COPYRIGHT.GPL PORTS INSTALL-win32.txt \
+	$(am__append_1)
 openvpn_SOURCES = \
         base64.c base64.h \
 	basic.h \
@@ -271,11 +338,13 @@ openvpn_SOURCES = \
 	otime.c otime.h \
 	packet_id.c packet_id.h \
 	perf.c perf.h \
+	pf.c pf.h pf-inline.h \
 	ping.c ping.h ping-inline.h \
 	plugin.c plugin.h \
 	pool.c pool.h \
 	proto.c proto.h \
 	proxy.c proxy.h \
+	ieproxy.h ieproxy.c \
         ps.c ps.h \
 	push.c push.h \
 	reliable.c reliable.h \
@@ -290,45 +359,14 @@ openvpn_SOURCES = \
 	status.c status.h \
 	syshead.h \
 	thread.c thread.h \
-	tun.c tun.h
+	tun.c tun.h \
+	win32.h win32.c \
+	cryptoapi.h cryptoapi.c
 
-LDADD =  ${LIBOBJDIR}memcmp$U.o
-man_MANS = openvpn.8
-EXTRA_DIST = \
-	doclean \
-	$(man_MANS) \
-	COPYRIGHT.GPL \
-	PORTS \
-	openvpn.spec \
-	easy-rsa \
-	sample-config-files \
-	sample-keys \
-	sample-scripts \
-	gentoo \
-	suse \
-	openvpn.spec.in \
-	config-win32.h \
-	win32.h \
-	win32.c \
-	cryptoapi.h \
-	cryptoapi.c \
-	makefile.w32 \
-        makefile.w32-vc \
-	INSTALL-win32.txt \
-	tap-win32 \
-	install-win32 \
-	service-win32 \
-	contrib \
-	debug \
-	plugin \
-        management \
-	images \
-	ieproxy.c \
-	ieproxy.h \
-	domake-win
-
+#nodist_html_DATA = openvpn.8.html
+dist_man_MANS = openvpn.8
 all: config.h
-	$(MAKE) $(AM_MAKEFLAGS) all-am
+	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
 .SUFFIXES: .c .o .obj
@@ -384,6 +422,8 @@ distclean-hdr:
 	-rm -f config.h stamp-h1
 openvpn.spec: $(top_builddir)/config.status $(srcdir)/openvpn.spec.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
+config-win32.h: $(top_builddir)/config.status $(srcdir)/config-win32.h.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(sbindir)" || $(mkdir_p) "$(DESTDIR)$(sbindir)"
@@ -421,6 +461,7 @@ include $(DEPDIR)/memcmp.Po
 include ./$(DEPDIR)/base64.Po
 include ./$(DEPDIR)/buffer.Po
 include ./$(DEPDIR)/crypto.Po
+include ./$(DEPDIR)/cryptoapi.Po
 include ./$(DEPDIR)/error.Po
 include ./$(DEPDIR)/event.Po
 include ./$(DEPDIR)/fdmisc.Po
@@ -428,6 +469,7 @@ include ./$(DEPDIR)/forward.Po
 include ./$(DEPDIR)/fragment.Po
 include ./$(DEPDIR)/gremlin.Po
 include ./$(DEPDIR)/helper.Po
+include ./$(DEPDIR)/ieproxy.Po
 include ./$(DEPDIR)/init.Po
 include ./$(DEPDIR)/interval.Po
 include ./$(DEPDIR)/list.Po
@@ -449,6 +491,7 @@ include ./$(DEPDIR)/options.Po
 include ./$(DEPDIR)/otime.Po
 include ./$(DEPDIR)/packet_id.Po
 include ./$(DEPDIR)/perf.Po
+include ./$(DEPDIR)/pf.Po
 include ./$(DEPDIR)/ping.Po
 include ./$(DEPDIR)/pkcs11.Po
 include ./$(DEPDIR)/plugin.Po
@@ -469,6 +512,7 @@ include ./$(DEPDIR)/ssl.Po
 include ./$(DEPDIR)/status.Po
 include ./$(DEPDIR)/thread.Po
 include ./$(DEPDIR)/tun.Po
+include ./$(DEPDIR)/win32.Po
 
 .c.o:
 	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -529,6 +573,94 @@ uninstall-man8:
 	  echo " rm -f '$(DESTDIR)$(man8dir)/$$inst'"; \
 	  rm -f "$(DESTDIR)$(man8dir)/$$inst"; \
 	done
+install-nodist_htmlDATA: $(nodist_html_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(htmldir)" || $(mkdir_p) "$(DESTDIR)$(htmldir)"
+	@list='$(nodist_html_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(nodist_htmlDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(htmldir)/$$f'"; \
+	  $(nodist_htmlDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(htmldir)/$$f"; \
+	done
+
+uninstall-nodist_htmlDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_html_DATA)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(htmldir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(htmldir)/$$f"; \
+	done
+
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run `make' without going through this Makefile.
+# To change the values of `make' variables: instead of editing Makefiles,
+# (1) if the variable is set in `config.status', edit `config.status'
+#     (which will cause the Makefiles to be regenerated when you run `make');
+# (2) otherwise, pass the desired values on the `make' command line.
+$(RECURSIVE_TARGETS):
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+
+mostlyclean-recursive clean-recursive distclean-recursive \
+maintainer-clean-recursive:
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	dot_seen=no; \
+	case "$@" in \
+	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
+	  *) list='$(SUBDIRS)' ;; \
+	esac; \
+	rev=''; for subdir in $$list; do \
+	  if test "$$subdir" = "."; then :; else \
+	    rev="$$subdir $$rev"; \
+	  fi; \
+	done; \
+	rev="$$rev ."; \
+	target=`echo $@ | sed s/-recursive//`; \
+	for subdir in $$rev; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done && test -z "$$fail"
+tags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+	done
+ctags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -540,10 +672,23 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS:  $(HEADERS) $(SOURCES) config.h.in $(TAGS_DEPENDENCIES) \
+TAGS: tags-recursive $(HEADERS) $(SOURCES) config.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
+	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
+	  include_option=--etags-include; \
+	  empty_fix=.; \
+	else \
+	  include_option=--include; \
+	  empty_fix=; \
+	fi; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test ! -f $$subdir/TAGS || \
+	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
+	  fi; \
+	done; \
 	list='$(SOURCES) $(HEADERS) config.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -556,7 +701,7 @@ TAGS:  $(HEADERS) $(SOURCES) config.h.in $(TAGS_DEPENDENCIES) \
 	    $$tags $$unique; \
 	fi
 ctags: CTAGS
-CTAGS:  $(HEADERS) $(SOURCES) config.h.in $(TAGS_DEPENDENCIES) \
+CTAGS: ctags-recursive $(HEADERS) $(SOURCES) config.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -654,7 +799,7 @@ check-TESTS: $(TESTS)
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/.
+	$(mkdir_p) $(distdir)/. $(distdir)/install-win32
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -679,6 +824,21 @@ distdir: $(DISTFILES)
 	    test -f $(distdir)/$$file \
 	    || cp -p $$d/$$file $(distdir)/$$file \
 	    || exit 1; \
+	  fi; \
+	done
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test -d "$(distdir)/$$subdir" \
+	    || $(mkdir_p) "$(distdir)/$$subdir" \
+	    || exit 1; \
+	    distdir=`$(am__cd) $(distdir) && pwd`; \
+	    top_distdir=`$(am__cd) $(top_distdir) && pwd`; \
+	    (cd $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="$$top_distdir" \
+	        distdir="$$distdir/$$subdir" \
+	        distdir) \
+	      || exit 1; \
 	  fi; \
 	done
 	$(MAKE) $(AM_MAKEFLAGS) \
@@ -783,21 +943,23 @@ distcleancheck: distclean
 	       exit 1; } >&2
 check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
-check: check-am
-all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(MANS) config.h
-installdirs:
-	for dir in "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)"; do \
+check: check-recursive
+all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA) $(HEADERS) \
+		config.h
+installdirs: installdirs-recursive
+installdirs-am:
+	for dir in "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)" "$(DESTDIR)$(htmldir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
-install: install-am
-install-exec: install-exec-am
-install-data: install-data-am
-uninstall: uninstall-am
+install: install-recursive
+install-exec: install-exec-recursive
+install-data: install-data-recursive
+uninstall: uninstall-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-am
+installcheck: installcheck-recursive
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -806,6 +968,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -813,80 +976,89 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-am
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+clean: clean-recursive
 
 clean-am: clean-generic clean-sbinPROGRAMS mostlyclean-am
 
-distclean: distclean-am
+distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(DEPDIR) ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
 
-dvi: dvi-am
+dvi: dvi-recursive
 
 dvi-am:
 
-html: html-am
+html: html-recursive
 
-info: info-am
+info: info-recursive
 
 info-am:
 
-install-data-am: install-man
+install-data-am: install-man install-nodist_htmlDATA
 
 install-exec-am: install-sbinPROGRAMS
 
-install-info: install-info-am
+install-info: install-info-recursive
 
 install-man: install-man8
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-am
+maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
 	-rm -rf $(DEPDIR) ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-am
+mostlyclean: mostlyclean-recursive
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-am
+pdf: pdf-recursive
 
 pdf-am:
 
-ps: ps-am
+ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-man uninstall-sbinPROGRAMS
+uninstall-am: uninstall-info-am uninstall-man \
+	uninstall-nodist_htmlDATA uninstall-sbinPROGRAMS
+
+uninstall-info: uninstall-info-recursive
 
 uninstall-man: uninstall-man8
 
-.PHONY: CTAGS GTAGS all all-am am--refresh check check-TESTS check-am \
-	clean clean-generic clean-sbinPROGRAMS ctags dist dist-all \
+.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am am--refresh check \
+	check-TESTS check-am clean clean-generic clean-recursive \
+	clean-sbinPROGRAMS ctags ctags-recursive dist dist-all \
 	dist-bzip2 dist-gzip dist-hook dist-shar dist-tarZ dist-zip \
 	distcheck distclean distclean-compile distclean-generic \
-	distclean-hdr distclean-tags distcleancheck distdir \
-	distuninstallcheck dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-man8 install-sbinPROGRAMS install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-info-am uninstall-man uninstall-man8 \
+	distclean-hdr distclean-recursive distclean-tags \
+	distcleancheck distdir distuninstallcheck dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-man8 \
+	install-nodist_htmlDATA install-sbinPROGRAMS install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic \
+	maintainer-clean-recursive mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-recursive pdf pdf-am ps ps-am \
+	tags tags-recursive uninstall uninstall-am uninstall-info-am \
+	uninstall-man uninstall-man8 uninstall-nodist_htmlDATA \
 	uninstall-sbinPROGRAMS
-
 
 .PHONY: plugin
 
 dist-hook:
 	cd $(distdir) && for i in $(EXTRA_DIST) ; do find $$i -name .svn -type d -prune -exec rm -rf '{}' ';' ; rm -f `find $$i -type f | grep -E '(^|\/)\.?\#|\~$$|\.s?o$$'` ; done
+#openvpn.8.html: $(srcdir)/openvpn.8
+#	$(MAN2HTML) < $(srcdir)/openvpn.8 > openvpn.8.html
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
