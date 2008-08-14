@@ -3,7 +3,7 @@
 main(int argc, char *argv[])
 {
 	FILE *fp;
-	char buf[1024], *ptr;
+	char buf[65536], *ptr;
 	int i;
 	int meta_skip=0;
 	int a;
