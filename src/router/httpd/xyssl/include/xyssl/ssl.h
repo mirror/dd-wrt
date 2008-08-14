@@ -70,8 +70,8 @@ extern "C" {
 #define TLS1_RSA_AES_256_SHA           53
 #define TLS1_EDH_RSA_AES_256_SHA       57
 
-#define SSL_SEND_BUF_SZ                3*1024
 #define SSL_MAX_BUF_SIZE               0xC800 + 2048
+#define SSL_SEND_BUF_SZ                3 * 1024
 
 extern int ssl_default_ciphers[];
 
