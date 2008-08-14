@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -149,6 +149,8 @@ void delete_routes (struct route_list *rl,
 		    const struct env_set *es);
 
 void setenv_routes (struct env_set *es, const struct route_list *rl);
+
+bool is_special_addr (const char *addr_str);
 
 #if AUTO_USERID
 bool get_default_gateway_mac_addr (unsigned char *macaddr);

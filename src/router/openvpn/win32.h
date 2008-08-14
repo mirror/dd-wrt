@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -27,6 +27,12 @@
 #define OPENVPN_WIN32_H
 
 #include "mtu.h"
+
+/* location of executables */
+#define SYS_PATH_ENV_VAR_NAME "SystemRoot"  /* environmental variable name that normally contains the system path */
+#define DEFAULT_WIN_SYS_PATH  "C:\\WINDOWS" /* --win-sys default value */
+#define NETSH_PATH_SUFFIX     "\\system32\\netsh.exe"
+#define WIN_ROUTE_PATH_SUFFIX "\\system32\\route.exe"
 
 /*
  * Win32-specific OpenVPN code, targetted at the mingw
@@ -246,6 +252,18 @@ char *getpass (const char *prompt);
 
 /* Set Win32 security attributes structure to allow all access */
 bool init_security_attributes_allow_all (struct security_attributes *obj);
+
+/* return true if filename is safe to be used on Windows */
+bool win_safe_filename (const char *fn);
+
+/* add constant environmental variables needed by Windows */
+struct env_set;
+void env_set_add_win32 (struct env_set *es);
+
+/* get and set the current windows system path */
+void set_win_sys_path (const char *newpath, struct env_set *es);
+void set_win_sys_path_via_env (struct env_set *es);
+char *get_win_sys_path (void);
 
 #endif
 #endif

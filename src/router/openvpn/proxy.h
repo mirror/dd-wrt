@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -59,6 +59,7 @@ void show_win_proxy_settings (const int msglevel);
 #define HTTP_AUTH_BASIC 1
 #define HTTP_AUTH_NTLM  2
 #define HTTP_AUTH_N     3
+#define HTTP_AUTH_NTLM2 4
 
 struct http_proxy_options {
   const char *server;
@@ -79,9 +80,10 @@ struct http_proxy_info {
   struct user_pass up;
 };
 
-struct http_proxy_info *new_http_proxy (const struct http_proxy_options *o,
-					struct auto_proxy_info *auto_proxy_info,
-					struct gc_arena *gc);
+struct http_proxy_info *http_proxy_new (const struct http_proxy_options *o,
+					struct auto_proxy_info *auto_proxy_info);
+
+void http_proxy_close (struct http_proxy_info *hp);
 
 bool establish_http_proxy_passthru (struct http_proxy_info *p,
 				    socket_descriptor_t sd, /* already open to proxy */

@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -21,12 +21,6 @@
  *  distribution); if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
 
 #include "syshead.h"
 
@@ -89,12 +83,18 @@ check_tls_dowork (struct context *c)
 
   if (interval_test (&c->c2.tmp_int))
     {
-      if (tls_multi_process
-	  (c->c2.tls_multi, &c->c2.to_link, &c->c2.to_link_addr,
-	   get_link_socket_info (c), &wakeup))
+      const int tmp_status = tls_multi_process
+	(c->c2.tls_multi, &c->c2.to_link, &c->c2.to_link_addr,
+	 get_link_socket_info (c), &wakeup);
+      if (tmp_status == TLSMP_ACTIVE)
 	{
 	  update_time ();
 	  interval_action (&c->c2.tmp_int);
+	}
+      else if (tmp_status == TLSMP_KILL)
+	{
+	  c->sig->signal_received = SIGTERM;
+	  c->sig->signal_text = "auth-control-exit";
 	}
 
       interval_future_trigger (&c->c2.tmp_int, wakeup);
@@ -356,7 +356,7 @@ check_fragment_dowork (struct context *c)
   if (lsi->mtu_changed && c->c2.ipv4_tun)
     {
       frame_adjust_path_mtu (&c->c2.frame_fragment, c->c2.link_socket->mtu,
-			     c->options.proto);
+			     c->options.ce.proto);
       lsi->mtu_changed = false;
     }
 
@@ -490,6 +490,10 @@ process_coarse_timers (struct context *c)
 #if P2MP
   /* see if we should send a push_request in response to --pull */
   check_push_request (c);
+#endif
+
+#ifdef PLUGIN_PF
+  pf_check_reload (c);
 #endif
 
   /* process --route options */
@@ -1034,7 +1038,7 @@ process_outgoing_link (struct context *c)
 #ifdef HAVE_GETTIMEOFDAY
 	  if (c->options.shaper)
 	    shaper_wrote_bytes (&c->c2.shaper, BLEN (&c->c2.to_link)
-				+ datagram_overhead (c->options.proto));
+				+ datagram_overhead (c->options.ce.proto));
 #endif
 	  /*
 	   * Let the pinger know that we sent a packet.

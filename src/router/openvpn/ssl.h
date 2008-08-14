@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -271,6 +271,9 @@
    communication pipe to the main thread to be ready to accept writes. */
 #define TLS_MULTI_THREAD_SEND_TIMEOUT 5
 
+/* Interval that tls_multi_process should call tls_authentication_status */
+#define TLS_MULTI_AUTH_STATUS_INTERVAL 10
+
 /*
  * Buffer sizes (also see mtu.h).
  */
@@ -367,6 +370,21 @@ struct key_state
    * If bad username/password, TLS connection will come up but 'authenticated' will be false.
    */
   bool authenticated;
+  time_t auth_deferred_expire;
+
+#ifdef ENABLE_DEF_AUTH
+  /* If auth_deferred is true, authentication is being deferred */
+  bool auth_deferred;
+#ifdef MANAGEMENT_DEF_AUTH
+  unsigned int mda_key_id;
+  unsigned int mda_status;
+#endif
+#ifdef PLUGIN_DEF_AUTH
+  unsigned int auth_control_status;
+  time_t acf_last_mod;
+  char *auth_control_file;
+#endif
+#endif
 };
 
 /*
@@ -447,6 +465,10 @@ struct tls_options
   struct env_set *es;
   const struct plugin_list *plugins;
 
+#ifdef MANAGEMENT_DEF_AUTH
+  struct man_def_auth_context *mda_context;
+#endif
+
   /* --gremlin bits */
   int gremlin;
 };
@@ -490,6 +512,11 @@ struct tls_session
   int verify_maxlevel;
 
   char *common_name;
+
+#ifdef ENABLE_PF
+  uint32_t common_name_hashval;
+#endif
+
   bool verified;                /* true if peer certificate was verified against CA */
 
   /* not-yet-authenticated incoming client */
@@ -561,6 +588,11 @@ struct tls_multi
    */
   char *locked_cn;
 
+#ifdef ENABLE_DEF_AUTH
+  /* Time of last call to tls_authentication_status */
+  time_t tas_last;
+#endif
+
   /*
    * Our session objects.
    */
@@ -599,11 +631,14 @@ void tls_multi_init_set_options(struct tls_multi* multi,
 				const char *local,
 				const char *remote);
 
-bool tls_multi_process (struct tls_multi *multi,
-			struct buffer *to_link,
-			struct link_socket_actual **to_link_addr,
-			struct link_socket_info *to_link_socket_info,
-			interval_t *wakeup);
+#define TLSMP_INACTIVE 0
+#define TLSMP_ACTIVE   1
+#define TLSMP_KILL     2
+int tls_multi_process (struct tls_multi *multi,
+		       struct buffer *to_link,
+		       struct link_socket_actual **to_link_addr,
+		       struct link_socket_info *to_link_socket_info,
+		       interval_t *wakeup);
 
 void tls_multi_free (struct tls_multi *multi, bool clear);
 
@@ -643,16 +678,35 @@ bool tls_send_payload (struct tls_multi *multi,
 bool tls_rec_payload (struct tls_multi *multi,
 		      struct buffer *buf);
 
-const char *tls_common_name (struct tls_multi* multi, bool null);
+const char *tls_common_name (const struct tls_multi* multi, const bool null);
 void tls_set_common_name (struct tls_multi *multi, const char *common_name);
 void tls_lock_common_name (struct tls_multi *multi);
 
-bool tls_authenticated (struct tls_multi *multi);
+#define TLS_AUTHENTICATION_SUCCEEDED  0
+#define TLS_AUTHENTICATION_FAILED     1
+#define TLS_AUTHENTICATION_DEFERRED   2
+#define TLS_AUTHENTICATION_UNDEFINED  3
+int tls_authentication_status (struct tls_multi *multi, const int latency);
 void tls_deauthenticate (struct tls_multi *multi);
+
+#ifdef MANAGEMENT_DEF_AUTH
+bool tls_authenticate_key (struct tls_multi *multi, const unsigned int mda_key_id, const bool auth);
+#endif
 
 /*
  * inline functions
  */
+
+static inline bool
+tls_test_auth_deferred_interval (const struct tls_multi *multi)
+{
+  if (multi)
+    {
+      const struct key_state *ks = &multi->session[TM_ACTIVE].key[KS_PRIMARY];
+      return now < ks->auth_deferred_expire;
+    }
+  return false;
+}
 
 static inline int
 tls_test_payload_len (const struct tls_multi *multi)
@@ -672,6 +726,26 @@ tls_set_single_session (struct tls_multi *multi)
   if (multi)
     multi->opt.single_session = true;
 }
+
+#ifdef ENABLE_PF
+
+static inline bool
+tls_common_name_hash (const struct tls_multi *multi, const char **cn, uint32_t *cn_hash)
+{
+  if (multi)
+    {
+      const struct tls_session *s = &multi->session[TM_ACTIVE];
+      if (s->common_name && s->common_name[0] != '\0')
+	{
+	  *cn = s->common_name;
+	  *cn_hash = s->common_name_hashval;
+	  return true;
+	}
+    }
+  return false;
+}
+
+#endif
 
 /*
  * protocol_dump() flags

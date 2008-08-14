@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -42,26 +42,15 @@
 #define OPENVPN_PORT 1194
 
 /*
+ * Maximum size passed passed to setsockopt SNDBUF/RCVBUF
+ */
+#define SOCKET_SND_RCV_BUF_MAX 1000000
+
+/*
  * Number of seconds that "resolv-retry infinite"
  * represents.
  */
 #define RESOLV_RETRY_INFINITE 1000000000
-
-#define REMOTE_LIST_SIZE 64
-
-struct remote_entry
-{
-  const char *hostname;
-  int port;
-};
-
-struct remote_list
-{
-  int len;
-  int current;
-  bool no_advance;
-  struct remote_entry array[REMOTE_LIST_SIZE];
-};
 
 /* 
  * packet_size_type is used to communicate packet size
@@ -175,8 +164,9 @@ struct link_socket
   /* used for long-term queueing of pre-accepted socket listen */
   bool listen_persistent_queued;
 
-  /* set on initial call to init phase 1 */
-  struct remote_list *remote_list;
+  /* Does config file contain any <connection> ... </connection> blocks? */
+  bool connection_profiles_defined;
+
   const char *remote_host;
   int remote_port;
   const char *local_host;
@@ -290,9 +280,11 @@ int openvpn_connect (socket_descriptor_t sd,
 
 void
 link_socket_init_phase1 (struct link_socket *sock,
+			 const bool connection_profiles_defined,
 			 const char *local_host,
-			 struct remote_list *remote_list,
 			 int local_port,
+			 const char *remote_host,
+			 int remote_port,
 			 int proto,
 			 int mode,
 			 const struct link_socket *accept_from,
@@ -333,6 +325,7 @@ void link_socket_close (struct link_socket *sock);
 #define PS_SHOW_PORT_IF_DEFINED (1<<0)
 #define PS_SHOW_PORT            (1<<1)
 #define PS_SHOW_PKTINFO         (1<<2)
+#define PS_DONT_SHOW_ADDR       (1<<3)
 
 const char *print_sockaddr_ex (const struct openvpn_sockaddr *addr,
 			       const char* separator,
@@ -391,8 +384,6 @@ void link_socket_bad_outgoing_addr (void);
 
 void setenv_trusted (struct env_set *es, const struct link_socket_info *info);
 
-void remote_list_randomize (struct remote_list *l);
-
 bool link_socket_update_flags (struct link_socket *ls, unsigned int sockflags);
 void link_socket_update_buffer_sizes (struct link_socket *ls, int rcvbuf, int sndbuf);
 
@@ -405,6 +396,7 @@ void link_socket_update_buffer_sizes (struct link_socket *ls, int rcvbuf, int sn
 #define OIA_IP         1
 #define OIA_ERROR     -1
 int openvpn_inet_aton (const char *dotted_quad, struct in_addr *addr);
+bool ip_addr_dotted_quad_safe (const char *dotted_quad);
 
 socket_descriptor_t create_socket_tcp (void);
 
@@ -466,15 +458,6 @@ datagram_overhead (int proto)
 /*
  * Misc inline functions
  */
-
-static inline int
-remote_list_len (const struct remote_list *rl)
-{
-  if (rl)
-    return rl->len;
-  else
-    return 0;
-}
 
 static inline bool
 legal_ipv4_port (int port)

@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -22,12 +22,6 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
-
 #include "syshead.h"
 
 #if P2MP_SERVER
@@ -39,6 +33,7 @@
 
 struct hash *
 hash_init (const int n_buckets,
+	   const uint32_t iv,
 	   uint32_t (*hash_function)(const void *key, uint32_t iv),
 	   bool (*compare_function)(const void *key1, const void *key2))
 {
@@ -51,7 +46,7 @@ hash_init (const int n_buckets,
   h->mask = h->n_buckets - 1;
   h->hash_function = hash_function;
   h->compare_function = compare_function;
-  h->iv = get_random ();
+  h->iv = iv;
   ALLOC_ARRAY (h->buckets, struct hash_bucket, h->n_buckets);
   for (i = 0; i < h->n_buckets; ++i)
     {
@@ -404,8 +399,8 @@ list_test (void)
 
   {
     struct gc_arena gc = gc_new ();
-    struct hash *hash = hash_init (10000, word_hash_function, word_compare_function);
-    struct hash *nhash = hash_init (256, word_hash_function, word_compare_function);
+    struct hash *hash = hash_init (10000, get_random (), word_hash_function, word_compare_function);
+    struct hash *nhash = hash_init (256, get_random (), word_hash_function, word_compare_function);
 
     printf ("hash_init n_buckets=%d mask=0x%08x\n", hash->n_buckets, hash->mask);
   

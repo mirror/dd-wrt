@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -21,12 +21,6 @@
  *  distribution); if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
 
 #include "syshead.h"
 
@@ -49,7 +43,10 @@ plugin_show_string_array (int msglevel, const char *name, const char *array[])
 {
   int i;
   for (i = 0; array[i]; ++i)
-    msg (msglevel, "%s[%d] = '%s'", name, i, array[i]);
+    {
+      if (env_safe_to_print (array[i]))
+	msg (msglevel, "%s[%d] = '%s'", name, i, array[i]);
+    }
 }
 
 static void
@@ -89,6 +86,8 @@ plugin_type_name (const int type)
       return "PLUGIN_LEARN_ADDRESS";
     case OPENVPN_PLUGIN_TLS_FINAL:
       return "PLUGIN_TLS_FINAL";
+    case OPENVPN_PLUGIN_ENABLE_PF:
+      return "OPENVPN_PLUGIN_ENABLE_PF";
     default:
       return "PLUGIN_???";
     }
@@ -186,6 +185,8 @@ static void
 plugin_init_item (struct plugin *p, const struct plugin_option *o)
 {
   struct gc_arena gc = gc_new ();
+  bool rel = false;
+
   p->so_pathname = o->so_pathname;
   p->plugin_type_mask = plugin_supported_types ();
 
@@ -193,7 +194,7 @@ plugin_init_item (struct plugin *p, const struct plugin_option *o)
 
   p->handle = NULL;
 #if defined(PLUGIN_LIBDIR)
-  if (!strrchr(p->so_pathname, '/'))
+  if (!absolute_pathname (p->so_pathname))
     {
       char full[PATH_MAX];
 
@@ -202,6 +203,7 @@ plugin_init_item (struct plugin *p, const struct plugin_option *o)
 #if defined(ENABLE_PLUGIN_SEARCH)
       if (!p->handle)
 	{
+	  rel = true;
 	  p->handle = dlopen (p->so_pathname, RTLD_NOW);
 	}
 #endif
@@ -209,6 +211,7 @@ plugin_init_item (struct plugin *p, const struct plugin_option *o)
   else
 #endif
     {
+      rel = !absolute_pathname (p->so_pathname);
       p->handle = dlopen (p->so_pathname, RTLD_NOW);
     }
   if (!p->handle)
@@ -218,6 +221,7 @@ plugin_init_item (struct plugin *p, const struct plugin_option *o)
 
 #elif defined(USE_LOAD_LIBRARY)
 
+  rel = !absolute_pathname (p->so_pathname);
   p->module = LoadLibrary (p->so_pathname);
   if (!p->module)
     msg (M_ERR, "PLUGIN_INIT: could not load plugin DLL: %s", p->so_pathname);
@@ -260,6 +264,9 @@ plugin_init_item (struct plugin *p, const struct plugin_option *o)
     p->requested_initialization_point = (*p->initialization_point)();
   else
     p->requested_initialization_point = OPENVPN_PLUGIN_INIT_PRE_DAEMON;
+
+  if (rel)
+    msg (M_WARN, "WARNING: plugin '%s' specified by a relative pathname -- using an absolute pathname would be more secure", p->so_pathname);
 
   p->initialized = true;
 
@@ -320,7 +327,7 @@ static int
 plugin_call_item (const struct plugin *p,
 		  void *per_client_context,
 		  const int type,
-		  const char *args,
+		  const struct argv *av,
 		  struct openvpn_plugin_string_list **retlist,
 		  const char **envp)
 {
@@ -333,18 +340,18 @@ plugin_call_item (const struct plugin *p,
   if (p->plugin_handle && (p->plugin_type_mask & OPENVPN_PLUGIN_MASK (type)))
     {
       struct gc_arena gc = gc_new ();
-      const char **argv = make_arg_array (p->so_pathname, args, &gc);
+      struct argv a = argv_insert_head (av, p->so_pathname);
 
       dmsg (D_PLUGIN_DEBUG, "PLUGIN_CALL: PRE type=%s", plugin_type_name (type));
-      plugin_show_args_env (D_PLUGIN_DEBUG, argv, envp);
+      plugin_show_args_env (D_PLUGIN_DEBUG, (const char **)a.argv, envp);
 
       /*
        * Call the plugin work function
        */
       if (p->func2)
-	status = (*p->func2)(p->plugin_handle, type, argv, envp, per_client_context, retlist);
+	status = (*p->func2)(p->plugin_handle, type, (const char **)a.argv, envp, per_client_context, retlist);
       else if (p->func1)
-	status = (*p->func1)(p->plugin_handle, type, argv, envp);
+	status = (*p->func1)(p->plugin_handle, type, (const char **)a.argv, envp);
       else
 	ASSERT (0);
 
@@ -353,12 +360,13 @@ plugin_call_item (const struct plugin *p,
 	   plugin_type_name (type),
 	   status);
 
-      if (status != OPENVPN_PLUGIN_FUNC_SUCCESS)
+      if (status == OPENVPN_PLUGIN_FUNC_ERROR)
 	msg (M_WARN, "PLUGIN_CALL: plugin function %s failed with status %d: %s",
 	     plugin_type_name (type),
 	     status,
 	     p->so_pathname);
 
+      argv_reset (&a);
       gc_free (&gc);
     }
   return status;
@@ -407,7 +415,6 @@ plugin_per_client_init (const struct plugin_common *pc,
   const int n = pc->n;
   int i;
 
-  CLEAR (*cli);
   for (i = 0; i < n; ++i)
     {
       const struct plugin *p = &pc->plugins[i];
@@ -476,7 +483,7 @@ plugin_common_open (struct plugin_common *pc,
   int i;
   const char **envp;
 
-  envp = make_env_array (es, &gc);
+  envp = make_env_array (es, false, &gc);
 
   if (pr)
     plugin_return_init (pr);
@@ -534,7 +541,7 @@ plugin_list_open (struct plugin_list *pl,
 int
 plugin_call (const struct plugin_list *pl,
 	     const int type,
-	     const char *args,
+	     const struct argv *av,
 	     struct plugin_return *pr,
 	     struct env_set *es)
 {
@@ -547,22 +554,35 @@ plugin_call (const struct plugin_list *pl,
       int i;
       const char **envp;
       const int n = plugin_n (pl);
-      int count = 0;
+      bool success = false;
+      bool error = false;
+      bool deferred = false;
       
       mutex_lock_static (L_PLUGIN);
 
       setenv_del (es, "script_type");
-      envp = make_env_array (es, &gc);
+      envp = make_env_array (es, false, &gc);
 
       for (i = 0; i < n; ++i)
 	{
-	  if (!plugin_call_item (&pl->common->plugins[i],
-				 pl->per_client.per_client_context[i],
-				 type,
-				 args,
-				 pr ? &pr->list[i] : NULL,
-				 envp))
-	    ++count;
+	  const int status = plugin_call_item (&pl->common->plugins[i],
+					       pl->per_client.per_client_context[i],
+					       type,
+					       av,
+					       pr ? &pr->list[i] : NULL,
+					       envp);
+	  switch (status)
+	    {
+	    case OPENVPN_PLUGIN_FUNC_SUCCESS:
+	      success = true;
+	      break;
+	    case OPENVPN_PLUGIN_FUNC_DEFERRED:
+	      deferred = true;
+	      break;
+	    default:
+	      error = true;
+	      break;
+	    }
 	}
 
       if (pr)
@@ -572,12 +592,15 @@ plugin_call (const struct plugin_list *pl,
 
       gc_free (&gc);
 
-      return count == n ? 0 : 1; /* if any one plugin in the chain failed, return failure (1) */
+      if (type == OPENVPN_PLUGIN_ENABLE_PF && success)
+	return OPENVPN_PLUGIN_FUNC_SUCCESS;
+      else if (error)
+	return OPENVPN_PLUGIN_FUNC_ERROR;
+      else if (deferred)
+	return OPENVPN_PLUGIN_FUNC_DEFERRED;
     }
-  else
-    {
-      return 0;
-    }
+
+  return OPENVPN_PLUGIN_FUNC_SUCCESS;
 }
 
 void

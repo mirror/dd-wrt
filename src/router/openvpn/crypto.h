@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -68,6 +68,9 @@
  */
 
 #if SSLEAY_VERSION_NUMBER < 0x00907000L
+
+/* Workaround: OpenSSL 0.9.6 breaks extract_x509_field_ssl function */
+#define USE_OLD_EXTRACT_X509_FIELD
 
 /* Workaround: EVP_CIPHER_mode is defined wrong in OpenSSL 0.9.6 but is fixed in 0.9.7 */
 #undef EVP_CIPHER_mode
