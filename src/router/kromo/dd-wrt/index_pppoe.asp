@@ -44,7 +44,7 @@
 			<select name="reconnect_hours">
 				<% make_time_list("reconnect_hours","0","23"); %>
 			</select>:<select name="reconnect_minutes">
-				<% make_time_list("schedule_minutes","0","59"); %>
+				<% make_time_list("reconnect_minutes","0","59"); %>
 			</select>
 		</div>
 	</div>
