@@ -511,23 +511,25 @@ ifneq ($(CONFIG_NOSSL),y)
 ifneq ($(CONFIG_MATRIXSSL),y)
 ifeq ($(CONFIG_OPENSSL),y)
 CFLAGS += -I$(TOP)/openssl/include  -I$(TOP)/openssl/include/openssl
-LDFLAGS += -L$(TOP)/openssl -L$(TOP)/openssl -lcrypto -lssl
+SSLLDFLAGS += -L$(TOP)/openssl -L$(TOP)/openssl -lcrypto -lssl
 CFLAGS += -DHAVE_OPENSSL
 CFLAGS += -DHAVE_HTTPS
 endif
 endif
 
 ifeq ($(CONFIG_MATRIXSSL),y)
-CFLAGS += -I$(TOP)/matrixssl
-LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
-CFLAGS += -DHAVE_MATRIXSSL
-CFLAGS += -DHAVE_HTTPS
-OBJS += matrixssl_xface.o
+CONFIG_XYSSL=y
+
+#CFLAGS += -I$(TOP)/matrixssl
+#SSLLDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
+#CFLAGS += -DHAVE_MATRIXSSL
+#CFLAGS += -DHAVE_HTTPS
+#OBJS += matrixssl_xface.o
 endif
 
 ifeq ($(CONFIG_XYSSL),y)
 CFLAGS += -I$(TOP)/httpd/xyssl/include
-LDFLAGS += -L$(TOP)/httpd/xyssl/library -lxyssl -lpthread
+SSLLDFLAGS += -L$(TOP)/httpd/xyssl/library -lxyssl -lpthread
 CFLAGS += -DHAVE_XYSSL
 CFLAGS += -DHAVE_HTTPS
 endif
@@ -543,6 +545,7 @@ vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visua
 all: validate.so visuals.so httpd cert
 
 clean:
+	cd xyssl && make clean
 	rm -f *.o *~ httpd
 	rm -f modules/*.o
 	rm -f modules/*.*~
@@ -576,7 +579,7 @@ ifeq ($(CONFIG_XYSSL),y)
 	cd xyssl && make static
 endif
 	./write_web www 
-	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+	$(CC) -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
