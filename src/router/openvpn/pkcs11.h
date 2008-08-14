@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -53,8 +53,19 @@ int
 pkcs11_logout();
 
 int
+pkcs11_management_id_count ();
+
+bool
+pkcs11_management_id_get (
+	const int index,
+	char ** id,
+	char **base64
+);
+
+int
 SSL_CTX_use_pkcs11 (
 	SSL_CTX * const ssl_ctx,
+	bool pkcs11_id_management,
 	const char * const pkcs11_id
 );
 

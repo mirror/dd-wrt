@@ -99,7 +99,7 @@
 /* Define to 1 if you have the `ENGINE_register_all_complete' function. */
 #undef HAVE_ENGINE_REGISTER_ALL_COMPLETE
 
-/* Define to 1 if you have the `epoll_create' function. */
+/* epoll_create function is defined */
 #undef HAVE_EPOLL_CREATE
 
 /* Define to 1 if you have the <errno.h> header file. */
@@ -110,6 +110,9 @@
 
 /* Define to 1 if you have the `EVP_CIPHER_CTX_set_key_length' function. */
 #undef HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH
+
+/* Define to 1 if you have the `execve' function. */
+#undef HAVE_EXECVE
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
@@ -219,6 +222,9 @@
 /* Define to 1 if you have the <net/if_tun.h> header file. */
 #undef HAVE_NET_IF_TUN_H
 
+/* Define to 1 if you have the <net/tun/if_tun.h> header file. */
+#undef HAVE_NET_TUN_IF_TUN_H
+
 /* Define to 1 if you have the `nice' function. */
 #undef HAVE_NICE
 
@@ -254,6 +260,9 @@
 
 /* Define to 1 if you have the <resolv.h> header file. */
 #undef HAVE_RESOLV_H
+
+/* Indicates if res_init is available */
+#undef HAVE_RES_INIT
 
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
@@ -448,11 +457,23 @@
 /* Enable strict options check between peers */
 #undef STRICT_OPTIONS_CHECK
 
+/* The TAP-Win32 id defined in tap-win32/SOURCES */
+#undef TAP_ID
+
+/* The TAP-Win32 version number is defined in tap-win32/SOURCES */
+#undef TAP_WIN32_MIN_MAJOR
+
+/* The TAP-Win32 version number is defined in tap-win32/SOURCES */
+#undef TAP_WIN32_MIN_MINOR
+
 /* A string representing our target */
 #undef TARGET_ALIAS
 
 /* Are we running on Mac OS X? */
 #undef TARGET_DARWIN
+
+/* Are we running on DragonFlyBSD? */
+#undef TARGET_DRAGONFLY
 
 /* Are we running on FreeBSD? */
 #undef TARGET_FREEBSD
@@ -469,6 +490,9 @@
 /* Are we running on Solaris? */
 #undef TARGET_SOLARIS
 
+/* Are we running WIN32? */
+#undef TARGET_WIN32
+
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
 
@@ -477,6 +501,9 @@
 
 /* Use libdl for dynamic library loading */
 #undef USE_LIBDL
+
+/* Use LoadLibrary to load DLLs on Windows */
+#undef USE_LOAD_LIBRARY
 
 /* Use LZO compression library */
 #undef USE_LZO

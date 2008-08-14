@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -27,15 +27,9 @@
  * so that SSL/TLS can be run over UDP.
  */
 
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
+#include "syshead.h"
 
 #if defined(USE_CRYPTO) && defined(USE_SSL)
-
-#include "syshead.h"
 
 #include "buffer.h"
 #include "error.h"
@@ -43,6 +37,39 @@
 #include "reliable.h"
 
 #include "memdbg.h"
+
+/*
+ * verify that test - base < extent while allowing for base or test wraparound
+ */
+static inline bool
+reliable_pid_in_range (const packet_id_type test,
+		       const packet_id_type base,
+		       const unsigned int extent)
+{
+  if (test >= base)
+    {
+      if (test - base < extent)
+	return true;
+    }
+  else
+    {      
+      const packet_id_type be = base + extent;
+      if (test < be && be < base)
+	return true;
+    }
+
+  return false;
+}
+
+/*
+ * verify that p1 < p2  while allowing for p1 or p2 wraparound
+ */
+static inline bool
+reliable_pid_min (const packet_id_type p1,
+		  const packet_id_type p2)
+{
+  return !reliable_pid_in_range (p1, p2, 0x80000000);
+}
 
 /* check if a particular packet_id is present in ack */
 static inline bool
@@ -336,7 +363,7 @@ reliable_not_replay (const struct reliable *rel, packet_id_type id)
 {
   struct gc_arena gc = gc_new ();
   int i;
-  if (id < rel->packet_id)
+  if (reliable_pid_min (id, rel->packet_id))
     goto bad;
   for (i = 0; i < rel->size; ++i)
     {
@@ -358,18 +385,17 @@ bool
 reliable_wont_break_sequentiality (const struct reliable *rel, packet_id_type id)
 {
   struct gc_arena gc = gc_new ();
-  int ret;
 
-  if ((int)id < (int)rel->packet_id + rel->size)
-    {
-      ret = true;
-    }
-  else
+  const int ret = reliable_pid_in_range (id, rel->packet_id, rel->size);
+
+  if (!ret)
     {
       dmsg (D_REL_LOW, "ACK " packet_id_format " breaks sequentiality: %s",
 	   (packet_id_print_type)id, reliable_print_ids (rel, &gc));
-      ret = false;
     }
+
+  dmsg (D_REL_DEBUG, "ACK RWBS rel->size=%d rel->packet_id=%08x id=%08x ret=%d\n", rel->size, rel->packet_id, id, ret);
+
   gc_free (&gc);
   return ret;
 }
@@ -407,7 +433,7 @@ reliable_get_buf_output_sequenced (struct reliable *rel)
       const struct reliable_entry *e = &rel->array[i];
       if (e->active)
 	{
-	  if (!min_id_defined || e->packet_id < min_id)
+	  if (!min_id_defined || reliable_pid_min (e->packet_id, min_id))
 	    {
 	      min_id_defined = true;
 	      min_id = e->packet_id;
@@ -415,7 +441,7 @@ reliable_get_buf_output_sequenced (struct reliable *rel)
 	}
     }
 
-  if (!min_id_defined || (int)(rel->packet_id - min_id) < rel->size)
+  if (!min_id_defined || reliable_pid_in_range (rel->packet_id, min_id, rel->size))
     {
       ret = reliable_get_buf (rel);
     }
@@ -502,7 +528,7 @@ reliable_send (struct reliable *rel, int *opcode)
       struct reliable_entry *e = &rel->array[i];
       if (e->active && local_now >= e->next_try)
 	{
-	  if (!best || e->packet_id < best->packet_id)
+	  if (!best || reliable_pid_min (e->packet_id, best->packet_id))
 	    best = e;
 	}
     }
@@ -598,7 +624,7 @@ reliable_mark_active_incoming (struct reliable *rel, struct buffer *buf,
 	  e->packet_id = pid;
 
 	  /* check for replay */
-	  ASSERT (pid >= rel->packet_id);
+	  ASSERT (!reliable_pid_min (pid, rel->packet_id));
 
 	  e->opcode = opcode;
 	  e->next_try = 0;

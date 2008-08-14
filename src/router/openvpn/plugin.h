@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -116,7 +116,7 @@ struct plugin_list *plugin_list_inherit (const struct plugin_list *src);
 
 int plugin_call (const struct plugin_list *pl,
 		 const int type,
-		 const char *args,
+		 const struct argv *av,
 		 struct plugin_return *pr,
 		 struct env_set *es);
 
@@ -168,7 +168,7 @@ plugin_defined (const struct plugin_list *pl, const int type)
 static inline int
 plugin_call (const struct plugin_list *pl,
 	     const int type,
-	     const char *args,
+	     const struct argv *av,
 	     struct plugin_return *pr,
 	     struct env_set *es)
 {

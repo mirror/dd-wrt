@@ -27,13 +27,18 @@
  * LITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
  * THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#include "syshead.h"
+
+#ifdef WIN32
+
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include <windows.h>
 #include <wincrypt.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
 
 #ifdef __MINGW32_VERSION
 /* MinGW w32api is incomplete when it comes to CryptoAPI, as per version 3.1
@@ -364,7 +369,7 @@ int SSL_CTX_use_CryptoAPI_certificate(SSL_CTX *ssl_ctx, const char *cert_prop)
     }
 
     /* cert_context->pbCertEncoded is the cert X509 DER encoded. */
-    cert = d2i_X509(NULL, (unsigned char **) &cd->cert_context->pbCertEncoded,
+    cert = d2i_X509(NULL, (const unsigned char **) &cd->cert_context->pbCertEncoded,
 		    cd->cert_context->cbCertEncoded);
     if (cert == NULL) {
 	SSLerr(SSL_F_SSL_CTX_USE_CERTIFICATE_FILE, ERR_R_ASN1_LIB);
@@ -461,3 +466,7 @@ int SSL_CTX_use_CryptoAPI_certificate(SSL_CTX *ssl_ctx, const char *cert_prop)
     }
     return 0;
 }
+
+#else
+static void dummy (void) {}
+#endif				/* WIN32 */
