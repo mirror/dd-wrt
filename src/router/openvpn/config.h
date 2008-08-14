@@ -100,7 +100,7 @@
 /* Define to 1 if you have the `ENGINE_register_all_complete' function. */
 #define HAVE_ENGINE_REGISTER_ALL_COMPLETE 1
 
-/* Define to 1 if you have the `epoll_create' function. */
+/* epoll_create function is defined */
 #define HAVE_EPOLL_CREATE 1
 
 /* Define to 1 if you have the <errno.h> header file. */
@@ -111,6 +111,9 @@
 
 /* Define to 1 if you have the `EVP_CIPHER_CTX_set_key_length' function. */
 #define HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH 1
+
+/* Define to 1 if you have the `execve' function. */
+#define HAVE_EXECVE 1
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
@@ -220,6 +223,9 @@
 /* Define to 1 if you have the <net/if_tun.h> header file. */
 /* #undef HAVE_NET_IF_TUN_H */
 
+/* Define to 1 if you have the <net/tun/if_tun.h> header file. */
+/* #undef HAVE_NET_TUN_IF_TUN_H */
+
 /* Define to 1 if you have the `nice' function. */
 #define HAVE_NICE 1
 
@@ -255,6 +261,9 @@
 
 /* Define to 1 if you have the <resolv.h> header file. */
 #define HAVE_RESOLV_H 1
+
+/* Indicates if res_init is available */
+#define HAVE_RES_INIT 1
 
 /* Define to 1 if you have the `select' function. */
 #define HAVE_SELECT 1
@@ -419,13 +428,13 @@
 #define PACKAGE_NAME "OpenVPN"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "OpenVPN 2.1_rc7"
+#define PACKAGE_STRING "OpenVPN 2.1_rc9"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "openvpn"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "2.1_rc7"
+#define PACKAGE_VERSION "2.1_rc9"
 
 /* Define to the necessary symbol if this constant uses a non-standard name on
    your system. */
@@ -449,11 +458,23 @@
 /* Enable strict options check between peers */
 /* #undef STRICT_OPTIONS_CHECK */
 
+/* The TAP-Win32 id defined in tap-win32/SOURCES */
+#define TAP_ID "tap0901"
+
+/* The TAP-Win32 version number is defined in tap-win32/SOURCES */
+#define TAP_WIN32_MIN_MAJOR 9
+
+/* The TAP-Win32 version number is defined in tap-win32/SOURCES */
+#define TAP_WIN32_MIN_MINOR 1
+
 /* A string representing our target */
 #define TARGET_ALIAS "mipsel-unknown-linux-gnu"
 
 /* Are we running on Mac OS X? */
 /* #undef TARGET_DARWIN */
+
+/* Are we running on DragonFlyBSD? */
+/* #undef TARGET_DRAGONFLY */
 
 /* Are we running on FreeBSD? */
 /* #undef TARGET_FREEBSD */
@@ -470,6 +491,9 @@
 /* Are we running on Solaris? */
 /* #undef TARGET_SOLARIS */
 
+/* Are we running WIN32? */
+/* #undef TARGET_WIN32 */
+
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #define TIME_WITH_SYS_TIME 1
 
@@ -478,6 +502,9 @@
 
 /* Use libdl for dynamic library loading */
 /* #undef USE_LIBDL */
+
+/* Use LoadLibrary to load DLLs on Windows */
+/* #undef USE_LOAD_LIBRARY */
 
 /* Use LZO compression library */
 #define USE_LZO 1
@@ -495,7 +522,7 @@
 /* #undef USE_VALGRIND */
 
 /* Version number of package */
-#define VERSION "2.1_rc7"
+#define VERSION "2.1_rc9"
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */

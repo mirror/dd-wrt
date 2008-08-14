@@ -47,6 +47,7 @@
 #include "plugin.h"
 #include "manage.h"
 #include "pf.h"
+#include "ping.h"
 
 /*
  * Our global key schedules, packaged thusly
