@@ -1729,6 +1729,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 			     menuname[i][j + 1]);
 		}
 #ifdef HAVE_HTTPS		//until https will allow upgrade and backup
+#ifdef HAVE_MATRIXSSL
 	      else if ((strlen (menu[i][j]) != 0) && (do_ssl)
 		       &&
 		       ((!strcmp (menu[i][j], "Upgrade.asp")
@@ -1741,6 +1742,7 @@ ej_do_menu (webs_t wp, int argc, char_t ** argv)
 			     menuname[i][j + 1]);
 		  websWrite (wp, "      \n//]]>\n</script>\n");
 		}
+#endif
 #endif
 #ifdef HAVE_MADWIFI
 	      else if (strlen (menu[i][j])
