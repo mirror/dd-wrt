@@ -311,8 +311,8 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 			writel(0x7FF, (ulong)regs + 0x200);
 			udelay(1);
 		}
-				/* PRxxxx: War for 5354 failures. */
-		if (sb_corerev(sbh) == 1) {
+		/* War for 5354 failures. */
+		if ((sb_corerev(sbh) == 2) && (sb_chip(sbh) == BCM5354_CHIP_ID)) {
 			uint32 tmp;
 
 			/* Change Flush control reg */
