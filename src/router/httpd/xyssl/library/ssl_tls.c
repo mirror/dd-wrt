@@ -1326,6 +1326,7 @@ int ssl_read( ssl_context *ssl, unsigned char *buf, int *len )
 {
     int ret, n;
 
+    if( ssl->state != SSL_HANDSHAKE_OVER )
     if( ( ret = ssl_handshake( ssl ) ) != 0 )
         return( ret );
 
@@ -1356,6 +1357,7 @@ int ssl_read( ssl_context *ssl, unsigned char *buf, int *len )
 {
     int ret, n;
                                                                                                                              
+    if( ssl->state != SSL_HANDSHAKE_OVER )
     if( ( ret = ssl_handshake( ssl ) ) != 0 )
         return( ret );
                                                                                                                              
@@ -1394,6 +1396,7 @@ int ssl_read_line( ssl_context *ssl, unsigned char *buf, int *len )
     memset(cur_para, 0, sizeof(cur_para));
     memset(buf, 0, strlen(buf));
                                                                                                                              
+    if( ssl->state != SSL_HANDSHAKE_OVER )
     if( ( ret = ssl_handshake( ssl ) ) != 0 )
         return( ret );
                                                                                                                              
@@ -1465,9 +1468,10 @@ int ssl_write( ssl_context *ssl, unsigned char *buf, int len )
 #endif
 int _ssl_write( ssl_context *ssl, unsigned char *buf, int len )
 {
-    int ret, n;
+    int ret=0, n;
                                                                                                                              
-    ret = ssl_handshake( ssl );
+    if( ssl->state != SSL_HANDSHAKE_OVER )
+	ret = ssl_handshake( ssl );
                                                                                                                              
     while( ssl->out_uoff < len && ret == 0 )
     {
