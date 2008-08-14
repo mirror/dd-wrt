@@ -197,6 +197,7 @@
 #define	DEVID5395	0x95	/*  5395 */
 #define	DEVID5397	0x97	/*  5397 */
 #define	DEVID5398	0x98	/*  5398 */
+#define DEVID53115	0x3115	/*  53115 */
 
 /* VLAN page registers */
 #define REG_VLAN_CTRL0	0x00	/* VLAN Control 0 register */
@@ -665,6 +666,8 @@ static dev_ops_t mdcmdio = {
 	"MII (MDC/MDIO)"
 };
 
+int iswrt610n=0;
+
 /* High level switch configuration functions. */
 
 /* Get access to the RoboSwitch */
@@ -756,18 +759,27 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 			nvram_set("switch_type", "BCM5397");
 		else if(robo->devid == DEVID5325)
 			nvram_set("switch_type", "BCM5325");
+		else if(robo->devid == DEVID53115)
+			nvram_set("switch_type", "BCM53115S");
 		else
 			nvram_set("switch_type", "unknown");						
 
 	if ((robo->devid == DEVID5395) ||
 	    (robo->devid == DEVID5397) ||
-	    (robo->devid == DEVID5398)) {
+	    (robo->devid == DEVID5398) ||
+	    (robo->devid == DEVID53115)) { /*-- wuzh add for Chip 53115S 2008-3-21 --*/ 
 		uint8 srst_ctrl;
 
 		/* If it is a 539x switch, use the soft reset register */
 		printk("%s: Resetting 539x robo switch\n", __FUNCTION__);
 
 		/* Reset the 539x switch core and register file */
+		char *boothwmodel=nvram_get("boot_hw_model");
+		if (boothwmodel && !strcmp(boothwmodel,"WRT610N"))
+		    iswrt610n=1;
+		    
+
+
 		srst_ctrl = 0x83;
 		mii_wreg(robo, PAGE_CTRL, REG_CTRL_SRST, &srst_ctrl, sizeof(uint8));
 //	+++ Gemtek, For reset issue			
@@ -821,7 +833,8 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 	ASSERT((robo->devid == DEVID5325) ||
 	       (robo->devid == DEVID5395) ||
 	       (robo->devid == DEVID5397) ||
-	       (robo->devid == DEVID5398));
+	       (robo->devid == DEVID5398) ||
+	       (robo->devid == DEVID53115) );   /*-- wuzh add DEVID3115 for Chip 53115S 2008-3-21 --*/
 
 	return robo;
 
@@ -942,11 +955,18 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 
 	/* setup global vlan configuration */
 	/* VLAN Control 0 Register (Page 0x34, Address 0) */
-	val8 = ((1 << 7) |		/* enable 802.1Q VLAN */
+	val8 = 0;
+if (iswrt610n)
+	{
+	robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
+	}
+	val8 |= ((1 << 7) |		/* enable 802.1Q VLAN */
 	        (3 << 5));		/* individual VLAN learning mode */
 	robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
 
 // +++ Gemtek, Fix Bridge Looping issue
+
+//if (iswrt610n)
 	robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL1, &val8, sizeof(val8));		
 // --- Gemtek, Fix Bridge Looping issue
 
@@ -986,11 +1006,17 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 				     arl_entry, ETHER_ADDR_LEN);
 
 		/* VLAN Control 4 Register (Page 0x34, Address 4) */
-		val8 = (1 << 6);		/* drop frame with VID violation */
+		val8 = 0;
+if (iswrt610n)
+		robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL4, &val8, sizeof(val8));
+		val8 |= (1 << 6);		/* drop frame with VID violation */
 		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL4, &val8, sizeof(val8));
 
 		/* VLAN Control 5 Register (Page 0x34, Address 5) */
-		val8 = (1 << 3);		/* drop frame when miss V table */
+		val8 = 0;
+if (iswrt610n)
+		robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL5, &val8, sizeof(val8));
+		val8 |= (1 << 3);		/* drop frame when miss V table */
 		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL5, &val8, sizeof(val8));
 
 		pdesc = pdesc25;
@@ -1176,6 +1202,10 @@ vlan_setup:
 			uint8 vtble, vtbli, vtbla;
 
 			if (robo->devid == DEVID5395) {
+				vtble = REG_VTBL_ENTRY_5395;
+				vtbli = REG_VTBL_INDX_5395;
+				vtbla = REG_VTBL_ACCESS_5395;
+			} else if (robo->devid == DEVID53115) {
 				vtble = REG_VTBL_ENTRY_5395;
 				vtbli = REG_VTBL_INDX_5395;
 				vtbla = REG_VTBL_ACCESS_5395;
