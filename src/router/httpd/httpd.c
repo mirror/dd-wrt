@@ -1207,7 +1207,7 @@ main (int argc, char **argv)
       {
 #ifdef HAVE_HTTPS
       case 'S':
-#if defined(HAVE_OPENSSL) || defined(HAVE_MATRIXSSL)
+#if defined(HAVE_OPENSSL) || defined(HAVE_MATRIXSSL) || defined(HAVE_XYSSL)
 	do_ssl = 1;
 	server_port = DEFAULT_HTTPS_PORT;
 	strcpy (pid_file, "/var/run/httpsd.pid");
