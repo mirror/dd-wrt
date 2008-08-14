@@ -2650,8 +2650,8 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	      else
 		ofs = 5.000f;
 	      ofs += (float) (chanlist[i] * 0.005f);
-	      if (i == 13)	//ch = i+1, e.g. i=0 ch=1; i=13 ch=14
-		ofs = 2.484f;	//ch 14 is 2.484, not 2.477 GHz
+	      if (i == 13 && chancount == 14)	//ch = i+1, e.g. i=0 ch=1; i=13 ch=14; BG band only
+		ofs = 2.484f;	//fix: ch 14 is 2.484, not 2.477 GHz
 	      websWrite (wp, ", \"%0.3f\"", ofs);
 	    }
 	  websWrite (wp, ");\n");
