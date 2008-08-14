@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -22,12 +22,6 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
-
 #include "syshead.h"
 
 #if P2MP_SERVER
@@ -41,6 +35,7 @@
 #include "memdbg.h"
 
 #include "forward-inline.h"
+#include "pf-inline.h"
 
 /*#define MULTI_DEBUG_EVENT_LOOP*/
 
@@ -52,6 +47,16 @@ id (struct multi_instance *mi)
     return tls_common_name (mi->context.c2.tls_multi, false);
   else
     return "NULL";
+}
+#endif
+
+#ifdef MANAGEMENT_DEF_AUTH
+static void
+set_cc_config (struct multi_instance *mi, struct buffer_list *cc_config)
+{
+  if (mi->cc_config)
+    buffer_list_free (mi->cc_config);
+  mi->cc_config = cc_config;
 }
 #endif
 
@@ -80,36 +85,33 @@ learn_address_script (const struct multi_context *m,
 
   if (plugin_defined (plugins, OPENVPN_PLUGIN_LEARN_ADDRESS))
     {
-      struct buffer cmd = alloc_buf_gc (256, &gc);
-
-      buf_printf (&cmd, "\"%s\" \"%s\"",
-		  op,
-		  mroute_addr_print (addr, &gc));
+      struct argv argv = argv_new ();
+      argv_printf (&argv, "%s %s",
+		   op,
+		   mroute_addr_print (addr, &gc));
       if (mi)
-	buf_printf (&cmd, " \"%s\"", tls_common_name (mi->context.c2.tls_multi, false));
-
-      if (plugin_call (plugins, OPENVPN_PLUGIN_LEARN_ADDRESS, BSTR (&cmd), NULL, es))
+	argv_printf_cat (&argv, "%s", tls_common_name (mi->context.c2.tls_multi, false));
+      if (plugin_call (plugins, OPENVPN_PLUGIN_LEARN_ADDRESS, &argv, NULL, es) != OPENVPN_PLUGIN_FUNC_SUCCESS)
 	{
 	  msg (M_WARN, "WARNING: learn-address plugin call failed");
 	  ret = false;
 	}
+      argv_reset (&argv);
     }
 
   if (m->top.options.learn_address_script)
     {
-      struct buffer cmd = alloc_buf_gc (256, &gc);
-
+      struct argv argv = argv_new ();
       setenv_str (es, "script_type", "learn-address");
-
-      buf_printf (&cmd, "%s \"%s\" \"%s\"",
-		  m->top.options.learn_address_script,
-		  op,
-		  mroute_addr_print (addr, &gc));
+      argv_printf (&argv, "%s %s %s",
+		   m->top.options.learn_address_script,
+		   op,
+		   mroute_addr_print (addr, &gc));
       if (mi)
-	buf_printf (&cmd, " \"%s\"", tls_common_name (mi->context.c2.tls_multi, false));
-
-      if (!system_check (BSTR (&cmd), es, S_SCRIPT, "WARNING: learn-address command failed"))
+	argv_printf_cat (&argv, "%s", tls_common_name (mi->context.c2.tls_multi, false));
+      if (!openvpn_execve_check (&argv, es, S_SCRIPT, "WARNING: learn-address command failed"))
 	ret = false;
+      argv_reset (&argv);
     }
 
   gc_free (&gc);
@@ -204,6 +206,25 @@ reap_buckets_per_pass (int n_buckets)
   return constrain_int (n_buckets / REAP_DIVISOR, REAP_MIN, REAP_MAX);
 }
 
+#ifdef MANAGEMENT_DEF_AUTH
+
+static uint32_t
+cid_hash_function (const void *key, uint32_t iv)
+{
+  const unsigned long *k = (const unsigned long *)key;
+  return (uint32_t) *k;
+}
+
+static bool
+cid_compare_function (const void *key1, const void *key2)
+{
+  const unsigned long *k1 = (const unsigned long *)key1;
+  const unsigned long *k2 = (const unsigned long *)key2;
+  return *k1 == *k2;
+}
+
+#endif
+
 /*
  * Main initialization function, init multi_context object.
  */
@@ -235,6 +256,7 @@ multi_init (struct multi_context *m, struct context *t, bool tcp_mode, int threa
    * which is seen on the TCP/UDP socket.
    */
   m->hash = hash_init (t->options.real_hash_size,
+		       get_random (),
 		       mroute_addr_hash_function,
 		       mroute_addr_compare_function);
 
@@ -243,6 +265,7 @@ multi_init (struct multi_context *m, struct context *t, bool tcp_mode, int threa
    * which client to route a packet to. 
    */
   m->vhash = hash_init (t->options.virtual_hash_size,
+			get_random (),
 			mroute_addr_hash_function,
 			mroute_addr_compare_function);
 
@@ -252,8 +275,16 @@ multi_init (struct multi_context *m, struct context *t, bool tcp_mode, int threa
    * for fast iteration through the list.
    */
   m->iter = hash_init (1,
+		       get_random (),
 		       mroute_addr_hash_function,
 		       mroute_addr_compare_function);
+
+#ifdef MANAGEMENT_DEF_AUTH
+  m->cid_hash = hash_init (t->options.real_hash_size,
+			   0,
+			   cid_hash_function,
+			   cid_compare_function);
+#endif
 
   /*
    * This is our scheduler, for time-based wakeup
@@ -379,6 +410,15 @@ ungenerate_prefix (struct multi_instance *mi)
   set_prefix (mi);
 }
 
+static const char *
+mi_prefix (const struct multi_instance *mi)
+{
+  if (mi && mi->msg_prefix)
+    return mi->msg_prefix;
+  else
+    return "UNDEF_I";
+}
+
 /*
  * Tell the route helper about deleted iroutes so
  * that it can update its mask of currently used
@@ -425,23 +465,23 @@ multi_client_disconnect_script (struct multi_context *m,
 
       if (plugin_defined (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_DISCONNECT))
 	{
-	  if (plugin_call (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_DISCONNECT, NULL, NULL, mi->context.c2.es))
+	  if (plugin_call (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_DISCONNECT, NULL, NULL, mi->context.c2.es) != OPENVPN_PLUGIN_FUNC_SUCCESS)
 	    msg (M_WARN, "WARNING: client-disconnect plugin call failed");
 	}
 
       if (mi->context.options.client_disconnect_script)
 	{
-	  struct gc_arena gc = gc_new ();
-	  struct buffer cmd = alloc_buf_gc (256, &gc);
-
+	  struct argv argv = argv_new ();
 	  setenv_str (mi->context.c2.es, "script_type", "client-disconnect");
-	  
-	  buf_printf (&cmd, "%s", mi->context.options.client_disconnect_script);
-
-	  system_check (BSTR (&cmd), mi->context.c2.es, S_SCRIPT, "client-disconnect command failed");
-	  
-	  gc_free (&gc);
+	  argv_printf (&argv, "%s", mi->context.options.client_disconnect_script);
+	  openvpn_execve_check (&argv, mi->context.c2.es, S_SCRIPT, "client-disconnect command failed");
+	  argv_reset (&argv);
 	}
+#ifdef MANAGEMENT_DEF_AUTH
+      if (management)
+	management_notify_client_close (management, &mi->context.c2.mda_context, mi->context.c2.es);
+#endif
+
     }
 }
 
@@ -473,6 +513,12 @@ multi_close_instance (struct multi_context *m,
 	{
 	  ASSERT (hash_remove (m->iter, &mi->real));
 	}
+#ifdef MANAGEMENT_DEF_AUTH
+      if (mi->did_cid_hash)
+	{
+	  ASSERT (hash_remove (m->cid_hash, &mi->context.c2.mda_context.cid));
+	}
+#endif
 
       schedule_remove_entry (m->schedule, (struct schedule_entry *) mi);
 
@@ -489,6 +535,10 @@ multi_close_instance (struct multi_context *m,
 
       mbuf_dereference_instance (m->mbuf, mi);
     }
+
+#ifdef MANAGEMENT_DEF_AUTH
+  set_cc_config (mi, NULL);
+#endif
 
   multi_client_disconnect_script (m, mi);
 
@@ -541,6 +591,9 @@ multi_uninit (struct multi_context *m)
 	  hash_free (m->hash);
 	  hash_free (m->vhash);
 	  hash_free (m->iter);
+#ifdef MANAGEMENT_DEF_AUTH
+	  hash_free (m->cid_hash);
+#endif
 	  m->hash = NULL;
 
 	  schedule_free (m->schedule);
@@ -610,6 +663,13 @@ multi_create_instance (struct multi_context *m, const struct mroute_addr *real)
       goto err;
     }
   mi->did_iter = true;
+
+#ifdef MANAGEMENT_DEF_AUTH
+  do {
+    mi->context.c2.mda_context.cid = m->cid_counter++;
+  } while (!hash_add (m->cid_hash, &mi->context.c2.mda_context.cid, mi, false));
+  mi->did_cid_hash = true;
+#endif
 
   mi->context.c2.push_reply_deferred = true;
 
@@ -986,7 +1046,8 @@ static struct multi_instance *
 multi_learn_in_addr_t (struct multi_context *m,
 		       struct multi_instance *mi,
 		       in_addr_t a,
-		       int netbits) /* -1 if host route, otherwise # of network bits in address */
+		       int netbits, /* -1 if host route, otherwise # of network bits in address */
+		       bool primary)
 {
   struct openvpn_sockaddr remote_si;
   struct mroute_addr addr;
@@ -1001,7 +1062,15 @@ multi_learn_in_addr_t (struct multi_context *m,
       addr.type |= MR_WITH_NETBITS;
       addr.netbits = (uint8_t) netbits;
     }
-  return multi_learn_addr (m, mi, &addr, 0);
+
+  {
+    struct multi_instance *owner = multi_learn_addr (m, mi, &addr, 0);
+#ifdef MANAGEMENT_DEF_AUTH
+    if (management && owner)
+      management_learn_addr (management, &mi->context.c2.mda_context, &addr, primary);
+#endif
+    return owner;
+  }
 }
 
 /*
@@ -1031,7 +1100,7 @@ multi_add_iroutes (struct multi_context *m,
 
 	  mroute_helper_add_iroute (m->route_helper, ir);
       
-	  multi_learn_in_addr_t (m, mi, ir->network, ir->netbits);
+	  multi_learn_in_addr_t (m, mi, ir->network, ir->netbits, false);
 	}
     }
   gc_free (&gc);
@@ -1258,12 +1327,52 @@ multi_client_connect_post_plugin (struct multi_context *m,
       for (i = 0; i < config.n; ++i)
 	{
 	  if (config.list[i] && config.list[i]->value)
-	    options_plugin_import (&mi->context.options,
+	    options_string_import (&mi->context.options,
 				   config.list[i]->value,
 				   D_IMPORT_ERRORS|M_OPTERR,
 				   option_permissions_mask,
 				   option_types_found,
 				   mi->context.c2.es);
+	}
+
+      /*
+       * If the --client-connect script generates a config file
+       * with an --ifconfig-push directive, it will override any
+       * --ifconfig-push directive from the --client-config-dir
+       * directory or any --ifconfig-pool dynamic address.
+       */
+      multi_select_virtual_addr (m, mi);
+      multi_set_virtual_addr_env (m, mi);
+    }
+}
+
+#endif
+
+#ifdef MANAGEMENT_DEF_AUTH
+
+/*
+ * Called to load management-derived client-connect config
+ */
+static void
+multi_client_connect_mda (struct multi_context *m,
+			  struct multi_instance *mi,
+			  const struct buffer_list *config,
+			  unsigned int option_permissions_mask,
+			  unsigned int *option_types_found)
+{
+  if (config)
+    {
+      struct buffer_entry *be;
+  
+      for (be = config->head; be != NULL; be = be->next)
+	{
+	  const char *opt = BSTR(&be->buf);
+	  options_string_import (&mi->context.options,
+				 opt,
+				 D_IMPORT_ERRORS|M_OPTERR,
+				 option_permissions_mask,
+				 option_types_found,
+				 mi->context.c2.es);
 	}
 
       /*
@@ -1316,7 +1425,7 @@ multi_client_connect_setenv (struct multi_context *m,
 static void
 multi_connection_established (struct multi_context *m, struct multi_instance *mi)
 {
-  if (tls_authenticated (mi->context.c2.tls_multi))
+  if (tls_authentication_status (mi->context.c2.tls_multi, 0) == TLS_AUTHENTICATION_SUCCEEDED)
     {
       struct gc_arena gc = gc_new ();
       unsigned int option_types_found = 0;
@@ -1406,11 +1515,11 @@ multi_connection_established (struct multi_context *m, struct multi_instance *mi
       /* deprecated callback, use a file for passing back return info */
       if (plugin_defined (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT))
 	{
-	  const char *dc_file = create_temp_filename (mi->context.options.tmp_dir, &gc);
-
+	  struct argv argv = argv_new ();
+	  const char *dc_file = create_temp_filename (mi->context.options.tmp_dir, "cc", &gc);
+	  argv_printf (&argv, "%s", dc_file);
 	  delete_file (dc_file);
-
-	  if (plugin_call (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT, dc_file, NULL, mi->context.c2.es))
+	  if (plugin_call (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT, &argv, NULL, mi->context.c2.es) != OPENVPN_PLUGIN_FUNC_SUCCESS)
 	    {
 	      msg (M_WARN, "WARNING: client-connect plugin call failed");
 	      cc_succeeded = false;
@@ -1420,6 +1529,7 @@ multi_connection_established (struct multi_context *m, struct multi_instance *mi
 	      multi_client_connect_post (m, mi, dc_file, option_permissions_mask, &option_types_found);
 	      ++cc_succeeded_count;
 	    }
+	  argv_reset (&argv);
 	}
 
       /* V2 callback, use a plugin_return struct for passing back return info */
@@ -1429,7 +1539,7 @@ multi_connection_established (struct multi_context *m, struct multi_instance *mi
 
 	  plugin_return_init (&pr);
 
-	  if (plugin_call (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT_V2, NULL, &pr, mi->context.c2.es))
+	  if (plugin_call (mi->context.plugins, OPENVPN_PLUGIN_CLIENT_CONNECT_V2, NULL, &pr, mi->context.c2.es) != OPENVPN_PLUGIN_FUNC_SUCCESS)
 	    {
 	      msg (M_WARN, "WARNING: client-connect-v2 plugin call failed");
 	      cc_succeeded = false;
@@ -1449,27 +1559,40 @@ multi_connection_established (struct multi_context *m, struct multi_instance *mi
        */
       if (mi->context.options.client_connect_script && cc_succeeded)
 	{
-	  struct buffer cmd = alloc_buf_gc (256, &gc);
+	  struct argv argv = argv_new ();
 	  const char *dc_file = NULL;
 
 	  setenv_str (mi->context.c2.es, "script_type", "client-connect");
 
-	  dc_file = create_temp_filename (mi->context.options.tmp_dir, &gc);
+	  dc_file = create_temp_filename (mi->context.options.tmp_dir, "cc", &gc);
 
 	  delete_file (dc_file);
 
-	  buf_printf (&cmd, "%s %s",
-		      mi->context.options.client_connect_script,
-		      dc_file);
+	  argv_printf (&argv, "%s %s",
+		       mi->context.options.client_connect_script,
+		       dc_file);
 
-	  if (system_check (BSTR (&cmd), mi->context.c2.es, S_SCRIPT, "client-connect command failed"))
+	  if (openvpn_execve_check (&argv, mi->context.c2.es, S_SCRIPT, "client-connect command failed"))
 	    {
 	      multi_client_connect_post (m, mi, dc_file, option_permissions_mask, &option_types_found);
 	      ++cc_succeeded_count;
 	    }
 	  else
 	    cc_succeeded = false;
+
+	  argv_reset (&argv);
 	}
+
+      /*
+       * Check for client-connect script left by management interface client
+       */
+#ifdef MANAGEMENT_DEF_AUTH
+      if (cc_succeeded && mi->cc_config)
+	{
+	  multi_client_connect_mda (m, mi, mi->cc_config, option_permissions_mask, &option_types_found);
+	  ++cc_succeeded_count;
+	}
+#endif
 
       /*
        * Check for "disable" directive in client-config-dir file
@@ -1518,7 +1641,7 @@ multi_connection_established (struct multi_context *m, struct multi_instance *mi
 	    {
 	      if (mi->context.c2.push_ifconfig_defined)
 		{
-		  multi_learn_in_addr_t (m, mi, mi->context.c2.push_ifconfig_local, -1);
+		  multi_learn_in_addr_t (m, mi, mi->context.c2.push_ifconfig_local, -1, true);
 		  msg (D_MULTI_LOW, "MULTI: primary virtual IP for %s: %s",
 		       multi_instance_string (mi, false, &gc),
 		       print_in_addr_t (mi->context.c2.push_ifconfig_local, 0, &gc));
@@ -1555,6 +1678,11 @@ multi_connection_established (struct multi_context *m, struct multi_instance *mi
 
       /* set flag so we don't get called again */
       mi->connection_established_flag = true;
+
+#ifdef MANAGEMENT_DEF_AUTH
+      if (management)
+	management_connection_established (management, &mi->context.c2.mda_context);
+#endif
 
       gc_free (&gc);
     }
@@ -1609,10 +1737,11 @@ multi_unicast (struct multi_context *m,
 /*
  * Broadcast a packet to all clients.
  */
-void
+static void
 multi_bcast (struct multi_context *m,
 	     const struct buffer *buf,
-	     struct multi_instance *omit)
+	     const struct multi_instance *sender_instance,
+	     const struct mroute_addr *sender_addr)
 {
   struct hash_iterator hi;
   struct hash_element *he;
@@ -1631,8 +1760,34 @@ multi_bcast (struct multi_context *m,
       while ((he = hash_iterator_next (&hi)))
 	{
 	  mi = (struct multi_instance *) he->value;
-	  if (mi != omit && !mi->halt)
-	    multi_add_mbuf (m, mi, mb);
+	  if (mi != sender_instance && !mi->halt)
+	    {
+#ifdef ENABLE_PF
+	      if (sender_instance)
+		{
+		  if (!pf_c2c_test (&sender_instance->context, &mi->context, "bcast_c2c"))
+		    {
+		      msg (D_PF_DROPPED_BCAST, "PF: client[%s] -> client[%s] packet dropped by BCAST packet filter",
+			   mi_prefix (sender_instance),
+			   mi_prefix (mi));
+		      continue;
+		    }
+		}
+	      if (sender_addr)
+		{
+		  if (!pf_addr_test (&mi->context, sender_addr, "bcast_src_addr"))
+		    {
+		      struct gc_arena gc = gc_new ();
+		      msg (D_PF_DROPPED_BCAST, "PF: addr[%s] -> client[%s] packet dropped by BCAST packet filter",
+			   mroute_addr_print_ex (sender_addr, MAPF_SHOW_ARP, &gc),
+			   mi_prefix (mi));
+		      gc_free (&gc);
+		      continue;
+		    }
+		}
+#endif
+	      multi_add_mbuf (m, mi, mb);
+	    }
 	}
 
       hash_iterator_free (&hi);
@@ -1792,6 +1947,8 @@ multi_process_incoming_link (struct multi_context *m, struct multi_instance *ins
 	      /* extract packet source and dest addresses */
 	      mroute_flags = mroute_extract_addr_from_packet (&src,
 							      &dest,
+							      NULL,
+							      NULL,
 							      &c->c2.to_tun,
 							      DEV_TYPE_TUN);
 
@@ -1814,7 +1971,7 @@ multi_process_incoming_link (struct multi_context *m, struct multi_instance *ins
 		  if (mroute_flags & MROUTE_EXTRACT_MCAST)
 		    {
 		      /* for now, treat multicast as broadcast */
-		      multi_bcast (m, &c->c2.to_tun, m->pending);
+		      multi_bcast (m, &c->c2.to_tun, m->pending, NULL);
 		    }
 		  else /* possible client to client routing */
 		    {
@@ -1824,18 +1981,46 @@ multi_process_incoming_link (struct multi_context *m, struct multi_instance *ins
 		      /* if dest addr is a known client, route to it */
 		      if (mi)
 			{
-			  multi_unicast (m, &c->c2.to_tun, mi);
-			  register_activity (c, BLEN(&c->c2.to_tun));
+#ifdef ENABLE_PF
+			  if (!pf_c2c_test (c, &mi->context, "tun_c2c"))
+			    {
+			      msg (D_PF_DROPPED, "PF: client -> client[%s] packet dropped by TUN packet filter",
+				   mi_prefix (mi));
+			    }
+			  else
+#endif
+			    {
+			      multi_unicast (m, &c->c2.to_tun, mi);
+			      register_activity (c, BLEN(&c->c2.to_tun));
+			    }
 			  c->c2.to_tun.len = 0;
 			}
 		    }
 		}
+#ifdef ENABLE_PF
+	      if (c->c2.to_tun.len && !pf_addr_test (c, &dest, "tun_dest_addr"))
+		{
+		  msg (D_PF_DROPPED, "PF: client -> addr[%s] packet dropped by TUN packet filter",
+		       mroute_addr_print_ex (&dest, MAPF_SHOW_ARP, &gc));
+		  c->c2.to_tun.len = 0;
+		}
+#endif
 	    }
 	  else if (TUNNEL_TYPE (m->top.c1.tuntap) == DEV_TYPE_TAP)
 	    {
+#ifdef ENABLE_PF
+	      struct mroute_addr edest;
+	      mroute_addr_reset (&edest);
+#endif
 	      /* extract packet source and dest addresses */
 	      mroute_flags = mroute_extract_addr_from_packet (&src,
 							      &dest,
+							      NULL,
+#ifdef ENABLE_PF
+							      &edest,
+#else
+							      NULL,
+#endif
 							      &c->c2.to_tun,
 							      DEV_TYPE_TAP);
 
@@ -1848,7 +2033,7 @@ multi_process_incoming_link (struct multi_context *m, struct multi_instance *ins
 			{
 			  if (mroute_flags & (MROUTE_EXTRACT_BCAST|MROUTE_EXTRACT_MCAST))
 			    {
-			      multi_bcast (m, &c->c2.to_tun, m->pending);
+			      multi_bcast (m, &c->c2.to_tun, m->pending, NULL);
 			    }
 			  else /* try client-to-client routing */
 			    {
@@ -1857,12 +2042,30 @@ multi_process_incoming_link (struct multi_context *m, struct multi_instance *ins
 			      /* if dest addr is a known client, route to it */
 			      if (mi)
 				{
-				  multi_unicast (m, &c->c2.to_tun, mi);
-				  register_activity (c, BLEN(&c->c2.to_tun));
+#ifdef ENABLE_PF
+				  if (!pf_c2c_test (c, &mi->context, "tap_c2c"))
+				    {
+				      msg (D_PF_DROPPED, "PF: client -> client[%s] packet dropped by TAP packet filter",
+					   mi_prefix (mi));
+				    }
+				  else
+#endif
+				    {
+				      multi_unicast (m, &c->c2.to_tun, mi);
+				      register_activity (c, BLEN(&c->c2.to_tun));
+				    }
 				  c->c2.to_tun.len = 0;
 				}
 			    }
 			}
+#ifdef ENABLE_PF
+		      if (c->c2.to_tun.len && !pf_addr_test (c, &edest, "tap_dest_addr"))
+			{
+			  msg (D_PF_DROPPED, "PF: client -> addr[%s] packet dropped by TAP packet filter",
+			       mroute_addr_print_ex (&edest, MAPF_SHOW_ARP, &gc));
+			  c->c2.to_tun.len = 0;
+			}
+#endif
 		    }
 		  else
 		    {
@@ -1904,6 +2107,20 @@ multi_process_incoming_tun (struct multi_context *m, const unsigned int mpp_flag
       struct mroute_addr src, dest;
       const int dev_type = TUNNEL_TYPE (m->top.c1.tuntap);
 
+#ifdef ENABLE_PF
+      struct mroute_addr esrc, *e1, *e2;
+      if (dev_type == DEV_TYPE_TUN)
+	{
+	  e1 = NULL;
+	  e2 = &src;
+	}
+      else
+	{
+	  e1 = e2 = &esrc;
+	  mroute_addr_reset (&esrc);
+	}
+#endif
+
 #ifdef MULTI_DEBUG_EVENT_LOOP
       printf ("TUN -> TCP/UDP [%d]\n", BLEN (&m->top.c2.buf));
 #endif
@@ -1918,6 +2135,12 @@ multi_process_incoming_tun (struct multi_context *m, const unsigned int mpp_flag
 
       mroute_flags = mroute_extract_addr_from_packet (&src,
 						      &dest,
+#ifdef ENABLE_PF
+						      e1,
+#else
+						      NULL,
+#endif
+						      NULL,
 						      &m->top.c2.buf,
 						      dev_type);
 
@@ -1929,7 +2152,11 @@ multi_process_incoming_tun (struct multi_context *m, const unsigned int mpp_flag
 	  if (mroute_flags & (MROUTE_EXTRACT_BCAST|MROUTE_EXTRACT_MCAST))
 	    {
 	      /* for now, treat multicast as broadcast */
-	      multi_bcast (m, &m->top.c2.buf, NULL);
+#ifdef ENABLE_PF
+	      multi_bcast (m, &m->top.c2.buf, NULL, e2);
+#else
+	      multi_bcast (m, &m->top.c2.buf, NULL, NULL);
+#endif
 	    }
 	  else
 	    {
@@ -1942,17 +2169,28 @@ multi_process_incoming_tun (struct multi_context *m, const unsigned int mpp_flag
 		  
 		  set_prefix (m->pending);
 
-		  if (multi_output_queue_ready (m, m->pending))
+#ifdef ENABLE_PF
+		  if (!pf_addr_test (c, e2, "tun_tap_src_addr"))
 		    {
-		      /* transfer packet pointer from top-level context buffer to instance */
-		      c->c2.buf = m->top.c2.buf;
+		      msg (D_PF_DROPPED, "PF: addr[%s] -> client packet dropped by packet filter",
+			   mroute_addr_print_ex (&src, MAPF_SHOW_ARP, &gc));
+		      buf_reset_len (&c->c2.buf);
 		    }
 		  else
-		    {
-		      /* drop packet */
-		      msg (D_MULTI_DROPPED, "MULTI: packet dropped due to output saturation (multi_process_incoming_tun)");
-		      buf_clear (&c->c2.buf);
-		    }
+#endif
+		  {
+		    if (multi_output_queue_ready (m, m->pending))
+		      {
+			/* transfer packet pointer from top-level context buffer to instance */
+			c->c2.buf = m->top.c2.buf;
+		      }
+		    else
+		      {
+			/* drop packet */
+			msg (D_MULTI_DROPPED, "MULTI: packet dropped due to output saturation (multi_process_incoming_tun)");
+			buf_reset_len (&c->c2.buf);
+		      }
+		  }
 	      
 		  /* encrypt in instance context */
 		  process_incoming_tun (c);
@@ -2086,7 +2324,7 @@ gremlin_flood_clients (struct multi_context *m)
 	ASSERT (buf_write_u8 (&buf, get_random () & 0xFF));
 
       for (i = 0; i < parm.n_packets; ++i)
-	multi_bcast (m, &buf, NULL);
+	multi_bcast (m, &buf, NULL, NULL);
 
       gc_free (&gc);
     }
@@ -2256,6 +2494,86 @@ management_delete_event (void *arg, event_t event)
 
 #endif
 
+#ifdef MANAGEMENT_DEF_AUTH
+
+static struct multi_instance *
+lookup_by_cid (struct multi_context *m, const unsigned long cid)
+{
+  if (m)
+    {
+      struct multi_instance *mi = (struct multi_instance *) hash_lookup (m->cid_hash, &cid);
+      if (mi && !mi->halt)
+	return mi;
+    }
+  return NULL;
+}
+
+static bool
+management_kill_by_cid (void *arg, const unsigned long cid)
+{
+  struct multi_context *m = (struct multi_context *) arg;
+  struct multi_instance *mi = lookup_by_cid (m, cid);
+  if (mi)
+    {
+      multi_signal_instance (m, mi, SIGTERM);
+      return true;
+    }
+  else
+    return false;
+}
+
+static bool
+management_client_auth (void *arg,
+			const unsigned long cid,
+			const unsigned int mda_key_id,
+			const bool auth,
+			const char *reason,
+			struct buffer_list *cc_config) /* ownership transferred */
+{
+  struct multi_context *m = (struct multi_context *) arg;
+  struct multi_instance *mi = lookup_by_cid (m, cid);
+  bool cc_config_owned = true;
+  bool ret = false;
+
+  if (mi)
+    {
+      ret = tls_authenticate_key (mi->context.c2.tls_multi, mda_key_id, auth);
+      if (ret)
+	{
+	  if (auth && !mi->connection_established_flag)
+	    {
+	      set_cc_config (mi, cc_config);
+	      cc_config_owned = false;
+	    }
+	  if (!auth && reason)
+	    msg (D_MULTI_LOW, "MULTI: connection rejected: %s", reason);
+	}
+    }
+  if (cc_config_owned && cc_config)
+    buffer_list_free (cc_config);
+  return ret;
+}
+#endif
+
+#ifdef MANAGEMENT_PF
+static bool
+management_client_pf (void *arg,
+		      const unsigned long cid,
+		      struct buffer_list *pf_config) /* ownership transferred */
+{
+  struct multi_context *m = (struct multi_context *) arg;
+  struct multi_instance *mi = lookup_by_cid (m, cid);
+  bool ret = false;
+
+  if (mi && pf_config)
+    ret = pf_load_from_buffer_list (&mi->context, pf_config);
+
+  if (pf_config)
+    buffer_list_free (pf_config);
+  return ret;
+}
+#endif
+
 void
 init_management_callback_multi (struct multi_context *m)
 {
@@ -2270,6 +2588,13 @@ init_management_callback_multi (struct multi_context *m)
       cb.kill_by_cn = management_callback_kill_by_cn;
       cb.kill_by_addr = management_callback_kill_by_addr;
       cb.delete_event = management_delete_event;
+#ifdef MANAGEMENT_DEF_AUTH
+      cb.kill_by_cid = management_kill_by_cid;
+      cb.client_auth = management_client_auth;
+#endif
+#ifdef MANAGEMENT_PF
+      cb.client_pf = management_client_pf;
+#endif
       management_set_callback (management, &cb);
     }
 #endif
@@ -2289,7 +2614,7 @@ tunnel_server (struct context *top)
 {
   ASSERT (top->options.mode == MODE_SERVER);
 
-  switch (top->options.proto) {
+  switch (top->options.ce.proto) {
   case PROTO_UDPv4:
     tunnel_server_udp (top);
     break;

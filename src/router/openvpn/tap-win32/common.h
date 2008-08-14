@@ -4,7 +4,7 @@
  *
  *  This code was inspired by the CIPE-Win32 driver by Damion K. Wilson.
  *
- *  This source code is Copyright (C) 2002-2007 OpenVPN Solutions LLC,
+ *  This source code is Copyright (C) 2002-2008 Telethra, Inc.,
  *  and is released under the GPL version 2 (see below), however due
  *  to the extra costs of supporting Windows Vista, OpenVPN Solutions
  *  LLC reserves the right to change the terms of the TAP-Win32/TAP-Win64
@@ -32,7 +32,15 @@
 // common to both.
 //===============================================
 
-#include "../autodefs/defs.h"
+#if defined(HAVE_CONFIG_H)
+#include "config.h"
+#else
+#if defined(_MSC_VER) && !defined(TAP_DRIVER_MAJOR_VERSION)
+#include "config-win32.h"
+#else
+#include "../config.h"
+#endif
+#endif
 
 //=============
 // TAP IOCTLs
@@ -81,4 +89,4 @@
 // simultaneously.
 //=========================================================
 
-#define TAP_COMPONENT_ID PRODUCT_TAP_ID
+#define TAP_COMPONENT_ID TAP_ID

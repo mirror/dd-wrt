@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -22,12 +22,6 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
-
 #include "syshead.h"
 
 #if PORT_SHARE
@@ -35,6 +29,7 @@
 #include "event.h"
 #include "socket.h"
 #include "fdmisc.h"
+#include "crypto.h"
 #include "ps.h"
 
 #include "memdbg.h"
@@ -796,6 +791,9 @@ port_share_open (const char *host, const int port)
 
       /* no blocking on control channel back to parent */
       set_nonblock (fd[1]);
+
+      /* initialize prng */
+      prng_init ();
 
       /* execute the event loop */
       port_share_proxy (hostaddr, port, fd[1]);

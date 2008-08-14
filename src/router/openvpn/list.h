@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -57,7 +57,7 @@ struct hash_element
 struct hash_bucket
 {
   MUTEX_DEFINE (mutex);
-  struct hash_element * volatile list;
+  struct hash_element *list;
 };
 
 struct hash
@@ -72,6 +72,7 @@ struct hash
 };
 
 struct hash *hash_init (const int n_buckets,
+			const uint32_t iv,
 			uint32_t (*hash_function)(const void *key, uint32_t iv),
 			bool (*compare_function)(const void *key1, const void *key2));
 

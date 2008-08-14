@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
+ *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -31,15 +31,9 @@
  * to IPSec.
  */
 
-#ifdef WIN32
-#include "config-win32.h"
-#else
-#include "config.h"
-#endif
+#include "syshead.h"
 
 #ifdef USE_CRYPTO
-
-#include "syshead.h"
 
 #include "packet_id.h"
 #include "misc.h"
@@ -215,12 +209,12 @@ packet_id_test (const struct packet_id_rec *p,
     {
       /*
        * In non-backtrack mode, all sequence number series must
-       * begin at 1 and must increment linearly without gaps.
+       * begin at some number n > 0 and must increment linearly without gaps.
        *
        * This mode is used with TCP.
        */
       if (pin->time == p->time)
-	return pin->id == p->id + 1;
+	return !p->id || pin->id == p->id + 1;
       else if (pin->time < p->time) /* if time goes back, reject */
 	return false;
       else                          /* time moved forward */
