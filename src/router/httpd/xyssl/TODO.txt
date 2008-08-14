@@ -1,0 +1,16 @@
+
+
+    Stuff that is being worked on:
+    ==============================
+
+        * Load/stress tests, code audit
+        * X.509 certificate writing
+        * SSL session renegotiation
+        * PKCS#1 v2 padding (TLS 1.1)
+        * Implementing SSH and IPsec
+        * Elliptic Curve Cryptography
+
+    If you have ideas, patches or bug reports,
+    please contact cd1@xyssl.org
+
+

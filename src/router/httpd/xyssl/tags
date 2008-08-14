@@ -1,0 +1,903 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.5.4	//
+AES_FROUND	library/aes.c	634;"	d	file:
+AES_RROUND	library/aes.c	725;"	d	file:
+APPS	programs/Makefile	/^APPS= ssl_client1 ssl_client2 ssl_server$/;"	m
+ASN1_BIT_STRING	include/xyssl/x509.h	51;"	d
+ASN1_BMP_STRING	include/xyssl/x509.h	63;"	d
+ASN1_BOOLEAN	include/xyssl/x509.h	49;"	d
+ASN1_CONSTRUCTED	include/xyssl/x509.h	65;"	d
+ASN1_CONTEXT_SPECIFIC	include/xyssl/x509.h	66;"	d
+ASN1_HASH_MDX	include/xyssl/rsa.h	41;"	d
+ASN1_HASH_SHA1	include/xyssl/rsa.h	45;"	d
+ASN1_IA5_STRING	include/xyssl/x509.h	60;"	d
+ASN1_INTEGER	include/xyssl/x509.h	50;"	d
+ASN1_NULL	include/xyssl/x509.h	53;"	d
+ASN1_OCTET_STRING	include/xyssl/x509.h	52;"	d
+ASN1_OID	include/xyssl/x509.h	54;"	d
+ASN1_PRIMITIVE	include/xyssl/x509.h	64;"	d
+ASN1_PRINTABLE_STRING	include/xyssl/x509.h	58;"	d
+ASN1_SEQUENCE	include/xyssl/x509.h	56;"	d
+ASN1_SET	include/xyssl/x509.h	57;"	d
+ASN1_T61_STRING	include/xyssl/x509.h	59;"	d
+ASN1_UNIVERSAL_STRING	include/xyssl/x509.h	62;"	d
+ASN1_UTC_TIME	include/xyssl/x509.h	61;"	d
+ASN1_UTF8_STRING	include/xyssl/x509.h	55;"	d
+BADCERT_CN_MISMATCH	include/xyssl/x509.h	43;"	d
+BADCERT_HAS_EXPIRED	include/xyssl/x509.h	42;"	d
+BADCERT_NOT_TRUSTED	include/xyssl/x509.h	44;"	d
+BITS_TO_LIMBS	library/bignum.c	46;"	d	file:
+BUFSIZE	programs/benchmark.c	40;"	d	file:
+CFLAGS	VS6.mak	/^CFLAGS=\/O2 \/W3 \/MT \/nologo \/Fo$@ \/DWIN32 \/DSELF_TEST #\/DHAVE_SSE2$/;"	m
+CFLAGS	library/Makefile	/^CFLAGS	= $(DEFINES) -I..\/include\/xyssl -O #-fPIC$/;"	m
+CFLAGS	programs/Makefile	/^CFLAGS	= -I..\/include -O$/;"	m
+CHARS_TO_LIMBS	library/bignum.c	47;"	d	file:
+CHK	include/xyssl/bignum.h	19;"	d
+COLLECT_SIZE	include/xyssl/havege.h	11;"	d
+CTLEN	library/rsa.c	476;"	d	file:
+D	include/xyssl/rsa.h	/^    mpi D;      \/*!<  private exponent  *\/$/;"	m
+DEFINES	library/Makefile	/^DEFINES	= -DHAVE_RDTSC #-DSELF_TEST -DHAVE_RDTSC #-DHAVE_SSE2$/;"	m
+DES3_dec_test	library/des.c	/^static const unsigned char DES3_dec_test[3][8] =$/;"	v	file:
+DES3_enc_test	library/des.c	/^static const unsigned char DES3_enc_test[3][8] =$/;"	v	file:
+DES3_init	library/des.c	/^static const unsigned char DES3_init[8] =$/;"	v	file:
+DES3_keys	library/des.c	/^static const unsigned char DES3_keys[24] =$/;"	v	file:
+DES_FP	library/des.c	256;"	d	file:
+DES_IP	library/des.c	242;"	d	file:
+DES_ROUND	library/des.c	270;"	d	file:
+DHM_MPI_EXPORT	library/dhm.c	125;"	d	file:
+DP	include/xyssl/rsa.h	/^    mpi DP;     \/*!<  D mod (P - 1)     *\/$/;"	m
+DQ	include/xyssl/rsa.h	/^    mpi DQ;     \/*!<  D mod (Q - 1)     *\/$/;"	m
+E	include/xyssl/rsa.h	/^    mpi E;      \/*!<  public exponent   *\/$/;"	m
+EMIT	library/bn_asm.h	374;"	d
+ERR_ASN1_INVALID_DATA	include/xyssl/x509.h	17;"	d
+ERR_ASN1_INVALID_LENGTH	include/xyssl/x509.h	15;"	d
+ERR_ASN1_LENGTH_MISMATCH	include/xyssl/x509.h	16;"	d
+ERR_ASN1_OUT_OF_DATA	include/xyssl/x509.h	13;"	d
+ERR_ASN1_UNEXPECTED_TAG	include/xyssl/x509.h	14;"	d
+ERR_BASE64_BUFFER_TOO_SMALL	include/xyssl/base64.h	11;"	d
+ERR_BASE64_INVALID_CHARACTER	include/xyssl/base64.h	12;"	d
+ERR_DHM_CALC_SECRET_FAILED	include/xyssl/dhm.h	15;"	d
+ERR_DHM_MAKE_PARAMS_FAILED	include/xyssl/dhm.h	12;"	d
+ERR_DHM_MAKE_PUBLIC_FAILED	include/xyssl/dhm.h	14;"	d
+ERR_DHM_READ_PARAMS_FAILED	include/xyssl/dhm.h	11;"	d
+ERR_DHM_READ_PUBLIC_FAILED	include/xyssl/dhm.h	13;"	d
+ERR_MPI_BUFFER_TOO_SMALL	include/xyssl/bignum.h	13;"	d
+ERR_MPI_DIVISION_BY_ZERO	include/xyssl/bignum.h	15;"	d
+ERR_MPI_INVALID_CHARACTER	include/xyssl/bignum.h	11;"	d
+ERR_MPI_INVALID_PARAMETER	include/xyssl/bignum.h	12;"	d
+ERR_MPI_IS_COMPOSITE	include/xyssl/bignum.h	17;"	d
+ERR_MPI_NEGATIVE_VALUE	include/xyssl/bignum.h	14;"	d
+ERR_MPI_NOT_INVERTIBLE	include/xyssl/bignum.h	16;"	d
+ERR_NET_ACCEPT_FAILED	include/xyssl/net.h	16;"	d
+ERR_NET_BIND_FAILED	include/xyssl/net.h	14;"	d
+ERR_NET_CONNECT_FAILED	include/xyssl/net.h	13;"	d
+ERR_NET_CONN_RESET	include/xyssl/net.h	19;"	d
+ERR_NET_LISTEN_FAILED	include/xyssl/net.h	15;"	d
+ERR_NET_RECV_FAILED	include/xyssl/net.h	17;"	d
+ERR_NET_SEND_FAILED	include/xyssl/net.h	18;"	d
+ERR_NET_SOCKET_FAILED	include/xyssl/net.h	12;"	d
+ERR_NET_UNKNOWN_HOST	include/xyssl/net.h	11;"	d
+ERR_NET_WOULD_BLOCK	include/xyssl/net.h	20;"	d
+ERR_RSA_DECRYPT_FAILED	include/xyssl/rsa.h	16;"	d
+ERR_RSA_ENCRYPT_FAILED	include/xyssl/rsa.h	15;"	d
+ERR_RSA_KEYGEN_FAILED	include/xyssl/rsa.h	11;"	d
+ERR_RSA_KEY_CHECK_FAILED	include/xyssl/rsa.h	14;"	d
+ERR_RSA_PRIVATE_FAILED	include/xyssl/rsa.h	13;"	d
+ERR_RSA_PUBLIC_FAILED	include/xyssl/rsa.h	12;"	d
+ERR_RSA_SIGN_FAILED	include/xyssl/rsa.h	17;"	d
+ERR_RSA_VERIFY_FAILED	include/xyssl/rsa.h	18;"	d
+ERR_SSL_BAD_HS_CERTIFICATE	include/xyssl/ssl.h	28;"	d
+ERR_SSL_BAD_HS_CERTIFICATE_REQUEST	include/xyssl/ssl.h	29;"	d
+ERR_SSL_BAD_HS_CERTIFICATE_VERIFY	include/xyssl/ssl.h	33;"	d
+ERR_SSL_BAD_HS_CHANGE_CIPHER_SPEC	include/xyssl/ssl.h	34;"	d
+ERR_SSL_BAD_HS_CLIENT_HELLO	include/xyssl/ssl.h	26;"	d
+ERR_SSL_BAD_HS_CLIENT_KEY_EXCHANGE	include/xyssl/ssl.h	32;"	d
+ERR_SSL_BAD_HS_FINISHED	include/xyssl/ssl.h	35;"	d
+ERR_SSL_BAD_HS_SERVER_HELLO	include/xyssl/ssl.h	27;"	d
+ERR_SSL_BAD_HS_SERVER_HELLO_DONE	include/xyssl/ssl.h	31;"	d
+ERR_SSL_BAD_HS_SERVER_KEY_EXCHANGE	include/xyssl/ssl.h	30;"	d
+ERR_SSL_CA_CHAIN_REQUIRED	include/xyssl/ssl.h	21;"	d
+ERR_SSL_CERTIFICATE_REQUIRED	include/xyssl/ssl.h	19;"	d
+ERR_SSL_CERTIFICATE_TOO_LARGE	include/xyssl/ssl.h	18;"	d
+ERR_SSL_FATAL_ALERT_MESSAGE	include/xyssl/ssl.h	23;"	d
+ERR_SSL_INVALID_MAC	include/xyssl/ssl.h	11;"	d
+ERR_SSL_INVALID_MODULUS_SIZE	include/xyssl/ssl.h	13;"	d
+ERR_SSL_INVALID_RECORD	include/xyssl/ssl.h	12;"	d
+ERR_SSL_NO_CIPHER_CHOSEN	include/xyssl/ssl.h	15;"	d
+ERR_SSL_NO_CLIENT_CERTIFICATE	include/xyssl/ssl.h	17;"	d
+ERR_SSL_NO_SESSION_FOUND	include/xyssl/ssl.h	16;"	d
+ERR_SSL_PEER_CLOSE_NOTIFY	include/xyssl/ssl.h	25;"	d
+ERR_SSL_PEER_VERIFY_FAILED	include/xyssl/ssl.h	24;"	d
+ERR_SSL_PRIVATE_KEY_REQUIRED	include/xyssl/ssl.h	20;"	d
+ERR_SSL_UNEXPECTED_MESSAGE	include/xyssl/ssl.h	22;"	d
+ERR_SSL_UNKNOWN_CIPHER	include/xyssl/ssl.h	14;"	d
+ERR_X509_CERT_INVALID_ALG	include/xyssl/x509.h	23;"	d
+ERR_X509_CERT_INVALID_DATE	include/xyssl/x509.h	25;"	d
+ERR_X509_CERT_INVALID_EXTENSIONS	include/xyssl/x509.h	28;"	d
+ERR_X509_CERT_INVALID_FORMAT	include/xyssl/x509.h	20;"	d
+ERR_X509_CERT_INVALID_NAME	include/xyssl/x509.h	24;"	d
+ERR_X509_CERT_INVALID_PEM	include/xyssl/x509.h	19;"	d
+ERR_X509_CERT_INVALID_PUBKEY	include/xyssl/x509.h	26;"	d
+ERR_X509_CERT_INVALID_SERIAL	include/xyssl/x509.h	22;"	d
+ERR_X509_CERT_INVALID_SIGNATURE	include/xyssl/x509.h	27;"	d
+ERR_X509_CERT_INVALID_VERSION	include/xyssl/x509.h	21;"	d
+ERR_X509_CERT_SIG_MISMATCH	include/xyssl/x509.h	32;"	d
+ERR_X509_CERT_UNKNOWN_PK_ALG	include/xyssl/x509.h	31;"	d
+ERR_X509_CERT_UNKNOWN_SIG_ALG	include/xyssl/x509.h	30;"	d
+ERR_X509_CERT_UNKNOWN_VERSION	include/xyssl/x509.h	29;"	d
+ERR_X509_KEY_INVALID_ENC_IV	include/xyssl/x509.h	36;"	d
+ERR_X509_KEY_INVALID_FORMAT	include/xyssl/x509.h	35;"	d
+ERR_X509_KEY_INVALID_PEM	include/xyssl/x509.h	33;"	d
+ERR_X509_KEY_INVALID_VERSION	include/xyssl/x509.h	34;"	d
+ERR_X509_KEY_PASSWORD_MISMATCH	include/xyssl/x509.h	39;"	d
+ERR_X509_KEY_PASSWORD_REQUIRED	include/xyssl/x509.h	38;"	d
+ERR_X509_KEY_UNKNOWN_ENC_ALG	include/xyssl/x509.h	37;"	d
+ERR_X509_SIG_VERIFY_FAILED	include/xyssl/x509.h	40;"	d
+F	library/md4.c	100;"	d	file:
+F	library/md4.c	121;"	d	file:
+F	library/md4.c	123;"	d	file:
+F	library/md4.c	144;"	d	file:
+F	library/md4.c	146;"	d	file:
+F	library/md4.c	166;"	d	file:
+F	library/md5.c	104;"	d	file:
+F	library/md5.c	123;"	d	file:
+F	library/md5.c	125;"	d	file:
+F	library/md5.c	144;"	d	file:
+F	library/md5.c	146;"	d	file:
+F	library/md5.c	165;"	d	file:
+F	library/md5.c	167;"	d	file:
+F	library/md5.c	186;"	d	file:
+F	library/sha1.c	113;"	d	file:
+F	library/sha1.c	138;"	d	file:
+F	library/sha1.c	140;"	d	file:
+F	library/sha1.c	165;"	d	file:
+F	library/sha1.c	167;"	d	file:
+F	library/sha1.c	192;"	d	file:
+F	library/sha1.c	194;"	d	file:
+F	library/sha1.c	219;"	d	file:
+F0	library/sha2.c	106;"	d	file:
+F1	library/sha2.c	107;"	d	file:
+FSb	library/aes.c	/^static const uint8 FSb[256] =$/;"	v	file:
+FSb	library/aes.c	/^static uint8 FSb[256];$/;"	v	file:
+FT	library/aes.c	226;"	d	file:
+FT	library/aes.c	309;"	d	file:
+FT0	library/aes.c	/^static const uint32 FT0[256] = { FT };$/;"	v	file:
+FT0	library/aes.c	/^static uint32 FT0[256]; $/;"	v	file:
+FT1	library/aes.c	/^static const uint32 FT1[256] = { FT };$/;"	v	file:
+FT1	library/aes.c	/^static uint32 FT1[256]; $/;"	v	file:
+FT2	library/aes.c	/^static const uint32 FT2[256] = { FT };$/;"	v	file:
+FT2	library/aes.c	/^static uint32 FT2[256]; $/;"	v	file:
+FT3	library/aes.c	/^static const uint32 FT3[256] = { FT };$/;"	v	file:
+FT3	library/aes.c	/^static uint32 FT3[256]; $/;"	v	file:
+G	include/xyssl/dhm.h	/^    mpi G;      \/*!<  generator         *\/$/;"	m
+GET_REQUEST	programs/ssl_client1.c	39;"	d	file:
+GET_REQUEST	programs/ssl_client2.c	41;"	d	file:
+GET_UINT32_BE	library/aes.c	47;"	d	file:
+GET_UINT32_BE	library/des.c	39;"	d	file:
+GET_UINT32_BE	library/sha1.c	39;"	d	file:
+GET_UINT32_BE	library/sha2.c	39;"	d	file:
+GET_UINT32_LE	library/md4.c	40;"	d	file:
+GET_UINT32_LE	library/md5.c	39;"	d	file:
+GX	include/xyssl/dhm.h	/^    mpi GX;     \/*!<  self = G^X mod P  *\/$/;"	m
+GY	include/xyssl/dhm.h	/^    mpi GY;     \/*!<  peer = G^Y mod P  *\/$/;"	m
+HTTP_RESPONSE	programs/ssl_server.c	38;"	d	file:
+K	include/xyssl/dhm.h	/^    mpi K;      \/*!<  key = GY^X mod P  *\/$/;"	m
+K	library/sha1.c	114;"	d	file:
+K	library/sha1.c	137;"	d	file:
+K	library/sha1.c	141;"	d	file:
+K	library/sha1.c	164;"	d	file:
+K	library/sha1.c	168;"	d	file:
+K	library/sha1.c	191;"	d	file:
+K	library/sha1.c	195;"	d	file:
+K	library/sha1.c	218;"	d	file:
+KT0	library/aes.c	/^static uint32 KT0[256];$/;"	v	file:
+KT1	library/aes.c	/^static uint32 KT1[256];$/;"	v	file:
+KT2	library/aes.c	/^static uint32 KT2[256];$/;"	v	file:
+KT3	library/aes.c	/^static uint32 KT3[256];$/;"	v	file:
+LDFLAGS	VS6.mak	/^LDFLAGS=xyssl.lib kernel32.lib shell32.lib user32.lib$/;"	m
+LDFLAGS	programs/Makefile	/^LDFLAGS	= -L..\/library -lxyssl #-lsocket -lnsl$/;"	m
+LHs	library/des.c	/^static const unsigned long LHs[16] =$/;"	v	file:
+LIB_OBJ	VS6.mak	/^LIB_OBJ=library\/aes.obj           library\/arc4.obj          \\$/;"	m
+MODE_DECRYPT	programs/filecrypt.c	42;"	d	file:
+MODE_ENCRYPT	programs/filecrypt.c	41;"	d	file:
+MUL	library/aes.c	103;"	d	file:
+MULADDC_CORE	library/bn_asm.h	112;"	d
+MULADDC_CORE	library/bn_asm.h	139;"	d
+MULADDC_CORE	library/bn_asm.h	19;"	d
+MULADDC_CORE	library/bn_asm.h	210;"	d
+MULADDC_CORE	library/bn_asm.h	239;"	d
+MULADDC_CORE	library/bn_asm.h	268;"	d
+MULADDC_CORE	library/bn_asm.h	293;"	d
+MULADDC_CORE	library/bn_asm.h	324;"	d
+MULADDC_CORE	library/bn_asm.h	357;"	d
+MULADDC_CORE	library/bn_asm.h	450;"	d
+MULADDC_CORE	library/bn_asm.h	469;"	d
+MULADDC_HUIT	library/bn_asm.h	154;"	d
+MULADDC_HUIT	library/bn_asm.h	376;"	d
+MULADDC_HUIT	library/bn_asm.h	37;"	d
+MULADDC_INIT	library/bn_asm.h	105;"	d
+MULADDC_INIT	library/bn_asm.h	132;"	d
+MULADDC_INIT	library/bn_asm.h	13;"	d
+MULADDC_INIT	library/bn_asm.h	201;"	d
+MULADDC_INIT	library/bn_asm.h	233;"	d
+MULADDC_INIT	library/bn_asm.h	262;"	d
+MULADDC_INIT	library/bn_asm.h	287;"	d
+MULADDC_INIT	library/bn_asm.h	318;"	d
+MULADDC_INIT	library/bn_asm.h	351;"	d
+MULADDC_INIT	library/bn_asm.h	445;"	d
+MULADDC_INIT	library/bn_asm.h	462;"	d
+MULADDC_STOP	library/bn_asm.h	122;"	d
+MULADDC_STOP	library/bn_asm.h	148;"	d
+MULADDC_STOP	library/bn_asm.h	220;"	d
+MULADDC_STOP	library/bn_asm.h	252;"	d
+MULADDC_STOP	library/bn_asm.h	277;"	d
+MULADDC_STOP	library/bn_asm.h	29;"	d
+MULADDC_STOP	library/bn_asm.h	308;"	d
+MULADDC_STOP	library/bn_asm.h	340;"	d
+MULADDC_STOP	library/bn_asm.h	367;"	d
+MULADDC_STOP	library/bn_asm.h	458;"	d
+MULADDC_STOP	library/bn_asm.h	483;"	d
+N	include/xyssl/rsa.h	/^    mpi N;      \/*!<  public modulus    *\/$/;"	m
+OBJS	library/Makefile	/^OBJS=aes.o       arc4.o      base64.o    bignum.o    \\$/;"	m
+OID_PKCS1	include/xyssl/x509.h	80;"	d
+OID_PKCS1_RSA	include/xyssl/x509.h	81;"	d
+OID_PKCS9	include/xyssl/x509.h	82;"	d
+OID_X520	include/xyssl/x509.h	79;"	d
+ONE_ITERATION	library/havege.c	60;"	d	file:
+P	include/xyssl/dhm.h	/^    mpi P;      \/*!<  prime modulus     *\/$/;"	m
+P	include/xyssl/rsa.h	/^    mpi P;      \/*!<  1st prime factor  *\/$/;"	m
+P	library/md4.c	101;"	d	file:
+P	library/md4.c	120;"	d	file:
+P	library/md4.c	124;"	d	file:
+P	library/md4.c	143;"	d	file:
+P	library/md4.c	147;"	d	file:
+P	library/md4.c	167;"	d	file:
+P	library/md5.c	94;"	d	file:
+P	library/sha1.c	102;"	d	file:
+P	library/sha2.c	115;"	d	file:
+PI_SUBST	library/md2.c	/^static const unsigned char PI_SUBST[256] =$/;"	v	file:
+PKCS9_EMAIL	include/xyssl/x509.h	77;"	d
+PRG_OBJ	VS6.mak	/^PRG_OBJ=programs\/benchmark.exe    programs\/hello.exe        \\$/;"	m
+PT1	include/xyssl/havege.h	/^    int PT1, PT2, offset;$/;"	m
+PT2	include/xyssl/havege.h	/^    int PT1, PT2, offset;$/;"	m
+PTLEN	library/rsa.c	475;"	d	file:
+PUT_UINT32_BE	library/aes.c	56;"	d	file:
+PUT_UINT32_BE	library/des.c	48;"	d	file:
+PUT_UINT32_BE	library/sha1.c	48;"	d	file:
+PUT_UINT32_BE	library/sha2.c	48;"	d	file:
+PUT_UINT32_LE	library/md4.c	49;"	d	file:
+PUT_UINT32_LE	library/md5.c	48;"	d	file:
+Q	include/xyssl/rsa.h	/^    mpi Q;      \/*!<  2nd prime factor  *\/$/;"	m
+QP	include/xyssl/rsa.h	/^    mpi QP;     \/*!<  inverse of Q % P  *\/$/;"	m
+R	library/sha1.c	95;"	d	file:
+R	library/sha2.c	109;"	d	file:
+RCON	library/aes.c	/^static const uint32 RCON[10] =$/;"	v	file:
+RCON	library/aes.c	/^static uint32 RCON[10];$/;"	v	file:
+RHs	library/des.c	/^static const unsigned long RHs[16] =$/;"	v	file:
+RN	include/xyssl/rsa.h	/^    mpi RN;     \/*!<  R^2 mod N         *\/$/;"	m
+ROTR	library/sha2.c	98;"	d	file:
+ROTR8	library/aes.c	100;"	d	file:
+RP	include/xyssl/dhm.h	/^    mpi RP;     \/*!<  recalc R*R mod P  *\/$/;"	m
+RP	include/xyssl/rsa.h	/^    mpi RP;     \/*!<  R^2 mod P         *\/$/;"	m
+RQ	include/xyssl/rsa.h	/^    mpi RQ;     \/*!<  R^2 mod Q         *\/$/;"	m
+RSA_CRYPT	include/xyssl/rsa.h	30;"	d
+RSA_MD2	include/xyssl/rsa.h	24;"	d
+RSA_MD4	include/xyssl/rsa.h	25;"	d
+RSA_MD5	include/xyssl/rsa.h	26;"	d
+RSA_NONE	include/xyssl/rsa.h	23;"	d
+RSA_SHA1	include/xyssl/rsa.h	27;"	d
+RSA_SIGN	include/xyssl/rsa.h	29;"	d
+RSb	library/aes.c	/^static const uint8 RSb[256] =$/;"	v	file:
+RSb	library/aes.c	/^static uint8 RSb[256];$/;"	v	file:
+RT	library/aes.c	353;"	d	file:
+RT	library/aes.c	436;"	d	file:
+RT0	library/aes.c	/^static const uint32 RT0[256] = { RT };$/;"	v	file:
+RT0	library/aes.c	/^static uint32 RT0[256];$/;"	v	file:
+RT1	library/aes.c	/^static const uint32 RT1[256] = { RT };$/;"	v	file:
+RT1	library/aes.c	/^static uint32 RT1[256];$/;"	v	file:
+RT2	library/aes.c	/^static const uint32 RT2[256] = { RT };$/;"	v	file:
+RT2	library/aes.c	/^static uint32 RT2[256];$/;"	v	file:
+RT3	library/aes.c	/^static const uint32 RT3[256] = { RT };$/;"	v	file:
+RT3	library/aes.c	/^static uint32 RT3[256];$/;"	v	file:
+S	library/md4.c	93;"	d	file:
+S	library/md5.c	92;"	d	file:
+S	library/sha1.c	93;"	d	file:
+S0	library/sha2.c	100;"	d	file:
+S1	library/sha2.c	101;"	d	file:
+S2	library/sha2.c	103;"	d	file:
+S3	library/sha2.c	104;"	d	file:
+SB1	library/des.c	/^static const unsigned long SB1[64] =$/;"	v	file:
+SB2	library/des.c	/^static const unsigned long SB2[64] =$/;"	v	file:
+SB3	library/des.c	/^static const unsigned long SB3[64] =$/;"	v	file:
+SB4	library/des.c	/^static const unsigned long SB4[64] =$/;"	v	file:
+SB5	library/des.c	/^static const unsigned long SB5[64] =$/;"	v	file:
+SB6	library/des.c	/^static const unsigned long SB6[64] =$/;"	v	file:
+SB7	library/des.c	/^static const unsigned long SB7[64] =$/;"	v	file:
+SB8	library/des.c	/^static const unsigned long SB8[64] =$/;"	v	file:
+SERVER_NAME	programs/ssl_client1.c	37;"	d	file:
+SERVER_NAME	programs/ssl_client2.c	39;"	d	file:
+SERVER_PORT	programs/ssl_client1.c	38;"	d	file:
+SERVER_PORT	programs/ssl_client2.c	40;"	d	file:
+SHR	library/sha2.c	97;"	d	file:
+SSL3_EDH_RSA_DES_168_SHA	include/xyssl/ssl.h	69;"	d
+SSL3_RSA_DES_168_SHA	include/xyssl/ssl.h	68;"	d
+SSL3_RSA_RC4_128_MD5	include/xyssl/ssl.h	66;"	d
+SSL3_RSA_RC4_128_SHA	include/xyssl/ssl.h	67;"	d
+SSLV3_MAJOR_VERSION	include/xyssl/ssl.h	40;"	d
+SSLV3_MINOR_VERSION	include/xyssl/ssl.h	41;"	d
+SSL_ALERT_CLOSE_NOTIFY	include/xyssl/ssl.h	83;"	d
+SSL_ALERT_FATAL	include/xyssl/ssl.h	85;"	d
+SSL_ALERT_NO_CERTIFICATE	include/xyssl/ssl.h	86;"	d
+SSL_ALERT_WARNING	include/xyssl/ssl.h	84;"	d
+SSL_BUFFER_LEN	include/xyssl/ssl.h	61;"	d
+SSL_CERTIFICATE_REQUEST	include/xyssl/ssl.h	/^    SSL_CERTIFICATE_REQUEST,$/;"	e
+SSL_CERTIFICATE_VERIFY	include/xyssl/ssl.h	/^    SSL_CERTIFICATE_VERIFY,$/;"	e
+SSL_CLIENT_CERTIFICATE	include/xyssl/ssl.h	/^    SSL_CLIENT_CERTIFICATE,$/;"	e
+SSL_CLIENT_CHANGE_CIPHER_SPEC	include/xyssl/ssl.h	/^    SSL_CLIENT_CHANGE_CIPHER_SPEC,$/;"	e
+SSL_CLIENT_FINISHED	include/xyssl/ssl.h	/^    SSL_CLIENT_FINISHED,$/;"	e
+SSL_CLIENT_HELLO	include/xyssl/ssl.h	/^    SSL_CLIENT_HELLO,$/;"	e
+SSL_CLIENT_KEY_EXCHANGE	include/xyssl/ssl.h	/^    SSL_CLIENT_KEY_EXCHANGE,$/;"	e
+SSL_COMPRESS_NULL	include/xyssl/ssl.h	47;"	d
+SSL_EXPIRATION_TIME	include/xyssl/ssl.h	55;"	d
+SSL_HANDSHAKE_OVER	include/xyssl/ssl.h	/^    SSL_HANDSHAKE_OVER$/;"	e
+SSL_HELLO_REQUEST	include/xyssl/ssl.h	/^    SSL_HELLO_REQUEST,$/;"	e
+SSL_HS_CERTIFICATE	include/xyssl/ssl.h	91;"	d
+SSL_HS_CERTIFICATE_REQUEST	include/xyssl/ssl.h	93;"	d
+SSL_HS_CERTIFICATE_VERIFY	include/xyssl/ssl.h	95;"	d
+SSL_HS_CLIENT_HELLO	include/xyssl/ssl.h	89;"	d
+SSL_HS_CLIENT_KEY_EXCHANGE	include/xyssl/ssl.h	96;"	d
+SSL_HS_FINISHED	include/xyssl/ssl.h	97;"	d
+SSL_HS_HELLO_REQUEST	include/xyssl/ssl.h	88;"	d
+SSL_HS_SERVER_HELLO	include/xyssl/ssl.h	90;"	d
+SSL_HS_SERVER_HELLO_DONE	include/xyssl/ssl.h	94;"	d
+SSL_HS_SERVER_KEY_EXCHANGE	include/xyssl/ssl.h	92;"	d
+SSL_IS_CLIENT	include/xyssl/ssl.h	45;"	d
+SSL_IS_SERVER	include/xyssl/ssl.h	46;"	d
+SSL_MAX_CONTENT_LEN	include/xyssl/ssl.h	54;"	d
+SSL_MSG_ALERT	include/xyssl/ssl.h	79;"	d
+SSL_MSG_APPLICATION_DATA	include/xyssl/ssl.h	81;"	d
+SSL_MSG_CHANGE_CIPHER_SPEC	include/xyssl/ssl.h	78;"	d
+SSL_MSG_HANDSHAKE	include/xyssl/ssl.h	80;"	d
+SSL_SERVER_CERTIFICATE	include/xyssl/ssl.h	/^    SSL_SERVER_CERTIFICATE,$/;"	e
+SSL_SERVER_CHANGE_CIPHER_SPEC	include/xyssl/ssl.h	/^    SSL_SERVER_CHANGE_CIPHER_SPEC,$/;"	e
+SSL_SERVER_FINISHED	include/xyssl/ssl.h	/^    SSL_SERVER_FINISHED,$/;"	e
+SSL_SERVER_HELLO	include/xyssl/ssl.h	/^    SSL_SERVER_HELLO,$/;"	e
+SSL_SERVER_HELLO_DONE	include/xyssl/ssl.h	/^    SSL_SERVER_HELLO_DONE,$/;"	e
+SSL_SERVER_KEY_EXCHANGE	include/xyssl/ssl.h	/^    SSL_SERVER_KEY_EXCHANGE,$/;"	e
+SSL_SESSION_TBL_LEN	include/xyssl/ssl.h	53;"	d
+SSL_VERIFY_NONE	include/xyssl/ssl.h	49;"	d
+SSL_VERIFY_OPTIONAL	include/xyssl/ssl.h	50;"	d
+SSL_VERIFY_REQUIRED	include/xyssl/ssl.h	51;"	d
+SWAP	library/havege.c	52;"	d	file:
+TLS10_MINOR_VERSION	include/xyssl/ssl.h	42;"	d
+TLS11_MINOR_VERSION	include/xyssl/ssl.h	43;"	d
+TLS1_EDH_RSA_AES_256_SHA	include/xyssl/ssl.h	71;"	d
+TLS1_RSA_AES_256_SHA	include/xyssl/ssl.h	70;"	d
+TST1_ENTER	library/havege.c	54;"	d	file:
+TST1_LEAVE	library/havege.c	57;"	d	file:
+TST2_ENTER	library/havege.c	55;"	d	file:
+TST2_LEAVE	library/havege.c	58;"	d	file:
+TimerProc	library/timing.c	/^DWORD WINAPI TimerProc( LPVOID uElapse )$/;"	f
+V	library/aes.c	293;"	d	file:
+V	library/aes.c	295;"	d	file:
+V	library/aes.c	297;"	d	file:
+V	library/aes.c	299;"	d	file:
+V	library/aes.c	301;"	d	file:
+V	library/aes.c	303;"	d	file:
+V	library/aes.c	305;"	d	file:
+V	library/aes.c	307;"	d	file:
+V	library/aes.c	420;"	d	file:
+V	library/aes.c	422;"	d	file:
+V	library/aes.c	424;"	d	file:
+V	library/aes.c	426;"	d	file:
+V	library/aes.c	428;"	d	file:
+V	library/aes.c	430;"	d	file:
+V	library/aes.c	432;"	d	file:
+V	library/aes.c	434;"	d	file:
+WALK	include/xyssl/havege.h	/^    int WALK[8192];$/;"	m
+X	include/xyssl/dhm.h	/^    mpi X;      \/*!<  secret value      *\/$/;"	m
+X520_COMMON_NAME	include/xyssl/x509.h	71;"	d
+X520_COUNTRY	include/xyssl/x509.h	72;"	d
+X520_LOCALITY	include/xyssl/x509.h	73;"	d
+X520_ORGANIZATION	include/xyssl/x509.h	75;"	d
+X520_ORG_UNIT	include/xyssl/x509.h	76;"	d
+X520_STATE	include/xyssl/x509.h	74;"	d
+XTIME	library/aes.c	102;"	d	file:
+_AES_H	include/xyssl/aes.h	5;"	d
+_ARC4_H	include/xyssl/arc4.h	5;"	d
+_BASE64_H	include/xyssl/base64.h	5;"	d
+_BIGNUM_H	include/xyssl/bignum.h	5;"	d
+_BN_ASM_H	library/bn_asm.h	8;"	d
+_CERTS_H	include/xyssl/certs.h	5;"	d
+_CRT_SECURE_NO_DEPRECATE	library/aes.c	28;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/arc4.c	27;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/base64.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/bignum.c	28;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/des.c	28;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/dhm.c	27;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/havege.c	29;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/md2.c	28;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/md4.c	28;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/md5.c	27;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/net.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/rsa.c	28;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/sha1.c	27;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/sha2.c	27;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/ssl_cli.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/ssl_srv.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/ssl_tls.c	30;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/timing.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	library/x509_read.c	33;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	programs/benchmark.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	programs/filecrypt.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	programs/hello.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	programs/rsa_demo.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	programs/selftest.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	programs/ssl_client1.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	programs/ssl_client2.c	22;"	d	file:
+_CRT_SECURE_NO_DEPRECATE	programs/ssl_server.c	22;"	d	file:
+_DES_H	include/xyssl/des.h	5;"	d
+_DHM_H	include/xyssl/dhm.h	5;"	d
+_HAVEGE_H	include/xyssl/havege.h	5;"	d
+_MD2_H	include/xyssl/md2.h	5;"	d
+_MD4_H	include/xyssl/md4.h	5;"	d
+_MD5_H	include/xyssl/md5.h	5;"	d
+_NET_H	include/xyssl/net.h	5;"	d
+_RSA_H	include/xyssl/rsa.h	5;"	d
+_SHA1_H	include/xyssl/sha1.h	5;"	d
+_SHA2_H	include/xyssl/sha2.h	5;"	d
+_SSL_H	include/xyssl/ssl.h	5;"	d
+_TIMING_H	include/xyssl/timing.h	5;"	d
+_X509_H	include/xyssl/x509.h	5;"	d
+_hr_time	library/timing.c	/^struct _hr_time$/;"	s	file:
+_x509_buf	include/xyssl/x509.h	/^typedef struct _x509_buf$/;"	s
+_x509_cert	include/xyssl/x509.h	/^typedef struct _x509_cert$/;"	s
+_x509_name	include/xyssl/x509.h	/^typedef struct _x509_name$/;"	s
+_x509_time	include/xyssl/x509.h	/^typedef struct _x509_time$/;"	s
+aes_cbc_decrypt	library/aes.c	/^void aes_cbc_decrypt( aes_context *ctx,$/;"	f
+aes_cbc_encrypt	library/aes.c	/^void aes_cbc_encrypt( aes_context *ctx,$/;"	f
+aes_context	include/xyssl/aes.h	/^aes_context;$/;"	t
+aes_dec_test	library/aes.c	/^static const uint8 aes_dec_test[3][16] =$/;"	v	file:
+aes_decrypt	library/aes.c	/^void aes_decrypt( aes_context *ctx,$/;"	f
+aes_enc_test	library/aes.c	/^static const uint8 aes_enc_test[3][16] =$/;"	v	file:
+aes_encrypt	library/aes.c	/^void aes_encrypt( aes_context *ctx,$/;"	f
+aes_gen_tables	library/aes.c	/^static void aes_gen_tables( void ) {}$/;"	f	file:
+aes_gen_tables	library/aes.c	/^static void aes_gen_tables( void )$/;"	f	file:
+aes_self_test	library/aes.c	/^int aes_self_test( void )$/;"	f
+aes_set_key	library/aes.c	/^void aes_set_key( aes_context *ctx, uint8 *key, int keysize )$/;"	f
+alarmed	library/timing.c	/^int alarmed = 0;$/;"	v
+arc4_context	include/xyssl/arc4.h	/^arc4_context;$/;"	t
+arc4_crypt	library/arc4.c	/^void arc4_crypt( arc4_context *ctx, unsigned char *buf, int buflen )$/;"	f
+arc4_self_test	library/arc4.c	/^int arc4_self_test( void )$/;"	f
+arc4_setup	library/arc4.c	/^void arc4_setup( arc4_context *ctx, unsigned char *key, int keylen )$/;"	f
+arc4_test_ct	library/arc4.c	/^static const unsigned char arc4_test_ct[3][8] =$/;"	v	file:
+arc4_test_key	library/arc4.c	/^static const unsigned char arc4_test_key[3][8] =$/;"	v	file:
+arc4_test_pt	library/arc4.c	/^static const unsigned char arc4_test_pt[3][8] =$/;"	v	file:
+asn1_get_bool	library/x509_read.c	/^static int asn1_get_bool( unsigned char **p,$/;"	f	file:
+asn1_get_int	library/x509_read.c	/^static int asn1_get_int( unsigned char **p,$/;"	f	file:
+asn1_get_len	library/x509_read.c	/^static int asn1_get_len( unsigned char **p,$/;"	f	file:
+asn1_get_mpi	library/x509_read.c	/^static int asn1_get_mpi( unsigned char **p,$/;"	f	file:
+asn1_get_tag	library/x509_read.c	/^static int asn1_get_tag( unsigned char **p,$/;"	f	file:
+authmode	include/xyssl/ssl.h	/^    int authmode;                       \/*!<  verification mode       *\/$/;"	m
+base64_dec_map	library/base64.c	/^static const int base64_dec_map[128] =$/;"	v	file:
+base64_decode	library/base64.c	/^int base64_decode( unsigned char *dst, int *dlen,$/;"	f
+base64_enc_map	library/base64.c	/^static const int base64_enc_map[64] =$/;"	v	file:
+base64_encode	library/base64.c	/^int base64_encode( unsigned char *dst, int *dlen,$/;"	f
+base64_self_test	library/base64.c	/^int base64_self_test( void )$/;"	f
+base64_test_dec	library/base64.c	/^static const unsigned char base64_test_dec[64] =$/;"	v	file:
+base64_test_enc	library/base64.c	/^static const unsigned char base64_test_enc[] =$/;"	v	file:
+biH	library/bignum.c	41;"	d	file:
+biL	library/bignum.c	40;"	d	file:
+buffer	include/xyssl/md2.h	/^    unsigned char buffer[16];   \/*!< data block being processed *\/$/;"	m
+buffer	include/xyssl/md4.h	/^    unsigned char buffer[64];   \/*!< data block being processed *\/$/;"	m
+buffer	include/xyssl/md5.h	/^    unsigned char buffer[64];   \/*!< data block being processed *\/$/;"	m
+buffer	include/xyssl/sha1.h	/^    unsigned char buffer[64];   \/*!< data block being processed *\/$/;"	m
+buffer	include/xyssl/sha2.h	/^    unsigned char buffer[64];   \/*!< data block being processed *\/$/;"	m
+ca_chain	include/xyssl/ssl.h	/^    x509_cert *ca_chain;                \/*!<  own trusted CA chain    *\/$/;"	m
+ca_istrue	include/xyssl/x509.h	/^    int ca_istrue;$/;"	m	struct:_x509_cert
+ciL	library/bignum.c	39;"	d	file:
+cipher	include/xyssl/ssl.h	/^    int cipher;                         \/*!<  current chosen cipher   *\/$/;"	m
+cipherlist	include/xyssl/ssl.h	/^    int *cipherlist;                    \/*!<  accepted ciphersuites   *\/$/;"	m
+cksum	include/xyssl/md2.h	/^    unsigned char cksum[16];    \/*!< checksum of the data block *\/$/;"	m
+client_auth	include/xyssl/ssl.h	/^    int client_auth;                    \/*!<  flag for client auth.   *\/$/;"	m
+close	library/net.c	38;"	d	file:
+ctx_dec	include/xyssl/ssl.h	/^    void *ctx_dec;                      \/*!<  decryption context      *\/$/;"	m
+ctx_enc	include/xyssl/ssl.h	/^    void *ctx_enc;                      \/*!<  encryption context      *\/$/;"	m
+ctxlen	include/xyssl/ssl.h	/^    int ctxlen;                         \/*!<  cipher context length   *\/$/;"	m
+day	include/xyssl/x509.h	/^    int year, mon, day;$/;"	m	struct:_x509_time
+des3_cbc_decrypt	library/des.c	/^void des3_cbc_decrypt( des3_context *ctx,$/;"	f
+des3_cbc_encrypt	library/des.c	/^void des3_cbc_encrypt( des3_context *ctx,$/;"	f
+des3_context	include/xyssl/des.h	/^des3_context;$/;"	t
+des3_crypt	library/des.c	/^static void des3_crypt( unsigned long SK[96],$/;"	f	file:
+des3_decrypt	library/des.c	/^void des3_decrypt( des3_context *ctx,$/;"	f
+des3_encrypt	library/des.c	/^void des3_encrypt( des3_context *ctx,$/;"	f
+des3_set_2keys	library/des.c	/^void des3_set_2keys( des3_context *ctx, unsigned char key[16] )$/;"	f
+des3_set_3keys	library/des.c	/^void des3_set_3keys( des3_context *ctx, unsigned char key[24] )$/;"	f
+des_cbc_decrypt	library/des.c	/^void des_cbc_decrypt( des_context *ctx,$/;"	f
+des_cbc_encrypt	library/des.c	/^void des_cbc_encrypt( des_context *ctx,$/;"	f
+des_context	include/xyssl/des.h	/^des_context;$/;"	t
+des_crypt	library/des.c	/^static void des_crypt( unsigned long SK[32],$/;"	f	file:
+des_decrypt	library/des.c	/^void des_decrypt( des_context *ctx,$/;"	f
+des_encrypt	library/des.c	/^void des_encrypt( des_context *ctx,$/;"	f
+des_main_ks	library/des.c	/^static void des_main_ks( unsigned long SK[32], unsigned char key[8] )$/;"	f	file:
+des_self_test	library/des.c	/^int des_self_test( void )$/;"	f
+des_set_key	library/des.c	/^void des_set_key( des_context *ctx, unsigned char key[8] )$/;"	f
+dhm_G	include/xyssl/ssl.h	/^    char *dhm_G;                        \/*!<  DHM generator (server)  *\/$/;"	m
+dhm_G	programs/ssl_server.c	/^char *dhm_G = "4";$/;"	v
+dhm_P	include/xyssl/ssl.h	/^    char *dhm_P;                        \/*!<  DHM modulus   (server)  *\/$/;"	m
+dhm_P	programs/ssl_server.c	/^char *dhm_P = $/;"	v
+dhm_calc_secret	library/dhm.c	/^int dhm_calc_secret( dhm_context *ctx,$/;"	f
+dhm_context	include/xyssl/dhm.h	/^dhm_context;$/;"	t
+dhm_ctx	include/xyssl/ssl.h	/^    dhm_context dhm_ctx;                \/*!<  DHM key exchange        *\/$/;"	m
+dhm_free	library/dhm.c	/^void dhm_free( dhm_context *ctx )$/;"	f
+dhm_make_params	library/dhm.c	/^int dhm_make_params( dhm_context *ctx, char *P, char *G,$/;"	f
+dhm_make_public	library/dhm.c	/^int dhm_make_public( dhm_context *ctx,$/;"	f
+dhm_read_public	library/dhm.c	/^int dhm_read_public( dhm_context *ctx,$/;"	f
+dhm_self_test	library/dhm.c	/^int dhm_self_test( void )$/;"	f
+dhm_ssl_make_params	library/dhm.c	/^int dhm_ssl_make_params( dhm_context *ctx, char *P, char *G,$/;"	f
+dhm_ssl_read_bignum	library/dhm.c	/^static int dhm_ssl_read_bignum( mpi *X,$/;"	f	file:
+dhm_ssl_read_params	library/dhm.c	/^int dhm_ssl_read_params( dhm_context *ctx,$/;"	f
+drk	include/xyssl/aes.h	/^    unsigned long drk[64];     \/*!< decryption round keys *\/$/;"	m
+dsk	include/xyssl/des.h	/^    unsigned long dsk[32];     \/*!< DES decryption subkeys *\/$/;"	m
+dsk	include/xyssl/des.h	/^    unsigned long dsk[96];     \/*!< Triple-DES decryption subkeys *\/$/;"	m
+endpoint	include/xyssl/ssl.h	/^    int endpoint;                       \/*!<  0: client, 1: server    *\/$/;"	m
+erk	include/xyssl/aes.h	/^    unsigned long erk[64];     \/*!< encryption round keys *\/$/;"	m
+esk	include/xyssl/des.h	/^    unsigned long esk[32];     \/*!< DES encryption subkeys *\/$/;"	m
+esk	include/xyssl/des.h	/^    unsigned long esk[96];     \/*!< Triple-DES encryption subkeys *\/$/;"	m
+hardclock	library/timing.c	/^unsigned long hardclock( void )$/;"	f
+hardclock_init	library/timing.c	/^static int hardclock_init = 0;$/;"	v	file:
+havege_fill	library/havege.c	/^static void havege_fill( havege_state *hs )$/;"	f	file:
+havege_init	library/havege.c	/^void havege_init( havege_state *hs )$/;"	f
+havege_rand	library/havege.c	/^int havege_rand( void *rng_d )$/;"	f
+havege_state	include/xyssl/havege.h	/^havege_state;$/;"	t
+hour	include/xyssl/x509.h	/^    int hour, min, sec;$/;"	m	struct:_x509_time
+hr_time	include/xyssl/timing.h	/^struct hr_time$/;"	s
+hs_md5	include/xyssl/ssl.h	/^     md5_context hs_md5;                \/*!<   MD5( Handshake msgs )  *\/$/;"	m
+hs_sha1	include/xyssl/ssl.h	/^    sha1_context hs_sha1;               \/*!<  SHA1( Handshake msgs )  *\/$/;"	m
+in_ctr	include/xyssl/ssl.h	/^    unsigned char *in_ctr;      \/*!< 64-bit incoming message counter  *\/$/;"	m
+in_hdr	include/xyssl/ssl.h	/^    unsigned char *in_hdr;      \/*!< 5-byte record header (in_ctr+8)  *\/$/;"	m
+in_hslen	include/xyssl/ssl.h	/^    int in_hslen;               \/*!< current handshake message length *\/$/;"	m
+in_left	include/xyssl/ssl.h	/^    int in_left;                \/*!< amount of data read so far       *\/$/;"	m
+in_msg	include/xyssl/ssl.h	/^    unsigned char *in_msg;      \/*!< the message payload  (in_hdr+5)  *\/$/;"	m
+in_msglen	include/xyssl/ssl.h	/^    int in_msglen;              \/*!< record header: message length    *\/$/;"	m
+in_msgtype	include/xyssl/ssl.h	/^    int in_msgtype;             \/*!< record header: message type      *\/$/;"	m
+issuer	include/xyssl/x509.h	/^    x509_name issuer;$/;"	m	struct:_x509_cert
+issuer_id	include/xyssl/x509.h	/^    x509_buf issuer_id;$/;"	m	struct:_x509_cert
+issuer_raw	include/xyssl/x509.h	/^    x509_buf issuer_raw;$/;"	m	struct:_x509_cert
+iv_dec	include/xyssl/ssl.h	/^    unsigned char iv_dec[16];           \/*!<  IV (decryption)         *\/$/;"	m
+iv_enc	include/xyssl/ssl.h	/^    unsigned char iv_enc[16];           \/*!<  IV (encryption)         *\/$/;"	m
+ivlen	include/xyssl/ssl.h	/^    int ivlen;                          \/*!<  IV length               *\/$/;"	m
+keylen	include/xyssl/ssl.h	/^    int keylen;                         \/*!<  symmetric key length    *\/$/;"	m
+left	include/xyssl/md2.h	/^    int left;                   \/*!< amount of data in buffer   *\/$/;"	m
+len	include/xyssl/dhm.h	/^    int len;    \/*!<  size(P) in chars  *\/$/;"	m
+len	include/xyssl/rsa.h	/^    int len;    \/*!<  size(N) in chars  *\/$/;"	m
+len	include/xyssl/x509.h	/^    int len;$/;"	m	struct:_x509_buf
+m	include/xyssl/arc4.h	/^    int m[256];         \/*!< permutation table *\/$/;"	m
+mac_dec	include/xyssl/ssl.h	/^    unsigned char mac_dec[32];          \/*!<  MAC (decryption)        *\/$/;"	m
+mac_enc	include/xyssl/ssl.h	/^    unsigned char mac_enc[32];          \/*!<  MAC (encryption)        *\/$/;"	m
+maclen	include/xyssl/ssl.h	/^    int maclen;                         \/*!<  MAC length              *\/$/;"	m
+main	library/havege.c	/^int main( int argc, char *argv[] )$/;"	f
+main	programs/benchmark.c	/^int main( void )$/;"	f
+main	programs/filecrypt.c	/^int main( int argc, char *argv[] )$/;"	f
+main	programs/hello.c	/^int main( void )$/;"	f
+main	programs/rsa_demo.c	/^int main( void )$/;"	f
+main	programs/selftest.c	/^int main( void )$/;"	f
+main	programs/ssl_client1.c	/^int main( void )$/;"	f
+main	programs/ssl_client2.c	/^int main( void )$/;"	f
+main	programs/ssl_server.c	/^int main( void )$/;"	f
+major_ver	include/xyssl/ssl.h	/^    int major_ver;              \/*!< equal to  SSLV3_MAJOR_VERSION    *\/$/;"	m
+master	include/xyssl/ssl.h	/^    unsigned char master[48];           \/*!<  master secret           *\/$/;"	m
+max_pathlen	include/xyssl/x509.h	/^    int max_pathlen;$/;"	m	struct:_x509_cert
+max_ver	include/xyssl/ssl.h	/^    unsigned char max_ver[2];   \/*!< max. version supported by client *\/$/;"	m
+md2_context	include/xyssl/md2.h	/^md2_context;$/;"	t
+md2_csum	library/md2.c	/^void md2_csum( unsigned char *input, int ilen,$/;"	f
+md2_file	library/md2.c	/^int md2_file( char *path, unsigned char output[16] )$/;"	f
+md2_finish	library/md2.c	/^void md2_finish( md2_context *ctx, unsigned char output[16] )$/;"	f
+md2_hmac	library/md2.c	/^void md2_hmac( unsigned char *key, int keylen,$/;"	f
+md2_process	library/md2.c	/^static void md2_process( md2_context *ctx )$/;"	f	file:
+md2_self_test	library/md2.c	/^int md2_self_test( void )$/;"	f
+md2_starts	library/md2.c	/^void md2_starts( md2_context *ctx )$/;"	f
+md2_test_str	library/md2.c	/^static const char md2_test_str[7][81] =$/;"	v	file:
+md2_test_sum	library/md2.c	/^static const unsigned char md2_test_sum[7][16] =$/;"	v	file:
+md2_update	library/md2.c	/^void md2_update( md2_context *ctx, unsigned char *input, int ilen )$/;"	f
+md4_context	include/xyssl/md4.h	/^md4_context;$/;"	t
+md4_csum	library/md4.c	/^void md4_csum( unsigned char *input, int ilen,$/;"	f
+md4_file	library/md4.c	/^int md4_file( char *path, unsigned char output[16] )$/;"	f
+md4_finish	library/md4.c	/^void md4_finish( md4_context *ctx, unsigned char output[16] )$/;"	f
+md4_hmac	library/md4.c	/^void md4_hmac( unsigned char *key, int keylen,$/;"	f
+md4_padding	library/md4.c	/^static const unsigned char md4_padding[64] =$/;"	v	file:
+md4_process	library/md4.c	/^static void md4_process( md4_context *ctx, unsigned char data[64] )$/;"	f	file:
+md4_self_test	library/md4.c	/^int md4_self_test( void )$/;"	f
+md4_starts	library/md4.c	/^void md4_starts( md4_context *ctx )$/;"	f
+md4_test_str	library/md4.c	/^static const char md4_test_str[7][81] =$/;"	v	file:
+md4_test_sum	library/md4.c	/^static const unsigned char md4_test_sum[7][16] =$/;"	v	file:
+md4_update	library/md4.c	/^void md4_update( md4_context *ctx, unsigned char *input, int ilen )$/;"	f
+md5_context	include/xyssl/md5.h	/^md5_context;$/;"	t
+md5_csum	library/md5.c	/^void md5_csum( unsigned char *input, int ilen,$/;"	f
+md5_file	library/md5.c	/^int md5_file( char *path, unsigned char output[16] )$/;"	f
+md5_finish	library/md5.c	/^void md5_finish( md5_context *ctx, unsigned char output[16] )$/;"	f
+md5_hmac	library/md5.c	/^void md5_hmac( unsigned char *key, int keylen,$/;"	f
+md5_padding	library/md5.c	/^static const unsigned char md5_padding[64] =$/;"	v	file:
+md5_process	library/md5.c	/^static void md5_process( md5_context *ctx, unsigned char data[64] )$/;"	f	file:
+md5_self_test	library/md5.c	/^int md5_self_test( void )$/;"	f
+md5_starts	library/md5.c	/^void md5_starts( md5_context *ctx )$/;"	f
+md5_test_str	library/md5.c	/^static const char md5_test_str[7][81] =$/;"	v	file:
+md5_test_sum	library/md5.c	/^static const unsigned char md5_test_sum[7][16] =$/;"	v	file:
+md5_update	library/md5.c	/^void md5_update( md5_context *ctx, unsigned char *input, int ilen )$/;"	f
+min	include/xyssl/x509.h	/^    int hour, min, sec;$/;"	m	struct:_x509_time
+minlen	include/xyssl/ssl.h	/^    int minlen;                         \/*!<  min. ciphertext length  *\/$/;"	m
+minor_ver	include/xyssl/ssl.h	/^    int minor_ver;              \/*!< either 0: SSLv3, or 1: TLSv1.0   *\/$/;"	m
+mon	include/xyssl/x509.h	/^    int year, mon, day;$/;"	m	struct:_x509_time
+mpi	include/xyssl/bignum.h	/^mpi;$/;"	t
+mpi_add_abs	library/bignum.c	/^int mpi_add_abs( mpi *X, mpi *A, mpi *B )$/;"	f
+mpi_add_int	library/bignum.c	/^int mpi_add_int( mpi *X, mpi *A, int b )$/;"	f
+mpi_add_mpi	library/bignum.c	/^int mpi_add_mpi( mpi *X, mpi *A, mpi *B )$/;"	f
+mpi_cmp_abs	library/bignum.c	/^int mpi_cmp_abs( mpi *X, mpi *Y )$/;"	f
+mpi_cmp_int	library/bignum.c	/^int mpi_cmp_int( mpi *X, int z )$/;"	f
+mpi_cmp_mpi	library/bignum.c	/^int mpi_cmp_mpi( mpi *X, mpi *Y )$/;"	f
+mpi_copy	library/bignum.c	/^int mpi_copy( mpi *X, mpi *Y )$/;"	f
+mpi_div_int	library/bignum.c	/^int mpi_div_int( mpi *Q, mpi *R, mpi *A, int b )$/;"	f
+mpi_div_mpi	library/bignum.c	/^int mpi_div_mpi( mpi *Q, mpi *R, mpi *A, mpi *B )$/;"	f
+mpi_exp_mod	library/bignum.c	/^int mpi_exp_mod( mpi *X, mpi *A, mpi *E, mpi *N, mpi *_RR )$/;"	f
+mpi_export	library/bignum.c	/^int mpi_export( mpi *X, unsigned char *buf, int *buflen )$/;"	f
+mpi_free	library/bignum.c	/^void mpi_free( mpi *X, ... )$/;"	f
+mpi_gcd	library/bignum.c	/^int mpi_gcd( mpi *G, mpi *A, mpi *B )$/;"	f
+mpi_gen_prime	library/bignum.c	/^int mpi_gen_prime( mpi *X, int nbits, int dh_flag,$/;"	f
+mpi_get_digit	library/bignum.c	/^static int mpi_get_digit( t_int *d, int radix, char c )$/;"	f	file:
+mpi_grow	library/bignum.c	/^int mpi_grow( mpi *X, int nblimbs )$/;"	f
+mpi_import	library/bignum.c	/^int mpi_import( mpi *X, unsigned char *buf, int buflen )$/;"	f
+mpi_init	library/bignum.c	/^void mpi_init( mpi *X, ... )$/;"	f
+mpi_inv_mod	library/bignum.c	/^int mpi_inv_mod( mpi *X, mpi *A, mpi *N )$/;"	f
+mpi_is_prime	library/bignum.c	/^int mpi_is_prime( mpi *X )$/;"	f
+mpi_lsb	library/bignum.c	/^int mpi_lsb( mpi *X )$/;"	f
+mpi_lset	library/bignum.c	/^int mpi_lset( mpi *X, int z )$/;"	f
+mpi_mod_int	library/bignum.c	/^int mpi_mod_int( t_int *r, mpi *A, int b )$/;"	f
+mpi_mod_mpi	library/bignum.c	/^int mpi_mod_mpi( mpi *R, mpi *A, mpi *B )$/;"	f
+mpi_montg_init	library/bignum.c	/^static void mpi_montg_init( t_int *mm, mpi *N )$/;"	f	file:
+mpi_montmul	library/bignum.c	/^static void mpi_montmul( mpi *A, mpi *B, mpi *N, t_int mm, mpi *T )$/;"	f	file:
+mpi_montred	library/bignum.c	/^static void mpi_montred( mpi *A, mpi *N, t_int mm, mpi *T )$/;"	f	file:
+mpi_mul_hlp	library/bignum.c	/^static void mpi_mul_hlp( int i, t_int *s, t_int *d, t_int b )$/;"	f	file:
+mpi_mul_int	library/bignum.c	/^int mpi_mul_int( mpi *X, mpi *A, t_int b )$/;"	f
+mpi_mul_mpi	library/bignum.c	/^int mpi_mul_mpi( mpi *X, mpi *A, mpi *B )$/;"	f
+mpi_read	library/bignum.c	/^int mpi_read( mpi *X, char *s, int radix )$/;"	f
+mpi_recurse_showf	library/bignum.c	/^static int mpi_recurse_showf( mpi *X, int radix, FILE *fout )$/;"	f	file:
+mpi_self_test	library/bignum.c	/^int mpi_self_test( void )$/;"	f
+mpi_shift_l	library/bignum.c	/^int mpi_shift_l( mpi *X, int count )$/;"	f
+mpi_shift_r	library/bignum.c	/^int mpi_shift_r( mpi *X, int count )$/;"	f
+mpi_show	library/bignum.c	/^int mpi_show( char *name, mpi *X, int radix )$/;"	f
+mpi_showf	library/bignum.c	/^int mpi_showf( char *name, mpi *X, int radix, FILE *fout )$/;"	f
+mpi_size	library/bignum.c	/^int mpi_size( mpi *X )$/;"	f
+mpi_sub_abs	library/bignum.c	/^int mpi_sub_abs( mpi *X, mpi *A, mpi *B )$/;"	f
+mpi_sub_hlp	library/bignum.c	/^static void mpi_sub_hlp( int n, t_int *s, t_int *d )$/;"	f	file:
+mpi_sub_int	library/bignum.c	/^int mpi_sub_int( mpi *X, mpi *A, int b )$/;"	f
+mpi_sub_mpi	library/bignum.c	/^int mpi_sub_mpi( mpi *X, mpi *A, mpi *B )$/;"	f
+mpi_swap	library/bignum.c	/^void mpi_swap( mpi *X, mpi *Y )$/;"	f
+my_preferred_ciphers	programs/ssl_server.c	/^int my_preferred_ciphers[] =$/;"	v
+myrand	programs/benchmark.c	/^int myrand( void *rng_state )$/;"	f
+n	include/xyssl/bignum.h	/^    int n;              \/*!<  total # of limbs  *\/$/;"	m
+nb_zero	include/xyssl/ssl.h	/^    int nb_zero;                \/*!< # of 0-length encrypted messages *\/$/;"	m
+net_accept	library/net.c	/^int net_accept( int bind_fd, int *client_fd,$/;"	f
+net_bind	library/net.c	/^int net_bind( int *fd, char *bind_ip, unsigned int port )$/;"	f
+net_close	library/net.c	/^void net_close( int fd )$/;"	f
+net_connect	library/net.c	/^int net_connect( int *fd, char *host, unsigned int port )$/;"	f
+net_is_blocking	library/net.c	/^static int net_is_blocking( void )$/;"	f	file:
+net_recv	library/net.c	/^int net_recv( int fd, unsigned char *buf, int *len )$/;"	f
+net_send	library/net.c	/^int net_send( int fd, unsigned char *buf, int *len )$/;"	f
+net_set_block	library/net.c	/^int net_set_block( int fd )$/;"	f
+net_set_nonblock	library/net.c	/^int net_set_nonblock( int fd )$/;"	f
+net_usleep	library/net.c	/^void net_usleep( unsigned long usec )$/;"	f
+next	include/xyssl/x509.h	/^    struct _x509_cert *next; $/;"	m	struct:_x509_cert
+next	include/xyssl/x509.h	/^    struct _x509_name *next;$/;"	m	struct:_x509_name
+nr	include/xyssl/aes.h	/^    int nr;                    \/*!< number of rounds      *\/$/;"	m
+offset	include/xyssl/havege.h	/^    int PT1, PT2, offset;$/;"	m
+oid	include/xyssl/x509.h	/^    x509_buf oid;$/;"	m	struct:_x509_name
+opaque	include/xyssl/timing.h	/^    unsigned char opaque[32];$/;"	m	struct:hr_time
+out_ctr	include/xyssl/ssl.h	/^    unsigned char *out_ctr;     \/*!< 64-bit outgoing message counter  *\/$/;"	m
+out_hdr	include/xyssl/ssl.h	/^    unsigned char *out_hdr;     \/*!< 5-byte record header (out_ctr+8) *\/$/;"	m
+out_left	include/xyssl/ssl.h	/^    int out_left;               \/*!< amount of data not yet written   *\/$/;"	m
+out_msg	include/xyssl/ssl.h	/^    unsigned char *out_msg;     \/*!< the message payload  (out_hdr+5) *\/$/;"	m
+out_msglen	include/xyssl/ssl.h	/^    int out_msglen;             \/*!< record header: message length    *\/$/;"	m
+out_msgtype	include/xyssl/ssl.h	/^    int out_msgtype;            \/*!< record header: message type      *\/$/;"	m
+out_uoff	include/xyssl/ssl.h	/^    int out_uoff;               \/*!< offset in user-supplied buffer   *\/$/;"	m
+own_cert	include/xyssl/ssl.h	/^    x509_cert *own_cert;                \/*!<  own X.509 certificate   *\/$/;"	m
+own_key	include/xyssl/ssl.h	/^    rsa_context *own_key;               \/*!<  own RSA private key     *\/$/;"	m
+p	include/xyssl/bignum.h	/^    t_int *p;           \/*!<  pointer to limbs  *\/$/;"	m
+p	include/xyssl/x509.h	/^    unsigned char *p;$/;"	m	struct:_x509_buf
+peer_cert	include/xyssl/ssl.h	/^    x509_cert *peer_cert;               \/*!<  peer X.509 cert chain   *\/$/;"	m
+peer_cn	include/xyssl/ssl.h	/^    char *peer_cn;                      \/*!<  expected peer CN        *\/$/;"	m
+pk_oid	include/xyssl/x509.h	/^    x509_buf pk_oid;$/;"	m	struct:_x509_cert
+pmslen	include/xyssl/ssl.h	/^    int pmslen;                         \/*!<  premaster length        *\/$/;"	m
+pool	include/xyssl/havege.h	/^    int pool[COLLECT_SIZE];$/;"	m
+premaster	include/xyssl/ssl.h	/^    unsigned char premaster[256];       \/*!<  premaster secret        *\/$/;"	m
+randbytes	include/xyssl/ssl.h	/^    unsigned char randbytes[64];        \/*!<  random bytes            *\/$/;"	m
+raw	include/xyssl/x509.h	/^    x509_buf raw;$/;"	m	struct:_x509_cert
+read	library/net.c	36;"	d	file:
+read_fd	include/xyssl/ssl.h	/^    int read_fd;                \/*!< descriptor for read operations   *\/$/;"	m
+resumed	include/xyssl/ssl.h	/^    int resumed;                        \/*!<  session resuming flag   *\/$/;"	m
+rng_d	include/xyssl/ssl.h	/^    void *rng_d;                        \/*!<  RNG data                *\/$/;"	m
+rng_f	include/xyssl/ssl.h	/^    int (*rng_f)(void *);               \/*!<  RNG function            *\/$/;"	m
+rsa	include/xyssl/x509.h	/^    rsa_context rsa;$/;"	m	struct:_x509_cert
+rsa_check_privkey	library/rsa.c	/^int rsa_check_privkey( rsa_context *ctx )$/;"	f
+rsa_check_pubkey	library/rsa.c	/^int rsa_check_pubkey( rsa_context *ctx )$/;"	f
+rsa_context	include/xyssl/rsa.h	/^rsa_context;$/;"	t
+rsa_free	library/rsa.c	/^void rsa_free( rsa_context *ctx )$/;"	f
+rsa_gen_key	library/rsa.c	/^int rsa_gen_key( rsa_context *ctx, int nbits, int exponent,$/;"	f
+rsa_pkcs1_decrypt	library/rsa.c	/^int rsa_pkcs1_decrypt( rsa_context *ctx,$/;"	f
+rsa_pkcs1_encrypt	library/rsa.c	/^int rsa_pkcs1_encrypt( rsa_context *ctx,$/;"	f
+rsa_pkcs1_sign	library/rsa.c	/^int rsa_pkcs1_sign( rsa_context *ctx, int alg_id,$/;"	f
+rsa_pkcs1_verify	library/rsa.c	/^int rsa_pkcs1_verify( rsa_context *ctx, int alg_id,$/;"	f
+rsa_private	library/rsa.c	/^int rsa_private( rsa_context *ctx, unsigned char *input,  int ilen,$/;"	f
+rsa_public	library/rsa.c	/^int rsa_public( rsa_context *ctx, unsigned char *input,  int ilen,$/;"	f
+rsa_self_test	library/rsa.c	/^int rsa_self_test( void )$/;"	f
+s	include/xyssl/bignum.h	/^    int s;              \/*!<  integer sign      *\/$/;"	m
+scanf_argv	programs/filecrypt.c	/^void scanf_argv( char *prompt, char **arg )$/;"	f
+sec	include/xyssl/x509.h	/^    int hour, min, sec;$/;"	m	struct:_x509_time
+serial	include/xyssl/x509.h	/^    x509_buf serial;$/;"	m	struct:_x509_cert
+sessid	include/xyssl/ssl.h	/^    unsigned char sessid[32];           \/*!<  session id              *\/$/;"	m
+session_table	programs/ssl_server.c	/^unsigned char session_table[SSL_SESSION_TBL_LEN];$/;"	v
+set_alarm	library/timing.c	/^void set_alarm( int seconds )$/;"	f
+set_timer	library/timing.c	/^unsigned long set_timer( struct hr_time *val, int reset )$/;"	f
+sha1_context	include/xyssl/sha1.h	/^sha1_context;$/;"	t
+sha1_csum	library/sha1.c	/^void sha1_csum( unsigned char *input, int ilen,$/;"	f
+sha1_file	library/sha1.c	/^int sha1_file( char *path, unsigned char output[20] )$/;"	f
+sha1_finish	library/sha1.c	/^void sha1_finish( sha1_context *ctx, unsigned char output[20] )$/;"	f
+sha1_hmac	library/sha1.c	/^void sha1_hmac( unsigned char *key, int keylen,$/;"	f
+sha1_padding	library/sha1.c	/^static const unsigned char sha1_padding[64] =$/;"	v	file:
+sha1_process	library/sha1.c	/^static void sha1_process( sha1_context *ctx, unsigned char data[64] )$/;"	f	file:
+sha1_self_test	library/sha1.c	/^int sha1_self_test( void )$/;"	f
+sha1_starts	library/sha1.c	/^void sha1_starts( sha1_context *ctx )$/;"	f
+sha1_test_str	library/sha1.c	/^static const char sha1_test_str[3][57] = $/;"	v	file:
+sha1_test_sum	library/sha1.c	/^static const unsigned char sha1_test_sum[3][20] =$/;"	v	file:
+sha1_update	library/sha1.c	/^void sha1_update( sha1_context *ctx, unsigned char *input, int ilen )$/;"	f
+sha2_context	include/xyssl/sha2.h	/^sha2_context;$/;"	t
+sha2_csum	library/sha2.c	/^void sha2_csum( unsigned char *input, int ilen,$/;"	f
+sha2_file	library/sha2.c	/^int sha2_file( char *path, unsigned char output[32] )$/;"	f
+sha2_finish	library/sha2.c	/^void sha2_finish( sha2_context *ctx, unsigned char output[32] )$/;"	f
+sha2_hmac	library/sha2.c	/^void sha2_hmac( unsigned char *key, int keylen,$/;"	f
+sha2_padding	library/sha2.c	/^static const unsigned char sha2_padding[64] =$/;"	v	file:
+sha2_process	library/sha2.c	/^static void sha2_process( sha2_context *ctx, unsigned char data[64] )$/;"	f	file:
+sha2_self_test	library/sha2.c	/^int sha2_self_test( void )$/;"	f
+sha2_starts	library/sha2.c	/^void sha2_starts( sha2_context *ctx )$/;"	f
+sha2_test_str	library/sha2.c	/^static const char sha2_test_str[3][57] = $/;"	v	file:
+sha2_test_sum	library/sha2.c	/^static const unsigned char sha2_test_sum[3][32] =$/;"	v	file:
+sha2_update	library/sha2.c	/^void sha2_update( sha2_context *ctx, unsigned char *input, int ilen )$/;"	f
+sidlen	include/xyssl/ssl.h	/^    int sidlen;                         \/*!<  session id length       *\/$/;"	m
+sidtable	include/xyssl/ssl.h	/^    unsigned char *sidtable;            \/*!<  table of session IDs    *\/$/;"	m
+sig	include/xyssl/x509.h	/^    x509_buf sig;$/;"	m	struct:_x509_cert
+sig_oid1	include/xyssl/x509.h	/^    x509_buf sig_oid1;$/;"	m	struct:_x509_cert
+sig_oid2	include/xyssl/x509.h	/^    x509_buf sig_oid2;$/;"	m	struct:_x509_cert
+sighandler	library/timing.c	/^static void sighandler( int signum )$/;"	f	file:
+small_prime	library/bignum.c	/^static const int small_prime[] =$/;"	v	file:
+snprintf	library/x509_read.c	1288;"	d	file:
+ssl_calc_finished	library/ssl_tls.c	/^static void ssl_calc_finished($/;"	f	file:
+ssl_calc_verify	library/ssl_tls.c	/^int ssl_calc_verify( ssl_context *ssl, unsigned char hash[36] )$/;"	f
+ssl_client_start	library/ssl_cli.c	/^int ssl_client_start( ssl_context *ssl )$/;"	f
+ssl_close_notify	library/ssl_tls.c	/^int ssl_close_notify( ssl_context *ssl )$/;"	f
+ssl_context	include/xyssl/ssl.h	/^ssl_context;$/;"	t
+ssl_decrypt_buf	library/ssl_tls.c	/^static int ssl_decrypt_buf( ssl_context *ssl )$/;"	f	file:
+ssl_default_ciphers	library/ssl_tls.c	/^int ssl_default_ciphers[] =$/;"	v
+ssl_derive_keys	library/ssl_tls.c	/^int ssl_derive_keys( ssl_context *ssl )$/;"	f
+ssl_encrypt_buf	library/ssl_tls.c	/^static int ssl_encrypt_buf( ssl_context *ssl )$/;"	f	file:
+ssl_flush_output	library/ssl_tls.c	/^int ssl_flush_output( ssl_context *ssl )$/;"	f
+ssl_free	library/ssl_tls.c	/^void ssl_free( ssl_context *ssl )$/;"	f
+ssl_get_cipher_name	library/ssl_tls.c	/^char *ssl_get_cipher_name( ssl_context *ssl )$/;"	f
+ssl_get_session	library/ssl_srv.c	/^static int ssl_get_session( ssl_context *ssl )$/;"	f	file:
+ssl_get_verify_result	library/ssl_tls.c	/^int ssl_get_verify_result( ssl_context *ssl )$/;"	f
+ssl_handshake	library/ssl_tls.c	/^int ssl_handshake( ssl_context *ssl )$/;"	f
+ssl_init	library/ssl_tls.c	/^int ssl_init( ssl_context *ssl, int client_resume )$/;"	f
+ssl_mac_md5	library/ssl_tls.c	/^static void ssl_mac_md5( unsigned char *secret,$/;"	f	file:
+ssl_mac_sha1	library/ssl_tls.c	/^static void ssl_mac_sha1( unsigned char *secret,$/;"	f	file:
+ssl_parse_certificate	library/ssl_tls.c	/^int ssl_parse_certificate( ssl_context *ssl )$/;"	f
+ssl_parse_certificate_request	library/ssl_cli.c	/^static int ssl_parse_certificate_request( ssl_context *ssl )$/;"	f	file:
+ssl_parse_certificate_verify	library/ssl_srv.c	/^static int ssl_parse_certificate_verify( ssl_context *ssl )$/;"	f	file:
+ssl_parse_change_cipher_spec	library/ssl_tls.c	/^int ssl_parse_change_cipher_spec( ssl_context *ssl )$/;"	f
+ssl_parse_client_hello	library/ssl_srv.c	/^static int ssl_parse_client_hello( ssl_context *ssl )$/;"	f	file:
+ssl_parse_client_key_exchange	library/ssl_srv.c	/^static int ssl_parse_client_key_exchange( ssl_context *ssl )$/;"	f	file:
+ssl_parse_finished	library/ssl_tls.c	/^int ssl_parse_finished( ssl_context *ssl )$/;"	f
+ssl_parse_server_hello	library/ssl_cli.c	/^static int ssl_parse_server_hello( ssl_context *ssl )$/;"	f	file:
+ssl_parse_server_hello_done	library/ssl_cli.c	/^static int ssl_parse_server_hello_done( ssl_context *ssl )$/;"	f	file:
+ssl_parse_server_key_exchange	library/ssl_cli.c	/^static int ssl_parse_server_key_exchange( ssl_context *ssl )$/;"	f	file:
+ssl_read	library/ssl_tls.c	/^int ssl_read( ssl_context *ssl, unsigned char *buf, int *len )$/;"	f
+ssl_read_record	library/ssl_tls.c	/^int ssl_read_record( ssl_context *ssl, int do_crypt )$/;"	f
+ssl_server_start	library/ssl_srv.c	/^int ssl_server_start( ssl_context *ssl )$/;"	f
+ssl_set_authmode	library/ssl_tls.c	/^void ssl_set_authmode( ssl_context *ssl, int authmode )$/;"	f
+ssl_set_ca_chain	library/ssl_tls.c	/^void ssl_set_ca_chain( ssl_context *ssl, x509_cert *ca, char *cn )$/;"	f
+ssl_set_ciphlist	library/ssl_tls.c	/^void ssl_set_ciphlist( ssl_context *ssl, int *ciphers )$/;"	f
+ssl_set_dhm_vals	library/ssl_tls.c	/^void ssl_set_dhm_vals( ssl_context *ssl, char *dhm_P, char *dhm_G )$/;"	f
+ssl_set_endpoint	library/ssl_tls.c	/^void ssl_set_endpoint( ssl_context *ssl, int endpoint )$/;"	f
+ssl_set_io_files	library/ssl_tls.c	/^void ssl_set_io_files( ssl_context *ssl, int read_fd, int write_fd )$/;"	f
+ssl_set_rng_func	library/ssl_tls.c	/^void ssl_set_rng_func( ssl_context *ssl,$/;"	f
+ssl_set_rsa_cert	library/ssl_tls.c	/^void ssl_set_rsa_cert( ssl_context *ssl, x509_cert *own_cert,$/;"	f
+ssl_set_session	library/ssl_srv.c	/^static void ssl_set_session( ssl_context *ssl )$/;"	f	file:
+ssl_set_sidtable	library/ssl_tls.c	/^void ssl_set_sidtable( ssl_context *ssl, unsigned char *sidtable )$/;"	f
+ssl_states	include/xyssl/ssl.h	/^ssl_states;$/;"	t
+ssl_write	library/ssl_tls.c	/^int ssl_write( ssl_context *ssl, unsigned char *buf, int len )$/;"	f
+ssl_write_certificate	library/ssl_tls.c	/^int ssl_write_certificate( ssl_context *ssl )$/;"	f
+ssl_write_certificate_request	library/ssl_srv.c	/^static int ssl_write_certificate_request( ssl_context *ssl )$/;"	f	file:
+ssl_write_certificate_verify	library/ssl_cli.c	/^static int ssl_write_certificate_verify( ssl_context *ssl )$/;"	f	file:
+ssl_write_change_cipher_spec	library/ssl_tls.c	/^int ssl_write_change_cipher_spec( ssl_context *ssl )$/;"	f
+ssl_write_client_hello	library/ssl_cli.c	/^static int ssl_write_client_hello( ssl_context *ssl )$/;"	f	file:
+ssl_write_client_key_exchange	library/ssl_cli.c	/^static int ssl_write_client_key_exchange( ssl_context *ssl )$/;"	f	file:
+ssl_write_finished	library/ssl_tls.c	/^int ssl_write_finished( ssl_context *ssl )$/;"	f
+ssl_write_record	library/ssl_tls.c	/^int ssl_write_record( ssl_context *ssl, int do_crypt )$/;"	f
+ssl_write_server_hello	library/ssl_srv.c	/^static int ssl_write_server_hello( ssl_context *ssl )$/;"	f	file:
+ssl_write_server_hello_done	library/ssl_srv.c	/^static int ssl_write_server_hello_done( ssl_context *ssl )$/;"	f	file:
+ssl_write_server_key_exchange	library/ssl_srv.c	/^static int ssl_write_server_key_exchange( ssl_context *ssl )$/;"	f	file:
+start	library/timing.c	/^    LARGE_INTEGER start;$/;"	m	struct:_hr_time	file:
+start	library/timing.c	/^    struct timeval start;$/;"	m	struct:_hr_time	file:
+state	include/xyssl/md2.h	/^    unsigned char state[48];    \/*!< intermediate digest state  *\/$/;"	m
+state	include/xyssl/md4.h	/^    unsigned long state[4];     \/*!< intermediate digest state  *\/$/;"	m
+state	include/xyssl/md5.h	/^    unsigned long state[4];     \/*!< intermediate digest state  *\/$/;"	m
+state	include/xyssl/sha1.h	/^    unsigned long state[5];     \/*!< intermediate digest state  *\/$/;"	m
+state	include/xyssl/sha2.h	/^    unsigned long state[8];     \/*!< intermediate digest state  *\/$/;"	m
+state	include/xyssl/ssl.h	/^    int state;                  \/*!<  SSL handshake: current state    *\/$/;"	m
+subject	include/xyssl/x509.h	/^    x509_name subject;$/;"	m	struct:_x509_cert
+subject_id	include/xyssl/x509.h	/^    x509_buf subject_id;$/;"	m	struct:_x509_cert
+subject_raw	include/xyssl/x509.h	/^    x509_buf subject_raw;$/;"	m	struct:_x509_cert
+t_dbl	include/xyssl/bignum.h	/^      typedef unsigned int t_dbl __attribute__((mode(TI)));$/;"	t
+t_dbl	include/xyssl/bignum.h	/^      typedef unsigned long long t_dbl;$/;"	t
+t_dbl	include/xyssl/bignum.h	/^    typedef __int64 t_dbl;$/;"	t
+t_dbl	include/xyssl/bignum.h	/^typedef unsigned long t_dbl;$/;"	t
+t_int	include/xyssl/bignum.h	/^  typedef unsigned long t_int;$/;"	t
+t_int	include/xyssl/bignum.h	/^typedef unsigned int  t_int;$/;"	t
+tag	include/xyssl/x509.h	/^    int tag;$/;"	m	struct:_x509_buf
+tbs	include/xyssl/x509.h	/^    x509_buf tbs;$/;"	m	struct:_x509_cert
+test_ca_crt	library/certs.c	/^const char test_ca_crt[] =$/;"	v
+test_ca_key	library/certs.c	/^const char test_ca_key[] =$/;"	v
+test_ca_pwd	library/certs.c	/^const char test_ca_pwd[] = "test";$/;"	v
+test_cli_crt	library/certs.c	/^const char test_cli_crt[] =$/;"	v
+test_cli_key	library/certs.c	/^const char test_cli_key[] =$/;"	v
+test_srv_crt	library/certs.c	/^const char test_srv_crt[] =$/;"	v
+test_srv_key	library/certs.c	/^const char test_srv_key[] =$/;"	v
+tls1_prf	library/ssl_tls.c	/^static void tls1_prf( unsigned char *secret, int slen, char *label,$/;"	f	file:
+total	include/xyssl/md4.h	/^    unsigned long total[2];     \/*!< number of bytes processed  *\/$/;"	m
+total	include/xyssl/md5.h	/^    unsigned long total[2];     \/*!< number of bytes processed  *\/$/;"	m
+total	include/xyssl/sha1.h	/^    unsigned long total[2];     \/*!< number of bytes processed  *\/$/;"	m
+total	include/xyssl/sha2.h	/^    unsigned long total[2];     \/*!< number of bytes processed  *\/$/;"	m
+tv_init	library/timing.c	/^static struct timeval tv_init;$/;"	v	file:
+uint32	library/aes.c	40;"	d	file:
+uint8	library/aes.c	36;"	d	file:
+v3_ext	include/xyssl/x509.h	/^    x509_buf v3_ext;$/;"	m	struct:_x509_cert
+val	include/xyssl/x509.h	/^    x509_buf val;$/;"	m	struct:_x509_name
+valid_from	include/xyssl/x509.h	/^    x509_time valid_from;$/;"	m	struct:_x509_cert
+valid_to	include/xyssl/x509.h	/^    x509_time valid_to;$/;"	m	struct:_x509_cert
+ver	include/xyssl/rsa.h	/^    int ver;    \/*!<  should be 0       *\/$/;"	m
+verify_result	include/xyssl/ssl.h	/^    int verify_result;                  \/*!<  verification result     *\/$/;"	m
+version	include/xyssl/x509.h	/^    int version;$/;"	m	struct:_x509_cert
+write	library/net.c	37;"	d	file:
+write_fd	include/xyssl/ssl.h	/^    int write_fd;               \/*!< descriptor for write operations  *\/$/;"	m
+wsa_init_done	library/net.c	/^static int wsa_init_done = 0;$/;"	v	file:
+x	include/xyssl/arc4.h	/^    int x;              \/*!< permutation index *\/$/;"	m
+x509_add_certs	library/x509_read.c	/^int x509_add_certs( x509_cert *chain, unsigned char *buf, int buflen )$/;"	f
+x509_buf	include/xyssl/x509.h	/^x509_buf;$/;"	t
+x509_cert	include/xyssl/x509.h	/^x509_cert;$/;"	t
+x509_cert_info	library/x509_read.c	/^char *x509_cert_info( x509_cert *crt )$/;"	f
+x509_des3_decrypt	library/x509_read.c	/^static void x509_des3_decrypt( unsigned char des3_iv[8],$/;"	f	file:
+x509_des3_getiv	library/x509_read.c	/^static int x509_des3_getiv( unsigned char *s, unsigned char iv[8] )$/;"	f	file:
+x509_dn_gets	library/x509_read.c	/^int x509_dn_gets( char *buf, char *end, x509_name *dn )$/;"	f
+x509_free_cert	library/x509_read.c	/^void x509_free_cert( x509_cert *crt )$/;"	f
+x509_get_alg	library/x509_read.c	/^static int x509_get_alg( unsigned char **p,$/;"	f	file:
+x509_get_dates	library/x509_read.c	/^static int x509_get_dates( unsigned char **p,$/;"	f	file:
+x509_get_ext	library/x509_read.c	/^static int x509_get_ext( unsigned char **p,$/;"	f	file:
+x509_get_name	library/x509_read.c	/^static int x509_get_name( unsigned char **p,$/;"	f	file:
+x509_get_pubkey	library/x509_read.c	/^static int x509_get_pubkey( unsigned char **p,$/;"	f	file:
+x509_get_serial	library/x509_read.c	/^static int x509_get_serial( unsigned char **p,$/;"	f	file:
+x509_get_sig	library/x509_read.c	/^static int x509_get_sig( unsigned char **p,$/;"	f	file:
+x509_get_uid	library/x509_read.c	/^static int x509_get_uid( unsigned char **p,$/;"	f	file:
+x509_get_version	library/x509_read.c	/^static int x509_get_version( unsigned char **p,$/;"	f	file:
+x509_hash	library/x509_read.c	/^static void x509_hash( unsigned char *in, int len, int alg,$/;"	f	file:
+x509_is_cert_expired	library/x509_read.c	/^int x509_is_cert_expired( x509_cert *crt )$/;"	f
+x509_name	include/xyssl/x509.h	/^x509_name;$/;"	t
+x509_parse_key	library/x509_read.c	/^int x509_parse_key( rsa_context *rsa, unsigned char *buf, int buflen,$/;"	f
+x509_read_crtfile	library/x509_read.c	/^int x509_read_crtfile( x509_cert *chain, char *path )$/;"	f
+x509_read_keyfile	library/x509_read.c	/^int x509_read_keyfile( rsa_context *rsa, char *path, char *pwd )$/;"	f
+x509_self_test	library/x509_read.c	/^int x509_self_test( void )$/;"	f
+x509_time	include/xyssl/x509.h	/^x509_time;$/;"	t
+x509_verify_cert	library/x509_read.c	/^int x509_verify_cert( x509_cert *crt, x509_cert *trust_ca,$/;"	f
+xyssl_ca_crt	library/certs.c	/^const char xyssl_ca_crt[] =$/;"	v
+y	include/xyssl/arc4.h	/^    int y;              \/*!< permutation index *\/$/;"	m
+year	include/xyssl/x509.h	/^    int year, mon, day;$/;"	m	struct:_x509_time
