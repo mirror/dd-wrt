@@ -9,7 +9,7 @@
 #
 # Add -fPIC to CFLAGS to compile as a shared library
 
-DEFINES	= -DHAVE_RDTSC -DHAVE_LONGLONG #-DSELF_TEST -DHAVE_RDTSC #-DHAVE_SSE2
+DEFINES	= -DHAVE_RDTSC -DHAVE_LONGLONG -DHAVE_RDTSC #-DSELF_TEST -DHAVE_RDTSC #-DHAVE_SSE2
 CFLAGS	= $(DEFINES) -I../include/xyssl -O
 
 OBJS=aes.o       arc4.o      base64.o    bignum.o    \
