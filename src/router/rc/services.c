@@ -318,13 +318,6 @@ handle_index (void)
 #ifdef HAVE_DNSMASQ
   handle = startstop_nofree ("dnsmasq", handle);
 #endif
-#ifndef HAVE_MADWIFI
-  handle = start_service_nofree ("nas", handle);
-#ifdef HAVE_MSSID
-  handle = start_service_nofree ("guest_nas", handle);
-#endif
-#endif
-  handle = start_service_nofree ("radio_timer", handle);
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
   handle = startstop_nofree ("zebra", handle);
 #endif
@@ -335,6 +328,13 @@ handle_index (void)
   handle = start_service_nofree ("vlantagging", handle);
   handle = start_service_nofree ("bridgesif", handle);
 #endif
+#ifndef HAVE_MADWIFI
+  handle = start_service_nofree ("nas", handle);
+#ifdef HAVE_MSSID
+  handle = start_service_nofree ("guest_nas", handle);
+#endif
+#endif
+  handle = start_service_nofree ("radio_timer", handle);
   handle = startstop_nofree ("firewall", handle);
   handle = startstop_nofree ("httpd", handle);	//httpd will not accept connection anymore on wan/lan ip changes changes
   handle = startstop_nofree ("cron", handle);	//httpd will not accept connection anymore on wan/lan ip changes changes
@@ -551,6 +551,10 @@ handle_pppoe (void)
 #ifdef HAVE_MADWIFI
   handle = start_service_nofree ("stabridge", handle);
 #endif
+#ifdef HAVE_VLANTAGGING
+  handle = start_service_nofree ("vlantagging", handle);
+  handle = start_service_nofree ("bridgesif", handle);
+#endif
 #ifndef HAVE_MADWIFI
   handle = start_service_nofree ("nas", handle);
 #ifdef HAVE_MSSID
@@ -558,10 +562,6 @@ handle_pppoe (void)
 #endif
 #endif
   handle = start_service_nofree ("radio_timer", handle);
-#ifdef HAVE_VLANTAGGING
-  handle = start_service_nofree ("vlantagging", handle);
-  handle = start_service_nofree ("bridgesif", handle);
-#endif
   if (handle)
     dlclose (handle);
 
@@ -791,15 +791,15 @@ handle_wireless (void)
 #ifdef HAVE_MADWIFI
   handle = start_service_nofree ("stabridge", handle);
 #endif
+#ifdef HAVE_VLANTAGGING
+  handle = start_service_nofree ("vlantagging", handle);
+  handle = start_service_nofree ("bridgesif", handle);
+#endif
 #ifndef HAVE_MADWIFI
   handle = start_service_nofree ("nas", handle);
 #ifdef HAVE_MSSID
   handle = start_service_nofree ("guest_nas", handle);
 #endif
-#endif
-#ifdef HAVE_VLANTAGGING
-  handle = start_service_nofree ("vlantagging", handle);
-  handle = start_service_nofree ("bridgesif", handle);
 #endif
   handle = start_service_nofree ("radio_timer", handle);
   startstop ("httpd");		//httpd will not accept connection anymore on wan/lan ip changes changes
@@ -865,15 +865,15 @@ handle_wireless_2 (void)
 #ifdef HAVE_MADWIFI
   handle = start_service_nofree ("stabridge", handle);
 #endif
+#ifdef HAVE_VLANTAGGING
+  handle = start_service_nofree ("vlantagging", handle);
+  handle = start_service_nofree ("bridgesif", handle);
+#endif
 #ifndef HAVE_MADWIFI
   handle = start_service_nofree ("nas", handle);
 #ifdef HAVE_MSSID
   handle = start_service_nofree ("guest_nas", handle);
 #endif
-#endif
-#ifdef HAVE_VLANTAGGING
-  handle = start_service_nofree ("vlantagging", handle);
-  handle = start_service_nofree ("bridgesif", handle);
 #endif
   handle = start_service_nofree ("radio_timer", handle);
   if (getSTA() || getWET())
