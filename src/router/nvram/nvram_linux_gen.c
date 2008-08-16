@@ -103,10 +103,14 @@ void
 lock (void)
 {
   FILE *in;
+  int lockwait=0;
   while ((in = fopen ("/tmp/nvram/.lock", "rb")) != NULL)
     {
       fclose (in);
       cprintf ("nvram lock, waiting....\n");
+      lockwait++;
+      if (lockwait==3)
+        unlink("/tmp/nvram/.lock"); //something crashed, we fix it
       sleep (1);
     }
   in = fopen ("/tmp/nvram/.lock", "wb");
@@ -228,7 +232,7 @@ nvram_get (const char *name)
   int len = strlen (name);
   if (len == 0)
     return NULL;
-  lock ();
+  lock();
 
   FILE *in = fopen ("/tmp/nvram/offsets.db", "rb");
   if (in == NULL)
