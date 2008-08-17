@@ -2650,7 +2650,7 @@ show_channel (webs_t wp, char *dev, char *prefix, int type)
 	      else
 		ofs = 5.000f;
 	      ofs += (float) (chanlist[i] * 0.005f);
-		  if (ofs == 2.477f) 
+		  if (ofs == 2.477f)
 		ofs = 2.484f; 	//fix: ch 14 is 2.484, not 2.477 GHz
 	      websWrite (wp, ", \"%0.3f\"", ofs);
 	    }
@@ -2973,12 +2973,12 @@ showrtssettings (webs_t wp, char *var)
   rep (vvar, '.', 'X');
   sprintf (ssid, "%s_rts", var);
   websWrite (wp,
-	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disabled)</script></input>&nbsp;\n",
+	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 	     vvar, var, nvram_default_match (ssid, "0",
 					     "0") ? "checked=\"checked\"" :
 	     "");
   websWrite (wp,
-	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enabled)</script></input>\n",
+	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",
 	     vvar, var, nvram_default_match (ssid, "1",
 					     "0") ? "checked=\"checked\"" :
 	     "");
@@ -3568,8 +3568,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 				  "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "//]]>\n</script>\n</select>\n</div>\n");
 
-
-  showOption (wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
+  showRadio (wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
 
   showOptionsLabel (wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS",
 		    nvram_default_get (wl_protmode, "None"));
