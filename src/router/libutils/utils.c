@@ -476,6 +476,9 @@ old_way:;
 #elif HAVE_DIR300
   setRouter ("D-Link DIR-300");
   return ROUTER_BOARD_FONERA;
+#elif HAVE_WBD500
+  setRouter ("Wiligear WBD-500");
+  return ROUTER_BOARD_FONERA;
 #elif HAVE_FONERA
   struct mii_ioctl_data *data;
   struct ifreq iwr;
@@ -550,7 +553,7 @@ old_way:;
   setRouter ("Infineon Danube");
   return ROUTER_BOARD_DANUBE;
 #elif HAVE_STORM
-  setRouter ("Wiligear WB-111");
+  setRouter ("Wiligear WBD-111");
   return ROUTER_BOARD_STORM;
 #elif HAVE_TW6600
   setRouter ("AW-6660");

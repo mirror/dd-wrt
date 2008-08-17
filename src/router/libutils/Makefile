@@ -139,6 +139,9 @@ endif
 ifeq ($(CONFIG_FONERA),y)
   CFLAGS += -DHAVE_FONERA
 endif
+ifeq ($(CONFIG_WBD500),y)
+  CFLAGS += -DHAVE_WBD500
+endif
 ifeq ($(CONFIG_TRIMAX),y)
   CFLAGS += -DHAVE_TRIMAX
 endif
