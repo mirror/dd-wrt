@@ -1700,13 +1700,13 @@ showRadio (webs_t wp, char *propname, char *nvname)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div>\n",
 	     propname);
   websWrite (wp,
-	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-	     nvname, nvram_default_match (nvname, "0",
-					  "0") ? "checked=\"checked\"" : "");
-  websWrite (wp,
 	     "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 	     nvname, nvram_default_match (nvname, "1",
 					  "0") ? "checked=\"checked\"" : "");
+  websWrite (wp,
+  	     "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+  	     nvname, nvram_default_match (nvname, "0",
+  					  "0") ? "checked=\"checked\"" : "");
   websWrite (wp, "</div>\n");
 }
 
