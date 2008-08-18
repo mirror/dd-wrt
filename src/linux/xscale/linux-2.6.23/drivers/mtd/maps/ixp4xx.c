@@ -348,8 +348,8 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		    dir_parts[0].offset=0;
 		    dir_parts[7].size=0x1000;
 		    dir_parts[7].offset = mtd->size-0x1000;
-		    dir_parts[4].size=erasesize;
-		    dir_parts[4].offset = mtd->size-erasesize;
+		    dir_parts[6].size=erasesize;
+		    dir_parts[6].offset = mtd->size-erasesize;
 
 		    long highest=dir_parts[6].offset;
 		    #ifdef CONFIG_TONZE
