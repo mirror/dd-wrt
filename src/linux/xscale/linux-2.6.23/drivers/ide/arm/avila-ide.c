@@ -20,9 +20,10 @@
 #include <linux/ide.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
+#include <asm/mach-types.h>
 #include <asm/delay.h>
 
-
+#define IXP4XX_EXP_BUS_CS1_BASE_PHYS	(IXP4XX_EXP_BUS_BASE_PHYS + 0x01000000)
 #define AVILA_IDE_BASE IXP4XX_EXP_BUS_CS1_BASE_PHYS
 #define AVILA_IDE_IRQ IRQ_IXP4XX_GPIO12
 #define AVILA_IDE_CONTROL 0x1e
@@ -120,7 +121,8 @@ void __init avila_ide_init(void)
 	ide_hwif_t *hwif;
 	unsigned char *avila_ide_iobase;
 	int i;
-
+	if (!machine_is_compex())
+	{
 	gpio_line_config(AVILA_IDE_INT, IXP4XX_GPIO_IN | IXP4XX_GPIO_STYLE_ACTIVE_HIGH);
 	gpio_line_isr_clear(AVILA_IDE_INT);
 
@@ -150,8 +152,9 @@ void __init avila_ide_init(void)
 	hwif->INB = avila_ide_inb;
 	hwif->INW = avila_ide_inw;
 	hwif->INSW = avila_ide_insw;
-
+	}
 }
+
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Dave G <daveg@unixstudios.net>");
