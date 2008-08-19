@@ -26,7 +26,7 @@
 //#include <shutils.h>
 
 #define SERVICE_MODULE "/lib/services.so"
-#define cprintf(fmt, args...)
+//#define cprintf(fmt, args...)
 
 
 #ifndef cprintf

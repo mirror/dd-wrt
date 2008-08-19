@@ -181,8 +181,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WZRG144NH 0x3217
 
 // U.S.Robotics USR5430 bridge (BCM4712 cpu, no switch, fccid: Gemtek MXF-EB921201G)
-#define ROUTER_USR_5430 0x3310
 
+#define ROUTER_USR_5430 0x3310
 // U.S.Robotics USR5432 bridge (BCM5350 cpu, 1 port, fccid: Universal Scientific Industrial Co. IXM-APGBR02)
 // U.S.Robotics USR5451 AP     (BCM5350 cpu, 1 port, fccid: Universal Scientific Industrial Co. IXM-APGBR02)
 // U.S.Robotics USR5461 router (BCM5350 cpu, fccid: Universal Scientific Industrial Co. IXM-RTGBR02)
@@ -196,7 +196,11 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_ASUS_WL500G 0x3606
 
 // ?
+//#ifdef HAVE_ALPHA
+//#define ROUTER_BOARD_CA8 0x3706
+//#else
 #define ROUTER_BOARD_CA8 0x3706
+//#endif
 
 // Fonera (Atheros SoC,...)
 #define ROUTER_BOARD_FONERA2200 0x3801
@@ -310,6 +314,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BOARD_DANUBE 0x610f
 
 #define ROUTER_BOARD_STORM 0x620f
+
+#define ROUTER_BOARD_ADM5120 0x630f
 
 
 

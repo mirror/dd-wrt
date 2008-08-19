@@ -3,6 +3,9 @@ busybox-config:
 
 busybox: busybox-config net-tools bird dhcpforwarder
 ifeq ($(ARCH),mipsel)
+ifeq ($(ARCHITECURE),adm5120)
+	cp busybox/.config_fonera busybox/.config
+else
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro busybox/.config
 else
@@ -21,7 +24,7 @@ ifeq ($(CONFIG_BBOX),"mini")
 endif
 	cd busybox && make oldconfig
 endif
-
+endif
 ifeq ($(ARCH),i386)
 	cp busybox/.config_wrap busybox/.config
 endif
