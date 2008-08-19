@@ -885,10 +885,11 @@ ej_show_wpa_setting (webs_t wp, int argc, char_t ** argv, char *prefix)
   else if (!strcmp (security_mode, "wep"))
     show_wep (wp, prefix);
 #ifdef HAVE_WPA_SUPPLICANT
+#ifndef HAVE_MICRO
   else if (!strcmp (security_mode, "8021X"))
     show_80211X (wp, prefix);
 #endif
-
+#endif
   return;
 }
 #else

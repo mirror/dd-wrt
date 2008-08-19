@@ -573,7 +573,7 @@ if (web!=NULL)
 void
 do_ej (char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
 {
-
+//fprintf(stderr,"load page %s\n",path);
 //open file and read into memory
   char *buffer = NULL;
   FILE *fp = NULL;
@@ -591,7 +591,6 @@ do_ej (char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
       len = 0;
       while (websRomPageIndex[i].path != NULL)
 	{
-//fprintf(stderr,"try to find %s from %s\n",path,websRomPageIndex[i].path);
 	  if (!strcmp (websRomPageIndex[i].path, path))
 	    {
 	      fp = fopen ("/etc/www", "rb");
