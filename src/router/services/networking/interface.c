@@ -247,7 +247,7 @@ start_config_vlan (void)
 int
 start_setup_vlans (void)
 {
-#if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM)
+#if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120)
   return 0;
 #else
   /* VLAN #16 is just a convieniant way of storing tagging info.  There is no VLAN #16 */
@@ -515,6 +515,9 @@ flush_interfaces (void)
   snprintf (all_ifnames, 255, "%s %s %s", "eth0",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #elif HAVE_STORM
+  snprintf (all_ifnames, 255, "%s %s %s", "eth0",
+	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#elif HAVE_ADM5120
   snprintf (all_ifnames, 255, "%s %s %s", "eth0",
 	    nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
 #elif HAVE_TW6600
