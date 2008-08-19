@@ -24,6 +24,9 @@ LDFLAGS	+= -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lutils -ffunction-sections 
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DBUFFALO_COUNTRY="\"$(CONFIG_COUNTRY)\""
 endif
+ifneq ($(CONFIG_5354),y)
+CFLAGS += -DHAVE_VINT
+endif
 
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
@@ -43,12 +46,7 @@ clean:
 install: all
 	install -d $(INSTALLDIR)/usr/sbin
 ifeq ($(CONFIG_MSSID),y)
-#ifeq ($(CONFIG_BCM5354),y)
-#	install -D wlconf.v24 $(INSTALLDIR)/usr/sbin/wlconf
 	install wlconf $(INSTALLDIR)/usr/sbin
-#else
-#	install -D wlconf.r9068 $(INSTALLDIR)/usr/sbin/wlconf
-#endif
 else
 	install -D wlconf.v23 $(INSTALLDIR)/usr/sbin/wlconf
 endif
