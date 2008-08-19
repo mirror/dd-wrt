@@ -1248,6 +1248,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"dnsmasq_enable", "0", 0},
 #elif HAVE_WRK54G
   {"dnsmasq_enable", "0", 0},
+#elif HAVE_ADM5120
+  {"dnsmasq_enable", "0", 0},
 #else
   {"dnsmasq_enable", "1", 0},
 #endif
@@ -1278,6 +1280,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_GGEW
   {"telnetd_enable", "0", 0},
 #elif HAVE_WRK54G
+  {"telnetd_enable", "0", 0},
+#elif HAVE_ADM5120
   {"telnetd_enable", "0", 0},
 #else
   {"telnetd_enable", "1", 0},
@@ -1913,6 +1917,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"dhcp_dnsmasq", "1", 0},
   {"enable_game", "0", 0},
 #elif HAVE_WRK54G
+  {"dhcp_dnsmasq", "0", 0},
+#elif HAVE_ADM5120
   {"dhcp_dnsmasq", "0", 0},
 #else
   {"dhcp_dnsmasq", "1", 0},
