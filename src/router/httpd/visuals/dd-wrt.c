@@ -1434,12 +1434,14 @@ show_security_prefix (webs_t wp, int argc, char_t ** argv, char *prefix,
   websWrite (wp, "<option value=\"wep\" %s>WEP</option>\n",
 	     selmatch (var, "wep", "selected=\"selected\""));
 #ifdef HAVE_WPA_SUPPLICANT
+#ifndef HAVE_MICRO
   if (!primary || nvram_match (sta, "sta") || nvram_match (sta, "wdssta")
       || nvram_match (sta, "apsta") || nvram_match (sta, "wet"))
     {
       websWrite (wp, "<option value=\"8021X\" %s>802.1x</option>\n",
 		 selmatch (var, "8021X", "selected=\"selected\""));
     }
+#endif
 #endif
 
   websWrite (wp, "</select></div>\n");
@@ -3996,6 +3998,7 @@ show_radius (webs_t wp, char *prefix, int showmacformat)
 
 
 #ifdef HAVE_WPA_SUPPLICANT
+#ifndef HAVE_MICRO
 void
 show_80211X (webs_t wp, char *prefix)
 {
@@ -4164,6 +4167,7 @@ show_80211X (webs_t wp, char *prefix)
   websWrite (wp, "//]]>\n</script>\n");
 
 }
+#endif
 #endif
 
 void
