@@ -163,6 +163,9 @@ endif
 ifeq ($(CONFIG_PS5),y)
   CFLAGS += -DHAVE_PS5
 endif
+ifeq ($(CONFIG_ADM5120),y)
+  CFLAGS += -DHAVE_ADM5120
+endif
 ifeq ($(CONFIG_LS5),y)
   CFLAGS += -DHAVE_LS5
 endif
