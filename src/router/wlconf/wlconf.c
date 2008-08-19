@@ -904,6 +904,11 @@ cprintf("get phy type %s\n",name);
 	
 #ifdef HAVE_BUFFALO
 	country = BUFFALO_COUNTRY;
+#elif HAVE_VINT
+	if (nvram_match("wl0_phytype","a"))
+	    country="US";
+	else
+	    country="JP";
 #else
 //	if (nvram_match("wl0_phytype","a"))
 //	    country="US";
