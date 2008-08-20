@@ -163,7 +163,7 @@ start_sysinit (void)
   mkdir ("/var/run", 0777);
   mkdir ("/var/tmp", 0777);
 
-  eval ("/sbin/watchdog");	// system watchdog
+  eval ("watchdog");	// system watchdog
 
   cprintf ("sysinit() setup console\n");
 
