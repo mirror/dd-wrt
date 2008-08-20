@@ -117,7 +117,7 @@ checknas (void)			//for broadcom v24 only
 void
 softcontrol_wlan_led (void)  //done in watchdog.c for non-micro builds.
 {
-#ifdef HAVE_MICRO
+#if defined(HAVE_MICRO) && !defined(HAVE_ADM5120)
 
   int brand;
   int radiostate = -1;
