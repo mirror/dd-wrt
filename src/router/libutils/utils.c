@@ -972,10 +972,10 @@ old_way:;
 	{
 	  if (!strlen (nvram_safe_get ("phyid_num")))
 	    {
-	      eval ("insmod", "switch-core");	//get phy type
-	      eval ("insmod", "switch-robo");
-	      eval ("rmmod", "switch-robo");
-	      eval ("rmmod", "switch-core");
+	      insmod("switch-core");	//get phy type
+	      insmod("switch-robo");
+	      rmmod("switch-robo");
+	      rmmod("switch-core");
 	      nvram_set ("boardnum", "2");
 	      nvram_set ("boardtype", "bcm94710dev");
 	    }
