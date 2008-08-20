@@ -113,7 +113,7 @@ start_sysinit (void)
   uname (&name);
 
 /* network drivers */
-  eval ("insmod", "ar2313");
+  insmod("ar2313");
   if (getRouterBrand () == ROUTER_BOARD_CA8PRO)
     {
       eval ("ifconfig", "eth0", "up");	// required for vlan config
@@ -140,11 +140,11 @@ start_sysinit (void)
 	}
     }
 
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_ahb");
+  insmod("ath_hal");
+  insmod("ath_ahb");
 //  eval ("ifconfig", "wifi0", "up");
 
-  eval ("insmod", "ipv6");
+  insmod("ipv6");
 
   /* Set a sane date */
   stime (&tm);

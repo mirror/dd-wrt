@@ -66,7 +66,7 @@ start_sysinit (void)
 
   //load ext2 
   // eval("insmod","jbd");
-  eval ("insmod", "ext2");
+  insmod("ext2");
 #ifndef KERNEL_24
   if (mount ("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
 #else
@@ -110,29 +110,29 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 /*
-  eval ("insmod", "md5");
-  eval ("insmod", "aes");
-  eval ("insmod", "blowfish");
-  eval ("insmod", "deflate");
-  eval ("insmod", "des");
-  eval ("insmod", "michael_mic");
-  eval ("insmod", "cast5");
-  eval ("insmod", "crypto_null");
+  insmod("md5");
+  insmod("aes");
+  insmod("blowfish");
+  insmod("deflate");
+  insmod("des");
+  insmod("michael_mic");
+  insmod("cast5");
+  insmod("crypto_null");
 */
-//  eval ("insmod", "ath_hal");
-//  eval ("insmod", "wlan");
-//  eval ("insmod", "ath_rate_sample");
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_pci");
+//  insmod("ath_hal");
+//  insmod("wlan");
+//  insmod("ath_rate_sample");
+  insmod("ath_hal");
+  insmod("ath_pci");
 
 
-  /*eval ("insmod", "wlan_acl");
-     eval ("insmod", "wlan_ccmp");
-     eval ("insmod", "wlan_tkip");
-     eval ("insmod", "wlan_wep");
-     eval ("insmod", "wlan_xauth");
-     eval ("insmod", "wlan_scan_ap");
-     eval ("insmod", "wlan_scan_sta");
+  /*insmod("wlan_acl");
+     insmod("wlan_ccmp");
+     insmod("wlan_tkip");
+     insmod("wlan_wep");
+     insmod("wlan_xauth");
+     insmod("wlan_scan_ap");
+     insmod("wlan_scan_sta");
    */
 /*  eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
@@ -142,10 +142,10 @@ start_sysinit (void)
   eval ("ifconfig", "wifi5", "up");
 */
 
-/*  eval ("insmod", "mii");
-  eval ("insmod", "korina");
-  eval ("insmod", "via-rhine");
-  eval ("insmod", "ipv6");*/
+/*  insmod("mii");
+  insmod("korina");
+  insmod("via-rhine");
+  insmod("ipv6");*/
   /* Set a sane date */
   stime (&tm);
   nvram_set ("use_crypto", "0");

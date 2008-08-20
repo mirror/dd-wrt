@@ -34,12 +34,12 @@ start_mmc (void)
     {
 
 #ifdef HAVE_FONERA
-      int res = eval ("insmod", "mmc");
+      int res = insmod("mmc");
       if (!res)
 	{
 	  //device detected
-	  eval ("insmod", "mbcache");
-	  eval ("insmod", "ext2");
+	  insmod("mbcache");
+	  insmod("ext2");
 
 	  if (mount ("/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL))
 	    {
@@ -100,12 +100,12 @@ start_mmc (void)
       sprintf (ddcs, "DDCS=0x%X", 1 << mmc_cs);
 
       if ((mmc_di + mmc_do + mmc_clk + mmc_cs) > 5)	//eval only if at least 0, 1, 2, 3
-	res = eval ("insmod", "mmc", dddi, dddo, ddclk, ddcs);	//eval("insmod","mmc", "DDDI=0x04", "DDDO=0x10", "DDCLK=0x08", "DDCS=0x80");
+	res = insmod("mmc", dddi, dddo, ddclk, ddcs);	//eval("insmod","mmc", "DDDI=0x04", "DDDO=0x10", "DDCLK=0x08", "DDCS=0x80");
 
       if (!res)
 	{
 	  //device detected
-	  eval ("insmod", "ext2");
+	  insmod("ext2");
 
 	  if (mount
 	      ("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL, NULL))

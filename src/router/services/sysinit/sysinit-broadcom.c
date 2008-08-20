@@ -263,11 +263,11 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
     case ROUTER_NETGEAR_WNR834BV2:
     case ROUTER_NETGEAR_WNDR3300:
     case ROUTER_ASUS_WL500W:
-      eval ("insmod", "wl");	//load module
+      insmod("wl");	//load module
       break;
     case ROUTER_WRT600N:
     case ROUTER_WRT610N:
-      eval ("insmod", "wl");	//load module
+      insmod("wl");	//load module
       wl_hwaddr ("eth0", macbuf);
       ether_etoa ((uchar *) macbuf, eaddr);
       nvram_set ("wl0_hwaddr", eaddr);
@@ -289,12 +289,12 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
       if (boardflags == 0)	//we can try anyway
 	{
 	  nvram_set ("boardflags", "0x0200");
-	  eval ("insmod", "wl");	//load module
+	  insmod("wl");	//load module
 	  nvram_unset ("boardflags");
 	}
       else if (boardflags & BFL_AFTERBURNER)	//ab flag already set
 	{
-	  eval ("insmod", "wl");	//load module
+	  insmod("wl");	//load module
 	}
       else			//ab flag not set
 	{
@@ -307,14 +307,14 @@ loadWlModule (void)		//set wled params, get boardflags, set afterburner bit, loa
 	  sprintf (ab, "0x%04X", boardflags);
 	  char *oldvalue = nvram_get ("boardflags");	// use the string for restoring since the Buffalo WZR-RS-G54 does await a 0x10 in the bootloader, otherwise the nvram gets deleted
 	  nvram_set ("boardflags", ab);	//set boardflags with AfterBurner bit on
-	  eval ("insmod", "wl");	//load module
+	  insmod("wl");	//load module
 	  nvram_set ("boardflags", oldvalue);	//set back to original
 	}
 
     }
 #ifdef HAVE_MADWIFI
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_pci");
+  insmod("ath_hal");
+  insmod("ath_pci");
 #endif
   return;
 }
@@ -1052,9 +1052,9 @@ start_sysinit (void)
 
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
-	      eval ("insmod", "switch-core");
-	      if (eval ("insmod", "switch-robo"))
-		eval ("insmod", "switch-adm");
+	      insmod("switch-core");
+	      if (insmod("switch-robo"))
+		insmod("switch-adm");
 	      break;
 
 	    case ROUTER_RT480W:
@@ -1062,9 +1062,9 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") : "";
-	      eval ("insmod", "switch-core");
-	      if (eval ("insmod", "switch-robo"))
-		eval ("insmod", "switch-adm");
+	      insmod("switch-core");
+	      if (insmod("switch-robo"))
+		insmod("switch-adm");
 	      break;
 
 	    case ROUTER_WRT54G3G:
@@ -1154,17 +1154,17 @@ start_sysinit (void)
       {
 #ifdef HAVE_MACBIND
 	if (nvram_match ("et0macaddr", MACBRAND))
-	  eval ("insmod", module);
+	  insmod(module);
 #else
 
 	cprintf ("loading %s\n", module);
-	eval ("insmod", module);
+	insmod(module);
 	cprintf ("done\n");
 #endif
       }
 
       if (check_hw_type () == BCM4702_CHIP)
-	eval ("insmod", "diag");
+	insmod("diag");
 
       loadWlModule ();
 /*
@@ -1175,7 +1175,7 @@ start_sysinit (void)
 	foreach (module, modules, next)
       {
 	cprintf ("loading %s\n", module);
-	eval ("insmod", module);
+	insmod(module);
       }
 #endif
 */
@@ -1187,67 +1187,67 @@ start_sysinit (void)
 	  led_control (LED_USB, LED_ON);
 
 	  cprintf ("loading usbcore\n");
-	  eval ("insmod", "usbcore");
+	  insmod("usbcore");
 
 	  if (nvram_match ("usb_uhci", "1"))
 	    {
 	      cprintf ("loading usb-uhci\n");
-	      eval ("insmod", "usb-uhci");
+	      insmod("usb-uhci");
 	    }
 
 	  if (nvram_match ("usb_ohci", "1"))
 	    {
 	      cprintf ("loading usb-ohci\n");
-	      eval ("insmod", "usb-ohci");
+	      insmod("usb-ohci");
 	    }
 
 	  if (nvram_match ("usb_usb2", "1"))
 	    {
 	      cprintf ("loading usb2 module\n");
-	      eval ("insmod", "ehci-hcd");
+	      insmod("ehci-hcd");
 	    }
 
 	  if (nvram_match ("usb_storage", "1"))
 	    {
 	      cprintf ("loading scsi_mod\n");
-	      eval ("insmod", "scsi_mod");
+	      insmod("scsi_mod");
 	      cprintf ("loading sd_mod\n");
-	      eval ("insmod", "sd_mod");
+	      insmod("sd_mod");
 	      cprintf ("loading usb-storage\n");
-	      eval ("insmod", "usb-storage");
+	      insmod("usb-storage");
 
 
 	      if (nvram_match ("usb_fs_ext3", "1"))
 		{
 		  cprintf ("loading ext2\n");
-		  eval ("insmod", "ext2");
+		  insmod("ext2");
 #ifdef HAVE_USB_ADVANCED
 		  cprintf ("loading jbd\n");
-		  eval ("insmod", "jbd");
+		  insmod("jbd");
 		  cprintf ("loading ext3\n");
-		  eval ("insmod", "ext3");
+		  insmod("ext3");
 #endif
 		}
 
 	      if (nvram_match ("usb_fs_fat", "1"))
 		{
 		  cprintf ("loading usb_fs_fat\n");
-		  eval ("insmod", "fat");
+		  insmod("fat");
 		  cprintf ("loading usb_fs_vfat\n");
-		  eval ("insmod", "vfat");
+		  insmod("vfat");
 		}
 
 //         if (nvram_match ("usb_fs_xfs", "1"))
 //         {
 //              cprintf ("loading usb_fs_xfs\n");
-//              eval ("insmod", "xfs");
+//              insmod("xfs");
 //         }             
 	    }
 
 	  if (nvram_match ("usb_printer", "1"))
 	    {
 	      cprintf ("loading printer\n");
-	      eval ("insmod", "printer");
+	      insmod("printer");
 	    }
 	}
       else
@@ -1620,8 +1620,8 @@ enable_dtag_vlan (int enable)
 	}
       stop_lan ();
       eval ("ifconfig", eth, "down");
-      eval ("rmmod", "bcm57xxlsys");
-      eval ("insmod", "bcm57xxlsys");
+      rmmod("bcm57xxlsys");
+      insmod("bcm57xxlsys");
       eval ("ifconfig", eth, "up");
       start_config_vlan ();
       start_lan ();
@@ -1660,8 +1660,8 @@ enable_dtag_vlan (int enable)
 	}
       stop_lan ();
       eval ("ifconfig", eth, "down");
-      eval ("rmmod", "bcm57xxlsys");
-      eval ("insmod", "bcm57xxlsys");
+      rmmod("bcm57xxlsys");
+      insmod("bcm57xxlsys");
       eval ("ifconfig", eth, "up");
       start_config_vlan ();
       start_lan ();

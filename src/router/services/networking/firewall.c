@@ -1049,8 +1049,8 @@ macgrp_chain (int seq, unsigned int mark, int urlenable)
   if (strcmp (wordlist, "") == 0)
     return;
 
-  eval ("insmod", "ipt_mac");
-  eval ("insmod", "xt_mac");
+  insmod("ipt_mac");
+  insmod("xt_mac");
 
   if (mark == MARK_DROP)
     {
@@ -1313,7 +1313,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 
 	  for (i = 0; i < strlen (realname); i++)
 	    realname[i] = tolower (realname[i]);
-	  eval ("insmod", "ipt_layer7");
+	  insmod("ipt_layer7");
 	  save2file ("-A advgrp_%d -m layer7 --l7proto %s -j %s\n",
 		     seq, realname, log_drop);
 	}
@@ -1346,7 +1346,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 	    proto = "waste";
 	  if (!strcasecmp (realname, "xdcc"))
 	    proto = "xdcc";
-	  eval ("insmod", "ipt_ipp2p");
+	  insmod("ipt_ipp2p");
 	  save2file ("-A advgrp_%d -p tcp -m ipp2p --%s -j %s\n", seq, proto,
 		     log_drop);
 
@@ -1356,7 +1356,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
   /* p2p catchall */
   if (nvram_nmatch ("1", "filter_p2p_grp%d", seq))
     {
-      eval ("insmod", "ipt_ipp2p");
+      insmod("ipt_ipp2p");
       save2file ("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
 		 log_drop);
     }
@@ -1364,7 +1364,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
   wordlist = nvram_nget ("filter_web_host%d", seq);
   if (strcmp (wordlist, ""))
     {
-      eval ("insmod", "ipt_webstr");
+      insmod("ipt_webstr");
       save2file ("-A advgrp_%d -p tcp -m tcp -m webstr --host \"%s\" -j %s\n",
 		 seq, wordlist, log_reject);
     }
@@ -1372,7 +1372,7 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
   wordlist = nvram_nget ("filter_web_url%d", seq);
   if (strcmp (wordlist, ""))
     {
-      eval ("insmod", "ipt_webstr");
+      insmod("ipt_webstr");
       save2file ("-A advgrp_%d -p tcp -m tcp -m webstr --url \"%s\" -j %s\n",
 		 seq, wordlist, log_reject);
     }
@@ -1991,7 +1991,7 @@ filter_forward (void)
 //                         lanface, wanface, HTTP_PORT, webfilter, log_reject);
   if (webfilter)
     {
-      eval ("insmod", "ipt_webstr");
+      insmod("ipt_webstr");
       save2file ("-A FORWARD -i %s -o %s -p tcp -m tcp "
 		 "-m webstr --content %d -j %s\n",
 		 lanface, wanface, webfilter, log_reject);
@@ -2999,23 +2999,23 @@ stop_firewall (void)
       sprintf (num, "advgrp_%d", i);
       eval ("iptables", "-F", num);
     }
-  eval ("rmmod", "ipt_webstr");
-  eval ("rmmod", "ipt_layer7");
-  eval ("rmmod", "ipt_ipp2p");
+  rmmod("ipt_webstr");
+  rmmod("ipt_layer7");
+  rmmod("ipt_ipp2p");
   if (nvram_invmatch ("apd_enable", "0"))
     {
-      eval ("rmmod", "ipt_mark");
-      eval ("rmmod", "xt_mark");
+      rmmod("ipt_mark");
+      rmmod("xt_mark");
     }
-  eval ("rmmod", "ipt_TRIGGER");
-  eval ("rmmod", "ipt_CONNMARK");
-  eval ("rmmod", "xt_CONNMARK");
+  rmmod("ipt_TRIGGER");
+  rmmod("ipt_CONNMARK");
+  rmmod("xt_CONNMARK");
   if (nvram_invmatch ("apd_enable", "0"))
     {
-      eval ("rmmod", "ipt_mac");
-      eval ("rmmod", "xt_mac");
+      rmmod("ipt_mac");
+      rmmod("xt_mac");
     }
-  eval ("rmmod", "ipt_IMQ");
+  rmmod("ipt_IMQ");
   cprintf ("done\n");
   return 0;
 }

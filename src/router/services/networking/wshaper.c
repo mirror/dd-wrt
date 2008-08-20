@@ -322,8 +322,8 @@ svqos_iptables (void)
 	     dev);
 
   // enable IMQ device for ingress policing
-  eval ("insmod", "imq");
-  eval ("insmod", "ipt_IMQ");
+  insmod("imq");
+  insmod("ipt_IMQ");
   if (strcmp (dev,"br0"))
     {
       sysprintf
@@ -363,10 +363,10 @@ svqos_iptables (void)
     ("/usr/sbin/iptables -t mangle -D POSTROUTING -o %s -j SVQOS_OUT", dev);
   sysprintf
     ("/usr/sbin/iptables -t mangle -I POSTROUTING -o %s -j SVQOS_OUT", dev);
-  eval ("insmod", "ipt_mark");
-  eval ("insmod", "xt_mark");
-  eval ("insmod", "ipt_CONNMARK");
-  eval ("insmod", "xt_CONNMARK");
+  insmod("ipt_mark");
+  insmod("xt_mark");
+  insmod("ipt_CONNMARK");
+  insmod("xt_CONNMARK");
   system2
     ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -j CONNMARK --restore-mark");
   system2
@@ -391,23 +391,23 @@ svqos_iptables (void)
   if (strcmp (dev, "br0") && strcmp (wl0mode, "wet")
       && strcmp (wl0mode, "apstawet"))
     {
-      eval ("rmmod", "ebt_dnat");
-      eval ("rmmod", "ebt_snat");
-      eval ("rmmod", "ebt_mark_m");
-      eval ("rmmod", "ebt_mark");
-      eval ("rmmod", "ebtable_filter");
-      eval ("rmmod", "ebtable_nat");
-      eval ("rmmod", "ebtables");
+      rmmod("ebt_dnat");
+      rmmod("ebt_snat");
+      rmmod("ebt_mark_m");
+      rmmod("ebt_mark");
+      rmmod("ebtable_filter");
+      rmmod("ebtable_nat");
+      rmmod("ebtables");
     }
   else
     {
-      eval ("insmod", "ebtables");
-      eval ("insmod", "ebtable_nat");
-      eval ("insmod", "ebtable_filter");
-      eval ("insmod", "ebt_mark");
-      eval ("insmod", "ebt_mark_m");
-      eval ("insmod", "ebt_snat");
-      eval ("insmod", "ebt_dnat");
+      insmod("ebtables");
+      insmod("ebtable_nat");
+      insmod("ebtable_filter");
+      insmod("ebt_mark");
+      insmod("ebt_mark_m");
+      insmod("ebt_snat");
+      insmod("ebt_dnat");
     }
 #endif
 #ifndef HAVE_AQOS
@@ -417,8 +417,8 @@ svqos_iptables (void)
 	break;
       if (strcmp (dev, "br0"))
 	{
-	  eval ("insmod", "ipt_mac");
-	  eval ("insmod", "xt_mac");
+	  insmod("ipt_mac");
+	  insmod("xt_mac");
 	  sysprintf
 	    ("/usr/sbin/iptables -t mangle -D PREROUTING -m mac --mac-source %s -j MARK --set-mark %s",
 	     data, level);
@@ -525,7 +525,7 @@ svqos_iptables (void)
 
       if (strstr (type, "l7"))
 	{
-	  eval ("insmod", "ipt_layer7");
+	  insmod("ipt_layer7");
 	  sysprintf
 	    ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -m layer7 --l7proto %s -m mark --mark 0 -j MARK --set-mark %s",
 	     name, level);
@@ -563,7 +563,7 @@ svqos_iptables (void)
 	    proto = "waste";
 	  else if (!strcasecmp (realname, "xdcc"))
 	    proto = "xdcc";
-	  eval ("insmod", "ipt_ipp2p");
+	  insmod("ipt_ipp2p");
 	  sysprintf
 	    ("/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
 	     proto, level);
@@ -739,14 +739,14 @@ stop_wshaper (void)
   char *dev = get_wshaper_dev ();
   if (strcmp (dev, "br0") && getWET () == NULL)
     {
-      eval ("rmmod", "ebt_dnat");
-      eval ("rmmod", "ebt_snat");
-      eval ("rmmod", "ebt_mark_m");
-      eval ("rmmod", "ebt_mark");
-      eval ("rmmod", "ebtable_filter");
-      eval ("rmmod", "ebtable_nat");
-      eval ("rmmod", "ebtables");
+      rmmod("ebt_dnat");
+      rmmod("ebt_snat");
+      rmmod("ebt_mark_m");
+      rmmod("ebt_mark");
+      rmmod("ebtable_filter");
+      rmmod("ebtable_nat");
+      rmmod("ebtables");
     }
-  eval ("rmmod", "imq");
+  rmmod("imq");
   return ret;
 }

@@ -103,9 +103,9 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 /* network drivers */
-  eval ("insmod", "ar2313");
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_ahb");
+  insmod("ar2313");
+  insmod("ath_hal");
+  insmod("ath_ahb");
 #ifdef HAVE_WRK54G
   system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
   system ("echo 1 >/proc/sys/dev/wifi0/softled");

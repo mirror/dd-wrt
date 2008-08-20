@@ -97,33 +97,33 @@ start_sysinit (void)
   uname (&name);
 
 //  enableAfterBurner ();
-  eval ("insmod", "md5");
-  eval ("insmod", "aes");
-  eval ("insmod", "blowfish");
-  eval ("insmod", "deflate");
-  eval ("insmod", "des");
-  eval ("insmod", "michael_mic");
-  eval ("insmod", "cast5");
-  eval ("insmod", "crypto_null");
+  insmod("md5");
+  insmod("aes");
+  insmod("blowfish");
+  insmod("deflate");
+  insmod("des");
+  insmod("michael_mic");
+  insmod("cast5");
+  insmod("crypto_null");
 
   system ("/etc/kendin");
-  eval ("insmod", "ixp400th");
-  eval ("insmod", "ixp400");
+  insmod("ixp400th");
+  insmod("ixp400");
   system ("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
-  eval ("insmod", "ixp400_eth");
-  eval ("insmod", "ocf");
-  eval ("insmod", "cryptodev");
-  eval ("insmod", "ixp4xx", "init_crypto=0");
+  insmod("ixp400_eth");
+  insmod("ocf");
+  insmod("cryptodev");
+  insmod("ixp4xx", "init_crypto=0");
   eval ("ifconfig", "ixp0", "0.0.0.0", "up");
   eval ("vconfig", "add", "ixp0", "1");
   eval ("vconfig", "add", "ixp0", "2");
 
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_pci");
+  insmod("ath_hal");
+  insmod("ath_pci");
 
 
-//  eval ("insmod", "wlan_scan_ap");
-//  eval ("insmod", "wlan_scan_sta");
+//  insmod("wlan_scan_ap");
+//  insmod("wlan_scan_sta");
 
 /*  eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
@@ -133,7 +133,7 @@ start_sysinit (void)
   eval ("ifconfig", "wifi5", "up");
 */
 
-  eval ("insmod", "ipv6");
+  insmod("ipv6");
 //  load_drivers(); //load madwifi drivers
   /* Set a sane date */
   stime (&tm);
