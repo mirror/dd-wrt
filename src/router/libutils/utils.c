@@ -2515,9 +2515,9 @@ getMTD (char *name)
 }
 
 
-void insmod(char *module)
+int insmod(char *module)
 {
-eval("insmod",module);
+return eval("insmod",module);
 }
 
 void rmmod(char *module)
