@@ -37,7 +37,7 @@ endif
 #CFLAGS += -Ilzma
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lshared -lcrypt -ldl -lutils
 
-CFLAGS += -DLINUX 
+CFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
