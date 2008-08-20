@@ -142,8 +142,6 @@ insmod("xt_MARK");
 insmod("xt_TCPMSS");
 insmod("xt_length");
 insmod("xt_limit");
-insmod("xt_mac");
-insmod("xt_mark");
 insmod("xt_multiport");
 insmod("xt_pkttype");
 insmod("xt_state");
@@ -152,17 +150,6 @@ insmod("xt_u32");
 
 insmod("iptable_filter");
 insmod("iptable_mangle");
-insmod("ipt_IMQ");
-insmod("ipt_LOG");
-insmod("ipt_MASQUERADE");
-insmod("ipt_REDIRECT");
-insmod("ipt_REJECT");
-insmod("ipt_TRIGGER");
-insmod("ipt_ULOG");
-insmod("ipt_ipp2p");
-insmod("ipt_iprange");
-insmod("ipt_layer7");
-insmod("ipt_webstr");
 insmod("nf_nat");
 insmod("iptable_nat");
 insmod("nf_nat_ftp");
@@ -170,6 +157,17 @@ insmod("nf_nat_irc");
 insmod("nf_nat_pptp");
 insmod("nf_nat_proto_gre");
 insmod("nf_nat_tftp");
+insmod("ipt_LOG");
+insmod("ipt_MASQUERADE");
+insmod("ipt_REDIRECT");
+insmod("ipt_REJECT");
+insmod("ipt_ULOG");
+insmod("ipt_TRIGGER");
+insmod("ipt_iprange");
+insmod("ipt_ipp2p");
+insmod("ipt_layer7");
+insmod("ipt_webstr");
+
 
 
 
@@ -228,6 +226,7 @@ fclose(fp);
 //  insmod("ipv6");
 
   /* Set a sane date */
+
   stime (&tm);
   nvram_set ("wl0_ifname", "ath0");
 
