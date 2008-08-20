@@ -101,55 +101,10 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 /* network drivers */
-/*eval("insmod","mii");
-eval("insmod","ibm_emac");
-eval("insmod","slhc");
-eval("insmod","imq");
-eval("insmod","tun");
-*/
-/* ppp drivers */
-/*
-eval("insmod","ppp_generic");
-eval("insmod","bsd_comp");
-eval("insmod","ppp_deflate");
-eval("insmod","ppp_mppe");
-eval("insmod","ppp_async");
-eval("insmod","ppp_synctty");
-eval("insmod","pppox");
-eval("insmod","pppoe");
+  insmod("ath_hal");
+  insmod("ath_pci");
 
-eval("insmod","md5");
-eval("insmod","aes");
-eval("insmod","blowfish");
-eval("insmod","deflate");
-eval("insmod","des");
-eval("insmod","michael_mic");
-eval("insmod","cast5");
-eval("insmod","crypto_null");
-*/
-//  eval ("insmod", "ath_hal");
-//  eval ("insmod", "wlan");
-//  eval ("insmod", "ath_rate_sample");
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_pci");
-
-/*  eval ("insmod", "wlan_acl");
-  eval ("insmod", "wlan_ccmp");
-  eval ("insmod", "wlan_tkip");
-  eval ("insmod", "wlan_wep");
-  eval ("insmod", "wlan_xauth");
-  eval ("insmod", "wlan_scan_ap");
-  eval ("insmod", "wlan_scan_sta");
-*/
-/*  eval ("ifconfig", "wifi0", "up");
-  eval ("ifconfig", "wifi1", "up");
-  eval ("ifconfig", "wifi2", "up");
-  eval ("ifconfig", "wifi3", "up");
-  eval ("ifconfig", "wifi4", "up");
-  eval ("ifconfig", "wifi5", "up");
-
-*/
-  eval ("insmod", "ipv6");
+  insmod("ipv6");
 
   /* Set a sane date */
   stime (&tm);

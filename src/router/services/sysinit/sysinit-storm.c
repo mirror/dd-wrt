@@ -100,7 +100,7 @@ start_sysinit (void)
   uname (&name);
 
 /* network drivers */
-//  eval ("insmod", "ag7100_mod");
+//  insmod("ag7100_mod");
 //  sleep(1);
   eval ("ifconfig", "eth0", "up");
   struct ifreq ifr;
@@ -115,9 +115,9 @@ start_sysinit (void)
       close (s);
     }
 
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_pci");
-//  eval ("insmod", "ath_mimo_pci");
+  insmod("ath_hal");
+  insmod("ath_pci");
+//  insmod("ath_mimo_pci");
 
 //  eval ("ifconfig", "wifi0", "up");
 
@@ -125,7 +125,7 @@ start_sysinit (void)
 //  system ("echo 1 >/proc/sys/dev/wifi0/softled");
 
 
-  eval ("insmod", "ipv6");
+  insmod("ipv6");
 
   /* Set a sane date */
   stime (&tm);
