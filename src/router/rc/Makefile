@@ -510,6 +510,9 @@ endif
 ifneq ($(CONFIG_MICRO),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
 endif
+ifeq ($(CONFIG_ADM5120),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
+endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc switch
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
