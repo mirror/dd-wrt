@@ -102,18 +102,18 @@ start_sysinit (void)
  test -e /lib/modules/$KERNELVER/extra/dspdd.ko && insmod /lib/modules/$KERNELVER/extra/dspdd.ko
  test -e /lib/modules/$KERNELVER/extra/endpointdd.ko && insmod /lib/modules/$KERNELVER/extra/endpointdd.ko
 */
-  eval ("insmod", "atmapi");
-  eval ("insmod", "adsldd");
-  eval ("insmod", "blaa_dd");
-  eval ("insmod", "bcmprocfs");
-  eval ("insmod", "bcm_enet");
+  insmod("atmapi");
+  insmod("adsldd");
+  insmod("blaa_dd");
+  insmod("bcmprocfs");
+  insmod("bcm_enet");
 
 
   /* Modules */
   uname (&name);
 /* network drivers */
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_pci");
+  insmod("ath_hal");
+  insmod("ath_pci");
 
 /*  eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
@@ -123,7 +123,7 @@ start_sysinit (void)
   eval ("ifconfig", "wifi5", "up");
 */
 
-  // eval ("insmod", "ipv6");
+  // insmod("ipv6");
 
   /* Set a sane date */
   stime (&tm);

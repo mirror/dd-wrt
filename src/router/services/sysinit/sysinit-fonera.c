@@ -115,9 +115,9 @@ start_sysinit (void)
   /* Modules */
   uname (&name);
 /* network drivers */
-  eval ("insmod", "ar2313");
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_ahb");
+  insmod("ar2313");
+  insmod("ath_hal");
+  insmod("ath_ahb");
 //  eval ("ifconfig", "wifi0", "up");
 #ifdef HAVE_LS2
   eval ("ifconfig", "eth0", "up");	// wan
@@ -148,7 +148,7 @@ start_sysinit (void)
 	  close (s);
 	}
     }
-//  eval ("insmod", "ipv6");
+//  insmod("ipv6");
 
   /* Set a sane date */
   stime (&tm);

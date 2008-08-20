@@ -49,12 +49,13 @@ start_stabridge (void)
 
   if (getWET ())
     {
-      eval ("insmod", "ebtables");
-      eval ("insmod", "ebtable_filter");
-      eval ("insmod", "ebtable_nat");
-      eval ("insmod", "ebtable_broute");
-      eval ("insmod", "ebt_arpnat");
-      eval ("insmod", "ebt_broute");
+      insmod("ebtables");
+      insmod("ebtables");
+      insmod("ebtable_filter");
+      insmod("ebtable_nat");
+      insmod("ebtable_broute");
+      insmod("ebt_arpnat");
+      insmod("ebt_broute");
       eval ("ebtables", "-t", "nat", "-A", "PREROUTING", "--in-interface",
 	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
       eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "--out-interface",
@@ -83,10 +84,10 @@ stop_stabridge (void)
   // remove the modules (..if rules are in?).
   eval ("ebtables", "-t", "broute", "-F");
   eval ("ebtables", "-t", "nat", "-F");
-  eval ("rmmod", "ebt_broute");
-  eval ("rmmod", "ebt_arpnat");
-  eval ("rmmod", "ebtable_broute");
-  eval ("rmmod", "ebtable_nat");
-  eval ("rmmod", "ebtable_filter");
-  eval ("rmmod", "ebtables");
+  rmmod("ebt_broute");
+  rmmod("ebt_arpnat");
+  rmmod("ebtable_broute");
+  rmmod("ebtable_nat");
+  rmmod("ebtable_filter");
+  rmmod("ebtables");
 }

@@ -29,7 +29,7 @@ void
 stop_jffs2 (void)
 {
   eval ("umount", "/jffs");
-  eval ("rmmod", "jffs2");
+  rmmod("jffs2");
 }
 
 void
@@ -44,8 +44,8 @@ start_jffs2 (void)
 	  nvram_set ("sys_clean_jffs2", "0");
 	  nvram_commit ();
 	  itworked = eval ("mtd", "erase", rwpart);
-	  eval ("insmod", "crc32");
-	  eval ("insmod", "jffs2");
+	  insmod("crc32");
+	  insmod("jffs2");
 	  char dev[64];
 	  sprintf (dev, "/dev/mtdblock/%d", getMTD ("ddwrt"));
 	  itworked += mount (dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
@@ -62,8 +62,8 @@ start_jffs2 (void)
       else
 	{
 	  itworked = eval ("mtd", "unlock", rwpart);
-	  eval ("insmod", "crc32");
-	  eval ("insmod", "jffs2");
+	  insmod("crc32");
+	  insmod("jffs2");
 	  char dev[64];
 	  sprintf (dev, "/dev/mtdblock/%d", getMTD ("ddwrt"));
 	  itworked += mount (dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);

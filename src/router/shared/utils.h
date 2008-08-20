@@ -635,5 +635,7 @@ int endswith (char *str, char *cmp);
 int isListed (char *listname, char *value);
 void addList (char *listname, char *value);
 int searchfor(FILE *fp, char *str,int scansize);
+void insmod(char *module);
+void rmmod(char *module);
 
 #endif

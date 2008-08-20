@@ -282,8 +282,6 @@ write_mac (const char *path)
 
   snprintf (string, sizeof (string), "string=%s", mac);
 
-//  eval ("insmod", "writemac", "flag=set_mac", string);
-//  eval ("rmmod", "writemac");
 
 //      write_wl_mac(mac); /* barry add for WRT54G v1.1 single board, write wl mac to EEPROM ! */
 

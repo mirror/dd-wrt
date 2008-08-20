@@ -200,10 +200,10 @@ start_sysinit (void)
   uname (&name);
 
 /* network drivers */
-  eval ("insmod", "ar2313");
+  insmod("ar2313");
 
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_ahb");
+  insmod("ath_hal");
+  insmod("ath_ahb");
 
 
   system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
@@ -216,7 +216,7 @@ start_sysinit (void)
 
 
 
-  eval ("insmod", "ipv6");
+  insmod("ipv6");
 
   /* Set a sane date */
   stime (&tm);

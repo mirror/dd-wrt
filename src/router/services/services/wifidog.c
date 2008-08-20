@@ -32,10 +32,10 @@ start_wifidog (void)
 {
   if (nvram_match ("wd_enable", "1"))
     {
-      eval ("insmod", "ipt_mark");
-      eval ("insmod", "ipt_mac");
-      eval ("insmod", "xt_mark");
-      eval ("insmod", "xt_mac");
+      insmod("ipt_mark");
+      insmod("ipt_mac");
+      insmod("xt_mark");
+      insmod("xt_mac");
       mkdir ("/tmp/etc/", 0744);
       FILE *fp = fopen ("/tmp/etc/wifidog.conf", "wb");
       if (!strlen (nvram_safe_get ("wd_gwid")))
