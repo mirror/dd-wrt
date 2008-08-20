@@ -1,0 +1,1853 @@
+diff -urN serial2/.amba-pl010.o.cmd serial/.amba-pl010.o.cmd
+--- serial2/.amba-pl010.o.cmd	1970-01-01 01:00:00.000000000 +0100
++++ serial/.amba-pl010.o.cmd	2008-08-19 02:55:04.324046778 +0200
+@@ -0,0 +1,452 @@
++cmd_drivers/serial/amba-pl010.o := mipsel-linux-uclibc-gcc -Wp,-MD,drivers/serial/.amba-pl010.o.d  -nostdinc -isystem /raid/xfs/toolchains/toolchain-mipsel_gcc4.1.2/bin/../lib/gcc/mipsel-linux-uclibc/4.1.2/include -D__KERNEL__ -Iinclude  -include include/linux/autoconf.h -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -O2  -mabi=32 -G 0 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding  -march=mips32 -Wa,-mips32 -Wa,--trap -Iinclude/asm-mips/mach-adm5120 -ffreestanding -Iinclude/asm-mips/mach-generic -D"VMLINUX_LOAD_ADDRESS=0xffffffff80002000" -fomit-frame-pointer  -fno-stack-protector -funit-at-a-time -Wdeclaration-after-statement -Wno-pointer-sign    -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(amba_pl010)"  -D"KBUILD_MODNAME=KBUILD_STR(amba_pl010)" -c -o drivers/serial/amba-pl010.o drivers/serial/amba-pl010.c
++
++deps_drivers/serial/amba-pl010.o := \
++  drivers/serial/amba-pl010.c \
++    $(wildcard include/config/serial/amba/pl010/console.h) \
++    $(wildcard include/config/magic/sysrq.h) \
++    $(wildcard include/config/serial/amba/pl010/numports.h) \
++    $(wildcard include/config/serial/amba/pl010/portname.h) \
++    $(wildcard include/config/type.h) \
++  include/linux/module.h \
++    $(wildcard include/config/modules.h) \
++    $(wildcard include/config/modversions.h) \
++    $(wildcard include/config/unused/symbols.h) \
++    $(wildcard include/config/generic/bug.h) \
++    $(wildcard include/config/module/unload.h) \
++    $(wildcard include/config/kallsyms.h) \
++    $(wildcard include/config/sysfs.h) \
++  include/linux/list.h \
++    $(wildcard include/config/debug/list.h) \
++  include/linux/stddef.h \
++  include/linux/compiler.h \
++    $(wildcard include/config/enable/must/check.h) \
++  include/linux/compiler-gcc4.h \
++    $(wildcard include/config/forced/inlining.h) \
++  include/linux/compiler-gcc.h \
++  include/linux/poison.h \
++  include/linux/prefetch.h \
++  include/linux/types.h \
++    $(wildcard include/config/uid16.h) \
++    $(wildcard include/config/lbd.h) \
++    $(wildcard include/config/lsf.h) \
++    $(wildcard include/config/resources/64bit.h) \
++  include/linux/posix_types.h \
++  include/asm/posix_types.h \
++  include/asm/sgidefs.h \
++  include/asm/types.h \
++    $(wildcard include/config/highmem.h) \
++    $(wildcard include/config/64bit/phys/addr.h) \
++    $(wildcard include/config/64bit.h) \
++  include/asm/processor.h \
++    $(wildcard include/config/32bit.h) \
++    $(wildcard include/config/mips/mt/fpaff.h) \
++    $(wildcard include/config/cpu/has/prefetch.h) \
++  include/linux/cpumask.h \
++    $(wildcard include/config/smp.h) \
++    $(wildcard include/config/hotplug/cpu.h) \
++  include/linux/kernel.h \
++    $(wildcard include/config/preempt/voluntary.h) \
++    $(wildcard include/config/debug/spinlock/sleep.h) \
++    $(wildcard include/config/printk.h) \
++    $(wildcard include/config/noprintk.h) \
++    $(wildcard include/config/numa.h) \
++  /raid/xfs/toolchains/toolchain-mipsel_gcc4.1.2/bin/../lib/gcc/mipsel-linux-uclibc/4.1.2/include/stdarg.h \
++  include/linux/linkage.h \
++  include/asm/linkage.h \
++  include/linux/bitops.h \
++  include/asm/bitops.h \
++    $(wildcard include/config/cpu/mipsr2.h) \
++    $(wildcard include/config/cpu/mips32.h) \
++    $(wildcard include/config/cpu/mips64.h) \
++  include/linux/irqflags.h \
++    $(wildcard include/config/trace/irqflags.h) \
++    $(wildcard include/config/trace/irqflags/support.h) \
++    $(wildcard include/config/x86.h) \
++  include/asm/irqflags.h \
++    $(wildcard include/config/mips/mt/smtc.h) \
++    $(wildcard include/config/irq/cpu.h) \
++    $(wildcard include/config/mips/mt/smtc/instant/replay.h) \
++  include/asm/hazards.h \
++    $(wildcard include/config/cpu/r10000.h) \
++    $(wildcard include/config/cpu/rm9000.h) \
++    $(wildcard include/config/cpu/sb1.h) \
++  include/asm/barrier.h \
++    $(wildcard include/config/cpu/has/sync.h) \
++    $(wildcard include/config/cpu/has/wb.h) \
++    $(wildcard include/config/weak/ordering.h) \
++    $(wildcard include/config/weak/reordering/beyond/llsc.h) \
++  include/asm/bug.h \
++    $(wildcard include/config/bug.h) \
++  include/asm-generic/bug.h \
++    $(wildcard include/config/debug/bugverbose.h) \
++  include/asm/byteorder.h \
++    $(wildcard include/config/cpu/mips64/r2.h) \
++  include/linux/byteorder/little_endian.h \
++  include/linux/byteorder/swab.h \
++  include/linux/byteorder/generic.h \
++  include/asm/cpu-features.h \
++    $(wildcard include/config/cpu/mipsr2/irq/vi.h) \
++    $(wildcard include/config/cpu/mipsr2/irq/ei.h) \
++  include/asm/cpu.h \
++  include/asm/cpu-info.h \
++    $(wildcard include/config/sgi/ip27.h) \
++    $(wildcard include/config/mips/mt.h) \
++  include/asm/cache.h \
++    $(wildcard include/config/mips/l1/cache/shift.h) \
++  include/asm-mips/mach-generic/kmalloc.h \
++    $(wildcard include/config/dma/coherent.h) \
++  include/asm-mips/mach-adm5120/cpu-feature-overrides.h \
++    $(wildcard include/config/adm5120/cpu/overrides.h) \
++  include/asm/war.h \
++    $(wildcard include/config/sgi/ip22.h) \
++    $(wildcard include/config/sni/rm.h) \
++    $(wildcard include/config/cpu/r5432.h) \
++    $(wildcard include/config/sb1/pass/1/workarounds.h) \
++    $(wildcard include/config/sb1/pass/2/workarounds.h) \
++    $(wildcard include/config/mips/malta.h) \
++    $(wildcard include/config/mips/atlas.h) \
++    $(wildcard include/config/mips/sead.h) \
++    $(wildcard include/config/cpu/tx49xx.h) \
++    $(wildcard include/config/pmc/yosemite.h) \
++    $(wildcard include/config/basler/excite.h) \
++    $(wildcard include/config/sgi/ip32.h) \
++    $(wildcard include/config/wr/ppmc.h) \
++    $(wildcard include/config/pmc/msp7120/eval.h) \
++    $(wildcard include/config/pmc/msp7120/gw.h) \
++    $(wildcard include/config/pmc/msp7120/fpga.h) \
++  include/asm-generic/bitops/non-atomic.h \
++  include/asm-generic/bitops/fls64.h \
++  include/asm-generic/bitops/ffz.h \
++  include/asm-generic/bitops/find.h \
++  include/asm-generic/bitops/sched.h \
++  include/asm-generic/bitops/hweight.h \
++  include/asm-generic/bitops/ext2-non-atomic.h \
++  include/asm-generic/bitops/le.h \
++  include/asm-generic/bitops/ext2-atomic.h \
++  include/asm-generic/bitops/minix.h \
++  include/linux/log2.h \
++    $(wildcard include/config/arch/has/ilog2/u32.h) \
++    $(wildcard include/config/arch/has/ilog2/u64.h) \
++  include/linux/threads.h \
++    $(wildcard include/config/nr/cpus.h) \
++    $(wildcard include/config/base/small.h) \
++  include/linux/bitmap.h \
++  include/linux/string.h \
++  include/asm/string.h \
++    $(wildcard include/config/cpu/r3000.h) \
++  include/asm/cachectl.h \
++  include/asm/mipsregs.h \
++    $(wildcard include/config/cpu/vr41xx.h) \
++    $(wildcard include/config/page/size/4kb.h) \
++    $(wildcard include/config/page/size/16kb.h) \
++    $(wildcard include/config/page/size/64kb.h) \
++  include/asm/prefetch.h \
++  include/asm/system.h \
++  include/asm/addrspace.h \
++    $(wildcard include/config/cpu/r8000.h) \
++  include/asm-mips/mach-generic/spaces.h \
++    $(wildcard include/config/dma/noncoherent.h) \
++  include/linux/const.h \
++  include/asm/cmpxchg.h \
++  include/asm/dsp.h \
++  include/linux/stat.h \
++  include/asm/stat.h \
++  include/linux/time.h \
++  include/linux/cache.h \
++  include/linux/seqlock.h \
++  include/linux/spinlock.h \
++    $(wildcard include/config/debug/spinlock.h) \
++    $(wildcard include/config/preempt.h) \
++    $(wildcard include/config/debug/lock/alloc.h) \
++  include/linux/preempt.h \
++    $(wildcard include/config/debug/preempt.h) \
++    $(wildcard include/config/preempt/notifiers.h) \
++  include/linux/thread_info.h \
++  include/asm/thread_info.h \
++    $(wildcard include/config/page/size/8kb.h) \
++    $(wildcard include/config/debug/stack/usage.h) \
++  include/linux/stringify.h \
++  include/linux/bottom_half.h \
++  include/linux/spinlock_types.h \
++  include/linux/spinlock_types_up.h \
++  include/linux/lockdep.h \
++    $(wildcard include/config/lockdep.h) \
++    $(wildcard include/config/lock/stat.h) \
++    $(wildcard include/config/generic/hardirqs.h) \
++    $(wildcard include/config/prove/locking.h) \
++  include/linux/spinlock_up.h \
++  include/linux/spinlock_api_up.h \
++  include/asm/atomic.h \
++  include/asm-generic/atomic.h \
++  include/linux/kmod.h \
++    $(wildcard include/config/kmod.h) \
++  include/linux/errno.h \
++  include/asm/errno.h \
++  include/asm-generic/errno-base.h \
++  include/linux/elf.h \
++  include/linux/auxvec.h \
++  include/asm/auxvec.h \
++  include/linux/elf-em.h \
++  include/asm/elf.h \
++    $(wildcard include/config/mips32/n32.h) \
++    $(wildcard include/config/mips32/o32.h) \
++    $(wildcard include/config/mips32/compat.h) \
++  include/linux/kobject.h \
++    $(wildcard include/config/hotplug.h) \
++  include/linux/sysfs.h \
++  include/linux/kref.h \
++  include/linux/wait.h \
++  include/asm/current.h \
++  include/linux/moduleparam.h \
++  include/linux/init.h \
++    $(wildcard include/config/memory/hotplug.h) \
++    $(wildcard include/config/acpi/hotplug/memory.h) \
++  include/asm/local.h \
++  include/linux/percpu.h \
++  include/linux/slab.h \
++    $(wildcard include/config/slab/debug.h) \
++    $(wildcard include/config/slub.h) \
++    $(wildcard include/config/slob.h) \
++    $(wildcard include/config/debug/slab.h) \
++  include/linux/gfp.h \
++    $(wildcard include/config/zone/dma.h) \
++    $(wildcard include/config/zone/dma32.h) \
++  include/linux/mmzone.h \
++    $(wildcard include/config/force/max/zoneorder.h) \
++    $(wildcard include/config/arch/populates/node/map.h) \
++    $(wildcard include/config/discontigmem.h) \
++    $(wildcard include/config/flat/node/mem/map.h) \
++    $(wildcard include/config/have/memory/present.h) \
++    $(wildcard include/config/need/node/memmap/size.h) \
++    $(wildcard include/config/need/multiple/nodes.h) \
++    $(wildcard include/config/sparsemem.h) \
++    $(wildcard include/config/have/arch/early/pfn/to/nid.h) \
++    $(wildcard include/config/flatmem.h) \
++    $(wildcard include/config/sparsemem/extreme.h) \
++    $(wildcard include/config/nodes/span/other/nodes.h) \
++    $(wildcard include/config/holes/in/zone.h) \
++  include/linux/numa.h \
++    $(wildcard include/config/nodes/shift.h) \
++  include/linux/nodemask.h \
++  include/asm/page.h \
++  include/linux/pfn.h \
++  include/asm/io.h \
++  include/asm-generic/iomap.h \
++  include/asm/pgtable-bits.h \
++    $(wildcard include/config/cpu/mips32/r1.h) \
++    $(wildcard include/config/cpu/tx39xx.h) \
++    $(wildcard include/config/mips/uncached.h) \
++  include/asm-mips/mach-generic/ioremap.h \
++  include/asm-mips/mach-generic/mangle-port.h \
++    $(wildcard include/config/swap/io/space.h) \
++  include/asm-generic/memory_model.h \
++    $(wildcard include/config/out/of/line/pfn/to/page.h) \
++  include/asm-generic/page.h \
++  include/linux/memory_hotplug.h \
++    $(wildcard include/config/have/arch/nodedata/extension.h) \
++  include/linux/notifier.h \
++  include/linux/mutex.h \
++    $(wildcard include/config/debug/mutexes.h) \
++  include/linux/rwsem.h \
++    $(wildcard include/config/rwsem/generic/spinlock.h) \
++  include/linux/rwsem-spinlock.h \
++  include/linux/srcu.h \
++  include/linux/topology.h \
++    $(wildcard include/config/sched/smt.h) \
++    $(wildcard include/config/sched/mc.h) \
++  include/linux/smp.h \
++  include/asm/topology.h \
++  include/asm-mips/mach-generic/topology.h \
++  include/asm-generic/topology.h \
++  include/linux/slab_def.h \
++  include/linux/kmalloc_sizes.h \
++  include/asm/percpu.h \
++  include/asm-generic/percpu.h \
++  include/asm/module.h \
++    $(wildcard include/config/cpu/mips32/r2.h) \
++    $(wildcard include/config/cpu/mips64/r1.h) \
++    $(wildcard include/config/cpu/r4300.h) \
++    $(wildcard include/config/cpu/r4x00.h) \
++    $(wildcard include/config/cpu/r5000.h) \
++    $(wildcard include/config/cpu/r6000.h) \
++    $(wildcard include/config/cpu/nevada.h) \
++    $(wildcard include/config/cpu/rm7000.h) \
++    $(wildcard include/config/cpu/loongson2.h) \
++  include/asm/uaccess.h \
++  include/asm-generic/uaccess.h \
++  include/linux/ioport.h \
++  include/linux/console.h \
++    $(wildcard include/config/disable/console/suspend.h) \
++  include/linux/sysrq.h \
++  include/linux/device.h \
++    $(wildcard include/config/debug/devres.h) \
++  include/linux/klist.h \
++  include/linux/completion.h \
++  include/linux/pm.h \
++    $(wildcard include/config/suspend.h) \
++    $(wildcard include/config/pm/sleep.h) \
++  include/asm/semaphore.h \
++  include/asm/device.h \
++  include/asm-generic/device.h \
++  include/linux/tty.h \
++    $(wildcard include/config/legacy/pty/count.h) \
++    $(wildcard include/config/audit.h) \
++  include/linux/fs.h \
++    $(wildcard include/config/dnotify.h) \
++    $(wildcard include/config/quota.h) \
++    $(wildcard include/config/inotify.h) \
++    $(wildcard include/config/security.h) \
++    $(wildcard include/config/epoll.h) \
++    $(wildcard include/config/auditsyscall.h) \
++    $(wildcard include/config/block.h) \
++    $(wildcard include/config/fs/xip.h) \
++    $(wildcard include/config/migration.h) \
++  include/linux/limits.h \
++  include/linux/ioctl.h \
++  include/asm/ioctl.h \
++  include/linux/kdev_t.h \
++  include/linux/dcache.h \
++    $(wildcard include/config/profiling.h) \
++  include/linux/rcupdate.h \
++  include/linux/namei.h \
++  include/linux/radix-tree.h \
++  include/linux/prio_tree.h \
++  include/linux/pid.h \
++  include/linux/sysctl.h \
++  include/linux/capability.h \
++  include/linux/quota.h \
++  include/linux/dqblk_xfs.h \
++  include/linux/dqblk_v1.h \
++  include/linux/dqblk_v2.h \
++  include/linux/nfs_fs_i.h \
++  include/linux/nfs.h \
++  include/linux/sunrpc/msg_prot.h \
++  include/linux/fcntl.h \
++  include/asm/fcntl.h \
++  include/asm-generic/fcntl.h \
++  include/linux/err.h \
++  include/linux/major.h \
++  include/linux/termios.h \
++  include/asm/termios.h \
++  include/asm/termbits.h \
++  include/asm/ioctls.h \
++  include/linux/workqueue.h \
++  include/linux/timer.h \
++    $(wildcard include/config/timer/stats.h) \
++  include/linux/ktime.h \
++    $(wildcard include/config/ktime/scalar.h) \
++  include/linux/jiffies.h \
++  include/linux/calc64.h \
++  include/asm/div64.h \
++  include/asm/compiler.h \
++  include/linux/timex.h \
++    $(wildcard include/config/no/hz.h) \
++  include/asm/param.h \
++    $(wildcard include/config/hz.h) \
++  include/asm/timex.h \
++  include/asm-mips/mach-generic/timex.h \
++  include/linux/tty_driver.h \
++  include/linux/cdev.h \
++  include/linux/tty_ldisc.h \
++  include/linux/tty_flip.h \
++  include/linux/serial_core.h \
++    $(wildcard include/config/irq.h) \
++    $(wildcard include/config/serial/core/console.h) \
++    $(wildcard include/config/hard/pps.h) \
++  include/linux/interrupt.h \
++    $(wildcard include/config/high/res/timers.h) \
++    $(wildcard include/config/generic/irq/probe.h) \
++    $(wildcard include/config/proc/fs.h) \
++  include/linux/irqreturn.h \
++  include/linux/hardirq.h \
++    $(wildcard include/config/preempt/bkl.h) \
++    $(wildcard include/config/virt/cpu/accounting.h) \
++  include/linux/smp_lock.h \
++    $(wildcard include/config/lock/kernel.h) \
++  include/asm/hardirq.h \
++  include/linux/irq.h \
++    $(wildcard include/config/s390.h) \
++    $(wildcard include/config/irq/per/cpu.h) \
++    $(wildcard include/config/irq/release/method.h) \
++    $(wildcard include/config/generic/pending/irq.h) \
++    $(wildcard include/config/irqbalance.h) \
++    $(wildcard include/config/auto/irq/affinity.h) \
++    $(wildcard include/config/generic/hardirqs/no//do/irq.h) \
++  include/asm/irq.h \
++    $(wildcard include/config/i8259.h) \
++    $(wildcard include/config/mips/mt/smtc/im/backstop.h) \
++  include/asm/mipsmtregs.h \
++  include/asm-mips/mach-generic/irq.h \
++    $(wildcard include/config/irq/cpu/rm7k.h) \
++    $(wildcard include/config/irq/cpu/rm9k.h) \
++  include/asm/ptrace.h \
++    $(wildcard include/config/cpu/has/smartmips.h) \
++  include/asm/isadep.h \
++  include/asm/irq_regs.h \
++  include/asm/hw_irq.h \
++  include/linux/profile.h \
++  include/linux/irq_cpustat.h \
++  include/linux/sched.h \
++    $(wildcard include/config/sched/debug.h) \
++    $(wildcard include/config/detect/softlockup.h) \
++    $(wildcard include/config/split/ptlock/cpus.h) \
++    $(wildcard include/config/keys.h) \
++    $(wildcard include/config/bsd/process/acct.h) \
++    $(wildcard include/config/taskstats.h) \
++    $(wildcard include/config/inotify/user.h) \
++    $(wildcard include/config/schedstats.h) \
++    $(wildcard include/config/task/delay/acct.h) \
++    $(wildcard include/config/fair/group/sched.h) \
++    $(wildcard include/config/blk/dev/io/trace.h) \
++    $(wildcard include/config/cc/stackprotector.h) \
++    $(wildcard include/config/sysvipc.h) \
++    $(wildcard include/config/rt/mutexes.h) \
++    $(wildcard include/config/task/xacct.h) \
++    $(wildcard include/config/cpusets.h) \
++    $(wildcard include/config/compat.h) \
++    $(wildcard include/config/fault/injection.h) \
++  include/linux/rbtree.h \
++  include/asm/mmu.h \
++  include/asm/cputime.h \
++  include/asm-generic/cputime.h \
++  include/linux/sem.h \
++  include/linux/ipc.h \
++  include/asm/ipcbuf.h \
++  include/asm/sembuf.h \
++  include/linux/signal.h \
++  include/asm/signal.h \
++    $(wildcard include/config/trad/signals.h) \
++    $(wildcard include/config/binfmt/irix.h) \
++  include/asm-generic/signal.h \
++  include/asm/sigcontext.h \
++  include/asm/siginfo.h \
++  include/asm-generic/siginfo.h \
++  include/linux/securebits.h \
++  include/linux/fs_struct.h \
++  include/linux/seccomp.h \
++    $(wildcard include/config/seccomp.h) \
++  include/linux/futex.h \
++    $(wildcard include/config/futex.h) \
++  include/linux/rtmutex.h \
++    $(wildcard include/config/debug/rt/mutexes.h) \
++  include/linux/plist.h \
++    $(wildcard include/config/debug/pi/list.h) \
++  include/linux/param.h \
++  include/linux/resource.h \
++  include/asm/resource.h \
++  include/asm-generic/resource.h \
++  include/linux/hrtimer.h \
++  include/linux/task_io_accounting.h \
++    $(wildcard include/config/task/io/accounting.h) \
++  include/linux/aio.h \
++  include/linux/aio_abi.h \
++  include/linux/uio.h \
++  include/linux/circ_buf.h \
++  include/linux/serial.h \
++  include/linux/amba/bus.h \
++  include/linux/amba/serial.h \
++  include/linux/clk.h \
++
++drivers/serial/amba-pl010.o: $(deps_drivers/serial/amba-pl010.o)
++
++$(deps_drivers/serial/amba-pl010.o):
+diff -urN serial2/.built-in.o.cmd serial/.built-in.o.cmd
+--- serial2/.built-in.o.cmd	1970-01-01 01:00:00.000000000 +0100
++++ serial/.built-in.o.cmd	2008-08-19 02:55:04.340045832 +0200
+@@ -0,0 +1 @@
++cmd_drivers/serial/built-in.o :=  mipsel-linux-uclibc-ld  -m elf32ltsmip  -r -o drivers/serial/built-in.o drivers/serial/serial_core.o drivers/serial/amba-pl010.o
+diff -urN serial2/.serial_core.o.cmd serial/.serial_core.o.cmd
+--- serial2/.serial_core.o.cmd	1970-01-01 01:00:00.000000000 +0100
++++ serial/.serial_core.o.cmd	2008-08-19 02:55:03.968043383 +0200
+@@ -0,0 +1,448 @@
++cmd_drivers/serial/serial_core.o := mipsel-linux-uclibc-gcc -Wp,-MD,drivers/serial/.serial_core.o.d  -nostdinc -isystem /raid/xfs/toolchains/toolchain-mipsel_gcc4.1.2/bin/../lib/gcc/mipsel-linux-uclibc/4.1.2/include -D__KERNEL__ -Iinclude  -include include/linux/autoconf.h -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs -fno-strict-aliasing -fno-common -Werror-implicit-function-declaration -O2  -mabi=32 -G 0 -mno-abicalls -fno-pic -pipe -msoft-float -ffreestanding  -march=mips32 -Wa,-mips32 -Wa,--trap -Iinclude/asm-mips/mach-adm5120 -ffreestanding -Iinclude/asm-mips/mach-generic -D"VMLINUX_LOAD_ADDRESS=0xffffffff80002000" -fomit-frame-pointer  -fno-stack-protector -funit-at-a-time -Wdeclaration-after-statement -Wno-pointer-sign    -D"KBUILD_STR(s)=\#s" -D"KBUILD_BASENAME=KBUILD_STR(serial_core)"  -D"KBUILD_MODNAME=KBUILD_STR(serial_core)" -c -o drivers/serial/serial_core.o drivers/serial/serial_core.c
++
++deps_drivers/serial/serial_core.o := \
++  drivers/serial/serial_core.c \
++    $(wildcard include/config/serial/core/console.h) \
++    $(wildcard include/config/type.h) \
++    $(wildcard include/config/irq.h) \
++    $(wildcard include/config/proc/fs.h) \
++    $(wildcard include/config/disable/console/suspend.h) \
++  include/linux/module.h \
++    $(wildcard include/config/modules.h) \
++    $(wildcard include/config/modversions.h) \
++    $(wildcard include/config/unused/symbols.h) \
++    $(wildcard include/config/generic/bug.h) \
++    $(wildcard include/config/module/unload.h) \
++    $(wildcard include/config/kallsyms.h) \
++    $(wildcard include/config/sysfs.h) \
++  include/linux/list.h \
++    $(wildcard include/config/debug/list.h) \
++  include/linux/stddef.h \
++  include/linux/compiler.h \
++    $(wildcard include/config/enable/must/check.h) \
++  include/linux/compiler-gcc4.h \
++    $(wildcard include/config/forced/inlining.h) \
++  include/linux/compiler-gcc.h \
++  include/linux/poison.h \
++  include/linux/prefetch.h \
++  include/linux/types.h \
++    $(wildcard include/config/uid16.h) \
++    $(wildcard include/config/lbd.h) \
++    $(wildcard include/config/lsf.h) \
++    $(wildcard include/config/resources/64bit.h) \
++  include/linux/posix_types.h \
++  include/asm/posix_types.h \
++  include/asm/sgidefs.h \
++  include/asm/types.h \
++    $(wildcard include/config/highmem.h) \
++    $(wildcard include/config/64bit/phys/addr.h) \
++    $(wildcard include/config/64bit.h) \
++  include/asm/processor.h \
++    $(wildcard include/config/32bit.h) \
++    $(wildcard include/config/mips/mt/fpaff.h) \
++    $(wildcard include/config/cpu/has/prefetch.h) \
++  include/linux/cpumask.h \
++    $(wildcard include/config/smp.h) \
++    $(wildcard include/config/hotplug/cpu.h) \
++  include/linux/kernel.h \
++    $(wildcard include/config/preempt/voluntary.h) \
++    $(wildcard include/config/debug/spinlock/sleep.h) \
++    $(wildcard include/config/printk.h) \
++    $(wildcard include/config/noprintk.h) \
++    $(wildcard include/config/numa.h) \
++  /raid/xfs/toolchains/toolchain-mipsel_gcc4.1.2/bin/../lib/gcc/mipsel-linux-uclibc/4.1.2/include/stdarg.h \
++  include/linux/linkage.h \
++  include/asm/linkage.h \
++  include/linux/bitops.h \
++  include/asm/bitops.h \
++    $(wildcard include/config/cpu/mipsr2.h) \
++    $(wildcard include/config/cpu/mips32.h) \
++    $(wildcard include/config/cpu/mips64.h) \
++  include/linux/irqflags.h \
++    $(wildcard include/config/trace/irqflags.h) \
++    $(wildcard include/config/trace/irqflags/support.h) \
++    $(wildcard include/config/x86.h) \
++  include/asm/irqflags.h \
++    $(wildcard include/config/mips/mt/smtc.h) \
++    $(wildcard include/config/irq/cpu.h) \
++    $(wildcard include/config/mips/mt/smtc/instant/replay.h) \
++  include/asm/hazards.h \
++    $(wildcard include/config/cpu/r10000.h) \
++    $(wildcard include/config/cpu/rm9000.h) \
++    $(wildcard include/config/cpu/sb1.h) \
++  include/asm/barrier.h \
++    $(wildcard include/config/cpu/has/sync.h) \
++    $(wildcard include/config/cpu/has/wb.h) \
++    $(wildcard include/config/weak/ordering.h) \
++    $(wildcard include/config/weak/reordering/beyond/llsc.h) \
++  include/asm/bug.h \
++    $(wildcard include/config/bug.h) \
++  include/asm-generic/bug.h \
++    $(wildcard include/config/debug/bugverbose.h) \
++  include/asm/byteorder.h \
++    $(wildcard include/config/cpu/mips64/r2.h) \
++  include/linux/byteorder/little_endian.h \
++  include/linux/byteorder/swab.h \
++  include/linux/byteorder/generic.h \
++  include/asm/cpu-features.h \
++    $(wildcard include/config/cpu/mipsr2/irq/vi.h) \
++    $(wildcard include/config/cpu/mipsr2/irq/ei.h) \
++  include/asm/cpu.h \
++  include/asm/cpu-info.h \
++    $(wildcard include/config/sgi/ip27.h) \
++    $(wildcard include/config/mips/mt.h) \
++  include/asm/cache.h \
++    $(wildcard include/config/mips/l1/cache/shift.h) \
++  include/asm-mips/mach-generic/kmalloc.h \
++    $(wildcard include/config/dma/coherent.h) \
++  include/asm-mips/mach-adm5120/cpu-feature-overrides.h \
++    $(wildcard include/config/adm5120/cpu/overrides.h) \
++  include/asm/war.h \
++    $(wildcard include/config/sgi/ip22.h) \
++    $(wildcard include/config/sni/rm.h) \
++    $(wildcard include/config/cpu/r5432.h) \
++    $(wildcard include/config/sb1/pass/1/workarounds.h) \
++    $(wildcard include/config/sb1/pass/2/workarounds.h) \
++    $(wildcard include/config/mips/malta.h) \
++    $(wildcard include/config/mips/atlas.h) \
++    $(wildcard include/config/mips/sead.h) \
++    $(wildcard include/config/cpu/tx49xx.h) \
++    $(wildcard include/config/pmc/yosemite.h) \
++    $(wildcard include/config/basler/excite.h) \
++    $(wildcard include/config/sgi/ip32.h) \
++    $(wildcard include/config/wr/ppmc.h) \
++    $(wildcard include/config/pmc/msp7120/eval.h) \
++    $(wildcard include/config/pmc/msp7120/gw.h) \
++    $(wildcard include/config/pmc/msp7120/fpga.h) \
++  include/asm-generic/bitops/non-atomic.h \
++  include/asm-generic/bitops/fls64.h \
++  include/asm-generic/bitops/ffz.h \
++  include/asm-generic/bitops/find.h \
++  include/asm-generic/bitops/sched.h \
++  include/asm-generic/bitops/hweight.h \
++  include/asm-generic/bitops/ext2-non-atomic.h \
++  include/asm-generic/bitops/le.h \
++  include/asm-generic/bitops/ext2-atomic.h \
++  include/asm-generic/bitops/minix.h \
++  include/linux/log2.h \
++    $(wildcard include/config/arch/has/ilog2/u32.h) \
++    $(wildcard include/config/arch/has/ilog2/u64.h) \
++  include/linux/threads.h \
++    $(wildcard include/config/nr/cpus.h) \
++    $(wildcard include/config/base/small.h) \
++  include/linux/bitmap.h \
++  include/linux/string.h \
++  include/asm/string.h \
++    $(wildcard include/config/cpu/r3000.h) \
++  include/asm/cachectl.h \
++  include/asm/mipsregs.h \
++    $(wildcard include/config/cpu/vr41xx.h) \
++    $(wildcard include/config/page/size/4kb.h) \
++    $(wildcard include/config/page/size/16kb.h) \
++    $(wildcard include/config/page/size/64kb.h) \
++  include/asm/prefetch.h \
++  include/asm/system.h \
++  include/asm/addrspace.h \
++    $(wildcard include/config/cpu/r8000.h) \
++  include/asm-mips/mach-generic/spaces.h \
++    $(wildcard include/config/dma/noncoherent.h) \
++  include/linux/const.h \
++  include/asm/cmpxchg.h \
++  include/asm/dsp.h \
++  include/linux/stat.h \
++  include/asm/stat.h \
++  include/linux/time.h \
++  include/linux/cache.h \
++  include/linux/seqlock.h \
++  include/linux/spinlock.h \
++    $(wildcard include/config/debug/spinlock.h) \
++    $(wildcard include/config/preempt.h) \
++    $(wildcard include/config/debug/lock/alloc.h) \
++  include/linux/preempt.h \
++    $(wildcard include/config/debug/preempt.h) \
++    $(wildcard include/config/preempt/notifiers.h) \
++  include/linux/thread_info.h \
++  include/asm/thread_info.h \
++    $(wildcard include/config/page/size/8kb.h) \
++    $(wildcard include/config/debug/stack/usage.h) \
++  include/linux/stringify.h \
++  include/linux/bottom_half.h \
++  include/linux/spinlock_types.h \
++  include/linux/spinlock_types_up.h \
++  include/linux/lockdep.h \
++    $(wildcard include/config/lockdep.h) \
++    $(wildcard include/config/lock/stat.h) \
++    $(wildcard include/config/generic/hardirqs.h) \
++    $(wildcard include/config/prove/locking.h) \
++  include/linux/spinlock_up.h \
++  include/linux/spinlock_api_up.h \
++  include/asm/atomic.h \
++  include/asm-generic/atomic.h \
++  include/linux/kmod.h \
++    $(wildcard include/config/kmod.h) \
++  include/linux/errno.h \
++  include/asm/errno.h \
++  include/asm-generic/errno-base.h \
++  include/linux/elf.h \
++  include/linux/auxvec.h \
++  include/asm/auxvec.h \
++  include/linux/elf-em.h \
++  include/asm/elf.h \
++    $(wildcard include/config/mips32/n32.h) \
++    $(wildcard include/config/mips32/o32.h) \
++    $(wildcard include/config/mips32/compat.h) \
++  include/linux/kobject.h \
++    $(wildcard include/config/hotplug.h) \
++  include/linux/sysfs.h \
++  include/linux/kref.h \
++  include/linux/wait.h \
++  include/asm/current.h \
++  include/linux/moduleparam.h \
++  include/linux/init.h \
++    $(wildcard include/config/memory/hotplug.h) \
++    $(wildcard include/config/acpi/hotplug/memory.h) \
++  include/asm/local.h \
++  include/linux/percpu.h \
++  include/linux/slab.h \
++    $(wildcard include/config/slab/debug.h) \
++    $(wildcard include/config/slub.h) \
++    $(wildcard include/config/slob.h) \
++    $(wildcard include/config/debug/slab.h) \
++  include/linux/gfp.h \
++    $(wildcard include/config/zone/dma.h) \
++    $(wildcard include/config/zone/dma32.h) \
++  include/linux/mmzone.h \
++    $(wildcard include/config/force/max/zoneorder.h) \
++    $(wildcard include/config/arch/populates/node/map.h) \
++    $(wildcard include/config/discontigmem.h) \
++    $(wildcard include/config/flat/node/mem/map.h) \
++    $(wildcard include/config/have/memory/present.h) \
++    $(wildcard include/config/need/node/memmap/size.h) \
++    $(wildcard include/config/need/multiple/nodes.h) \
++    $(wildcard include/config/sparsemem.h) \
++    $(wildcard include/config/have/arch/early/pfn/to/nid.h) \
++    $(wildcard include/config/flatmem.h) \
++    $(wildcard include/config/sparsemem/extreme.h) \
++    $(wildcard include/config/nodes/span/other/nodes.h) \
++    $(wildcard include/config/holes/in/zone.h) \
++  include/linux/numa.h \
++    $(wildcard include/config/nodes/shift.h) \
++  include/linux/nodemask.h \
++  include/asm/page.h \
++  include/linux/pfn.h \
++  include/asm/io.h \
++  include/asm-generic/iomap.h \
++  include/asm/pgtable-bits.h \
++    $(wildcard include/config/cpu/mips32/r1.h) \
++    $(wildcard include/config/cpu/tx39xx.h) \
++    $(wildcard include/config/mips/uncached.h) \
++  include/asm-mips/mach-generic/ioremap.h \
++  include/asm-mips/mach-generic/mangle-port.h \
++    $(wildcard include/config/swap/io/space.h) \
++  include/asm-generic/memory_model.h \
++    $(wildcard include/config/out/of/line/pfn/to/page.h) \
++  include/asm-generic/page.h \
++  include/linux/memory_hotplug.h \
++    $(wildcard include/config/have/arch/nodedata/extension.h) \
++  include/linux/notifier.h \
++  include/linux/mutex.h \
++    $(wildcard include/config/debug/mutexes.h) \
++  include/linux/rwsem.h \
++    $(wildcard include/config/rwsem/generic/spinlock.h) \
++  include/linux/rwsem-spinlock.h \
++  include/linux/srcu.h \
++  include/linux/topology.h \
++    $(wildcard include/config/sched/smt.h) \
++    $(wildcard include/config/sched/mc.h) \
++  include/linux/smp.h \
++  include/asm/topology.h \
++  include/asm-mips/mach-generic/topology.h \
++  include/asm-generic/topology.h \
++  include/linux/slab_def.h \
++  include/linux/kmalloc_sizes.h \
++  include/asm/percpu.h \
++  include/asm-generic/percpu.h \
++  include/asm/module.h \
++    $(wildcard include/config/cpu/mips32/r2.h) \
++    $(wildcard include/config/cpu/mips64/r1.h) \
++    $(wildcard include/config/cpu/r4300.h) \
++    $(wildcard include/config/cpu/r4x00.h) \
++    $(wildcard include/config/cpu/r5000.h) \
++    $(wildcard include/config/cpu/r6000.h) \
++    $(wildcard include/config/cpu/nevada.h) \
++    $(wildcard include/config/cpu/rm7000.h) \
++    $(wildcard include/config/cpu/loongson2.h) \
++  include/asm/uaccess.h \
++  include/asm-generic/uaccess.h \
++  include/linux/tty.h \
++    $(wildcard include/config/legacy/pty/count.h) \
++    $(wildcard include/config/audit.h) \
++  include/linux/fs.h \
++    $(wildcard include/config/dnotify.h) \
++    $(wildcard include/config/quota.h) \
++    $(wildcard include/config/inotify.h) \
++    $(wildcard include/config/security.h) \
++    $(wildcard include/config/epoll.h) \
++    $(wildcard include/config/auditsyscall.h) \
++    $(wildcard include/config/block.h) \
++    $(wildcard include/config/fs/xip.h) \
++    $(wildcard include/config/migration.h) \
++  include/linux/limits.h \
++  include/linux/ioctl.h \
++  include/asm/ioctl.h \
++  include/linux/kdev_t.h \
++  include/linux/dcache.h \
++    $(wildcard include/config/profiling.h) \
++  include/linux/rcupdate.h \
++  include/linux/namei.h \
++  include/linux/radix-tree.h \
++  include/linux/prio_tree.h \
++  include/linux/pid.h \
++  include/linux/sysctl.h \
++  include/linux/capability.h \
++  include/asm/semaphore.h \
++  include/linux/quota.h \
++  include/linux/dqblk_xfs.h \
++  include/linux/dqblk_v1.h \
++  include/linux/dqblk_v2.h \
++  include/linux/nfs_fs_i.h \
++  include/linux/nfs.h \
++  include/linux/sunrpc/msg_prot.h \
++  include/linux/fcntl.h \
++  include/asm/fcntl.h \
++  include/asm-generic/fcntl.h \
++  include/linux/err.h \
++  include/linux/major.h \
++  include/linux/termios.h \
++  include/asm/termios.h \
++  include/asm/termbits.h \
++  include/asm/ioctls.h \
++  include/linux/workqueue.h \
++  include/linux/timer.h \
++    $(wildcard include/config/timer/stats.h) \
++  include/linux/ktime.h \
++    $(wildcard include/config/ktime/scalar.h) \
++  include/linux/jiffies.h \
++  include/linux/calc64.h \
++  include/asm/div64.h \
++  include/asm/compiler.h \
++  include/linux/timex.h \
++    $(wildcard include/config/no/hz.h) \
++  include/asm/param.h \
++    $(wildcard include/config/hz.h) \
++  include/asm/timex.h \
++  include/asm-mips/mach-generic/timex.h \
++  include/linux/tty_driver.h \
++  include/linux/cdev.h \
++  include/linux/tty_ldisc.h \
++  include/linux/console.h \
++  include/linux/serial_core.h \
++    $(wildcard include/config/hard/pps.h) \
++  include/linux/interrupt.h \
++    $(wildcard include/config/high/res/timers.h) \
++    $(wildcard include/config/generic/irq/probe.h) \
++  include/linux/irqreturn.h \
++  include/linux/hardirq.h \
++    $(wildcard include/config/preempt/bkl.h) \
++    $(wildcard include/config/virt/cpu/accounting.h) \
++  include/linux/smp_lock.h \
++    $(wildcard include/config/lock/kernel.h) \
++  include/asm/hardirq.h \
++  include/linux/irq.h \
++    $(wildcard include/config/s390.h) \
++    $(wildcard include/config/irq/per/cpu.h) \
++    $(wildcard include/config/irq/release/method.h) \
++    $(wildcard include/config/generic/pending/irq.h) \
++    $(wildcard include/config/irqbalance.h) \
++    $(wildcard include/config/auto/irq/affinity.h) \
++    $(wildcard include/config/generic/hardirqs/no//do/irq.h) \
++  include/asm/irq.h \
++    $(wildcard include/config/i8259.h) \
++    $(wildcard include/config/mips/mt/smtc/im/backstop.h) \
++  include/asm/mipsmtregs.h \
++  include/asm-mips/mach-generic/irq.h \
++    $(wildcard include/config/irq/cpu/rm7k.h) \
++    $(wildcard include/config/irq/cpu/rm9k.h) \
++  include/asm/ptrace.h \
++    $(wildcard include/config/cpu/has/smartmips.h) \
++  include/asm/isadep.h \
++  include/asm/irq_regs.h \
++  include/asm/hw_irq.h \
++  include/linux/profile.h \
++  include/linux/irq_cpustat.h \
++  include/linux/sched.h \
++    $(wildcard include/config/sched/debug.h) \
++    $(wildcard include/config/detect/softlockup.h) \
++    $(wildcard include/config/split/ptlock/cpus.h) \
++    $(wildcard include/config/keys.h) \
++    $(wildcard include/config/bsd/process/acct.h) \
++    $(wildcard include/config/taskstats.h) \
++    $(wildcard include/config/inotify/user.h) \
++    $(wildcard include/config/schedstats.h) \
++    $(wildcard include/config/task/delay/acct.h) \
++    $(wildcard include/config/fair/group/sched.h) \
++    $(wildcard include/config/blk/dev/io/trace.h) \
++    $(wildcard include/config/cc/stackprotector.h) \
++    $(wildcard include/config/sysvipc.h) \
++    $(wildcard include/config/rt/mutexes.h) \
++    $(wildcard include/config/task/xacct.h) \
++    $(wildcard include/config/cpusets.h) \
++    $(wildcard include/config/compat.h) \
++    $(wildcard include/config/fault/injection.h) \
++  include/linux/rbtree.h \
++  include/asm/mmu.h \
++  include/asm/cputime.h \
++  include/asm-generic/cputime.h \
++  include/linux/sem.h \
++  include/linux/ipc.h \
++  include/asm/ipcbuf.h \
++  include/asm/sembuf.h \
++  include/linux/signal.h \
++  include/asm/signal.h \
++    $(wildcard include/config/trad/signals.h) \
++    $(wildcard include/config/binfmt/irix.h) \
++  include/asm-generic/signal.h \
++  include/asm/sigcontext.h \
++  include/asm/siginfo.h \
++  include/asm-generic/siginfo.h \
++  include/linux/securebits.h \
++  include/linux/fs_struct.h \
++  include/linux/completion.h \
++  include/linux/seccomp.h \
++    $(wildcard include/config/seccomp.h) \
++  include/linux/futex.h \
++    $(wildcard include/config/futex.h) \
++  include/linux/rtmutex.h \
++    $(wildcard include/config/debug/rt/mutexes.h) \
++  include/linux/plist.h \
++    $(wildcard include/config/debug/pi/list.h) \
++  include/linux/param.h \
++  include/linux/resource.h \
++  include/asm/resource.h \
++  include/asm-generic/resource.h \
++  include/linux/hrtimer.h \
++  include/linux/task_io_accounting.h \
++    $(wildcard include/config/task/io/accounting.h) \
++  include/linux/aio.h \
++  include/linux/aio_abi.h \
++  include/linux/uio.h \
++  include/linux/circ_buf.h \
++  include/linux/sysrq.h \
++    $(wildcard include/config/magic/sysrq.h) \
++  include/linux/tty_flip.h \
++  include/linux/device.h \
++    $(wildcard include/config/debug/devres.h) \
++  include/linux/ioport.h \
++  include/linux/klist.h \
++  include/linux/pm.h \
++    $(wildcard include/config/suspend.h) \
++    $(wildcard include/config/pm/sleep.h) \
++  include/asm/device.h \
++  include/asm-generic/device.h \
++  include/linux/serial.h \
++  include/linux/delay.h \
++  include/asm/delay.h \
++
++drivers/serial/serial_core.o: $(deps_drivers/serial/serial_core.o)
++
++$(deps_drivers/serial/serial_core.o):
+diff -urN serial2/.svn/all-wcprops serial/.svn/all-wcprops
+--- serial2/.svn/all-wcprops	2008-08-18 22:05:15.000000000 +0200
++++ serial/.svn/all-wcprops	1970-01-01 01:00:00.000000000 +0100
+@@ -1,11 +0,0 @@
+-K 25
+-svn:wc:ra_dav:version-url
+-V 70
+-/openwrt/!svn/ver/8653/trunk/target/linux/adm5120/files/drivers/serial
+-END
+-adm5120_uart.c
+-K 25
+-svn:wc:ra_dav:version-url
+-V 85
+-/openwrt/!svn/ver/8653/trunk/target/linux/adm5120/files/drivers/serial/adm5120_uart.c
+-END
+diff -urN serial2/.svn/entries serial/.svn/entries
+--- serial2/.svn/entries	2008-08-18 22:05:15.000000000 +0200
++++ serial/.svn/entries	1970-01-01 01:00:00.000000000 +0100
+@@ -1,62 +0,0 @@
+-9
+-
+-dir
+-9500
+-https://svn.openwrt.org/openwrt/trunk/target/linux/adm5120/files/drivers/serial
+-https://svn.openwrt.org/openwrt
+-
+-
+-
+-2007-07-13T13:14:08.845560Z
+-7967
+-florian
+-
+-
+-svn:special svn:externals svn:needs-lock
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-3c298f89-4303-0410-b956-a3cf2f4a3e73
+-
+-adm5120_uart.c
+-file
+-
+-
+-
+-
+-2008-08-18T20:05:15.292044Z
+-9c7045876fdee9e9fffe1312377301ff
+-2007-07-13T13:14:08.845560Z
+-7967
+-florian
+-has-props
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-13002
+-
+diff -urN serial2/.svn/format serial/.svn/format
+--- serial2/.svn/format	2008-08-18 22:05:15.000000000 +0200
++++ serial/.svn/format	1970-01-01 01:00:00.000000000 +0100
+@@ -1 +0,0 @@
+-9
+diff -urN serial2/.svn/prop-base/adm5120_uart.c.svn-base serial/.svn/prop-base/adm5120_uart.c.svn-base
+--- serial2/.svn/prop-base/adm5120_uart.c.svn-base	2008-08-18 22:05:15.000000000 +0200
++++ serial/.svn/prop-base/adm5120_uart.c.svn-base	1970-01-01 01:00:00.000000000 +0100
+@@ -1,9 +0,0 @@
+-K 13
+-svn:eol-style
+-V 6
+-native
+-K 12
+-svn:keywords
+-V 2
+-Id
+-END
+diff -urN serial2/.svn/text-base/adm5120_uart.c.svn-base serial/.svn/text-base/adm5120_uart.c.svn-base
+--- serial2/.svn/text-base/adm5120_uart.c.svn-base	2008-08-18 22:05:15.000000000 +0200
++++ serial/.svn/text-base/adm5120_uart.c.svn-base	1970-01-01 01:00:00.000000000 +0100
+@@ -1,520 +0,0 @@
+-/*
+- *	Serial driver for ADM5120 SoC
+- *
+- *	Derived from drivers/serial/uart00.c
+- *	Copyright 2001 Altera Corporation
+- *
+- *	Some pieces are derived from the ADMtek 2.4 serial driver.
+- *	Copyright (C) ADMtek Incorporated, 2003
+- *		daniell@admtek.com.tw
+- *	Which again was derived from drivers/char/serial.c
+- *	Copyright (C) Linus Torvalds et al.
+- *
+- *	Copyright Jeroen Vreeken (pe1rxq@amsat.org), 2005
+- */
+-
+-#include <linux/autoconf.h>
+-#include <linux/init.h>
+-#include <linux/kernel.h>
+-#include <linux/module.h>
+-#include <linux/ioport.h>
+-#include <linux/serial.h>
+-#include <linux/serial_core.h>
+-#include <linux/tty.h>
+-#include <linux/tty_flip.h>
+-#include <linux/console.h>
+-
+-#include <asm/mach-adm5120/adm5120_defs.h>
+-#include <asm/mach-adm5120/adm5120_irq.h>
+-
+-#define ADM5120_UART_REG(base, reg) \
+-	(*(volatile u32 *)KSEG1ADDR((base)+(reg)))
+-
+-#define ADM5120_UARTCLK_FREQ            62500000
+-#define ADM5120_UART_BAUDDIV(rate)	((unsigned long)(ADM5120_UARTCLK_FREQ/(16*(rate)) - 1))
+-
+-#define ADM5120_UART_BAUD115200		ADM5120_UART_BAUDDIV(115200)
+-
+-#define ADM5120_UART_DATA		0x00
+-#define ADM5120_UART_RS			0x04
+-#define ADM5120_UART_LCR_H		0x08
+-#define ADM5120_UART_LCR_M		0x0c
+-#define ADM5120_UART_LCR_L		0x10
+-#define ADM5120_UART_CR			0x14
+-#define ADM5120_UART_FR			0x18
+-#define ADM5120_UART_IR			0x1c
+-
+-#define ADM5120_UART_FE			0x01
+-#define ADM5120_UART_PE			0x02
+-#define ADM5120_UART_BE			0x04
+-#define ADM5120_UART_OE			0x08
+-#define ADM5120_UART_ERR		0x0f
+-#define ADM5120_UART_FIFO_EN		0x10
+-#define ADM5120_UART_EN			0x01
+-#define ADM5120_UART_TIE		0x20
+-#define ADM5120_UART_RIE		0x50
+-#define ADM5120_UART_IE			0x78
+-#define ADM5120_UART_CTS		0x01
+-#define ADM5120_UART_DSR		0x02
+-#define ADM5120_UART_DCD		0x04
+-#define ADM5120_UART_TXFF		0x20
+-#define ADM5120_UART_TXFE		0x80
+-#define ADM5120_UART_RXFE		0x10
+-#define ADM5120_UART_BRK		0x01
+-#define ADM5120_UART_PEN		0x02
+-#define ADM5120_UART_EPS		0x04
+-#define ADM5120_UART_STP2		0x08
+-#define ADM5120_UART_W5			0x00
+-#define ADM5120_UART_W6			0x20
+-#define ADM5120_UART_W7			0x40
+-#define ADM5120_UART_W8			0x60
+-#define ADM5120_UART_MIS		0x01
+-#define ADM5120_UART_RIS		0x02
+-#define ADM5120_UART_TIS		0x04
+-#define ADM5120_UART_RTIS		0x08
+-
+-static void adm5120ser_stop_tx(struct uart_port *port)
+-{
+-	ADM5120_UART_REG(port->iobase, ADM5120_UART_CR) &= ~ADM5120_UART_TIE;
+-}
+-
+-static void adm5120ser_irq_rx(struct uart_port *port)
+-{
+-	struct tty_struct *tty = port->info->tty;
+-	unsigned int status, ch, rds, flg, ignored = 0;
+-
+-	status = ADM5120_UART_REG(port->iobase, ADM5120_UART_FR);
+-	while (!(status & ADM5120_UART_RXFE)) {
+-		/* 
+-		 * We need to read rds before reading the 
+-		 * character from the fifo
+-		 */
+-		rds = ADM5120_UART_REG(port->iobase, ADM5120_UART_RS);
+-		ch = ADM5120_UART_REG(port->iobase, ADM5120_UART_DATA);
+-		port->icount.rx++;
+-
+-		if (tty->low_latency)
+-			tty_flip_buffer_push(tty);
+-
+-		flg = TTY_NORMAL;
+-
+-		/*
+-		 * Note that the error handling code is
+-		 * out of the main execution path
+-		 */
+-		if (rds & ADM5120_UART_ERR)
+-			goto handle_error;
+-		if (uart_handle_sysrq_char(port, ch))
+-			goto ignore_char;
+-
+-	error_return:
+-		tty_insert_flip_char(tty, ch, flg);
+-
+-	ignore_char:
+-		status = ADM5120_UART_REG(port->iobase, ADM5120_UART_FR);
+-	}
+- out:
+-	tty_flip_buffer_push(tty);
+-	return;
+-
+- handle_error:
+- 	ADM5120_UART_REG(port->iobase, ADM5120_UART_RS) = 0xff;
+-	if (rds & ADM5120_UART_BE) {
+-		port->icount.brk++;
+-		if (uart_handle_break(port))
+-			goto ignore_char;
+-	} else if (rds & ADM5120_UART_PE)
+-		port->icount.parity++;
+-	else if (rds & ADM5120_UART_FE)
+-		port->icount.frame++;
+-	if (rds & ADM5120_UART_OE)
+-		port->icount.overrun++;
+-
+-	if (rds & port->ignore_status_mask) {
+-		if (++ignored > 100)
+-			goto out;
+-		goto ignore_char;
+-	}
+-	rds &= port->read_status_mask;
+-
+-	if (rds & ADM5120_UART_BE)
+-		flg = TTY_BREAK;
+-	else if (rds & ADM5120_UART_PE)
+-		flg = TTY_PARITY;
+-	else if (rds & ADM5120_UART_FE)
+-		flg = TTY_FRAME;
+-
+-	if (rds & ADM5120_UART_OE) {
+-		/*
+-		 * CHECK: does overrun affect the current character?
+-		 * ASSUMPTION: it does not.
+-		 */
+-		tty_insert_flip_char(tty, ch, flg);
+-		ch = 0;
+-		flg = TTY_OVERRUN;
+-	}
+-#ifdef CONFIG_MAGIC_SYSRQ
+-	port->sysrq = 0;
+-#endif
+-	goto error_return;
+-}
+-
+-static void adm5120ser_irq_tx(struct uart_port *port)
+-{
+-	struct circ_buf *xmit = &port->info->xmit;
+-	int count;
+-
+-	if (port->x_char) {
+-		ADM5120_UART_REG(port->iobase, ADM5120_UART_DATA) =
+-		    port->x_char;
+-		port->icount.tx++;
+-		port->x_char = 0;
+-		return;
+-	}
+-	if (uart_circ_empty(xmit) || uart_tx_stopped(port)) {
+-		adm5120ser_stop_tx(port);
+-		return;
+-	}
+-
+-	count = port->fifosize >> 1;
+-	do {
+-		ADM5120_UART_REG(port->iobase, ADM5120_UART_DATA) =
+-		    xmit->buf[xmit->tail];
+-		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
+-		port->icount.tx++;
+-		if (uart_circ_empty(xmit))
+-			break;
+-	} while (--count > 0);
+-
+-	if (uart_circ_chars_pending(xmit) < WAKEUP_CHARS)
+-		uart_write_wakeup(port);
+-
+-	if (uart_circ_empty(xmit))
+-		adm5120ser_stop_tx(port);
+-}
+-
+-static void adm5120ser_irq_modem(struct uart_port *port)
+-{
+-	unsigned int status;
+-
+-	status = ADM5120_UART_REG(port->iobase, ADM5120_UART_FR);
+-
+-	if (status & ADM5120_UART_DCD)
+-		uart_handle_dcd_change(port, status & ADM5120_UART_DCD);
+-
+-	if (status & ADM5120_UART_DSR)
+-		port->icount.dsr++;
+-
+-	if (status & ADM5120_UART_CTS)
+-		uart_handle_cts_change(port, status & ADM5120_UART_CTS);
+-
+-	wake_up_interruptible(&port->info->delta_msr_wait);
+-}
+-
+-static irqreturn_t adm5120ser_irq(int irq, void *dev_id)
+-{
+-	struct uart_port *port = dev_id;
+-	unsigned long ir = ADM5120_UART_REG(port->iobase, ADM5120_UART_IR);
+-
+-	if (ir & (ADM5120_UART_RIS | ADM5120_UART_RTIS))
+-		adm5120ser_irq_rx(port);
+-	if (ir & ADM5120_UART_TIS)
+-		adm5120ser_irq_tx(port);
+-	if (ir & ADM5120_UART_MIS) {
+-		adm5120ser_irq_modem(port);
+-		ADM5120_UART_REG(port->iobase, ADM5120_UART_IR) = 0xff;
+-	}
+-
+-	return IRQ_HANDLED;
+-}
+-
+-static unsigned int adm5120ser_tx_empty(struct uart_port *port)
+-{
+-	unsigned int fr = ADM5120_UART_REG(port->iobase, ADM5120_UART_FR);
+-	return (fr & ADM5120_UART_TXFE) ? TIOCSER_TEMT : 0;
+-}
+-
+-static void adm5120ser_set_mctrl(struct uart_port *port, unsigned int mctrl)
+-{
+-}
+-
+-static unsigned int adm5120ser_get_mctrl(struct uart_port *port)
+-{
+-	unsigned int result = 0;
+-	unsigned int fr = ADM5120_UART_REG(port->iobase, ADM5120_UART_FR);
+-
+-	if (fr & ADM5120_UART_CTS)
+-		result |= TIOCM_CTS;
+-	if (fr & ADM5120_UART_DSR)
+-		result |= TIOCM_DSR;
+-	if (fr & ADM5120_UART_DCD)
+-		result |= TIOCM_CAR;
+-	return result;
+-}
+-
+-static void adm5120ser_start_tx(struct uart_port *port)
+-{
+-	ADM5120_UART_REG(port->iobase, ADM5120_UART_CR) |= ADM5120_UART_TIE;
+-}
+-
+-static void adm5120ser_stop_rx(struct uart_port *port)
+-{
+-	ADM5120_UART_REG(port->iobase, ADM5120_UART_CR) &= ~ADM5120_UART_RIE;
+-}
+-
+-static void adm5120ser_enable_ms(struct uart_port *port)
+-{
+-}
+-
+-static void adm5120ser_break_ctl(struct uart_port *port, int break_state)
+-{
+-	unsigned long flags;
+-	unsigned long lcrh;
+-
+-	spin_lock_irqsave(&port->lock, flags);
+-	lcrh = ADM5120_UART_REG(port->iobase, ADM5120_UART_LCR_H);
+-	if (break_state == -1)
+-		lcrh |= ADM5120_UART_BRK;
+-	else
+-		lcrh &= ~ADM5120_UART_BRK;
+-	ADM5120_UART_REG(port->iobase, ADM5120_UART_LCR_H) = lcrh;
+-	spin_unlock_irqrestore(&port->lock, flags);
+-}
+-
+-static int adm5120ser_startup(struct uart_port *port)
+-{
+-	int ret;
+-
+-	ret = request_irq(port->irq, adm5120ser_irq, 0, "ADM5120 UART", port);
+-	if (ret) {
+-		printk(KERN_ERR "Couldn't get irq %d\n", port->irq);
+-		return ret;
+-	}
+-	ADM5120_UART_REG(port->iobase, ADM5120_UART_LCR_H) |=
+-	    ADM5120_UART_FIFO_EN;
+-	ADM5120_UART_REG(port->iobase, ADM5120_UART_CR) |=
+-	    ADM5120_UART_EN | ADM5120_UART_IE;
+-	return 0;
+-}
+-
+-static void adm5120ser_shutdown(struct uart_port *port)
+-{
+-	ADM5120_UART_REG(port->iobase, ADM5120_UART_CR) &= ~ADM5120_UART_IE;
+-	free_irq(port->irq, port);
+-}
+-
+-static void adm5120ser_set_termios(struct uart_port *port,
+-    struct ktermios *termios, struct ktermios *old)
+-{
+-	unsigned int baud, quot, lcrh;
+-	unsigned long flags;
+-
+-	termios->c_cflag |= CREAD;
+-
+-	baud = uart_get_baud_rate(port, termios, old, 0, port->uartclk/16);
+-	quot = uart_get_divisor(port, baud);
+-
+-	lcrh = ADM5120_UART_FIFO_EN;
+-	switch (termios->c_cflag & CSIZE) {
+-		case CS5:
+-			lcrh |= ADM5120_UART_W5;
+-			break;
+-		case CS6:
+-			lcrh |= ADM5120_UART_W6;
+-			break;
+-		case CS7:
+-			lcrh |= ADM5120_UART_W7;
+-			break;
+-		default:
+-			lcrh |= ADM5120_UART_W8;
+-			break;
+-	}
+-	if (termios->c_cflag & CSTOPB)
+-		lcrh |= ADM5120_UART_STP2;
+-	if (termios->c_cflag & PARENB) {
+-		lcrh |= ADM5120_UART_PEN;
+-		if (!(termios->c_cflag & PARODD))
+-			lcrh |= ADM5120_UART_EPS;
+-	}
+-
+-	spin_lock_irqsave(port->lock, flags);
+-
+-	ADM5120_UART_REG(port->iobase, ADM5120_UART_LCR_H) = lcrh;
+-
+-	/*
+-	 * Update the per-port timeout.
+-	 */
+-	uart_update_timeout(port, termios->c_cflag, baud);
+-
+-	port->read_status_mask = ADM5120_UART_OE;
+-	if (termios->c_iflag & INPCK)
+-		port->read_status_mask |= ADM5120_UART_FE | ADM5120_UART_PE;
+-	if (termios->c_iflag & (BRKINT | PARMRK))
+-		port->read_status_mask |= ADM5120_UART_BE;
+-
+-	/*
+-	 * Characters to ignore
+-	 */
+-	port->ignore_status_mask = 0;
+-	if (termios->c_iflag & IGNPAR)
+-		port->ignore_status_mask |= ADM5120_UART_FE | ADM5120_UART_PE;
+-	if (termios->c_iflag & IGNBRK) {
+-		port->ignore_status_mask |= ADM5120_UART_BE;
+-		/*
+-		 * If we're ignoring parity and break indicators,
+-		 * ignore overruns to (for real raw support).
+-		 */
+-		if (termios->c_iflag & IGNPAR)
+-			port->ignore_status_mask |= ADM5120_UART_OE;
+-	}
+-
+-	quot = ADM5120_UART_BAUD115200;
+-	ADM5120_UART_REG(port->iobase, ADM5120_UART_LCR_L) = quot & 0xff;
+-	ADM5120_UART_REG(port->iobase, ADM5120_UART_LCR_M) = quot >> 8;
+-
+-	spin_unlock_irqrestore(&port->lock, flags);
+-}
+-
+-static const char *adm5120ser_type(struct uart_port *port)
+-{
+-	return port->type == PORT_ADM5120 ? "ADM5120" : NULL;
+-}
+-
+-static void adm5120ser_config_port(struct uart_port *port, int flags)
+-{
+-	if (flags & UART_CONFIG_TYPE)
+-		port->type = PORT_ADM5120;
+-}
+-
+-static void adm5120ser_release_port(struct uart_port *port)
+-{
+-	release_mem_region(port->iobase, ADM5120_UART_SIZE);
+-}
+-
+-static int adm5120ser_request_port(struct uart_port *port)
+-{
+-	return request_mem_region(port->iobase, ADM5120_UART_SIZE,
+-	    "adm5120-uart") != NULL ? 0 : -EBUSY; 
+-}
+-
+-static struct uart_ops adm5120ser_ops = {
+-	.tx_empty =	adm5120ser_tx_empty,
+-	.set_mctrl =	adm5120ser_set_mctrl,
+-	.get_mctrl =	adm5120ser_get_mctrl,
+-	.stop_tx =	adm5120ser_stop_tx,
+-	.start_tx =	adm5120ser_start_tx,
+-	.stop_rx =	adm5120ser_stop_rx,
+-	.enable_ms =	adm5120ser_enable_ms,
+-	.break_ctl =	adm5120ser_break_ctl,
+-	.startup =	adm5120ser_startup,
+-	.shutdown =	adm5120ser_shutdown,
+-	.set_termios =	adm5120ser_set_termios,
+-	.type =		adm5120ser_type,
+-	.config_port =	adm5120ser_config_port,
+-	.release_port =	adm5120ser_release_port,
+-	.request_port =	adm5120ser_request_port,
+-};
+-
+-static void adm5120console_put(const char c)
+-{
+-	while ((ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_FR) &
+-	     ADM5120_UART_TXFF) != 0);
+-	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_DATA) = c;
+-}
+-
+-static void adm5120console_write(struct console *con, const char *s,
+-    unsigned int count)
+-{
+-	while (count--) {
+-		if (*s == '\n')
+-			adm5120console_put('\r');
+-		adm5120console_put(*s);
+-		s++;
+-	}
+-}
+-
+-static int adm5120console_setup(struct console *con, char *options)
+-{
+-	/* Set to 115200 baud, 8N1 and enable FIFO */
+-	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_LCR_L) =
+-	    ADM5120_UART_BAUD115200 & 0xff;
+-	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_LCR_M) =
+-	    ADM5120_UART_BAUD115200 >> 8;
+-	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_LCR_H) =
+-	    ADM5120_UART_W8 | ADM5120_UART_FIFO_EN;
+-	/* Enable port */
+-	ADM5120_UART_REG(ADM5120_UART0_BASE, ADM5120_UART_CR) =
+-	    ADM5120_UART_EN;
+-
+-	return 0;
+-}
+-
+-static struct uart_driver adm5120ser_reg;
+-
+-static struct console adm5120_serconsole = {
+-	.name =		"ttyS",
+-	.write =	adm5120console_write,
+-	.device =	uart_console_device,
+-	.setup =	adm5120console_setup,
+-	.flags =	CON_PRINTBUFFER,
+-	.cflag =	B115200 | CS8 | CREAD,
+-	.index =	0,
+-	.data =		&adm5120ser_reg,
+-};
+-
+-static int __init adm5120console_init(void)
+-{
+-	register_console(&adm5120_serconsole);
+-	return 0;
+-}
+-
+-console_initcall(adm5120console_init);
+-
+-
+-static struct uart_port adm5120ser_ports[] = {
+-	{
+-		.iobase =	ADM5120_UART0_BASE,
+-		.irq =		ADM5120_IRQ_UART0,
+-		.uartclk =	ADM5120_UARTCLK_FREQ,
+-		.fifosize =	16,
+-		.ops =		&adm5120ser_ops,
+-		.line =		0,
+-		.flags =	ASYNC_BOOT_AUTOCONF,
+-	},
+-#if (CONFIG_ADM5120_NR_UARTS > 1)
+-	{
+-		.iobase =	ADM5120_UART1_BASE,
+-		.irq =		ADM5120_IRQ_UART1,
+-		.uartclk =	ADM5120_UARTCLK_FREQ,
+-		.fifosize =	16,
+-		.ops =		&adm5120ser_ops,
+-		.line =		1,
+-		.flags =	ASYNC_BOOT_AUTOCONF,
+-	},
+-#endif
+-};
+-
+-static struct uart_driver adm5120ser_reg = {
+-	.owner	=	THIS_MODULE,
+-	.driver_name =	"ttyS",
+-	.dev_name =	"ttyS",
+-	.major =	TTY_MAJOR,
+-	.minor =	64,
+-	.nr =		CONFIG_ADM5120_NR_UARTS,
+-	.cons =		&adm5120_serconsole,
+-};
+-
+-static int __init adm5120ser_init(void)
+-{
+-	int ret, i;
+-
+-	ret = uart_register_driver(&adm5120ser_reg);
+-	if (!ret) {
+-		for (i = 0; i < CONFIG_ADM5120_NR_UARTS; i++)
+-			uart_add_one_port(&adm5120ser_reg, &adm5120ser_ports[i]);
+-	}
+-
+-	return ret;
+-}
+-
+-__initcall(adm5120ser_init);
+diff -urN serial2/21285.c serial/21285.c
+--- serial2/21285.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/21285.c	2007-10-11 15:30:18.000000000 +0200
+@@ -478,6 +478,7 @@
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "ttyFB",
+ 	.dev_name		= "ttyFB",
++	.devfs_name             = "ttyFB",
+ 	.major			= SERIAL_21285_MAJOR,
+ 	.minor			= SERIAL_21285_MINOR,
+ 	.nr			= 1,
+diff -urN serial2/8250.c serial/8250.c
+--- serial2/8250.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/8250.c	2007-10-11 15:30:18.000000000 +0200
+@@ -2587,6 +2587,7 @@
+ static struct uart_driver serial8250_reg = {
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "serial",
++	.devfs_name		= "tts/",
+ 	.dev_name		= "ttyS",
+ 	.major			= TTY_MAJOR,
+ 	.minor			= 64,
+diff -urN serial2/adm5120_uart.c serial/adm5120_uart.c
+--- serial2/adm5120_uart.c	2008-08-18 22:05:15.000000000 +0200
++++ serial/adm5120_uart.c	2008-08-19 16:19:53.708043201 +0200
+@@ -497,6 +497,7 @@
+ static struct uart_driver adm5120ser_reg = {
+ 	.owner	=	THIS_MODULE,
+ 	.driver_name =	"ttyS",
++	.devfs_name   = "tts/",
+ 	.dev_name =	"ttyS",
+ 	.major =	TTY_MAJOR,
+ 	.minor =	64,
+diff -urN serial2/amba-pl010.c serial/amba-pl010.c
+--- serial2/amba-pl010.c	2008-08-19 00:35:43.000000000 +0200
++++ serial/amba-pl010.c	2008-08-19 16:19:32.344043370 +0200
+@@ -659,6 +659,7 @@
+ static struct uart_driver amba_reg = {
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= SERIAL_AMBA_NAME,
++	.devfs_name		= "tts/",
+ 	.dev_name		= SERIAL_AMBA_NAME,
+ 	.major			= SERIAL_AMBA_MAJOR,
+ 	.minor			= SERIAL_AMBA_MINOR,
+Files serial2/amba-pl010.o and serial/amba-pl010.o differ
+diff -urN serial2/atmel_serial.c serial/atmel_serial.c
+--- serial2/atmel_serial.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/atmel_serial.c	2007-10-11 15:30:18.000000000 +0200
+@@ -909,6 +909,7 @@
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "atmel_serial",
+ 	.dev_name		= ATMEL_DEVICENAME,
++	.devfs_name		= ATMEL_DEVICENAME,
+ 	.major			= SERIAL_ATMEL_MAJOR,
+ 	.minor			= MINOR_START,
+ 	.nr			= ATMEL_MAX_UART,
+Files serial2/built-in.o and serial/built-in.o differ
+diff -urN serial2/crisv10.c serial/crisv10.c
+--- serial2/crisv10.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/crisv10.c	2007-10-11 15:30:18.000000000 +0200
+@@ -4871,7 +4871,7 @@
+ 		B115200 | CS8 | CREAD | HUPCL | CLOCAL; /* is normally B9600 default... */
+ 	driver->init_termios.c_ispeed = 115200;
+ 	driver->init_termios.c_ospeed = 115200;
+-	driver->flags = TTY_DRIVER_REAL_RAW | TTY_DRIVER_DYNAMIC_DEV;
++ 	driver->flags = TTY_DRIVER_REAL_RAW | TTY_DRIVER_NO_DEVFS;
+ 	driver->termios = serial_termios;
+ 	driver->termios_locked = serial_termios_locked;
+ 
+diff -urN serial2/dz.c serial/dz.c
+--- serial2/dz.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/dz.c	2007-10-11 15:30:18.000000000 +0200
+@@ -771,7 +771,11 @@
+ static struct uart_driver dz_reg = {
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "serial",
+-	.dev_name		= "ttyS",
++#ifdef CONFIG_DEVFS
++ 	.dev_name		= "tts/%d",
++#else
++  	.dev_name		= "ttyS%d",
++#endif
+ 	.major			= TTY_MAJOR,
+ 	.minor			= 64,
+ 	.nr			= DZ_NB_PORT,
+diff -urN serial2/imx.c serial/imx.c
+--- serial2/imx.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/imx.c	2007-10-11 15:30:18.000000000 +0200
+@@ -1029,6 +1029,7 @@
+ 	.owner          = THIS_MODULE,
+ 	.driver_name    = DRIVER_NAME,
+ 	.dev_name       = "ttySMX",
++	.devfs_name	= "ttsmx/",
+ 	.major          = SERIAL_IMX_MAJOR,
+ 	.minor          = MINOR_START,
+ 	.nr             = ARRAY_SIZE(imx_ports),
+diff -urN serial2/ip22zilog.c serial/ip22zilog.c
+--- serial2/ip22zilog.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/ip22zilog.c	2007-10-11 15:30:18.000000000 +0200
+@@ -1078,6 +1078,7 @@
+ static struct uart_driver ip22zilog_reg = {
+ 	.owner		= THIS_MODULE,
+ 	.driver_name	= "serial",
++	.devfs_name	= "tts/",
+ 	.dev_name	= "ttyS",
+ 	.major		= TTY_MAJOR,
+ 	.minor		= 64,
+diff -urN serial2/m32r_sio.c serial/m32r_sio.c
+--- serial2/m32r_sio.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/m32r_sio.c	2007-10-11 15:30:18.000000000 +0200
+@@ -1127,6 +1127,7 @@
+ static struct uart_driver m32r_sio_reg = {
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "sio",
++	.devfs_name		= "tts/",
+ 	.dev_name		= "ttyS",
+ 	.major			= TTY_MAJOR,
+ 	.minor			= 64,
+diff -urN serial2/mcfserial.c serial/mcfserial.c
+--- serial2/mcfserial.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/mcfserial.c	2007-10-11 15:30:18.000000000 +0200
+@@ -1750,6 +1750,7 @@
+ 	/* Initialize the tty_driver structure */
+ 	mcfrs_serial_driver->owner = THIS_MODULE;
+ 	mcfrs_serial_driver->name = "ttyS";
++ 	mcfrs_serial_driver->devfs_name = "ttys/";
+ 	mcfrs_serial_driver->driver_name = "mcfserial";
+ 	mcfrs_serial_driver->major = TTY_MAJOR;
+ 	mcfrs_serial_driver->minor_start = 64;
+diff -urN serial2/mpc52xx_uart.c serial/mpc52xx_uart.c
+--- serial2/mpc52xx_uart.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/mpc52xx_uart.c	2007-10-11 15:30:18.000000000 +0200
+@@ -812,6 +812,7 @@
+ 	.owner		= THIS_MODULE,
+ 	.driver_name	= "mpc52xx_psc_uart",
+ 	.dev_name	= "ttyPSC",
++	.devfs_name	= "ttyPSC",
+ 	.major		= SERIAL_PSC_MAJOR,
+ 	.minor		= SERIAL_PSC_MINOR,
+ 	.nr		= MPC52xx_PSC_MAXNUM,
+diff -urN serial2/pmac_zilog.c serial/pmac_zilog.c
+--- serial2/pmac_zilog.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/pmac_zilog.c	2007-10-11 15:30:18.000000000 +0200
+@@ -100,6 +100,7 @@
+ static struct uart_driver pmz_uart_reg = {
+ 	.owner		=	THIS_MODULE,
+ 	.driver_name	=	"ttyS",
++	.devfs_name	=	"tts/",
+ 	.dev_name	=	"ttyS",
+ 	.major		=	TTY_MAJOR,
+ };
+diff -urN serial2/pxa.c serial/pxa.c
+--- serial2/pxa.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/pxa.c	2007-10-11 15:30:18.000000000 +0200
+@@ -777,6 +777,7 @@
+ static struct uart_driver serial_pxa_reg = {
+ 	.owner		= THIS_MODULE,
+ 	.driver_name	= "PXA serial",
++	.devfs_name	= "tts/",
+ 	.dev_name	= "ttyS",
+ 	.major		= TTY_MAJOR,
+ 	.minor		= 64,
+diff -urN serial2/s3c2410.c serial/s3c2410.c
+--- serial2/s3c2410.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/s3c2410.c	2007-10-11 15:30:18.000000000 +0200
+@@ -148,6 +148,7 @@
+ /* UART name and device definitions */
+ 
+ #define S3C24XX_SERIAL_NAME	"ttySAC"
++#define S3C24XX_SERIAL_DEVFS    "tts/"
+ #define S3C24XX_SERIAL_MAJOR	204
+ #define S3C24XX_SERIAL_MINOR	64
+ 
+@@ -950,6 +951,7 @@
+ 	.nr		= 3,
+ 	.cons		= S3C24XX_SERIAL_CONSOLE,
+ 	.driver_name	= S3C24XX_SERIAL_NAME,
++	.devfs_name	= S3C24XX_SERIAL_DEVFS,
+ 	.major		= S3C24XX_SERIAL_MAJOR,
+ 	.minor		= S3C24XX_SERIAL_MINOR,
+ };
+diff -urN serial2/sa1100.c serial/sa1100.c
+--- serial2/sa1100.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/sa1100.c	2007-10-11 15:30:18.000000000 +0200
+@@ -815,6 +815,7 @@
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "ttySA",
+ 	.dev_name		= "ttySA",
++	.devfs_name		= "ttySA",
+ 	.major			= SERIAL_SA1100_MAJOR,
+ 	.minor			= MINOR_START,
+ 	.nr			= NR_PORTS,
+diff -urN serial2/serial_core.c serial/serial_core.c
+--- serial2/serial_core.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/serial_core.c	2007-10-11 15:30:18.000000000 +0200
+@@ -2198,6 +2198,7 @@
+ 
+ 	normal->owner		= drv->owner;
+ 	normal->driver_name	= drv->driver_name;
++	normal->devfs_name	= drv->devfs_name;
+ 	normal->name		= drv->dev_name;
+ 	normal->major		= drv->major;
+ 	normal->minor_start	= drv->minor;
+@@ -2206,7 +2207,7 @@
+ 	normal->init_termios	= tty_std_termios;
+ 	normal->init_termios.c_cflag = B9600 | CS8 | CREAD | HUPCL | CLOCAL;
+ 	normal->init_termios.c_ispeed = normal->init_termios.c_ospeed = 9600;
+-	normal->flags		= TTY_DRIVER_REAL_RAW | TTY_DRIVER_DYNAMIC_DEV;
++ 	normal->flags		= TTY_DRIVER_REAL_RAW | TTY_DRIVER_NO_DEVFS;
+ 	normal->driver_state    = drv;
+ 	tty_set_operations(normal, &uart_ops);
+ 
+Files serial2/serial_core.o and serial/serial_core.o differ
+diff -urN serial2/serial_txx9.c serial/serial_txx9.c
+--- serial2/serial_txx9.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/serial_txx9.c	2007-10-11 15:30:18.000000000 +0200
+@@ -45,11 +45,13 @@
+ #if !defined(CONFIG_SERIAL_TXX9_STDSERIAL)
+ /* "ttyS" is used for standard serial driver */
+ #define TXX9_TTY_NAME "ttyTX"
++#define TXX9_TTY_DEVFS_NAME "tttx/"
+ #define TXX9_TTY_MINOR_START	196
+ #define TXX9_TTY_MAJOR	204
+ #else
+ /* acts like standard serial driver */
+ #define TXX9_TTY_NAME "ttyS"
++#define TXX9_TTY_DEVFS_NAME "tts/"
+ #define TXX9_TTY_MINOR_START	64
+ #define TXX9_TTY_MAJOR	TTY_MAJOR
+ #endif
+@@ -936,6 +938,7 @@
+ static struct uart_driver serial_txx9_reg = {
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "serial_txx9",
++	.devfs_name		= TXX9_TTY_DEVFS_NAME,
+ 	.dev_name		= TXX9_TTY_NAME,
+ 	.major			= TXX9_TTY_MAJOR,
+ 	.minor			= TXX9_TTY_MINOR_START,
+diff -urN serial2/sh-sci.c serial/sh-sci.c
+--- serial2/sh-sci.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/sh-sci.c	2007-10-11 15:30:18.000000000 +0200
+@@ -1371,6 +1371,9 @@
+ static struct uart_driver sci_uart_driver = {
+ 	.owner		= THIS_MODULE,
+ 	.driver_name	= "sci",
++#ifdef CONFIG_DEVFS_FS
++	.devfs_name	= "ttsc/",
++#endif
+ 	.dev_name	= "ttySC",
+ 	.major		= SCI_MAJOR,
+ 	.minor		= SCI_MINOR_START,
+diff -urN serial2/sunhv.c serial/sunhv.c
+--- serial2/sunhv.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/sunhv.c	2007-10-11 15:30:18.000000000 +0200
+@@ -393,6 +393,7 @@
+ static struct uart_driver sunhv_reg = {
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "serial",
++	.devfs_name		= "tts/",
+ 	.dev_name		= "ttyS",
+ 	.major			= TTY_MAJOR,
+ };
+diff -urN serial2/sunsab.c serial/sunsab.c
+--- serial2/sunsab.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/sunsab.c	2007-10-11 15:30:18.000000000 +0200
+@@ -827,6 +827,7 @@
+ static struct uart_driver sunsab_reg = {
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "serial",
++	.devfs_name		= "tts/",
+ 	.dev_name		= "ttyS",
+ 	.major			= TTY_MAJOR,
+ };
+diff -urN serial2/sunsu.c serial/sunsu.c
+--- serial2/sunsu.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/sunsu.c	2007-10-11 15:30:18.000000000 +0200
+@@ -1174,6 +1174,7 @@
+ static struct uart_driver sunsu_reg = {
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "serial",
++	.devfs_name		= "tts/",
+ 	.dev_name		= "ttyS",
+ 	.major			= TTY_MAJOR,
+ };
+diff -urN serial2/sunzilog.c serial/sunzilog.c
+--- serial2/sunzilog.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/sunzilog.c	2007-10-11 15:30:18.000000000 +0200
+@@ -1027,6 +1027,7 @@
+ static struct uart_driver sunzilog_reg = {
+ 	.owner		=	THIS_MODULE,
+ 	.driver_name	=	"ttyS",
++	.devfs_name	=	"tts/",
+ 	.dev_name	=	"ttyS",
+ 	.major		=	TTY_MAJOR,
+ };
+diff -urN serial2/v850e_uart.c serial/v850e_uart.c
+--- serial2/v850e_uart.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/v850e_uart.c	2007-10-11 15:30:18.000000000 +0200
+@@ -468,6 +468,7 @@
+ static struct uart_driver v850e_uart_driver = {
+ 	.owner			= THIS_MODULE,
+ 	.driver_name		= "v850e_uart",
++	.devfs_name		= "tts/",
+ 	.dev_name		= "ttyS",
+ 	.major			= TTY_MAJOR,
+ 	.minor			= V850E_UART_MINOR_BASE,
+diff -urN serial2/vr41xx_siu.c serial/vr41xx_siu.c
+--- serial2/vr41xx_siu.c	2007-10-12 18:43:44.000000000 +0200
++++ serial/vr41xx_siu.c	2007-10-11 15:30:18.000000000 +0200
+@@ -849,6 +849,7 @@
+ 	.owner		= THIS_MODULE,
+ 	.driver_name	= "SIU",
+ 	.dev_name	= "ttyVR",
++	.devfs_name	= "ttvr/",
+ 	.major		= SIU_MAJOR,
+ 	.minor		= SIU_MINOR_BASE,
+ 	.cons		= SERIAL_VR41XX_CONSOLE,
