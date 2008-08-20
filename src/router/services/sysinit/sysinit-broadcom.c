@@ -410,7 +410,7 @@ start_sysinit (void)
   mkdir ("/var/tmp", 0777);
   cprintf ("sysinit() setup console\n");
 #ifndef HAVE_MICRO
-  eval ("/sbin/watchdog");	// system watchdog
+  eval ("watchdog");	// system watchdog
 #endif
   /* Setup console */
 
