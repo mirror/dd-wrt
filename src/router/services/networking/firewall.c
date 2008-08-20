@@ -3007,15 +3007,11 @@ stop_firewall (void)
       rmmod("ipt_mark");
       rmmod("xt_mark");
     }
-  rmmod("ipt_TRIGGER");
-  rmmod("ipt_CONNMARK");
-  rmmod("xt_CONNMARK");
   if (nvram_invmatch ("apd_enable", "0"))
     {
       rmmod("ipt_mac");
       rmmod("xt_mac");
     }
-  rmmod("ipt_IMQ");
   cprintf ("done\n");
   return 0;
 }
