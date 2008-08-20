@@ -23,7 +23,7 @@ else
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils  -ldl
 CFLAGS += -I$(LINUXDIR)
 
-CFLAGS += -fpic
+CFLAGS += -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
