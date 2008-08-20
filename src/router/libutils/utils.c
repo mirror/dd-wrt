@@ -2514,6 +2514,17 @@ getMTD (char *name)
   return device;
 }
 
+
+void insmod(char *module)
+{
+eval("insmod",module);
+}
+
+void rmmod(char *module)
+{
+eval("rmmod",module);
+}
+
 #ifdef HAVE_X86
 
 static int fd;

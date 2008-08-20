@@ -5,7 +5,7 @@
 #include <utils.h>
 #include <wlutils.h>
 #include <errno.h>
-#ifndef HAVE_MICRO
+#if !defined(HAVE_MICRO) && !defined(HAVE_ADM5120)
 
 static void
 watchdog (void)
