@@ -63,7 +63,6 @@ start_sysinit (void)
   struct utsname name;
   struct stat tmp_stat;
   time_t tm = 0;
-  unlink ("/etc/nvram/.lock");
   cprintf ("sysinit() proc\n");
   /* /proc */
   mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
@@ -95,17 +94,6 @@ start_sysinit (void)
   eval ("mknod", "/dev/mtd/4", "c", "90", "8");
   eval ("mknod", "/dev/mtd/4ro", "c", "90", "9");
 
-  unlink ("/tmp/nvram/.lock");
-  eval ("mkdir", "/tmp/nvram");
-  eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
-  FILE *in = fopen ("/tmp/nvram/nvram.db", "rb");
-  if (in != NULL)
-    {
-      fclose (in);
-      eval ("/usr/sbin/convertnvram");
-      eval ("/sbin/mtd", "erase", "nvram");
-      nvram_commit ();
-    }
   cprintf ("sysinit() var\n");
 
   /* /var */
