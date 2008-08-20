@@ -217,7 +217,7 @@ static struct MAIN maincalls[] = {
   {"startservices",NULL,start_services_main},
   {"start_single_service",NULL,start_single_service_main},
   {"startstop",NULL,startstop_main},
-#if !defined(HAVE_MICRO) && !defined(HAVE_ADM5120)
+#if !defined(HAVE_MICRO) || defined(HAVE_ADM5120)
   {"watchdog", NULL, &watchdog_main},
 #endif
 //  {"nvram", NULL, &nvram_main},
