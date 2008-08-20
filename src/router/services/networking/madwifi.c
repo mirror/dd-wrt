@@ -754,7 +754,7 @@ set_scanlist (char *dev, char *wif)
   char *next;
   struct iwreq iwr;
   char scanlist[32];
-  unsigned short list[64];
+  char list[64];
   sprintf (scanlist, "%s_scanlist", dev);
   char *sl = nvram_default_get (scanlist, "default");
   int c = 0;
@@ -962,7 +962,7 @@ set_netmode (char *wif, char *dev, char *use)
 }
 
 static
-setRTS (char *use)
+void setRTS (char *use)
 {
   char rts[32];
 
@@ -993,7 +993,7 @@ setRTS (char *use)
 }
 
 static
-set_compression (int count)
+void set_compression (int count)
 {
   char comp[32];
   char wif[32];
@@ -1782,10 +1782,10 @@ if (ifexists(wif))
 }
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108)
 eval("rmmod","ath_ahb");
-eval ("insmod", "ath_ahb", "autocreate=none");
+insmod("ath_ahb", "autocreate=none");
 #else
 eval("rmmod","ath_pci");
-eval ("insmod", "ath_pci", "autocreate=none");
+insmod("ath_pci", "autocreate=none");
 #endif
 for (s=0;s<10;s++)
 {

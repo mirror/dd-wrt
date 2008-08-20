@@ -549,7 +549,7 @@ start_ipv6 (void)
   if (!nvram_invmatch ("ipv6_enable", "0"))
     return 0;
 
-  ret = eval ("insmod", "ipv6");
+  ret = insmod("ipv6");
   syslog (LOG_INFO, "ipv6 successfully started\n");
 
   cprintf ("done\n");

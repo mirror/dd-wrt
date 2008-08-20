@@ -189,157 +189,157 @@ eval("insmod","crypto_null");
 
 //system("/etc/kendin");
   if (detect ("Rhine-"))	// VIA Rhine-I, Rhine-II, Rhine-III
-    eval ("insmod", "via-rhine");
+    insmod("via-rhine");
   if (detect ("DP8381"))
-    eval ("insmod", "natsemi");
+    insmod("natsemi");
   if (detect ("PCnet32"))	//vmware?
-    eval ("insmod", "pcnet32");
+    insmod("pcnet32");
   if (detect ("Tigon3"))	//Broadcom 
-    eval ("insmod", "tg3");
+    insmod("tg3");
   else if (detect ("NetXtreme"))	//Broadcom 
-    eval ("insmod", "tg3");
+    insmod("tg3");
   if (detect ("NetXtreme II"))	//Broadcom 
-    eval ("insmod", "bnx2");
+    insmod("bnx2");
   if (detect ("BCM44"))		//Broadcom 
-    eval ("insmod", "b44");
+    insmod("b44");
 
 
   if (detect ("EtherExpress PRO/100"))	//intel 100 mbit 
-    eval ("insmod", "e100");
+    insmod("e100");
   else if (detect ("PRO/100"))	//intel 100 mbit
-    eval ("insmod", "e100");
+    insmod("e100");
   else if (detect ("8280"))	//intel 100 mbit 
-    eval ("insmod", "e100");
+    insmod("e100");
   else if (detect ("Ethernet Pro 100"))	//intel 100 mbit 
-    eval ("insmod", "e100");
+    insmod("e100");
   else if (detect ("8255"))	//intel 100 mbit 
-    eval ("insmod", "eepro100");
+    insmod("eepro100");
 
 
   if (detect ("PRO/1000"))	//Intel Gigabit 
-    eval ("insmod", "e1000");
+    insmod("e1000");
   else if (detect ("82541"))	// Intel Gigabit
-    eval ("insmod", "e1000");
+    insmod("e1000");
   else if (detect ("82547"))	// Intel Gigabit
-    eval ("insmod", "e1000");
+    insmod("e1000");
   else if (detect ("82546"))	// Intel Gigabit
-    eval ("insmod", "e1000");
+    insmod("e1000");
   else if (detect ("82545"))	// Intel Gigabit / VMWare 64 bit mode (nice trick to get gigabit out of it)
-    eval ("insmod", "e1000");
+    insmod("e1000");
   else if (detect ("82543"))	// Intel Gigabit / VMWare 64 bit mode (nice trick to get gigabit out of it)
-    eval ("insmod", "e1000");
+    insmod("e1000");
   else if (detect ("82572"))	// Intel Gigabit 
-    eval ("insmod", "e1000");
+    insmod("e1000");
 
 
   if (detect ("RTL-8110"))	// Realtek 8169 Adapter (various notebooks) 
-    eval ("insmod", "r8169");
+    insmod("r8169");
   else if (detect ("RTL-8169"))	// Realtek 8169 Adapter (various notebooks) 
-    eval ("insmod", "r8169");
+    insmod("r8169");
   else if (detect ("RTL8101"))	// Realtek 8169 Adapter (various notebooks) 
-    eval ("insmod", "r8169");
+    insmod("r8169");
 
   if (detect ("8139"))		// Realtek 8139 Adapter (various notebooks) 
-    eval ("insmod", "8139too");
+    insmod("8139too");
   if (detect ("DFE-690TXD"))	// Realtek 8139 Adapter (various notebooks) 
-    eval ("insmod", "8139too");
+    insmod("8139too");
   else if (detect ("SMC2-1211TX"))	// Realtek 8139 Adapter (various notebooks) 
-    eval ("insmod", "8139too");
+    insmod("8139too");
   else if (detect ("Robotics"))	// Realtek 8139 Adapter (various notebooks) 
-    eval ("insmod", "8139too");
+    insmod("8139too");
 
 
   if (detect ("nForce2 Ethernet"))	// nForce2 
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("nForce3 Ethernet"))	// nForce3 
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("nForce Ethernet"))	// nForce 
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("CK804 Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("CK8S Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP04 Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP2A Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP51 Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP55 Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP61 Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP65 Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP67 Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP67 Gigabit"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP73 Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP77 Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
   else if (detect ("MCP79 Ethernet"))	// nForce
-    eval ("insmod", "forcedeth");
+    insmod("forcedeth");
 
   if (detect ("Sundance"))	//Dlink fibre
-    eval ("insmod", "sundance");
+    insmod("sundance");
   else if (detect ("DL10050"))
-    eval ("insmod", "sundance");
+    insmod("sundance");
 
 
   if (detect ("88E8001"))	//Marvell Yukon
-    eval ("insmod", "sk98lin");
+    insmod("sk98lin");
   else if (detect ("RDK-"))
-    eval ("insmod", "sk98lin");
+    insmod("sk98lin");
   else if (detect ("SK-98"))
-    eval ("insmod", "sk98lin");
+    insmod("sk98lin");
   else if (detect ("3c940"))
-    eval ("insmod", "sk98lin");
+    insmod("sk98lin");
   else if (detect ("Marvell"))
-    eval ("insmod", "sk98lin");
+    insmod("sk98lin");
 
 
   if (detect ("RTL-8029"))	// Old Realtek PCI NE2000 clone (10M only)
     {
-      eval ("insmod", "8390");
-      eval ("insmod", "ne2k-pci");
+      insmod("8390");
+      insmod("ne2k-pci");
     }
 
 
   if (detect ("3c905"))		// 3Com
-    eval ("insmod", "3c59x");
+    insmod("3c59x");
   else if (detect ("3c555"))	// 3Com
-    eval ("insmod", "3c59x");
+    insmod("3c59x");
   else if (detect ("3c556"))	// 3Com
-    eval ("insmod", "3c59x");
+    insmod("3c59x");
   else if (detect ("ScSOHO100"))	// 3Com
-    eval ("insmod", "3c59x");
+    insmod("3c59x");
   else if (detect ("Hurricane"))	// 3Com
-    eval ("insmod", "3c59x");
+    insmod("3c59x");
 
   if (detect ("LNE100TX"))	// liteon / linksys
-    eval ("insmod", "tulip");
+    insmod("tulip");
   else if (detect ("FasterNet"))
-    eval ("insmod", "tulip");
+    insmod("tulip");
   else if (detect ("ADMtek NC100"))
-    eval ("insmod", "tulip");
+    insmod("tulip");
   else if (detect ("910-A1"))
-    eval ("insmod", "tulip");
+    insmod("tulip");
   else if (detect ("tulip"))
-    eval ("insmod", "tulip");
+    insmod("tulip");
   else if (detect ("DECchip 21142"))
-    eval ("insmod", "tulip");
+    insmod("tulip");
   else if (detect ("MX987x5"))
-    eval ("insmod", "tulip");
+    insmod("tulip");
 
   if (detect ("DGE-530T"))
-    eval ("insmod", "skge");
+    insmod("skge");
   else if (detect ("D-Link Gigabit"))
-    eval ("insmod", "skge");
+    insmod("skge");
 
   if (detect ("SiS900"))	// Sis 900
-    eval ("insmod", "sis900");
+    insmod("sis900");
 
   eval ("ifconfig", "eth0", "0.0.0.0", "up");
   eval ("ifconfig", "eth1", "0.0.0.0", "up");
@@ -359,10 +359,10 @@ eval("insmod","crypto_null");
       close (s);
     }
 #ifndef HAVE_NOWIFI
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "ath_pci");
+  insmod("ath_hal");
+  insmod("ath_pci");
 #ifdef HAVE_MADWIFI_MIMO
-  eval ("insmod", "ath_mimo_pci");
+  insmod("ath_mimo_pci");
 #endif
 
 /*  eval ("ifconfig", "wifi0", "up");
@@ -373,20 +373,20 @@ eval("insmod","crypto_null");
   eval ("ifconfig", "wifi5", "up");*/
 #endif
 
-  eval ("insmod", "ipv6");
+  insmod("ipv6");
   eval ("mknod", "/dev/rtc", "c", "253", "0");
 #ifdef HAVE_CPUTEMP
-//  eval ("insmod", "nsc_gpio");
-//  eval ("insmod", "scx200_gpio");
-//  eval ("insmod", "scx200_i2c");
-//  eval ("insmod", "scx200_acb");
-//  eval ("insmod", "lm77");
+//  insmod("nsc_gpio");
+//  insmod("scx200_gpio");
+//  insmod("scx200_i2c");
+//  insmod("scx200_acb");
+//  insmod("lm77");
 #endif
   if (detect ("SafeXcel-1141"))
     {
-      eval ("insmod", "ocf");
-      eval ("insmod", "cryptodev");
-      eval ("insmod", "safe");
+      insmod("ocf");
+      insmod("cryptodev");
+      insmod("safe");
       nvram_set ("use_crypto", "1");
     }
   else

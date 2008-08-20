@@ -1295,12 +1295,6 @@ start_lan (void)
   strcpy (wan_ifname, nvram_safe_get ("wan_ifname"));
   strcpy (lan_ifnames, nvram_safe_get ("lan_ifnames"));
 
-// Motorola doesnt like this
-//      if(nvram_match("wl0_gmode", "-1"))
-//              eval("rmmod", "wl");
-//      else
-//              eval("insmod", "wl");
-
   cprintf ("%s\n", lan_ifname);
 
 
@@ -2432,19 +2426,6 @@ start_wan (int status)
       pppoe_wan_ifname = getSTA ();
     }
 #endif
-/*	if (strcmp(wan_proto,"pppoe"))
-	    {
-	    eval("insmod","slhc");	    
-	    eval("insmod","ppp_generic");
-	    eval("insmod","bsd_comp");
-	    eval("insmod","ppp_async");
-	    eval("insmod","ppp_deflate");
-	    eval("insmod","ppp_mppe_mppc");
-	    eval("insmod","ppp_synctty");
-	    eval("insmod","pppox");
-	    eval("insmod","pppoe");
-	    }
-*/
 #endif
 //fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
@@ -3383,15 +3364,6 @@ stop_wan (void)
   ifconfig (wan_ifname, 0, NULL, NULL);
   eval ("ifconfig", wan_ifname, "down");	//to allow for MAC clone to take effect
 #ifdef HAVE_PPP
-/*	    eval("rmmod","pppoe");
-	    eval("rmmod","pppox");
-	    eval("mrmod","ppp_synctty");
-	    eval("rmmod","ppp_mppe_mppc");
-	    eval("rmmod","ppp_deflate");
-	    eval("rmmod","ppp_async");
-	    eval("rmmod","bsd_comp");
-	    eval("rmmod","ppp_generic");
-	    eval("rmmod","slhc");	 */
 #endif
 #ifndef HAVE_FON
   if (nvram_match ("fon_enable", "1")
