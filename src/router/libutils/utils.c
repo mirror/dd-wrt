@@ -2522,7 +2522,7 @@ return eval("insmod",module);
 
 void rmmod(char *module)
 {
-eval("rmmod",module);
+return eval("rmmod",module);
 }
 
 #ifdef HAVE_X86

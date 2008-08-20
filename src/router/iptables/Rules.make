@@ -6,6 +6,7 @@ experimental: $(EXTRAS_EXP)
 
 # Have to handle extensions which no longer exist.
 clean: $(EXTRA_CLEANS)
+	rm -f TAGS `find . -name '*~' -o -name '.*~'` `find . -name '*.rej'` `find . -name '*.d'` .makefirst
 	rm -f $(SHARED_LIBS) $(SHARED_SE_LIBS) $(EXTRAS) $(EXTRAS_EXP) $(SHARED_LIBS:%.so=%_sh.o) $(SHARED_SE_LIBS:%.so=%_sh.o)
 	rm -f extensions/initext.c extensions/initext6.c
 	@find . -name '*.[ao]' -o -name '*.so' | xargs rm -f
