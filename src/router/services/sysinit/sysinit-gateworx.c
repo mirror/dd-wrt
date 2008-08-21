@@ -216,6 +216,30 @@ start_sysinit (void)
 //system("/etc/kendin");
 
 
+
+
+
+
+
+
+#ifndef HAVE_NOWIFI
+  insmod("ath_hal");
+  if (nvram_get ("rate_control") != NULL)
+    {
+      char rate[64];
+      sprintf (rate, "ratectl=%s", nvram_safe_get ("rate_control"));
+      insmod("ath_pci", rate);
+    }
+  else
+    {
+      insmod("ath_pci");
+    }
+#endif
+#ifdef HAVE_MADWIFI_MIMO
+  insmod("ath_mimo_pci");
+#endif
+
+
 #if 1
   insmod("ixp400th");
   insmod("ixp400");
@@ -241,26 +265,6 @@ start_sysinit (void)
 #endif
 
 
-
-
-
-
-#ifndef HAVE_NOWIFI
-  insmod("ath_hal");
-  if (nvram_get ("rate_control") != NULL)
-    {
-      char rate[64];
-      sprintf (rate, "ratectl=%s", nvram_safe_get ("rate_control"));
-      insmod("ath_pci", rate);
-    }
-  else
-    {
-      insmod("ath_pci");
-    }
-#endif
-#ifdef HAVE_MADWIFI_MIMO
-  insmod("ath_mimo_pci");
-#endif
   // insmod("ath_pci", "rfkill=0", "autocreate=none");
 
 /*  if (ifexists ("wifi0"))
@@ -370,6 +374,8 @@ Configure mac addresses by reading data from eeprom
 	  eval ("ifconfig", "ixp1", "hw", "ether", mac);
 	  eval ("ifconfig", "ixp0", "0.0.0.0", "up");
 	  eval ("ifconfig", "ixp1", "0.0.0.0", "up");
+	}else{
+	eval("insmod","avila-ide");
 	}
       fclose (file);
     }
