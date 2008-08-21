@@ -44,136 +44,132 @@
 #include <shutils.h>
 #include <utils.h>
 
-
-int
-start_sysinit (void)
+int start_sysinit( void )
 {
-  char buf[PATH_MAX];
-  struct utsname name;
-  struct stat tmp_stat;
-  time_t tm = 0;
-  unlink ("/etc/nvram/.lock");
-  cprintf ("sysinit() proc\n");
-  /* /proc */
-  mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-  cprintf ("sysinit() tmp\n");
+    char buf[PATH_MAX];
+    struct utsname name;
+    struct stat tmp_stat;
+    time_t tm = 0;
 
-  /* /tmp */
-  mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-  // fix for linux kernel 2.6
-  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-  eval ("mkdir", "/tmp/www");
+    unlink( "/etc/nvram/.lock" );
+    cprintf( "sysinit() proc\n" );
+    /*
+     * /proc 
+     */
+    mount( "proc", "/proc", "proc", MS_MGC_VAL, NULL );
+    cprintf( "sysinit() tmp\n" );
 
-  //load ext2 
-  // eval("insmod","jbd");
-  insmod("ext2");
+    /*
+     * /tmp 
+     */
+    mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
+    // fix for linux kernel 2.6
+    mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
+    eval( "mkdir", "/tmp/www" );
+
+    // load ext2 
+    // eval("insmod","jbd");
+    insmod( "ext2" );
 #ifndef KERNEL_24
-  if (mount ("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
+    if( mount
+	( "/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL ) )
 #else
-  if (mount
-      ("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
+    if( mount
+	( "/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL ) )
 #endif
     {
-      //not created yet, create ext2 partition
-      eval ("/sbin/mke2fs", "-F", "-b", "1024", "/dev/cf/card0/part3");
-      //mount ext2 
-      mount ("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL);
-      eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
+	// not created yet, create ext2 partition
+	eval( "/sbin/mke2fs", "-F", "-b", "1024", "/dev/cf/card0/part3" );
+	// mount ext2 
+	mount( "/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL,
+	       NULL );
+	eval( "/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/" );
     }
-  eval ("mkdir", "-p", "/usr/local/nvram");
-  unlink ("/tmp/nvram/.lock");
-  eval ("mkdir", "/tmp/nvram");
-  eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
+    eval( "mkdir", "-p", "/usr/local/nvram" );
+    unlink( "/tmp/nvram/.lock" );
+    eval( "mkdir", "/tmp/nvram" );
+    eval( "cp", "/etc/nvram/nvram.db", "/tmp/nvram" );
 
-  eval ("mount", "/usr/local", "-o", "remount,ro");
+    eval( "mount", "/usr/local", "-o", "remount,ro" );
 
-//  eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
-  cprintf ("sysinit() var\n");
+    // eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+    cprintf( "sysinit() var\n" );
 
-  /* /var */
-  mkdir ("/tmp/var", 0777);
-  mkdir ("/var/lock", 0777);
-  mkdir ("/var/log", 0777);
-  mkdir ("/var/run", 0777);
-  mkdir ("/var/tmp", 0777);
-  cprintf ("sysinit() setup console\n");
+    /*
+     * /var 
+     */
+    mkdir( "/tmp/var", 0777 );
+    mkdir( "/var/lock", 0777 );
+    mkdir( "/var/log", 0777 );
+    mkdir( "/var/run", 0777 );
+    mkdir( "/var/tmp", 0777 );
+    cprintf( "sysinit() setup console\n" );
 
-  /* Setup console */
+    /*
+     * Setup console 
+     */
 
-  cprintf ("sysinit() klogctl\n");
-  klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
-  cprintf ("sysinit() get router\n");
+    cprintf( "sysinit() klogctl\n" );
+    klogctl( 8, NULL, atoi( nvram_safe_get( "console_loglevel" ) ) );
+    cprintf( "sysinit() get router\n" );
 
-  int brand = getRouterBrand ();
+    int brand = getRouterBrand(  );
 
+    /*
+     * Modules 
+     */
+    uname( &name );
+    /*
+     * insmod("md5"); insmod("aes"); insmod("blowfish"); insmod("deflate");
+     * insmod("des"); insmod("michael_mic"); insmod("cast5");
+     * insmod("crypto_null"); 
+     */
+    // insmod("ath_hal");
+    // insmod("wlan");
+    // insmod("ath_rate_sample");
+    insmod( "ath_hal" );
+    insmod( "ath_pci" );
 
-  /* Modules */
-  uname (&name);
-/*
-  insmod("md5");
-  insmod("aes");
-  insmod("blowfish");
-  insmod("deflate");
-  insmod("des");
-  insmod("michael_mic");
-  insmod("cast5");
-  insmod("crypto_null");
-*/
-//  insmod("ath_hal");
-//  insmod("wlan");
-//  insmod("ath_rate_sample");
-  insmod("ath_hal");
-  insmod("ath_pci");
+    /*
+     * insmod("wlan_acl"); insmod("wlan_ccmp"); insmod("wlan_tkip");
+     * insmod("wlan_wep"); insmod("wlan_xauth"); insmod("wlan_scan_ap");
+     * insmod("wlan_scan_sta"); 
+     */
+    /*
+     * eval ("ifconfig", "wifi0", "up"); eval ("ifconfig", "wifi1", "up");
+     * eval ("ifconfig", "wifi2", "up"); eval ("ifconfig", "wifi3", "up");
+     * eval ("ifconfig", "wifi4", "up"); eval ("ifconfig", "wifi5", "up"); 
+     */
 
+    /*
+     * insmod("mii"); insmod("korina"); insmod("via-rhine"); insmod("ipv6");
+     */
+    /*
+     * Set a sane date 
+     */
+    stime( &tm );
+    nvram_set( "use_crypto", "0" );
+    nvram_set( "wl0_ifname", "ath0" );
 
-  /*insmod("wlan_acl");
-     insmod("wlan_ccmp");
-     insmod("wlan_tkip");
-     insmod("wlan_wep");
-     insmod("wlan_xauth");
-     insmod("wlan_scan_ap");
-     insmod("wlan_scan_sta");
-   */
-/*  eval ("ifconfig", "wifi0", "up");
-  eval ("ifconfig", "wifi1", "up");
-  eval ("ifconfig", "wifi2", "up");
-  eval ("ifconfig", "wifi3", "up");
-  eval ("ifconfig", "wifi4", "up");
-  eval ("ifconfig", "wifi5", "up");
-*/
-
-/*  insmod("mii");
-  insmod("korina");
-  insmod("via-rhine");
-  insmod("ipv6");*/
-  /* Set a sane date */
-  stime (&tm);
-  nvram_set ("use_crypto", "0");
-  nvram_set ("wl0_ifname", "ath0");
-
-  cprintf ("done\n");
-  return 0;
+    cprintf( "done\n" );
+    return 0;
 }
 
-int
-check_cfe_nv (void)
+int check_cfe_nv( void )
 {
-  nvram_set ("portprio_support", "0");
-  return 0;
+    nvram_set( "portprio_support", "0" );
+    return 0;
 }
 
-int
-check_pmon_nv (void)
+int check_pmon_nv( void )
 {
-  return 0;
+    return 0;
 }
 
-void
-start_overclocking (void)
+void start_overclocking( void )
 {
 }
-void
-enable_dtag_vlan (int enable)
+void enable_dtag_vlan( int enable )
 {
 
 }

@@ -50,262 +50,299 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 
-
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
 #include <cymac.h>
 
-extern void vlan_init (int num);
+extern void vlan_init( int num );
 
-
-int
-start_sysinit (void)
+int start_sysinit( void )
 {
-  char buf[PATH_MAX];
-  struct utsname name;
-  struct stat tmp_stat;
-  time_t tm = 0;
-  unlink ("/etc/nvram/.lock");
-  cprintf ("sysinit() proc\n");
-  /* /proc */
-  mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-  mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-  cprintf ("sysinit() tmp\n");
+    char buf[PATH_MAX];
+    struct utsname name;
+    struct stat tmp_stat;
+    time_t tm = 0;
 
-  /* /tmp */
-  mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-  // fix for linux kernel 2.6
-  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-  eval ("mkdir", "/tmp/www");
-  eval ("mknod", "/dev/nvram", "c", "229", "0");
-  eval ("mknod", "/dev/ppp", "c", "108", "0");
+    unlink( "/etc/nvram/.lock" );
+    cprintf( "sysinit() proc\n" );
+    /*
+     * /proc 
+     */
+    mount( "proc", "/proc", "proc", MS_MGC_VAL, NULL );
+    mount( "sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL );
+    cprintf( "sysinit() tmp\n" );
 
-  unlink ("/tmp/nvram/.lock");
-  eval ("mkdir", "/tmp/nvram");
-  cprintf ("sysinit() var\n");
+    /*
+     * /tmp 
+     */
+    mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
+    // fix for linux kernel 2.6
+    mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
+    eval( "mkdir", "/tmp/www" );
+    eval( "mknod", "/dev/nvram", "c", "229", "0" );
+    eval( "mknod", "/dev/ppp", "c", "108", "0" );
 
-  /* /var */
-  mkdir ("/tmp/var", 0777);
-  mkdir ("/var/lock", 0777);
-  mkdir ("/var/log", 0777);
-  mkdir ("/var/run", 0777);
-  mkdir ("/var/tmp", 0777);
-  cprintf ("sysinit() setup console\n");
-  eval ("watchdog");
-  /* Setup console */
+    unlink( "/tmp/nvram/.lock" );
+    eval( "mkdir", "/tmp/nvram" );
+    cprintf( "sysinit() var\n" );
 
-  cprintf ("sysinit() klogctl\n");
-  klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
-  cprintf ("sysinit() get router\n");
+    /*
+     * /var 
+     */
+    mkdir( "/tmp/var", 0777 );
+    mkdir( "/var/lock", 0777 );
+    mkdir( "/var/log", 0777 );
+    mkdir( "/var/run", 0777 );
+    mkdir( "/var/tmp", 0777 );
+    cprintf( "sysinit() setup console\n" );
+    eval( "watchdog" );
+    /*
+     * Setup console 
+     */
+
+    cprintf( "sysinit() klogctl\n" );
+    klogctl( 8, NULL, atoi( nvram_safe_get( "console_loglevel" ) ) );
+    cprintf( "sysinit() get router\n" );
 
 #ifndef HAVE_DIR400
-  int mtd = getMTD ("board_config");
-  char mtdpath[64];
-  sprintf (mtdpath, "/dev/mtdblock/%d", mtd);
-  FILE *fp = fopen (mtdpath, "rb");
-  if (fp)
+    int mtd = getMTD( "board_config" );
+    char mtdpath[64];
+
+    sprintf( mtdpath, "/dev/mtdblock/%d", mtd );
+    FILE *fp = fopen( mtdpath, "rb" );
+
+    if( fp )
     {
-      fseek (fp, 0x1000, SEEK_SET);
-      unsigned int test;
-      fread (&test, 4, 1, fp);
-      fprintf (stderr, "test pattern is %X\n", test);
-      if (test != 0xffffffff)
+	fseek( fp, 0x1000, SEEK_SET );
+	unsigned int test;
+
+	fread( &test, 4, 1, fp );
+	fprintf( stderr, "test pattern is %X\n", test );
+	if( test != 0xffffffff )
 	{
-	  fprintf (stderr,
-		   "radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
-	  fseek (fp, 0, SEEK_SET);
-	  char *block = (char *) malloc (65536);
-	  fread (block, 65536, 1, fp);
-	  fclose (fp);
-	  int i;
-	  for (i = 0x1000; i < 65536; i++)
-	    block[i] = 0xff;
-	  fp = fopen ("/tmp/radio", "wb");
-	  fwrite (block, 65536, 1, fp);
-	  eval ("mtd", "-f", "write", "/tmp/radio", "board_config");	//writes back new config and reboots
-	  eval ("event", "5", "1", "15");
+	    fprintf( stderr,
+		     "radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n" );
+	    fseek( fp, 0, SEEK_SET );
+	    char *block = ( char * )malloc( 65536 );
+
+	    fread( block, 65536, 1, fp );
+	    fclose( fp );
+	    int i;
+
+	    for( i = 0x1000; i < 65536; i++ )
+		block[i] = 0xff;
+	    fp = fopen( "/tmp/radio", "wb" );
+	    fwrite( block, 65536, 1, fp );
+	    eval( "mtd", "-f", "write", "/tmp/radio", "board_config" );	// writes 
+									// back 
+									// new 
+									// config 
+									// and 
+									// reboots
+	    eval( "event", "5", "1", "15" );
 	}
-      fclose (fp);
+	fclose( fp );
     }
 #else
-  if (!nvram_match ("dir400preconfig", "1"))
+    if( !nvram_match( "dir400preconfig", "1" ) )
     {
-      nvram_set ("dir400preconfig", "1");
-      nvram_commit ();
-      int mtd = getMTD ("fullflash");
-      char mtdpath[64];
-      char mac[18];
-      sprintf (mtdpath, "/dev/mtdblock/%d", mtd);
-      FILE *fp = fopen (mtdpath, "rb");
-      int s = searchfor (fp, "lan_mac=", 512);
-      if (s == -1)
+	nvram_set( "dir400preconfig", "1" );
+	nvram_commit(  );
+	int mtd = getMTD( "fullflash" );
+	char mtdpath[64];
+	char mac[18];
+
+	sprintf( mtdpath, "/dev/mtdblock/%d", mtd );
+	FILE *fp = fopen( mtdpath, "rb" );
+	int s = searchfor( fp, "lan_mac=", 512 );
+
+	if( s == -1 )
 	{
-	  fprintf (stderr, "no mac found in config\n");
-	  fclose (fp);
+	    fprintf( stderr, "no mac found in config\n" );
+	    fclose( fp );
 	}
-      else
+	else
 	{
-	  mac[17] = 0;
-	  fread (mac, 17, 1, fp);
-	  fclose (fp);
-	  mtd = getMTD ("board_config");
-	  sprintf (mtdpath, "/dev/mtdblock/%d", mtd);
-	  fp = fopen (mtdpath, "rb");
-	  fseek (fp, 0, SEEK_SET);
-	  char *block = (char *) malloc (65536);
-	  fread (block, 65536, 1, fp);
-	  fclose (fp);
-	  unsigned char in_addr[6];
-	  int changed = 0;
-	  ether_atoe (mac, &in_addr[0]);
-	  if (memcmp (block + 96, &in_addr[0], 6))
+	    mac[17] = 0;
+	    fread( mac, 17, 1, fp );
+	    fclose( fp );
+	    mtd = getMTD( "board_config" );
+	    sprintf( mtdpath, "/dev/mtdblock/%d", mtd );
+	    fp = fopen( mtdpath, "rb" );
+	    fseek( fp, 0, SEEK_SET );
+	    char *block = ( char * )malloc( 65536 );
+
+	    fread( block, 65536, 1, fp );
+	    fclose( fp );
+	    unsigned char in_addr[6];
+	    int changed = 0;
+
+	    ether_atoe( mac, &in_addr[0] );
+	    if( memcmp( block + 96, &in_addr[0], 6 ) )
 	    {
-	      changed++;
-	      memcpy (block + 96, &in_addr[0], 6);	// wlan mac
+		changed++;
+		memcpy( block + 96, &in_addr[0], 6 );	// wlan mac
 	    }
-	  in_addr[5]++;
-	  if (memcmp (block + 102, &in_addr[0], 6))
+	    in_addr[5]++;
+	    if( memcmp( block + 102, &in_addr[0], 6 ) )
 	    {
-	      changed++;
-	      memcpy (block + 102, &in_addr[0], 6);	// eth0 mac
+		changed++;
+		memcpy( block + 102, &in_addr[0], 6 );	// eth0 mac
 	    }
-	  in_addr[5]++;
-	  if (memcmp (block + 108, &in_addr[0], 6))
+	    in_addr[5]++;
+	    if( memcmp( block + 108, &in_addr[0], 6 ) )
 	    {
-	      changed++;
-	      memcpy (block + 108, &in_addr[0], 6);	// eth1 mac
+		changed++;
+		memcpy( block + 108, &in_addr[0], 6 );	// eth1 mac
 	    }
-	  in_addr[5]++;
-	  if (memcmp (block + 118, &in_addr[0], 6))
+	    in_addr[5]++;
+	    if( memcmp( block + 118, &in_addr[0], 6 ) )
 	    {
-	      changed++;
-	      memcpy (block + 118, &in_addr[0], 6);	// wlan1 mac
+		changed++;
+		memcpy( block + 118, &in_addr[0], 6 );	// wlan1 mac
 	    }
-	  if (changed)
+	    if( changed )
 	    {
-	      fprintf (stderr,
-		       "radio config needs to be adjusted, system will reboot after flashing\n");
-	      fp = fopen ("/tmp/radio", "wb");
-	      fwrite (block, 65536, 1, fp);
-	      fclose (fp);
-	      eval ("mtd", "-f", "write", "/tmp/radio", "board_config");	//writes back new config and reboots
-	      eval ("event", "5", "1", "15");
+		fprintf( stderr,
+			 "radio config needs to be adjusted, system will reboot after flashing\n" );
+		fp = fopen( "/tmp/radio", "wb" );
+		fwrite( block, 65536, 1, fp );
+		fclose( fp );
+		eval( "mtd", "-f", "write", "/tmp/radio", "board_config" );	// writes 
+										// back 
+										// new 
+										// config 
+										// and 
+										// reboots
+		eval( "event", "5", "1", "15" );
 	    }
-	  else
+	    else
 	    {
-	      fprintf (stderr,
-		       "no change required, radio config remains unchanged\n");
+		fprintf( stderr,
+			 "no change required, radio config remains unchanged\n" );
 	    }
-	  free (block);
+	    free( block );
 	}
     }
 #endif
 
-
-  /* Modules */
-  uname (&name);
-/* network drivers */
-  insmod("ar2313");
-  insmod("ath_hal");
-  insmod("ath_ahb");
-//  eval ("ifconfig", "wifi0", "up");
-  eval ("ifconfig", "eth0", "up");	// wan
-  system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
-  system ("echo 1 >/proc/sys/dev/wifi0/softled");
-  if (getRouterBrand () == ROUTER_BOARD_FONERA2200)
+    /*
+     * Modules 
+     */
+    uname( &name );
+    /*
+     * network drivers 
+     */
+    insmod( "ar2313" );
+    insmod( "ath_hal" );
+    insmod( "ath_ahb" );
+    // eval ("ifconfig", "wifi0", "up");
+    eval( "ifconfig", "eth0", "up" );	// wan
+    system( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
+    system( "echo 1 >/proc/sys/dev/wifi0/softled" );
+    if( getRouterBrand(  ) == ROUTER_BOARD_FONERA2200 )
     {
-      eval ("ifconfig", "eth0", "up");	// required for vlan config
-      eval ("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-      eval ("/sbin/vconfig", "add", "eth0", "0");
-      eval ("/sbin/vconfig", "add", "eth0", "1");
-      struct ifreq ifr;
-      int s;
-      if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
+	eval( "ifconfig", "eth0", "up" );	// required for vlan config
+	eval( "/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
+	eval( "/sbin/vconfig", "add", "eth0", "0" );
+	eval( "/sbin/vconfig", "add", "eth0", "1" );
+	struct ifreq ifr;
+	int s;
+
+	if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
 	{
-	  char eabuf[32];
-	  strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
-	  ioctl (s, SIOCGIFHWADDR, &ifr);
-	  char macaddr[32];
-	  strcpy (macaddr,
-		  ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,
-			      eabuf));
-	  nvram_set ("et0macaddr", macaddr);
-	  MAC_ADD (macaddr);
-	  ether_atoe (macaddr, (unsigned char *) ifr.ifr_hwaddr.sa_data);
-	  strncpy (ifr.ifr_name, "vlan1", IFNAMSIZ);
-	  ioctl (s, SIOCSIFHWADDR, &ifr);
-	  close (s);
+	    char eabuf[32];
+
+	    strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+	    ioctl( s, SIOCGIFHWADDR, &ifr );
+	    char macaddr[32];
+
+	    strcpy( macaddr,
+		    ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.sa_data,
+				eabuf ) );
+	    nvram_set( "et0macaddr", macaddr );
+	    MAC_ADD( macaddr );
+	    ether_atoe( macaddr, ( unsigned char * )ifr.ifr_hwaddr.sa_data );
+	    strncpy( ifr.ifr_name, "vlan1", IFNAMSIZ );
+	    ioctl( s, SIOCSIFHWADDR, &ifr );
+	    close( s );
 	}
     }
-  else
+    else
     {
-      vlan_init (0xff);		// 4 lan + 1 wan
+	vlan_init( 0xff );	// 4 lan + 1 wan
     }
-//  insmod("ipv6");
+    // insmod("ipv6");
 
-  /* Set a sane date */
-  stime (&tm);
-  nvram_set ("wl0_ifname", "ath0");
+    /*
+     * Set a sane date 
+     */
+    stime( &tm );
+    nvram_set( "wl0_ifname", "ath0" );
 
-  return 0;
+    return 0;
 }
 
-int
-check_cfe_nv (void)
+int check_cfe_nv( void )
 {
-  nvram_set ("portprio_support", "0");
-  return 0;
+    nvram_set( "portprio_support", "0" );
+    return 0;
 }
 
-int
-check_pmon_nv (void)
+int check_pmon_nv( void )
 {
-  return 0;
+    return 0;
 }
 
-void
-start_overclocking (void)
+void start_overclocking( void )
 {
 }
-void
-enable_dtag_vlan (int enable)
+void enable_dtag_vlan( int enable )
 {
 
 }
 
-void
-start_fixboard (void)
+void start_fixboard( void )
 {
-  int mtd = getMTD ("board_config");
-  char mtdpath[64];
-  sprintf (mtdpath, "/dev/mtdblock/%d", mtd);
-  fprintf (stderr, "board config path = %s\n", mtdpath);
-  FILE *fp = fopen (mtdpath, "rb");
-  if (fp)
+    int mtd = getMTD( "board_config" );
+    char mtdpath[64];
+
+    sprintf( mtdpath, "/dev/mtdblock/%d", mtd );
+    fprintf( stderr, "board config path = %s\n", mtdpath );
+    FILE *fp = fopen( mtdpath, "rb" );
+
+    if( fp )
     {
-      fseek (fp, 0x1000, SEEK_SET);
-      unsigned int test;
-      fread (&test, 4, 1, fp);
-      fprintf (stderr, "test pattern is %X\n", test);
-      if (test != 0xffffffff)
+	fseek( fp, 0x1000, SEEK_SET );
+	unsigned int test;
+
+	fread( &test, 4, 1, fp );
+	fprintf( stderr, "test pattern is %X\n", test );
+	if( test != 0xffffffff )
 	{
-	  fprintf (stderr,
-		   "radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n");
-	  fseek (fp, 0, SEEK_SET);
-	  char *block = (char *) malloc (65536);
-	  fread (block, 65536, 1, fp);
-	  fclose (fp);
-	  int i;
-	  for (i = 0x1000; i < 65536; i++)
-	    block[i] = 0xff;
-	  fp = fopen ("/tmp/radio", "wb");
-	  fwrite (block, 65536, 1, fp);
-	  eval ("mtd", "-f", "write", "/tmp/radio", "board_config");	//writes back new config and reboots
-	  eval ("event", "5", "1", "15");
-	}
-      fclose (fp);
-    }
+	    fprintf( stderr,
+		     "radio config fixup is required to clean bad stuff out of memory, otherwise the radio config cannot be detected\n" );
+	    fseek( fp, 0, SEEK_SET );
+	    char *block = ( char * )malloc( 65536 );
 
+	    fread( block, 65536, 1, fp );
+	    fclose( fp );
+	    int i;
+
+	    for( i = 0x1000; i < 65536; i++ )
+		block[i] = 0xff;
+	    fp = fopen( "/tmp/radio", "wb" );
+	    fwrite( block, 65536, 1, fp );
+	    eval( "mtd", "-f", "write", "/tmp/radio", "board_config" );	// writes 
+									// back 
+									// new 
+									// config 
+									// and 
+									// reboots
+	    eval( "event", "5", "1", "15" );
+	}
+	fclose( fp );
+    }
 
 }

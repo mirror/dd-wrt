@@ -9,7 +9,6 @@ extern "C"
 {
 #endif
 
-
 #define CRC8_INIT_VALUE  0xff	/* Initial CRC8 checksum value */
 #define CRC8_GOOD_VALUE  0x9f	/* Good final CRC8 checksum value */
 #define HCS_GOOD_VALUE   0x39	/* Good final header checksum value */
@@ -20,9 +19,11 @@ extern "C"
 #define CRC32_INIT_VALUE 0xffffffff	/* Initial CRC32 checksum value */
 #define CRC32_GOOD_VALUE 0xdebb20e3	/* Good final CRC32 checksum value */
 
-  uint32 crc32 (void *, uint, uint32);
+    uint32 crc32( void *, uint, uint32 );
 
-/* macros for common usage */
+    /*
+     * macros for common usage 
+     */
 
 #define APPEND_CRC8(pbytes, nbytes)                           \
 do {                                                          \

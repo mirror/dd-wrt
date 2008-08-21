@@ -24,8 +24,8 @@
 #define EZC_ERR_INVALID_STATE 	2
 #define EZC_ERR_INVALID_DATA 	3
 
-void do_apply_ezconfig_post (char *url, FILE * stream, int len,
-			     char *boundary);
-void do_ezconfig_asp (char *url, FILE * stream);
+void do_apply_ezconfig_post( char *url, FILE * stream, int len,
+			     char *boundary );
+void do_ezconfig_asp( char *url, FILE * stream );
 
 #endif /* _ezc_h_ */
