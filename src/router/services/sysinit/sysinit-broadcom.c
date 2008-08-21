@@ -292,7 +292,7 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 		nvram_unset( "boardflags" );
 	    }
 	    else if( boardflags & BFL_AFTERBURNER )	// ab flag already
-							// set
+		// set
 	    {
 		insmod( "wl" );	// load module
 	    }
@@ -309,24 +309,25 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 
 		sprintf( ab, "0x%04X", boardflags );
 		char *oldvalue = nvram_get( "boardflags" );	// use the
-								// string for 
-								// restoring
-								// since the
-								// Buffalo
-								// WZR-RS-G54 
-								// does await 
-								// a 0x10 in
-								// the
-								// bootloader, 
-								// otherwise
-								// the nvram
-								// gets
-								// deleted
+
+		// string for 
+		// restoring
+		// since the
+		// Buffalo
+		// WZR-RS-G54 
+		// does await 
+		// a 0x10 in
+		// the
+		// bootloader, 
+		// otherwise
+		// the nvram
+		// gets
+		// deleted
 		nvram_set( "boardflags", ab );	// set boardflags with
-						// AfterBurner bit on
+		// AfterBurner bit on
 		insmod( "wl" );	// load module
 		nvram_set( "boardflags", oldvalue );	// set back to
-							// original
+		// original
 	    }
 
     }
@@ -505,11 +506,11 @@ int start_sysinit( void )
 		|| nvram_get( "et0macaddr" ) == "" )
 	    {
 		nvram_set( "et0macaddr", "00:16:E3:00:00:10" );	// fix for
-								// missing
-								// cfe
-								// default =
-								// dead LAN
-								// ports.
+		// missing
+		// cfe
+		// default =
+		// dead LAN
+		// ports.
 		need_reboot = 1;
 	    }
 	    if( nvram_get( "et1macaddr" ) == NULL
@@ -527,11 +528,11 @@ int start_sysinit( void )
 		|| nvram_get( "et0macaddr" ) == "" )
 	    {
 		nvram_set( "et0macaddr", "00:11:22:00:00:10" );	// fix for
-								// missing
-								// cfe
-								// default =
-								// dead LAN
-								// ports.
+		// missing
+		// cfe
+		// default =
+		// dead LAN
+		// ports.
 		need_reboot = 1;
 	    }
 	    if( nvram_get( "et1macaddr" ) == NULL
@@ -549,11 +550,11 @@ int start_sysinit( void )
 		|| nvram_get( "et0macaddr" ) == "" )
 	    {
 		nvram_set( "et0macaddr", "00:0C:6E:00:00:10" );	// fix for
-								// missing
-								// cfe
-								// default =
-								// dead LAN
-								// ports.
+		// missing
+		// cfe
+		// default =
+		// dead LAN
+		// ports.
 		need_reboot = 1;
 	    }
 	    if( nvram_get( "et1macaddr" ) == NULL
@@ -572,8 +573,9 @@ int start_sysinit( void )
 	case ROUTER_BUFFALO_WBR54G:	// for WLA-G54
 	    basic_params = generic1;
 	    if( nvram_match( "wan_to_lan", "yes" ) && nvram_invmatch( "wan_proto", "disabled" ) )	// = 
-													// no 
-													// lan
+													// 
+		// no 
+		// lan
 	    {
 		basic_params = generic1_wantolan;
 	    }
@@ -588,8 +590,9 @@ int start_sysinit( void )
 	    nvram_set( "wan_ifname", "eth0" );	// WAN to nonexist. iface.
 	    nvram_set( "port_swap", "1" );
 	    if( nvram_match( "wan_to_lan", "yes" ) && nvram_invmatch( "wan_proto", "disabled" ) )	// = 
-													// no 
-													// lan
+													// 
+		// no 
+		// lan
 	    {
 		nvram_set( "lan_ifnames", "eth2" );
 		nvram_set( "wan_ifname", "eth1" );
@@ -863,8 +866,9 @@ int start_sysinit( void )
 	    nvram_set( "port_swap", "1" );
 	    eval( "gpio", "disable", "7" );
 	    if( nvram_match( "wan_to_lan", "yes" ) && nvram_invmatch( "wan_proto", "disabled" ) )	// = 
-													// no 
-													// lan
+													// 
+		// no 
+		// lan
 	    {
 		nvram_set( "lan_ifnames", "eth2" );
 		nvram_set( "wan_ifname", "eth1" );
@@ -915,7 +919,8 @@ int start_sysinit( void )
 	    nvram_set( "lan_ifnames", "vlan0 eth2" );
 	    nvram_set( "wl0_ifname", "eth2" );
 	    nvram_set( "wan_ifname", "vlan1" );	// fix for Asus WL500gPremium 
-						// WAN problem.
+						// 
+	    // WAN problem.
 	    if( nvram_match( "vlan1ports", "0 5u" ) )
 		nvram_set( "vlan1ports", "0 5" );
 	    break;
@@ -936,10 +941,11 @@ int start_sysinit( void )
 	    nvram_set( "lan_ifnames", "eth0 eth1" );
 	    nvram_set( "wl0_ifname", "eth1" );
 	    nvram_set( "wan_ifname", "eth2" );	// map WAN port to
-						// nonexistant interface
+	    // nonexistant interface
 	    if( nvram_match( "wan_to_lan", "yes" ) && nvram_invmatch( "wan_proto", "disabled" ) )	// = 
-													// no 
-													// lan
+													// 
+		// no 
+		// lan
 	    {
 		nvram_set( "lan_ifnames", "eth1" );
 		nvram_set( "wan_ifname", "eth0" );
@@ -952,7 +958,7 @@ int start_sysinit( void )
 	    break;
 
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:	// we must fix cfe defaults
-						// with CR added
+	    // with CR added
 	    nvram_set( "vlan0hwname", "et0" );
 	    nvram_set( "vlan1hwname", "et0" );
 	    nvram_set( "et0mdcport", "0" );
@@ -985,12 +991,12 @@ int start_sysinit( void )
 	    break;
 	case ROUTER_LINKSYS_WTR54GS:
 	    eval( "gpio", "enable", "3" );	// prevent reboot loop on
-						// reset
+	    // reset
 	    break;
 
 	case ROUTER_WAP54G_V3:
 	    eval( "gpio", "enable", "0" );	// reset gpio 0 for reset
-						// button 
+	    // button 
 	    // nvram_set ("vlan0ports", "1 5*");
 	    // nvram_set ("vlan1ports", "4 5");
 	    // if (nvram_match ("wan_to_lan", "yes") && nvram_invmatch
@@ -1061,9 +1067,9 @@ int start_sysinit( void )
 	    {
 		nvram_set( "buffalo_hp", "1" );
 #ifndef HAVE_BUFFALO		// if HAVE_BUFFALO not used to be FCC/CE
-				// valid
+		// valid
 		nvram_set( "boardflags", "0x3658" );	// enable high gain
-							// PA
+		// PA
 		need_reboot = 1;
 #endif
 	    }
@@ -1075,9 +1081,9 @@ int start_sysinit( void )
 	    {
 		nvram_set( "buffalo_hp", "1" );
 #ifndef HAVE_BUFFALO		// if HAVE_BUFFALO not used to be FCC/CE
-				// valid
+		// valid
 		nvram_set( "boardflags", "0x3758" );	// enable high gain
-							// PA
+		// PA
 		need_reboot = 1;
 #endif
 	    }
@@ -1681,13 +1687,14 @@ char *enable_dtag_vlan( int enable )
 	vlan7ports = "1t 5";
     }
     if( nvram_match( "vlan2ports", "0 8" ) || nvram_match( "vlan2ports", "0 8*" ) || nvram_match( "vlan2ports", "0 8t" ) || nvram_match( "vlan1ports", "4 8" ) )	// special 
-																					// condition 
-																					// for 
-																					// Broadcom 
-																					// Gigabit 
-																					// Phy 
-																					// routers 
 																					// 
+	// condition 
+	// for 
+	// Broadcom 
+	// Gigabit 
+	// Phy 
+	// routers 
+	// 
     {
 #ifdef HAVE_MADWIFI
 	char *eth = "eth0";
@@ -1744,9 +1751,9 @@ char *enable_dtag_vlan( int enable )
     }
 
     if( nvram_match( "switch_type", "BCM5325" ) )	// special condition
-							// for Broadcom
-							// Gigabit Phy
-							// routers 
+	// for Broadcom
+	// Gigabit Phy
+	// routers 
     {
 #ifdef HAVE_MADWIFI
 	char *eth = "eth0";
@@ -1786,15 +1793,16 @@ char *enable_dtag_vlan( int enable )
     char *eth = "eth0";
 
     FILE *in = fopen( "/proc/switch/eth1/reset", "rb" );	// this
-								// condition
-								// fails
-								// almost.
-								// just one
-								// router
-								// (DLINK
-								// DIR-330)
-								// requires
-								// it
+
+    // condition
+    // fails
+    // almost.
+    // just one
+    // router
+    // (DLINK
+    // DIR-330)
+    // requires
+    // it
     if( in )
     {
 	eth = "eth1";
@@ -1803,15 +1811,16 @@ char *enable_dtag_vlan( int enable )
     else
     {
 	FILE *in = fopen( "/proc/switch/eth2/reset", "rb" );	// this
-								// condition
-								// fails
-								// almost.
-								// just one
-								// router
-								// (DLINK
-								// DIR-330)
-								// requires
-								// it
+
+	// condition
+	// fails
+	// almost.
+	// just one
+	// router
+	// (DLINK
+	// DIR-330)
+	// requires
+	// it
 	if( in )
 	{
 	    eth = "eth2";

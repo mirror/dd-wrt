@@ -142,7 +142,7 @@ int mtd_write( const char *path, const char *mtd )
     long support_max_len;
 
     if( strstr( nvram_safe_get( "flash_type" ), "640" ) )	// This is a
-								// 8MB flash
+	// 8MB flash
 	support_max_len = 0x7A0000;	// 8*1024*1024 - 256*1024 - 128*1024;
     else
 	support_max_len = TRX_MAX_LEN;

@@ -205,9 +205,11 @@ int write_boot( const char *path, const char *mtd )
 
 	printf( "Writing data to %s ...\n", mtd );
 	ret_count = write( mtd_fd, buf, count - sizeof( struct boot_header ) );	// skip 
-										// the 
-										// header 
-										// size
+										// 
+	// 
+	// the 
+	// header 
+	// size
 	if( ret_count != count - sizeof( struct boot_header ) )
 	{
 	    perror( mtd );
@@ -219,11 +221,11 @@ int write_boot( const char *path, const char *mtd )
     if( strcmp( path, "/bin/boot.bin" ) )
     {				// from tftp update boot.bin
 	nvram_set( "boot_ver", "" );	// The boot ver set to null, so we
-					// can update old boot.
+	// can update old boot.
 	nvram_commit(  );
 	printf( "Erasing first 128K of kernel\n" );	// Force to update
-							// code.bin, when
-							// update boot.bin.
+	// code.bin, when
+	// update boot.bin.
 	/*
 	 * erase first 128k of kernel 
 	 */
@@ -285,7 +287,9 @@ int write_mac( const char *path )
     }
 
     buf[0] = buf[0] & 0xFE;	// *unmask the 0th bit (valid mac addr should 
-				// leave this bit as 0)
+				// 
+    // 
+    // leave this bit as 0)
 
     sprintf( mac, "%02X:%02X:%02X:%02X:%02X:%02X", buf[0], buf[1], buf[2],
 	     buf[3], buf[4], buf[5] );
@@ -294,6 +298,8 @@ int write_mac( const char *path )
     snprintf( string, sizeof( string ), "string=%s", mac );
 
     // write_wl_mac(mac); /* barry add for WRT54G v1.1 single board, write wl 
+    // 
+    // 
     // mac to EEPROM ! */
 
     cprintf( "Write mac done...\n" );

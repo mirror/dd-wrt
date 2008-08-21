@@ -45,6 +45,8 @@ int main( int argc, char **argv )
     // if( check_wan_link(0) ) { 
     // if( nvram_invmatch("ntp_enable", "0") && ( ( check_wan_link(0) &&
     // nvram_match("ppp_demand", "1") ) || (nvram_match("wan_proto", "pppoe") 
+    // 
+    // 
     // && nvram_match("ppp_demand", "0") ) ) {
 
     if( nvram_invmatch( "dhcp_dnsmasq", "1" ) )

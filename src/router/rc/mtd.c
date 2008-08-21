@@ -277,7 +277,8 @@ int mtd_write( const char *path, const char *mtd )
     fprintf( stderr, "freeram=[%ld] bufferram=[%ld]\n", info.freeram,
 	     info.bufferram );
     int mul = 1;		// temporarily use 1 instead of 4 until we
-				// found a a solution
+
+    // found a a solution
     if( ( info.freeram + info.bufferram ) >= ( trx.len + 1 * 1024 * 1024 ) )
     {
 	fprintf( stderr, "The free memory is enough, writing image once.\n" );

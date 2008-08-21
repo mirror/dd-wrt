@@ -147,8 +147,8 @@ int roaming_daemon( void )
 		site_survey_lists[i].channel == 0 )
 		break;
 	    if( site_survey_lists[i].SSID[0] == 0 )	// empty ssid's or
-							// hidden ssid's are
-							// not supported
+		// hidden ssid's are
+		// not supported
 		continue;
 	    if( regexec( comp, &site_survey_lists[i].SSID[0] ) )
 	    {

@@ -87,7 +87,7 @@ static int getdiscindex( void )	// works only for squashfs
 
 	if( in == NULL )
 	    continue;		// no second partition or disc does not
-				// exist, skipping
+	// exist, skipping
 	char buf[4];
 
 	fread( buf, 4, 1, in );
@@ -233,12 +233,14 @@ int start_sysinit( void )
     else if( detect( "82546" ) )	// Intel Gigabit
 	insmod( "e1000" );
     else if( detect( "82545" ) )	// Intel Gigabit / VMWare 64 bit mode 
-					// (nice trick to get gigabit out of
-					// it)
+					// 
+	// (nice trick to get gigabit out of
+	// it)
 	insmod( "e1000" );
     else if( detect( "82543" ) )	// Intel Gigabit / VMWare 64 bit mode 
-					// (nice trick to get gigabit out of
-					// it)
+					// 
+	// (nice trick to get gigabit out of
+	// it)
 	insmod( "e1000" );
     else if( detect( "82572" ) )	// Intel Gigabit 
 	insmod( "e1000" );
@@ -246,22 +248,22 @@ int start_sysinit( void )
     if( detect( "RTL-8110" ) )	// Realtek 8169 Adapter (various notebooks) 
 	insmod( "r8169" );
     else if( detect( "RTL-8169" ) )	// Realtek 8169 Adapter (various
-					// notebooks) 
+	// notebooks) 
 	insmod( "r8169" );
     else if( detect( "RTL8101" ) )	// Realtek 8169 Adapter (various
-					// notebooks) 
+	// notebooks) 
 	insmod( "r8169" );
 
     if( detect( "8139" ) )	// Realtek 8139 Adapter (various notebooks) 
 	insmod( "8139too" );
     if( detect( "DFE-690TXD" ) )	// Realtek 8139 Adapter (various
-					// notebooks) 
+	// notebooks) 
 	insmod( "8139too" );
     else if( detect( "SMC2-1211TX" ) )	// Realtek 8139 Adapter (various
-					// notebooks) 
+	// notebooks) 
 	insmod( "8139too" );
     else if( detect( "Robotics" ) )	// Realtek 8139 Adapter (various
-					// notebooks) 
+	// notebooks) 
 	insmod( "8139too" );
 
     if( detect( "nForce2 Ethernet" ) )	// nForce2 
