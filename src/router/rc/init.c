@@ -41,7 +41,7 @@ static void set_term( int fd )
 
     tcgetattr( fd, &tty );
 
-    /*
+    /* 
      * set control chars 
      */
     tty.c_cc[VINTR] = 3;	/* C-c */
@@ -53,28 +53,28 @@ static void set_term( int fd )
     tty.c_cc[VSTOP] = 19;	/* C-s */
     tty.c_cc[VSUSP] = 26;	/* C-z */
 
-    /*
+    /* 
      * use line dicipline 0 
      */
     tty.c_line = 0;
 
-    /*
+    /* 
      * Make it be sane 
      */
     tty.c_cflag &= CBAUD | CBAUDEX | CSIZE | CSTOPB | PARENB | PARODD;
     tty.c_cflag |= CREAD | HUPCL | CLOCAL;
 
-    /*
+    /* 
      * input modes 
      */
     tty.c_iflag = ICRNL | IXON | IXOFF;
 
-    /*
+    /* 
      * output modes 
      */
     tty.c_oflag = OPOST | ONLCR;
 
-    /*
+    /* 
      * local modes 
      */
     tty.c_lflag =
@@ -87,7 +87,7 @@ int console_init(  )
 {
     int fd;
 
-    /*
+    /* 
      * Clean up 
      */
     ioctl( 0, TIOCNOTTY, 0 );
@@ -96,12 +96,12 @@ int console_init(  )
     close( 2 );
     setsid(  );
 
-    /*
+    /* 
      * Reopen console 
      */
     if( ( fd = open( _PATH_CONSOLE, O_RDWR ) ) < 0 )
     {
-	/*
+	/* 
 	 * Avoid debug messages is redirected to socket packet if no exist a
 	 * UART chip, added by honor, 2003-12-04 
 	 */
@@ -140,7 +140,7 @@ pid_t ddrun_shell( int timeout, int nowait )
     };
     int sig;
 
-    /*
+    /* 
      * Wait for user input 
      */
     // cprintf("Hit enter to continue...");
@@ -153,23 +153,23 @@ pid_t ddrun_shell( int timeout, int nowait )
 	    perror( "fork" );
 	    return 0;
 	case 0:
-	    /*
+	    /* 
 	     * Reset signal handlers set for parent process 
 	     */
 	    for( sig = 0; sig < ( _NSIG - 1 ); sig++ )
 		signal( sig, SIG_DFL );
 
-	    /*
+	    /* 
 	     * Reopen console 
 	     */
 	    console_init(  );
 	    // if (ret) exit(0); //no console running
-	    /*
+	    /* 
 	     * Pass on TZ 
 	     */
 	    snprintf( tz, sizeof( tz ), "TZ=%s", getenv( "TZ" ) );
 
-	    /*
+	    /* 
 	     * Now run it.  The new program will take over this PID, so
 	     * nothing further in init.c should be run. 
 	     */
@@ -192,7 +192,7 @@ pid_t ddrun_shell( int timeout, int nowait )
 	    }
 #endif
 
-	    /*
+	    /* 
 	     * We're still here? Some error happened. 
 	     */
 	    perror( SHELL );
@@ -212,13 +212,13 @@ void shutdown_system( void )
 {
     int sig;
 
-    /*
+    /* 
      * Disable signal handlers 
      */
     for( sig = 0; sig < ( _NSIG - 1 ); sig++ )
 	signal( sig, SIG_DFL );
 
-    /*
+    /* 
      * Blink led before reboot 
      */
     diag_led( DIAG, START_LED );
@@ -307,7 +307,7 @@ void fatal_signal( int sig )
     shutdown_system(  );
     sleep( 2 );
 
-    /*
+    /* 
      * Halt on SIGUSR1 
      */
     reboot( sig == SIGUSR1 ? RB_HALT_SYSTEM : RB_AUTOBOOT );
@@ -333,7 +333,7 @@ void signal_init( void )
     signal( SIGCHLD, reap );
 }
 
-/*
+/* 
  * States 
  */
 enum
@@ -352,7 +352,7 @@ enum
 static int state = START;
 static int signalled = -1;
 
-/*
+/* 
  * Signal handling 
  */
 static void rc_signal( int sig )
@@ -401,7 +401,7 @@ static void rc_signal( int sig )
     }
 }
 
-/*
+/* 
  * Timer procedure 
  */
 int do_timer( void )
@@ -412,7 +412,7 @@ int do_timer( void )
 
 static int noconsole = 0;
 
-/*
+/* 
  * Main loop 
  */
 int main( int argc, char **argv )
@@ -425,9 +425,13 @@ int main( int argc, char **argv )
     // "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 
     // 
     // 
+    // 
+    // 
+    // 
+    // 
     // 1);
     // system("/etc/nvram/nvram");
-    /*
+    /* 
      * Basic initialization 
      */
     cprintf( "console init\n" );
@@ -441,7 +445,7 @@ int main( int argc, char **argv )
     fprintf( stderr, "starting Architecture code for " ARCHITECTURE "\n" );
     start_service( "sysinit" );
     cprintf( "setup signals\n" );
-    /*
+    /* 
      * Setup signal handlers 
      */
     signal_init(  );
@@ -456,7 +460,7 @@ int main( int argc, char **argv )
 #endif
     sigemptyset( &sigset );
 
-    /*
+    /* 
      * Give user a chance to run a shell before bringing up the rest of the
      * system 
      */
@@ -467,7 +471,7 @@ int main( int argc, char **argv )
 
     start_service( "nvram" );
 
-    /*
+    /* 
      * Restore defaults if necessary 
      */
     int brand = getRouterBrand(  );
@@ -485,7 +489,7 @@ int main( int argc, char **argv )
 #endif
     start_service( "restore_defaults" );
 
-    /*
+    /* 
      * Add vlan 
      */
     boardflags = strtoul( nvram_safe_get( "boardflags" ), NULL, 0 );
@@ -533,7 +537,7 @@ int main( int argc, char **argv )
     start_service( "mkfiles" );
     char *hostname;
 
-    /*
+    /* 
      * set hostname to wan_hostname or router_name 
      */
     if( strlen( nvram_safe_get( "wan_hostname" ) ) > 0 )
@@ -584,7 +588,7 @@ int main( int argc, char **argv )
 #endif
 
     fclose( fp );
-    /*
+    /* 
      * Loop forever 
      */
     for( ;; )
@@ -653,7 +657,7 @@ int main( int argc, char **argv )
 #endif
 #endif
 
-		/*
+		/* 
 		 * Fall through 
 		 */
 	    case STOP:
@@ -707,7 +711,7 @@ int main( int argc, char **argv )
 		    state = IDLE;
 		    break;
 		}
-		/*
+		/* 
 		 * Fall through 
 		 */
 	    case START:
@@ -849,19 +853,19 @@ int main( int argc, char **argv )
 
 		led_control( LED_DIAG, LED_OFF );
 		lcdmessage( "System Ready" );
-		/*
+		/* 
 		 * Fall through 
 		 */
 	    case TIMER:
 		cprintf( "TIMER\n" );
 		do_timer(  );
-		/*
+		/* 
 		 * Fall through 
 		 */
 	    case IDLE:
 		cprintf( "IDLE\n" );
 		state = IDLE;
-		/*
+		/* 
 		 * Wait for user input or state change 
 		 */
 		while( signalled == -1 )

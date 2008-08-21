@@ -24,7 +24,7 @@ static void watchdog( void )
 	write( fd, "\0", 1 );
 	fsync( fd );
 
-	/*
+	/* 
 	 * software wlan led control 
 	 */
 #ifdef HAVE_MADWIFI
@@ -45,13 +45,13 @@ static void watchdog( void )
 	    {
 		led_control( LED_WLAN, LED_OFF );
 #ifndef HAVE_MADWIFI
-		/*
+		/* 
 		 * Disable wireless will cause diag led blink, so we want to
 		 * stop it. 
 		 */
 		if( brand == ROUTER_WRT54G )
 		    diag_led( DIAG, STOP_LED );
-		/*
+		/* 
 		 * Disable wireless will cause power led off, so we want to
 		 * turn it on. 
 		 */
@@ -62,7 +62,7 @@ static void watchdog( void )
 
 	    oldstate = radiostate;
 	}
-	/*
+	/* 
 	 * end software wlan led control 
 	 */
 
@@ -73,7 +73,7 @@ static void watchdog( void )
 int watchdog_main( int argc, char *argv[] )
 {
 
-    /*
+    /* 
      * Run it under background 
      */
     switch ( fork(  ) )
@@ -83,14 +83,14 @@ int watchdog_main( int argc, char *argv[] )
 	    exit( 1 );
 	    break;
 	case 0:
-	    /*
+	    /* 
 	     * child process 
 	     */
 	    watchdog(  );
 	    exit( 0 );
 	    break;
 	default:
-	    /*
+	    /* 
 	     * parent process should just die 
 	     */
 	    _exit( 0 );

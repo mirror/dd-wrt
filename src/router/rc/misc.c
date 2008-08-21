@@ -112,7 +112,7 @@ int get_data( struct table *v, int write_to_nv )
 	ptr = ptr + v->len;
     }
 
-    /*
+    /* 
      * Save to nvram 
      */
     if( write_to_nv == 1 || write_to_nv == 3 )

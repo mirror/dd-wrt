@@ -111,7 +111,7 @@ void checknas( void )		// for broadcom v24 only
 #endif
 }
 
-/*
+/* 
  * software wlan led control 
  */
 void softcontrol_wlan_led( void )	// done in watchdog.c for non-micro
@@ -142,13 +142,13 @@ void softcontrol_wlan_led( void )	// done in watchdog.c for non-micro
 	    led_control( LED_WLAN, LED_OFF );
 #ifndef HAVE_MADWIFI
 	    brand = getRouterBrand(  );
-	    /*
+	    /* 
 	     * Disable wireless will cause diag led blink, so we want to stop 
 	     * it. 
 	     */
 	    if( brand == ROUTER_WRT54G )
 		diag_led( DIAG, STOP_LED );
-	    /*
+	    /* 
 	     * Disable wireless will cause power led off, so we want to turn
 	     * it on. 
 	     */
@@ -164,7 +164,7 @@ void softcontrol_wlan_led( void )	// done in watchdog.c for non-micro
 #endif
 }
 
-/*
+/* 
  * end software wlan led control 
  */
 

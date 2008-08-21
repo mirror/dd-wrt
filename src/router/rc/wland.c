@@ -52,7 +52,7 @@ static char *get_wshaper_dev( void )
 static int do_ap_watchdog( void )
 {
 
-    /*
+    /* 
      * AP Watchdog - experimental check and fix for hung AP 
      */
     int val = 0;
@@ -131,7 +131,7 @@ int compareNet( char *ip, char *net, char *dest )
 
     n--;
     n <<= shift;
-    /*
+    /* 
      * fprintf(stderr, "compare %08X with %08X\n",(unsigned
      * int)(dfullip&(unsigned int)n),(unsigned int)fullip&(unsigned int)n);
      * fprintf(stderr, "fullip %08X\n",fullip); fprintf(stderr, "dfullip
@@ -151,30 +151,23 @@ int containsIP( char *ip )
     char *i, *net;
     char cip[32];
 
-    // fprintf(stderr,"scan for ip2 %s\n",ip);
     strcpy( cip, ip );
     in = fopen( "/tmp/aqos_ips", "rb" );
     if( in == NULL )
 	return 0;
 
-    // fprintf(stderr,"scan for ip %s\n",ip);
     while( feof( in ) == 0 && fscanf( in, "%s", buf_ip ) == 1 )
     {
-	// fprintf(stderr,"begin\n");
 	i = ( char * )&buf_ip[0];
 	net = strsep( &i, "/" );
-	// fprintf(stderr,"found %s/%s\n", net, i);
 	if( compareNet( net, i, cip ) )
 	{
-	    // fprintf (stderr,"%s/%s fits to %s\n", net, i, ip);
 	    fclose( in );
 	    return 1;
 	}
-	// fprintf (stderr,"%s/%s dosnt fit to %s\n", net, i, ip);
 	memset( buf_ip, 0, 32 );
     }
     fclose( in );
-    // fprintf(stderr,"no ip found\n");
     return 0;
 }
 static int qosidx = 1000;
@@ -187,18 +180,15 @@ int containsMAC( char *ip )
     in = fopen( "/tmp/aqos_macs", "rb" );
     if( in == NULL )
 	return 0;
-    // fprintf(stderr,"scan for mac %s \n",ip);
     while( feof( in ) == 0 && fscanf( in, "%s", buf_ip ) == 1 )
     {
 	if( !strcmp( buf_ip, ip ) )
 	{
 	    fclose( in );
-	    // fprintf(stderr,"found mac %s \n",ip);
 	    return 1;
 	}
     }
     fclose( in );
-    // fprintf(stderr,"no mac found\n");
     return 0;
 }
 
@@ -243,15 +233,12 @@ static void do_aqos_check( void )
     }
     while( fgetc( arp ) != '\n' );
 
-    // fscanf(arp,"%s %s %s %s %s
-    // %s",ip_buf,hw_buf,fl_buf,mac_buf,mask_buf,dev_buf); //skip first line
     while( !feof( arp ) && fscanf
 	   ( arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf,
 	     mask_buf, dev_buf ) == 6 )
     {
 	char *wan = get_wan_face(  );
 
-	// fprintf(stderr,"wan is %s, dev_buf = %s\n",wan,dev_buf);
 	if( wan && strlen( wan ) > 0 && !strcmp( dev_buf, wan ) )
 	    continue;
 
@@ -260,7 +247,6 @@ static void do_aqos_check( void )
 
 	if( cip || cmac )
 	{
-	    // fprintf(stderr,"no mac found, continue\n");
 	    continue;
 	}
 
@@ -273,9 +259,7 @@ static void do_aqos_check( void )
 	    if( strlen( mac_buf ) )
 		sysprintf( "echo \"%s\" >>/tmp/aqos_macs", mac_buf );
 	    // create default rule for ip
-	    // fprintf(stderr,"add userip\n");
 	    add_userip( ipnet, qosidx, defaulup, defauldown );
-	    // fprintf(stderr,"done\n");
 	    qosidx += 2;
 	    memset( ip_buf, 0, 32 );
 	    memset( mac_buf, 0, 32 );
@@ -288,9 +272,7 @@ static void do_aqos_check( void )
 	    if( strlen( ip_buf ) )
 		sysprintf( "echo \"%s\" >>/tmp/aqos_macs", ip_buf );
 	    // create default rule for mac
-	    // fprintf(stderr,"add usermac\n");
 	    add_usermac( mac_buf, qosidx, defaulup, defauldown );
-	    // fprintf(stderr,"done\n");
 	    qosidx += 2;
 	}
 	memset( ip_buf, 0, 32 );
@@ -309,16 +291,13 @@ void start_wds_check( void )
     if( ( sock = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) < 0 )
 	return;
 
-    /*
-     * Sveasoft - Bring up and configure wds interfaces 
-     */
-    /*
+    /* 
      * logic - if separate ip defined bring it up 
      */
-    /*
+    /* 
      * else if flagged for br1 and br1 is enabled add to br1 
      */
-    /*
+    /* 
      * else add it to the br0 bridge 
      */
     int cnt = get_wl_instances(  );
@@ -333,10 +312,7 @@ void start_wds_check( void )
 
 	    dev = nvram_nget( "wl%d_wds%d_if", c, s );
 
-	    if( nvram_nmatch( "0", "wl%d_wds%d_enable", c, s ) )	// wds_s 
-									// 
-		// 
-		// disabled
+	    if( nvram_nmatch( "0", "wl%d_wds%d_enable", c, s ) )
 		continue;
 
 	    memset( &ifr, 0, sizeof( struct ifreq ) );
@@ -348,13 +324,12 @@ void start_wds_check( void )
 		( IFF_RUNNING | IFF_UP ) )
 		continue;
 
-	    /*
+	    /* 
 	     * P2P WDS type 
 	     */
 	    if( nvram_nmatch( "1", "wl%d_wds%d_enable", c, s ) )	// wds_s 
 									// 
 		// 
-		// disabled
 	    {
 		char wdsbc[32] = { 0 };
 		char *wdsip = nvram_nget( "wl%d_wds%d_ipaddr", c, s );
@@ -365,7 +340,7 @@ void start_wds_check( void )
 		eval( "ifconfig", dev, wdsip, "broadcast",
 		      wdsbc, "netmask", wdsnm, "up" );
 	    }
-	    /*
+	    /* 
 	     * Subnet WDS type 
 	     */
 	    else if( nvram_nmatch( "2", "wl%d_wds%d_enable", c, s )
@@ -374,11 +349,15 @@ void start_wds_check( void )
 		eval( "ifconfig", dev, "up" );
 		eval( "brctl", "addif", "br1", dev );
 	    }
-	    /*
+	    /* 
 	     * LAN WDS type 
 	     */
 	    else if( nvram_nmatch( "3", "wl%d_wds%d_enable", c, s ) )	// wds_s 
 									// 
+		// 
+		// 
+		// 
+		// 
 		// 
 		// disabled
 	    {
@@ -444,10 +423,10 @@ int checkbssid( void )
     return 0;
 }
 
-/*
+/* 
  * for Client/Wet mode 
  */
-/*
+/* 
  * be nice to rewrite this to use sta_info_t if we had proper Broadcom API
  * specs 
  */
@@ -636,7 +615,7 @@ static void do_madwifi_check( void )
 #endif
 
 #ifdef HAVE_MADWIFI
-/*
+/* 
  * static HAL_MIB_STATS laststats[16]; void detectACK(void) { int count =
  * getdevicecount(); int i; int s = socket(AF_INET, SOCK_DGRAM, 0); for
  * (i=0;i<count;i++) { char wifi[16]; sprintf(wifi,"wifi%d",i); struct ifreq
@@ -684,7 +663,7 @@ static void setACK( void )
 #endif
 #endif
 
-/*
+/* 
  * static void setShortSlot(void) { char *shortslot = nvram_safe_get
  * ("wl0_shortslot");
  * 
@@ -723,7 +702,7 @@ static void do_wlan_check( void )
 
 int main( int argc, char **argv )
 {
-    /*
+    /* 
      * Run it in the background 
      */
     switch ( fork(  ) )
@@ -733,14 +712,14 @@ int main( int argc, char **argv )
 	    exit( 0 );
 	    break;
 	case 0:
-	    /*
+	    /* 
 	     * child process 
 	     */
 	    // fork ok
 	    ( void )setsid(  );
 	    break;
 	default:
-	    /*
+	    /* 
 	     * parent process should just die 
 	     */
 	    _exit( 0 );
@@ -748,7 +727,7 @@ int main( int argc, char **argv )
 #ifdef HAVE_AQOS
     qosidx = 1000;
 #endif
-    /*
+    /* 
      * Most of time it goes to sleep 
      */
 #ifdef HAVE_MADWIFI
@@ -765,6 +744,6 @@ int main( int argc, char **argv )
     return 0;
 }				// end main
 
-/*
+/* 
  * void main(int argc, char **argv) { wland_main(argc,argv); } 
  */

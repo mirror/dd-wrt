@@ -25,7 +25,7 @@
 #include <cy_conf.h>
 #include <utils.h>
 
-/*
+/* 
  * Open an MTD device
  * @param       mtd     path to or partition name of MTD device
  * @param       flags   open() flags
@@ -54,7 +54,7 @@ int mtd_open( const char *mtd, int flags )
     return open( mtd, flags );
 }
 
-/*
+/* 
  * Erase an MTD device
  * @param       mtd     path to or partition name of MTD device
  * @return      0 on success and errno on failure
@@ -72,7 +72,7 @@ int mtd_erase( const char *mtd )
     // et0 = strdup (et0);
     // et1 = strdup (et1);
 
-    /*
+    /* 
      * Open MTD device 
      */
     if( ( mtd_fd = mtd_open( mtd, O_RDWR ) ) < 0 )
@@ -81,7 +81,7 @@ int mtd_erase( const char *mtd )
 	return errno;
     }
 
-    /*
+    /* 
      * Get sector size 
      */
     if( ioctl( mtd_fd, MEMGETINFO, &mtd_info ) != 0 )
@@ -118,7 +118,7 @@ int mtd_erase( const char *mtd )
 extern int http_get( const char *server, char *buf, size_t count,
 		     off_t offset );
 
-/*
+/* 
  * Write a file to an MTD device
  * @param       path    file to write or a URL
  * @param       mtd     path to or partition name of MTD device 
@@ -147,7 +147,7 @@ int mtd_write( const char *path, const char *mtd )
     else
 	support_max_len = TRX_MAX_LEN;
 
-    /*
+    /* 
      * Examine TRX header 
      */
     if( ( fp = fopen( path, "r" ) ) )
@@ -167,7 +167,7 @@ int mtd_write( const char *path, const char *mtd )
 	goto fail;
     }
 
-    /*
+    /* 
      * Open MTD device and get sector size 
      */
     if( ( mtd_fd = mtd_open( mtd, O_RDWR ) ) < 0 ||
@@ -178,7 +178,7 @@ int mtd_write( const char *path, const char *mtd )
 	goto fail;
     }
 
-    /*
+    /* 
      * See if we have enough memory to store the whole file 
      */
     sysinfo( &info );
@@ -187,7 +187,7 @@ int mtd_write( const char *path, const char *mtd )
     if( info.freeram >= ( trx.len + 1 * 1024 * 1024 ) )
     {
 	fprintf( stderr, "The free memory is enough, writing image once.\n" );
-	/*
+	/* 
 	 * Begin to write image after all image be downloaded by web upgrade.
 	 * In order to avoid upgrade fail if user unplug the ethernet cable
 	 * during upgrading 
@@ -206,7 +206,7 @@ int mtd_write( const char *path, const char *mtd )
 		 erase_info.length );
     }
 
-    /*
+    /* 
      * Allocate temporary buffer 
      */
     if( !( buf = malloc( erase_info.length ) ) )
@@ -215,7 +215,7 @@ int mtd_write( const char *path, const char *mtd )
 	goto fail;
     }
 
-    /*
+    /* 
      * Calculate CRC over header 
      */
     crc = crc32( ( uint8 * ) & trx.flag_version,
@@ -226,7 +226,7 @@ int mtd_write( const char *path, const char *mtd )
     if( trx.flag_version & TRX_NO_HEADER )
 	trx.len -= sizeof( struct trx_header );
 
-    /*
+    /* 
      * Write file or URL to MTD device 
      */
     for( erase_info.start = 0; erase_info.start < trx.len;
@@ -247,7 +247,7 @@ int mtd_write( const char *path, const char *mtd )
 		http_get( path, &buf[off], len - off,
 			  erase_info.start + off );
 
-	/*
+	/* 
 	 * for debug 
 	 */
 	sum = sum + count;
@@ -259,11 +259,11 @@ int mtd_write( const char *path, const char *mtd )
 		     path, count - off, len - off );
 	    goto fail;
 	}
-	/*
+	/* 
 	 * Update CRC 
 	 */
 	crc = crc32( &buf[off], count - off, crc );
-	/*
+	/* 
 	 * Check CRC before writing if possible 
 	 */
 	if( count == trx.len )
@@ -280,7 +280,7 @@ int mtd_write( const char *path, const char *mtd )
 			 "Writing image to flash, waiting a moment...\n" );
 	    }
 	}
-	/*
+	/* 
 	 * Do it 
 	 */
 	( void )ioctl( mtd_fd, MEMUNLOCK, &erase_info );
@@ -297,7 +297,7 @@ int mtd_write( const char *path, const char *mtd )
   fail:
     if( buf )
     {
-	/*
+	/* 
 	 * Dummy read to ensure chip(s) are out of lock/suspend state 
 	 */
 	( void )read( mtd_fd, buf, 2 );
@@ -326,7 +326,7 @@ int nvram_restore( const char *path, char *mtd )
     long count = 0;
     int ret = -1;
 
-    /*
+    /* 
      * Examine TRX header 
      */
     if( ( fp = fopen( path, "r" ) ) )
@@ -364,7 +364,7 @@ int nvram_restore( const char *path, char *mtd )
     fprintf( stderr, "Erase old nvram data\n" );
     mtd_erase( mtd );
 
-    /*
+    /* 
      * Open MTD device and get sector size 
      */
     if( ( mtd_fd = mtd_open( mtd, O_RDWR ) ) < 0 ||
@@ -384,13 +384,13 @@ int nvram_restore( const char *path, char *mtd )
 	goto fail;
     }
 
-    /*
+    /* 
      * Write NVRAM space 
      */
     fseek( fp1, -NVRAM_SPACE, SEEK_END );
     fwrite( buf, count, 1, fp1 );
 
-    /*
+    /* 
      * Close NVRAM and regenerate environment file 
      */
     fclose( fp );
@@ -406,7 +406,7 @@ int nvram_restore( const char *path, char *mtd )
 
 }
 
-/*
+/* 
  * Irving -  We need an unlock function in order to mount a r/w jffs2 partition
  * Unlock an MTD device
  * @param       mtd     path to or partition name of MTD device
@@ -418,7 +418,7 @@ int mtd_unlock( const char *mtd )
     mtd_info_t mtd_info;
     erase_info_t lock_info;
 
-    /*
+    /* 
      * Open MTD device 
      */
     if( ( mtd_fd = mtd_open( mtd, O_RDWR ) ) < 0 )
@@ -427,7 +427,7 @@ int mtd_unlock( const char *mtd )
 	return errno;
     }
 
-    /*
+    /* 
      * Get sector size 
      */
     if( ioctl( mtd_fd, MEMGETINFO, &mtd_info ) != 0 )

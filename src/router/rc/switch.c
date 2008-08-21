@@ -56,7 +56,7 @@ void setup_switch( void )
 	    "controller (%d ports)\n", max_port );
     for( portid = 1; portid <= max_port; portid++ )
     {
-	/*
+	/* 
 	 * get nvram attributes associated with port and set switch regs 
 	 */
 	port_attribs = nvGetSwitchPortAttribs( portid );
