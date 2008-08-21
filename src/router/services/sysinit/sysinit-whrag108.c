@@ -44,207 +44,214 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.       */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.      */
+#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
+#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
 
-//highly experimental
+// highly experimental
 
-void
-setRegister (int socket, short reg, short value)
+void setRegister( int socket, short reg, short value )
 {
-//  struct mii_ioctl_data data;
-  struct ifreq ifr;
-  unsigned short *data = (unsigned short *) (&ifr.ifr_data);
-  data[0] = 0;
-  data[1] = reg;
-  data[2] = value;
-  (void) strncpy (ifr.ifr_name, "eth0", sizeof ("eth0"));
-//  data.reg_num = reg;
-//  data.val_in = value;
-  ioctl (socket, SIOCSMIIREG, &ifr);
+    // struct mii_ioctl_data data;
+    struct ifreq ifr;
+    unsigned short *data = ( unsigned short * )( &ifr.ifr_data );
+
+    data[0] = 0;
+    data[1] = reg;
+    data[2] = value;
+    ( void )strncpy( ifr.ifr_name, "eth0", sizeof( "eth0" ) );
+    // data.reg_num = reg;
+    // data.val_in = value;
+    ioctl( socket, SIOCSMIIREG, &ifr );
 }
 
-void
-switch_main (int argc, char *argv[])
+void switch_main( int argc, char *argv[] )
 {
-  int reg = atoi (argv[1]);
-  int val = atoi (argv[2]);
-  int s = socket (AF_INET, SOCK_DGRAM, 0);
-  if (s < 0)
+    int reg = atoi( argv[1] );
+    int val = atoi( argv[2] );
+    int s = socket( AF_INET, SOCK_DGRAM, 0 );
+
+    if( s < 0 )
     {
-      return;
+	return;
     }
-  setRegister (s, reg, val);
-  close (s);
+    setRegister( s, reg, val );
+    close( s );
 }
 
-void
-setupSwitch (void)
+void setupSwitch( void )
 {
-  int s = socket (AF_INET, SOCK_DGRAM, 0);
-  if (s < 0)
+    int s = socket( AF_INET, SOCK_DGRAM, 0 );
+
+    if( s < 0 )
     {
-      return;
+	return;
     }
-//  setRegister(s,0x02,0xa0);
+    // setRegister(s,0x02,0xa0);
 
-//Enable 8021Q (80) and IGMP snooping (40)
-  //setRegister(s,0x05,0xa0);
-//vlan1: valid,5,2,1 port fid=1 vid=1 
-  // setRegister(s,0x76,0x21);
-  // setRegister(s,0x77,0x10);
-  // setRegister(s,0x78,0x01);
-//write (04) and trigger address 0
-  // setRegister(s,0x6E,0x04);
-  // setRegister(s,0x6F,0x00);
-//vlan2: valid,5,4,3 port fid=2 vid=2 
-  // setRegister(s,0x76,0x3E);
-  // setRegister(s,0x77,0x20);
-  // setRegister(s,0x78,0x02);
+    // Enable 8021Q (80) and IGMP snooping (40)
+    // setRegister(s,0x05,0xa0);
+    // vlan1: valid,5,2,1 port fid=1 vid=1 
+    // setRegister(s,0x76,0x21);
+    // setRegister(s,0x77,0x10);
+    // setRegister(s,0x78,0x01);
+    // write (04) and trigger address 0
+    // setRegister(s,0x6E,0x04);
+    // setRegister(s,0x6F,0x00);
+    // vlan2: valid,5,4,3 port fid=2 vid=2 
+    // setRegister(s,0x76,0x3E);
+    // setRegister(s,0x77,0x20);
+    // setRegister(s,0x78,0x02);
 
-//write (04) and trigger address 0
-//  setRegister(s,0x6E,0x04);
-//  setRegister(s,0x6F,0x01);
+    // write (04) and trigger address 0
+    // setRegister(s,0x6E,0x04);
+    // setRegister(s,0x6F,0x01);
 
-//config port 1,2 to VLAN id 1
-  setRegister (s, 0x14, 0x01);
-//config port 1,2 to filter vid 1
-  setRegister (s, 0x12, 0x46);
+    // config port 1,2 to VLAN id 1
+    setRegister( s, 0x14, 0x01 );
+    // config port 1,2 to filter vid 1
+    setRegister( s, 0x12, 0x46 );
 
-//config port 3,4 to VLAN id 2
-  setRegister (s, 0x24, 0x02);
-  setRegister (s, 0x34, 0x02);
-  setRegister (s, 0x44, 0x02);
-  setRegister (s, 0x54, 0x02);
-//config port 3,4 to filter vid 2
-  setRegister (s, 0x22, 0x46);
-  setRegister (s, 0x32, 0x46);
-  setRegister (s, 0x42, 0x46);
-  setRegister (s, 0x52, 0x46);
+    // config port 3,4 to VLAN id 2
+    setRegister( s, 0x24, 0x02 );
+    setRegister( s, 0x34, 0x02 );
+    setRegister( s, 0x44, 0x02 );
+    setRegister( s, 0x54, 0x02 );
+    // config port 3,4 to filter vid 2
+    setRegister( s, 0x22, 0x46 );
+    setRegister( s, 0x32, 0x46 );
+    setRegister( s, 0x42, 0x46 );
+    setRegister( s, 0x52, 0x46 );
 
-//for IGMP, disenable special tagging
-//  setRegister(s,0x0b,0x01);
-//enable vlan tag insertion por 5
-//  setRegister(s,0x50,0x04);
-//  setRegister(s,0x52,0x06);
-//remove it from all others
-  setRegister (s, 0x10, 0x02);
-  setRegister (s, 0x20, 0x02);
-  setRegister (s, 0x30, 0x02);
-  setRegister (s, 0x40, 0x02);
-  setRegister (s, 0x50, 0x02);
-//switch enable
-  setRegister (s, 0x01, 0x01);
-  close (s);
+    // for IGMP, disenable special tagging
+    // setRegister(s,0x0b,0x01);
+    // enable vlan tag insertion por 5
+    // setRegister(s,0x50,0x04);
+    // setRegister(s,0x52,0x06);
+    // remove it from all others
+    setRegister( s, 0x10, 0x02 );
+    setRegister( s, 0x20, 0x02 );
+    setRegister( s, 0x30, 0x02 );
+    setRegister( s, 0x40, 0x02 );
+    setRegister( s, 0x50, 0x02 );
+    // switch enable
+    setRegister( s, 0x01, 0x01 );
+    close( s );
 
 }
 
-int
-start_sysinit (void)
+int start_sysinit( void )
 {
-  char buf[PATH_MAX];
-  struct utsname name;
-  struct stat tmp_stat;
-  time_t tm = 0;
-  unlink ("/etc/nvram/.lock");
-  cprintf ("sysinit() proc\n");
-  /* /proc */
-  mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-  mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-  cprintf ("sysinit() tmp\n");
+    char buf[PATH_MAX];
+    struct utsname name;
+    struct stat tmp_stat;
+    time_t tm = 0;
 
-  /* /tmp */
-  mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-  // fix for linux kernel 2.6
-  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-  eval ("mkdir", "/tmp/www");
-  eval ("mknod", "/dev/nvram", "c", "229", "0");
-  eval ("mknod", "/dev/ppp", "c", "108", "0");
+    unlink( "/etc/nvram/.lock" );
+    cprintf( "sysinit() proc\n" );
+    /*
+     * /proc 
+     */
+    mount( "proc", "/proc", "proc", MS_MGC_VAL, NULL );
+    mount( "sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL );
+    cprintf( "sysinit() tmp\n" );
 
-  unlink ("/tmp/nvram/.lock");
-  eval ("mkdir", "/tmp/nvram");
-  eval ("/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/");
-  FILE *in = fopen ("/tmp/nvram/nvram.db", "rb");
-  if (in != NULL)
+    /*
+     * /tmp 
+     */
+    mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
+    // fix for linux kernel 2.6
+    mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
+    eval( "mkdir", "/tmp/www" );
+    eval( "mknod", "/dev/nvram", "c", "229", "0" );
+    eval( "mknod", "/dev/ppp", "c", "108", "0" );
+
+    unlink( "/tmp/nvram/.lock" );
+    eval( "mkdir", "/tmp/nvram" );
+    eval( "/bin/tar", "-xzf", "/dev/mtdblock/3", "-C", "/" );
+    FILE *in = fopen( "/tmp/nvram/nvram.db", "rb" );
+
+    if( in != NULL )
     {
-      fclose (in);
-      eval ("/usr/sbin/convertnvram");
-      eval ("/sbin/mtd", "erase", "nvram");
-      nvram_commit ();
+	fclose( in );
+	eval( "/usr/sbin/convertnvram" );
+	eval( "/sbin/mtd", "erase", "nvram" );
+	nvram_commit(  );
     }
-  cprintf ("sysinit() var\n");
+    cprintf( "sysinit() var\n" );
 
-  /* /var */
-  mkdir ("/tmp/var", 0777);
-  mkdir ("/var/lock", 0777);
-  mkdir ("/var/log", 0777);
-  mkdir ("/var/run", 0777);
-  mkdir ("/var/tmp", 0777);
-  cprintf ("sysinit() setup console\n");
-  eval ("watchdog");
-  /* Setup console */
+    /*
+     * /var 
+     */
+    mkdir( "/tmp/var", 0777 );
+    mkdir( "/var/lock", 0777 );
+    mkdir( "/var/log", 0777 );
+    mkdir( "/var/run", 0777 );
+    mkdir( "/var/tmp", 0777 );
+    cprintf( "sysinit() setup console\n" );
+    eval( "watchdog" );
+    /*
+     * Setup console 
+     */
 
-  cprintf ("sysinit() klogctl\n");
-  klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
-  cprintf ("sysinit() get router\n");
+    cprintf( "sysinit() klogctl\n" );
+    klogctl( 8, NULL, atoi( nvram_safe_get( "console_loglevel" ) ) );
+    cprintf( "sysinit() get router\n" );
 
-  int brand = getRouterBrand ();
+    int brand = getRouterBrand(  );
 
+    /*
+     * Modules 
+     */
+    uname( &name );
 
-  /* Modules */
-  uname (&name);
+    /*
+     * network drivers 
+     */
+    insmod( "ar2313" );
 
-/* network drivers */
-  insmod("ar2313");
+    insmod( "ath_hal" );
+    insmod( "ath_ahb" );
 
-  insmod("ath_hal");
-  insmod("ath_ahb");
+    system( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
+    system( "echo 1 >/proc/sys/dev/wifi0/softled" );
+    system( "echo 3 >/proc/sys/dev/wifi1/ledpin" );
+    system( "echo 1 >/proc/sys/dev/wifi1/softled" );
 
+    // eval ("ifconfig", "wifi0", "up");
+    // eval ("ifconfig", "wifi1", "up");
 
-  system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
-  system ("echo 1 >/proc/sys/dev/wifi0/softled");
-  system ("echo 3 >/proc/sys/dev/wifi1/ledpin");
-  system ("echo 1 >/proc/sys/dev/wifi1/softled");
+    insmod( "ipv6" );
 
-//  eval ("ifconfig", "wifi0", "up");
-//  eval ("ifconfig", "wifi1", "up");
+    /*
+     * Set a sane date 
+     */
+    stime( &tm );
+    nvram_set( "wl0_ifname", "ath0" );
 
-
-
-  insmod("ipv6");
-
-  /* Set a sane date */
-  stime (&tm);
-  nvram_set ("wl0_ifname", "ath0");
-
-  return 0;
-  cprintf ("done\n");
+    return 0;
+    cprintf( "done\n" );
 }
 
-int
-check_cfe_nv (void)
+int check_cfe_nv( void )
 {
-  nvram_set ("portprio_support", "0");
-  return 0;
+    nvram_set( "portprio_support", "0" );
+    return 0;
 }
 
-int
-check_pmon_nv (void)
+int check_pmon_nv( void )
 {
-  return 0;
+    return 0;
 }
 
-void
-start_overclocking (void)
+void start_overclocking( void )
 {
 }
-void
-enable_dtag_vlan (int enable)
+void enable_dtag_vlan( int enable )
 {
 
 }

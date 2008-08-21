@@ -19,18 +19,16 @@
 #include <code_pattern.h>
 #include <rc.h>
 
-int
-setuserpasswd_main (int argc, char **argv)
+int setuserpasswd_main( int argc, char **argv )
 {
 
-
-  if (!argv[1] || !argv[2])
+    if( !argv[1] || !argv[2] )
     {
-      fprintf (stderr, "usage: setuserpasswd [username] [password]\n");
-      return EINVAL;
+	fprintf( stderr, "usage: setuserpasswd [username] [password]\n" );
+	return EINVAL;
     }
-  nvram_set ("http_username", zencrypt (argv[1]));
-  nvram_set ("http_passwd", zencrypt (argv[2]));
-  nvram_commit ();
-  start_mkfiles();
+    nvram_set( "http_username", zencrypt( argv[1] ) );
+    nvram_set( "http_passwd", zencrypt( argv[2] ) );
+    nvram_commit(  );
+    start_mkfiles(  );
 }

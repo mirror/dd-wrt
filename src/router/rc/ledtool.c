@@ -17,42 +17,48 @@
 #include <utils.h>
 #include <nvparse.h>
 
-
-
-int main (int argc, char **argv)
+int main( int argc, char **argv )
 {
-  /* Run it in the background */
-  switch (fork ())
+    /*
+     * Run it in the background 
+     */
+    switch ( fork(  ) )
     {
-    case -1:
-      // can't fork
-      exit (0);
-      break;
-    case 0:
-      /* child process */
-      // fork ok
-      (void) setsid ();
-      break;
-    default:
-      /* parent process should just die */
-      _exit (0);
+	case -1:
+	    // can't fork
+	    exit( 0 );
+	    break;
+	case 0:
+	    /*
+	     * child process 
+	     */
+	    // fork ok
+	    ( void )setsid(  );
+	    break;
+	default:
+	    /*
+	     * parent process should just die 
+	     */
+	    _exit( 0 );
     }
-  int times = atoi (argv[1]);
-  while (times > 0)
+    int times = atoi( argv[1] );
+
+    while( times > 0 )
     {
-      int count = 3;
-      while (count > 0)
+	int count = 3;
+
+	while( count > 0 )
 	{
-	  led_control (LED_DIAG, LED_ON);
-	  usleep (500000);
-	  led_control (LED_DIAG, LED_OFF);
-	  usleep (500000);
-	  count--;
+	    led_control( LED_DIAG, LED_ON );
+	    usleep( 500000 );
+	    led_control( LED_DIAG, LED_OFF );
+	    usleep( 500000 );
+	    count--;
 	}
-      times--;
-      if (times > 0)
-	sleep (3);
+	times--;
+	if( times > 0 )
+	    sleep( 3 );
     }
 
-  return 0;
+    return 0;
 }				// end main

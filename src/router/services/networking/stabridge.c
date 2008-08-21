@@ -41,53 +41,48 @@
 #include <cy_conf.h>
 #include <utils.h>
 
-
-
-void
-start_stabridge (void)
+void start_stabridge( void )
 {
 
-  if (getWET ())
+    if( getWET(  ) )
     {
-      insmod("ebtables");
-      insmod("ebtables");
-      insmod("ebtable_filter");
-      insmod("ebtable_nat");
-      insmod("ebtable_broute");
-      insmod("ebt_arpnat");
-      insmod("ebt_broute");
-      eval ("ebtables", "-t", "nat", "-A", "PREROUTING", "--in-interface",
-	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
-      eval ("ebtables", "-t", "nat", "-A", "POSTROUTING", "--out-interface",
-	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
-      eval ("ebtables", "-t", "broute", "-A", "BROUTING", "--protocol",
-	    "0x888e", "--in-interface", getWET (), "-j", "DROP");
+	insmod( "ebtables" );
+	insmod( "ebtables" );
+	insmod( "ebtable_filter" );
+	insmod( "ebtable_nat" );
+	insmod( "ebtable_broute" );
+	insmod( "ebt_arpnat" );
+	insmod( "ebt_broute" );
+	eval( "ebtables", "-t", "nat", "-A", "PREROUTING", "--in-interface",
+	      getWET(  ), "-j", "arpnat", "--arpnat-target", "ACCEPT" );
+	eval( "ebtables", "-t", "nat", "-A", "POSTROUTING", "--out-interface",
+	      getWET(  ), "-j", "arpnat", "--arpnat-target", "ACCEPT" );
+	eval( "ebtables", "-t", "broute", "-A", "BROUTING", "--protocol",
+	      "0x888e", "--in-interface", getWET(  ), "-j", "DROP" );
     }
 }
 
-
-void
-stop_stabridge (void)
+void stop_stabridge( void )
 {
-  if (getWET ())
+    if( getWET(  ) )
     {
-      eval ("ebtables", "-t", "broute", "-D", "BROUTING", "--protocol",
-	    "0x888e", "--in-interface", getWET (), "-j", "DROP");
-      eval ("ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface",
-	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
-      eval ("ebtables", "-t", "nat", "-D", "PREROUTING", "--in-interface",
-	    getWET (), "-j", "arpnat", "--arpnat-target", "ACCEPT");
+	eval( "ebtables", "-t", "broute", "-D", "BROUTING", "--protocol",
+	      "0x888e", "--in-interface", getWET(  ), "-j", "DROP" );
+	eval( "ebtables", "-t", "nat", "-D", "POSTROUTING", "--out-interface",
+	      getWET(  ), "-j", "arpnat", "--arpnat-target", "ACCEPT" );
+	eval( "ebtables", "-t", "nat", "-D", "PREROUTING", "--in-interface",
+	      getWET(  ), "-j", "arpnat", "--arpnat-target", "ACCEPT" );
     }
-  // flush the tables, since getWET will not find the interface
-  // in the nvram (if changed from client-bridge to whatever)
-  // Fix, cause the rmmod command does not
-  // remove the modules (..if rules are in?).
-  eval ("ebtables", "-t", "broute", "-F");
-  eval ("ebtables", "-t", "nat", "-F");
-  rmmod("ebt_broute");
-  rmmod("ebt_arpnat");
-  rmmod("ebtable_broute");
-  rmmod("ebtable_nat");
-  rmmod("ebtable_filter");
-  rmmod("ebtables");
+    // flush the tables, since getWET will not find the interface
+    // in the nvram (if changed from client-bridge to whatever)
+    // Fix, cause the rmmod command does not
+    // remove the modules (..if rules are in?).
+    eval( "ebtables", "-t", "broute", "-F" );
+    eval( "ebtables", "-t", "nat", "-F" );
+    rmmod( "ebt_broute" );
+    rmmod( "ebt_arpnat" );
+    rmmod( "ebtable_broute" );
+    rmmod( "ebtable_nat" );
+    rmmod( "ebtable_filter" );
+    rmmod( "ebtables" );
 }

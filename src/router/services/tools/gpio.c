@@ -27,46 +27,44 @@
 #include <fcntl.h>
 #include <utils.h>
 
-
-int
-gpio_main (int argc, char **argv)
+int gpio_main( int argc, char **argv )
 {
 
-  unsigned int gpio;
-  unsigned int old_gpio = -1;
-  unsigned int pin;
+    unsigned int gpio;
+    unsigned int old_gpio = -1;
+    unsigned int pin;
 
-  if (argc != 3)
+    if( argc != 3 )
     {
-      fprintf (stderr, "%s <poll | enable | disable> <pin>\n", argv[0]);
-      exit (1);
+	fprintf( stderr, "%s <poll | enable | disable> <pin>\n", argv[0] );
+	exit( 1 );
     }
 
-  pin = atoi (argv[2]);
-  if (!strcmp (argv[1], "poll"))
+    pin = atoi( argv[2] );
+    if( !strcmp( argv[1], "poll" ) )
     {
-      while (1)
+	while( 1 )
 	{
-	  gpio = get_gpio (pin);
-	  if (gpio != old_gpio)
-	    fprintf (stdout, "%02X\n", gpio);
-	  old_gpio = gpio;
+	    gpio = get_gpio( pin );
+	    if( gpio != old_gpio )
+		fprintf( stdout, "%02X\n", gpio );
+	    old_gpio = gpio;
 	}
     }
-  else if (!strcmp (argv[1], "init"))
+    else if( !strcmp( argv[1], "init" ) )
     {
-      gpio = get_gpio (pin);
+	gpio = get_gpio( pin );
     }
-  else if (!strcmp (argv[1], "enable"))
+    else if( !strcmp( argv[1], "enable" ) )
     {
-      gpio = 1;
-      set_gpio (pin, gpio);
+	gpio = 1;
+	set_gpio( pin, gpio );
     }
-  else if (!strcmp (argv[1], "disable"))
+    else if( !strcmp( argv[1], "disable" ) )
     {
-      gpio = 0;
-      set_gpio (pin, gpio);
+	gpio = 0;
+	set_gpio( pin, gpio );
     }
 
-  return 0;
+    return 0;
 }

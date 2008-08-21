@@ -43,95 +43,102 @@
 #include <shutils.h>
 #include <utils.h>
 
-
-
-
-int
-start_sysinit (void)
+int start_sysinit( void )
 {
-  char buf[PATH_MAX];
-  struct utsname name;
-  struct stat tmp_stat;
-  time_t tm = 0;
-  unlink ("/etc/nvram/.lock");
-  cprintf ("sysinit() proc\n");
-  /* /proc */
-  mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-  mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-  cprintf ("sysinit() tmp\n");
+    char buf[PATH_MAX];
+    struct utsname name;
+    struct stat tmp_stat;
+    time_t tm = 0;
 
-  /* /tmp */
-  mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-  // fix for linux kernel 2.6
-  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-  eval ("mknod", "/dev/nvram", "c", "229", "0");
-  eval ("mknod", "/dev/ppp", "c", "108", "0");
-  eval ("mkdir", "/tmp/www");
+    unlink( "/etc/nvram/.lock" );
+    cprintf( "sysinit() proc\n" );
+    /*
+     * /proc 
+     */
+    mount( "proc", "/proc", "proc", MS_MGC_VAL, NULL );
+    mount( "sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL );
+    cprintf( "sysinit() tmp\n" );
 
-  unlink ("/tmp/nvram/.lock");
-  eval ("mkdir", "/tmp/nvram");
-  eval ("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
-  FILE *in = fopen ("/tmp/nvram/nvram.db", "rb");
-  if (in != NULL)
+    /*
+     * /tmp 
+     */
+    mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
+    // fix for linux kernel 2.6
+    mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
+    eval( "mknod", "/dev/nvram", "c", "229", "0" );
+    eval( "mknod", "/dev/ppp", "c", "108", "0" );
+    eval( "mkdir", "/tmp/www" );
+
+    unlink( "/tmp/nvram/.lock" );
+    eval( "mkdir", "/tmp/nvram" );
+    eval( "/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/" );
+    FILE *in = fopen( "/tmp/nvram/nvram.db", "rb" );
+
+    if( in != NULL )
     {
-      fclose (in);
-      eval ("/usr/sbin/convertnvram");
-      eval ("/sbin/mtd", "erase", "nvram");
-      nvram_commit ();
+	fclose( in );
+	eval( "/usr/sbin/convertnvram" );
+	eval( "/sbin/mtd", "erase", "nvram" );
+	nvram_commit(  );
     }
-  cprintf ("sysinit() var\n");
+    cprintf( "sysinit() var\n" );
 
-  /* /var */
-  mkdir ("/tmp/var", 0777);
-  mkdir ("/var/lock", 0777);
-  mkdir ("/var/log", 0777);
-  mkdir ("/var/run", 0777);
-  mkdir ("/var/tmp", 0777);
-  cprintf ("sysinit() setup console\n");
-  eval ("watchdog");
-  /* Setup console */
+    /*
+     * /var 
+     */
+    mkdir( "/tmp/var", 0777 );
+    mkdir( "/var/lock", 0777 );
+    mkdir( "/var/log", 0777 );
+    mkdir( "/var/run", 0777 );
+    mkdir( "/var/tmp", 0777 );
+    cprintf( "sysinit() setup console\n" );
+    eval( "watchdog" );
+    /*
+     * Setup console 
+     */
 
-  cprintf ("sysinit() klogctl\n");
-  klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
-  cprintf ("sysinit() get router\n");
+    cprintf( "sysinit() klogctl\n" );
+    klogctl( 8, NULL, atoi( nvram_safe_get( "console_loglevel" ) ) );
+    cprintf( "sysinit() get router\n" );
 
-  int brand = getRouterBrand ();
+    int brand = getRouterBrand(  );
 
+    /*
+     * Modules 
+     */
+    uname( &name );
+    /*
+     * network drivers 
+     */
+    insmod( "ath_hal" );
+    insmod( "ath_pci" );
 
-  /* Modules */
-  uname (&name);
-/* network drivers */
-  insmod("ath_hal");
-  insmod("ath_pci");
+    insmod( "ipv6" );
 
-  insmod("ipv6");
+    /*
+     * Set a sane date 
+     */
+    stime( &tm );
+    nvram_set( "wl0_ifname", "ath0" );
 
-  /* Set a sane date */
-  stime (&tm);
-  nvram_set ("wl0_ifname", "ath0");
-
-  return 0;
+    return 0;
 }
 
-int
-check_cfe_nv (void)
+int check_cfe_nv( void )
 {
-  nvram_set ("portprio_support", "0");
-  return 0;
+    nvram_set( "portprio_support", "0" );
+    return 0;
 }
 
-int
-check_pmon_nv (void)
+int check_pmon_nv( void )
 {
-  return 0;
+    return 0;
 }
 
-void
-start_overclocking (void)
+void start_overclocking( void )
 {
 }
-void
-enable_dtag_vlan (int enable)
+void enable_dtag_vlan( int enable )
 {
 
 }

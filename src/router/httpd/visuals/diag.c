@@ -13,87 +13,86 @@
 
 #include <broadcom.h>
 
-
-
-
-
-void
-ping_onload (webs_t wp, char *arg)
+void ping_onload( webs_t wp, char *arg )
 {
-  int pid;
-  char *type = websGetVar (wp, "submit_type", "");
+    int pid;
+    char *type = websGetVar( wp, "submit_type", "" );
 
-  pid = find_pid_by_ps ("ping");
+    pid = find_pid_by_ps( "ping" );
 
-  if (pid > 0 && strncmp (type, "stop", 4))
+    if( pid > 0 && strncmp( type, "stop", 4 ) )
     {				// pinging
-      websWrite (wp, arg);
+	websWrite( wp, arg );
     }
 
 }
 
-void
-ej_dump_ping_log (webs_t wp, int argc, char_t ** argv)
+void ej_dump_ping_log( webs_t wp, int argc, char_t ** argv )
 {
-  int count = 0;
-  FILE *fp;
-  char line[254];
-  char newline[300];
-  int i;
+    int count = 0;
+    FILE *fp;
+    char line[254];
+    char newline[300];
+    int i;
 
-/* wait as long file size increases, but max. 10 s)*/
-  int c, count1 = 0, count2 = -1, timeout = 0;
+    /*
+     * wait as long file size increases, but max. 10 s)
+     */
+    int c, count1 = 0, count2 = -1, timeout = 0;
 
-  while ((count1 > count2) && (timeout < 5))
+    while( ( count1 > count2 ) && ( timeout < 5 ) )
     {
-      count2 = count1;
-      count1 = 0;
+	count2 = count1;
+	count1 = 0;
 
-      if ((fp = fopen (PING_TMP, "r")) != NULL)
+	if( ( fp = fopen( PING_TMP, "r" ) ) != NULL )
 	{
-	  c = fgetc (fp);
-	  while (c != EOF)
+	    c = fgetc( fp );
+	    while( c != EOF )
 	    {
-	      count1++;
-	      c = fgetc (fp);
+		count1++;
+		c = fgetc( fp );
 	    }
-	  fclose (fp);
-	  timeout++;
-	  sleep (2);
+	    fclose( fp );
+	    timeout++;
+	    sleep( 2 );
 	}
     }
-/* end waiting */
+    /*
+     * end waiting 
+     */
 
-  if ((fp = fopen (PING_TMP, "r")) != NULL)
+    if( ( fp = fopen( PING_TMP, "r" ) ) != NULL )
     {				// show result
-      while (fgets (line, sizeof (line), fp) != NULL)
+	while( fgets( line, sizeof( line ), fp ) != NULL )
 	{
-	  line[strlen (line) - 1] = '\0';
-	  if (!strcmp (line, ""))
-	    continue;
-	  int nc = 0;
-	  for (i = 0; i < strlen (line) + 1; i++)
+	    line[strlen( line ) - 1] = '\0';
+	    if( !strcmp( line, "" ) )
+		continue;
+	    int nc = 0;
+
+	    for( i = 0; i < strlen( line ) + 1; i++ )
 	    {
-	      if (line[i] == '"')
+		if( line[i] == '"' )
 		{
-		  newline[nc++] = '&';
-		  newline[nc++] = 'q';
-		  newline[nc++] = 'u';
-		  newline[nc++] = 'o';
-		  newline[nc++] = 't';
-		  newline[nc++] = ';';
+		    newline[nc++] = '&';
+		    newline[nc++] = 'q';
+		    newline[nc++] = 'u';
+		    newline[nc++] = 'o';
+		    newline[nc++] = 't';
+		    newline[nc++] = ';';
 		}
-	      else
-		newline[nc++] = line[i];
+		else
+		    newline[nc++] = line[i];
 	    }
-	  newline[nc++] = 0;
-	  websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', newline);
-	  count++;
+	    newline[nc++] = 0;
+	    websWrite( wp, "%c\"%s\"\n", count ? ',' : ' ', newline );
+	    count++;
 	}
-      fclose (fp);
+	fclose( fp );
     }
 
-  unlink (PING_TMP);
+    unlink( PING_TMP );
 
-  return;
+    return;
 }
