@@ -3,8 +3,17 @@ busybox-config:
 
 busybox: busybox-config net-tools bird dhcpforwarder
 ifeq ($(ARCH),mipsel)
-ifeq ($(ARCHITECURE),adm5120)
+ifeq ($(ARCHITECTURE),adm5120)
+ifeq ($(CONFIG_DIST),"micro")
+	cp busybox/.config_micro_atheros busybox/.config
+else
 	cp busybox/.config_fonera busybox/.config
+endif
+ifeq ($(CONFIG_MMC),y)
+	echo CONFIG_MKE2FS=y >> busybox/.config
+else
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+endif
 else
 ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro busybox/.config
