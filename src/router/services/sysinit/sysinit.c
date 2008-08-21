@@ -550,8 +550,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -560,8 +560,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -570,8 +570,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -580,8 +580,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -590,8 +590,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -600,8 +600,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -610,8 +610,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -620,8 +620,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -630,8 +630,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -640,8 +640,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -650,8 +650,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -660,8 +660,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -670,8 +670,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -680,8 +680,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -690,8 +690,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	restore_defaults = 1;
     }
@@ -702,8 +702,8 @@ void start_restore_defaults( void )
     int brand = getRouterBrand(  );
 
     if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
-							// nvram_invmatch("os_name", 
-							// "linux"))
+	// nvram_invmatch("os_name", 
+	// "linux"))
     {
 	// nvram_unset("sv_restore_defaults");
 	restore_defaults = 1;
@@ -1015,12 +1015,12 @@ void start_restore_defaults( void )
     if( brand == ROUTER_WRT600N )
     {
 	if( nvram_match( "switch_type", "BCM5395" ) )	// fix for WRT600N
-							// v1.1 (BCM5395 does 
-							// not suppport vid
-							// 0, so gemtek
-							// internally
-							// configured vid 1
-							// as lan)
+	    // v1.1 (BCM5395 does 
+	    // not suppport vid
+	    // 0, so gemtek
+	    // internally
+	    // configured vid 1
+	    // as lan)
 	{
 	    nvram_set( "vlan0ports", " " );
 	    nvram_set( "vlan1ports", "1 2 3 4 8*" );
@@ -1382,7 +1382,8 @@ int start_nvram( void )
     CONVERT_NV( "d11g_dtim", "wl_dtim" );
 
     nvram_unset( "wl0_hwaddr" );	// When disbale wireless, we must get 
-					// null wireless mac */
+					// 
+    // null wireless mac */
 
     nvram_set( "wan_get_dns", "" );
     nvram_set( "filter_id", "1" );
@@ -1398,12 +1399,12 @@ int start_nvram( void )
     // nvram_set("wl_macmode1","other");
     // }
     if( nvram_match( "wl_gmode", "5" ) )	// Mixed mode had been
-						// changed to 5
+	// changed to 5
 	nvram_set( "wl_gmode", "1" );
 
     if( nvram_match( "wl_gmode", "4" ) )	// G-ONLY mode had been
-						// changed to 2, after 1.40.1 
-						// for WiFi G certication
+	// changed to 2, after 1.40.1 
+	// for WiFi G certication
 	nvram_set( "wl_gmode", "2" );
 
     // nvram_set("wl_country","Worldwide"); // The country always Worldwide
@@ -1418,7 +1419,7 @@ int start_nvram( void )
     // nvram_set ("traceroute_ip", "");
 
     nvram_set( "filter_port", "" );	// The name have been disbaled from
-					// 1.41.3
+    // 1.41.3
 
 #ifdef HAVE_UPNP
     if( ( nvram_match( "restore_defaults", "1" ) )
@@ -1462,9 +1463,9 @@ int start_nvram( void )
 
     if( nvram_match( "wl_wep", "restricted" ) )
 	nvram_set( "wl_wep", "enabled" );	// the nas need this value,
-						// the "restricted" is no
-						// longer need. (20040624 by
-						// honor)
+    // the "restricted" is no
+    // longer need. (20040624 by
+    // honor)
 
 #ifdef HAVE_SET_BOOT
     if( !nvram_match( "boot_wait_web", "0" ) )
@@ -1479,7 +1480,7 @@ int start_nvram( void )
     if( check_hw_type(  ) == BCM5352E_CHIP )
     {
 	nvram_set( "opo", "0" );	// OFDM power reducement in quarter
-					// dbm (2 dbm in this case)
+	// dbm (2 dbm in this case)
 	nvram_set( "ag0", "0" );	// Antenna Gain definition in dbm
     }
 #endif
@@ -1505,11 +1506,12 @@ int start_nvram( void )
     nvram_unset( "filter_services7" );
 
     nvram_unset( "vdsl_state" );	// important (this value should never 
-					// be commited, but if this will fix
-					// the vlan7 issue)
+					// 
+    // be commited, but if this will fix
+    // the vlan7 issue)
     nvram_unset( "fromvdsl" );	// important (this value should never be
-				// commited, but if this will fix the vlan7
-				// issue)
+    // commited, but if this will fix the vlan7
+    // issue)
 
 #ifdef DIST
     nvram_set( "dist_type", DIST );

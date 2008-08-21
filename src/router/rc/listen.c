@@ -462,7 +462,7 @@ int main( int argc, char *argv[] )
 
 			if( !check_wan_link( 0 ) )
 			{	// Connect fail, we want to re-connect
-				// session
+			    // session
 			    sleep( 3 );
 			    goto retry;
 			}

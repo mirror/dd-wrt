@@ -176,10 +176,12 @@ pid_t ddrun_shell( int timeout, int nowait )
 #ifdef HAVE_REGISTER
 	    if( isregistered(  ) )
 #endif
+	    {
 		execve( SHELL, ( char *[] )
 			{
 			"/bin/login", NULL}
 			, envp );
+	    }
 #ifdef HAVE_REGISTER
 	    else
 	    {
@@ -421,6 +423,8 @@ int main( int argc, char **argv )
 
     // setenv("PATH",
     // "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 
+    // 
+    // 
     // 1);
     // system("/etc/nvram/nvram");
     /*
@@ -434,6 +438,7 @@ int main( int argc, char **argv )
     cprintf( "first message\n" );
     lcdmessage( "System Start" );
     cprintf( "start service\n" );
+    fprintf( stderr, "starting Architecture code for " ARCHITECTURE "\n" );
     start_service( "sysinit" );
     cprintf( "setup signals\n" );
     /*
@@ -442,7 +447,7 @@ int main( int argc, char **argv )
     signal_init(  );
     signal( SIGHUP, rc_signal );
     signal( SIGUSR1, rc_signal );	// Start single service from WEB, by
-					// honor
+    // honor
     signal( SIGUSR2, rc_signal );
     signal( SIGINT, rc_signal );
     signal( SIGALRM, rc_signal );
@@ -587,7 +592,7 @@ int main( int argc, char **argv )
 	switch ( state )
 	{
 	    case USER:		// Restart single service from WEB of tftpd,
-				// by honor
+		// by honor
 		lcdmessage( "RESTART SERVICES" );
 		cprintf( "USER1\n" );
 		start_single_service(  );
@@ -624,11 +629,11 @@ int main( int argc, char **argv )
 		}
 		if( nvram_match( "wl_wep", "restricted" ) )
 		    nvram_set( "wl_wep", "enabled" );	// the nas need this
-							// value, the
-							// "restricted" is no 
-							// longer need.
-							// (20040624 by
-							// honor)
+		// value, the
+		// "restricted" is no 
+		// longer need.
+		// (20040624 by
+		// honor)
 #endif
 
 		cprintf( "RESTART\n" );
@@ -727,10 +732,10 @@ int main( int argc, char **argv )
 		start_service( "setup_vlans" );
 #ifndef HAVE_MADWIFI
 		if( nvram_match( "wl0_mode", "apstawet" ) )	// temporary
-								// fix for
-								// repeater-bridge 
-								// mode init
-								// problem
+		    // fix for
+		    // repeater-bridge 
+		    // mode init
+		    // problem
 		{
 		    nvram_set( "wl0_mode", "wet" );
 		    start_service( "wlconf" );
@@ -807,16 +812,16 @@ int main( int argc, char **argv )
 		    chmod( "/tmp/.rc_startup", 0700 );
 		    system( "/tmp/.rc_startup" );
 		    system( "/etc/init.d/rcS" );	// start openwrt
-							// startup script
-							// (siPath impl)
+		    // startup script
+		    // (siPath impl)
 		    cprintf( "start modules\n" );
 		    start_service( "modules" );
 #ifdef HAVE_MILKFISH
 		    start_service( "milkfish_boot" );
 #endif
 		    if( nvram_invmatch( "rc_custom", "" ) )	// create
-								// custom
-								// script
+			// custom
+			// script
 		    {
 			nvram2file( "rc_custom", "/tmp/custom.sh" );
 			chmod( "/tmp/custom.sh", 0700 );

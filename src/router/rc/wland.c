@@ -121,10 +121,12 @@ int compareNet( char *ip, char *net, char *dest )
 	( dip1 << 24 ) | ( dip2 << 16 ) | ( dip3 << 8 ) | dip4;
     int bit = atoi( net );
     unsigned long long n = ( unsigned long long )1 << ( unsigned long long )bit;	// convert 
-											// net 
-											// to 
-											// full 
-											// mask
+											// 
+    // 
+    // net 
+    // to 
+    // full 
+    // mask
     int shift = 32 - bit;
 
     n--;
@@ -332,7 +334,9 @@ void start_wds_check( void )
 	    dev = nvram_nget( "wl%d_wds%d_if", c, s );
 
 	    if( nvram_nmatch( "0", "wl%d_wds%d_enable", c, s ) )	// wds_s 
-									// disabled
+									// 
+		// 
+		// disabled
 		continue;
 
 	    memset( &ifr, 0, sizeof( struct ifreq ) );
@@ -348,7 +352,9 @@ void start_wds_check( void )
 	     * P2P WDS type 
 	     */
 	    if( nvram_nmatch( "1", "wl%d_wds%d_enable", c, s ) )	// wds_s 
-									// disabled
+									// 
+		// 
+		// disabled
 	    {
 		char wdsbc[32] = { 0 };
 		char *wdsip = nvram_nget( "wl%d_wds%d_ipaddr", c, s );
@@ -372,7 +378,9 @@ void start_wds_check( void )
 	     * LAN WDS type 
 	     */
 	    else if( nvram_nmatch( "3", "wl%d_wds%d_enable", c, s ) )	// wds_s 
-									// disabled
+									// 
+		// 
+		// disabled
 	    {
 		eval( "ifconfig", dev, "up" );
 		eval( "brctl", "addif", "br0", dev );
