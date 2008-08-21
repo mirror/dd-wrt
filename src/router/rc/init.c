@@ -850,7 +850,7 @@ int main( int argc, char **argv )
 		eval( "rstpctl", "rstp", "br0", "on" );
 #endif
 
-		system( "/etc/postinit" );
+		system( "/etc/postinit&" );
 
 		led_control( LED_DIAG, LED_OFF );
 		lcdmessage( "System Ready" );
