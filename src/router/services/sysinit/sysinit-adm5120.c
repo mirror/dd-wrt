@@ -1,7 +1,7 @@
 /*
- * sysinit-fonera.c
+ * sysinit-adm5120.c
  *
- * Copyright (C) 2006 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2008 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -162,6 +162,15 @@ int start_sysinit( void )
     insmod( "ipt_layer7" );
     insmod( "ipt_webstr" );
 
+    // ppp drivers
+
+    insmod( "slhc" );
+    insmod( "ppp_generic" );
+    insmod( "ppp_async" );
+    insmod( "ppp_synctty" );
+    insmod( "pppox" );
+    insmod( "pppoe" );
+
     insmod( "adm5120_wdt" );
     insmod( "adm5120sw" );
     unsigned char mac[6];
@@ -193,9 +202,9 @@ int start_sysinit( void )
 		// fprintf(stderr,"old mac %s\n",ether_etoa ((unsigned char
 		// *) ifr.ifr_hwaddr.sa_data,eabuf));
 		memcpy( ( unsigned char * )ifr.ifr_hwaddr.sa_data, mac, 6 );
-		fprintf( stderr, "new mac %s\n",
-			 ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.
-				     sa_data, eabuf ) );
+		// fprintf( stderr, "new mac %s\n",
+		// ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.
+		// sa_data, eabuf ) );
 		ioctl( s, SIOCSIFHWADDR, &ifr );
 		close( s );
 	    }
@@ -213,7 +222,7 @@ int start_sysinit( void )
 	}
 	else
 	{
-	    fprintf( stderr, "no mac found\n" );
+	    fprintf( stderr, "error: no valid mac address found for eth0\n" );
 	}
 	fclose( fp );
     }
@@ -222,13 +231,11 @@ int start_sysinit( void )
      */
     insmod( "ath_hal" );
     insmod( "ath_pci" );
-    // eval ("ifconfig", "wifi0", "up");
-    // insmod("ipv6");
 
+    eval( "watchdog" );
     /*
      * Set a sane date 
      */
-    eval( "watchdog" );
 
     stime( &tm );
     nvram_set( "wl0_ifname", "ath0" );

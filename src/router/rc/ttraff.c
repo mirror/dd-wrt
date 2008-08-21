@@ -76,7 +76,7 @@ int main( int argc, char **argv )
     currtime = localtime( &tloc );	// convert seconds to date structure 
 
     while( currtime->tm_year < 100 )	// loop until ntp time is set (year
-					// >= 2000)
+	// >= 2000)
     {
 	sleep( 15 );
 	time( &tloc );
@@ -150,15 +150,17 @@ int main( int argc, char **argv )
 	}
 
 	if( in_dev_last > in_dev )	// 4GB limit was reached or couter
-					// reseted
+	    // reseted
 	{
 	    megi = ( in_dev_last >> 20 ) + ( in_dev >> 20 );	// to avarage 
-								// loss and
-								// gain here
-								// to 0 over
-								// long time
+								// 
+	    // 
+	    // loss and
+	    // gain here
+	    // to 0 over
+	    // long time
 	    in_diff = ( in_dev >> 20 ) * 2;	// to avarage loss and gain
-						// here to 0 over long time
+	    // here to 0 over long time
 	    in_dev_last = in_dev;
 	}
 	else
@@ -168,15 +170,17 @@ int main( int argc, char **argv )
 	}
 
 	if( out_dev_last > out_dev )	// 4GB limit was reached or counter
-					// reseted
+	    // reseted
 	{
 	    mego = ( out_dev_last >> 20 ) + ( out_dev >> 20 );	// to avarage 
-								// loss and
-								// gain here
-								// to 0 over
-								// long time
+								// 
+	    // 
+	    // loss and
+	    // gain here
+	    // to 0 over
+	    // long time
 	    out_diff = ( out_dev >> 20 ) * 2;	// to avarage loss and gain
-						// here to 0 over long time
+	    // here to 0 over long time
 	    out_dev_last = out_dev;
 	}
 	else

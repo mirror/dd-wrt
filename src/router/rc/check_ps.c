@@ -99,7 +99,7 @@ void checknas( void )		// for broadcom v24 only
     fclose( fnas );
 
     if( strlen( buf ) != count_processes( "nas" ) )	// restart all nas
-							// processes
+	// processes
     {
 	eval( "stopservice", "nas" );
 	eval( "startservice", "nas" );
@@ -177,8 +177,8 @@ void checkupgrade( void )
     {
 	fclose( in );
 	eval( "rm", "/tmp/cron.d/check_ps" );	// deleting cron file to
-						// prevent double call of
-						// this
+	// prevent double call of
+	// this
 	fprintf( stderr,
 		 "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n" );
 	sleep( 30 );
