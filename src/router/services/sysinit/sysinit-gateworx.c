@@ -232,7 +232,7 @@ int start_sysinit( void )
 	char rate[64];
 
 	sprintf( rate, "ratectl=%s", nvram_safe_get( "rate_control" ) );
-	insmod( "ath_pci", rate );
+	eval("insmod", "ath_pci", rate );
     }
     else
     {
