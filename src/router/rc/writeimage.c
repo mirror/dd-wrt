@@ -205,7 +205,7 @@ int write_boot( const char *path, const char *mtd )
 
 	printf( "Writing data to %s ...\n", mtd );
 	ret_count = write( mtd_fd, buf, count - sizeof( struct boot_header ) );	// skip 
-										// 
+	// 
 	// 
 	// 
 	// 
@@ -292,7 +292,7 @@ int write_mac( const char *path )
     }
 
     buf[0] = buf[0] & 0xFE;	// *unmask the 0th bit (valid mac addr should 
-				// 
+    // 
     // 
     // 
     // 
