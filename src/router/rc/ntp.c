@@ -148,7 +148,7 @@ int do_ntp( void )		// called from ntp_main and
 #endif
 #endif
 	/* 
-	 * time_t now = time(0); syslog(LOG_INFO, "time updated: %s\n",
+	 * time_t now = time(0); dd_syslog(LOG_INFO, "time updated: %s\n",
 	 * ctime(&now)); 
 	 */
     }
@@ -176,7 +176,7 @@ void ntp_main( timer_t t, int arg )
     if( !check_wan_link( 0 ) && nvram_invmatch( "wan_proto", "disabled" ) )
 	return;			// don't execute if not online
 
-    // syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
+    // dd_syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
     eval( "stopservice", "ntpc" );
     if( do_ntp(  ) == 0 )
     {

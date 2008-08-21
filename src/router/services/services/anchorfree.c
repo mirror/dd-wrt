@@ -118,7 +118,7 @@ void start_anchorfree( void )
 	&& !nvram_match( "af_registered", "1" ) )
     {
 	nvram_set( "af_registered", "1" );
-	syslog( LOG_INFO, "anchorfree : starting redirection\n" );
+	dd_syslog( LOG_INFO, "anchorfree : starting redirection\n" );
 	char url[1024];
 	char devid[256];
 
@@ -437,7 +437,7 @@ void stop_anchorfree( void )
 	char dest[32];
 	char source[32];
 
-	syslog( LOG_INFO, "anchorfree : stopping redirection\n" );
+	dd_syslog( LOG_INFO, "anchorfree : stopping redirection\n" );
 	char host[128];
 
 	getIPFromName( nvram_safe_get( "af_dnathost" ), host );

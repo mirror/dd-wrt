@@ -87,7 +87,7 @@ int start_igmp_proxy( void )
 	if( ifcount )
 	{
 	    ret = _evalpid( argv, NULL, 0, &pid );
-	    syslog( LOG_INFO,
+	    dd_syslog( LOG_INFO,
 		    "igmprt : multicast daemon successfully started\n" );
 	}
     }

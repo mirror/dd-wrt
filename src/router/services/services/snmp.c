@@ -72,7 +72,7 @@ int start_snmp( void )
     ret = _evalpid( snmpd_argv, NULL, 0, &pid );
 
     cprintf( "done\n" );
-    syslog( LOG_INFO, "snmpd : SNMP daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "snmpd : SNMP daemon successfully started\n" );
 
     return ret;
 }
@@ -84,7 +84,7 @@ int stop_snmp( void )
     cprintf( "done\n" );
     if( pidof( "snmpd" ) > 0 )
     {
-	syslog( LOG_INFO, "snmpd : SNMP daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "snmpd : SNMP daemon successfully stopped\n" );
 	ret = killall( "snmpd", SIGKILL );
     }
     return ret;

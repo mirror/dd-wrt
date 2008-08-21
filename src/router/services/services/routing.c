@@ -45,17 +45,17 @@ int zebra_init( void )
     else if( nvram_match( "wk_mode", "ospf" ) )
     {
 	zebra_ospf_init(  );
-	syslog( LOG_INFO, "zebra : zebra (ospf) successfully initiated\n" );
+	dd_syslog( LOG_INFO, "zebra : zebra (ospf) successfully initiated\n" );
     }
     else if( nvram_match( "wk_mode", "bgp" ) )
     {
 	zebra_bgp_init(  );
-	syslog( LOG_INFO, "zebra : zebra (ospf) successfully initiated\n" );
+	dd_syslog( LOG_INFO, "zebra : zebra (ospf) successfully initiated\n" );
     }
     else if( nvram_match( "wk_mode", "router" ) )
     {
 	zebra_ripd_init(  );
-	syslog( LOG_INFO, "zebra : zebra (router) successfully initiated\n" );
+	dd_syslog( LOG_INFO, "zebra : zebra (router) successfully initiated\n" );
     }
     else
 	return 0;
@@ -466,7 +466,7 @@ int bird_init( void )
 	fclose( fp );
 
 	ret1 = eval( "bird", "-c", "/tmp/bird/bird.conf" );
-	syslog( LOG_INFO, "bird : bird daemon successfully started\n" );
+	dd_syslog( LOG_INFO, "bird : bird daemon successfully started\n" );
     }
     return 0;
 
@@ -508,7 +508,7 @@ int stop_zebra( void )
 
     if( pidof( "zebra" ) > 0 || pidof( "ripd" ) > 0 || pidof( "ospfd" ) > 0 )
     {
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"zebra : zebra (ripd and ospfd) daemon successfully stopped\n" );
 	ret1 = killall( "zebra", SIGTERM );
 	ret2 = killall( "ripd", SIGTERM );
@@ -526,7 +526,7 @@ int stop_zebra( void )
 #elif defined(HAVE_BIRD)
     if( pidof( "bird" ) > 0 )
     {
-	syslog( LOG_INFO, "bird : bird daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "bird : bird daemon successfully stopped\n" );
 	ret1 = killall( "bird", SIGTERM );
 
 	cprintf( "done\n" );
