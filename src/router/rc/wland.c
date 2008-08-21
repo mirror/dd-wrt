@@ -123,6 +123,7 @@ int compareNet( char *ip, char *net, char *dest )
     unsigned long long n = ( unsigned long long )1 << ( unsigned long long )bit;	// convert 
 											// 
     // 
+    // 
     // net 
     // to 
     // full 
@@ -330,6 +331,7 @@ void start_wds_check( void )
 	    if( nvram_nmatch( "1", "wl%d_wds%d_enable", c, s ) )	// wds_s 
 									// 
 		// 
+		// 
 	    {
 		char wdsbc[32] = { 0 };
 		char *wdsip = nvram_nget( "wl%d_wds%d_ipaddr", c, s );
@@ -354,6 +356,7 @@ void start_wds_check( void )
 	     */
 	    else if( nvram_nmatch( "3", "wl%d_wds%d_enable", c, s ) )	// wds_s 
 									// 
+		// 
 		// 
 		// 
 		// 
