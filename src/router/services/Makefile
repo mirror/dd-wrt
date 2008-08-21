@@ -113,6 +113,9 @@ endif
 ifeq ($(CONFIG_TONZE),y)
 CFLAGS += -DHAVE_TONZE
 endif
+ifeq ($(CONFIG_SYSLOG),y)
+CFLAGS += -DHAVE_SYSLOG
+endif
 ifeq ($(CONFIG_SPUTNIK),y)
 CFLAGS += -DHAVE_SPUTNIK
 endif
