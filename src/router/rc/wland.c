@@ -121,7 +121,8 @@ int compareNet( char *ip, char *net, char *dest )
 	( dip1 << 24 ) | ( dip2 << 16 ) | ( dip3 << 8 ) | dip4;
     int bit = atoi( net );
     unsigned long long n = ( unsigned long long )1 << ( unsigned long long )bit;	// convert 
-											// 
+
+    // 
     // 
     // 
     // net 
@@ -329,7 +330,7 @@ void start_wds_check( void )
 	     * P2P WDS type 
 	     */
 	    if( nvram_nmatch( "1", "wl%d_wds%d_enable", c, s ) )	// wds_s 
-									// 
+		// 
 		// 
 		// 
 	    {
@@ -355,7 +356,7 @@ void start_wds_check( void )
 	     * LAN WDS type 
 	     */
 	    else if( nvram_nmatch( "3", "wl%d_wds%d_enable", c, s ) )	// wds_s 
-									// 
+		// 
 		// 
 		// 
 		// 
