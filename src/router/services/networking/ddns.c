@@ -299,7 +299,7 @@ int start_ddns( void )
     }
 
     ret = eval( "inadyn", "--input_file", "/tmp/ddns/inadyn.conf" );
-    syslog( LOG_INFO, "DDNS : inadyn daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "DDNS : inadyn daemon successfully started\n" );
 
     cprintf( "done\n" );
 
@@ -311,7 +311,7 @@ int stop_ddns( void )
     int ret;
 
     if( pidof( "inadyn" ) > 0 )
-	syslog( LOG_INFO, "DDNS : inadyn daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "DDNS : inadyn daemon successfully stopped\n" );
 
     unlink( "/tmp/ddns/ddns.log" );
     ret = killall( "inadyn", SIGTERM );

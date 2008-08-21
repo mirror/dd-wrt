@@ -284,7 +284,7 @@ int start_splashd( void )
     fclose( fp );
     chmod( "/tmp/start_splashd.sh", 0700 );
     system2( "/tmp/start_splashd.sh&" );
-    syslog( LOG_INFO, "splashd : splash daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "splashd : splash daemon successfully started\n" );
 
     cprintf( "done\n" );
     return ret;
@@ -296,7 +296,7 @@ int stop_splashd( void )
 
     if( pidof( "splashd" ) > 0 )
     {
-	syslog( LOG_INFO, "splashd : splash daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "splashd : splash daemon successfully stopped\n" );
 	// ret = killps("splashd",NULL);
 	ret = killall( "splashd", SIGTERM );
 	eval( "/usr/libexec/nocat/clear.fw" );

@@ -34,7 +34,7 @@ void stop_milkfish( void )
 {
     if( pidof( "rtpproxy" ) > 0 || pidof( "openser" ) > 0 )
     {
-	syslog( LOG_INFO, "Milkfish service successfully stopped\n" );
+	dd_syslog( LOG_INFO, "Milkfish service successfully stopped\n" );
 
 	killall( "rtpproxy", SIGTERM );
 	killall( "openser", SIGTERM );
@@ -51,7 +51,7 @@ void start_milkfish( void )
 	eval( "/etc/config/milkfish.netup" );	// start rtpproxy and
 						// openserctl
 
-	syslog( LOG_INFO, "Milkfish service successfully started\n" );
+	dd_syslog( LOG_INFO, "Milkfish service successfully started\n" );
     }
 }
 

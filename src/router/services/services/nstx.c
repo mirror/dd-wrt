@@ -31,7 +31,7 @@ void stop_nstxd( void )
 {
     if( pidof( "nstxd" ) > 0 )
     {
-	syslog( LOG_INFO, "nstxd : nstx daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "nstxd : nstx daemon successfully stopped\n" );
 	killall( "nstxd", SIGTERM );
     }
 }
@@ -42,7 +42,7 @@ void start_nstxd( void )
     {
 	stop_nstxd(  );
 	eval( "nstxd" );
-	syslog( LOG_INFO, "nstxd daemon successfully started\n" );
+	dd_syslog( LOG_INFO, "nstxd daemon successfully started\n" );
     }
 }
 

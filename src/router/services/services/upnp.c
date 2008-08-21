@@ -48,7 +48,7 @@ int start_upnp( void )
 		    "-W", wan_ifname,
 		    "-I", nvram_safe_get( "upnp_ssdp_interval" ),
 		    "-A", nvram_safe_get( "upnp_max_age" ) );
-	syslog( LOG_INFO, "upnp : upnp daemon successfully started\n" );
+	dd_syslog( LOG_INFO, "upnp : upnp daemon successfully started\n" );
     }
 
     cprintf( "done\n" );
@@ -59,7 +59,7 @@ int stop_upnp( void )
 {
     if( pidof( "upnp" ) > 0 )
     {
-	syslog( LOG_INFO, "upnp : upnp daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "upnp : upnp daemon successfully stopped\n" );
 	killall( "upnp", SIGUSR1 );
 	killall( "upnp", SIGTERM );
 	cprintf( "done\n" );

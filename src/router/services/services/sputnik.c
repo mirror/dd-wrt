@@ -43,7 +43,7 @@ int start_sputnik( void )
     insmod( "xt_mac" );
 
     ret = eval( "sputnik" );
-    syslog( LOG_INFO, "sputnik : sputnik daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "sputnik : sputnik daemon successfully started\n" );
     cprintf( "done\n" );
     return ret;
 }
@@ -54,7 +54,7 @@ int stop_sputnik( void )
 
     if( pidof( "sputnik" ) > 0 )
     {
-	syslog( LOG_INFO, "sputnik : sputnik daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "sputnik : sputnik daemon successfully stopped\n" );
 	ret = killall( "sputnik", SIGTERM );
 
 	cprintf( "done\n" );
