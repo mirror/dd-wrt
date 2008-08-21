@@ -28,7 +28,6 @@
 #define SHELL "/bin/login"
 #define	_PATH_CONSOLE	"/dev/console"
 
-
 #define start_service(a) eval("startservice",a);
 #define start_services() eval("startservices");
 #define start_single_service() eval("start_single_service");
@@ -36,777 +35,851 @@
 #define stop_services() eval("stopservices");
 #define startstop(a) eval("startstop",a);
 
-static void
-set_term (int fd)
+static void set_term( int fd )
 {
-  struct termios tty;
+    struct termios tty;
 
-  tcgetattr (fd, &tty);
+    tcgetattr( fd, &tty );
 
-  /* set control chars */
-  tty.c_cc[VINTR] = 3;		/* C-c */
-  tty.c_cc[VQUIT] = 28;		/* C-\ */
-  tty.c_cc[VERASE] = 127;	/* C-? */
-  tty.c_cc[VKILL] = 21;		/* C-u */
-  tty.c_cc[VEOF] = 4;		/* C-d */
-  tty.c_cc[VSTART] = 17;	/* C-q */
-  tty.c_cc[VSTOP] = 19;		/* C-s */
-  tty.c_cc[VSUSP] = 26;		/* C-z */
+    /*
+     * set control chars 
+     */
+    tty.c_cc[VINTR] = 3;	/* C-c */
+    tty.c_cc[VQUIT] = 28;	/* C-\ */
+    tty.c_cc[VERASE] = 127;	/* C-? */
+    tty.c_cc[VKILL] = 21;	/* C-u */
+    tty.c_cc[VEOF] = 4;		/* C-d */
+    tty.c_cc[VSTART] = 17;	/* C-q */
+    tty.c_cc[VSTOP] = 19;	/* C-s */
+    tty.c_cc[VSUSP] = 26;	/* C-z */
 
-  /* use line dicipline 0 */
-  tty.c_line = 0;
+    /*
+     * use line dicipline 0 
+     */
+    tty.c_line = 0;
 
-  /* Make it be sane */
-  tty.c_cflag &= CBAUD | CBAUDEX | CSIZE | CSTOPB | PARENB | PARODD;
-  tty.c_cflag |= CREAD | HUPCL | CLOCAL;
+    /*
+     * Make it be sane 
+     */
+    tty.c_cflag &= CBAUD | CBAUDEX | CSIZE | CSTOPB | PARENB | PARODD;
+    tty.c_cflag |= CREAD | HUPCL | CLOCAL;
 
+    /*
+     * input modes 
+     */
+    tty.c_iflag = ICRNL | IXON | IXOFF;
 
-  /* input modes */
-  tty.c_iflag = ICRNL | IXON | IXOFF;
+    /*
+     * output modes 
+     */
+    tty.c_oflag = OPOST | ONLCR;
 
-  /* output modes */
-  tty.c_oflag = OPOST | ONLCR;
+    /*
+     * local modes 
+     */
+    tty.c_lflag =
+	ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
 
-  /* local modes */
-  tty.c_lflag =
-    ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
-
-  tcsetattr (fd, TCSANOW, &tty);
+    tcsetattr( fd, TCSANOW, &tty );
 }
 
-
-
-int
-console_init ()
+int console_init(  )
 {
-  int fd;
+    int fd;
 
-  /* Clean up */
-  ioctl (0, TIOCNOTTY, 0);
-  close (0);
-  close (1);
-  close (2);
-  setsid ();
+    /*
+     * Clean up 
+     */
+    ioctl( 0, TIOCNOTTY, 0 );
+    close( 0 );
+    close( 1 );
+    close( 2 );
+    setsid(  );
 
-  /* Reopen console */
-  if ((fd = open (_PATH_CONSOLE, O_RDWR)) < 0)
+    /*
+     * Reopen console 
+     */
+    if( ( fd = open( _PATH_CONSOLE, O_RDWR ) ) < 0 )
     {
-      /* Avoid debug messages is redirected to socket packet if no exist a UART chip, added by honor, 2003-12-04 */
-      (void) open ("/dev/null", O_RDONLY);
-      (void) open ("/dev/null", O_WRONLY);
-      (void) open ("/dev/null", O_WRONLY);
-      perror (_PATH_CONSOLE);
-      return errno;
+	/*
+	 * Avoid debug messages is redirected to socket packet if no exist a
+	 * UART chip, added by honor, 2003-12-04 
+	 */
+	( void )open( "/dev/null", O_RDONLY );
+	( void )open( "/dev/null", O_WRONLY );
+	( void )open( "/dev/null", O_WRONLY );
+	perror( _PATH_CONSOLE );
+	return errno;
     }
-  dup2 (fd, 0);
-  dup2 (fd, 1);
-  dup2 (fd, 2);
+    dup2( fd, 0 );
+    dup2( fd, 1 );
+    dup2( fd, 2 );
 
-  ioctl (0, TIOCSCTTY, 1);
-  tcsetpgrp (0, getpgrp ());
-  set_term (0);
+    ioctl( 0, TIOCSCTTY, 1 );
+    tcsetpgrp( 0, getpgrp(  ) );
+    set_term( 0 );
 
-  return 0;
-}
-
-pid_t
-ddrun_shell (int timeout, int nowait)
-{
-  pid_t pid;
-  char tz[1000];
-  char *envp[] = {
-    "TERM=vt100",
-    "TERMINFO=/etc/terminfo",
-    "HOME=/",
-    "PS1=\\u@\\h:\\w\\$ ",
-    "PATH=/usr/bin:/bin:/usr/sbin:/sbin:/jffs/usr/bin:/jffs/bin:/jffs/usr/sbin:/jffs/sbin",
-    "LD_LIBRARY_PATH=/usr/lib:/lib:/jffs/usr/lib:/jffs/lib",
-    "SHELL=" SHELL,
-    "USER=root",
-    tz,
-    NULL
-  };
-  int sig;
-
-  /* Wait for user input */
-  // cprintf("Hit enter to continue...");
-  if (waitfor (STDIN_FILENO, timeout) <= 0)
     return 0;
+}
 
-  switch ((pid = fork ()))
+pid_t ddrun_shell( int timeout, int nowait )
+{
+    pid_t pid;
+    char tz[1000];
+    char *envp[] = {
+	"TERM=vt100",
+	"TERMINFO=/etc/terminfo",
+	"HOME=/",
+	"PS1=\\u@\\h:\\w\\$ ",
+	"PATH=/usr/bin:/bin:/usr/sbin:/sbin:/jffs/usr/bin:/jffs/bin:/jffs/usr/sbin:/jffs/sbin",
+	"LD_LIBRARY_PATH=/usr/lib:/lib:/jffs/usr/lib:/jffs/lib",
+	"SHELL=" SHELL,
+	"USER=root",
+	tz,
+	NULL
+    };
+    int sig;
+
+    /*
+     * Wait for user input 
+     */
+    // cprintf("Hit enter to continue...");
+    if( waitfor( STDIN_FILENO, timeout ) <= 0 )
+	return 0;
+
+    switch ( ( pid = fork(  ) ) )
     {
-    case -1:
-      perror ("fork");
-      return 0;
-    case 0:
-      /* Reset signal handlers set for parent process */
-      for (sig = 0; sig < (_NSIG - 1); sig++)
-	signal (sig, SIG_DFL);
+	case -1:
+	    perror( "fork" );
+	    return 0;
+	case 0:
+	    /*
+	     * Reset signal handlers set for parent process 
+	     */
+	    for( sig = 0; sig < ( _NSIG - 1 ); sig++ )
+		signal( sig, SIG_DFL );
 
-      /* Reopen console */
-      console_init ();
-//      if (ret) exit(0); //no console running
-      /* Pass on TZ */
-      snprintf (tz, sizeof (tz), "TZ=%s", getenv ("TZ"));
+	    /*
+	     * Reopen console 
+	     */
+	    console_init(  );
+	    // if (ret) exit(0); //no console running
+	    /*
+	     * Pass on TZ 
+	     */
+	    snprintf( tz, sizeof( tz ), "TZ=%s", getenv( "TZ" ) );
 
-      /* Now run it.  The new program will take over this PID, 
-       * so nothing further in init.c should be run. */
+	    /*
+	     * Now run it.  The new program will take over this PID, so
+	     * nothing further in init.c should be run. 
+	     */
 #ifdef HAVE_REGISTER
-    if (isregistered())
+	    if( isregistered(  ) )
 #endif
-      execve (SHELL, (char *[])
-	      {
-	      "/bin/login", NULL}, envp);
+		execve( SHELL, ( char *[] )
+			{
+			"/bin/login", NULL}
+			, envp );
 #ifdef HAVE_REGISTER
-    else
-    {
-    envp[6]="SHELL=/sbin/regshell";
-      execve ("/sbin/regshell", (char *[])
-	      {
-	      "/sbin/regshell", NULL}, envp); 
-    }
+	    else
+	    {
+		envp[6] = "SHELL=/sbin/regshell";
+		execve( "/sbin/regshell", ( char *[] )
+			{
+			"/sbin/regshell", NULL}, envp );
+	    }
 #endif
 
-      /* We're still here?  Some error happened. */
-      perror (SHELL);
-      exit (errno);
-    default:
-      if (nowait)
-	return pid;
-      else
-	{
-	  waitpid (pid, NULL, 0);
-	  return 0;
-	}
+	    /*
+	     * We're still here? Some error happened. 
+	     */
+	    perror( SHELL );
+	    exit( errno );
+	default:
+	    if( nowait )
+		return pid;
+	    else
+	    {
+		waitpid( pid, NULL, 0 );
+		return 0;
+	    }
     }
 }
 
-void
-shutdown_system (void)
+void shutdown_system( void )
 {
-  int sig;
+    int sig;
 
-  /* Disable signal handlers */
-  for (sig = 0; sig < (_NSIG - 1); sig++)
-    signal (sig, SIG_DFL);
+    /*
+     * Disable signal handlers 
+     */
+    for( sig = 0; sig < ( _NSIG - 1 ); sig++ )
+	signal( sig, SIG_DFL );
 
-  /* Blink led before reboot */
-  diag_led (DIAG, START_LED);
-  led_control (LED_DIAG, LED_ON);
+    /*
+     * Blink led before reboot 
+     */
+    diag_led( DIAG, START_LED );
+    led_control( LED_DIAG, LED_ON );
 
-  cprintf ("Sending SIGTERM to all processes\n");
-  kill (-1, SIGTERM);
-  sync ();
-  sleep (5);
+    cprintf( "Sending SIGTERM to all processes\n" );
+    kill( -1, SIGTERM );
+    sync(  );
+    sleep( 5 );
 
-  cprintf ("Sending SIGKILL to all processes\n");
-  kill (-1, SIGKILL);
-  sync ();
-  sleep (1);
-  
+    cprintf( "Sending SIGKILL to all processes\n" );
+    kill( -1, SIGKILL );
+    sync(  );
+    sleep( 1 );
 
 #ifdef HAVE_RB500
-  eval ("umount", "/");
+    eval( "umount", "/" );
 #endif
 }
 
 static int fatal_signals[] = {
-  SIGQUIT,
-  SIGILL,
+    SIGQUIT,
+    SIGILL,
 #ifndef HAVE_RB500
-  SIGABRT,
+    SIGABRT,
 #endif
-  SIGFPE,
-  SIGPIPE,
-  SIGBUS,
-  // SIGSEGV,      // Don't shutdown, when Segmentation fault.
-  SIGSYS,
-  SIGTRAP,
-  SIGPWR,
-  SIGTERM,			/* reboot */
-  //SIGUSR1,      /* halt */      // We use the for some purpose
+    SIGFPE,
+    SIGPIPE,
+    SIGBUS,
+    // SIGSEGV, // Don't shutdown, when Segmentation fault.
+    SIGSYS,
+    SIGTRAP,
+    SIGPWR,
+    SIGTERM,			/* reboot */
+    // SIGUSR1, /* halt */ // We use the for some purpose
 };
 
-void
-fatal_signal (int sig)
+void fatal_signal( int sig )
 {
-  char *message = NULL;
+    char *message = NULL;
 
-  switch (sig)
+    switch ( sig )
     {
-    case SIGQUIT:
-      message = "Quit";
-      break;
-    case SIGILL:
-      message = "Illegal instruction";
-      break;
-    case SIGABRT:
-      message = "Abort";
-      break;
-    case SIGFPE:
-      message = "Floating exception";
-      break;
-    case SIGPIPE:
-      message = "Broken pipe";
-      break;
-    case SIGBUS:
-      message = "Bus error";
-      break;
-    case SIGSEGV:
-      message = "Segmentation fault";
-      break;
-    case SIGSYS:
-      message = "Bad system call";
-      break;
-    case SIGTRAP:
-      message = "Trace trap";
-      break;
-    case SIGPWR:
-      message = "Power failure";
-      break;
-    case SIGTERM:
-      message = "Terminated";
-      break;
-      //case SIGUSR1: message = "User-defined signal 1"; break;
+	case SIGQUIT:
+	    message = "Quit";
+	    break;
+	case SIGILL:
+	    message = "Illegal instruction";
+	    break;
+	case SIGABRT:
+	    message = "Abort";
+	    break;
+	case SIGFPE:
+	    message = "Floating exception";
+	    break;
+	case SIGPIPE:
+	    message = "Broken pipe";
+	    break;
+	case SIGBUS:
+	    message = "Bus error";
+	    break;
+	case SIGSEGV:
+	    message = "Segmentation fault";
+	    break;
+	case SIGSYS:
+	    message = "Bad system call";
+	    break;
+	case SIGTRAP:
+	    message = "Trace trap";
+	    break;
+	case SIGPWR:
+	    message = "Power failure";
+	    break;
+	case SIGTERM:
+	    message = "Terminated";
+	    break;
+	    // case SIGUSR1: message = "User-defined signal 1"; break;
     }
 
-  if (message)
-    cprintf ("%s....................................\n", message);
-  else
-    cprintf ("Caught signal %d.......................................\n",
-	     sig);
+    if( message )
+	cprintf( "%s....................................\n", message );
+    else
+	cprintf( "Caught signal %d.......................................\n",
+		 sig );
 
-  shutdown_system ();
-  sleep (2);
+    shutdown_system(  );
+    sleep( 2 );
 
-  /* Halt on SIGUSR1 */
-  reboot (sig == SIGUSR1 ? RB_HALT_SYSTEM : RB_AUTOBOOT);
-  loop_forever ();
+    /*
+     * Halt on SIGUSR1 
+     */
+    reboot( sig == SIGUSR1 ? RB_HALT_SYSTEM : RB_AUTOBOOT );
+    loop_forever(  );
 }
 
-static void
-reap (int sig)
+static void reap( int sig )
 {
-  pid_t pid;
+    pid_t pid;
 
-  while ((pid = waitpid (-1, NULL, WNOHANG)) > 0)
-    cprintf ("Reaped %d\n", pid);
+    while( ( pid = waitpid( -1, NULL, WNOHANG ) ) > 0 )
+	cprintf( "Reaped %d\n", pid );
 }
 
-
-void
-signal_init (void)
+void signal_init( void )
 {
-  int i;
+    int i;
 
-  for (i = 0; i < sizeof (fatal_signals) / sizeof (fatal_signals[0]); i++)
-    signal (fatal_signals[i], fatal_signal);
+    for( i = 0; i < sizeof( fatal_signals ) / sizeof( fatal_signals[0] );
+	 i++ )
+	signal( fatal_signals[i], fatal_signal );
 
-  signal (SIGCHLD, reap);
+    signal( SIGCHLD, reap );
 }
 
-/* States */
+/*
+ * States 
+ */
 enum
 {
-  RESTART,
-  STOP,
-  START,
-  TIMER,
-  USER,
-  IDLE,
+    RESTART,
+    STOP,
+    START,
+    TIMER,
+    USER,
+    IDLE,
 #ifdef HAVE_X86
-  REBOOT,
+    REBOOT,
 #endif
 };
 
 static int state = START;
 static int signalled = -1;
 
-/* Signal handling */
-static void
-rc_signal (int sig)
+/*
+ * Signal handling 
+ */
+static void rc_signal( int sig )
 {
-  if (state == IDLE)
+    if( state == IDLE )
     {
-      if (sig == SIGHUP)
+	if( sig == SIGHUP )
 	{
-	  lcdmessage ("Signal RESTART");
-	  printf ("signalling RESTART\n");
-	  signalled = RESTART;
+	    lcdmessage( "Signal RESTART" );
+	    printf( "signalling RESTART\n" );
+	    signalled = RESTART;
 	}
-      else if (sig == SIGUSR2)
+	else if( sig == SIGUSR2 )
 	{
-	  lcdmessage ("Signal START");
-	  printf ("signalling START\n");
-	  signalled = START;
+	    lcdmessage( "Signal START" );
+	    printf( "signalling START\n" );
+	    signalled = START;
 	}
-      else if (sig == SIGINT)
+	else if( sig == SIGINT )
 	{
-	  lcdmessage ("Signal STOP");
-	  printf ("signalling STOP\n");
-	  signalled = STOP;
+	    lcdmessage( "Signal STOP" );
+	    printf( "signalling STOP\n" );
+	    signalled = STOP;
 	}
-      else if (sig == SIGALRM)
+	else if( sig == SIGALRM )
 	{
-	  lcdmessage ("Signal TIMER");
-	  printf ("signalling TIMER\n");
-	  signalled = TIMER;
+	    lcdmessage( "Signal TIMER" );
+	    printf( "signalling TIMER\n" );
+	    signalled = TIMER;
 	}
 #ifdef HAVE_X86
-      else if (sig == SIGTERM)
+	else if( sig == SIGTERM )
 	{
-	  lcdmessage ("Signal Reboot");
-	  printf ("signalling REBOOT\n");
-	  signalled = REBOOT;
+	    lcdmessage( "Signal Reboot" );
+	    printf( "signalling REBOOT\n" );
+	    signalled = REBOOT;
 	}
 #endif
-      else if (sig == SIGUSR1)
+	else if( sig == SIGUSR1 )
 	{			// Receive from WEB
-	  lcdmessage ("Signal USER");
-	  printf ("signalling USER1\n");
-	  signalled = USER;
+	    lcdmessage( "Signal USER" );
+	    printf( "signalling USER1\n" );
+	    signalled = USER;
 	}
 
     }
 }
-/* Timer procedure */
-int
-do_timer (void)
+
+/*
+ * Timer procedure 
+ */
+int do_timer( void )
 {
-  //do_ntp();
-  return 0;
+    // do_ntp();
+    return 0;
 }
 
 static int noconsole = 0;
 
-/* Main loop */
-int
-main (int argc, char **argv)
+/*
+ * Main loop 
+ */
+int main( int argc, char **argv )
 {
-  sigset_t sigset;
-  pid_t shell_pid = 0;
-  uint boardflags;
-  //setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 1);
-  //system("/etc/nvram/nvram");
-  /* Basic initialization */
-  cprintf ("console init\n");
-  if (console_init ())
-    noconsole = 1;
-  cprintf ("init lcd\n");
-  initlcd ();
-  cprintf ("first message\n");
-  lcdmessage ("System Start");
-  cprintf ("start service\n");
-  start_service ("sysinit");
-  cprintf ("setup signals\n");
-  /* Setup signal handlers */
-  signal_init ();
-  signal (SIGHUP, rc_signal);
-  signal (SIGUSR1, rc_signal);	// Start single service from WEB, by honor
-  signal (SIGUSR2, rc_signal);
-  signal (SIGINT, rc_signal);
-  signal (SIGALRM, rc_signal);
+    sigset_t sigset;
+    pid_t shell_pid = 0;
+    uint boardflags;
+
+    // setenv("PATH",
+    // "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 
+    // 1);
+    // system("/etc/nvram/nvram");
+    /*
+     * Basic initialization 
+     */
+    cprintf( "console init\n" );
+    if( console_init(  ) )
+	noconsole = 1;
+    cprintf( "init lcd\n" );
+    initlcd(  );
+    cprintf( "first message\n" );
+    lcdmessage( "System Start" );
+    cprintf( "start service\n" );
+    start_service( "sysinit" );
+    cprintf( "setup signals\n" );
+    /*
+     * Setup signal handlers 
+     */
+    signal_init(  );
+    signal( SIGHUP, rc_signal );
+    signal( SIGUSR1, rc_signal );	// Start single service from WEB, by
+					// honor
+    signal( SIGUSR2, rc_signal );
+    signal( SIGINT, rc_signal );
+    signal( SIGALRM, rc_signal );
 #ifdef HAVE_X86
-  signal (SIGTERM, rc_signal);
+    signal( SIGTERM, rc_signal );
 #endif
-  sigemptyset (&sigset);
+    sigemptyset( &sigset );
 
-  /* Give user a chance to run a shell before bringing up the rest of the system */
+    /*
+     * Give user a chance to run a shell before bringing up the rest of the
+     * system 
+     */
 
-  if (!noconsole)
-    ddrun_shell (1, 0);
-  cprintf ("setup nvram\n");
+    if( !noconsole )
+	ddrun_shell( 1, 0 );
+    cprintf( "setup nvram\n" );
 
-  start_service ("nvram");
+    start_service( "nvram" );
 
-  /* Restore defaults if necessary */
-  int brand = getRouterBrand ();
+    /*
+     * Restore defaults if necessary 
+     */
+    int brand = getRouterBrand(  );
 
 #ifdef HAVE_SKYTEL
-  nvram_set ("vlan0ports", "0 1 2 3 4 5*");
-  nvram_set ("vlan1ports", "");
+    nvram_set( "vlan0ports", "0 1 2 3 4 5*" );
+    nvram_set( "vlan1ports", "" );
 #else
 
-  if (brand == ROUTER_WRT600N || brand == ROUTER_WRT610N)
+    if( brand == ROUTER_WRT600N || brand == ROUTER_WRT610N )
     {
-      nvram_set ("vlan2hwname", "et0");
+	nvram_set( "vlan2hwname", "et0" );
     }
 
-
 #endif
-  start_service ("restore_defaults");
+    start_service( "restore_defaults" );
 
-
-  /* Add vlan */
-  boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
-  nvram_set ("wanup", "0");
-
+    /*
+     * Add vlan 
+     */
+    boardflags = strtoul( nvram_safe_get( "boardflags" ), NULL, 0 );
+    nvram_set( "wanup", "0" );
 
 #ifndef HAVE_RB500
-  switch (brand)
+    switch ( brand )
     {
-    case ROUTER_WRT600N:
-    case ROUTER_WRT610N:
-    case ROUTER_ASUS_WL500GD:
-    case ROUTER_ASUS_WL550GE:
-    case ROUTER_MOTOROLA:
-    case ROUTER_RT480W:
-    case ROUTER_WRT350N:
-    case ROUTER_BUFFALO_WZRG144NH:
-    case ROUTER_DELL_TRUEMOBILE_2300_V2:
-      start_service ("config_vlan");
-      break;
-    default:
-      if (check_vlan_support ())
-	{
-	  start_service ("config_vlan");
-	}
-      break;
+	case ROUTER_WRT600N:
+	case ROUTER_WRT610N:
+	case ROUTER_ASUS_WL500GD:
+	case ROUTER_ASUS_WL550GE:
+	case ROUTER_MOTOROLA:
+	case ROUTER_RT480W:
+	case ROUTER_WRT350N:
+	case ROUTER_BUFFALO_WZRG144NH:
+	case ROUTER_DELL_TRUEMOBILE_2300_V2:
+	    start_service( "config_vlan" );
+	    break;
+	default:
+	    if( check_vlan_support(  ) )
+	    {
+		start_service( "config_vlan" );
+	    }
+	    break;
 
     }
 #endif
 
-  set_ip_forward ('1');
-  system ("/etc/preinit");	//sets default values for ip_conntrack
-  system ("/bin/echo 0 > /proc/sys/net/ipv4/tcp_westwood");
-  system ("/bin/echo 1 > /proc/sys/net/ipv4/tcp_vegas_cong_avoid");
-  system ("/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_alpha");
-  system ("/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_beta");
-  system ("/bin/echo vegas > /proc/sys/net/ipv4/tcp_congestion_control");
+    set_ip_forward( '1' );
+    system( "/etc/preinit" );	// sets default values for ip_conntrack
+    system( "/bin/echo 0 > /proc/sys/net/ipv4/tcp_westwood" );
+    system( "/bin/echo 1 > /proc/sys/net/ipv4/tcp_vegas_cong_avoid" );
+    system( "/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_alpha" );
+    system( "/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_beta" );
+    system( "/bin/echo vegas > /proc/sys/net/ipv4/tcp_congestion_control" );
 
 #ifdef HAVE_JFFS2
-  start_service ("jffs2");
+    start_service( "jffs2" );
 #endif
 #ifdef HAVE_MMC
-  start_service ("mmc");
+    start_service( "mmc" );
 #endif
 
-  start_service ("mkfiles");
-  char *hostname;
+    start_service( "mkfiles" );
+    char *hostname;
 
-  /* set hostname to wan_hostname or router_name */
-  if (strlen (nvram_safe_get ("wan_hostname")) > 0)
-    hostname = nvram_safe_get ("wan_hostname");
-  else if (strlen (nvram_safe_get ("router_name")) > 0)
-    hostname = nvram_safe_get ("router_name");
-  else
-    hostname = "dd-wrt";
+    /*
+     * set hostname to wan_hostname or router_name 
+     */
+    if( strlen( nvram_safe_get( "wan_hostname" ) ) > 0 )
+	hostname = nvram_safe_get( "wan_hostname" );
+    else if( strlen( nvram_safe_get( "router_name" ) ) > 0 )
+	hostname = nvram_safe_get( "router_name" );
+    else
+	hostname = "dd-wrt";
 
-  sethostname (hostname, strlen (hostname));
-  stop_service ("httpd");
+    sethostname( hostname, strlen( hostname ) );
+    stop_service( "httpd" );
 
-//create loginprompt
-  FILE *fp = fopen ("/tmp/loginprompt", "wb");
+    // create loginprompt
+    FILE *fp = fopen( "/tmp/loginprompt", "wb" );
 
 #ifndef HAVE_MAKSAT
 #ifndef HAVE_MSSID
 #ifdef DIST
-  if (strlen (DIST) > 0)
-    fprintf (fp,
-	     "DD-WRT v23 SP3 %s (c) 2008 NewMedia-NET GmbH\nRelease: "
-	     BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
-  else
-    fprintf (fp,
-	     "DD-WRT v23 SP3 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
-	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+    if( strlen( DIST ) > 0 )
+	fprintf( fp,
+		 "DD-WRT v23 SP3 %s (c) 2008 NewMedia-NET GmbH\nRelease: "
+		 BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION );
+    else
+	fprintf( fp,
+		 "DD-WRT v23 SP3 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
+		 BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION );
 #else
-  fprintf (fp,
-	   "DD-WRT v23 SP3 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
-	   BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+    fprintf( fp,
+	     "DD-WRT v23 SP3 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
+	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION );
 #endif
 #else
 #ifdef DIST
-  if (strlen (DIST) > 0)
-    fprintf (fp,
-	     "DD-WRT v24 %s (c) 2008 NewMedia-NET GmbH\nRelease: " BUILD_DATE
-	     " (SVN revision: %s)\n", DIST, SVN_REVISION);
-  else
-    fprintf (fp,
-	     "DD-WRT v24 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
-	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+    if( strlen( DIST ) > 0 )
+	fprintf( fp,
+		 "DD-WRT v24 %s (c) 2008 NewMedia-NET GmbH\nRelease: "
+		 BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION );
+    else
+	fprintf( fp,
+		 "DD-WRT v24 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
+		 BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION );
 #else
-  fprintf (fp,
-	   "DD-WRT v24 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
-	   BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
+    fprintf( fp,
+	     "DD-WRT v24 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
+	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION );
 #endif
 #endif
 #endif
 
-  fclose (fp);
-  /* Loop forever */
-  for (;;)
+    fclose( fp );
+    /*
+     * Loop forever 
+     */
+    for( ;; )
     {
-      switch (state)
+	switch ( state )
 	{
-	case USER:		// Restart single service from WEB of tftpd, by honor
-	  lcdmessage ("RESTART SERVICES");
-	  cprintf ("USER1\n");
-	  start_single_service ();
+	    case USER:		// Restart single service from WEB of tftpd,
+				// by honor
+		lcdmessage( "RESTART SERVICES" );
+		cprintf( "USER1\n" );
+		start_single_service(  );
 #ifdef HAVE_CHILLI
-	  start_service ("chilli");
+		start_service( "chilli" );
 #endif
 #ifdef HAVE_WIFIDOG
-	  start_service ("wifidog");
+		start_service( "wifidog" );
 #endif
 
-	  state = IDLE;
-	  break;
+		state = IDLE;
+		break;
 
-	case RESTART:
-	  lcdmessage ("RESTART SYSTEM");
+	    case RESTART:
+		lcdmessage( "RESTART SYSTEM" );
 #ifdef HAVE_OVERCLOCKING
-	  start_service ("overclocking");
+		start_service( "overclocking" );
 #endif
-	  cprintf ("RESET NVRAM VARS\n");
-	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
+		cprintf( "RESET NVRAM VARS\n" );
+		nvram_set( "wl0_lazy_wds", nvram_safe_get( "wl_lazy_wds" ) );
 #ifndef HAVE_MSSID
-	  nvram_set ("wl0_akm", nvram_safe_get ("wl_akm"));
-	  if (nvram_match ("wl_wep", "tkip"))
-	    {
-	      nvram_set ("wl_crypto", "tkip");
-	    }
-	  else if (nvram_match ("wl_wep", "aes"))
-	    {
-	      nvram_set ("wl_crypto", "aes");
-	    }
-	  else if (nvram_match ("wl_wep", "tkip+aes"))
-	    {
-	      nvram_set ("wl_crypto", "tkip+aes");
-	    }
-	  if (nvram_match ("wl_wep", "restricted"))
-	    nvram_set ("wl_wep", "enabled");	// the nas need this value, the "restricted" is no longer need. (20040624 by honor)
+		nvram_set( "wl0_akm", nvram_safe_get( "wl_akm" ) );
+		if( nvram_match( "wl_wep", "tkip" ) )
+		{
+		    nvram_set( "wl_crypto", "tkip" );
+		}
+		else if( nvram_match( "wl_wep", "aes" ) )
+		{
+		    nvram_set( "wl_crypto", "aes" );
+		}
+		else if( nvram_match( "wl_wep", "tkip+aes" ) )
+		{
+		    nvram_set( "wl_crypto", "tkip+aes" );
+		}
+		if( nvram_match( "wl_wep", "restricted" ) )
+		    nvram_set( "wl_wep", "enabled" );	// the nas need this
+							// value, the
+							// "restricted" is no 
+							// longer need.
+							// (20040624 by
+							// honor)
 #endif
 
-	  cprintf ("RESTART\n");
+		cprintf( "RESTART\n" );
 
 #ifndef HAVE_MADWIFI
-	  eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
+		eval( "wlconf", nvram_safe_get( "wl0_ifname" ), "down" );
 #ifdef HAVE_MSSID
-	  char *next;
-	  char var[80];
-	  char *vifs = nvram_safe_get ("wl0_vifs");
-	  if (vifs != NULL)
-	    foreach (var, vifs, next)
-	    {
-	      eval ("ifconfig", var, "down");
-	    }
+		char *next;
+		char var[80];
+		char *vifs = nvram_safe_get( "wl0_vifs" );
+
+		if( vifs != NULL )
+		    foreach( var, vifs, next )
+		{
+		    eval( "ifconfig", var, "down" );
+		}
 #endif
 #endif
 
-	  /* Fall through */
-	case STOP:
-	  lcdmessage ("STOPPING SERVICES");
-	  cprintf ("STOP\n");
-	  killall ("udhcpc", SIGKILL);
-	  setenv ("PATH",
-		  "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin",
-		  1);
-	  setenv ("LD_LIBRARY_PATH",
-		  "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
-		  1);
-	  cprintf ("STOP SERVICES\n");
+		/*
+		 * Fall through 
+		 */
+	    case STOP:
+		lcdmessage( "STOPPING SERVICES" );
+		cprintf( "STOP\n" );
+		killall( "udhcpc", SIGKILL );
+		setenv( "PATH",
+			"/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin",
+			1 );
+		setenv( "LD_LIBRARY_PATH",
+			"/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
+			1 );
+		cprintf( "STOP SERVICES\n" );
 
-	  stop_services ();
-	  stop_service ("radio_timer");
+		stop_services(  );
+		stop_service( "radio_timer" );
 #ifndef HAVE_MADWIFI
-	  stop_service ("nas");
+		stop_service( "nas" );
 #endif
-	  cprintf ("STOP WAN\n");
-	  stop_service ("ttraff");
-	  stop_service ("wan");
-	  cprintf ("STOP LAN\n");
+		cprintf( "STOP WAN\n" );
+		stop_service( "ttraff" );
+		stop_service( "wan" );
+		cprintf( "STOP LAN\n" );
 #ifdef HAVE_MADWIFI
-	  stop_service ("stabridge");
+		stop_service( "stabridge" );
 #endif
 #ifdef HAVE_RSTP
-	  eval ("killall", "rstpd");
-	  unlink ("/tmp/.rstp_server");
+		eval( "killall", "rstpd" );
+		unlink( "/tmp/.rstp_server" );
 #endif
 #ifdef HAVE_VLANTAGGING
-	  stop_service ("bridging");
+		stop_service( "bridging" );
 #endif
 #ifdef HAVE_BONDING
-	  stop_service ("bonding");
+		stop_service( "bonding" );
 #endif
 
-	  stop_service ("lan");
+		stop_service( "lan" );
 #ifdef HAVE_VLANTAGGING
-	  stop_service ("bridgesif");
-	  stop_service ("vlantagging");
+		stop_service( "bridgesif" );
+		stop_service( "vlantagging" );
 #endif
 
 #ifndef HAVE_RB500
-	  stop_service ("resetbutton");
+		stop_service( "resetbutton" );
 #endif
-	  start_service ("create_rc_shutdown");
-	  system ("/tmp/.rc_shutdown");
-	  if (state == STOP)
-	    {
-	      state = IDLE;
-	      break;
-	    }
-	  /* Fall through */
-	case START:
-	  lcdmessage ("START SERVICES");
-	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
+		start_service( "create_rc_shutdown" );
+		system( "/tmp/.rc_shutdown" );
+		if( state == STOP )
+		{
+		    state = IDLE;
+		    break;
+		}
+		/*
+		 * Fall through 
+		 */
+	    case START:
+		lcdmessage( "START SERVICES" );
+		nvram_set( "wl0_lazy_wds", nvram_safe_get( "wl_lazy_wds" ) );
 #ifndef HAVE_MSSID
-	  nvram_set ("wl0_akm", nvram_safe_get ("wl_akm"));
+		nvram_set( "wl0_akm", nvram_safe_get( "wl_akm" ) );
 #endif
-	  cprintf ("START\n");
-	  setenv ("PATH",
-		  "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin",
-		  1);
-	  setenv ("LD_LIBRARY_PATH",
-		  "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
-		  1);
+		cprintf( "START\n" );
+		setenv( "PATH",
+			"/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin",
+			1 );
+		setenv( "LD_LIBRARY_PATH",
+			"/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
+			1 );
 #ifdef HAVE_IPV6
-	  start_service ("ipv6");
+		start_service( "ipv6" );
 #endif
 #ifndef HAVE_RB500
-	  start_service ("resetbutton");
+		start_service( "resetbutton" );
 #endif
-	  start_service ("setup_vlans");
+		start_service( "setup_vlans" );
 #ifndef HAVE_MADWIFI
-	  if (nvram_match ("wl0_mode", "apstawet"))	//temporary fix for repeater-bridge mode init problem
-	    {
-	      nvram_set ("wl0_mode", "wet");
-	      start_service ("wlconf");
-	      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
-	      nvram_set ("wl0_mode", "apstawet");
-	    }
-	  start_service ("wlconf");
+		if( nvram_match( "wl0_mode", "apstawet" ) )	// temporary
+								// fix for
+								// repeater-bridge 
+								// mode init
+								// problem
+		{
+		    nvram_set( "wl0_mode", "wet" );
+		    start_service( "wlconf" );
+		    eval( "wlconf", nvram_safe_get( "wl0_ifname" ), "down" );
+		    nvram_set( "wl0_mode", "apstawet" );
+		}
+		start_service( "wlconf" );
 #endif
 
 #ifdef HAVE_VLANTAGGING
-	  start_service ("bridging");
+		start_service( "bridging" );
 #endif
-	  start_service ("lan");
+		start_service( "lan" );
 #ifdef HAVE_BONDING
-	  start_service ("bonding");
+		start_service( "bonding" );
 #endif
 #ifdef HAVE_REGISTER
-	  start_service ("mkfiles");
+		start_service( "mkfiles" );
 #endif
 #ifdef HAVE_MADWIFI
-	  start_service ("stabridge");
+		start_service( "stabridge" );
 #endif
 
+		cprintf( "start services\n" );
+		start_services(  );
 
-	  cprintf ("start services\n");
-	  start_services ();
+		cprintf( "start wan boot\n" );
+		start_service( "wan_boot" );
+		start_service( "ttraff" );
 
-	  cprintf ("start wan boot\n");
-	  start_service ("wan_boot");
-	  start_service ("ttraff");
+		cprintf( "diag STOP LED\n" );
+		diag_led( DIAG, STOP_LED );
+		cprintf( "set led release wan control\n" );
+		SET_LED( RELEASE_WAN_CONTROL );
 
-	  cprintf ("diag STOP LED\n");
-	  diag_led (DIAG, STOP_LED);
-	  cprintf ("set led release wan control\n");
-	  SET_LED (RELEASE_WAN_CONTROL);
-
-	  if (nvram_match ("wl0_mode", "sta")
-	      || nvram_match ("wl0_mode", "wet")
-	      || nvram_match ("wl0_mode", "apsta")
-	      || nvram_match ("wl0_mode", "apstawet"))
-	    {
-	      //fix for client mode
-	      cprintf ("ifconfig wl up\n");
-	      eval ("/sbin/ifconfig", get_wdev (), "up");
-	    }
+		if( nvram_match( "wl0_mode", "sta" )
+		    || nvram_match( "wl0_mode", "wet" )
+		    || nvram_match( "wl0_mode", "apsta" )
+		    || nvram_match( "wl0_mode", "apstawet" ) )
+		{
+		    // fix for client mode
+		    cprintf( "ifconfig wl up\n" );
+		    eval( "/sbin/ifconfig", get_wdev(  ), "up" );
+		}
 
 #ifndef HAVE_MADWIFI
 #ifdef HAVE_RADIOOFF
-	  if (nvram_match ("radiooff_button", "1")
-	      && nvram_match ("radiooff_boot_off", "1"))
-	    {
-	      eval ("wl", "-i", get_wl_instance_name (0), "radio", "off");
-	    }
-	  else
-#endif
-	    start_service ("nas");
-#ifdef HAVE_MSSID
-	  start_service ("guest_nas");
-#endif
-#endif
-
-	  start_service ("radio_timer");
-#ifdef HAVE_VLANTAGGING
-	  start_service ("vlantagging");
-	  start_service ("bridgesif");
-#endif
-
-
-	  cprintf ("create rc file\n");
-#ifdef HAVE_REGISTER
-	  if (isregistered ())
-#endif
-	    {
-	      start_service ("create_rc_startup");
-	      chmod ("/tmp/.rc_startup", 0700);
-	      system ("/tmp/.rc_startup");
-	      system ("/etc/init.d/rcS");	// start openwrt startup script (siPath impl)
-	      cprintf ("start modules\n");
-	      start_service ("modules");
-#ifdef HAVE_MILKFISH
-	      start_service ("milkfish_boot");
-#endif
-	      if (nvram_invmatch ("rc_custom", ""))	//create custom script
+		if( nvram_match( "radiooff_button", "1" )
+		    && nvram_match( "radiooff_boot_off", "1" ) )
 		{
-		  nvram2file ("rc_custom", "/tmp/custom.sh");
-		  chmod ("/tmp/custom.sh", 0700);
+		    eval( "wl", "-i", get_wl_instance_name( 0 ), "radio",
+			  "off" );
 		}
-	    }
+		else
+#endif
+		    start_service( "nas" );
+#ifdef HAVE_MSSID
+		start_service( "guest_nas" );
+#endif
+#endif
+
+		start_service( "radio_timer" );
+#ifdef HAVE_VLANTAGGING
+		start_service( "vlantagging" );
+		start_service( "bridgesif" );
+#endif
+
+		cprintf( "create rc file\n" );
+#ifdef HAVE_REGISTER
+		if( isregistered(  ) )
+#endif
+		{
+		    start_service( "create_rc_startup" );
+		    chmod( "/tmp/.rc_startup", 0700 );
+		    system( "/tmp/.rc_startup" );
+		    system( "/etc/init.d/rcS" );	// start openwrt
+							// startup script
+							// (siPath impl)
+		    cprintf( "start modules\n" );
+		    start_service( "modules" );
+#ifdef HAVE_MILKFISH
+		    start_service( "milkfish_boot" );
+#endif
+		    if( nvram_invmatch( "rc_custom", "" ) )	// create
+								// custom
+								// script
+		    {
+			nvram2file( "rc_custom", "/tmp/custom.sh" );
+			chmod( "/tmp/custom.sh", 0700 );
+		    }
+		}
 
 #ifdef HAVE_CHILLI
-	  start_service ("chilli");
+		start_service( "chilli" );
 #endif
 #ifdef HAVE_WIFIDOG
-	  start_service ("wifidog");
+		start_service( "wifidog" );
 #endif
-	  cprintf ("start syslog\n");
+		cprintf( "start syslog\n" );
 #ifndef HAVE_WRK54G
-	  startstop ("syslog");
+		startstop( "syslog" );
 #endif
 #ifdef HAVE_RSTP
-//just experimental for playing
-	  eval ("brctl", "stp", "br0", "off");
-	  eval ("rstpd");
-	  eval ("rstpctl", "rstp", "br0", "on");
+		// just experimental for playing
+		eval( "brctl", "stp", "br0", "off" );
+		eval( "rstpd" );
+		eval( "rstpctl", "rstp", "br0", "on" );
 #endif
 
-	  system ("/etc/postinit");
+		system( "/etc/postinit" );
 
-	  led_control (LED_DIAG, LED_OFF);
-	  lcdmessage ("System Ready");
-	  /* Fall through */
-	case TIMER:
-	  cprintf ("TIMER\n");
-	  do_timer ();
-	  /* Fall through */
-	case IDLE:
-	  cprintf ("IDLE\n");
-	  state = IDLE;
-	  /* Wait for user input or state change */
-	  while (signalled == -1)
-	    {
-	      if (!noconsole && (!shell_pid || kill (shell_pid, 0) != 0))
-		shell_pid = ddrun_shell (0, 1);
-	      else
-		sigsuspend (&sigset);
+		led_control( LED_DIAG, LED_OFF );
+		lcdmessage( "System Ready" );
+		/*
+		 * Fall through 
+		 */
+	    case TIMER:
+		cprintf( "TIMER\n" );
+		do_timer(  );
+		/*
+		 * Fall through 
+		 */
+	    case IDLE:
+		cprintf( "IDLE\n" );
+		state = IDLE;
+		/*
+		 * Wait for user input or state change 
+		 */
+		while( signalled == -1 )
+		{
+		    if( !noconsole
+			&& ( !shell_pid || kill( shell_pid, 0 ) != 0 ) )
+			shell_pid = ddrun_shell( 0, 1 );
+		    else
+			sigsuspend( &sigset );
 
-	    }
-	  state = signalled;
-	  signalled = -1;
-	  break;
+		}
+		state = signalled;
+		signalled = -1;
+		break;
 #ifdef HAVE_X86
-	case REBOOT:
-	  lcdmessage ("System Reboots!");
-	  system ("reboot");
-	  break;
+	    case REBOOT:
+		lcdmessage( "System Reboots!" );
+		system( "reboot" );
+		break;
 #endif
-	default:
-	  cprintf ("UNKNOWN\n");
-	  return 0;
+	    default:
+		cprintf( "UNKNOWN\n" );
+		return 0;
 	}
 
     }

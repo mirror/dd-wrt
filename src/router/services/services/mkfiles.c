@@ -38,115 +38,120 @@
 #define PASSWD_FILE	"/tmp/etc/passwd"
 #define GROUP_FILE	"/tmp/etc/group"
 
+int isregistered( void );
 
-
-
-int isregistered (void);
-
-void
-setPassword (char *passwd)
+void setPassword( char *passwd )
 {
-  FILE *fp;
-  struct stat buf;
-  /* Create password's and group's database directory */
-  if (stat (PASSWD_DIR, &buf) != 0)
+    FILE *fp;
+    struct stat buf;
+
+    /*
+     * Create password's and group's database directory 
+     */
+    if( stat( PASSWD_DIR, &buf ) != 0 )
     {
-      mkdir (PASSWD_DIR, 0700);
+	mkdir( PASSWD_DIR, 0700 );
     }
-  if (!(fp = fopen (PASSWD_FILE, "w")))
+    if( !( fp = fopen( PASSWD_FILE, "w" ) ) )
     {
-      perror (PASSWD_FILE);
-      return;
+	perror( PASSWD_FILE );
+	return;
     }
 
-  fprintf (fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
-  fclose (fp);
+    fprintf( fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd );
+    fclose( fp );
 }
 
-int
-start_mkfiles (void)
+int start_mkfiles( void )
 {
-  FILE *fp;
-  struct stat buf;
-  cprintf ("%s:%d", __func__, __LINE__);
+    FILE *fp;
+    struct stat buf;
+
+    cprintf( "%s:%d", __func__, __LINE__ );
 #ifdef HAVE_SKYTRON
-  char *http_passwd = nvram_safe_get ("skyhttp_passwd");
+    char *http_passwd = nvram_safe_get( "skyhttp_passwd" );
 #elif HAVE_34TELECOM
-  char *http_passwd = nvram_safe_get ("newhttp_passwd");
+    char *http_passwd = nvram_safe_get( "newhttp_passwd" );
 #else
-  char *http_passwd = nvram_safe_get ("http_passwd");
+    char *http_passwd = nvram_safe_get( "http_passwd" );
 #endif
-  cprintf ("%s:%d", __func__, __LINE__);
-  if (stat (HOME_DIR, &buf) != 0)
+    cprintf( "%s:%d", __func__, __LINE__ );
+    if( stat( HOME_DIR, &buf ) != 0 )
     {
-      mkdir (HOME_DIR, 0700);
+	mkdir( HOME_DIR, 0700 );
     }
-  cprintf ("%s:%d", __func__, __LINE__);
+    cprintf( "%s:%d", __func__, __LINE__ );
 
 #ifdef HAVE_SSHD
-  if (stat (SSH_DIR, &buf) != 0)
+    if( stat( SSH_DIR, &buf ) != 0 )
     {
-      mkdir (SSH_DIR, 0700);
+	mkdir( SSH_DIR, 0700 );
     }
 #endif
-  cprintf ("%s:%d", __func__, __LINE__);
+    cprintf( "%s:%d", __func__, __LINE__ );
 
-  /* Create password's and group's database directory */
-  if (stat (PASSWD_DIR, &buf) != 0)
+    /*
+     * Create password's and group's database directory 
+     */
+    if( stat( PASSWD_DIR, &buf ) != 0 )
     {
-      mkdir (PASSWD_DIR, 0700);
+	mkdir( PASSWD_DIR, 0700 );
     }
-  cprintf ("%s:%d", __func__, __LINE__);
+    cprintf( "%s:%d", __func__, __LINE__ );
 
-  /* Write password file with username root and password */
-  if (!(fp = fopen (PASSWD_FILE, "w")))
+    /*
+     * Write password file with username root and password 
+     */
+    if( !( fp = fopen( PASSWD_FILE, "w" ) ) )
     {
-      perror (PASSWD_FILE);
-      return errno;
+	perror( PASSWD_FILE );
+	return errno;
     }
-  cprintf ("%s:%d", __func__, __LINE__);
+    cprintf( "%s:%d", __func__, __LINE__ );
 #ifdef HAVE_REGISTER
-  if (isregistered ())
+    if( isregistered(  ) )
 #endif
     {
-      fprintf (fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-	       http_passwd);
-      fprintf (fp, "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",
-	       http_passwd);
-      fclose (fp);
+	fprintf( fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
+		 http_passwd );
+	fprintf( fp, "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",
+		 http_passwd );
+	fclose( fp );
     }
-  cprintf ("%s:%d", __func__, __LINE__);
-  /* Write group file with group 'root' */
-  if (!(fp = fopen (GROUP_FILE, "w")))
+    cprintf( "%s:%d", __func__, __LINE__ );
+    /*
+     * Write group file with group 'root' 
+     */
+    if( !( fp = fopen( GROUP_FILE, "w" ) ) )
     {
-      perror (GROUP_FILE);
-      return errno;
+	perror( GROUP_FILE );
+	return errno;
     }
-  cprintf ("%s:%d", __func__, __LINE__);
-  fprintf (fp, "root:x:0:\n");
-  fclose (fp);
+    cprintf( "%s:%d", __func__, __LINE__ );
+    fprintf( fp, "root:x:0:\n" );
+    fclose( fp );
 
-  system2 ("/bin/mkdir -p /var/spool");
-  system2 ("/bin/mkdir -p /var/spool/cron");
-  system2 ("/bin/mkdir -p /var/lock/subsys");
-  system2 ("/bin/mkdir -p /var/spool/cron/crontabs");
-  system2 ("/bin/touch /var/spool/cron/crontabs/root");
-  system2 ("/bin/mkdir -p /var/lib");
-  system2 ("/bin/mkdir -p /var/lib/misc");
-  system2 ("/bin/mkdir -p /var/tmp");
+    system2( "/bin/mkdir -p /var/spool" );
+    system2( "/bin/mkdir -p /var/spool/cron" );
+    system2( "/bin/mkdir -p /var/lock/subsys" );
+    system2( "/bin/mkdir -p /var/spool/cron/crontabs" );
+    system2( "/bin/touch /var/spool/cron/crontabs/root" );
+    system2( "/bin/mkdir -p /var/lib" );
+    system2( "/bin/mkdir -p /var/lib/misc" );
+    system2( "/bin/mkdir -p /var/tmp" );
 
-  system2 ("/bin/mkdir -p /var/log");
-  system2 ("/bin/touch /var/log/messages");
-  cprintf ("%s:%d", __func__, __LINE__);
+    system2( "/bin/mkdir -p /var/log" );
+    system2( "/bin/touch /var/log/messages" );
+    cprintf( "%s:%d", __func__, __LINE__ );
 
 #ifdef HAVE_SNMP
-  system2 ("/bin/mkdir -p /var/snmp");
+    system2( "/bin/mkdir -p /var/snmp" );
 #endif
-  system2 ("/bin/chmod 0777 /tmp");
-  cprintf ("%s:%d", __func__, __LINE__);
+    system2( "/bin/chmod 0777 /tmp" );
+    cprintf( "%s:%d", __func__, __LINE__ );
 
-  dns_to_resolv ();
-  cprintf ("%s:%d", __func__, __LINE__);
+    dns_to_resolv(  );
+    cprintf( "%s:%d", __func__, __LINE__ );
 
-  return 0;
+    return 0;
 }

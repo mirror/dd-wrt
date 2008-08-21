@@ -27,165 +27,157 @@
 #include "libbridge.h"
 #include "libbridge_private.h"
 
-
-int
-br_add_bridge (const char *brname)
+int br_add_bridge( const char *brname )
 {
-  int ret;
+    int ret;
 
 #ifdef SIOCBRADDBR
-  ret = ioctl (br_socket_fd, SIOCBRADDBR, brname);
-  if (ret < 0)
+    ret = ioctl( br_socket_fd, SIOCBRADDBR, brname );
+    if( ret < 0 )
 #endif
     {
-      char _br[IFNAMSIZ];
-      unsigned long arg[3] = { BRCTL_ADD_BRIDGE, (unsigned long) _br };
+	char _br[IFNAMSIZ];
+	unsigned long arg[3] = { BRCTL_ADD_BRIDGE, ( unsigned long )_br };
 
-      strncpy (_br, brname, IFNAMSIZ);
-      ret = ioctl (br_socket_fd, SIOCSIFBR, arg);
+	strncpy( _br, brname, IFNAMSIZ );
+	ret = ioctl( br_socket_fd, SIOCSIFBR, arg );
     }
 
-  return ret < 0 ? errno : 0;
+    return ret < 0 ? errno : 0;
 }
 
-int
-br_del_bridge (const char *brname)
+int br_del_bridge( const char *brname )
 {
-  int ret;
+    int ret;
 
 #ifdef SIOCBRDELBR
-  ret = ioctl (br_socket_fd, SIOCBRDELBR, brname);
-  if (ret < 0)
+    ret = ioctl( br_socket_fd, SIOCBRDELBR, brname );
+    if( ret < 0 )
 #endif
     {
-      char _br[IFNAMSIZ];
-      unsigned long arg[3] = { BRCTL_DEL_BRIDGE, (unsigned long) _br };
+	char _br[IFNAMSIZ];
+	unsigned long arg[3] = { BRCTL_DEL_BRIDGE, ( unsigned long )_br };
 
-      strncpy (_br, brname, IFNAMSIZ);
-      ret = ioctl (br_socket_fd, SIOCSIFBR, arg);
+	strncpy( _br, brname, IFNAMSIZ );
+	ret = ioctl( br_socket_fd, SIOCSIFBR, arg );
     }
-  return ret < 0 ? errno : 0;
+    return ret < 0 ? errno : 0;
 }
 
-int
-br_add_interface (const char *bridge, const char *dev)
+int br_add_interface( const char *bridge, const char *dev )
 {
-  struct ifreq ifr;
-  int err;
-  int ifindex = if_nametoindex (dev);
+    struct ifreq ifr;
+    int err;
+    int ifindex = if_nametoindex( dev );
 
-  if (ifindex == 0)
-    return ENODEV;
+    if( ifindex == 0 )
+	return ENODEV;
 
-  strncpy (ifr.ifr_name, bridge, IFNAMSIZ);
+    strncpy( ifr.ifr_name, bridge, IFNAMSIZ );
 #ifdef SIOCBRADDIF
-  ifr.ifr_ifindex = ifindex;
-  err = ioctl (br_socket_fd, SIOCBRADDIF, &ifr);
-  if (err < 0)
+    ifr.ifr_ifindex = ifindex;
+    err = ioctl( br_socket_fd, SIOCBRADDIF, &ifr );
+    if( err < 0 )
 #endif
     {
-      unsigned long args[4] = { BRCTL_ADD_IF, ifindex, 0, 0 };
+	unsigned long args[4] = { BRCTL_ADD_IF, ifindex, 0, 0 };
 
-      ifr.ifr_data = (char *) args;
-      err = ioctl (br_socket_fd, SIOCDEVPRIVATE, &ifr);
+	ifr.ifr_data = ( char * )args;
+	err = ioctl( br_socket_fd, SIOCDEVPRIVATE, &ifr );
     }
-  eval ("ifconfig", dev, "promisc");
-  return err < 0 ? errno : 0;
+    eval( "ifconfig", dev, "promisc" );
+    return err < 0 ? errno : 0;
 }
 
-int
-br_del_interface (const char *bridge, const char *dev)
+int br_del_interface( const char *bridge, const char *dev )
 {
-  struct ifreq ifr;
-  int err;
-  int ifindex = if_nametoindex (dev);
+    struct ifreq ifr;
+    int err;
+    int ifindex = if_nametoindex( dev );
 
-  if (ifindex == 0)
-    return ENODEV;
+    if( ifindex == 0 )
+	return ENODEV;
 
-  strncpy (ifr.ifr_name, bridge, IFNAMSIZ);
+    strncpy( ifr.ifr_name, bridge, IFNAMSIZ );
 #ifdef SIOCBRDELIF
-  ifr.ifr_ifindex = ifindex;
-  err = ioctl (br_socket_fd, SIOCBRDELIF, &ifr);
-  if (err < 0)
+    ifr.ifr_ifindex = ifindex;
+    err = ioctl( br_socket_fd, SIOCBRDELIF, &ifr );
+    if( err < 0 )
 #endif
     {
-      unsigned long args[4] = { BRCTL_DEL_IF, ifindex, 0, 0 };
+	unsigned long args[4] = { BRCTL_DEL_IF, ifindex, 0, 0 };
 
-      ifr.ifr_data = (char *) args;
-      err = ioctl (br_socket_fd, SIOCDEVPRIVATE, &ifr);
+	ifr.ifr_data = ( char * )args;
+	err = ioctl( br_socket_fd, SIOCDEVPRIVATE, &ifr );
     }
 
-  return err < 0 ? errno : 0;
+    return err < 0 ? errno : 0;
 }
 
 static int
-br_set (const char *bridge, const char *name,
-	unsigned long value, unsigned long oldcode)
+br_set( const char *bridge, const char *name,
+	unsigned long value, unsigned long oldcode )
 {
-  int ret = -1;
+    int ret = -1;
+
 #ifdef HAVE_LIBSYSFS
-  struct sysfs_class_device *dev;
+    struct sysfs_class_device *dev;
 
-  dev = sysfs_get_class_device (br_class_net, bridge);
-  if (dev)
+    dev = sysfs_get_class_device( br_class_net, bridge );
+    if( dev )
     {
-      struct sysfs_attribute *attr;
-      char buf[32];
-      char path[SYSFS_PATH_MAX];
+	struct sysfs_attribute *attr;
+	char buf[32];
+	char path[SYSFS_PATH_MAX];
 
-      snprintf (buf, sizeof (buf), "%ld\n", value);
-      snprintf (path, SYSFS_PATH_MAX, "%s/bridge/%s", dev->path, name);
+	snprintf( buf, sizeof( buf ), "%ld\n", value );
+	snprintf( path, SYSFS_PATH_MAX, "%s/bridge/%s", dev->path, name );
 
-      attr = sysfs_open_attribute (path);
-      if (attr)
+	attr = sysfs_open_attribute( path );
+	if( attr )
 	{
-	  ret = sysfs_write_attribute (attr, buf, strlen (buf));
-	  sysfs_close_attribute (attr);
+	    ret = sysfs_write_attribute( attr, buf, strlen( buf ) );
+	    sysfs_close_attribute( attr );
 	}
-      sysfs_close_class_device (dev);
+	sysfs_close_class_device( dev );
     }
-  else
+    else
 #endif
     {
-      struct ifreq ifr;
-      unsigned long args[4] = { oldcode, value, 0, 0 };
+	struct ifreq ifr;
+	unsigned long args[4] = { oldcode, value, 0, 0 };
 
-      strncpy (ifr.ifr_name, bridge, IFNAMSIZ);
-      ifr.ifr_data = (char *) &args;
-      ret = ioctl (br_socket_fd, SIOCDEVPRIVATE, &ifr);
+	strncpy( ifr.ifr_name, bridge, IFNAMSIZ );
+	ifr.ifr_data = ( char * )&args;
+	ret = ioctl( br_socket_fd, SIOCDEVPRIVATE, &ifr );
     }
 
-  return ret < 0 ? errno : 0;
+    return ret < 0 ? errno : 0;
 }
 
-int
-br_set_bridge_forward_delay (const char *br, int sec)
+int br_set_bridge_forward_delay( const char *br, int sec )
 {
-  struct timeval tv;
-  tv.tv_sec = sec;
-  tv.tv_usec = 0;
+    struct timeval tv;
 
-  return br_set (br, "forward_delay", __tv_to_jiffies (&tv),
-		 BRCTL_SET_BRIDGE_FORWARD_DELAY);
+    tv.tv_sec = sec;
+    tv.tv_usec = 0;
+
+    return br_set( br, "forward_delay", __tv_to_jiffies( &tv ),
+		   BRCTL_SET_BRIDGE_FORWARD_DELAY );
 }
 
-int
-br_set_stp_state (const char *br, int stp_state)
+int br_set_stp_state( const char *br, int stp_state )
 {
-  return br_set (br, "stp_state", stp_state, BRCTL_SET_BRIDGE_STP_STATE);
+    return br_set( br, "stp_state", stp_state, BRCTL_SET_BRIDGE_STP_STATE );
 }
 
-
-int
-br_set_bridge_prio (const char *br, char *prio)
+int br_set_bridge_prio( const char *br, char *prio )
 {
-  return br_set (br, "priority", atoi (prio), BRCTL_SET_BRIDGE_PRIORITY);
+    return br_set( br, "priority", atoi( prio ), BRCTL_SET_BRIDGE_PRIORITY );
 }
 
-int
-br_set_port_prio (const char *bridge, char *port, char *prio)
+int br_set_port_prio( const char *bridge, char *port, char *prio )
 {
-  return port_set (bridge, port, "priority", atoi (prio),
-		   BRCTL_SET_PORT_PRIORITY);
+    return port_set( bridge, port, "priority", atoi( prio ),
+		     BRCTL_SET_PORT_PRIORITY );
 }

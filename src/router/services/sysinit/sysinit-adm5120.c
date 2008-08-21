@@ -53,193 +53,204 @@
 #include <utils.h>
 #include <cymac.h>
 
+extern void vlan_init( int num );
 
-extern void vlan_init (int num);
-
-int
-start_sysinit (void)
+int start_sysinit( void )
 {
-  char buf[PATH_MAX];
-  struct utsname name;
-  struct stat tmp_stat;
-  time_t tm = 0;
-  cprintf ("sysinit() proc\n");
-  /* /proc */
-  mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-  mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-  cprintf ("sysinit() tmp\n");
+    char buf[PATH_MAX];
+    struct utsname name;
+    struct stat tmp_stat;
+    time_t tm = 0;
 
-  /* /tmp */
-  mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-  // fix for linux kernel 2.6
-  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-  eval ("mkdir", "/tmp/www");
-  eval ("mknod", "/dev/nvram", "c", "229", "0");
-  eval ("mknod", "/dev/ppp", "c", "108", "0");
-  eval ("mknod", "-m", "0660", "/dev/mmc", "b", "126", "0");
-  eval ("mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1");
-  eval ("mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2");
-  eval ("mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3");
-  eval ("mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4");
+    cprintf( "sysinit() proc\n" );
+    /*
+     * /proc 
+     */
+    mount( "proc", "/proc", "proc", MS_MGC_VAL, NULL );
+    mount( "sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL );
+    cprintf( "sysinit() tmp\n" );
 
-  eval ("mkdir", "/dev/mtd");
-  eval ("mknod", "/dev/mtd/0", "c", "90", "0");
-  eval ("mknod", "/dev/mtd/0ro", "c", "90", "1");
-  eval ("mknod", "/dev/mtd/1", "c", "90", "2");
-  eval ("mknod", "/dev/mtd/1ro", "c", "90", "3");
-  eval ("mknod", "/dev/mtd/2", "c", "90", "4");
-  eval ("mknod", "/dev/mtd/2ro", "c", "90", "5");
-  eval ("mknod", "/dev/mtd/3", "c", "90", "6");
-  eval ("mknod", "/dev/mtd/3ro", "c", "90", "7");
-  eval ("mknod", "/dev/mtd/4", "c", "90", "8");
-  eval ("mknod", "/dev/mtd/4ro", "c", "90", "9");
+    /*
+     * /tmp 
+     */
+    mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
+    // fix for linux kernel 2.6
+    mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
+    eval( "mkdir", "/tmp/www" );
+    eval( "mknod", "/dev/nvram", "c", "229", "0" );
+    eval( "mknod", "/dev/ppp", "c", "108", "0" );
+    eval( "mknod", "-m", "0660", "/dev/mmc", "b", "126", "0" );
+    eval( "mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1" );
+    eval( "mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2" );
+    eval( "mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3" );
+    eval( "mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4" );
 
-  cprintf ("sysinit() var\n");
+    eval( "mkdir", "/dev/mtd" );
+    eval( "mknod", "/dev/mtd/0", "c", "90", "0" );
+    eval( "mknod", "/dev/mtd/0ro", "c", "90", "1" );
+    eval( "mknod", "/dev/mtd/1", "c", "90", "2" );
+    eval( "mknod", "/dev/mtd/1ro", "c", "90", "3" );
+    eval( "mknod", "/dev/mtd/2", "c", "90", "4" );
+    eval( "mknod", "/dev/mtd/2ro", "c", "90", "5" );
+    eval( "mknod", "/dev/mtd/3", "c", "90", "6" );
+    eval( "mknod", "/dev/mtd/3ro", "c", "90", "7" );
+    eval( "mknod", "/dev/mtd/4", "c", "90", "8" );
+    eval( "mknod", "/dev/mtd/4ro", "c", "90", "9" );
 
-  /* /var */
-  mkdir ("/tmp/var", 0777);
-  mkdir ("/var/lock", 0777);
-  mkdir ("/var/log", 0777);
-  mkdir ("/var/run", 0777);
-  mkdir ("/var/tmp", 0777);
-  cprintf ("sysinit() setup console\n");
-  /* Setup console */
+    cprintf( "sysinit() var\n" );
 
-  cprintf ("sysinit() klogctl\n");
-  klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
-  cprintf ("sysinit() get router\n");
+    /*
+     * /var 
+     */
+    mkdir( "/tmp/var", 0777 );
+    mkdir( "/var/lock", 0777 );
+    mkdir( "/var/log", 0777 );
+    mkdir( "/var/run", 0777 );
+    mkdir( "/var/tmp", 0777 );
+    cprintf( "sysinit() setup console\n" );
+    /*
+     * Setup console 
+     */
 
+    cprintf( "sysinit() klogctl\n" );
+    klogctl( 8, NULL, atoi( nvram_safe_get( "console_loglevel" ) ) );
+    cprintf( "sysinit() get router\n" );
 
+    /*
+     * Modules 
+     */
+    uname( &name );
+    /*
+     * load some netfilter stuff 
+     */
 
-  /* Modules */
-  uname (&name);
-/* load some netfilter stuff */
+    insmod( "nf_conntrack_ftp" );
+    insmod( "nf_conntrack_irc" );
+    insmod( "nf_conntrack_netbios_ns" );
+    insmod( "nf_conntrack_pptp" );
+    insmod( "nf_conntrack_proto_gre" );
+    insmod( "nf_conntrack_proto_udplite" );
+    insmod( "nf_conntrack_tftp" );
+    insmod( "xt_CLASSIFY" );
+    insmod( "xt_MARK" );
+    insmod( "xt_TCPMSS" );
+    insmod( "xt_length" );
+    insmod( "xt_limit" );
+    insmod( "xt_multiport" );
+    insmod( "xt_pkttype" );
+    insmod( "xt_state" );
+    insmod( "xt_tcpmss" );
+    insmod( "xt_u32" );
 
+    insmod( "iptable_filter" );
+    insmod( "iptable_mangle" );
+    insmod( "nf_nat" );
+    insmod( "iptable_nat" );
+    insmod( "nf_nat_ftp" );
+    insmod( "nf_nat_irc" );
+    insmod( "nf_nat_pptp" );
+    insmod( "nf_nat_proto_gre" );
+    insmod( "nf_nat_tftp" );
+    insmod( "ipt_LOG" );
+    insmod( "ipt_MASQUERADE" );
+    insmod( "ipt_REDIRECT" );
+    insmod( "ipt_REJECT" );
+    insmod( "ipt_ULOG" );
+    insmod( "ipt_TRIGGER" );
+    insmod( "ipt_iprange" );
+    insmod( "ipt_ipp2p" );
+    insmod( "ipt_layer7" );
+    insmod( "ipt_webstr" );
 
+    insmod( "adm5120_wdt" );
+    insmod( "adm5120sw" );
+    unsigned char mac[6];
+    char eabuf[32];
+    char mtdpath[32];
 
-insmod("nf_conntrack_ftp");
-insmod("nf_conntrack_irc");
-insmod("nf_conntrack_netbios_ns");
-insmod("nf_conntrack_pptp");
-insmod("nf_conntrack_proto_gre");
-insmod("nf_conntrack_proto_udplite");
-insmod("nf_conntrack_tftp");
-insmod("xt_CLASSIFY");
-insmod("xt_MARK");
-insmod("xt_TCPMSS");
-insmod("xt_length");
-insmod("xt_limit");
-insmod("xt_multiport");
-insmod("xt_pkttype");
-insmod("xt_state");
-insmod("xt_tcpmss");
-insmod("xt_u32");
+    memset( mac, 0, 6 );
+    FILE *fp;
+    int mtd = getMTD( "boot" );
 
-insmod("iptable_filter");
-insmod("iptable_mangle");
-insmod("nf_nat");
-insmod("iptable_nat");
-insmod("nf_nat_ftp");
-insmod("nf_nat_irc");
-insmod("nf_nat_pptp");
-insmod("nf_nat_proto_gre");
-insmod("nf_nat_tftp");
-insmod("ipt_LOG");
-insmod("ipt_MASQUERADE");
-insmod("ipt_REDIRECT");
-insmod("ipt_REJECT");
-insmod("ipt_ULOG");
-insmod("ipt_TRIGGER");
-insmod("ipt_iprange");
-insmod("ipt_ipp2p");
-insmod("ipt_layer7");
-insmod("ipt_webstr");
-
-
-
-
-
-insmod("adm5120_wdt");
-insmod("adm5120sw");
-unsigned char mac[6];
-char eabuf[32];
-char mtdpath[32];
-memset(mac,0,6);
-FILE *fp;
-int mtd = getMTD ("boot");
-sprintf (mtdpath, "/dev/mtdblock/%d", mtd);
-fp = fopen (mtdpath, "rb");
-if (fp!=NULL)
-{
-fprintf(stderr,"search mac\n");
-int s = searchfor (fp, "mgmc", 0x20000-5);
-if (s!=-1)
+    sprintf( mtdpath, "/dev/mtdblock/%d", mtd );
+    fp = fopen( mtdpath, "rb" );
+    if( fp != NULL )
     {
-//    fseek(fp,ftell(fp),SEEK_SET);
-    fprintf(stderr,"found mac at 0x%08X\n",ftell(fp));
-    fread (mac,6,1,fp);
-      struct ifreq ifr;
-      int s;
-      if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
+	int s = searchfor( fp, "mgmc", 0x20000 - 5 );
+
+	if( s != -1 )
 	{
-	  strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
-	  ioctl (s, SIOCGIFHWADDR, &ifr);
-	  fprintf(stderr,"old mac %s\n",ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,eabuf));
-	  memcpy((unsigned char *) ifr.ifr_hwaddr.sa_data,mac,6);
-	  fprintf(stderr,"new mac %s\n",ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,eabuf));
-	  ioctl (s, SIOCSIFHWADDR, &ifr);
-	  close (s);
+	    // fseek(fp,ftell(fp),SEEK_SET);
+	    // fprintf(stderr,"found mac at 0x%08X\n",ftell(fp));
+	    fread( mac, 6, 1, fp );
+	    struct ifreq ifr;
+	    int s;
+
+	    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+	    {
+		strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+		ioctl( s, SIOCGIFHWADDR, &ifr );
+		// fprintf(stderr,"old mac %s\n",ether_etoa ((unsigned char
+		// *) ifr.ifr_hwaddr.sa_data,eabuf));
+		memcpy( ( unsigned char * )ifr.ifr_hwaddr.sa_data, mac, 6 );
+		fprintf( stderr, "new mac %s\n",
+			 ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.
+				     sa_data, eabuf ) );
+		ioctl( s, SIOCSIFHWADDR, &ifr );
+		close( s );
+	    }
+
+	    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+	    {
+		strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+		ioctl( s, SIOCGIFHWADDR, &ifr );
+		nvram_set( "et0macaddr_safe",
+			   ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.
+				       sa_data, eabuf ) );
+		close( s );
+	    }
+
 	}
-
-  if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
-    {
-      strncpy (ifr.ifr_name, "eth0", IFNAMSIZ);
-      ioctl (s, SIOCGIFHWADDR, &ifr);
-      nvram_set ("et0macaddr_safe",ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,eabuf));
-      close (s);
+	else
+	{
+	    fprintf( stderr, "no mac found\n" );
+	}
+	fclose( fp );
     }
+    /*
+     * network drivers 
+     */
+    insmod( "ath_hal" );
+    insmod( "ath_pci" );
+    // eval ("ifconfig", "wifi0", "up");
+    // insmod("ipv6");
 
+    /*
+     * Set a sane date 
+     */
+    eval( "watchdog" );
 
+    stime( &tm );
+    nvram_set( "wl0_ifname", "ath0" );
 
-    }else{
-    fprintf(stderr,"no mac found\n");
-    }
-fclose(fp);
-}
-/* network drivers */
-  insmod("ath_hal");
-  insmod("ath_pci");
-//  eval ("ifconfig", "wifi0", "up");
-//  insmod("ipv6");
-
-  /* Set a sane date */
-  eval ("watchdog");
-
-  stime (&tm);
-  nvram_set ("wl0_ifname", "ath0");
-
-  return 0;
+    return 0;
 }
 
-int
-check_cfe_nv (void)
+int check_cfe_nv( void )
 {
-  nvram_set ("portprio_support", "0");
-  return 0;
+    nvram_set( "portprio_support", "0" );
+    return 0;
 }
 
-int
-check_pmon_nv (void)
+int check_pmon_nv( void )
 {
-  return 0;
+    return 0;
 }
 
-void
-start_overclocking (void)
+void start_overclocking( void )
 {
 }
-void
-enable_dtag_vlan (int enable)
+void enable_dtag_vlan( int enable )
 {
 
 }

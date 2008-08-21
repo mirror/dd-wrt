@@ -20,7 +20,6 @@
  * $Id:
  */
 
-
 #ifdef HAVE_MSSID
 #include <ctype.h>
 #include <string.h>
@@ -37,99 +36,98 @@
 #include <linux/sockios.h>
 #include <wlutils.h>
 
-
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-
-void
-start_config_macs (char *wlifname)	//reconfigure macs which should fix the corerev 5 and 7 problem
+void start_config_macs( char *wlifname )	// reconfigure macs which
+						// should fix the corerev 5
+						// and 7 problem
 {
-  int unit = get_wl_instance (wlifname);
-  char *vifs = nvram_nget ("wl%d_vifs", unit);
-  char *mbss = nvram_nget ("wl%d_mbss", unit);
-  char *next;
-  char var[80];
-  if (!strcmp (mbss, "0"))
+    int unit = get_wl_instance( wlifname );
+    char *vifs = nvram_nget( "wl%d_vifs", unit );
+    char *mbss = nvram_nget( "wl%d_mbss", unit );
+    char *next;
+    char var[80];
+
+    if( !strcmp( mbss, "0" ) )
     {
-      if (vifs != NULL)
-	foreach (var, vifs, next)
+	if( vifs != NULL )
+	    foreach( var, vifs, next )
 	{
-	  eval ("wl", "-i", var, "down");
-	  eval ("wl", "-i", var, "cur_etheraddr",
-		nvram_nget ("%s_hwaddr", var));
-	  eval ("wl", "-i", var, "bssid", nvram_nget ("%s_hwaddr", var));
-	  eval ("wl", "-i", var, "up");
+	    eval( "wl", "-i", var, "down" );
+	    eval( "wl", "-i", var, "cur_etheraddr",
+		  nvram_nget( "%s_hwaddr", var ) );
+	    eval( "wl", "-i", var, "bssid", nvram_nget( "%s_hwaddr", var ) );
+	    eval( "wl", "-i", var, "up" );
 	}
     }
 }
-void
-do_mssid (char *wlifname)
+void do_mssid( char *wlifname )
 {
-  //bridge the virtual interfaces too
-  struct ifreq ifr;
-  int s;
-  char *next;
-  char var[80];
-  char *vifs = nvram_nget ("wl%d_vifs", get_wl_instance (wlifname));
-  if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-    return;
-  if (vifs != NULL)
-    foreach (var, vifs, next)
+    // bridge the virtual interfaces too
+    struct ifreq ifr;
+    int s;
+    char *next;
+    char var[80];
+    char *vifs = nvram_nget( "wl%d_vifs", get_wl_instance( wlifname ) );
+
+    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) < 0 )
+	return;
+    if( vifs != NULL )
+	foreach( var, vifs, next )
     {
-      ether_atoe (nvram_nget ("%s_hwaddr", var), ifr.ifr_hwaddr.sa_data);
-      strncpy (ifr.ifr_name, var, IFNAMSIZ);
-      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-      if (!nvram_nmatch ("0", "%s_bridged", var))
+	ether_atoe( nvram_nget( "%s_hwaddr", var ), ifr.ifr_hwaddr.sa_data );
+	strncpy( ifr.ifr_name, var, IFNAMSIZ );
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	if( !nvram_nmatch( "0", "%s_bridged", var ) )
 	{
-	  //  ifconfig (var, IFUP, NULL, NULL);
-	  eval ("ifconfig", var, "down");
-	  ioctl (s, SIOCSIFHWADDR, &ifr);
-	  eval ("ifconfig", var, "up");
-	  br_add_interface (getBridge (var), var);
+	    // ifconfig (var, IFUP, NULL, NULL);
+	    eval( "ifconfig", var, "down" );
+	    ioctl( s, SIOCSIFHWADDR, &ifr );
+	    eval( "ifconfig", var, "up" );
+	    br_add_interface( getBridge( var ), var );
 	}
-      else
+	else
 	{
-	  eval ("ifconfig", var, "down");
-	  ioctl (s, SIOCSIFHWADDR, &ifr);
-	  eval ("ifconfig", var, "up");
-	  ifconfig (var, IFUP, nvram_nget ("%s_ipaddr", var),
-		    nvram_nget ("%s_netmask", var));
+	    eval( "ifconfig", var, "down" );
+	    ioctl( s, SIOCSIFHWADDR, &ifr );
+	    eval( "ifconfig", var, "up" );
+	    ifconfig( var, IFUP, nvram_nget( "%s_ipaddr", var ),
+		      nvram_nget( "%s_netmask", var ) );
 	}
     }
-  close (s);
+    close( s );
 }
 
 #ifndef HAVE_MADWIFI
 
-void
-set_vifsmac (char *base)	// corrects hwaddr and bssid assignment
+void set_vifsmac( char *base )	// corrects hwaddr and bssid assignment
 {
-  struct ifreq ifr;
-  int s;
-  char *next;
-  char var[80];
-  char mac[80];
-  char *vifs = nvram_nget ("%s_vifs", base);
-  if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-    return;
-  if (vifs != NULL)
-    foreach (var, vifs, next)
+    struct ifreq ifr;
+    int s;
+    char *next;
+    char var[80];
+    char mac[80];
+    char *vifs = nvram_nget( "%s_vifs", base );
+
+    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) < 0 )
+	return;
+    if( vifs != NULL )
+	foreach( var, vifs, next )
     {
-      wl_getbssid (var, mac);
-      eval ("ifconfig", var, "down");
-      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-      strncpy (ifr.ifr_name, var, IFNAMSIZ);
-      ioctl (s, SIOCSIFHWADDR, &ifr);
-      eval ("ifconfig", var, "up");
+	wl_getbssid( var, mac );
+	eval( "ifconfig", var, "down" );
+	ether_atoe( mac, ifr.ifr_hwaddr.sa_data );
+	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	strncpy( ifr.ifr_name, var, IFNAMSIZ );
+	ioctl( s, SIOCSIFHWADDR, &ifr );
+	eval( "ifconfig", var, "up" );
     }
-  close (s);
+    close( s );
 }
 
-void
-start_vifsmac (void)
+void start_vifsmac( void )
 {
-  set_vifsmac ("wl0");
+    set_vifsmac( "wl0" );
 }
 #endif
 
