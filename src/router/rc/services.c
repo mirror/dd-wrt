@@ -94,7 +94,7 @@ int start_services_main( int argc, char **argv )
 #ifdef HAVE_FTP
     eval( "/etc/config/proftpd.startup" );
 #endif
-#ifndef HAVE_WRK54G
+#ifndef HAVE_MICRO
     handle = start_service_nofree( "syslog", handle );
 #endif
 #ifdef HAVE_TFTP
@@ -201,7 +201,7 @@ int stop_services_main( int argc, char **argv )
 #ifdef HAVE_TFTP
     handle = stop_service_nofree( "tftpd", handle );
 #endif
-#ifndef HAVE_WRK54G
+#ifndef HAVE_MICRO
     handle = stop_service_nofree( "syslog", handle );
 #endif
 #ifdef HAVE_OLSRD
@@ -400,7 +400,7 @@ static void handle_services( void )
     handle = startstop_nofree( "pppoerelay", handle );
 #endif
     handle = startstop_nofree( "udhcpd", handle );
-#ifndef HAVE_WRK54G
+#ifndef HAVE_MICRO
     handle = startstop_nofree( "syslog", handle );
 #endif
 #ifdef HAVE_RSTATS
@@ -453,7 +453,7 @@ static void handle_services( void )
 #endif
     handle = startstop_nofree( "firewall", handle );
     handle = startstop_nofree( "wshaper", handle );
-#ifndef HAVE_WRK54G
+#ifndef HAVE_MICRO
     handle = startstop_nofree( "syslog", handle );
 #endif
 #ifdef HAVE_OPENVPN
@@ -576,7 +576,7 @@ static void handle_filters( void )
 
     handle = stop_service_nofree( "cron", handle );
     handle = startstop_nofree( "firewall", handle );
-#ifndef HAVE_WRK54G
+#ifndef HAVE_MICRO
     handle = startstop_nofree( "syslog", handle );
 #endif
     handle = stop_service_nofree( "wland", handle );
