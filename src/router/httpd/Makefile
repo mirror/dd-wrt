@@ -103,6 +103,9 @@ endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
 endif
+ifeq ($(CONFIG_SYSLOG),y)
+CFLAGS += -DHAVE_SYSLOG
+endif
 ifeq ($(CONFIG_MULTICAST),y)
 CFLAGS += -DHAVE_MULTICAST
 endif
