@@ -3825,13 +3825,12 @@ int start_hotplug_net( void )
     if( !strcmp( action, "add" ) )
     {
 	fprintf( stderr, "adding WDS %s\n", interface );
-	struct ifreq ifr;
+/*	struct ifreq ifr;
 	int s;
 
 	if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
 	{
-	  fprintf(stderr,"adding WDS %s\n",interface);
-/*      struct ifreq ifr;
+      struct ifreq ifr;
       int s;
       if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
 	{
