@@ -3830,30 +3830,32 @@ int start_hotplug_net( void )
 
 	if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
 	{
-	    char eabuf[32];
-
-	    strncpy( ifr.ifr_name, ifname, IFNAMSIZ );
-	    ioctl( s, SIOCGIFHWADDR, &ifr );
-	    char macaddr[32];
-
-	    ifr.ifr_hwaddr.sa_data[0] |= 0x02;	// mask first byte to 0x02
-	    strcpy( macaddr,
-		    ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.sa_data,
-				eabuf ) );
-	    fprintf( stderr, "interface number is %s\n", nr );
-	    int count = atoi( nr );
-	    int i;
-
-	    if( count >= 0 )
-		for( i = 0; i < count + 1; i++ )
-		    MAC_ADD( macaddr );
-	    fprintf( stderr, "set %s mac addr to %s\n", interface, macaddr );
-	    ether_atoe( macaddr, ( unsigned char * )ifr.ifr_hwaddr.sa_data );
-	    strncpy( ifr.ifr_name, interface, IFNAMSIZ );
-	    eval( "ifconfig", interface, "down" );
-	    ioctl( s, SIOCSIFHWADDR, &ifr );
-	    close( s );
-	}
+	  fprintf(stderr,"adding WDS %s\n",interface);
+/*      struct ifreq ifr;
+      int s;
+      if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
+	{
+	  char eabuf[32];
+	  strncpy (ifr.ifr_name, ifname, IFNAMSIZ);
+	  ioctl (s, SIOCGIFHWADDR, &ifr);
+	  char macaddr[32];
+	  ifr.ifr_hwaddr.sa_data[0]|=0x02; // mask first byte to 0x02
+	  strcpy (macaddr,
+		  ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,
+			      eabuf));
+	  fprintf(stderr,"interface number is %s\n",nr);
+	  int count = atoi(nr);
+	  int i;
+	  if (count>=0)
+	    for (i=0;i<count+1;i++)
+		MAC_ADD (macaddr);
+	 fprintf(stderr,"set %s mac addr to %s\n",interface,macaddr);
+	  ether_atoe (macaddr, (unsigned char *) ifr.ifr_hwaddr.sa_data);
+	  strncpy (ifr.ifr_name, interface, IFNAMSIZ);
+//	  eval ("ifconfig", interface, "down");
+	  ioctl (s, SIOCSIFHWADDR, &ifr);
+	  close (s);
+	}*/
 
 	eval( "ifconfig", interface, "up" );
 	if( nvram_match( bridged, "1" ) )
