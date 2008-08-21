@@ -276,7 +276,7 @@ int main( int argc, char **argv )
 	int brand = getRouterBrand(  );
 
 	if( brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54 )	// these 
-																					// 
+	    // 
 	    // 
 	    // 
 	    // 

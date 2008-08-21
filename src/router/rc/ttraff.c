@@ -153,7 +153,7 @@ int main( int argc, char **argv )
 	    // reseted
 	{
 	    megi = ( in_dev_last >> 20 ) + ( in_dev >> 20 );	// to avarage 
-								// 
+	    // 
 	    // 
 	    // 
 	    // 
@@ -178,7 +178,7 @@ int main( int argc, char **argv )
 	    // reseted
 	{
 	    mego = ( out_dev_last >> 20 ) + ( out_dev >> 20 );	// to avarage 
-								// 
+	    // 
 	    // 
 	    // 
 	    // 
