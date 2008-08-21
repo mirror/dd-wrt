@@ -371,7 +371,7 @@ void period_check( int sig )
 	gpio = 1 << ( brand & 0x000f );	// calculate gpio value.
 
     if( ( brand & 0x0010 ) == 0 )	// check reset button polarity: 0
-					// normal, 1 inversed
+	// normal, 1 inversed
 	state = ( val & gpio );
     else
 	state = !( val & gpio );
@@ -449,7 +449,9 @@ void period_check( int sig )
     }
 
     push = 1 << ( sesgpio & 0x0f );	// calculate push value from ses gpio 
-					// pin no.
+					// 
+    // 
+    // pin no.
 
 #endif
     /*
@@ -489,40 +491,40 @@ void period_check( int sig )
 #ifdef HAVE_X86
 		    eval( "mount", "/usr/local", "-o", "remount,rw" );
 		    eval( "rm", "-f", "/tmp/nvram/*" );	// delete nvram
-							// database
+		    // database
 		    eval( "rm", "-f", "/tmp/nvram/.lock" );	// delete
-								// nvram
-								// database
+		    // nvram
+		    // database
 		    eval( "rm", "-f", "/usr/local/nvram/*" );	// delete
-								// nvram
-								// database
+		    // nvram
+		    // database
 		    eval( "mount", "/usr/local", "-o", "remount,ro" );
 #elif HAVE_RB500
 		    eval( "rm", "-f", "/tmp/nvram/*" );	// delete nvram
-							// database
+		    // database
 		    eval( "rm", "-f", "/tmp/nvram/.lock" );	// delete
-								// nvram
-								// database
+		    // nvram
+		    // database
 		    eval( "rm", "-f", "/etc/nvram/*" );	// delete nvram
-							// database
+		    // database
 #elif HAVE_MAGICBOX
 		    eval( "rm", "-f", "/tmp/nvram/*" );	// delete nvram
-							// database
+		    // database
 		    eval( "rm", "-f", "/tmp/nvram/.lock" );	// delete
-								// nvram
-								// database
+		    // nvram
+		    // database
 		    eval( "erase", "nvram" );
 #else
 		    nvram_set( "sv_restore_defaults", "1" );
 		    nvram_commit(  );
 		    eval( "killall", "ledtool" );	// stop blinking on
-							// nvram_commit
+		    // nvram_commit
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX)
 		    led_control( LED_DIAG, LED_ON );	// turn diag led on,
-							// so we know reset
-							// was pressed and
-							// we're restoring
-							// defaults.
+		    // so we know reset
+		    // was pressed and
+		    // we're restoring
+		    // defaults.
 #endif
 		    eval( "erase", "nvram" );
 #endif
@@ -549,7 +551,7 @@ void period_check( int sig )
 	if( ses_mode == 1 )
 	{
 	    led_control( LED_SES, LED_FLASH );	// when pressed, blink white
-						// SES (AOSS) led
+	    // SES (AOSS) led
 #ifdef HAVE_RADIOOFF
 	    if( nvram_match( "radiooff_button", "1" ) )
 	    {
@@ -577,7 +579,7 @@ void period_check( int sig )
 	else if( ses_mode == 0 )
 	{
 	    led_control( LED_SES, LED_FLASH );	// when pressed, blink SES
-						// (AOSS) led
+	    // (AOSS) led
 #ifdef HAVE_RADIOOFF
 	    if( nvram_match( "radiooff_button", "1" ) )
 	    {

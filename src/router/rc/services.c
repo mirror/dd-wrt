@@ -334,13 +334,13 @@ static void handle_index( void )
     handle = start_service_nofree( "radio_timer", handle );
     handle = startstop_nofree( "firewall", handle );
     handle = startstop_nofree( "httpd", handle );	// httpd will not
-							// accept connection
-							// anymore on wan/lan 
-							// ip changes changes
+    // accept connection
+    // anymore on wan/lan 
+    // ip changes changes
     handle = startstop_nofree( "cron", handle );	// httpd will not
-							// accept connection
-							// anymore on wan/lan 
-							// ip changes changes
+    // accept connection
+    // anymore on wan/lan 
+    // ip changes changes
     handle = start_service_nofree( "anchorfreednat", handle );
     if( handle )
 	dlclose( handle );
@@ -792,7 +792,7 @@ static void handle_wireless( void )
 #endif
     handle = start_service_nofree( "radio_timer", handle );
     startstop( "httpd" );	// httpd will not accept connection anymore
-				// on wan/lan ip changes changes
+    // on wan/lan ip changes changes
     if( handle )
 	dlclose( handle );
 
@@ -849,7 +849,7 @@ static void handle_wireless_2( void )
     handle = start_service_nofree( "bonding", handle );
 #endif
     if( getSTA(  ) || getWET(  ) )	// since we need to cover apstawet,
-					// we must use getWET as well
+	// we must use getWET as well
     {
 	handle = start_service_nofree( "wan", handle );
 	handle = start_service_nofree( "ttraff", handle );
@@ -870,7 +870,7 @@ static void handle_wireless_2( void )
     handle = start_service_nofree( "radio_timer", handle );
     if( getSTA(  ) || getWET(  ) )
 	startstop( "httpd" );	// httpd will not accept connection anymore
-				// on wan/lan ip changes changes
+    // on wan/lan ip changes changes
 #ifdef HAVE_MADWIFI
     handle = start_service_nofree( "hostapdwan", handle );
 #endif

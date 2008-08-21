@@ -88,7 +88,7 @@ void checkupdate( void )
 	    fscanf( in, "%d", &res2 );
 	    pclose( in );
 	    if( res2 == 1 || res2 == 7 )	// 7 is the result for debug
-						// info enabled reboot builds
+		// info enabled reboot builds
 	    {
 		fprintf( stderr, "updating avila type 2 redboot\n" );
 		eval( "tar", "-xaf", "/usr/lib/firmware/redboot.tg7", "-C",
@@ -342,10 +342,10 @@ int start_sysinit( void )
     eval( "ifconfig", "ixp0", "0.0.0.0", "up" );
     eval( "ifconfig", "ixp1", "0.0.0.0", "up" );
     if( getRouterBrand(  ) == ROUTER_BOARD_GATEWORX_GW2345 )	// lets load
-								// the spi
-								// drivers
-								// for this
-								// switch
+	// the spi
+	// drivers
+	// for this
+	// switch
     {
 	insmod( "spi-algo-bit" );
 	insmod( "spi-ixp4xx" );

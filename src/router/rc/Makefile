@@ -40,6 +40,8 @@ REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 #endif
 
+CFLAGS += -DARCHITECTURE="\"$(ARCHITECTURE)\""
+
 ifneq ($(CONFIG_RB500),y)
 ifneq ($(CONFIG_X86),y)
 OBJS += mtd.o

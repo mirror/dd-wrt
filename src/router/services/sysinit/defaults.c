@@ -419,6 +419,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"dhcp_start", "100", 0},	/* First assignable DHCP address */
     // { "dhcp_end", "150", 0 }, /* Last assignable DHCP address */ /* Remove 
     // 
+    // 
     // */
     {"dhcp_num", "50", 0},	/* Number of DHCP Users *//* Add */
 
@@ -516,7 +517,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_ifname", "", 0},	/* Interface name */
     {"wl_hwaddr", "", 0},	/* MAC address */
     {"wl_phytype", "g", 0},	/* Current wireless band ("a" (5 GHz), "b" *
-     * (2.4 GHz), or "g" (2.4 GHz)) *//*
+     * * (2.4 GHz), or "g" (2.4 GHz)) *//*
      * Modify 
      */
     {"wl_corerev", "", 0},	/* Current core revision */
@@ -899,7 +900,7 @@ struct nvram_tuple srouter_defaults[] = {
      */
     {"security_mode", "disabled", 0},	/* WPA mode
 					 * (disabled|radius|wpa|psk|wep) for
-     * * WEB *//*
+     * * * WEB *//*
      * Add 
      */
     {"security_mode_last", "", 0},	/* Save last WPA mode *//* Add */
@@ -2069,6 +2070,7 @@ struct nvram_tuple srouter_defaults[] = {
     // fs070712
     {"sip_domain", "192.168.1.1", 0},	/* MILKFISH SETTING */// set "192.168.1.1" as default - not 
 					// 
+    // 
     // setting at all disables dbtextctl
     // script - fs070712
 #endif

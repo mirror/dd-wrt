@@ -75,7 +75,7 @@ static bool  usb_ufd_connected( char *str )
      *  Mount the path and look for the WCN configuration file. If it
      * exists launch wcnparse to process the configuration. 
      */ 
-static int  usb_process_path( char *path ) 
+static int usb_process_path( char *path ) 
 {
     int ret = ENOENT;
     struct stat tmp_stat;
@@ -95,7 +95,7 @@ static bool  usb_ufd_connected( char *str )
     /*
      * Handle hotplugging of UFD 
      */ 
-static int  usb_add_ufd(  ) 
+static int usb_add_ufd(  ) 
 {
     DIR * dir;
     struct dirent *entry;
