@@ -50,7 +50,7 @@ int main( int argc, char **argv )
 	{
 
 	    radiotime0 = strtol( nvram_get( "radio0_on_time" ), NULL, 2 );	// convert 
-										// 
+	    // 
 	    // 
 	    // 
 	    // 
@@ -67,7 +67,7 @@ int main( int argc, char **argv )
 	    // to take care of
 	    // midnight
 	    radiotime0 = ( radiotime0 >> ( 24 - currtime->tm_hour - 1 ) ) & 3;	// get 
-										// 
+	    // 
 	    // 
 	    // 
 	    // 
@@ -81,7 +81,7 @@ int main( int argc, char **argv )
 	    // bits)
 #ifdef HAVE_MSSID
 	    radiotime1 = strtol( nvram_get( "radio1_on_time" ), NULL, 2 );	// convert 
-										// 
+	    // 
 	    // 
 	    // 
 	    // 
@@ -98,7 +98,7 @@ int main( int argc, char **argv )
 	    // to take care of
 	    // midnight
 	    radiotime1 = ( radiotime1 >> ( 24 - currtime->tm_hour - 1 ) ) & 3;	// get 
-										// 
+	    // 
 	    // 
 	    // 
 	    // 
@@ -146,7 +146,7 @@ int main( int argc, char **argv )
 		radiotime1 = 0;
 
 	    if( ( ( needchange ) && currtime->tm_min == 0 ) || ( firsttime ) )	// change 
-										// 
+		// 
 		// 
 		// 
 		// 
@@ -240,7 +240,7 @@ int main( int argc, char **argv )
 	}
 
 	sleep( 58 );		// loop every 58 s to be sure to catch min == 
-				// 
+	// 
 	// 
 	// 
 	// 
