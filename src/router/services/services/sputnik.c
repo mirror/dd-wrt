@@ -27,39 +27,43 @@
 #include <syslog.h>
 #include <signal.h>
 
-/* Sputnik APD Service Handling */
-int
-start_sputnik (void)
+/*
+ * Sputnik APD Service Handling 
+ */
+int start_sputnik( void )
 {
-  int ret;
-  // Only start if enabled
-  if (!nvram_invmatch ("apd_enable", "0"))
-    return 0;
-  insmod("ipt_mark");
-  insmod("ipt_mac");
-  insmod("xt_mark");
-  insmod("xt_mac");
+    int ret;
 
-  ret = eval ("sputnik");
-  syslog (LOG_INFO, "sputnik : sputnik daemon successfully started\n");
-  cprintf ("done\n");
-  return ret;
+    // Only start if enabled
+    if( !nvram_invmatch( "apd_enable", "0" ) )
+	return 0;
+    insmod( "ipt_mark" );
+    insmod( "ipt_mac" );
+    insmod( "xt_mark" );
+    insmod( "xt_mac" );
+
+    ret = eval( "sputnik" );
+    syslog( LOG_INFO, "sputnik : sputnik daemon successfully started\n" );
+    cprintf( "done\n" );
+    return ret;
 }
 
-int
-stop_sputnik (void)
+int stop_sputnik( void )
 {
-  int ret = 0;
-  if (pidof ("sputnik") > 0)
+    int ret = 0;
+
+    if( pidof( "sputnik" ) > 0 )
     {
-      syslog (LOG_INFO, "sputnik : sputnik daemon successfully stopped\n");
-      ret = killall ("sputnik", SIGTERM);
+	syslog( LOG_INFO, "sputnik : sputnik daemon successfully stopped\n" );
+	ret = killall( "sputnik", SIGTERM );
 
-      cprintf ("done\n");
+	cprintf( "done\n" );
     }
-  return ret;
+    return ret;
 }
 
-/* END Sputnik Service Handling */
+/*
+ * END Sputnik Service Handling 
+ */
 
 #endif

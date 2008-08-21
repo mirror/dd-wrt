@@ -25,55 +25,56 @@
 #include <utils.h>
 #include <sys/mount.h>
 
-void
-stop_jffs2 (void)
+void stop_jffs2( void )
 {
-  eval ("umount", "/jffs");
-  rmmod("jffs2");
+    eval( "umount", "/jffs" );
+    rmmod( "jffs2" );
 }
 
-void
-start_jffs2 (void)
+void start_jffs2( void )
 {
-  char *rwpart = "ddwrt";
-  int itworked = 0;
-  if (nvram_match ("sys_enable_jffs2", "1"))
+    char *rwpart = "ddwrt";
+    int itworked = 0;
+
+    if( nvram_match( "sys_enable_jffs2", "1" ) )
     {
-      if (nvram_match ("sys_clean_jffs2", "1"))
+	if( nvram_match( "sys_clean_jffs2", "1" ) )
 	{
-	  nvram_set ("sys_clean_jffs2", "0");
-	  nvram_commit ();
-	  itworked = eval ("mtd", "erase", rwpart);
-	  insmod("crc32");
-	  insmod("jffs2");
-	  char dev[64];
-	  sprintf (dev, "/dev/mtdblock/%d", getMTD ("ddwrt"));
-	  itworked += mount (dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
-	  if (itworked)
+	    nvram_set( "sys_clean_jffs2", "0" );
+	    nvram_commit(  );
+	    itworked = eval( "mtd", "erase", rwpart );
+	    insmod( "crc32" );
+	    insmod( "jffs2" );
+	    char dev[64];
+
+	    sprintf( dev, "/dev/mtdblock/%d", getMTD( "ddwrt" ) );
+	    itworked += mount( dev, "/jffs", "jffs2", MS_MGC_VAL, NULL );
+	    if( itworked )
 	    {
-	      nvram_set ("jffs_mounted", "0");
+		nvram_set( "jffs_mounted", "0" );
 	    }
-	  else
+	    else
 	    {
-	      nvram_set ("jffs_mounted", "1");
+		nvram_set( "jffs_mounted", "1" );
 	    }
 
 	}
-      else
+	else
 	{
-	  itworked = eval ("mtd", "unlock", rwpart);
-	  insmod("crc32");
-	  insmod("jffs2");
-	  char dev[64];
-	  sprintf (dev, "/dev/mtdblock/%d", getMTD ("ddwrt"));
-	  itworked += mount (dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
-	  if (itworked)
+	    itworked = eval( "mtd", "unlock", rwpart );
+	    insmod( "crc32" );
+	    insmod( "jffs2" );
+	    char dev[64];
+
+	    sprintf( dev, "/dev/mtdblock/%d", getMTD( "ddwrt" ) );
+	    itworked += mount( dev, "/jffs", "jffs2", MS_MGC_VAL, NULL );
+	    if( itworked )
 	    {
-	      nvram_set ("jffs_mounted", "0");
+		nvram_set( "jffs_mounted", "0" );
 	    }
-	  else
+	    else
 	    {
-	      nvram_set ("jffs_mounted", "1");
+		nvram_set( "jffs_mounted", "1" );
 	    }
 
 	}

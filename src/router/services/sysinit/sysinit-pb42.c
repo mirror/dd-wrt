@@ -44,100 +44,105 @@
 #include <shutils.h>
 #include <utils.h>
 
-#define SIOCGMIIREG	0x8948	/* Read MII PHY register.       */
-#define SIOCSMIIREG	0x8949	/* Write MII PHY register.      */
+#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
+#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
 
-
-int
-start_sysinit (void)
+int start_sysinit( void )
 {
-  char buf[PATH_MAX];
-  struct utsname name;
-  struct stat tmp_stat;
-  time_t tm = 0;
-  unlink ("/etc/nvram/.lock");
-  cprintf ("sysinit() proc\n");
-  /* /proc */
-  mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
-  mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-  cprintf ("sysinit() tmp\n");
+    char buf[PATH_MAX];
+    struct utsname name;
+    struct stat tmp_stat;
+    time_t tm = 0;
 
-  /* /tmp */
-  mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-  // fix for linux kernel 2.6
-  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
-  eval ("mkdir", "/tmp/www");
-  eval ("mknod", "/dev/nvram", "c", "229", "0");
-  eval ("mknod", "/dev/ppp", "c", "108", "0");
+    unlink( "/etc/nvram/.lock" );
+    cprintf( "sysinit() proc\n" );
+    /*
+     * /proc 
+     */
+    mount( "proc", "/proc", "proc", MS_MGC_VAL, NULL );
+    mount( "sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL );
+    cprintf( "sysinit() tmp\n" );
 
-  unlink ("/tmp/nvram/.lock");
-  eval ("mkdir", "/tmp/nvram");
+    /*
+     * /tmp 
+     */
+    mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
+    // fix for linux kernel 2.6
+    mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
+    eval( "mkdir", "/tmp/www" );
+    eval( "mknod", "/dev/nvram", "c", "229", "0" );
+    eval( "mknod", "/dev/ppp", "c", "108", "0" );
 
+    unlink( "/tmp/nvram/.lock" );
+    eval( "mkdir", "/tmp/nvram" );
 
-  /* /var */
-  mkdir ("/tmp/var", 0777);
-  mkdir ("/var/lock", 0777);
-  mkdir ("/var/log", 0777);
-  mkdir ("/var/run", 0777);
-  mkdir ("/var/tmp", 0777);
-  cprintf ("sysinit() setup console\n");
-  eval ("watchdog");
-  /* Setup console */
+    /*
+     * /var 
+     */
+    mkdir( "/tmp/var", 0777 );
+    mkdir( "/var/lock", 0777 );
+    mkdir( "/var/log", 0777 );
+    mkdir( "/var/run", 0777 );
+    mkdir( "/var/tmp", 0777 );
+    cprintf( "sysinit() setup console\n" );
+    eval( "watchdog" );
+    /*
+     * Setup console 
+     */
 
-  cprintf ("sysinit() klogctl\n");
-  klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));
-  cprintf ("sysinit() get router\n");
+    cprintf( "sysinit() klogctl\n" );
+    klogctl( 8, NULL, atoi( nvram_safe_get( "console_loglevel" ) ) );
+    cprintf( "sysinit() get router\n" );
 
-  int brand = getRouterBrand ();
+    int brand = getRouterBrand(  );
 
+    /*
+     * Modules 
+     */
+    uname( &name );
 
-  /* Modules */
-  uname (&name);
+    /*
+     * network drivers 
+     */
+    insmod( "ag7100_mod" );
 
-/* network drivers */
-  insmod("ag7100_mod");
+    // insmod("ath_pci", "autocreate=none");
+    insmod( "ath_mimo_pci" );
 
-//insmod("ath_pci", "autocreate=none");
-  insmod("ath_mimo_pci");
+    // eval ("ifconfig", "wifi0", "up");
 
-//  eval ("ifconfig", "wifi0", "up");
+    insmod( "ipv6" );
 
+    /*
+     * Set a sane date 
+     */
+    stime( &tm );
+    nvram_set( "wl0_ifname", "ath0" );
 
-
-  insmod("ipv6");
-
-  /* Set a sane date */
-  stime (&tm);
-  nvram_set ("wl0_ifname", "ath0");
-
-  return 0;
-  cprintf ("done\n");
+    return 0;
+    cprintf( "done\n" );
 }
 
-int
-check_cfe_nv (void)
+int check_cfe_nv( void )
 {
-  nvram_set ("portprio_support", "0");
-  return 0;
+    nvram_set( "portprio_support", "0" );
+    return 0;
 }
 
-int
-check_pmon_nv (void)
+int check_pmon_nv( void )
 {
-  return 0;
+    return 0;
 }
 
-void
-start_overclocking (void)
+void start_overclocking( void )
 {
 }
-void
-enable_dtag_vlan (int enable)
+void enable_dtag_vlan( int enable )
 {
 
 }

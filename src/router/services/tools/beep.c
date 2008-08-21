@@ -28,66 +28,66 @@
 #include <utils.h>
 #include <wlutils.h>
 
-
-
-void
-beep (int gpio, int time,int polarity)
+void beep( int gpio, int time, int polarity )
 {
-  set_gpio (gpio, 1-polarity);
-  usleep (time*1000);
-  set_gpio (gpio, 0+polarity);
-  usleep (time*1000);
+    set_gpio( gpio, 1 - polarity );
+    usleep( time * 1000 );
+    set_gpio( gpio, 0 + polarity );
+    usleep( time * 1000 );
 }
 
-int
-beep_main (int argc, char **argv)
+int beep_main( int argc, char **argv )
 {
 
-  unsigned int gpio;
-  unsigned int polarity;
-  unsigned char assoclist[1024];
+    unsigned int gpio;
+    unsigned int polarity;
+    unsigned char assoclist[1024];
 
-  if (argc != 4)
+    if( argc != 4 )
     {
-      fprintf (stderr, "%s <interface> <gpio> <polarity>\n", argv[0]);
-      exit (1);
+	fprintf( stderr, "%s <interface> <gpio> <polarity>\n", argv[0] );
+	exit( 1 );
     }
-  gpio = atoi (argv[2]);
-  polarity = atoi(argv[3]);
-  while (1)
+    gpio = atoi( argv[2] );
+    polarity = atoi( argv[3] );
+    while( 1 )
     {
-      int cnt = getassoclist (argv[1], assoclist);
-      if (cnt == -1)
+	int cnt = getassoclist( argv[1], assoclist );
+
+	if( cnt == -1 )
 	{
-	  cnt = 0;
+	    cnt = 0;
 	}
-      if (!cnt)
+	if( !cnt )
 	{
-	  fprintf (stderr, "not associated, wait 5 seconds\n");
-	  sleep (5);
-	  continue;
+	    fprintf( stderr, "not associated, wait 5 seconds\n" );
+	    sleep( 5 );
+	    continue;
 	}
-      unsigned char *pos = assoclist;
-      pos += 4;
-      int rssi = getRssi (argv[1], pos);
-      int noise = getNoise (argv[1], pos);
-      int snr = rssi - noise;
-      if (snr < 0)
+	unsigned char *pos = assoclist;
+
+	pos += 4;
+	int rssi = getRssi( argv[1], pos );
+	int noise = getNoise( argv[1], pos );
+	int snr = rssi - noise;
+
+	if( snr < 0 )
 	{
-	  fprintf (stderr, "snr is %d, invalid\n", snr);
-	  continue;
+	    fprintf( stderr, "snr is %d, invalid\n", snr );
+	    continue;
 	}
-      if (snr > 30)
+	if( snr > 30 )
 	{
-	  fprintf (stderr, "snr perfect, full beep (%d)\n", snr);
-	  set_gpio (gpio, 1-polarity);	//snr perfect
-	  continue;
+	    fprintf( stderr, "snr perfect, full beep (%d)\n", snr );
+	    set_gpio( gpio, 1 - polarity );	// snr perfect
+	    continue;
 	}
-      int beeptime = 66 * (31 - snr);
-     fprintf (stderr, "snr is %d, beep interval %d\n", snr, beeptime);
-      
-      beep (gpio, beeptime,polarity);
+	int beeptime = 66 * ( 31 - snr );
+
+	fprintf( stderr, "snr is %d, beep interval %d\n", snr, beeptime );
+
+	beep( gpio, beeptime, polarity );
     }
 
-  return 0;
+    return 0;
 }
