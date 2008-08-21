@@ -56,9 +56,8 @@ endif
 ifndef CONFIG_MSSID
 	install txackset.sh $(INSTALLDIR)/etc
 else
-	install patchtable.bin $(INSTALLDIR)/etc
+#	install patchtable.bin $(INSTALLDIR)/etc
 endif
-	install network.overrides $(INSTALLDIR)/etc
 	install init.d/rcS $(INSTALLDIR)/etc/init.d
 	install init.d/S01dummy $(INSTALLDIR)/etc/init.d
 #install nvram/nvram $(INSTALLDIR)/etc/nvram
