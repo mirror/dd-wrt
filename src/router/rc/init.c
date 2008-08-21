@@ -840,7 +840,7 @@ int main( int argc, char **argv )
 		start_service( "wifidog" );
 #endif
 		cprintf( "start syslog\n" );
-#ifndef HAVE_SYSLOG
+#ifdef HAVE_SYSLOG
 		startstop( "syslog" );
 #endif
 #ifdef HAVE_RSTP
