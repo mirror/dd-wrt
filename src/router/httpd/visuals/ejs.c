@@ -2823,7 +2823,7 @@ int tf_webWriteESCNV( webs_t wp, const char *nvname )
     for( c = nvram_safe_get( nvname ); *c; c++ )
     {
 	if( ( isprint( *c ) ) && ( *c != '"' ) && ( *c != '&' )
-	    && ( *c != '<' ) && ( *c != '>' ) && ( *c != '\'' ) )
+	    && ( *c != '<' ) && ( *c != '>' ) && ( *c != '\'' ) && ( *c != '\\' ))
 	{
 	    buf[n++] = *c;
 	}
