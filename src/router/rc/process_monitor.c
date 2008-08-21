@@ -70,7 +70,7 @@ int main( int argc, char **argv )
 #endif
 	if( do_ntp(  ) != 0 )
 	{
-	    syslog( LOG_ERR,
+	    dd_syslog( LOG_ERR,
 		    "Last update failed, we need to re-update after %d seconds\n",
 		    NTP_N_TIMER );
 	    time = NTP_N_TIMER;
@@ -94,7 +94,7 @@ int main( int argc, char **argv )
 	{
 	    eval( "stopservice", "snmp" );
 	    sleep( 1 );
-	    syslog( LOG_DEBUG, "Restarting snmpd\n" );
+	    dd_syslog( LOG_DEBUG, "Restarting snmpd\n" );
 	    eval( "startservice", "snmp" );
 
 	}
@@ -105,7 +105,7 @@ int main( int argc, char **argv )
 	{
 	    eval( "stopservice", "wifidog" );
 	    sleep( 1 );
-	    syslog( LOG_DEBUG, "Restarting Wifidog daemon\n" );
+	    dd_syslog( LOG_DEBUG, "Restarting Wifidog daemon\n" );
 	    eval( "startservice", "wifidog" );
 	}
 #endif
@@ -117,7 +117,7 @@ int main( int argc, char **argv )
 	    eval( "stopservice", "resetbutton" );
 	}
 
-	syslog( LOG_DEBUG, "We need to re-update after %d seconds\n",
+	dd_syslog( LOG_DEBUG, "We need to re-update after %d seconds\n",
 		NTP_M_TIMER );
 
 	time = NTP_M_TIMER;

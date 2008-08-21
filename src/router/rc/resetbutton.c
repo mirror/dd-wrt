@@ -55,7 +55,7 @@ void init_gpio(  )
     fd = open( "/dev/mem", O_RDWR );
     if( fd < 0 )
     {
-	// syslog(LOG_ERR, "Can't open /dev/mem: %s", strerror(errno));
+	// dd_syslog(LOG_ERR, "Can't open /dev/mem: %s", strerror(errno));
 	exit( 1 );
     }
 
@@ -63,7 +63,7 @@ void init_gpio(  )
 		 ( off_t ) GPIO0_BASE );
     if( page == MAP_FAILED )
     {
-	// syslog(LOG_ERR, "Can't mmap GPIO memory space: %s",
+	// dd_syslog(LOG_ERR, "Can't mmap GPIO memory space: %s",
 	// strerror(errno));
 	exit( 1 );
     }
@@ -482,7 +482,7 @@ void period_check( int sig )
 		if( ( brand & 0x000f ) != 0x000f )
 		{
 		    printf( "resetbutton: factory default.\n" );
-		    syslog( LOG_DEBUG,
+		    dd_syslog( LOG_DEBUG,
 			    "Reset button: restoring factory defaults now!\n" );
 #if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX)
 		    led_control( LED_DIAG, LED_ON );
@@ -557,10 +557,10 @@ void period_check( int sig )
 	    if( nvram_match( "radiooff_button", "1" ) )
 	    {
 #ifndef HAVE_BUFFALO
-		syslog( LOG_DEBUG,
+		dd_syslog( LOG_DEBUG,
 			"SES / AOSS / EZ-setup button: turning radio on\n" );
 #else
-		syslog( LOG_DEBUG, "AOSS button: turning radio on\n" );
+		dd_syslog( LOG_DEBUG, "AOSS button: turning radio on\n" );
 #endif
 		if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
 		{
@@ -585,10 +585,10 @@ void period_check( int sig )
 	    if( nvram_match( "radiooff_button", "1" ) )
 	    {
 #ifndef HAVE_BUFFALO
-		syslog( LOG_DEBUG,
+		dd_syslog( LOG_DEBUG,
 			"SES / AOSS / EZ-setup button: turning radio off\n" );
 #else
-		syslog( LOG_DEBUG, "AOSS button: turning radio off\n" );
+		dd_syslog( LOG_DEBUG, "AOSS button: turning radio off\n" );
 #endif
 		if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
 		{

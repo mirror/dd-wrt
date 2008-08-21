@@ -403,7 +403,7 @@ int start_nas_single( char *type, char *prefix )
 	    && strcmp( nvram_safe_get( apmode ), "apsta" ) )
 	{
 	    mode = "-A";
-	    syslog( LOG_INFO,
+	    dd_syslog( LOG_INFO,
 		    "NAS : NAS lan (%s interface) successfully started\n",
 		    prefix );
 #ifdef HAVE_MSSID
@@ -415,7 +415,7 @@ int start_nas_single( char *type, char *prefix )
 	else
 	{
 	    mode = "-S";
-	    syslog( LOG_INFO,
+	    dd_syslog( LOG_INFO,
 		    "NAS : NAS wan (%s interface) successfully started\n",
 		    prefix );
 #ifdef HAVE_MSSID
@@ -662,11 +662,11 @@ int stop_nas( void )
 #endif
 
     if( pidof( "nas" ) > 0 )
-	syslog( LOG_INFO, "NAS : NAS daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "NAS : NAS daemon successfully stopped\n" );
 
     if( pidof( "wrt-radauth" ) > 0 )
     {
-	syslog( LOG_INFO, "RADAUTH : RADAUTH daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "RADAUTH : RADAUTH daemon successfully stopped\n" );
 	killall( "wrt-radauth", SIGKILL );
     }
 

@@ -78,7 +78,7 @@ void start_wifidog( void )
 
 	fclose( fp );
 	eval( "wifidog" );
-	syslog( LOG_INFO, "wifidog successfully started\n" );
+	dd_syslog( LOG_INFO, "wifidog successfully started\n" );
     }
 }
 
@@ -86,7 +86,7 @@ void stop_wifidog( void )
 {
     if( pidof( "wifidog" ) > 0 )
     {
-	syslog( LOG_INFO, "wifidog successfully stopped\n" );
+	dd_syslog( LOG_INFO, "wifidog successfully stopped\n" );
 	killall( "wifidog", SIGTERM );
     }
 }

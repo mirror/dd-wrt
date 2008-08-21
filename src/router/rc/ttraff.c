@@ -109,7 +109,7 @@ int main( int argc, char **argv )
      * now we can loop and collect data 
      */
 
-    syslog( LOG_DEBUG, "ttraff: data collection started\n" );
+    dd_syslog( LOG_DEBUG, "ttraff: data collection started\n" );
 
     do
     {
@@ -240,7 +240,7 @@ int main( int argc, char **argv )
 	    nvram_commit(  );
 	    commited = 1;
 	    needcommit = 0;
-	    syslog( LOG_DEBUG,
+	    dd_syslog( LOG_DEBUG,
 		    "ttraff: data for %d-%d-%d commited to nvram\n", day,
 		    month, year );
 	}
