@@ -233,7 +233,6 @@ static struct MAIN maincalls[] = {
 int main( int argc, char **argv )
 {
     char *base = strrchr( argv[0], '/' );
-
     base = base ? base + 1 : argv[0];
     int i;
     for( i = 0; i < sizeof( maincalls ) / sizeof( struct MAIN ); i++ )
