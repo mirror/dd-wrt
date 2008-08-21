@@ -451,6 +451,7 @@ void period_check( int sig )
     push = 1 << ( sesgpio & 0x0f );	// calculate push value from ses gpio 
 					// 
     // 
+    // 
     // pin no.
 
 #endif

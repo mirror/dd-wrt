@@ -159,6 +159,7 @@ int main( int argc, char **argv )
 	    // 
 	    // 
 	    // 
+	    // 
 	    // loss and
 	    // gain here
 	    // to 0 over
@@ -178,6 +179,7 @@ int main( int argc, char **argv )
 	{
 	    mego = ( out_dev_last >> 20 ) + ( out_dev >> 20 );	// to avarage 
 								// 
+	    // 
 	    // 
 	    // 
 	    // 
