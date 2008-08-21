@@ -569,6 +569,8 @@ function fix_cr(F) {
 	var re5 = new RegExp( '&#34;', 'gi' );
 	var re6 = new RegExp( '&#62;', 'gi' );
 	var re7 = new RegExp( '&#60;', 'gi' );
+	var re8 = new RegExp( '&#92;', 'gi' );
+	var re9 = new RegExp( '&#39;', 'gi' );
 	var a = F.replace(re1, '\n');
 	var b = a.replace(re2, '\n');
 	var c = b.replace(re3, '\n');
@@ -576,7 +578,9 @@ function fix_cr(F) {
 	var e = d.replace(re5, '"');
 	var f = e.replace(re6, '>');
 	var g = f.replace(re7, '<');
-return g;
+	var h = g.replace(re8, '\'');
+	var i = h.replace(re9, '\\');	
+return i;
 }
 
 
