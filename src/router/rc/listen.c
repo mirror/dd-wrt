@@ -1,5 +1,5 @@
 
-/*
+/* 
  * listen.c listen for any packet through an interface 
  */
 
@@ -179,7 +179,7 @@ int raw_socket( int ifindex )
 
 u_int16_t checksum( void *addr, int count )
 {
-    /*
+    /* 
      * Compute Internet Checksum for "count" bytes beginning at location
      * "addr". 
      */
@@ -188,19 +188,19 @@ u_int16_t checksum( void *addr, int count )
 
     while( count > 1 )
     {
-	/*
+	/* 
 	 * This is the inner loop 
 	 */
 	sum += *source++;
 	count -= 2;
     }
 
-    /*
+    /* 
      * Add left-over byte, if any 
      */
     if( count > 0 )
     {
-	/*
+	/* 
 	 * Make sure that the left-over byte is added correctly both with
 	 * little and big endian hosts 
 	 */
@@ -209,7 +209,7 @@ u_int16_t checksum( void *addr, int count )
 	*( unsigned char * )( &tmp ) = *( unsigned char * )source;
 	sum += tmp;
     }
-    /*
+    /* 
      * Fold 32-bit sum to 16 bits 
      */
     while( sum >> 16 )
@@ -345,12 +345,12 @@ int listen_interface( char *interface )
 		goto Exit;
 	    }
 
-	    /*
+	    /* 
 	     * ignore any extra garbage bytes 
 	     */
 	    bytes = ntohs( packet.tot_len );
 
-	    /*
+	    /* 
 	     * check IP checksum 
 	     */
 	    check = packet.check;

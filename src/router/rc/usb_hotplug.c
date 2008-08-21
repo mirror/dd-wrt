@@ -1,4 +1,4 @@
-/*
+/* 
  *  USB hotplug service  Copyright 2007, Broadcom Corporation All Rights
  * Reserved.  THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO
  * WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR
@@ -39,7 +39,7 @@ int main( int argc, char **argv )
 	sscanf( interface, "%d/%d/%d", &class, &subclass, &protocol );
     }
     
-	/*
+	/* 
 	 * If a new USB device is added and it is of storage class 
 	 */ 
 	if( class == 8 && subclass == 6  &&!strcmp( action, "add" ) )
@@ -48,7 +48,7 @@ int main( int argc, char **argv )
 }
 
 
-    /*
+    /* 
      *  Check if the UFD is still connected because the links created in
      * /dev/discs are not removed when the UFD is unplugged. 
      */ 
@@ -58,7 +58,7 @@ static bool  usb_ufd_connected( char *str )
     char proc_file[128];
 
     
-	/*
+	/* 
 	 * Host no. assigned by scsi driver for this UFD 
 	 */ 
 	host_no = atoi( str );
@@ -71,7 +71,7 @@ static bool  usb_ufd_connected( char *str )
 }
 
 
-    /*
+    /* 
      *  Mount the path and look for the WCN configuration file. If it
      * exists launch wcnparse to process the configuration. 
      */ 
@@ -82,7 +82,7 @@ static bool  usb_ufd_connected( char *str )
 
     eval( "/bin/mount", "-t", "vfat", path, "/mnt" );
     
-	/*
+	/* 
 	 * if (stat("/mnt/SMRTNTKY/WSETTING.WFC", &tmp_stat) == 0) {
 	 * eval("/usr/sbin/wcnparse", "-C", "/mnt",
 	 * "SMRTNTKY/WSETTING.WFC"); ret = 0; } eval("/bin/umount",
@@ -92,7 +92,7 @@ static bool  usb_ufd_connected( char *str )
 }
 
 
-    /*
+    /* 
      * Handle hotplugging of UFD 
      */ 
 static int usb_add_ufd(  ) 
@@ -104,7 +104,7 @@ static int usb_add_ufd(  )
     if( ( dir = opendir( "/dev/discs" ) ) == NULL )
 	return EINVAL;
     
-	/*
+	/* 
 	 * Scan through entries in the directories 
 	 */ 
 	while( ( entry = readdir( dir ) ) != NULL )
@@ -112,7 +112,7 @@ static int usb_add_ufd(  )
 	if( ( strncmp( entry->d_name, "disc", 4 ) ) )
 	    continue;
 	
-	    /*
+	    /* 
 	     * Files created when the UFD is inserted are not removed when
 	     * it is removed. Verify the device is still inserted. Strip
 	     * the "disc" and pass the rest of the string. 
@@ -123,13 +123,13 @@ static int usb_add_ufd(  )
 	eval( "/usr/sbin/disktype", path, ">/tmp/disktype.dump" );
 	eval( "/usr/sbin/disktype", path, ">/tmp/disktype.dump" );
 	
-	    /*
+	    /* 
 	     * Check if it has FAT file system 
 	     */ 
 	    if( eval( "/bin/grep", "-q", "FAT", "/tmp/disktype.dump" ) == 0 )
 	{
 	    
-		/*
+		/* 
 		 * If it is partioned, mount first partition else raw disk 
 		 */ 
 		if( eval

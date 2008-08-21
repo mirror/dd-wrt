@@ -24,7 +24,7 @@ int wol_run( void )
     if( nvram_match( "wol_enable", "0" ) )
 	return 0;
 
-    /*
+    /* 
      * Most of time it goes to sleep 
      */
     while( nvram_match( "wol_enable", "1" ) )
@@ -64,7 +64,7 @@ int wol_run( void )
 
 int wol_main( int argc, char **argv )
 {
-    /*
+    /* 
      * Run it in the background 
      */
 
@@ -77,14 +77,14 @@ int wol_main( int argc, char **argv )
 	    exit( 0 );
 	    break;
 	case 0:
-	    /*
+	    /* 
 	     * child process 
 	     */
 	    // fork ok
 	    ( void )setsid(  );
 	    break;
 	default:
-	    /*
+	    /* 
 	     * parent process should just die 
 	     */
 	    _exit( 0 );
