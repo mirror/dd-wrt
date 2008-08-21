@@ -211,6 +211,7 @@ int write_boot( const char *path, const char *mtd )
 	// 
 	// 
 	// 
+	// 
 	// the 
 	// header 
 	// size
@@ -297,6 +298,7 @@ int write_mac( const char *path )
     // 
     // 
     // 
+    // 
     // leave this bit as 0)
 
     sprintf( mac, "%02X:%02X:%02X:%02X:%02X:%02X", buf[0], buf[1], buf[2],
@@ -306,6 +308,7 @@ int write_mac( const char *path )
     snprintf( string, sizeof( string ), "string=%s", mac );
 
     // write_wl_mac(mac); /* barry add for WRT54G v1.1 single board, write wl 
+    // 
     // 
     // 
     // 

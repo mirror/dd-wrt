@@ -136,6 +136,7 @@ int do_ntp( void )		// called from ntp_main and
 	    // 
 	    // 
 	    // 
+	    // 
 	    // avoid the day from going back to yesterday
 	    if( ( mon != mend ) || ( day != dend ) || ( tm->tm_hour <= 1 ) )
 		tv.tv_sec += dstEntry[dst].dstBias;
