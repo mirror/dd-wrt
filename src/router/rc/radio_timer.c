@@ -56,6 +56,7 @@ int main( int argc, char **argv )
 	    // 
 	    // 
 	    // 
+	    // 
 	    // binary 
 	    // string 
 	    // to 
@@ -67,6 +68,7 @@ int main( int argc, char **argv )
 	    // midnight
 	    radiotime0 = ( radiotime0 >> ( 24 - currtime->tm_hour - 1 ) ) & 3;	// get 
 										// 
+	    // 
 	    // 
 	    // 
 	    // 
@@ -85,6 +87,7 @@ int main( int argc, char **argv )
 	    // 
 	    // 
 	    // 
+	    // 
 	    // binary 
 	    // string 
 	    // to 
@@ -96,6 +99,7 @@ int main( int argc, char **argv )
 	    // midnight
 	    radiotime1 = ( radiotime1 >> ( 24 - currtime->tm_hour - 1 ) ) & 3;	// get 
 										// 
+	    // 
 	    // 
 	    // 
 	    // 
@@ -143,6 +147,7 @@ int main( int argc, char **argv )
 
 	    if( ( ( needchange ) && currtime->tm_min == 0 ) || ( firsttime ) )	// change 
 										// 
+		// 
 		// 
 		// 
 		// 
@@ -236,6 +241,7 @@ int main( int argc, char **argv )
 
 	sleep( 58 );		// loop every 58 s to be sure to catch min == 
 				// 
+	// 
 	// 
 	// 
 	// 
