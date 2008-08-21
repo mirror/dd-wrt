@@ -125,19 +125,19 @@ void start_vpn_modules( void )
 	  || nvram_match( "ipsec_pass", "1" ) ) )
     {
 	eval( "/sbin/insmod", "nf_conntrack_proto_gre" );
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"vpn modules : nf_conntrack_proto_gre successfully loaded\n" );
 	eval( "/sbin/insmod", "nf_nat_proto_gre" );
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"vpn modules : nf_nat_proto_gre successfully loaded\n" );
     }
     if( nvram_match( "pptp_pass", "1" ) )
     {
 	eval( "/sbin/insmod", "nf_conntrack_pptp" );
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"vpn modules : nf_conntrack_pptp successfully loaded\n" );
 	eval( "/sbin/insmod", "nf_nat_pptp" );
-	syslog( LOG_INFO, "vpn modules : nf_nat_pptp successfully loaded\n" );
+	dd_syslog( LOG_INFO, "vpn modules : nf_nat_pptp successfully loaded\n" );
     }
 
 #else
@@ -145,19 +145,19 @@ void start_vpn_modules( void )
 	  || nvram_match( "ipsec_pass", "1" ) ) )
     {
 	eval( "/sbin/insmod", "ip_conntrack_proto_gre" );
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"vpn modules : ip_conntrack_proto_gre successfully loaded\n" );
 	eval( "/sbin/insmod", "ip_nat_proto_gre" );
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"vpn modules : ip_nat_proto_gre successfully loaded\n" );
     }
     if( nvram_match( "pptp_pass", "1" ) )
     {
 	eval( "/sbin/insmod", "ip_conntrack_pptp" );
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"vpn modules : ip_conntrack_pptp successfully loaded\n" );
 	eval( "/sbin/insmod", "ip_nat_pptp" );
-	syslog( LOG_INFO, "vpn modules : ip_nat_pptp successfully loaded\n" );
+	dd_syslog( LOG_INFO, "vpn modules : ip_nat_pptp successfully loaded\n" );
     }
 #endif
 }
@@ -169,13 +169,13 @@ void stop_vpn_modules( void )
     eval( "/sbin/rmmod", "nf_conntrack_pptp" );
     eval( "/sbin/rmmod", "nf_nat_proto_gre" );
     eval( "/sbin/rmmod", "nf_conntrack_proto_gre" );
-    syslog( LOG_INFO, "vpn modules : vpn modules successfully unloaded\n" );
+    dd_syslog( LOG_INFO, "vpn modules : vpn modules successfully unloaded\n" );
 #else
     eval( "/sbin/rmmod", "ip_nat_pptp" );
     eval( "/sbin/rmmod", "ip_nat_proto_gre" );
     eval( "/sbin/rmmod", "ip_conntrack_pptp" );
     eval( "/sbin/rmmod", "ip_conntrack_proto_gre" );
-    syslog( LOG_INFO, "vpn modules : vpn modules successfully unloaded\n" );
+    dd_syslog( LOG_INFO, "vpn modules : vpn modules successfully unloaded\n" );
 
 #endif
 }
@@ -203,7 +203,7 @@ int stop_dns_clear_resolv( void )
     FILE *fp_w;
 
     if( pidof( "dnsmasq" ) > 0 )
-	syslog( LOG_INFO, "dnsmasq : dnsmasq daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "dnsmasq : dnsmasq daemon successfully stopped\n" );
     // int ret = killps("dnsmasq",NULL);
     int ret = killall( "dnsmasq", SIGTERM );
 
@@ -239,7 +239,7 @@ int start_ntpc( void )
 	pid_t pid;
 
 	_evalpid( nas_argv, NULL, 0, &pid );
-	syslog( LOG_INFO, "ntpclient : ntp client successfully started\n" );
+	dd_syslog( LOG_INFO, "ntpclient : ntp client successfully started\n" );
     }
 
     cprintf( "done\n" );
@@ -249,7 +249,7 @@ int start_ntpc( void )
 int stop_ntpc( void )
 {
     if( pidof( "ntpclient" ) > 0 )
-	syslog( LOG_INFO, "ntpclient : ntp client successfully stopped\n" );
+	dd_syslog( LOG_INFO, "ntpclient : ntp client successfully stopped\n" );
     int ret = killall( "ntpclient", SIGTERM );
 
     cprintf( "done\n" );
@@ -262,7 +262,7 @@ int start_resetbutton( void )
     int ret = 0;
 
     ret = eval( "resetbutton" );
-    syslog( LOG_INFO,
+    dd_syslog( LOG_INFO,
 	    "reset button : resetbutton daemon successfully started\n" );
 
     cprintf( "done\n" );
@@ -274,7 +274,7 @@ int stop_resetbutton( void )
     int ret = 0;
 
     if( pidof( "resetbutton" ) > 0 )
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"reset button : resetbutton daemon successfully stopped\n" );
     ret = killall( "resetbutton", SIGKILL );
 
@@ -290,7 +290,7 @@ int start_iptqueue( void )
 	return 0;
 
     ret = eval( "iptqueue" );
-    syslog( LOG_INFO, "iptqueue successfully started\n" );
+    dd_syslog( LOG_INFO, "iptqueue successfully started\n" );
 
     cprintf( "done\n" );
     return ret;
@@ -301,7 +301,7 @@ int stop_iptqueue( void )
     int ret = 0;
 
     if( pidof( "iptqueue" ) > 0 )
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"iptqueue : iptqueue daemon successfully stopped\n" );
     ret = killall( "iptqueue", SIGKILL );
 
@@ -391,7 +391,7 @@ int start_cron( void )
 
     cprintf( "starting cron\n" );
     ret = eval( "cron" );
-    syslog( LOG_INFO, "cron : cron daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "cron : cron daemon successfully started\n" );
 
     cprintf( "done\n" );
     return ret;
@@ -402,7 +402,7 @@ int stop_cron( void )
     int ret = 0;
 
     if( pidof( "cron" ) > 0 )
-	syslog( LOG_INFO, "cron : cron daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "cron : cron daemon successfully stopped\n" );
     // ret = killps("cron","-9");
     ret = killall( "cron", SIGKILL );
     eval( "rm", "-rf", "/tmp/cron.d" );
@@ -410,7 +410,7 @@ int stop_cron( void )
     return ret;
 }
 
-#ifndef HAVE_WRK54G
+#ifndef HAVE_MICRO
 int start_syslog( void )
 {
     int ret1 = 0, ret2 = 0;
@@ -424,9 +424,9 @@ int start_syslog( void )
     else
 	ret1 = eval( "/sbin/syslogd", "-L" );
 
-    syslog( LOG_INFO, "syslogd : syslog daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "syslogd : syslog daemon successfully started\n" );
     ret2 = eval( "/sbin/klogd" );
-    syslog( LOG_INFO, "klogd : klog daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "klogd : klog daemon successfully started\n" );
 
     return ret1 | ret2;
 }
@@ -436,10 +436,10 @@ int stop_syslog( void )
     int ret;
 
     if( pidof( "klogd" ) > 0 )
-	syslog( LOG_INFO, "klogd : klog daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "klogd : klog daemon successfully stopped\n" );
     ret = killall( "klogd", SIGKILL );
     if( pidof( "syslogd" ) > 0 )
-	syslog( LOG_INFO, "syslogd : syslog daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "syslogd : syslog daemon successfully stopped\n" );
     ret += killall( "syslogd", SIGKILL );
 
     cprintf( "done\n" );
@@ -459,7 +459,7 @@ int start_redial( void )
     symlink( "/sbin/rc", "/tmp/ppp/redial" );
 
     ret = _evalpid( redial_argv, NULL, 0, &pid );
-    syslog( LOG_INFO, "ppp_redial : redial process successfully started\n" );
+    dd_syslog( LOG_INFO, "ppp_redial : redial process successfully started\n" );
 
     cprintf( "done\n" );
     return ret;
@@ -470,7 +470,7 @@ int stop_redial( void )
     int ret;
 
     if( pidof( "redial" ) > 0 )
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"ppp_redial : redial daemon successfully stopped\n" );
     // ret = killps("redial","-9");
     ret = killall( "redial", SIGKILL );
@@ -518,7 +518,7 @@ int start_radvd( void )
     system2( "sync" );
 
     ret = eval( "/sbin/radvd" );
-    syslog( LOG_INFO, "radvd : RADV daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "radvd : RADV daemon successfully started\n" );
 
     cprintf( "done\n" );
     return ret;
@@ -529,7 +529,7 @@ int stop_radvd( void )
     int ret = 0;
 
     if( pidof( "radvd" ) > 0 )
-	syslog( LOG_INFO, "radvd : RADV daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "radvd : RADV daemon successfully stopped\n" );
     // ret = killps("radvd",NULL);
     ret = killall( "radvd", SIGKILL );
 
@@ -548,7 +548,7 @@ int start_ipv6( void )
 	return 0;
 
     ret = insmod( "ipv6" );
-    syslog( LOG_INFO, "ipv6 successfully started\n" );
+    dd_syslog( LOG_INFO, "ipv6 successfully started\n" );
 
     cprintf( "done\n" );
     return ret;
@@ -562,7 +562,7 @@ int stop_pppoe( void )
 
     unlink( "/tmp/ppp/link" );
     if( pidof( "pppd" ) > 0 )
-	syslog( LOG_INFO, "pppoe process successfully stopped\n" );
+	dd_syslog( LOG_INFO, "pppoe process successfully stopped\n" );
     ret = killall( "pppd", SIGTERM );
     if( nvram_match( "wan_vdsl", "1" ) )
     {
@@ -604,7 +604,7 @@ int stop_dhcpc( void )
     int ret = 0;
 
     if( pidof( "udhcpc" ) > 0 )
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"udhcpc : udhcp client process successfully stopped\n" );
     ret = killall( "udhcpc", SIGTERM );
 
@@ -1394,7 +1394,7 @@ int stop_l2tp( void )
 int stop_wland( void )
 {
     if( pidof( "wland" ) > 0 )
-	syslog( LOG_INFO, "wland : WLAN daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "wland : WLAN daemon successfully stopped\n" );
     int ret = killall( "wland", SIGKILL );
 
     cprintf( "done\n" );
@@ -1415,7 +1415,7 @@ int start_wland( void )
     // return 0;
 
     ret = _evalpid( wland_argv, NULL, 0, &pid );
-    syslog( LOG_INFO, "wland : WLAN daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "wland : WLAN daemon successfully started\n" );
     cprintf( "done\n" );
     return ret;
 }
@@ -1430,7 +1430,7 @@ int start_process_monitor( void )
     char *argv[] = { "process_monitor", NULL };
     int ret = _evalpid( argv, NULL, 0, &pid );
 
-    syslog( LOG_INFO, "process_monitor successfully started\n" );
+    dd_syslog( LOG_INFO, "process_monitor successfully started\n" );
 
     cprintf( "done" );
 
@@ -1442,7 +1442,7 @@ int stop_process_monitor( void )
     int ret;
 
     if( pidof( "process_monitor" ) > 0 )
-	syslog( LOG_INFO, "process_monitor successfully stopped\n" );
+	dd_syslog( LOG_INFO, "process_monitor successfully stopped\n" );
     ret = killall( "process_monitor", SIGKILL );
 
     cprintf( "done\n" );
@@ -1470,7 +1470,7 @@ int start_radio_timer( void )
     char *argv[] = { "radio_timer", NULL };
     int ret = _evalpid( argv, NULL, 0, &pid );
 
-    syslog( LOG_INFO,
+    dd_syslog( LOG_INFO,
 	    "radio_timer : radio timer daemon successfully started\n" );
 
     cprintf( "done" );
@@ -1483,7 +1483,7 @@ int stop_radio_timer( void )
     int ret;
 
     if( pidof( "radio_timer" ) > 0 )
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"radio_timer : radio timer daemon successfully stopped\n" );
     ret = killall( "radio_timer", SIGKILL );
 
@@ -1507,7 +1507,7 @@ int start_ttraff( void )
     char *argv[] = { "ttraff", NULL };
     int ret = _evalpid( argv, NULL, 0, &pid );
 
-    syslog( LOG_INFO,
+    dd_syslog( LOG_INFO,
 	    "ttraff : traffic counter daemon successfully started\n" );
 
     cprintf( "done" );
@@ -1520,7 +1520,7 @@ int stop_ttraff( void )
     int ret;
 
     if( pidof( "ttraff" ) > 0 )
-	syslog( LOG_INFO,
+	dd_syslog( LOG_INFO,
 		"ttraff : traffic counter daemon successfully stopped\n" );
     ret = killall( "ttraff", SIGKILL );
 
@@ -1595,7 +1595,7 @@ void start_hwmon( void )
     sysprintf( "/bin/echo %d > %s/%s_max", temp_max, TEMP_PATH, TEMP_PREFIX );
     sysprintf( "/bin/echo %d > %s/%s_max_hyst", temp_hyst, TEMP_PATH,
 	       TEMP_PREFIX );
-    syslog( LOG_INFO, "hwmon successfully started\n" );
+    dd_syslog( LOG_INFO, "hwmon successfully started\n" );
 }
 
 #endif

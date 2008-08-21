@@ -31,7 +31,7 @@ void stop_rstats( void )
 {
     if( pidof( "rstats" ) > 0 )
     {
-	syslog( LOG_INFO, "rstats : rstats daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "rstats : rstats daemon successfully stopped\n" );
 	killall( "rstats", SIGTERM );
     }
 }
@@ -50,7 +50,7 @@ void start_rstats( void )
     {
 	stop_rstats(  );
 	eval( "rstats" );
-	syslog( LOG_INFO, "rstats daemon successfully started\n" );
+	dd_syslog( LOG_INFO, "rstats daemon successfully started\n" );
     }
 }
 

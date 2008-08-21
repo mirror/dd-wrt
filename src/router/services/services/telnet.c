@@ -51,7 +51,7 @@ int start_telnetd( void )
 	return 0;
     // ret = _evalpid (telnetd_argv_reg, NULL, 0, &pid);
 #endif
-    syslog( LOG_INFO, "telnetd : telnet daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "telnetd : telnet daemon successfully started\n" );
 
     cprintf( "done\n" );
     return ret;
@@ -63,7 +63,7 @@ int stop_telnetd( void )
 
     if( pidof( "telnetd" ) > 0 )
     {
-	syslog( LOG_INFO, "telnetd : telnet daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "telnetd : telnet daemon successfully stopped\n" );
 	ret = killall( "telnetd", SIGTERM );
     }
     cprintf( "done\n" );

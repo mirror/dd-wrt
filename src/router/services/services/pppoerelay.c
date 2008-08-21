@@ -37,14 +37,14 @@ void start_pppoerelay( void )
 	    eval( "pppoe-relay", "-S", nvram_safe_get( "wan_ifname" ), "-C",
 		  "br0" );
 
-	syslog( LOG_INFO, "pppoe-relay successfully started\n" );
+	dd_syslog( LOG_INFO, "pppoe-relay successfully started\n" );
     }
 }
 void stop_pppoerelay( void )
 {
     if( pidof( "pppoe-relay" ) > 0 )
     {
-	syslog( LOG_INFO, "pppoe-relay successfully stopped\n" );
+	dd_syslog( LOG_INFO, "pppoe-relay successfully stopped\n" );
 	killall( "pppoe-relay", SIGTERM );
     }
 }

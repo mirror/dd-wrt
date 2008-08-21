@@ -217,7 +217,7 @@ int start_pptpd( void )
 	eval( "/usr/sbin/pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o",
 	      "/tmp/pptpd/options.pptpd" );
 
-    syslog( LOG_INFO, "pptpd : pptp daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "pptpd : pptp daemon successfully started\n" );
     return ret;
 }
 
@@ -227,7 +227,7 @@ int stop_pptpd( void )
 
     if( pidof( "pptpd" ) > 0 )
     {
-	syslog( LOG_INFO, "pptpd : pptp daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "pptpd : pptp daemon successfully stopped\n" );
 	ret = killall( "pptpd", SIGKILL );
 	killall( "bcrelay", SIGKILL );
     }

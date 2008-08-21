@@ -381,7 +381,7 @@ int start_udhcpd( void )
     dns_to_resolv(  );
 
     eval( "udhcpd", "/tmp/udhcpd.conf" );
-    syslog( LOG_INFO, "udhcpd : udhcp daemon successfully started\n" );
+    dd_syslog( LOG_INFO, "udhcpd : udhcp daemon successfully started\n" );
 
     /*
      * Dump static leases to udhcpd.leases so they can be read by dnsmasq 
@@ -403,7 +403,7 @@ int stop_udhcpd( void )
 {
     if( pidof( "udhcpd" ) > 0 )
     {
-	syslog( LOG_INFO, "udhcpd : udhcp daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO, "udhcpd : udhcp daemon successfully stopped\n" );
 	softkill( "udhcpd" );
     }
     cprintf( "done\n" );
