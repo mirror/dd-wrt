@@ -670,7 +670,7 @@ int searchfor( FILE * fp, char *str, int scansize );
 int insmod( char *module );
 void rmmod( char *module );
 
-#ifdef HAVE_SYSLOG
+#ifndef HAVE_SYSLOG
 #define dd_syslog(a, args...) do { } while(0);
 #else
 #define dd_syslog(a, args...) syslog( a,## args);
