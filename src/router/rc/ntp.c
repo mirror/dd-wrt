@@ -132,6 +132,10 @@ int do_ntp( void )		// called from ntp_main and
 	    // if this is the end day, don't undo dst until we're past 1am to 
 	    // 
 	    // 
+	    // 
+	    // 
+	    // 
+	    // 
 	    // avoid the day from going back to yesterday
 	    if( ( mon != mend ) || ( day != dend ) || ( tm->tm_hour <= 1 ) )
 		tv.tv_sec += dstEntry[dst].dstBias;
@@ -142,7 +146,7 @@ int do_ntp( void )		// called from ntp_main and
 	eval( "hwclock", "-w" );
 #endif
 #endif
-	/*
+	/* 
 	 * time_t now = time(0); syslog(LOG_INFO, "time updated: %s\n",
 	 * ctime(&now)); 
 	 */
@@ -151,7 +155,7 @@ int do_ntp( void )		// called from ntp_main and
     return 0;
 }
 
-/*
+/* 
  * int mon; int day; int dst = 4; for (mon = 1; mon <= 12; ++mon) {
  * printf("[%02d] ", mon); for (day = 1; day <= 31; ++day) { int yi = 2005 -
  * 2006; // dst table starts at 2006 int mbeg = dstEntry[dst].startMonth; int 

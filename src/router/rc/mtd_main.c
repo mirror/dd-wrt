@@ -1,4 +1,4 @@
-/*
+/* 
  * mtd - simple memory technology device manipulation tool
  *
  * Copyright (C) 2005 Waldemar Brodkorb <wbx@dass-it.de>,
@@ -61,7 +61,7 @@
 
 #define SYSTYPE_UNKNOWN     0
 #define SYSTYPE_BROADCOM    1
-/*
+/* 
  * to be continued 
  */
 
@@ -128,7 +128,7 @@ static int image_check_bcom( int imagefd, const char *mtd )
 	case 0x73343557:	/* W54s */
 	case 0x46343557:	/* W54F */
 	case 0x55343557:	/* W54U */
-	    /*
+	    /* 
 	     * ignore the first 32 bytes 
 	     */
 	    buflen = read( imagefd, buf, sizeof( struct trx_header ) );
@@ -145,7 +145,7 @@ static int image_check_bcom( int imagefd, const char *mtd )
 	return 0;
     }
 
-    /*
+    /* 
      * check if image fits to mtd device 
      */
     fd = mtd_open( mtd, O_RDWR | O_SYNC );
@@ -326,20 +326,20 @@ static int mtd_write( int imagefd, const char *mtd, int quiet )
 
     for( ;; )
     {
-	/*
+	/* 
 	 * buffer may contain data already (from trx check) 
 	 */
 	r = buflen;
 	r += read( imagefd, buf + buflen, BUFSIZE - buflen );
 	w += r;
 
-	/*
+	/* 
 	 * EOF 
 	 */
 	if( r <= 0 )
 	    break;
 
-	/*
+	/* 
 	 * need to erase the next block before writing data to it 
 	 */
 	while( w > e )
@@ -349,7 +349,7 @@ static int mtd_write( int imagefd, const char *mtd, int quiet )
 
 	    if( !quiet )
 		fprintf( stderr, "\b\b\b[e]" );
-	    /*
+	    /* 
 	     * erase the chunk 
 	     */
 	    if( ioctl( fd, MEMERASE, &mtdEraseInfo ) < 0 )
@@ -485,7 +485,7 @@ int mtd_main( int argc, char **argv )
 	    }
 	}
 
-	/*
+	/* 
 	 * check trx file before erasing or writing anything 
 	 */
 	if( !image_check( imagefd, device ) )

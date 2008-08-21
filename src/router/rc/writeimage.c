@@ -33,7 +33,7 @@
 extern int mtd_erase_sector( const char *mtd, unsigned long start,
 			     unsigned long end );
 
-/*
+/* 
  * Write pmon from user space, and erease first 128K of kernel Must check EST 
  * header. Restore lan mac to new boot. The boot filename must be boot.bin 
  */
@@ -77,7 +77,7 @@ int write_boot( const char *path, const char *mtd )
 
     memset( &boot, 0, sizeof( struct boot_header ) );
 
-    /*
+    /* 
      * Examine EST header 
      */
     if( ( fp = fopen( path, "r" ) ) )
@@ -97,7 +97,7 @@ int write_boot( const char *path, const char *mtd )
 	goto fail;
     }
 
-    /*
+    /* 
      * Open MTD device and get sector size 
      */
     if( ( mtd_fd = mtd_open( mtd, O_RDWR ) ) < 0 )
@@ -114,7 +114,7 @@ int write_boot( const char *path, const char *mtd )
 	goto fail;
     }
 
-    /*
+    /* 
      * See if we have enough memory to store the whole file 
      */
     sysinfo( &info );
@@ -123,7 +123,7 @@ int write_boot( const char *path, const char *mtd )
     else
 	erase_info.length = mtd_info.erasesize;
 
-    /*
+    /* 
      * Allocate temporary buffer 
      */
     if( !( buf = malloc( PMON_SIZE ) ) )
@@ -134,7 +134,7 @@ int write_boot( const char *path, const char *mtd )
     }
     // memset(&buf,0,sizeof(buf));
 
-    /*
+    /* 
      * Write file or URL to MTD device 
      */
     for( erase_info.start = 0; erase_info.start < PMON_SIZE;
@@ -168,7 +168,7 @@ int write_boot( const char *path, const char *mtd )
 	    goto fail;
 	}
 
-	/*
+	/* 
 	 * update mac to new boot 
 	 */
 	lan_mac = nvram_get( "et0macaddr" );
@@ -191,7 +191,7 @@ int write_boot( const char *path, const char *mtd )
 		    nvram_safe_get( "eou_public_key" ), 258 );
 	}
 
-	/*
+	/* 
 	 * Do it 
 	 */
 	printf( "Erasing %s...\n", mtd );
@@ -206,6 +206,10 @@ int write_boot( const char *path, const char *mtd )
 	printf( "Writing data to %s ...\n", mtd );
 	ret_count = write( mtd_fd, buf, count - sizeof( struct boot_header ) );	// skip 
 										// 
+	// 
+	// 
+	// 
+	// 
 	// 
 	// the 
 	// header 
@@ -226,7 +230,7 @@ int write_boot( const char *path, const char *mtd )
 	printf( "Erasing first 128K of kernel\n" );	// Force to update
 	// code.bin, when
 	// update boot.bin.
-	/*
+	/* 
 	 * erase first 128k of kernel 
 	 */
 	if( mtd_erase_sector( "linux", 0, 128 * 1024 ) != 0 )
@@ -254,7 +258,7 @@ int write_boot( const char *path, const char *mtd )
     return ret;
 }
 
-/*
+/* 
  * PMON default nvram address is from 0x400 to 0x2400, We use 0x2000 to store 
  * 8's mac. Please confirm the address 0x2000 to 0x2400 is full 0xFF. Because 
  * the user space cann't directly access flash value, so i use kernel to
@@ -289,6 +293,10 @@ int write_mac( const char *path )
     buf[0] = buf[0] & 0xFE;	// *unmask the 0th bit (valid mac addr should 
 				// 
     // 
+    // 
+    // 
+    // 
+    // 
     // leave this bit as 0)
 
     sprintf( mac, "%02X:%02X:%02X:%02X:%02X:%02X", buf[0], buf[1], buf[2],
@@ -298,6 +306,10 @@ int write_mac( const char *path )
     snprintf( string, sizeof( string ), "string=%s", mac );
 
     // write_wl_mac(mac); /* barry add for WRT54G v1.1 single board, write wl 
+    // 
+    // 
+    // 
+    // 
     // 
     // 
     // mac to EEPROM ! */
@@ -392,7 +404,7 @@ int write_eou_key( const char *path )
     return 0;
 }
 
-/*
+/* 
  * Erase an MTD device
  * @param       mtd     path to or partition name of MTD device
  * @param       start   start address to erase
@@ -408,7 +420,7 @@ mtd_erase_sector( const char *mtd, unsigned long start, unsigned long end )
 
     printf( "mtd_erase_sector(%s,%ld,%ld) doing", mtd, start, end );
 
-    /*
+    /* 
      * Open MTD device 
      */
     if( ( mtd_fd = mtd_open( mtd, O_RDWR ) ) < 0 )
@@ -417,7 +429,7 @@ mtd_erase_sector( const char *mtd, unsigned long start, unsigned long end )
 	return errno;
     }
 
-    /*
+    /* 
      * Get sector size 
      */
     if( ioctl( mtd_fd, MEMGETINFO, &mtd_info ) != 0 )

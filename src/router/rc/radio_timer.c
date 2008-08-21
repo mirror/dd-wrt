@@ -1,4 +1,4 @@
-/*
+/* 
  * Radio timer by Eko: 19.jul.2006
  * 
  * hours are represented as bits in 24 bit = xxxxxxxxxxxxxxxxxxxxxxxx from
@@ -52,6 +52,10 @@ int main( int argc, char **argv )
 	    radiotime0 = strtol( nvram_get( "radio0_on_time" ), NULL, 2 );	// convert 
 										// 
 	    // 
+	    // 
+	    // 
+	    // 
+	    // 
 	    // binary 
 	    // string 
 	    // to 
@@ -64,6 +68,10 @@ int main( int argc, char **argv )
 	    radiotime0 = ( radiotime0 >> ( 24 - currtime->tm_hour - 1 ) ) & 3;	// get 
 										// 
 	    // 
+	    // 
+	    // 
+	    // 
+	    // 
 	    // pattern 
 	    // only 
 	    // (last 
@@ -72,6 +80,10 @@ int main( int argc, char **argv )
 #ifdef HAVE_MSSID
 	    radiotime1 = strtol( nvram_get( "radio1_on_time" ), NULL, 2 );	// convert 
 										// 
+	    // 
+	    // 
+	    // 
+	    // 
 	    // 
 	    // binary 
 	    // string 
@@ -84,6 +96,10 @@ int main( int argc, char **argv )
 	    // midnight
 	    radiotime1 = ( radiotime1 >> ( 24 - currtime->tm_hour - 1 ) ) & 3;	// get 
 										// 
+	    // 
+	    // 
+	    // 
+	    // 
 	    // 
 	    // pattern 
 	    // only 
@@ -127,6 +143,10 @@ int main( int argc, char **argv )
 
 	    if( ( ( needchange ) && currtime->tm_min == 0 ) || ( firsttime ) )	// change 
 										// 
+		// 
+		// 
+		// 
+		// 
 		// 
 		// when 
 		// min 
@@ -216,6 +236,10 @@ int main( int argc, char **argv )
 
 	sleep( 58 );		// loop every 58 s to be sure to catch min == 
 				// 
+	// 
+	// 
+	// 
+	// 
 	// 
 	// 0
 

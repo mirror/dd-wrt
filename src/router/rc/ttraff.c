@@ -1,4 +1,4 @@
-/*
+/* 
  * ttraff.c by Eko: 12.feb.2008
  * 
  * used for collecting and storing WAN traffic info to nvram
@@ -83,7 +83,7 @@ int main( int argc, char **argv )
 	currtime = localtime( &tloc );
     }
 
-    /*
+    /* 
      * now we have time, let's start 
      */
     static char wanface[32];
@@ -105,7 +105,7 @@ int main( int argc, char **argv )
 
     strncpy( wanface, get_wan_face(  ), sizeof( wanface ) );
 
-    /*
+    /* 
      * now we can loop and collect data 
      */
 
@@ -155,6 +155,10 @@ int main( int argc, char **argv )
 	    megi = ( in_dev_last >> 20 ) + ( in_dev >> 20 );	// to avarage 
 								// 
 	    // 
+	    // 
+	    // 
+	    // 
+	    // 
 	    // loss and
 	    // gain here
 	    // to 0 over
@@ -174,6 +178,10 @@ int main( int argc, char **argv )
 	{
 	    mego = ( out_dev_last >> 20 ) + ( out_dev >> 20 );	// to avarage 
 								// 
+	    // 
+	    // 
+	    // 
+	    // 
 	    // 
 	    // loss and
 	    // gain here

@@ -40,7 +40,7 @@
 #include <nvparse.h>
 extern int wan_valid( char *ifname );
 
-/*
+/* 
  * VLAN Descriptors, per-board or platform setting 
  */
 struct vlan_board_s
@@ -130,7 +130,7 @@ static int vlan_configure( void )
 	    mibac_int = ROBO_AC_RATE_MAX;
     }
 
-    /*
+    /* 
      * find configured and enabled WAN connection 
      */
     for( unit = 0; unit < MAX_NVPARSE; unit++ )
@@ -142,7 +142,7 @@ static int vlan_configure( void )
 	wan_proto = nvram_get( strcat_r( prefix, "proto", tmp ) );
 	if( !wan_proto || !strcmp( wan_proto, "disabled" ) )
 	    continue;
-	/*
+	/* 
 	 * disable the connection if the i/f is not in wan_ifnames 
 	 */
 	if( !wan_valid( wan_ifname ) )
@@ -162,10 +162,10 @@ static int vlan_configure( void )
 	return -1;
     }
 
-    /*
+    /* 
      * check to make sure vlan numbers are valid 
      */
-    /*
+    /* 
      * (if no nvram variables, use defaults) 
      */
     if( strlen( wan_vlan ) )
@@ -189,16 +189,16 @@ static int vlan_configure( void )
 	bVlan = 0;
     }
 
-    /*
+    /* 
      * first restore ifnames, if necessary.  note that if the user 
      */
-    /*
+    /* 
      * wants to change lan_ifname or wan_ifname, it will be necessary 
      */
-    /*
+    /* 
      * to delete the corresponding 'restore' value to avoid subsequent 
      */
-    /*
+    /* 
      * overwriting of the new value when the router starts 
      */
     if( strlen( restore_wan_ifname ) )
@@ -232,16 +232,16 @@ static int vlan_configure( void )
 	    return -1;
     }
 
-    /*
+    /* 
      * now check to see if vlan disabled 
      */
-    /*
+    /* 
      * disabled, just exit 
      */
     if( !bVlan )
 	return 0;
 
-    /*
+    /* 
      * activate interface to Robo switch 
      */
     if( ( bcm_api_init(  ) ) < 0 )
@@ -252,26 +252,26 @@ static int vlan_configure( void )
 	}
 	return -1;
     }
-    /*
+    /* 
      * create interface names 
      */
-    /*
+    /* 
      * get base name that interface will be based on 
      */
     sprintf( lan_ifbase, "eth%d", vlan_boards[board_index].vlan_devno );
 
-    /*
+    /* 
      * check to see if bridge has been set up 
      */
     if( strncmp( lan_ifname, "br", 2 ) == 0 )
     {
-	/*
+	/* 
 	 * iterate though members of bridge group and extract lan name for 
 	 */
-	/*
+	/* 
 	 * use in creating vlans and create list w/o lan member, which will 
 	 */
-	/*
+	/* 
 	 * have vlan group members added below 
 	 */
 	buf_index = 0;
@@ -292,32 +292,32 @@ static int vlan_configure( void )
 	}
     }
 
-    /*
+    /* 
      * note that if brcm tags are enabled, the WAN is configured with a vlan
      * and 
      */
-    /*
+    /* 
      * the LAN ports are configured with the brcm tag driver.  if brcm tags
      * are disabled 
      */
-    /*
+    /* 
      * the LAN is configured with a vlan and the WAN directly uses eth0.
      * This 
      */
-    /*
+    /* 
      * only applies to vlan interfaces created with vconfig.  In both cases,
      * the underlying 
      */
-    /*
+    /* 
      * switch is programmed with a separate vlan for WAN and LAN, but in the
      * case w/o 
      */
-    /*
+    /* 
      * brcm tags, the WAN vlan tag is removed when it exits the switch to the 
      * CPU 
      */
 
-    /*
+    /* 
      * modify lan_ifbase & wan_ifbase for brcm tag driver, but save to bring
      * up interface 
      */
@@ -325,14 +325,14 @@ static int vlan_configure( void )
     strcpy( wan_ifbase, lan_ifbase );
     if( bBrcmTag )
     {
-	/*
+	/* 
 	 * if brcm tag driver will be used, add 't' to root name 
 	 */
 	strcat( lan_ifbase, "t" );
 	strcat( wan_ifbase, "t" );
 	sprintf( buf, ".%d", vlan_boards[board_index].wan_port );
 	strcat( wan_ifbase, buf );
-	/*
+	/* 
 	 * need to create wan vlan name here.  the form of the name will be
 	 * ethx.port.vlan 
 	 */
@@ -342,7 +342,7 @@ static int vlan_configure( void )
 	nvram_set( strcat_r( prefix, "ifnames", tmp ), buf );
     }
 
-    /*
+    /* 
      * we need to handle the case of if bridge exists or not.  if it does
      * exist, and brcm tags are enabled brcm tag (for default) interface
      * names will be substituted for 'ethx' name.  if it doesn't exist,
@@ -364,24 +364,24 @@ static int vlan_configure( void )
 	 i <= vlan_boards[board_index].lan_port_end; i++ )
     {
 	if( bBrcmTag )
-	    /*
+	    /* 
 	     * use port ids for interface suffixes 
 	     */
 	    sprintf( &buf[buf_index], "%s.%d ", lan_ifbase, i );
 	else
-	    /*
+	    /* 
 	     * use single lan vlan id interface suffixes 
 	     */
 	    sprintf( &buf[buf_index], "%s.%d ", lan_ifbase, lan_vid );
 	buf_index = strlen( buf );
 	if( !bBrcmTag )
-	    /*
+	    /* 
 	     * if no brcm tag driver, just use one interface for all ports on 
 	     * LAN side 
 	     */
 	    break;
     }
-    /*
+    /* 
      * get rid of last space 
      */
     buf[strlen( buf ) - 1] = '\0';
@@ -391,7 +391,7 @@ static int vlan_configure( void )
     nvram_set( "lan_ifnames", buf );
     nvram_set( "lan_ifname", lan_br_name );
 
-    /*
+    /* 
      * change wan_hwaddr to be lan_hwaddr.  this is because underlying lan
      * device has lan_hwaddr and if wan vlan device had different hwaddr, the 
      * vlan processing would set the underlying device to promiscuous mode 
@@ -400,17 +400,17 @@ static int vlan_configure( void )
     nvram_set( strcat_r( prefix, "hwaddr", tmp ),
 	       nvram_safe_get( "lan_hwaddr" ) );
 
-    /*
+    /* 
      * now create vlan i/f's 
      */
-    /*
+    /* 
      * need to bring up the underlying switch i/f to create vlans 
      */
     ifconfig( lan_ifbase_realdev, IFUP, 0, 0 );
 
     if( bBrcmTag )
     {
-	/*
+	/* 
 	 * create brcm tag device for wan 
 	 */
 	bcm_reg_brcmtag_dev( lan_ifbase_realdev, "t",
@@ -418,13 +418,13 @@ static int vlan_configure( void )
 	ifconfig( wan_ifbase, IFUP, 0, 0 );
     }
 
-    /*
+    /* 
      * first, wan vlan.  note, must also configure wan here, in case 
      */
-    /*
+    /* 
      * it's the same wan being used for nfs, in order to allow nfs to 
      */
-    /*
+    /* 
      * keep working during configuration of vlans 
      */
     sprintf( vlan_wan, "%d", wan_vid );
@@ -432,32 +432,32 @@ static int vlan_configure( void )
     if( bBrcmTag )
 	eval( "vconfig", "add", wan_ifbase, vlan_wan );
     else
-	/*
+	/* 
 	 * don't configure WAN as vlan interface, just program switch with
 	 * vlan id 
 	 */
 	bcm_vlan_create( 0, wan_vid );	/* this is for default case, which
 					 * doesn't call vconfig */
-    /*
+    /* 
      * Bring up WAN interface 
      */
     ifconfig( nvram_safe_get( strcat_r( prefix, "ifname", tmp ) ), IFUP,
 	      nvram_safe_get( strcat_r( prefix, "ipaddr", tmp ) ),
 	      nvram_safe_get( strcat_r( prefix, "netmask", tmp ) ) );
-    /*
+    /* 
      * now configure wan vlan and enable vlans 
      */
     sprintf( port, "%d", vlan_boards[board_index].wan_port );
     eval( "vconfig", "add_port", vlan_wan, port );
-    /*
+    /* 
      * MII port is set up to tag with wan vlan here, but that will be
      * overridden below 
      */
-    /*
+    /* 
      * to tag with lan vlan (only matters for default case where CPU doesn't
      * have vlan 
      */
-    /*
+    /* 
      * configured, but switch does; ie, mii port does tag/untag) 
      */
     sprintf( port, "%d", BCM_MII_PORT );	/* mii port, note that vlan
@@ -465,38 +465,38 @@ static int vlan_configure( void )
     if( bBrcmTag )
 	eval( "vconfig", "add_port_nountag", vlan_wan, port );
     else
-	/*
+	/* 
 	 * if no BRCM tags, untag MII for WAN VLAN 
 	 */
 	eval( "vconfig", "add_port", vlan_wan, port );
     if( bBrcmTag )
-	/*
+	/* 
 	 * set flag to let vlan dev build headers in vlan_dev_hard_header 
 	 */
 	eval( "vconfig", "set_flag",
 	      nvram_safe_get( strcat_r( prefix, "wan_ifname", tmp ) ), "1",
 	      "0" );
 
-    /*
+    /* 
      * now enable switch ports for vlan 
      */
     sprintf( buf, "%d", 1 );
     eval( "vconfig", "ports_enable", buf );
 
-    /*
+    /* 
      * set multicast related registers 
      */
     buf[0] = 0x0a;		/* Rsvd MC tag/untag */
     if( bBrcmTag )
-	/*
+	/* 
 	 * if default mode, allow tagging of frames into MII.  this is to
 	 * allow 
 	 */
-	/*
+	/* 
 	 * lan to have vlan handling in switch, but remove vlan tag when
 	 * received 
 	 */
-	/*
+	/* 
 	 * by CPU 
 	 */
 	buf[0] |= 0x80;
@@ -511,7 +511,7 @@ static int vlan_configure( void )
     bcm_write_reg( 0, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL5, buf, 1 );
     if( bBrcmTag )
     {
-	/*
+	/* 
 	 * now set up managed mode registers for brcm tag 
 	 */
 	buf[0] = 0x00;		/* Rsvd MC tag/untag */
@@ -527,31 +527,31 @@ static int vlan_configure( void )
 	bcm_write_reg( 0, ROBO_CTRL_PAGE, ROBO_SWITCH_MODE, buf, 1 );
 	brcm_tag_driver_enabled = 1;
     }
-    /*
+    /* 
      * now assign 0.0.0.0 ip address to i/f underlying vlans 
      */
     if( bBrcmTag )
 	ifconfig( lan_ifbase_realdev, IFUP, "0.0.0.0", "0.0.0.0" );
 
-    /*
+    /* 
      * now lan vlan 
      */
     for( i = vlan_boards[board_index].lan_port_start;
 	 i <= vlan_boards[board_index].lan_port_end; i++ )
     {
-	/*
+	/* 
 	 * if default, no vconfig, because 
 	 */
-	/*
+	/* 
 	 * vlan untagged at MII port 
 	 */
 	if( bBrcmTag )
 	{
-	    /*
+	    /* 
 	     * default mode (w/brcm tags), create brcm tag device per port
 	     * and set up 
 	     */
-	    /*
+	    /* 
 	     * single vlan for all ports 
 	     */
 	    if( i == vlan_boards[board_index].lan_port_start )
@@ -569,17 +569,17 @@ static int vlan_configure( void )
 	}
 	else
 	{
-	    /*
+	    /* 
 	     * brcm tags disabled.  create one vlan interface for LAN 
 	     */
 	    if( i == vlan_boards[board_index].lan_port_start )
 	    {
-		/*
+		/* 
 		 * only create one vlan for default mode w/no brcm tags 
 		 */
 		sprintf( vlan, "%d", lan_vid );
 		eval( "vconfig", "add", lan_ifbase, vlan );
-		/*
+		/* 
 		 * also add mii port 
 		 */
 		sprintf( port, "%d", BCM_MII_PORT );	/* mii port */
@@ -587,7 +587,7 @@ static int vlan_configure( void )
 	    }
 	    sprintf( port, "%d", i );
 	    eval( "vconfig", "add_port", vlan, port );
-	    /*
+	    /* 
 	     * add interface to port/interface map 
 	     */
 	    bcm_add_port_interface( i, lan_vid );
@@ -596,10 +596,10 @@ static int vlan_configure( void )
 
     if( hasBridge && bBrcmTag )
     {
-	/*
+	/* 
 	 * init spanning tree state 
 	 */
-	/*
+	/* 
 	 * set WAN port & MII to forwarding, all others to disabled 
 	 */
 	bcm_port_stp_set( BCM_WAN_PORT, BCM_PORT_STP_FORWARD );
@@ -610,13 +610,13 @@ static int vlan_configure( void )
     }
     else
     {
-	/*
+	/* 
 	 * init spanning tree state to none for all ports 
 	 */
 	for( i = 1; i <= BCM_MAX_PORT; i++ )
 	    bcm_port_stp_set( i, BCM_PORT_STP_NONE );
     }
-    /*
+    /* 
      * add static entries to arl for wan hwaddr & lan hwaddr 
      */
     ether_atoe( nvram_safe_get( strcat_r( prefix, "hwaddr", tmp ) ),
@@ -626,12 +626,12 @@ static int vlan_configure( void )
     if( BCM_RET_SUCCESS != ( retval = bcm_l2_addr_add( 0, &l2addr ) ) )
 	dprintf( "failure writing wan l2 addr: %d\n", retval );
     ether_atoe( nvram_safe_get( "lan_hwaddr" ), eth_addr );
-    /*
+    /* 
      * set up MIB autocast, if enabled 
      */
     if( bMIBAC )
     {
-	/*
+	/* 
 	 * set up MIB AC (dst, src, port & rate) 
 	 */
 	memcpy( MIBda, eth_addr, sizeof( bcm_mac_t ) );
@@ -650,7 +650,7 @@ static int vlan_configure( void )
 	buf[0] |= 0x20;		/* enable MIB AC */
 	bcm_write_reg( 0, ROBO_MGMT_PAGE, ROBO_GLOBAL_CONFIG, buf, 1 );
     }
-    /*
+    /* 
      * now multicast entry for BPDUs 
      */
     bcm_l2_addr_init( &l2addr, mcast_addr, wan_vid );
@@ -668,7 +668,7 @@ static int vlan_configure( void )
 	    if( BCM_RET_SUCCESS !=
 		( retval = bcm_l2_addr_add( 0, &l2addr ) ) )
 		dprintf( "failure writing lan l2 addr: %d\n", retval );
-	    /*
+	    /* 
 	     * now multicast entry for BPDUs 
 	     */
 	    bcm_l2_addr_init( &l2addr, mcast_addr, vid );
@@ -680,10 +680,10 @@ static int vlan_configure( void )
     }
     if( !bBrcmTag )
     {
-	/*
+	/* 
 	 * if in mgmt mode (if brcm tag driver used), don't need to do this 
 	 */
-	/*
+	/* 
 	 * set bogus mc addr to bypass specian h/w handling of BPDUs and let
 	 * ARL handle them 
 	 */
@@ -692,12 +692,12 @@ static int vlan_configure( void )
 		       mcast_addr, sizeof( mcast_addr ) );
     }
     vlan_configured = 1;
-    /*
+    /* 
      * deinit Robo switch interface 
      */
     bcm_api_deinit(  );
 
-    /*
+    /* 
      * We had changed wan_hwaddr to be the same as lan_hwaddr (temporarily)
      * due the issue of promiscuous. Now it's time to roll it back. 
      */
@@ -730,14 +730,14 @@ static int vlan_deconfigure( void )
     uint board_index = 0;
     int unit;
 
-    /*
+    /* 
      * first, bring down vlans, if enabled 
      */
     dprintf( "deconfigure vlan\n" );
     if( vlan_configured )
     {
 
-	/*
+	/* 
 	 * activate interface to Robo switch 
 	 */
 	if( ( bcm_api_init(  ) ) < 0 )
@@ -746,7 +746,7 @@ static int vlan_deconfigure( void )
 	    return -1;
 	}
 
-	/*
+	/* 
 	 * find configured and enabled WAN connection 
 	 */
 	for( unit = 0; unit < MAX_NVPARSE; unit++ )
@@ -758,7 +758,7 @@ static int vlan_deconfigure( void )
 	    wan_proto = nvram_get( strcat_r( prefix, "proto", tmp ) );
 	    if( !wan_proto || !strcmp( wan_proto, "disabled" ) )
 		continue;
-	    /*
+	    /* 
 	     * disable the connection if the i/f is not in wan_ifnames 
 	     */
 	    if( !wan_valid( wan_ifname ) )
@@ -777,7 +777,7 @@ static int vlan_deconfigure( void )
 	    return -1;
 	}
 
-	/*
+	/* 
 	 * vlan is non-zero, that means that eth0 is wan port 
 	 */
 	if( vlan_boards[board_index].vlan_devno )
@@ -785,12 +785,12 @@ static int vlan_deconfigure( void )
 		      nvram_safe_get( strcat_r( prefix, "ipaddr", tmp ) ),
 		      nvram_safe_get( strcat_r( prefix, "netmask", tmp ) ) );
 
-	/*
+	/* 
 	 * now bring down brcm tag device for wan device 
 	 */
 	if( brcm_tag_driver_enabled )
 	{
-	    /*
+	    /* 
 	     * Strip off vlan suffix 
 	     */
 	    strcpy( name, wan_ifname );
@@ -804,25 +804,25 @@ static int vlan_deconfigure( void )
 	    bcm_write_reg( 0, ROBO_CTRL_PAGE, ROBO_SWITCH_MODE, buf, 1 );
 	    buf[0] = 0x00;	/* turn off vlan mode */
 	    bcm_write_reg( 0, ROBO_VLAN_PAGE, ROBO_VLAN_CTRL0, buf, 1 );
-	    /*
+	    /* 
 	     * now, deconfigure wan vlan 
 	     */
 	    eval( "vconfig", "rem", wan_ifname );
 	}
 
-	/*
+	/* 
 	 * now lan vlan 
 	 */
 	if( brcm_tag_driver_enabled )
 	{
 	    char *ifnames = nvram_safe_get( "lan_ifnames" );
 
-	    /*
+	    /* 
 	     * default mode, just bring down brcm tag devices per port 
 	     */
 	    foreach( name, ifnames, next )
 	    {
-		/*
+		/* 
 		 * check to see if has suffix '.port' before removing 
 		 */
 		if( strrchr( name, '.' ) != NULL )
@@ -831,21 +831,21 @@ static int vlan_deconfigure( void )
 	    brcm_tag_driver_enabled = 0;
 	}
 	else
-	    /*
+	    /* 
 	     * no brcm tags, bring down lan vlan 
 	     */
 	    char *ifnames = nvram_safe_get( "lan_ifnames" );
 
 	foreach( name, ifnames, next )
 	{
-	    /*
+	    /* 
 	     * check to see if has suffix '.port' before removing 
 	     */
 	    if( strrchr( name, '.' ) != NULL )
 		eval( "vconfig", "rem", name );
 	}
     }
-    /*
+    /* 
      * now disable switch ports for vlan 
      */
     sprintf( buf, "%d\n", 0 );
@@ -853,7 +853,7 @@ static int vlan_deconfigure( void )
     vlan_configured = 0;
     bcm_api_deinit(  );
 
-    /*
+    /* 
      * now restore environment 
      */
     if( strlen( restore_wan_ifname ) )
@@ -890,25 +890,25 @@ static int vlan_deconfigure( void )
     return 0;
 }
 
-/*
+/* 
  * Setup VLAN interfaces, if enabled
  */
 int start_vlan( void )
 {
-    /*
+    /* 
      * Bringup vlan interfaces 
      */
     vlan_configure(  );
     return 0;
 }
 
-/*
+/* 
  * Stop VLANs, if they have been created.
  */
 int stop_vlan( void )
 {
 
-    /*
+    /* 
      * Shut down vifs 
      */
     vlan_deconfigure(  );
@@ -918,7 +918,7 @@ int stop_vlan( void )
 int start_portmon(  )
 {
 
-    /*
+    /* 
      * Start Linkscan 
      */
     return 0;
@@ -928,7 +928,7 @@ int start_portmon(  )
 int stop_portmon(  )
 {
 
-    /*
+    /* 
      * Stop linkscan 
      */
     return 0;

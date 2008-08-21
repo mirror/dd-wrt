@@ -42,7 +42,7 @@
 
 #include <revision.h>
 
-/*
+/* 
  * Call when keepalive mode
  */
 int redial_main( int argc, char **argv )
@@ -268,7 +268,7 @@ int main( int argc, char **argv )
 
 #ifndef HAVE_RB500
 #ifndef HAVE_X86
-    /*
+    /* 
      * erase [device] 
      */
     if( strstr( base, "erase" ) )
@@ -277,6 +277,10 @@ int main( int argc, char **argv )
 
 	if( brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54 )	// these 
 																					// 
+	    // 
+	    // 
+	    // 
+	    // 
 	    // 
 	    // routers 
 	    // have 
@@ -310,7 +314,7 @@ int main( int argc, char **argv )
 	return 0;
     }
 
-    /*
+    /* 
      * write [path] [device] 
      */
     if( strstr( base, "write" ) )
@@ -340,7 +344,7 @@ int main( int argc, char **argv )
     }
 #endif
 #endif
-    /*
+    /* 
      * hotplug [event] 
      */
     if( strstr( base, "hotplug" ) )
@@ -370,7 +374,7 @@ int main( int argc, char **argv )
     // 
     if( strstr( base, "filtersync" ) )
 	return start_service( "filtersync" );
-    /*
+    /* 
      * filter [add|del] number 
      */
     if( strstr( base, "filter" ) )
@@ -408,7 +412,7 @@ int main( int argc, char **argv )
 	start_service( "mkfiles" );
 	return 0;
     }
-    /*
+    /* 
      * rc [stop|start|restart ] 
      */
     else if( strstr( base, "rc" ) )
