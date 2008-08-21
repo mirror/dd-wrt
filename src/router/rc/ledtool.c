@@ -19,7 +19,7 @@
 
 int main( int argc, char **argv )
 {
-    /*
+    /* 
      * Run it in the background 
      */
     switch ( fork(  ) )
@@ -29,14 +29,14 @@ int main( int argc, char **argv )
 	    exit( 0 );
 	    break;
 	case 0:
-	    /*
+	    /* 
 	     * child process 
 	     */
 	    // fork ok
 	    ( void )setsid(  );
 	    break;
 	default:
-	    /*
+	    /* 
 	     * parent process should just die 
 	     */
 	    _exit( 0 );

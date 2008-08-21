@@ -68,15 +68,15 @@ void init_gpio(  )
 	exit( 1 );
     }
 
-    /*
+    /* 
      * disable 
      */
     *REG( page, GPIO0_TCR ) &= ~( GPIO_LED | GPIO_BUTTON );
-    /*
+    /* 
      * enable led 
      */
     *REG( page, GPIO0_TCR ) |= GPIO_LED | GPIO_BUTTON;
-    /*
+    /* 
      * enable/disable(?) button 
      */
     *REG( page, GPIO0_TCR ) &= ~GPIO_BUTTON;
@@ -112,7 +112,7 @@ int getbuttonstate(  )
     FILE *in;
     int ret = get_gpio( 8 );
 
-    /*
+    /* 
      * in = fopen ("/proc/simple_config/push_button", "rb"); if (in == NULL)
      * return 0; fscanf (in, "%d", &ret); fclose (in);
      */
@@ -147,37 +147,37 @@ int read_bit( int bit )
     int file;
     struct gpio_bit _bit;
 
-    /*
+    /* 
      * open device 
      */
     if( ( file = open( filename, O_RDONLY ) ) == -1 )
     {
-	/*
+	/* 
 	 * ERROR HANDLING; you can check errno to see what went wrong 
 	 */
 	return 1;
     }
 
-    /*
+    /* 
      * Config pin as input 
      */
     _bit.bit = bit;
     _bit.state = IXP4XX_GPIO_IN;
     if( ioctl( file, GPIO_SET_CONFIG, ( long )&_bit ) < 0 )
     {
-	/*
+	/* 
 	 * ERROR HANDLING; you can check errno to see what went wrong 
 	 */
 	return 1;
     }
 
-    /*
+    /* 
      * Read data 
      */
     _bit.bit = bit;
     if( ioctl( file, GPIO_GET_BIT, ( long )&_bit ) < 0 )
     {
-	/*
+	/* 
 	 * ERROR HANDLING; you can check errno to see what went wrong 
 	 */
 	return 1;
@@ -287,7 +287,7 @@ void runStartup( char *folder, char *extension )
     closedir( directory );
 }
 
-/*
+/* 
  * void system_reboot(void) { DEBUG("resetbutton: reboot\n"); alarmtimer(0,
  * 0); eval("reboot"); } 
  */
@@ -295,15 +295,15 @@ void runStartup( char *folder, char *extension )
 void service_restart( void )
 {
     DEBUG( "resetbutton: restart\n" );
-    /*
+    /* 
      * Stop the timer alarm 
      */
     alarmtimer( 0, 0 );
-    /*
+    /* 
      * Reset the Diagnostic LED 
      */
     diag_led( DIAG, START_LED );	/* call from service.c */
-    /*
+    /* 
      * Restart all of services 
      */
     eval( "rc", "restart" );
@@ -376,7 +376,7 @@ void period_check( int sig )
     else
 	state = !( val & gpio );
 
-    /*
+    /* 
      * 1 byte router's SES (AOSS) button gpio number and polarity; Eko
      * 25.nov.06
      * 
@@ -454,7 +454,7 @@ void period_check( int sig )
     // pin no.
 
 #endif
-    /*
+    /* 
      * The value is zero during button-pushed. 
      */
     if( state )
@@ -463,7 +463,7 @@ void period_check( int sig )
 
 	if( mode == 0 )
 	{
-	    /*
+	    /* 
 	     * We detect button pushed first time 
 	     */
 	    alarmtimer( 0, URGENT_INTERVAL );
@@ -600,7 +600,7 @@ void period_check( int sig )
 	    ses_mode = 1;
 
 	}
-	/*
+	/* 
 	 * else if (ses_mode == 2) { #ifdef HAVE_RADIOOFF if (nvram_match
 	 * ("radiooff_button", "1")) eval ("wl", "radio", "on"); #endif
 	 * 
@@ -619,7 +619,7 @@ void period_check( int sig )
 	 * } 
 	 */
 
-	/*
+	/* 
 	 * char *led_argv[] = { "check_ses_led", SES_LED_CHECK_TIMES,
 	 * SES_LED_CHECK_INTERVAL, NULL }; pid_t pid;
 	 * 
@@ -634,7 +634,7 @@ void period_check( int sig )
     else
     {
 
-	/*
+	/* 
 	 * Although it's unpushed now, it had ever been pushed 
 	 */
 	if( mode == 1 )
@@ -647,7 +647,7 @@ void period_check( int sig )
 	    }
 	    service_restart(  );
 	}
-	/*
+	/* 
 	 * if( ses_mode == 1 ){ cprintf("Release SES push button\n");
 	 * eval("sendudp", "-i", nvram_safe_get("lan_ifname"), "-s",
 	 * nvram_safe_get("lan_ipaddr"), "-d",
@@ -673,7 +673,7 @@ int main( int argc, char *argv[] )
 #ifdef HAVE_MAGICBOX
     init_gpio(  );
 #endif
-    /*
+    /* 
      * Run it under background 
      */
     switch ( fork(  ) )
@@ -683,30 +683,30 @@ int main( int argc, char *argv[] )
 	    exit( 0 );
 	    break;
 	case 0:
-	    /*
+	    /* 
 	     * child process 
 	     */
 	    DEBUG( "fork ok\n" );
 	    ( void )setsid(  );
 	    break;
 	default:
-	    /*
+	    /* 
 	     * parent process should just die 
 	     */
 	    _exit( 0 );
     }
 
-    /*
+    /* 
      * set the signal handler 
      */
     signal( SIGALRM, period_check );
 
-    /*
+    /* 
      * set timer 
      */
     alarmtimer( NORMAL_INTERVAL, 0 );
 
-    /*
+    /* 
      * Most of time it goes to sleep 
      */
     while( 1 )

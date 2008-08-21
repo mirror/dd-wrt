@@ -66,7 +66,7 @@ wget( int method, const char *server, char *buf, size_t count, off_t offset )
 
     strncpy( url, server, sizeof( url ) );
 
-    /*
+    /* 
      * Parse URL 
      */
     if( !strncmp( url, "http://", 7 ) )
@@ -91,7 +91,7 @@ wget( int method, const char *server, char *buf, size_t count, off_t offset )
 	port = atoi( s );
     }
     fprintf( stderr, "try to resolve %s\n", host );
-    /*
+    /* 
      * Open socket 
      */
     if( !inet_aton( host, &sin.sin_addr ) )
@@ -111,7 +111,7 @@ wget( int method, const char *server, char *buf, size_t count, off_t offset )
     }
     cprintf( "connected!\n" );
 
-    /*
+    /* 
      * Send HTTP request 
      */
     fprintf( fp, "%s /%s HTTP/1.1\r\n",
@@ -131,7 +131,7 @@ wget( int method, const char *server, char *buf, size_t count, off_t offset )
     else
 	fprintf( fp, "Connection: close\r\n\r\n" );
 
-    /*
+    /* 
      * Check HTTP response 
      */
     cprintf( "HTTP request sent, awaiting response...\n" );
@@ -157,7 +157,7 @@ wget( int method, const char *server, char *buf, size_t count, off_t offset )
 	}
     }
 
-    /*
+    /* 
      * Parse headers 
      */
     while( fgets( line, sizeof( line ), fp ) )
@@ -188,7 +188,7 @@ wget( int method, const char *server, char *buf, size_t count, off_t offset )
     len = fread( buf, 1, len, fp );
 
   done:
-    /*
+    /* 
      * Close socket 
      */
     fflush( fp );
@@ -203,7 +203,7 @@ int http_get( const char *server, char *buf, size_t count, off_t offset )
 
 int http_post( const char *server, char *buf, size_t count )
 {
-    /*
+    /* 
      * No continuation generally possible with POST 
      */
     return wget( METHOD_POST, server, buf, count, 0 );

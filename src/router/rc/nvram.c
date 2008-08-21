@@ -13,7 +13,7 @@ static void usage( void )
     exit( 0 );
 }
 
-/*
+/* 
  * NVRAM utility 
  */
 int main( int argc, char **argv )
@@ -21,7 +21,7 @@ int main( int argc, char **argv )
     char *name, *value, buf[NVRAM_SPACE];
     int size;
 
-    /*
+    /* 
      * Skip program name 
      */
     --argc;
@@ -30,7 +30,7 @@ int main( int argc, char **argv )
     if( !*argv )
 	usage(  );
 
-    /*
+    /* 
      * Process the remaining arguments. 
      */
     for( ; *argv; argv++ )

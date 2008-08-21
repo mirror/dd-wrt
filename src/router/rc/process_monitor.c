@@ -42,13 +42,6 @@ int main( int argc, char **argv )
 
     openlog( "process_monitor", LOG_PID | LOG_NDELAY, LOG_DAEMON );
 
-    // if( check_wan_link(0) ) { 
-    // if( nvram_invmatch("ntp_enable", "0") && ( ( check_wan_link(0) &&
-    // nvram_match("ppp_demand", "1") ) || (nvram_match("wan_proto", "pppoe") 
-    // 
-    // 
-    // && nvram_match("ppp_demand", "0") ) ) {
-
     if( nvram_invmatch( "dhcp_dnsmasq", "1" ) )
     {
 	leasetime = atol( nvram_safe_get( "dhcp_lease" ) ) * 60;
@@ -67,7 +60,7 @@ int main( int argc, char **argv )
     if( nvram_invmatch( "ntp_enable", "0" ) )
     {				// && check_wan_link(0) ) {
 
-	/*
+	/* 
 	 * init ntp timer 
 	 */
 #if defined(HAVE_SNMP) || defined(HAVE_WIFIDOG)
