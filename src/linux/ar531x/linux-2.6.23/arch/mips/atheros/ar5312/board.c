@@ -223,7 +223,7 @@ int __init ar5312_init_devices(void)
 	/* Locate board/radio config data */
 	ar531x_find_config(ar5312_flash_limit());
 	bcfg = (struct ar531x_boarddata *) board_config;
-//	printk(KERN_EMERG "radio = 0x%X\n",radio_config);
+//	printk(KERN_EMERG "radio = 0x%p\n",radio_config);
 
 	
 	/*
@@ -240,6 +240,7 @@ int __init ar5312_init_devices(void)
 			bcfg->config |= BD_ISCASPER;
 	} else
 		{
+//		printk(KERN_EMERG "radio config not found, set radio to null\n");
 		radio = NULL;
 		}
 
@@ -308,6 +309,7 @@ int __init ar5312_init_devices(void)
 			}
 		}
 		if (*((u32 *) radio) & AR531X_RADIO1_MASK) {
+//		printk("init wmac 1\n");
 			ar5312_wmac[1].dev.platform_data = init_wmac(1);
 			ar5312_devs[dev++] = &ar5312_wmac[1];
 		}

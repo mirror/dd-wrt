@@ -35,7 +35,7 @@ extern int early_serial_setup(struct uart_port *port);
 struct ar531x_boarddata default_config;
 static int fake_config=0;
 
-static u8 *find_board_config(char *flash_limit)
+u8 *find_board_config(char *flash_limit)
 {
 	char *addr;
 	int found = 0;
@@ -106,22 +106,22 @@ static u8 *find_board_config(char *flash_limit)
 	return addr;
 }
 
-static u8 *find_radio_config(char *flash_limit, char *board_config)
+u8 *find_radio_config(char *flash_limit, char *bconfig)
 {
 	int dataFound;
-	u32 radio_config;
+	u32 rconfig;
 	if (fake_config)
-	    board_config = flash_limit-0x10000;
+	    bconfig = flash_limit-0x10000;
 	/* 
 	 * Now find the start of Radio Configuration data, using heuristics:
 	 * Search forward from Board Configuration data by 0x1000 bytes
 	 * at a time until we find non-0xffffffff.
 	 */
 	dataFound = 0;
-	for (radio_config = (u32) board_config + 0x1000;
-	     (radio_config < (u32) flash_limit);
-	     radio_config += 0x1000) {
-		if (*(int *)radio_config != 0xffffffff) {
+	for (rconfig = (u32) bconfig + 0x1000;
+	     (rconfig < (u32) flash_limit);
+	     rconfig += 0x1000) {
+		if (*(int *)rconfig != 0xffffffff) {
 			dataFound = 1;
 			break;
 		}
@@ -129,10 +129,10 @@ static u8 *find_radio_config(char *flash_limit, char *board_config)
 
 #ifdef CONFIG_ATHEROS_AR5315
 	if (!dataFound) { /* AR2316 relocates radio config to new location */
-	    for (radio_config = (u32) board_config + 0xf8;
-	     	(radio_config < (u32) flash_limit - 0x1000 + 0xf8);
-			 radio_config += 0x1000) {
-			if (*(int *)radio_config != 0xffffffff) {
+	    for (rconfig = (u32) bconfig + 0xf8;
+	     	(rconfig < (u32) flash_limit - 0x1000 + 0xf8);
+			 rconfig += 0x1000) {
+			if (*(int *)rconfig != 0xffffffff) {
 				dataFound = 1;
 				break;
 			}
@@ -141,12 +141,12 @@ static u8 *find_radio_config(char *flash_limit, char *board_config)
 #endif
 
 	if (!dataFound) {
-		radio_config=flash_limit-0x10000;
+		rconfig=flash_limit-0x10000;
 		printk("Could not find Radio Configuration data\n");
-		radio_config = 0;
+		rconfig = 0;
 	}
 
-	return (u8 *) radio_config;
+	return (u8 *) rconfig;
 }
 
 int __init ar531x_find_config(char *flash_limit)
@@ -173,6 +173,8 @@ int __init ar531x_find_config(char *flash_limit)
 		return -ENODEV;
 
 	radio_config = board_config + 0x100 + ((rcfg - bcfg) & 0xfff);
+	if (fake_config)
+	    radio_config = board_config + 0x100 + ((0xc000) & 0xfff);
 	printk("Found board config at 0x%x\n",bcfg);
 	printk("Radio config found at offset 0x%x(0x%x) (%p)\n", rcfg - bcfg, radio_config - board_config,rcfg);
 	rcfg_size = BOARD_CONFIG_BUFSZ - ((rcfg - bcfg) & (BOARD_CONFIG_BUFSZ - 1));
