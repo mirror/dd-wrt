@@ -64,10 +64,14 @@ void
 lock (void)
 {
   FILE *in;
+  int lockwait=0;
   while ((in = fopen ("/tmp/.nvlock", "rb")) != NULL)
     {
       fclose (in);
       //cprintf ("nvram lock, waiting....\n");
+      lockwait++;
+      if (lockwait==3)
+        unlink("/tmp/.nvlock"); //something crashed, we fix it
       sleep (1);
     }
   in = fopen ("/tmp/.nvlock", "wb");
@@ -223,6 +227,14 @@ nvram_set (const char *name, const char *value)
 	    _nvram_set (v->wl0_name, value);
 	  if (strcmp (v->d11g_name, ""))
 	    _nvram_set (v->d11g_name, value);
+	//Jemmy add for dual band wireless 2008.3.1
+      if (!nvram_match("restore_defaults", "0") || !nvram_match("os_name", "linux"))	 
+    {
+	  if(strcmp(v->wl1_name,""))
+	    _nvram_set(v->wl1_name, value);
+	}
+	  if ((!strcmp(v->wl1_name, "wl1_maclist")) || (!strcmp(v->wl1_name, "wl1_macmode")))
+		_nvram_set(v->wl1_name, value);	    
 	}
     }
 //unlock();
