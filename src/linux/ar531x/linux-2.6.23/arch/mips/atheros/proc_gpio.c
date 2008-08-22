@@ -180,9 +180,9 @@ gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
   else
     {
   if (procfs_buffer[0] == '0' || procfs_buffer[0] == 'i')
-    reg = reg | GPIO_CR_M (((unsigned int) data) & PIN_MASK);
-  if (procfs_buffer[0] == '1' || procfs_buffer[0] == 'o')
     reg = reg & ~(GPIO_CR_M (((unsigned int) data) & PIN_MASK));
+  if (procfs_buffer[0] == '1' || procfs_buffer[0] == 'o')
+    reg = reg | GPIO_CR_M (((unsigned int) data) & PIN_MASK);
       if ((unsigned int) data & GPIO_IN)
 	{
 	  sysRegWrite (AR531X_GPIO_DI, reg);
