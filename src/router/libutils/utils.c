@@ -108,29 +108,59 @@ void add_userip( char *ip, int idx, char *upstream, char *downstream )
     char ups[32];
     char downs[32];
 
-    sprintf( up, "1:%d", base );
-    sprintf( down, "1:%d", base + 1 );
-    sprintf( ups, "%skbit", upstream );
-    sprintf( downs, "%skbit", downstream );
-    sysprintf
-	( "tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
-	  "imq0", base, upstream, upstream );
-    sysprintf( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-	       "imq0", base );
-    sysprintf
-	( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match ip src %s flowid 1:%d",
-	  "imq0", ip, base );
+    if( nvram_match( "qos_type", "1" ) )
+    {
+	sprintf( up, "1:%d", base );
+	sprintf( down, "1:%d", base + 1 );
+	sprintf( ups, "%skbit", upstream );
+	sprintf( downs, "%skbit", downstream );
+	sysprintf
+	    ( "tc class add dev %s parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
+	      "imq0", base, upstream, upstream );
+	sysprintf
+	    ( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
+	      "imq0", base );
+	sysprintf
+	    ( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match ip src %s flowid 1:%d",
+	      "imq0", ip, base );
 
-    sysprintf
-	( "tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
-	  base + 1, downstream, downstream );
-    sysprintf
-	( "tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
-	  base + 1, base + 1 );
-    sysprintf
-	( "tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match ip dst %s flowid 1:%d",
-	  ip, base + 1 );
+	sysprintf
+	    ( "tc class add dev imq0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
+	      base + 1, downstream, downstream );
+	sysprintf
+	    ( "tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
+	      base + 1, base + 1 );
+	sysprintf
+	    ( "tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match ip dst %s flowid 1:%d",
+	      ip, base + 1 );
 
+    }
+    else
+    {
+	sprintf( up, "1:%d", base );
+	sprintf( down, "1:%d", base + 1 );
+	sprintf( ups, "%skbit", upstream );
+	sprintf( downs, "%skbit", downstream );
+	sysprintf
+	    ( "tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
+	      "imq0", base, upstream, upstream );
+	sysprintf
+	    ( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
+	      "imq0", base );
+	sysprintf
+	    ( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match ip src %s flowid 1:%d",
+	      "imq0", ip, base );
+
+	sysprintf
+	    ( "tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
+	      base + 1, downstream, downstream );
+	sysprintf
+	    ( "tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
+	      base + 1, base + 1 );
+	sysprintf
+	    ( "tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match ip dst %s flowid 1:%d",
+	      ip, base + 1 );
+    }
 }
 
 void add_usermac( char *mac, int idx, char *upstream, char *downstream )
@@ -162,47 +192,95 @@ void add_usermac( char *mac, int idx, char *upstream, char *downstream )
 	     octet[5] );
     sprintf( doct2, "%02X%02X", octet[0], octet[1] );
 
-    // up
-    sysprintf( "tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit", "imq0", base, upstream, upstream );	// 
-    sysprintf( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-	       "imq0", base );
-    sysprintf
-	( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",
-	  "imq0", oct2, oct4, base );
-
-    // down
-    if( strcmp( get_wshaper_dev(  ), "br0" ) )
+    if( nvram_match( "qos_type", "1" ) )
     {
-	/*
-	 * use separate root class, since no other class is created for br0
-	 * if qos is wan based 
-	 */
+	// up
+	sysprintf( "tc class add dev %s parent 1:1 classid 1:%d htb rate %skbit ceil %skbit", "imq0", base, upstream, upstream );	// 
 	sysprintf
-	    ( "tc class add dev br0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",
-	      base + 1, downstream, downstream );
+	    ( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
+	      "imq0", base );
 	sysprintf
-	    ( "tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
-	      base + 1, base + 1 );
-	sysprintf
-	    ( "tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-	      doct4, doct2, base + 1 );
+	    ( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",
+	      "imq0", oct2, oct4, base );
+
+	// down
+	if( strcmp( get_wshaper_dev(  ), "br0" ) )
+	{
+	    /*
+	     * use separate root class, since no other class is created for br0
+	     * if qos is wan based 
+	     */
+	    sysprintf
+		( "tc class add dev br0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",
+		  base + 1, downstream, downstream );
+	    sysprintf
+		( "tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
+		  base + 1, base + 1 );
+	    sysprintf
+		( "tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+		  doct4, doct2, base + 1 );
+	}
+	else
+	{
+	    /*
+	     * use root class of br0 interface which was created by the wshaper 
+	     */
+	    sysprintf
+		( "tc class add dev br0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
+		  base + 1, downstream, downstream );
+	    sysprintf
+		( "tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
+		  base + 1, base + 1 );
+	    sysprintf
+		( "tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+		  doct4, doct2, base + 1 );
+	}
+
     }
     else
     {
-	/*
-	 * use root class of br0 interface which was created by the wshaper 
-	 */
+	// up
+	sysprintf( "tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit", "imq0", base, upstream, upstream );	// 
 	sysprintf
-	    ( "tc class add dev br0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
-	      base + 1, downstream, downstream );
+	    ( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
+	      "imq0", base );
 	sysprintf
-	    ( "tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
-	      base + 1, base + 1 );
-	sysprintf
-	    ( "tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-	      doct4, doct2, base + 1 );
-    }
+	    ( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",
+	      "imq0", oct2, oct4, base );
 
+	// down
+	if( strcmp( get_wshaper_dev(  ), "br0" ) )
+	{
+	    /*
+	     * use separate root class, since no other class is created for br0
+	     * if qos is wan based 
+	     */
+	    sysprintf
+		( "tc class add dev br0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",
+		  base + 1, downstream, downstream );
+	    sysprintf
+		( "tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
+		  base + 1, base + 1 );
+	    sysprintf
+		( "tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+		  doct4, doct2, base + 1 );
+	}
+	else
+	{
+	    /*
+	     * use root class of br0 interface which was created by the wshaper 
+	     */
+	    sysprintf
+		( "tc class add dev br0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
+		  base + 1, downstream, downstream );
+	    sysprintf
+		( "tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
+		  base + 1, base + 1 );
+	    sysprintf
+		( "tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+		  doct4, doct2, base + 1 );
+	}
+    }
     /*
      * mac downstream matching can only be made directly on the connected
      * interface 
@@ -956,7 +1034,7 @@ int internal_getRouterBrand(  )
     }
 
     if( boardnum == 8 && nvram_match( "boardtype", "0x0467" ) )	// fccid:
-								// K7SF5D7231B
+	// K7SF5D7231B
     {
 	cprintf( "router is Belkin F5D7231-4 v2000\n" );
 	setRouter( "Belkin F5D7231-4 v2000" );
@@ -975,7 +1053,7 @@ int internal_getRouterBrand(  )
     }
 #endif
     if( boardnum == 2 && nvram_match( "boardtype", "bcm94710dev" ) && nvram_match( "melco_id", "29016" ) )	// Buffalo 
-														// WLI2-TX1-G54)
+	// WLI2-TX1-G54)
     {
 	cprintf( "router is Buffalo WLI2-TX1-G54\n" );
 	setRouter( "Buffalo WLI2-TX1-G54" );
@@ -1023,7 +1101,7 @@ int internal_getRouterBrand(  )
     }
 
     if( gemteknum == 9 )	// Must be Motorola wr850g v1 or we800g v1 or 
-				// Linksys wrt55ag v1
+	// Linksys wrt55ag v1
     {
 	if( startswith( et0, "00:0C:E5" ) ||
 	    startswith( et0, "00:0c:e5" ) ||
@@ -1520,7 +1598,7 @@ int check_wan_link( int num )
 		printf( "The %s had been died, remove %s\n",
 			nvram_safe_get( "wan_proto" ), filename );
 		wan_link = 0;	// For some reason, the pppoed had been died, 
-				// by link file still exist.
+		// by link file still exist.
 		unlink( filename );
 	    }
 	}
@@ -2251,16 +2329,18 @@ int led_control( int type, int act )
     int bridge_gpio = 0x0f;
     int vpn_gpio = 0x0f;
     int ses_gpio = 0x0f;	// use for SES1 (Linksys), AOSS (Buffalo)
-				// ....
+
+    // ....
     int ses2_gpio = 0x0f;
     int wlan_gpio = 0x0f;	// use this only if wlan led is not
-				// controlled by hardware!
+
+    // controlled by hardware!
     int usb_gpio = 0x0f;
     int v1func = 0;
 
     switch ( getRouterBrand(  ) )	// gpio definitions here: 0xYZ,
-					// Y=0:normal, Y=1:inverted, Z:gpio
-					// number (f=disabled)
+	// Y=0:normal, Y=1:inverted, Z:gpio
+	// number (f=disabled)
     {
 #ifndef HAVE_BUFFALO
 	case ROUTER_BOARD_GATEWORX:
@@ -2271,7 +2351,7 @@ int led_control( int type, int act )
 	    break;
 	case ROUTER_LINKSYS_WRH54G:
 	    diag_gpio = 0x11;	// power led blink / off to indicate factory
-				// defaults
+	    // defaults
 	    break;
 	case ROUTER_WRT54G:
 	case ROUTER_WRT54G_V8:
@@ -2384,12 +2464,12 @@ int led_control( int type, int act )
 	case ROUTER_MOTOROLA:
 	    power_gpio = 0x01;
 	    diag_gpio = 0x11;	// power led blink / off to indicate factory
-				// defaults
+	    // defaults
 	    break;
 	case ROUTER_RT210W:
 	    power_gpio = 0x15;
 	    diag_gpio = 0x05;	// power led blink / off to indicate factory
-				// defaults
+	    // defaults
 	    connected_gpio = 0x10;
 	    wlan_gpio = 0x13;
 	    break;
@@ -2398,28 +2478,28 @@ int led_control( int type, int act )
 	case ROUTER_BELKIN_F5D7231:
 	    power_gpio = 0x15;
 	    diag_gpio = 0x05;	// power led blink / off to indicate factory
-				// defaults
+	    // defaults
 	    connected_gpio = 0x10;
 	    break;
 	case ROUTER_MICROSOFT_MN700:
 	    power_gpio = 0x06;
 	    diag_gpio = 0x16;	// power led blink / off to indicate factory
-				// defaults
+	    // defaults
 	    break;
 	case ROUTER_ASUS_WL500GD:
 	case ROUTER_ASUS_WL520GUGC:
 	    diag_gpio = 0x00;	// power led blink / off to indicate factory
-				// defaults
+	    // defaults
 	    break;
 	case ROUTER_ASUS_WL500G_PRE:
 	    power_gpio = 0x11;
 	    diag_gpio = 0x01;	// power led blink / off to indicate factory
-				// defaults
+	    // defaults
 	    break;
 	case ROUTER_ASUS_WL550GE:
 	    power_gpio = 0x12;
 	    diag_gpio = 0x02;	// power led blink / off to indicate factory
-				// defaults
+	    // defaults
 	    break;
 	case ROUTER_WRT54G3G:
 	case ROUTER_WRTSL54GS:
@@ -2439,7 +2519,7 @@ int led_control( int type, int act )
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:
 	    power_gpio = 0x17;
 	    diag_gpio = 0x07;	// power led blink / off to indicate factory
-				// defaults
+	    // defaults
 	    wlan_gpio = 0x16;
 	    break;
 	case ROUTER_NETGEAR_WNR834B:
@@ -2450,7 +2530,7 @@ int led_control( int type, int act )
 	case ROUTER_SITECOM_WL105B:
 	    power_gpio = 0x03;
 	    diag_gpio = 0x13;	// power led blink / off to indicate factory
-				// defaults
+	    // defaults
 	    wlan_gpio = 0x14;
 	    break;
 	case ROUTER_WRT150N:
@@ -2470,19 +2550,19 @@ int led_control( int type, int act )
 	case ROUTER_WRT160N:
 	    power_gpio = 0x01;
 	    diag_gpio = 0x11;	// power led blink / off to indicate fac.def. 
-				// 
+	    // 
 	    connected_gpio = 0x13;	// ses orange
 	    ses_gpio = 0x15;	// ses blue
 	    break;
 	case ROUTER_ASUS_WL500G:
 	    power_gpio = 0x10;
 	    diag_gpio = 0x00;	// power led blink /off to indicate factory
-				// defaults
+	    // defaults
 	    break;
 	case ROUTER_ASUS_WL500W:
 	    power_gpio = 0x15;
 	    diag_gpio = 0x05;	// power led blink /off to indicate factory
-				// defaults
+	    // defaults
 	    break;
 	case ROUTER_LINKSYS_WTR54GS:
 	    diag_gpio = 0x01;
@@ -2503,7 +2583,7 @@ int led_control( int type, int act )
 	case ROUTER_NETGEAR_WNDR3300:
 	    power_gpio = 0x05;
 	    diag_gpio = 0x15;	// power led blink /off to indicate factory
-				// defaults
+	    // defaults
 	    break;
 	case ROUTER_ASKEY_RT220XD:
 	    wlan_gpio = 0x10;
