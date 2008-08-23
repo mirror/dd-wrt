@@ -17,7 +17,7 @@
 #include "ar5315/ar5315.h"
 
 #define PROCFS_MAX_SIZE 64
-extern const char *get_arch_type (void);
+extern const char *get_arch_type( void );
 struct proc_dir_entry *proc_gpio, *gpio_dir;
 
 //Masks for data exchange through "void *data" pointer
@@ -41,273 +41,286 @@ struct proc_dir_entry *proc_gpio, *gpio_dir;
 #define AR5315_NUM_GPIO         22
 */
 
-static void cleanup_proc (void);
+static void cleanup_proc( void );
 
 //The buffer used to store the data returned by the proc file
 static char procfs_buffer[PROCFS_MAX_SIZE];
 static unsigned long procfs_buffer_size = 0;
 
-
 static int
-gpio_proc_read (char *buf, char **start, off_t offset,
-		int len, int *eof, void *data)
+gpio_proc_read( char *buf, char **start, off_t offset,
+		int len, int *eof, void *data )
 {
-  u32 reg = 0;
-  if (!strcmp (get_arch_type (), "Atheros AR5315"))
+    u32 reg = 0;
+
+    if( !strcmp( get_arch_type(  ), "Atheros AR5315" ) )
     {
-      if ((unsigned int) data & GPIO_IN)
-	reg = sysRegRead (AR5315_GPIO_DI);
-      if ((unsigned int) data & GPIO_OUT)
-	reg = sysRegRead (AR5315_GPIO_DO);
-      if ((unsigned int) data & GPIO_DIR)
-	reg = sysRegRead (AR5315_GPIO_CR);
+	if( ( unsigned int )data & GPIO_IN )
+	    reg = sysRegRead( AR5315_GPIO_DI );
+	if( ( unsigned int )data & GPIO_OUT )
+	    reg = sysRegRead( AR5315_GPIO_DO );
+	if( ( unsigned int )data & GPIO_DIR )
+	    reg = sysRegRead( AR5315_GPIO_CR );
     }
-  else
+    else
     {
-      if ((unsigned int) data & GPIO_IN)
-	reg = sysRegRead (AR531X_GPIO_DI);
-      if ((unsigned int) data & GPIO_OUT)
-	reg = sysRegRead (AR531X_GPIO_DO);
-      if ((unsigned int) data & GPIO_DIR)
-	reg = sysRegRead (AR531X_GPIO_CR);
+	if( ( unsigned int )data & GPIO_IN )
+	    reg = sysRegRead( AR531X_GPIO_DI );
+	if( ( unsigned int )data & GPIO_OUT )
+	    reg = sysRegRead( AR531X_GPIO_DO );
+	if( ( unsigned int )data & GPIO_DIR )
+	    reg = sysRegRead( AR531X_GPIO_CR );
     }
-  //printk (KERN_NOTICE "gpio_proc: read: value of reg ... %#08X   .. value of data %#08X\n",
-  //                                                                                                                                      reg,(unsigned int)data);
+    //printk (KERN_NOTICE "gpio_proc: read: value of reg ... %#08X   .. value of data %#08X\n",
+    //                                                                                                                                      reg,(unsigned int)data);
 
-  if (GPIO_CR_M (((unsigned int) data) & PIN_MASK) & reg)
-    buf[0] = '1';
-  else
-    buf[0] = '0';
-  buf[1] = 0;
+    if( GPIO_CR_M( ( ( unsigned int )data ) & PIN_MASK ) & reg )
+	buf[0] = '1';
+    else
+	buf[0] = '0';
+    buf[1] = 0;
 
-  *eof = 1;
+    *eof = 1;
 
-  return (2);
+    return ( 2 );
 
 }
 
 static int
-gpio_proc_info_read (char *buf, char **start, off_t offset,
-		     int len, int *eof, void *data)
+gpio_proc_info_read( char *buf, char **start, off_t offset,
+		     int len, int *eof, void *data )
 {
-  *eof = 1;
-  if (!strcmp (get_arch_type (), "Atheros AR5315"))
+    *eof = 1;
+    if( !strcmp( get_arch_type(  ), "Atheros AR5315" ) )
     {
-      return (sprintf
-	      (buf, "GPIO_IN   %#08X \nGPIO_OUT  %#08X \nGPIO_DIR  %#08X \n",
-	       sysRegRead (AR5315_GPIO_DI), sysRegRead (AR5315_GPIO_DO),
-	       sysRegRead (AR5315_GPIO_CR)));
+	return ( sprintf
+		 ( buf,
+		   "GPIO_IN   %#08X \nGPIO_OUT  %#08X \nGPIO_DIR  %#08X \n",
+		   sysRegRead( AR5315_GPIO_DI ), sysRegRead( AR5315_GPIO_DO ),
+		   sysRegRead( AR5315_GPIO_CR ) ) );
     }
-  else
+    else
     {
-      return (sprintf
-	      (buf, "GPIO_IN   %#08X \nGPIO_OUT  %#08X \nGPIO_DIR  %#08X \n",
-	       sysRegRead (AR531X_GPIO_DI), sysRegRead (AR531X_GPIO_DO),
-	       sysRegRead (AR531X_GPIO_CR)));
+	return ( sprintf
+		 ( buf,
+		   "GPIO_IN   %#08X \nGPIO_OUT  %#08X \nGPIO_DIR  %#08X \n",
+		   sysRegRead( AR531X_GPIO_DI ), sysRegRead( AR531X_GPIO_DO ),
+		   sysRegRead( AR531X_GPIO_CR ) ) );
     }
 }
 
 static int
-gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
-		 void *data)
+gpio_proc_write( struct file *file, const char *buffer, unsigned long count,
+		 void *data )
 {
-  u32 reg = 0;
+    u32 reg = 0;
 
-  /* get buffer size */
-  procfs_buffer_size = count;
-  if (procfs_buffer_size > PROCFS_MAX_SIZE)
+    /* get buffer size */
+    procfs_buffer_size = count;
+    if( procfs_buffer_size > PROCFS_MAX_SIZE )
     {
-      procfs_buffer_size = PROCFS_MAX_SIZE;
+	procfs_buffer_size = PROCFS_MAX_SIZE;
     }
-  /* write data to the buffer */
-  if (copy_from_user (procfs_buffer, buffer, procfs_buffer_size))
+    /* write data to the buffer */
+    if( copy_from_user( procfs_buffer, buffer, procfs_buffer_size ) )
     {
-      return -EFAULT;
-    }
-
-  procfs_buffer[procfs_buffer_size] = 0;
-  //printk (KERN_NOTICE "you wrote \"%c\" to GPIO %i\n",procfs_buffer[0], ((int)data) & 0xff );
-
-  //printk (KERN_NOTICE "GPIO PROCID %#08X\n",(int) data );
-  if (!strcmp (get_arch_type (), "Atheros AR5315"))
-    {
-
-      if ((unsigned int) data & GPIO_IN)
-	reg = sysRegRead (AR5315_GPIO_DI);
-      if ((unsigned int) data & GPIO_OUT)
-	reg = sysRegRead (AR5315_GPIO_DO);
-      if ((unsigned int) data & GPIO_DIR)
-	reg = sysRegRead (AR5315_GPIO_CR);
-    }
-  else
-    {
-      if ((unsigned int) data & GPIO_IN)
-	reg = sysRegRead (AR531X_GPIO_DI);
-      if ((unsigned int) data & GPIO_OUT)
-	reg = sysRegRead (AR531X_GPIO_DO);
-      if ((unsigned int) data & GPIO_DIR)
-	reg = sysRegRead (AR531X_GPIO_CR);
-
-
-    }
-  //printk (KERN_NOTICE "value before ... %#08X\n",reg);
-
-
-  //printk (KERN_NOTICE ".. and after write %#08X \n",reg);
-
-  if (!strcmp (get_arch_type (), "Atheros AR5315"))
-    {
-  if (procfs_buffer[0] == '0' || procfs_buffer[0] == 'i')
-    reg = reg & ~(GPIO_CR_M (((unsigned int) data) & PIN_MASK));
-  if (procfs_buffer[0] == '1' || procfs_buffer[0] == 'o')
-    reg = reg | GPIO_CR_M (((unsigned int) data) & PIN_MASK);
-      if ((unsigned int) data & GPIO_IN)
-	{
-	  sysRegWrite (AR5315_GPIO_DI, reg);
-	  (void) sysRegRead (AR5315_GPIO_DI);	/* flush write to hardware */
-	}
-      if ((unsigned int) data & GPIO_OUT)
-	{
-	  sysRegWrite (AR5315_GPIO_DO, reg);
-	  (void) sysRegRead (AR5315_GPIO_DO);	/* flush write to hardware */
-	}
-      if ((unsigned int) data & GPIO_DIR)
-	{
-	  sysRegWrite (AR5315_GPIO_CR, reg);
-	  (void) sysRegRead (AR5315_GPIO_CR);	/* flush write to hardware */
-	}
-    }
-  else
-    {
-  if (procfs_buffer[0] == '0' || procfs_buffer[0] == 'i')
-    reg = reg & ~(GPIO_CR_M (((unsigned int) data) & PIN_MASK));
-  if (procfs_buffer[0] == '1' || procfs_buffer[0] == 'o')
-    reg = reg | GPIO_CR_M (((unsigned int) data) & PIN_MASK);
-      if ((unsigned int) data & GPIO_IN)
-	{
-	  sysRegWrite (AR531X_GPIO_DI, reg);
-	  (void) sysRegRead (AR531X_GPIO_DI);	/* flush write to hardware */
-	}
-      if ((unsigned int) data & GPIO_OUT)
-	{
-	  sysRegWrite (AR531X_GPIO_DO, reg);
-	  (void) sysRegRead (AR531X_GPIO_DO);	/* flush write to hardware */
-	}
-      if ((unsigned int) data & GPIO_DIR)
-	{
-	  sysRegWrite (AR531X_GPIO_CR, reg);
-	  (void) sysRegRead (AR531X_GPIO_CR);	/* flush write to hardware */
-	}
-
-
+	return -EFAULT;
     }
 
-  return procfs_buffer_size;
+    procfs_buffer[procfs_buffer_size] = 0;
+    //printk (KERN_NOTICE "you wrote \"%c\" to GPIO %i\n",procfs_buffer[0], ((int)data) & 0xff );
+
+    //printk (KERN_NOTICE "GPIO PROCID %#08X\n",(int) data );
+    if( !strcmp( get_arch_type(  ), "Atheros AR5315" ) )
+    {
+
+	if( ( unsigned int )data & GPIO_IN )
+	    reg = sysRegRead( AR5315_GPIO_DI );
+	if( ( unsigned int )data & GPIO_OUT )
+	    reg = sysRegRead( AR5315_GPIO_DO );
+	if( ( unsigned int )data & GPIO_DIR )
+	    reg = sysRegRead( AR5315_GPIO_CR );
+    }
+    else
+    {
+	if( ( unsigned int )data & GPIO_IN )
+	    reg = sysRegRead( AR531X_GPIO_DI );
+	if( ( unsigned int )data & GPIO_OUT )
+	    reg = sysRegRead( AR531X_GPIO_DO );
+	if( ( unsigned int )data & GPIO_DIR )
+	    reg = sysRegRead( AR531X_GPIO_CR );
+
+    }
+    //printk (KERN_NOTICE "value before ... %#08X\n",reg);
+
+    //printk (KERN_NOTICE ".. and after write %#08X \n",reg);
+
+    if( !strcmp( get_arch_type(  ), "Atheros AR5315" ) )
+    {
+	if( procfs_buffer[0] == '0' || procfs_buffer[0] == 'i' )
+	    reg = reg & ~( GPIO_CR_M( ( ( unsigned int )data ) & PIN_MASK ) );
+	if( procfs_buffer[0] == '1' || procfs_buffer[0] == 'o' )
+	    reg = reg | GPIO_CR_M( ( ( unsigned int )data ) & PIN_MASK );
+	if( ( unsigned int )data & GPIO_IN )
+	{
+	    sysRegWrite( AR5315_GPIO_DI, reg );
+	    ( void )sysRegRead( AR5315_GPIO_DI );	/* flush write to hardware */
+	}
+	if( ( unsigned int )data & GPIO_OUT )
+	{
+	    sysRegWrite( AR5315_GPIO_DO, reg );
+	    ( void )sysRegRead( AR5315_GPIO_DO );	/* flush write to hardware */
+	}
+	if( ( unsigned int )data & GPIO_DIR )
+	{
+	    sysRegWrite( AR5315_GPIO_CR, reg );
+	    ( void )sysRegRead( AR5315_GPIO_CR );	/* flush write to hardware */
+	}
+    }
+    else
+    {
+	if( ( unsigned int )data & GPIO_IN )
+	{
+	    if( procfs_buffer[0] == '0' || procfs_buffer[0] == 'i' )
+		reg =
+		    reg &
+		    ~( GPIO_CR_M( ( ( unsigned int )data ) & PIN_MASK ) );
+	    if( procfs_buffer[0] == '1' || procfs_buffer[0] == 'o' )
+		reg = reg | GPIO_CR_M( ( ( unsigned int )data ) & PIN_MASK );
+	    sysRegWrite( AR531X_GPIO_DI, reg );
+	    ( void )sysRegRead( AR531X_GPIO_DI );	/* flush write to hardware */
+	}
+	if( ( unsigned int )data & GPIO_OUT )
+	{
+	    if( procfs_buffer[0] == '0' || procfs_buffer[0] == 'i' )
+		reg =
+		    reg &
+		    ~( GPIO_CR_M( ( ( unsigned int )data ) & PIN_MASK ) );
+	    if( procfs_buffer[0] == '1' || procfs_buffer[0] == 'o' )
+		reg = reg | GPIO_CR_M( ( ( unsigned int )data ) & PIN_MASK );
+	    sysRegWrite( AR531X_GPIO_DO, reg );
+	    ( void )sysRegRead( AR531X_GPIO_DO );	/* flush write to hardware */
+	}
+	if( ( unsigned int )data & GPIO_DIR )
+	{
+	    if( procfs_buffer[0] == '0' || procfs_buffer[0] == 'i' )
+		reg = reg | GPIO_CR_M( ( ( unsigned int )data ) & PIN_MASK );
+	    if( procfs_buffer[0] == '1' || procfs_buffer[0] == 'o' )
+		reg =
+		    reg &
+		    ~( GPIO_CR_M( ( ( unsigned int )data ) & PIN_MASK ) );
+	    sysRegWrite( AR531X_GPIO_CR, reg );
+	    ( void )sysRegRead( AR531X_GPIO_CR );	/* flush write to hardware */
+	}
+
+    }
+
+    return procfs_buffer_size;
 }
 
-static __init int
-register_proc (void)
+static __init int register_proc( void )
 {
-  unsigned char i, flag = 0;
-  char proc_name[16];
-  int gpiocount = 0;
-  if (!strcmp (get_arch_type (), "Atheros AR5315"))
+    unsigned char i, flag = 0;
+    char proc_name[16];
+    int gpiocount = 0;
+
+    if( !strcmp( get_arch_type(  ), "Atheros AR5315" ) )
     {
-      gpiocount = 22;
+	gpiocount = 22;
     }
-  else
+    else
     {
-      gpiocount = 8;
+	gpiocount = 8;
     }
 
-  /* create directory gpio */
-  gpio_dir = proc_mkdir ("gpio", NULL);
-  if (gpio_dir == NULL)
-    goto fault;
-  gpio_dir->owner = THIS_MODULE;
+    /* create directory gpio */
+    gpio_dir = proc_mkdir( "gpio", NULL );
+    if( gpio_dir == NULL )
+	goto fault;
+    gpio_dir->owner = THIS_MODULE;
 
-  for (i = 0; i < gpiocount * 3; i++)	//create for every GPIO "x_in"," x_out" and "x_dir"
+    for( i = 0; i < gpiocount * 3; i++ )	//create for every GPIO "x_in"," x_out" and "x_dir"
     {
-      if (i / gpiocount == 0)
+	if( i / gpiocount == 0 )
 	{
-	  flag = GPIO_IN;
-	  sprintf (proc_name, "%i_in", i);
+	    flag = GPIO_IN;
+	    sprintf( proc_name, "%i_in", i );
 	}
-      if (i / gpiocount == 1)
+	if( i / gpiocount == 1 )
 	{
-	  flag = GPIO_OUT;
-	  sprintf (proc_name, "%i_out", i % gpiocount);
+	    flag = GPIO_OUT;
+	    sprintf( proc_name, "%i_out", i % gpiocount );
 	}
-      if (i / gpiocount == 2)
+	if( i / gpiocount == 2 )
 	{
-	  flag = GPIO_DIR;
-	  sprintf (proc_name, "%i_dir", i % gpiocount);
+	    flag = GPIO_DIR;
+	    sprintf( proc_name, "%i_dir", i % gpiocount );
 	}
 
-      proc_gpio = create_proc_entry (proc_name, S_IRUGO, gpio_dir);
-      if (proc_gpio)
+	proc_gpio = create_proc_entry( proc_name, S_IRUGO, gpio_dir );
+	if( proc_gpio )
 	{
-	  proc_gpio->read_proc = gpio_proc_read;
-	  proc_gpio->write_proc = gpio_proc_write;
-	  proc_gpio->owner = THIS_MODULE;
-	  proc_gpio->data = ((i % gpiocount) | flag);
+	    proc_gpio->read_proc = gpio_proc_read;
+	    proc_gpio->write_proc = gpio_proc_write;
+	    proc_gpio->owner = THIS_MODULE;
+	    proc_gpio->data = ( ( i % gpiocount ) | flag );
 	}
-      else
+	else
+	    goto fault;
+
+    }
+
+    proc_gpio = create_proc_entry( "info", S_IRUGO, gpio_dir );
+    if( proc_gpio )
+    {
+	proc_gpio->read_proc = gpio_proc_info_read;
+	proc_gpio->owner = THIS_MODULE;
+    }
+    else
 	goto fault;
 
-    }
+    printk( KERN_NOTICE
+	    "gpio_proc: module loaded and /proc/gpio/ created\n" );
+    return 0;
 
-  proc_gpio = create_proc_entry ("info", S_IRUGO, gpio_dir);
-  if (proc_gpio)
-    {
-      proc_gpio->read_proc = gpio_proc_info_read;
-      proc_gpio->owner = THIS_MODULE;
-    }
-  else
-    goto fault;
-
-  printk (KERN_NOTICE "gpio_proc: module loaded and /proc/gpio/ created\n");
-  return 0;
-
-fault:
-  cleanup_proc ();
-  return -EFAULT;
+  fault:
+    cleanup_proc(  );
+    return -EFAULT;
 }
 
-static void
-cleanup_proc (void)
+static void cleanup_proc( void )
 {
-  unsigned char i;
-  char proc_name[16];
-  int gpiocount=0;
-  if (!strcmp (get_arch_type (), "Atheros AR5315"))
+    unsigned char i;
+    char proc_name[16];
+    int gpiocount = 0;
+
+    if( !strcmp( get_arch_type(  ), "Atheros AR5315" ) )
     {
-      gpiocount = 22;
+	gpiocount = 22;
     }
-  else
+    else
     {
-      gpiocount = 8;
+	gpiocount = 8;
     }
 
-  for (i = 0; i < gpiocount; i++)
+    for( i = 0; i < gpiocount; i++ )
     {
-      sprintf (proc_name, "%i_in", i);
-      remove_proc_entry (proc_name, gpio_dir);
-      sprintf (proc_name, "%i_out", i);
-      remove_proc_entry (proc_name, gpio_dir);
-      sprintf (proc_name, "%i_dir", i);
-      remove_proc_entry (proc_name, gpio_dir);
+	sprintf( proc_name, "%i_in", i );
+	remove_proc_entry( proc_name, gpio_dir );
+	sprintf( proc_name, "%i_out", i );
+	remove_proc_entry( proc_name, gpio_dir );
+	sprintf( proc_name, "%i_dir", i );
+	remove_proc_entry( proc_name, gpio_dir );
     }
-  remove_proc_entry ("info", gpio_dir);
-  remove_proc_entry ("gpio", NULL);
-  printk (KERN_INFO "gpio_proc: unloaded and /proc/gpio/ removed\n");
+    remove_proc_entry( "info", gpio_dir );
+    remove_proc_entry( "gpio", NULL );
+    printk( KERN_INFO "gpio_proc: unloaded and /proc/gpio/ removed\n" );
 
 }
 
+module_init( register_proc );
+module_exit( cleanup_proc );
 
-module_init (register_proc);
-module_exit (cleanup_proc);
-
-MODULE_AUTHOR ("olg");
-MODULE_DESCRIPTION ("AR5315 GPIO pins in /proc/gpio/");
-MODULE_LICENSE ("GPL");
+MODULE_AUTHOR( "olg" );
+MODULE_DESCRIPTION( "AR5315 GPIO pins in /proc/gpio/" );
+MODULE_LICENSE( "GPL" );
