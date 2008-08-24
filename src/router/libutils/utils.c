@@ -692,7 +692,7 @@ int internal_getRouterBrand(  )
     setRouter( "AW-6660" );
     return ROUTER_BOARD_TW6600;
 #elif HAVE_ALPHA
-    setRouter( "Alpha Networks AP48" );
+    setRouter( "Alfa Networks AP48" );
     return ROUTER_BOARD_CA8;
 #elif HAVE_USR5453
     setRouter( "US Robotics USR5453" );
