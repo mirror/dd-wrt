@@ -604,9 +604,9 @@ void vlan_init( int numports )
     }
 
     config_vlan(  );
-    eval( "/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
-    eval( "/sbin/vconfig", "add", "eth0", "1" );
-    eval( "/sbin/vconfig", "add", "eth0", "2" );
+    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
+    eval( "vconfig", "add", "eth0", "1" );
+    eval( "vconfig", "add", "eth0", "2" );
     struct ifreq ifr;
     int s;
 

@@ -71,7 +71,7 @@ static void makeipup( void )
 
     FILE *fp = fopen( "/tmp/pppoeserver/ip-up", "w" );
 
-    fprintf( fp, "#!/bin/sh\n" "/sbin/startservice set_routes\n"	// reinitialize 
+    fprintf( fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
 									// routing, 
 									// just 
 									// in 
@@ -81,16 +81,16 @@ static void makeipup( void )
 									// target 
 									// route 
 									// exists
-	     "/usr/sbin/iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
-	     "/usr/sbin/iptables -I INPUT -i $1 -j ACCEPT\n"
-	     "/usr/sbin/iptables -I FORWARD -i $1 -j ACCEPT\n", mss + 1,
+	     "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
+	     "iptables -I INPUT -i $1 -j ACCEPT\n"
+	     "iptables -I FORWARD -i $1 -j ACCEPT\n", mss + 1,
 	     mss );
     fclose( fp );
     fp = fopen( "/tmp/pppoeserver/ip-down", "w" );
     fprintf( fp, "#!/bin/sh\n"
-	     "/usr/sbin/iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
-	     "/usr/sbin/iptables -D INPUT -i $1 -j ACCEPT\n"
-	     "/usr/sbin/iptables -D FORWARD -i $1 -j ACCEPT\n", mss + 1,
+	     "iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
+	     "iptables -D INPUT -i $1 -j ACCEPT\n"
+	     "iptables -D FORWARD -i $1 -j ACCEPT\n", mss + 1,
 	     mss );
     fclose( fp );
     chmod( "/tmp/pppoeserver/ip-up", 0744 );

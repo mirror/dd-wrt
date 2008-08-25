@@ -63,7 +63,7 @@ static int do_ap_watchdog( void )
 	WLAND_INTERVAL ? atoi( nvram_safe_get( "apwatchdog_interval" ) ) :
 	WLAND_INTERVAL;
 
-    system2( "/usr/sbin/wl assoclist 2>&1 > /tmp/.assoclist" );
+    system2( "wl assoclist 2>&1 > /tmp/.assoclist" );
     stat( "/tmp/.assoclist", &s );
     unlink( "/tmp/.assoclist" );
 
@@ -74,7 +74,7 @@ static int do_ap_watchdog( void )
     {
 	time( &last );
 	cprintf( "resetting ap radio\n" );
-	eval( "/usr/sbin/wlconf", get_wdev(  ), "down" );
+	eval( "wlconf", get_wdev(  ), "down" );
 
 	val = atoi( nvram_safe_get( "wl0_channel" ) ) + 1;
 	if( val <= 2 || val >= 14 )
@@ -83,7 +83,7 @@ static int do_ap_watchdog( void )
 	wl_ioctl( get_wdev(  ), WLC_SET_CHANNEL, &val, sizeof( val ) );
 	wl_ioctl( get_wdev(  ), WLC_UP, NULL, 0 );
 
-	eval( "/usr/sbin/wlconf", get_wdev(  ), "down" );
+	eval( "wlconf", get_wdev(  ), "down" );
 	eval( "startservice", "wlconf" );
 	// wlconf_up (get_wdev ());
 
@@ -442,7 +442,7 @@ static void do_client_check( void )
     // char mac[512];
     int len;
 
-    system2( "/usr/sbin/wl assoc 2>&1 > /tmp/.xassocx" );
+    system2( "wl assoc 2>&1 > /tmp/.xassocx" );
     if( ( fp = fopen( "/tmp/.xassocx", "r" ) ) == NULL )
 	return;
 
@@ -530,9 +530,9 @@ static void do_madwifi_check( void )
 
 		if( count < 1 )
 		{
-		    eval( "/sbin/ifconfig", wdsdev, "down" );
+		    eval( "ifconfig", wdsdev, "down" );
 		    sleep( 1 );
-		    eval( "/sbin/ifconfig", wdsdev, "up" );
+		    eval( "ifconfig", wdsdev, "up" );
 		    eval( "startservice", "set_routes" );
 		}
 	    }
@@ -573,14 +573,14 @@ static void do_madwifi_check( void )
 			{
 			    foreach( var, vifs, next )
 			    {
-				eval( "/sbin/ifconfig", var, "down" );
+				eval( "ifconfig", var, "down" );
 			    }
 			}
 
 			notstarted[i] = 0;
-			eval( "/sbin/ifconfig", dev, "down" );
+			eval( "ifconfig", dev, "down" );
 			sleep( 1 );
-			eval( "/sbin/ifconfig", dev, "up" );
+			eval( "ifconfig", dev, "up" );
 			eval( "startservice", "set_routes" );
 			lastchans[i] = -1;
 		    }
@@ -600,7 +600,7 @@ static void do_madwifi_check( void )
 			{
 			    foreach( var, vifs, next )
 			    {
-				eval( "/sbin/ifconfig", var, "up" );
+				eval( "ifconfig", var, "up" );
 				eval( "startservice", "set_routes" );
 			    }
 			}

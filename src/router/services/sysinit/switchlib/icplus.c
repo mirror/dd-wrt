@@ -563,9 +563,9 @@ void vlan_init( int portmask )
     phyReg = phyReg & ~VID_INDX_SEL_M;
     setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phyReg );
 
-    eval( "/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
-    eval( "/sbin/vconfig", "add", "eth0", "0" );
-    eval( "/sbin/vconfig", "add", "eth0", "2" );
+    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
+    eval( "vconfig", "add", "eth0", "0" );
+    eval( "vconfig", "add", "eth0", "2" );
     struct ifreq ifr;
     int s;
 
