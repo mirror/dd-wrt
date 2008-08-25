@@ -3182,7 +3182,7 @@ int stop_firewall( void )
 
     foreach( var, wordlist, next )
     {
-	sysprintf( "/usr/sbin/iptables -D INPUT -s %s -j ACCEPT", var );
+	sysprintf( "iptables -D INPUT -s %s -j ACCEPT", var );
     }
 #endif
     char num[32];

@@ -203,11 +203,11 @@ int zebra_ospf_init( void )
     fclose( fp );
 
     if( nvram_match( "dyn_default", "1" ) )
-	while( !eval( "/usr/sbin/ip", "route", "del", "default" ) )
+	while( !eval( "ip", "route", "del", "default" ) )
 	    ;
 
-    ret1 = eval( "/usr/sbin/zebra", "-d", "-f", "/tmp/zebra.conf" );
-    ret2 = eval( "/usr/sbin/ospfd", "-d", "-f", "/tmp/ospfd.conf" );
+    ret1 = eval( "zebra", "-d", "-f", "/tmp/zebra.conf" );
+    ret2 = eval( "ospfd", "-d", "-f", "/tmp/ospfd.conf" );
 
     return ret1 + ret2;
 }

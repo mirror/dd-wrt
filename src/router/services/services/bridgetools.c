@@ -76,26 +76,26 @@ int br_set_stp_state( const char *br, int stp_state )
     if( stp_state == 1 )
     {
 	// syslog (LOG_INFO, "stp is set to on\n");
-	return eval( "/sbin/rstpctl", "rstp", br, "on" );
+	return eval( "rstpctl", "rstp", br, "on" );
     }
     else
     {
 	// syslog (LOG_INFO, "stp is set to off\n");
-	return eval( "/sbin/rstpctl", "rstp", br, "off" );
+	return eval( "rstpctl", "rstp", br, "off" );
     }
 }
 int br_set_port_prio( const char *br, char *port, char *prio )
 {
     if( !ifexists( br ) )
 	return -1;
-    return eval( "/sbin/rstpctl", "setportprio", br, port, prio );
+    return eval( "rstpctl", "setportprio", br, port, prio );
 }
 
 int br_set_bridge_prio( const char *br, char *prio )
 {
     if( !ifexists( br ) )
 	return -1;
-    return eval( "/sbin/rstpctl", "setbridgeprio", br, prio );
+    return eval( "rstpctl", "setbridgeprio", br, prio );
 }
 
 int br_set_bridge_forward_delay( const char *br, int sec )
@@ -103,7 +103,7 @@ int br_set_bridge_forward_delay( const char *br, int sec )
     char delay[32];
 
     sprintf( delay, "%d", sec );
-    return eval( "/sbin/rstpctl", "setfdelay", br, delay );
+    return eval( "rstpctl", "setfdelay", br, delay );
 
 }
 #else
@@ -112,7 +112,7 @@ int br_set_bridge_forward_delay( const char *br, int sec )
     char delay[32];
 
     sprintf( delay, "%d", sec );
-    return eval( "/usr/sbin/brctl", "setfd", br, delay );
+    return eval( "brctl", "setfd", br, delay );
 }
 
 int br_set_stp_state( const char *br, int stp_state )
@@ -122,33 +122,33 @@ int br_set_stp_state( const char *br, int stp_state )
     if( stp_state == 1 )
     {
 	// syslog (LOG_INFO, "stp is set to on\n");
-	return eval( "/usr/sbin/brctl", "stp", br, "1" );
+	return eval( "brctl", "stp", br, "1" );
     }
     else
     {
 	// syslog (LOG_INFO, "stp is set to off\n");
-	return eval( "/usr/sbin/brctl", "stp", br, "0" );
+	return eval( "brctl", "stp", br, "0" );
     }
 }
 int br_set_port_prio( const char *br, char *port, char *prio )
 {
     if( !ifexists( br ) )
 	return -1;
-    return eval( "/usr/sbin/brctl", "setportprio", br, port, prio );
+    return eval( "brctl", "setportprio", br, port, prio );
 }
 
 int br_set_bridge_prio( const char *br, char *prio )
 {
     if( !ifexists( br ) )
 	return -1;
-    return eval( "/usr/sbin/brctl", "setbridgeprio", br, prio );
+    return eval( "brctl", "setbridgeprio", br, prio );
 }
 
 #endif
 int br_add_bridge( const char *brname )
 {
     dd_syslog( LOG_INFO, "bridge added successfully\n" );
-    return eval( "/usr/sbin/brctl", "addbr", brname );
+    return eval( "brctl", "addbr", brname );
 }
 
 int br_del_bridge( const char *brname )
@@ -156,7 +156,7 @@ int br_del_bridge( const char *brname )
     if( !ifexists( brname ) )
 	return -1;
     dd_syslog( LOG_INFO, "bridge deleted successfully\n" );
-    return eval( "/usr/sbin/brctl", "delbr", brname );
+    return eval( "brctl", "delbr", brname );
 }
 
 int br_add_interface( const char *br, const char *dev )
@@ -164,7 +164,7 @@ int br_add_interface( const char *br, const char *dev )
     if( !ifexists( dev ) )
 	return -1;
     dd_syslog( LOG_INFO, "interface added successfully\n" );
-    return eval( "/usr/sbin/brctl", "addif", br, dev );
+    return eval( "brctl", "addif", br, dev );
 }
 
 int br_del_interface( const char *br, const char *dev )
@@ -172,7 +172,7 @@ int br_del_interface( const char *br, const char *dev )
     if( !ifexists( dev ) )
 	return -1;
     dd_syslog( LOG_INFO, "interface deleted successfully\n" );
-    return eval( "/usr/sbin/brctl", "delif", br, dev );
+    return eval( "brctl", "delif", br, dev );
 }
 
 #endif

@@ -124,19 +124,19 @@ void start_vpn_modules( void )
     if( ( nvram_match( "pptp_pass", "1" ) || nvram_match( "l2tp_pass", "1" )
 	  || nvram_match( "ipsec_pass", "1" ) ) )
     {
-	eval( "/sbin/insmod", "nf_conntrack_proto_gre" );
+	insmod( "nf_conntrack_proto_gre" );
 	dd_syslog( LOG_INFO,
 		"vpn modules : nf_conntrack_proto_gre successfully loaded\n" );
-	eval( "/sbin/insmod", "nf_nat_proto_gre" );
+	insmod( "nf_nat_proto_gre" );
 	dd_syslog( LOG_INFO,
 		"vpn modules : nf_nat_proto_gre successfully loaded\n" );
     }
     if( nvram_match( "pptp_pass", "1" ) )
     {
-	eval( "/sbin/insmod", "nf_conntrack_pptp" );
+	insmod( "nf_conntrack_pptp" );
 	dd_syslog( LOG_INFO,
 		"vpn modules : nf_conntrack_pptp successfully loaded\n" );
-	eval( "/sbin/insmod", "nf_nat_pptp" );
+	insmod( "nf_nat_pptp" );
 	dd_syslog( LOG_INFO, "vpn modules : nf_nat_pptp successfully loaded\n" );
     }
 
@@ -144,19 +144,19 @@ void start_vpn_modules( void )
     if( ( nvram_match( "pptp_pass", "1" ) || nvram_match( "l2tp_pass", "1" )
 	  || nvram_match( "ipsec_pass", "1" ) ) )
     {
-	eval( "/sbin/insmod", "ip_conntrack_proto_gre" );
+	insmod( "ip_conntrack_proto_gre" );
 	dd_syslog( LOG_INFO,
 		"vpn modules : ip_conntrack_proto_gre successfully loaded\n" );
-	eval( "/sbin/insmod", "ip_nat_proto_gre" );
+	insmod( "ip_nat_proto_gre" );
 	dd_syslog( LOG_INFO,
 		"vpn modules : ip_nat_proto_gre successfully loaded\n" );
     }
     if( nvram_match( "pptp_pass", "1" ) )
     {
-	eval( "/sbin/insmod", "ip_conntrack_pptp" );
+	insmod( "ip_conntrack_pptp" );
 	dd_syslog( LOG_INFO,
 		"vpn modules : ip_conntrack_pptp successfully loaded\n" );
-	eval( "/sbin/insmod", "ip_nat_pptp" );
+	insmod( "ip_nat_pptp" );
 	dd_syslog( LOG_INFO, "vpn modules : ip_nat_pptp successfully loaded\n" );
     }
 #endif
@@ -165,16 +165,16 @@ void start_vpn_modules( void )
 void stop_vpn_modules( void )
 {
 #if defined(HAVE_XSCALE) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
-    eval( "/sbin/rmmod", "nf_nat_pptp" );
-    eval( "/sbin/rmmod", "nf_conntrack_pptp" );
-    eval( "/sbin/rmmod", "nf_nat_proto_gre" );
-    eval( "/sbin/rmmod", "nf_conntrack_proto_gre" );
+    rmmod( "nf_nat_pptp" );
+    rmmod( "nf_conntrack_pptp" );
+    rmmod( "nf_nat_proto_gre" );
+    rmmod( "nf_conntrack_proto_gre" );
     dd_syslog( LOG_INFO, "vpn modules : vpn modules successfully unloaded\n" );
 #else
-    eval( "/sbin/rmmod", "ip_nat_pptp" );
-    eval( "/sbin/rmmod", "ip_nat_proto_gre" );
-    eval( "/sbin/rmmod", "ip_conntrack_pptp" );
-    eval( "/sbin/rmmod", "ip_conntrack_proto_gre" );
+    rmmod( "ip_nat_pptp" );
+    rmmod( "ip_nat_proto_gre" );
+    rmmod( "ip_conntrack_pptp" );
+    rmmod( "ip_conntrack_proto_gre" );
     dd_syslog( LOG_INFO, "vpn modules : vpn modules successfully unloaded\n" );
 
 #endif
@@ -334,7 +334,7 @@ int start_cron( void )
 	FILE *fp;
 
 	fp = fopen( "/tmp/cron.d/pppoe_reconnect", "w" );
-	fprintf( fp, "%s %s * * * root /usr/bin/killall pppd\n",
+	fprintf( fp, "%s %s * * * root /bin/killall pppd\n",
 		 nvram_safe_get( "reconnect_minutes" ),
 		 nvram_safe_get( "reconnect_hours" ) );
 	fclose( fp );
@@ -420,12 +420,12 @@ int start_syslog( void )
 
     if( strlen( nvram_safe_get( "syslogd_rem_ip" ) ) > 0 )
 	ret1 =
-	    eval( "/sbin/syslogd", "-R", nvram_safe_get( "syslogd_rem_ip" ) );
+	    eval( "syslogd", "-R", nvram_safe_get( "syslogd_rem_ip" ) );
     else
-	ret1 = eval( "/sbin/syslogd", "-L" );
+	ret1 = eval( "syslogd", "-L" );
 
     dd_syslog( LOG_INFO, "syslogd : syslog daemon successfully started\n" );
-    ret2 = eval( "/sbin/klogd" );
+    ret2 = eval( "klogd" );
     dd_syslog( LOG_INFO, "klogd : klog daemon successfully started\n" );
 
     return ret1 | ret2;
@@ -517,7 +517,7 @@ int start_radvd( void )
 
     system2( "sync" );
 
-    ret = eval( "/sbin/radvd" );
+    ret = eval( "radvd" );
     dd_syslog( LOG_INFO, "radvd : RADV daemon successfully started\n" );
 
     cprintf( "done\n" );
@@ -1356,7 +1356,7 @@ int start_l2tp( int status )
 	    eval( "listen", nvram_safe_get( "lan_ifname" ) );
     }
     else
-	sysprintf( "/usr/sbin/l2tp-control \"start-session %s\"",
+	sysprintf( "l2tp-control \"start-session %s\"",
 		   nvram_safe_get( "l2tp_server_ip" ) );
 
     cprintf( "done\n" );
@@ -1405,7 +1405,7 @@ int start_wland( void )
 {
     int ret;
     pid_t pid;
-    char *wland_argv[] = { "/sbin/wland",
+    char *wland_argv[] = { "wland",
 	NULL
     };
 
@@ -1553,7 +1553,7 @@ int start_force_to_dial( void )
     if( nvram_match( "wan_proto", "l2tp" ) )
     {
 
-	sysprintf( "/usr/sbin/l2tp-control \"start-session %s\"",
+	sysprintf( "l2tp-control \"start-session %s\"",
 		   nvram_safe_get( "l2tp_server_ip" ) );
 	return ret;
     }
