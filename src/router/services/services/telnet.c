@@ -32,10 +32,10 @@ int start_telnetd( void )
     int ret = 0;
     pid_t pid;
 
-    char *telnetd_argv[] = { "/usr/sbin/telnetd", NULL };
+    char *telnetd_argv[] = { "telnetd", NULL };
 #ifdef HAVE_REGISTER
     char *telnetd_argv_reg[] =
-	{ "/usr/sbin/telnetd", "-l", "/sbin/regshell", NULL };
+	{ "telnetd", "-l", "/sbin/regshell", NULL };
 #endif
     stop_telnetd(  );
 

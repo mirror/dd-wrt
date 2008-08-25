@@ -34,7 +34,7 @@ int run_wiviz_main( int argc, char **argv )
 		fprintf( fp, "hopdwell=%s&hopseq=%s\n",
 			 nvram_safe_get( "hopdwell" ), hopseq );
 		fclose( fp );
-		eval( "/usr/sbin/wiviz", ">/dev/null", "</dev/null", "2>&1",
+		eval( "wiviz", ">/dev/null", "</dev/null", "2>&1",
 		      "&" );
 	    }
 	    exit( 0 );

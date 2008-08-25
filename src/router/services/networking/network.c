@@ -2267,7 +2267,7 @@ void start_lan( void )
      * Sveasoft - set default IP gateway defined 
      */
     if( strcmp( nvram_safe_get( "lan_gateway" ), "0.0.0.0" ) )
-	eval( "/usr/sbin/ip", "ro", "add", "default", "via",
+	eval( "ip", "ro", "add", "default", "via",
 	      nvram_safe_get( "lan_gateway" ), "dev", "br0" );
 
 #ifdef HAVE_MSSID
@@ -2286,10 +2286,10 @@ void start_lan( void )
     start_set_routes(  );
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_MSSID
-    eval( "/usr/sbin/wl", "radio",
+    eval( "wl", "radio",
 	  nvram_invmatch( "wl_net_mode", "disabled" ) ? "on" : "off" );
 #else
-    eval( "/usr/sbin/wl", "radio",
+    eval( "wl", "radio",
 	  nvram_invmatch( "wl0_net_mode", "disabled" ) ? "on" : "off" );
 #endif
 #endif
@@ -2743,8 +2743,11 @@ void start_wan( int status )
 	// Lets open option file and enter all the parameters.
 	fp = fopen( "/tmp/ppp/options.pppoe", "w" );
 	// rp-pppoe kernelmode plugin
+#ifdef HAVE_ADM5120
+	fprintf( fp, "plugin /lib/rp-pppoe.so" );
+#else
 	fprintf( fp, "plugin /usr/lib/rp-pppoe.so" );
-
+#endif
 	if( nvram_invmatch( "pppoe_service", "" ) )
 	    fprintf( fp, " rp_pppoe_service %s",
 		     nvram_safe_get( "pppoe_service" ) );
@@ -2923,7 +2926,7 @@ void start_wan( int status )
 	stop_pptp(  );
 #endif
 	// system("export LINUX_PLUGIN=/usr/lib/rp-pppoe.so"); 
-	eval( "/usr/sbin/pppd", "file", "/tmp/ppp/options.pppoe" );
+	eval( "pppd", "file", "/tmp/ppp/options.pppoe" );
 
 	// This is horrible.
 	// What if pppoe recconects with ppp1?

@@ -783,7 +783,7 @@ int main( int argc, char **argv )
 		{
 		    // fix for client mode
 		    cprintf( "ifconfig wl up\n" );
-		    eval( "/sbin/ifconfig", get_wdev(  ), "up" );
+		    eval( "ifconfig", get_wdev(  ), "up" );
 		}
 
 #ifndef HAVE_MADWIFI
