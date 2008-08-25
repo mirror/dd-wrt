@@ -39,7 +39,7 @@ void stop_milkfish( void )
 	killall( "rtpproxy", SIGTERM );
 	killall( "openser", SIGTERM );
 	// Stop the milkfish services
-	eval( "/usr/sbin/milkfish_services", "stop" );
+	eval( "milkfish_services", "stop" );
     }
 }
 
@@ -76,7 +76,7 @@ void start_milkfish_boot( void )
 	nvram_set( "need_commit", "1" );
     }
     // Start the milkfish services
-    eval( "/usr/sbin/milkfish_services", "start" );
+    eval( "milkfish_services", "start" );
     // dbtext module setup
     eval( "mkdir", "-p", "/var/openser/dbtext/" );
     eval( "cp", "/etc/openser/dbtext/aliases", "/var/openser/dbtext/" );
@@ -87,7 +87,7 @@ void start_milkfish_boot( void )
     eval( "cp", "/etc/openser/dbtext/grp", "/var/openser/dbtext/" );
 
     // restore dbtext parts which may have been saved into nvram
-    eval( "/usr/sbin/milkfish_services", "sipdb", "restorenvdd" );
+    eval( "milkfish_services", "sipdb", "restorenvdd" );
 
     // firewall configuration in networking/firewall.c
     return;

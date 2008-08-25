@@ -44,7 +44,7 @@ void start_mmc( void )
 	    if( mount( "/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL ) )
 	    {
 		// device not formated
-		eval( "/sbin/mke2fs", "-F", "-b", "1024", "/dev/mmc" );
+		eval( "mke2fs", "-F", "-b", "1024", "/dev/mmc" );
 		mount( "/dev/mmc", "/mmc", "ext2", MS_MGC_VAL, NULL );
 	    }
 	}
@@ -118,7 +118,7 @@ void start_mmc( void )
 		( "/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL, NULL ) )
 	    {
 		// device not formated
-		eval( "/sbin/mke2fs", "-F", "-b", "1024",
+		eval( "mke2fs", "-F", "-b", "1024",
 		      "/dev/mmc/disc0/part1" );
 		mount( "/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL,
 		       NULL );

@@ -51,7 +51,7 @@ int wol_run( void )
 	macs = nvram_safe_get( "wol_macs" );
 
 	ret =
-	    eval( "/usr/sbin/wol", passwd_param, passwd, hostname_param,
+	    eval( "wol", passwd_param, passwd, hostname_param,
 		  hostname, macs );
 
 	sleep( interval );

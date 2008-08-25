@@ -172,7 +172,7 @@ int start_pptpd( void )
 	mss = 1500 - 40 - 108;
 
     fp = fopen( "/tmp/pptpd/ip-up", "w" );
-    fprintf( fp, "#!/bin/sh\n" "/sbin/startservice set_routes\n"	// reinitialize 
+    fprintf( fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
 									// routing, 
 									// just 
 									// in 
@@ -182,18 +182,18 @@ int start_pptpd( void )
 									// target 
 									// route 
 									// exists
-	     "/usr/sbin/iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
-	     "/usr/sbin/iptables -I INPUT -i $1 -j ACCEPT\n"
-	     "/usr/sbin/iptables -I FORWARD -i $1 -j ACCEPT\n"
+	     "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
+	     "iptables -I INPUT -i $1 -j ACCEPT\n"
+	     "iptables -I FORWARD -i $1 -j ACCEPT\n"
 	     "%s\n", mss + 1, mss,
 	     nvram_get( "pptpd_ipup_script" ) ?
 	     nvram_get( "pptpd_ipup_script" ) : "" );
     fclose( fp );
     fp = fopen( "/tmp/pptpd/ip-down", "w" );
     fprintf( fp, "#!/bin/sh\n"
-	     "/usr/sbin/iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
-	     "/usr/sbin/iptables -D INPUT -i $1 -j ACCEPT\n"
-	     "/usr/sbin/iptables -D FORWARD -i $1 -j ACCEPT\n"
+	     "iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
+	     "iptables -D INPUT -i $1 -j ACCEPT\n"
+	     "iptables -D FORWARD -i $1 -j ACCEPT\n"
 	     "%s\n", mss + 1, mss,
 	     nvram_get( "pptpd_ipdown_script" ) ?
 	     nvram_get( "pptpd_ipdown_script" ) : "" );
@@ -214,7 +214,7 @@ int start_pptpd( void )
 
     // Execute pptpd daemon
     ret =
-	eval( "/usr/sbin/pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o",
+	eval( "pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o",
 	      "/tmp/pptpd/options.pptpd" );
 
     dd_syslog( LOG_INFO, "pptpd : pptp daemon successfully started\n" );

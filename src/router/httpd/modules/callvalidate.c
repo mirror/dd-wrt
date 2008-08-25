@@ -60,9 +60,13 @@
 #include <stdio.h>
 // #include <shutils.h>
 
+#ifdef HAVE_ADM5120
+#define SERVICE_MODULE "/lib/validate.so"
+#define VISSERVICE_MODULE "/lib/visuals.so"
+#else
 #define SERVICE_MODULE "/usr/lib/validate.so"
 #define VISSERVICE_MODULE "/usr/lib/visuals.so"
-
+#endif
 // #define SERVICE_MODULE "/tmp/validate.so"
 // #define VISSERVICE_MODULE "/tmp/visuals.so"
 
@@ -104,7 +108,7 @@ void *load_visual_service( char *name )
 	cprintf( "not found, try to load alternate\n" );
 	char dl[64];
 
-	sprintf( dl, "/usr/lib/%s_visual.so", name );
+	sprintf( dl, "/lib/%s_visual.so", name );
 	cprintf( "try to load %s\n", dl );
 	handle = dlopen( dl, RTLD_LAZY );
 	if( handle == NULL )
@@ -128,7 +132,7 @@ void *load_service( char *name )
 	cprintf( "not found, try to load alternate\n" );
 	char dl[64];
 
-	sprintf( dl, "/usr/lib/%s_validate.so", name );
+	sprintf( dl, "/lib/%s_validate.so", name );
 	cprintf( "try to load %s\n", dl );
 	handle = dlopen( dl, RTLD_LAZY );
 	if( handle == NULL )

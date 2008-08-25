@@ -20,7 +20,7 @@
 
 #define MIN_BUF_SIZE    4096
 
-#define SERVICE_MODULE "/usr/lib/services.so"
+#define SERVICE_MODULE "/lib/services.so"
 #define cprintf(fmt, args...)
 
 /*
