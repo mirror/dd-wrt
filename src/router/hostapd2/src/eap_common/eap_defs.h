@@ -53,7 +53,7 @@ typedef enum {
 	EAP_TYPE_TLS = 13 /* RFC 2716 */,
 	EAP_TYPE_LEAP = 17 /* Cisco proprietary */,
 	EAP_TYPE_SIM = 18 /* RFC 4186 */,
-	EAP_TYPE_TTLS = 21 /* draft-ietf-pppext-eap-ttls-02.txt */,
+	EAP_TYPE_TTLS = 21 /* RFC 5281 */,
 	EAP_TYPE_AKA = 23 /* RFC 4187 */,
 	EAP_TYPE_PEAP = 25 /* draft-josefsson-pppext-eap-tls-eap-06.txt */,
 	EAP_TYPE_MSCHAPV2 = 26 /* draft-kamath-pppext-eap-mschapv2-00.txt */,
@@ -65,7 +65,7 @@ typedef enum {
 	EAP_TYPE_PAX = 46 /* RFC 4746 */,
 	EAP_TYPE_PSK = 47 /* RFC 4764 */,
 	EAP_TYPE_SAKE = 48 /* RFC 4763 */,
-	EAP_TYPE_IKEV2 = 49 /* draft-tschofenig-eap-ikev2-15.txt */,
+	EAP_TYPE_IKEV2 = 49 /* RFC 5106 */,
 	EAP_TYPE_EXPANDED = 254 /* RFC 3748 */,
 	EAP_TYPE_GPSK = 255 /* EXPERIMENTAL - type not yet allocated
 			     * draft-ietf-emu-eap-gpsk-01.txt */
@@ -75,6 +75,7 @@ typedef enum {
 /* SMI Network Management Private Enterprise Code for vendor specific types */
 enum {
 	EAP_VENDOR_IETF = 0,
+	EAP_VENDOR_MICROSOFT = 0x000137 /* Microsoft */,
 	EAP_VENDOR_WFA = 0x00372A /* Wi-Fi Alliance */
 };
 

@@ -293,12 +293,11 @@ data that is available through \c SCAN_RESULTS but in a way that
 avoids problems with large number of scan results not fitting in the
 ctrl_iface messages.
 
-There are three subcommands for the \c BSS command: "BSS first"
-requests information for the first BSS in the scan results table, "BSS
-<BSSID>" requests information for the given BSS (based on BSSID in
-00:01:02:03:04:05 format), and "BSS next <previous BSSID>" requests
-information for the BSS following the specified BSS (to allow
-iteration through the scan results).
+There are two options for selecting the BSS with the \c BSS command:
+"BSS <idx>" requests information for the BSS identified by the index
+(0 .. size-1) in the scan results table and "BSS <BSSID>" requests
+information for the given BSS (based on BSSID in 00:01:02:03:04:05
+format).
 
 BSS information is presented in following format. Please note that new
 fields may be added to this field=value data, so the ctrl_iface user

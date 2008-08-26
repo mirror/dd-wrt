@@ -126,7 +126,7 @@ static const char *commands_help =
 "disconnected\n"
 "  scan = request new BSS scan\n"
 "  scan_results = get latest scan results\n"
-"  bss <<first> | <bssid> | <next bssid>> = get detailed scan result info\n"
+"  bss <<idx> | <bssid>> = get detailed scan result info\n"
 "  get_capability <eap/pairwise/group/key_mgmt/proto/auth_alg> = "
 "get capabilies\n"
 "  ap_scan <value> = set ap_scan parameter\n"
@@ -900,15 +900,13 @@ static int wpa_cli_cmd_bss(struct wpa_ctrl *ctrl, int argc, char *argv[])
 	char cmd[64];
 	int res;
 
-	if (argc < 1 || argc > 2) {
-		printf("Invalid BSS command: need either one or two "
-		       "arguments\n");
+	if (argc != 1) {
+		printf("Invalid BSS command: need one argument (index or "
+		       "BSSID)\n");
 		return -1;
 	}
 
-	res = os_snprintf(cmd, sizeof(cmd), "BSS %s%s%s", argv[0],
-			  (argc == 2) ? " " : "",
-			  (argc == 2) ? argv[1] : "");
+	res = os_snprintf(cmd, sizeof(cmd), "BSS %s", argv[0]);
 	if (res < 0 || (size_t) res >= sizeof(cmd))
 		return -1;
 	cmd[sizeof(cmd) - 1] = '\0';

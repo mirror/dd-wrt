@@ -97,7 +97,7 @@ struct eap_config {
 	u8 *pac_opaque_encr_key;
 	char *eap_fast_a_id;
 	int eap_sim_aka_result_ind;
-	struct wps_context *wps;
+	int tnc;
 };
 
 
