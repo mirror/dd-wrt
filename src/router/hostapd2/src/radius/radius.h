@@ -88,8 +88,6 @@ enum { RADIUS_ATTR_USER_NAME = 1,
        RADIUS_ATTR_TUNNEL_PRIVATE_GROUP_ID = 81,
        RADIUS_ATTR_ACCT_INTERIM_INTERVAL = 85,
        RADIUS_ATTR_NAS_IPV6_ADDRESS = 95,
-       RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN = 96,
-       RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP = 97,       
 };
 
 
@@ -160,6 +158,26 @@ struct radius_attr_vendor {
 
 enum { RADIUS_VENDOR_ATTR_MS_MPPE_SEND_KEY = 16,
        RADIUS_VENDOR_ATTR_MS_MPPE_RECV_KEY = 17
+};
+
+#define RADIUS_VENDOR_ID_WISPR 14122
+/*ATTRIBUTE	WISPr-Location-ID			1	string	WISPr
+ATTRIBUTE	WISPr-Location-Name			2	string	WISPr
+ATTRIBUTE	WISPr-Logoff-URL			3	string	WISPr
+ATTRIBUTE	WISPr-Redirection-URL			4	string	WISPr
+ATTRIBUTE	WISPr-Bandwidth-Min-Up			5	integer	WISPr
+ATTRIBUTE	WISPr-Bandwidth-Min-Down		6	integer	WISPr
+ATTRIBUTE	WISPr-Bandwidth-Max-Up			7	integer	WISPr
+ATTRIBUTE	WISPr-Bandwidth-Max-Down		8	integer	WISPr
+ATTRIBUTE	WISPr-Session-Terminate-Time		9	string	WISPr
+ATTRIBUTE	WISPr-Session-Terminate-End-Of-Day	10	string	WISPr
+ATTRIBUTE	WISPr-Billing-Class-Of-Service		11	string	WISPr
+*/
+enum {
+       RADIUS_ATTR_WISPR_BANDWIDTH_MIN_UP = 5,     
+       RADIUS_ATTR_WISPR_BANDWIDTH_MIN_DOWN = 6,
+       RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP = 7,     
+       RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN = 8,
 };
 
 #ifdef _MSC_VER
@@ -246,6 +264,8 @@ radius_msg_add_attr_user_password(struct radius_msg *msg,
 int radius_msg_get_attr(struct radius_msg *msg, u8 type, u8 *buf, size_t len);
 int radius_msg_get_vlanid(struct radius_msg *msg);
 
+u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor,u8 subtype, size_t *alen);
+
 static inline int radius_msg_add_attr_int32(struct radius_msg *msg, u8 type,
 					    u32 value)
 {
@@ -265,6 +285,17 @@ static inline int radius_msg_get_attr_int32(struct radius_msg *msg, u8 type,
 	*value = ntohl(val);
 	return 0;
 }
+
+/*static inline int radius_msg_get_vendor_attr_int32(struct radius_msg *msg, u32 vendor, u8 subtype,u32 *value)
+{
+	u32 val;
+	char *res;
+	size_t alen=4;
+	res = radius_msg_get_vendor_attr(msg, vendor,subtype, &alen);
+	*value = ntohl(res);
+	return 0;
+}
+*/
 int radius_msg_get_attr_ptr(struct radius_msg *msg, u8 type, u8 **buf,
 			    size_t *len, const u8 *start);
 int radius_msg_count_attr(struct radius_msg *msg, u8 type, int min_len);
