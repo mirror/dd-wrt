@@ -1661,13 +1661,16 @@ radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius";
 radius.label="MAC Radius Client";
 radius.label2="MAC Format";
-radius.label3="RADIUS Server Address";
-radius.label4="RADIUS Server Port";
+radius.label3="Radius Auth Server Address";
+radius.label4="Radius Auth Server Port";
 radius.label5="Maximum Unauthenticated Users";
 radius.label6="Password Format";
-radius.label7="RADIUS Shared Secret";
+radius.label7="Radius Auth Shared Secret";
 radius.label8="Override Radius if server is unavailable";
-
+radius.label13="Radius Acct Server Address";
+radius.label14="Radius Acct Server Port";
+radius.label17="Radius Acct Shared Secret";
+radius.label18="Radius Accounting";
 
 // ** Wireless_MAC.asp **//
 var wl_mac = new Object();
