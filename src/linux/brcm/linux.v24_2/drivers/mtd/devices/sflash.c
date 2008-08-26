@@ -222,6 +222,10 @@ sflash_mtd_init(void)
 	{
 	do_support = 1;  //Netcore NW618
 	}
+  if (nvram_match ("boardnum", "8") && nvram_match ("boardtype", "0x048e") && nvram_match ("boardrev", "0x11") && nvram_match ("parefldovoltage", "0x28"))
+	{
+	do_support = 1;  //ALLNET 01
+	}
 	
   if ((nvram_match ("boardnum", "83258") || nvram_match ("boardnum", "0x01")) && nvram_match ("boardtype", "0x48E") && nvram_match ("boardrev", "0x10"))
 	{
