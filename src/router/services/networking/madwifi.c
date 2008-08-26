@@ -604,12 +604,15 @@ void setupHostAP( char *prefix, int iswan )
 	    fprintf( fp, "eap_server=0\n" );
 	    fprintf( fp, "auth_algs=1\n" );
 	    fprintf( fp, "radius_retry_primary_interval=60\n" );
-	    fprintf( fp, "auth_server_addr=%s\n",
-		     nvram_nget( "%s_radius_ipaddr", prefix ) );
-	    fprintf( fp, "auth_server_port=%s\n",
-		     nvram_nget( "%s_radius_port", prefix ) );
-	    fprintf( fp, "auth_server_shared_secret=%s\n",
-		     nvram_nget( "%s_radius_key", prefix ) );
+	    fprintf( fp, "auth_server_addr=%s\n",nvram_nget( "%s_radius_ipaddr", prefix ) );
+	    fprintf( fp, "auth_server_port=%s\n",nvram_nget( "%s_radius_port", prefix ) );
+	    fprintf( fp, "auth_server_shared_secret=%s\n",nvram_nget( "%s_radius_key", prefix ) );
+	    if (nvram_nmatch("1","%s_acct",prefix))
+		{
+		fprintf( fp, "acct_server_addr=%s\n",nvram_nget( "%s_acct_ipaddr", prefix ) );
+		fprintf( fp, "acct_server_port=%s\n",nvram_nget( "%s_acct_port", prefix ) );
+		fprintf( fp, "acct_server_shared_secret=%s\n",nvram_nget( "%s_acct_key", prefix ) );
+		}
 	}
 	if( nvram_invmatch( akm, "radius" ) )
 	{
