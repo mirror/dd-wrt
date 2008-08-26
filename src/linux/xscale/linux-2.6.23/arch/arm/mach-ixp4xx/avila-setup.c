@@ -190,6 +190,17 @@ MACHINE_START(AVILA, "Gateworks Avila Network Platform")
 	.init_machine	= avila_init,
 MACHINE_END
 
+MACHINE_START(WAVESAT_AVILA, "Gateworks/Wavesat Avila Network Platform")
+	/* Maintainer: Deepak Saxena <dsaxena@plexity.net> */
+	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,
+	.map_io		= ixp4xx_map_io,
+	.init_irq	= ixp4xx_init_irq,
+	.timer		= &ixp4xx_timer,
+	.boot_params	= 0x0100,
+	.init_machine	= avila_init,
+MACHINE_END
+
 
  /*
   * Loft is functionally equivalent to Avila except that it has a
