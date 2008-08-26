@@ -1032,6 +1032,7 @@ static void ieee802_1x_decapsulate_radius(struct hostapd_data *hapd,
 		       hdr->code, hdr->identifier, be_to_host16(hdr->length),
 		       buf);
 	sm->eap_if->aaaEapReq = TRUE;
+		//brainslayer. hier bandwidth attribut abfragen
 
 	wpabuf_free(sm->eap_if->aaaEapReqData);
 	sm->eap_if->aaaEapReqData = wpabuf_alloc_ext_data(eap, len);
@@ -1201,6 +1202,63 @@ ieee802_1x_search_radius_identifier(struct hostapd_data *hapd, u8 identifier)
 }
 
 
+#ifdef HAVE_AQOS
+int stricmp(char *a,char *b)
+{
+int l1 = strlen(a);
+int l2 = strlen(b);
+if (l1!=l2)
+    return -1;
+int i;
+for (i=0;i<l1;i++)
+    {
+    if (toupper(a[i])!=toupper(b[i]))
+	return -1;
+    }
+return 0;
+}
+extern void add_usermac( char *mac, int idx, char *upstream,
+			 char *downstream );
+
+int addrule(char *mac, char *upstream, char *downstream)
+{
+    char *qos_mac = nvram_safe_get( "svqos_macs" );
+    int ret = 0;
+    if (strlen(qos_mac)>0)
+    {
+    char *newqos = malloc(strlen(qos_mac)*2);
+    memset(newqos,0,strlen(qos_mac));
+    char level[32], level2[32], data[32], type[32];
+    do
+    {
+	if( sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2 , type) < 4 )
+	    break;
+	if (!stricmp(data,mac) && !strcmp(level,upstream) && !strcmp(level2,downstream))
+	    {
+	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd");	    
+	    ret |=2;
+	    }else
+	    {
+	    if (!stricmp(data,mac))
+	    {
+	    ret |=1;
+	    }
+	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
+	    }
+    }
+    while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
+    nvram_set("svqos_macs",newqos);
+    free(newqos);
+    }else
+    {
+    char newqos[128];
+    sprintf(newqos,"%s %s %s %s |",mac,upstream,downstream,"hostapd");	    
+    nvram_set("svqos_macs",newqos);    
+    }
+return ret;
+
+}
+#endif
 /* Process the RADIUS frames from Authentication Server */
 static RadiusRxResult
 ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
@@ -1214,7 +1272,7 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 	int eap_timeout;
 	struct eapol_state_machine *sm;
 	int override_eapReq = 0;
-
+	static int qosidx=500;
 	sm = ieee802_1x_search_radius_identifier(hapd, msg->hdr->identifier);
 	if (sm == NULL) {
 		wpa_printf(MSG_DEBUG, "IEEE 802.1X: Could not find matching "
@@ -1282,6 +1340,49 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 
 	switch (msg->hdr->code) {
 	case RADIUS_CODE_ACCESS_ACCEPT:
+#ifdef HAVE_AQOS
+		wpa_printf(MSG_DEBUG, "check user bandwith shaping\n");
+		u32 *down,*up;
+		size_t len;
+		if ((down=(u32*)radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN ,&len)) == NULL) {
+		    wpa_printf(MSG_DEBUG, "no downstream level found\n");
+		}else
+		{
+		if ((up=(u32*)radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP ,&len)) == NULL) {
+		    wpa_printf(MSG_DEBUG, "no up level found\n");
+		    os_free(down);
+		    }else{
+		    *down=ntohl(*down);
+		    *up=ntohl(*up);
+		    wpa_printf(MSG_DEBUG, "downstream %d kbits, upstream %d kbits level found\n",*down,*up);
+		    char mac[64];
+		    sprintf(mac, MACSTR, MAC2STR(sta->addr));
+		    char uplevel[64];
+		    char downlevel[64];
+		    sprintf(uplevel,"%d",*up);
+		    sprintf(downlevel,"%d",*down);
+		    int ret = addrule(mac,uplevel,downlevel);
+		    //case 0 = does not exists, should just be added, no restart
+		    //case 1 = no change required, already added
+		    //case 2 = change required, exists, but new settings
+		    //case 3 = change required, exists, new setting 
+		    if (!ret)
+			{
+			qosidx+=2;
+			if (qosidx>500)
+			    qosidx=0;
+			add_usermac(mac, qosidx, uplevel,downlevel );
+			}else if (ret>1)
+			{
+			system("stopservice wshaper");
+			system("startservice wshaper");
+			}	    
+		    os_free(up);
+		    os_free(down);
+		    }
+		
+		}
+#endif
 		if (sta->ssid->dynamic_vlan == DYNAMIC_VLAN_DISABLED)
 			sta->vlan_id = 0;
 		else {

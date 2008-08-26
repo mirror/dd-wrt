@@ -1556,7 +1556,26 @@ int start_nvram( void )
 	nvram_set( "hopseq", channel );
     }
 #endif
-
+    //filter hostapd shaping rules
+    char *qos_mac = nvram_safe_get( "svqos_macs" );
+    if (strlen(qos_mac)>0)
+    {
+    char *newqos = malloc(strlen(qos_mac));
+    memset(newqos,0,strlen(qos_mac));
+    char level[32], level2[32], data[32], type[32];
+    do
+    {
+	if( sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2 , type) < 4 )
+	    break;
+	if (strcmp(type,"hostapd"))
+	    {
+	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);
+	    }
+    }
+    while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
+    nvram_set("svqos_macs",newqos);
+    free(newqos);
+    }
     return 0;
 }
 

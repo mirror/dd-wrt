@@ -166,9 +166,8 @@ void add_userip( char *ip, int idx, char *upstream, char *downstream )
 void add_usermac( char *mac, int idx, char *upstream, char *downstream )
 {
     unsigned char octet[6];
-
+    
     ether_atoe( mac, octet );
-
     int base = 120 + idx;
     char up[32];
     char down[32];
