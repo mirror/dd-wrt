@@ -339,6 +339,8 @@ static void hostapd_acl_expire(void *eloop_ctx, void *timeout_ctx)
 
 	eloop_register_timeout(10, 0, hostapd_acl_expire, hapd, NULL);
 }
+extern void add_usermac( char *mac, int idx, char *upstream,
+			 char *downstream );
 
 
 /* Return 0 if RADIUS message was a reply to ACL query (and was processed here)
@@ -351,6 +353,7 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 	struct hostapd_data *hapd = data;
 	struct hostapd_acl_query_data *query, *prev;
 	struct hostapd_cached_radius_acl *cache;
+	static int qosidx=500;
 
 	query = hapd->acl_queries;
 	prev = NULL;
@@ -404,6 +407,28 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 				   MAC2STR(query->addr));
 			cache->acct_interim_interval = 0;
 		}
+		//brainslayer. hier bandwidth attribut abfragen
+		unsigned int down,up;
+		if (radius_msg_get_attr_int32(msg, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN ,&down) == 0) {
+		    wpa_printf(MSG_DEBUG, "no downstream level found\n");
+		}else
+		{
+		if (radius_msg_get_attr_int32(msg, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP ,&up) == 0) {
+		    wpa_printf(MSG_DEBUG, "no up level found\n");
+		    }else{
+		    wpa_printf(MSG_DEBUG, "downstream %d kbits, upstream %d kbits level found\n",down,up);
+		    char downlevel[64];
+		    char uplevel[64];
+		    char mac[64];
+		    sprintf(downlevel,"%d",down);
+		    sprintf(uplevel,"%d",up);
+		    sprintf(mac, MACSTR, MAC2STR(query->addr));
+		    add_usermac(mac, qosidx, uplevel,downlevel );
+		    qosidx+=2;
+		    }
+		
+		}
+		
 
 		cache->vlan_id = radius_msg_get_vlanid(msg);
 	} else

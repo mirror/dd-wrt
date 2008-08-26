@@ -20,11 +20,11 @@
 
 #include <include/compat.h>
 #include <net80211/ieee80211.h>
-#ifdef WME_NUM_AC
+//#ifdef WME_NUM_AC
 /* Assume this is built against BSD branch of madwifi driver. */
-#define MADWIFI_BSD
-#include <net80211/_ieee80211.h>
-#endif /* WME_NUM_AC */
+//#define MADWIFI_BSD
+//#include <net80211/_ieee80211.h>
+//#endif /* WME_NUM_AC */
 #include <net80211/ieee80211_crypto.h>
 #include <net80211/ieee80211_ioctl.h>
 
