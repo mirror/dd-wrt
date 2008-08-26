@@ -407,15 +407,15 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 				   MAC2STR(query->addr));
 			cache->acct_interim_interval = 0;
 		}
+#if 0
 		//brainslayer. hier bandwidth attribut abfragen
-		unsigned char *down,*up;
+		u32 *down,*up;
 		size_t len;
-		if ((down=radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN ,&len)) == NULL) {
+		if ((down=(u32*)radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN ,&len)) == NULL) {
 		    wpa_printf(MSG_DEBUG, "no downstream level found\n");
 		}else
 		{
-		len;
-		if ((up=radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP ,&len)) == NULL) {
+		if ((up=(u32*)radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP ,&len)) == NULL) {
 		    wpa_printf(MSG_DEBUG, "no up level found\n");
 		    os_free(down);
 		    }else{
@@ -435,7 +435,7 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 		    }
 		
 		}
-		
+#endif		
 
 		cache->vlan_id = radius_msg_get_vlanid(msg);
 	} else
