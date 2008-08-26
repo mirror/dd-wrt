@@ -683,12 +683,14 @@ int start_sysinit( void )
 		|| nvram_get( "pci/1/3/macaddr" ) == NULL )
 		need_reboot = 1;
 
+	    {
 	    unsigned char mac[20];
 
 	    strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 	    nvram_set( "pci/1/3/macaddr", mac );
 	    MAC_SUB( mac );
 	    nvram_set( "pci/1/1/macaddr", mac );
+	    }
 
 	    struct nvram_tuple wndr3300_pci_1_1_params[] = {
 		{"stbcpo", "0", 0},
@@ -988,6 +990,24 @@ int start_sysinit( void )
 	    break;
 	case ROUTER_ALLNET01:
 	    nvram_set( "wl0_ifname", "eth1" );
+	    if( nvram_match( "vlan1ports", "5u" ) ) //correct bad parameters
+		{
+		nvram_set( "vlan1ports", "4 5" );
+		nvram_set( "vlan0ports", "0 1 2 3 5*" );
+		}
+	    //fix mac
+	    unsigned char mac[6];
+	    FILE *in=fopen("/dev/mtdblock/0","rb");
+	    if (in!=NULL) //special sercom mac address handling
+		{
+		fseek(in,0x1ffa0,SEEK_SET);
+		fread(mac,6,1,in);
+		fclose(in);
+		char macstr[32];
+		sprintf(macstr,"%02X:%02X:%02X:%02X:%02X:%02X",(int)mac[0]&0xff,(int)mac[1]&0xff,(int)mac[2]&0xff,(int)mac[3]&0xff,(int)mac[4]&0xff,(int)mac[5]&0xff);
+		nvram_set("et0macaddr",macstr);
+		eval("ifconfig","eth0","hw","ether",macstr);
+		}
 	    break;
 	case ROUTER_LINKSYS_WTR54GS:
 	    eval( "gpio", "enable", "3" );	// prevent reboot loop on
