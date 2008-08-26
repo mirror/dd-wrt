@@ -45,7 +45,7 @@ struct radius_attr_hdr {
 	u8 length; /* including this header */
 	/* followed by length-2 octets of attribute value */
 } STRUCT_PACKED;
-
+    
 #define RADIUS_MAX_ATTR_LEN (255 - sizeof(struct radius_attr_hdr))
 
 enum { RADIUS_ATTR_USER_NAME = 1,
@@ -87,7 +87,9 @@ enum { RADIUS_ATTR_USER_NAME = 1,
        RADIUS_ATTR_MESSAGE_AUTHENTICATOR = 80,
        RADIUS_ATTR_TUNNEL_PRIVATE_GROUP_ID = 81,
        RADIUS_ATTR_ACCT_INTERIM_INTERVAL = 85,
-       RADIUS_ATTR_NAS_IPV6_ADDRESS = 95
+       RADIUS_ATTR_NAS_IPV6_ADDRESS = 95,
+       RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN = 96,
+       RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP = 97,       
 };
 
 
