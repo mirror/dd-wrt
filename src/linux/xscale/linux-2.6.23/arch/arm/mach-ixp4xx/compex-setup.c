@@ -95,19 +95,59 @@ static struct platform_device *compex_devices[] __initdata = {
 	&compex_uart
 };
 
+/*#define PCI_CSR_HOST               (1 << 0)
+#define PCI_CSR_ARBEN              (1 << 1)
+#define PCI_CSR_ADS                (1 << 2)
+#define PCI_CSR_PDS                (1 << 3)
+#define PCI_CSR_ABE                (1 << 4)
+#define PCI_CSR_DBT                (1 << 5)
+#define PCI_CSR_ASE                (1 << 8)
+#define PCI_CSR_IC                 (1 << 15)
+#define PCI_CSR_PRST               (1 << 16)
+#define REG32(a,b) ((volatile unsigned int *)((a)+(b)))
+#define IXP425_PCI_CFG_BASE        0xC0000000
+#define IXP425_PCI_CSR             REG32(IXP425_PCI_CFG_BASE,0x1C)
+*/
 static void __init compex_init(void)
 {
+ 	u32 data;
+ 	int i;
+ 
+ 	/* WP188 support,
+ 	   WP188 has a RTL8201 (phy addr = 1) in place of the Marvell switch */
+ 	data = (1<<31) | (1<<21) | (3<<16);
+ 	for(i=0; i<4; i++) {
+ 		*(u32 *) (IXP4XX_EthB_BASE_VIRT + 0x80 + i*4) = data & 0xff;
+ 		data >>=8;
+ 	}
+ 	for ( i=0 ; i<5000 ; i++ ) {
+ 		data = *(u32 *) (IXP4XX_EthB_BASE_VIRT + 0x80 + 3*4);
+ 		if ( (data & 0x80) == 0 )
+ 			break;
+ 	}
+ 	for(i=0; i<4; i++) {
+ 		data |= (*(u32 *) (IXP4XX_EthB_BASE_VIRT + 0x90 + i*4) & 0xff) << (i*8);
+ 	}
+ 	data &= 0xffff;
+     
+
 	ixp4xx_sys_init();
 
 	compex_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
 	compex_flash_resource.end =
-		IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
+		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
+
+ 	if ( data == 0x8201 ) {
+ 		compex_flash_resource.end =
+ 			IXP4XX_EXP_BUS_BASE(0) + 2*ixp4xx_exp_bus_size - 1;
+ 	}
+ 		
 
 	platform_add_devices(compex_devices, ARRAY_SIZE(compex_devices));
 }
 
 #ifdef CONFIG_MACH_COMPEX
-MACHINE_START(COMPEX, "Compex WP188")
+MACHINE_START(COMPEX, "Compex WP18 / NP18A / WP188")
 	/* Maintainer: Imre Kaloz <Kaloz@openwrt.org> */
 	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
 	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xfffc,

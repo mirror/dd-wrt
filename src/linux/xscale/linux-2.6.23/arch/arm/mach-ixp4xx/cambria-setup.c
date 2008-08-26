@@ -92,6 +92,20 @@ static struct platform_device cambria_uart = {
 	.resource		= cambria_uart_resources
 };
 
+static struct resource cambria_optional_uart_resources[] = {
+	{
+		.start	= 0x52000000,
+		.end	= 0x52000fff,
+		.flags	= IORESOURCE_MEM
+	},
+	{
+		.start	= 0x53000000,
+		.end	= 0x53000fff,
+		.flags	= IORESOURCE_MEM
+	}
+};
+
+
 static struct resource cambria_pata_resources[] = {
   {
     .flags  = IORESOURCE_MEM
