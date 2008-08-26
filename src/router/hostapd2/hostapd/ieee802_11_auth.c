@@ -408,22 +408,29 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 			cache->acct_interim_interval = 0;
 		}
 		//brainslayer. hier bandwidth attribut abfragen
-		unsigned int down,up;
-		if (radius_msg_get_attr_int32(msg, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN ,&down) == 0) {
+		unsigned char *down,*up;
+		int len;
+		if ((down=radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN ,&len)) == NULL) {
 		    wpa_printf(MSG_DEBUG, "no downstream level found\n");
 		}else
 		{
-		if (radius_msg_get_attr_int32(msg, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP ,&up) == 0) {
+		len;
+		if ((up=radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP ,&len)) == NULL) {
 		    wpa_printf(MSG_DEBUG, "no up level found\n");
+		    os_free(down);
 		    }else{
-		    wpa_printf(MSG_DEBUG, "downstream %d kbits, upstream %d kbits level found\n",down,up);
-		    char downlevel[64];
-		    char uplevel[64];
+		    *down=ntohl(*down);
+		    *up=ntohl(*up);
+		    wpa_printf(MSG_DEBUG, "downstream %d kbits, upstream %d kbits level found\n",*down,*up);
 		    char mac[64];
-		    sprintf(downlevel,"%d",down);
-		    sprintf(uplevel,"%d",up);
 		    sprintf(mac, MACSTR, MAC2STR(query->addr));
+		    char uplevel[64];
+		    char downlevel[64];
+		    sprintf(uplevel,"%d",*up);
+		    sprintf(downlevel,"%d",*down);
 		    add_usermac(mac, qosidx, uplevel,downlevel );
+		    os_free(up);
+		    os_free(down);
 		    qosidx+=2;
 		    }
 		

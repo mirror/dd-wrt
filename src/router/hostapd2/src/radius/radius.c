@@ -182,8 +182,6 @@ static struct radius_attr_type radius_attrs[] =
 	{ RADIUS_ATTR_ACCT_INTERIM_INTERVAL, "Acct-Interim-Interval",
 	  RADIUS_ATTR_INT32 },
 	{ RADIUS_ATTR_NAS_IPV6_ADDRESS, "NAS-IPv6-Address", RADIUS_ATTR_IPV6 },
-	{ RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN , "WISPr-Bandwidth-Max-Down",RADIUS_ATTR_INT32 },
-	{ RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP , "WISPr-Bandwidth-Max-Up",RADIUS_ATTR_INT32 },
 };
 #define RADIUS_ATTRS (sizeof(radius_attrs) / sizeof(radius_attrs[0]))
 
@@ -718,7 +716,7 @@ void radius_msg_make_authenticator(struct radius_msg *msg,
  * The returned payload is allocated with os_malloc() and caller must free it
  * by calling os_free().
  */
-static u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor,
+u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor,
 				      u8 subtype, size_t *alen)
 {
 	u8 *data, *pos;
