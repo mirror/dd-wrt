@@ -307,6 +307,10 @@ CONFIG_PEERKEY=y
 #LIBS += -L$(LTM_PATH)
 #LIBS_p += -L$(LTM_PATH)
 #endif
+# At the cost of about 4 kB of additional binary size, the internal LibTomMath
+# can be configured to include faster routines for exptmod, sqr, and div to
+# speed up DH and RSA calculation considerably
+#CONFIG_INTERNAL_LIBTOMMATH_FAST=y
 
 # Include NDIS event processing through WMI into wpa_supplicant/wpasvc.
 # This is only for Windows builds and requires WMI-related header files and
@@ -349,10 +353,7 @@ CONFIG_PEERKEY=y
 #WIRELESS_DEV=/usr/src/wireless-dev
 #CFLAGS += -I$(WIRELESS_DEV)/net/mac80211
 
-# IEEE 802.11r/D4.1 (Fast BSS Transition)
-# This enables an experimental implementation of a draft version of
-# IEEE 802.11r. This draft is still subject to change, so it should be noted
-# that this version may not comply with the final standard.
+# IEEE Std 802.11r-2008 (Fast BSS Transition)
 #CONFIG_IEEE80211R=y
 
 # Add support for writing debug log to a file (/tmp/wpa_supplicant-log-#.txt)

@@ -121,7 +121,7 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 			       const u8 *kck, const u8 *target_ap)
 {
 	size_t buf_len;
-	u8 *buf, *pos, *ftie_len;
+	u8 *buf, *pos, *ftie_len, *ftie_pos;
 	struct rsn_mdie *mdie;
 	struct rsn_ftie *ftie;
 	struct rsn_ie_hdr *rsnie;
@@ -226,6 +226,7 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 	mdie->ft_capab = 0; /* FIX: copy from the target AP's MDIE */
 
 	/* FTIE[SNonce, R0KH-ID] */
+	ftie_pos = pos;
 	*pos++ = WLAN_EID_FAST_BSS_TRANSITION;
 	ftie_len = pos++;
 	ftie = (struct rsn_ftie *) pos;
@@ -242,7 +243,7 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 
 	if (kck) {
 		/*
-		 * IEEE 802.11r/D9.0, 11A.8.4
+		 * IEEE Std 802.11r-2008, 11A.8.4
 		 * MIC shall be calculated over:
 		 * non-AP STA MAC address
 		 * Target AP MAC address
@@ -255,7 +256,7 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 		ftie->mic_control[1] = 3; /* Information element count */
 		if (wpa_ft_mic(kck, sm->own_addr, target_ap, 5,
 			       ((u8 *) mdie) - 2, 2 + sizeof(*mdie),
-			       ((u8 *) ftie) - 2, 2 + *ftie_len,
+			       ftie_pos, 2 + *ftie_len,
 			       (u8 *) rsnie, 2 + rsnie->len, NULL, 0,
 			       ftie->mic) < 0) {
 			wpa_printf(MSG_INFO, "FT: Failed to calculate MIC");
@@ -535,7 +536,7 @@ int wpa_ft_process_response(struct wpa_sm *sm, const u8 *ies, size_t ies_len,
 	wpa_hexdump(MSG_DEBUG, "FT: PMKR1Name",
 		    sm->pmk_r1_name, WPA_PMK_NAME_LEN);
 
-	bssid = ft_action ? sm->target_ap : sm->bssid;
+	bssid = target_ap;
 	wpa_pmk_r1_to_ptk(sm->pmk_r1, sm->snonce, ftie->anonce, sm->own_addr,
 			  bssid, sm->pmk_r1_name,
 			  (u8 *) &sm->ptk, sizeof(sm->ptk), ptk_name);
@@ -581,7 +582,7 @@ int wpa_ft_is_completed(struct wpa_sm *sm)
 
 
 int wpa_ft_validate_reassoc_resp(struct wpa_sm *sm, const u8 *ies,
-				 size_t ies_len)
+				 size_t ies_len, const u8 *src_addr)
 {
 	struct wpa_ft_ies parse;
 	struct rsn_mdie *mdie;
@@ -664,7 +665,7 @@ int wpa_ft_validate_reassoc_resp(struct wpa_sm *sm, const u8 *ies,
 		return -1;
 	}
 
-	if (wpa_ft_mic(sm->ptk.kck, sm->own_addr, sm->bssid, 6,
+	if (wpa_ft_mic(sm->ptk.kck, sm->own_addr, src_addr, 6,
 		       parse.mdie - 2, parse.mdie_len + 2,
 		       parse.ftie - 2, parse.ftie_len + 2,
 		       parse.rsn - 2, parse.rsn_len + 2, NULL, 0,

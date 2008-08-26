@@ -12,8 +12,6 @@
  * See README and COPYING for more details.
  */
 
-#include <QTimer>
-
 #include "scanresults.h"
 #include "wpagui.h"
 #include "networkconfig.h"
@@ -58,14 +56,19 @@ void ScanResults::updateResults()
 {
 	char reply[2048];
 	size_t reply_len;
-    
-	scanResultsWidget->clear();
-	QString cmd("BSS first");
+	int index;
+	char cmd[20];
 
+	scanResultsWidget->clear();
+
+	index = 0;
 	while (wpagui) {
+		snprintf(cmd, sizeof(cmd), "BSS %d", index++);
+		if (index > 1000)
+			break;
+
 		reply_len = sizeof(reply) - 1;
-		if (wpagui->ctrlRequest(cmd.toAscii().constData(), reply,
-		    &reply_len) < 0)
+		if (wpagui->ctrlRequest(cmd, reply, &reply_len) < 0)
 			break;
 		reply[reply_len] = '\0';
 
@@ -105,9 +108,6 @@ void ScanResults::updateResults()
 
 		if (bssid.isEmpty())
 			break;
-
-		cmd = "BSS next ";
-		cmd.append(bssid);
 	}
 }
 

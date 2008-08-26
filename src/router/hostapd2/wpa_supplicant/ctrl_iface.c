@@ -76,6 +76,7 @@ static int wpa_supplicant_ctrl_iface_set(struct wpa_supplicant *wpa_s,
 }
 
 
+#ifdef IEEE8021X_EAPOL
 static int wpa_supplicant_ctrl_iface_preauth(struct wpa_supplicant *wpa_s,
 					     char *addr)
 {
@@ -95,6 +96,7 @@ static int wpa_supplicant_ctrl_iface_preauth(struct wpa_supplicant *wpa_s,
 
 	return 0;
 }
+#endif /* IEEE8021X_EAPOL */
 
 
 #ifdef CONFIG_PEERKEY
@@ -328,9 +330,7 @@ static int wpa_supplicant_ctrl_iface_bssid(struct wpa_supplicant *wpa_s,
 	}
 
 	os_memcpy(ssid->bssid, bssid, ETH_ALEN);
-	ssid->bssid_set =
-		os_memcmp(bssid, "\x00\x00\x00\x00\x00\x00", ETH_ALEN) != 0;
-		
+	ssid->bssid_set = !is_zero_ether_addr(bssid);
 
 	return 0;
 }
@@ -1226,8 +1226,6 @@ static int wpa_supplicant_ctrl_iface_bss(struct wpa_supplicant *wpa_s,
 					 size_t buflen)
 {
 	u8 bssid[ETH_ALEN];
-	int next = 0;
-	int first = 0;
 	size_t i;
 	struct wpa_scan_results *results;
 	struct wpa_scan_res *bss;
@@ -1235,34 +1233,20 @@ static int wpa_supplicant_ctrl_iface_bss(struct wpa_supplicant *wpa_s,
 	char *pos, *end;
 	const u8 *ie, *ie2;
 
-	if (os_strcmp(cmd, "first") == 0) {
-		first = 1;
-	} else if (os_strncmp(cmd, "next ", 5) == 0) {
-		next = 1;
-		if (hwaddr_aton(cmd + 5, bssid))
-			return -1;
-	} else {
-		if (hwaddr_aton(cmd, bssid))
-			return -1;
-	}
-
 	results = wpa_s->scan_res;
 	if (results == NULL)
 		return 0;
 
-	for (i = 0; i < results->num; i++) {
-		if (first)
-			break;
-
-		if (os_memcmp(bssid, results->res[i]->bssid, ETH_ALEN) == 0) {
-			if (next)
-				first = 1; /* pick next */
-			else
+	if (hwaddr_aton(cmd, bssid) == 0) {
+		for (i = 0; i < results->num; i++) {
+			if (os_memcmp(bssid, results->res[i]->bssid, ETH_ALEN)
+			    == 0)
 				break;
 		}
-	}
+	} else
+		i = atoi(cmd);
 
-	if (i >= results->num)
+	if (i >= results->num || results->res[i] == NULL)
 		return 0; /* no match found */
 
 	bss = results->res[i];
@@ -1279,7 +1263,8 @@ static int wpa_supplicant_ctrl_iface_bss(struct wpa_supplicant *wpa_s,
 		       "tsf=%016llu\n"
 		       "ie=",
 		       MAC2STR(bss->bssid), bss->freq, bss->beacon_int,
-		       bss->caps, bss->qual, bss->noise, bss->level, bss->tsf);
+		       bss->caps, bss->qual, bss->noise, bss->level,
+		       (unsigned long long) bss->tsf);
 	if (ret < 0 || ret >= end - pos)
 		return pos - buf;
 	pos += ret;
@@ -1411,9 +1396,11 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 			wpa_s->reassociate = 1;
 			wpa_supplicant_req_scan(wpa_s, 0, 0);
 		}
+#ifdef IEEE8021X_EAPOL
 	} else if (os_strncmp(buf, "PREAUTH ", 8) == 0) {
 		if (wpa_supplicant_ctrl_iface_preauth(wpa_s, buf + 8))
 			reply_len = -1;
+#endif /* IEEE8021X_EAPOL */
 #ifdef CONFIG_PEERKEY
 	} else if (os_strncmp(buf, "STKSTART ", 9) == 0) {
 		if (wpa_supplicant_ctrl_iface_stkstart(wpa_s, buf + 9))

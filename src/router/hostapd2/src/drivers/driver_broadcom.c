@@ -44,11 +44,35 @@ struct wpa_driver_broadcom_data {
 };
 
 
+#ifndef WLC_DEAUTHENTICATE
+#define WLC_DEAUTHENTICATE 143
+#endif
+#ifndef WLC_DEAUTHENTICATE_WITH_REASON
+#define WLC_DEAUTHENTICATE_WITH_REASON 201
+#endif
+#ifndef WLC_SET_TKIP_COUNTERMEASURES
+#define WLC_SET_TKIP_COUNTERMEASURES 202
+#endif
 
+#if !defined(PSK_ENABLED) /* NEW driver interface */
+#define WL_VERSION 360130
+/* wireless authentication bit vector */
+#define WPA_ENABLED 1
+#define PSK_ENABLED 2
+                                                                                
+#define WAUTH_WPA_ENABLED(wauth)  ((wauth) & WPA_ENABLED)
+#define WAUTH_PSK_ENABLED(wauth)  ((wauth) & PSK_ENABLED)
+#define WAUTH_ENABLED(wauth)    ((wauth) & (WPA_ENABLED | PSK_ENABLED))
+
+#define WSEC_PRIMARY_KEY WL_PRIMARY_KEY
+
+typedef wl_wsec_key_t wsec_key_t;
+#endif
 
 typedef struct {
 	uint32 val;
 	struct ether_addr ea;
+	uint16 res;
 } wlc_deauth_t;
 
 
@@ -337,10 +361,14 @@ static void wpa_driver_broadcom_deinit(void *priv)
 static int wpa_driver_broadcom_set_countermeasures(void *priv,
 						   int enabled)
 {
+#if 0
 	struct wpa_driver_broadcom_data *drv = priv;
 	/* FIX: ? */
 	return broadcom_ioctl(drv, WLC_SET_TKIP_COUNTERMEASURES, &enabled,
 			      sizeof(enabled));
+#else
+	return 0;
+#endif
 }
 
 static int wpa_driver_broadcom_set_drop_unencrypted(void *priv, int enabled)
@@ -417,7 +445,7 @@ wpa_driver_broadcom_get_scan_results(void *priv,
 	wsr = (wl_scan_results_t *) buf;
 
 	wsr->buflen = WLC_IOCTL_MAXLEN - sizeof(wsr);
-	wsr->version = 108;
+	wsr->version = 107;
 	wsr->count = 0;
 
 	if (broadcom_ioctl(drv, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0) {
@@ -437,8 +465,8 @@ wpa_driver_broadcom_get_scan_results(void *priv,
 		results[ap_num].freq = frequency_list[wbi->channel - 1];
 		/* get ie's */
 		wpa_hexdump(MSG_MSGDUMP, "BROADCOM: AP IEs",
-			    (u8 *) wbi + + wbi->ie_offset, wbi->ie_length);
-		ie = (struct bss_ie_hdr *) ((u8 *) wbi + wbi->ie_offset);
+			    (u8 *) wbi + sizeof(*wbi), wbi->ie_length);
+		ie = (struct bss_ie_hdr *) ((u8 *) wbi + sizeof(*wbi));
 		for (left = wbi->ie_length; left > 0;
 		     left -= (ie->len + 2), ie = (struct bss_ie_hdr *)
 			     ((u8 *) ie + 2 + ie->len)) {
@@ -475,7 +503,7 @@ static int wpa_driver_broadcom_deauthenticate(void *priv, const u8 *addr,
 	wdt.val = reason_code;
 	os_memcpy(&wdt.ea, addr, sizeof wdt.ea);
 	wdt.res = 0x7fff;
-	return broadcom_ioctl(drv, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &wdt,
+	return broadcom_ioctl(drv, WLC_DEAUTHENTICATE_WITH_REASON, &wdt,
 			      sizeof(wdt));
 }
 

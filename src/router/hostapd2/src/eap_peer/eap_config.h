@@ -350,6 +350,12 @@ struct eap_peer_config {
 	 * fast_pac_format=binary option can be used to select binary format
 	 * for storing PAC entires in order to save some space (the default
 	 * text format uses about 2.5 times the size of minimal binary format).
+	 *
+	 * crypto_binding option can be used to control PEAPv0 cryptobinding
+	 * behavior:
+	 * 0 = do not use cryptobinding
+	 * 1 = use cryptobinding if server supports it (default)
+	 * 2 = require cryptobinding
 	 */
 	char *phase1;
 
@@ -409,6 +415,44 @@ struct eap_peer_config {
 	 * using a smartcard.
 	 */
 	char *key_id;
+
+	/**
+	 * cert_id - Cert ID for OpenSSL engine
+	 *
+	 * This is used if the certificate operations for EAP-TLS are performed
+	 * using a smartcard.
+	 */
+	char *cert_id;
+
+	/**
+	 * ca_cert_id - CA Cert ID for OpenSSL engine
+	 *
+	 * This is used if the CA certificate for EAP-TLS is on a smartcard.
+	 */
+	char *ca_cert_id;
+
+	/**
+	 * key2_id - Key ID for OpenSSL engine (phase2)
+	 *
+	 * This is used if private key operations for EAP-TLS are performed
+	 * using a smartcard.
+	 */
+	char *key2_id;
+
+	/**
+	 * cert2_id - Cert ID for OpenSSL engine (phase2)
+	 *
+	 * This is used if the certificate operations for EAP-TLS are performed
+	 * using a smartcard.
+	 */
+	char *cert2_id;
+
+	/**
+	 * ca_cert2_id - CA Cert ID for OpenSSL engine (phase2)
+	 *
+	 * This is used if the CA certificate for EAP-TLS is on a smartcard.
+	 */
+	char *ca_cert2_id;
 
 	/**
 	 * otp - One-time-password

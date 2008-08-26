@@ -2,6 +2,7 @@
  * hostapd / Initialization and configuration
  * Host AP kernel driver
  * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2007-2008, Intel Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -168,14 +169,6 @@ struct hostapd_data {
 #endif /* CONFIG_FULL_DYNAMIC_VLAN */
 
 	struct l2_packet_data *l2;
-	struct wps_context *wps;
-
-#ifdef CONFIG_WPS
-	u8 *wps_beacon_ie;
-	size_t wps_beacon_ie_len;
-	u8 *wps_probe_resp_ie;
-	size_t wps_probe_resp_ie_len;
-#endif /* CONFIG_WPS */
 };
 
 
@@ -229,6 +222,18 @@ struct hostapd_iface {
 
 	int olbc; /* Overlapping Legacy BSS Condition */
 
+	/* Number of HT associated stations that do not support greenfield */
+	int num_sta_ht_no_gf;
+
+	/* Number of associated non-HT stations */
+	int num_sta_no_ht;
+
+	/* Number of HT associated stations 20 MHz */
+	int num_sta_ht_20mhz;
+
+	/* Overlapping BSS information */
+	int olbc_ht;
+
 	int dfs_enable;
 	u8 pwr_const;
 	unsigned int tx_power;
@@ -239,6 +244,10 @@ struct hostapd_iface {
 	struct hostapd_config_change *change;
 	hostapd_iface_cb reload_iface_cb;
 	hostapd_iface_cb config_reload_cb;
+
+#ifdef CONFIG_IEEE80211N
+	u16 ht_op_mode;
+#endif /* CONFIG_IEEE80211N */
 };
 
 void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,

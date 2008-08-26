@@ -29,6 +29,7 @@
 #include "priv_netlink.h"
 #include "driver_wext.h"
 #include "ieee802_11_defs.h"
+#include "wpa_common.h"
 
 #ifdef CONFIG_CLIENT_MLME
 #include <netpacket/packet.h>
@@ -149,36 +150,12 @@ enum {
 #endif /* CONFIG_CLIENT_MLME */
 
 
-struct wpa_driver_wext_data {
-	void *ctx;
-	int event_sock;
-	int ioctl_sock;
-	int mlme_sock;
-	char ifname[IFNAMSIZ + 1];
-	int ifindex;
-	int ifindex2;
-	u8 *assoc_req_ies;
-	size_t assoc_req_ies_len;
-	u8 *assoc_resp_ies;
-	size_t assoc_resp_ies_len;
-	struct wpa_driver_capa capa;
-	int has_capability;
-	int we_version_compiled;
-
-	/* for set_auth_alg fallback */
-	int use_crypt;
-	int auth_alg_fallback;
-
-	int operstate;
-
-	char mlmedev[IFNAMSIZ + 1];
-
-	int scan_complete_events;
-};
 
 
 static int wpa_driver_wext_flush_pmkid(void *priv);
 static int wpa_driver_wext_get_range(void *priv);
+static void wpa_driver_wext_finish_drv_init(struct wpa_driver_wext_data *drv);
+
 
 static int wpa_driver_wext_send_oper_ifla(struct wpa_driver_wext_data *drv,
 					  int linkmode, int operstate)
@@ -239,8 +216,8 @@ static int wpa_driver_wext_send_oper_ifla(struct wpa_driver_wext_data *drv,
 }
 
 
-static int wpa_driver_wext_set_auth_param(struct wpa_driver_wext_data *drv,
-					  int idx, u32 value)
+int wpa_driver_wext_set_auth_param(struct wpa_driver_wext_data *drv,
+				   int idx, u32 value)
 {
 	struct iwreq iwr;
 	int ret = 0;
@@ -251,9 +228,11 @@ static int wpa_driver_wext_set_auth_param(struct wpa_driver_wext_data *drv,
 	iwr.u.param.value = value;
 
 	if (ioctl(drv->ioctl_sock, SIOCSIWAUTH, &iwr) < 0) {
-		perror("ioctl[SIOCSIWAUTH]");
-		fprintf(stderr, "WEXT auth param %d value 0x%x - ",
-			idx, value);
+		if (errno != EOPNOTSUPP) {
+			wpa_printf(MSG_DEBUG, "WEXT: SIOCSIWAUTH(param %d "
+				   "value 0x%x) failed: %s)",
+				   idx, value, strerror(errno));
+		}
 		ret = errno == EOPNOTSUPP ? -2 : -1;
 	}
 
@@ -655,9 +634,8 @@ static void wpa_driver_wext_event_wireless(struct wpa_driver_wext_data *drv,
 			wpa_printf(MSG_DEBUG, "Wireless event: new AP: "
 				   MACSTR,
 				   MAC2STR((u8 *) iwe->u.ap_addr.sa_data));
-			if (os_memcmp(iwe->u.ap_addr.sa_data,
-				      "\x00\x00\x00\x00\x00\x00", ETH_ALEN) ==
-			    0 ||
+			if (is_zero_ether_addr(
+				    (const u8 *) iwe->u.ap_addr.sa_data) ||
 			    os_memcmp(iwe->u.ap_addr.sa_data,
 				      "\x44\x44\x44\x44\x44\x44", ETH_ALEN) ==
 			    0) {
@@ -713,7 +691,8 @@ static void wpa_driver_wext_event_wireless(struct wpa_driver_wext_data *drv,
 }
 
 
-static void wpa_driver_wext_event_link(void *ctx, char *buf, size_t len,
+static void wpa_driver_wext_event_link(struct wpa_driver_wext_data *drv,
+				       void *ctx, char *buf, size_t len,
 				       int del)
 {
 	union wpa_event_data event;
@@ -730,7 +709,65 @@ static void wpa_driver_wext_event_link(void *ctx, char *buf, size_t len,
 		   event.interface_status.ifname,
 		   del ? "removed" : "added");
 
+	if (os_strcmp(drv->ifname, event.interface_status.ifname) == 0) {
+		if (del)
+			drv->if_removed = 1;
+		else
+			drv->if_removed = 0;
+	}
+
 	wpa_supplicant_event(ctx, EVENT_INTERFACE_STATUS, &event);
+}
+
+
+static int wpa_driver_wext_own_ifname(struct wpa_driver_wext_data *drv,
+				      struct nlmsghdr *h)
+{
+	struct ifinfomsg *ifi;
+	int attrlen, nlmsg_len, rta_len;
+	struct rtattr *attr;
+
+	ifi = NLMSG_DATA(h);
+
+	nlmsg_len = NLMSG_ALIGN(sizeof(struct ifinfomsg));
+
+	attrlen = h->nlmsg_len - nlmsg_len;
+	if (attrlen < 0)
+		return 0;
+
+	attr = (struct rtattr *) (((char *) ifi) + nlmsg_len);
+
+	rta_len = RTA_ALIGN(sizeof(struct rtattr));
+	while (RTA_OK(attr, attrlen)) {
+		if (attr->rta_type == IFLA_IFNAME) {
+			if (os_strcmp(((char *) attr) + rta_len, drv->ifname)
+			    == 0)
+				return 1;
+			else
+				break;
+		}
+		attr = RTA_NEXT(attr, attrlen);
+	}
+
+	return 0;
+}
+
+
+static int wpa_driver_wext_own_ifindex(struct wpa_driver_wext_data *drv,
+				       int ifindex, struct nlmsghdr *h)
+{
+	if (drv->ifindex == ifindex || drv->ifindex2 == ifindex)
+		return 1;
+
+	if (drv->if_removed && wpa_driver_wext_own_ifname(drv, h)) {
+		drv->ifindex = if_nametoindex(drv->ifname);
+		wpa_printf(MSG_DEBUG, "WEXT: Update ifindex for a removed "
+			   "interface");
+		wpa_driver_wext_finish_drv_init(drv);
+		return 1;
+	}
+
+	return 0;
 }
 
 
@@ -747,8 +784,7 @@ static void wpa_driver_wext_event_rtm_newlink(struct wpa_driver_wext_data *drv,
 
 	ifi = NLMSG_DATA(h);
 
-	if (drv->ifindex != ifi->ifi_index && drv->ifindex2 != ifi->ifi_index)
-	{
+	if (!wpa_driver_wext_own_ifindex(drv, ifi->ifi_index, h)) {
 		wpa_printf(MSG_DEBUG, "Ignore event for foreign ifindex %d",
 			   ifi->ifi_index);
 		return;
@@ -760,7 +796,7 @@ static void wpa_driver_wext_event_rtm_newlink(struct wpa_driver_wext_data *drv,
 		   (ifi->ifi_flags & IFF_UP) ? "[UP]" : "",
 		   (ifi->ifi_flags & IFF_RUNNING) ? "[RUNNING]" : "",
 		   (ifi->ifi_flags & IFF_LOWER_UP) ? "[LOWER_UP]" : "",
-		   (ifi->ifi_flags & IFF_DORMANT) ? "[DORMANT" : "");
+		   (ifi->ifi_flags & IFF_DORMANT) ? "[DORMANT]" : "");
 	/*
 	 * Some drivers send the association event before the operup event--in
 	 * this case, lifting operstate in wpa_driver_wext_set_operstate()
@@ -787,7 +823,7 @@ static void wpa_driver_wext_event_rtm_newlink(struct wpa_driver_wext_data *drv,
 				drv, ctx, ((char *) attr) + rta_len,
 				attr->rta_len - rta_len);
 		} else if (attr->rta_type == IFLA_IFNAME) {
-			wpa_driver_wext_event_link(ctx,
+			wpa_driver_wext_event_link(drv, ctx,
 						   ((char *) attr) + rta_len,
 						   attr->rta_len - rta_len, 0);
 		}
@@ -820,7 +856,7 @@ static void wpa_driver_wext_event_rtm_dellink(struct wpa_driver_wext_data *drv,
 	rta_len = RTA_ALIGN(sizeof(struct rtattr));
 	while (RTA_OK(attr, attrlen)) {
 		if (attr->rta_type == IFLA_IFNAME) {
-			wpa_driver_wext_event_link(ctx,
+			wpa_driver_wext_event_link(drv,  ctx,
 						   ((char *) attr) + rta_len,
 						   attr->rta_len - rta_len, 1);
 		}
@@ -1001,7 +1037,7 @@ int wpa_driver_wext_set_ifflags(struct wpa_driver_wext_data *drv, int flags)
  */
 void * wpa_driver_wext_init(void *ctx, const char *ifname)
 {
-	int s, flags;
+	int s;
 	struct sockaddr_nl local;
 	struct wpa_driver_wext_data *drv;
 
@@ -1042,6 +1078,16 @@ void * wpa_driver_wext_init(void *ctx, const char *ifname)
 
 	drv->mlme_sock = -1;
 
+	wpa_driver_wext_finish_drv_init(drv);
+
+	return drv;
+}
+
+
+static void wpa_driver_wext_finish_drv_init(struct wpa_driver_wext_data *drv)
+{
+	int flags;
+
 	if (wpa_driver_wext_get_ifflags(drv, &flags) != 0)
 		printf("Could not get interface '%s' flags\n", drv->ifname);
 	else if (!(flags & IFF_UP)) {
@@ -1075,7 +1121,7 @@ void * wpa_driver_wext_init(void *ctx, const char *ifname)
 
 	drv->ifindex = if_nametoindex(drv->ifname);
 
-	if (os_strncmp(ifname, "wlan", 4) == 0) {
+	if (os_strncmp(drv->ifname, "wlan", 4) == 0) {
 		/*
 		 * Host AP driver may use both wlan# and wifi# interface in
 		 * wireless events. Since some of the versions included WE-18
@@ -1085,14 +1131,12 @@ void * wpa_driver_wext_init(void *ctx, const char *ifname)
 		 * driver are not in use anymore.
 		 */
 		char ifname2[IFNAMSIZ + 1];
-		os_strlcpy(ifname2, ifname, sizeof(ifname2));
+		os_strlcpy(ifname2, drv->ifname, sizeof(ifname2));
 		os_memcpy(ifname2, "wifi", 4);
 		wpa_driver_wext_alternative_ifindex(drv, ifname2);
 	}
 
 	wpa_driver_wext_send_oper_ifla(drv, 1, IF_OPER_DORMANT);
-
-	return drv;
 }
 
 
@@ -1318,8 +1362,15 @@ static void wext_get_scan_freq(struct iw_event *iwe,
 		/*
 		 * Some drivers do not report frequency, but a channel.
 		 * Try to map this to frequency by assuming they are using
-		 * IEEE 802.11b/g.
+		 * IEEE 802.11b/g.  But don't overwrite a previously parsed
+		 * frequency if the driver sends both frequency and channel,
+		 * since the driver may be sending an A-band channel that we
+		 * don't handle here.
 		 */
+
+		if (res->res.freq)
+			return;
+
 		if (iwe->u.freq.m >= 1 && iwe->u.freq.m <= 13) {
 			res->res.freq = 2407 + 5 * iwe->u.freq.m;
 			return;
@@ -1381,7 +1432,11 @@ static void wext_get_scan_rate(struct iw_event *iwe,
 		clen -= sizeof(struct iw_param);
 		custom += sizeof(struct iw_param);
 	}
-	res->maxrate = maxrate;
+
+	/* Convert the maxrate from WE-style (b/s units) to
+	 * 802.11 rates (500000 b/s units).
+	 */
+	res->maxrate = maxrate / 500000;
 }
 
 
@@ -1695,8 +1750,12 @@ static int wpa_driver_wext_get_range(void *priv)
 			drv->capa.enc |= WPA_DRIVER_CAPA_ENC_TKIP;
 		if (range->enc_capa & IW_ENC_CAPA_CIPHER_CCMP)
 			drv->capa.enc |= WPA_DRIVER_CAPA_ENC_CCMP;
-		wpa_printf(MSG_DEBUG, "  capabilities: key_mgmt 0x%x enc 0x%x",
-			   drv->capa.key_mgmt, drv->capa.enc);
+		if (range->enc_capa & IW_ENC_CAPA_4WAY_HANDSHAKE)
+			drv->capa.flags |= WPA_DRIVER_FLAGS_4WAY_HANDSHAKE;
+
+		wpa_printf(MSG_DEBUG, "  capabilities: key_mgmt 0x%x enc 0x%x "
+			   "flags 0x%x",
+			   drv->capa.key_mgmt, drv->capa.enc, drv->capa.flags);
 	} else {
 		wpa_printf(MSG_DEBUG, "SIOCGIWRANGE: too old (short) data - "
 			   "assuming WPA is not supported");
@@ -1714,6 +1773,43 @@ static int wpa_driver_wext_set_wpa(void *priv, int enabled)
 
 	return wpa_driver_wext_set_auth_param(drv, IW_AUTH_WPA_ENABLED,
 					      enabled);
+}
+
+
+static int wpa_driver_wext_set_psk(struct wpa_driver_wext_data *drv,
+				   const u8 *psk)
+{
+	struct iw_encode_ext *ext;
+	struct iwreq iwr;
+	int ret;
+
+	wpa_printf(MSG_DEBUG, "%s", __FUNCTION__);
+
+	if (!(drv->capa.flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE))
+		return 0;
+
+	if (!psk)
+		return 0;
+
+	os_memset(&iwr, 0, sizeof(iwr));
+	os_strlcpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
+
+	ext = os_zalloc(sizeof(*ext) + PMK_LEN);
+	if (ext == NULL)
+		return -1;
+
+	iwr.u.encoding.pointer = (caddr_t) ext;
+	iwr.u.encoding.length = sizeof(*ext) + PMK_LEN;
+	ext->key_len = PMK_LEN;
+	os_memcpy(&ext->key, psk, ext->key_len);
+	ext->alg = IW_ENCODE_ALG_PMK;
+
+	ret = ioctl(drv->ioctl_sock, SIOCSIWENCODEEXT, &iwr);
+	if (ret < 0)
+		perror("ioctl[SIOCSIWENCODEEXT] PMK");
+	os_free(ext);
+
+	return ret;
 }
 
 
@@ -1773,6 +1869,16 @@ static int wpa_driver_wext_set_key_ext(void *priv, wpa_alg alg,
 	case WPA_ALG_CCMP:
 		ext->alg = IW_ENCODE_ALG_CCMP;
 		break;
+	case WPA_ALG_PMK:
+		ext->alg = IW_ENCODE_ALG_PMK;
+		break;
+#ifdef WEXT_MFP_PENDING
+#ifdef CONFIG_IEEE80211W
+	case WPA_ALG_IGTK:
+		ext->alg = IW_ENCODE_ALG_AES_CMAC;
+		break;
+#endif /* CONFIG_IEEE80211W */
+#endif /* WEXT_MFP_PENDING */
 	default:
 		wpa_printf(MSG_DEBUG, "%s: Unknown algorithm %d",
 			   __FUNCTION__, alg);
@@ -1975,7 +2081,7 @@ static int wpa_driver_wext_set_gen_ie(void *priv, const u8 *ie,
 }
 
 
-static int wpa_driver_wext_cipher2wext(int cipher)
+int wpa_driver_wext_cipher2wext(int cipher)
 {
 	switch (cipher) {
 	case CIPHER_NONE:
@@ -1994,7 +2100,7 @@ static int wpa_driver_wext_cipher2wext(int cipher)
 }
 
 
-static int wpa_driver_wext_keymgmt2wext(int keymgmt)
+int wpa_driver_wext_keymgmt2wext(int keymgmt)
 {
 	switch (keymgmt) {
 	case KEY_MGMT_802_1X:
@@ -2052,9 +2158,8 @@ wpa_driver_wext_auth_alg_fallback(struct wpa_driver_wext_data *drv,
 }
 
 
-static int
-wpa_driver_wext_associate(void *priv,
-			  struct wpa_driver_associate_params *params)
+int wpa_driver_wext_associate(void *priv,
+			      struct wpa_driver_associate_params *params)
 {
 	struct wpa_driver_wext_data *drv = priv;
 	int ret = 0;
@@ -2120,11 +2225,30 @@ wpa_driver_wext_associate(void *priv,
 		allow_unencrypted_eapol = 0;
 	else
 		allow_unencrypted_eapol = 1;
-	
+
+	if (wpa_driver_wext_set_psk(drv, params->psk) < 0)
+		ret = -1;
 	if (wpa_driver_wext_set_auth_param(drv,
 					   IW_AUTH_RX_UNENCRYPTED_EAPOL,
 					   allow_unencrypted_eapol) < 0)
 		ret = -1;
+#ifdef WEXT_MFP_PENDING
+#ifdef CONFIG_IEEE80211W
+	switch (params->mgmt_frame_protection) {
+	case NO_MGMT_FRAME_PROTECTION:
+		value = IW_AUTH_MFP_DISABLED;
+		break;
+	case MGMT_FRAME_PROTECTION_OPTIONAL:
+		value = IW_AUTH_MFP_OPTIONAL;
+		break;
+	case MGMT_FRAME_PROTECTION_REQUIRED:
+		value = IW_AUTH_MFP_REQUIRED;
+		break;
+	};
+	if (wpa_driver_wext_set_auth_param(drv, IW_AUTH_MFP, value) < 0)
+		ret = -1;
+#endif /* CONFIG_IEEE80211W */
+#endif /* WEXT_MFP_PENDING */
 	if (params->freq && wpa_driver_wext_set_freq(drv, params->freq) < 0)
 		ret = -1;
 	if (wpa_driver_wext_set_ssid(drv, params->ssid, params->ssid_len) < 0)
@@ -2170,17 +2294,54 @@ int wpa_driver_wext_set_mode(void *priv, int mode)
 {
 	struct wpa_driver_wext_data *drv = priv;
 	struct iwreq iwr;
-	int ret = 0;
+	int ret = -1, flags;
+	unsigned int new_mode = mode ? IW_MODE_ADHOC : IW_MODE_INFRA;
 
 	os_memset(&iwr, 0, sizeof(iwr));
 	os_strlcpy(iwr.ifr_name, drv->ifname, IFNAMSIZ);
-	iwr.u.mode = mode ? IW_MODE_ADHOC : IW_MODE_INFRA;
-
-	if (ioctl(drv->ioctl_sock, SIOCSIWMODE, &iwr) < 0) {
-		perror("ioctl[SIOCSIWMODE]");
-		ret = -1;
+	iwr.u.mode = new_mode;
+	if (ioctl(drv->ioctl_sock, SIOCSIWMODE, &iwr) == 0) {
+		ret = 0;
+		goto done;
 	}
 
+	if (errno != EBUSY) {
+		perror("ioctl[SIOCSIWMODE]");
+		goto done;
+	}
+
+	/* mac80211 doesn't allow mode changes while the device is up, so if
+	 * the device isn't in the mode we're about to change to, take device
+	 * down, try to set the mode again, and bring it back up.
+	 */
+	if (ioctl(drv->ioctl_sock, SIOCGIWMODE, &iwr) < 0) {
+		perror("ioctl[SIOCGIWMODE]");
+		goto done;
+	}
+
+	if (iwr.u.mode == new_mode) {
+		ret = 0;
+		goto done;
+	}
+
+	if (wpa_driver_wext_get_ifflags(drv, &flags) == 0) {
+		(void) wpa_driver_wext_set_ifflags(drv, flags & ~IFF_UP);
+
+		/* Try to set the mode again while the interface is down */
+		iwr.u.mode = new_mode;
+		if (ioctl(drv->ioctl_sock, SIOCSIWMODE, &iwr) < 0)
+			perror("ioctl[SIOCSIWMODE]");
+		else
+			ret = 0;
+
+		/* Ignore return value of get_ifflags to ensure that the device
+		 * is always up like it was before this function was called.
+		 */
+		(void) wpa_driver_wext_get_ifflags(drv, &flags);
+		(void) wpa_driver_wext_set_ifflags(drv, flags | IFF_UP);
+	}
+
+done:
 	return ret;
 }
 
@@ -2237,7 +2398,7 @@ static int wpa_driver_wext_flush_pmkid(void *priv)
 }
 
 
-static int wpa_driver_wext_get_capa(void *priv, struct wpa_driver_capa *capa)
+int wpa_driver_wext_get_capa(void *priv, struct wpa_driver_capa *capa)
 {
 	struct wpa_driver_wext_data *drv = priv;
 	if (!drv->has_capability)

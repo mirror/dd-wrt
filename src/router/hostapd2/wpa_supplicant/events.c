@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant - Driver event processing
- * Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -40,6 +40,8 @@ static int wpa_supplicant_select_config(struct wpa_supplicant *wpa_s)
 	if (wpa_s->conf->ap_scan == 1 && wpa_s->current_ssid)
 		return 0;
 
+	wpa_printf(MSG_DEBUG, "Select network based on association "
+		   "information");
 	ssid = wpa_supplicant_get_ssid(wpa_s);
 	if (ssid == NULL) {
 		wpa_printf(MSG_INFO, "No network configuration found for the "
@@ -100,6 +102,7 @@ void wpa_supplicant_mark_disassoc(struct wpa_supplicant *wpa_s)
 	if (wpa_s->key_mgmt == WPA_KEY_MGMT_PSK ||
 	    wpa_s->key_mgmt == WPA_KEY_MGMT_FT_PSK)
 		eapol_sm_notify_eap_success(wpa_s->eapol, FALSE);
+	wpa_s->ap_ies_from_associnfo = 0;
 }
 
 
@@ -552,9 +555,6 @@ static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
 	if (wpa_s->conf->ap_scan == 2 || wpa_s->disconnected)
 		return;
 
-	if (wpa_s->wpa_state > WPA_ASSOCIATED)
-		goto done;
-
 	while (selected == NULL) {
 		for (prio = 0; prio < wpa_s->conf->num_prio; prio++) {
 			selected = wpa_supplicant_select_bss(
@@ -567,7 +567,6 @@ static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
 			wpa_printf(MSG_DEBUG, "No APs found - clear blacklist "
 				   "and try again");
 			wpa_blacklist_clear(wpa_s);
-			memset(&wpa_s->last_scan_results, 0, sizeof(wpa_s->last_scan_results));
 		} else if (selected == NULL) {
 			break;
 		}
@@ -595,12 +594,10 @@ static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
 		rsn_preauth_scan_results(wpa_s->wpa, wpa_s->scan_res);
 	} else {
 		wpa_printf(MSG_DEBUG, "No suitable AP found.");
-		timeout = 0;
+		timeout = 5;
 		goto req_scan;
 	}
 
-done:
-	os_get_time(&wpa_s->last_scan_results);
 	return;
 
 req_scan:
@@ -696,6 +693,8 @@ static void wpa_supplicant_event_associnfo(struct wpa_supplicant *wpa_s,
 		wpa_sm_set_ap_wpa_ie(wpa_s->wpa, NULL, 0);
 	if (!rsn_found && data->assoc_info.beacon_ies)
 		wpa_sm_set_ap_rsn_ie(wpa_s->wpa, NULL, 0);
+	if (wpa_found || rsn_found)
+		wpa_s->ap_ies_from_associnfo = 1;
 }
 
 
@@ -805,11 +804,8 @@ static void wpa_supplicant_event_disassoc(struct wpa_supplicant *wpa_s)
 	}
 	if (wpa_s->wpa_state >= WPA_ASSOCIATED)
 		wpa_supplicant_req_scan(wpa_s, 0, 100000);
-	else if (wpa_s->wpa_state == WPA_ASSOCIATING)
-		wpa_supplicant_req_auth_timeout(wpa_s, 0, 100000);
-
 	bssid = wpa_s->bssid;
-	if (os_memcmp(bssid, "\x00\x00\x00\x00\x00\x00", ETH_ALEN) == 0)
+	if (is_zero_ether_addr(bssid))
 		bssid = wpa_s->pending_bssid;
 	wpa_blacklist_add(wpa_s, bssid);
 	wpa_sm_notify_disassoc(wpa_s->wpa);

@@ -281,6 +281,7 @@ struct wpa_supplicant {
 	int disconnected; /* all connections disabled; i.e., do no reassociate
 			   * before this has been cleared */
 	struct wpa_ssid *current_ssid;
+	int ap_ies_from_associnfo;
 
 	/* Selected configuration (based on Beacon/ProbeResp WPA IE) */
 	int pairwise_cipher;
@@ -333,7 +334,6 @@ struct wpa_supplicant {
 	struct wpa_client_mlme mlme;
 	int use_client_mlme;
 	int driver_4way_handshake;
-	struct os_time last_scan_results;
 };
 
 
@@ -381,7 +381,6 @@ int wpa_supplicant_scard_init(struct wpa_supplicant *wpa_s,
 
 /* scan.c */
 void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec);
-int wpa_supplicant_may_scan(struct wpa_supplicant *wpa_s);
 void wpa_supplicant_cancel_scan(struct wpa_supplicant *wpa_s);
 
 /* events.c */
