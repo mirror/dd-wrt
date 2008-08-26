@@ -1552,17 +1552,20 @@ wds.legend2="Erweiterte Optionen";
 
 // **************************************************************** Wireless_radauth.asp ***************************************************************//
 
-radius.titl="RADIUS";
+radius.titl="Radius";
 radius.h2="Remote Authentication Dial-In User Service";
-radius.legend="RADIUS";
-radius.label="RADIUS-Client-MAC";
+radius.legend="Radius";
+radius.label="Radius Client MAC";
 radius.label2="MAC-Format";
-radius.label3="RADIUS-Server-IP";
-radius.label4="RADIUS-Server-Port";
+radius.label3="Radius Auth Server IP";
+radius.label4="Radius Auth Server Port";
 radius.label5="Erlaubte unauthentifizierte Nutzer";
 radius.label6="Passwort-Format";
-radius.label7="RADIUS Shared Secret";
+radius.label7="Radius Auth Shared Secret";
 radius.label8="Umgehen, wenn Server nicht verfügbar";
+radius.label13="Radius Acct Server IP";
+radius.label14="Radius Acct Server Port";
+radius.label17="Radius Acct Shared Secret";
 
 
 
