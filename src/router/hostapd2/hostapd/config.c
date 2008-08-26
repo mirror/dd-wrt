@@ -1,6 +1,7 @@
 /*
  * hostapd / Configuration file
  * Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2007-2008, Intel Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -25,7 +26,6 @@
 #include "wpa_common.h"
 #include "wpa.h"
 #include "uuid.h"
-#include "eap_common/eap_wsc_common.h"
 
 
 #define MAX_STA_COUNT 2007
@@ -179,6 +179,8 @@ static void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 	bss->radius_server_auth_port = 1812;
 	bss->ap_max_inactivity = AP_MAX_INACTIVITY;
 	bss->eapol_version = EAPOL_VERSION;
+
+	bss->max_listen_interval = 65535;
 }
 
 
@@ -242,6 +244,14 @@ static struct hostapd_config * hostapd_config_defaults(void)
 	conf->wme_ac_params[1] = ac_bk;
 	conf->wme_ac_params[2] = ac_vi;
 	conf->wme_ac_params[3] = ac_vo;
+
+#ifdef CONFIG_IEEE80211N
+	SET_2BIT_LE16(&conf->ht_capab,
+		      HT_CAP_INFO_MIMO_PWR_SAVE_OFFSET,
+		      MIMO_PWR_NO_LIMIT_ON_MIMO_SEQS);
+
+	conf->ht_capab |= HT_CAP_INFO_GREEN_FIELD;
+#endif /* CONFIG_IEEE80211N */
 
 	return conf;
 }
@@ -368,7 +378,7 @@ static int hostapd_config_read_wpa_psk(const char *fname,
 			ret = -1;
 			break;
 		}
-		if (os_memcmp(addr, "\x00\x00\x00\x00\x00\x00", ETH_ALEN) == 0)
+		if (is_zero_ether_addr(addr))
 			psk->group = 1;
 		else
 			os_memcpy(psk->addr, addr, ETH_ALEN);
@@ -1473,6 +1483,10 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 		} else if (os_strcmp(buf, "eap_sim_aka_result_ind") == 0) {
 			bss->eap_sim_aka_result_ind = atoi(pos);
 #endif /* EAP_SIM */
+#ifdef EAP_TNC
+		} else if (os_strcmp(buf, "tnc") == 0) {
+			bss->tnc = atoi(pos);
+#endif /* EAP_TNC */
 #endif /* EAP_SERVER */
 		} else if (os_strcmp(buf, "eap_message") == 0) {
 			char *term;
@@ -1851,6 +1865,11 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 				printf("Line %d: invalid rate list\n", line);
 				errors++;
 			}
+		} else if (os_strcmp(buf, "preamble") == 0) {
+			if (atoi(pos))
+				conf->preamble = SHORT_PREAMBLE;
+			else
+				conf->preamble = LONG_PREAMBLE;
 		} else if (os_strcmp(buf, "ignore_broadcast_ssid") == 0) {
 			bss->ignore_broadcast_ssid = atoi(pos);
 		} else if (os_strcmp(buf, "bridge_packets") == 0) {
@@ -1928,44 +1947,14 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 		} else if (os_strcmp(buf, "ieee80211w") == 0) {
 			bss->ieee80211w = atoi(pos);
 #endif /* CONFIG_IEEE80211W */
-#ifdef CONFIG_WPS
-		} else if (os_strcmp(buf, "wps_state") == 0) {
-			bss->wps_state = atoi(pos);
-			if (bss->wps_state < 0 || bss->wps_state > 2) {
-				printf("Line %d: invalid wps_state\n", line);
-				errors++;
-			}
-		} else if (os_strcmp(buf, "ap_setup_locked") == 0) {
-			bss->ap_setup_locked = atoi(pos);
-		} else if (os_strcmp(buf, "uuid") == 0) {
-			if (uuid_str2bin(pos, bss->uuid)) {
-				printf("Line %d: invalid UUID\n", line);
-				errors++;
-			}
-		} else if (os_strcmp(buf, "wps_pin_requests") == 0) {
-			bss->wps_pin_requests = os_strdup(pos);
-		} else if (os_strcmp(buf, "device_name") == 0) {
-			bss->device_name = os_strdup(pos);
-		} else if (os_strcmp(buf, "manufacturer") == 0) {
-			bss->manufacturer = os_strdup(pos);
-		} else if (os_strcmp(buf, "model_name") == 0) {
-			bss->model_name = os_strdup(pos);
-		} else if (os_strcmp(buf, "model_number") == 0) {
-			bss->model_number = os_strdup(pos);
-		} else if (os_strcmp(buf, "serial_number") == 0) {
-			bss->serial_number = os_strdup(pos);
-		} else if (os_strcmp(buf, "device_type") == 0) {
-			bss->device_type = os_strdup(pos);
-		} else if (os_strcmp(buf, "config_methods") == 0) {
-			bss->config_methods = os_strdup(pos);
-		} else if (os_strcmp(buf, "os_version") == 0) {
-			if (hexstr2bin(pos, bss->os_version, 4)) {
-				printf("Line %d: invalid os_version\n", line);
-				errors++;
-			}
-		} else if (os_strcmp(buf, "ap_pin") == 0) {
-			bss->ap_pin = os_strdup(pos);
-#endif /* CONFIG_WPS */
+#ifdef CONFIG_IEEE80211N
+		} else if (os_strcmp(buf, "ieee80211n") == 0) {
+			conf->ieee80211n = atoi(pos);
+#endif /* CONFIG_IEEE80211N */
+		} else if (os_strcmp(buf, "max_listen_interval") == 0) {
+			bss->max_listen_interval = atoi(pos);
+		} else if (os_strcmp(buf, "okc") == 0) {
+			bss->okc = atoi(pos);
 		} else {
 			printf("Line %d: unknown configuration item '%s'\n",
 			       line, buf);
@@ -2158,18 +2147,6 @@ static void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 		}
 	}
 #endif /* CONFIG_IEEE80211R */
-
-#ifdef CONFIG_WPS
-	os_free(conf->wps_pin_requests);
-	os_free(conf->device_name);
-	os_free(conf->manufacturer);
-	os_free(conf->model_name);
-	os_free(conf->model_number);
-	os_free(conf->serial_number);
-	os_free(conf->device_type);
-	os_free(conf->config_methods);
-	os_free(conf->ap_pin);
-#endif /* CONFIG_WPS */
 }
 
 
@@ -2263,29 +2240,6 @@ hostapd_get_eap_user(const struct hostapd_bss_config *conf, const u8 *identity,
 		     size_t identity_len, int phase2)
 {
 	struct hostapd_eap_user *user = conf->eap_user;
-
-#ifdef CONFIG_WPS
-	if (conf->wps_state && identity_len == WSC_ID_ENROLLEE_LEN &&
-	    os_memcmp(identity, WSC_ID_ENROLLEE, WSC_ID_ENROLLEE_LEN) == 0) {
-		static struct hostapd_eap_user wsc_enrollee;
-		os_memset(&wsc_enrollee, 0, sizeof(wsc_enrollee));
-		wsc_enrollee.methods[0].method = eap_server_get_type(
-			"WSC", &wsc_enrollee.methods[0].vendor);
-		return &wsc_enrollee;
-	}
-
-	if (conf->wps_state && conf->ap_pin &&
-	    identity_len == WSC_ID_REGISTRAR_LEN &&
-	    os_memcmp(identity, WSC_ID_REGISTRAR, WSC_ID_REGISTRAR_LEN) == 0) {
-		static struct hostapd_eap_user wsc_registrar;
-		os_memset(&wsc_registrar, 0, sizeof(wsc_registrar));
-		wsc_registrar.methods[0].method = eap_server_get_type(
-			"WSC", &wsc_registrar.methods[0].vendor);
-		wsc_registrar.password = (u8 *) conf->ap_pin;
-		wsc_registrar.password_len = os_strlen(conf->ap_pin);
-		return &wsc_registrar;
-	}
-#endif /* CONFIG_WPS */
 
 	while (user) {
 		if (!phase2 && user->identity == NULL) {

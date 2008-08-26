@@ -187,7 +187,7 @@ static void wpa_supplicant_timeout(void *eloop_ctx, void *timeout_ctx)
 {
 	struct wpa_supplicant *wpa_s = eloop_ctx;
 	const u8 *bssid = wpa_s->bssid;
-	if (os_memcmp(bssid, "\x00\x00\x00\x00\x00\x00", ETH_ALEN) == 0)
+	if (is_zero_ether_addr(bssid))
 		bssid = wpa_s->pending_bssid;
 	wpa_msg(wpa_s, MSG_INFO, "Authentication with " MACSTR " timed out.",
 		MAC2STR(bssid));
@@ -770,11 +770,13 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_RSN_ENABLED,
 			 !!(ssid->proto & WPA_PROTO_RSN));
 
-	if (wpa_sm_set_ap_wpa_ie(wpa_s->wpa, bss_wpa,
-				 bss_wpa ? 2 + bss_wpa[1] : 0) ||
-	    wpa_sm_set_ap_rsn_ie(wpa_s->wpa, bss_rsn,
-				 bss_rsn ? 2 + bss_rsn[1] : 0))
-		return -1;
+	if (bss || !wpa_s->ap_ies_from_associnfo) {
+		if (wpa_sm_set_ap_wpa_ie(wpa_s->wpa, bss_wpa,
+					 bss_wpa ? 2 + bss_wpa[1] : 0) ||
+		    wpa_sm_set_ap_rsn_ie(wpa_s->wpa, bss_rsn,
+					 bss_rsn ? 2 + bss_rsn[1] : 0))
+			return -1;
+	}
 
 	sel = ie.group_cipher & ssid->group_cipher;
 	if (sel & WPA_CIPHER_CCMP) {
@@ -1088,13 +1090,15 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
 	} else {
 		/* Timeout for IEEE 802.11 authentication and association */
-		int timeout;
-		if (assoc_failed)
-			timeout = 5;
-		else if (wpa_s->conf->ap_scan == 1)
-			timeout = 10;
-		else
-			timeout = 60;
+		int timeout = 60;
+
+		if (assoc_failed) {
+			/* give IBSS a bit more time */
+ 			timeout = ssid->mode ? 10 : 5;
+		} else if (wpa_s->conf->ap_scan == 1) {
+			/* give IBSS a bit more time */
+ 			timeout = ssid->mode ? 20 : 10;
+		}
 		wpa_supplicant_req_auth_timeout(wpa_s, timeout, 0);
 	}
 
@@ -1129,8 +1133,7 @@ void wpa_supplicant_disassociate(struct wpa_supplicant *wpa_s,
 				 int reason_code)
 {
 	u8 *addr = NULL;
-	if (os_memcmp(wpa_s->bssid, "\x00\x00\x00\x00\x00\x00", ETH_ALEN) != 0)
-	{
+	if (!is_zero_ether_addr(wpa_s->bssid)) {
 		if (wpa_s->use_client_mlme)
 			ieee80211_sta_disassociate(wpa_s, reason_code);
 		else
@@ -1158,8 +1161,7 @@ void wpa_supplicant_deauthenticate(struct wpa_supplicant *wpa_s,
 {
 	u8 *addr = NULL;
 	wpa_supplicant_set_state(wpa_s, WPA_DISCONNECTED);
-	if (os_memcmp(wpa_s->bssid, "\x00\x00\x00\x00\x00\x00", ETH_ALEN) != 0)
-	{
+	if (!is_zero_ether_addr(wpa_s->bssid)) {
 		if (wpa_s->use_client_mlme)
 			ieee80211_sta_deauthenticate(wpa_s, reason_code);
 		else
@@ -1180,7 +1182,7 @@ static int wpa_supplicant_get_scan_results_old(struct wpa_supplicant *wpa_s)
 {
 #define SCAN_AP_LIMIT 128
 	struct wpa_scan_result *results;
-	int num, i, j;
+	int num, i;
 	struct wpa_scan_results *res;
 
 	results = os_malloc(SCAN_AP_LIMIT * sizeof(struct wpa_scan_result));
@@ -1276,21 +1278,6 @@ static int wpa_supplicant_get_scan_results_old(struct wpa_supplicant *wpa_s)
 
 		res->res[res->num++] = r;
 	}
-
-	/* sort scan results by quality */
-	for(i = 0; i < num - 1; i++) {
-		for(j = i + 1; j < num; j++) {
-			struct wpa_scan_result tmp;
-
-			if (results[i].qual > results[j].qual)
-				continue;
-
-			os_memcpy(&tmp, &results[i], sizeof(tmp));
-			os_memcpy(&results[i], &results[j], sizeof(tmp));
-			os_memcpy(&results[j], &tmp, sizeof(tmp));
-		}
-	}
-
 
 	os_free(results);
 	wpa_s->scan_res = res;
@@ -1429,9 +1416,6 @@ void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr,
 			     const u8 *buf, size_t len)
 {
 	struct wpa_supplicant *wpa_s = ctx;
-
-	if (wpa_s->wpa_state < WPA_ASSOCIATING)
-		return;
 
 	wpa_printf(MSG_DEBUG, "RX EAPOL from " MACSTR, MAC2STR(src_addr));
 	wpa_hexdump(MSG_MSGDUMP, "RX EAPOL", buf, len);

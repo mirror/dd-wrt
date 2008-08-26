@@ -1138,7 +1138,7 @@ static struct wpabuf * ikev2_build_sa_auth(struct ikev2_initiator_data *data)
 	if (secret == NULL) {
 		wpa_printf(MSG_INFO, "IKEV2: Could not get shared secret - "
 			   "use fake value");
-		/* draft-tschofenig-eap-ikev2-15.txt, Sect. 7:
+		/* RFC 5106, Sect. 7:
 		 * Use a random key to fake AUTH generation in order to prevent
 		 * probing of user identities.
 		 */

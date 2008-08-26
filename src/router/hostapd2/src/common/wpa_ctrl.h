@@ -50,11 +50,6 @@ extern "C" {
 #define WPA_EVENT_SCAN_RESULTS "CTRL-EVENT-SCAN-RESULTS "
 
 
-/* hostapd control interface - fixed message prefixes */
-#define WPS_EVENT_PIN_NEEDED "WPS-PIN-NEEDED "
-#define WPS_EVENT_NEW_AP_SETTINGS "WPS-NEW-AP-SETTINGS "
-
-
 /* wpa_supplicant/hostapd control interface access */
 
 /**

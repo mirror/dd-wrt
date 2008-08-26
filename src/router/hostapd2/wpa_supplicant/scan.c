@@ -40,18 +40,6 @@ static void wpa_supplicant_gen_assoc_event(struct wpa_supplicant *wpa_s)
 	wpa_supplicant_event(wpa_s, EVENT_ASSOC, &data);
 }
 
-int wpa_supplicant_may_scan(struct wpa_supplicant *wpa_s)
-{
-	struct os_time time;
-
-	if (wpa_s->conf->scan_cache > 0) {
-		os_get_time(&time);
-		time.sec -= wpa_s->conf->scan_cache;
-		if (os_time_before(&time, &wpa_s->last_scan_results))
-			return 0;
-	}
-	return 1;
-}
 
 static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 {
@@ -146,9 +134,8 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 	} else
 		wpa_s->prev_scan_ssid = BROADCAST_SSID_SCAN;
 
-	if (!wpa_supplicant_may_scan(wpa_s) ||
-		(wpa_s->scan_res_tried == 0 && wpa_s->conf->ap_scan == 1 &&
-	    !wpa_s->use_client_mlme)) {
+	if (wpa_s->scan_res_tried == 0 && wpa_s->conf->ap_scan == 1 &&
+	    !wpa_s->use_client_mlme) {
 		wpa_s->scan_res_tried++;
 		wpa_printf(MSG_DEBUG, "Trying to get current scan results "
 			   "first without requesting a new scan to speed up "
@@ -185,6 +172,28 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
  */
 void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec)
 {
+	/* If there's at least one network that should be specifically scanned
+	 * then don't cancel the scan and reschedule.  Some drivers do
+	 * background scanning which generates frequent scan results, and that
+	 * causes the specific SSID scan to get continually pushed back and
+	 * never happen, which causes hidden APs to never get probe-scanned.
+	 */
+	if (eloop_is_timeout_registered(wpa_supplicant_scan, wpa_s, NULL) &&
+	    wpa_s->conf->ap_scan == 1) {
+		struct wpa_ssid *ssid = wpa_s->conf->ssid;
+
+		while (ssid) {
+			if (!ssid->disabled && ssid->scan_ssid)
+				break;
+			ssid = ssid->next;
+		}
+		if (ssid) {
+			wpa_msg(wpa_s, MSG_DEBUG, "Not rescheduling scan to "
+			        "ensure that specific SSID scans occur");
+			return;
+		}
+	}
+
 	wpa_msg(wpa_s, MSG_DEBUG, "Setting scan request: %d sec %d usec",
 		sec, usec);
 	eloop_cancel_timeout(wpa_supplicant_scan, wpa_s, NULL);

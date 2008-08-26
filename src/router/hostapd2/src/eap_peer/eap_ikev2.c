@@ -1,5 +1,5 @@
 /*
- * EAP-IKEv2 peer (draft-tschofenig-eap-ikev2-15.txt)
+ * EAP-IKEv2 peer (RFC 5106)
  * Copyright (c) 2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,7 +22,7 @@
 
 struct eap_ikev2_data {
 	struct ikev2_responder_data ikev2;
-	enum { WAIT_START, MSG, WAIT_FRAG_ACK, DONE, FAIL } state;
+	enum { WAIT_START, PROC_MSG, WAIT_FRAG_ACK, DONE, FAIL } state;
 	struct wpabuf *in_buf;
 	struct wpabuf *out_buf;
 	size_t out_used;
@@ -38,8 +38,8 @@ static const char * eap_ikev2_state_txt(int state)
 	switch (state) {
 	case WAIT_START:
 		return "WAIT_START";
-	case MSG:
-		return "MSG";
+	case PROC_MSG:
+		return "PROC_MSG";
 	case WAIT_FRAG_ACK:
 		return "WAIT_FRAG_ACK";
 	case DONE:
@@ -391,7 +391,7 @@ static struct wpabuf * eap_ikev2_process(struct eap_sm *sm, void *priv,
 			return NULL;
 		}
 		wpa_printf(MSG_DEBUG, "EAP-IKEV2: Fragment acknowledged");
-		eap_ikev2_state(data, MSG);
+		eap_ikev2_state(data, PROC_MSG);
 		return eap_ikev2_build_msg(data, ret, id);
 	}
 
@@ -433,7 +433,7 @@ static struct wpabuf * eap_ikev2_process(struct eap_sm *sm, void *priv,
 		data->out_used = 0;
 	}
 
-	eap_ikev2_state(data, MSG);
+	eap_ikev2_state(data, PROC_MSG);
 	return eap_ikev2_build_msg(data, ret, id);
 }
 

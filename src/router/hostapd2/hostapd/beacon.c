@@ -3,6 +3,7 @@
  * Copyright (c) 2002-2004, Instant802 Networks, Inc.
  * Copyright (c) 2005-2006, Devicescape Software, Inc.
  * Copyright (c) 2008, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2007-2008, Intel Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -27,7 +28,6 @@
 #include "driver.h"
 #include "sta_info.h"
 #include "ieee802_11h.h"
-#include "wps_hostapd.h"
 
 
 static u8 ieee802_11_erp_info(struct hostapd_data *hapd)
@@ -186,8 +186,6 @@ void handle_probe_req(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 	ie = mgmt->u.probe_req.variable;
 	ie_len = len - (IEEE80211_HDRLEN + sizeof(mgmt->u.probe_req));
 
-	hostapd_wps_probe_req_rx(hapd, mgmt->sa, ie, ie_len);
-
 	if (!hapd->iconf->send_probe_response)
 		return;
 
@@ -285,16 +283,10 @@ void handle_probe_req(struct hostapd_data *hapd, struct ieee80211_mgmt *mgmt,
 	pos = hostapd_eid_wpa(hapd, pos, epos - pos, sta);
 
 	/* Wi-Fi Wireless Multimedia Extensions */
-	if (hapd->conf->wme_enabled)
-		pos = hostapd_eid_wme(hapd, pos);
+	pos = hostapd_eid_wme(hapd, pos);
 
-#ifdef CONFIG_WPS
-	if (hapd->conf->wps_state && hapd->wps_probe_resp_ie) {
-		os_memcpy(pos, hapd->wps_probe_resp_ie,
-			  hapd->wps_probe_resp_ie_len);
-		pos += hapd->wps_probe_resp_ie_len;
-	}
-#endif /* CONFIG_WPS */
+	pos = hostapd_eid_ht_capabilities_info(hapd, pos);
+	pos = hostapd_eid_ht_operation(hapd, pos);
 
 	if (hostapd_send_mgmt_frame(hapd, resp, pos - (u8 *) resp, 0) < 0)
 		perror("handle_probe_req: send");
@@ -384,16 +376,27 @@ void ieee802_11_set_beacon(struct hostapd_data *hapd)
 				  tailpos, NULL);
 
 	/* Wi-Fi Wireless Multimedia Extensions */
-	if (hapd->conf->wme_enabled)
-		tailpos = hostapd_eid_wme(hapd, tailpos);
+	tailpos = hostapd_eid_wme(hapd, tailpos);
 
-#ifdef CONFIG_WPS
-	if (hapd->conf->wps_state && hapd->wps_beacon_ie) {
-		os_memcpy(tailpos, hapd->wps_beacon_ie,
-			  hapd->wps_beacon_ie_len);
-		tailpos += hapd->wps_beacon_ie_len;
+#ifdef CONFIG_IEEE80211N
+	if (hapd->iconf->ieee80211n) {
+		u8 *start;
+		start = tailpos;
+		tailpos = hostapd_eid_ht_capabilities_info(hapd, tailpos);
+		if (hostapd_set_ht_capability(hapd->conf->iface, hapd,
+					      start + 2)) {
+			wpa_printf(MSG_ERROR, "Could not set HT capabilities "
+				   "for kernel driver");
+		}
+
+		start = tailpos;
+		tailpos = hostapd_eid_ht_operation(hapd, tailpos);
+		if (hostapd_set_ht_operation(hapd->conf->iface, hapd,
+					     start + 2))
+			wpa_printf(MSG_ERROR, "Could not set HT operation for "
+				   "kernel driver");
 	}
-#endif /* CONFIG_WPS */
+#endif /* CONFIG_IEEE80211N */
 
 	tail_len = tailpos > tail ? tailpos - tail : 0;
 

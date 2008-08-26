@@ -1,6 +1,7 @@
 /*
  * hostapd - driver interface definition
  * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2007-2008, Intel Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -14,6 +15,17 @@
 
 #ifndef DRIVER_H
 #define DRIVER_H
+
+struct hostapd_sta_add_params {
+	const u8 *addr;
+	u16 aid;
+	u16 capability;
+	const u8 *supp_rates;
+	size_t supp_rates_len;
+	int flags;
+	u16 listen_interval;
+	const struct ht_cap_ie *ht_capabilities;
+};
 
 enum hostapd_driver_if_type {
 	HOSTAPD_IF_VLAN, HOSTAPD_IF_WDS
@@ -78,9 +90,12 @@ struct wpa_driver_ops {
 	int (*send_mgmt_frame)(void *priv, const void *msg, size_t len,
 			       int flags);
 	int (*set_assoc_ap)(void *priv, const u8 *addr);
+	/* note: sta_add() is deprecated; use sta_add2() instead */
 	int (*sta_add)(const char *ifname, void *priv, const u8 *addr, u16 aid,
 		       u16 capability, u8 *supp_rates, size_t supp_rates_len,
-		       int flags);
+		       int flags, u16 listen_interval);
+	int (*sta_add2)(const char *ifname, void *priv,
+			struct hostapd_sta_add_params *params);
 	int (*get_inact_sec)(void *priv, const u8 *addr);
 	int (*sta_clear_stats)(void *priv, const u8 *addr);
 
@@ -160,10 +175,14 @@ struct wpa_driver_ops {
 	int (*send_ether)(void *priv, const u8 *dst, const u8 *src, u16 proto,
 			  const u8 *data, size_t data_len);
 
-	int (*set_wps_beacon_ie)(const char *ifname, void *priv,
-				 const u8 *ie, size_t len);
-	int (*set_wps_probe_resp_ie)(const char *ifname, void *priv,
-				     const u8 *ie, size_t len);
+	int (*set_radius_acl_auth)(void *priv, const u8 *mac, int accepted, 
+				   u32 session_timeout);
+	int (*set_radius_acl_expire)(void *priv, const u8 *mac);
+
+	int (*set_ht_capability)(const char *ifname, void *priv,
+				 const u8 *data, size_t data_len);
+	int (*set_ht_operation)(const char *ifname, void *priv,
+				const u8 *data, size_t data_len);
 };
 
 static inline void *
@@ -363,14 +382,33 @@ hostapd_set_countermeasures(struct hostapd_data *hapd, int enabled)
 
 static inline int
 hostapd_sta_add(const char *ifname, struct hostapd_data *hapd, const u8 *addr,
-		u16 aid, u16 capability, u8 *supp_rates, size_t supp_rates_len,
-		int flags)
+		u16 aid, u16 capability, const u8 *supp_rates,
+		size_t supp_rates_len, int flags, u16 listen_interval,
+		const struct ht_cap_ie *ht_capabilities)
 {
-	if (hapd->driver == NULL || hapd->driver->sta_add == NULL)
+	if (hapd->driver == NULL)
+		return 0;
+
+	if (hapd->driver->sta_add2) {
+		struct hostapd_sta_add_params params;
+		os_memset(&params, 0, sizeof(params));
+		params.addr = addr;
+		params.aid = aid;
+		params.capability = capability;
+		params.supp_rates = supp_rates;
+		params.supp_rates_len = supp_rates_len;
+		params.flags = flags;
+		params.listen_interval = listen_interval;
+		params.ht_capabilities = ht_capabilities;
+		return hapd->driver->sta_add2(ifname, hapd->drv_priv, &params);
+	}
+
+	if (hapd->driver->sta_add == NULL)
 		return 0;
 	return hapd->driver->sta_add(ifname, hapd->drv_priv, addr, aid,
-				     capability, supp_rates, supp_rates_len,
-				     flags);
+				     capability, (u8 *) supp_rates,
+				     supp_rates_len,
+				     flags, listen_interval);
 }
 
 static inline int
@@ -684,23 +722,48 @@ hostapd_driver_commit(struct hostapd_data *hapd)
 }
 
 static inline int
-hostapd_set_wps_beacon_ie(struct hostapd_data *hapd, const u8 *ie, size_t len)
+hostapd_set_radius_acl_auth(struct hostapd_data *hapd, const u8 *mac,
+			    int accepted, u32 session_timeout)
 {
-	if (hapd->driver == NULL || hapd->driver->set_wps_beacon_ie == NULL)
+	if (hapd->driver == NULL || hapd->driver->set_radius_acl_auth == NULL)
 		return 0;
-	return hapd->driver->set_wps_beacon_ie(hapd->conf->iface,
-					       hapd->drv_priv, ie, len);
+	return hapd->driver->set_radius_acl_auth(hapd->drv_priv, mac, accepted,
+						 session_timeout);
 }
 
 static inline int
-hostapd_set_wps_probe_resp_ie(struct hostapd_data *hapd, const u8 *ie,
-			      size_t len)
+hostapd_set_radius_acl_expire(struct hostapd_data *hapd, const u8 *mac)
 {
 	if (hapd->driver == NULL ||
-	    hapd->driver->set_wps_probe_resp_ie == NULL)
+	    hapd->driver->set_radius_acl_expire == NULL)
 		return 0;
-	return hapd->driver->set_wps_probe_resp_ie(hapd->conf->iface,
-						   hapd->drv_priv, ie, len);
+	return hapd->driver->set_radius_acl_expire(hapd->drv_priv, mac);
 }
+
+#ifdef CONFIG_IEEE80211N
+static inline int
+hostapd_set_ht_capability(const char *ifname, struct hostapd_data *hapd,
+			  const u8 *ht_cap)
+{
+	if (hapd->driver == NULL || hapd->driver->set_ht_capability == NULL ||
+	    ht_cap == NULL)
+		return 0;
+	return hapd->driver->set_ht_capability(
+		ifname, hapd->drv_priv, ht_cap,
+		sizeof(struct ieee80211_ht_capability));
+}
+
+static inline int
+hostapd_set_ht_operation(const char *ifname, struct hostapd_data *hapd,
+			 const u8 *ht_operation)
+{
+	if (hapd->driver == NULL || hapd->driver->set_ht_operation == NULL ||
+	    ht_operation == NULL)
+		return 0;
+	return hapd->driver->set_ht_operation(
+		ifname, hapd->drv_priv, ht_operation,
+		sizeof(struct ieee80211_ht_operation));
+}
+#endif /* CONFIG_IEEE80211N */
 
 #endif /* DRIVER_H */

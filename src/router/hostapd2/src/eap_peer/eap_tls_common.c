@@ -59,6 +59,8 @@ static void eap_tls_params_from_conf1(struct tls_connection_params *params,
 	params->engine_id = config->engine_id;
 	params->pin = config->pin;
 	params->key_id = config->key_id;
+	params->cert_id = config->cert_id;
+	params->ca_cert_id = config->ca_cert_id;
 }
 
 
@@ -73,6 +75,11 @@ static void eap_tls_params_from_conf2(struct tls_connection_params *params,
 	params->dh_file = (char *) config->dh_file2;
 	params->subject_match = (char *) config->subject_match2;
 	params->altsubject_match = (char *) config->altsubject_match2;
+	params->engine_id = config->engine_id;
+	params->pin = config->pin;
+	params->key_id = config->key2_id;
+	params->cert_id = config->cert2_id;
+	params->ca_cert_id = config->ca_cert2_id;
 }
 
 
@@ -820,6 +827,14 @@ int eap_peer_tls_decrypt(struct eap_sm *sm, struct eap_ssl_data *data,
 	buf_len = wpabuf_len(in_data);
 	if (data->tls_in_total > buf_len)
 		buf_len = data->tls_in_total;
+	/*
+	 * Even though we try to disable TLS compression, it is possible that
+	 * this cannot be done with all TLS libraries. Add extra buffer space
+	 * to handle the possibility of the decrypted data being longer than
+	 * input data.
+	 */
+	buf_len += 500;
+	buf_len *= 3;
 	*in_decrypted = wpabuf_alloc(buf_len ? buf_len : 1);
 	if (*in_decrypted == NULL) {
 		eap_peer_tls_reset_input(data);

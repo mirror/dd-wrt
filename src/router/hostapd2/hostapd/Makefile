@@ -1,8 +1,8 @@
 ifndef CC
 CC=gcc
 endif
+CFLAGS+ = -MMD $(COPTS) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS = -MMD $(COPTS) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections 
 
 # define HOSTAPD_DUMP_STATE to include SIGUSR1 handler for dumping state to
 # a file (undefine it, if you want to save in binary size)
@@ -12,13 +12,12 @@ CFLAGS += -I../src
 CFLAGS += -I../src/crypto
 CFLAGS += -I../src/utils
 CFLAGS += -I../src/common
-
 LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 # Uncomment following line and set the path to your kernel tree include
 # directory if your C library does not include all header files.
 # CFLAGS += -DUSE_KERNEL_HEADERS -I/usr/src/linux/include
--include ../../.config
+
 -include ../../.config
 -include .config
 
@@ -96,6 +95,10 @@ OBJS += wpa_ft.o
 NEED_SHA256=y
 endif
 
+ifdef CONFIG_IEEE80211N
+CFLAGS += -DCONFIG_IEEE80211N
+endif
+
 ifdef CONFIG_DRIVER_HOSTAP
 CFLAGS += -DCONFIG_DRIVER_HOSTAP
 OBJS += driver_hostap.o
@@ -119,7 +122,7 @@ endif
 
 ifdef CONFIG_DRIVER_NL80211
 CFLAGS += -DCONFIG_DRIVER_NL80211
-OBJS += driver_nl80211.o
+OBJS += driver_nl80211.o radiotap.o
 LIBS += -lnl
 endif
 
@@ -166,8 +169,8 @@ endif
 ifdef CONFIG_EAP_PEAP
 CFLAGS += -DEAP_PEAP
 OBJS += ../src/eap_server/eap_peap.o
+OBJS += ../src/eap_common/eap_peap_common.o
 TLS_FUNCS=y
-CONFIG_EAP_TLV=y
 CONFIG_EAP_MSCHAPV2=y
 endif
 
@@ -239,31 +242,12 @@ CFLAGS += -DEAP_VENDOR_TEST
 OBJS += ../src/eap_server/eap_vendor_test.o
 endif
 
-ifdef CONFIG_EAP_TLV
-CFLAGS += -DEAP_TLV
-OBJS += ../src/eap_server/eap_tlv.o
-endif
-
 ifdef CONFIG_EAP_FAST
 CFLAGS += -DEAP_FAST
 OBJS += ../src/eap_server/eap_fast.o
+OBJS += ../src/eap_common/eap_fast_common.o
 TLS_FUNCS=y
 NEED_T_PRF=y
-endif
-
-ifdef CONFIG_WPS
-CFLAGS += -DCONFIG_WPS -DEAP_WSC
-OBJS += ../src/utils/uuid.o
-OBJS += wps_hostapd.o
-OBJS += ../src/eap_server/eap_wsc.o ../src/eap_common/eap_wsc_common.o
-OBJS += ../src/wps/wps.o
-OBJS += ../src/wps/wps_common.o
-OBJS += ../src/wps/wps_dev_attr.o
-OBJS += ../src/wps/wps_enrollee.o
-OBJS += ../src/wps/wps_registrar.o
-NEED_DH_GROUPS=y
-NEED_SHA256=y
-NEED_CRYPTO=y
 endif
 
 ifdef CONFIG_EAP_IKEV2
@@ -271,6 +255,13 @@ CFLAGS += -DEAP_IKEV2
 OBJS += ../src/eap_server/eap_ikev2.o ../src/eap_server/ikev2.o
 OBJS += ../src/eap_common/eap_ikev2_common.o ../src/eap_common/ikev2_common.o
 NEED_DH_GROUPS=y
+endif
+
+ifdef CONFIG_EAP_TNC
+CFLAGS += -DEAP_TNC
+OBJS += ../src/eap_server/eap_tnc.o
+OBJS += ../src/eap_server/tncs.o
+NEED_BASE64=y
 endif
 
 # Basic EAP functionality is needed for EAPOL
@@ -460,6 +451,10 @@ endif
 
 ifdef CONFIG_IPV6
 CFLAGS += -DCONFIG_IPV6
+endif
+
+ifdef CONFIG_DRIVER_RADIUS_ACL
+CFLAGS += -DCONFIG_DRIVER_RADIUS_ACL
 endif
 
 ifdef CONFIG_FULL_DYNAMIC_VLAN

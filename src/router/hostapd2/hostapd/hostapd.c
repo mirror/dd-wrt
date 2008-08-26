@@ -41,9 +41,9 @@
 #include "tls.h"
 #include "eap_server/eap_sim_db.h"
 #include "eap_server/eap.h"
+#include "eap_server/tncs.h"
 #include "version.h"
 #include "l2_packet/l2_packet.h"
-#include "wps_hostapd.h"
 
 
 static int hostapd_radius_get_eap_user(void *ctx, const u8 *identity,
@@ -166,17 +166,18 @@ static void hostapd_logger_cb(void *ctx, const u8 *addr, unsigned int module,
 
 static void hostapd_deauth_all_stas(struct hostapd_data *hapd)
 {
-#if 0
 	u8 addr[ETH_ALEN];
 
-	os_memset(addr, 0xff, ETH_ALEN);
-	hostapd_sta_deauth(hapd, addr, WLAN_REASON_PREV_AUTH_NOT_VALID);
-#else
 	/* New Prism2.5/3 STA firmware versions seem to have issues with this
 	 * broadcast deauth frame. This gets the firmware in odd state where
-	 * nothing works correctly, so let's skip sending this for a while
-	 * until the issue has been resolved. */
-#endif
+	 * nothing works correctly, so let's skip sending this for the hostap
+	 * driver. */
+
+	if (hapd->driver && os_strcmp(hapd->driver->name, "hostap") != 0) {
+		os_memset(addr, 0xff, ETH_ALEN);
+		hostapd_sta_deauth(hapd, addr,
+				   WLAN_REASON_PREV_AUTH_NOT_VALID);
+	}
 }
 
 
@@ -297,6 +298,7 @@ static void hostapd_wpa_auth_conf(struct hostapd_bss_config *conf,
 	wconf->eapol_version = conf->eapol_version;
 	wconf->peerkey = conf->peerkey;
 	wconf->wme_enabled = conf->wme_enabled;
+	wconf->okc = conf->okc;
 #ifdef CONFIG_IEEE80211W
 	wconf->ieee80211w = conf->ieee80211w;
 #endif /* CONFIG_IEEE80211W */
@@ -413,8 +415,8 @@ static void hostapd_dump_state(struct hostapd_data *hapd)
 			(sta->flags & WLAN_STA_SHORT_PREAMBLE ?
 			 "[SHORT_PREAMBLE]" : ""),
 			(sta->flags & WLAN_STA_PREAUTH ? "[PREAUTH]" : ""),
-			(sta->flags & WLAN_STA_WPS ? "[WPS]" : ""),
-			(sta->flags & WLAN_STA_MAYBE_WPS ? "[MAYBE_WPS]" : ""),
+			(sta->flags & WLAN_STA_WME ? "[WME]" : ""),
+			(sta->flags & WLAN_STA_MFP ? "[MFP]" : ""),
 			(sta->flags & WLAN_STA_NONERP ? "[NonERP]" : ""),
 			sta->capability,
 			sta->listen_interval);
@@ -584,8 +586,6 @@ static void hostapd_cleanup(struct hostapd_data *hapd)
 #ifdef CONFIG_IEEE80211R
 	l2_packet_deinit(hapd->l2);
 #endif /* CONFIG_IEEE80211R */
-
-	hostapd_deinit_wps(hapd);
 
 	hostapd_wireless_event_deinit(hapd);
 
@@ -892,6 +892,26 @@ static int hostapd_wpa_auth_for_each_sta(
 }
 
 
+static int hostapd_wpa_auth_for_each_auth(
+	void *ctx, int (*cb)(struct wpa_authenticator *sm, void *ctx),
+	void *cb_ctx)
+{
+	struct hostapd_data *ohapd;
+	size_t i, j;
+	struct hapd_interfaces *interfaces = eloop_get_user_data();
+
+	for (i = 0; i < interfaces->count; i++) {
+		for (j = 0; j < interfaces->iface[i]->num_bss; j++) {
+			ohapd = interfaces->iface[i]->bss[j];
+			if (cb(ohapd->wpa_auth, cb_ctx))
+				return 1;
+		}
+	}
+
+	return 0;
+}
+
+
 static int hostapd_wpa_auth_send_ether(void *ctx, const u8 *dst, u16 proto,
 				       const u8 *data, size_t data_len)
 {
@@ -1096,6 +1116,7 @@ static int hostapd_setup_wpa(struct hostapd_data *hapd)
 	cb.get_seqnum_igtk = hostapd_wpa_auth_get_seqnum_igtk;
 	cb.send_eapol = hostapd_wpa_auth_send_eapol;
 	cb.for_each_sta = hostapd_wpa_auth_for_each_sta;
+	cb.for_each_auth = hostapd_wpa_auth_for_each_auth;
 	cb.send_ether = hostapd_wpa_auth_send_ether;
 #ifdef CONFIG_IEEE80211R
 	cb.send_ft_action = hostapd_wpa_auth_send_ft_action;
@@ -1144,7 +1165,7 @@ static int hostapd_setup_radius_srv(struct hostapd_data *hapd,
 	srv.pac_opaque_encr_key = conf->pac_opaque_encr_key;
 	srv.eap_fast_a_id = conf->eap_fast_a_id;
 	srv.eap_sim_aka_result_ind = conf->eap_sim_aka_result_ind;
-	srv.wps = hapd->wps;
+	srv.tnc = conf->tnc;
 	srv.ipv6 = conf->radius_server_ipv6;
 	srv.get_eap_user = hostapd_radius_get_eap_user;
 
@@ -1274,8 +1295,6 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 		printf("ACL initialization failed.\n");
 		return -1;
 	}
-	if (hostapd_init_wps(hapd, conf))
-		return -1;
 
 	if (ieee802_1x_init(hapd)) {
 		printf("IEEE 802.1X initialization failed.\n");
@@ -1544,6 +1563,12 @@ static int setup_interface1(struct hostapd_iface *iface)
 	if (hostapd_validate_bssid_configuration(iface))
 		return -1;
 
+#ifdef CONFIG_IEEE80211N
+	SET_2BIT_LE16(&iface->ht_op_mode,
+		      HT_INFO_OPERATION_MODE_OP_MODE_OFFSET,
+		      OP_MODE_PURE);
+#endif /* CONFIG_IEEE80211N */
+
 	os_memcpy(country, hapd->iconf->country, 3);
 	country[3] = '\0';
 	if (hostapd_set_country(hapd, country) < 0) {
@@ -1646,7 +1671,7 @@ int hostapd_setup_interface_stop(struct hostapd_iface *iface)
 
 static void show_version(void)
 {
-	printf(
+	fprintf(stderr,
 		"hostapd v" VERSION_STR "\n"
 		"User space daemon for IEEE 802.11 AP management,\n"
 		"IEEE 802.1X/WPA/WPA2/EAP/RADIUS Authenticator\n"
@@ -1658,7 +1683,7 @@ static void show_version(void)
 static void usage(void)
 {
 	show_version();
-	printf(
+	fprintf(stderr,
 		"\n"
 		"usage: hostapd [-hdBKtv] [-P <PID file>] "
 		"<configuration file(s)>\n"
@@ -1862,7 +1887,7 @@ int main(int argc, char *argv[])
 	struct hapd_interfaces interfaces;
 	int ret = 1, k;
 	size_t i, j;
-	int c, debug = 0, daemonize = 0;
+	int c, debug = 0, daemonize = 0, tnc = 0;
 	const char *pid_file = NULL;
 
 	hostapd_logger_register_cb(hostapd_logger_cb);
@@ -1948,7 +1973,19 @@ int main(int argc, char *argv[])
 						    setup_interface_done);
 		if (ret)
 			goto out;
+
+		for (k = 0; k < (int) interfaces.iface[i]->num_bss; k++) {
+			if (interfaces.iface[i]->bss[0]->conf->tnc)
+				tnc++;
+		}
 	}
+
+#ifdef EAP_TNC
+	if (tnc && tncs_global_init() < 0) {
+		wpa_printf(MSG_ERROR, "Failed to initialize TNCS");
+		goto out;
+	}
+#endif /* EAP_TNC */
 
 	if (daemonize && os_daemonize(pid_file)) {
 		perror("daemon");
@@ -1993,6 +2030,10 @@ int main(int argc, char *argv[])
 		hostapd_cleanup_iface(interfaces.iface[i]);
 	}
 	os_free(interfaces.iface);
+
+#ifdef EAP_TNC
+	tncs_global_deinit();
+#endif /* EAP_TNC */
 
 	eloop_destroy();
 
