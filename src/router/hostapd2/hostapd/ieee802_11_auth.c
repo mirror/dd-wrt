@@ -409,7 +409,7 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
 		}
 		//brainslayer. hier bandwidth attribut abfragen
 		unsigned char *down,*up;
-		int len;
+		size_t len;
 		if ((down=radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN ,&len)) == NULL) {
 		    wpa_printf(MSG_DEBUG, "no downstream level found\n");
 		}else
