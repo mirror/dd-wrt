@@ -1,6 +1,7 @@
 /*
  * hostapd / Station table data structures
  * Copyright (c) 2002-2004, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2007-2008, Intel Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -15,6 +16,10 @@
 #ifndef AP_H
 #define AP_H
 
+#ifdef CONFIG_IEEE80211N
+#include "ieee802_11_defs.h"
+#endif /* CONFIG_IEEE80211N */
+
 /* STA flags */
 #define WLAN_STA_AUTH BIT(0)
 #define WLAN_STA_ASSOC BIT(1)
@@ -26,8 +31,8 @@
 #define WLAN_STA_SHORT_PREAMBLE BIT(7)
 #define WLAN_STA_PREAUTH BIT(8)
 #define WLAN_STA_WME BIT(9)
-#define WLAN_STA_WPS BIT(10)
-#define WLAN_STA_MAYBE_WPS BIT(11)
+#define WLAN_STA_MFP BIT(10)
+#define WLAN_STA_HT BIT(11)
 #define WLAN_STA_NONERP BIT(31)
 
 /* Maximum number of supported rates (from both Supported Rates and Extended
@@ -84,6 +89,10 @@ struct sta_info {
 	struct hostapd_ssid *ssid_probe; /* SSID selection based on ProbeReq */
 
 	int vlan_id;
+
+#ifdef CONFIG_IEEE80211N
+	struct ht_cap_ie ht_capabilities; /* IEEE 802.11n capabilities */
+#endif /* CONFIG_IEEE80211N */
 };
 
 

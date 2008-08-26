@@ -16,6 +16,11 @@
 #include <sys/ioctl.h>
 
 #ifdef USE_KERNEL_HEADERS
+/* compat-wireless does not include linux/compiler.h to define __user, so
+ * define it here */
+#ifndef __user
+#define __user
+#endif /* __user */
 #include <asm/types.h>
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>   /* The L2 protocols */
@@ -50,8 +55,6 @@ struct hostap_driver_data {
 
 	u8 *generic_ie;
 	size_t generic_ie_len;
-	u8 *wps_ie;
-	size_t wps_ie_len;
 };
 
 
@@ -657,7 +660,8 @@ static int hostap_read_sta_data(void *priv,
 
 static int hostap_sta_add(const char *ifname, void *priv, const u8 *addr,
 			  u16 aid, u16 capability, u8 *supp_rates,
-			  size_t supp_rates_len, int flags)
+			  size_t supp_rates_len, int flags,
+			  u16 listen_interval)
 {
 	struct hostap_driver_data *drv = priv;
 	struct prism2_hostapd_param param;
@@ -761,7 +765,7 @@ static int hostapd_ioctl_set_generic_elem(struct hostap_driver_data *drv)
 	int res;
 	size_t blen, elem_len;
 
-	elem_len = drv->generic_ie_len + drv->wps_ie_len;
+	elem_len = drv->generic_ie_len;
 	blen = PRISM2_HOSTAPD_GENERIC_ELEMENT_HDR_LEN + elem_len;
 	if (blen < sizeof(*param))
 		blen = sizeof(*param);
@@ -775,10 +779,6 @@ static int hostapd_ioctl_set_generic_elem(struct hostap_driver_data *drv)
 	if (drv->generic_ie) {
 		os_memcpy(param->u.generic_elem.data, drv->generic_ie,
 			  drv->generic_ie_len);
-	}
-	if (drv->wps_ie) {
-		os_memcpy(&param->u.generic_elem.data[drv->generic_ie_len],
-			  drv->wps_ie, drv->wps_ie_len);
 	}
 	wpa_hexdump(MSG_DEBUG, "hostap: Set generic IE",
 		    param->u.generic_elem.data, elem_len);
@@ -804,36 +804,6 @@ static int hostap_set_generic_elem(const char *ifname, void *priv,
 			return -1;
 		os_memcpy(drv->generic_ie, elem, elem_len);
 		drv->generic_ie_len = elem_len;
-	}
-
-	return hostapd_ioctl_set_generic_elem(drv);
-}
-
-
-static int hostap_set_wps_beacon_ie(const char *ifname, void *priv,
-				    const u8 *ie, size_t len)
-{
-	/* Host AP driver supports only one set of extra IEs, so we need to
-	 * use the ProbeResp IEs also for Beacon frames since they include more
-	 * information. */
-	return 0;
-}
-
-
-static int hostap_set_wps_probe_resp_ie(const char *ifname, void *priv,
-					const u8 *ie, size_t len)
-{
-	struct hostap_driver_data *drv = priv;
-
-	os_free(drv->wps_ie);
-	drv->wps_ie = NULL;
-	drv->wps_ie_len = 0;
-	if (ie) {
-		drv->wps_ie = os_malloc(len);
-		if (drv->wps_ie == NULL)
-			return -1;
-		os_memcpy(drv->wps_ie, ie, len);
-		drv->wps_ie_len = len;
 	}
 
 	return hostapd_ioctl_set_generic_elem(drv);
@@ -1154,7 +1124,6 @@ static void hostap_driver_deinit(void *priv)
 		close(drv->sock);
 
 	os_free(drv->generic_ie);
-	os_free(drv->wps_ie);
 
 	free(drv);
 }
@@ -1269,6 +1238,4 @@ const struct wpa_driver_ops wpa_driver_hostap_ops = {
 	.get_inact_sec = hostap_get_inact_sec,
 	.sta_clear_stats = hostap_sta_clear_stats,
 	.get_hw_feature_data = hostap_get_hw_feature_data,
-	.set_wps_beacon_ie = hostap_set_wps_beacon_ie,
-	.set_wps_probe_resp_ie = hostap_set_wps_probe_resp_ie,
 };

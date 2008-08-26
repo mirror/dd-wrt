@@ -98,8 +98,7 @@ void wpa_eapol_key_send(struct wpa_sm *sm, const u8 *kck,
 			int ver, const u8 *dest, u16 proto,
 			u8 *msg, size_t msg_len, u8 *key_mic)
 {
-	if (os_memcmp(dest, "\x00\x00\x00\x00\x00\x00", ETH_ALEN) == 0 &&
-	    os_memcmp(sm->bssid, "\x00\x00\x00\x00\x00\x00", ETH_ALEN) == 0) {
+	if (is_zero_ether_addr(dest) && is_zero_ether_addr(sm->bssid)) {
 		/*
 		 * Association event was not yet received; try to fetch
 		 * BSSID from the driver.
@@ -451,7 +450,6 @@ static void wpa_supplicant_key_neg_complete(struct wpa_sm *sm,
 		MACSTR " [PTK=%s GTK=%s]", MAC2STR(addr),
 		wpa_cipher_txt(sm->pairwise_cipher),
 		wpa_cipher_txt(sm->group_cipher));
-	wpa_sm_cancel_scan(sm);
 	wpa_sm_cancel_auth_timeout(sm);
 	wpa_sm_set_state(sm, WPA_COMPLETED);
 
@@ -783,7 +781,6 @@ static void wpa_report_ie_mismatch(struct wpa_sm *sm,
 	}
 
 	wpa_sm_disassociate(sm, WLAN_REASON_IE_IN_4WAY_DIFFERS);
-	wpa_sm_req_scan(sm, 0, 0);
 }
 
 
@@ -1447,7 +1444,7 @@ int wpa_sm_rx_eapol(struct wpa_sm *sm, const u8 *src_addr,
 	}
 	wpa_eapol_key_dump(key);
 
-	eapol_sm_notify_lower_layer_success(sm->eapol);
+	eapol_sm_notify_lower_layer_success(sm->eapol, 0);
 	wpa_hexdump(MSG_MSGDUMP, "WPA: RX EAPOL-Key", tmp, len);
 	if (data_len < len) {
 		wpa_printf(MSG_DEBUG, "WPA: ignoring %lu bytes after the IEEE "
@@ -1791,7 +1788,6 @@ static void wpa_sm_pmksa_free_cb(struct rsn_pmksa_cache_entry *entry,
 
 		os_memset(sm->pmk, 0, sizeof(sm->pmk));
 		wpa_sm_deauthenticate(sm, WLAN_REASON_UNSPECIFIED);
-		wpa_sm_req_scan(sm, 0, 0);
 	}
 }
 
@@ -1859,6 +1855,8 @@ void wpa_sm_deinit(struct wpa_sm *sm)
  */
 void wpa_sm_notify_assoc(struct wpa_sm *sm, const u8 *bssid)
 {
+	int clear_ptk = 1;
+
 	if (sm == NULL)
 		return;
 
@@ -1871,15 +1869,25 @@ void wpa_sm_notify_assoc(struct wpa_sm *sm, const u8 *bssid)
 		rsn_preauth_deinit(sm);
 
 #ifdef CONFIG_IEEE80211R
-	if ((sm->key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X ||
-	     sm->key_mgmt == WPA_KEY_MGMT_FT_PSK) &&
-	    wpa_ft_is_completed(sm)) {
+	if (wpa_ft_is_completed(sm)) {
 		wpa_supplicant_key_neg_complete(sm, sm->bssid, 1);
 
 		/* Prepare for the next transition */
 		wpa_ft_prepare_auth_request(sm);
+
+		clear_ptk = 0;
 	}
 #endif /* CONFIG_IEEE80211R */
+
+	if (clear_ptk) {
+		/*
+		 * IEEE 802.11, 8.4.10: Delete PTK SA on (re)association if
+		 * this is not part of a Fast BSS Transition.
+		 */
+		wpa_printf(MSG_DEBUG, "WPA: Clear old PTK");
+		sm->ptk_set = 0;
+		sm->tptk_set = 0;
+	}
 }
 
 
@@ -1985,8 +1993,8 @@ void wpa_sm_set_config(struct wpa_sm *sm, struct rsn_supp_config *config)
 	if (!sm)
 		return;
 
-	sm->network_ctx = config;
 	if (config) {
+		sm->network_ctx = config->network_ctx;
 		sm->peerkey_enabled = config->peerkey_enabled;
 		sm->allowed_pairwise_cipher = config->allowed_pairwise_cipher;
 		sm->proactive_key_caching = config->proactive_key_caching;
@@ -1998,6 +2006,7 @@ void wpa_sm_set_config(struct wpa_sm *sm, struct rsn_supp_config *config)
 		} else
 			sm->ssid_len = 0;
 	} else {
+		sm->network_ctx = NULL;
 		sm->peerkey_enabled = 0;
 		sm->allowed_pairwise_cipher = 0;
 		sm->proactive_key_caching = 0;
@@ -2005,7 +2014,8 @@ void wpa_sm_set_config(struct wpa_sm *sm, struct rsn_supp_config *config)
 		sm->eap_conf_ctx = NULL;
 		sm->ssid_len = 0;
 	}
-	pmksa_cache_notify_reconfig(sm->pmksa);
+	if (config == NULL || config->network_ctx != sm->network_ctx)
+		pmksa_cache_notify_reconfig(sm->pmksa);
 }
 
 
@@ -2187,10 +2197,6 @@ int wpa_sm_get_status(struct wpa_sm *sm, char *buf, size_t buflen,
  * @wpa_ie: Pointer to buffer for WPA/RSN IE
  * @wpa_ie_len: Pointer to the length of the wpa_ie buffer
  * Returns: 0 on success, -1 on failure
- *
- * Inform WPA state machine about the WPA/RSN IE used in (Re)Association
- * Request frame. The IE will be used to override the default value generated
- * with wpa_sm_set_assoc_wpa_ie_default().
  */
 int wpa_sm_set_assoc_wpa_ie_default(struct wpa_sm *sm, u8 *wpa_ie,
 				    size_t *wpa_ie_len)

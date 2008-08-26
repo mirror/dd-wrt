@@ -1,6 +1,7 @@
 /*
  * hostapd / IEEE 802.11 Management
  * Copyright (c) 2002-2008, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2007-2008, Intel Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -98,6 +99,146 @@ u8 * hostapd_eid_ext_supp_rates(struct hostapd_data *hapd, u8 *eid)
 
 	return pos;
 }
+
+
+u8 * hostapd_eid_ht_capabilities_info(struct hostapd_data *hapd, u8 *eid)
+{
+#ifdef CONFIG_IEEE80211N
+	struct ieee80211_ht_capability *cap;
+	u8 *pos = eid;
+
+	if (!hapd->iconf->ieee80211n)
+		return eid;
+
+	*pos++ = WLAN_EID_HT_CAP;
+	*pos++ = sizeof(*cap);
+
+	cap = (struct ieee80211_ht_capability *) pos;
+	os_memset(cap, 0, sizeof(*cap));
+	SET_2BIT_U8(&cap->mac_ht_params_info,
+		    MAC_HT_PARAM_INFO_MAX_RX_AMPDU_FACTOR_OFFSET,
+		    MAX_RX_AMPDU_FACTOR_64KB);
+
+	cap->capabilities_info = host_to_le16(hapd->iconf->ht_capab);
+
+	cap->supported_mcs_set[0] = 0xff;
+	cap->supported_mcs_set[1] = 0xff;
+
+ 	pos += sizeof(*cap);
+
+	return pos;
+#else /* CONFIG_IEEE80211N */
+	return eid;
+#endif /* CONFIG_IEEE80211N */
+}
+
+
+u8 * hostapd_eid_ht_operation(struct hostapd_data *hapd, u8 *eid)
+{
+#ifdef CONFIG_IEEE80211N
+	struct ieee80211_ht_operation *oper;
+	u8 *pos = eid;
+
+	if (!hapd->iconf->ieee80211n)
+		return eid;
+
+	*pos++ = WLAN_EID_HT_OPERATION;
+	*pos++ = sizeof(*oper);
+
+	oper = (struct ieee80211_ht_operation *) pos;
+	os_memset(oper, 0, sizeof(*oper));
+
+	oper->operation_mode = host_to_le16(hapd->iface->ht_op_mode);
+
+	pos += sizeof(*oper);
+
+	return pos;
+#else /* CONFIG_IEEE80211N */
+	return eid;
+#endif /* CONFIG_IEEE80211N */
+}
+
+
+#ifdef CONFIG_IEEE80211N
+
+/*
+op_mode
+Set to 0 (HT pure) under the followign conditions
+	- all STAs in the BSS are 20/40 MHz HT in 20/40 MHz BSS or
+	- all STAs in the BSS are 20 MHz HT in 20 MHz BSS
+Set to 1 (HT non-member protection) if there may be non-HT STAs
+	in both the primary and the secondary channel
+Set to 2 if only HT STAs are associated in BSS,
+	however and at least one 20 MHz HT STA is associated
+Set to 3 (HT mixed mode) when one or more non-HT STAs are associated
+	(currently non-GF HT station is considered as non-HT STA also)
+*/
+int hostapd_ht_operation_update(struct hostapd_iface *iface)
+{
+	u16 cur_op_mode, new_op_mode;
+	int op_mode_changes = 0;
+
+	if (!iface->conf->ieee80211n || iface->conf->ht_op_mode_fixed)
+		return 0;
+
+	wpa_printf(MSG_DEBUG, "%s current operation mode=0x%X",
+		   __func__, iface->ht_op_mode);
+
+	if (!(iface->ht_op_mode & HT_INFO_OPERATION_MODE_NON_GF_DEVS_PRESENT)
+	    && iface->num_sta_ht_no_gf) {
+		iface->ht_op_mode |=
+			HT_INFO_OPERATION_MODE_NON_GF_DEVS_PRESENT;
+		op_mode_changes++;
+	} else if ((iface->ht_op_mode &
+		    HT_INFO_OPERATION_MODE_NON_GF_DEVS_PRESENT) &&
+		   iface->num_sta_ht_no_gf == 0) {
+		iface->ht_op_mode &=
+			~HT_INFO_OPERATION_MODE_NON_GF_DEVS_PRESENT;
+		op_mode_changes++;
+	}
+
+	if (!(iface->ht_op_mode & HT_INFO_OPERATION_MODE_NON_HT_STA_PRESENT) &&
+	    (iface->num_sta_no_ht || iface->olbc_ht)) {
+		iface->ht_op_mode |= HT_INFO_OPERATION_MODE_NON_HT_STA_PRESENT;
+		op_mode_changes++;
+	} else if ((iface->ht_op_mode &
+		    HT_INFO_OPERATION_MODE_NON_HT_STA_PRESENT) &&
+		   (iface->num_sta_no_ht == 0 && !iface->olbc_ht)) {
+		iface->ht_op_mode &=
+			~HT_INFO_OPERATION_MODE_NON_HT_STA_PRESENT;
+		op_mode_changes++;
+	}
+
+	/* Note: currently we switch to the MIXED op mode if HT non-greenfield
+	 * station is associated. Probably it's a theoretical case, since
+	 * it looks like all known HT STAs support greenfield.
+	 */
+	new_op_mode = 0;
+	if (iface->num_sta_no_ht ||
+	    (iface->ht_op_mode & HT_INFO_OPERATION_MODE_NON_GF_DEVS_PRESENT))
+		new_op_mode = OP_MODE_MIXED;
+	else if ((iface->conf->ht_capab & HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET)
+		 && iface->num_sta_ht_20mhz)
+		new_op_mode = OP_MODE_20MHZ_HT_STA_ASSOCED;
+	else if (iface->olbc_ht)
+		new_op_mode = OP_MODE_MAY_BE_LEGACY_STAS;
+	else
+		new_op_mode = OP_MODE_PURE;
+
+	cur_op_mode = iface->ht_op_mode & HT_INFO_OPERATION_MODE_OP_MODE_MASK;
+	if (cur_op_mode != new_op_mode) {
+		iface->ht_op_mode &= ~HT_INFO_OPERATION_MODE_OP_MODE_MASK;
+		iface->ht_op_mode |= new_op_mode;
+		op_mode_changes++;
+	}
+
+	wpa_printf(MSG_DEBUG, "%s new operation mode=0x%X changes=%d",
+		   __func__, iface->ht_op_mode, op_mode_changes);
+
+	return op_mode_changes;
+}
+
+#endif /* CONFIG_IEEE80211N */
 
 
 u16 hostapd_own_capab_info(struct hostapd_data *hapd, struct sta_info *sta,
@@ -208,11 +349,6 @@ static int ieee802_11_parse_vendor_specific(struct hostapd_data *hapd,
 					   pos[4], (unsigned long) elen);
 				return -1;
 			}
-			break;
-		case 4:
-			/* Wi-Fi Protected Setup (WPS) IE */
-			elems->wps_ie = pos;
-			elems->wps_ie_len = elen;
 			break;
 		default:
 			wpa_printf(MSG_MSGDUMP, "Unknown Microsoft "
@@ -330,6 +466,14 @@ ParseRes ieee802_11_parse_elems(struct hostapd_data *hapd, u8 *start,
 		case WLAN_EID_FAST_BSS_TRANSITION:
 			elems->ftie = pos;
 			elems->ftie_len = elen;
+			break;
+		case WLAN_EID_HT_CAP:
+			elems->ht_capabilities = pos;
+			elems->ht_capabilities_len = elen;
+			break;
+		case WLAN_EID_HT_OPERATION:
+			elems->ht_operation = pos;
+			elems->ht_operation_len = elen;
 			break;
 		default:
 			unknown++;
@@ -860,6 +1004,15 @@ static void handle_assoc(struct hostapd_data *hapd,
 		goto fail;
 	}
 
+	if (listen_interval > hapd->conf->max_listen_interval) {
+		hostapd_logger(hapd, mgmt->sa, HOSTAPD_MODULE_IEEE80211,
+			       HOSTAPD_LEVEL_DEBUG,
+			       "Too large Listen Interval (%d)",
+			       listen_interval);
+		resp = WLAN_STATUS_ASSOC_DENIED_LISTEN_INT_TOO_LARGE;
+		goto fail;
+	}
+
 	if (reassoc) {
 		os_memcpy(sta->previous_ap, mgmt->u.reassoc_req.current_ap,
 			  ETH_ALEN);
@@ -867,7 +1020,8 @@ static void handle_assoc(struct hostapd_data *hapd,
 
 	sta->capability = capab_info;
 
-	/* followed by SSID and Supported rates */
+	/* followed by SSID and Supported rates; and HT capabilities if 802.11n
+	 * is used */
 	if (ieee802_11_parse_elems(hapd, pos, left, &elems, 1) == ParseFailed
 	    || !elems.ssid) {
 		printf("STA " MACSTR " sent invalid association request\n",
@@ -939,6 +1093,24 @@ static void handle_assoc(struct hostapd_data *hapd,
 		sta->supported_rates_len += elems.ext_supp_rates_len;
 	}
 
+#ifdef CONFIG_IEEE80211N
+	/* save HT capabilities in the sta object */
+	os_memset(&sta->ht_capabilities, 0, sizeof(sta->ht_capabilities));
+	if (elems.ht_capabilities &&
+	    elems.ht_capabilities_len >= sizeof(struct ieee80211_ht_capability)
+	    && (sta->flags & WLAN_STA_WME)) {
+		/* note: without WMM capability, treat the sta as non-HT */
+		sta->flags |= WLAN_STA_HT;
+		sta->ht_capabilities.id = WLAN_EID_HT_CAP;
+		sta->ht_capabilities.length =
+			sizeof(struct ieee80211_ht_capability);
+		os_memcpy(&sta->ht_capabilities.data,
+			  elems.ht_capabilities,
+			  sizeof(struct ieee80211_ht_capability));
+	} else
+		sta->flags &= ~WLAN_STA_HT;
+#endif /* CONFIG_IEEE80211N */
+
 	if ((hapd->conf->wpa & WPA_PROTO_RSN) && elems.rsn_ie) {
 		wpa_ie = elems.rsn_ie;
 		wpa_ie_len = elems.rsn_ie_len;
@@ -950,21 +1122,6 @@ static void handle_assoc(struct hostapd_data *hapd,
 		wpa_ie = NULL;
 		wpa_ie_len = 0;
 	}
-#ifdef CONFIG_WPS
-	if (hapd->conf->wps_state && wpa_ie == NULL) {
-		if (elems.wps_ie) {
-			wpa_printf(MSG_DEBUG, "STA included WPS IE in "
-				   "(Re)Association Request - assume WPS is "
-				   "used");
-			sta->flags |= WLAN_STA_WPS;
-		} else {
-			wpa_printf(MSG_DEBUG, "STA did not include WPA/RSN IE "
-				   "in (Re)Association Request - possible WPS "
-				   "use");
-			sta->flags |= WLAN_STA_MAYBE_WPS;
-		}
-	} else
-#endif /* CONFIG_WPS */
 	if (hapd->conf->wpa && wpa_ie == NULL) {
 		printf("STA " MACSTR ": No WPA/RSN IE in association "
 		       "request\n", MAC2STR(sta->addr));
@@ -1007,6 +1164,12 @@ static void handle_assoc(struct hostapd_data *hapd,
 			resp = WLAN_STATUS_INVALID_IE;
 		if (resp != WLAN_STATUS_SUCCESS)
 			goto fail;
+#ifdef CONFIG_IEEE80211W
+		if (wpa_auth_uses_mfp(sta->wpa_sm))
+			sta->flags |= WLAN_STA_MFP;
+		else
+			sta->flags &= ~WLAN_STA_MFP;
+#endif /* CONFIG_IEEE80211W */
 
 #ifdef CONFIG_IEEE80211R
 		if (sta->auth_alg == WLAN_AUTH_FT) {
@@ -1079,6 +1242,38 @@ static void handle_assoc(struct hostapd_data *hapd,
 			ieee802_11_set_beacons(hapd->iface);
 	}
 
+#ifdef CONFIG_IEEE80211N
+	if (sta->flags & WLAN_STA_HT) {
+		if ((sta->ht_capabilities.data.capabilities_info &
+		     HT_CAP_INFO_GREEN_FIELD) == 0) {
+			hapd->iface->num_sta_ht_no_gf++;
+			wpa_printf(MSG_DEBUG, "%s STA " MACSTR " - no "
+				   "greenfield, num of non-gf stations %d",
+				   __func__, MAC2STR(sta->addr),
+				   hapd->iface->num_sta_ht_no_gf);
+		}
+		if ((sta->ht_capabilities.data.capabilities_info &
+		     HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET) == 0) {
+			hapd->iface->num_sta_ht_20mhz++;
+			wpa_printf(MSG_DEBUG, "%s STA " MACSTR " - 20 MHz HT, "
+				   "num of 20MHz HT STAs %d",
+				   __func__, MAC2STR(sta->addr),
+				   hapd->iface->num_sta_ht_20mhz);
+		}
+	} else {
+		hapd->iface->num_sta_no_ht++;
+		if (hapd->iconf->ieee80211n) {
+			wpa_printf(MSG_DEBUG, "%s STA " MACSTR
+				   " - no HT, num of non-HT stations %d",
+				   __func__, MAC2STR(sta->addr),
+				   hapd->iface->num_sta_no_ht);
+		}
+	}
+
+	if (hostapd_ht_operation_update(hapd->iface) > 0)
+		ieee802_11_set_beacons(hapd->iface);
+#endif /* CONFIG_IEEE80211N */
+
 	/* get a unique AID */
 	if (sta->aid > 0) {
 		wpa_printf(MSG_DEBUG, "  old AID %d", sta->aid);
@@ -1143,6 +1338,9 @@ static void handle_assoc(struct hostapd_data *hapd,
 		p = hostapd_eid_ext_supp_rates(hapd, p);
 		if (sta->flags & WLAN_STA_WME)
 			p = hostapd_eid_wme(hapd, p);
+
+		p = hostapd_eid_ht_capabilities_info(hapd, p);
+		p = hostapd_eid_ht_operation(hapd, p);
 
 #ifdef CONFIG_IEEE80211R
 		if (resp == WLAN_STATUS_SUCCESS) {
@@ -1557,6 +1755,7 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 	u16 status;
 	struct sta_info *sta;
 	int new_assoc = 1;
+	struct ht_cap_ie *ht_cap = NULL;
 
 	if (!ok) {
 		hostapd_logger(hapd, mgmt->da, HOSTAPD_MODULE_IEEE80211,
@@ -1607,9 +1806,16 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 	else
 		mlme_associate_indication(hapd, sta);
 
+#ifdef CONFIG_IEEE80211N
+	if (sta->flags & WLAN_STA_HT)
+		ht_cap = &sta->ht_capabilities;
+#endif /* CONFIG_IEEE80211N */
+
 	if (hostapd_sta_add(hapd->conf->iface, hapd, sta->addr, sta->aid,
 			    sta->capability, sta->supported_rates,
-			    sta->supported_rates_len, 0)) {
+			    sta->supported_rates_len, 0, sta->listen_interval,
+			    ht_cap))
+	{
 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_NOTICE,
 			       "Could not add STA to kernel driver");
@@ -1671,6 +1877,9 @@ void ieee802_11_mgmt_cb(struct hostapd_data *hapd, u8 *buf, size_t len,
 		break;
 	case WLAN_FC_STYPE_PROBE_RESP:
 		wpa_printf(MSG_DEBUG, "mgmt::proberesp cb");
+		break;
+	case WLAN_FC_STYPE_DEAUTH:
+		/* ignore */
 		break;
 	default:
 		printf("unknown mgmt cb frame subtype %d\n", stype);

@@ -312,13 +312,6 @@ static int wpa_config_process_ap_scan(struct wpa_config *config, char *pos)
 	return 0;
 }
 
-static int wpa_config_process_scan_cache(struct wpa_config *config, char *pos)
-{
-	config->scan_cache = atoi(pos);
-	wpa_printf(MSG_DEBUG, "scan_cache=%d", config->scan_cache);
-	return 0;
-}
-
 
 static int wpa_config_process_fast_reauth(struct wpa_config *config, char *pos)
 {
@@ -451,9 +444,6 @@ static int wpa_config_process_global(struct wpa_config *config, char *pos,
 
 	if (os_strncmp(pos, "ap_scan=", 8) == 0)
 		return wpa_config_process_ap_scan(config, pos + 8);
-
-	if (os_strncmp(pos, "scan_cache=", 11) == 0)
-		return wpa_config_process_scan_cache(config, pos + 11);
 
 	if (os_strncmp(pos, "fast_reauth=", 12) == 0)
 		return wpa_config_process_fast_reauth(config, pos + 12);
@@ -764,6 +754,11 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	STR(pin);
 	STR(engine_id);
 	STR(key_id);
+	STR(cert_id);
+	STR(ca_cert_id);
+	STR(key2_id);
+	STR(cert2_id);
+	STR(ca_cert2_id);
 	INTe(engine);
 	INT_DEF(eapol_flags, DEFAULT_EAPOL_FLAGS);
 #endif /* IEEE8021X_EAPOL */
@@ -820,8 +815,6 @@ static void wpa_config_write_global(FILE *f, struct wpa_config *config)
 		fprintf(f, "eapol_version=%d\n", config->eapol_version);
 	if (config->ap_scan != DEFAULT_AP_SCAN)
 		fprintf(f, "ap_scan=%d\n", config->ap_scan);
-	if (config->scan_cache != 0)
-		fprintf(f, "scan_cache=%d\n", config->scan_cache);
 	if (config->fast_reauth != DEFAULT_FAST_REAUTH)
 		fprintf(f, "fast_reauth=%d\n", config->fast_reauth);
 #ifdef EAP_TLS_OPENSSL

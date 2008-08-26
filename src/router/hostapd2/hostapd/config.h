@@ -1,6 +1,7 @@
 /*
  * hostapd / Configuration file
  * Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2007-2008, Intel Corporation
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -242,6 +243,7 @@ struct hostapd_bss_config {
 	u8 *pac_opaque_encr_key;
 	char *eap_fast_a_id;
 	int eap_sim_aka_result_ind;
+	int tnc;
 
 	char *radius_server_clients;
 	int radius_server_auth_port;
@@ -263,21 +265,14 @@ struct hostapd_bss_config {
 
 	macaddr bssid;
 
-	int wps_state;
-#ifdef CONFIG_WPS
-	int ap_setup_locked;
-	u8 uuid[16];
-	char *wps_pin_requests;
-	char *device_name;
-	char *manufacturer;
-	char *model_name;
-	char *model_number;
-	char *serial_number;
-	char *device_type;
-	char *config_methods;
-	u8 os_version[4];
-	char *ap_pin;
-#endif /* CONFIG_WPS */
+	/*
+	 * Maximum listen interval that STAs can use when associating with this
+	 * BSS. If a STA tries to use larger value, the association will be
+	 * denied with status code 51.
+	 */
+	u16 max_listen_interval;
+
+	int okc; /* Opportunistic Key Caching */
 };
 
 
@@ -351,6 +346,12 @@ struct hostapd_config {
 		INTERNAL_BRIDGE_DISABLED = 0,
 		INTERNAL_BRIDGE_ENABLED = 1
 	} bridge_packets;
+
+#ifdef CONFIG_IEEE80211N
+	int ieee80211n;
+	int ht_op_mode_fixed;
+	u16 ht_capab;
+#endif /* CONFIG_IEEE80211N */
 };
 
 

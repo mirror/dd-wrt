@@ -406,17 +406,17 @@ typedef __uint8_t __u8;
  * Privates ioctl are SIOCIWFIRSTPRIV -> SIOCIWLASTPRIV
  */
 
-#define IW_PRIV_TYPE_MASK	0x70000	/* Type of arguments */
-#define IW_PRIV_TYPE_NONE	0x00000
-#define IW_PRIV_TYPE_BYTE	0x10000	/* Char as number */
-#define IW_PRIV_TYPE_CHAR	0x20000	/* Char as character */
-#define IW_PRIV_TYPE_INT	0x40000	/* 32 bits int */
-#define IW_PRIV_TYPE_FLOAT	0x50000	/* struct iw_freq */
-#define IW_PRIV_TYPE_ADDR	0x60000	/* struct sockaddr */
+#define IW_PRIV_TYPE_MASK	0x7000	/* Type of arguments */
+#define IW_PRIV_TYPE_NONE	0x0000
+#define IW_PRIV_TYPE_BYTE	0x1000	/* Char as number */
+#define IW_PRIV_TYPE_CHAR	0x2000	/* Char as character */
+#define IW_PRIV_TYPE_INT	0x4000	/* 32 bits int */
+#define IW_PRIV_TYPE_FLOAT	0x5000	/* struct iw_freq */
+#define IW_PRIV_TYPE_ADDR	0x6000	/* struct sockaddr */
 
-#define IW_PRIV_SIZE_FIXED	0x08000	/* Variable or fixed number of args */
+#define IW_PRIV_SIZE_FIXED	0x0800	/* Variable or fixed number of args */
 
-#define IW_PRIV_SIZE_MASK	0x07FFF	/* Max number of those args */
+#define IW_PRIV_SIZE_MASK	0x07FF	/* Max number of those args */
 
 /*
  * Note : if the number of args is fixed and the size < 16 octets,
@@ -568,6 +568,8 @@ typedef __uint8_t __u8;
 #define IW_AUTH_RX_UNENCRYPTED_EAPOL	8
 #define IW_AUTH_ROAMING_CONTROL		9
 #define IW_AUTH_PRIVACY_INVOKED		10
+#define IW_AUTH_CIPHER_GROUP_MGMT	11
+#define IW_AUTH_MFP			12
 
 /* IW_AUTH_WPA_VERSION values (bit field) */
 #define IW_AUTH_WPA_VERSION_DISABLED	0x00000001
@@ -595,6 +597,11 @@ typedef __uint8_t __u8;
 #define IW_AUTH_ROAMING_DISABLE	1	/* user space program used for roaming
 					 * control */
 
+/* IW_AUTH_MFP (management frame protection) values */
+#define IW_AUTH_MFP_DISABLED	0	/* MFP disabled */
+#define IW_AUTH_MFP_OPTIONAL	1	/* MFP optional */
+#define IW_AUTH_MFP_REQUIRED	2	/* MFP required */
+
 /* SIOCSIWENCODEEXT definitions */
 #define IW_ENCODE_SEQ_MAX_SIZE	8
 /* struct iw_encode_ext ->alg */
@@ -602,6 +609,8 @@ typedef __uint8_t __u8;
 #define IW_ENCODE_ALG_WEP	1
 #define IW_ENCODE_ALG_TKIP	2
 #define IW_ENCODE_ALG_CCMP	3
+#define IW_ENCODE_ALG_PMK	4
+#define IW_ENCODE_ALG_AES_CMAC	5
 /* struct iw_encode_ext ->ext_flags */
 #define IW_ENCODE_EXT_TX_SEQ_VALID	0x00000001
 #define IW_ENCODE_EXT_RX_SEQ_VALID	0x00000002
@@ -621,6 +630,7 @@ typedef __uint8_t __u8;
 #define IW_ENC_CAPA_WPA2	0x00000002
 #define IW_ENC_CAPA_CIPHER_TKIP	0x00000004
 #define IW_ENC_CAPA_CIPHER_CCMP	0x00000008
+#define IW_ENC_CAPA_4WAY_HANDSHAKE	0x00000010
 
 /* Event capability macros - in (struct iw_range *)->event_capa
  * Because we have more than 32 possible events, we use an array of
@@ -1046,8 +1056,8 @@ struct	iw_range
 struct	iw_priv_args
 {
 	__u32		cmd;		/* Number of the ioctl to issue */
-	__u32		set_args;	/* Type and number of args */
-	__u32		get_args;	/* Type and number of args */
+	__u16		set_args;	/* Type and number of args */
+	__u16		get_args;	/* Type and number of args */
 	char		name[IFNAMSIZ];	/* Name of the extension */
 };
 

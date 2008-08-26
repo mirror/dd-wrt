@@ -248,7 +248,7 @@ struct eap_config {
 	/**
 	 * mac_addr - MAC address of the peer
 	 *
-	 * This is only used by EAP-WSC and can be left %NULL if not available.
+	 * This can be left %NULL if not available.
 	 */
 	const u8 *mac_addr;
 };

@@ -181,6 +181,8 @@ static struct radius_attr_type radius_attrs[] =
 	  RADIUS_ATTR_HEXDUMP },
 	{ RADIUS_ATTR_ACCT_INTERIM_INTERVAL, "Acct-Interim-Interval",
 	  RADIUS_ATTR_INT32 },
+	{ RADIUS_ATTR_CHARGEABLE_USER_IDENTITY, "Chargable-User-Identity",
+	  RADIUS_ATTR_TEXT },
 	{ RADIUS_ATTR_NAS_IPV6_ADDRESS, "NAS-IPv6-Address", RADIUS_ATTR_IPV6 },
 };
 #define RADIUS_ATTRS (sizeof(radius_attrs) / sizeof(radius_attrs[0]))
@@ -803,6 +805,7 @@ static u8 * decrypt_ms_key(const u8 *key, size_t len,
 	ppos = plain = os_malloc(plen);
 	if (plain == NULL)
 		return NULL;
+	plain[0] = 0;
 
 	while (left > 0) {
 		/* b(1) = MD5(Secret + Request-Authenticator + Salt)
@@ -827,7 +830,7 @@ static u8 * decrypt_ms_key(const u8 *key, size_t len,
 		left -= MD5_MAC_LEN;
 	}
 
-	if (plain[0] > plen - 1) {
+	if (plain[0] == 0 || plain[0] > plen - 1) {
 		printf("Failed to decrypt MPPE key\n");
 		os_free(plain);
 		return NULL;

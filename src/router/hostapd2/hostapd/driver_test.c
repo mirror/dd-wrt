@@ -44,10 +44,6 @@ struct test_driver_bss {
 	u8 bssid[ETH_ALEN];
 	u8 *ie;
 	size_t ielen;
-	u8 *wps_beacon_ie;
-	size_t wps_beacon_ie_len;
-	u8 *wps_probe_resp_ie;
-	size_t wps_probe_resp_ie_len;
 	u8 ssid[32];
 	size_t ssid_len;
 	int privacy;
@@ -66,8 +62,6 @@ struct test_driver_data {
 static void test_driver_free_bss(struct test_driver_bss *bss)
 {
 	free(bss->ie);
-	free(bss->wps_beacon_ie);
-	free(bss->wps_probe_resp_ie);
 	free(bss);
 }
 
@@ -352,8 +346,6 @@ static void test_driver_scan(struct test_driver_data *drv,
 			return;
 		pos += ret;
 		pos += wpa_snprintf_hex(pos, end - pos, bss->ie, bss->ielen);
-		pos += wpa_snprintf_hex(pos, end - pos, bss->wps_probe_resp_ie,
-					bss->wps_probe_resp_ie_len);
 
 		if (bss->privacy) {
 			ret = snprintf(pos, end - pos, " PRIVACY");
@@ -726,66 +718,6 @@ static int test_driver_set_generic_elem(const char *ifname, void *priv,
 }
 
 
-static int test_driver_set_wps_beacon_ie(const char *ifname, void *priv,
-					 const u8 *ie, size_t len)
-{
-	struct test_driver_data *drv = priv;
-	struct test_driver_bss *bss;
-
-	bss = test_driver_get_bss(drv, ifname);
-	if (bss == NULL)
-		return -1;
-
-	free(bss->wps_beacon_ie);
-
-	if (ie == NULL) {
-		bss->wps_beacon_ie = NULL;
-		bss->wps_beacon_ie_len = 0;
-		return 0;
-	}
-
-	bss->wps_beacon_ie = malloc(len);
-	if (bss->wps_beacon_ie == NULL) {
-		bss->wps_beacon_ie_len = 0;
-		return -1;
-	}
-
-	memcpy(bss->wps_beacon_ie, ie, len);
-	bss->wps_beacon_ie_len = len;
-	return 0;
-}
-
-
-static int test_driver_set_wps_probe_resp_ie(const char *ifname, void *priv,
-					     const u8 *ie, size_t len)
-{
-	struct test_driver_data *drv = priv;
-	struct test_driver_bss *bss;
-
-	bss = test_driver_get_bss(drv, ifname);
-	if (bss == NULL)
-		return -1;
-
-	free(bss->wps_probe_resp_ie);
-
-	if (ie == NULL) {
-		bss->wps_probe_resp_ie = NULL;
-		bss->wps_probe_resp_ie_len = 0;
-		return 0;
-	}
-
-	bss->wps_probe_resp_ie = malloc(len);
-	if (bss->wps_probe_resp_ie == NULL) {
-		bss->wps_probe_resp_ie_len = 0;
-		return -1;
-	}
-
-	memcpy(bss->wps_probe_resp_ie, ie, len);
-	bss->wps_probe_resp_ie_len = len;
-	return 0;
-}
-
-
 static int test_driver_sta_deauth(void *priv, const u8 *addr, int reason)
 {
 	struct test_driver_data *drv = priv;
@@ -1061,15 +993,17 @@ static int test_driver_set_sta_vlan(void *priv, const u8 *addr,
 
 static int test_driver_sta_add(const char *ifname, void *priv, const u8 *addr,
 			       u16 aid, u16 capability, u8 *supp_rates,
-			       size_t supp_rates_len, int flags)
+			       size_t supp_rates_len, int flags,
+			       u16 listen_interval)
 {
 	struct test_driver_data *drv = priv;
 	struct test_client_socket *cli;
 	struct test_driver_bss *bss;
 
 	wpa_printf(MSG_DEBUG, "%s(ifname=%s addr=" MACSTR " aid=%d "
-		   "capability=0x%x flags=0x%x",
-		   __func__, ifname, MAC2STR(addr), aid, capability, flags);
+		   "capability=0x%x flags=0x%x listen_interval=%d)",
+		   __func__, ifname, MAC2STR(addr), aid, capability, flags,
+		   listen_interval);
 	wpa_hexdump(MSG_DEBUG, "test_driver_sta_add - supp_rates",
 		    supp_rates, supp_rates_len);
 
@@ -1232,6 +1166,4 @@ const struct wpa_driver_ops wpa_driver_test_ops = {
 	.set_sta_vlan = test_driver_set_sta_vlan,
 	.sta_add = test_driver_sta_add,
 	.send_ether = test_driver_send_ether,
-	.set_wps_beacon_ie = test_driver_set_wps_beacon_ie,
-	.set_wps_probe_resp_ie = test_driver_set_wps_probe_resp_ie,
 };
