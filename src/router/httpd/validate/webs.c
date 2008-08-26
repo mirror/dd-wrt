@@ -771,6 +771,15 @@ _8021xprv
 	nvram_set( n, radius );
     copytonv( wp, "%s_radius_port", prefix );
     copytonv( wp, "%s_radius_key", prefix );
+#ifdef HAVE_MADWIFI
+    copytonv( wp, "%s_acct", prefix );
+    sprintf( n, "%s_acct_ipaddr", prefix );
+    if( get_merge_ipaddr( wp, n, radius ) )
+	nvram_set( n, radius );
+    copytonv( wp, "%s_acct_port", prefix );
+    copytonv( wp, "%s_acct_key", prefix );
+#endif
+
     copytonv( wp, "%s_radmactype", prefix );
     sprintf( n, "%s_key1", prefix );
     char *key1 = websGetVar( wp, n, "" );
@@ -1271,7 +1280,7 @@ void qos_add_mac( webs_t wp )
     if( strstr( svqos_macs, add_mac ) )
 	return;
 #ifdef HAVE_AQOS
-    snprintf( new_mac, 4095, "%s %s 100 100 |", svqos_macs, add_mac );
+    snprintf( new_mac, 4095, "%s %s 100 100 user |", svqos_macs, add_mac );
 #else
     snprintf( new_mac, 4095, "%s %s 30 |", svqos_macs, add_mac );
 #endif
