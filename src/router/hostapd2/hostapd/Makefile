@@ -13,7 +13,7 @@ CFLAGS += -I../src/crypto
 CFLAGS += -I../src/utils
 CFLAGS += -I../src/common
 
-LDFLAGS += -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 # Uncomment following line and set the path to your kernel tree include
 # directory if your C library does not include all header files.

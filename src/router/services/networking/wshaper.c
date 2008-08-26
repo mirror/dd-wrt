@@ -227,8 +227,6 @@ extern void add_usermac( char *mac, int idx, char *upstream,
 
 void aqos_tables( void )
 {
-    char *qos_ipaddr = nvram_safe_get( "svqos_ips" );
-    char *qos_mac = nvram_safe_get( "svqos_macs" );
     FILE *outips;
     FILE *outmacs;
 
@@ -256,12 +254,14 @@ void aqos_tables( void )
     }
     outips = fopen( "/tmp/aqos_ips", "wb" );
     outmacs = fopen( "/tmp/aqos_macs", "wb" );
-    char level[32], level2[32], data[32];
+    char *qos_ipaddr = nvram_safe_get( "svqos_ips" );
+    char *qos_mac = nvram_safe_get( "svqos_macs" );
+    char level[32], level2[32], data[32], type[32];
     int qosidx = 0;
 
     do
     {
-	if( sscanf( qos_mac, "%31s %31s %31s |", data, level, level2 ) < 3 )
+	if( sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2 , type) < 4 )
 	    break;
 	fprintf( outmacs, "%s\n", data );
 	add_usermac( data, qosidx, level, level2 );
