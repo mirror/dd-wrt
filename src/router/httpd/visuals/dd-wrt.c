@@ -3129,14 +3129,14 @@ static void show_netmode( webs_t wp, char *prefix )
 }
 static void showrtssettings( webs_t wp, char *var )
 {
-    websWrite( wp,
-	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rts)</script></div>\n" );
     char ssid[32];
     char vvar[32];
 
     strcpy( vvar, var );
     rep( vvar, '.', 'X' );
     sprintf( ssid, "%s_rts", var );
+    websWrite( wp,
+	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rts)</script></div>\n" );
     websWrite( wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",
 	       vvar, var, nvram_default_match( ssid, "1",
@@ -4100,28 +4100,6 @@ void show_radius( webs_t wp, char *prefix, int showmacformat )
     char var[80];
 
     cprintf( "show radius\n" );
-    websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label3)</script></div>\n" );
-    websWrite( wp,
-	       "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n",
-	       prefix );
-    sprintf( var, "%s_radius_ipaddr", prefix );
-    char *rad = nvram_safe_get( var );
-
-    websWrite( wp,
-	       "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",
-	       prefix, get_single_ip( rad, 0 ) );
-    websWrite( wp,
-	       "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",
-	       prefix, get_single_ip( rad, 1 ) );
-    websWrite( wp,
-	       "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",
-	       prefix, get_single_ip( rad, 2 ) );
-    websWrite( wp,
-	       "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label3)\" class=\"num\" value=\"%d\" />\n",
-	       prefix, get_single_ip( rad, 3 ) );
-    websWrite( wp, "</div>\n" );
     if( showmacformat )
     {
 	websWrite( wp, "<div class=\"setting\">\n" );
@@ -4143,30 +4121,73 @@ void show_radius( webs_t wp, char *prefix, int showmacformat )
 	websWrite( wp, "</select>\n" );
 	websWrite( wp, "</div>\n" );
     }
-
+    char *rad = nvram_nget("%s_radius_ipaddr", prefix);
     websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label4)</script></div>\n" );
+    websWrite( wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label3)</script></div>\n" );
+    websWrite( wp, "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n",prefix );
+    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 0 ) );
+    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 1 ) );
+    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 2 ) );
+    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label3)\" class=\"num\" value=\"%d\" />\n",prefix, get_single_ip( rad, 3 ) );
+    websWrite( wp, "</div>\n" );
+    
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label4)</script></div>\n" );
     sprintf( var, "%s_radius_port", prefix );
-    websWrite( wp,
-	       "<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label4)\" value=\"%s\" />\n",
-	       prefix, nvram_default_get( var, "1812" ) );
-    websWrite( wp,
-	       "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n" );
+    websWrite( wp,"<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label4)\" value=\"%s\" />\n",prefix, nvram_default_get( var, "1812" ) );
+    websWrite( wp,"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n" );
     websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label7)</script></div>\n" );
+    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label7)</script></div>\n" );
     sprintf( var, "%s_radius_key", prefix );
-    websWrite( wp,
-	       "<input type=\"password\" id=\"%s_radius_key\" name=\"%s_radius_key\" maxlength=\"79\" size=\"32\" value=\"",
-	       prefix, prefix );
+    websWrite( wp,"<input type=\"password\" id=\"%s_radius_key\" name=\"%s_radius_key\" maxlength=\"79\" size=\"32\" value=\"",prefix, prefix );
     tf_webWriteESCNV( wp, var );
     websWrite( wp, "\" />&nbsp;&nbsp;&nbsp;\n" );
-    websWrite( wp,
-	       "<input type=\"checkbox\" name=\"%s_radius_unmask\" value=\"0\" onclick=\"setElementMask('%s_radius_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
-	       prefix, prefix );
+    websWrite( wp, "<input type=\"checkbox\" name=\"%s_radius_unmask\" value=\"0\" onclick=\"setElementMask('%s_radius_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",prefix, prefix );
     websWrite( wp, "</div>\n" );
-
+#ifdef HAVE_MADWIFI
+    if (!showmacformat)
+    {
+    char acct[32];
+    char vvar[32];
+    strcpy( vvar, var );
+    rep( vvar, '.', 'X' );
+    sprintf(acct,"%s_acct",prefix);
+    websWrite( wp,"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label18)</script></div>\n" );
+    websWrite( wp,"<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idacct', true);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",vvar, prefix, nvram_default_match( acct, "1","0" ) ? "checked=\"checked\"" :"" );
+    websWrite( wp,"<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idacct, false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",vvar, prefix, nvram_default_match( acct, "0","0" ) ? "checked=\"checked\"" : "" );
+    websWrite( wp, "</div>\n" );
+    char *rad = nvram_nget("%s_acct_ipaddr", prefix);
+    websWrite( wp, "<div id=\"%s_idacct\">\n", vvar );
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label13)</script></div>\n" );
+    websWrite( wp, "<input type=\"hidden\" name=\"%s_acct_ipaddr\" value=\"4\" />\n",prefix );
+    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 0 ) );
+    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 1 ) );
+    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 2 ) );
+    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label13)\" class=\"num\" value=\"%d\" />\n",prefix, get_single_ip( rad, 3 ) );
+    websWrite( wp, "</div>\n" );
+    
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label14)</script></div>\n" );
+    sprintf( var, "%s_acct_port", prefix );
+    websWrite( wp,"<input name=\"%s_acct_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label14)\" value=\"%s\" />\n",prefix, nvram_default_get( var, "1813" ) );
+    websWrite( wp,"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n" );
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label17)</script></div>\n" );
+    sprintf( var, "%s_acct_key", prefix );
+    websWrite( wp,"<input type=\"password\" id=\"%s_acct_key\" name=\"%s_acct_key\" maxlength=\"79\" size=\"32\" value=\"",prefix, prefix );
+    tf_webWriteESCNV( wp, var );
+    websWrite( wp, "\" />&nbsp;&nbsp;&nbsp;\n" );
+    websWrite( wp, "<input type=\"checkbox\" name=\"%s_acct_unmask\" value=\"0\" onclick=\"setElementMask('%s_acct_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",prefix, prefix );
+    websWrite( wp, "</div>\n" );    
+    websWrite( wp, "</div>\n" );    
+    websWrite( wp, "<script>\n//<![CDATA[\n " );
+    websWrite( wp,
+	       "show_layer_ext(document.getElementsByName(\"%s_acct\"), \"%s_idacct\", %s);\n",
+	       prefix, vvar, nvram_match( acct, "1" ) ? "true" : "false" );
+    websWrite( wp, "//]]>\n</script>\n" );
+    }
+#endif
 }
 
 #ifdef HAVE_WPA_SUPPLICANT
