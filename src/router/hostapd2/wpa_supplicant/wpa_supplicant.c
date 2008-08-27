@@ -1094,10 +1094,10 @@ void wpa_supplicant_associate(struct wpa_supplicant *wpa_s,
 
 		if (assoc_failed) {
 			/* give IBSS a bit more time */
- 			timeout = ssid->mode ? 10 : 5;
+ 			timeout = ssid->mode ? 10 : 2;
 		} else if (wpa_s->conf->ap_scan == 1) {
 			/* give IBSS a bit more time */
- 			timeout = ssid->mode ? 20 : 10;
+ 			timeout = ssid->mode ? 20 : 3;
 		}
 		wpa_supplicant_req_auth_timeout(wpa_s, timeout, 0);
 	}
@@ -1182,7 +1182,7 @@ static int wpa_supplicant_get_scan_results_old(struct wpa_supplicant *wpa_s)
 {
 #define SCAN_AP_LIMIT 128
 	struct wpa_scan_result *results;
-	int num, i;
+	int num, i, j;
 	struct wpa_scan_results *res;
 
 	results = os_malloc(SCAN_AP_LIMIT * sizeof(struct wpa_scan_result));
@@ -1278,6 +1278,21 @@ static int wpa_supplicant_get_scan_results_old(struct wpa_supplicant *wpa_s)
 
 		res->res[res->num++] = r;
 	}
+
+	/* sort scan results by quality */
+	for(i = 0; i < num - 1; i++) {
+		for(j = i + 1; j < num; j++) {
+			struct wpa_scan_result tmp;
+
+			if (results[i].qual > results[j].qual)
+				continue;
+
+			os_memcpy(&tmp, &results[i], sizeof(tmp));
+			os_memcpy(&results[i], &results[j], sizeof(tmp));
+			os_memcpy(&results[j], &tmp, sizeof(tmp));
+		}
+	}
+
 
 	os_free(results);
 	wpa_s->scan_res = res;
@@ -1416,6 +1431,9 @@ void wpa_supplicant_rx_eapol(void *ctx, const u8 *src_addr,
 			     const u8 *buf, size_t len)
 {
 	struct wpa_supplicant *wpa_s = ctx;
+
+	if (wpa_s->wpa_state < WPA_ASSOCIATING)
+		return;
 
 	wpa_printf(MSG_DEBUG, "RX EAPOL from " MACSTR, MAC2STR(src_addr));
 	wpa_hexdump(MSG_MSGDUMP, "RX EAPOL", buf, len);
