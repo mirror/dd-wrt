@@ -2348,6 +2348,10 @@ int led_control( int type, int act )
 	case ROUTER_BOARD_GATEWORX_SWAP:
 	    connected_gpio = 0x4;
 	    break;
+	case ROUTER_BOARD_STORM:
+	    connected_gpio = 0x5;
+	    diag_gpio = 0x3;
+	    break;
 	case ROUTER_LINKSYS_WRH54G:
 	    diag_gpio = 0x11;	// power led blink / off to indicate factory
 	    // defaults

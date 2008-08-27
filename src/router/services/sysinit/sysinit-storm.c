@@ -75,6 +75,7 @@ int start_sysinit( void )
     // fix for linux kernel 2.6
     mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
     eval( "mkdir", "/tmp/www" );
+    eval( "mknod", "/dev/gpio", "c", "127", "0" );
     eval( "mknod", "/dev/nvram", "c", "229", "0" );
     eval( "mknod", "/dev/ppp", "c", "108", "0" );
 
@@ -146,7 +147,11 @@ int start_sysinit( void )
      */
     stime( &tm );
     nvram_set( "wl0_ifname", "ath0" );
-
+    //disable led's 
+    eval("gpio","disable","1");
+    eval("gpio","disable","2");
+    eval("gpio","disable","3");
+    eval("gpio","disable","5");
     return 0;
     cprintf( "done\n" );
 }
