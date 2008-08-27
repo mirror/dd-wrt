@@ -1038,17 +1038,11 @@ get_client_ip_mac (int conn_fp)
   getpeername (conn_fp, (struct sockaddr *) &sa, &len);
   char *peer = inet_ntoa (sa.sin_addr);
   char *client = malloc(strlen(peer)+1);
-  
+  strcpy(client,peer);
   nvram_set ("http_client_ip", client);
-  free(client);
-  //if(strcmp(nvram_safe_get("http_client_ip"), inet_ntoa(sa.sin_addr)))
-  //      nvram_set("http_client_ip", inet_ntoa(sa.sin_addr));
-  m = get_mac_from_ip (inet_ntoa (sa.sin_addr));
+  m = get_mac_from_ip (client);
   nvram_set ("http_client_mac", m);
-  //if(m){
-  //      if(strcmp(nvram_safe_get("http_client_mac"), m))
-  //              nvram_set("http_client_mac", m);
-  //}
+  free(client);
 }
 
 static void
