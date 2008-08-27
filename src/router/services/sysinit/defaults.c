@@ -224,6 +224,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
     {"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
     {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
+#elif defined(HAVE_GGEW) && defined(HAVE_NS5)
+    {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_X86
 #ifdef HAVE_GW700
     {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
@@ -464,7 +466,11 @@ struct nvram_tuple srouter_defaults[] = {
     {"http_lanport", "80", 0},	/* LAN port to listen on */
     {"http_enable", "1", 0},	/* HTTP server enable/disable */
 #ifdef HAVE_HTTPS
+#ifdef HAVE_GGEW
+    {"https_enable", "1", 0},	/* HTTPS server enable/disable */
+#else
     {"https_enable", "0", 0},	/* HTTPS server enable/disable */
+#endif
 #endif
     {"http_method", "post", 0},	/* HTTP method */
 #ifdef HAVE_SAGAR
@@ -538,7 +544,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_SAGAR
     {"wl_ssid", "hotspot-internet", 0},	/* Service set ID (network name) */
 #elif HAVE_GGEW
+#ifndef HAVE_NS5
     {"wl_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
+#endif
 #elif HAVE_NEWMEDIA
     {"wl_ssid", "changeme", 0},	/* Service set ID (network name) */
 #elif HAVE_MAKSAT
@@ -567,6 +575,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_TRIMAX)
     {"wl0_ssid", "trimax", 0},	/* Service set ID (network name) */
     {"ath0_ssid", "trimax", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_GGEW) && defined(HAVE_NS5)
+    {"ath0_ssid", "GGEWnet-wartung", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_DDLAN)
     {"wl0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
     {"ath0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
@@ -702,6 +712,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath5_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
 
 #ifdef HAVE_DDLAN
+    {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#elif defined(HAVE_GGEW) && defined(HAVE_NS5)
     {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #else
     {"ath0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
@@ -1132,6 +1144,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
 #ifdef HAVE_DDLAN
     {"remote_management", "1", 0},	/* Remote Management [1|0] */
+#elif HAVE_GGEW
+    {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_MAGICBOX
     {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_XSCALE
@@ -1157,6 +1171,8 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #endif
 #ifdef HAVE_SAGAR
+    {"remote_mgt_https", "1", 0},	/* Remote Management use https [1|0] */// add
+#elif HAVE_GGEW
     {"remote_mgt_https", "1", 0},	/* Remote Management use https [1|0] */// add
 #elif HAVE_HTTPS
     {"remote_mgt_https", "0", 0},	/* Remote Management use https [1|0] */// add
