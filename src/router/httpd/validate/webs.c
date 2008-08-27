@@ -758,6 +758,9 @@ _8021xprv
     copytonv( wp, "%s_peap8021xuser", prefix );
     copytonv( wp, "%s_peap8021xpasswd", prefix );
     copytonv( wp, "%s_peap8021xca", prefix );
+    copytonv( wp, "%s_ttls8021xuser", prefix );
+    copytonv( wp, "%s_ttls8021xpasswd", prefix );
+    copytonv( wp, "%s_ttls8021xca", prefix );
     copytonv( wp, "%s_leap8021xuser", prefix );
     copytonv( wp, "%s_leap8021xpasswd", prefix );
 

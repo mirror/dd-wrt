@@ -340,8 +340,8 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    {
 		sprintf( bul, "[%d]", cnt++ );
 		eval( "iwconfig", prefix, "key", bul, athkey );	// setup wep
-								// encryption 
-								// key
+		// encryption 
+		// key
 	    }
 	}
 	sprintf( bul, "[%s]", nvram_nget( "%s_key", prefix ) );
@@ -465,6 +465,24 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    write_nvram( psk, ath );
 	    fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
 	}
+	if( nvram_prefix_match( "8021xtype", prefix, "ttls" ) )
+	{
+	    fprintf( fp, "\tkey_mgmt=WPA-EAP\n" );
+	    fprintf( fp, "\teap=TTLS\n" );
+	    fprintf( fp, "\tidentity=\"%s\"\n",
+		     nvram_prefix_get( "ttls8021xuser", prefix ) );
+	    fprintf( fp, "\tpassword=\"%s\"\n",
+		     nvram_prefix_get( "ttls8021xpasswd", prefix ) );
+	    if( strlen(nvram_nget("%s_ttls8021xca", prefix)) > 0
+	    {
+		sprintf( psk, "/tmp/%s", prefix );
+		mkdir( psk );
+		sprintf( psk, "/tmp/%s/ca.pem", prefix );
+		sprintf( ath, "%s_ttls8021xca", prefix );
+		write_nvram( psk, ath );
+		fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
+	    }
+	}
 	if( nvram_prefix_match( "8021xtype", prefix, "leap" ) )
 	{
 	    fprintf( fp, "\tkey_mgmt=WPA-EAP\n" );
@@ -542,8 +560,8 @@ void setupHostAP( char *prefix, int iswan )
 	    {
 		sprintf( bul, "[%d]", cnt++ );
 		eval( "iwconfig", prefix, "key", bul, athkey );	// setup wep
-								// encryption 
-								// key
+		// encryption 
+		// key
 	    }
 	}
 	sprintf( bul, "[%s]", nvram_nget( "%s_key", prefix ) );
@@ -604,15 +622,21 @@ void setupHostAP( char *prefix, int iswan )
 	    fprintf( fp, "eap_server=0\n" );
 	    fprintf( fp, "auth_algs=1\n" );
 	    fprintf( fp, "radius_retry_primary_interval=60\n" );
-	    fprintf( fp, "auth_server_addr=%s\n",nvram_nget( "%s_radius_ipaddr", prefix ) );
-	    fprintf( fp, "auth_server_port=%s\n",nvram_nget( "%s_radius_port", prefix ) );
-	    fprintf( fp, "auth_server_shared_secret=%s\n",nvram_nget( "%s_radius_key", prefix ) );
-	    if (nvram_nmatch("1","%s_acct",prefix))
-		{
-		fprintf( fp, "acct_server_addr=%s\n",nvram_nget( "%s_acct_ipaddr", prefix ) );
-		fprintf( fp, "acct_server_port=%s\n",nvram_nget( "%s_acct_port", prefix ) );
-		fprintf( fp, "acct_server_shared_secret=%s\n",nvram_nget( "%s_acct_key", prefix ) );
-		}
+	    fprintf( fp, "auth_server_addr=%s\n",
+		     nvram_nget( "%s_radius_ipaddr", prefix ) );
+	    fprintf( fp, "auth_server_port=%s\n",
+		     nvram_nget( "%s_radius_port", prefix ) );
+	    fprintf( fp, "auth_server_shared_secret=%s\n",
+		     nvram_nget( "%s_radius_key", prefix ) );
+	    if( nvram_nmatch( "1", "%s_acct", prefix ) )
+	    {
+		fprintf( fp, "acct_server_addr=%s\n",
+			 nvram_nget( "%s_acct_ipaddr", prefix ) );
+		fprintf( fp, "acct_server_port=%s\n",
+			 nvram_nget( "%s_acct_port", prefix ) );
+		fprintf( fp, "acct_server_shared_secret=%s\n",
+			 nvram_nget( "%s_acct_key", prefix ) );
+	    }
 	}
 	if( nvram_invmatch( akm, "radius" ) )
 	{
@@ -982,7 +1006,7 @@ static void setRTS( char *use )
 
     if( nvram_nmatch( "None", "%s_protmode", use ) )
 	eval( "iwpriv", use, "protmode", "0" );	// avoid throughput problems
-						// (CTS disabled for now)
+    // (CTS disabled for now)
     if( nvram_nmatch( "CTS", "%s_protmode", use ) )
 	eval( "iwpriv", use, "protmode", "1" );
     if( nvram_nmatch( "RTS/CTS", "%s_protmode", use ) )
@@ -1298,7 +1322,7 @@ static void configure_single( int count )
 	char *chanbw = nvram_nget( "%s_channelbw", dev );
 
 	setdistance( wif, distance, atoi( chanbw ) );	// sets the receiver
-							// sensitivity
+	// sensitivity
     }
     else
 	setsysctrl( wif, "dynack_count", 20 );
@@ -1840,19 +1864,20 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	if( reg_domain > -1 )	// reg domain was successfully readed 
 	{
 	    if( nvram_get( regdomain ) != NULL )	// reg domain is
-							// defined in nvram
+		// defined in nvram
 	    {
 		int destination = atoi( nvram_safe_get( regdomain ) );	// read 
-									// new 
-									// target 
-									// regdomain
+
+		// new 
+		// target 
+		// regdomain
 		if( destination != reg_domain )	// check if changed
 		{
 		    if( set_regdomain( ( 0x50010000 ) + ( 0x10000 * i ), destination ) == 0 )	// modifiy 
-												// eeprom 
-												// with 
-												// new 
-												// regdomain
+			// eeprom 
+			// with 
+			// new 
+			// regdomain
 			changed = 1;
 		}
 	    }
@@ -1867,7 +1892,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
 
     if( changed )		// if changed, deconfigure myself and
-				// reconfigure me in the same way. 
+	// reconfigure me in the same way. 
     {
 	deconfigure_wifi(  );
 	configure_wifi(  );
