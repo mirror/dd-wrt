@@ -555,6 +555,9 @@ static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
 	if (wpa_s->conf->ap_scan == 2 || wpa_s->disconnected)
 		return;
 
+	if (wpa_s->wpa_state > WPA_ASSOCIATED)
+		goto done;
+
 	while (selected == NULL) {
 		for (prio = 0; prio < wpa_s->conf->num_prio; prio++) {
 			selected = wpa_supplicant_select_bss(
@@ -567,6 +570,7 @@ static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
 			wpa_printf(MSG_DEBUG, "No APs found - clear blacklist "
 				   "and try again");
 			wpa_blacklist_clear(wpa_s);
+			memset(&wpa_s->last_scan_results, 0, sizeof(wpa_s->last_scan_results));
 		} else if (selected == NULL) {
 			break;
 		}
@@ -594,10 +598,12 @@ static void wpa_supplicant_event_scan_results(struct wpa_supplicant *wpa_s)
 		rsn_preauth_scan_results(wpa_s->wpa, wpa_s->scan_res);
 	} else {
 		wpa_printf(MSG_DEBUG, "No suitable AP found.");
-		timeout = 5;
+		timeout = 0;
 		goto req_scan;
 	}
 
+done:
+	os_get_time(&wpa_s->last_scan_results);
 	return;
 
 req_scan:
@@ -762,7 +768,7 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
 		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
 	} else if (!ft_completed) {
 		/* Timeout for receiving the first EAPOL packet */
-		wpa_supplicant_req_auth_timeout(wpa_s, 10, 0);
+		wpa_supplicant_req_auth_timeout(wpa_s, 3, 0);
 	}
 	wpa_supplicant_cancel_scan(wpa_s);
 
@@ -804,6 +810,9 @@ static void wpa_supplicant_event_disassoc(struct wpa_supplicant *wpa_s)
 	}
 	if (wpa_s->wpa_state >= WPA_ASSOCIATED)
 		wpa_supplicant_req_scan(wpa_s, 0, 100000);
+	else if (wpa_s->wpa_state == WPA_ASSOCIATING)
+		wpa_supplicant_req_auth_timeout(wpa_s, 0, 100000);
+
 	bssid = wpa_s->bssid;
 	if (is_zero_ether_addr(bssid))
 		bssid = wpa_s->pending_bssid;

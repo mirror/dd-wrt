@@ -40,6 +40,18 @@ static void wpa_supplicant_gen_assoc_event(struct wpa_supplicant *wpa_s)
 	wpa_supplicant_event(wpa_s, EVENT_ASSOC, &data);
 }
 
+int wpa_supplicant_may_scan(struct wpa_supplicant *wpa_s)
+{
+	struct os_time time;
+
+	if (wpa_s->conf->scan_cache > 0) {
+		os_get_time(&time);
+		time.sec -= wpa_s->conf->scan_cache;
+		if (os_time_before(&time, &wpa_s->last_scan_results))
+			return 0;
+	}
+	return 1;
+}
 
 static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 {
@@ -48,11 +60,23 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 	int enabled, scan_req = 0, ret;
 	const u8 *extra_ie = NULL;
 	size_t extra_ie_len = 0;
+	int scan_ssid_all = 1;
 
 	if (wpa_s->disconnected && !wpa_s->scan_req)
 		return;
 
 	enabled = 0;
+
+	/* check if all configured ssids should be scanned directly */
+	ssid = wpa_s->conf->ssid;
+	while (ssid) {
+		if (!ssid->scan_ssid) {
+			scan_ssid_all = 0;
+			break;
+		}
+		ssid = ssid->next;
+	}
+
 	ssid = wpa_s->conf->ssid;
 	while (ssid) {
 		if (!ssid->disabled) {
@@ -125,6 +149,10 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 		return;
 	}
 
+	if (scan_ssid_all && !ssid) {
+		ssid = wpa_s->conf->ssid;
+	}
+
 	wpa_printf(MSG_DEBUG, "Starting AP scan (%s SSID)",
 		   ssid ? "specific": "broadcast");
 	if (ssid) {
@@ -134,8 +162,9 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 	} else
 		wpa_s->prev_scan_ssid = BROADCAST_SSID_SCAN;
 
-	if (wpa_s->scan_res_tried == 0 && wpa_s->conf->ap_scan == 1 &&
-	    !wpa_s->use_client_mlme) {
+	if (!wpa_supplicant_may_scan(wpa_s) ||
+		(wpa_s->scan_res_tried == 0 && wpa_s->conf->ap_scan == 1 &&
+	    !wpa_s->use_client_mlme)) {
 		wpa_s->scan_res_tried++;
 		wpa_printf(MSG_DEBUG, "Trying to get current scan results "
 			   "first without requesting a new scan to speed up "
@@ -144,6 +173,7 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 		return;
 	}
 
+	wpa_drv_flush_pmkid(wpa_s);
 	if (wpa_s->use_client_mlme) {
 		ieee80211_sta_set_probe_req_ie(wpa_s, extra_ie, extra_ie_len);
 		ret = ieee80211_sta_req_scan(wpa_s, ssid ? ssid->ssid : NULL,
@@ -156,7 +186,7 @@ static void wpa_supplicant_scan(void *eloop_ctx, void *timeout_ctx)
 
 	if (ret) {
 		wpa_printf(MSG_WARNING, "Failed to initiate AP scan.");
-		wpa_supplicant_req_scan(wpa_s, 10, 0);
+		wpa_supplicant_req_scan(wpa_s, 3, 0);
 	}
 }
 
