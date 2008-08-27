@@ -355,7 +355,7 @@
 
 #define ROUTER_BOARD_DANUBE 0x610f
 
-#define ROUTER_BOARD_STORM 0x620f
+#define ROUTER_BOARD_STORM 0x6201 // value 1 is a fake to enable reset button code. real gpio is 60
 
 #define ROUTER_BOARD_ADM5120 0x630f
 
