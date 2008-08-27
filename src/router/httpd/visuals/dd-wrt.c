@@ -4203,26 +4203,10 @@ void show_80211X( webs_t wp, char *prefix )
      * _8021xpem
      * _8021xprv
      */
-    /*
-     * websWrite (wp, "<div class=\"setting\">\n"); websWrite (wp,"<div
-     * class=\"label\"><script
-     * type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></div>\n");
-     * websWrite (wp, "<select name=\"%s_8021xtype\"
-     * onchange=\"change_80211x(this.form.security_mode.selectedIndex,this.form)\">\n", 
-     * prefix); websWrite (wp, "<option value=\"peap\"
-     * onclick=\"enable_idpeap()\" %s >Peap</option>\n",nvram_prefix_match
-     * ("8021xtype", prefix,"peap") ? "selected" : ""); websWrite (wp, "<option
-     * value=\"leap\" onclick=\"enable_idleap()\" %s
-     * >Leap</option>\n",nvram_prefix_match ("8021xtype", prefix,"leap") ?
-     * "selected" : ""); websWrite (wp, "<option value=\"tls\"
-     * onclick=\"enable_idtls()\" %s >TLS</option>\n",nvram_prefix_match
-     * ("8021xtype", prefix,"tls") ? "selected" : ""); websWrite (wp,
-     * "</select>\n"); websWrite (wp, "</div>\n"); 
-     */
     char type[32];
 
     sprintf( type, "%s_8021xtype", prefix );
-    nvram_default_get( type, "peap" );
+    nvram_default_get( type, "ttls" );
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></div>\n" );
@@ -4241,7 +4225,41 @@ void show_80211X( webs_t wp, char *prefix )
 	       prefix, prefix, nvram_prefix_match( "8021xtype", prefix,
 						   "tls" ) ?
 	       "checked=\"checked\"" : "" );
+    websWrite( wp,
+	       "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"ttls\" onclick=\"enable_idttls('%s')\" %s />TTLS&nbsp;\n",
+	       prefix, prefix, nvram_prefix_match( "8021xtype", prefix,
+						   "ttls" ) ?
+	       "checked=\"checked\"" : "" );
     websWrite( wp, "</div>\n" );
+    // ttls authentication
+    websWrite( wp, "<div id=\"idttls%s\">\n", prefix );
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.user)</script></div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_ttls8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	       prefix, nvram_prefix_get( "ttls8021xuser", prefix ) );
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_ttls8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	       prefix, nvram_prefix_get( "ttls8021xpasswd", prefix ) );
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.servercertif)</script></div>\n" );
+    websWrite( wp,
+	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_ttls8021xca\" name=\"%s_ttls8021xca\"></textarea><script language=\"text/javascript\">\n//<![CDATA[\n ",
+	       prefix, prefix );
+    websWrite( wp, "var %s_ttls8021xca = fix_cr( '%s' );\n", prefix,
+	       nvram_prefix_get( "ttls8021xca", prefix ) );
+    websWrite( wp,
+	       "document.getElementById(\"%s_ttls8021xca\").value = %s_ttls8021xca;\n",
+	       prefix, prefix );
+    websWrite( wp, "//]]>\n</script>\n" );
+    websWrite( wp, "</div>\n" );
+    websWrite( wp, "</div>\n" );
+    
 
     // peap authentication
     websWrite( wp, "<div id=\"idpeap%s\">\n", prefix );

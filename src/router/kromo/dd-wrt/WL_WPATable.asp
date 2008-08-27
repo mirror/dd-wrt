@@ -127,19 +127,28 @@ function ValidateKey(key, bit, index) {
 
 	return true;
 }
+function enable_idttls(ifname) {
+	show_layer_ext(this, 'idttls' + ifname, true)
+	show_layer_ext(this, 'idtls'  + ifname, false)
+	show_layer_ext(this, 'idpeap' + ifname, false)
+	show_layer_ext(this, 'idleap' + ifname, false)
+}
 
 function enable_idpeap(ifname) {
+	show_layer_ext(this, 'idttls' + ifname, false)
 	show_layer_ext(this, 'idtls' + ifname, false)
 	show_layer_ext(this, 'idpeap' + ifname, true)
 	show_layer_ext(this, 'idleap' + ifname, false)
 }
 function enable_idleap(ifname) {
+	show_layer_ext(this, 'idttls' + ifname, false)
 	show_layer_ext(this, 'idtls' + ifname, false)
 	show_layer_ext(this, 'idpeap' + ifname, false)
 	show_layer_ext(this, 'idleap' + ifname, true)
 }
 
 function enable_idtls(ifname) {
+	show_layer_ext(this, 'idttls' + ifname, false)
 	show_layer_ext(this, 'idtls' + ifname, true)
 	show_layer_ext(this, 'idpeap' + ifname, false)
 	show_layer_ext(this, 'idleap' + ifname, false)
