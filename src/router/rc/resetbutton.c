@@ -121,15 +121,22 @@ int getbuttonstate(  )
     return 0;
 }
 #endif
-#if defined(HAVE_GATEWORX)
+#if defined(HAVE_GATEWORX) || defined (HAVE_STORM)
 
+#include <linux/mii.h>
+#include <linux/sockios.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
 #define u8 unsigned char
 #define u32 unsigned long
 
-// #include <linux/ixp425-gpio.h>
-
-#include <include/asm/hardware.h>
-#include <include/asm-arm/arch-ixp4xx/ixp4xx-regs.h>
+#define GPIO_GET_BIT	0x0000001
+#define GPIO_SET_BIT	0x0000002
+#define GPIO_GET_CONFIG	0x0000003
+#define GPIO_SET_CONFIG 0x0000004
 
 #define IXP4XX_GPIO_OUT 		0x1
 #define IXP4XX_GPIO_IN  		0x2
@@ -221,10 +228,14 @@ int getbuttonstate(  )
     FILE *in;
     int ret;
 
+#ifdef HAVE_STORM	
+	ret = read_bit(60);
+#else
     if( isCompex(  ) )
 	ret = read_bit( 0 );
     else
 	ret = read_bit( 4 );
+#endif
     return ret == 0 ? 1 : 0;
 }
 #endif
@@ -328,7 +339,7 @@ void period_check( int sig )
     // time(&t);
     // DEBUG("resetbutton: now time=%d\n", t);
 
-#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX)
+#if defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX)
     val = getbuttonstate(  );
 #ifdef HAVE_WRK54G
     if( val )
@@ -364,7 +375,7 @@ void period_check( int sig )
 
     int state = 0;
 
-#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX)
+#if defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_STORM) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_LSX)
     state = val;
 #else
     if( ( brand & 0x000f ) != 0x000f )
@@ -538,7 +549,7 @@ void period_check( int sig )
 	    }
 	}
     }
-#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX)
+#if !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_GATEWORX) && !defined(HAVE_STORM) && !defined(HAVE_LS2) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_LS5) && !defined(HAVE_LSX)
 
     else if( ( sesgpio != 0xff )
 	     && ( ( ( sesgpio & 0x10 ) == 0 && ( val & push ) )
