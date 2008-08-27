@@ -2,7 +2,7 @@
 /*
  * dd-wrt.c
  *
- * Copyright (C) 2005 - 2007 Sebastian Gottschall <sebastian.gottschall@blueline-ag.de>
+ * Copyright (C) 2005 - 2007 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
