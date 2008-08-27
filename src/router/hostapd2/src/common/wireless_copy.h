@@ -406,17 +406,17 @@ typedef __uint8_t __u8;
  * Privates ioctl are SIOCIWFIRSTPRIV -> SIOCIWLASTPRIV
  */
 
-#define IW_PRIV_TYPE_MASK	0x7000	/* Type of arguments */
-#define IW_PRIV_TYPE_NONE	0x0000
-#define IW_PRIV_TYPE_BYTE	0x1000	/* Char as number */
-#define IW_PRIV_TYPE_CHAR	0x2000	/* Char as character */
-#define IW_PRIV_TYPE_INT	0x4000	/* 32 bits int */
-#define IW_PRIV_TYPE_FLOAT	0x5000	/* struct iw_freq */
-#define IW_PRIV_TYPE_ADDR	0x6000	/* struct sockaddr */
+#define IW_PRIV_TYPE_MASK	0x70000	/* Type of arguments */
+#define IW_PRIV_TYPE_NONE	0x00000
+#define IW_PRIV_TYPE_BYTE	0x10000	/* Char as number */
+#define IW_PRIV_TYPE_CHAR	0x20000	/* Char as character */
+#define IW_PRIV_TYPE_INT	0x40000	/* 32 bits int */
+#define IW_PRIV_TYPE_FLOAT	0x50000	/* struct iw_freq */
+#define IW_PRIV_TYPE_ADDR	0x60000	/* struct sockaddr */
 
-#define IW_PRIV_SIZE_FIXED	0x0800	/* Variable or fixed number of args */
+#define IW_PRIV_SIZE_FIXED	0x08000	/* Variable or fixed number of args */
 
-#define IW_PRIV_SIZE_MASK	0x07FF	/* Max number of those args */
+#define IW_PRIV_SIZE_MASK	0x07FFF	/* Max number of those args */
 
 /*
  * Note : if the number of args is fixed and the size < 16 octets,
@@ -1056,8 +1056,8 @@ struct	iw_range
 struct	iw_priv_args
 {
 	__u32		cmd;		/* Number of the ioctl to issue */
-	__u16		set_args;	/* Type and number of args */
-	__u16		get_args;	/* Type and number of args */
+	__u32		set_args;	/* Type and number of args */
+	__u32		get_args;	/* Type and number of args */
 	char		name[IFNAMSIZ];	/* Name of the extension */
 };
 
