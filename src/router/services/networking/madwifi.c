@@ -473,7 +473,7 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 		     nvram_prefix_get( "ttls8021xuser", prefix ) );
 	    fprintf( fp, "\tpassword=\"%s\"\n",
 		     nvram_prefix_get( "ttls8021xpasswd", prefix ) );
-	    if( strlen(nvram_nget("%s_ttls8021xca", prefix)) > 0
+	    if( strlen( nvram_nget( "%s_ttls8021xca", prefix ) ) > 0 )
 	    {
 		sprintf( psk, "/tmp/%s", prefix );
 		mkdir( psk );
