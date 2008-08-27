@@ -1591,8 +1591,9 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 		if (chain_trusted)
 			continue;
 
-		if ((unsigned long) now.sec <
-		    (unsigned long) cert->not_before ||
+		if (
+//		    (unsigned long) now.sec <
+//		    (unsigned long) cert->not_before ||
 		    (unsigned long) now.sec >
 		    (unsigned long) cert->not_after) {
 			wpa_printf(MSG_INFO, "X509: Certificate not valid "
