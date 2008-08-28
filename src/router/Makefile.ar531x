@@ -186,11 +186,11 @@ endif
 ifeq ($(CONFIG_FONERA2200),y)
 	cp $(LINUXDIR)/.config_generic_selfmap_vlan $(LINUXDIR)/.config
 endif
-ifeq ($(CONFIG_DIR400),y)
-	cp $(LINUXDIR)/.config_dir400 $(LINUXDIR)/.config
-endif
 ifeq ($(CONFIG_DIR300),y)
 	cp $(LINUXDIR)/.config_dir300 $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_DIR400),y)
+	cp $(LINUXDIR)/.config_dir400 $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_LS2),y)
 	cp $(LINUXDIR)/.config_generic_selfmap $(LINUXDIR)/.config
@@ -477,6 +477,10 @@ ifeq ($(CONFIG_TW6600),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.whr bs=2752512 conv=sync
 	./tools/trx_n -o $(ARCH)-uclibc/whrag108-firmware.bin $(ARCH)-uclibc/root.whr $(ARCH)-uclibc/lzma_vmlinusaw
 endif
+ifeq ($(CONFIG_ALPHA),y)
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.alpha bs=6946816 conv=sync
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/alpha-firmware.bin $(ARCH)-uclibc/root.alpha $(ARCH)-uclibc/vmlinux.bin.l7
+endif
 ifeq ($(CONFIG_USR5453),y)
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/root.usr bs=6815744 conv=sync
 	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/usr5453-firmware.bin $(ARCH)-uclibc/root.usr $(ARCH)-uclibc/lzma_vmlinus
@@ -517,7 +521,7 @@ ifeq ($(CONFIG_LS2),y)
 	./tools/trx_n -o $(ARCH)-uclibc/ls2-firmware.bin $(ARCH)-uclibc/vmlinux.ls2
 endif
 ifeq ($(CONFIG_MR3202A),y)
-	./tools/trx_n -o $(ARCH)-uclibc/mr3202a-firmware.bin $(ARCH)-uclibc/vmlinux.mr3202a
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/mr3202a-firmware.bin $(ARCH)-uclibc/vmlinux.mr3202a
 endif
 ifeq ($(CONFIG_FONERA2200),y)
 	./tools/trx_n -o $(ARCH)-uclibc/fonera-firmware.bin -m 100000000 $(ARCH)-uclibc/vmlinux.fonera
