@@ -701,6 +701,8 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 #ifdef HAVE_DDLAN
     {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
+#elif defined(HAVE_GGEW) && defined(HAVE_NS5)
+    {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #else
     {"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #endif
