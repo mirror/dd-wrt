@@ -3267,18 +3267,38 @@ static void show_chanshift( webs_t wp, char *wl_chanshift )
 	       wl_chanshift );
     websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
     websWrite( wp,
-	       "document.write(\"<option value=\\\"-1\\\" %s >-1</option>\");\n",
-	       nvram_default_match( wl_chanshift, "-1",
+	       "document.write(\"<option value=\\\"-15\\\" %s >-15 Mhz</option>\");\n",
+	       nvram_default_match( wl_chanshift, "-15",
 				    "0" ) ? "selected=\\\"selected\\\"" :
 	       "" );
     websWrite( wp,
-	       "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n",
+	       "document.write(\"<option value=\\\"-10\\\" %s >-10 Mhz</option>\");\n",
+	       nvram_default_match( wl_chanshift, "-10",
+				    "0" ) ? "selected=\\\"selected\\\"" :
+	       "" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"-5\\\" %s >-5 Mhz</option>\");\n",
+	       nvram_default_match( wl_chanshift, "-5",
+				    "0" ) ? "selected=\\\"selected\\\"" :
+	       "" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"0\\\" %s >0 Mhz</option>\");\n",
 	       nvram_default_match( wl_chanshift, "0",
 				    "0" ) ? "selected=\\\"selected\\\"" :
 	       "" );
     websWrite( wp,
-	       "document.write(\"<option value=\\\"1\\\" %s >+1</option>\");\n",
-	       nvram_default_match( wl_chanshift, "1",
+	       "document.write(\"<option value=\\\"5\\\" %s >+5 Mhz</option>\");\n",
+	       nvram_default_match( wl_chanshift, "5",
+				    "0" ) ? "selected=\\\"selected\\\"" :
+	       "" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"10\\\" %s >+10 Mhz</option>\");\n",
+	       nvram_default_match( wl_chanshift, "10",
+				    "0" ) ? "selected=\\\"selected\\\"" :
+	       "" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"15\\\" %s >+15 Mhz</option>\");\n",
+	       nvram_default_match( wl_chanshift, "15",
 				    "0" ) ? "selected=\\\"selected\\\"" :
 	       "" );
     websWrite( wp, "//]]>\n</script>\n</select>\n</div>\n" );
@@ -3295,7 +3315,7 @@ static int show_virtualssid( webs_t wp, char *prefix )
     char wl_protmode[32];
 
 #ifdef HAVE_MADWIFI
-    char wl_chanshift[16];
+//    char wl_chanshift[16];
 #endif
     sprintf( vif, "%s_vifs", prefix );
     char *vifs = nvram_safe_get( vif );
@@ -3330,8 +3350,8 @@ static int show_virtualssid( webs_t wp, char *prefix )
 		   var, nvram_safe_get( ssid ) );
 
 #ifdef HAVE_MADWIFI
-	sprintf( wl_chanshift, "%s_chanshift", var );
-	show_chanshift( wp, wl_chanshift );
+//	sprintf( wl_chanshift, "%s_chanshift", var );
+//	show_chanshift( wp, wl_chanshift );
 
 	sprintf( wl_protmode, "%s_protmode", var );
 	showOptionsLabel( wp, "wl_basic.protmode", wl_protmode,
