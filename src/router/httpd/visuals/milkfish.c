@@ -196,7 +196,7 @@ void ej_exec_show_aliases( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp, "\" /></td>\n" );
 	websWrite( wp, "<td>\n" );
 	websWrite( wp,
-		   "<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+		   "<input maxlength=\"50\" size=\"50\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"",
 		   i );
 	show_aliases_table( wp, "pass", i );
 	websWrite( wp, "\" /></td>\n" );
