@@ -3266,10 +3266,18 @@ static void show_chanshift( webs_t wp, char *prefix )
     char wl_channelbw[32];
 
     sprintf( wl_channelbw, "%s_channelbw", prefix );
+    sprintf( wl_chanshift, "%s_chanshift", prefix );
+    if( atoi( nvram_safe_get( wl_channelbw ) ) > 5
+	&& ( atoi( nvram_safe_get( wl_chanshift ) ) & 0xf ) > 10 )
+	nvram_set( wl_chanshift, "10" );
+    if( atoi( nvram_safe_get( wl_channelbw ) ) > 10
+	&& ( atoi( nvram_safe_get( wl_chanshift ) ) & 0xf ) > 0 )
+	nvram_set( wl_chanshift, "0" );
+
     if( nvram_match( wl_channelbw, "5" )
 	|| nvram_match( wl_channelbw, "10" ) )
     {
-	sprintf( wl_chanshift, "%s_chanshift", prefix );
+
 	websWrite( wp, "<div class=\"setting\">\n" );
 	websWrite( wp,
 		   "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.chanshift)</script></div>\n<select name=\"%s\">\n",
@@ -3731,7 +3739,6 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 
     // char wl_xchanmode[16];
     char wl_outdoor[16];
-    char wl_chanshift[16];
     char wl_diversity[16];
     char wl_rxantenna[16];
     char wl_txantenna[16];
@@ -3750,7 +3757,6 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     char wl_protmode[32];
 
     sprintf( wl_protmode, "%s_protmode", prefix );
-    sprintf( wl_chanshift, "%s_chanshift", prefix );
     sprintf( wl_turbo, "%s_turbo", prefix );
     sprintf( wl_outdoor, "%s_outdoor", prefix );
     sprintf( wl_diversity, "%s_diversity", prefix );
