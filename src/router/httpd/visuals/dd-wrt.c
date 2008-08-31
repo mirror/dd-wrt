@@ -926,7 +926,7 @@ void ej_active_wireless2( webs_t wp, int argc, char_t ** argv )
 	while( fgets( line, sizeof( line ), fp ) != NULL )
 	{
 	    if( sscanf( line, "%s %s", list[0], mac ) != 2 )	// assoclist
-								// 00:11:22:33:44:55
+		// 00:11:22:33:44:55
 		continue;
 
 	    if( strcmp( list[0], "assoclist" ) )
@@ -1260,7 +1260,8 @@ void ej_show_staticleases( webs_t wp, int argc, char_t ** argv )
     char *nvleases = nvram_safe_get( "static_leases" );
     char *leases = ( char * )malloc( strlen( nvleases ) + 1 );
     char *originalpointer = leases;	// strsep destroys the pointer by
-					// moving it
+
+    // moving it
     strcpy( leases, nvleases );
     for( i = 0; i < leasenum; i++ )
     {
@@ -1344,24 +1345,24 @@ void ej_show_security( webs_t wp, int argc, char_t ** argv )
     websWrite( wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
 	       selmatch( "security_mode", "wpa", "selected=\"selected\"" ) );
     if( !nvram_match( "wl0_mode", "wet" ) && nvram_match( "wl_wds1_enable", "0" ) && nvram_match( "wl_wds2_enable", "0" ) && nvram_match( "wl_wds3_enable", "0" ) && nvram_match( "wl_wds4_enable", "0" ) && nvram_match( "wl_wds5_enable", "0" ) && nvram_match( "wl_wds6_enable", "0" ) && nvram_match( "wl_wds7_enable", "0" ) && nvram_match( "wl_wds8_enable", "0" ) && nvram_match( "wl_wds9_enable", "0" ) && nvram_match( "wl_wds10_enable", "0" ) )	// botho 
-																																																								// 10/04/06 
-																																																								// : 
-																																																								// if 
-																																																								// wireless 
-																																																								// client 
-																																																								// bridge 
-																																																								// mode 
-																																																								// selected 
-																																																								// or 
-																																																								// WDS 
-																																																								// activated 
-																																																								// => 
-																																																								// we 
-																																																								// don't 
-																																																								// display 
-																																																								// WPA2 
-																																																								// security 
-																																																								// modes
+	// 10/04/06 
+	// : 
+	// if 
+	// wireless 
+	// client 
+	// bridge 
+	// mode 
+	// selected 
+	// or 
+	// WDS 
+	// activated 
+	// => 
+	// we 
+	// don't 
+	// display 
+	// WPA2 
+	// security 
+	// modes
     {
 	websWrite( wp,
 		   "<option value=\"psk2\" %s>WPA2 Personal</option>\n",
@@ -1501,7 +1502,7 @@ ej_show_security_single( webs_t wp, int argc, char_t ** argv, char *prefix )
 	       "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
 	       prefix );
     tf_webWriteESCNV( wp, ssid );	// fix for broken html page if ssid
-					// contains html tag
+    // contains html tag
     websWrite( wp, "] HWAddr [%s]</legend>\n", nvram_safe_get( mac ) );
     show_security_prefix( wp, argc, argv, prefix, 1 );
     websWrite( wp, "</fieldset>\n<br />\n" );
@@ -1514,7 +1515,7 @@ ej_show_security_single( webs_t wp, int argc, char_t ** argv, char *prefix )
 		   "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
 		   var );
 	tf_webWriteESCNV( wp, ssid );	// fix for broken html page if ssid
-					// contains html tag
+	// contains html tag
 	websWrite( wp, "]</legend>\n" );
 	rep( var, '.', 'X' );
 	show_security_prefix( wp, argc, argv, var, 0 );
@@ -1559,12 +1560,12 @@ void ej_show_dhcpd_settings( webs_t wp, int argc, char_t ** argv )
     int i;
 
     if( nvram_match( "wl0_mode", "wet" ) )	// dhcpd settings disabled in 
-						// client bridge mode, so we
-						// wont display it
+	// client bridge mode, so we
+	// wont display it
 	return;
     if( nvram_match( "wl0_mode", "apstawet" ) )	// dhcpd settings disabled in 
-						// client bridge mode, so we
-						// wont display it
+	// client bridge mode, so we
+	// wont display it
 	return;
     websWrite( wp,
 	       "<fieldset><legend><script type=\"text/javascript\">Capture(idx.dhcp_legend)</script></legend>\n" );
@@ -3259,50 +3260,68 @@ static void showbridgesettings( webs_t wp, char *var, int mcast )
 }
 
 #ifdef HAVE_MADWIFI
-static void show_chanshift( webs_t wp, char *wl_chanshift )
+static void show_chanshift( webs_t wp, char *prefix )
 {
-    websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.chanshift)</script></div>\n<select name=\"%s\">\n",
-	       wl_chanshift );
-    websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
-    websWrite( wp,
-	       "document.write(\"<option value=\\\"-15\\\" %s >-15 Mhz</option>\");\n",
-	       nvram_default_match( wl_chanshift, "-15",
-				    "0" ) ? "selected=\\\"selected\\\"" :
-	       "" );
-    websWrite( wp,
-	       "document.write(\"<option value=\\\"-10\\\" %s >-10 Mhz</option>\");\n",
-	       nvram_default_match( wl_chanshift, "-10",
-				    "0" ) ? "selected=\\\"selected\\\"" :
-	       "" );
-    websWrite( wp,
-	       "document.write(\"<option value=\\\"-5\\\" %s >-5 Mhz</option>\");\n",
-	       nvram_default_match( wl_chanshift, "-5",
-				    "0" ) ? "selected=\\\"selected\\\"" :
-	       "" );
-    websWrite( wp,
-	       "document.write(\"<option value=\\\"0\\\" %s >0 Mhz</option>\");\n",
-	       nvram_default_match( wl_chanshift, "0",
-				    "0" ) ? "selected=\\\"selected\\\"" :
-	       "" );
-    websWrite( wp,
-	       "document.write(\"<option value=\\\"5\\\" %s >+5 Mhz</option>\");\n",
-	       nvram_default_match( wl_chanshift, "5",
-				    "0" ) ? "selected=\\\"selected\\\"" :
-	       "" );
-    websWrite( wp,
-	       "document.write(\"<option value=\\\"10\\\" %s >+10 Mhz</option>\");\n",
-	       nvram_default_match( wl_chanshift, "10",
-				    "0" ) ? "selected=\\\"selected\\\"" :
-	       "" );
-    websWrite( wp,
-	       "document.write(\"<option value=\\\"15\\\" %s >+15 Mhz</option>\");\n",
-	       nvram_default_match( wl_chanshift, "15",
-				    "0" ) ? "selected=\\\"selected\\\"" :
-	       "" );
-    websWrite( wp, "//]]>\n</script>\n</select>\n</div>\n" );
+    char wl_chanshift[32];
+    char wl_channelbw[32];
 
+    sprintf( wl_channelbw, "%s_channelbw", prefix );
+    if( nvram_match( wl_channelbw, "5" )
+	|| nvram_match( wl_channelbw, "10" ) )
+    {
+	sprintf( wl_chanshift, "%s_chanshift", prefix );
+	websWrite( wp, "<div class=\"setting\">\n" );
+	websWrite( wp,
+		   "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.chanshift)</script></div>\n<select name=\"%s\">\n",
+		   wl_chanshift );
+	websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
+	if( nvram_match( wl_channelbw, "5" ) )
+	    websWrite( wp,
+		       "document.write(\"<option value=\\\"-15\\\" %s >-15 Mhz</option>\");\n",
+		       nvram_default_match( wl_chanshift, "-15",
+					    "0" ) ?
+		       "selected=\\\"selected\\\"" : "" );
+	if( nvram_match( wl_channelbw, "5" )
+	    || nvram_match( wl_channelbw, "10" ) )
+	    websWrite( wp,
+		       "document.write(\"<option value=\\\"-10\\\" %s >-10 Mhz</option>\");\n",
+		       nvram_default_match( wl_chanshift, "-10",
+					    "0" ) ?
+		       "selected=\\\"selected\\\"" : "" );
+	if( nvram_match( wl_channelbw, "5" )
+	    || nvram_match( wl_channelbw, "10" ) )
+	    websWrite( wp,
+		       "document.write(\"<option value=\\\"-5\\\" %s >-5 Mhz</option>\");\n",
+		       nvram_default_match( wl_chanshift, "-5",
+					    "0" ) ?
+		       "selected=\\\"selected\\\"" : "" );
+	websWrite( wp,
+		   "document.write(\"<option value=\\\"0\\\" %s >0 Mhz</option>\");\n",
+		   nvram_default_match( wl_chanshift, "0",
+					"0" ) ? "selected=\\\"selected\\\"" :
+		   "" );
+	if( nvram_match( wl_channelbw, "5" )
+	    || nvram_match( wl_channelbw, "10" ) )
+	    websWrite( wp,
+		       "document.write(\"<option value=\\\"5\\\" %s >+5 Mhz</option>\");\n",
+		       nvram_default_match( wl_chanshift, "5",
+					    "0" ) ?
+		       "selected=\\\"selected\\\"" : "" );
+	if( nvram_match( wl_channelbw, "5" )
+	    || nvram_match( wl_channelbw, "10" ) )
+	    websWrite( wp,
+		       "document.write(\"<option value=\\\"10\\\" %s >+10 Mhz</option>\");\n",
+		       nvram_default_match( wl_chanshift, "10",
+					    "0" ) ?
+		       "selected=\\\"selected\\\"" : "" );
+	if( nvram_match( wl_channelbw, "5" ) )
+	    websWrite( wp,
+		       "document.write(\"<option value=\\\"15\\\" %s >+15 Mhz</option>\");\n",
+		       nvram_default_match( wl_chanshift, "15",
+					    "0" ) ?
+		       "selected=\\\"selected\\\"" : "" );
+	websWrite( wp, "//]]>\n</script>\n</select>\n</div>\n" );
+    }
 }
 #endif
 static int show_virtualssid( webs_t wp, char *prefix )
@@ -3339,7 +3358,7 @@ static int show_virtualssid( webs_t wp, char *prefix )
 		   "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
 		   var );
 	tf_webWriteESCNV( wp, ssid );	// fix for broken html page if ssid
-					// contains html tag
+	// contains html tag
 	websWrite( wp, "]</legend>\n" );
 	websWrite( wp, "<div class=\"setting\">\n" );
 	websWrite( wp,
@@ -3350,8 +3369,8 @@ static int show_virtualssid( webs_t wp, char *prefix )
 		   var, nvram_safe_get( ssid ) );
 
 #ifdef HAVE_MADWIFI
-//	sprintf( wl_chanshift, "%s_chanshift", var );
-//	show_chanshift( wp, wl_chanshift );
+//      sprintf( wl_chanshift, "%s_chanshift", var );
+//      show_chanshift( wp, wl_chanshift );
 
 	sprintf( wl_protmode, "%s_protmode", var );
 	showOptionsLabel( wp, "wl_basic.protmode", wl_protmode,
@@ -3532,15 +3551,15 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       prefix );
     websWrite( wp, "<fieldset>\n" );
     websWrite( wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [", prefix ), tf_webWriteESCNV( wp, wl_ssid );	// fix 
-																			// for 
-																			// broken 
-																			// html 
-																			// page 
-																			// if 
-																			// ssid 
-																			// contains 
-																			// html 
-																			// tag
+    // for 
+    // broken 
+    // html 
+    // page 
+    // if 
+    // ssid 
+    // contains 
+    // html 
+    // tag
     websWrite( wp, "] HWAddr [%s]</legend>\n", nvram_safe_get( wl_macaddr ) );
     char power[16];
 
@@ -3570,10 +3589,10 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     sprintf( power, "%s_txpwrdbm", prefix );
     // sprintf (maxpower, "%s_maxpower", prefix);
     if( !strcmp( prefix, "ath0" ) && issuperchannel(  ) )	// show
-								// client
-								// only on
-								// first
-								// interface
+	// client
+	// only on
+	// first
+	// interface
     {
 
 	websWrite( wp, " 	<div class=\"setting\">\n" );
@@ -3931,7 +3950,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       wl_ssid, nvram_safe_get( wl_ssid ) );
 
 #ifdef HAVE_MADWIFI
-    show_chanshift( wp, wl_chanshift );
+    show_chanshift( wp, prefix );
 #endif
     if( nvram_match( wl_mode, "ap" ) || nvram_match( wl_mode, "wdsap" )
 	|| nvram_match( wl_mode, "infra" ) )
@@ -4015,7 +4034,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 
     // ACK timing
 #if defined(HAVE_ACK) || defined(HAVE_MADWIFI)	// temp fix for v24 broadcom
-						// ACKnot working
+    // ACKnot working
 
     sprintf( power, "%s_distance", prefix );
     websWrite( wp, "<br />\n" );
@@ -4141,71 +4160,124 @@ void show_radius( webs_t wp, char *prefix, int showmacformat )
 	websWrite( wp, "</select>\n" );
 	websWrite( wp, "</div>\n" );
     }
-    char *rad = nvram_nget("%s_radius_ipaddr", prefix);
+    char *rad = nvram_nget( "%s_radius_ipaddr", prefix );
+
     websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label3)</script></div>\n" );
-    websWrite( wp, "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n",prefix );
-    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 0 ) );
-    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 1 ) );
-    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 2 ) );
-    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label3)\" class=\"num\" value=\"%d\" />\n",prefix, get_single_ip( rad, 3 ) );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label3)</script></div>\n" );
+    websWrite( wp,
+	       "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n",
+	       prefix );
+    websWrite( wp,
+	       "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",
+	       prefix, get_single_ip( rad, 0 ) );
+    websWrite( wp,
+	       "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",
+	       prefix, get_single_ip( rad, 1 ) );
+    websWrite( wp,
+	       "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",
+	       prefix, get_single_ip( rad, 2 ) );
+    websWrite( wp,
+	       "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label3)\" class=\"num\" value=\"%d\" />\n",
+	       prefix, get_single_ip( rad, 3 ) );
     websWrite( wp, "</div>\n" );
-    
+
     websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label4)</script></div>\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label4)</script></div>\n" );
     sprintf( var, "%s_radius_port", prefix );
-    websWrite( wp,"<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label4)\" value=\"%s\" />\n",prefix, nvram_default_get( var, "1812" ) );
-    websWrite( wp,"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label4)\" value=\"%s\" />\n",
+	       prefix, nvram_default_get( var, "1812" ) );
+    websWrite( wp,
+	       "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n" );
     websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label7)</script></div>\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label7)</script></div>\n" );
     sprintf( var, "%s_radius_key", prefix );
-    websWrite( wp,"<input type=\"password\" id=\"%s_radius_key\" name=\"%s_radius_key\" maxlength=\"79\" size=\"32\" value=\"",prefix, prefix );
+    websWrite( wp,
+	       "<input type=\"password\" id=\"%s_radius_key\" name=\"%s_radius_key\" maxlength=\"79\" size=\"32\" value=\"",
+	       prefix, prefix );
     tf_webWriteESCNV( wp, var );
     websWrite( wp, "\" />&nbsp;&nbsp;&nbsp;\n" );
-    websWrite( wp, "<input type=\"checkbox\" name=\"%s_radius_unmask\" value=\"0\" onclick=\"setElementMask('%s_radius_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",prefix, prefix );
+    websWrite( wp,
+	       "<input type=\"checkbox\" name=\"%s_radius_unmask\" value=\"0\" onclick=\"setElementMask('%s_radius_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
+	       prefix, prefix );
     websWrite( wp, "</div>\n" );
 #ifdef HAVE_MADWIFI
-    if (!showmacformat)
+    if( !showmacformat )
     {
-    char acct[32];
-    char vvar[32];
-    strcpy( vvar, var );
-    rep( vvar, '.', 'X' );
-    sprintf(acct,"%s_acct",prefix);
-    websWrite( wp,"<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label18)</script></div>\n" );
-    websWrite( wp,"<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idacct', true);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",vvar, prefix, nvram_default_match( acct, "1","0" ) ? "checked=\"checked\"" :"" );
-    websWrite( wp,"<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idacct, false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",vvar, prefix, nvram_default_match( acct, "0","0" ) ? "checked=\"checked\"" : "" );
-    websWrite( wp, "</div>\n" );
-    char *rad = nvram_nget("%s_acct_ipaddr", prefix);
-    websWrite( wp, "<div id=\"%s_idacct\">\n", vvar );
-    websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label13)</script></div>\n" );
-    websWrite( wp, "<input type=\"hidden\" name=\"%s_acct_ipaddr\" value=\"4\" />\n",prefix );
-    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 0 ) );
-    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 1 ) );
-    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.",prefix, get_single_ip( rad, 2 ) );
-    websWrite( wp,"<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label13)\" class=\"num\" value=\"%d\" />\n",prefix, get_single_ip( rad, 3 ) );
-    websWrite( wp, "</div>\n" );
-    
-    websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label14)</script></div>\n" );
-    sprintf( var, "%s_acct_port", prefix );
-    websWrite( wp,"<input name=\"%s_acct_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label14)\" value=\"%s\" />\n",prefix, nvram_default_get( var, "1813" ) );
-    websWrite( wp,"<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n" );
-    websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label17)</script></div>\n" );
-    sprintf( var, "%s_acct_key", prefix );
-    websWrite( wp,"<input type=\"password\" id=\"%s_acct_key\" name=\"%s_acct_key\" maxlength=\"79\" size=\"32\" value=\"",prefix, prefix );
-    tf_webWriteESCNV( wp, var );
-    websWrite( wp, "\" />&nbsp;&nbsp;&nbsp;\n" );
-    websWrite( wp, "<input type=\"checkbox\" name=\"%s_acct_unmask\" value=\"0\" onclick=\"setElementMask('%s_acct_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",prefix, prefix );
-    websWrite( wp, "</div>\n" );    
-    websWrite( wp, "</div>\n" );    
-    websWrite( wp, "<script>\n//<![CDATA[\n " );
-    websWrite( wp,
-	       "show_layer_ext(document.getElementsByName(\"%s_acct\"), \"%s_idacct\", %s);\n",
-	       prefix, vvar, nvram_match( acct, "1" ) ? "true" : "false" );
-    websWrite( wp, "//]]>\n</script>\n" );
+	char acct[32];
+	char vvar[32];
+
+	strcpy( vvar, var );
+	rep( vvar, '.', 'X' );
+	sprintf( acct, "%s_acct", prefix );
+	websWrite( wp,
+		   "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label18)</script></div>\n" );
+	websWrite( wp,
+		   "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idacct', true);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",
+		   vvar, prefix, nvram_default_match( acct, "1",
+						      "0" ) ?
+		   "checked=\"checked\"" : "" );
+	websWrite( wp,
+		   "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idacct, false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+		   vvar, prefix, nvram_default_match( acct, "0",
+						      "0" ) ?
+		   "checked=\"checked\"" : "" );
+	websWrite( wp, "</div>\n" );
+	char *rad = nvram_nget( "%s_acct_ipaddr", prefix );
+
+	websWrite( wp, "<div id=\"%s_idacct\">\n", vvar );
+	websWrite( wp, "<div class=\"setting\">\n" );
+	websWrite( wp,
+		   "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label13)</script></div>\n" );
+	websWrite( wp,
+		   "<input type=\"hidden\" name=\"%s_acct_ipaddr\" value=\"4\" />\n",
+		   prefix );
+	websWrite( wp,
+		   "<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.",
+		   prefix, get_single_ip( rad, 0 ) );
+	websWrite( wp,
+		   "<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.",
+		   prefix, get_single_ip( rad, 1 ) );
+	websWrite( wp,
+		   "<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label13)\" class=\"num\" value=\"%d\" />.",
+		   prefix, get_single_ip( rad, 2 ) );
+	websWrite( wp,
+		   "<input size=\"3\" maxlength=\"3\" name=\"%s_acct_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label13)\" class=\"num\" value=\"%d\" />\n",
+		   prefix, get_single_ip( rad, 3 ) );
+	websWrite( wp, "</div>\n" );
+
+	websWrite( wp, "<div class=\"setting\">\n" );
+	websWrite( wp,
+		   "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label14)</script></div>\n" );
+	sprintf( var, "%s_acct_port", prefix );
+	websWrite( wp,
+		   "<input name=\"%s_acct_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label14)\" value=\"%s\" />\n",
+		   prefix, nvram_default_get( var, "1813" ) );
+	websWrite( wp,
+		   "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n" );
+	websWrite( wp, "<div class=\"setting\">\n" );
+	websWrite( wp,
+		   "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label17)</script></div>\n" );
+	sprintf( var, "%s_acct_key", prefix );
+	websWrite( wp,
+		   "<input type=\"password\" id=\"%s_acct_key\" name=\"%s_acct_key\" maxlength=\"79\" size=\"32\" value=\"",
+		   prefix, prefix );
+	tf_webWriteESCNV( wp, var );
+	websWrite( wp, "\" />&nbsp;&nbsp;&nbsp;\n" );
+	websWrite( wp,
+		   "<input type=\"checkbox\" name=\"%s_acct_unmask\" value=\"0\" onclick=\"setElementMask('%s_acct_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
+		   prefix, prefix );
+	websWrite( wp, "</div>\n" );
+	websWrite( wp, "</div>\n" );
+	websWrite( wp, "<script>\n//<![CDATA[\n " );
+	websWrite( wp,
+		   "show_layer_ext(document.getElementsByName(\"%s_acct\"), \"%s_idacct\", %s);\n",
+		   prefix, vvar, nvram_match( acct,
+					      "1" ) ? "true" : "false" );
+	websWrite( wp, "//]]>\n</script>\n" );
     }
 #endif
 }
@@ -4279,7 +4351,6 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp, "//]]>\n</script>\n" );
     websWrite( wp, "</div>\n" );
     websWrite( wp, "</div>\n" );
-    
 
     // peap authentication
     websWrite( wp, "<div id=\"idpeap%s\">\n", prefix );
@@ -5713,9 +5784,9 @@ void ej_get_clone_wmac( webs_t wp, int argc, char_t ** argv )
 	if( nvram_match( "port_swap", "1" ) )
 	{
 	    if( strlen( nvram_safe_get( "et1macaddr" ) ) != 0 )	// safe:
-								// maybe
-								// et1macaddr 
-								// not there?
+		// maybe
+		// et1macaddr 
+		// not there?
 	    {
 		c = strdup( nvram_safe_get( "et1macaddr" ) );
 	    }
@@ -6487,12 +6558,12 @@ void ej_show_wan_to_switch( webs_t wp, int argc, char_t ** argv )
 {
 
     if( nvram_match( "wan_proto", "disabled" ) || !nvram_match( "wl_mode", "ap" ) )	// WAN 
-											// disabled 
-											// OR 
-											// Wirelles 
-											// is 
-											// not 
-											// AP
+	// disabled 
+	// OR 
+	// Wirelles 
+	// is 
+	// not 
+	// AP
     {
 	websWrite( wp, "<fieldset>\n\
 							<legend><script type=\"text/javascript\">Capture(idx.legend2)</script></legend>\n\
