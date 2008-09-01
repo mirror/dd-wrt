@@ -736,17 +736,6 @@ int main( int argc, char **argv )
 #endif
 		start_service( "setup_vlans" );
 #ifndef HAVE_MADWIFI
-		if( nvram_match( "wl0_mode", "apstawet" ) )	// temporary
-		    // fix for
-		    // repeater-bridge 
-		    // mode init
-		    // problem
-		{
-		    nvram_set( "wl0_mode", "wet" );
-		    start_service( "wlconf" );
-		    eval( "wlconf", nvram_safe_get( "wl0_ifname" ), "down" );
-		    nvram_set( "wl0_mode", "apstawet" );
-		}
 		start_service( "wlconf" );
 #endif
 
@@ -776,16 +765,11 @@ int main( int argc, char **argv )
 		cprintf( "set led release wan control\n" );
 		SET_LED( RELEASE_WAN_CONTROL );
 
-		if( nvram_match( "wl0_mode", "sta" )
-		    || nvram_match( "wl0_mode", "wet" )
-		    || nvram_match( "wl0_mode", "apsta" )
-		    || nvram_match( "wl0_mode", "apstawet" ) )
-		{
-		    // fix for client mode
-		    cprintf( "ifconfig wl up\n" );
-		    eval( "ifconfig", get_wdev(  ), "up" );
-		}
-
+#ifdef HAVE_VLANTAGGING
+		start_service( "vlantagging" );
+		start_service( "bridgesif" );
+#endif
+		
 #ifndef HAVE_MADWIFI
 #ifdef HAVE_RADIOOFF
 		if( nvram_match( "radiooff_button", "1" )
@@ -803,10 +787,6 @@ int main( int argc, char **argv )
 #endif
 
 		start_service( "radio_timer" );
-#ifdef HAVE_VLANTAGGING
-		start_service( "vlantagging" );
-		start_service( "bridgesif" );
-#endif
 
 		cprintf( "create rc file\n" );
 #ifdef HAVE_REGISTER
