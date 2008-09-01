@@ -410,7 +410,7 @@ int stop_cron( void )
     return ret;
 }
 
-#ifndef HAVE_MICRO
+#ifdef HAVE_SYSLOG
 int start_syslog( void )
 {
     int ret1 = 0, ret2 = 0;
