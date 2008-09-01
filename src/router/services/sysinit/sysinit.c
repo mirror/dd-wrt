@@ -1524,8 +1524,41 @@ int start_nvram( void )
 #ifdef HAVE_MICRO
 	// if dist_type micro, check styles, and force to elegant if needed
 	char *style = nvram_safe_get( "router_style" );
+	int need_elegant = 1;
 
-	if( !strstr( "blue cyan elegant green orange red yellow", style ) )
+//	if( !strstr( "blue cyan elegant green orange red yellow", style ) )
+#ifdef HAVE_BLUE
+    if( !strcmp( style, "blue" ) )
+	need_elegant = 0;	
+    else
+#endif
+#ifdef HAVE_CYAN
+    if( !strcmp( style, "cyan" ) )
+	need_elegant = 0;
+    else
+#endif
+#ifdef HAVE_YELLOW
+    if( !strcmp( style, "yellow" ) )
+	need_elegant = 0;
+    else
+#endif
+#ifdef HAVE_GREEN
+    if( !strcmp( style, "green" ) )
+	need_elegant = 0;
+    else
+#endif
+#ifdef HAVE_ORANGE
+    if( !strcmp( style, "orange" ) )
+	need_elegant = 0;
+    else
+#endif
+#ifdef HAVE_RED
+    if( !strcmp( style, "red" ) )
+	need_elegant = 0;
+#endif
+
+	
+	if (need_elegant) 			// default to elegant
 	{
 	    nvram_set( "router_style", "elegant" );
 	}
