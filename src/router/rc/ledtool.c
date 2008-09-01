@@ -42,6 +42,9 @@ int main( int argc, char **argv )
 	    _exit( 0 );
     }
     int times = atoi( argv[1] );
+    int type=0;
+    if (argc > 2)
+	type = atoi( argv[2] );
 
     while( times > 0 )
     {
@@ -49,8 +52,15 @@ int main( int argc, char **argv )
 
 	while( count > 0 )
 	{
+	if (type==1)
+	    led_control( LED_CONNECTED, LED_ON );
+	else
 	    led_control( LED_DIAG, LED_ON );
+
 	    usleep( 500000 );
+	if (type==1)
+	    led_control( LED_CONNECTED, LED_OFF );
+	else
 	    led_control( LED_DIAG, LED_OFF );
 	    usleep( 500000 );
 	    count--;
