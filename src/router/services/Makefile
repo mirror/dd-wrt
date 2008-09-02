@@ -412,26 +412,8 @@ ifeq ($(CONFIG_IPROUTE2),y)
 CFLAGS += -DHAVE_IPROUTE2
 endif
 
-ifeq ($(CONFIG_BLUE),y)
-CFLAGS += -DHAVE_BLUE
-endif
-ifeq ($(CONFIG_CYAN),y)
-CFLAGS += -DHAVE_CYAN
-endif
-ifeq ($(CONFIG_ELEGANT),y)
-CFLAGS += -DHAVE_ELEGANT
-endif
-ifeq ($(CONFIG_RED),y)
-CFLAGS += -DHAVE_RED
-endif
-ifeq ($(CONFIG_YELLOW),y)
-CFLAGS += -DHAVE_YELLOW
-endif
-ifeq ($(CONFIG_GREEN),y)
-CFLAGS += -DHAVE_GREEN
-endif
-ifeq ($(CONFIG_ORANGE),y)
-CFLAGS += -DHAVE_ORANGE
+ifeq ($(CONFIG_ROUTERSTYLE),y)
+CFLAGS += -DHAVE_ROUTERSTYLE
 endif
 
 ifeq ($(CONFIG_TELCOM),y)
