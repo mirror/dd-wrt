@@ -16,29 +16,30 @@ ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/images/logo.png
 ifneq ($(CONFIG_COMPRESSEDJS),y)
 	cp common_micro.js $(INSTALLDIR)/www/common.js
-	rm -f $(INSTALLDIR)/www/common_micro.js
 else
 	cp common_micro.compressed.js $(INSTALLDIR)/www/common.js
-	rm -f $(INSTALLDIR)/www/common_micro.compressed.js
 endif
 	rm -f $(INSTALLDIR)/www/Log_incoming.asp
 	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
 endif
+
 ifeq ($(CONFIG_DIST),"micro-special")
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/logo.png
 ifneq ($(CONFIG_COMPRESSEDJS),y)
 	cp common_micro.js $(INSTALLDIR)/www/common.js
-	rm -f $(INSTALLDIR)/www/common_micro.js
 else
 	cp common_micro.compressed.js $(INSTALLDIR)/www/common.js
-	rm -f $(INSTALLDIR)/www/common_micro.compressed.js
 endif
 	rm -f $(INSTALLDIR)/www/Log_incoming.asp
 	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
 endif
+
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
+	
+	rm -f $(INSTALLDIR)/www/common_micro.js
+	rm -f $(INSTALLDIR)/www/common_micro.compressed.js
 
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
@@ -50,13 +51,12 @@ ifneq ($(CONFIG_EXTHELP),y)
 	cp -a help $(INSTALLDIR)/www
 endif
 endif
-	rm -f $(INSTALLDIR)/www/common_micro.js
 	mkdir -p $(INSTALLDIR)/www/js
 endif
 endif
+
 ifeq ($(CONFIG_TW6600),y)
 	cp -a help $(INSTALLDIR)/www
-	rm -f $(INSTALLDIR)/www/common_micro.js
 	mkdir -p $(INSTALLDIR)/www/js
 endif
 
