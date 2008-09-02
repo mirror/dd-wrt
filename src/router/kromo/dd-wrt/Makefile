@@ -135,9 +135,12 @@ endif
 
 ifeq ($(CONFIG_ELEGANT),y)
 	mkdir $(INSTALLDIR)/www/style/elegant
-#	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
-#	cp elegant/style_ie.css $(INSTALLDIR)/www/style/elegant
+ifneq ($(CONFIG_ROUTERSTYLE),y)	
+	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
+	cp elegant/style_ie.css $(INSTALLDIR)/www/style/elegant
+else
 	touch $(INSTALLDIR)/www/style/elegant/style.css
+endif
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp elegant/logo.png $(INSTALLDIR)/www/style
 endif
