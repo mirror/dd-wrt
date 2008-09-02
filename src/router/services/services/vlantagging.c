@@ -158,6 +158,12 @@ void start_bridgesif( void )
 	    break;
 	if( strncmp( tag, "EOP", 3 ) )
 	{
+	    char *mtu = nvram_nget("%s_mtu",tag);
+	    if (mtu && strlen(mtu))
+		{
+		eval( "ifconfig", tag, "mtu", mtu); 
+		eval( "ifconfig", port, "mtu", mtu); //sync mtu for interface
+		}
 	    br_add_interface( tag, port );
 	    if( prio )
 		br_set_port_prio( tag, port, prio );
@@ -177,8 +183,9 @@ void start_bridging( void )
 	char *port = word;
 	char *tag = strsep( &port, ">" );
 	char *prio = port;
+	char *mtu = strsep( &prio, ">" );
 
-	strsep( &prio, ">" );
+	strsep( &mtu, ">" );
 	if( !tag || !port )
 	    break;
 	char ipaddr[32];
@@ -195,6 +202,9 @@ void start_bridging( void )
 	    br_set_stp_state( tag, 0 );
 	if( prio )
 	    br_set_bridge_prio( tag, prio );
+	if (mtu && strlen(mtu)>0)
+	    nvram_nset(mtu,"%s_mtu",tag);
+	
 	if( !nvram_match( ipaddr, "0.0.0.0" )
 	    && !nvram_match( netmask, "0.0.0.0" ) )
 	{
@@ -203,6 +213,7 @@ void start_bridging( void )
 	}
 	else
 	    eval( "ifconfig", tag, "0.0.0.0", "up" );
+	eval( "ifconfig", tag, "mtu", mtu);
     }
     start_set_routes(  );
 }
