@@ -2036,7 +2036,7 @@ void save_networking( webs_t wp )
 
     for( i = 0; i < bridgescount; i++ )
     {
-	char *ifname, *tag, *prio;
+	char *ifname, *tag, *prio,*mtu;
 	char var[32];
 	char ipaddr[32];
 	char netmask[32];
@@ -2059,6 +2059,14 @@ void save_networking( webs_t wp )
 	if( strlen( prio ) == 0 )
 	    prio = "32768";
 
+	sprintf( var, "bridgemtu%d", i );
+	mtu = websGetVar( wp, var, NULL );
+	if( !mtu )
+	    mtu = "1500";
+	if( strlen( prio ) == 0 )
+	    mtu = "1500";
+
+
 	sprintf( n, "%s_ipaddr", ifname );
 	if( get_merge_ipaddr( wp, n, ipaddr ) )
 	    nvram_set( n, ipaddr );
@@ -2074,6 +2082,8 @@ void save_networking( webs_t wp )
 	    strcat( buffer, "Off" );
 	strcat( buffer, ">" );
 	strcat( buffer, prio );
+	strcat( buffer, ">" );
+	strcat( buffer, mtu );
 	if( i < bridgescount - 1 )
 	    strcat( buffer, " " );
     }
