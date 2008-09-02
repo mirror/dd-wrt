@@ -1657,13 +1657,16 @@ radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius";
 radius.label="MAC Radius odjemalec";
 radius.label2="MAC format";
-radius.label3="Radius stre¾nikov IP";
-radius.label4="Radius odjemalèeva vrata";
+radius.label3="Radius Auth stre¾nikov naslov";
+radius.label4="Radius Auth stre¾nikova vrata";
 radius.label5="Najveèje ¹t. neoverovljenih uporabnikov";
 radius.label6="Format gesla";
-radius.label7="RADIUS deljena skrivnost";
-radius.label8="razveljavi Radius, èe stre¾nik ni na voljo";
-
+radius.label7="Radius Auth deljena skrivnost";
+radius.label8="Razveljavi Radius, èe stre¾nik ni na voljo";
+radius.label13="Radius Acct stre¾nikov naslov";
+radius.label14="Radius Acct stre¾nikova vrata";
+radius.label17="Radius Acct deljena skrivnost";
+radius.label18="Radius Accounting";
 
 // ** Wireless_MAC.asp **//
 
