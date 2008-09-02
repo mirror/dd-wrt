@@ -1490,6 +1490,7 @@ static void do_cfebackup( char *url, webs_t stream, char *query )
 }
 #endif
 
+#ifdef HAVE_ROUTERSTYLE
 static void do_stylecss( char *url, webs_t stream, char *query )
 {
     char *style = nvram_get( "router_style" );
@@ -1498,7 +1499,7 @@ static void do_stylecss( char *url, webs_t stream, char *query )
 	style = query;
 
     long sdata[30];
-#ifdef HAVE_BLUE
+
     long blue[30] =
 	{ 0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f,
 0x35d,
@@ -1507,8 +1508,7 @@ static void do_stylecss( char *url, webs_t stream, char *query )
 	0xfff, 0xfff,
 	0x999, 0x69f, 0x69f, 0xccf, 0x78f, 0xfff
     };
-#endif
-#ifdef HAVE_CYAN
+
     long cyan[30] =
 	{ 0x099, 0xfff, 0x3bb, 0x066, 0x066, 0x3bb, 0x3bb, 0xcff, 0x4cc,
 0x1aa,
@@ -1517,8 +1517,7 @@ static void do_stylecss( char *url, webs_t stream, char *query )
 	0xfff, 0xfff,
 	0x999, 0x3bb, 0x3bb, 0xcff, 0x6cc, 0xfff
     };
-#endif
-//#ifdef HAVE_ELEGANT
+
     long elegant[30] =
 	{ 0x30519c, 0xfff, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7,
 	0xfff, 0x6384cf, 0x6384cf, 0x6384cf, 0x6384cf,
@@ -1527,8 +1526,7 @@ static void do_stylecss( char *url, webs_t stream, char *query )
 	0xfff, 0x496fc7, 0xfff, 0xfff,
 	0x999, 0x496fc7, 0x496fc7, 0xfff, 0x6384cf, 0xfff
     };
-//#endif
-#ifdef HAVE_GREEN
+
     long green[30] =
 	{ 0x090, 0xfff, 0x3b3, 0x060, 0x060, 0x3b3, 0x3b3, 0xcfc, 0x4c4,
 0x1a1,
@@ -1537,8 +1535,7 @@ static void do_stylecss( char *url, webs_t stream, char *query )
 	0xfff, 0xfff,
 	0x999, 0x3b3, 0x3b3, 0xcfc, 0x6c6, 0xfff
     };
-#endif
-#ifdef HAVE_ORANGE
+
     long orange[30] =
 	{ 0xf26522, 0xfff, 0xff8400, 0xff8400, 0xff8400, 0xff8400, 0xff8400,
 	0xfff, 0xfeb311, 0xfeb311, 0xfeb311, 0xfeb311,
@@ -1547,8 +1544,7 @@ static void do_stylecss( char *url, webs_t stream, char *query )
 	0xfff, 0xff8400, 0xfff, 0xfff,
 	0x999, 0xff8400, 0xff8400, 0xfff, 0xff9000, 0xfff
     };
-#endif
-#ifdef HAVE_RED
+
     long red[30] =
 	{ 0xc00, 0xfff, 0xe33, 0x800, 0x800, 0xe33, 0xd55, 0xfcc, 0xe77,
  0xc44,
@@ -1557,8 +1553,7 @@ static void do_stylecss( char *url, webs_t stream, char *query )
 	0xfff, 0xfff,
 	0x999, 0xd55, 0xd55, 0xfcc, 0xe77, 0xfff
     };
-#endif
-#ifdef HAVE_YELLOW
+
     long yellow[30] =
 	{ 0xcc0, 0x000, 0xee3, 0x880, 0x880, 0xee3, 0xdd5, 0x660, 0xee7,
 	0xbb4,
@@ -1567,38 +1562,27 @@ static void do_stylecss( char *url, webs_t stream, char *query )
 	0x000, 0xfff,
 	0x999, 0xdd5, 0xdd5, 0x660, 0xee7, 0x000
     };
-#endif
 
-#ifdef HAVE_BLUE
+
+
     if( !strcmp( style, "blue" ) )
 	memcpy( sdata, blue, 30 * sizeof( long ) );	
     else
-#endif
-#ifdef HAVE_CYAN
     if( !strcmp( style, "cyan" ) )
 	memcpy( sdata, cyan, 30 * sizeof( long ) );
     else
-#endif
-#ifdef HAVE_YELLOW
     if( !strcmp( style, "yellow" ) )
 	memcpy( sdata, yellow, 30 * sizeof( long ) );
     else
-#endif
-#ifdef HAVE_GREEN
     if( !strcmp( style, "green" ) )
 	memcpy( sdata, green, 30 * sizeof( long ) );
     else
-#endif
-#ifdef HAVE_ORANGE
     if( !strcmp( style, "orange" ) )
 	memcpy( sdata, orange, 30 * sizeof( long ) );
     else
-#endif
-#ifdef HAVE_RED
     if( !strcmp( style, "red" ) )
 	memcpy( sdata, red, 30 * sizeof( long ) );
     else			// default to elegant
-#endif
 	memcpy( sdata, elegant, 30 * sizeof( long ) );
 
     websWrite( stream, "@import url(../common.css);\n" );
@@ -1670,6 +1654,7 @@ static void do_stylecss_ie( char *url, webs_t stream, char *query )
 	       "margin-left:-9px;\n"
 	       "margin-bottom:8px;\n" "padding:0 .09em;\n" "}\n" );
 }
+#endif
 
 /*
  * static void do_style (char *url, webs_t stream, char *query) { char *style 
@@ -2073,8 +2058,7 @@ struct mime_handler mime_handlers[] = {
     // {"style.css", "text/css", NULL, NULL, do_style, NULL},
     {"common.js", "text/javascript", NULL, NULL, do_file, NULL},
 #ifdef HAVE_LANGUAGE
-    {"lang_pack/language.js", "text/javascript", NULL, NULL, do_language,
-     NULL},
+    {"lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL},
 #endif
     {"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth},
 #ifdef HAVE_SKYTRON
@@ -2089,6 +2073,7 @@ struct mime_handler mime_handlers[] = {
     {"**.html", "text/html", no_cache, NULL, do_ej, NULL},
 
 #endif
+#ifdef HAVE_ROUTERSTYLE
     {"style/blue/style.css", "text/css", NULL, NULL, do_stylecss, NULL},
     {"style/cyan/style.css", "text/css", NULL, NULL, do_stylecss, NULL},
     {"style/elegant/style.css", "text/css", NULL, NULL, do_stylecss, NULL},
@@ -2098,15 +2083,12 @@ struct mime_handler mime_handlers[] = {
     {"style/yellow/style.css", "text/css", NULL, NULL, do_stylecss, NULL},
     {"style/blue/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
     {"style/cyan/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
-    {"style/elegant/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
-     NULL},
-    {"style/green/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
-     NULL},
-    {"style/orange/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
-     NULL},
+    {"style/elegant/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
+    {"style/green/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
+    {"style/orange/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
     {"style/red/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
-    {"style/yellow/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
-     NULL},
+    {"style/yellow/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
+#endif
     {"**.css", "text/css", NULL, NULL, do_file, NULL},
     {"**.svg", "image/svg+xml", NULL, NULL, do_file, NULL},
     {"**.gif", "image/gif", NULL, NULL, do_file, NULL},
