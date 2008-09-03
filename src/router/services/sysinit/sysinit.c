@@ -1512,6 +1512,8 @@ int start_nvram( void )
     nvram_unset( "fromvdsl" );	// important (this value should never be
     // commited, but if this will fix the vlan7
     // issue)
+    
+    nvram_unset ("do_reboot");  //for GUI, see broadcom.c
 
 #ifdef DIST
     nvram_set( "dist_type", DIST );
