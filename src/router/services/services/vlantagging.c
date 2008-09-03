@@ -184,7 +184,7 @@ void start_bridging( void )
     char *bridge = strsep (&stp, ">");
     char *mtu = stp;
     char *prio = strsep (&mtu, ">");
-    
+    if (prio)
 	strsep( &mtu, ">" );
 	if( !bridge || !stp )
 	    break;
@@ -202,7 +202,7 @@ void start_bridging( void )
 	    br_set_stp_state( bridge, 0 );
 	if( prio )
 	    br_set_bridge_prio( bridge, prio );
-	if (mtu && strlen(mtu)>0)
+	if (prio && mtu && strlen(mtu)>0)
 	    nvram_nset(mtu,"%s_mtu",bridge);
 	
 	if( !nvram_match( ipaddr, "0.0.0.0" )
@@ -213,7 +213,6 @@ void start_bridging( void )
 	}
 	else
 	    eval( "ifconfig", bridge, "0.0.0.0", "up" );
-	eval( "ifconfig", bridge, "mtu", mtu);
     }
     start_set_routes(  );
 }
@@ -231,14 +230,14 @@ char *getBridgeMTU( char *ifname  )
     char *bridge = strsep (&stp, ">");
     char *mtu = stp;
     char *prio = strsep (&mtu, ">");
-    
+    if (prio)    
 	strsep( &mtu, ">" );
 
 	if( !bridge || !stp )
 	    break;
 	if( !strcmp( bridge, ifname ) )
 	    {
-	    if (!mtu)
+	    if (!prio || !mtu)
 		return "1500";
 	    else
 		return mtu;
