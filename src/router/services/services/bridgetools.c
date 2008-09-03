@@ -148,6 +148,7 @@ int br_set_bridge_prio( const char *br, char *prio )
 int br_add_bridge( const char *brname )
 {
     dd_syslog( LOG_INFO, "bridge added successfully\n" );
+    eval("ifconfig",brname,"mtu",getBridgeMTU(brname));
     return eval( "brctl", "addbr", brname );
 }
 
@@ -163,6 +164,7 @@ int br_add_interface( const char *br, const char *dev )
 {
     if( !ifexists( dev ) )
 	return -1;
+    eval("ifconfig",dev,"mtu",getBridgeMTU(br));
     dd_syslog( LOG_INFO, "interface added successfully\n" );
     return eval( "brctl", "addif", br, dev );
 }

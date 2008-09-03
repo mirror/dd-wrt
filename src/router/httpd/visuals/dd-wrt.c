@@ -2372,8 +2372,8 @@ void ej_show_bridgenames( webs_t wp, int argc, char_t ** argv )
     {
 	char *port = word;
 	char *tag = strsep( &port, ">" );
-	char *prio = port;
-	char *mtu = strsep( &prio, ">" );
+	char *mtu = port;
+	char *prio = strsep( &mtu, ">" );
 
 	strsep( &mtu, ">" );
 	if( !tag || !port )
