@@ -1332,7 +1332,6 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
     if( nvram_match( "do_reboot", "1" ) )
     {
-	nvram_set( "do_reboot", "0" );
 	action = REBOOT;
     }
     /*
