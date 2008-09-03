@@ -30,6 +30,7 @@
 int br_add_bridge( const char *brname )
 {
     int ret;
+    eval("ifconfig",brname,"mtu",getBridgeMTU(brname));
 
 #ifdef SIOCBRADDBR
     ret = ioctl( br_socket_fd, SIOCBRADDBR, brname );
@@ -66,6 +67,9 @@ int br_del_bridge( const char *brname )
 
 int br_add_interface( const char *bridge, const char *dev )
 {
+
+    eval("ifconfig",dev,"mtu",getBridgeMTU(bridge));
+
     struct ifreq ifr;
     int err;
     int ifindex = if_nametoindex( dev );
