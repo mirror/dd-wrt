@@ -984,10 +984,22 @@ int start_sysinit( void )
 	    break;
 
 	case ROUTER_ASUS_WL520GUGC:
-	case ROUTER_NETGEAR_WGR614L:
 	    if( nvram_match( "vlan1ports", "0 5u" ) )
 		nvram_set( "vlan1ports", "0 5" );
 	    break;
+	    
+	case ROUTER_NETGEAR_WGR614L:
+	    if( nvram_match( "vlan1ports", "0 5u" ) )
+		nvram_set( "vlan1ports", "0 5" );
+	    if( nvram_match( "sromrev", "2" )   
+	      && nvram_match ("boardrev", "0x10")
+	      && nvram_match ("boardtype", "0x48E") )
+	    {
+	    nvram_set ("sromrev", "3");    // This is a fix for WGR614L NA - which has a wrong sromrev
+	    need_reboot = 1;
+        }
+	    break;	    
+	 
 	case ROUTER_ALLNET01:
 	    nvram_set( "wl0_ifname", "eth1" );
 	    if( nvram_match( "vlan1ports", "5u" ) ) //correct bad parameters
@@ -1108,6 +1120,17 @@ int start_sysinit( void )
 #endif
 	    }
 	    break;
+	    
+	case ROUTER_NETGEAR_WGR614L:  // This is a fix for WGR614L NA - which has a wrong sromrev
+	    if( nvram_match( "sromrev", "2" ) 
+	      && nvram_match ("boardrev", "0x10")
+	      && nvram_match ("boardtype", "0x48E") )
+	    {
+	    nvram_set ("sromrev", "3");
+	    need_reboot = 1;
+        }
+	    break;
+	
     }
 
     if( need_reboot )
