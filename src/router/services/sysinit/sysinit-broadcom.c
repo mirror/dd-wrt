@@ -1120,16 +1120,6 @@ int start_sysinit( void )
 #endif
 	    }
 	    break;
-	    
-	case ROUTER_NETGEAR_WGR614L:  // This is a fix for WGR614L NA - which has a wrong sromrev
-	    if( nvram_match( "sromrev", "2" ) 
-	      && nvram_match ("boardrev", "0x10")
-	      && nvram_match ("boardtype", "0x48E") )
-	    {
-	    nvram_set ("sromrev", "3");
-	    need_reboot = 1;
-        }
-	    break;
 	
     }
 
