@@ -2426,6 +2426,11 @@ void ej_show_bridgenames( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp,
 		   "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
 		   vlan_name, "32768" );
+	websWrite( wp, "&nbsp;MTU&nbsp;" );
+	sprintf( vlan_name, "bridgemtu%d", count );
+	websWrite( wp,
+		   "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n",
+		   vlan_name, "1500" );
 	websWrite( wp,
 		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 		   i );
