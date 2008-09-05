@@ -1560,6 +1560,7 @@ int start_nvram( void )
 	nvram_set( "hopseq", channel );
     }
 #endif
+    nvram_unset("lasthour");
     //filter hostapd shaping rules
     char *qos_mac = nvram_safe_get( "svqos_macs" );
     if (strlen(qos_mac)>0)
