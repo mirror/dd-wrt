@@ -10,6 +10,7 @@
 static void watchdog( void )
 {
     int brand = getRouterBrand(  );
+    int registered = -1;
     int radiostate = -1;
     int oldstate = -1;
 
@@ -24,6 +25,10 @@ static void watchdog( void )
 	write( fd, "\0", 1 );
 	fsync( fd );
 
+	if (registered==-1)
+	    registered = isregistered_real();
+	if (!registered)
+	    registered = isregistered(); //to poll
 	/* 
 	 * software wlan led control 
 	 */
