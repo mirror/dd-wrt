@@ -329,6 +329,8 @@ getMaxPower (char *ifname)
 void
 setupSupplicant (char *prefix, char *ssidoverride)
 {
+if (!isregistered())
+    return;
   char akm[16];
   char bridged[32];
   char wmode[16];
@@ -540,6 +542,8 @@ supplicant_main (int argc, char *argv[])
 void
 setupHostAP (char *prefix, int iswan)
 {
+if (!isregistered())
+    return;
   char psk[32];
   char akm[16];
 
@@ -1513,6 +1517,8 @@ configure_single (int count)
 	}
 
       eval ("iwpriv", var, "bgscan", "0");
+if (!isregistered())
+    nvram_set(ssid,"need_activation");
 #ifdef HAVE_MAKSAT
       eval ("iwconfig", var, "essid", nvram_default_get (ssid, "maksat_vap"));
 #elif defined(HAVE_TRIMAX)
@@ -1566,6 +1572,8 @@ configure_single (int count)
   memset (var, 0, 80);
 
   cprintf ("set ssid\n");
+if (!isregistered())
+    nvram_set(ssid,"need_activation");
 #ifdef HAVE_MAKSAT
   eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "maksat"));
 #elif defined(HAVE_TRIMAX)
