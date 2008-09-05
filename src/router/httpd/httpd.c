@@ -765,7 +765,9 @@ handle_request (void)
   // seg change for status site
 #ifdef HAVE_REGISTER
   if (registered == -1)
-    registered = isregistered ();
+    registered = isregistered_real ();
+  if (!registered)
+    registered = isregistered();
 #endif
 
 
