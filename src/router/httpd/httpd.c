@@ -634,6 +634,7 @@ containsstring (char *source, char *cmp)
 
 static char *last_log_ip = NULL;
 static int registered = -1;
+static int registered_real = -1;
 #define LINE_LEN 10000
 static void
 handle_request (void)
@@ -764,10 +765,14 @@ handle_request (void)
     }
   // seg change for status site
 #ifdef HAVE_REGISTER
-  if (registered == -1)
-    registered = isregistered_real ();
-  if (!registered)
+  if (registered_real == -1)
+    {
+    registered_real = isregistered_real ();
+    }
+  if (!registered_real)
     registered = isregistered();
+  else
+    registered = registered_real;
 #endif
 
 
