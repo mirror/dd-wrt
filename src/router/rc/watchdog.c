@@ -28,7 +28,7 @@ static void watchdog( void )
 	if (registered==-1)
 	    registered = isregistered_real();
 	if (!registered)
-	    registered = isregistered(); //to poll
+	    isregistered(); //to poll
 	/* 
 	 * software wlan led control 
 	 */
