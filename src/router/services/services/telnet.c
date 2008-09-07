@@ -43,7 +43,7 @@ int start_telnetd( void )
 	return 0;
 
 #ifdef HAVE_REGISTER
-    if( isregistered(  ) )
+    if( isregistered_real(  ) )
 #endif
 	ret = _evalpid( telnetd_argv, NULL, 0, &pid );
 #ifdef HAVE_REGISTER
