@@ -38,7 +38,7 @@
 #define PASSWD_FILE	"/tmp/etc/passwd"
 #define GROUP_FILE	"/tmp/etc/group"
 
-int isregistered( void );
+int isregistered_real( void );
 
 void setPassword( char *passwd )
 {
@@ -109,7 +109,7 @@ int start_mkfiles( void )
     }
     cprintf( "%s:%d", __func__, __LINE__ );
 #ifdef HAVE_REGISTER
-    if( isregistered(  ) )
+    if( isregistered_real(  ) )
 #endif
     {
 	fprintf( fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
