@@ -122,7 +122,7 @@ int start_services_main( int argc, char **argv )
 
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
-    if( isregistered(  ) )
+    if( isregistered_real(  ) )
 #endif
 	handle = start_service_nofree( "sshd", handle );
 #endif
@@ -219,7 +219,7 @@ int stop_services_main( int argc, char **argv )
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
-    if( isregistered(  ) )
+    if( isregistered_real(  ) )
 #endif
 	handle = stop_service_nofree( "sshd", handle );
 #endif
@@ -447,7 +447,7 @@ static void handle_services( void )
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
-    if( isregistered(  ) )
+    if( isregistered_real(  ) )
 #endif
 	handle = startstop_nofree( "sshd", handle );
 #endif
