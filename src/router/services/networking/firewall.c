@@ -2769,7 +2769,7 @@ void app_udp_settable( void )
     }
 }
 
-int isregistered( void );
+int isregistered_real( void );
 
 int
 #ifdef DEVELOPE_ENV
@@ -2946,7 +2946,7 @@ start_firewall( void )
      */
     cprintf( "Exec RC Filewall\n" );
 #ifdef HAVE_REGISTER
-    if( isregistered(  ) )
+    if( isregistered_real(  ) )
 #endif
 	if( create_rc_file( RC_FIREWALL ) == 0 )
 	{
