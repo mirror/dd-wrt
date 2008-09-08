@@ -25,10 +25,12 @@ static void watchdog( void )
 	write( fd, "\0", 1 );
 	fsync( fd );
 
+#ifdef HAVE_REGISTER
 	if (registered==-1)
 	    registered = isregistered_real();
 	if (!registered)
 	    isregistered(); //to poll
+#endif
 	/* 
 	 * software wlan led control 
 	 */
