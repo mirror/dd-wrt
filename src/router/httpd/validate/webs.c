@@ -1052,6 +1052,10 @@ void ping_wol( webs_t wp )
     nvram_set( "wol_cmd", wol_cmd );
 
     // use Wol.asp as a debugging console
+#ifdef HAVE_REGISTER
+if (!isregistered_real())
+    return;
+#endif
     sysprintf( "%s > %s 2>&1 &", wol_cmd, PING_TMP );
 
 }
@@ -1067,7 +1071,10 @@ void diag_ping_start( webs_t wp )
     nvram_set( "ping_ip", ip );
 
     setenv( "PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1 );
-
+#ifdef HAVE_REGISTER
+if (!isregistered_real())
+    return;
+#endif
     sysprintf( "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,
 	       PING_TMP );
 
