@@ -388,19 +388,21 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 {
 	int cfe_size;
 
-	int board_data_size = 0; // Netgear 0x003e0000-0x003f0000 : "board_data", we exclude this part from our mapping
-	
+	int board_data_size = 0; // e.g Netgear 0x003e0000-0x003f0000 : "board_data", we exclude this part from our mapping
+
+    uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );	
+		
 	if (nvram_match ("boardtype", "0x0472") && nvram_match ("cardbus", "1")
-	  && (nvram_match ("boardnum", "8") || nvram_match ("boardnum", "01"))) {
+	  && (boardnum == 8 || boardnum == 01)) {
 		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WNR834B, Netgear WNR834Bv2
 	}
 
 	if (nvram_match ("boardtype", "0x0472") && nvram_match ("boardrev", "0x23")
-	  && nvram_match ("boardnum", "01")) {
+	  && boardnum == 01) {
 		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WNDR-3300
 	}	
 	
-	if ((nvram_match ("boardnum", "83258") || nvram_match ("boardnum", "0x01"))
+	if ((boardnum == 83258 || boardnum == 01)
     && (nvram_match( "boardtype", "0x48E" ) || nvram_match( "boardtype", "0x048e" ) )
 	&& (nvram_match( "boardrev", "0x10" ) || nvram_match( "boardrev", "0x11" ) )
 	&& nvram_match ( "boardflags", "0x750" )) {
