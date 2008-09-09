@@ -1655,6 +1655,19 @@ static void do_stylecss_ie( char *url, webs_t stream, char *query )
 }
 #endif
 
+#ifdef HAVE_REGISTER
+static void do_stylecss_ie( char *url, webs_t stream, char *query )
+{
+if (!isregistered_real())
+    {
+    do_file("/style/logo-trial.png",stream,query);
+    }else
+    {
+    do_file(url,stream,query);    
+    }
+}
+
+#endif
 /*
  * static void do_style (char *url, webs_t stream, char *query) { char *style 
  * = nvram_get ("router_style"); if (style == NULL || strlen (style) == 0)
@@ -2087,6 +2100,9 @@ struct mime_handler mime_handlers[] = {
     {"style/orange/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
     {"style/red/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
     {"style/yellow/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL},
+#endif
+#ifdef HAVE_REGISTER
+    {"style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL},
 #endif
     {"**.css", "text/css", NULL, NULL, do_file, NULL},
     {"**.svg", "image/svg+xml", NULL, NULL, do_file, NULL},
