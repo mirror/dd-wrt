@@ -1656,7 +1656,7 @@ static void do_stylecss_ie( char *url, webs_t stream, char *query )
 #endif
 
 #ifdef HAVE_REGISTER
-static void do_stylecss_ie( char *url, webs_t stream, char *query )
+static void do_trial_logo( char *url, webs_t stream, char *query )
 {
 if (!isregistered_real())
     {
