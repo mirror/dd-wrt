@@ -32,6 +32,95 @@
 #include <utils.h>
 #include <syslog.h>
 #include <wlutils.h>
+#include <bcmutils.h>
+
+
+int start_nas_notify (char *ifname)
+{
+    char *argv[] = { "nas4not", "lan", ifname, "up",
+	NULL,			/* role */
+	NULL,			/* crypto */
+	NULL,			/* auth */
+	NULL,			/* passphrase */
+	NULL,			/* ssid */
+	NULL
+    };
+    char *str = NULL;
+    int retries = 10;
+    char tmp[100], prefix[] = "wlXXXXXXXXXX_";
+    int unit;
+    char remote[ETHER_ADDR_LEN];
+    char ssid[48], pass[80], auth[16], crypto[16], role[8];
+    int i;
+
+    /*
+     * the wireless interface must be configured to run NAS 
+     */
+    wl_ioctl( ifname, WLC_GET_INSTANCE, &unit, sizeof( unit ) );
+    snprintf( prefix, sizeof( prefix ), "wl%d_", unit );
+    if( nvram_match( strcat_r( prefix, "akm", tmp ), "" ) &&
+	nvram_match( strcat_r( prefix, "auth_mode", tmp ), "none" ) )
+	return 0;
+
+    while( retries-- > 0 && !( str = file2str( "/tmp/nas.wl0lan.pid" ) ) )
+	sleep( 1 );
+    if( !str )
+    {
+	return -1;
+    }
+    free( str );
+    sleep( 3 );
+    /*
+     * find WDS link configuration 
+     */
+    wl_ioctl( ifname, WLC_WDS_GET_REMOTE_HWADDR, remote, ETHER_ADDR_LEN );
+    for( i = 0; i < MAX_NVPARSE; i++ )
+    {
+	char mac[ETHER_ADDR_STR_LEN];
+	uint8 ea[ETHER_ADDR_LEN];
+
+	if( get_wds_wsec( unit, i, mac, role, crypto, auth, ssid, pass ) &&
+	    ether_atoe( mac, ea ) && !bcmp( ea, remote, ETHER_ADDR_LEN ) )
+	{
+	    argv[4] = role;
+	    argv[5] = crypto;
+	    argv[6] = auth;
+	    argv[7] = pass;
+	    argv[8] = ssid;
+	    break;
+	}
+    }
+
+    /*
+     * did not find WDS link configuration, use wireless' 
+     */
+    if( i == MAX_NVPARSE )
+    {
+	/*
+	 * role 
+	 */
+	argv[4] = "auto";
+	/*
+	 * crypto 
+	 */
+	argv[5] = nvram_safe_get( strcat_r( prefix, "crypto", tmp ) );
+	/*
+	 * auth mode 
+	 */
+	argv[6] = nvram_safe_get( strcat_r( prefix, "akm", tmp ) );
+	/*
+	 * passphrase 
+	 */
+	argv[7] = nvram_safe_get( strcat_r( prefix, "wpa_psk", tmp ) );
+	/*
+	 * ssid 
+	 */
+	argv[8] = nvram_safe_get( strcat_r( prefix, "ssid", tmp ) );
+    }
+    int pid;
+
+    return _evalpid( argv, ">/dev/console", 0, &pid );
+}
 
 void start_radius( char *prefix )
 {
@@ -320,8 +409,24 @@ int start_nas( void )
 	{
 	    cprintf( "start nas lan\n" );
 	    start_nas_lan( c );
+	    
+	int s;
+	for( s = 1; s <= MAX_WDS_DEVS; s++ )
+	{
+	    char *dev;
+
+	    if( nvram_nmatch( "0", "wl%d_wds%d_enable", c, s ) )
+		continue;
+		
+	    dev = nvram_nget( "wl%d_wds%d_if", c, s );
+	    
+		sleep (1); 
+        start_nas_notify (dev);
+	}
+	   
 	}
     }
+
     return 1;
 }
 
