@@ -854,7 +854,7 @@ static int ad1889_ac97_init(ad1889_dev_t *dev, int id)
 	}
 
 	eid = ad1889_codec_read(ac97, AC97_EXTENDED_ID);
-	if (eid == 0xffffff) {
+	if (eid == 0xffff) {
 		printk(KERN_WARNING DEVNAME ": no codec attached?\n");
 		goto out_free;
 	}
