@@ -35,7 +35,7 @@
  *
  */
 
-#include "jffs2_bbc_framework.h" /**BBC**/
+//#include "jffs2_bbc_framework.h" /**BBC**/
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/jffs2.h>
@@ -141,7 +141,7 @@ int jffs2_read_dnode(struct jffs2_sb_info *c, struct jffs2_full_dnode *fd, unsig
 	D2(printk(KERN_DEBUG "Data CRC matches calculated CRC %08x\n", crc));
 	if (ri->compr != JFFS2_COMPR_NONE) {
 		D2(printk(KERN_DEBUG "Decompress %d bytes from %p to %d bytes at %p\n", ri->csize, readbuf, ri->dsize, decomprbuf)); 
-		jffs2_bbc_model_set_act_sb(c); /**BBC**/
+//		jffs2_bbc_model_set_act_sb(c); /**BBC**/
 		ret = jffs2_decompress(ri->compr, readbuf, decomprbuf, ri->csize, ri->dsize);
 		if (ret) {
 			printk(KERN_WARNING "Error: jffs2_decompress returned %d\n", ret);

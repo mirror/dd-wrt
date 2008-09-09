@@ -3,7 +3,7 @@
 #
 # 14 Sep 2000, Christoph Hellwig <hch@infradead.org>
 # Rewritten to use lists instead of if-statements.
-# 
+#EXTRA_CFLAGS := -DCONFIG_NOPRINTK
 
 O_TARGET := fs.o
 

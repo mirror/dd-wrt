@@ -35,7 +35,7 @@
  *
  */
 
-#include "jffs2_bbc_fs.h" /**BBC**/
+//#include "jffs2_bbc_fs.h" /**BBC**/
 #include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -273,7 +273,7 @@ static struct super_block *jffs2_read_super(struct super_block *sb, void *data, 
 	sb->s_magic = JFFS2_SUPER_MAGIC;
 	if (!(sb->s_flags & MS_RDONLY))
 		jffs2_start_garbage_collect_thread(c);
-	jffs2_bbc_load_model(sb);  /**BBC**/
+//	jffs2_bbc_load_model(sb);  /**BBC**/
 	return sb;
 
  out_root_i:
@@ -290,7 +290,7 @@ static struct super_block *jffs2_read_super(struct super_block *sb, void *data, 
 void jffs2_put_super (struct super_block *sb)
 {
 	struct jffs2_sb_info *c = JFFS2_SB_INFO(sb);
-	jffs2_bbc_unload_model(sb); /**BBC**/
+//	jffs2_bbc_unload_model(sb); /**BBC**/
 
 	D2(printk(KERN_DEBUG "jffs2: jffs2_put_super()\n"));
 
@@ -347,7 +347,7 @@ static int __init init_jffs2_fs(void)
 {
 	int ret;
 
-	jffs2_bbc_proc_init();   /**BBC**/
+//	jffs2_bbc_proc_init();   /**BBC**/
 
 
 	printk(KERN_NOTICE "JFFS2 version 2.1. (C) 2001 Red Hat, Inc., designed by Axis Communications AB.\n");
@@ -394,7 +394,7 @@ static int __init init_jffs2_fs(void)
 
 static void __exit exit_jffs2_fs(void)
 {
-	jffs2_bbc_proc_deinit(); /**BBC**/
+//	jffs2_bbc_proc_deinit(); /**BBC**/
 
 	jffs2_destroy_slab_caches();
 	jffs2_zlib_exit();

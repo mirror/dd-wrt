@@ -35,10 +35,13 @@
 #define TRACE(s, args...)	{}
 #endif
 
+//#define ERROR(s, args...)	{}
 #define ERROR(s, args...)	printk(KERN_EMERG "SQUASHFS error: "s, ## args)
 
+//#define SERROR(s, args...)	{}
 #define SERROR(s, args...)	printk(KERN_EMERG "SQUASHFS error: "s, ## args);
 
+//#define WARNING(s, args...)	{}
 #define WARNING(s, args...)	printk(KERN_EMERG "SQUASHFS: "s, ## args)
 
 #define SQUASHFS_I(INO)			(&INO->u.squashfs_i)
