@@ -78,9 +78,6 @@ ifeq ($(CONFIG_WIKAR),y)
 	cp -a wikar $(INSTALLDIR)/www/style
 endif
 
-ifneq ($(CONFIG_REGISTER),y)
-	rm -f $(INSTALLDIR)/www/style/logo-trial.png
-endif
 
 ifeq ($(CONFIG_SPUTNIK_APD),y)
 	cp sputnik/sputnik.png $(INSTALLDIR)/www/images
@@ -147,6 +144,7 @@ else
 endif
 	cp common_style/common.css $(INSTALLDIR)/www/style
 	cp elegant/logo.png $(INSTALLDIR)/www/style
+	cp elegant/logo-trial.png $(INSTALLDIR)/www/style
 endif
 
 ifeq ($(CONFIG_CYAN),y)
@@ -307,6 +305,9 @@ endif
 
 ifeq ($(CONFIG_THOM),y)
 	cp -f thom/logo.png $(INSTALLDIR)/www/style/logo.png
+endif
+ifneq ($(CONFIG_REGISTER),y)
+	rm -f $(INSTALLDIR)/www/style/logo-trial.png
 endif
 
 #ifneq ($(CONFIG_MADWIFI),y)
