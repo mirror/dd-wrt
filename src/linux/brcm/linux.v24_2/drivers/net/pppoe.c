@@ -350,7 +350,6 @@ int pppoe_rcv_core(struct sock *sk, struct sk_buff *skb)
 	struct pppox_opt *relay_po = NULL;
 
 	if (sk->state & PPPOX_BOUND) {
-		skb_pull(skb, sizeof(struct pppoe_hdr));
 		ppp_input(&po->chan, skb);
 	} else if (sk->state & PPPOX_RELAY) {
 		relay_po = get_item_by_addr(&po->pppoe_relay);
@@ -361,7 +360,6 @@ int pppoe_rcv_core(struct sock *sk, struct sk_buff *skb)
 		if ((relay_po->sk->state & PPPOX_CONNECTED) == 0)
 			goto abort_put;
 
-		skb_pull(skb, sizeof(struct pppoe_hdr));
 		if (!__pppoe_xmit( relay_po->sk , skb))
 			goto abort_put;
 	} else {
@@ -390,16 +388,21 @@ static int pppoe_rcv(struct sk_buff *skb,
 
 {
 	struct pppoe_hdr *ph = (struct pppoe_hdr *) skb->nh.raw;
+	int len = ntohs(ph->length);
 	struct pppox_opt *po;
 	struct sock *sk ;
 	int ret;
 
-	po = get_item((unsigned long) ph->sid, skb->mac.ethernet->h_source);
+	skb_pull(skb, sizeof(*ph));
+	if (skb->len < len)
+		goto drop;
 
-	if (!po) {
-		kfree_skb(skb);
-		return NET_RX_DROP;
-	}
+	po = get_item((unsigned long) ph->sid, skb->mac.ethernet->h_source);
+	if (!po)
+		goto drop;
+
+	if (pskb_trim(skb, len))
+		goto drop;
 
 	sk = po->sk;
         bh_lock_sock(sk);
@@ -416,6 +419,9 @@ static int pppoe_rcv(struct sk_buff *skb,
 	sock_put(sk);
 
 	return ret;
+ drop:
+	kfree_skb(skb);
+	return NET_RX_DROP;
 }
 
 /************************************************************************
@@ -901,6 +907,9 @@ int __pppoe_xmit(struct sock *sk, struct sk_buff *skb)
 		 * give dev_queue_xmit something it can free.
 		 */
 		skb2 = skb_clone(skb, GFP_ATOMIC);
+
+		if (skb2 == NULL)
+			goto abort;
 	}
 
 	ph = (struct pppoe_hdr *) skb_push(skb2, sizeof(struct pppoe_hdr));
@@ -952,8 +961,6 @@ int pppoe_rcvmsg(struct socket *sock, struct msghdr *m, int total_len, int flags
 	struct sock *sk = sock->sk;
 	struct sk_buff *skb = NULL;
 	int error = 0;
-	int len;
-	struct pppoe_hdr *ph = NULL;
 
 	if (sk->state & PPPOX_BOUND) {
 		error = -EIO;
@@ -970,17 +977,12 @@ int pppoe_rcvmsg(struct socket *sock, struct msghdr *m, int total_len, int flags
 	m->msg_namelen = 0;
 
 	if (skb) {
-		error = 0;
-		ph = (struct pppoe_hdr *) skb->nh.raw;
-		len = ntohs(ph->length);
-
-		error = memcpy_toiovec(m->msg_iov, (unsigned char *) &ph->tag[0], len);
-		if (error < 0)
-			goto do_skb_free;
-		error = len;
+		total_len = min_t(int, total_len, skb->len);
+		error = skb_copy_datagram_iovec(skb, 0, m->msg_iov, total_len);
+		if (error == 0)
+			error = total_len;
 	}
 
-do_skb_free:
 	if (skb)
 		kfree_skb(skb);
 end:
