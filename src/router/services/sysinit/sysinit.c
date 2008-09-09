@@ -115,6 +115,17 @@ void runStartup( char *folder, char *extension )
     {
 	if( endswith( entry->d_name, extension ) )
 	{
+#ifdef HAVE_REGISTER
+	if (!isregistered_real())
+	    {
+	if( endswith( entry->d_name, "wdswatchdog.startup") )
+	    continue;
+	if( endswith( entry->d_name, "schedulerb.startup") )
+	    continue;
+	if( endswith( entry->d_name, "proxywatchdog.startup") )
+	    continue;
+	    }
+#endif
 	    sysprintf( "%s/%s 2>&1 > /dev/null&\n", folder, entry->d_name );
 	    // execute script 
 	}
