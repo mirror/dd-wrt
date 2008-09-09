@@ -324,17 +324,18 @@ SCTP_STATIC int sctp_do_bind(struct sock *sk, union sctp_addr *addr, int len)
 	if (snum && snum < PROT_SOCK && !capable(CAP_NET_BIND_SERVICE))
 		return -EACCES;
 
+	/* See if the address matches any of the addresses we may have
+	 * already bound before checking against other endpoints.
+	 */
+	if (sctp_bind_addr_match(bp, addr, sp))
+		return -EINVAL;
+
 	/* Make sure we are allowed to bind here.
 	 * The function sctp_get_port_local() does duplicate address
 	 * detection.
 	 */
 	if ((ret = sctp_get_port_local(sk, addr))) {
-		if (ret == (long) sk) {
-			/* This endpoint has a conflicting address. */
-			return -EINVAL;
-		} else {
-			return -EADDRINUSE;
-		}
+		return -EADDRINUSE;
 	}
 
 	/* Refresh ephemeral port.  */
@@ -3174,7 +3175,9 @@ static int sctp_getsockopt_local_addrs(struct sock *sk, int len,
 	if (copy_from_user(&getaddrs, optval, sizeof(struct sctp_getaddrs)))
 		return -EFAULT;
 
-	if (getaddrs.addr_num <= 0) return -EINVAL;
+	if (getaddrs.addr_num <= 0 ||
+	    getaddrs.addr_num >= (INT_MAX / sizeof(union sctp_addr)))
+		return -EINVAL;
 	/*
 	 *  For UDP-style sockets, id specifies the association to query.
 	 *  If the id field is set to the value '0' then the locally bound
@@ -3797,7 +3800,9 @@ static long sctp_get_port_local(struct sock *sk, union sctp_addr *addr)
 			struct sctp_endpoint *ep2;
 			ep2 = sctp_sk(sk2)->ep;
 
-			if (reuse && sk2->reuse)
+			if (sk == sk2 ||
+			    (reuse && sk2->reuse &&
+			     sk2->state != SCTP_SS_LISTENING))
 				continue;
 
 			if (sctp_bind_addr_match(&ep2->base.bind_addr, addr,
@@ -3918,6 +3923,11 @@ SCTP_STATIC int sctp_seqpacket_listen(struct sock *sk, int backlog)
 	if (!ep->base.bind_addr.port) {
 		if (sctp_autobind(sk))
 			return -EAGAIN;
+	} else {
+		if (sctp_get_port(sk, sk->num)) {
+			sk->state = SCTP_SS_CLOSED;
+			return -EADDRINUSE;
+		}
 	}
 	sk->state = SCTP_SS_LISTENING;
 	sctp_hash_endpoint(ep);
@@ -3985,7 +3995,7 @@ int sctp_inet_listen(struct socket *sock, int backlog)
 		goto out;
 
 	/* Allocate HMAC for generating cookie. */
-	if (sctp_hmac_alg) {
+	if (!sctp_sk(sk)->hmac && sctp_hmac_alg) {
 		tfm = sctp_crypto_alloc_tfm(sctp_hmac_alg, 0);
 		if (!tfm) {
 			err = -ENOSYS;
@@ -4007,7 +4017,8 @@ int sctp_inet_listen(struct socket *sock, int backlog)
 		goto cleanup;
 
 	/* Store away the transform reference. */
-	sctp_sk(sk)->hmac = tfm;
+	if (!sctp_sk(sk)->hmac)
+		sctp_sk(sk)->hmac = tfm;
 out:
 	sctp_release_sock(sk);
 	return err;
