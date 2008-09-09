@@ -180,21 +180,18 @@ void start_bridging( void )
     wordlist = nvram_safe_get( "bridges" );
     foreach( word, wordlist, next )
     {
-    char *stp = word;
-    char *bridge = strsep (&stp, ">");
-    char *mtu = stp;
-    char *prio = strsep (&mtu, ">");
-    if (prio)
-	strsep( &mtu, ">" );
+	char *stp = word;
+	char *bridge = strsep( &stp, ">" );
+	char *mtu = stp;
+	char *prio = strsep( &mtu, ">" );
+
+	if( prio )
+	    strsep( &mtu, ">" );
 	if( !bridge || !stp )
 	    break;
-	char ipaddr[32];
 
-	sprintf( ipaddr, "%s_ipaddr", bridge );
-	char netmask[32];
-
-	sprintf( netmask, "%s_netmask", bridge );
-
+	if( prio && mtu && strlen( mtu ) > 0 )
+	    nvram_nset( mtu, "%s_mtu", bridge );
 	br_add_bridge( bridge );
 	if( !strcmp( stp, "On" ) )
 	    br_set_stp_state( bridge, 1 );
@@ -202,23 +199,13 @@ void start_bridging( void )
 	    br_set_stp_state( bridge, 0 );
 	if( prio )
 	    br_set_bridge_prio( bridge, prio );
-	if (prio && mtu && strlen(mtu)>0)
-	    nvram_nset(mtu,"%s_mtu",bridge);
-	
-	if( !nvram_match( ipaddr, "0.0.0.0" )
-	    && !nvram_match( netmask, "0.0.0.0" ) )
-	{
-	    eval( "ifconfig", bridge, nvram_safe_get( ipaddr ), "netmask",
-		  nvram_safe_get( netmask ), "up" );
-	}
-	else
-	    eval( "ifconfig", bridge, "0.0.0.0", "up" );
+
+	eval( "ifconfig", bridge, "up" );
     }
     start_set_routes(  );
 }
 
-
-char *getBridgeMTU( char *ifname  )
+char *getBridgeMTU( char *ifname )
 {
     static char word[256];
     char *next, *wordlist;
@@ -226,22 +213,23 @@ char *getBridgeMTU( char *ifname  )
     wordlist = nvram_safe_get( "bridges" );
     foreach( word, wordlist, next )
     {
-    char *stp = word;
-    char *bridge = strsep (&stp, ">");
-    char *mtu = stp;
-    char *prio = strsep (&mtu, ">");
-    if (prio)    
-	strsep( &mtu, ">" );
+	char *stp = word;
+	char *bridge = strsep( &stp, ">" );
+	char *mtu = stp;
+	char *prio = strsep( &mtu, ">" );
+
+	if( prio )
+	    strsep( &mtu, ">" );
 
 	if( !bridge || !stp )
 	    break;
 	if( !strcmp( bridge, ifname ) )
-	    {
-	    if (!prio || !mtu)
+	{
+	    if( !prio || !mtu )
 		return "1500";
 	    else
 		return mtu;
-	    }
+	}
     }
     return "1500";
 }
