@@ -145,8 +145,11 @@ conntrack_iterate(const struct ip_conntrack_tuple_hash *hash,
 		return 0;
 
 	newlen = print_conntrack(buffer + *len, hash->ctrack);
-	if (*len + newlen > maxlen)
+
+	if (*len + newlen > maxlen) {
+		(*upto)--;
 		return 1;
+	}
 	else *len += newlen;
 
 	return 0;
