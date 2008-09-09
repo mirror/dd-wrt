@@ -1660,7 +1660,7 @@ static void do_trial_logo( char *url, webs_t stream, char *query )
 {
 if (!isregistered_real())
     {
-    do_file("/style/logo-trial.png",stream,query);
+    do_file("style/logo-trial.png",stream,query);
     }else
     {
     do_file(url,stream,query);    
