@@ -78,6 +78,10 @@ ifeq ($(CONFIG_WIKAR),y)
 	cp -a wikar $(INSTALLDIR)/www/style
 endif
 
+ifneq ($(CONFIG_REGISTER),y)
+	rm -f $(INSTALLDIR)/www/style/logo-trial.png
+endif
+
 ifeq ($(CONFIG_SPUTNIK_APD),y)
 	cp sputnik/sputnik.png $(INSTALLDIR)/www/images
 endif
