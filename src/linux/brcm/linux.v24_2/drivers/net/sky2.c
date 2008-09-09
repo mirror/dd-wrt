@@ -1157,7 +1157,7 @@ static int sky2_xmit_frame(struct sk_buff *skb, struct net_device *dev)
 	int avail;
 	dma_addr_t mapping;
 	u32 addr64;
-	u16 mss;
+	u16 mss = 0;
 	u8 ctrl;
 
 	spin_lock_irqsave(&sky2->tx_lock, flags);
