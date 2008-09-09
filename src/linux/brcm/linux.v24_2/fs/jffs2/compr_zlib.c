@@ -56,23 +56,24 @@
 	*/
 #define STREAM_END_SPACE 12
 
-static DECLARE_MUTEX(deflate_sem);
+//static DECLARE_MUTEX(deflate_sem);
 static DECLARE_MUTEX(inflate_sem);
-static void *deflate_workspace;
+//static void *deflate_workspace;
 static void *inflate_workspace;
 
 int __init jffs2_zlib_init(void)
 {
-	deflate_workspace = vmalloc(zlib_deflate_workspacesize());
+/*	deflate_workspace = vmalloc(zlib_deflate_workspacesize());
 	if (!deflate_workspace) {
 		printk(KERN_WARNING "Failed to allocate %d bytes for deflate workspace\n", zlib_deflate_workspacesize());
 		return -ENOMEM;
 	}
 	D1(printk(KERN_DEBUG "Allocated %d bytes for deflate workspace\n", zlib_deflate_workspacesize()));
+	*/
 	inflate_workspace = vmalloc(zlib_inflate_workspacesize());
 	if (!inflate_workspace) {
 		printk(KERN_WARNING "Failed to allocate %d bytes for inflate workspace\n", zlib_inflate_workspacesize());
-		vfree(deflate_workspace);
+//		vfree(deflate_workspace);
 		return -ENOMEM;
 	}
 	D1(printk(KERN_DEBUG "Allocated %d bytes for inflate workspace\n", zlib_inflate_workspacesize()));
@@ -81,10 +82,10 @@ int __init jffs2_zlib_init(void)
 
 void jffs2_zlib_exit(void)
 {
-	vfree(deflate_workspace);
+//	vfree(deflate_workspace);
 	vfree(inflate_workspace);
 }
-
+/*
 int jffs2_zlib_compress2(unsigned char *data_in, unsigned char *cpage_out,
 		   __u32 *sourcelen, __u32 *dstlen)
 {
@@ -144,8 +145,8 @@ int jffs2_zlib_compress2(unsigned char *data_in, unsigned char *cpage_out,
 	*sourcelen = strm.total_in;
 	return 0;
 }
-
-void jffs2_zlib_decompress2(unsigned char *data_in, unsigned char *cpage_out,
+*/
+void jffs2_zlib_decompress(unsigned char *data_in, unsigned char *cpage_out,
 		      __u32 srclen, __u32 destlen)
 {
 	z_stream strm;
@@ -176,14 +177,15 @@ void jffs2_zlib_decompress2(unsigned char *data_in, unsigned char *cpage_out,
 	up(&inflate_sem);
 }
 
-extern int jffs2_zlib_compress(unsigned char *data_in, unsigned char *cpage_out, __u32 * sourcelen, __u32 * dstlen);
-extern void jffs2_zlib_decompress(unsigned char *data_in, unsigned char *cpage_out, __u32 srclen, __u32 destlen);
+//extern int jffs2_zlib_compress(unsigned char *data_in, unsigned char *cpage_out, __u32 * sourcelen, __u32 * dstlen);
+//extern void jffs2_zlib_decompress(unsigned char *data_in, unsigned char *cpage_out, __u32 srclen, __u32 destlen);
 
-int zlib_compress(unsigned char *data_in, unsigned char *cpage_out,
+/*int zlib_compress(unsigned char *data_in, unsigned char *cpage_out,
                    __u32 *sourcelen, __u32 *dstlen)
 {
 		return jffs2_zlib_compress(data_in,cpage_out,sourcelen,dstlen);
 }
+*/
 
 void zlib_decompress(unsigned char *data_in, unsigned char *cpage_out,
                       __u32 srclen, __u32 destlen)

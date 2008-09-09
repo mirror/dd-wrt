@@ -35,7 +35,7 @@
  *
  */
 
-#include "jffs2_bbc_framework.h" /**BBC**/
+//#include "jffs2_bbc_framework.h" /**BBC**/
 #include <linux/kernel.h>
 #include <linux/mtd/mtd.h>
 #include <linux/slab.h>
@@ -652,7 +652,7 @@ static int jffs2_garbage_collect_dnode(struct jffs2_sb_info *c, struct jffs2_era
 		writebuf = pg_ptr + (offset & (PAGE_CACHE_SIZE -1));
 
 		if (comprbuf) {
-			jffs2_bbc_model_set_act_sb(c); /**BBC**/
+//			jffs2_bbc_model_set_act_sb(c); /**BBC**/
 			comprtype = jffs2_compress(writebuf, comprbuf, &datalen, &cdatalen);
 		}
 		if (comprtype) {

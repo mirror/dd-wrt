@@ -35,7 +35,7 @@
  *
  */
 
-#include "jffs2_bbc_framework.h" /**BBC**/
+//#include "jffs2_bbc_framework.h" /**BBC**/
 #include <linux/kernel.h>
 #include <linux/mtd/compatmac.h> /* for min() */
 #include <linux/slab.h>
@@ -460,7 +460,7 @@ int jffs2_commit_write (struct file *filp, struct page *pg, unsigned start, unsi
 
 		comprbuf = kmalloc(cdatalen, GFP_KERNEL);
 		if (comprbuf) {
-			jffs2_bbc_model_set_act_sb(c); /**BBC**/
+//			jffs2_bbc_model_set_act_sb(c); /**BBC**/
 			comprtype = jffs2_compress(page_address(pg)+ (file_ofs & (PAGE_CACHE_SIZE-1)), comprbuf, &datalen, &cdatalen);
 		}
 		if (comprtype == JFFS2_COMPR_NONE) {
