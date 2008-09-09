@@ -1297,7 +1297,7 @@ sbni_ioctl( struct net_device  *dev,  struct ifreq  *ifr,  int  cmd )
 		break;
 
 	case  SIOCDEVRESINSTATS :
-		if( current->euid != 0 )	/* root only */
+		if (!capable(CAP_NET_ADMIN))	/* root only */
 			return  -EPERM;
 		memset( &nl->in_stats, 0, sizeof(struct sbni_in_stats) );
 		break;
@@ -1316,7 +1316,7 @@ sbni_ioctl( struct net_device  *dev,  struct ifreq  *ifr,  int  cmd )
 		break;
 
 	case  SIOCDEVSHWSTATE :
-		if( current->euid != 0 )	/* root only */
+		if (!capable(CAP_NET_ADMIN))	/* root only */
 			return  -EPERM;
 
 		spin_lock( &nl->lock );
@@ -1337,7 +1337,7 @@ sbni_ioctl( struct net_device  *dev,  struct ifreq  *ifr,  int  cmd )
 #ifdef CONFIG_SBNI_MULTILINE
 
 	case  SIOCDEVENSLAVE :
-		if( current->euid != 0 )	/* root only */
+		if (!capable(CAP_NET_ADMIN))	/* root only */
 			return  -EPERM;
 
 		if( (error = verify_area( VERIFY_READ, ifr->ifr_data,
@@ -1355,7 +1355,7 @@ sbni_ioctl( struct net_device  *dev,  struct ifreq  *ifr,  int  cmd )
 		return  enslave( dev, slave_dev );
 
 	case  SIOCDEVEMANSIPATE :
-		if( current->euid != 0 )	/* root only */
+		if (!capable(CAP_NET_ADMIN))	/* root only */
 			return  -EPERM;
 
 		return  emancipate( dev );
