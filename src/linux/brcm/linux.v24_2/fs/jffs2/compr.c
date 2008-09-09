@@ -50,6 +50,9 @@ void rubinmips_decompress(unsigned char *data_in, unsigned char *cpage_out, __u3
 int dynrubin_compress(unsigned char *data_in, unsigned char *cpage_out, __u32 *sourcelen, __u32 *dstlen);
 void dynrubin_decompress(unsigned char *data_in, unsigned char *cpage_out, __u32 srclen, __u32 destlen);
 
+int lzma_compress(unsigned char *data_in, unsigned char *cpage_out, __u32 *sourcelen, __u32 *dstlen);
+void lzma_decompress(unsigned char *data_in, unsigned char *cpage_out, __u32 srclen, __u32 destlen);
+
 
 /* jffs2_compress:
  * @data: Pointer to uncompressed data
@@ -73,10 +76,17 @@ unsigned char jffs2_compress(unsigned char *data_in, unsigned char *cpage_out,
 {
 	int ret;
 
+	ret = lzma_compress(data_in, cpage_out, datalen, cdatalen);
+	if (!ret) {
+		return JFFS2_COMPR_LZMA;
+	}
+
+#if 0
 	ret = zlib_compress(data_in, cpage_out, datalen, cdatalen);
 	if (!ret) {
 		return JFFS2_COMPR_ZLIB;
 	}
+#endif
 #if 0 /* Disabled 23/9/1. With zlib it hardly ever gets a look in */
 	ret = dynrubin_compress(data_in, cpage_out, datalen, cdatalen);
 	if (!ret) {
@@ -122,6 +132,10 @@ int jffs2_decompress(unsigned char comprtype, unsigned char *cdata_in,
 
 	case JFFS2_COMPR_ZLIB:
 		zlib_decompress(cdata_in, data_out, cdatalen, datalen);
+		break;
+
+	case JFFS2_COMPR_LZMA:
+		lzma_decompress(cdata_in, data_out, cdatalen, datalen);
 		break;
 
 	case JFFS2_COMPR_RTIME:

@@ -91,7 +91,12 @@ The Red Hat gcc 2.96 compiler subtree can also be used to build this tree.
 You should ensure you use gcc-2.96-74 or later. gcc-2.96-54 will not build
 the kernel correctly.
 
-gcc 4 is not supported.
+gcc 3.3 and 3.4 are both known to work well. gcc 4.0 and 4.1 also work on
+a several architectures (i386, x86_64, ppc, sparc, sparc64, alpha). Other
+archs will not work. Versions 4.2 and onwards are not supported anymore.
+Supporting them would require massive in-depth changes which will add a
+lot of bugs and might break older compilers. If you don't have any gcc
+below 4.2, check Documentation/using-newer-gcc.txt for instructions.
 
 In addition, please pay attention to compiler optimization.  Anything
 greater than -O2 may not be wise.  Similarly, if you choose to use gcc-2.95.x

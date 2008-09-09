@@ -1363,9 +1363,13 @@ udf_update_inode(struct inode *inode, int do_sync)
 
 	if (inode->i_uid != UDF_SB(inode->i_sb)->s_uid)
 		fe->uid = cpu_to_le32(inode->i_uid);
+	else
+		fe->uid = cpu_to_le32(-1);
 
 	if (inode->i_gid != UDF_SB(inode->i_sb)->s_gid)
 		fe->gid = cpu_to_le32(inode->i_gid);
+	else
+		fe->uid = cpu_to_le32(-1);
 
 	udfperms =	((inode->i_mode & S_IRWXO)     ) |
 			((inode->i_mode & S_IRWXG) << 2) |
