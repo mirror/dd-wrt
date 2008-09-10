@@ -120,6 +120,12 @@ void nv_file_in( char *url, webs_t wp, int len, char *boundary )
 
     sign[6] = 0;
     char *nvram_ver = NULL;
+#ifdef HAVE_REGISTER
+    if (!isregistered_real())
+	{
+	return;
+	}
+#endif
 
     /*
      * Look for our part 
@@ -269,6 +275,12 @@ void nv_file_out( char *path, webs_t wp, char *query )
     int backupcount = 0;
     char sign[7] = { "DD-WRT" };
 
+#ifdef HAVE_REGISTER
+    if (!isregistered_real())
+	{
+	return;
+	}
+#endif
     char *buf = ( char * )malloc( NVRAM_SPACE );
 
     nvram_getall( buf, NVRAM_SPACE );
