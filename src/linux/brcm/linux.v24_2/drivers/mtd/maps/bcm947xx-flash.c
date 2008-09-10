@@ -405,7 +405,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	if ((boardnum == 83258 || boardnum == 01)
     && (nvram_match( "boardtype", "0x48E" ) || nvram_match( "boardtype", "0x048e" ) )
 	&& (nvram_match( "boardrev", "0x10" ) || nvram_match( "boardrev", "0x11" ) )
-	&& nvram_match ( "boardflags", "0x750" )) {
+	&& (nvram_match ( "boardflags", "0x750" ) || nvram_match ( "boardflags", "0x0750" )) ) {
 		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WGR614L, WGR614v8, WGR614v9, WGR614v8WW
 	}
 
