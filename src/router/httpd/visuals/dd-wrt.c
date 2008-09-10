@@ -3766,7 +3766,9 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     char wl_noise_immunity[32];
     char wl_ofdm_weak_det[32];
     char wl_protmode[32];
+    char wl_doth[32];
 
+    sprintf( wl_doth, "%s_doth", prefix );
     sprintf( wl_protmode, "%s_protmode", prefix );
     sprintf( wl_turbo, "%s_turbo", prefix );
     sprintf( wl_outdoor, "%s_outdoor", prefix );
@@ -3967,6 +3969,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       wl_ssid, nvram_safe_get( wl_ssid ) );
 
 #ifdef HAVE_MADWIFI
+    showRadio( wp, "wl_basic.radar", wl_doth );    
     show_chanshift( wp, prefix );
 #endif
     if( nvram_match( wl_mode, "ap" ) || nvram_match( wl_mode, "wdsap" )
