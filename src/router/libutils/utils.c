@@ -1504,7 +1504,7 @@ int internal_getRouterBrand(  )
     if( ( boardnum == 83258 || boardnum == 01 ) 
     && (nvram_match( "boardtype", "0x48E" ) || nvram_match( "boardtype", "0x048e" ) )
 	&& (nvram_match( "boardrev", "0x10" ) || nvram_match( "boardrev", "0x11" ) )
-	&& nvram_match ( "boardflags", "0x750" ) )
+	&& (nvram_match ( "boardflags", "0x750" ) || nvram_match ( "boardflags", "0x0750" )) )
     {
 	cprintf( "router is Netgear WGR614v8/v9/L/WW\n" );
 	setRouter( "Netgear WGR614v8/v9/L/WW" );
