@@ -1517,14 +1517,15 @@ configure_single (int count)
 	}
 
       eval ("iwpriv", var, "bgscan", "0");
-if (!isregistered())
-    nvram_set(ssid,"need_activation");
 #ifdef HAVE_MAKSAT
       eval ("iwconfig", var, "essid", nvram_default_get (ssid, "maksat_vap"));
 #elif defined(HAVE_TRIMAX)
       eval ("iwconfig", var, "essid", nvram_default_get (ssid, "trimax_vap"));
 #else
-      eval ("iwconfig", var, "essid", nvram_default_get (ssid, "dd-wrt_vap"));
+if (!isregistered())
+  eval ("iwconfig", dev, "essid", "need_activation");
+else
+  eval ("iwconfig", var, "essid", nvram_default_get (ssid, "dd-wrt_vap"));
 #endif
       cprintf ("set broadcast flag vif %s\n", var);	// hide ssid
       sprintf (broadcast, "%s_closed", var);
@@ -1572,13 +1573,14 @@ if (!isregistered())
   memset (var, 0, 80);
 
   cprintf ("set ssid\n");
-if (!isregistered())
-    nvram_set(ssid,"need_activation");
 #ifdef HAVE_MAKSAT
   eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "maksat"));
 #elif defined(HAVE_TRIMAX)
   eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "trimax"));
 #else
+if (!isregistered())
+  eval ("iwconfig", dev, "essid", "need_activation");
+else
   eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "dd-wrt"));
 #endif
   cprintf ("set broadcast flag\n");	// hide ssid
