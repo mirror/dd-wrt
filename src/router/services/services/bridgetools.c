@@ -163,7 +163,7 @@ int br_add_bridge( const char *brname )
 	      "up" );
     }
     else
-	eval( "ifconfig", brname, "0.0.0.0", "mtu", getBridgeMTU( brname ),
+	eval( "ifconfig", brname, "mtu", getBridgeMTU( brname ),
 	      "up" );
     return eval( "brctl", "addbr", brname );
 }
@@ -195,7 +195,7 @@ int br_add_interface( const char *br, const char *dev )
 	      nvram_safe_get( netmask ), "mtu", getBridgeMTU( br ) );
     }
     else
-	eval( "ifconfig", br, "0.0.0.0", "mtu", getBridgeMTU( br ) );
+	eval( "ifconfig", br, "mtu", getBridgeMTU( br ) );
 
     dd_syslog( LOG_INFO, "interface added successfully\n" );
     return eval( "brctl", "addif", br, dev );
