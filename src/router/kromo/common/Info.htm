@@ -199,6 +199,7 @@ function refresh(F)
 				</div>
 				<div id="main">
 					<div id="contentsInfo">
+						<form name="Info" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="Info" />
 							<input type="hidden" name="next_page" value="Info.htm" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
@@ -498,9 +499,6 @@ function refresh(F)
 									</table>
 								</fieldset><br />
 							</div>
-							<div class="center">
-								<% show_paypal(); %>
-							</div><br />
 	
 							<div class="submitFooter">
 								<script type="text/javascript">
@@ -510,6 +508,10 @@ function refresh(F)
 								 //]]>
 								 </script>
 							</div>
+					    </form>
+							<div class="center">
+								<% show_paypal(); %>
+							</div><br />
 					</div>
 				</div>
 				<div id="floatKiller"></div>
