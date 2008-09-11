@@ -46,8 +46,7 @@ int start_nas_notify (char *ifname)
 	NULL
     };
     char *str = NULL;
-    int retries = 10;
-    char tmp[100], prefix[] = "wlXXXXXXXXXX_";
+    char tmp[100], prefix[] = "wlXXXXXXXXXX_", pidfile[] = "/tmp/nas.wlXXXXXXXlan.pid";
     int unit;
     char remote[ETHER_ADDR_LEN];
     char ssid[48], pass[80], auth[16], crypto[16], role[8];
@@ -58,13 +57,9 @@ int start_nas_notify (char *ifname)
      */
     wl_ioctl( ifname, WLC_GET_INSTANCE, &unit, sizeof( unit ) );
     snprintf( prefix, sizeof( prefix ), "wl%d_", unit );
-    if( nvram_match( strcat_r( prefix, "akm", tmp ), "" ) &&
-	nvram_match( strcat_r( prefix, "auth_mode", tmp ), "none" ) )
-	return 0;
+    snprintf( pidfile, sizeof( pidfile ), "/tmp/nas.wl%dlan.pid", unit );
 
-    while( retries-- > 0 && !( str = file2str( "/tmp/nas.wl0lan.pid" ) ) )
-	sleep( 1 );
-    if( !str )
+    if( !( str = file2str( pidfile)) ) // no pidfile means no nas was run (required)
     {
 	return -1;
     }
@@ -419,8 +414,7 @@ int start_nas( void )
 		continue;
 		
 	    dev = nvram_nget( "wl%d_wds%d_if", c, s );
-	    
-		sleep (1); 
+
         start_nas_notify (dev);
 	}
 	   
