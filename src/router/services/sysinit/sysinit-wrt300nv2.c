@@ -121,7 +121,6 @@ int start_sysinit( void )
     uname( &name );
     nvram_set( "intel_eth", "0" );
 
-    // system("/etc/kendin");
 
 #if 1
     insmod( "ixp400th" );
