@@ -156,7 +156,7 @@ int br_add_bridge( const char *brname )
     sprintf( netmask, "%s_netmask", brname );
     int ret = eval( "brctl", "addbr", brname );
 
-    if( !nvram_match( ipaddr, "0.0.0.0" )
+    if(nvram_get(ipaddr) && nvram_get(netmask) &&  !nvram_match( ipaddr, "0.0.0.0" )
 	&& !nvram_match( netmask, "0.0.0.0" ) )
     {
 	eval( "ifconfig", brname, nvram_safe_get( ipaddr ), "netmask",
