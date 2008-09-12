@@ -346,16 +346,6 @@ int start_setup_vlans( void )
     if( strstr( asttemp, "5*" ) || strstr( asttemp, "8*" ) )
 	ast = 1;
 
-    // if (nvram_match ("trunking", "1"))
-    // system ("echo 1 > /proc/sys/dev/adm6996/trunk");
-    // else
-    // system ("echo 0 > /proc/sys/dev/adm6996/trunk");
-
-    // if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("xover",
-    // "1"))
-    // workaround = 1;
-    // else
-    // workaround = 0;
 
     memset( &portsettings[0][0], 0, 16 * 64 );
     memset( &tagged[0], 0, 16 );

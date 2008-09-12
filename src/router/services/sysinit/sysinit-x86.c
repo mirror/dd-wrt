@@ -113,7 +113,6 @@ int start_sysinit( void )
      * /proc 
      */
     mount( "proc", "/proc", "proc", MS_MGC_VAL, NULL );
-    // system ("/etc/convert");
     mount( "sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL );
     mount( "debugfs", "/sys/kernel/debug", "debugfs", MS_MGC_VAL, NULL );
     cprintf( "sysinit() tmp\n" );
