@@ -57,7 +57,6 @@ static int detect( char *devicename )
     int res;
 
     sprintf( devcall, "/sbin/lspci|/bin/grep \"%s\"|/bin/wc -l", devicename );
-    // system(devcall);
     FILE *in = popen( devcall, "rb" );
 
     fscanf( in, "%d", &res );
@@ -223,7 +222,6 @@ int start_sysinit( void )
 	insmod( "e1000" );
     }
 
-    // system("/etc/kendin");
 
 #ifndef HAVE_NOWIFI
     insmod( "ath_hal" );
@@ -345,7 +343,7 @@ int start_sysinit( void )
 	insmod( "spi-ixp4xx" );
 	insmod( "ks8995m" );
 	sleep( 1 );
-	system( "echo R01=01 > /proc/driver/KS8995M" );	// enable switch 
+	system2( "echo R01=01 > /proc/driver/KS8995M" );	// enable switch 
     }
     char filename2[64];
 
