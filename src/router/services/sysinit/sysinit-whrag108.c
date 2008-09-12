@@ -217,10 +217,10 @@ int start_sysinit( void )
     insmod( "ath_hal" );
     insmod( "ath_ahb" );
 
-    system( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
-    system( "echo 1 >/proc/sys/dev/wifi0/softled" );
-    system( "echo 3 >/proc/sys/dev/wifi1/ledpin" );
-    system( "echo 1 >/proc/sys/dev/wifi1/softled" );
+    system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
+    system2( "echo 3 >/proc/sys/dev/wifi1/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi1/softled" );
 
     // eval ("ifconfig", "wifi0", "up");
     // eval ("ifconfig", "wifi1", "up");

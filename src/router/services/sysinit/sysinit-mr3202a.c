@@ -116,8 +116,8 @@ int start_sysinit( void )
     insmod( "ath_hal" );
     insmod( "ath_ahb" );
 #ifdef HAVE_WRK54G
-    system( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
-    system( "echo 1 >/proc/sys/dev/wifi0/softled" );
+    system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
 #endif
     // eval ("ifconfig", "wifi0", "up");
     eval( "ifconfig", "eth0", "up" );
