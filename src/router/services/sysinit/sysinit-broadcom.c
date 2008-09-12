@@ -183,6 +183,7 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	case ROUTER_WRT350N:
 	case ROUTER_WRT310N:
 	case ROUTER_NETGEAR_WG602_V4:
+	case ROUTER_USR_5461:
 	    nvram_set( "wl0gpio0", "8" );
 	    break;
 	case ROUTER_WRT300NV11:
@@ -486,11 +487,11 @@ int start_sysinit( void )
 	    break;
 
 	case ROUTER_RT480W:
-	case ROUTER_USR_5461:
 	    setup_4712(  );
 	    break;
 
 	case ROUTER_BELKIN_F5D7231:
+	case ROUTER_USR_5461:
 	    nvram_set( "lan_ifnames", "vlan0 eth1" );
 	    nvram_set( "wan_ifname", "vlan1" );
 	    nvram_set( "wl0_ifname", "eth1" );

@@ -301,6 +301,13 @@ int start_setup_vlans( void )
 	    vlanmap[3] = 2;
 	    vlanmap[4] = 1;
 	}
+	else if( nvram_match( "vlan0ports", "4 1 2 3 5*" ) )
+	{
+	    vlanmap[1] = 4;
+	    vlanmap[2] = 1;
+	    vlanmap[3] = 2;
+	    vlanmap[4] = 3;
+	}
 	else			// nvram_match ("vlan0ports", "1 2 3 4 5*")
 				// nothing to do
 	{
