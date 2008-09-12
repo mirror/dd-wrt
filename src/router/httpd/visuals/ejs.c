@@ -1484,7 +1484,11 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
 		     "1" ) | nvram_match( "openvpncl_enable",
 					  "1" );
     int auth = nvram_match( "status_auth", "1" );
-
+    int registered = 1;
+#ifdef HAVE_REGISTER
+    if (!isregistered_real())
+	registered = 0;
+#endif
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_NOWIFI
     int wifi = 0;
@@ -1512,7 +1516,7 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
     {"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp",
      "Status_Wireless.asp",
      "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp",
-     "Info.htm", "", "", ""}
+     "Info.htm", "register.asp", "", ""}
     };
 
     /*
@@ -1538,7 +1542,7 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
      "", "", "", ""},
     {"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN",
      "statuSputnik",
-     "statuVPN", "statuBand", "statuSysInfo", "", "", ""}
+     "statuVPN", "statuBand", "statuSysInfo", "statuActivate", "", ""}
     };
 
 #ifdef HAVE_MADWIFI
@@ -1709,6 +1713,11 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
 											// OpenVPN
 		    j++;
 		if( ( !auth ) && !strcmp( menu[i][j], "Info.htm" ) )	// jump 
+									// over 
+									// Sys-Info
+		    j++;
+
+		if( ( registered ) && !strcmp( menu[i][j], "register.asp" ) )	// jump 
 									// over 
 									// Sys-Info
 		    j++;
