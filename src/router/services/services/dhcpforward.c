@@ -37,13 +37,13 @@
 int start_dhcpfwd( void )
 {
     if( nvram_match( "wl0_mode", "wet" ) || nvram_match( "wl0_mode", "apstawet" ) )	// dont 
-											// start 
-											// any 
-											// dhcp 
-											// services 
-											// in 
-											// bridge 
-											// mode
+	// start 
+	// any 
+	// dhcp 
+	// services 
+	// in 
+	// bridge 
+	// mode
     {
 	nvram_set( "lan_proto", "static" );
 	return 0;
@@ -56,20 +56,20 @@ int start_dhcpfwd( void )
 	mkdir( "/tmp/dhcp-fwd", 0700 );
 	mkdir( "/var/run/dhcp-fwd", 0700 );
 	fp = fopen( "/tmp/dhcp-fwd/dhcp-fwd.conf", "wb" );
-	fprintf( fp, "user		root\n" );
-	fprintf( fp, "group		root\n" );
-	fprintf( fp, "chroot		/var/run/dhcp-fwd\n" );
-	fprintf( fp, "logfile		/tmp/dhcp-fwd.log\n" );
-	fprintf( fp, "loglevel	1\n" );
-	fprintf( fp, "pidfile		/var/run/dhcp-fwd.pid\n" );
-	fprintf( fp, "ulimit core	0\n" );
-	fprintf( fp, "ulimit stack	64K\n" );
-	fprintf( fp, "ulimit data	32K\n" );
-	fprintf( fp, "ulimit rss	200K\n" );
-	fprintf( fp, "ulimit nproc	0\n" );
-	fprintf( fp, "ulimit nofile	0\n" );
-	fprintf( fp, "ulimit as	0\n" );
-	fprintf( fp, "if	%s	true	false	true\n",
+	fprintf( fp, "user		root\n"
+		 "group		root\n"
+		 "chroot		/var/run/dhcp-fwd\n"
+		 "logfile		/tmp/dhcp-fwd.log\n"
+		 "loglevel	1\n"
+		 "pidfile		/var/run/dhcp-fwd.pid\n"
+		 "ulimit core	0\n"
+		 "ulimit stack	64K\n"
+		 "ulimit data	32K\n"
+		 "ulimit rss	200K\n"
+		 "ulimit nproc	0\n"
+		 "ulimit nofile	0\n"
+		 "ulimit as	0\n"
+		 "if	%s	true	false	true\n",
 		 nvram_safe_get( "lan_ifname" ) );
 
 	char *wan_proto = nvram_safe_get( "wan_proto" );
@@ -78,7 +78,7 @@ int start_dhcpfwd( void )
 	if( getSTA(  ) )
 	{
 	    wan_ifname = getSTA(  );	// returns eth1/eth2 for broadcom and 
-					// ath0 for atheros
+	    // ath0 for atheros
 	}
 #ifdef HAVE_PPPOE
 	if( strcmp( wan_proto, "pppoe" ) == 0 )
@@ -122,9 +122,9 @@ int start_dhcpfwd( void )
 	    fprintf( fp, "if	%s	false	true	true\n", wan_ifname );
 	}
 
-	fprintf( fp, "name	%s	ws-c\n",
-		 nvram_safe_get( "lan_ifname" ) );
-	fprintf( fp, "server	ip	%s\n",
+	fprintf( fp, "name	%s	ws-c\n"
+		 "server	ip	%s\n",
+		 nvram_safe_get( "lan_ifname" ),
 		 nvram_safe_get( "dhcpfwd_ip" ) );
 	fclose( fp );
 	eval( "dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf" );
@@ -152,7 +152,7 @@ void stop_dhcpfwd( void )
 	syslog( LOG_INFO,
 		"dhcpfwd : dhcp forwarder daemon successfully stopped\n" );
 	killall( "dhcpfwd", SIGTERM );	// kill also dhcp forwarder if
-					// available
+	// available
     }
 #endif
 #ifdef HAVE_DHCPRELAY
