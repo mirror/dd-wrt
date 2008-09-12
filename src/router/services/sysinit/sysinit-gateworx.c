@@ -250,12 +250,6 @@ int start_sysinit( void )
     insmod( "ixp400_eth" );
     eval( "ifconfig", "ixp0", "0.0.0.0", "up" );
     eval( "ifconfig", "ixp1", "0.0.0.0", "up" );
-    /*
-     * if (getRouterBrand () == ROUTER_BOARD_GATEWORX_GW2345) //lets load the 
-     * spi drivers for this switch { insmod("spi-algo-bit");
-     * insmod("spi-ixp4xx"); insmod("ks8995m"); sleep (1); system ("echo
-     * R01=01 > /proc/driver/KS8995M"); // enable switch } 
-     */
     insmod( "ocf" );
     insmod( "cryptodev" );
     // insmod("ixp4xx", "init_crypto=0");

@@ -128,14 +128,6 @@ int start_sysinit( void )
 	close( s );
     }
 
-    // insmod("ath_hal");
-    // insmod("ath_pci");
-    // insmod("ath_mimo_pci");
-
-    // eval ("ifconfig", "wifi0", "up");
-
-    // system ("echo 2 >/proc/sys/dev/wifi0/ledpin");
-    // system ("echo 1 >/proc/sys/dev/wifi0/softled");
 
     insmod( "ipv6" );
 
