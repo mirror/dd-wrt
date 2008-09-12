@@ -163,8 +163,7 @@ int br_add_bridge( const char *brname )
 	      "up" );
     }
     else
-	eval( "ifconfig", brname, "mtu", getBridgeMTU( brname ),
-	      "up" );
+	eval( "ifconfig", brname, "mtu", getBridgeMTU( brname ));
     return eval( "brctl", "addbr", brname );
 }
 
