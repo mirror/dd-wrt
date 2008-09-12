@@ -995,6 +995,10 @@ void start_restore_defaults( void )
 		nvram_set( "vlan0ports", "4 3 2 1 5*" );
 		nvram_set( "vlan1ports", "0 5" );
 		break;
+		case ROUTER_USR_5461:
+		nvram_set( "vlan0ports", "4 1 2 3 5*" );
+		nvram_set( "vlan1ports", "0 5" );
+		break;
 	    default:
 		if( nvram_match( "boardnum", "WAP54GV3_8M_0614" ) )
 		{
@@ -1178,6 +1182,9 @@ void start_restore_defaults( void )
 		case ROUTER_BUFFALO_WBR2G54S:
 		    nvram_set( "vlan0ports", "4 3 2 1 5*" );
 		    break;
+		case ROUTER_USR_5461:
+		nvram_set( "vlan0ports", "4 1 2 3 5*" );
+		break;
 		default:
 		    if( nvram_match( "bootnv_ver", "4" )
 			|| nvram_match( "boardnum", "WAP54GV3_8M_0614" ) )
@@ -1197,6 +1204,7 @@ void start_restore_defaults( void )
 		    break;
 		case ROUTER_ASUS_WL500G_PRE:
 		case ROUTER_LINKSYS_WRH54G:
+		case ROUTER_USR_5461:
 		    nvram_set( "vlan1ports", "0 5" );
 		    break;
 		case ROUTER_MOTOROLA:
