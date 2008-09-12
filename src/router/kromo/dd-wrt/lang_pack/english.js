@@ -421,6 +421,7 @@ bmenu.statuWLAN="Wireless";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Bandwidth";
 bmenu.statuSysInfo="Sys-Info";
+bmenu.statuActivate="Activate";
 
 // ** Alive.asp **//
 var alive = new Object();

@@ -1389,6 +1389,7 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
 }
 
+
 #ifdef HAVE_SKYTRON
 int do_auth( char *userid, char *passwd, char *realm )
 {
@@ -1425,6 +1426,17 @@ int do_cauth( char *userid, char *passwd, char *realm )
     return do_auth( userid, passwd, realm );
 }
 #endif
+
+#ifdef HAVE_REGISTER
+int do_auth_reg( char *userid, char *passwd, char *realm )
+{
+    if (!isregistered())
+	return -1;
+    return do_auth(userid,passwd,realm);
+}
+#endif
+
+
 #undef HAVE_DDLAN
 
 #ifdef HAVE_DDLAN
@@ -2059,7 +2071,9 @@ struct mime_handler mime_handlers[] = {
 #endif
 
     {"changepass.asp", "text/html", no_cache, NULL, do_ej, NULL},
-    {"register.asp", "text/html", no_cache, NULL, do_ej, NULL},
+#ifdef HAVE_REGISTER
+    {"register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg},
+#endif
     {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth},
     // #endif
     // #ifdef HAVE_MADWIFI
