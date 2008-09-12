@@ -39,8 +39,23 @@ void ej_get_firmware_version( webs_t wp, int argc, char_t ** argv )
     websWrite( wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION,
 	       nvram_safe_get( "dist_type" ) );
 #else
+
+#ifdef HAVE_REGISTER
+if (isregistered() && !isregistered_real())
+    {
+    websWrite( wp, "%s%s %s %d Hour Trial", CYBERTAN_VERSION, MINOR_VERSION,
+	       nvram_safe_get( "dist_type" ) , getTrialCount());        
+    }else
+    {
+    websWrite( wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION,
+	       nvram_safe_get( "dist_type" ) );    
+    }
+
+#else
+
     websWrite( wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION,
 	       nvram_safe_get( "dist_type" ) );
+#endif
 #endif
 }
 #endif

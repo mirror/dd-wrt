@@ -365,6 +365,7 @@ bmenu.statuSputnik="Sputnik-Agent";
 bmenu.statuWLAN="WLAN";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuSysInfo="Sys-Info";
+bmenu.statuActivate="Aktivieren";
 
 // **************************************************************** Alive.asp **********************************************************************//
 
