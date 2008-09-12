@@ -72,26 +72,24 @@ static void makeipup( void )
     FILE *fp = fopen( "/tmp/pppoeserver/ip-up", "w" );
 
     fprintf( fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
-									// routing, 
-									// just 
-									// in 
-									// case 
-									// that 
-									// a
-									// target 
-									// route 
-									// exists
+	     // routing, 
+	     // just 
+	     // in 
+	     // case 
+	     // that 
+	     // a
+	     // target 
+	     // route 
+	     // exists
 	     "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
 	     "iptables -I INPUT -i $1 -j ACCEPT\n"
-	     "iptables -I FORWARD -i $1 -j ACCEPT\n", mss + 1,
-	     mss );
+	     "iptables -I FORWARD -i $1 -j ACCEPT\n", mss + 1, mss );
     fclose( fp );
     fp = fopen( "/tmp/pppoeserver/ip-down", "w" );
     fprintf( fp, "#!/bin/sh\n"
 	     "iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
 	     "iptables -D INPUT -i $1 -j ACCEPT\n"
-	     "iptables -D FORWARD -i $1 -j ACCEPT\n", mss + 1,
-	     mss );
+	     "iptables -D FORWARD -i $1 -j ACCEPT\n", mss + 1, mss );
     fclose( fp );
     chmod( "/tmp/pppoeserver/ip-up", 0744 );
     chmod( "/tmp/pppoeserver/ip-down", 0744 );
@@ -128,26 +126,25 @@ void start_pppoeserver( void )
 		fprintf( fp, "mppc\n" );
 	    fprintf( fp, "nopcomp\n" );
 	    fprintf( fp, "idle %s\n", nvram_safe_get( "pppoeserver_idle" ) );	// todo 
-										// ...
+	    // ...
 	    if( nvram_default_match( "pppoeserver_encryption", "1", "0" ) )	// make 
-										// it 
-										// configureable
+		// it 
+		// configureable
 	    {
-		fprintf( fp, "mppe required,no56,no40,stateless\n" );
-		fprintf( fp, "refuse-eap\n" );
-		fprintf( fp, "refuse-pap\n" );
-		fprintf( fp, "refuse-chap\n" );
-		fprintf( fp, "refuse-mschap\n" );
-		fprintf( fp, "require-mschap-v2\n" );
+		fprintf( fp, "mppe required,no56,no40,stateless\n"
+			 "refuse-eap\n"
+			 "refuse-pap\n"
+			 "refuse-chap\n"
+			 "refuse-mschap\n" "require-mschap-v2\n" );
 	    }
 	    else
 		fprintf( fp, "nomppe\n" );
-	    fprintf( fp, "auth\n" );
-	    fprintf( fp, "default-mru\n" );
-	    fprintf( fp, "default-asyncmap\n" );
-	    fprintf( fp, "lcp-echo-interval %s\n",
-		     nvram_safe_get( "pppoeserver_lcpechoint" ) );
-	    fprintf( fp, "lcp-echo-failure %s\n",
+	    fprintf( fp, "auth\n"
+		     "default-mru\n"
+		     "default-asyncmap\n"
+		     "lcp-echo-interval %s\n"
+		     "lcp-echo-failure %s\n",
+		     nvram_safe_get( "pppoeserver_lcpechoint" ),
 		     nvram_safe_get( "pppoeserver_lcpechofail" ) );
 	    struct dns_lists *dns_list = get_dns_list(  );
 
@@ -199,14 +196,14 @@ void start_pppoeserver( void )
 
 	    if( dns_list )
 		free( dns_list );
-	    fprintf( fp, "noipdefault\n" );
-	    fprintf( fp, "nodefaultroute\n" );
-	    fprintf( fp, "noproxyarp\n" );
-	    fprintf( fp, "noktune\n" );
-	    fprintf( fp, "netmask 255.255.255.255\n" );
-	    fprintf( fp, "chap-secrets /tmp/pppoeserver/chap-secrets\n" );
-	    fprintf( fp, "ip-up-script /tmp/pppoeserver/ip-up\n" );
-	    fprintf( fp, "ip-down-script /tmp/pppoeserver/ip-down\n" );
+	    fprintf( fp, "noipdefault\n"
+		     "nodefaultroute\n"
+		     "noproxyarp\n"
+		     "noktune\n"
+		     "netmask 255.255.255.255\n"
+		     "chap-secrets /tmp/pppoeserver/chap-secrets\n"
+		     "ip-up-script /tmp/pppoeserver/ip-up\n"
+		     "ip-down-script /tmp/pppoeserver/ip-down\n" );
 	    fclose( fp );
 
 	    // parse chaps from nvram to file
@@ -243,16 +240,16 @@ void start_pppoeserver( void )
 	    makeipup(  );
 	    // end parsing
 	    eval( "pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get( "lan_ipaddr" ), "-R", nvram_safe_get( "pppoeserver_remoteaddr" ) );	// todo, 
-																		// make 
-																		// interface 
-																		// and 
-																		// base 
-																		// address 
-																		// configurable, 
-																		// see 
-																		// networking 
-																		// page 
-																		// options
+	    // make 
+	    // interface 
+	    // and 
+	    // base 
+	    // address 
+	    // configurable, 
+	    // see 
+	    // networking 
+	    // page 
+	    // options
 	}
 	else
 	{
@@ -279,17 +276,16 @@ void start_pppoeserver( void )
 		fprintf( fp, "mppc\n" );
 	    fprintf( fp, "nopcomp\n" );
 	    fprintf( fp, "idle %s\n", nvram_safe_get( "pppoeserver_idle" ) );	// todo 
-										// ...
+	    // ...
 	    if( nvram_default_match( "pppoeserver_encryption", "1", "0" ) )	// make 
-										// it 
-										// configureable
+		// it 
+		// configureable
 	    {
-		fprintf( fp, "mppe required,no56,no40,stateless\n" );
-		fprintf( fp, "refuse-eap\n" );
-		fprintf( fp, "refuse-pap\n" );
-		fprintf( fp, "refuse-chap\n" );
-		fprintf( fp, "refuse-mschap\n" );
-		fprintf( fp, "require-mschap-v2\n" );
+		fprintf( fp, "mppe required,no56,no40,stateless\n"
+			 "refuse-eap\n"
+			 "refuse-pap\n"
+			 "refuse-chap\n"
+			 "refuse-mschap\n" "require-mschap-v2\n" );
 	    }
 	    else
 		fprintf( fp, "nomppe\n" );
@@ -343,84 +339,83 @@ void start_pppoeserver( void )
 
 	    if( dns_list )
 		free( dns_list );
-	    fprintf( fp, "login\n" );
-	    fprintf( fp, "require-mschap-v2\n" );
-	    fprintf( fp, "default-mru\n" );
-	    fprintf( fp, "default-asyncmap\n" );
-	    fprintf( fp, "lcp-echo-interval %s\n", nvram_safe_get( "pppoeserver_lcpechoint" ) );	// todo 
-													// optionally 
-													// configurable
-	    fprintf( fp, "lcp-echo-failure %s\n", nvram_safe_get( "pppoeserver_lcpechofail" ) );	// todo 
-													// optionally 
-													// configureable
-	    fprintf( fp, "noipdefault\n" );
-	    fprintf( fp, "nodefaultroute\n" );
-	    fprintf( fp, "noproxyarp\n" );
-	    fprintf( fp, "noktune\n" );
-	    fprintf( fp, "netmask 255.255.255.255\n" );
-	    fprintf( fp, "plugin radius.so\n" );
-	    fprintf( fp, "plugin radattr.so\n" );
-	    fprintf( fp, "radius-config-file /tmp/pppoeserver/radius/radiusclient.conf\n" );
-	    fprintf( fp, "ip-up-script /tmp/pppoeserver/ip-up\n" );
-	    fprintf( fp, "ip-down-script /tmp/pppoeserver/ip-down\n" );
+	    fprintf( fp, "login\n" "require-mschap-v2\n" "default-mru\n" "default-asyncmap\n" "lcp-echo-interval %s\n"	// todo 
+		     // optionally 
+		     // configurable
+		     "lcp-echo-failure %s\n"	// todo 
+		     // optionally 
+		     // configureable
+		     "noipdefault\n"
+		     "nodefaultroute\n"
+		     "noproxyarp\n"
+		     "noktune\n"
+		     "netmask 255.255.255.255\n"
+		     "plugin radius.so\n"
+		     "plugin radattr.so\n"
+		     "radius-config-file /tmp/pppoeserver/radius/radiusclient.conf\n"
+		     "ip-up-script /tmp/pppoeserver/ip-up\n"
+		     "ip-down-script /tmp/pppoeserver/ip-down\n",
+		     nvram_safe_get( "pppoeserver_lcpechoint" ),
+		     nvram_safe_get( "pppoeserver_lcpechofail" ) );
 	    fclose( fp );
 	    mkdir( "/tmp/pppoeserver/radius", 0777 );
 	    fp = fopen( "/tmp/pppoeserver/radius/radiusclient.conf", "wb" );
-	    fprintf( fp, "auth_order\tradius\n" );
-	    fprintf( fp, "login_tries\t4\n" );
-	    fprintf( fp, "login_timeout\t60\n" );
-	    fprintf( fp, "nologin\t/etc/nologin\n" );
-	    fprintf( fp, "issue\t/etc/issue\n" );
-	    fprintf( fp, "servers\t/tmp/pppoeserver/radius/servers\n" );
-	    fprintf( fp, "dictionary\t/etc/dictionary\n" );
-	    fprintf( fp, "login_radius\t/usr/local/sbin/login.radius\n" );
-	    fprintf( fp, "seqfile\t/var/run/radius.seq\n" );
-	    fprintf( fp, "mapfile\t/etc/port-id-map\n" );
-	    fprintf( fp, "default_realm\n" );
-	    fprintf( fp, "radius_timeout\t10\n" );
-	    fprintf( fp, "radius_retries\t3\n" );
-	    fprintf( fp, "login_local\t/bin/login\n" );
-	    fprintf( fp, "authserver %s:%s\n",
+	    fprintf( fp, "auth_order\tradius\n"
+		     "login_tries\t4\n"
+		     "login_timeout\t60\n"
+		     "nologin\t/etc/nologin\n"
+		     "issue\t/etc/issue\n"
+		     "servers\t/tmp/pppoeserver/radius/servers\n"
+		     "dictionary\t/etc/dictionary\n"
+		     "login_radius\t/usr/local/sbin/login.radius\n"
+		     "seqfile\t/var/run/radius.seq\n"
+		     "mapfile\t/etc/port-id-map\n"
+		     "default_realm\n"
+		     "radius_timeout\t10\n"
+		     "radius_retries\t3\n"
+		     "login_local\t/bin/login\n"
+		     "authserver %s:%s\n"
+		     "acctserver %s:%s\n",
 		     nvram_safe_get( "pppoeserver_authserverip" ),
-		     nvram_safe_get( "pppoeserver_authserverport" ) );
-	    fprintf( fp, "acctserver %s:%s\n",
+		     nvram_safe_get( "pppoeserver_authserverport" ),
 		     nvram_safe_get( "pppoeserver_authserverip" ),
 		     nvram_safe_get( "pppoeserver_acctserverport" ) );
 	    fclose( fp );
 	    fp = fopen( "/tmp/pppoeserver/radius/servers", "wb" );
 	    fprintf( fp, "%s %s\n", nvram_safe_get( "pppoeserver_authserverip" ), nvram_safe_get( "pppoeserver_sharedkey" ) );	// todo, 
-																// shared 
-																// secret 
-																// for 
-																// radius 
-																// server, 
-																// see 
-																// above 
-																// for 
-																// server 
-																// name, 
-																// must 
-																// be 
-																// identical
+	    // shared 
+	    // secret 
+	    // for 
+	    // radius 
+	    // server, 
+	    // see 
+	    // above 
+	    // for 
+	    // server 
+	    // name, 
+	    // must 
+	    // be 
+	    // identical
 	    fclose( fp );
 	    makeipup(  );
 	    eval( "pppoe-server", "-k", "-I", "br0", "-L", nvram_safe_get( "lan_ipaddr" ), "-R", nvram_safe_get( "pppoeserver_remoteaddr" ) );	// todo, 
-																		// make 
-																		// interface 
-																		// and 
-																		// base 
-																		// address 
-																		// configurable, 
-																		// remote 
-																		// addr 
-																		// as 
-																		// well, 
-																		// see 
-																		// networking 
-																		// page 
-																		// options
+	    // make 
+	    // interface 
+	    // and 
+	    // base 
+	    // address 
+	    // configurable, 
+	    // remote 
+	    // addr 
+	    // as 
+	    // well, 
+	    // see 
+	    // networking 
+	    // page 
+	    // options
 	}
-	dd_syslog( LOG_INFO, "rp-pppoe : pppoe server successfully started\n" );
+	dd_syslog( LOG_INFO,
+		   "rp-pppoe : pppoe server successfully started\n" );
     }
 }
 
@@ -428,7 +423,8 @@ void stop_pppoeserver( void )
 {
     if( pidof( "pppoe-server" ) > 0 )
     {
-	dd_syslog( LOG_INFO, "rp-pppoe : pppoe server successfully stopped\n" );
+	dd_syslog( LOG_INFO,
+		   "rp-pppoe : pppoe server successfully stopped\n" );
 	killall( "pppoe-server", SIGTERM );
 	del_pppoe_natrule(  );
     }
