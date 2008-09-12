@@ -2605,6 +2605,9 @@ int led_control( int type, int act )
 	    ses_gpio = 0x19;	// ses blue
 	    usb_gpio = 0x10;
 	    break;
+	case ROUTER_USR_5461:
+	    usb_gpio = 0x01;
+	    break;
 #endif
     }
     if( type == LED_DIAG && v1func == 1 )
