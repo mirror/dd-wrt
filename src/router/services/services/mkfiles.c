@@ -112,10 +112,9 @@ int start_mkfiles( void )
     if( isregistered_real(  ) )
 #endif
     {
-	fprintf( fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
-		 http_passwd );
-	fprintf( fp, "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",
-		 http_passwd );
+	fprintf( fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n"
+		 "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",
+		 http_passwd, http_passwd );
 	fclose( fp );
     }
     cprintf( "%s:%d", __func__, __LINE__ );
