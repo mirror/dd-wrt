@@ -208,8 +208,8 @@
 
 // U.S.Robotics USR5430 bridge (BCM4712 cpu, no switch, fccid: Gemtek
 // MXF-EB921201G)
-
 #define ROUTER_USR_5430 0x3310
+
 // U.S.Robotics USR5432 bridge (BCM5350 cpu, 1 port, fccid: Universal
 // Scientific Industrial Co. IXM-APGBR02)
 // U.S.Robotics USR5451 AP (BCM5350 cpu, 1 port, fccid: Universal Scientific
@@ -269,7 +269,7 @@
 // Q87-WAP54GV31)
 #define ROUTER_WAP54G_V3 0x4210
 
-// Asus WL-520G (BCM5350 cpu, fccid: Asus MSQWL520G)
+// Asus WL-520G (WL-500G-C in China) (BCM5350 cpu, fccid: Asus MSQWL520G)
 #define ROUTER_ASUS_WL520G 0x430f
 
 // Asus WL-520GU / WL-520GC (BCM5354 cpu, fccid: Asus MSQWL520GUGC)
