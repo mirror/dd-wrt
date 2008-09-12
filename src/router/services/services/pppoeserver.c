@@ -204,6 +204,7 @@ void start_pppoeserver( void )
 	    fprintf( fp, "noproxyarp\n" );
 	    fprintf( fp, "noktune\n" );
 	    fprintf( fp, "netmask 255.255.255.255\n" );
+	    fprintf( fp, "chap-secrets /tmp/pppoeserver/chap-secrets\n" );
 	    fprintf( fp, "ip-up-script /tmp/pppoeserver/ip-up\n" );
 	    fprintf( fp, "ip-down-script /tmp/pppoeserver/ip-down\n" );
 	    fclose( fp );
@@ -359,6 +360,7 @@ void start_pppoeserver( void )
 	    fprintf( fp, "netmask 255.255.255.255\n" );
 	    fprintf( fp, "plugin radius.so\n" );
 	    fprintf( fp, "plugin radattr.so\n" );
+	    fprintf( fp, "radius-config-file /tmp/pppoeserver/radius/radiusclient.conf\n" );
 	    fprintf( fp, "ip-up-script /tmp/pppoeserver/ip-up\n" );
 	    fprintf( fp, "ip-down-script /tmp/pppoeserver/ip-down\n" );
 	    fclose( fp );
