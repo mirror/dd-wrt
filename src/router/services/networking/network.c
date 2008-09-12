@@ -3105,8 +3105,8 @@ void start_wan( int status )
 	br_init(  );
 #endif
 
-	br_set_stp_state( "br0", 0 );	// system ("/usr/sbin/brctl stp br0
-					// off");
+	br_set_stp_state( "br0", 0 );	
+					
 #ifdef HAVE_MICRO
 	br_shutdown(  );
 #endif
@@ -3118,8 +3118,7 @@ void start_wan( int status )
 	br_init(  );
 #endif
 
-	br_set_stp_state( "br0", 1 );	// system ("/usr/sbin/brctl stp br0
-					// off");
+	br_set_stp_state( "br0", 1 );	
 #ifdef HAVE_MICRO
 	br_shutdown(  );
 #endif
@@ -3913,11 +3912,10 @@ int start_hotplug_net( void )
 	notify_nas( "lan", interface, "up" );
 #endif
 	if( nvram_match( "lan_stp", "0" ) )
-	    br_set_stp_state( "br0", 0 );	// system ("/usr/sbin/brctl
-						// stp br0 off");
+	    br_set_stp_state( "br0", 0 );	
+						
 	else
-	    br_set_stp_state( "br0", 1 );	// system ("/usr/sbin/brctl
-						// stp br0 off");
+	    br_set_stp_state( "br0", 1 );	
 #ifdef HAVE_MICRO
 	br_shutdown(  );
 #endif
