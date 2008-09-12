@@ -241,8 +241,8 @@ int start_sysinit( void )
     insmod( "ath_ahb" );
     // eval ("ifconfig", "wifi0", "up");
     eval( "ifconfig", "eth0", "up" );	// wan
-    system( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
-    system( "echo 1 >/proc/sys/dev/wifi0/softled" );
+    system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
     if( getRouterBrand(  ) == ROUTER_BOARD_FONERA2200 )
     {
 	eval( "ifconfig", "eth0", "up" );	// required for vlan config

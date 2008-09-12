@@ -2925,7 +2925,6 @@ void start_wan( int status )
 #ifdef HAVE_PPTP
 	stop_pptp(  );
 #endif
-	// system("export LINUX_PLUGIN=/usr/lib/rp-pppoe.so"); 
 	eval( "pppd", "file", "/tmp/ppp/options.pppoe" );
 
 	// This is horrible.

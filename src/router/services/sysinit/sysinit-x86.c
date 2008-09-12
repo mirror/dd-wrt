@@ -58,7 +58,7 @@ static int detect( char *devicename )
 
     if( tmp == NULL )
     {
-	system( "/sbin/lspci>/tmp/devices" );
+	system2( "/sbin/lspci>/tmp/devices" );
     }
     else
 	fclose( tmp );
@@ -67,7 +67,6 @@ static int detect( char *devicename )
 
     sprintf( devcall, "cat /tmp/devices|/bin/grep \"%s\"|/bin/wc -l",
 	     devicename );
-    // system(devcall);
     FILE *in = popen( devcall, "rb" );
 
     fscanf( in, "%d", &res );
@@ -196,7 +195,6 @@ int start_sysinit( void )
      * eval("insmod","crypto_null"); 
      */
 
-    // system("/etc/kendin");
     if( detect( "Rhine-" ) )	// VIA Rhine-I, Rhine-II, Rhine-III
 	insmod( "via-rhine" );
     if( detect( "DP8381" ) )
