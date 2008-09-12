@@ -56,37 +56,6 @@ static char *get_mtu_val( void )
 #ifdef HAVE_SVQOS
 void svqos_reset_ports( void )
 {
-    /*
-     * system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 >
-     * /dev/null"); system ("echo 1 > /proc/sys/dev/adm6996/port2/enable 2>&1 
-     * > /dev/null"); system ("echo 1 > /proc/sys/dev/adm6996/port3/enable
-     * 2>&1 > /dev/null"); system ("echo 1 >
-     * /proc/sys/dev/adm6996/port4/enable 2>&1 > /dev/null"); system ("echo 1 
-     * > /proc/switch/eth0/port/1/enable 2>&1 > /dev/null"); system ("echo 1
-     * > /proc/switch/eth0/port/2/enable 2>&1 > /dev/null"); system ("echo 1
-     * > /proc/switch/eth0/port/3/enable 2>&1 > /dev/null"); system ("echo 1
-     * > /proc/switch/eth0/port/4/enable 2>&1 > /dev/null");
-     * 
-     * system ("echo 0 > /proc/sys/dev/adm6996/port1/port-prio-enable 2>&1 >
-     * /dev/null"); system ("echo 0 >
-     * /proc/sys/dev/adm6996/port2/port-prio-enable 2>&1 > /dev/null");
-     * system ("echo 0 > /proc/sys/dev/adm6996/port3/port-prio-enable 2>&1 >
-     * /dev/null"); system ("echo 0 >
-     * /proc/sys/dev/adm6996/port4/port-prio-enable 2>&1 > /dev/null");
-     * 
-     * system ("echo 100 > /proc/sys/dev/adm6996/port1/speed 2>&1 >
-     * /dev/null"); system ("echo 100 > /proc/sys/dev/adm6996/port2/speed
-     * 2>&1 > /dev/null"); system ("echo 100 >
-     * /proc/sys/dev/adm6996/port3/speed 2>&1 > /dev/null"); system ("echo
-     * 100 > /proc/sys/dev/adm6996/port4/speed 2>&1 > /dev/null");
-     * 
-     * system ("echo full > /proc/sys/dev/adm6996/port1/bandwidth 2>&1 >
-     * /dev/null"); system ("echo full >
-     * /proc/sys/dev/adm6996/port2/bandwidth 2>&1 > /dev/null"); system
-     * ("echo full > /proc/sys/dev/adm6996/port3/bandwidth 2>&1 >
-     * /dev/null"); system ("echo full >
-     * /proc/sys/dev/adm6996/port4/bandwidth 2>&1 > /dev/null"); 
-     */
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
