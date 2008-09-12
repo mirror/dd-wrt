@@ -337,6 +337,11 @@ ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 #OBJS += crc.o register.c
 REGOBJS = register.c crc.o
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
+REGOBJS2 = ../shared/register.c
+endif
+endif
 endif
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
@@ -583,7 +588,7 @@ endif
 cert:
 	./gencert.sh
 	
-httpd: cgi.o ej.o httpd.o broadcom.o \
+httpd: $(REGOBJS2) cgi.o ej.o httpd.o broadcom.o \
        $(ADDOBJ) nvramsr.o callvalidate.o $(OBJS)
 	gcc -o write_web write_web.c
 ifeq ($(CONFIG_XYSSL),y)
