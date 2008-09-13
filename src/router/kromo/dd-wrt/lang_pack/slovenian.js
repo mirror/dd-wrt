@@ -421,6 +421,7 @@ bmenu.statuWLAN="Brez¾ièno";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="Pasovna ¹irina";
 bmenu.statuSysInfo="Info stran";
+bmenu.statuActivate="Aktiviraj";
 
 // ** Alive.asp **//
 
@@ -1802,6 +1803,7 @@ wl_basic.multicast="Posredovanje multicast paketov";
 wl_basic.intmit="Odpornost na ¹um";
 wl_basic.noise_immunity="Nivo odpornosti na ¹um";
 wl_basic.ofdm_weak_det="©ibko zaznavanje OFDM";
+wl_basic.radar="Zaznavanje radarja";
 //help container
 
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
