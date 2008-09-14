@@ -31,6 +31,9 @@
 
 #ifdef HAVE_QUAGGA
 
+
+void fwritenvram(char *key,FILE *fp);
+
 int zebra_ospf_init( void );
 int zebra_bgp_init( void );
 int zebra_ripd_init( void );
@@ -183,8 +186,7 @@ int zebra_ospf_init( void )
 	return errno;
     }
 
-    if( strlen( nvram_safe_get( "zebra_conf" ) ) < 1
-	|| nvram_match( "zebra_copt", "1" ) )
+    if( nvram_match( "zebra_copt", "1" ) )
     {
 	if( nvram_match( "zebra_log", "1" ) )
 	{
@@ -205,8 +207,7 @@ int zebra_ospf_init( void )
 	return errno;
     }
 
-    if( strlen( nvram_safe_get( "ospfd_conf" ) ) < 1
-	|| nvram_match( "ospfd_copt", "1" ) )
+    if( nvram_match( "ospfd_copt", "1" ) )
     {
 	fprintf( fp, "!\n" );
 	// fprintf (fp, "password %s\n", nvram_safe_get ("http_passwd"));
@@ -326,8 +327,7 @@ int zebra_ripd_init( void )
 	return errno;
     }
 
-    if( strlen( nvram_safe_get( "zebra_conf" ) ) < 1
-	|| nvram_match( "zebra_copt", "1" ) )
+    if( nvram_match( "zebra_copt", "1" ) )
     {
 	if( nvram_match( "zebra_log", "1" ) )
 	{
@@ -348,8 +348,7 @@ int zebra_ripd_init( void )
 	return errno;
     }
 
-    if( strlen( nvram_safe_get( "ripd_conf" ) ) > 0
-	&& nvram_match( "ripd_copt", "1" ) )
+    if( nvram_match( "ripd_copt", "1" ) )
     {
 	fwritenvram( "ripd_conf", fp );
     }
@@ -416,11 +415,12 @@ int zebra_bgp_init( void )
     FILE *fp;
     int ret1, ret2;
 
-    // printf("Start zebra\n");
+     fprintf(stderr,"Start zebra\n");
+    
     if( !strcmp( lt, "0" ) && !strcmp( lr, "0" ) &&
 	!strcmp( wt, "0" ) && !strcmp( wr, "0" ) && !nvram_match("zebra_copt","1"))
     {
-	printf( "zebra disabled.\n" );
+	fprintf(stderr, "zebra disabled.\n" );
 	return 0;
     }
 
@@ -433,8 +433,7 @@ int zebra_bgp_init( void )
 	return errno;
     }
 
-    if( strlen( nvram_safe_get( "zebra_conf" ) ) < 1
-	|| nvram_match( "zebra_copt", "1" ) )
+    if( nvram_match( "zebra_copt", "1" ) )
     {
 	if( nvram_match( "zebra_log", "1" ) )
 	{
@@ -454,15 +453,15 @@ int zebra_bgp_init( void )
 	perror( "/tmp/bgpd.conf" );
 	return errno;
     }
-    if( strlen( nvram_safe_get( "bgpd_conf" ) ) > 0
-	&& nvram_match( "bgpd_copt", "1" ) )
+    if( nvram_match( "bgpd_copt", "1" ) )
     {
+        fprintf(stderr,"write conf\n");
 	fwritenvram( "bgpd_conf", fp );
     }
     else
     {
 	fprintf( fp, "router bgp %s\n" ,nvram_safe_get( "routing_bgp_as" ));
-	fprintf( fp, "  network %s/%s\n", nvram_safe_get("lan_ipaddr"),get_net(nvram_safe_get("lan_netmask")));
+	fprintf( fp, "  network %s/%d\n", nvram_safe_get("lan_ipaddr"),get_net(nvram_safe_get("lan_netmask")));
 	if( wf && strlen( wf ) > 0 && !nvram_match("wan_ipaddr","0.0.0.0") )
 	    fprintf( fp, "  network %s/%s\n", nvram_safe_get("wan_ipaddr"),nvram_safe_get("wan_netmask"));
 	fprintf( fp, "neighbor %s local-as %s\n", lf,
@@ -477,6 +476,7 @@ int zebra_bgp_init( void )
 
 	fflush( fp );
     }
+    fprintf(stderr,"close\n");
     fclose( fp );
 
     ret1 = eval( "zebra", "-d", "-f", "/tmp/zebra.conf" );
