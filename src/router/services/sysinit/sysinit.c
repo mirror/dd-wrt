@@ -1580,6 +1580,7 @@ int start_nvram( void )
     }
 #endif
     nvram_unset("lasthour");
+#ifdef HAVE_AQOS 
     //filter hostapd shaping rules
     char *qos_mac = nvram_safe_get( "svqos_macs" );
     if (strlen(qos_mac)>0)
@@ -1600,6 +1601,7 @@ int start_nvram( void )
     nvram_set("svqos_macs",newqos);
     free(newqos);
     }
+#endif
     return 0;
 }
 
