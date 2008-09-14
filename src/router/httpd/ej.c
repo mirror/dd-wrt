@@ -114,7 +114,7 @@ do_ej_file (FILE *fp,int filelen, webs_t stream)	// jimmy, https, 8/4/2003
   char *pattern, *asp = NULL, *func = NULL, *end = NULL;
   int len = 0;
   int filecount = 0;
-
+ 
   pattern = (char *) malloc (PATTERN_BUFFER + 1);
   while (((c = getc(fp)) != EOF) && filecount<filelen)
     {
@@ -571,7 +571,7 @@ if (web!=NULL)
 
 
 void
-do_ej (char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
+do_ej (struct mime_handler *handler,char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
 {
 //fprintf(stderr,"load page %s\n",path);
 //open file and read into memory

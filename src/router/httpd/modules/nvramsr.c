@@ -249,12 +249,12 @@ void nv_file_in( char *url, webs_t wp, int len, char *boundary )
     chdir( "/www" );
 }
 
-void sr_config_cgi( char *path, webs_t wp, char *query )
+void sr_config_cgi(struct mime_handler *handler, char *path, webs_t wp, char *query )
 {
     if( restore_ret != 0 )
-	do_ej( "Fail.asp", wp, NULL );
+	do_ej(handler, "Fail.asp", wp, NULL );
     else
-	do_ej( "Success_rest.asp", wp, NULL );
+	do_ej(handler, "Success_rest.asp", wp, NULL );
 
     websDone( wp, 200 );
 
@@ -269,12 +269,11 @@ void sr_config_cgi( char *path, webs_t wp, char *query )
     }
 }
 
-void nv_file_out( char *path, webs_t wp, char *query )
+void nv_file_out(struct mime_handler *handler, char *path, webs_t wp, char *query )
 {
 
     int backupcount = 0;
     char sign[7] = { "DD-WRT" };
-
 #ifdef HAVE_REGISTER
     if (!isregistered_real())
 	{

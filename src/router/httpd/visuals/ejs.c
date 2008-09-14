@@ -30,7 +30,7 @@ int ( *httpd_filter_name ) ( char *old_name, char *new_name, size_t size,
 char *( *websGetVar ) ( webs_t wp, char *var, char *d ) = NULL;
 int ( *websWrite ) ( webs_t wp, char *fmt, ... ) = NULL;
 struct wl_client_mac *wl_client_macs = NULL;
-void ( *do_ej ) ( char *path, webs_t stream, char *query ) = NULL;	// jimmy, 
+void ( *do_ej ) (struct mime_handler *handler, char *path, webs_t stream, char *query ) = NULL;	// jimmy, 
 									// https, 
 									// 8/4/2003
 int ( *ejArgs ) ( int argc, char_t ** argv, char_t * fmt, ... ) = NULL;
@@ -1280,7 +1280,7 @@ void ej_show_modules( webs_t wp, int argc, char_t ** argv )
 		if( endswith( entry->d_name, argv[0] ) )
 		{
 		    sprintf( buf, "%s/%s", directories[idx], entry->d_name );
-		    do_ej( buf, wp, NULL );
+		    do_ej(NULL, buf, wp, NULL );
 		}
 	    }
 	    else
@@ -1288,7 +1288,7 @@ void ej_show_modules( webs_t wp, int argc, char_t ** argv )
 		if( endswith( entry->d_name, ".webconfig" ) )
 		{
 		    sprintf( buf, "%s/%s", directories[idx], entry->d_name );
-		    do_ej( buf, wp, NULL );
+		    do_ej(NULL, buf, wp, NULL );
 		}
 	    }
 	}

@@ -27,7 +27,7 @@ int refresh_time = STATUS_REFRESH_TIME2;
 void ej_show_status_setting( webs_t wp, int argc, char_t ** argv )
 {
 
-    do_ej( "Status_Router1.asp", wp, NULL );
+    do_ej(NULL, "Status_Router1.asp", wp, NULL );
 
     return;
 }
