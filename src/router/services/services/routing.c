@@ -71,24 +71,40 @@ void start_quagga_writememory( void )
 
     if( in != NULL )
     {
-	fclose( in );
+	fseek(in,0,SEEK_END);
+	int len = ftell(in);
+	rewind(in);
+	char *buf = malloc(len);
+	fread(buf,len,1,in);
+	fclose(in);
 	nvram_set( "zebra_copt", "1" );
-	writenvram( "zebra_conf", "/tmp/zebra.conf" );
+	nvram_set( "zebra_conf", buf);
+	free(buf);
     }
-    else
+    else{
 	nvram_set( "zebra_copt", "0" );
-
+	nvram_unset("zebra_conf");
+	}
     in = fopen( "/tmp/ospfd.conf", "rb" );
 
     if( in != NULL )
     {
-	fclose( in );
+	fseek(in,0,SEEK_END);
+	int len = ftell(in);
+	rewind(in);
+	char *buf = malloc(len);
+	fread(buf,len,1,in);
+	fclose(in);
 	nvram_set( "ospfd_copt", "1" );
-	writenvram( "ospfd_conf", "/tmp/ospfd.conf" );
+	nvram_set( "ospfd_conf", buf);
+	free(buf);
+	fclose( in );
     }
-    else
+    else{
 	nvram_set( "ospfd_copt", "0" );
-
+	nvram_unset("ospfd_conf");
+	}
+nvram_commit();
 }
 
 int zebra_ospf_init( void )
@@ -119,7 +135,7 @@ int zebra_ospf_init( void )
 
     if( strlen( nvram_safe_get( "zebra_conf" ) ) > 0 )
     {
-	fprintf( fp, "%s", nvram_safe_get( "zebra_conf" ) );
+	fwritenvram("zebra_conf",fp);
     }
 
     fclose( fp );
@@ -141,7 +157,7 @@ int zebra_ospf_init( void )
 
 	fprintf( fp, "interface %s\n!\n", lf );
 	fprintf( fp, "interface %s\n", wf );
-	fprintf( fp, "passive interface lo\n" );
+	fprintf( fp, "passive-interface lo\n" );
 
 	int cnt = get_wl_instances(  );
 	int c;
@@ -204,15 +220,7 @@ int zebra_ospf_init( void )
 
     if( strlen( nvram_safe_get( "ospfd_conf" ) ) > 0 )
     {
-	char *addconf = nvram_safe_get( "ospfd_conf" );
-
-	i = 0;
-	do
-	{
-	    if( addconf[i] != 0xd )
-		putc( addconf[i], fp );
-	}
-	while( addconf[i++] );
+	fwritenvram("ospfd_conf",fp);
     }
 
     fflush( fp );
