@@ -63,8 +63,9 @@ struct mime_handler
   char *mime_type;
   char *extra_header;
   void (*input) (char *path, FILE * stream, int len, char *boundary);
-  void (*output) (char *path, FILE * stream, char *query);
+  void (*output) (struct mime_handler *handler,char *path, FILE * stream, char *query);
   int (*auth) (char *userid, char *passwd, char *realm);
+  unsigned char send_headers;
 };
 typedef struct
 {
@@ -73,6 +74,7 @@ typedef struct
   unsigned int size;		/* Size of web page in bytes */
 } websRomPageIndexType;
 
+//extern void setLength(long len);
 
 extern struct mime_handler mime_handlers[];
 
@@ -83,7 +85,7 @@ extern void set_cgi (char *name, char *value);
 extern int count_cgi ();
 
 /* Regular file handler */
-extern void do_file (char *path, webs_t stream, char *query);
+extern void do_file (struct mime_handler *handler,char *path, webs_t stream, char *query);
 
 /* GoAhead 2.1 compatibility */
 //typedef FILE * webs_t;
@@ -120,7 +122,7 @@ struct Webenvironment
   char *(*PwebsGetVar) (webs_t wp, char *var, char *d);
   int (*PwebsWrite) (webs_t wp, char *fmt, ...);
   struct wl_client_mac *Pwl_client_macs;
-  void (*Pdo_ej) (char *path, webs_t stream, char *query);	// jimmy, https, 8/4/2003
+  void (*Pdo_ej) (struct mime_handler *handler,char *path, webs_t stream, char *query);	// jimmy, https, 8/4/2003
   int (*PejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
   FILE *(*PgetWebsFile) (char *path);
   int (*Pwfflush) (FILE * fp);
@@ -146,14 +148,15 @@ extern int getWebsFileLen (char *path);
 
 extern char *zencrypt (char *passwd);
 
-extern void do_filtertable (char *path, webs_t stream, char *query);
-extern void do_wds (char *path, webs_t stream, char *query);
+extern void do_filtertable (struct mime_handler *handler,char *path, webs_t stream, char *query);
+extern void do_wds (struct mime_handler *handler,char *path, webs_t stream, char *query);
 #ifndef VISUALSOURCE
 #ifndef VALIDSOURCE
 extern FILE *getWebsFile (char *path);
 extern int ejArgs (int argc, char_t ** argv, char_t * fmt, ...);
-extern void do_ej (char *path, webs_t stream, char *query);
+extern void do_ej (struct mime_handler *handler,char *path, webs_t stream, char *query);
 extern void do_ej_buffer (char *buffer, webs_t stream);
+extern int websWrite( webs_t wp, char *fmt, ... );
 #endif
 #endif
 int do_auth (char *userid, char *passwd, char *realm);

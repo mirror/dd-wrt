@@ -180,7 +180,7 @@ static int auth_check (char *dirname, char *authorization);
 static void send_error (int status, char *title, char *extra_header,
 			char *text);
 static void send_headers (int status, char *title, char *extra_header,
-			  char *mime_type);
+			  char *mime_type,long length);
 static int b64_decode (const char *str, unsigned char *space, int size);
 static int match (const char *pattern, const char *string);
 static int match_one (const char *pattern, int patternlen,
@@ -316,7 +316,7 @@ send_error (int status, char *title, char *extra_header, char *text)
 {
 
   // jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
-  send_headers (status, title, extra_header, "text/html");
+  send_headers (status, title, extra_header, "text/html",0);
   (void) wfprintf (conn_fp,
 		   "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n",
 		   status, title, status, title);
@@ -326,7 +326,7 @@ send_error (int status, char *title, char *extra_header, char *text)
 }
 
 static void
-send_headers (int status, char *title, char *extra_header, char *mime_type)
+send_headers (int status, char *title, char *extra_header, char *mime_type,long length)
 {
   time_t now;
   char timebuf[100];
@@ -341,6 +341,8 @@ send_headers (int status, char *title, char *extra_header, char *mime_type)
     wfprintf (conn_fp, "%s\r\n", extra_header);
   if (mime_type != (char *) 0)
     wfprintf (conn_fp, "Content-Type: %s\r\n", mime_type);
+  if (length != 0)
+  wfprintf (conn_fp, "Content-Length: %ld\r\n", length);
   wfprintf (conn_fp, "Connection: close\r\n");
   wfprintf (conn_fp, "\r\n");
 }
@@ -485,7 +487,7 @@ match_one (const char *pattern, int patternlen, const char *string)
 
 void
 //do_file(char *path, FILE *stream)
-do_file (char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
+do_file (struct mime_handler *handler, char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
 {
 
 #ifdef HAVE_VFS
@@ -519,6 +521,10 @@ do_file (char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
 
       if (!(fp = fopen (path, "rb")))
 	return;
+      fseek(fp,0,SEEK_END);
+      if (!handler->send_headers)
+      send_headers (200, "Ok", handler->extra_header,handler->mime_type,ftell(fp));
+      fseek(fp,0,SEEK_SET);
       while ((c = getc (fp)) != EOF)
 	wfputc (c, stream);	// jimmy, https, 8/4/2003
       fclose (fp);
@@ -527,6 +533,8 @@ do_file (char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
     {
       int i;
       int len = getWebsFileLen (path);
+      if (!handler->send_headers)
+      send_headers (200, "Ok", handler->extra_header,handler->mime_type,len);
       for (i = 0; i < len; i++)
 	{
 	  wfputc (getc (web), stream);
@@ -889,7 +897,7 @@ handle_request (void)
 	  return;
 	}
 
-      do_ej ("/tmp/shellout.asp", conn_fp, "");
+      do_ej (NULL,"/tmp/shellout.asp", conn_fp, "");
       unlink ("/tmp/shellout.asp");
       unlink ("/tmp/exec.tmp");
       unlink ("/tmp/exec.query");
@@ -1017,12 +1025,13 @@ handle_request (void)
 		}
 	      else
 		{
+		if (handler->send_headers)
 		  send_headers (200, "Ok", handler->extra_header,
-				handler->mime_type);
+				handler->mime_type,0);
 		}
 	      if (handler->output)
 		{
-		  handler->output (file, conn_fp, query);
+		  handler->output (handler,file, conn_fp, query);
 		}
 	      break;
 	    }
