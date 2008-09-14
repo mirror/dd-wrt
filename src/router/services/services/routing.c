@@ -78,7 +78,7 @@ void start_quagga_writememory( void )
     else
 	nvram_set( "zebra_copt", "0" );
 
-    FILE *in = fopen( "/tmp/ospfd.conf", "rb" );
+    in = fopen( "/tmp/ospfd.conf", "rb" );
 
     if( in != NULL )
     {
@@ -93,24 +93,11 @@ void start_quagga_writememory( void )
 
 int zebra_ospf_init( void )
 {
-
-    char *lt = nvram_safe_get( "dr_lan_tx" );
-    char *lr = nvram_safe_get( "dr_lan_rx" );
-    char *wt = nvram_safe_get( "dr_wan_tx" );
-    char *wr = nvram_safe_get( "dr_wan_rx" );
     char *lf = nvram_safe_get( "lan_ifname" );
     char *wf = get_wan_face(  );
 
     FILE *fp;
     int ret1, ret2, s = 0, i = 0;
-
-    // printf("Start zebra\n");
-    if( !strcmp( lt, "0" ) && !strcmp( lr, "0" ) &&
-	!strcmp( wt, "0" ) && !strcmp( wr, "0" ) )
-    {
-	printf( "zebra disabled.\n" );
-	return 0;
-    }
 
     /*
      * Write configuration file based on current information 
