@@ -193,13 +193,13 @@ if (fp==NULL)
     return;
       char *host_key = nvram_safe_get (var);
       int len = strlen(host_key);
+      fprintf(stderr,"host key len %d\n",len);
       for (i=0;i<len;i++)
      	  if (host_key[i] != 0x0D)
 	    fprintf (fp, "%c", host_key[i]);
 }
 void writenvram(char *var,char *file)
 {
-int i;
 FILE *fp=fopen(file,"wb");
 if (fp==NULL)
     return;
