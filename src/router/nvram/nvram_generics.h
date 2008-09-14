@@ -193,6 +193,8 @@ FILE *fp=fopen(file,"wb");
 if (fp==NULL)
     return;
       char *host_key = nvram_safe_get (var);
+      if (strlen(host_key)>0)
+      {
       i = 0;
       do
 	{
@@ -200,6 +202,7 @@ if (fp==NULL)
 	    fprintf (fp, "%c", host_key[i]);
 	}
       while (host_key[++i]);
+      }
 fclose(fp);
 
 }
@@ -209,6 +212,8 @@ int i;
 if (fp==NULL)
     return;
       char *host_key = nvram_safe_get (var);
+      if (strlen(host_key)>0)
+      {
       i = 0;
       do
 	{
@@ -216,4 +221,5 @@ if (fp==NULL)
 	    fprintf (fp, "%c", host_key[i]);
 	}
       while (host_key[++i]);
+      }
 }
