@@ -851,22 +851,22 @@ void ej_show_wpa_setting( webs_t wp, int argc, char_t ** argv )
     if( !strcmp( security_mode, "psk" )
 	|| !strcmp( security_mode, "psk2" )
 	|| !strcmp( security_mode, "psk psk2" ) )
-	do_ej( "WPA_Preshared.asp", wp, NULL );
+	do_ej(NULL, "WPA_Preshared.asp", wp, NULL );
 #if UI_STYLE != CISCO
     else if( !strcmp( security_mode, "disabled" ) )
-	do_ej( "WPA_Preshared.asp", wp, NULL );
+	do_ej(NULL, "WPA_Preshared.asp", wp, NULL );
 #endif
     else if( !strcmp( security_mode, "radius" ) )
     {
-	do_ej( "Radius.asp", wp, NULL );
-	do_ej( "WEP.asp", wp, NULL );
+	do_ej(NULL, "Radius.asp", wp, NULL );
+	do_ej(NULL, "WEP.asp", wp, NULL );
     }
     else if( !strcmp( security_mode, "wpa" )
 	     || !strcmp( security_mode, "wpa2" )
 	     || !strcmp( security_mode, "wpa wpa2" ) )
-	do_ej( "WPA_Radius.asp", wp, NULL );
+	do_ej(NULL, "WPA_Radius.asp", wp, NULL );
     else if( !strcmp( security_mode, "wep" ) )
-	do_ej( "WEP.asp", wp, NULL );
+	do_ej(NULL, "WEP.asp", wp, NULL );
 
     return;
 }
