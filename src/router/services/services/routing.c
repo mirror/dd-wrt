@@ -415,12 +415,10 @@ int zebra_bgp_init( void )
     FILE *fp;
     int ret1, ret2;
 
-     fprintf(stderr,"Start zebra\n");
     
     if( !strcmp( lt, "0" ) && !strcmp( lr, "0" ) &&
 	!strcmp( wt, "0" ) && !strcmp( wr, "0" ) && !nvram_match("zebra_copt","1"))
     {
-	fprintf(stderr, "zebra disabled.\n" );
 	return 0;
     }
 
@@ -455,7 +453,6 @@ int zebra_bgp_init( void )
     }
     if( nvram_match( "bgpd_copt", "1" ) )
     {
-        fprintf(stderr,"write conf\n");
 	fwritenvram( "bgpd_conf", fp );
     }
     else
@@ -476,7 +473,6 @@ int zebra_bgp_init( void )
 
 	fflush( fp );
     }
-    fprintf(stderr,"close\n");
     fclose( fp );
 
     ret1 = eval( "zebra", "-d", "-f", "/tmp/zebra.conf" );
