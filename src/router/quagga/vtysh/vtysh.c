@@ -2037,7 +2037,7 @@ DEFUN (vtysh_telnet_port,
   execute_command ("telnet", 2, argv[0], argv[1]);
   return CMD_SUCCESS;
 }
-
+/*
 DEFUN (vtysh_ssh,
        vtysh_ssh_cmd,
        "ssh WORD",
@@ -2047,8 +2047,8 @@ DEFUN (vtysh_ssh,
   execute_command ("ssh", 1, argv[0], NULL);
   return CMD_SUCCESS;
 }
-
-DEFUN (vtysh_start_shell,
+*/
+/*DEFUN (vtysh_start_shell,
        vtysh_start_shell_cmd,
        "start-shell",
        "Start UNIX shell\n")
@@ -2056,8 +2056,8 @@ DEFUN (vtysh_start_shell,
   execute_command ("sh", 0, NULL, NULL);
   return CMD_SUCCESS;
 }
-
-DEFUN (vtysh_start_bash,
+*/
+/*DEFUN (vtysh_start_bash,
        vtysh_start_bash_cmd,
        "start-shell bash",
        "Start UNIX shell\n"
@@ -2065,8 +2065,8 @@ DEFUN (vtysh_start_bash,
 {
   execute_command ("bash", 0, NULL, NULL);
   return CMD_SUCCESS;
-}
-
+}*/
+/*
 DEFUN (vtysh_start_zsh,
        vtysh_start_zsh_cmd,
        "start-shell zsh",
@@ -2076,7 +2076,7 @@ DEFUN (vtysh_start_zsh,
   execute_command ("zsh", 0, NULL, NULL);
   return CMD_SUCCESS;
 }
-
+*/
 static void
 vtysh_install_default (enum node_type node)
 {
@@ -2394,7 +2394,6 @@ vtysh_init_vty (void)
 #endif
   install_element (VIEW_NODE, &vtysh_telnet_cmd);
   install_element (VIEW_NODE, &vtysh_telnet_port_cmd);
-  install_element (VIEW_NODE, &vtysh_ssh_cmd);
   install_element (ENABLE_NODE, &vtysh_ping_cmd);
   install_element (ENABLE_NODE, &vtysh_ping_ip_cmd);
   install_element (ENABLE_NODE, &vtysh_traceroute_cmd);
@@ -2405,10 +2404,6 @@ vtysh_init_vty (void)
 #endif
   install_element (ENABLE_NODE, &vtysh_telnet_cmd);
   install_element (ENABLE_NODE, &vtysh_telnet_port_cmd);
-  install_element (ENABLE_NODE, &vtysh_ssh_cmd);
-  install_element (ENABLE_NODE, &vtysh_start_shell_cmd);
-  install_element (ENABLE_NODE, &vtysh_start_bash_cmd);
-  install_element (ENABLE_NODE, &vtysh_start_zsh_cmd);
   
   install_element (VIEW_NODE, &vtysh_show_memory_cmd);
   install_element (ENABLE_NODE, &vtysh_show_memory_cmd);
