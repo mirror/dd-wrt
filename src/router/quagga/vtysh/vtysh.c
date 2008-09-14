@@ -1815,7 +1815,6 @@ DEFUN (vtysh_write_memory,
   for (i = 0; i < VTYSH_INDEX_MAX; i++)
     ret = vtysh_client_execute (&vtysh_client[i], line, stdout);
 
-  fprintf (stdout,"Call DD-WRT subsystem\n");
   system("startservice quagga_writememory");  
   fprintf (stdout,"[OK]\n");
 
