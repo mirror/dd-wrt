@@ -2532,20 +2532,11 @@ static void save_prefix( webs_t wp, char *prefix )
 #endif
     copytonv( wp, "%s_regdomain", prefix );
 
-    sprintf( turbo, "%s_turbo", prefix );
-    char *tw = websGetVar( wp, turbo, NULL );
-
-    if( tw && !nvram_match( turbo, tw ) )
-    {
-	turbochanged = 1;
-    }
-    if( tw )
-	nvram_set( turbo, tw );
     copytonv( wp, "%s_rts", prefix );
     if( nvram_nmatch( "1", "%s_rts", prefix ) )
     {
 	sprintf( turbo, "%s_rtsvalue", prefix );
-	tw = websGetVar( wp, turbo, NULL );
+	char *tw = websGetVar( wp, turbo, NULL );
 	if( tw )
 	{
 	    if( atoi( tw ) < 1 )
@@ -2668,9 +2659,9 @@ static void save_prefix( webs_t wp, char *prefix )
 	}
     }
 #ifdef HAVE_MADWIFI
-    if( cbwchanged || chanchanged || turbochanged )
+    if( cbwchanged || chanchanged)
     {
-	if( nvram_match( turbo, "1" ) )
+	if( nvram_match( chanbw, "40" ) )
 	{
 	    nvram_set( sifs, "8" );
 	    nvram_set( preamble, "14" );
