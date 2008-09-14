@@ -1309,6 +1309,26 @@ void get_network( char *ipaddr, char *netmask )
 
 }
 
+int get_net(char *netmask)
+{
+if (!netmask)
+    return;
+unsigned int mask[4];
+sscanf( netmask, "%d.%d.%d.%d", &mask[0], &mask[1], &mask[2], &mask[3] );
+unsigned int value;
+value |= mask[0]<<24;
+value |= mask[1]<<16;
+value |= mask[2]<<8;
+value |= mask[3];
+unsigned int base =0;
+int i;
+for (i=0;i<32;i++)
+    {
+    if ((value & (1<<i)))
+	base++;
+    }
+return base;
+}
 /*
  * note: copied from Broadcom code and put in shared via this file 
  */
