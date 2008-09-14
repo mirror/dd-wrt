@@ -80,9 +80,10 @@ void start_quagga_writememory( void )
 	int len = ftell( in );
 
 	rewind( in );
-	char *buf = malloc( len );
+	char *buf = malloc( len +1);
 
 	fread( buf, len, 1, in );
+	buf[len]=0;
 	fclose( in );
 	nvram_set( "zebra_copt", "1" );
 	nvram_set( "zebra_conf", buf );
@@ -101,9 +102,10 @@ void start_quagga_writememory( void )
 	int len = ftell( in );
 
 	rewind( in );
-	char *buf = malloc( len );
+	char *buf = malloc( len +1);
 
 	fread( buf, len, 1, in );
+	buf[len]=0;
 	fclose( in );
 	nvram_set( "ospfd_copt", "1" );
 	nvram_set( "ospfd_conf", buf );
@@ -123,9 +125,10 @@ void start_quagga_writememory( void )
 	int len = ftell( in );
 
 	rewind( in );
-	char *buf = malloc( len );
+	char *buf = malloc( len +1);
 
 	fread( buf, len, 1, in );
+	buf[len]=0;
 	fclose( in );
 	nvram_set( "bgpd_copt", "1" );
 	nvram_set( "bgpd_conf", buf );
@@ -145,9 +148,10 @@ void start_quagga_writememory( void )
 	int len = ftell( in );
 
 	rewind( in );
-	char *buf = malloc( len );
+	char *buf = malloc( len +1);
 
 	fread( buf, len, 1, in );
+	buf[len]=0;
 	fclose( in );
 	nvram_set( "ripd_copt", "1" );
 	nvram_set( "ripd_conf", buf );
