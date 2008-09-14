@@ -37,31 +37,36 @@ int zebra_ripd_init( void );
 
 int zebra_init( void )
 {
-    if( nvram_match( "wk_mode", "gateway" ) )
+    char *sub;
+    char var[32], *next;
+
+    sub = nvram_safe_get( "wk_mode" );
+    foreach( var, sub, next )
     {
-	printf( "zebra disabled.\n" );
-	return 0;
+	if( !strcmp( var, "gateway" ) )
+	{
+	    printf( "zebra disabled.\n" );
+	    return 0;
+	}
+	else if( !strcmp( var, "ospf" ) )
+	{
+	    zebra_ospf_init(  );
+	    dd_syslog( LOG_INFO,
+		       "zebra : zebra (ospf) successfully initiated\n" );
+	}
+	else if( !strcmp( var, "bgp" ) )
+	{
+	    zebra_bgp_init(  );
+	    dd_syslog( LOG_INFO,
+		       "zebra : zebra (ospf) successfully initiated\n" );
+	}
+	else if( !strcmp( var, "router" ) )
+	{
+	    zebra_ripd_init(  );
+	    dd_syslog( LOG_INFO,
+		       "zebra : zebra (router) successfully initiated\n" );
+	}
     }
-    else if( nvram_match( "wk_mode", "ospf" ) )
-    {
-	zebra_ospf_init(  );
-	dd_syslog( LOG_INFO,
-		   "zebra : zebra (ospf) successfully initiated\n" );
-    }
-    else if( nvram_match( "wk_mode", "bgp" ) )
-    {
-	zebra_bgp_init(  );
-	dd_syslog( LOG_INFO,
-		   "zebra : zebra (ospf) successfully initiated\n" );
-    }
-    else if( nvram_match( "wk_mode", "router" ) )
-    {
-	zebra_ripd_init(  );
-	dd_syslog( LOG_INFO,
-		   "zebra : zebra (router) successfully initiated\n" );
-    }
-    else
-	return 0;
     return 0;
 }
 
@@ -110,6 +115,53 @@ void start_quagga_writememory( void )
 	nvram_set( "ospfd_copt", "0" );
 	nvram_unset( "ospfd_conf" );
     }
+
+    in = fopen( "/tmp/bgpd.conf", "rb" );
+
+    if( in != NULL )
+    {
+	fseek( in, 0, SEEK_END );
+	int len = ftell( in );
+
+	rewind( in );
+	char *buf = malloc( len );
+
+	fread( buf, len, 1, in );
+	fclose( in );
+	nvram_set( "bgpd_copt", "1" );
+	nvram_set( "bgpd_conf", buf );
+	free( buf );
+	fclose( in );
+    }
+    else
+    {
+	nvram_set( "bgpd_copt", "0" );
+	nvram_unset( "bgpd_conf" );
+    }
+
+    in = fopen( "/tmp/ripd.conf", "rb" );
+
+    if( in != NULL )
+    {
+	fseek( in, 0, SEEK_END );
+	int len = ftell( in );
+
+	rewind( in );
+	char *buf = malloc( len );
+
+	fread( buf, len, 1, in );
+	fclose( in );
+	nvram_set( "ripd_copt", "1" );
+	nvram_set( "ripd_conf", buf );
+	free( buf );
+	fclose( in );
+    }
+    else
+    {
+	nvram_set( "ripd_copt", "0" );
+	nvram_unset( "ripd_conf" );
+    }
+
     nvram_commit(  );
 }
 
@@ -272,6 +324,21 @@ int zebra_ripd_init( void )
 	perror( "/tmp/zebra.conf" );
 	return errno;
     }
+
+    if( strlen( nvram_safe_get( "zebra_conf" ) ) < 1
+	|| nvram_match( "zebra_copt", "1" ) )
+    {
+	if( nvram_match( "zebra_log", "1" ) )
+	{
+	    fprintf( fp, "log file /var/log/zebra.log\n" );
+	}
+    }
+
+    if( strlen( nvram_safe_get( "zebra_conf" ) ) > 0 )
+    {
+	fwritenvram( "zebra_conf", fp );
+    }
+
     fclose( fp );
 
     if( !( fp = fopen( "/tmp/ripd.conf", "w" ) ) )
@@ -279,44 +346,54 @@ int zebra_ripd_init( void )
 	perror( "/tmp/ripd.conf" );
 	return errno;
     }
-    fprintf( fp, "router rip\n" );
-    fprintf( fp, "  network %s\n", lf );
-    if( wf && strlen( wf ) > 0 )
-	fprintf( fp, "  network %s\n", wf );
-    fprintf( fp, "redistribute connected\n" );
-    // fprintf(fp, "redistribute kernel\n");
-    // fprintf(fp, "redistribute static\n");
 
-    fprintf( fp, "interface %s\n", lf );
-    if( strcmp( lt, "0" ) != 0 )
-	fprintf( fp, "  ip rip send version %s\n", lt );
-    if( strcmp( lr, "0" ) != 0 )
-	fprintf( fp, "  ip rip receive version %s\n", lr );
-
-    if( wf && strlen( wf ) > 0 )
-	fprintf( fp, "interface %s\n", wf );
-    if( strcmp( wt, "0" ) != 0 )
-	fprintf( fp, "  ip rip send version %s\n", wt );
-    if( strcmp( wr, "0" ) != 0 )
-	fprintf( fp, "  ip rip receive version %s\n", wr );
-
-    fprintf( fp, "router rip\n" );
-    if( strcmp( lt, "0" ) == 0 )
-	fprintf( fp, "  distribute-list private out %s\n", lf );
-    if( strcmp( lr, "0" ) == 0 )
-	fprintf( fp, "  distribute-list private in  %s\n", lf );
-    if( wf && strlen( wf ) > 0 )
+    if( strlen( nvram_safe_get( "ripd_conf" ) ) > 0
+	&& nvram_match( "ripd_copt", "1" ) )
     {
-	if( strcmp( wt, "0" ) == 0 )
-	    fprintf( fp, "  distribute-list private out %s\n", wf );
-	if( strcmp( wr, "0" ) == 0 )
-	    fprintf( fp, "  distribute-list private in  %s\n", wf );
+	fwritenvram( "ripd_conf", fp );
     }
-    fprintf( fp, "access-list private deny any\n" );
+    else
+    {
 
-    // fprintf(fp, "debug rip events\n");
-    // fprintf(fp, "log file /tmp/ripd.log\n");
-    fflush( fp );
+	fprintf( fp, "router rip\n" );
+	fprintf( fp, "  network %s\n", lf );
+	if( wf && strlen( wf ) > 0 )
+	    fprintf( fp, "  network %s\n", wf );
+	fprintf( fp, "redistribute connected\n" );
+	// fprintf(fp, "redistribute kernel\n");
+	// fprintf(fp, "redistribute static\n");
+
+	fprintf( fp, "interface %s\n", lf );
+	if( strcmp( lt, "0" ) != 0 )
+	    fprintf( fp, "  ip rip send version %s\n", lt );
+	if( strcmp( lr, "0" ) != 0 )
+	    fprintf( fp, "  ip rip receive version %s\n", lr );
+
+	if( wf && strlen( wf ) > 0 )
+	    fprintf( fp, "interface %s\n", wf );
+	if( strcmp( wt, "0" ) != 0 )
+	    fprintf( fp, "  ip rip send version %s\n", wt );
+	if( strcmp( wr, "0" ) != 0 )
+	    fprintf( fp, "  ip rip receive version %s\n", wr );
+
+	fprintf( fp, "router rip\n" );
+	if( strcmp( lt, "0" ) == 0 )
+	    fprintf( fp, "  distribute-list private out %s\n", lf );
+	if( strcmp( lr, "0" ) == 0 )
+	    fprintf( fp, "  distribute-list private in  %s\n", lf );
+	if( wf && strlen( wf ) > 0 )
+	{
+	    if( strcmp( wt, "0" ) == 0 )
+		fprintf( fp, "  distribute-list private out %s\n", wf );
+	    if( strcmp( wr, "0" ) == 0 )
+		fprintf( fp, "  distribute-list private in  %s\n", wf );
+	}
+	fprintf( fp, "access-list private deny any\n" );
+
+	// fprintf(fp, "debug rip events\n");
+	// fprintf(fp, "log file /tmp/ripd.log\n");
+	fflush( fp );
+    }
     fclose( fp );
 
     ret1 = eval( "zebra", "-d", "-f", "/tmp/zebra.conf" );
@@ -354,6 +431,21 @@ int zebra_bgp_init( void )
 	perror( "/tmp/zebra.conf" );
 	return errno;
     }
+
+    if( strlen( nvram_safe_get( "zebra_conf" ) ) < 1
+	|| nvram_match( "zebra_copt", "1" ) )
+    {
+	if( nvram_match( "zebra_log", "1" ) )
+	{
+	    fprintf( fp, "log file /var/log/zebra.log\n" );
+	}
+    }
+
+    if( strlen( nvram_safe_get( "zebra_conf" ) ) > 0 )
+    {
+	fwritenvram( "zebra_conf", fp );
+    }
+
     fclose( fp );
 
     if( !( fp = fopen( "/tmp/bgpd.conf", "w" ) ) )
@@ -361,21 +453,29 @@ int zebra_bgp_init( void )
 	perror( "/tmp/bgpd.conf" );
 	return errno;
     }
-    fprintf( fp, "router bgp\n" );
-    fprintf( fp, "  network %s\n", lf );
-    if( wf && strlen( wf ) > 0 )
-	fprintf( fp, "  network %s\n", wf );
-    fprintf( fp, "neighbor %s local-as %s\n", lf,
-	     nvram_safe_get( "routing_bgp_as" ) );
-    if( wf && strlen( wf ) > 0 )
-	fprintf( fp, "neighbor %s local-as %s\n", wf,
+    if( strlen( nvram_safe_get( "bgpd_conf" ) ) > 0
+	&& nvram_match( "bgpd_copt", "1" ) )
+    {
+	fwritenvram( "bgpd_conf", fp );
+    }
+    else
+    {
+	fprintf( fp, "router bgp\n" );
+	fprintf( fp, "  network %s\n", lf );
+	if( wf && strlen( wf ) > 0 )
+	    fprintf( fp, "  network %s\n", wf );
+	fprintf( fp, "neighbor %s local-as %s\n", lf,
 		 nvram_safe_get( "routing_bgp_as" ) );
-    fprintf( fp, "neighbor %s remote-as %s\n",
-	     nvram_safe_get( "routing_bgp_neighbor_ip" ),
-	     nvram_safe_get( "routing_bgp_neighbor_as" ) );
-    fprintf( fp, "access-list all permit any\n" );
+	if( wf && strlen( wf ) > 0 )
+	    fprintf( fp, "neighbor %s local-as %s\n", wf,
+		     nvram_safe_get( "routing_bgp_as" ) );
+	fprintf( fp, "neighbor %s remote-as %s\n",
+		 nvram_safe_get( "routing_bgp_neighbor_ip" ),
+		 nvram_safe_get( "routing_bgp_neighbor_as" ) );
+	fprintf( fp, "access-list all permit any\n" );
 
-    fflush( fp );
+	fflush( fp );
+    }
     fclose( fp );
 
     ret1 = eval( "zebra", "-d", "-f", "/tmp/zebra.conf" );
