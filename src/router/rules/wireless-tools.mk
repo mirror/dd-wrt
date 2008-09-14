@@ -2,7 +2,7 @@ wireless-tools-clean:
 	make -C wireless-tools clean
 
 wireless-tools:
-	make -C wireless-tools CC=$(CC) CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" all iwmulticall
+	make -C wireless-tools CC=$(CC) CFLAGS="$(COPTS)" all iwmulticall
 
 wireless-tools-install:
 	make -C wireless-tools INSTALL_DIR=$(INSTALLDIR)/wireless-tools/usr/sbin install-bin
