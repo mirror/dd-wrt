@@ -819,14 +819,12 @@ set_rate (char *dev)
   char net[32];
   char bw[32];
   char xr[32];
-  char turbo[32];
 
   sprintf (bw, "%s_channelbw", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (rate, "%s_minrate", dev);
   sprintf (maxrate, "%s_maxrate", dev);
   sprintf (xr, "%s_xr", dev);
-  sprintf (turbo, "%s_turbo", dev);
   char *r = nvram_default_get (rate, "0");
   char *mr = nvram_default_get (maxrate, "0");
 
@@ -849,7 +847,7 @@ set_rate (char *dev)
 	nvram_set (rate, "0");
 	r = "0";
       }
-  if (nvram_match (turbo, "1"))
+  if (nvram_match (bw, "40"))
     if (atof (r) == 27.0f || atof (r) == 1.5f || atof (r) == 2.0f
 	|| atof (r) == 3.0f || atof (r) == 4.5f || atof (r) == 9.0f
 	|| atof (r) == 13.5f)
@@ -890,15 +888,14 @@ static void
 set_netmode (char *wif, char *dev, char *use)
 {
   char net[16];
-  char turbo[16];
   char mode[16];
   char xr[16];
   char comp[32];
   char ff[16];
-
+  char bw[16];
   sprintf (mode, "%s_mode", dev);
   sprintf (net, "%s_net_mode", dev);
-  sprintf (turbo, "%s_turbo", dev);
+  sprintf (bw, "%s_channelbw", dev);
   sprintf (xr, "%s_xr", dev);
   sprintf (comp, "%s_compression", dev);
   sprintf (ff, "%s_ff", dev);
@@ -961,7 +958,7 @@ set_netmode (char *wif, char *dev, char *use)
 	  eval ("iwpriv", use, "mode", "1");
       }
   }
-  if (nvram_default_match (turbo, "1", "0"))
+  if (nvram_default_match (bw, "40", "20"))
     {
       {
 	if (!strcmp (netmode, "g-only"))
@@ -1131,11 +1128,8 @@ configure_single (int count)
   char rxantenna[32];
   char txantenna[32];
   char athmac[16];
-  char turbo[16];
-
   sprintf (wif, "wifi%d", count);
   sprintf (dev, "ath%d", count);
-  sprintf (turbo, "%s_turbo", dev);
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (wl, "ath%d_mode", count);
   sprintf (channel, "ath%d_channel", count);
