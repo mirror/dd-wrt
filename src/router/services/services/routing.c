@@ -71,40 +71,46 @@ void start_quagga_writememory( void )
 
     if( in != NULL )
     {
-	fseek(in,0,SEEK_END);
-	int len = ftell(in);
-	rewind(in);
-	char *buf = malloc(len);
-	fread(buf,len,1,in);
-	fclose(in);
+	fseek( in, 0, SEEK_END );
+	int len = ftell( in );
+
+	rewind( in );
+	char *buf = malloc( len );
+
+	fread( buf, len, 1, in );
+	fclose( in );
 	nvram_set( "zebra_copt", "1" );
-	nvram_set( "zebra_conf", buf);
-	free(buf);
+	nvram_set( "zebra_conf", buf );
+	free( buf );
     }
-    else{
+    else
+    {
 	nvram_set( "zebra_copt", "0" );
-	nvram_unset("zebra_conf");
-	}
+	nvram_unset( "zebra_conf" );
+    }
     in = fopen( "/tmp/ospfd.conf", "rb" );
 
     if( in != NULL )
     {
-	fseek(in,0,SEEK_END);
-	int len = ftell(in);
-	rewind(in);
-	char *buf = malloc(len);
-	fread(buf,len,1,in);
-	fclose(in);
+	fseek( in, 0, SEEK_END );
+	int len = ftell( in );
+
+	rewind( in );
+	char *buf = malloc( len );
+
+	fread( buf, len, 1, in );
+	fclose( in );
 	nvram_set( "ospfd_copt", "1" );
-	nvram_set( "ospfd_conf", buf);
-	free(buf);
+	nvram_set( "ospfd_conf", buf );
+	free( buf );
 	fclose( in );
     }
-    else{
+    else
+    {
 	nvram_set( "ospfd_copt", "0" );
-	nvram_unset("ospfd_conf");
-	}
-nvram_commit();
+	nvram_unset( "ospfd_conf" );
+    }
+    nvram_commit(  );
 }
 
 int zebra_ospf_init( void )
@@ -135,7 +141,7 @@ int zebra_ospf_init( void )
 
     if( strlen( nvram_safe_get( "zebra_conf" ) ) > 0 )
     {
-	fwritenvram("zebra_conf",fp);
+	fwritenvram( "zebra_conf", fp );
     }
 
     fclose( fp );
@@ -156,8 +162,8 @@ int zebra_ospf_init( void )
 	fprintf( fp, "!\n!\n!\n" );
 
 	fprintf( fp, "interface %s\n!\n", lf );
-	fprintf( fp, "interface %s\n", wf );
-	fprintf( fp, "passive-interface lo\n" );
+	if( wf && strlen( wf ) > 0 )
+	    fprintf( fp, "interface %s\n", wf );
 
 	int cnt = get_wl_instances(  );
 	int c;
@@ -192,6 +198,7 @@ int zebra_ospf_init( void )
 	    fprintf( fp, "!\n" );
 	}
 	fprintf( fp, "router ospf\n" );
+	fprintf( fp, " passive-interface lo\n" );
 	fprintf( fp, " ospf router-id %s\n", nvram_safe_get( "lan_ipaddr" ) );
 	fprintf( fp, " redistribute kernel\n" );
 	fprintf( fp, " redistribute connected\n" );
@@ -220,7 +227,7 @@ int zebra_ospf_init( void )
 
     if( strlen( nvram_safe_get( "ospfd_conf" ) ) > 0 )
     {
-	fwritenvram("ospfd_conf",fp);
+	fwritenvram( "ospfd_conf", fp );
     }
 
     fflush( fp );
@@ -274,7 +281,8 @@ int zebra_ripd_init( void )
     }
     fprintf( fp, "router rip\n" );
     fprintf( fp, "  network %s\n", lf );
-    fprintf( fp, "  network %s\n", wf );
+    if( wf && strlen( wf ) > 0 )
+	fprintf( fp, "  network %s\n", wf );
     fprintf( fp, "redistribute connected\n" );
     // fprintf(fp, "redistribute kernel\n");
     // fprintf(fp, "redistribute static\n");
@@ -285,7 +293,8 @@ int zebra_ripd_init( void )
     if( strcmp( lr, "0" ) != 0 )
 	fprintf( fp, "  ip rip receive version %s\n", lr );
 
-    fprintf( fp, "interface %s\n", wf );
+    if( wf && strlen( wf ) > 0 )
+	fprintf( fp, "interface %s\n", wf );
     if( strcmp( wt, "0" ) != 0 )
 	fprintf( fp, "  ip rip send version %s\n", wt );
     if( strcmp( wr, "0" ) != 0 )
@@ -296,10 +305,13 @@ int zebra_ripd_init( void )
 	fprintf( fp, "  distribute-list private out %s\n", lf );
     if( strcmp( lr, "0" ) == 0 )
 	fprintf( fp, "  distribute-list private in  %s\n", lf );
-    if( strcmp( wt, "0" ) == 0 )
-	fprintf( fp, "  distribute-list private out %s\n", wf );
-    if( strcmp( wr, "0" ) == 0 )
-	fprintf( fp, "  distribute-list private in  %s\n", wf );
+    if( wf && strlen( wf ) > 0 )
+    {
+	if( strcmp( wt, "0" ) == 0 )
+	    fprintf( fp, "  distribute-list private out %s\n", wf );
+	if( strcmp( wr, "0" ) == 0 )
+	    fprintf( fp, "  distribute-list private in  %s\n", wf );
+    }
     fprintf( fp, "access-list private deny any\n" );
 
     // fprintf(fp, "debug rip events\n");
@@ -351,11 +363,13 @@ int zebra_bgp_init( void )
     }
     fprintf( fp, "router bgp\n" );
     fprintf( fp, "  network %s\n", lf );
-    fprintf( fp, "  network %s\n", wf );
+    if( wf && strlen( wf ) > 0 )
+	fprintf( fp, "  network %s\n", wf );
     fprintf( fp, "neighbor %s local-as %s\n", lf,
 	     nvram_safe_get( "routing_bgp_as" ) );
-    fprintf( fp, "neighbor %s local-as %s\n", wf,
-	     nvram_safe_get( "routing_bgp_as" ) );
+    if( wf && strlen( wf ) > 0 )
+	fprintf( fp, "neighbor %s local-as %s\n", wf,
+		 nvram_safe_get( "routing_bgp_as" ) );
     fprintf( fp, "neighbor %s remote-as %s\n",
 	     nvram_safe_get( "routing_bgp_neighbor_ip" ),
 	     nvram_safe_get( "routing_bgp_neighbor_as" ) );
