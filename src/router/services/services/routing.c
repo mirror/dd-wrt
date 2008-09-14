@@ -108,7 +108,6 @@ void start_quagga_writememory( void )
 	nvram_set( "ospfd_copt", "1" );
 	nvram_set( "ospfd_conf", buf );
 	free( buf );
-	fclose( in );
     }
     else
     {
@@ -131,7 +130,6 @@ void start_quagga_writememory( void )
 	nvram_set( "bgpd_copt", "1" );
 	nvram_set( "bgpd_conf", buf );
 	free( buf );
-	fclose( in );
     }
     else
     {
@@ -154,7 +152,6 @@ void start_quagga_writememory( void )
 	nvram_set( "ripd_copt", "1" );
 	nvram_set( "ripd_conf", buf );
 	free( buf );
-	fclose( in );
     }
     else
     {
@@ -310,7 +307,7 @@ int zebra_ripd_init( void )
 
     // printf("Start zebra\n");
     if( !strcmp( lt, "0" ) && !strcmp( lr, "0" ) &&
-	!strcmp( wt, "0" ) && !strcmp( wr, "0" ) )
+	!strcmp( wt, "0" ) && !strcmp( wr, "0" ) && !nvram_match("zebra_copt","1"))
     {
 	printf( "zebra disabled.\n" );
 	return 0;
@@ -417,7 +414,7 @@ int zebra_bgp_init( void )
 
     // printf("Start zebra\n");
     if( !strcmp( lt, "0" ) && !strcmp( lr, "0" ) &&
-	!strcmp( wt, "0" ) && !strcmp( wr, "0" ) )
+	!strcmp( wt, "0" ) && !strcmp( wr, "0" ) && !nvram_match("zebra_copt","1"))
     {
 	printf( "zebra disabled.\n" );
 	return 0;
@@ -460,10 +457,10 @@ int zebra_bgp_init( void )
     }
     else
     {
-	fprintf( fp, "router bgp\n" );
-	fprintf( fp, "  network %s\n", lf );
-	if( wf && strlen( wf ) > 0 )
-	    fprintf( fp, "  network %s\n", wf );
+	fprintf( fp, "router bgp %s\n" ,nvram_safe_get( "routing_bgp_as" ));
+	fprintf( fp, "  network %s/%s\n", nvram_safe_get("lan_ipaddr"),get_net(nvram_safe_get("lan_netmask")));
+	if( wf && strlen( wf ) > 0 && !nvram_match("wan_ipaddr","0.0.0.0") )
+	    fprintf( fp, "  network %s/%s\n", nvram_safe_get("wan_ipaddr"),nvram_safe_get("wan_netmask"));
 	fprintf( fp, "neighbor %s local-as %s\n", lf,
 		 nvram_safe_get( "routing_bgp_as" ) );
 	if( wf && strlen( wf ) > 0 )
