@@ -102,7 +102,7 @@ endif
 endif
 ifeq ($(ARCH),arm)
 ifeq ($(ARCHITECTURE),storm)
-	cp busybox/.config_fonera busybox/.config
+	cp busybox/.config_storm busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
 	cp busybox/.config_xscale busybox/.config
