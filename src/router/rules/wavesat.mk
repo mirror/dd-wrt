@@ -16,7 +16,11 @@ wavesat-install:
 	mkdir -p $(INSTALLDIR)/wavesat/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wimax
 	mkdir -p wavesat/install
 	cp -f wavesat/config/* $(INSTALLDIR)/wavesat/etc/config
+ifeq ($(ARCHITECTURE),storm)
+	cp -rf wavesat/sub/armle/ts_2_6/uclibc/* wavesat/install
+else
 	cp -rf wavesat/sub/arm/ts_2_6/uclibc/* wavesat/install
+endif
 	mv -f wavesat/install/*.ko $(INSTALLDIR)/wavesat/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wimax
 	cp -rf wavesat/install/* $(INSTALLDIR)/wavesat/sub
 	rm -rf wavesat/install
