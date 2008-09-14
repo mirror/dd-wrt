@@ -139,6 +139,7 @@ share.styl="Aussehen";
 share.err="Fehler";
 share.errs="Fehler";
 share.meters="Meter";
+share.turbo="Turbo (40 Mhz)";
 share.full="Full (20 Mhz)";
 share.half="Half (10 Mhz)";
 share.quarter="Quarter (5 Mhz)";

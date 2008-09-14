@@ -2882,9 +2882,6 @@ void show_rates( webs_t wp, char *prefix, int maxrate )
     char **rate;
     char **showrates = NULL;
     int len;
-    char turbo[32];
-
-    sprintf( turbo, "%s_turbo", prefix );
     char mode[32];
     char bw[16];
 
@@ -2900,7 +2897,7 @@ void show_rates( webs_t wp, char *prefix, int maxrate )
     {
 	rate = ag_rates;
 	len = sizeof( ag_rates ) / sizeof( char * );
-	if( nvram_match( turbo, "1" ) )
+	if( nvram_match( bw, "40" ) )
 	{
 	    showrates = turbo_rates;
 	}
@@ -2919,7 +2916,7 @@ void show_rates( webs_t wp, char *prefix, int maxrate )
     {
 	rate = ag_rates;
 	len = sizeof( ag_rates ) / sizeof( char * );
-	if( nvram_match( turbo, "1" ) )
+	if( nvram_match( bw, "40" ) )
 	{
 	    showrates = turbo_rates;
 	}
@@ -2953,7 +2950,7 @@ void show_rates( webs_t wp, char *prefix, int maxrate )
     {
 	rate = bg_rates;
 	len = sizeof( bg_rates ) / sizeof( char * );
-	if( nvram_match( turbo, "1" ) )
+	if( nvram_match( bw, "40" ) )
 	{
 	    rate = ag_rates;
 	    len = sizeof( ag_rates ) / sizeof( char * );
@@ -3746,7 +3743,6 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     show_netmode( wp, prefix );
     // turbo options
 #ifdef HAVE_MADWIFI
-    char wl_turbo[16];
 
     // char wl_xchanmode[16];
     char wl_outdoor[16];
@@ -3770,7 +3766,6 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 
     sprintf( wl_doth, "%s_doth", prefix );
     sprintf( wl_protmode, "%s_protmode", prefix );
-    sprintf( wl_turbo, "%s_turbo", prefix );
     sprintf( wl_outdoor, "%s_outdoor", prefix );
     sprintf( wl_diversity, "%s_diversity", prefix );
     sprintf( wl_rxantenna, "%s_rxantenna", prefix );
@@ -3833,10 +3828,6 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     showrtssettings( wp, prefix );
     show_rates( wp, prefix, 0 );
     show_rates( wp, prefix, 1 );
-    // #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) &&
-    // !defined(HAVE_MERAKI)
-    showRadio( wp, "wl_basic.turbo", wl_turbo );
-    // #endif
     showRadio( wp, "wl_basic.preamble", wl_preamble );
     showRadio( wp, "wl_basic.extrange", wl_xr );
     showRadio( wp, "wl_basic.supergcomp", wl_comp );
@@ -3853,6 +3844,10 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
 	       wl_width );
     websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n",
+	       nvram_match( wl_width,
+			    "40" ) ? "selected=\\\"selected\\\"" : "" );
     websWrite( wp,
 	       "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n",
 	       nvram_match( wl_width,
@@ -4963,8 +4958,8 @@ void ej_get_currate( webs_t wp, int argc, char_t ** argv )
 	    divisor = KILO;
 	}
     }
-    sprintf( mode, "%s_turbo", nvram_safe_get( "wifi_display" ) );
-    if( nvram_match( mode, "1" ) )
+    sprintf( mode, "%s_channelbw", nvram_safe_get( "wifi_display" ) );
+    if( nvram_match( mode, "40" ) )
 	rate *= 2;
     if( rate > 0.0 )
     {
@@ -5241,8 +5236,8 @@ void ej_active_wireless( webs_t wp, int argc, char_t ** argv )
     for( i = 0; i < c; i++ )
     {
 	sprintf( devs, "ath%d", i );
-	sprintf( turbo, "%s_turbo", devs );
-	if( nvram_match( turbo, "1" ) )
+	sprintf( turbo, "%s_channelbw", devs );
+	if( nvram_match( turbo, "40" ) )
 	    t = 2;
 	else
 	    t = 1;
@@ -5279,8 +5274,8 @@ void ej_active_wireless( webs_t wp, int argc, char_t ** argv )
 	    sprintf( wdsvarname, "ath%d_wds%d_enable", i, s );
 	    sprintf( wdsdevname, "ath%d_wds%d_if", i, s );
 	    sprintf( wdsmacname, "ath%d_wds%d_hwaddr", i, s );
-	    sprintf( turbo, "ath%d_turbo", i );
-	    if( nvram_match( turbo, "1" ) )
+	    sprintf( turbo, "ath%d_channelbw", i );
+	    if( nvram_match( turbo, "40" ) )
 		t = 2;
 	    else
 		t = 1;
