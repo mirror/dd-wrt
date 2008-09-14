@@ -1,5 +1,7 @@
 quagga-configure:
-	cd quagga && ./configure --host=$(ARCH)-uclibc-linux $(CONFIG_QUAGGA_EXTRA) --enable-opaque-lsa --enable-ospf-te --disable-ospfclient --enable-multipath=32  --disable-ipv6 --prefix=/usr  --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi
+	cd quagga/readline && ./configure --host=$(ARCH)-uclibc-linux --prefix=/usr
+	$(MAKE) -C quagga/readline
+	cd quagga && ./configure --host=$(ARCH)-uclibc-linux $(CONFIG_QUAGGA_EXTRA) --enable-opaque-lsa --enable-ospf-te --disable-ospfclient --enable-multipath=32  --disable-ipv6 --prefix=/usr  --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --with-libreadline=$(TOP)/quagga/readline CFLAGS="-I$(TOP)/quagga" LDFLAGS="-L$(TOP)/quagga/readline -L$(TOP)/ncurses/lib -lncurses"
 
 quagga:
 	$(MAKE) -C quagga
@@ -7,6 +9,7 @@ quagga:
 quagga-install:
 	make -C quagga DESTDIR=$(INSTALLDIR)/quagga install
 	rm -rf $(INSTALLDIR)/quagga/usr/info
+	rm -rf $(INSTALLDIR)/quagga/usr/share
 	rm -rf $(INSTALLDIR)/quagga/usr/include
 	rm -rf $(INSTALLDIR)/quagga/usr/etc
 	rm -rf $(INSTALLDIR)/quagga/usr/man
