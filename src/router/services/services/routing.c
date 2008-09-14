@@ -313,7 +313,7 @@ int zebra_ripd_init( void )
     if( !strcmp( lt, "0" ) && !strcmp( lr, "0" ) &&
 	!strcmp( wt, "0" ) && !strcmp( wr, "0" ) && !nvram_match("zebra_copt","1"))
     {
-	printf( "zebra disabled.\n" );
+	fprintf(stderr, "zebra disabled.\n" );
 	return 0;
     }
 
@@ -643,24 +643,25 @@ int stop_zebra( void )
     int ret1 = 0;
 
 #ifdef HAVE_QUAGGA
-    int ret2 = 0, ret3 = 0;
+    int ret2 = 0, ret3 = 0, ret4 = 0;
 
-    if( pidof( "zebra" ) > 0 || pidof( "ripd" ) > 0 || pidof( "ospfd" ) > 0 )
+    if( pidof( "zebra" ) > 0 || pidof( "ripd" ) > 0 || pidof( "ospfd" ) > 0 || pidof( "bgpd" ) > 0 )
     {
 	dd_syslog( LOG_INFO,
 		   "zebra : zebra (ripd and ospfd) daemon successfully stopped\n" );
 	ret1 = killall( "zebra", SIGTERM );
 	ret2 = killall( "ripd", SIGTERM );
 	ret3 = killall( "ospfd", SIGTERM );
+	ret4 = killall( "bgpd", SIGTERM );
 
 	while( !
 	       ( killall( "zebra", SIGTERM ) && killall( "ripd", SIGTERM )
-		 && killall( "ospfd", SIGTERM ) ) )
+		 && killall( "ospfd", SIGTERM ) && killall( "bgpd", SIGTERM ) ) )
 	    sleep( 1 );
 
 	cprintf( "done\n" );
     }
-    return ret1 | ret2 | ret3;
+    return ret1 | ret2 | ret3 | ret4;
 
 #elif defined(HAVE_BIRD)
     if( pidof( "bird" ) > 0 )
