@@ -1814,7 +1814,7 @@ DEFUN (vtysh_write_memory,
     ret = vtysh_client_execute (&vtysh_client[i], line, stdout);
   
   fprintf (stdout,"[OK]\n");
-
+  system("startservice savequagga");
   return ret;
 }
 
