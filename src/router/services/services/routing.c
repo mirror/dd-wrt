@@ -45,21 +45,50 @@ int zebra_init( void )
     else if( nvram_match( "wk_mode", "ospf" ) )
     {
 	zebra_ospf_init(  );
-	dd_syslog( LOG_INFO, "zebra : zebra (ospf) successfully initiated\n" );
+	dd_syslog( LOG_INFO,
+		   "zebra : zebra (ospf) successfully initiated\n" );
     }
     else if( nvram_match( "wk_mode", "bgp" ) )
     {
 	zebra_bgp_init(  );
-	dd_syslog( LOG_INFO, "zebra : zebra (ospf) successfully initiated\n" );
+	dd_syslog( LOG_INFO,
+		   "zebra : zebra (ospf) successfully initiated\n" );
     }
     else if( nvram_match( "wk_mode", "router" ) )
     {
 	zebra_ripd_init(  );
-	dd_syslog( LOG_INFO, "zebra : zebra (router) successfully initiated\n" );
+	dd_syslog( LOG_INFO,
+		   "zebra : zebra (router) successfully initiated\n" );
     }
     else
 	return 0;
     return 0;
+}
+
+void start_quagga_writememory( void )
+{
+    FILE *in = fopen( "/tmp/zebra.conf", "rb" );
+
+    if( in != NULL )
+    {
+	fclose( in );
+	nvram_set( "zebra_copt", "1" );
+	writenvram( "zebra_conf", "/tmp/zebra.conf" );
+    }
+    else
+	nvram_set( "zebra_copt", "0" );
+
+    FILE *in = fopen( "/tmp/ospfd.conf", "rb" );
+
+    if( in != NULL )
+    {
+	fclose( in );
+	nvram_set( "ospfd_copt", "1" );
+	writenvram( "ospfd_conf", "/tmp/ospfd.conf" );
+    }
+    else
+	nvram_set( "ospfd_copt", "0" );
+
 }
 
 int zebra_ospf_init( void )
@@ -509,7 +538,7 @@ int stop_zebra( void )
     if( pidof( "zebra" ) > 0 || pidof( "ripd" ) > 0 || pidof( "ospfd" ) > 0 )
     {
 	dd_syslog( LOG_INFO,
-		"zebra : zebra (ripd and ospfd) daemon successfully stopped\n" );
+		   "zebra : zebra (ripd and ospfd) daemon successfully stopped\n" );
 	ret1 = killall( "zebra", SIGTERM );
 	ret2 = killall( "ripd", SIGTERM );
 	ret3 = killall( "ospfd", SIGTERM );
