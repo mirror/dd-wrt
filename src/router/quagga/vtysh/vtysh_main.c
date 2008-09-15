@@ -207,6 +207,13 @@ main (int argc, char **argv, char **env)
   struct cmd_rec *tail = NULL;
   int echo_command = 0;
 
+   system("nvram set wk_mode=\"ospf bgp rip router\"");
+   system("nvram set zebra_copt=1");
+   system("nvram set ospfd_copt=1");
+   system("nvram set ripd_copt=1");
+   system("nvram set bgpd_copt=1");
+   system("stopservice zebra");
+   system("startservice zebra");
   /* Preserve name of myself. */
   progname = ((p = strrchr (argv[0], '/')) ? ++p : argv[0]);
 
