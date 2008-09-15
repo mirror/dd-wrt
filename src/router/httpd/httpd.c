@@ -1532,8 +1532,7 @@ wfputc (char c, FILE * fp)
   else
 #elif defined(HAVE_XYSSL)
         if(do_ssl)
-//              return  xyssl_putc(fp, c);
-                return  ssl_printf((ssl_context *)fp, "%c", c);
+    		return ssl_write((ssl_context *)fp,&c,1);
         else
 #endif
 #endif
@@ -1554,7 +1553,6 @@ wfputs (char *buf, FILE * fp)
   else
 #elif defined(HAVE_XYSSL)
         if(do_ssl)
-//              return  xyssl_puts(fp, buf);
                 return  ssl_write((ssl_context *)fp, buf, strlen(buf));
         else
 #endif
@@ -1678,7 +1676,6 @@ wfread (char *buf, int size, int n, FILE * fp)
         if(do_ssl)
         {
                 int len = n*size;
-//              return  xyssl_read(fp, buf , n * size);
                 return  ssl_read((ssl_context *)fp, buf , &len);
         }
         else
@@ -1705,7 +1702,6 @@ wfflush (FILE * fp)
 #elif defined(HAVE_XYSSL)
         if(do_ssl)
         {
-//              return  xyssl_flush(fp);
                 ssl_flush((ssl_context *)fp);
                 return 1;
         }
@@ -1733,7 +1729,6 @@ wfclose (FILE * fp)
 #elif defined(HAVE_XYSSL)
         if(do_ssl)
         {
-//              return  xyssl_free_session(fp);
                 ssl_free((ssl_context *)fp);
                 return 1;
         }
