@@ -1471,7 +1471,7 @@ int ssl_write( ssl_context *ssl, unsigned char *buf, int len )
 int _ssl_write( ssl_context *ssl, unsigned char *buf, int len )
 {
     int ret=0, n;
-                                                                                                                             
+//    fprintf(stderr,"_ssl_write %d\n",len);                                                                                                                             
     if( ssl->state != SSL_HANDSHAKE_OVER )
 	ret = ssl_handshake( ssl );
                                                                                                                              
@@ -1502,10 +1502,13 @@ int ssl_write( ssl_context *ssl, unsigned char *buf, int len )
                                                                                                                              
     if(ssl == NULL || buf == NULL || len == 0)
         return 0;
+//    fprintf(stderr, "write %d bytes\n");
     if(ssl->ssl_buflen + len <= SSL_SEND_BUF_SZ)
     {
+//    fprintf(stderr, "memcpy\n");
         memcpy(ssl->ssl_buffer + ssl->ssl_buflen, buf, len);
         ssl->ssl_buflen += len;
+//    fprintf(stderr, "newlen %d\n",ssl->ssl_buflen);
         ret = len;
     }
     else
@@ -1516,23 +1519,30 @@ int ssl_write( ssl_context *ssl, unsigned char *buf, int len )
         {
                 for(i = 0; remain >= SSL_SEND_BUF_SZ; i++)
                 {
+//		    fprintf(stderr, "ssl_write remain %d\n",remain);
                     ret = _ssl_write(ssl, buf + i * SSL_SEND_BUF_SZ, SSL_SEND_BUF_SZ);
+//		    fprintf(stderr, "ssl_write remain2 %d\n",remain);
                     if(ret <= 0)
                     break;
                     remain -= SSL_SEND_BUF_SZ;
+//		    fprintf(stderr, "ssl_write remain3 %d\n",remain);
                 }
         }
         if(ret > 0)
         {
            if(ssl->ssl_buflen + remain > SSL_SEND_BUF_SZ)
            {
+//		    fprintf(stderr, "ssl_write2 remain0 %d\n",remain);
                 ret = _ssl_write(ssl, ssl->ssl_buffer, ssl->ssl_buflen);
+//		    fprintf(stderr, "ssl_write2 remain1 %d\n",remain);
                 if(ret > 0)
                 ssl->ssl_buflen = 0;
            }
         if(ret > 0)
         {
+//		    fprintf(stderr, "memcpy remain ret %d\n",ret);
                 memcpy(ssl->ssl_buffer + ssl->ssl_buflen, buf + i * SSL_SEND_BUF_SZ, remain);
+//		    fprintf(stderr, "memcpy2 %d\n",ssl->ssl_buflen);
                 ssl->ssl_buflen += remain;
                 ret = len;
         }
