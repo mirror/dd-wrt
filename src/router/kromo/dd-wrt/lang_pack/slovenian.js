@@ -146,6 +146,7 @@ share.styl="Stil";
 share.err="napak";
 share.errs="napak";
 share.meters="metrov";
+share.turbo="Turbo (40 Mhz)";
 share.full="Polni (20 Mhz)";
 share.half="Polovièni (10 Mhz)";
 share.quarter="Èetrtinski (5 Mhz)";
