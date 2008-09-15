@@ -2495,7 +2495,7 @@ void validate_iradius( webs_t wp, char *value, struct variable *v )
 	{
 	    char st[32];
 
-	    sprintf( st, "%d", ( now.tv_sec + t * 60 ) );
+	    sprintf( st, "%ld", ( now.tv_sec + t * 60 ) );
 	    strcat( leases, st );
 	}
 	strcat( leases, " " );
