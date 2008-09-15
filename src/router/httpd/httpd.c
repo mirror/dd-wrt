@@ -539,6 +539,7 @@ do_file (struct mime_handler *handler, char *path, webs_t stream, char *query)	/
 	{
 	  wfputc (getc (web), stream);
 	}
+      
       fclose (web);
     }
 #endif
@@ -1532,7 +1533,8 @@ wfputc (char c, FILE * fp)
   else
 #elif defined(HAVE_XYSSL)
         if(do_ssl)
-    		return ssl_write((ssl_context *)fp,&c,1);
+    		return ssl_printf((ssl_context *)fp,"%c",c);
+//    		return ssl_write((ssl_context *)fp,&c,1);
         else
 #endif
 #endif
