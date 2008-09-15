@@ -20,7 +20,7 @@
 
 struct site_survey_list
 {
-    uint8 SSID[33];
+    char SSID[33];
     unsigned char BSSID[18];
     uint8 channel;		/* Channel no. */
     int16 RSSI;			/* receive signal strength (in dBm) */
@@ -104,7 +104,7 @@ void ej_dump_site_survey( webs_t wp, int argc, char_t ** argv )
 	// fix for " in SSID
 	char *tssid =
 	    ( site_survey_lists[i].SSID[0] ==
-	      0 ) ? "hidden" : site_survey_lists[i].SSID;
+	      0 ) ? "hidden" : &site_survey_lists[i].SSID[0];
 	int pos = 0;
 	int tpos;
 	int ssidlen = strlen( tssid );

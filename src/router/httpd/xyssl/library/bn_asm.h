@@ -7,7 +7,7 @@
 #ifndef _BN_ASM_H
 #define _BN_ASM_H
 
-#if defined(__GNUC__)
+#if 0
 #if defined(__i386__)
 
 #define MULADDC_INIT                            \
