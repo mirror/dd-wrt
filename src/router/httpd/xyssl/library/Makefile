@@ -27,15 +27,15 @@ all: static shared
 static: libxyssl.a
 
 libxyssl.a: $(OBJS)
-	@echo "  $(AR)    $@"; $(AR) r $@ $(OBJS)
+	$(AR) r $@ $(OBJS)
 
 shared: libxyssl.so
 
 libxyssl.so: $(OBJS) 
-	@echo "  $(LD)    $@"; $(LD) -shared -o $@ $^
+	$(LD) -shared -o $@ $^
 
 .c.o:
-	@echo "  $(CC)    $<"; $(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -c $<
 
 clean:
 	@rm -f *.o libxyssl.*

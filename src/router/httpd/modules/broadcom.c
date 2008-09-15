@@ -1496,7 +1496,7 @@ do_apply_post( char *url, webs_t stream, int len, char *boundary )
 static void do_cfebackup(struct mime_handler *handler, char *url, webs_t stream, char *query )
 {
     system2( "cat /dev/mtd/0 > /tmp/cfe.bin" );
-    do_file(handler, "/tmp/cfe.bin", stream, NULL );
+    do_file_attach(handler, "/tmp/cfe.bin", stream, NULL,"cfe.bin" );
     unlink( "/tmp/cfe.bin" );
 }
 #endif
@@ -2163,17 +2163,17 @@ struct mime_handler mime_handlers[] = {
 
 #ifdef HAVE_DDLAN
     {"nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out,
-     do_auth2,1},
+     do_auth2,0},
     {"nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
      nv_file_out,
-     do_auth2,1},
+     do_auth2,0},
     {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL,1},
 #else
     {"nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out,
-     do_auth,1},
+     do_auth,0},
     {"nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
      nv_file_out,
-     do_auth,1},
+     do_auth,0},
     {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth,1},
 #endif
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)

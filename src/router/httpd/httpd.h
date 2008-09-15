@@ -86,6 +86,7 @@ extern int count_cgi ();
 
 /* Regular file handler */
 extern void do_file (struct mime_handler *handler,char *path, webs_t stream, char *query);
+extern void do_file_attach (struct mime_handler *handler,char *path, webs_t stream, char *query, char *attachment);
 
 /* GoAhead 2.1 compatibility */
 //typedef FILE * webs_t;
