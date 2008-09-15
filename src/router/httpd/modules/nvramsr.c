@@ -295,9 +295,11 @@ void nv_file_out(struct mime_handler *handler, char *path, webs_t wp, char *quer
 	if( buf[i] == 0 )
 	    backupcount++;
     }
-    wfwrite( sign, 6, 1, wp );
-    wfputc( backupcount & 255, wp );	// high byte
-    wfputc( backupcount >> 8, wp );	// low byte
+    FILE *fp = fopen("/tmp/nvrambak.bin","wb");
+    
+    fwrite( sign, 6, 1, fp );
+    fputc( backupcount & 255, fp );	// high byte
+    fputc( backupcount >> 8, fp );	// low byte
     while( strlen( p ) != 0 )
     {
 	int len = strlen( p );
@@ -307,20 +309,22 @@ void nv_file_out(struct mime_handler *handler, char *path, webs_t wp, char *quer
 		p[i] = 0;
 	char *name = p;
 
-	wfputc( strlen( name ), wp );
+	fputc( strlen( name ), fp );
 
 	for( i = 0; i < strlen( name ); i++ )
-	    wfputc( name[i], wp );
+	    fputc( name[i], fp );
 	char *val = nvram_safe_get( name );
 
-	wfputc( strlen( val ) & 255, wp );
-	wfputc( strlen( val ) >> 8, wp );
+	fputc( strlen( val ) & 255, fp );
+	fputc( strlen( val ) >> 8, fp );
 	for( i = 0; i < strlen( val ); i++ )
-	    wfputc( val[i], wp );
+	    fputc( val[i], fp );
 
 	p += len + 1;
     }
     free( buf );
-
+    fclose(fp);
+    do_file_attach(handler,"/tmp/nvrambak.bin",wp,query,"nvrambak.bin");
+    eval("rm","-f","/tmp/nvrambak.bin");
     return;
 }

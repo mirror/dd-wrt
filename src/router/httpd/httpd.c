@@ -178,7 +178,7 @@ static int auth_check( char *dirname, char *authorization );
 static void send_error( int status, char *title, char *extra_header,
 			char *text );
 static void send_headers( int status, char *title, char *extra_header,
-			  char *mime_type, long length );
+			  char *mime_type, long length ,char *attach_file);
 static int b64_decode( const char *str, unsigned char *space, int size );
 static int match( const char *pattern, const char *string );
 static int match_one( const char *pattern, int patternlen,
@@ -312,7 +312,7 @@ send_error( int status, char *title, char *extra_header, char *text )
 {
 
     // jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
-    send_headers( status, title, extra_header, "text/html", 0 );
+    send_headers( status, title, extra_header, "text/html", 0 ,NULL);
     ( void )wfprintf( conn_fp,
 		      "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n",
 		      status, title, status, title );
@@ -323,24 +323,26 @@ send_error( int status, char *title, char *extra_header, char *text )
 
 static void
 send_headers( int status, char *title, char *extra_header, char *mime_type,
-	      long length )
+	      long length , char *attach_file)
 {
     time_t now;
     char timebuf[100];
-
-    // jimmy, https, 8/4/2003, fprintf -> wfprintf
     wfprintf( conn_fp, "%s %d %s\r\n", PROTOCOL, status, title );
+    if( mime_type != ( char * )0 )
+	wfprintf( conn_fp, "Content-Type: %s\r\n", mime_type );
+
+
     wfprintf( conn_fp, "Server: %s\r\n", SERVER_NAME );
     now = time( ( time_t * ) 0 );
     strftime( timebuf, sizeof( timebuf ), RFC1123FMT, gmtime( &now ) );
     wfprintf( conn_fp, "Date: %s\r\n", timebuf );
+    wfprintf( conn_fp, "Connection: close\r\n" );
+    if (attach_file)
+	wfprintf( conn_fp, "Content-Disposition: attachment; filename=%s\r\n", attach_file );
     if( extra_header != ( char * )0 && *extra_header )
 	wfprintf( conn_fp, "%s\r\n", extra_header );
-    if( mime_type != ( char * )0 )
-	wfprintf( conn_fp, "Content-Type: %s\r\n", mime_type );
     if( length != 0 )
 	wfprintf( conn_fp, "Content-Length: %ld\r\n", length );
-    wfprintf( conn_fp, "Connection: close\r\n" );
     wfprintf( conn_fp, "\r\n" );
 }
 
@@ -478,9 +480,9 @@ match_one( const char *pattern, int patternlen, const char *string )
     return 0;
 }
 
-void
+static void
 //do_file(char *path, FILE *stream)
-do_file( struct mime_handler *handler, char *path, webs_t stream, char *query )	//jimmy, https, 8/4/2003
+do_file_2( struct mime_handler *handler, char *path, webs_t stream, char *query,char *attach )	//jimmy, https, 8/4/2003
 {
 
 #ifdef HAVE_VFS
@@ -520,7 +522,7 @@ do_file( struct mime_handler *handler, char *path, webs_t stream, char *query )	
 	fseek( fp, 0, SEEK_END );
 	if( !handler->send_headers )
 	    send_headers( 200, "Ok", handler->extra_header,
-			  handler->mime_type, ftell( fp ) );
+			  handler->mime_type, ftell( fp ) ,attach);
 	fseek( fp, 0, SEEK_SET );
 	while( ( c = getc( fp ) ) != EOF )
 	    wfputc( c, stream );	// jimmy, https, 8/4/2003
@@ -533,7 +535,7 @@ do_file( struct mime_handler *handler, char *path, webs_t stream, char *query )	
 
 	if( !handler->send_headers )
 	    send_headers( 200, "Ok", handler->extra_header,
-			  handler->mime_type, len );
+			  handler->mime_type, len ,attach);
 	int a;
 	char buf[128];
 	int tot = 0;
@@ -549,6 +551,22 @@ do_file( struct mime_handler *handler, char *path, webs_t stream, char *query )	
 	fclose( web );
     }
 #endif
+}
+
+
+void
+//do_file(char *path, FILE *stream)
+do_file( struct mime_handler *handler, char *path, webs_t stream, char *query )	//jimmy, https, 8/4/2003
+{
+
+do_file_2(handler,path,stream,query,NULL);
+}
+void
+//do_file(char *path, FILE *stream)
+do_file_attach( struct mime_handler *handler, char *path, webs_t stream, char *query,char *attachment )	//jimmy, https, 8/4/2003
+{
+
+do_file_2(handler,path,stream,query,attachment);
 }
 
 #ifdef HSIAB_SUPPORT
@@ -1040,7 +1058,7 @@ static void handle_request( void )
 		{
 		    if( handler->send_headers )
 			send_headers( 200, "Ok", handler->extra_header,
-				      handler->mime_type, 0 );
+				      handler->mime_type, 0,NULL );
 		}
 		if( handler->output )
 		{
