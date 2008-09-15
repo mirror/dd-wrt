@@ -61,14 +61,12 @@
                                                         \
     PTEST = PT1 >> 20;                                  \
                                                         \
-    TST1_ENTER  TST1_ENTER  TST1_ENTER  TST1_ENTER      \
-    TST1_ENTER  TST1_ENTER  TST1_ENTER  TST1_ENTER      \
-    TST1_ENTER  TST1_ENTER  TST1_ENTER  TST1_ENTER      \
-                                                        \
-    TST1_LEAVE  TST1_LEAVE  TST1_LEAVE  TST1_LEAVE      \
-    TST1_LEAVE  TST1_LEAVE  TST1_LEAVE  TST1_LEAVE      \
-    TST1_LEAVE  TST1_LEAVE  TST1_LEAVE  TST1_LEAVE      \
-                                                        \
+    {							\
+    int a;						\
+    for (a=0;a<12;a++)	TST1_ENTER 			\
+							\
+    for (a=0;a<12;a++) 	TST1_LEAVE 			\
+    }                                                   \
     PTX = (PT1 >> 18) & 7;                              \
     PT1 &= 0x1FFF;                                      \
     PT2 &= 0x1FFF;                                      \
@@ -108,14 +106,13 @@
     PT2 = ((PT2 & 0x1FFF) & (~8)) ^ ((PT1 ^ 8) & 0x8);  \
     PTY = (PT2 >> 10) & 7;                              \
                                                         \
-    TST2_ENTER  TST2_ENTER  TST2_ENTER  TST2_ENTER      \
-    TST2_ENTER  TST2_ENTER  TST2_ENTER  TST2_ENTER      \
-    TST2_ENTER  TST2_ENTER  TST2_ENTER  TST2_ENTER      \
+    {							\
+    int a;						\
+    for (a=0;a<12;a++)	TST2_ENTER 			\
                                                         \
-    TST2_LEAVE  TST2_LEAVE  TST2_LEAVE  TST2_LEAVE      \
-    TST2_LEAVE  TST2_LEAVE  TST2_LEAVE  TST2_LEAVE      \
-    TST2_LEAVE  TST2_LEAVE  TST2_LEAVE  TST2_LEAVE      \
-                                                        \
+							\
+    for (a=0;a<12;a++)	TST2_LEAVE 			\
+    }                                                    \
     C = &WALK[PT1 ^ 5];                                 \
     D = &WALK[PT2 ^ 5];                                 \
                                                         \

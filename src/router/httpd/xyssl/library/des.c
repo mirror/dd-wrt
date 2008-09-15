@@ -377,15 +377,9 @@ static void des_crypt( unsigned long SK[32],
     GET_UINT32_BE( Y, input, 4 );
 
     DES_IP( X, Y );
-
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
+    int a;
+    for (a=0;a<16;a++)
+    DES_ROUND( Y, X );  
 
     DES_FP( Y, X );
 
@@ -526,33 +520,9 @@ static void des3_crypt( unsigned long SK[96],
     GET_UINT32_BE( Y, input, 4 );
 
     DES_IP( X, Y );
-
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-
-    DES_ROUND( X, Y );  DES_ROUND( Y, X );
-    DES_ROUND( X, Y );  DES_ROUND( Y, X );
-    DES_ROUND( X, Y );  DES_ROUND( Y, X );
-    DES_ROUND( X, Y );  DES_ROUND( Y, X );
-    DES_ROUND( X, Y );  DES_ROUND( Y, X );
-    DES_ROUND( X, Y );  DES_ROUND( Y, X );
-    DES_ROUND( X, Y );  DES_ROUND( Y, X );
-    DES_ROUND( X, Y );  DES_ROUND( Y, X );
-
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
-    DES_ROUND( Y, X );  DES_ROUND( X, Y );
+    int a;
+    for (a=0;a<48;a++)
+    DES_ROUND( Y, X );
 
     DES_FP( Y, X );
 

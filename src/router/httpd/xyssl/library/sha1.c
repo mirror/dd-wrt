@@ -73,22 +73,9 @@ static void sha1_process( sha1_context *ctx, unsigned char data[64] )
 {
     unsigned long temp, W[16], A, B, C, D, E;
 
-    GET_UINT32_BE( W[0],  data,  0 );
-    GET_UINT32_BE( W[1],  data,  4 );
-    GET_UINT32_BE( W[2],  data,  8 );
-    GET_UINT32_BE( W[3],  data, 12 );
-    GET_UINT32_BE( W[4],  data, 16 );
-    GET_UINT32_BE( W[5],  data, 20 );
-    GET_UINT32_BE( W[6],  data, 24 );
-    GET_UINT32_BE( W[7],  data, 28 );
-    GET_UINT32_BE( W[8],  data, 32 );
-    GET_UINT32_BE( W[9],  data, 36 );
-    GET_UINT32_BE( W[10], data, 40 );
-    GET_UINT32_BE( W[11], data, 44 );
-    GET_UINT32_BE( W[12], data, 48 );
-    GET_UINT32_BE( W[13], data, 52 );
-    GET_UINT32_BE( W[14], data, 56 );
-    GET_UINT32_BE( W[15], data, 60 );
+    int a;
+    for (a=0;a<16;a++)
+	GET_UINT32_BE( W[a],  data,  a<<2 );
 
 #define S(x,n) ((x << n) | ((x & 0xFFFFFFFF) >> (32 - n)))
 
@@ -299,11 +286,9 @@ void sha1_finish( sha1_context *ctx, unsigned char output[20] )
     sha1_update( ctx, (unsigned char *) sha1_padding, padn );
     sha1_update( ctx, msglen, 8 );
 
-    PUT_UINT32_BE( ctx->state[0], output,  0 );
-    PUT_UINT32_BE( ctx->state[1], output,  4 );
-    PUT_UINT32_BE( ctx->state[2], output,  8 );
-    PUT_UINT32_BE( ctx->state[3], output, 12 );
-    PUT_UINT32_BE( ctx->state[4], output, 16 );
+    int a;
+    for (a=0;a<5;a++)
+	PUT_UINT32_BE( ctx->state[a], output,  a<<2 );
 }
 
 /*
