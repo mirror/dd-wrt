@@ -1253,15 +1253,17 @@ int x509_read_keyfile( rsa_context *rsa, char *path, char *pwd )
     unsigned char *buf;
 
     if( ( f = fopen( path, "rb" ) ) == NULL )
+	{
         return( 1 );
-
+	}
     fseek( f, 0, SEEK_END );
     n = (size_t) ftell( f );
     fseek( f, 0, SEEK_SET );
 
     if( ( buf = (unsigned char *) malloc( n + 1 ) ) == NULL )
+	{
         return( 1 );
-
+	}
     if( fread( buf, 1, n, f ) != n )
     {
         fclose( f );

@@ -154,8 +154,9 @@ static int ssl_parse_client_hello( ssl_context *ssl )
         if( buf[0] != 0x80 || buf[1] < 17 ||
             buf[2] != SSL_HS_CLIENT_HELLO ||
             buf[3] != SSLV3_MAJOR_VERSION )
+            {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+	    }
         memcpy( ssl->max_ver, buf + 3, 2 );
 
         ssl->major_ver = SSLV3_MAJOR_VERSION;
@@ -197,17 +198,21 @@ static int ssl_parse_client_hello( ssl_context *ssl )
 
         if(   ciph_len < 3 || ciph_len > 192 ||
             ( ciph_len % 3 ) != 0 )
+            {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+	    }
         if( sess_len < 0 || sess_len > 32 )
+            {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+	    }
         if( chal_len < 8 || chal_len > 32 )
+            {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+	    }
         if( n != 6 + ciph_len + sess_len + chal_len )
+            {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+	    }
         p = buf + 6 + ciph_len;
         memset( ssl->randbytes, 0, 64 );
         memcpy( ssl->randbytes + 32 - chal_len, p, chal_len );
@@ -240,8 +245,9 @@ static int ssl_parse_client_hello( ssl_context *ssl )
         if( buf[0] != SSL_MSG_HANDSHAKE   ||
             buf[1] != SSLV3_MAJOR_VERSION ||
             buf[3] != 0 || buf[4] < 45 )
+            {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+	    }
         n = (int) buf[4];
 
         if( ssl->in_left < 5 + n )
@@ -280,8 +286,9 @@ static int ssl_parse_client_hello( ssl_context *ssl )
         /* check the protocol version */
         if( buf[0] != SSL_HS_CLIENT_HELLO ||
             buf[4] != SSLV3_MAJOR_VERSION )
+            {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+	    }
         ssl->major_ver = SSLV3_MAJOR_VERSION;
         ssl->minor_ver = ( buf[5] <= TLS10_MINOR_VERSION )
                          ? buf[5]  : TLS10_MINOR_VERSION;
@@ -291,14 +298,16 @@ static int ssl_parse_client_hello( ssl_context *ssl )
 
         /* check the message length */
         if( buf[1] != 0 || buf[2] != 0 || (int) buf[3] + 4 != n )
+            {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+	    }
         /* check the session length */
         sess_len = (int) buf[38];
 
         if( sess_len < 0 || sess_len > 32 )
+            {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+	    }
         ssl->sidlen = sess_len;
         memcpy( ssl->sessid, buf + 39, ssl->sidlen );
 
@@ -307,14 +316,17 @@ static int ssl_parse_client_hello( ssl_context *ssl )
 
         if(   ciph_len < 2 || ciph_len > 128 ||
             ( ciph_len % 2 ) != 0 )
+            {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+	    }
         /* check the compression alg. length */
-        comp_len = (int) buf[41 + sess_len + ciph_len];
 
-        if( n != 42 + sess_len + ciph_len + comp_len )
+        comp_len = buf[41 + sess_len + ciph_len];
+
+        if( comp_len < 1 || comp_len > 16 )
+        {
             return( ERR_SSL_BAD_HS_CLIENT_HELLO );
-
+        }
         /* search for a matching cipher */
         for( i = 0; ssl->cipherlist[i] != 0; i++ )
         {
@@ -658,10 +670,13 @@ static int ssl_parse_certificate_verify( ssl_context *ssl )
  */
 int ssl_server_start( ssl_context *ssl )
 {
-    int ret = ssl_flush_output( ssl );
-
-    while( ret == 0 )
+int ret = 0;
+    while( ssl->state != SSL_HANDSHAKE_OVER )
     {
+
+    ret = ssl_flush_output( ssl );
+    if (ret!=0)
+	break;
         switch( ssl->state )
         {
         case SSL_HELLO_REQUEST:
@@ -744,7 +759,10 @@ int ssl_server_start( ssl_context *ssl )
         default:
             return( 0 );
         }
+        if( ret != 0 )
+            break;
+    
     }
-
+    
     return( ret );
 }

@@ -128,6 +128,9 @@ unsigned long hardclock( void )
     return( tbl );
 }
 #else
+
+
+
 static int hardclock_init = 0;
 static struct timeval tv_init;
 

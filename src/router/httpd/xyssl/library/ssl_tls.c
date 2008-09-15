@@ -799,9 +799,11 @@ int ssl_flush_output( ssl_context *ssl )
 
         ret = net_send( ssl->write_fd, buf,
                        &ssl->out_left );
+        if( ret <= 0 )
+            return( ret );
     }
 
-    return( ret );
+    return 0;
 }
 
 /*
