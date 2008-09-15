@@ -2473,7 +2473,6 @@ static void save_prefix( webs_t wp, char *prefix )
     char turbo[80];
     char chanbw[80];
     char preamble[80];
-    int turbochanged = 0;
     int cbwchanged = 0;
 
     sprintf( n, "%s_ssid", prefix );
