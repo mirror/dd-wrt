@@ -807,36 +807,23 @@ static void mpi_mul_hlp( int i, t_int *s, t_int *d, t_int b )
     if( i == 32 )
     {
         MULADDC_INIT
-        MULADDC_CORE   MULADDC_CORE
-        MULADDC_CORE   MULADDC_CORE   MULADDC_CORE
-        MULADDC_CORE   MULADDC_CORE   MULADDC_CORE
-
-        MULADDC_CORE   MULADDC_CORE
-        MULADDC_CORE   MULADDC_CORE   MULADDC_CORE
-        MULADDC_CORE   MULADDC_CORE   MULADDC_CORE
-        MULADDC_CORE   MULADDC_CORE   MULADDC_CORE
-        MULADDC_CORE   MULADDC_CORE   MULADDC_CORE
-        MULADDC_CORE   MULADDC_CORE
-
-        MULADDC_CORE   MULADDC_CORE   MULADDC_CORE
-        MULADDC_CORE   MULADDC_CORE   MULADDC_CORE
-        MULADDC_CORE   MULADDC_CORE
+        int a;
+        for (a=0;a<32;a++)
+        {
+        MULADDC_CORE
+        }
         MULADDC_STOP
     }
     else
     {
         if( i == 16 )
         {
-            MULADDC_INIT
-            MULADDC_CORE   MULADDC_CORE
-            MULADDC_CORE   MULADDC_CORE
-            MULADDC_CORE   MULADDC_CORE
-            MULADDC_CORE   MULADDC_CORE
-
-            MULADDC_CORE   MULADDC_CORE
-            MULADDC_CORE   MULADDC_CORE
-            MULADDC_CORE   MULADDC_CORE
-            MULADDC_CORE   MULADDC_CORE
+        MULADDC_INIT
+        int a;
+        for (a=0;a<16;a++)
+        {
+        MULADDC_CORE
+        }
             MULADDC_STOP
         }
         else
@@ -844,11 +831,12 @@ static void mpi_mul_hlp( int i, t_int *s, t_int *d, t_int b )
             for( ; i >= 8; i -= 8 )
             {
                 MULADDC_INIT
-                MULADDC_CORE   MULADDC_CORE
-                MULADDC_CORE   MULADDC_CORE
 
-                MULADDC_CORE   MULADDC_CORE
-                MULADDC_CORE   MULADDC_CORE
+        int a;
+        for (a=0;a<8;a++)
+        {
+        MULADDC_CORE
+        }
                 MULADDC_STOP
             }
 

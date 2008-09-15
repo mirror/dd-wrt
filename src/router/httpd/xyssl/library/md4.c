@@ -73,22 +73,9 @@ static void md4_process( md4_context *ctx, unsigned char data[64] )
 {
     unsigned long X[16], A, B, C, D;
 
-    GET_UINT32_LE( X[0],  data,  0 );
-    GET_UINT32_LE( X[1],  data,  4 );
-    GET_UINT32_LE( X[2],  data,  8 );
-    GET_UINT32_LE( X[3],  data, 12 );
-    GET_UINT32_LE( X[4],  data, 16 );
-    GET_UINT32_LE( X[5],  data, 20 );
-    GET_UINT32_LE( X[6],  data, 24 );
-    GET_UINT32_LE( X[7],  data, 28 );
-    GET_UINT32_LE( X[8],  data, 32 );
-    GET_UINT32_LE( X[9],  data, 36 );
-    GET_UINT32_LE( X[10], data, 40 );
-    GET_UINT32_LE( X[11], data, 44 );
-    GET_UINT32_LE( X[12], data, 48 );
-    GET_UINT32_LE( X[13], data, 52 );
-    GET_UINT32_LE( X[14], data, 56 );
-    GET_UINT32_LE( X[15], data, 60 );
+    int a;
+    for (a=0;a<16;a++)
+	GET_UINT32_LE( X[a],  data,  a<<2 );
 
 #define S(x,n) ((x << n) | ((x & 0xFFFFFFFF) >> (32 - n)))
 
@@ -246,10 +233,9 @@ void md4_finish( md4_context *ctx, unsigned char output[16] )
     md4_update( ctx, (unsigned char *) md4_padding, padn );
     md4_update( ctx, msglen, 8 );
 
-    PUT_UINT32_LE( ctx->state[0], output,  0 );
-    PUT_UINT32_LE( ctx->state[1], output,  4 );
-    PUT_UINT32_LE( ctx->state[2], output,  8 );
-    PUT_UINT32_LE( ctx->state[3], output, 12 );
+    int a;
+    for (a=0;a<4;a++)
+    PUT_UINT32_LE( ctx->state[a], output,  a<<2 );
 }
 
 /*
