@@ -76,23 +76,9 @@ static void sha2_process( sha2_context *ctx, unsigned char data[64] )
 {
     unsigned long temp1, temp2, W[64];
     unsigned long A, B, C, D, E, F, G, H;
-
-    GET_UINT32_BE( W[0],  data,  0 );
-    GET_UINT32_BE( W[1],  data,  4 );
-    GET_UINT32_BE( W[2],  data,  8 );
-    GET_UINT32_BE( W[3],  data, 12 );
-    GET_UINT32_BE( W[4],  data, 16 );
-    GET_UINT32_BE( W[5],  data, 20 );
-    GET_UINT32_BE( W[6],  data, 24 );
-    GET_UINT32_BE( W[7],  data, 28 );
-    GET_UINT32_BE( W[8],  data, 32 );
-    GET_UINT32_BE( W[9],  data, 36 );
-    GET_UINT32_BE( W[10], data, 40 );
-    GET_UINT32_BE( W[11], data, 44 );
-    GET_UINT32_BE( W[12], data, 48 );
-    GET_UINT32_BE( W[13], data, 52 );
-    GET_UINT32_BE( W[14], data, 56 );
-    GET_UINT32_BE( W[15], data, 60 );
+    int a;
+    for (a=0;a<16;a++)
+    GET_UINT32_BE( W[a],  data,  a<<2 );
 
 #define  SHR(x,n) ((x & 0xFFFFFFFF) >> n)
 #define ROTR(x,n) (SHR(x,n) | (x << (32 - n)))
@@ -276,15 +262,12 @@ void sha2_finish( sha2_context *ctx, unsigned char output[32] )
 
     sha2_update( ctx, (unsigned char *) sha2_padding, padn );
     sha2_update( ctx, msglen, 8 );
+    
+    int a;
+    for (a=0;a<8;a++)
+	PUT_UINT32_BE( ctx->state[a], output,  a<<2 );
+    
 
-    PUT_UINT32_BE( ctx->state[0], output,  0 );
-    PUT_UINT32_BE( ctx->state[1], output,  4 );
-    PUT_UINT32_BE( ctx->state[2], output,  8 );
-    PUT_UINT32_BE( ctx->state[3], output, 12 );
-    PUT_UINT32_BE( ctx->state[4], output, 16 );
-    PUT_UINT32_BE( ctx->state[5], output, 20 );
-    PUT_UINT32_BE( ctx->state[6], output, 24 );
-    PUT_UINT32_BE( ctx->state[7], output, 28 );
 }
 
 /*

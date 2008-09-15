@@ -5124,14 +5124,14 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 
     if( !ifexists( ifname ) )
     {
-	printf( stderr, "IOCTL_STA_INFO ifresolv %s failed!\n", ifname );
+	printf( "IOCTL_STA_INFO ifresolv %s failed!\n", ifname );
 	return cnt;
     }
     int state = get_radiostate( ifname );
 
     if( state == 0 || state == -1 )
     {
-	printf( stderr, "IOCTL_STA_INFO radio %s not enabled!\n", ifname );
+	printf( "IOCTL_STA_INFO radio %s not enabled!\n", ifname );
 	return cnt;
     }
     s = socket( AF_INET, SOCK_DGRAM, 0 );
