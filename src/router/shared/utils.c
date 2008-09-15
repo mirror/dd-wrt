@@ -1315,16 +1315,16 @@ if (!netmask)
     return;
 unsigned int mask[4];
 sscanf( netmask, "%d.%d.%d.%d", &mask[0], &mask[1], &mask[2], &mask[3] );
-unsigned int value;
+unsigned int value=0;
 value |= mask[0]<<24;
 value |= mask[1]<<16;
 value |= mask[2]<<8;
 value |= mask[3];
 unsigned int base =0;
-int i;
+unsigned int i;
 for (i=0;i<32;i++)
     {
-    if ((value & (1<<i)))
+    if ((value & (1<<i)) == (1<<i))
 	base++;
     }
 return base;
