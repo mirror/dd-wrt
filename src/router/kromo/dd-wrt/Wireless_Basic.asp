@@ -200,7 +200,7 @@ addEvent(window, "unload", function() {
 		  </div>
 		  <div id="main">
 			<div id="contents">
-			   <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
+			   <form name="wireless" action="apply.cgi" method="post">
 				  	<input type="hidden" name="submit_button" value="Wireless_Basic" />
 				  	<input type="hidden" name="action" value="Apply" />
 				  	<input type="hidden" name="change_action" value="gozila_cgi" />

@@ -16,7 +16,7 @@ function to_apply(F) {
 	</head>
 
 	<body>
-		<form name="ipfilter" action="apply.cgi" method="<% get_http_method(); %>" >
+		<form name="ipfilter" action="apply.cgi" method="post" >
 			<input type="hidden" name="submit_button" value="FilterIPMAC" />
 			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" />

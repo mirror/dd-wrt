@@ -50,7 +50,7 @@ function milkfish_sip_message_submit(F) {
 	</head>
 	
 	<body>
-		<form name="setup" action="applyuser.cgi" method="<% get_http_method(); %>">
+		<form name="setup" action="applyuser.cgi" method="post">
 		<input type="hidden" name="submit_button" value="Milkfish_messaging" />
 		<input type="hidden" name="action" value="Apply" />
 		<input type="hidden" name="change_action" />
