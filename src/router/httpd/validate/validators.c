@@ -46,64 +46,7 @@ extern FILE *debout;
 #define D(a)
 #endif
 
-typedef struct
-{
-    uint chan;			/* channel number */
-    uint freq;			/* in Mhz */
-} chan_info_t;
 
-static chan_info_t chan_info[] = {
-    /*
-     * A channels 
-     */
-    /*
-     * 11a usa low 
-     */
-    {36, 5180},
-    {40, 5200},
-    {44, 5220},
-    {48, 5240},
-    {52, 5260},
-    {56, 5280},
-    {60, 5300},
-    {64, 5320},
-
-    /*
-     * 11a Europe 
-     */
-    {100, 5500},
-    {104, 5520},
-    {108, 5540},
-    {112, 5560},
-    {116, 5580},
-    {120, 5600},
-    {124, 5620},
-    {128, 5640},
-    {132, 5660},
-    {136, 5680},
-    {140, 5700},
-
-    /*
-     * 11a usa high 
-     */
-    {149, 5745},
-    {153, 5765},
-    {157, 5785},
-    {161, 5805},
-
-    /*
-     * 11a japan 
-     */
-    {184, 4920},
-    {188, 4940},
-    {192, 4960},
-    {196, 4980},
-    {200, 5000},
-    {204, 5020},
-    {208, 5040},
-    {212, 5060},
-    {216, 5080}
-};
 
 void ( *do_ej_buffer ) ( char *buffer, webs_t stream );
 int ( *httpd_filter_name ) ( char *old_name, char *new_name, size_t size,

@@ -246,7 +246,7 @@ static int auth_check( char *dirname, char *authorization )
     l = b64_decode( &( authorization[6] ), authinfo, sizeof( authinfo ) );
     authinfo[l] = '\0';
     /* Split into user and password. */
-    authpass = strchr( authinfo, ':' );
+    authpass = strchr( (char *)authinfo, ':' );
     if( authpass == ( char * )0 )
     {
 	/* No colon?  Bogus auth info. */
@@ -530,7 +530,6 @@ do_file_2( struct mime_handler *handler, char *path, webs_t stream, char *query,
     }
     else
     {
-	int i;
 	int len = getWebsFileLen( path );
 
 	if( !handler->send_headers )
@@ -1080,7 +1079,7 @@ void				// add by honor 2003-04-16
 get_client_ip_mac( int conn_fp )
 {
     struct sockaddr_in sa;
-    int len = sizeof( struct sockaddr_in );
+    unsigned int len = sizeof( struct sockaddr_in );
     char *m;
 
     getpeername( conn_fp, ( struct sockaddr * )&sa, &len );
@@ -1465,7 +1464,7 @@ int main( int argc, char **argv )
 #ifdef HAVE_XYSSL
 	    ssl_free( &ssl );
 	    havege_init( &hs );
-	    if( ret = ssl_init( &ssl, 0 ) != 0 )
+	    if( (ret = ssl_init( &ssl, 0 )) != 0 )
 	    {
 		printf( "ssl_init failed\n" );
 		close( conn_fd );
@@ -1540,7 +1539,7 @@ char *wfgets( char *buf, int len, FILE * fp )
     else
 #elif defined(HAVE_XYSSL)
     if( do_ssl )
-	return ( char * )ssl_read_line( ( ssl_context * ) fp, buf, &len );
+	return ( char * )ssl_read_line( ( ssl_context * ) fp, (unsigned char *)buf, &len );
     else
 #endif
 #endif
@@ -1560,7 +1559,7 @@ int wfputc( char c, FILE * fp )
     else
 #elif defined(HAVE_XYSSL)
     if( do_ssl )
-	return ssl_write( ( ssl_context * ) fp, &c, 1 );
+	return ssl_write( ( ssl_context * ) fp, (unsigned char*)&c, 1 );
     else
 #endif
 #endif
@@ -1580,7 +1579,7 @@ int wfputs( char *buf, FILE * fp )
     else
 #elif defined(HAVE_XYSSL)
     if( do_ssl )
-	return ssl_write( ( ssl_context * ) fp, buf, strlen( buf ) );
+	return ssl_write( ( ssl_context * ) fp, (unsigned char*)buf, strlen( buf ) );
     else
 #endif
 #endif
@@ -1659,11 +1658,11 @@ size_t wfwrite( char *buf, int size, int n, FILE * fp )
     else
 #elif defined(HAVE_MATRIXSSL)
     if( do_ssl )
-	return matrixssl_write( fp, buf, n * size );
+	return matrixssl_write( fp, (unsigned char*)buf, n * size );
     else
 #elif defined(HAVE_XYSSL)
     if( do_ssl )
-	return ssl_write( ( ssl_context * ) fp, buf, n * size );
+	return ssl_write( ( ssl_context * ) fp, (unsigned char*)buf, n * size );
     else
 #endif
 #endif
@@ -1700,7 +1699,7 @@ size_t wfread( char *buf, int size, int n, FILE * fp )
     {
 	int len = n * size;
 
-	return ssl_read( ( ssl_context * ) fp, buf, &len );
+	return ssl_read( ( ssl_context * ) fp, (unsigned char*)buf, &len );
     }
     else
 #endif
