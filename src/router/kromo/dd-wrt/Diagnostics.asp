@@ -61,7 +61,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="ping" action="apply.cgi" method="<% get_http_method(); %>" >
+						<form name="ping" action="apply.cgi" method="post" >
 							<input type="hidden" name="submit_button" value="Ping" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="submit_type" />
