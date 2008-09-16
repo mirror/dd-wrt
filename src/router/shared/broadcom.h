@@ -598,6 +598,7 @@ extern int ISDIGIT( char *value, int flag );
  * ASCII character set set flag to 0 to ignore zero-length values 
  */
 extern int ISASCII( char *value, int flag );
+extern int tf_webWriteJS( webs_t wp, const char *s );
 
 extern void do_setup_wizard( char *url, webs_t stream );
 extern void ej_show_turbo( webs_t wp, int argc, char_t ** argv );
@@ -660,7 +661,7 @@ extern void show_preshared( webs_t wp, char *prefix );
 extern void show_radius( webs_t wp, char *prefix, int showmac );
 extern void show_wparadius( webs_t wp, char *prefix );
 extern void show_wep( webs_t wp, char *prefix );
-extern char *get_wep_value( char *type, char *_bit, char *prefix );
+extern char *get_wep_value(char *buf, char *type, char *_bit, char *prefix );
 
 #ifdef HAVE_MILKFISH
 extern void ej_exec_milkfish_service( webs_t wp, int argc, char_t ** argv );

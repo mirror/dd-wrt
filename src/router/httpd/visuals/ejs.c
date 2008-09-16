@@ -1491,7 +1491,9 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
     int wifi = haswifi(  );
 #endif
 #endif
+#ifdef HAVE_WAVESAT
     int wimaxwifi = 0;
+#endif
     char menu[8][11][32] =
 	{ {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
 	   "Networking.asp", "", "", "", "", ""},

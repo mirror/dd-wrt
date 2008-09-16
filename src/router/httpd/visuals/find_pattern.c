@@ -68,7 +68,7 @@ find_match_pattern( char *name, size_t mlen,
 		    const char *data, const char *pattern, char *def )
 {
     int ret = 0;
-    int offset, len, length;
+    unsigned int offset, len, length;
 
     ret =
 	find_pattern( data, strlen( data ), pattern, strlen( pattern ), '$',

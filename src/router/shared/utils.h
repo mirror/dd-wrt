@@ -656,7 +656,7 @@ void getIPFromName( char *name, char *ip );
 
 struct wl_client_mac
 {
-    unsigned char hostname[32];
+    char hostname[32];
     char ipaddr[20];
     char hwaddr[20];
     int status;			// 0:offline 1:online
