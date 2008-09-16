@@ -720,15 +720,17 @@ void bump_maxfd(int fd, int *max);
 int read_write(int fd, unsigned char *packet, int size, int rw);
 
 /* log.c */
-void die(char *message, char *arg1, int exit_code);
 #ifndef NO_LOG
+void die(char *message, char *arg1, int exit_code);
 int log_start(struct passwd *ent_pw, int errfd);
 int log_reopen(char *log_file);
+#else
+#define die(a,b,c) exit(c)
 #endif
 #ifdef NEED_PRINTF
 void my_syslog(int priority, const char *format, ...);
 #else
-#define my_syslog(prio,fmt,...) { }
+#define my_syslog(prio,fmt,...) while(0){ }
 #endif
 void set_log_writer(fd_set *set, int *maxfdp);
 void check_log_writer(fd_set *set);
