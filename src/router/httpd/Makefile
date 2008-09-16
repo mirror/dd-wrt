@@ -334,7 +334,7 @@ ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 CFLAGS += -DHAVE_SSHD
 endif
 ifeq ($(CONFIG_REGISTER),y)
-CFLAGS += -DHAVE_REGISTER
+CFLAGS += -DHAVE_REGISTER -DNOMAIN
 #OBJS += crc.o register.c
 REGOBJS = register.c crc.o
 ifneq ($(CONFIG_DIST),"micro")
