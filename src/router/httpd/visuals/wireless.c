@@ -306,7 +306,7 @@ void save_hostname_ip( void )
     int match = 0;
     struct wl_client
     {
-	unsigned char hostname[32];
+	char hostname[32];
 	char ipaddr[20];
 	char hwaddr[20];
     } wl_clients[MAX_LEASES];
@@ -395,7 +395,6 @@ void save_hostname_ip( void )
 void ej_wireless_active_table( webs_t wp, int argc, char_t ** argv )
 {
     int i, flag = 0;
-    char *type;
     char word[256], *next;
     FILE *fp;
     char list[2][20];
@@ -557,13 +556,12 @@ void ej_wireless_active_table( webs_t wp, int argc, char_t ** argv )
  * 
  * return ""; } 
  */
-char *get_wep_value( char *type, char *_bit, char *prefix )
+char *get_wep_value(char *temp, char *type, char *_bit, char *prefix )
 {
 
     int cnt;
     char *wordlist;
     char wl_wep[] = "wlX.XX_wep_XXXXXX";
-    char temp[256] = "";
 
     if( nvram_match( "generate_key", "1" ) )
     {
@@ -628,7 +626,7 @@ void ej_get_wep_value( webs_t wp, int argc, char_t ** argv )
 {
     char *type, *bit;
     char *value = "", new_value[50] = "";
-
+    char temp[256];
 #ifdef FASTWEB
     ejArgs( argc, argv, "%s", &type );
 #else
@@ -642,11 +640,11 @@ void ej_get_wep_value( webs_t wp, int argc, char_t ** argv )
 #ifdef HAVE_MADWIFI
     bit = GOZILA_GET( wp, "ath0_wep_bit" );
 
-    value = get_wep_value( type, bit, "ath0" );
+    value = get_wep_value(temp, type, bit, "ath0" );
 #else
     bit = GOZILA_GET( wp, "wl_wep_bit" );
     cprintf( "bit = %s\n", bit );
-    value = get_wep_value( type, bit, "wl" );
+    value = get_wep_value(temp, type, bit, "wl" );
 #endif
     cprintf( "value = %s\n", value );
     httpd_filter_name( value, new_value, sizeof( new_value ), GET );

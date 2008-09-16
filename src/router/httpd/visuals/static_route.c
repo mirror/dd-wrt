@@ -14,12 +14,10 @@
 static char word[256];
 void ej_show_routeif( webs_t wp, int argc, char_t ** argv )
 {
-    char *arg;
-    int which, count;
+    int which;
     char *next, *page;
     char *ipaddr, *netmask, *gateway, *metric, *ifname;
-    static ifnamecopy[32];
-    int temp;
+    static char ifnamecopy[32];
     static char bufferif[512];
 
     page = websGetVar( wp, "route_page", NULL );
@@ -96,15 +94,10 @@ void ej_static_route_setting( webs_t wp, int argc, char_t ** argv )
     int temp;
     char new_name[200];
 
-#ifdef FASTWEB
-    ejArgs( argc, argv, "%s %d", &arg, &count );
-#else
-    if( ejArgs( argc, argv, "%s %d", &arg, &count ) < 2 )
-    {
-	websError( wp, 400, "Insufficient args\n" );
+    if (argc<2)
 	return;
-    }
-#endif
+    arg = argv[0];
+    count = atoi(argv[1]);
 
     page = websGetVar( wp, "route_page", NULL );
     if( !page )
