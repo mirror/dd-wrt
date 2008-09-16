@@ -704,7 +704,7 @@ static struct wifi_channels *list_channelsext( const char *ifname,
     char wl_turbo[16];
 
     sprintf( wl_mode, "%s_net_mode", ifname );
-    sprintf( wl_turbo, "%s_turbo", ifname );
+    sprintf( wl_turbo, "%s_channelbw", ifname );
     int l = 0;
 
     for( i = 0; i < achans.ic_nchans; i++ )
@@ -764,7 +764,7 @@ static struct wifi_channels *list_channelsext( const char *ifname,
 	if( !IEEE80211_IS_CHAN_STURBO( &achans.ic_chans[i] )
 	    && !IEEE80211_IS_CHAN_DTURBO( &achans.ic_chans[i] ) )
 	{
-	    if( nvram_match( wl_turbo, "1" ) )
+	    if( nvram_match( wl_turbo, "40" ) )
 		continue;
 	}
 	// filter out turbo channels if turbo mode is disabled
@@ -775,7 +775,7 @@ static struct wifi_channels *list_channelsext( const char *ifname,
 	 */
 	if( IEEE80211_IS_CHAN_STURBO( &achans.ic_chans[i] ) )
 	{
-	    if( nvram_match( wl_turbo, "0" ) )
+	    if( !nvram_match( wl_turbo, "40" ) )
 		continue;
 	}
 
