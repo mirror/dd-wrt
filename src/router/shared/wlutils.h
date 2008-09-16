@@ -130,7 +130,7 @@ extern int wl_iovar_get( char *ifname, char *iovar, void *bufptr,
 			 int buflen );
 extern int wl_iovar_setint( char *ifname, char *iovar, int val );
 
-// extern int wl_iovar_getint (char *ifname, char *iovar, int *val);
+extern int wl_iovar_getint (char *ifname, char *iovar, int *val);
 
 extern int wl_bssiovar_setbuf( char *ifname, char *iovar, int bssidx,
 			       void *param, int paramlen, void *bufptr,

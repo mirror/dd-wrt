@@ -42,12 +42,9 @@ extern char *( *websGetVar ) ( webs_t wp, char *var, char *d );
 
 void wan_proto( webs_t wp )
 {
-    int ret = 0;
     char *enable;
-
     enable = websGetVar( wp, "wan_proto", NULL );
     nvram_set( "wan_proto", enable );
-
 }
 
 #ifdef FILTER_DEBUG
@@ -60,7 +57,6 @@ extern FILE *debout;
 
 void dhcpfwd( webs_t wp )
 {
-    int ret = 0;
     char *enable;
 
     enable = websGetVar( wp, "dhcpfwd_enable", NULL );
@@ -2469,12 +2465,13 @@ void add_bridgeif( webs_t wp )
 static void save_prefix( webs_t wp, char *prefix )
 {
     char n[80];
+#ifdef HAVE_MADWIFI
     char sifs[80];
     char turbo[80];
     char chanbw[80];
     char preamble[80];
     int cbwchanged = 0;
-
+#endif
     sprintf( n, "%s_ssid", prefix );
     copytonv( wp, n );
     if( !strcmp( prefix, "wl0" ) || !strcmp( prefix, "wl1" ) )
@@ -3168,7 +3165,6 @@ base64_encode( const unsigned char *in, size_t inlen,
 char *request_freedns( char *user, char *password )
 {
     unsigned char final[32];
-    unsigned char out[64];
     char un[128];
 
     unlink( "/tmp/.hash" );

@@ -517,13 +517,7 @@ return buf;
 FILE *
 getWebsFile (char *path)
 {
-/*char tmpfile[64];
-sprintf(tmpfile,"/tmp/%s",path);
-//fprintf(stderr,"read %s\n",path);
-FILE *web = fopen(tmpfile,"rb");
-if (web!=NULL)return web;*/
   cprintf ("opening %s\n", path);
-  char *buf = NULL;
   int i = 0;
   while (websRomPageIndex[i].path != NULL)
     {
@@ -575,7 +569,6 @@ do_ej (struct mime_handler *handler,char *path, webs_t stream, char *query)	// j
 {
 //fprintf(stderr,"load page %s\n",path);
 //open file and read into memory
-  char *buffer = NULL;
   FILE *fp = NULL;
 #ifdef HAVE_VFS
   entry *e;

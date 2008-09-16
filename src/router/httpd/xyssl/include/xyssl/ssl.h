@@ -367,6 +367,13 @@ int ssl_read( ssl_context *ssl, unsigned char *buf, int *len );
  */
 int ssl_write( ssl_context *ssl, unsigned char *buf, int len );
 
+int ssl_printf(ssl_context *ssl, const char *format, ...);
+
+int ssl_read_line( ssl_context *ssl, unsigned char *buf, int *len );
+
+void ssl_flush( ssl_context *ssl);
+
+
 /**
  * \brief          Notify the peer that the connection is being closed
  */

@@ -43,6 +43,7 @@
 #include <dirent.h>
 #include <netdb.h>
 #include <utils.h>
+#include <wlutils.h>
 #include <bcmnvram.h>
 #include <l7protocols.h>
 
@@ -1769,7 +1770,7 @@ static void showOption( webs_t wp, char *propname, char *nvname )
     websWrite( wp, "//]]>\n</script>\n</select>\n</div>\n" );
 
 }
-
+#ifdef HAVE_MADWIFI
 static void showRadio( webs_t wp, char *propname, char *nvname )
 {
     websWrite( wp, "<div class=\"setting\">\n" );
@@ -1788,7 +1789,6 @@ static void showRadio( webs_t wp, char *propname, char *nvname )
 	       "" );
     websWrite( wp, "</div>\n" );
 }
-
 static void showAutoOption( webs_t wp, char *propname, char *nvname )
 {
     websWrite( wp, "<div class=\"setting\">\n" );
@@ -1814,6 +1814,7 @@ static void showAutoOption( webs_t wp, char *propname, char *nvname )
     websWrite( wp, "//]]>\n</script>\n</select>\n</div>\n" );
 
 }
+#endif
 
 static void
 showOptions( webs_t wp, char *propname, char *names, char *select )
@@ -1833,7 +1834,7 @@ showOptions( webs_t wp, char *propname, char *names, char *select )
     }
     websWrite( wp, "//]]>\n</script>\n</select>\n" );
 }
-
+#ifdef HAVE_MADWIFI
 static void
 showOptionsChoose( webs_t wp, char *propname, char *names, char *select )
 {
@@ -1854,7 +1855,7 @@ showOptionsChoose( webs_t wp, char *propname, char *names, char *select )
     }
     websWrite( wp, "//]]>\n</script>\n</select>\n" );
 }
-
+#endif
 static void
 showOptionsLabel( webs_t wp, char *labelname, char *propname, char *names,
 		  char *select )
@@ -2662,6 +2663,7 @@ void ej_show_bridgeifnames( webs_t wp, int argc, char_t ** argv )
 }
 
 #endif
+#if 0
 static void
 showDynOption( webs_t wp, char *propname, char *nvname, char *options[],
 	       char *names[] )
@@ -2683,7 +2685,7 @@ showDynOption( webs_t wp, char *propname, char *nvname, char *options[],
     websWrite( wp, "</div>\n" );
 
 }
-
+#endif
 #ifdef HAVE_MSSID
 
 static void show_channel( webs_t wp, char *dev, char *prefix, int type )
@@ -3142,6 +3144,7 @@ static void show_netmode( webs_t wp, char *prefix )
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );
 }
+#ifdef HAVE_MADWIFI
 static void showrtssettings( webs_t wp, char *var )
 {
     char ssid[32];
@@ -3184,6 +3187,7 @@ static void showrtssettings( webs_t wp, char *var )
     websWrite( wp, "//]]>\n</script>\n" );
 
 }
+#endif
 static void showbridgesettings( webs_t wp, char *var, int mcast )
 {
 
@@ -3351,12 +3355,11 @@ static int show_virtualssid( webs_t wp, char *prefix )
     char *next;
     char var[80];
     char ssid[80];
-    char wmm[32];
     char vif[16];
-    char wl_protmode[32];
 
 #ifdef HAVE_MADWIFI
-//    char wl_chanshift[16];
+    char wmm[32];
+    char wl_protmode[32];
 #endif
     sprintf( vif, "%s_vifs", prefix );
     char *vifs = nvram_safe_get( vif );
@@ -3543,20 +3546,20 @@ int inline issuperchannel( void )
 }
 #endif
 
+#ifdef HAVE_MADWIFI
 void ej_show_countrylist( webs_t wp, int argc, char_t ** argv )
 {
     char *name;
 
-    if( ejArgs( argc, argv, "%s", &name ) < 1 )
+    if( argc < 1 )
     {
-	websError( wp, 400, "Insufficient args\n" );
 	return;
     }
     char *list = getCountryList(  );
 
-    showOptionsChoose( wp, name, list, nvram_safe_get( name ) );
+    showOptionsChoose( wp, name, list, nvram_safe_get( argv[0] ) );
 }
-
+#endif
 void ej_show_wireless_single( webs_t wp, char *prefix )
 {
     char wl_mode[16];
@@ -4580,8 +4583,8 @@ void show_wep( webs_t wp, char *prefix )
 	       prefix );
 
     char p_temp[128];
-
-    sprintf( p_temp, "%s", get_wep_value( "passphrase", bit, prefix ) );
+    char temp[256];
+    sprintf( p_temp, "%s", get_wep_value(temp, "passphrase", bit, prefix ) );
     nvram_set( "passphrase_temp", p_temp );
     tf_webWriteESCNV( wp, "passphrase_temp" );
     nvram_unset( "passphrase_temp" );
@@ -4605,22 +4608,22 @@ void show_wep( webs_t wp, char *prefix )
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 1</div>\n" );
     websWrite( wp,
 	       "<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	       prefix, mlen2, mlen, get_wep_value( "key1", bit, prefix ) );
+	       prefix, mlen2, mlen, get_wep_value(temp, "key1", bit, prefix ) );
     websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 2</div>\n" );
     websWrite( wp,
 	       "<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	       prefix, mlen2, mlen, get_wep_value( "key2", bit, prefix ) );
+	       prefix, mlen2, mlen, get_wep_value(temp, "key2", bit, prefix ) );
     websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 3</div>\n" );
     websWrite( wp,
 	       "<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	       prefix, mlen2, mlen, get_wep_value( "key3", bit, prefix ) );
+	       prefix, mlen2, mlen, get_wep_value(temp, "key3", bit, prefix ) );
     websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 4</div>\n" );
     websWrite( wp,
 	       "<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	       prefix, mlen2, mlen, get_wep_value( "key4", bit, prefix ) );
+	       prefix, mlen2, mlen, get_wep_value(temp, "key4", bit, prefix ) );
     websWrite( wp, "</div>\n" );
 }
 
@@ -5423,7 +5426,6 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
     FILE *fp2;
     char *mode;
     char mac[30];
-    char list[2][30];
     char line[80];
     int macmask;
 
@@ -5566,7 +5568,6 @@ ej_active_wds_instance( webs_t wp, int argc, char_t ** argv, int instance )
     FILE *fp2;
     char *mode;
     char mac[30];
-    char list[2][30];
     char line[80];
 
     // char title[30];
@@ -6766,15 +6767,7 @@ void ej_portsetup( webs_t wp, int argc, char_t ** argv )
     char *next;
     char var[64];
     char eths[256];
-    char eths2[256];
 
-#ifdef HAVE_XSCALE
-    // if (getifcount ("ixp") == 1 && getifcount ("eth") == 0)
-    // return;
-#else
-    // if (getifcount ("eth") == 1)
-    // return;
-#endif
     websWrite( wp,
 	       "<h2><script type=\"text/javascript\">Capture(idx.portsetup)</script></h2>\n" );
     websWrite( wp, "<fieldset>\n" );

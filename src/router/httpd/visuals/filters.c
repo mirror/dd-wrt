@@ -877,15 +877,13 @@ void ej_filter_port_services_get( webs_t wp, int argc, char_t ** argv )
     int which;
     char word[1024], *next;
     char delim[] = "<&nbsp;>";
-    int index = 0;
 
     D( "ej_filter_port_services get" );
 
-    if( ejArgs( argc, argv, "%s %d", &type, &which ) < 2 )
-    {
-	websError( wp, 400, "Insufficient args\n" );
+    if (argc<2)
 	return;
-    }
+    type = argv[0];
+    which = atoi(argv[1]);
 
     char services[8192];
 
