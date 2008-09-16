@@ -1491,7 +1491,7 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
     int wifi = haswifi(  );
 #endif
 #endif
-#ifdef HAVE_WAVESAT
+#ifdef HAVE_MADWIFI
     int wimaxwifi = 0;
 #endif
     char menu[8][11][32] =
