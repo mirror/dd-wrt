@@ -495,6 +495,8 @@ extern void forward_add( webs_t wp );
 extern void forward_remove( webs_t wp );
 extern void lease_add( webs_t wp );
 extern void lease_remove( webs_t wp );
+extern void ttraff_erase( webs_t wp );
+extern void ttraff_restore( webs_t wp );
 extern void chap_user_add( webs_t wp );
 extern void chap_user_remove( webs_t wp );
 
