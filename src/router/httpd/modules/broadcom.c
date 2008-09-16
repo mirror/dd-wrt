@@ -921,6 +921,8 @@ static struct gozila_action gozila_actions[] = {
 #endif
     {"Services", "add_lease", "", 0, REFRESH, "lease_add"},
     {"Services", "remove_lease", "", 0, REFRESH, "lease_remove"},
+    {"Services", "delete_ttraffdata", "", 0, REFRESH, "ttraff_erase"},
+    {"Services", "restore_ttraffdata", "", 0, REFRESH, "ttraff_restore"},    
 #ifdef HAVE_PPPOESERVER
     {"PPPoE_Server", "add_chap_user", "", 0, REFRESH, "chap_user_add"},
     {"PPPoE_Server", "remove_chap_user", "", 0, REFRESH, "chap_user_remove"},
@@ -2002,6 +2004,15 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
     websWrite( stream, "</html>\n" );
 
 }
+
+static void ttraff_backup(struct mime_handler *handler, char *url, webs_t stream, char *query )
+{
+    system2( "nvram show | grep traff- > /tmp/traffbackup.bin" );
+    do_file_attach(handler, "/tmp/traffbackup.bin", stream, NULL,"traffbackup.bin" );
+    unlink( "/tmp/traffbackup.bin" );
+}
+
+
 static void do_apply_cgi(struct mime_handler *handler, char *url, webs_t stream, char *q )
 {
     char *path, *query;
@@ -2182,6 +2193,8 @@ struct mime_handler mime_handlers[] = {
      do_auth,0},
 #endif
     {"ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth,1},
+    {"traffbackup.bin*", "application/octet-stream", no_cache, NULL, ttraff_backup,
+     do_auth,0},
     // for ddm
     {NULL, NULL, NULL, NULL, NULL, NULL,0}
 };
