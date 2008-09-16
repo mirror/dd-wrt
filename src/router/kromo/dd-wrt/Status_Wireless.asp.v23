@@ -111,7 +111,7 @@ addEvent(window, "unload", function() {
 
 				<div id="main">
 					<div id="contents">
-						<form action="apply.cgi" method="<% get_http_method(); %>">
+						<form action="apply.cgi" method="post">
 							<h2><% tran("status_wireless.h2"); %></h2>
 							
 							<fieldset>

@@ -62,7 +62,7 @@ if (valid_password(F))
 					</div>
 				</div>
 				<div id="main">
-                    		<form name="changepassword" action="apply.cgi" method="<% get_http_method(); %>">
+                    		<form name="changepassword" action="apply.cgi" method="post">
                   			<input type="hidden" name="submit_button" value="index" />
                   			<input type="hidden" name="submit_type" />
                   			<input type="hidden" name="next_page" />

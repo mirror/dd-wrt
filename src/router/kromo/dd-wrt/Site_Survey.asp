@@ -19,7 +19,7 @@ function do_join (F,SSID) {
 
 	<body>
 		<div id="bulle" class="bulle"></div>
-		<form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
+		<form name="wireless" action="apply.cgi" method="post">
 			<input type="hidden" name="submit_button" value="Join" />
 			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" />
