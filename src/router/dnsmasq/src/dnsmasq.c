@@ -353,8 +353,9 @@ int main (int argc, char **argv)
       close(nullfd);
     }
   
+#ifndef NO_LOG
     log_err = log_start(ent_pw, err_pipe[1]); 
-    
+#endif
     /* if we are to run scripts, we need to fork a helper before dropping root. */
    daemon->helperfd = -1;
 #ifndef NO_FORK
