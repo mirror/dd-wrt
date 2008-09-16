@@ -844,20 +844,26 @@ void check_dhcp_hosts(int fatal)
 	   if ((configs->flags & cp->flags & CONFIG_ADDR) && configs->addr.s_addr == cp->addr.s_addr)
 	     {
 	       if (fatal)
+	       {
 		 die(_("duplicate IP address %s in dhcp-config directive."), 
 		     inet_ntoa(cp->addr), EC_BADCONF);
-	       else
+	       }
+	       else{
 		 my_syslog(LOG_ERR, _("duplicate IP address %s in %s."), 
 			   inet_ntoa(cp->addr), daemon->dhcp_hosts_file);
+		}
 	       configs->flags &= ~CONFIG_ADDR;
 	     }
 	 
 	 if ((configs->flags & CONFIG_NAME) && (domain = strip_hostname(configs->hostname)))
 	   {
 	     if (fatal)
+	       {
 	       die(_("illegal domain %s in dhcp-config directive."), domain, EC_BADCONF);
-	     else
+	     }
+	     else{
 	       my_syslog(LOG_ERR, _("illegal domain %s in %s."), domain, daemon->dhcp_hosts_file);
+	     }
 	     free(configs->hostname);
 	     configs->flags &= ~CONFIG_NAME;
 	   }
