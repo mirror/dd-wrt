@@ -2422,7 +2422,7 @@ struct ej_handler ej_handlers[] = {
     {"wl_ioctl", ej_wl_ioctl},
     {"dump_ping_log", ej_dump_ping_log},
     // {"dump_traceroute_log", ej_dump_traceroute_log},
-    {"get_http_method", ej_get_http_method},
+    // {"get_http_method", ej_get_http_method},
     /*
      * { "get_backup_name", ej_get_backup_name }, 
      */
