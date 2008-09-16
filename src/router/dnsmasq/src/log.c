@@ -387,6 +387,7 @@ void flush_log(void)
     }
 }
 #endif
+#ifndef NO_LOG
 void die(char *message, char *arg1, int exit_code)
 {
   char *errmess = strerror(errno);
@@ -400,9 +401,8 @@ void die(char *message, char *arg1, int exit_code)
   
   log_stderr = 0;
   my_syslog(LOG_CRIT, _("FAILED to start up"));
-#ifndef NO_LOG
   flush_log();
-#endif
   
   exit(exit_code);
 }
+#endif
