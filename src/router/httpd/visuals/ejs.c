@@ -1453,11 +1453,6 @@ void ej_show_bandwidth( webs_t wp, int argc, char_t ** argv )
 #endif
 }
 
-void ej_get_http_method( webs_t wp, int argc, char_t ** argv )
-{
-    websWrite( wp, "%s", "post" );
-}
-
 void ej_do_menu( webs_t wp, int argc, char_t ** argv )
 {
     char *mainmenu, *submenu;
