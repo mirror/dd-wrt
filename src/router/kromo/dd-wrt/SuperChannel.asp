@@ -31,7 +31,7 @@ function to_submit(F) {
 				</div>
 				<div id="main">
 				<div id="contents">
-                    		<form name="register" action="apply.cgi" method="<% get_http_method(); %>">
+                    		<form name="register" action="apply.cgi" method="post">
                   			<input type="hidden" name="submit_button" value="SuperChannel" />
                   			<input type="hidden" name="submit_type" />
                   			<input type="hidden" name="next_page" value="Wireless_Basic.asp" />
