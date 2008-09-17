@@ -913,7 +913,7 @@ static struct gozila_action gozila_actions[] = {
     {"Wiviz_Survey", "Set", "", 0, REFRESH, "set_wiviz"},
 #endif
 #ifdef HAVE_REGISTER
-    {"Registered", "activate", "", 1, RESTART, "reg_validate"},
+    {"Register", "activate", "", 1, RESTART, "reg_validate"},
 #endif
     {"index", "changepass", "", 1, REFRESH, "changepass"},
 #ifdef HAVE_SUPERCHANNEL
