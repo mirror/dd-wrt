@@ -214,10 +214,13 @@ addEvent(window, "unload", function() {
 											document.write("<input class=\"button\" type=\"button\" name=\"delete_button\" value=\"" + sbutton.del + "\" onclick=\"ttraff_remove_submit(this.form);\" />");
 											//]]>
 											</script>
+										</div>	
+										<!--
 										<div class="setting">
 											<div class="label"><% tran("config.mess2"); %></div>
 											<input type="file" name="file" size="40" />
 										</div>
+										-->
 								</fieldset><br />
 							</div>
 
