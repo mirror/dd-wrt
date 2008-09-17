@@ -44,7 +44,7 @@ function to_submit(F) {
 				</div>
 				<div id="main">
                     		<form name="register" action="apply.cgi" method="post">
-                  			<input type="hidden" name="submit_button" value="Register" />
+                  			<input type="hidden" name="submit_button" value="Registered" />
                   			<input type="hidden" name="submit_type" />
                   			<input type="hidden" name="change_action" />
 					<input type="hidden" name="action" value="Apply" />
