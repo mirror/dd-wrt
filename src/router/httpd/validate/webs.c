@@ -2798,10 +2798,13 @@ void ttraff_erase( webs_t wp )
 	}
 	while( fgets( line, sizeof( line ), fp ) != NULL )
 	{
-		if (strstr (line, "traff-"))
+		if (startswith (line, "traff-"))
 	    {
 		 name = strtok (line, "=");
-		 nvram_unset (name);
+		 if (strlen (name) == 13)  //only unset ttraf-XX-XXXX
+		 {
+		   nvram_unset (name);
+	     } 
 	    }
 	}
 	nvram_commit ( );
