@@ -150,9 +150,7 @@ int pos_nthoccurence( char *source, int cmp, int which )
 
 char *substring( int start, int stop, const char *src, char *dst )
 {
-    int count = stop - start;
-
-    sprintf( dst, "%.*s", count, src + start );
+    sprintf( dst, "%.*s", stop - start, src + start );
 
     return dst;
 }
