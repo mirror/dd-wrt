@@ -55,27 +55,6 @@ function lease_remove_submit(F) {
 	F.submit();
 }
 
-function ttraff_remove_submit(F) {
-	if(!confirm(share.del)) {
-	return false;
-	}
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "delete_ttraffdata";
-	checked(F);
-	F.submit();
-}
-
-function ttraff_restore_submit(F) {
-	if (F.file.value == "")	{
-	alert(errmsg.err42);
-	return false;
-	}
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "restore_ttraffdata";
-	checked(F);
-	F.submit();
-}
-
 function to_reboot(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
