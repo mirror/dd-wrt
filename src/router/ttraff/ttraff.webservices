@@ -5,16 +5,4 @@
 		<input class="spaceradio" type="radio" value="1" name="ttraff_enable" <% nvram_checked("ttraff_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="ttraff_enable" <% nvram_checked("ttraff_enable","0"); %> /><% tran("share.disable"); %>
 	</div>
-<div class="setting"><% tran("bmenu.admin"); %></div>
-	<script type="text/javascript">
-	//<![CDATA[
-	document.write("<input class=\"button\" type=\"button\" name=\"backup_button\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/traffbackup.bin';\" />");
-//	document.write("<input class=\"button\" type=\"button\" name=\"restore_button\" value=\"" + sbutton.restore + "\" onclick=\"ttraff_restore_submit(this.form);\" />");
-	document.write("<input class=\"button\" type=\"button\" name=\"delete_button\" value=\"" + sbutton.del + "\" onclick=\"ttraff_remove_submit(this.form);\" />");
-	//]]>
-	</script>
-<div class="setting">
-	<div class="label"><% tran("config.mess2"); %></div>
-	<input type="file" name="file" size="40" />
-</div>
 </fieldset><br/>
