@@ -2193,7 +2193,7 @@ struct mime_handler mime_handlers[] = {
      do_auth,0},
 #endif
     {"ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth,1},
-    {"traffbackup.bak*", "text/html", no_cache, NULL, ttraff_backup,
+    {"traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup,
      do_auth,0},
     // for ddm
     {NULL, NULL, NULL, NULL, NULL, NULL,0}
