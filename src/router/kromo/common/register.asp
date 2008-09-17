@@ -7,7 +7,7 @@ document.title = "<% nvram_get("router_name"); %> - Activation";
 
 function to_submit(F) {
 	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "Register";
+	F.submit_button.value = "Registered";
 	F.submit_type.value = "activate";
 	F.register.value = "Activating";
 	F.action.value = "Apply";
