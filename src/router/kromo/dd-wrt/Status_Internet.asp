@@ -26,10 +26,10 @@ function ttraff_remove_submit(F) {
 }
 
 function ttraff_restore_submit(F) {
-	if (F.file.value == "")	{
-	alert(errmsg.err42);
-	return false;
-	}
+//	if (F.file.value == "")	{
+//	alert(errmsg.err42);
+//	return false;
+//	}
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "restore_ttraffdata";
 	apply(F);
