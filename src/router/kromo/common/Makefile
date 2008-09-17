@@ -40,7 +40,7 @@ else
 endif
 ifeq ($(CONFIG_REGISTER),y)
 	-cp -a register.asp $(INSTALLDIR)/www/register.asp
-	-cp -a Register.asp $(INSTALLDIR)/www/Register.asp
+	-cp -a Registered.asp $(INSTALLDIR)/www/Register.asp
 endif
 
 ifdef EMI_TEST
