@@ -63,7 +63,7 @@ char *GOZILA_GET( webs_t wp, char *name );
 /*
  * for static route 
  */
-#define STATIC_ROUTE_PAGE 20
+#define STATIC_ROUTE_PAGE 50
 
 /*
  * for wireless 
