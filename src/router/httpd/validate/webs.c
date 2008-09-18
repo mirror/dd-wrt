@@ -2786,32 +2786,6 @@ void set_wiviz( webs_t wp )
 }
 #endif
 
-
-/* void ttraff_restore( webs_t wp )
-{
-	char line[2048];
-	char *name = NULL;
-	char *data = NULL;
-	FILE *fp = fopen( "/tmp/traffdata.bak", "r" );
-	if( fp == NULL )
-	{
-	  return;
-	}
-	while( fgets( line, sizeof( line ), fp ) != NULL )
-	{
-		if (startswith (line, "traff-"))
-	    {
-		 name = strtok (line, "=");
-		 if (strlen (name) == 13)  //only set ttraf-XX-XXXX
-		 {
-		   data = strtok (NULL, "");	 
-		   nvram_set (name, data);
-	     } 
-	    }
-	}
-	nvram_commit ( );
-	unlink( "/tmp/traffdata.bak" );
-}*/
 void ttraff_erase( webs_t wp )
 {
 	char line[2048];
