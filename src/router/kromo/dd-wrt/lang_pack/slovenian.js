@@ -1405,6 +1405,8 @@ status_inet.traffin="Vhodni promet";
 status_inet.traffout="Izhodni promet";
 status_inet.previous="Prej¹nji mesec";
 status_inet.next="Naslednji mesec";
+status_inet.dataadmin="Upravljanje podatkov";
+status_inet.delete_confirm="POZOR! Vsi podaki bodo izbrisani. Nadaljujem?";
 
 
 //help container
