@@ -383,6 +383,13 @@ extern void nv_file_out(struct mime_handler *handler, char *path, webs_t wp, cha
 extern void sr_config_cgi(struct mime_handler *handler, char *path, webs_t wp, char *query );
 
 /*
+ * for traff data save-restore 
+ */
+extern void ttraff_erase( webs_t wp );
+extern void td_file_in( char *url, webs_t stream, int len, char *boundary );
+extern void td_config_cgi(struct mime_handler *handler, char *path, webs_t wp, char *query );
+
+/*
  * for ddns 
  */
 extern void ddns_save_value( webs_t wp );
@@ -495,8 +502,6 @@ extern void forward_add( webs_t wp );
 extern void forward_remove( webs_t wp );
 extern void lease_add( webs_t wp );
 extern void lease_remove( webs_t wp );
-extern void ttraff_erase( webs_t wp );
-extern void ttraff_restore( webs_t wp );
 extern void chap_user_add( webs_t wp );
 extern void chap_user_remove( webs_t wp );
 
