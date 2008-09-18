@@ -1409,6 +1409,8 @@ status_inet.traffin="Incoming";
 status_inet.traffout="Outgoing";
 status_inet.previous="Previous Month";
 status_inet.next="Next Month";
+status_inet.dataadmin="Data Administration";
+status_inet.delete_confirm="WARNING! This will delete all traffic data. Proceed?";
 
 
 //help container
