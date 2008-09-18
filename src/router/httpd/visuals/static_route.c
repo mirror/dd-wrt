@@ -94,10 +94,15 @@ void ej_static_route_setting( webs_t wp, int argc, char_t ** argv )
     int temp;
     char new_name[200];
 
-    if (argc<2)
+#ifdef FASTWEB
+    ejArgs( argc, argv, "%s %d", &arg, &count );
+#else
+    if( ejArgs( argc, argv, "%s %d", &arg, &count ) < 2 )
+    {
+	websError( wp, 400, "Insufficient args\n" );
 	return;
-    arg = argv[0];
-    count = atoi(argv[1]);
+    }
+#endif
 
     page = websGetVar( wp, "route_page", NULL );
     if( !page )
