@@ -2786,32 +2786,8 @@ void set_wiviz( webs_t wp )
 }
 #endif
 
-void ttraff_erase( webs_t wp )
-{
-	char line[2048];
-	char *name = NULL;
-	system2( "nvram show | grep traff- > /tmp/.ttraff" );	
-	FILE *fp = fopen( "/tmp/.ttraff", "r" );
-	if( fp == NULL )
-	{
-	  return;
-	}
-	while( fgets( line, sizeof( line ), fp ) != NULL )
-	{
-		if (startswith (line, "traff-"))
-	    {
-		 name = strtok (line, "=");
-		 if (strlen (name) == 13)  //only unset ttraf-XX-XXXX
-		 {
-		   nvram_unset (name);
-	     } 
-	    }
-	}
-	nvram_commit ( );
-	unlink( "/tmp/.ttraff" );
-}
 
-void ttraff_restore( webs_t wp )
+/* void ttraff_restore( webs_t wp )
 {
 	char line[2048];
 	char *name = NULL;
@@ -2835,6 +2811,30 @@ void ttraff_restore( webs_t wp )
 	}
 	nvram_commit ( );
 	unlink( "/tmp/traffdata.bak" );
+}*/
+void ttraff_erase( webs_t wp )
+{
+	char line[2048];
+	char *name = NULL;
+	system2( "nvram show | grep traff- > /tmp/.ttraff" );	
+	FILE *fp = fopen( "/tmp/.ttraff", "r" );
+	if( fp == NULL )
+	{
+	  return;
+	}
+	while( fgets( line, sizeof( line ), fp ) != NULL )
+	{
+		if (startswith (line, "traff-"))
+	    {
+		 name = strtok (line, "=");
+		 if (strlen (name) == 13)  //only unset ttraf-XX-XXXX
+		 {
+		   nvram_unset (name);
+	     } 
+	    }
+	}
+	nvram_commit ( );
+	unlink( "/tmp/.ttraff" );
 }
 
 void changepass( webs_t wp )
