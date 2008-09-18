@@ -19,14 +19,6 @@ function ttraff_restore_submit(F) {
 	apply(F);
 }
 				
-function to_submit(F) {
-	F.save_button.value = sbutton.saving;
-	apply(F);
-}
-function to_apply(F) {
-	F.save_button.value = sbutton.saving;
-	applytake(F);
-}
 		
 		//]]>
 		</script>
@@ -35,9 +27,7 @@ function to_apply(F) {
 	<body>
 				<form name="firmware" method="post" action="tadmin.cgi" enctype="multipart/form-data">
 					<input type="hidden" name="submit_button" value="Traff_admin" />
-					<input type="hidden" name="action" />
-					<input type="hidden" name="change_action" />
-					<input type="hidden" name="submit_type" />
+
 
 				<h2><% tran("status_inet.traff"); %>: <% tran("status_inet.dataadmin"); %></h2>
 				<br />		
