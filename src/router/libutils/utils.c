@@ -1872,7 +1872,7 @@ int diag_led( int type, int act )
 	return diag_led_4712( type, act );
     else if( brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG )
 	return diag_led_4702( type, act );
-    else if( ( brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT600N
+    else if( ( brand == ROUTER_WRTSL54GS
 	       || brand == ROUTER_WRT310N || brand == ROUTER_WRT350N
 	       || brand == ROUTER_BUFFALO_WZRG144NH ) && type == DIAG )
 	return diag_led_4704( type, act );
