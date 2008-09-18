@@ -834,7 +834,6 @@ static struct gozila_action gozila_actions[] = {
 												// cisco 
 												// style
     {"Status_Internet", "delete_ttraffdata", "", 0, REFRESH, "ttraff_erase"},
-    {"Status_Internet", "restore_ttraffdata", "", 0, REFRESH, "ttraff_restore"},
     {"Status", "Disconnect", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},
     {"Status", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},
     {"Status", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},
@@ -2007,7 +2006,8 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 
 static void ttraff_backup(struct mime_handler *handler, char *url, webs_t stream, char *query )
 {
-    system2( "nvram show | grep traff- > /tmp/traffdata.bak" );
+	system2( "echo TRAFF-DATA > /tmp/traffdata.bak" );
+    system2( "nvram show | grep traff- >> /tmp/traffdata.bak" );
     do_file_attach(handler, "/tmp/traffdata.bak", stream, NULL,"traffdata.bak" );
     unlink( "/tmp/traffdata.bak" );
 }
@@ -2195,6 +2195,8 @@ struct mime_handler mime_handlers[] = {
     {"ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth,1},
     {"traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup,
      do_auth,0},
+    {"tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi,
+     NULL,1},
     // for ddm
     {NULL, NULL, NULL, NULL, NULL, NULL,0}
 };
