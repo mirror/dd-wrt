@@ -328,3 +328,85 @@ void nv_file_out(struct mime_handler *handler, char *path, webs_t wp, char *quer
     eval("rm","-f","/tmp/nvrambak.bin");
     return;
 }
+
+
+void
+td_file_in( char *url, webs_t wp, int len, char *boundary )  //load and set traffic data from config file
+{
+    char buf[2048];
+	char *name = NULL;
+	char *data = NULL;
+
+    /*
+     * Look for our part 
+     */
+    while( len > 0 )
+    {
+	if( !wfgets( buf, MIN( len + 1, sizeof( buf ) ), wp ) )
+	    return;
+	len -= strlen( buf );
+	if( !strncasecmp( buf, "Content-Disposition:", 20 ) )
+	{
+	    if( strstr( buf, "name=\"file\"" ) )
+	    {
+		break;
+	    }
+	}
+    }
+    /*
+     * Skip boundary and headers 
+     */
+    while( len > 0 )
+    {
+	if( !wfgets( buf, sizeof( buf ), wp ) )
+	    return;
+	len -= strlen( buf );
+	if( !strcmp( buf, "\n" ) || !strcmp( buf, "\r\n" ) )
+	    break;
+    }
+
+    if (wfgets (buf, sizeof( buf ), wp) != NULL )
+    {
+	len -= strlen( buf );    
+    if( strncmp( buf, "TRAFF-DATA", 10) == 0)  //sig OK
+	{	    
+    while( wfgets (buf, sizeof( buf ), wp) != NULL )
+    {
+	    len -= strlen( buf );
+		if (startswith (buf, "traff-"))
+	    {
+		 name = strtok (buf, "=");
+		 if (strlen (name) == 13)  //only set ttraf-XX-XXXX
+		 {
+		   data = strtok (NULL, "");	 
+		   nvram_set (name, data);
+	     } 
+	    }
+    }
+    
+	}
+	}	
+
+    /*
+     * Slurp anything remaining in the request 
+     */
+    while( len-- )
+    {
+#ifdef HAVE_HTTPS
+	if( do_ssl )
+	{
+	    wfgets( buf, 1, wp );
+	}
+	else
+#endif
+	    ( void )fgetc( wp );
+    }
+
+    nvram_commit(  );
+}
+
+void td_config_cgi(struct mime_handler *handler, char *path, webs_t wp, char *query )
+{
+	do_ej(handler, "Traff_admin.asp", wp, NULL );
+    websDone( wp, 200 );
+}
