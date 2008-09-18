@@ -200,16 +200,9 @@ void ej_static_route_table( webs_t wp, int argc, char_t ** argv )
     int which;
     char *type;
     char word[256], *next;
-
-#ifdef FASTWEB
-    ejArgs( argc, argv, "%s", &type );
-#else
-    if( ejArgs( argc, argv, "%s", &type ) < 1 )
-    {
-	websError( wp, 400, "Insufficient args\n" );
-	return;
-    }
-#endif
+    if (argc<1)
+	returnM
+    type = argv[0];
 
     page = atoi( websGetVar( wp, "route_page", "0" ) );	// default to 0
     if( !strcmp( type, "select" ) )
