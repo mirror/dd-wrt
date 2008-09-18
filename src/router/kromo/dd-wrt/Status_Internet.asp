@@ -17,21 +17,11 @@ function connect(F,I) {
 }
 
 function ttraff_remove_submit(F) {
-	if(!confirm(share.del)) {
+	if(!confirm(status_inet.delete_confirm)) {
 	return false;
 	}
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "delete_ttraffdata";
-	apply(F);
-}
-
-function ttraff_restore_submit(F) {
-//	if (F.file.value == "")	{
-//	alert(errmsg.err42);
-//	return false;
-//	}
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "restore_ttraffdata";
 	apply(F);
 }
 
@@ -205,21 +195,17 @@ addEvent(window, "unload", function() {
 											document.write("<input class=\"button\" type=\"button\" value=\"" + status_inet.next + "\" onclick=\"do_show_next();\">");
 											//]]>
 											</script>
-										</div><br /><hr>
-										<div class="setting"><% tran("bmenu.admin"); %></div>
+										</div>
+								</fieldset><br />
+								<fieldset>
+								<legend><% tran("status_inet.dataadmin"); %></legend>
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"backup_button\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/traffdata.bak';\" />");
-											document.write("<input class=\"button\" type=\"button\" name=\"restore_button\" value=\"" + sbutton.restore + "\" onclick=\"ttraff_restore_submit(this.form);\" />");
+											document.write("<input class=\"button\" type=\"button\" name=\"restore_button\" value=\"" + sbutton.restore + "\" onclick=\"openWindow('Traff_admin.asp', 500, 180);\" />");
 											document.write("<input class=\"button\" type=\"button\" name=\"delete_button\" value=\"" + sbutton.del + "\" onclick=\"ttraff_remove_submit(this.form);\" />");
 											//]]>
 											</script>
-										<!--
-										<div class="setting">
-											<div class="label"><% tran("config.mess2"); %></div>
-											<input type="file" name="file" size="40" />
-										</div>
-										-->
 								</fieldset><br />
 							</div>
 
