@@ -230,6 +230,10 @@ ifeq ($(CONFIG_NEWMEDIA),y)
 	cp -f nmn/nmn_logo.png $(INSTALLDIR)/www/style/logo.png
 endif
 
+ifeq ($(CONFIG_ALLNETWRT),y)
+	cp -f allnet/logo.png $(INSTALLDIR)/www/style/logo.png
+endif
+
 ifeq ($(CONFIG_SPUTNIK),y)
 	cp -f sputnik/logo.png $(INSTALLDIR)/www/style
 endif
