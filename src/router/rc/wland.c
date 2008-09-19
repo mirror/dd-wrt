@@ -270,9 +270,12 @@ static void do_aqos_check( void )
 	if( !cmac && strlen( mac_buf ) > 0 )
 	{
 
+	    char ipnet[32];
+	    sprintf( ipnet, "%s/32", ip_buf );
+
 	    sysprintf( "echo \"%s\" >>/tmp/aqos_macs", mac_buf );
 	    if( strlen( ip_buf ) )
-		sysprintf( "echo \"%s\" >>/tmp/aqos_macs", ip_buf );
+		sysprintf( "echo \"%s\" >>/tmp/aqos_ips", ipnet );
 	    // create default rule for mac
 	    add_usermac( mac_buf, qosidx, defaulup, defauldown );
 	    qosidx += 2;
