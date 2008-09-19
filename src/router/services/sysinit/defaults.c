@@ -1351,6 +1351,9 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl0_antdiv", "3", 0},
     {"wl1_txant", "0", 0},
     {"wl1_antdiv", "3", 0},
+#elif HAVE_ALLNETWRT
+    {"wl0_txant", "0", 0},
+    {"wl0_antdiv", "0", 0},
 #else
     {"wl0_txant", "3", 0},
     {"wl0_antdiv", "3", 0},

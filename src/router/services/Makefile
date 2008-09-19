@@ -60,6 +60,9 @@ ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 OBJS += rstats.o
 endif
+ifeq ($(CONFIG_ALLNETWRT),y)
+  CFLAGS += -DHAVE_ALLNETWRT
+endif
 ifeq ($(CONFIG_OVERCLOCKING),y)
 CFLAGS += -DHAVE_OVERCLOCKING
 endif
