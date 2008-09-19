@@ -201,7 +201,7 @@ void ej_static_route_table( webs_t wp, int argc, char_t ** argv )
     char *type;
     char word[256], *next;
     if (argc<1)
-	returnM
+	return;
     type = argv[0];
 
     page = atoi( websGetVar( wp, "route_page", "0" ) );	// default to 0
