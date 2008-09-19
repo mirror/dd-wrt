@@ -357,7 +357,6 @@ int svqos_iptables( void )
     /*
      * mac format is "mac level | mac level |" ..etc 
      */
-#ifndef HAVE_AQOS
     char *wl0mode = nvram_get( "wl0_mode" );
 
     if( wl0mode == NULL )
@@ -383,7 +382,6 @@ int svqos_iptables( void )
 	insmod( "ebt_snat" );
 	insmod( "ebt_dnat" );
     }
-#endif
 #ifndef HAVE_AQOS
     do
     {
