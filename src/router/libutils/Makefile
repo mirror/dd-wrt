@@ -58,6 +58,9 @@ OBJS += ../shared/countrycode/countrycode_$(ARCH).o
 ifeq ($(CONFIG_SILENCE),y)
   CFLAGS += -DHAVE_SILENCE
 endif
+ifeq ($(CONFIG_ALLNETWRT),y)
+  CFLAGS += -DHAVE_ALLNETWRT
+endif
 ifeq ($(CONFIG_BUFFALO),y)
   CFLAGS += -DHAVE_BUFFALO
 endif
