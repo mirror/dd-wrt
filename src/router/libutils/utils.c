@@ -446,7 +446,19 @@ char *getRouter(  )
 
 int internal_getRouterBrand(  )
 {
-
+#ifdef HAVE_ALLNETWRT
+    uint boardnum = strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
+    if( boardnum == 8 &&
+	nvram_match( "boardtype", "0x048e" )
+	&& nvram_match( "boardrev", "0x11" ) )
+    {
+	cprintf( "router is ALLNET01\n" );
+	setRouter( "ALLNET EURO-WRT" );
+	return ROUTER_ALLNET01;
+    }
+eval( "event", "3", "1", "15" );
+return 0;
+#else
 #ifdef HAVE_ADM5120
     setRouter( "Tonze AP-120" );
     return ROUTER_BOARD_ADM5120;
@@ -1538,7 +1550,7 @@ int internal_getRouterBrand(  )
     return 0;
 #endif
 #endif
-
+#endif
 }
 static int router_type = -1;
 int getRouterBrand(  )
