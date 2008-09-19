@@ -453,7 +453,7 @@ int internal_getRouterBrand(  )
 	&& nvram_match( "boardrev", "0x11" ) )
     {
 	cprintf( "router is ALLNET01\n" );
-	setRouter( "ALLNET EURO-WRT" );
+	setRouter( "ALLNET EUROWRT 54" );
 	return ROUTER_ALLNET01;
     }
 eval( "event", "3", "1", "15" );
@@ -1445,7 +1445,7 @@ return 0;
 	&& nvram_match( "boardrev", "0x11" ) )
     {
 	cprintf( "router is ALLNET01\n" );
-	setRouter( "ALLNET EURO-WRT" );
+	setRouter( "ALLNET EUROWRT 54" );
 	return ROUTER_ALLNET01;
     }
 
