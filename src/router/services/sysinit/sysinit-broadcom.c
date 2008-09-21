@@ -902,7 +902,7 @@ int start_sysinit( void )
 		nvram_set( "lan_ifnames", "vlan0 eth2" );
 		nvram_set( "vlan0ports", "3 2 1 0 5*" );
 		nvram_set( "vlan1ports", "4 5" );
-		nvram set( "vlan0hwname", "et0" );		
+		nvram_set( "vlan0hwname", "et0" );		
 	    }
 	    else
 	    {
