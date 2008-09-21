@@ -891,10 +891,24 @@ int start_sysinit( void )
 	case ROUTER_ASUS_WL500W:
 	case ROUTER_BUFFALO_WLAH_G54:
 	case ROUTER_BUFFALO_WAPM_HP_AM54G54:
-	case ROUTER_WRTSL54GS:
 	case ROUTER_MICROSOFT_MN700:
 	    nvram_set( "wan_ifname", "eth1" );
 	    break;
+	    
+	case ROUTER_WRTSL54GS:
+	    nvram_set( "wan_ifname", "eth1" );
+	    if( nvram_match ("force_vlan_supp", "enabled") )
+	    {
+		nvram_set( "lan_ifnames", "vlan0 eth2" );
+		nvram_set( "vlan0ports", "3 2 1 0 5*" );
+		nvram_set( "vlan1ports", "4 5" );
+		nvram set( "vlan0hwname", "et0" );		
+	    }
+	    else
+	    {
+		nvram_set( "lan_ifnames", "eth0 eth2" );		
+	    }	    
+	    break;			
 
 	case ROUTER_WRT54G1X:
 	    if( check_vlan_support(  ) )
@@ -1121,6 +1135,19 @@ int start_sysinit( void )
 		need_reboot = 1;
 #endif
 	    }
+	    break;
+	    
+	case ROUTER_WRTSL54GS:
+	    if(nvram_match ("force_vlan_supp", "enabled") && nvram_match( "boardflags", "0x0018" ) )
+	    {
+		nvram_set( "boardflags", "0x0118" );  //enable lan vlans
+		need_reboot = 1;		
+	    }
+	    else if(!nvram_match ("force_vlan_supp", "enabled") && nvram_match( "boardflags", "0x0118" ) )
+	    {
+		nvram_set( "boardflags", "0x0018" );  //disable vlans
+		need_reboot = 1;		    
+	    }	    
 	    break;
 	
     }
