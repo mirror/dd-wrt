@@ -2363,6 +2363,9 @@ int led_control( int type, int act )
 	// number (f=disabled)
     {
 #ifndef HAVE_BUFFALO
+	case ROUTER_ALLNET01:
+	    connected_gpio = 0x10;
+	    break;
 	case ROUTER_BOARD_GATEWORX:
 	    connected_gpio = 0x3;
 	    break;
