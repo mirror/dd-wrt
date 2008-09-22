@@ -224,14 +224,15 @@ void add_usermac( char *mac, int idx, char *upstream, char *downstream )
 	    /*
 	     * use root class of br0 interface which was created by the wshaper 
 	     */
+            // br0 -> imq0 changed, in lan-briding, we need to use IMQ
 	    sysprintf
-		( "tc class add dev br0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
+		( "tc class add dev imq0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
 		  base + 1, downstream, downstream );
 	    sysprintf
-		( "tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
+		( "tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
 		  base + 1, base + 1 );
 	    sysprintf
-		( "tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+		( "tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
 		  doct4, doct2, base + 1 );
 	}
 
@@ -269,14 +270,15 @@ void add_usermac( char *mac, int idx, char *upstream, char *downstream )
 	    /*
 	     * use root class of br0 interface which was created by the wshaper 
 	     */
+            // br0 -> imq0 changed, in lan-briding, we need to use IMQ
 	    sysprintf
-		( "tc class add dev br0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
+		( "tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
 		  base + 1, downstream, downstream );
 	    sysprintf
-		( "tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
+		( "tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
 		  base + 1, base + 1 );
 	    sysprintf
-		( "tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+		( "tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
 		  doct4, doct2, base + 1 );
 	}
     }
