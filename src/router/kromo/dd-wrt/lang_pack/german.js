@@ -704,7 +704,7 @@ idx_h.srv="Heartbeat-Server";
 idx_h.con_strgy="Verbindungsstrategie";
 idx_h.max_idle="Bei Bedarf verbinden: Maximale Ruhezeit";
 idx_h.alive="Lebenserhaltung: Zeitabstand Wiedereinwahl";
-idx_h.reconnect="Zangstrennung";
+idx_h.reconnect="Zwangstrennung";
 
 
 
