@@ -900,7 +900,7 @@ int start_sysinit( void )
 	    if( nvram_match ("force_vlan_supp", "enabled") )
 	    {
 		nvram_set( "lan_ifnames", "vlan0 eth2" );
-		nvram_set( "vlan0ports", "3 2 1 0 5*" );
+		nvram_set( "vlan0ports", "0 1 2 3 5*" );
 		nvram_set( "vlan1ports", "4 5" );
 		nvram_set( "vlan0hwname", "et0" );		
 	    }
