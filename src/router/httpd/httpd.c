@@ -1083,12 +1083,10 @@ get_client_ip_mac( int conn_fp )
     char *m;
 
     getpeername( conn_fp, ( struct sockaddr * )&sa, &len );
-    char *peer = inet_ntoa( sa.sin_addr );
-    char *client = malloc( strlen( peer ) + 1 );
-
-    strcpy( client, peer );
-    nvram_set( "http_client_ip", client );
-    m = get_mac_from_ip( client );
+    char client[32];
+    char *peer = inet_ntop(AF_INET, &sa.sin_addr,client,16);
+    nvram_set( "http_client_ip", peer);
+    m = get_mac_from_ip( peer );
     nvram_set( "http_client_mac", m );
     free( client );
 }

@@ -1217,9 +1217,7 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     {
 	goto footer;
     }
-    if( legal_ip_netmask
-	( "lan_ipaddr", "lan_netmask",
-	  nvram_safe_get( "http_client_ip" ) ) == TRUE )
+    if( legal_ip_netmask( "lan_ipaddr", "lan_netmask",nvram_safe_get( "http_client_ip" ) ) == TRUE )
 	nvram_set( "browser_method", "USE_LAN" );
         else
 	nvram_set( "browser_method", "USE_WAN" );
