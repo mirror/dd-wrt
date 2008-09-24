@@ -1568,8 +1568,13 @@ void start_lan( void )
 		    br_add_interface( getBridge( name ), name );
 		    led_control( LED_BRIDGE, LED_ON );
 #ifdef HAVE_MSSID
+		/* Enable host DHCP relay */
+		if (nvram_match("lan_dhcp", "1"))
+			{
 		    wl_iovar_set( name, "wet_host_mac",
 				  ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN );
+			}
+		/* Enable WET DHCP relay if requested */
 		if (nvram_match("dhcp_relay", "1"))  // seems to fix some dhcp problems, also Netgear does it this way
 			{
 		    enable_dhcprelay( lan_ifname );
