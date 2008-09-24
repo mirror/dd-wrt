@@ -1570,7 +1570,10 @@ void start_lan( void )
 #ifdef HAVE_MSSID
 		    wl_iovar_set( name, "wet_host_mac",
 				  ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN );
+		if (nvram_match("dhcp_relay", "1"))  // seems to fix some dhcp problems, also Netgear does it this way
+			{
 		    enable_dhcprelay( lan_ifname );
+			}
 		    do_mssid( name );
 #endif
 		}
