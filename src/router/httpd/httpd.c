@@ -1088,7 +1088,6 @@ get_client_ip_mac( int conn_fp )
     nvram_set( "http_client_ip", peer);
     m = get_mac_from_ip( peer );
     nvram_set( "http_client_mac", m );
-    free( client );
 }
 
 static void handle_server_sig_int( int sig )
