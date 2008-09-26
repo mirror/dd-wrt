@@ -28,6 +28,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
+#include <syslog.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -110,6 +111,7 @@ int start_sshd( void )
 	eval( "dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE,
 	      "-d", DSS_HOST_KEY_FILE, "-p", port, passwd_ok, forwarding_ok );
 #endif
+    dd_syslog( LOG_INFO, "dropbear : ssh daemon successfully started\n" );
     // ret = _eval (sshd_argv, NULL, 0, &pid);
 
     return ret;
@@ -119,12 +121,13 @@ int stop_sshd( void )
 {
     int ret = 0;
 
-    // char buf[255] = { 0 };
-
-    // if (nvram_match("sshd_enable", "0"))
+    if( pidof( "dropbear" ) > 0 )
+    {
     killall( "dropbear", SIGTERM );
     sleep( 1 );
     ret = killall( "dropbear", SIGKILL );
+	dd_syslog( LOG_INFO, "dropbear : ssh daemon successfully stopped\n" );
+	}
 
     cprintf( "done\n" );
 
