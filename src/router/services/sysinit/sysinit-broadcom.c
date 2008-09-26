@@ -605,7 +605,18 @@ int start_sysinit( void )
 	    break;
 
 	case ROUTER_NETGEAR_WNR834BV2:
+	    if( nvram_match ("force_vlan_supp", "enabled") )
+	    {
+		nvram_set( "lan_ifnames", "vlan0 eth2" );
+		nvram_set( "wan_ifname", "eth1" );
+		nvram_set( "vlan0ports", "3 2 1 0 5*" );
+		nvram_set( "vlan1ports", "4 5" );  //dummy
+		nvram_set( "vlan0hwname", "et0" );
+	    }
+	    else
+	    {
 	    basic_params = generic1;
+    	}
 
 	    if( nvram_get( "pci/1/1/macaddr" ) == NULL )
 		need_reboot = 1;
@@ -901,7 +912,7 @@ int start_sysinit( void )
 	    {
 		nvram_set( "lan_ifnames", "vlan0 eth2" );
 		nvram_set( "vlan0ports", "0 1 2 3 5*" );
-		nvram_set( "vlan1ports", "4 5" );
+		nvram_set( "vlan1ports", "4 5" );  //dummy
 		nvram_set( "vlan0hwname", "et0" );		
 	    }
 	    else
@@ -1146,6 +1157,19 @@ int start_sysinit( void )
 	    else if(!nvram_match ("force_vlan_supp", "enabled") && nvram_match( "boardflags", "0x0118" ) )
 	    {
 		nvram_set( "boardflags", "0x0018" );  //disable vlans
+		need_reboot = 1;		    
+	    }	    
+	    break;
+	    
+	case ROUTER_NETGEAR_WNR834BV2:
+	    if(nvram_match ("force_vlan_supp", "enabled") && nvram_match( "boardflags", "0x10" ) )
+	    {
+		nvram_set( "boardflags", "0x110" );  //enable lan vlans
+		need_reboot = 1;		
+	    }
+	    else if(!nvram_match ("force_vlan_supp", "enabled") && nvram_match( "boardflags", "0x110" ) )
+	    {
+		nvram_set( "boardflags", "0x10" );  //disable vlans
 		need_reboot = 1;		    
 	    }	    
 	    break;
