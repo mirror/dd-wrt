@@ -1188,21 +1188,21 @@ return 0;
 
     if( boardnum == 1 &&
 	nvram_match( "boardtype", "0x0472" )
-	&& nvram_match( "cardbus", "1" ) )
-    {
-	cprintf( "router is Netgear WNR834B v2\n" );
-	setRouter( "Netgear WNR834B v2" );
-	return ROUTER_NETGEAR_WNR834BV2;
-    }
-
-    if( boardnum == 1 &&
-	nvram_match( "boardtype", "0x0472" )
 	&& nvram_match( "boardrev", "0x23" ) )
     {
-	cprintf( "router is Netgear WNDR-3300\n" );
-	setRouter( "Netgear WNDR3300" );
-	return ROUTER_NETGEAR_WNDR3300;
-    }
+	  if (nvram_match( "cardbus", "1" ) )
+	  {
+	  cprintf( "router is Netgear WNR834B v2\n" );
+	  setRouter( "Netgear WNR834B v2" );
+	  return ROUTER_NETGEAR_WNR834BV2;
+      }
+	  else
+	  {
+	  cprintf( "router is Netgear WNDR-3300\n" );
+	  setRouter( "Netgear WNDR3300" );
+	  return ROUTER_NETGEAR_WNDR3300;
+      }
+	}
 
     if( boardnum == 42 )	// Get Linksys N models
     {
