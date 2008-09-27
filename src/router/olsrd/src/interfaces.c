@@ -59,6 +59,14 @@ struct ifchgf
 
 static struct ifchgf *ifchgf_list;
 
+
+/* Some cookies for stats keeping */
+struct olsr_cookie_info *interface_poll_timer_cookie = NULL;
+struct olsr_cookie_info *hello_gen_timer_cookie = NULL;
+struct olsr_cookie_info *tc_gen_timer_cookie = NULL;
+struct olsr_cookie_info *mid_gen_timer_cookie = NULL;
+struct olsr_cookie_info *hna_gen_timer_cookie = NULL;
+
 /**
  *Do initialization of various data needed for
  *network interface management.
@@ -74,6 +82,21 @@ ifinit(void)
   /* Initial values */
   ifnet = NULL;
 
+  /*
+   * Get some cookies for getting stats to ease troubleshooting.
+   */
+  interface_poll_timer_cookie =
+    olsr_alloc_cookie("Interface Polling", OLSR_COOKIE_TYPE_TIMER);
+
+  hello_gen_timer_cookie =
+    olsr_alloc_cookie("Hello Generation", OLSR_COOKIE_TYPE_TIMER);
+  tc_gen_timer_cookie =
+    olsr_alloc_cookie("TC Generation", OLSR_COOKIE_TYPE_TIMER);
+  mid_gen_timer_cookie =
+    olsr_alloc_cookie("MID Generation", OLSR_COOKIE_TYPE_TIMER);
+  hna_gen_timer_cookie =
+    olsr_alloc_cookie("HNA Generation", OLSR_COOKIE_TYPE_TIMER);
+
   OLSR_PRINTF(1, "\n ---- Interface configuration ---- \n\n");
   /* Run trough all interfaces immedeatly */
   for (tmp_if = olsr_cnf->interfaces; tmp_if != NULL; tmp_if = tmp_if->next) {
@@ -87,7 +110,8 @@ ifinit(void)
   
   /* Kick a periodic timer for the network interface update function */
   olsr_start_timer((unsigned int)olsr_cnf->nic_chgs_pollrate * MSEC_PER_SEC, 5,
-                   OLSR_TIMER_PERIODIC, &check_interface_updates, NULL, 0);
+                   OLSR_TIMER_PERIODIC, &check_interface_updates, NULL,
+                   interface_poll_timer_cookie->ci_id);
 
   return (ifnet == NULL) ? 0 : 1;
 }
@@ -242,6 +266,7 @@ struct olsr_if *
 queue_if(const char *name, int hemu)
 {
   struct olsr_if *interf_n = olsr_cnf->interfaces;
+  size_t name_size;
 
   //printf("Adding interface %s\n", name);
 
@@ -258,15 +283,15 @@ queue_if(const char *name, int hemu)
 
   interf_n = olsr_malloc(sizeof(struct olsr_if), "queue interface");
 
-  /* strlen () does not return length including terminating /0 */
-  interf_n->name = olsr_malloc(strlen(name) + 1, "queue interface name");
+  name_size = strlen(name) + 1;
+  interf_n->name = olsr_malloc(name_size, "queue interface name");
   interf_n->cnf = NULL;
   interf_n->interf = NULL;
   interf_n->configured = 0;
 
   interf_n->host_emul = hemu ? OLSR_TRUE : OLSR_FALSE;
 
-  strncpy(interf_n->name, name, strlen(name) + 1);
+  strscpy(interf_n->name, name, name_size);
   interf_n->next = olsr_cnf->interfaces;
   olsr_cnf->interfaces = interf_n;
 

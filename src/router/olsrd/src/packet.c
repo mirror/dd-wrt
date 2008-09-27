@@ -118,7 +118,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
 
   /* Walk all links of this interface */
   OLSR_FOR_ALL_LINK_ENTRIES(links) {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
     struct ipaddr_str buf;
 #endif
     int lnk = lookup_link_status(links);
@@ -202,7 +202,7 @@ olsr_build_hello_packet(struct hello_message *message, struct interface *outif)
   if (ifnet != NULL && ifnet->int_next != NULL)
     OLSR_FOR_ALL_NBR_ENTRIES(neighbor) {
 
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
     struct ipaddr_str buf;
 #endif
     /* Check that the neighbor is not added yet */
@@ -389,7 +389,7 @@ olsr_build_tc_packet(struct tc_message *message)
     if (sending_tc) {
       /* Send empty TC */
       OLSR_PRINTF(3, "No more MPR selectors - will send empty TCs\n");
-      set_empty_tc_timer(GET_TIMESTAMP((olsr_cnf->max_tc_vtime*3)*1000));
+      set_empty_tc_timer(GET_TIMESTAMP((olsr_cnf->max_tc_vtime * 3) * MSEC_PER_SEC));
       sending_tc = OLSR_FALSE;
     }
   }

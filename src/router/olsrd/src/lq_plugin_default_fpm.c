@@ -46,7 +46,6 @@
 #include "packet.h"
 #include "olsr.h"
 #include "lq_plugin_default_fpm.h"
-#include "fpm.h"
 
 /* etx lq plugin (fpm version) settings */
 struct lq_handler lq_etx_fpm_handler = {
@@ -76,15 +75,15 @@ struct lq_handler lq_etx_fpm_handler = {
     sizeof(struct default_lq_fpm)
 };
 
-fpm aging_factor_new, aging_factor_old;
-fpm aging_quickstart_new, aging_quickstart_old;
+olsr_u32_t aging_factor_new, aging_factor_old;
+olsr_u32_t aging_quickstart_new, aging_quickstart_old;
 
 void default_lq_initialize_fpm(void) {
-  aging_factor_new = ftofpm(olsr_cnf->lq_aging);
-  aging_factor_old = fpmsub(itofpm(1), aging_factor_new);
+  aging_factor_new = (olsr_u32_t)(olsr_cnf->lq_aging * LQ_FPM_INTERNAL_MULTIPLIER);
+  aging_factor_old = LQ_FPM_INTERNAL_MULTIPLIER - aging_factor_new;
   
-  aging_quickstart_new = ftofpm(LQ_QUICKSTART_AGING);
-  aging_quickstart_old = fpmsub(itofpm(1), aging_quickstart_new);
+  aging_quickstart_new = (olsr_u32_t)(LQ_QUICKSTART_AGING * LQ_FPM_INTERNAL_MULTIPLIER);
+  aging_quickstart_old = LQ_FPM_INTERNAL_MULTIPLIER - aging_quickstart_new;
 }
 
 olsr_linkcost default_lq_calc_cost_fpm(const void *ptr) {
@@ -95,7 +94,7 @@ olsr_linkcost default_lq_calc_cost_fpm(const void *ptr) {
     return LINK_COST_BROKEN;
   }
   
-  cost = fpmidiv(itofpm(255 * 255), (int)lq->valueLq * (int)lq->valueNlq);
+  cost = LQ_FPM_LINKCOST_MULTIPLIER * 255/(int)lq->valueLq * 255/(int)lq->valueNlq;
 
   if (cost > LINK_COST_BROKEN)
     return LINK_COST_BROKEN;
@@ -151,11 +150,11 @@ void default_lq_deserialize_tc_lq_pair_fpm(const olsr_u8_t **curr, void *ptr) {
 
 olsr_linkcost default_lq_packet_loss_worker_fpm(struct link_entry *link, void *ptr, olsr_bool lost) {
   struct default_lq_fpm *tlq = ptr;
-  fpm alpha_old = aging_factor_old;
-  fpm alpha_new = aging_factor_new;
+  olsr_u32_t alpha_old = aging_factor_old;
+  olsr_u32_t alpha_new = aging_factor_new;
   
-  fpm value;
-  fpm link_loss_factor = fpmidiv(itofpm(link->loss_link_multiplier), 65536);
+  olsr_u32_t value;
+  // fpm link_loss_factor = fpmidiv(itofpm(link->loss_link_multiplier), 65536);
   
   if (tlq->quickstart < LQ_QUICKSTART_STEPS) {
     alpha_new = aging_quickstart_new;
@@ -164,17 +163,17 @@ olsr_linkcost default_lq_packet_loss_worker_fpm(struct link_entry *link, void *p
   }
 
   // exponential moving average
-  value = itofpm(tlq->valueLq);
+  value = (olsr_u32_t)(tlq->valueLq) * LQ_FPM_INTERNAL_MULTIPLIER / 255;
 
-  value = fpmmul(value, alpha_old);
+  value = (value * alpha_old + LQ_FPM_INTERNAL_MULTIPLIER-1) / LQ_FPM_INTERNAL_MULTIPLIER;
   
   if (!lost) {
-    fpm ratio;
-    ratio = fpmmuli(alpha_new, 255);
-    ratio = fpmmul(ratio, link_loss_factor);
-    value = fpmadd(value, ratio);
+    olsr_u32_t ratio;
+    
+    ratio = (alpha_new * link->loss_link_multiplier + LINK_LOSS_MULTIPLIER-1) / LINK_LOSS_MULTIPLIER;
+    value += ratio;
   }
-  tlq->valueLq = fpmtoi(value);
+  tlq->valueLq = (value * 255 + LQ_FPM_INTERNAL_MULTIPLIER-1) / LQ_FPM_INTERNAL_MULTIPLIER;
   
   return default_lq_calc_cost_fpm(ptr);
 }
@@ -199,16 +198,17 @@ void default_lq_clear_fpm(void *target) {
   memset(target, 0, sizeof(struct default_lq_fpm));
 }
 
-const char *default_lq_print_fpm(void *ptr, struct lqtextbuffer *buffer) {
+const char *default_lq_print_fpm(void *ptr, char separator, struct lqtextbuffer *buffer) {
   struct default_lq_fpm *lq = ptr;
   
-  sprintf(buffer->buf, "%s/%s",
-    fpmtoa(fpmidiv(itofpm((int)lq->valueLq), 255)),
-    fpmtoa(fpmidiv(itofpm((int)lq->valueNlq), 255)));
+  snprintf(buffer->buf, sizeof(buffer->buf), "%0.3f%c%0.3f",
+      (float)(lq->valueLq) / 255.0,
+      separator,
+      (float)(lq->valueNlq) / 255.0);
   return buffer->buf;
 }
 
 const char *default_lq_print_cost_fpm(olsr_linkcost cost, struct lqtextbuffer *buffer) {
-  sprintf(buffer->buf, "%s", fpmtoa(cost));
+  snprintf(buffer->buf, sizeof(buffer->buf), "%.3f", (float)(cost) / LQ_FPM_LINKCOST_MULTIPLIER);
   return buffer->buf;
 }

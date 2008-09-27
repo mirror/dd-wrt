@@ -5,7 +5,7 @@
 #
 
 # activate debugging with 1 or deactivate with 0
-DEBUG = 0
+DEBUG ?= 0
 
 # compile OLSR_PRINTF out
 NO_DEBUG_MESSAGES ?= 0
@@ -54,8 +54,6 @@ CPPFLAGS =	-Isrc
 ifneq ($(TOPDIR),.)
 CPPFLAGS +=	-I$(TOPDIR)/src
 endif
-# use the new fixed point math stuff
-CPPFLAGS +=     -DUSE_FPM
 
 # add gcc warnings and optimizations if CFLAGS not set
 ifndef CFLAGS
@@ -99,7 +97,7 @@ ifeq ($(DEBUG),0)
 WARNINGS +=	-fomit-frame-pointer
 endif
 # we have small inline functions in src/lq_route.h which should always be inlined
-WARNINGS +=	-finline-limit=50
+WARNINGS +=	-finline-limit=350
 # These tell gcc to put each function and global variable in a separate section.
 # The linker can than remove all unreferenced section. But in the olsrd binary
 # unused doesn't imply unused at all since the function may be used by plugins,
@@ -118,7 +116,7 @@ CFLAGS +=	$(EXTRA_CFLAGS)
 CPPFLAGS +=	$(OS_CFLAG_PTHREAD)
 endif
 ifneq ($(MUDFLAP),0)
-CFLAGS +=	-fmudflapth 
+CFLAGS +=	-fmudflapth
 endif
 
 ifdef OLSRD_PLUGIN
@@ -130,6 +128,7 @@ LDFLAGS +=	-Wl,--version-script=version-script.txt
 else
 # c and ld flags for main
 LDFLAGS +=	-Wl,-export-dynamic 
+LDFLAGS +=	-Wl,-rpath,$(LIBDIR)
 endif
 # LDFLAGS for all 
 LDFLAGS +=	-Wl,--warn-common
@@ -151,6 +150,9 @@ CPPFLAGS +=	$(EXTRA_CPPFLAGS)
 
 # we have plugins with the old interface
 #CPPFLAGS +=	-DSUPPORT_OLD_PLUGIN_VERSIONS=1
+
+# use the new fixed point math stuff
+CPPFLAGS +=     -DUSE_FPM
 
 # search sources and headers in current dir and in src/
 SRCS +=		$(wildcard src/common/*.c src/*.c *.c)

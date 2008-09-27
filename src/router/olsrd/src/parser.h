@@ -1,6 +1,6 @@
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tï¿½nnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -57,8 +57,6 @@ struct parse_function_entry
   struct parse_function_entry *next;
 };
 
-extern struct parse_function_entry *parse_functions;
-
 typedef char *preprocessor_function(char *packet, struct interface *, union olsr_ip_addr *, int *length);
 
 struct preprocessor_function_entry
@@ -67,7 +65,13 @@ struct preprocessor_function_entry
   struct preprocessor_function_entry *next;
 };
 
-extern struct preprocessor_function_entry *preprocessor_functions;
+typedef void packetparser_function(struct olsr *olsr, struct interface *in_if, union olsr_ip_addr *from_addr);
+
+struct packetparser_function_entry
+{
+  packetparser_function *function;
+  struct packetparser_function_entry *next;
+};
 
 void
 parser_set_disp_pack_in(olsr_bool);
@@ -92,6 +96,12 @@ olsr_preprocessor_add_function(preprocessor_function);
 
 int
 olsr_preprocessor_remove_function(preprocessor_function);
+
+void
+olsr_packetparser_add_function(packetparser_function *function);
+
+int
+olsr_packetparser_remove_function(packetparser_function *function);
 
 void
 parse_packet(struct olsr *, int, struct interface *, union olsr_ip_addr *);

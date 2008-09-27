@@ -651,8 +651,14 @@ olsr_output_lq_hello(void *para)
   // destroy internal format
   destroy_lq_hello(&lq_hello);
 
-  if(net_output_pending(outif) && (!outif->immediate_send_tc || TIMED_OUT(outif->fwdtimer))) {
-    net_output(outif);
+  if (net_output_pending(outif)) {
+    if (outif->immediate_send_tc) {
+      if (TIMED_OUT(outif->fwdtimer))
+        set_buffer_timer(outif);
+    }
+    else {
+      net_output(outif);
+    }
   }
 }
 
@@ -682,7 +688,7 @@ olsr_output_lq_tc(void *para)
   } else if (prev_empty == 0) {
       // initialize timer
 
-      set_empty_tc_timer(GET_TIMESTAMP(olsr_cnf->max_tc_vtime * 3 * 1000));
+      set_empty_tc_timer(GET_TIMESTAMP(olsr_cnf->max_tc_vtime * 3 * MSEC_PER_SEC));
 
       prev_empty = 1;
 
@@ -698,8 +704,14 @@ olsr_output_lq_tc(void *para)
 
   destroy_lq_tc(&lq_tc);
 
-  if(net_output_pending(outif) && (outif->immediate_send_tc || TIMED_OUT(outif->fwdtimer))) {
-    set_buffer_timer(outif);
+  if (net_output_pending(outif)) {
+    if (!outif->immediate_send_tc) {
+      if (TIMED_OUT(outif->fwdtimer))
+        set_buffer_timer(outif);
+    }
+    else {
+      net_output(outif);
+    }
   }
 }
 

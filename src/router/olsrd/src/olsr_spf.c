@@ -360,10 +360,25 @@ olsr_calculate_routing_table (void)
     tc->hops = 0;
   } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 
+
+  /*
+   * Check if there was a change in the main IP address.
+   * Bail if there is no main IP address.
+   */
+  olsr_change_myself_tc();
+  if (!tc_myself) {
+
+    /*
+     * All gone now. Flush all routes.
+     */
+    olsr_update_rib_routes();
+    olsr_update_kernel_routes();
+    return;
+  }
+
   /*
    * zero ourselves and add us to the candidate tree.
    */
-  olsr_change_myself_tc();
   tc_myself->path_cost = ZERO_ROUTE_COST;
   olsr_spf_add_cand_tree(&cand_tree, tc_myself);
 
@@ -446,9 +461,7 @@ olsr_calculate_routing_table (void)
        * does not contain a next-hop.
        */
       if (tc != tc_myself) {
-#ifndef NODEBUG
         struct ipaddr_str buf;
-#endif
         OLSR_PRINTF(2, "SPF: %s no next-hop\n", olsr_ip_to_string(&buf, &tc->addr));
       }
 #endif

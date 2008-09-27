@@ -524,7 +524,7 @@ struct rt_path *
 olsr_insert_routing_table(union olsr_ip_addr *dst, int plen,
                           union olsr_ip_addr *originator, int origin)
 {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
   struct ipaddr_str dstbuf, origbuf;
 #endif
   struct tc_entry *tc;
@@ -586,7 +586,7 @@ void
 olsr_delete_routing_table(union olsr_ip_addr *dst, int plen,
                           union olsr_ip_addr *originator)
 {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
   struct ipaddr_str dstbuf, origbuf;
 #endif
 

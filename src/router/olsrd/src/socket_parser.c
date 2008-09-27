@@ -157,8 +157,6 @@ olsr_poll_sockets(void)
 {
   int n;
   struct olsr_socket_entry *olsr_sockets;
-  /* Global buffer for times(2) calls. Do not remopve since at least OpenBSD needs it. */
-  struct tms tms_buf;
   fd_set ibits;
   struct timeval tvp = {0, 0};
 
@@ -195,7 +193,7 @@ olsr_poll_sockets(void)
     }
 
   /* Update time since this is much used by the parsing functions */
-  now_times = times(&tms_buf);
+  now_times = olsr_times();
 
   for(olsr_sockets = olsr_socket_entries;olsr_sockets;olsr_sockets = olsr_sockets->next)
     {

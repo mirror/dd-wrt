@@ -108,13 +108,10 @@ main(int argc, char *argv[])
 {
   struct if_config_options *default_ifcnf;
   char conf_file_name[FILENAME_MAX];
-  struct tms tms_buf;
-#ifndef NODEBUG
   struct ipaddr_str buf;
-#endif
 #ifdef WIN32
   WSADATA WsaData;
-  int len;
+  size_t len;
 #endif
 
   /* paranoia checks */
@@ -153,7 +150,7 @@ main(int argc, char *argv[])
   olsr_openlog("olsrd");
 
   /* Grab initial timestamp */
-  now_times = times(&tms_buf);
+  now_times = olsr_times();
     
   printf("\n *** %s ***\n Build date: %s on %s\n http://www.olsr.org\n\n", 
 	 olsrd_version, 
@@ -163,6 +160,8 @@ main(int argc, char *argv[])
   /* Using PID as random seed */
   srandom(getpid());
 
+  /* Init widely used statics */
+  memset(&all_zero, 0, sizeof(union olsr_ip_addr));
 
   /*
    * Set configfile name and
@@ -180,9 +179,9 @@ main(int argc, char *argv[])
   if (len == 0 || conf_file_name[len - 1] != '\\')
     conf_file_name[len++] = '\\';
   
-  strcpy(conf_file_name + len, "olsrd.conf");
+  strscpy(conf_file_name + len, "olsrd.conf", sizeof(conf_file_name) - len);
 #else
-  strncpy(conf_file_name, OLSRD_GLOBAL_CONF_FILE, FILENAME_MAX);
+  strscpy(conf_file_name, OLSRD_GLOBAL_CONF_FILE, sizeof(conf_file_name));
 #endif
 
   if ((argc > 1) && (strcmp(argv[1], "-f") == 0)) 
@@ -202,7 +201,7 @@ main(int argc, char *argv[])
 	  exit(EXIT_FAILURE);
 	}
 		 
-      strncpy(conf_file_name, argv[1], FILENAME_MAX);
+      strscpy(conf_file_name, argv[1], sizeof(conf_file_name));
       argv++; argc--;
 
     }
@@ -255,13 +254,20 @@ main(int argc, char *argv[])
       fprintf(stderr, "Bad configuration!\n");
       olsr_exit(__func__, EXIT_FAILURE);      
     }
+
+  /*
+   * Print configuration 
+   */
+  if(olsr_cnf->debug_level > 1) {
+    olsrd_print_cnf(olsr_cnf);
+  }
 #ifndef WIN32
   /* Disable redirects globally */
   disable_redirects_global(olsr_cnf->ip_version);
 #endif
 
   /*
-   *socket for icotl calls
+   * socket for ioctl calls
    */
   olsr_cnf->ioctl_s = socket(olsr_cnf->ip_version, SOCK_DGRAM, 0);
   if (olsr_cnf->ioctl_s < 0) {
@@ -278,6 +284,9 @@ main(int argc, char *argv[])
   fcntl(olsr_cnf->rtnl_s, F_SETFL, O_NONBLOCK);
 #endif
 
+/*
+ * create routing socket
+ */
 #if defined __FreeBSD__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
   olsr_cnf->rts = socket(PF_ROUTE, SOCK_RAW, 0);
   if (olsr_cnf->rts < 0) {
@@ -877,6 +886,20 @@ olsr_process_arguments(int argc, char *argv[],
       return -1;
     }
   return 0;
+}
+
+/*
+ * a wrapper around times(2). times(2) has the problem, that it may return -1
+ * in case of an err (e.g. EFAULT on the parameter) or immediately before an
+ * overrun (though it is not en error) just because the jiffies (or whatever
+ * the underlying kernel calls the smallest accountable time unit) are
+ * inherently "unsigned" (and always incremented).
+ */
+unsigned long olsr_times(void)
+{
+  struct tms tms_buf;
+  const long t = times(&tms_buf);
+  return t < 0 ? -errno : t;
 }
 
 /*

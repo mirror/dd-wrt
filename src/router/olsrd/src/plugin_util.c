@@ -126,7 +126,7 @@ int set_plugin_string(const char *value, void *data, set_plugin_parameter_addon 
             OLSR_PRINTF(0, "String too long \"%s\"", value);
             return 1;
         }
-        strcpy(v, value);
+        strscpy(v, value, addon.ui);
         OLSR_PRINTF(1, "%s string %s\n", "Got", value);
     } else {
         OLSR_PRINTF(0, "%s string %s\n", "Ignored", value);

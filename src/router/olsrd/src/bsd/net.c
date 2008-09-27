@@ -554,7 +554,7 @@ get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, int scope_in)
       sin6 = (const struct sockaddr_in6 *)(ifa->ifa_addr);
       if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr))
 	continue;
-      strncpy(ifr6.ifr_name, ifname, sizeof(ifr6.ifr_name));
+      strscpy(ifr6.ifr_name, ifname, sizeof(ifr6.ifr_name));
       if ((s6 = socket(AF_INET6, SOCK_DGRAM, 0)) < 0) {
 	OLSR_PRINTF(3, "socket(AF_INET6,SOCK_DGRAM)");
 	break;

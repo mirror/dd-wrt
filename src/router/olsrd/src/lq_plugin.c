@@ -50,6 +50,7 @@
 
 #include "lq_plugin_default_float.h"
 #include "lq_plugin_default_fpm.h"
+#include "lq_plugin_default_ff.h"
 
 struct avl_tree lq_handler_tree;
 struct lq_handler *active_lq_handler = NULL;
@@ -67,7 +68,7 @@ init_lq_handler_tree(void)
   avl_init(&lq_handler_tree, &avl_strcasecmp);
   register_lq_handler(&lq_etx_float_handler, LQ_ALGORITHM_ETX_FLOAT_NAME);
   register_lq_handler(&lq_etx_fpm_handler, LQ_ALGORITHM_ETX_FPM_NAME);
-  
+  register_lq_handler(&lq_etx_ff_handler, LQ_ALGORITHM_ETX_FF_NAME);
   if (activate_lq_handler(olsr_cnf->lq_algorithm)) {
     activate_lq_handler(LQ_ALGORITHM_ETX_FPM_NAME);
   }
@@ -89,10 +90,11 @@ void
 register_lq_handler(struct lq_handler *handler, const char *name)
 {
   struct lq_handler_node *node;
+  size_t name_size = sizeof(*node) + strlen(name) + 1;
   
-  node = olsr_malloc(sizeof(*node) + strlen(name) + 1, "olsr lq handler");
-  
-  strcpy(node->name, name);
+  node = olsr_malloc(name_size, "olsr lq handler");
+   
+  strscpy(node->name, name, name_size);
   node->node.key = node->name;
   node->handler = handler;
   
@@ -276,13 +278,14 @@ olsr_memorize_foreign_hello_lq(struct link_entry *local,
  * value in the same context (a single printf command for example).
  * 
  * @param pointer to link_entry
+ * @param char separator between LQ and NLQ 
  * @param buffer for output
  * @return pointer to a buffer with the text representation
  */
 const char *
-get_link_entry_text(struct link_entry *entry, struct lqtextbuffer *buffer)
+get_link_entry_text(struct link_entry *entry, char separator, struct lqtextbuffer *buffer)
 {
-  return active_lq_handler->print_hello_lq(entry->linkquality, buffer);
+  return active_lq_handler->print_hello_lq(entry->linkquality, separator, buffer);
 }
 
 /*
@@ -293,13 +296,14 @@ get_link_entry_text(struct link_entry *entry, struct lqtextbuffer *buffer)
  * value in the same context (a single printf command for example).
  * 
  * @param pointer to tc_edge_entry
+ * @param char separator between LQ and NLQ 
  * @param pointer to buffer
  * @return pointer to the buffer with the text representation
  */
 const char *
-get_tc_edge_entry_text(struct tc_edge_entry *entry, struct lqtextbuffer *buffer)
+get_tc_edge_entry_text(struct tc_edge_entry *entry, char separator, struct lqtextbuffer *buffer)
 {
-  return active_lq_handler->print_tc_lq(entry->linkquality, buffer);
+  return active_lq_handler->print_tc_lq(entry->linkquality, separator, buffer);
 }
 
 /*

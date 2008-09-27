@@ -49,7 +49,7 @@
 
 struct ipaddr_str {
     char buf[MAX(INET6_ADDRSTRLEN, INET_ADDRSTRLEN)];
-};
+} __attribute__((unused));
 
 /*
  * Macros for comparing and copying IP addresses

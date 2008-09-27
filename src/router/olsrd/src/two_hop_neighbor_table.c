@@ -146,7 +146,9 @@ olsr_insert_two_hop_neighbor_table(struct neighbor_2_entry *two_hop_neighbor)
 {
   olsr_u32_t hash = olsr_ip_hashing(&two_hop_neighbor->neighbor_2_addr);
 
-  //printf("Adding 2 hop neighbor %s\n", olsr_ip_to_string(&buf, &two_hop_neighbor->neighbor_2_addr));
+#if 0
+    printf("Adding 2 hop neighbor %s\n", olsr_ip_to_string(&buf, &two_hop_neighbor->neighbor_2_addr));
+#endif
 
   /* Queue */  
   QUEUE_ELEM(two_hop_neighbortable[hash], two_hop_neighbor);
@@ -168,14 +170,14 @@ olsr_lookup_two_hop_neighbor_table(const union olsr_ip_addr *dest)
   struct neighbor_2_entry  *neighbor_2;
   olsr_u32_t               hash = olsr_ip_hashing(dest);
 
-  //printf("LOOKING FOR %s\n", olsr_ip_to_string(&buf, dest));
+  /* printf("LOOKING FOR %s\n", olsr_ip_to_string(&buf, dest)); */
   for(neighbor_2 = two_hop_neighbortable[hash].next;
       neighbor_2 != &two_hop_neighbortable[hash];
       neighbor_2 = neighbor_2->next)
     {
       struct mid_address *adr;
 
-      //printf("Checking %s\n", olsr_ip_to_string(&buf, dest));
+      /* printf("Checking %s\n", olsr_ip_to_string(&buf, dest)); */
       if (ipequal(&neighbor_2->neighbor_2_addr, dest))
 	return neighbor_2;
 
@@ -209,7 +211,7 @@ olsr_lookup_two_hop_neighbor_table_mid(const union olsr_ip_addr *dest)
   struct neighbor_2_entry  *neighbor_2;
   olsr_u32_t               hash;
 
-  //printf("LOOKING FOR %s\n", olsr_ip_to_string(&buf, dest));
+  /* printf("LOOKING FOR %s\n", olsr_ip_to_string(&buf, dest)); */
   hash = olsr_ip_hashing(dest);
   
   for(neighbor_2 = two_hop_neighbortable[hash].next;

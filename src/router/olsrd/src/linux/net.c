@@ -583,9 +583,7 @@ int
 join_mcast(struct interface *ifs, int sock)
 {
   /* See linux/in6.h */
-#ifndef NODEBUG
   struct ipaddr_str buf;
-#endif
   struct ipv6_mreq mcastreq;
 
   mcastreq.ipv6mr_multiaddr = ifs->int6_multaddr.sin6_addr;
@@ -750,7 +748,7 @@ check_wireless_interface(char * ifname)
   struct ifreq ifr;
 
   memset(&ifr, 0, sizeof(ifr));
-  strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+  strscpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 
   return (ioctl(olsr_cnf->ioctl_s, SIOCGIWNAME, &ifr) >= 0) ? 1 : 0;
 }
@@ -802,7 +800,7 @@ calculate_if_metric(char *ifname)
   if(check_wireless_interface(ifname))
     {
       struct ifreq ifr;
-      strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+      strscpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
       
       /* Get bit rate */
       if(ioctl(olsr_cnf->ioctl_s, SIOCGIWRATE, &ifr) < 0)
@@ -826,7 +824,7 @@ calculate_if_metric(char *ifname)
       struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
       int bmcr;
       memset(&ifr, 0, sizeof(ifr));
-      strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+      strscpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 
       if (ioctl(olsr_cnf->ioctl_s, SIOCGMIIPHY, &ifr) < 0) {
 	if (errno != ENODEV)
@@ -876,7 +874,7 @@ is_if_link_up(char *ifname)
       struct mii_data *mii = (struct mii_data *)&ifr.ifr_data;
       int bmsr;
       memset(&ifr, 0, sizeof(ifr));
-      strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+      strscpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 
       if (ioctl(olsr_cnf->ioctl_s, SIOCGMIIPHY, &ifr) < 0) {
 	if (errno != ENODEV)
