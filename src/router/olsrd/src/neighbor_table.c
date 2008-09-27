@@ -418,9 +418,7 @@ olsr_print_neighbor_table(void)
     for(neigh = neighbortable[idx].next; neigh != &neighbortable[idx]; neigh = neigh->next) {
       struct link_entry *lnk = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
       if(lnk) {
-#ifndef NODEBUG
         struct ipaddr_str buf;
-#endif
         OLSR_PRINTF(1, "%-*s  %5.3f  %5.3f  %s  %s  %s  %d\n",
                     iplen,
                     olsr_ip_to_string(&buf, &neigh->neighbor_main_addr),

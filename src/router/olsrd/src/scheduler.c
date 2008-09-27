@@ -63,7 +63,6 @@ clock_t now_times;		       /* current idea of times(2) reported uptime */
 /* Hashed root of all timers */
 struct list_node timer_wheel[TIMER_WHEEL_SLOTS];
 clock_t timer_last_run;		       /* remember the last timeslot walk */
-struct list_node *timer_walk_list_node = NULL;	/* used for timeslot walk */
 
 /* Pool of timers to avoid malloc() churn */
 struct list_node free_timer_list;
@@ -79,12 +78,12 @@ unsigned int timers_running;
  * @return nada
  */
 static void
-olsr_scheduler_sleep(clock_t scheduler_runtime)
+olsr_scheduler_sleep(unsigned long scheduler_runtime)
 {
   struct timespec remainder_spec, sleeptime_spec;
   struct timeval sleeptime_val, time_used, next_interval;
   olsr_u32_t next_interval_usec;
-  clock_t milliseconds_used;
+  unsigned long milliseconds_used;
 
   /* Calculate next planned scheduler invocation */
   next_interval_usec = olsr_cnf->pollrate * USEC_PER_SEC;
@@ -119,7 +118,6 @@ olsr_scheduler_sleep(clock_t scheduler_runtime)
 void
 olsr_scheduler(void)
 {
-  struct tms tms_buf;		       /* Buffer for times(2) calls. */
   struct interface *ifn;
 
   OLSR_PRINTF(1, "Scheduler started - polling every %0.2f seconds\n",
@@ -133,7 +131,7 @@ olsr_scheduler(void)
      * Update the global timestamp. We are using a non-wallclock timer here
      * to avoid any undesired side effects if the system clock changes.
      */
-    now_times = times(&tms_buf);
+    now_times = olsr_times();
 
     /* Read incoming data */
     olsr_poll_sockets();
@@ -159,7 +157,7 @@ olsr_scheduler(void)
     }
 
     /* We are done, sleep until the next scheduling interval. */
-    olsr_scheduler_sleep(times(&tms_buf) - now_times);
+    olsr_scheduler_sleep(olsr_times() - now_times);
 
 #if defined WIN32
     /* The Ctrl-C signal handler thread asks us to exit */
@@ -317,6 +315,35 @@ olsr_init_timers(void)
   timers_running = 0;
 }
 
+/*
+ * olsr_get_next_list_entry
+ *
+ * Get the next list node in a hash bucket.
+ * The listnode of the timer in may be subject to getting removed from
+ * this timer bucket in olsr_change_timer() and olsr_stop_timer(), which
+ * means that we can miss our walking context.
+ * By caching the previous node we can figure out if the current node
+ * has been removed from the hash bucket and compute the next node.
+ */
+static struct list_node *
+olsr_get_next_list_entry (struct list_node **prev_node,
+                          struct list_node *current_node)
+{
+  if ((*prev_node)->next == current_node) {
+
+    /*
+     * No change in the list, normal traversal, update the previous node.
+     */
+    *prev_node = current_node;
+    return (current_node->next);
+  } else {
+
+    /*
+     * List change. Recompute the walking context.
+     */
+    return ((*prev_node)->next);
+  }
+}
 
 /**
  * Walk through the timer list and check if any timer is ready to fire.
@@ -326,7 +353,7 @@ void
 olsr_walk_timers(clock_t * last_run)
 {
   static struct timer_entry *timer;
-  struct list_node *timer_head_node;
+  struct list_node *timer_head_node, *timer_walk_node, *timer_walk_prev_node;
   unsigned int timers_walked, timers_fired;
   unsigned int total_timers_walked, total_timers_fired;
   unsigned int wheel_slot_walks = 0;
@@ -347,12 +374,15 @@ olsr_walk_timers(clock_t * last_run)
 
     /* Get the hash slot for this clocktick */
     timer_head_node = &timer_wheel[*last_run & TIMER_WHEEL_MASK];
+    timer_walk_prev_node = timer_head_node;
 
     /* Walk all entries hanging off this hash bucket */
-    for (timer_walk_list_node = timer_head_node->next; timer_walk_list_node != timer_head_node;	/* circular list */
-	 timer_walk_list_node = timer_walk_list_node->next) {
+    for (timer_walk_node = timer_head_node->next;
+         timer_walk_node != timer_head_node; /* circular list */
+	 timer_walk_node = olsr_get_next_list_entry(&timer_walk_prev_node,
+                                                    timer_walk_node)) {
 
-      timer = list2timer(timer_walk_list_node);
+      timer = list2timer(timer_walk_node);
 
       timers_walked++;
 
@@ -360,10 +390,11 @@ olsr_walk_timers(clock_t * last_run)
       if (TIMED_OUT(timer->timer_clock)) {
 
 	OLSR_PRINTF(3, "TIMER: fire %s timer %p, ctx %p, "
-		    "at clocktick %s\n",
+		    "at clocktick %u (%s)\n",
 		    olsr_cookie_name(timer->timer_cookie),
 		    timer, timer->timer_cb_context,
-                    olsr_clock_string((unsigned int)(*last_run)));
+                    (unsigned int)*last_run,
+                    olsr_wallclock_string());
 
 	/* This timer is expired, call into the provided callback function */
 	timer->timer_cb(timer->timer_cb_context);
@@ -402,11 +433,6 @@ olsr_walk_timers(clock_t * last_run)
     /* Increment the time slot and wheel slot walk iteration */
     (*last_run)++;
     wheel_slot_walks++;
-
-    /*
-     * Mark the timer walk context unused.
-     */
-    timer_walk_list_node = NULL;
   }
 
 #ifdef DEBUG
@@ -500,8 +526,8 @@ olsr_wallclock_string(void)
   if (usec<0)
     usec=0;
 
-  snprintf(ret, sizeof(buf)/4, "%02lu:%02lu:%02lu.%06lu",
-	   (sec % 86400) / 3600, (sec % 3600) / 60, sec % 60, usec);
+  snprintf(ret, sizeof(buf)/4, "%02lu:%02lu:%02lu.%06lu",	   
+    (sec % 86400) / 3600, (sec % 3600) / 60, sec % 60, usec);
 
   return ret;
 }
@@ -529,8 +555,10 @@ olsr_clock_string(clock_t clock)
   /* On most systems a clocktick is a 10ms quantity. */
   msec = olsr_cnf->system_tick_divider * (clock_t)(clock - now_times);
   sec = msec / MSEC_PER_SEC;
+
   if ((long)sec<0)
     sec = 0;
+
   snprintf(ret, sizeof(buf) / 4, "%02u:%02u:%02u.%03u",
 	   sec / 3600, (sec % 3600) / 60, (sec % 60), (msec % MSEC_PER_SEC));
 
@@ -590,21 +618,6 @@ olsr_start_timer(unsigned int rel_time, olsr_u8_t jitter_pct,
   return timer;
 }
 
-/*
- * Check if there is a timer walk in progress and advance the
- * walking context if so. Keep in mind we are about to delete
- * the timer from a list and this will destroy the walking context.
- */
-
-static inline void
-olsr_update_timer_walk_ctx(struct timer_entry *timer)
-{
-  if (timer_walk_list_node == &timer->timer_list) {
-    timer_walk_list_node = timer_walk_list_node->next;
-  }
-}
-
-
 /**
  * Delete a timer.
  *
@@ -624,8 +637,6 @@ olsr_stop_timer(struct timer_entry *timer)
 	      olsr_cookie_name(timer->timer_cookie),
 	      timer, timer->timer_cb_context);
 #endif
-
-  olsr_update_timer_walk_ctx(timer);
 
   /*
    * Carve out of the existing wheel_slot and return to the pool
@@ -666,8 +677,6 @@ olsr_change_timer(struct timer_entry *timer, unsigned int rel_time,
 
   timer->timer_clock = olsr_jitter(rel_time, jitter_pct, timer->timer_random);
   timer->timer_jitter_pct = jitter_pct;
-
-  olsr_update_timer_walk_ctx(timer);
 
   /*
    * Changes are easy: Remove timer from the exisiting timer_wheel slot

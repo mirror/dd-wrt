@@ -71,9 +71,7 @@ prefix_to_netmask(olsr_u8_t *a, int len, olsr_u8_t prefixlen)
 olsr_u8_t
 netmask_to_prefix(const olsr_u8_t *adr, int len)
 {
-#ifndef NODEBUG
   struct ipaddr_str buf;
-#endif
   const olsr_u8_t * const a_end = adr+len;
   olsr_u16_t prefix = 0;
   const olsr_u8_t *a;

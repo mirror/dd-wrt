@@ -150,7 +150,7 @@ char *StrError(unsigned int ErrNo)
 
   if (WideCharToMultiByte(CP_ACP, 0, WideMsg, -1, Msg, sizeof (Msg),
                           NULL, NULL) == 0)
-    strcpy(Msg, "[cannot convert string]");
+  strscpy(Msg, "[cannot convert string]", sizeof(Msg));
 #endif
 
   return Msg;
@@ -389,7 +389,7 @@ static char *inet_ntop4(const unsigned char *src, char *dst, int size)
   if (sprintf(tmp, fmt, src[0], src[1], src[2], src[3]) > size)
     return (NULL);
 
-  return strcpy(dst, tmp);
+  return strscpy(dst, tmp, size);
 }
 
 static char *inet_ntop6(const unsigned char *src, char *dst, int size)
@@ -477,7 +477,7 @@ static char *inet_ntop6(const unsigned char *src, char *dst, int size)
   if ((tp - tmp) > size)
     return (NULL);
 
-  return strcpy(dst, tmp);
+  return strscpy(dst, tmp, size);
 }
 
 char *inet_ntop(int af, const void *src, char *dst, int size)

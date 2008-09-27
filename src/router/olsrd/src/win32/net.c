@@ -118,6 +118,14 @@ int getsocket(int BuffSize, char *Int __attribute__((unused)))
     return -1;
   }
 
+  if (setsockopt(Sock, SOL_SOCKET, SO_REUSEADDR,
+                 (char *)&On, sizeof (On)) < 0)
+  {
+    WinSockPError("getsocket/setsockopt(SO_REUSEADDR)");
+    closesocket(Sock);
+    return -1;
+  }
+
   while (BuffSize > 8192)
   {
     if (setsockopt(Sock, SOL_SOCKET, SO_RCVBUF, (char *)&BuffSize,
@@ -166,6 +174,14 @@ int getsocket6(int BuffSize, char *Int __attribute__((unused)))
                  (char *)&On, sizeof (On)) < 0)
   {
     WinSockPError("getsocket6/setsockopt(SO_BROADCAST)");
+    closesocket(Sock);
+    return -1;
+  }
+
+  if (setsockopt(Sock, SOL_SOCKET, SO_REUSEADDR,
+                 (char *)&On, sizeof (On)) < 0)
+  {
+    WinSockPError("getsocket6/setsockopt(SO_REUSEADDR)");
     closesocket(Sock);
     return -1;
   }

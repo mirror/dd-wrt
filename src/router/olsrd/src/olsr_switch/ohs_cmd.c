@@ -91,7 +91,7 @@ get_next_token(const char *src, char *dst, size_t buflen)
 int
 ohs_set_olsrd_path(const char *path)
 {
-  strncpy(olsrd_path, path, FILENAME_MAX);
+  strscpy(olsrd_path, path, sizeof(olsrd_path));
   return 0;
 }
 
