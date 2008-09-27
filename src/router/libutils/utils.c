@@ -621,6 +621,9 @@ return 0;
 #elif HAVE_DIR300
     setRouter( "D-Link DIR-300" );
     return ROUTER_BOARD_FONERA;
+#elif HAVE_CNC
+    setRouter( "CNC Outdoor AP" );
+    return ROUTER_BOARD_FONERA;
 #elif HAVE_WBD500
     setRouter( "Wiligear WBD-500" );
     return ROUTER_BOARD_FONERA;
