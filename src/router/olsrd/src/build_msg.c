@@ -320,7 +320,7 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
       /* Link statuses */
       for(j = 0; j <= MAX_LINK; j++)
 	{
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
           struct ipaddr_str buf;
 #endif
 
@@ -491,7 +491,7 @@ serialize_hello6(struct hello_message *message, struct interface *ifp)
     {
       for(j = 0; j <= MAX_LINK; j++)
 	{
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
           struct ipaddr_str buf;
 #endif
 	  first_entry = OLSR_TRUE;
@@ -606,7 +606,7 @@ serialize_hello6(struct hello_message *message, struct interface *ifp)
 static olsr_bool
 serialize_tc4(struct tc_message *message, struct interface *ifp)           
 {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
   struct ipaddr_str buf;
 #endif
   olsr_u16_t remainsize, curr_size;
@@ -733,7 +733,7 @@ serialize_tc4(struct tc_message *message, struct interface *ifp)
 static olsr_bool
 serialize_tc6(struct tc_message *message, struct interface *ifp)           
 {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
   struct ipaddr_str buf;
 #endif
   olsr_u16_t remainsize, curr_size;
@@ -892,7 +892,7 @@ serialize_mid4(struct interface *ifp)
     {
       if(!ipequal(&olsr_cnf->main_addr, &ifs->ip_addr))
 	{
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
           struct ipaddr_str buf;
 #endif
 
@@ -994,7 +994,7 @@ serialize_mid6(struct interface *ifp)
     {
       if(!ipequal(&olsr_cnf->main_addr, &ifs->ip_addr))
 	{
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
           struct ipaddr_str buf;
 #endif
 	  if((curr_size + olsr_cnf->ipsize) > remainsize)
@@ -1214,8 +1214,9 @@ serialize_hna6(struct interface *ifp)
   m->v6.seqno = htons(get_msg_seqno());
   
   net_outbuffer_push(ifp, msg_buffer, curr_size);
-  
-  //printf("Sending HNA (%d bytes)...\n", outputsize);
+#if 0
+  printf("Sending HNA (%d bytes)...\n", outputsize);
+#endif
   return OLSR_FALSE;
 
 }

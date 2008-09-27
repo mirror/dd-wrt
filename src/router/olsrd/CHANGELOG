@@ -6,23 +6,35 @@ PATCHES from Hannes Gredler <hannes@gredler.at>:
 - add small valgrind howto
 - remove the per tc_edge timer
 - add some basic infrastructure for cookies
+  cookies are used to track usage of timer and memory resources
+- add a lightweight memory manager to reduce malloc() churn.
 - eliminate data field from avl_node and list_node and
   replace this via inline recasts
 - add indentation dotfile for future code cleanup
 - refactor the timer implementation, get rid of timeout functions
   all manipulations done in constant time.
 - use calloc rather than malloc for lazy callers
+- log RIB add/del transactions only if there is an actual route change
+- fix to to always insert a HNA Net when receiving a HNA refresh
+- fix delete all routes if the last IP address is gone
 
 PATCHES and BUGFIXES from Henning Rogge <rogge@fgan.de>
 - Bugfix for fragmented TC sequence numbers
+- eliminate second timer for edge garbage collection (aka border code).
 - fix SPF bug
+- fix for jitter calculation
 - refactor linkset code
 - add netsimpcap, a network simulation device
 - parser refactoring
+- fix for possible overflow in fpm plugin
 
-PATCHES from Sven-Ola Tuecke <sven-ola@gmx.de>:
+PATCHES and BUGFIXES from Sven-Ola Tuecke <sven-ola@gmx.de>:
 - add a fixed-point math implementation, which saves
   a great deal of CPU on embedded devices
+- fix for Link quality dijkstra limit
+
+PATCHES and BUGFIXES from Aaron Kaplan <aaron@lo-res.org>:
+- fix openbsd warnings / compile errors about sprintf strcpy
 
 BUGFIX from Erik Tromp <erik_tromp@hotmail.com>:
 - update in bmf due to new flags field in tc_edge_entry
@@ -33,6 +45,14 @@ PATCH from Clemens Hopfer <datacop@inode.at>:
 PATCH from Joe Gio <joezgio@gmail.com>:
 - track if AC power is connected/disconnected
 
+PATCH from Hagen Paul Pfeifer <hagen@jauu.net>:
+- import jenkins hash for good hash calculations
+
+PATCH from Andres Ambrois <andresambrois@gmail.com>:
+- nameservice plugin: add parameters for SIGHUPing other daemons, or calling scripts
+
+PATCH from Markus Kittenberger <Markus.Kittenberger@gmx.at>:
+- txtinfo plugin: add more http options
 
 0.5.5 ---------------------------------------------------------------------
 

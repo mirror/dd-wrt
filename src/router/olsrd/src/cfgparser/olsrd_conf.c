@@ -83,6 +83,13 @@ main(int argc, char *argv[])
 
   if((cnf = olsrd_parse_cnf(argv[1])) != NULL)
     {
+      if((argc > 2) && (!strcmp(argv[2], "-print")))
+	{
+	  olsrd_print_cnf(cnf);  
+	  olsrd_write_cnf(cnf, "./out.conf");
+	}
+      else
+        printf("Use -print to view parsed values\n");
       printf("Configfile parsed OK\n");
     }
   else
@@ -529,6 +536,151 @@ get_default_if_config(void)
 
 
 
+void
+olsrd_print_cnf(struct olsrd_config *cnf)
+{
+  struct ip_prefix_list   *h  = cnf->hna_entries;
+  struct olsr_if           *in = cnf->interfaces;
+  struct plugin_entry      *pe = cnf->plugins;
+  struct ip_prefix_list    *ie = cnf->ipc_nets;
+  struct olsr_lq_mult      *mult;
+  char ipv6_buf[100];             /* buffer for IPv6 inet_htop */
+
+  printf(" *** olsrd configuration ***\n");
+
+  printf("Debug Level      : %d\n", cnf->debug_level);
+  if(cnf->ip_version == AF_INET6)
+    printf("IpVersion        : 6\n");
+  else
+    printf("IpVersion        : 4\n");
+  if(cnf->allow_no_interfaces)
+    printf("No interfaces    : ALLOWED\n");
+  else
+    printf("No interfaces    : NOT ALLOWED\n");
+  printf("TOS              : 0x%02x\n", cnf->tos);
+  printf("RtTable          : 0x%02x\n", cnf->rttable);
+  printf("RtTableDefault   : 0x%02x\n", cnf->rttable_default);
+  if(cnf->willingness_auto)
+    printf("Willingness      : AUTO\n");
+  else
+    printf("Willingness      : %d\n", cnf->willingness);
+
+  printf("IPC connections  : %d\n", cnf->ipc_connections);
+  while(ie)
+    {
+      struct ipaddr_str strbuf;
+      if (ie->net.prefix_len == olsr_cnf->maxplen) {
+          printf("\tHost %s\n", olsr_ip_to_string(&strbuf, &ie->net.prefix));
+      } else {
+          printf("\tNet %s/%d\n", olsr_ip_to_string(&strbuf, &ie->net.prefix), ie->net.prefix_len);
+      }
+      ie = ie->next;
+    }
+
+
+  printf("Pollrate         : %0.2f\n", cnf->pollrate);
+
+  printf("NIC ChangPollrate: %0.2f\n", cnf->nic_chgs_pollrate);
+
+  printf("TC redundancy    : %d\n", cnf->tc_redundancy);
+
+  printf("MPR coverage     : %d\n", cnf->mpr_coverage);
+   
+  printf("LQ level         : %d\n", cnf->lq_level);
+
+  printf("LQ fish eye      : %d\n", cnf->lq_fish);
+
+  printf("LQ Dijkstra limit: %d, %0.2f\n", cnf->lq_dlimit, cnf->lq_dinter);
+
+  printf("LQ aging factor  : %f\n", cnf->lq_aging);
+
+  printf("LQ algorithm name: %s\n", cnf->lq_algorithm ? cnf->lq_algorithm : "default");
+  
+  printf("NAT threshold    : %f\n", cnf->lq_nat_thresh);
+
+  printf("Clear screen     : %s\n", cnf->clear_screen ? "yes" : "no");
+
+  /* Interfaces */
+  if(in)
+    {
+      printf("Interfaces:\n");
+      while(in)
+	{
+	  printf(" dev: \"%s\"\n", in->name);
+	  
+	  if(in->cnf->ipv4_broadcast.v4.s_addr)
+	    {
+	      printf("\tIPv4 broadcast           : %s\n", inet_ntoa(in->cnf->ipv4_broadcast.v4));
+	    }
+	  else
+	    {
+	      printf("\tIPv4 broadcast           : AUTO\n");
+	    }
+	  
+	  printf("\tIPv6 addrtype            : %s\n", in->cnf->ipv6_addrtype ? "site-local" : "global");
+	  
+	  //union olsr_ip_addr       ipv6_multi_site;
+	  //union olsr_ip_addr       ipv6_multi_glbl;
+	  printf("\tIPv6 multicast site/glbl : %s", inet_ntop(AF_INET6, &in->cnf->ipv6_multi_site.v6, ipv6_buf, sizeof(ipv6_buf)));
+	  printf("/%s\n", inet_ntop(AF_INET6, &in->cnf->ipv6_multi_glbl.v6, ipv6_buf, sizeof(ipv6_buf)));
+	  
+	  printf("\tHELLO emission/validity  : %0.2f/%0.2f\n", in->cnf->hello_params.emission_interval, in->cnf->hello_params.validity_time);
+	  printf("\tTC emission/validity     : %0.2f/%0.2f\n", in->cnf->tc_params.emission_interval, in->cnf->tc_params.validity_time);
+	  printf("\tMID emission/validity    : %0.2f/%0.2f\n", in->cnf->mid_params.emission_interval, in->cnf->mid_params.validity_time);
+	  printf("\tHNA emission/validity    : %0.2f/%0.2f\n", in->cnf->hna_params.emission_interval, in->cnf->hna_params.validity_time);
+	  
+          for (mult = in->cnf->lq_mult; mult != NULL; mult = mult->next)
+          {
+            printf("\tLinkQualityMult          : %s %0.2f\n", inet_ntop(cnf->ip_version, &mult->addr, ipv6_buf, sizeof (ipv6_buf)), (float)(mult->value)/65536.0);
+          }
+
+          printf("\tAutodetetc changes       : %s\n", in->cnf->autodetect_chg ? "yes" : "no");
+
+	  in = in->next;
+	}
+    }
+
+
+
+
+  /* Plugins */
+  if(pe)
+    {
+      printf("Plugins:\n");
+
+      while(pe)
+	{
+	  printf("\tName: \"%s\"\n", pe->name);
+	  pe = pe->next;
+	}
+    }
+
+  /* Hysteresis */
+  if(cnf->use_hysteresis) {
+    printf("Using hysteresis:\n");
+    printf("\tScaling      : %0.2f\n", cnf->hysteresis_param.scaling);
+    printf("\tThr high/low : %0.2f/%0.2f\n", cnf->hysteresis_param.thr_high, cnf->hysteresis_param.thr_low);
+  } else {
+    printf("Not using hysteresis\n");
+  }
+
+  /* HNA IPv4 and IPv6 */
+  if(h) {
+    printf("HNA%d entries:\n", cnf->ip_version == AF_INET ? 4 : 6);
+    while(h) {
+      struct ipaddr_str buf;
+      printf("\t%s/", olsr_ip_to_string(&buf, &h->net.prefix));
+      if (cnf->ip_version == AF_INET) {
+        union olsr_ip_addr ip;
+        olsr_prefix_to_netmask(&ip, h->net.prefix_len);
+        printf("%s\n", olsr_ip_to_string(&buf, &ip));
+      } else {
+        printf("%d\n", h->net.prefix_len);
+      }
+      h = h->next;
+    }
+  }
+}
 
 #if defined WIN32
 struct ioinfo

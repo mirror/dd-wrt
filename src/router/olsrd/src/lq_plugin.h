@@ -54,6 +54,7 @@
 #define ZERO_ROUTE_COST 0
 
 #define MINIMAL_USEFUL_LQ 0.1
+#define LQ_PLUGIN_RELEVANT_COSTCHANGE 16
 
 #define LQ_QUICKSTART_STEPS 12
 #define LQ_QUICKSTART_AGING 0.25
@@ -83,8 +84,8 @@ struct lq_handler {
   void (*deserialize_hello_lq) (const olsr_u8_t ** curr, void *lq);
   void (*deserialize_tc_lq) (const olsr_u8_t ** curr, void *lq);
 
-  const char *(*print_hello_lq) (void *ptr, struct lqtextbuffer * buffer);
-  const char *(*print_tc_lq) (void *ptr, struct lqtextbuffer * buffer);
+  const char *(*print_hello_lq) (void *ptr, char separator, struct lqtextbuffer * buffer);
+  const char *(*print_tc_lq) (void *ptr, char separator, struct lqtextbuffer * buffer);
   const char *(*print_cost) (olsr_linkcost cost, struct lqtextbuffer * buffer);
 
   size_t hello_lq_size;
@@ -130,8 +131,10 @@ void olsr_memorize_foreign_hello_lq(struct link_entry *local,
 				    struct hello_neighbor *foreign);
 
 const char *get_link_entry_text(struct link_entry *entry,
+				char separator,
 				struct lqtextbuffer *buffer);
 const char *get_tc_edge_entry_text(struct tc_edge_entry *entry,
+				   char separator,
 				   struct lqtextbuffer *buffer);
 const char *get_linkcost_text(olsr_linkcost cost, olsr_bool route,
 			      struct lqtextbuffer *buffer);

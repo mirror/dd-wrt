@@ -219,6 +219,12 @@ add_ifchgf(int (*f)(struct interface *, int));
 int
 del_ifchgf(int (*f)(struct interface *, int));
 
+extern struct olsr_cookie_info *interface_poll_timer_cookie;
+extern struct olsr_cookie_info *hello_gen_timer_cookie;
+extern struct olsr_cookie_info *tc_gen_timer_cookie;
+extern struct olsr_cookie_info *mid_gen_timer_cookie;
+extern struct olsr_cookie_info *hna_gen_timer_cookie;
+
 #endif
 
 /*

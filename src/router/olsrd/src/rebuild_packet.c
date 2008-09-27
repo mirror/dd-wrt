@@ -79,7 +79,7 @@ mid_chgestruct(struct mid_message *mmsg, const union olsr_message *m)
        */
       no_aliases =  ((ntohs(m->v4.olsr_msgsize) - 12) / 4);
 
-      //printf("Aliases: %d\n", no_aliases);
+      /*printf("Aliases: %d\n", no_aliases); */
       mmsg->mid_origaddr.v4.s_addr = m->v4.originator;
       mmsg->addr.v4.s_addr = m->v4.originator;
       /*seq number*/
@@ -89,7 +89,7 @@ mid_chgestruct(struct mid_message *mmsg, const union olsr_message *m)
       /* Get vtime */
       mmsg->vtime = me_to_reltime(m->v4.olsr_vtime);
 
-      //printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno);
+      /*printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno); */
 
 
       for(i = 0; i < no_aliases; i++)
@@ -105,9 +105,7 @@ mid_chgestruct(struct mid_message *mmsg, const union olsr_message *m)
       
       if(olsr_cnf->debug_level > 1)
 	{
-#ifndef NODEBUG
           struct ipaddr_str buf;
-#endif
 	  OLSR_PRINTF(3, "Alias list for %s: ", olsr_ip_to_string(&buf, &mmsg->mid_origaddr));
 	  OLSR_PRINTF(3, "%s", olsr_ip_to_string(&buf, &mmsg->addr));
 	  alias_tmp = mmsg->mid_addr;
@@ -130,7 +128,7 @@ mid_chgestruct(struct mid_message *mmsg, const union olsr_message *m)
        */
       no_aliases =  ((ntohs(m->v6.olsr_msgsize) - 12) / 16); /* NB 16 */
 
-      //printf("Aliases: %d\n", no_aliases);
+      /*printf("Aliases: %d\n", no_aliases); */
       mmsg->mid_origaddr.v6 = m->v6.originator;
       mmsg->addr.v6 = m->v6.originator;
       /*seq number*/
@@ -140,13 +138,13 @@ mid_chgestruct(struct mid_message *mmsg, const union olsr_message *m)
       /* Get vtime */
       mmsg->vtime = me_to_reltime(m->v6.olsr_vtime);
 
-      //printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno);
+      /*printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno); */
 
       for(i = 0; i < no_aliases; i++)
 	{
 	  alias = olsr_malloc(sizeof(struct mid_alias), "MID chgestruct 2");
 	  
-	  //printf("Adding alias: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&maddr6->addr));
+	  /*printf("Adding alias: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&maddr6->addr));*/
 	  alias->alias_addr.v6 = maddr6->addr;
 	  alias->next = mmsg->mid_addr;
 	  mmsg->mid_addr = alias;
@@ -157,9 +155,7 @@ mid_chgestruct(struct mid_message *mmsg, const union olsr_message *m)
 
       if(olsr_cnf->debug_level > 1)
 	{
-#ifndef NODEBUG
           struct ipaddr_str buf;
-#endif
 	  OLSR_PRINTF(3, "Alias list for %s", ip6_to_string(&buf, &mmsg->mid_origaddr.v6));
 	  OLSR_PRINTF(3, "%s", ip6_to_string(&buf, &mmsg->addr.v6));
 

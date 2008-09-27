@@ -85,6 +85,7 @@ struct pcf
 static struct pcf *pcf_list;
 
 static olsr_u16_t message_seqno;
+union olsr_ip_addr all_zero;
 
 /**
  *Initialize the message sequence number as a random value
@@ -125,7 +126,7 @@ register_pcf(int (*f)(int, int, int))
 
 /**
  *Process changes in neighborhood or/and topology.
- *Re-calculates the neighborhooh/topology if there
+ *Re-calculates the neighborhood/topology if there
  *are any updates - then calls the right functions to
  *update the routing table.
  *@return 0
@@ -338,9 +339,7 @@ olsr_forward_message(union olsr_message *m,
   if(olsr_lookup_mprs_set(src) == NULL)
     {
 #ifdef DEBUG
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       OLSR_PRINTF(5, "Forward - sender %s not MPR selector\n", olsr_ip_to_string(&buf, src));
 #endif
       return 0;
@@ -405,7 +404,7 @@ void
 set_buffer_timer(struct interface *ifn)
 {      
   /* Set timer */
-  ifn->fwdtimer = GET_TIMESTAMP(random() * olsr_cnf->max_jitter * 1000 / RAND_MAX);
+  ifn->fwdtimer = GET_TIMESTAMP(random() * olsr_cnf->max_jitter * MSEC_PER_SEC / RAND_MAX);
 }
 
 void

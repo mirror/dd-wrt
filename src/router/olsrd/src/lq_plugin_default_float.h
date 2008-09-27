@@ -47,7 +47,6 @@
 #define LQ_ALGORITHM_ETX_FLOAT_NAME "etx_float"
 
 #define LQ_PLUGIN_LC_MULTIPLIER 1024
-#define LQ_PLUGIN_RELEVANT_COSTCHANGE 8
 
 struct default_lq_float {
   float lq, nlq;
@@ -71,7 +70,7 @@ void default_lq_deserialize_tc_lq_pair_float(const olsr_u8_t **curr, void *lq);
 void default_lq_copy_link2tc_float(void *target, void *source);
 void default_lq_clear_float(void *target);
 
-const char *default_lq_print_float(void *ptr, struct lqtextbuffer *buffer);
+const char *default_lq_print_float(void *ptr, char separator, struct lqtextbuffer *buffer);
 const char *default_lq_print_cost_float(olsr_linkcost cost, struct lqtextbuffer *buffer);
 
 extern struct lq_handler lq_etx_float_handler;

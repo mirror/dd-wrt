@@ -49,7 +49,7 @@
 #define LQ_HELLO_MESSAGE      201
 #define LQ_TC_MESSAGE         202
 
-// deserialized OLSR header
+/* deserialized OLSR header */
 
 struct olsr_common
 {
@@ -62,7 +62,7 @@ struct olsr_common
   olsr_u16_t         seqno;
 };
 
-// serialized IPv4 OLSR header
+/* serialized IPv4 OLSR header */
 
 struct olsr_header_v4
 {
@@ -75,7 +75,7 @@ struct olsr_header_v4
   olsr_u16_t seqno;
 };
 
-// serialized IPv6 OLSR header
+/* serialized IPv6 OLSR header */
 
 struct olsr_header_v6
 {
@@ -88,7 +88,7 @@ struct olsr_header_v6
   olsr_u16_t    seqno;
 };
 
-// deserialized LQ_HELLO
+/* deserialized LQ_HELLO */
 
 struct lq_hello_neighbor
 {
@@ -107,7 +107,7 @@ struct lq_hello_message
   struct lq_hello_neighbor *neigh;
 };
 
-// serialized LQ_HELLO
+/* serialized LQ_HELLO */
 
 struct lq_hello_info_header
 {
@@ -123,7 +123,7 @@ struct lq_hello_header
   olsr_u8_t  will;
 };
 
-// deserialized LQ_TC
+/* deserialized LQ_TC */
 struct lq_tc_message
 {
   struct olsr_common    comm;
@@ -132,7 +132,7 @@ struct lq_tc_message
   struct tc_mpr_addr    *neigh;
 };
 
-// serialized LQ_TC
+/* serialized LQ_TC */
 
 struct lq_tc_header
 {

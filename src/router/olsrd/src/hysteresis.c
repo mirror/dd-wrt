@@ -77,9 +77,7 @@ olsr_process_hysteresis(struct link_entry *entry)
     {
       if(entry->L_link_pending == 1)
 	{
-#ifndef NODEBUG
           struct ipaddr_str buf;
-#endif
 	  OLSR_PRINTF(1, "HYST[%s] link set to NOT pending!\n", 
 		      olsr_ip_to_string(&buf, &entry->neighbor_iface_addr));
 	  changes_neighborhood = OLSR_TRUE;
@@ -101,9 +99,7 @@ olsr_process_hysteresis(struct link_entry *entry)
     {
       if(entry->L_link_pending == 0)
 	{
-#ifndef NODEBUG
           struct ipaddr_str buf;
-#endif
 	  OLSR_PRINTF(1, "HYST[%s] link set to pending!\n", 
 		      olsr_ip_to_string(&buf, &entry->neighbor_iface_addr));
 	  changes_neighborhood = OLSR_TRUE;
@@ -149,9 +145,7 @@ olsr_process_hysteresis(struct link_entry *entry)
 void
 olsr_update_hysteresis_hello(struct link_entry *entry, olsr_reltime htime)
 {
-#ifndef NODEBUG
   struct ipaddr_str buf;
-#endif
   OLSR_PRINTF(3, "HYST[%s]: HELLO update vtime %u ms\n",
               olsr_ip_to_string(&buf, &entry->neighbor_iface_addr), htime+htime/2);
 
@@ -171,7 +165,7 @@ update_hysteresis_incoming(union olsr_ip_addr *remote, struct interface *local, 
   /* Calculate new quality */
   if(lnk != NULL)
     {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
       struct ipaddr_str buf;
 #endif
       lnk->L_link_quality = olsr_hyst_calc_stability(lnk->L_link_quality);

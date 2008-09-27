@@ -74,6 +74,7 @@ olsr_rt_flags(const struct rt_entry *rt)
   const struct rt_nexthop *nh;
   olsr_u8_t flags = RTF_UP;
 
+  /* destination is host */
   if (rt->rt_dst.prefix_len == olsr_cnf->maxplen) {
     flags |= RTF_HOST;
   }
@@ -184,7 +185,7 @@ olsr_add_kernel_route(struct rt_entry *rt)
 {
 
   if(!olsr_cnf->host_emul) {
-    olsr_16_t error = olsr_cnf->ip_version == AF_INET ?
+    olsr_16_t error = (olsr_cnf->ip_version == AF_INET) ?
       olsr_addroute_function(rt) : olsr_addroute6_function(rt);
 
     if(error < 0) {

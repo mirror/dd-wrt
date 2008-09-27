@@ -46,7 +46,7 @@
 #include <assert.h>
 
 /* Root directory of the cookies we have in the system */
-struct olsr_cookie_info *cookies[COOKIE_ID_MAX];
+static struct olsr_cookie_info *cookies[COOKIE_ID_MAX] = { 0 };
 
 /*
  * Allocate a cookie for the next available cookie id.
@@ -54,17 +54,8 @@ struct olsr_cookie_info *cookies[COOKIE_ID_MAX];
 struct olsr_cookie_info *
 olsr_alloc_cookie(const char *cookie_name, olsr_cookie_type cookie_type)
 {
-  static olsr_bool first = OLSR_TRUE;
   struct olsr_cookie_info *ci;
   int ci_index;
-
-  /* Clear the cookie root array on the first call */
-  if (first) {
-    for (ci_index = 0; ci_index < COOKIE_ID_MAX; ci_index++) {
-      cookies[ci_index] = NULL;
-    }
-    first = OLSR_FALSE;
-  }
 
   /*
    * Look for an unused index.

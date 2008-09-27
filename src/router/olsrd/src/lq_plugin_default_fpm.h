@@ -42,13 +42,17 @@
 #define LQ_ETX_FPM_
 
 #include "olsr_types.h"
-#include "fpm.h"
 #include "lq_plugin.h"
 
-#define LQ_PLUGIN_LC_MULTIPLIER 1024
-#define LQ_PLUGIN_RELEVANT_COSTCHANGE_FPM 16
+/* use only 1<<16 - 1 to allow the multiplication of two
+ * upscaled numbers between 0 and 1 */
+#define LQ_FPM_INTERNAL_MULTIPLIER 65535
+#define LQ_FPM_LINKCOST_MULTIPLIER 65535
+
+#define LQ_PLUGIN_RELEVANT_COSTCHANGE_FPM 64
 
 #define LQ_ALGORITHM_ETX_FPM_NAME "etx_fpm"
+
 struct default_lq_fpm {
 	olsr_u8_t valueLq;
 	olsr_u8_t valueNlq;
@@ -72,7 +76,7 @@ void default_lq_deserialize_tc_lq_pair_fpm(const olsr_u8_t **curr, void *lq);
 void default_lq_copy_link2tc_fpm(void *target, void *source);
 void default_lq_clear_fpm(void *target);
 
-const char *default_lq_print_fpm(void *ptr, struct lqtextbuffer *buffer);
+const char *default_lq_print_fpm(void *ptr, char separator, struct lqtextbuffer *buffer);
 const char *default_lq_print_cost_fpm(olsr_linkcost cost, struct lqtextbuffer *buffer);
 
 extern struct lq_handler lq_etx_fpm_handler;
