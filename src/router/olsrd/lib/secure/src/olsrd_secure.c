@@ -178,7 +178,7 @@ secure_plugin_init(void)
   olsr_printf(1, "Timestamp database initialized\n");
 
   if(!strlen(keyfile))
-    strcpy(keyfile, KEYFILE);
+    strscpy(keyfile, KEYFILE, sizeof(keyfile));
 
   i = read_key_from_file(keyfile);
 

@@ -43,7 +43,11 @@
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
- 
+#ifdef _WRS_KERNEL
+#include <vxWorks.h>
+#include <sockLib.h>
+#include <wrn/coreip/netinet/in.h>
+#else
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -57,6 +61,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdarg.h>
+#endif
 
 #include "olsr.h"
 #include "ipcalc.h"
@@ -79,11 +84,14 @@
 #define close(x) closesocket(x)
 #endif
 
+#ifdef _WRS_KERNEL
+static int ipc_open;
+static int ipc_socket_up;
+#define DOT_DRAW_PORT 2004
+#endif
 
 static int ipc_socket;
 static int ipc_connection;
-
-
 
 /* IPC initialization function */
 static int
@@ -100,7 +108,7 @@ static void
 ipc_print_neigh_link(const struct neighbor_entry *neighbor);
 
 static void
-ipc_print_tc_link(const struct tc_entry *entry, const struct tc_edge_entry *dst_entry);
+ipc_print_tc_link(const struct tc_entry *, const struct tc_edge_entry *);
 
 static void
 ipc_print_net(const union olsr_ip_addr *, const union olsr_ip_addr *, olsr_u8_t);
@@ -120,8 +128,11 @@ ipc_send_fmt(const char *format, ...) __attribute__((format(printf,1,2)));
  *This function is called by the my_init
  *function in uolsrd_plugin.c
  */
-int
-olsrd_plugin_init(void)
+#ifdef _WRS_KERNEL
+int olsrd_dotdraw_init(void)
+#else
+int olsrd_plugin_init(void)
+#endif
 {
   /* Initial IPC value */
   ipc_socket = -1;
@@ -139,8 +150,11 @@ olsrd_plugin_init(void)
 /**
  * destructor - called at unload
  */
-void
-olsr_plugin_exit(void)
+#ifdef _WRS_KERNEL
+void olsrd_dotdraw_exit(void)
+#else
+void olsr_plugin_exit(void)
+#endif
 {
   if (ipc_connection != -1) {
     CLOSE(ipc_connection);
@@ -161,7 +175,7 @@ ipc_print_neigh_link(const struct neighbor_entry *neighbor)
   struct link_entry* link;
   struct lqtextbuffer lqbuffer;
   
-  if (neighbor->status == 0) { // non SYM
+  if (neighbor->status == 0) { /* non SYM */
     style = "dashed";
   } else {   
     link = get_best_link_to_neighbor(&neighbor->neighbor_main_addr);
@@ -237,7 +251,9 @@ plugin_ipc_init(void)
   }
 
   /* Register with olsrd */
-  //printf("Adding socket with olsrd\n");
+#if 0
+  printf("Adding socket with olsrd\n");
+#endif
   add_olsr_socket(ipc_socket, &ipc_action);
 
   return 1;
@@ -259,11 +275,13 @@ ipc_action(int fd __attribute__((unused)))
     olsr_printf(1, "(DOT DRAW)IPC accept: %s\n", strerror(errno));
     return;
   }
+#ifndef _WRS_KERNEL
   if (!ip4equal(&pin.sin_addr, &ipc_accept_ip.v4)) {
     olsr_printf(0, "Front end-connection from foreign host (%s) not allowed!\n", inet_ntoa(pin.sin_addr));
     CLOSE(ipc_connection);
     return;
   }
+#endif
   olsr_printf(1, "(DOT DRAW)IPC: Connection from %s\n", inet_ntoa(pin.sin_addr));
   pcf_event(1, 1, 1);
   close(ipc_connection); /* close connection after one output */
@@ -299,7 +317,9 @@ pcf_event(int changes_neighborhood,
     /* Topology */  
     OLSR_FOR_ALL_TC_ENTRIES(tc) {
       OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
-        ipc_print_tc_link(tc, tc_edge);
+        if (tc_edge->edge_inv) {
+          ipc_print_tc_link(tc, tc_edge);
+        }
       } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
     } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 
@@ -365,7 +385,8 @@ static void
 ipc_send(const char *data, int size)
 {
   if (ipc_connection != -1) {
-#if defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__ || defined __MacOSX__
+#if defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__ || defined __MacOSX__ || \
+defined _WRS_KERNEL
 #define FLAGS 0
 #else
 #define FLAGS MSG_NOSIGNAL

@@ -414,7 +414,7 @@ parse_http_request(int fd)
     }
 #endif
     /* We only support GET */
-    strcpy(body, HTTP_400_MSG);
+    strscpy(body, HTTP_400_MSG, sizeof(body));
     stats.ill_hits++;
     c = build_http_header(HTTP_BAD_REQ, OLSR_TRUE, strlen(body), req, sizeof(req));
   } else if (!strcmp(req_type, "GET")) {
@@ -523,11 +523,11 @@ parse_http_request(int fd)
 
 
     stats.ill_hits++;
-    strcpy(body, HTTP_404_MSG);
+    strscpy(body, HTTP_404_MSG, sizeof(body));
     c = build_http_header(HTTP_BAD_FILE, OLSR_TRUE, strlen(body), req, sizeof(req));
   } else {
     /* We only support GET */
-    strcpy(body, HTTP_400_MSG);
+    strscpy(body, HTTP_400_MSG, sizeof(body));
     stats.ill_hits++;
     c = build_http_header(HTTP_BAD_REQ, OLSR_TRUE, strlen(body), req, sizeof(req));
   }
@@ -991,7 +991,7 @@ static int build_neigh_body(char *buf, olsr_u32_t bufsize)
       struct lqtextbuffer lqbuffer1, lqbuffer2;
       size += snprintf(&buf[size], bufsize-size,
                        "<td align=\"right\">(%s) %s</td>",
-                       get_link_entry_text(link, &lqbuffer1),
+                       get_link_entry_text(link, '/', &lqbuffer1),
                        get_linkcost_text(link->linkcost, OLSR_FALSE, &lqbuffer2));
     }
     size += snprintf(&buf[size], bufsize-size, "</tr>\n");
@@ -1061,7 +1061,7 @@ static int build_topo_body(char *buf, olsr_u32_t bufsize)
             struct lqtextbuffer lqbuffer1, lqbuffer2;
               size += snprintf(&buf[size], bufsize-size,
                                "<td align=\"right\">(%s) %s</td>\n",
-                               get_tc_edge_entry_text(tc_edge, &lqbuffer1),
+                               get_tc_edge_entry_text(tc_edge, '/', &lqbuffer1),
                                get_linkcost_text(tc_edge->cost, OLSR_FALSE, &lqbuffer2));
           }
           size += snprintf(&buf[size], bufsize-size, "</tr>\n");
@@ -1187,6 +1187,19 @@ static int build_cfgfile_body(char *buf, olsr_u32_t bufsize)
                    "file based on the current olsrd configuration of this node.<br/>\n"
                    "<hr/>\n"
                    "<pre>\n");
+
+#ifdef NETDIRECT
+  {
+        /* Hack to make netdirect stuff work with
+           olsrd_write_cnf_buf
+        */
+        char tmpBuf[10000];
+        size = olsrd_write_cnf_buf(olsr_cnf, tmpBuf, 10000);
+        snprintf(&buf[size], bufsize-size, tmpBuf);
+  }
+#else
+  size += olsrd_write_cnf_buf(olsr_cnf, &buf[size], bufsize-size);
+#endif
 
   if (size < 0) {
     size = snprintf(buf, size, "ERROR GENERATING CONFIGFILE!\n");

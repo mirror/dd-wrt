@@ -431,9 +431,7 @@ void FindNeighbors(
     struct link_entry* walker;
 
     OLSR_FOR_ALL_LINK_ENTRIES(walker) {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       union olsr_ip_addr* neighborMainIp;
 
       /* Consider only links from the specified interface */
@@ -455,9 +453,7 @@ void FindNeighbors(
        * passed IP addresses (if passed). Rely on short-circuit boolean evaluation. */
       if (source != NULL && ipequal(neighborMainIp, MainAddressOf(source)))
       {
-#ifndef NODEBUG
         struct ipaddr_str buf;
-#endif
         OLSR_PRINTF(
           9,
           "%s: ----> Not forwarding to %s: is source of pkt\n",
@@ -470,9 +466,7 @@ void FindNeighbors(
       /* Rely on short-circuit boolean evaluation */
       if (forwardedBy != NULL && ipequal(neighborMainIp, MainAddressOf(forwardedBy)))
       {
-#ifndef NODEBUG
         struct ipaddr_str buf;
-#endif
         OLSR_PRINTF(
           9,
           "%s: ----> Not forwarding to %s: is the node that forwarded the pkt\n",
@@ -485,9 +479,7 @@ void FindNeighbors(
       /* Rely on short-circuit boolean evaluation */
       if (forwardedTo != NULL && ipequal(neighborMainIp, MainAddressOf(forwardedTo)))
       {
-#ifndef NODEBUG
         struct ipaddr_str buf;
-#endif
         OLSR_PRINTF(
           9,
           "%s: ----> Not forwarding to %s: is the node to which the pkt was forwarded\n",
@@ -542,9 +534,7 @@ void FindNeighbors(
     /* TODO: get_link_set() is not thread-safe! */
     for (walker = get_link_set(); walker != NULL; walker = walker->next) 
     {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       union olsr_ip_addr* neighborMainIp;
       struct link_entry* bestLinkToNeighbor;
       struct tc_entry* tcLastHop;
@@ -656,9 +646,7 @@ void FindNeighbors(
 
       if (forwardedBy != NULL)
       {
-#ifndef NODEBUG
         struct ipaddr_str forwardedByBuf, niaBuf;
-#endif
         OLSR_PRINTF(
           9,
           "%s: ----> 2-hop path from %s via me to %s will cost %5.2f\n",
@@ -743,9 +731,7 @@ void FindNeighbors(
     }
 
     OLSR_FOR_ALL_LINK_ENTRIES(walker) {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       union olsr_ip_addr* neighborMainIp;
       struct link_entry* bestLinkToNeighbor;
       struct tc_entry* tcLastHop;
@@ -837,9 +823,7 @@ void FindNeighbors(
       {
         if (bestLinkToNeighbor == NULL)
         {
-#ifndef NODEBUG
           struct ipaddr_str buf;
-#endif
           OLSR_PRINTF(
             9,
             "%s: ----> Not forwarding to %s: no link found\n",
@@ -954,9 +938,7 @@ void FindNeighbors(
   }
   else
   {
-#ifndef NODEBUG
     struct ipaddr_str buf;
-#endif
     OLSR_PRINTF(
       9,
       "%s: ----> %d neighbors found on \"%s\"; best neighbor to forward to: %s\n",
