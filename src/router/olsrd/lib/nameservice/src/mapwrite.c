@@ -176,14 +176,15 @@ void mapwrite_work(FILE* fmap)
     char* llb = lookup_position_latlon(&tc_edge->T_dest_addr);
     if (NULL != lla && NULL != llb)
     {
-      struct lqtextbuffer lqbuffer;
+      struct lqtextbuffer lqbuffer, lqbuffer2;
       
       /*
        * To speed up processing, Links with both positions are named PLink()
        */
-      if (0 > fprintf(fmap, "PLink('%s','%s',%s,%s,%s);\n", 
+      if (0 > fprintf(fmap, "PLink('%s','%s',%s,%s,%s,%s);\n", 
             olsr_ip_to_string(&strbuf1, &tc_edge->T_dest_addr),
             olsr_ip_to_string(&strbuf2, &tc->addr), 
+            get_tc_edge_entry_text(tc_edge, ',', &lqbuffer2),
             get_linkcost_text(tc_edge->cost, OLSR_FALSE, &lqbuffer),
             lla, llb))
       {
@@ -192,14 +193,15 @@ void mapwrite_work(FILE* fmap)
     }
     else
     {
-      struct lqtextbuffer lqbuffer;
+      struct lqtextbuffer lqbuffer, lqbuffer2;
       
       /*
        * If one link end pos is unkown, only send Link()
        */
-      if (0 > fprintf(fmap, "Link('%s','%s',%s);\n", 
+      if (0 > fprintf(fmap, "Link('%s','%s',%s,%s);\n", 
             olsr_ip_to_string(&strbuf1, &tc_edge->T_dest_addr),
             olsr_ip_to_string(&strbuf2, &tc->addr), 
+            get_tc_edge_entry_text(tc_edge, ',', &lqbuffer2),
             get_linkcost_text(tc_edge->cost, OLSR_FALSE, &lqbuffer)))
       {
         return;

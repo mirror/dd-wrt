@@ -88,7 +88,7 @@ float my_lat = 0.0, my_lon = 0.0;
  * my own hostnames, service_lines and dns-servers
  * are store in a linked list (without hashing)
  * */
-static struct list_node list[HASHSIZE];
+static struct list_node name_list[HASHSIZE];
 struct name_entry *my_names = NULL;
 struct timer_entry *name_table_write = NULL;
 static olsr_bool name_table_changed = OLSR_TRUE;
@@ -136,22 +136,22 @@ name_constructor(void)
 
 	len = strlen(my_hosts_file);
 	if (my_hosts_file[len - 1] != '\\')
-		my_hosts_file[len++] = '\\';
-	strcpy(my_hosts_file + len, "hosts_olsr");
+		strscat(my_hosts_file, "\\", sizeof(my_host_file));
+	strscat(my_hosts_file, "hosts_olsr", sizeof(my_host_file));
 	
 	len = strlen(my_services_file);
 	if (my_services_file[len - 1] != '\\')
-		my_services_file[len++] = '\\';
-	strcpy(my_services_file + len, "services_olsr");
+		strscat(my_services_file, "\\", sizeof(my_services_file));
+	strscat(my_services_file, "services_olsr", sizeof(my_services_file));
 
 	len = strlen(my_resolv_file);
 	if (my_resolv_file[len - 1] != '\\')
-		my_resolv_file[len++] = '\\';
-	strcpy(my_resolv_file + len, "resolvconf_olsr");
+		strscat(my_resolv_file, "\\", sizeof(my_resolv_file));
+	strscat(my_resolv_file, "resolvconf_olsr", sizeof(my_resolv_file));
 #else
-	strcpy(my_hosts_file, "/var/run/hosts_olsr");
-	strcpy(my_services_file, "/var/run/services_olsr");
-	strcpy(my_resolv_file, "/var/run/resolvconf_olsr");
+	strscpy(my_hosts_file, "/var/run/hosts_olsr", sizeof(my_hosts_file));
+	strscpy(my_services_file, "/var/run/services_olsr", sizeof(my_services_file));
+	strscpy(my_resolv_file, "/var/run/resolvconf_olsr", sizeof(my_resolv_file));
 	*my_sighup_pid_file = 0;
 #endif
 
@@ -164,7 +164,7 @@ name_constructor(void)
 	
 	/* init the lists heads */
 	for(i = 0; i < HASHSIZE; i++) {
-		list_head_init(&list[i]);
+		list_head_init(&name_list[i]);
 		list_head_init(&forwarder_list[i]);
 		list_head_init(&service_list[i]);
 		list_head_init(&latlon_list[i]);
@@ -317,7 +317,8 @@ name_init(void)
 	//regex string for validating the hostnames
 	const char *regex_name = "^[[:alnum:]_.-]+$";
 	//regex string for the service line
-	char *regex_service = olsr_malloc(256*sizeof(char) + strlen(my_suffix), "new *char from name_init for regex_service");
+	size_t regex_size = 256 * sizeof(char) + strlen(my_suffix);
+	char *regex_service = olsr_malloc(regex_size, "new *char from name_init for regex_service");
 	memset(&ipz, 0, sizeof(ipz));
 
 	//compile the regex from the string
@@ -342,9 +343,9 @@ name_init(void)
 	//regex_service = "^[[:alnum:]]+://(([[:alnum:]_.-]+.olsr)|([[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}))
 	//                 :    port              /path      |(tcp OR udp) |short description
 	//                 :[[:digit:]]+[[:alnum:]/?._=#-]*\\|(tcp|udp)\\|[^|[:cntrl:]]+$";
-    strcpy(regex_service, "^[[:alnum:]]+://(([[:alnum:]_.-]+");
-    strcat(regex_service, my_suffix);
-	strcat(regex_service, ")|([[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3})):[[:digit:]]+[[:alnum:]/?._=#-]*\\|(tcp|udp)\\|[^|[:cntrl:]]+$");
+	strscpy(regex_service, "^[[:alnum:]]+://(([[:alnum:]_.-]+", regex_size);
+	strscat(regex_service, my_suffix, regex_size);
+	strscat(regex_service, ")|([[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3}\\.[[:digit:]]{1,3})):[[:digit:]]+[[:alnum:]/?._=#-]*\\|(tcp|udp)\\|[^|[:cntrl:]]+$", regex_size);
 
 	/* #1: call regcomp() to compile the regex */
 	if ((ret = regcomp(&regex_t_service, regex_service , REG_EXTENDED )) != 0)
@@ -426,9 +427,7 @@ remove_nonvalid_names_from_list(struct name_entry *my_list, int type)
 	}
 
 	if ( !valid  ) {
-#ifndef NODEBUG
 		struct ipaddr_str strbuf;
-#endif
 		OLSR_PRINTF(1, "NAME PLUGIN: invalid or malformed parameter %s (%s), fix your config!\n", my_list->name, olsr_ip_to_string(&strbuf, &my_list->ip));
 		next = my_list->next;
 		free(my_list->name);
@@ -437,9 +436,7 @@ remove_nonvalid_names_from_list(struct name_entry *my_list, int type)
 		my_list = NULL;
 		return remove_nonvalid_names_from_list(next, type);
 	} else {
-#ifndef NODEBUG
 		struct ipaddr_str strbuf;
-#endif
 		OLSR_PRINTF(2, "NAME PLUGIN: validate parameter %s (%s) -> OK\n", my_list->name, olsr_ip_to_string(&strbuf, &my_list->ip));
 		my_list->next = remove_nonvalid_names_from_list(my_list->next, type);
 		return my_list;
@@ -462,7 +459,7 @@ name_destructor(void)
 	free_name_entry_list(&my_services);
 	free_name_entry_list(&my_forwarders);
 
-	free_all_list_entries(list);
+	free_all_list_entries(name_list);
 	free_all_list_entries(service_list);
 	free_all_list_entries(forwarder_list);
 	free_all_list_entries(latlon_list);
@@ -540,9 +537,7 @@ olsr_start_write_file_timer(void)
 void
 olsr_namesvc_delete_db_entry(struct db_entry *db)
 {
-#ifndef NODEBUG
 	struct ipaddr_str strbuf;
-#endif
 	OLSR_PRINTF(2, "NAME PLUGIN: %s timed out... deleting\n", 
 				olsr_ip_to_string(&strbuf, &db->originator));
 
@@ -672,9 +667,7 @@ olsr_parser(union olsr_message *m,
 	/* Check that the neighbor this message was received from is symmetric. 
 	If not - back off*/
 	if(check_neighbor_link(ipaddr) != SYM_LINK) {
-#ifndef NODEBUG
 		struct ipaddr_str strbuf;
-#endif
 		OLSR_PRINTF(3, "NAME PLUGIN: Received msg from NON SYM neighbor %s\n", olsr_ip_to_string(&strbuf, ipaddr));
 		return;
 	}
@@ -767,16 +760,14 @@ create_packet(struct name* to, struct name_entry *from)
 {
 	char *pos = (char*) to;
 	int k;
-#ifndef NODEBUG
 	struct ipaddr_str strbuf;
-#endif
 	OLSR_PRINTF(3, "NAME PLUGIN: Announcing name %s (%s) %d\n", 
 		from->name, olsr_ip_to_string(&strbuf, &from->ip), from->len);
 	to->type = htons(from->type);
 	to->len = htons(from->len);
 	to->ip = from->ip;
 	pos += sizeof(struct name);
-	strncpy(pos, from->name, from->len);
+	memcpy(pos, from->name, from->len);
 	pos += from->len;
 	for (k = from->len; (k & 3) != 0; k++)
 		*pos++ = '\0';
@@ -789,9 +780,7 @@ create_packet(struct name* to, struct name_entry *from)
 void
 decap_namemsg(struct name *from_packet, struct name_entry **to, olsr_bool *this_table_changed )
 {
-#ifndef NODEBUG
 	struct ipaddr_str strbuf;
-#endif
 	struct name_entry *tmp;
 	struct name_entry *already_saved_name_entries;
 	char *name = (char*)from_packet + sizeof(struct name);
@@ -837,16 +826,14 @@ decap_namemsg(struct name *from_packet, struct name_entry **to, olsr_bool *this_
 					olsr_ip_to_string(&strbuf, &already_saved_name_entries->ip));
 				free(already_saved_name_entries->name);
 				already_saved_name_entries->name = olsr_malloc(len_of_name + 1, "upd name_entry name");
-				strncpy(already_saved_name_entries->name, name, len_of_name);
+				strscpy(already_saved_name_entries->name, name, len_of_name + 1);
 
 				*this_table_changed = OLSR_TRUE;
 				olsr_start_write_file_timer();
 			}
 			if (!ipequal(&already_saved_name_entries->ip, &from_packet->ip))
 			{
-#ifndef NODEBUG
 				struct ipaddr_str strbuf2, strbuf3;
-#endif
 				OLSR_PRINTF(4, "NAME PLUGIN: updating ip %s -> %s (%s)\n",
 					olsr_ip_to_string(&strbuf, &already_saved_name_entries->ip),
 					olsr_ip_to_string(&strbuf2, &from_packet->ip),
@@ -869,10 +856,9 @@ decap_namemsg(struct name *from_packet, struct name_entry **to, olsr_bool *this_
 	tmp = olsr_malloc(sizeof(struct name_entry), "new name_entry");		
 	tmp->type = ntohs(from_packet->type);
 	tmp->len = len_of_name > MAX_NAME ? MAX_NAME : ntohs(from_packet->len);
-	tmp->name = olsr_malloc(tmp->len+1, "new name_entry name");
+	tmp->name = olsr_malloc(tmp->len + 1, "new name_entry name");
 	tmp->ip = from_packet->ip;
-	strncpy(tmp->name, name, tmp->len);
-	tmp->name[tmp->len] = '\0';
+	strscpy(tmp->name, name, tmp->len + 1);
 
 	OLSR_PRINTF(3, "\nNAME PLUGIN: create new name/service/forwarder entry %s (%s) [len=%d] [type=%d] in linked list\n", 
 		tmp->name, olsr_ip_to_string(&strbuf, &tmp->ip), tmp->len, tmp->type);
@@ -893,9 +879,7 @@ decap_namemsg(struct name *from_packet, struct name_entry **to, olsr_bool *this_
 void
 update_name_entry(union olsr_ip_addr *originator, struct namemsg *msg, int msg_size, olsr_reltime vtime)
 {
-#ifndef NODEBUG
 	struct ipaddr_str strbuf;
-#endif
 	char *pos, *end_pos;
 	struct name *from_packet; 
 	int i;
@@ -918,7 +902,7 @@ update_name_entry(union olsr_ip_addr *originator, struct namemsg *msg, int msg_s
 		
 		switch (ntohs(from_packet->type)) {
 			case NAME_HOST: 
-				insert_new_name_in_list(originator, list, from_packet,
+				insert_new_name_in_list(originator, name_list, from_packet,
 										&name_table_changed, vtime); 
 				break;
 			case NAME_FORWARDER:
@@ -973,9 +957,7 @@ insert_new_name_in_list(union olsr_ip_addr *originator,
 		entry = list2db(list_node);
 
 		if (ipequal(originator, &entry->originator)) {
-#ifndef NODEBUG
 			struct ipaddr_str strbuf;
-#endif
 			// found
 			OLSR_PRINTF(4, "NAME PLUGIN: found entry for (%s) in its hash table\n",
 						olsr_ip_to_string(&strbuf, originator));
@@ -993,9 +975,7 @@ insert_new_name_in_list(union olsr_ip_addr *originator,
 
 	if (! entry_found)
 	{
-#ifndef NODEBUG
 		struct ipaddr_str strbuf;
-#endif
 		OLSR_PRINTF(3, "NAME PLUGIN: create new db entry for ip (%s) in hash table\n",
 					olsr_ip_to_string(&strbuf, originator));
 
@@ -1123,7 +1103,7 @@ write_hosts_file(void)
 	
 	// write received names
 	for (hash = 0; hash < HASHSIZE; hash++) {
-		list_head = &list[hash];
+		list_head = &name_list[hash];
 		for (list_node = list_head->next; list_node != list_head;
 			 list_node = list_node->next) {
 
@@ -1247,7 +1227,7 @@ write_services_file(void)
 	
 	// write received services
 	for (hash = 0; hash < HASHSIZE; hash++) {
-		list_head = &list[hash];
+		list_head = &service_list[hash];
 		for (list_node = list_head->next; list_node != list_head;
 			 list_node = list_node->next) {
 
@@ -1349,7 +1329,7 @@ write_resolv_file(void)
 	memset(nameserver_routes, 0, sizeof(nameserver_routes));
 
 	for (hash = 0; hash < HASHSIZE; hash++) {
-		list_head = &list[hash];
+		list_head = &forwarder_list[hash];
 		for (list_node = list_head->next; list_node != list_head;
 			 list_node = list_node->next) {
 
@@ -1469,9 +1449,7 @@ allowed_ip(const union olsr_ip_addr *addr)
 	struct ip_prefix_list *hna;
 	struct interface *iface;
 	union olsr_ip_addr tmp_ip, tmp_msk;
-#ifndef NODEBUG
 	struct ipaddr_str strbuf;
-#endif
 	
 	OLSR_PRINTF(6, "checking %s\n", olsr_ip_to_string(&strbuf, addr));
 	
@@ -1574,9 +1552,7 @@ allowed_hostname_or_ip_in_service(const char *service_line, const regmatch_t *ho
 	//ip in service-line is allowed 
 	if (inet_pton(olsr_cnf->ip_version, hostname_or_ip, &olsr_ip) > 0) {
 		if (allowed_ip(&olsr_ip)) {
-#ifndef NODEBUG
 			struct ipaddr_str strbuf;
-#endif
 			OLSR_PRINTF(2, "NAME PLUGIN: ip %s in service %s is OK\n", olsr_ip_to_string(&strbuf, &olsr_ip), service_line);
 			free(hostname_or_ip);
 			hostname_or_ip = NULL;
@@ -1658,7 +1634,7 @@ lookup_name_latlon(union olsr_ip_addr *ip)
 	struct name_entry *name;
 
 	for (hash = 0; hash < HASHSIZE; hash++) {
-		list_head = &list[hash];
+		list_head = &name_list[hash];
 		for (list_node = list_head->next; list_node != list_head;
 			 list_node = list_node->next) {
 
