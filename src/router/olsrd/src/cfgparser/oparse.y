@@ -45,6 +45,7 @@
 #include "../defs.h"
 #include "../ipcalc.h"
 #include "../net_olsr.h"
+#include "../link_set.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -103,7 +104,7 @@ static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg)
     }
 
     mult->addr = addr;
-    mult->value = (olsr_u32_t)(mult_arg->floating * 65536);
+    mult->value = (olsr_u32_t)(mult_arg->floating * LINK_LOSS_MULTIPLIER);
 
     mult->next = walker->cnf->lq_mult;
     walker->cnf->lq_mult = mult;

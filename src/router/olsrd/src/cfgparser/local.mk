@@ -41,8 +41,8 @@
 C=$(if $(CFGDIR),$(CFGDIR)/)
 
 # add the variables as we may have others already there
-SRCS += $(foreach file,olsrd_conf oparse oscan,$(C)$(file).c)
-OBJS += $(foreach file,olsrd_conf oparse oscan,$(C)$(file).o)
+SRCS += $(foreach file,olsrd_conf oparse oscan cfgfile_gen,$(C)$(file).c)
+OBJS += $(foreach file,olsrd_conf oparse oscan cfgfile_gen,$(C)$(file).o)
 HDRS += $(foreach file,olsrd_conf oparse,$(C)$(file).h)
 
 $(C)oscan.c: $(C)oscan.lex $(C)Makefile

@@ -82,7 +82,7 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
       message_neighbors != NULL;
       message_neighbors = message_neighbors->next)
     {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
       struct ipaddr_str buf;
 #endif
       union olsr_ip_addr      *neigh_addr;
@@ -121,14 +121,18 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
                              two_hop_neighbor_yet, 0);
               two_hop_neighbor = two_hop_neighbor_yet->neighbor_2;
 
-              // For link quality OLSR, reset the path link quality here.
-              // The path link quality will be calculated in the second pass, below.
-              // Keep the saved_path_link_quality for reference.
+              /*
+               * For link quality OLSR, reset the path link quality here.
+               * The path link quality will be calculated in the second pass, below.
+               * Keep the saved_path_link_quality for reference.
+               */
 
               if (olsr_cnf->lq_level > 0)
                 {
-                  // loop through the one-hop neighbors that see this
-                  // 'two_hop_neighbor'
+                  /*
+                   * loop through the one-hop neighbors that see this
+                   * 'two_hop_neighbor'
+                   */
 
                   struct neighbor_list_entry *walker;
 
@@ -136,8 +140,10 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
                        walker != &two_hop_neighbor->neighbor_2_nblist;
                        walker = walker->next)
                     {
-                      // have we found the one-hop neighbor that sent the
-                      // HELLO message that we're current processing?
+                      /*
+                       * have we found the one-hop neighbor that sent the
+                       * HELLO message that we're current processing?
+                       */
 
                       if (walker->neighbor == neighbor)
                         {
@@ -191,7 +197,8 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
         }
     }
 
-  // Separate, second pass for link quality OLSR
+  /* Separate, second pass for link quality OLSR */
+  /* Separate, second and third pass for link quality OLSR */
 
   if (olsr_cnf->lq_level > 0)
     {
@@ -202,15 +209,16 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
       if(!lnk)
 	return;
 
-      // calculate first hop path quality
+      /* calculate first hop path quality */
       first_hop_pathcost = lnk->linkcost;
-      
-      // Second pass for link quality OLSR: calculate the best 2-hop
-      // path costs to all the 2-hop neighbors indicated in the
-      // HELLO message. Since the same 2-hop neighbor may be listed
-      // more than once in the same HELLO message (each at a possibly
-      // different quality) we want to select only the best one, not just
-      // the last one listed in the HELLO message.
+      /*
+       *  Second pass for link quality OLSR: calculate the best 2-hop
+       * path costs to all the 2-hop neighbors indicated in the
+       * HELLO message. Since the same 2-hop neighbor may be listed
+       * more than once in the same HELLO message (each at a possibly
+       * different quality) we want to select only the best one, not just
+       * the last one listed in the HELLO message.
+       */
 
       for(message_neighbors = message->neighbors;
           message_neighbors != NULL;
@@ -232,15 +240,19 @@ process_message_neighbors(struct neighbor_entry *neighbor, const struct hello_me
 
               two_hop_neighbor = two_hop_neighbor_yet->neighbor_2;
 
-              // loop through the one-hop neighbors that see this
-              // 'two_hop_neighbor'
+              /*
+               *  loop through the one-hop neighbors that see this
+               * 'two_hop_neighbor'
+               */
 
               for (walker = two_hop_neighbor->neighbor_2_nblist.next;
                    walker != &two_hop_neighbor->neighbor_2_nblist;
                    walker = walker->next)
                 {
-                  // have we found the one-hop neighbor that sent the
-                  // HELLO message that we're current processing?
+                  /*
+                   * have we found the one-hop neighbor that sent the
+                   * HELLO message that we're current processing?
+                   */
 
                   if (walker->neighbor == neighbor)
                     {
@@ -450,10 +462,10 @@ olsr_hello_tap(struct hello_message *message,
   if (olsr_cnf->lq_level > 0)
     {
       struct hello_neighbor *walker;
-      // just in case our neighbor has changed its HELLO interval
+      /* just in case our neighbor has changed its HELLO interval */
       olsr_update_packet_loss_hello_int(lnk, message->htime);
 
-      // find the input interface in the list of neighbor interfaces
+      /* find the input interface in the list of neighbor interfaces */
       for (walker = message->neighbors; walker != NULL; walker = walker->next)
         if (ipequal(&walker->address, &in_if->ip_addr))
           break;
@@ -462,7 +474,7 @@ olsr_hello_tap(struct hello_message *message,
       // know the link quality in both directions
       olsr_memorize_foreign_hello_lq(lnk, walker);
 
-      // update packet loss for link quality calculation
+      /* update packet loss for link quality calculation */
       olsr_update_packet_loss(lnk);
     }
   
@@ -474,7 +486,7 @@ olsr_hello_tap(struct hello_message *message,
   if(olsr_cnf->use_hysteresis)
     {
       /* Update HELLO timeout */
-      //printf("MESSAGE HTIME: %f\n", message->htime);
+      /* printf("MESSAGE HTIME: %f\n", message->htime);*/
       olsr_update_hysteresis_hello(lnk, message->htime);
     }
 
@@ -488,9 +500,7 @@ olsr_hello_tap(struct hello_message *message,
   /* Check willingness */
   if(neighbor->willingness != message->willingness)
     {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       OLSR_PRINTF(1, "Willingness for %s changed from %d to %d - UPDATING\n", 
 		  olsr_ip_to_string(&buf, &neighbor->neighbor_main_addr),
 		  neighbor->willingness,
@@ -530,7 +540,7 @@ olsr_process_received_mid(union olsr_message *m,
                           struct interface *in_if __attribute__((unused)),
                           union olsr_ip_addr *from_addr)
 {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
   struct ipaddr_str buf;
 #endif
   struct mid_alias *tmp_adr;
@@ -555,9 +565,7 @@ olsr_process_received_mid(union olsr_message *m,
      */
 
     if(check_neighbor_link(from_addr) != SYM_LINK) {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       OLSR_PRINTF(2, "Received MID from NON SYM neighbor %s\n", olsr_ip_to_string(&buf, from_addr));
       olsr_free_mid_packet(&message);
       return;
@@ -568,9 +576,7 @@ olsr_process_received_mid(union olsr_message *m,
 
     while (tmp_adr) {
       if (!mid_lookup_main_addr(&tmp_adr->alias_addr)){
-#ifndef NODEBUG
         struct ipaddr_str buf;
-#endif
         OLSR_PRINTF(1, "MID new: (%s, ", olsr_ip_to_string(&buf, &message.mid_origaddr));
         OLSR_PRINTF(1, "%s)\n", olsr_ip_to_string(&buf, &tmp_adr->alias_addr));
         insert_mid_alias(&message.mid_origaddr, &tmp_adr->alias_addr, message.vtime);
@@ -604,7 +610,6 @@ olsr_process_received_hna(union olsr_message *m,
   olsr_reltime       vtime;
   olsr_u16_t         olsr_msgsize;
   union olsr_ip_addr originator;
-  //olsr_u8_t          ttl; unused
   olsr_u8_t          hop_count;
   olsr_u16_t         packet_seq_number;
 
@@ -645,7 +650,7 @@ olsr_process_received_hna(union olsr_message *m,
 
   /* validate originator */
   pkt_get_ipaddress(&curr, &originator);
-  //printf("HNA from %s\n\n", olsr_ip_to_string(&buf, &originator));
+  /*printf("HNA from %s\n\n", olsr_ip_to_string(&buf, &originator));*/
 
   /* ttl */
   pkt_ignore_u8(&curr);
@@ -662,9 +667,7 @@ olsr_process_received_hna(union olsr_message *m,
      *      message MUST be discarded.
      */
     if (check_neighbor_link(from_addr) != SYM_LINK) {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       OLSR_PRINTF(2, "Received HNA from NON SYM neighbor %s\n", olsr_ip_to_string(&buf, from_addr));
       return;
     }

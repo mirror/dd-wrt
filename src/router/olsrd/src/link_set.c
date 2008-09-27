@@ -327,7 +327,7 @@ set_loss_link_multiplier(struct link_entry *entry)
 
   /* if we have not found an entry, then use the default multiplier */
   if (val == 0) {
-    val = 65536;
+    val = LINK_LOSS_MULTIPLIER;
   }
 
   /* store the multiplier */
@@ -428,9 +428,7 @@ olsr_expire_link_sym_timer(void *context)
 void
 olsr_expire_link_hello_timer(void *context)
 {
-#ifndef NODEBUG
   struct ipaddr_str buf;
-#endif
   struct link_entry *link;
 
   link = (struct link_entry *)context;
@@ -514,9 +512,7 @@ add_link_entry(const union olsr_ip_addr *local,
 
 #ifdef DEBUG
   {
-#ifndef NODEBUG
     struct ipaddr_str localbuf, rembuf;
-#endif
     OLSR_PRINTF(1, "Adding %s=>%s to link set\n",
 		olsr_ip_to_string(&localbuf, local), olsr_ip_to_string(&rembuf,
 								       remote));
@@ -528,10 +524,10 @@ add_link_entry(const union olsr_ip_addr *local,
 
   /* copy if_name, if it is defined */
   if (local_if->int_name) {
+    size_t name_size = strlen(local_if->int_name) + 1;
     new_link->if_name =
-      olsr_malloc(strlen(local_if->int_name) + 1,
-		  "target of if_name in new link entry");
-    strcpy(new_link->if_name, local_if->int_name);
+      olsr_malloc(name_size, "target of if_name in new link entry");
+    strscpy(new_link->if_name, local_if->int_name, name_size);
   } else
     new_link->if_name = NULL;
 
@@ -587,9 +583,7 @@ add_link_entry(const union olsr_ip_addr *local,
   neighbor = olsr_lookup_neighbor_table(remote_main);
   if (!neighbor) {
 #ifdef DEBUG
-#ifndef NODEBUG
     struct ipaddr_str buf;
-#endif
     OLSR_PRINTF(3, "ADDING NEW NEIGHBOR ENTRY %s FROM LINK SET\n",
 		olsr_ip_to_string(&buf, remote_main));
 #endif
@@ -641,11 +635,17 @@ lookup_link_entry(const union olsr_ip_addr *remote,
   OLSR_FOR_ALL_LINK_ENTRIES(link) {
     if (ipequal(remote, &link->neighbor_iface_addr) &&
 	(link->if_name ? !strcmp(link->if_name, local->int_name)
-	 : ipequal(&local->ip_addr, &link->local_iface_addr)) &&
-
-	/* check the remote-main address only if there is one given */
-	(!remote_main
-	 || ipequal(remote_main, &link->neighbor->neighbor_main_addr))) {
+	 : ipequal(&local->ip_addr, &link->local_iface_addr)))
+    {
+      /* check the remote-main address only if there is one given */
+      if (NULL != remote_main && !ipequal(remote_main, &link->neighbor->neighbor_main_addr))
+      {
+        /* Neighbor has changed it's main_addr, update */
+        struct ipaddr_str oldbuf, newbuf;
+        OLSR_PRINTF(1, "Neighbor changed main_ip, updating %s -> %s\n",
+          olsr_ip_to_string(&oldbuf, &link->neighbor->neighbor_main_addr), olsr_ip_to_string(&newbuf, remote_main));
+        link->neighbor->neighbor_main_addr = *remote_main;
+      }
       return link;
     }
   } OLSR_FOR_ALL_LINK_ENTRIES_END(link);
@@ -806,7 +806,7 @@ olsr_print_link_set(void)
     OLSR_PRINTF(1, "%-*s  %5.3f  %-14s %s\n",
 		addrsize, olsr_ip_to_string(&buf, &walker->neighbor_iface_addr),
 		walker->L_link_quality,
-		get_link_entry_text(walker, &lqbuffer1),
+		get_link_entry_text(walker, '/', &lqbuffer1),
 		get_linkcost_text(walker->linkcost, OLSR_FALSE, &lqbuffer2));
   } OLSR_FOR_ALL_LINK_ENTRIES_END(walker);
 #endif

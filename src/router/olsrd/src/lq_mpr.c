@@ -81,7 +81,7 @@ void olsr_calculate_lq_mpr(void)
 
   for(i = 0; i < HASHSIZE; i++)
     {
-      // loop through all 2-hop neighbours
+      /* loop through all 2-hop neighbours */
 
       for (neigh2 = two_hop_neighbortable[i].next;
            neigh2 != &two_hop_neighbortable[i];
@@ -89,20 +89,20 @@ void olsr_calculate_lq_mpr(void)
         {
           best_1hop = LINK_COST_BROKEN;
 
-          // check whether this 2-hop neighbour is also a neighbour
+          /* check whether this 2-hop neighbour is also a neighbour */
 
           neigh = olsr_lookup_neighbor_table(&neigh2->neighbor_2_addr);
 
-          // if it's a neighbour and also symmetric, then examine
-          // the link quality
+          /* if it's a neighbour and also symmetric, then examine
+             the link quality */
           
           if (neigh != NULL && neigh->status == SYM)
             {
-              // if the direct link is better than the best route via
-              // an MPR, then prefer the direct link and do not select
-              // an MPR for this 2-hop neighbour
+              /* if the direct link is better than the best route via
+               * an MPR, then prefer the direct link and do not select
+               * an MPR for this 2-hop neighbour */
 
-              // determine the link quality of the direct link
+              /* determine the link quality of the direct link */
 
               struct link_entry *lnk = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
 
@@ -111,7 +111,7 @@ void olsr_calculate_lq_mpr(void)
 
               best_1hop = lnk->linkcost;
 
-              // see wether we find a better route via an MPR
+              /* see wether we find a better route via an MPR */
 
               for (walker = neigh2->neighbor_2_nblist.next;
                    walker != &neigh2->neighbor_2_nblist;
@@ -119,18 +119,18 @@ void olsr_calculate_lq_mpr(void)
                 if (walker->path_linkcost < best_1hop)
                   break;
 
-              // we've reached the end of the list, so we haven't found
-              // a better route via an MPR - so, skip MPR selection for
-              // this 1-hop neighbor
+              /* we've reached the end of the list, so we haven't found
+               * a better route via an MPR - so, skip MPR selection for
+               * this 1-hop neighbor */
 
               if (walker == &neigh2->neighbor_2_nblist)
                 continue;
             }
 
-          // find the connecting 1-hop neighbours with the
-          // best total link qualities
+          /* find the connecting 1-hop neighbours with the
+           * best total link qualities */
 
-          // mark all 1-hop neighbours as not selected
+          /* mark all 1-hop neighbours as not selected */
 
           for (walker = neigh2->neighbor_2_nblist.next;
                walker != &neigh2->neighbor_2_nblist;
@@ -139,8 +139,8 @@ void olsr_calculate_lq_mpr(void)
 
           for (k = 0; k < olsr_cnf->mpr_coverage; k++)
             {
-              // look for the best 1-hop neighbour that we haven't
-              // yet selected
+              /* look for the best 1-hop neighbour that we haven't
+               * yet selected */
 
               neigh = NULL;
               best = LINK_COST_BROKEN;
@@ -156,9 +156,9 @@ void olsr_calculate_lq_mpr(void)
                     best = walker->path_linkcost;
                   }
 
-              // Found a 1-hop neighbor that we haven't previously selected.
-              // Use it as MPR only when the 2-hop path through it is better than
-              // any existing 1-hop path.
+              /* Found a 1-hop neighbor that we haven't previously selected.
+               * Use it as MPR only when the 2-hop path through it is better than
+               * any existing 1-hop path. */
               if ((neigh != NULL) && (best < best_1hop))
                 {
                   neigh->is_mpr = OLSR_TRUE;
@@ -168,8 +168,8 @@ void olsr_calculate_lq_mpr(void)
                     mpr_changes = OLSR_TRUE;
                 }
 
-              // no neighbour found => the requested MPR coverage cannot
-              // be satisfied => stop
+              /* no neighbour found => the requested MPR coverage cannot
+               * be satisfied => stop */
 
               else
                 break;

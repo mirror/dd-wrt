@@ -72,6 +72,7 @@ unsigned int cpu_overload_exit = 0;
 
 struct parse_function_entry *parse_functions;
 struct preprocessor_function_entry *preprocessor_functions;
+struct packetparser_function_entry *packetparser_functions;
 
 static char inbuf[MAXMESSAGESIZE+1];
 
@@ -178,6 +179,47 @@ int olsr_preprocessor_remove_function(preprocessor_function *function) {
   return 0;
 }
 
+void olsr_packetparser_add_function(packetparser_function *function) {
+  struct packetparser_function_entry *new_entry;
+  
+  OLSR_PRINTF(3, "Parser: registering packetparser\n");
+  
+  new_entry = olsr_malloc(sizeof(struct packetparser_function_entry), "Register packetparser function");
+  
+  new_entry->function = function;
+  
+  /* Queue */
+  new_entry->next = packetparser_functions;
+  packetparser_functions = new_entry;
+  
+  OLSR_PRINTF(3, "Registered packetparser  function\n");
+  
+}
+
+int olsr_packetparser_remove_function(packetparser_function *function) {
+  struct packetparser_function_entry *entry, *prev;
+  
+  entry = packetparser_functions;
+  prev = NULL;
+  
+  while (entry) {
+    if (entry->function == function) {
+      if (entry == packetparser_functions) {
+        packetparser_functions = entry->next;
+      } else {
+        prev->next = entry->next;
+      }
+      free(entry);
+      return 1;
+    }
+    
+    prev = entry;
+    entry = entry->next;
+  }
+  
+  return 0;
+}
+
 /**
  *Process a newly received OLSR packet. Checks the type
  *and to the neccessary convertions and call the
@@ -195,6 +237,7 @@ void parse_packet(struct olsr *olsr, int size, struct interface *in_if, union ol
   int msgsize;
   int processed;
   struct parse_function_entry *entry;
+  struct packetparser_function_entry *packetparser;
   
   count = size - ((char *)m - (char *)olsr);
   
@@ -208,6 +251,16 @@ void parse_packet(struct olsr *olsr, int size, struct interface *in_if, union ol
     olsr_syslog(OLSR_LOG_ERR, " packet length error in  packet received from %s!",
     olsr_ip_to_string(&buf, from_addr));
     return;
+  }
+  
+  // translate sequence number to host order
+  olsr->olsr_seqno = ntohs(olsr->olsr_seqno);
+  
+  // call packetparser
+  packetparser = packetparser_functions;
+  while (packetparser) {
+    packetparser->function(olsr, in_if, from_addr);
+    packetparser = packetparser->next;
   }
   
   //printf("Message from %s\n\n", olsr_ip_to_string(&buf, from_addr)); 
@@ -274,9 +327,7 @@ void parse_packet(struct olsr *olsr, int size, struct interface *in_if, union ol
       /* IPv4 */
       if (m->v4.ttl <= 0 && olsr_cnf->lq_fish == 0)
       {
-#ifndef NODEBUG
         struct ipaddr_str buf;
-#endif
         OLSR_PRINTF(2, "Dropping packet type %d from neigh %s with TTL 0\n",
             m->v4.olsr_msgtype,
             olsr_ip_to_string(&buf, from_addr));
@@ -288,9 +339,7 @@ void parse_packet(struct olsr *olsr, int size, struct interface *in_if, union ol
       /* IPv6 */
       if (m->v6.ttl <= 0 && olsr_cnf->lq_fish == 0)
       {
-#ifndef NODEBUG
         struct ipaddr_str buf;
-#endif
         OLSR_PRINTF(2, "Dropping packet type %d from %s with TTL 0\n",
             m->v4.olsr_msgtype,
             olsr_ip_to_string(&buf, from_addr));
@@ -310,7 +359,7 @@ void parse_packet(struct olsr *olsr, int size, struct interface *in_if, union ol
     /* Should be the same for IPv4 and IPv6 */
     if (ipequal((union olsr_ip_addr *)&m->v4.originator, &olsr_cnf->main_addr)
         || !olsr_validate_address((union olsr_ip_addr *)&m->v4.originator)) {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
       struct ipaddr_str buf;
 #endif
 #ifdef DEBUG
@@ -351,9 +400,7 @@ void parse_packet(struct olsr *olsr, int size, struct interface *in_if, union ol
     
     /* UNKNOWN PACKETTYPE */
     if (processed == 0) {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       unk_chgestruct(&unkpacket, m);
       
       OLSR_PRINTF(3, "Unknown type: %d, size %d, from %s\n",
@@ -391,7 +438,7 @@ void olsr_input(int fd) {
   cpu_overload_exit = 0;
   
   for (;;) {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
     struct ipaddr_str buf;
 #endif
     /* sockaddr_in6 is bigger than sockaddr !!!! */

@@ -85,7 +85,7 @@ olsr_init_mid_set(void)
 static void
 olsr_expire_mid_entry(void *context)
 {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
   struct ipaddr_str buf;
 #endif
   struct mid_entry *mid;
@@ -201,9 +201,7 @@ insert_mid_tuple(union olsr_ip_addr *m_addr, struct mid_address *alias,
     /* Delete possible 2 hop neighbor */
     if ((tmp_2_neighbor =
 	 olsr_lookup_two_hop_neighbor_table_mid(&tmp_adr->alias)) != NULL) {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       OLSR_PRINTF(1, "Deleting 2 hop node from MID: %s to ",
 		  olsr_ip_to_string(&buf, &tmp_adr->alias));
       OLSR_PRINTF(1, "%s\n", olsr_ip_to_string(&buf, m_addr));
@@ -218,9 +216,7 @@ insert_mid_tuple(union olsr_ip_addr *m_addr, struct mid_address *alias,
 	  olsr_lookup_neighbor_table_alias(&tmp_adr->alias)) != NULL)
 	&& ((real_neigh = olsr_lookup_neighbor_table_alias(m_addr)) != NULL))
     {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       OLSR_PRINTF(1, "[MID]Deleting bogus neighbor entry %s real ",
 		  olsr_ip_to_string(&buf, &tmp_adr->alias));
       OLSR_PRINTF(1, "%s\n", olsr_ip_to_string(&buf, m_addr));
@@ -256,9 +252,7 @@ insert_mid_alias(union olsr_ip_addr *main_add, const union olsr_ip_addr *alias,
   struct neighbor_entry *ne_old, *ne_new;
   struct mid_entry *me_old;
   int ne_ref_rp_count;
-#ifndef NODEBUG
   struct ipaddr_str buf1, buf2;
-#endif
   struct mid_address *adr;
   if (!olsr_validate_address(alias))
     return;
@@ -385,9 +379,7 @@ int
 olsr_update_mid_table(const union olsr_ip_addr *adr, olsr_reltime vtime)
 {
   olsr_u32_t hash;
-#ifndef NODEBUG
   struct ipaddr_str buf;
-#endif
   struct mid_entry *tmp_list = mid_set;
 
   OLSR_PRINTF(3, "MID: update %s\n", olsr_ip_to_string(&buf, adr));
@@ -452,9 +444,7 @@ olsr_prune_aliases(const union olsr_ip_addr *m_addr,
     }
 
     if (declared_aliases == NULL) {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       /* Current alias not found in list of declared aliases: free current alias */
       OLSR_PRINTF(1, "MID remove: (%s, ",
 		  olsr_ip_to_string(&buf, &entry->main_addr));
@@ -550,9 +540,7 @@ olsr_print_mid_set(void)
     for (tmp_list = mid_set[idx].next; tmp_list != &mid_set[idx];
 	 tmp_list = tmp_list->next) {
       struct mid_address *tmp_addr;
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       OLSR_PRINTF(1, "%s: ", olsr_ip_to_string(&buf, &tmp_list->main_addr));
       for (tmp_addr = tmp_list->aliases; tmp_addr;
 	   tmp_addr = tmp_addr->next_alias) {

@@ -208,7 +208,7 @@ olsr_add_hna_net(struct hna_entry *hna_gw, const union olsr_ip_addr *net,
 static void
 olsr_expire_hna_net_entry(void *context)
 {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
   struct ipaddr_str buf1, buf2;
 #endif
   struct hna_net *net_to_delete;
@@ -332,18 +332,14 @@ olsr_print_hna_set(void)
 	    {
 	      if(olsr_cnf->ip_version == AF_INET)
 		{
-#ifndef NODEBUG
                   struct ipaddr_str buf;
-#endif
 		  OLSR_PRINTF(1, "%-15s ", olsr_ip_to_string(&buf, &tmp_net->A_network_addr));
 		  OLSR_PRINTF(1, "%-15d ", tmp_net->prefix_len);
 		  OLSR_PRINTF(1, "%-15s\n", olsr_ip_to_string(&buf, &tmp_hna->A_gateway_addr));
 		}
 	      else
 		{
-#ifndef NODEBUG
                   struct ipaddr_str buf;
-#endif
 		  OLSR_PRINTF(1, "%-27s/%d", olsr_ip_to_string(&buf, &tmp_net->A_network_addr), tmp_net->A_netmask.v6);
 		  OLSR_PRINTF(1, "%s\n", olsr_ip_to_string(&buf, &tmp_hna->A_gateway_addr));
 		}

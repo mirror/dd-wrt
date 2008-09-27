@@ -99,7 +99,7 @@ olsr_is_mpr(void)
 static void
 olsr_expire_mpr_sel_entry(void *context)
 {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
   struct ipaddr_str buf;
 #endif
   struct mpr_selector *mpr_sel;
@@ -146,9 +146,7 @@ olsr_set_mpr_sel_timer(struct mpr_selector *mpr_sel, olsr_reltime rel_timer)
 struct mpr_selector *
 olsr_add_mpr_selector(const union olsr_ip_addr *addr, olsr_reltime vtime)
 {
-#ifndef NODEBUG
   struct ipaddr_str buf;
-#endif
   struct mpr_selector *new_entry;
 
   OLSR_PRINTF(1, "MPRS: adding %s\n", olsr_ip_to_string(&buf, addr));
@@ -210,9 +208,7 @@ olsr_lookup_mprs_set(const union olsr_ip_addr *addr)
 int
 olsr_update_mprs_set(const union olsr_ip_addr *addr, olsr_reltime vtime)
 {
-#ifndef NODEBUG
   struct ipaddr_str buf;
-#endif
   struct mpr_selector *mprs = olsr_lookup_mprs_set(addr);
 
   OLSR_PRINTF(5, "MPRS: Update %s\n", olsr_ip_to_string(&buf, addr));
@@ -237,9 +233,7 @@ olsr_print_mprs_set(void)
   struct mpr_selector *mprs;
   OLSR_PRINTF(1, "MPR SELECTORS: ");
   for(mprs = mprs_list.next; mprs != &mprs_list; mprs = mprs->next) {
-#ifndef NODEBUG
     struct ipaddr_str buf;
-#endif
     OLSR_PRINTF(1, "%s ", olsr_ip_to_string(&buf, &mprs->MS_main_addr));
   }
   OLSR_PRINTF(1, "\n");

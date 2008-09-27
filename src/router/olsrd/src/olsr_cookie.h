@@ -44,7 +44,7 @@
 #ifndef _OLSR_COOKIE_H
 #define _OLSR_COOKIE_H
 
-#define COOKIE_ID_MAX  20	/* maximum number of cookies in the system */
+#define COOKIE_ID_MAX  25	/* maximum number of cookies in the system */
 
 typedef enum olsr_cookie_type_ {
   OLSR_COOKIE_TYPE_MIN,

@@ -116,7 +116,7 @@ clear_spy_list(char *ifname)
   wrq.u.data.flags = 0;
 
   /* Set device name */
-  strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+  strscpy(wrq.ifr_name, ifname, sizeof(wrq.ifr_name));
 
   if(ioctl(olsr_cnf->ioctl_s, SIOCSIWSPY, &wrq) < 0)
     {
@@ -147,7 +147,7 @@ add_spy_node(union olsr_ip_addr *addr, char *interface)
   wrq.u.data.length = IW_MAX_SPY;
   wrq.u.data.flags = 0;
 
-  strncpy(wrq.ifr_name, interface, IFNAMSIZ);
+  strscpy(wrq.ifr_name, interface, sizeof(wrq.ifr_name));
 
   if(ioctl(olsr_cnf->ioctl_s, SIOCGIWSPY, &wrq) < 0)
     {
@@ -180,7 +180,7 @@ add_spy_node(union olsr_ip_addr *addr, char *interface)
   wrq.u.data.flags = 0;
   
   /* Set device name */
-  strncpy(wrq.ifr_name, interface, IFNAMSIZ);
+  strscpy(wrq.ifr_name, interface, sizeof(wrq.ifr_name));
   
   if(ioctl(olsr_cnf->ioctl_s, SIOCSIWSPY, &wrq) < 0)
     {
@@ -216,7 +216,7 @@ convert_ip_to_mac(union olsr_ip_addr *ip, struct sockaddr *mac, char *interface)
   arp_query.arp_ha.sa_family = 0;
   arp_query.arp_flags = 0;
 
-  strncpy(arp_query.arp_dev, interface, IFNAMSIZ);
+  strscpy(arp_query.arp_dev, interface, sizeof(arp_query.arp_dev));
   
   if((ioctl(olsr_cnf->ioctl_s, SIOCGARP, &arp_query) < 0) ||
      !(arp_query.arp_flags & ATF_COM)) /* ATF_COM - hw addr valid */
@@ -323,7 +323,7 @@ poll_link_layer(void *foo)
       wrq.u.data.flags = 0;
       
       /* Set device name */
-      strncpy(wrq.ifr_name, iflist->int_name, IFNAMSIZ);
+      strscpy(wrq.ifr_name, iflist->int_name, sizeof(wrq.ifr_name));
       
       /* Do the request */
       if(ioctl(olsr_cnf->ioctl_s, SIOCGIWSPY, &wrq) < 0)
@@ -398,7 +398,7 @@ iw_get_range_info(char            *ifname,
   wrq.u.data.flags = 0;
 
   /* Set device name */
-  strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+  strscpy(wrq.ifr_name, ifname, sizeof(wrq.ifr_name));
 
   if(ioctl(olsr_cnf->ioctl_s, SIOCGIWRANGE, &wrq) < 0)
     {

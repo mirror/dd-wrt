@@ -75,7 +75,7 @@ set_flag(char *ifname, short flag __attribute__((unused)))
 {
   struct ifreq ifr;
 
-  strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+  strscpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 
   /* Get flags */
   if (ioctl(olsr_cnf->ioctl_s, SIOCGIFFLAGS, &ifr) < 0) 
@@ -84,7 +84,7 @@ set_flag(char *ifname, short flag __attribute__((unused)))
       return -1;
     }
 
-  strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+  strscpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
   
   //printf("Setting flags for if \"%s\"\n", ifr.ifr_name);
 
@@ -178,7 +178,7 @@ chk_if_changed(struct olsr_if *iface)
     }
 
   memset(&ifr, 0, sizeof(struct ifreq));
-  strncpy(ifr.ifr_name, iface->name, IFNAMSIZ);
+  strscpy(ifr.ifr_name, iface->name, sizeof(ifr.ifr_name));
 
 
   /* Get flags (and check if interface exists) */
@@ -261,7 +261,7 @@ chk_if_changed(struct olsr_if *iface)
   /* IP version 6 */
   if(olsr_cnf->ip_version == AF_INET6)
     {
-#if !defined(NODEBUG) && defined(DEBUG)
+#ifdef DEBUG
       struct ipaddr_str buf;
 #endif
       /* Get interface address */
@@ -283,9 +283,7 @@ chk_if_changed(struct olsr_if *iface)
 
       if(memcmp(&tmp_saddr6.sin6_addr, &ifp->int6_addr.sin6_addr, olsr_cnf->ipsize) != 0)
 	{
-#ifndef NODEBUG
           struct ipaddr_str buf;
-#endif
 	  OLSR_PRINTF(1, "New IP address for %s:\n", ifr.ifr_name);
 	  OLSR_PRINTF(1, "\tOld: %s\n", ip6_to_string(&buf, &ifp->int6_addr.sin6_addr));
 	  OLSR_PRINTF(1, "\tNew: %s\n", ip6_to_string(&buf, &tmp_saddr6.sin6_addr));
@@ -367,9 +365,7 @@ chk_if_changed(struct olsr_if *iface)
 		&((struct sockaddr_in *)&ifr.ifr_netmask)->sin_addr.s_addr, 
 		olsr_cnf->ipsize) != 0)
 	{
-#ifndef NODEBUG
           struct ipaddr_str buf;
-#endif
 	  /* New address */
 	  OLSR_PRINTF(1, "IPv4 netmask changed for %s\n", ifr.ifr_name);
 	  OLSR_PRINTF(1, "\tOld:%s\n", ip4_to_string(&buf, ifp->int_netmask.sin_addr));
@@ -395,9 +391,7 @@ chk_if_changed(struct olsr_if *iface)
 	  
 	  if(ifp->int_broadaddr.sin_addr.s_addr != ((struct sockaddr_in *)&ifr.ifr_broadaddr)->sin_addr.s_addr)
 	    {
-#ifndef NODEBUG
               struct ipaddr_str buf;
-#endif
 	      /* New address */
 	      OLSR_PRINTF(1, "IPv4 broadcast changed for %s\n", ifr.ifr_name);
 	      OLSR_PRINTF(1, "\tOld:%s\n", ip4_to_string(&buf, ifp->int_broadaddr.sin_addr));
@@ -504,6 +498,7 @@ add_hemu_if(struct olsr_if *iface)
   union olsr_ip_addr null_addr;
   olsr_u32_t addr[4];
   struct ipaddr_str buf;
+  size_t name_size;
 
   if(!iface->host_emul)
     return -1;
@@ -515,11 +510,12 @@ add_hemu_if(struct olsr_if *iface)
   iface->configured = OLSR_TRUE;
   iface->interf = ifp;
 
+  name_size = strlen("hcif01") + 1;
   ifp->is_hcif = OLSR_TRUE;
-  ifp->int_name = olsr_malloc(strlen("hcif01") + 1, "Interface update 3");
+  ifp->int_name = olsr_malloc(name_size, "Interface update 3");
   ifp->int_metric = 0;
 
-  strcpy(ifp->int_name, "hcif01");
+  strscpy(ifp->int_name, "hcif01", name_size);
 
   OLSR_PRINTF(1, "Adding %s(host emulation):\n", ifp->int_name);
 
@@ -629,18 +625,20 @@ add_hemu_if(struct olsr_if *iface)
     olsr_start_timer(iface->cnf->hello_params.emission_interval * MSEC_PER_SEC,
                      HELLO_JITTER, OLSR_TIMER_PERIODIC,
                      olsr_cnf->lq_level == 0 ? &generate_hello : &olsr_output_lq_hello,
-                     ifp, 0);
+                     ifp, hello_gen_timer_cookie->ci_id);
   ifp->tc_gen_timer =
     olsr_start_timer(iface->cnf->tc_params.emission_interval * MSEC_PER_SEC,
                      TC_JITTER, OLSR_TIMER_PERIODIC,
                      olsr_cnf->lq_level == 0 ? &generate_tc : &olsr_output_lq_tc,
-                     ifp, 0);
+                     ifp, tc_gen_timer_cookie->ci_id);
   ifp->mid_gen_timer =
     olsr_start_timer(iface->cnf->mid_params.emission_interval * MSEC_PER_SEC,
-                     MID_JITTER, OLSR_TIMER_PERIODIC, &generate_mid, ifp, 0);
+                     MID_JITTER, OLSR_TIMER_PERIODIC, &generate_mid, ifp,
+                     mid_gen_timer_cookie->ci_id);
   ifp->hna_gen_timer =
     olsr_start_timer(iface->cnf->hna_params.emission_interval * MSEC_PER_SEC,
-                     HNA_JITTER, OLSR_TIMER_PERIODIC, &generate_hna, ifp, 0);
+                     HNA_JITTER, OLSR_TIMER_PERIODIC, &generate_hna, ifp,
+                     hna_gen_timer_cookie->ci_id);
 
   /* Recalculate max topology hold time */
   if(olsr_cnf->max_tc_vtime < iface->cnf->tc_params.emission_interval)
@@ -682,6 +680,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
   struct interface ifs, *ifp;
   struct ifreq ifr;
   union olsr_ip_addr null_addr;
+  size_t name_size;
 #ifdef linux
   int precedence = IPTOS_PREC(olsr_cnf->tos);
   int tos_bits = IPTOS_TOS(olsr_cnf->tos);
@@ -692,7 +691,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
 
   memset(&ifr, 0, sizeof(struct ifreq));
   memset(&ifs, 0, sizeof(struct interface));
-  strncpy(ifr.ifr_name, iface->name, IFNAMSIZ);
+  strscpy(ifr.ifr_name, iface->name, sizeof(ifr.ifr_name));
 
   OLSR_PRINTF(debuglvl, "Checking %s:\n", ifr.ifr_name);
 
@@ -743,9 +742,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
   if(olsr_cnf->ip_version == AF_INET6)
     {
       /* Get interface address */
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       if(get_ipv6_address(ifr.ifr_name, &ifs.int6_addr, iface->cnf->ipv6_addrtype) <= 0)
 	{
 	  if(iface->cnf->ipv6_addrtype == IPV6_ADDR_SITELOCAL)
@@ -759,13 +756,14 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
       OLSR_PRINTF(debuglvl, "\tAddress: %s\n", ip6_to_string(&buf, &ifs.int6_addr.sin6_addr));
       
       /* Multicast */
+      memset (&ifs.int6_multaddr, 0, sizeof (ifs.int6_multaddr));
+      ifs.int6_multaddr.sin6_family   = AF_INET6;
+      ifs.int6_multaddr.sin6_flowinfo = htonl(0);
+      ifs.int6_multaddr.sin6_scope_id = if_nametoindex(ifr.ifr_name);
+      ifs.int6_multaddr.sin6_port     = htons(OLSRPORT);
       ifs.int6_multaddr.sin6_addr = (iface->cnf->ipv6_addrtype == IPV6_ADDR_SITELOCAL) ? 
 	iface->cnf->ipv6_multi_site.v6 :
 	iface->cnf->ipv6_multi_glbl.v6;
-      /* Set address family */
-      ifs.int6_multaddr.sin6_family = AF_INET6;
-      /* Set port */
-      ifs.int6_multaddr.sin6_port = htons(OLSRPORT);
       
 #ifdef __MacOSX__
       ifs.int6_multaddr.sin6_scope_id = 0;
@@ -841,9 +839,10 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
     ifs.int_mtu = OLSR_DEFAULT_MTU;
   else
     ifs.int_mtu = ifr.ifr_mtu;
+
   if (ifs.int_mtu>1500)
     ifs.int_mtu = OLSR_DEFAULT_MTU;
-  
+
   ifs.int_mtu -= (olsr_cnf->ip_version == AF_INET6) ? UDP_IPV6_HDRSIZE : UDP_IPV4_HDRSIZE;
 
   ifs.ttl_index = -32; /* For the first 32 TC's, fish-eye is disabled */
@@ -858,37 +857,37 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
 
   if(olsr_cnf->ip_version == AF_INET)
     {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       OLSR_PRINTF(1, "\tAddress:%s\n", ip4_to_string(&buf, ifs.int_addr.sin_addr));
       OLSR_PRINTF(1, "\tNetmask:%s\n", ip4_to_string(&buf, ifs.int_netmask.sin_addr));
       OLSR_PRINTF(1, "\tBroadcast address:%s\n", ip4_to_string(&buf, ifs.int_broadaddr.sin_addr));
     }
   else
     {
-#ifndef NODEBUG
       struct ipaddr_str buf;
-#endif
       OLSR_PRINTF(1, "\tAddress: %s\n", ip6_to_string(&buf, &ifs.int6_addr.sin6_addr));
       OLSR_PRINTF(1, "\tMulticast: %s\n", ip6_to_string(&buf, &ifs.int6_multaddr.sin6_addr));
     }
   
   ifp = olsr_malloc(sizeof (struct interface), "Interface update 2");
   
-  ifp->immediate_send_tc = (iface->cnf->tc_params.emission_interval < iface->cnf->hello_params.emission_interval);
-
   iface->configured = 1;
   iface->interf = ifp;
 
   /* XXX bad code */
   memcpy(ifp, &ifs, sizeof(struct interface));
   
+  ifp->immediate_send_tc = (iface->cnf->tc_params.emission_interval < iface->cnf->hello_params.emission_interval);
+  if (olsr_cnf->max_jitter == 0)
+  {
+    /* max_jitter determines the max time to store to-be-send-messages, correlated with random() */
+    olsr_cnf->max_jitter = ifp->immediate_send_tc ? iface->cnf->tc_params.emission_interval : iface->cnf->hello_params.emission_interval;
+  }
+
+  name_size = strlen(if_basename(ifr.ifr_name)) + 1;
   ifp->gen_properties = NULL;
-  ifp->int_name = olsr_malloc(strlen(ifr.ifr_name) + 1, "Interface update 3");
-      
-  strcpy(ifp->int_name, if_basename(ifr.ifr_name));
-  /* Segfaults if using strncpy(IFNAMSIZ) why oh why?? */
+  ifp->int_name = olsr_malloc(name_size, "Interface update 3");
+  strscpy(ifp->int_name, if_basename(ifr.ifr_name), name_size);
   ifp->int_next = ifnet;
   ifnet = ifp;
 
@@ -982,18 +981,20 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__((unused)))
     olsr_start_timer(iface->cnf->hello_params.emission_interval * MSEC_PER_SEC,
                      HELLO_JITTER, OLSR_TIMER_PERIODIC,
                      olsr_cnf->lq_level == 0 ? &generate_hello : &olsr_output_lq_hello,
-                     ifp, 0);
+                     ifp, hello_gen_timer_cookie->ci_id);
   ifp->tc_gen_timer =
     olsr_start_timer(iface->cnf->tc_params.emission_interval * MSEC_PER_SEC,
                      TC_JITTER, OLSR_TIMER_PERIODIC,
                      olsr_cnf->lq_level == 0 ? &generate_tc : &olsr_output_lq_tc,
-                     ifp, 0);
+                     ifp, tc_gen_timer_cookie->ci_id);
   ifp->mid_gen_timer =
     olsr_start_timer(iface->cnf->mid_params.emission_interval * MSEC_PER_SEC,
-                     MID_JITTER, OLSR_TIMER_PERIODIC, &generate_mid, ifp, 0);
+                     MID_JITTER, OLSR_TIMER_PERIODIC, &generate_mid, ifp,
+                     mid_gen_timer_cookie->ci_id);
   ifp->hna_gen_timer =
     olsr_start_timer(iface->cnf->hna_params.emission_interval * MSEC_PER_SEC,
-                     HNA_JITTER, OLSR_TIMER_PERIODIC, &generate_hna, ifp, 0);
+                     HNA_JITTER, OLSR_TIMER_PERIODIC, &generate_hna, ifp,
+                     hna_gen_timer_cookie->ci_id);
 
   /* Recalculate max topology hold time */
   if(olsr_cnf->max_tc_vtime < iface->cnf->tc_params.emission_interval) {

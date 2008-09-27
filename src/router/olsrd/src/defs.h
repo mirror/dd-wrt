@@ -63,7 +63,7 @@ extern const char build_host[];
 
 #ifndef OLSRD_GLOBAL_CONF_FILE
 #define OLSRD_CONF_FILE_NAME	"olsrd.conf"
-#define OLSRD_GLOBAL_CONF_FILE	"/tmp/" OLSRD_CONF_FILE_NAME
+#define OLSRD_GLOBAL_CONF_FILE	"/etc/" OLSRD_CONF_FILE_NAME
 #endif
 
 #define	MAXMESSAGESIZE		1500	/* max broadcast size */
@@ -115,6 +115,35 @@ extern FILE *debug_handle;
 #define INLINE inline __attribute__((always_inline))
 
 /*
+ * A somewhat safe version of strncpy and strncat. Note, that
+ * BSD/Solaris strlcpy()/strlcat() differ in implementation, while
+ * the BSD compiler prints out a warning if you use plain strcpy().
+ */
+ 
+static INLINE char *strscpy(char *dest, const char *src, size_t size)
+{
+	register size_t l = 0;
+#if !defined(NODEBUG) && defined(DEBUG)
+	if (sizeof(dest) == size) fprintf(stderr, "Warning: probably sizeof(pointer) in strscpy(%p, %s, %d)!\n", dest, src, size);
+	if (NULL == dest) fprintf(stderr, "Warning: dest is NULL in strscpy!\n");
+	if (NULL == src) fprintf(stderr, "Warning: src is NULL in strscpy!\n");
+#endif
+	if (NULL != dest && NULL != src)
+	{
+		/* src does not need to be null terminated */
+		if (0 < size--) while(l < size && 0 != src[l]) l++;
+		dest[l] = 0;
+	}
+	return strncpy(dest, src, l);
+}
+
+static INLINE char *strscat(char *dest, const char *src, size_t size)
+{
+	register size_t l = strlen(dest);
+	return strscpy(dest + l, src, size > l ? size - l : 0);
+}
+
+/*
  * Queueing macros
  */
 
@@ -147,6 +176,15 @@ extern clock_t now_times; /* current idea of times(2) reported uptime */
 extern olsr_bool olsr_win32_end_request;
 extern olsr_bool olsr_win32_end_flag;
 #endif
+
+/*
+ * a wrapper around times(2). times(2) has the problem, that it may return -1
+ * in case of an err (e.g. EFAULT on the parameter) or immediately before an
+ * overrun (though it is not en error) just because the jiffies (or whatever
+ * the underlying kernel calls the smallest accountable time unit) are
+ * inherently "unsigned" (and always incremented).
+ */
+unsigned long olsr_times(void);
 
 /*
  *IPC functions

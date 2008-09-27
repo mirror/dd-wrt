@@ -168,9 +168,7 @@ olsr_chosen_mpr(struct neighbor_entry *one_hop_neighbor, olsr_u16_t *two_hop_cov
   struct neighbor_2_list_entry *second_hop_entries; 
   struct neighbor_entry        *dup_neighbor;
   olsr_u16_t                   count;
-#ifndef NODEBUG
   struct ipaddr_str            buf;
-#endif  
   count = *two_hop_covered_count;
 
   OLSR_PRINTF(1, "Setting %s as MPR\n", olsr_ip_to_string(&buf, &one_hop_neighbor->neighbor_main_addr));
@@ -414,9 +412,7 @@ add_will_always_nodes(void)
 #endif
 
   OLSR_FOR_ALL_NBR_ENTRIES(a_neighbor) {
-#ifndef NODEBUG
     struct ipaddr_str buf;
-#endif
     if ((a_neighbor->status == NOT_SYM) ||
         (a_neighbor->willingness != WILL_ALWAYS)) {
       continue;
@@ -559,9 +555,7 @@ olsr_optimize_mpr_set(void)
         }
 
         if (remove) {
-#ifndef NODEBUG
           struct ipaddr_str buf;
-#endif
           OLSR_PRINTF(3, "MPR OPTIMIZE: removiong mpr %s\n\n", olsr_ip_to_string(&buf, &a_neighbor->neighbor_main_addr));
           a_neighbor->is_mpr = OLSR_FALSE;
         }

@@ -36,7 +36,10 @@
 # the copyright holders.
 #
 
-VERS =		0.5.6-rc6
+# Please also write a new version to:
+# gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
+# gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
+VERS =		pre-0.5.6-r2
 
 TOPDIR = .
 include Makefile.inc
@@ -62,7 +65,7 @@ default_target: $(EXENAME)
 $(EXENAME):	$(OBJS) src/builddata.o
 		$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-cfgparser:	$(CFGDEPS)
+cfgparser:	$(CFGDEPS) src/builddata.o
 		$(MAKE) -C $(CFGDIR)
 
 switch:		
@@ -84,6 +87,10 @@ clean:
 	-rm -f $(OBJS) $(SRCS:%.c=%.d) $(EXENAME) $(EXENAME).exe src/builddata.c $(TMPFILES)
 ifeq ($(OS), win32)
 	-rm -f libolsrd.a
+	-rm -f gui/win32/Main/olsrd_cfgparser.lib
+	-rm -f olsr-setup.exe
+	-rm -fr gui/win32/Main/Release
+	-rm -fr gui/win32/Shim/Release
 endif
 
 uberclean:	clean clean_libs
@@ -91,6 +98,7 @@ uberclean:	clean clean_libs
 #	BSD-xargs has no "--no-run-if-empty" aka "-r"
 	find . \( -name '*.[od]' -o -name '*~' \) -not -path "*/.hg*" -print0 | xargs -0 rm -f
 	$(MAKECMD) -C $(SWITCHDIR) clean
+	$(MAKECMD) -C $(CFGDIR) clean
 
 install: install_olsrd
 
@@ -133,14 +141,33 @@ rpm:
 # PLUGINS
 #
 
-libs: 
-		$(MAKECMD) -C lib LIBDIR=$(LIBDIR)
+# This is quite ugly but at least it works
+ifeq ($(OS),linux)
+SUBDIRS = $(notdir $(shell find lib -maxdepth 2 -name Makefile -not -path lib/Makefile -printf "%h\n"|sort))
+else
+ifeq ($(OS),win32)
+SUBDIRS := dot_draw httpinfo mini pgraph secure txtinfo
+else
+SUBDIRS := bmf dot_draw dyn_gw dyn_gw_plain httpinfo mini nameservice pgraph secure txtinfo
+endif
+endif
+
+libs:
+		set -e;for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR);done
 
 libs_clean clean_libs:
-		$(MAKECMD) -C lib LIBDIR=$(LIBDIR) clean
+		-for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR) clean;done
+ifeq ($(OS), win32)
+		-rm -f lib/pgraph/olsrd_pgraph.dll
+		-rm -f lib/txtinfo/olsrd_txtinfo.dll
+		-rm -f lib/httpinfo/olsrd_httpinfo.dll
+		-rm -f lib/secure/olsrd_secure.dll
+		-rm -f lib/dot_draw/olsrd_dot_draw.dll
+		-rm -f lib/mini/olsrd_mini.dll
+endif
 
 libs_install install_libs:
-		$(MAKECMD) -C lib LIBDIR=$(LIBDIR) install
+		set -e;for dir in $(SUBDIRS);do $(MAKECMD) -C lib/$$dir LIBDIR=$(LIBDIR) install;done
 
 httpinfo:
 		$(MAKECMD) -C lib/httpinfo clean
