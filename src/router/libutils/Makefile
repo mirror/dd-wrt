@@ -294,6 +294,12 @@ endif
 ifeq ($(CONFIG_MAKSAT),y)
 CFLAGS += -DHAVE_MAKSAT
 endif
+ifeq ($(CONFIG_NOTRIAL),y)
+CFLAGS += -DHAVE_NOTRIAL
+endif
+ifeq ($(CONFIG_CNC),y)
+CFLAGS += -DHAVE_CNC
+endif
 
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS += -DHAVE_VILIM
