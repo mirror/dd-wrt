@@ -241,7 +241,7 @@ static void zebra_connect (void) {
   i.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
 #else
   i.sun_family = AF_UNIX;
-  strcpy (i.sun_path, ZEBRA_SOCKET);
+  strscpy (i.sun_path, ZEBRA_SOCKET, sizeof(i.sun_path));
 #endif
 
   ret = connect (zebra.sock, (struct sockaddr *)&i, sizeof i);

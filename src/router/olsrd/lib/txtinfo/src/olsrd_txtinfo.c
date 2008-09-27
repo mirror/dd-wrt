@@ -321,7 +321,7 @@ static void ipc_print_neigh(void)
     struct neighbor_2_list_entry *list_2;
     int thop_cnt;
 
-    ipc_sendf("\nTable: Neighbors\nIP address\tSYM\tMPR\tMPRS\tWillingness\t2 Hop Neighbors\n");
+    ipc_sendf("Table: Neighbors\nIP address\tSYM\tMPR\tMPRS\tWill.\t2 Hop Neighbors\n");
 
     /* Neighbors */
     OLSR_FOR_ALL_NBR_ENTRIES(neigh) {
@@ -352,7 +352,7 @@ static void ipc_print_link(void)
 
     struct link_entry *link = NULL;
 
-    ipc_sendf("Table: Links\nLocal IP\tremote IP\tHysteresis\tLinkcost\n");
+    ipc_sendf("Table: Links\nLocal IP\tRemote IP\tHyst.\tLQ\tNLQ\tCost\n");
 
     /* Link set */
     OLSR_FOR_ALL_LINK_ENTRIES(link) {
@@ -360,7 +360,7 @@ static void ipc_print_link(void)
                    olsr_ip_to_string(&buf1, &link->local_iface_addr),
                    olsr_ip_to_string(&buf2, &link->neighbor_iface_addr),
                    link->L_link_quality, 
-                   get_link_entry_text(link, &lqbuffer1),
+                   get_link_entry_text(link, '\t', &lqbuffer1),
                    get_linkcost_text(link->linkcost, OLSR_FALSE, &lqbuffer2));
     } OLSR_FOR_ALL_LINK_ENTRIES_END(link);
 
@@ -373,7 +373,7 @@ static void ipc_print_routes(void)
     struct rt_entry *rt;
     struct lqtextbuffer lqbuffer;
     
-    ipc_sendf("Table: Routes\nDestination\tGateway\tMetric\tETX\tInterface\n");
+    ipc_sendf("Table: Routes\nDestination\tGateway IP\tMetric\tETX\tInterface\n");
 
     /* Walk the route table */
     OLSR_FOR_ALL_RT_ENTRIES(rt) {
@@ -394,7 +394,7 @@ static void ipc_print_topology(void)
 {
     struct tc_entry *tc;
     
-    ipc_sendf("Table: Topology\nDestination IP\tLast hop IP\tLinkcost\n");
+    ipc_sendf("Table: Topology\nDest. IP\tLast hop IP\tLQ\tNLQ\tCost\n");
 
     /* Topology */  
     OLSR_FOR_ALL_TC_ENTRIES(tc) {
@@ -406,7 +406,7 @@ static void ipc_print_topology(void)
             ipc_sendf( "%s\t%s\t%s\t%s\n", 
                        olsr_ip_to_string(&dstbuf, &tc_edge->T_dest_addr),
                        olsr_ip_to_string(&addrbuf, &tc->addr), 
-                       get_tc_edge_entry_text(tc_edge, &lqbuffer1),
+                       get_tc_edge_entry_text(tc_edge, '\t', &lqbuffer1),
                        get_linkcost_text(tc_edge->cost, OLSR_FALSE, &lqbuffer2));
         	}
         } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
@@ -425,13 +425,13 @@ static void ipc_print_hna(void)
 
     size = 0;
 
-    ipc_sendf("Table: HNA\nNetwork\tNetmask\tGateway\n");
+    ipc_sendf("Table: HNA\nDestination\tGateway\n");
 
     /* Announced HNA entries */
     if (olsr_cnf->ip_version == AF_INET) {
         for(hna = olsr_cnf->hna_entries; hna != NULL; hna = hna->next) {
             struct ipaddr_str addrbuf, mainaddrbuf;
-            ipc_sendf("%s\t%d\t%s\n",
+            ipc_sendf("%s/%d\t%s\n",
                       olsr_ip_to_string(&addrbuf, &hna->net.prefix),
                       hna->net.prefix_len,
                       olsr_ip_to_string(&mainaddrbuf, &olsr_cnf->main_addr));
@@ -439,7 +439,7 @@ static void ipc_print_hna(void)
     } else {
         for(hna = olsr_cnf->hna_entries; hna != NULL; hna = hna->next) {
             struct ipaddr_str addrbuf, mainaddrbuf;
-            ipc_sendf("%s\t%d\t%s\n",
+            ipc_sendf("%s/%d\t%s\n",
                       olsr_ip_to_string(&addrbuf, &hna->net.prefix),
                       hna->net.prefix_len,
                       olsr_ip_to_string(&mainaddrbuf, &olsr_cnf->main_addr));
@@ -454,7 +454,7 @@ static void ipc_print_hna(void)
              tmp_net != &tmp_hna->networks;
              tmp_net = tmp_net->next) {
 
-            ipc_sendf("%s\t%d\t%s\n",
+            ipc_sendf("%s/%d\t%s\n",
                       olsr_ip_to_string(&addrbuf, &tmp_net->A_network_addr),
                       tmp_net->prefixlen,
                       olsr_ip_to_string(&mainaddrbuf, &tmp_hna->A_gateway_addr));
@@ -471,7 +471,7 @@ static void ipc_print_mid(void)
     struct mid_entry *entry;
     struct mid_address *alias;
 
-    ipc_sendf("Table: MID\nIP\tAliases\n");
+    ipc_sendf("Table: MID\nIP address\tAliases\n");
 
     /* MID */
     for(index = 0; index < HASHSIZE; index++) {
