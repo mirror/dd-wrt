@@ -826,6 +826,14 @@ return 0;
 	setRouter( "Buffalo WHR-G125" );
 	return ROUTER_BUFFALO_WHRG54S;
     }
+    if( nvram_match( "boardnum", "00" ) && nvram_match( "boardrev", "0x11" )
+	&& nvram_match( "boardtype", "0x048e" )
+	&& nvram_match( "melco_id", "32064" ) )
+    {
+	cprintf( "router is Buffalo WHR-HP-G125\n" );
+	setRouter( "Buffalo WHR-HP-G125" );
+	return ROUTER_BUFFALO_WHRG54S;
+    }
 
     if( nvram_match( "boardnum", "00" ) &&
 	nvram_match( "boardrev", "0x13" )
