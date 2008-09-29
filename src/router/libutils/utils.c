@@ -826,6 +826,16 @@ return 0;
 	setRouter( "Buffalo WHR-G125" );
 	return ROUTER_BUFFALO_WHRG54S;
     }
+
+    if( nvram_match( "boardnum", "00" ) && nvram_match( "boardrev", "0x10" )
+	&& nvram_match( "boardtype", "0x048e" )
+	&& nvram_match( "melco_id", "32139" ) )
+    {
+	cprintf( "router is Buffalo WCA-G\n" );
+	setRouter( "Buffalo WCA-G" );
+	return ROUTER_BUFFALO_WCAG; //vlan1 is lan, vlan0 is unused, implementation not done. will me made after return to germany
+    }
+
     if( nvram_match( "boardnum", "00" ) && nvram_match( "boardrev", "0x11" )
 	&& nvram_match( "boardtype", "0x048e" )
 	&& nvram_match( "melco_id", "32064" ) )
