@@ -359,6 +359,8 @@
 
 #define ROUTER_BOARD_ADM5120 0x630f
 
+#define ROUTER_BUFFALO_WCAG 0x6404
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith( char *source, char *cmp )
