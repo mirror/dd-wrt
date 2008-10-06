@@ -107,18 +107,21 @@ int redial_main( int argc, char **argv )
 			start_service( "wan_redial" );
 		    }
 #endif
+#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
+		    else
+#endif
 #ifdef HAVE_PPTP
-		    else if( nvram_match( "wan_proto", "pptp" ) )
+		    if( nvram_match( "wan_proto", "pptp" ) )
 		    {
 			stop_service( "pptp" );
 			sleep( 1 );
 			start_service( "wan_redial" );
 		    }
 #endif
-#ifdef HAVE_L2TP
-#if defined(HAVE_PPTP) || defined(HAVE_PPPOE)
+#if defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
 		    else
 #endif
+#ifdef HAVE_L2TP
 		    if( nvram_match( "wan_proto", "l2tp" ) )
 		    {
 			stop_service( "l2tp" );
