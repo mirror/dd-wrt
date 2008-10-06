@@ -15,7 +15,7 @@
 /* #undef SLIRP */
 
 /* Enable Broadcast Relay? */
-/* #undef BCRELAY */
+#define BCRELAY 1
 
 /* Work as a PNS rather than a PAC? */
 /* #undef PNS_MODE */
