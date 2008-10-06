@@ -1,6 +1,38 @@
 /*
  * DHCP library functions.
- * Copyright (C) 2003, 2004, 2005 Mondru AB.
+ *
+ * Copyright (c) 2006, Jens Jakobsen 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *   Redistributions of source code must retain the above copyright notice,
+ *   this list of conditions and the following disclaimer.
+ *
+ *   Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the distribution.
+ *
+ *   Neither the names of copyright holders nor the names of its contributors
+ *   may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *
+ * Copyright (C) 2003, 2004, 2005, 2006 Mondru AB.
  *
  * The contents of this file may be used under the terms of the GNU
  * General Public License Version 2, provided that the above copyright
@@ -46,7 +78,7 @@
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>
 
-#elif defined (__FreeBSD__)  || defined (__APPLE__)
+#elif defined (__FreeBSD__)   || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
 #include <net/if.h>
 #include <net/bpf.h>
 #include <net/if_dl.h>
@@ -273,7 +305,7 @@ int dhcp_setaddr(char const *devname,
 #if defined(__linux__)
   ifr.ifr_netmask.sa_family = AF_INET;
 
-#elif defined(__FreeBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
   ((struct sockaddr_in *) &ifr.ifr_addr)->sin_len = 
     sizeof (struct sockaddr_in);
   ((struct sockaddr_in *) &ifr.ifr_dstaddr)->sin_len = 
@@ -322,7 +354,7 @@ int dhcp_setaddr(char const *devname,
     ((struct sockaddr_in *) &ifr.ifr_netmask)->sin_addr.s_addr = 
       netmask->s_addr;
 
-#elif defined(__FreeBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
     ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr.s_addr = 
       netmask->s_addr;
 
@@ -348,7 +380,7 @@ int dhcp_setaddr(char const *devname,
 
   /* TODO: How does it work on Solaris? */
 
-#if defined(__FreeBSD__) || defined (__APPLE__)
+#if defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
   (void)dhcp_sifflags(devname, IFF_UP | IFF_RUNNING);  /* TODO */
   /*return tun_addroute(this, addr, addr, netmask);*/
 #else
@@ -358,6 +390,46 @@ int dhcp_setaddr(char const *devname,
 }
 
 #if defined(__linux__)
+
+int dhcp_getmac(const char *ifname, char *macaddr) {
+  int fd;
+  int option=1;
+  struct ifreq ifr;
+
+  memset(&ifr, 0, sizeof(ifr));
+
+  /* Create socket */
+  if ((fd = socket(PF_PACKET, SOCK_RAW, htons(DHCP_ETH_IP))) < 0) {
+    if (errno == EPERM) {
+      sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	      "Cannot create raw socket. Must be root.");
+    }
+    sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	    "socket(domain=%d, protocol=%lx, protocol=%d) failed",
+	    PF_PACKET, SOCK_RAW, DHCP_ETH_IP);
+  }
+
+  /* Get the MAC address of our interface */
+  strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+  if (ioctl(fd, SIOCGIFHWADDR, &ifr) < 0) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, errno,
+	    "ioctl(d=%d, request=%d) failed",
+	    fd, SIOCGIFHWADDR);
+  }
+  memcpy(macaddr, ifr.ifr_hwaddr.sa_data, DHCP_ETH_ALEN);
+  if (ifr.ifr_hwaddr.sa_family != ARPHRD_ETHER) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+	    "Not Ethernet: %.16s", ifname);
+  }
+  
+  if (macaddr[0] & 0x01) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, 0, 
+	    "Ethernet has broadcast or multicast address: %.16s", ifname);
+  }
+  
+  close(fd);
+  
+}
 
 /**
  * dhcp_open_eth()
@@ -466,7 +538,7 @@ int dhcp_open_eth(char const *ifname, uint16_t protocol, int promisc,
   return fd;
 }
 
-#elif defined (__FreeBSD__) || defined (__APPLE__)
+#elif defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
 
 
 int dhcp_getmac(const char *ifname, char *macaddr) {
@@ -652,7 +724,7 @@ if (this->debug) printf("Sending IP packet\n");
 	    fd, length);
     return -1;
   }
-#elif defined(__FreeBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
   if (write(fd, packet, length) < 0) {
     sys_err(LOG_ERR, __FILE__, __LINE__, errno, "write() failed");
     return -1;
@@ -1083,7 +1155,7 @@ dhcp_new(struct dhcp_t **dhcp, int numconn, char *interface,
       return -1; /* Error reporting done in dhcp_open_eth */
     }
 
-#if defined(__FreeBSD__) || defined (__APPLE__)
+#if defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__APPLE__)
   if (ioctl((*dhcp)->fd, BIOCGBLEN, &blen) < 0) {
     sys_err(LOG_ERR, __FILE__, __LINE__, errno,"ioctl() failed!");
   }
@@ -1372,6 +1444,11 @@ int dhcp_undoDNAT(struct dhcp_conn_t *conn,
     return 0; 
   
   /* Was it an ICMP reply from us? */ /* Added by Freddy */
+  if ((pack->iph.saddr == conn->ourip.s_addr) &&
+      (pack->iph.protocol == DHCP_IP_ICMP))
+    return 0;
+
+  /* Was it an ICMP reply from us? */
   if ((pack->iph.saddr == conn->ourip.s_addr) &&
       (pack->iph.protocol == DHCP_IP_ICMP))
     return 0;
@@ -1914,7 +1991,7 @@ int dhcp_sendNAK(struct dhcp_conn_t *conn,
  * dhcp_getreq()
  * Process a received DHCP request MESSAGE.
  **/
-int dhcp_getreq(struct dhcp_t *this, 
+int dhcp_getreq(struct dhcp_t *this,
 		struct dhcp_fullpacket_t *pack, int len) {
   struct dhcp_conn_t *conn;
 
@@ -2084,23 +2161,13 @@ int dhcp_receive_ip(struct dhcp_t *this, struct dhcp_ippacket_t *pack,
 
   /* Check to see if it is a packet for us */
   /* TODO: Handle IP packets with options. Currently these are just ignored */
-  if ((pack->iph.daddr == 0) ||
-      (pack->iph.daddr == 0xffffffff) ||
-      (pack->iph.daddr == ourip.s_addr)) {
-
-    /* if (pack->iph.ihl != 5)
-      return 0;  Packets for us with IP options are silently dropped */
-
-    /* if (pack->iph.protocol != DHCP_IP_UDP)
-      return 0;   Packets for us which are not UDP are silently dropped */
-    
-    /* We handle DHCP IPv4 packets without header options */
-    if ((pack->iph.ihl == 5) && (pack->iph.protocol == DHCP_IP_UDP)) {
-      (void)dhcp_getreq(this, (struct dhcp_fullpacket_t*) pack, len);
-      return 0; /* TODO */
-    }
+  if (((pack->iph.daddr == 0) || 
+       (pack->iph.daddr == 0xffffffff) ||
+       (pack->iph.daddr == ourip.s_addr)) &&
+      ((pack->iph.ihl == 5) && (pack->iph.protocol == DHCP_IP_UDP) &&
+       (((struct dhcp_fullpacket_t*)pack)->udph.dst == htons(DHCP_BOOTPS)))) {
+    (void)dhcp_getreq(this, (struct dhcp_fullpacket_t*) pack, len);
   }
-
 
   /* Return if we do not know peer */
   if (!conn) 
@@ -2573,7 +2640,7 @@ extern int dhcp_set_cb_disconnect(struct dhcp_t *this,
 
 
 
-#if defined(__FreeBSD__) || defined (__APPLE__)
+#if defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__APPLE__)
 
 int dhcp_receive(struct dhcp_t *this) {
   /*

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT(chillispot, 1.0, bugs@chillispot.org)
+AC_INIT(chillispot, 1.1.0, bugs@chillispot.org)
 AC_CONFIG_SRCDIR([src/cmdline.c])
 
 AM_INIT_AUTOMAKE

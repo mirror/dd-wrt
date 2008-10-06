@@ -50,6 +50,10 @@ chilli \-  ChilliSpot.org. A Wireless LAN Access Point Controller
 ] [
 .BI \-\-ipdown " script" 
 ] [
+.BI \-\-conup " script" 
+] [
+.BI \-\-condown " script" 
+] [
 .BI \-\-radiuslisten " host" 
 ] [
 .BI \-\-radiusserver1 " host" 
@@ -63,6 +67,10 @@ chilli \-  ChilliSpot.org. A Wireless LAN Access Point Controller
 .BI \-\-radiussecret " secret"
 ] [
 .BI \-\-radiusnasid " id"
+] [
+.BI \-\-radiusnasip " host"
+] [
+.BI \-\-radiuscalled " name"
 ] [
 .BI \-\-radiuslocationid " id"
 ] [
@@ -81,6 +89,10 @@ chilli \-  ChilliSpot.org. A Wireless LAN Access Point Controller
 .BI \-\-proxyclient " host"
 ] [
 .BI \-\-proxysecret " secret"
+] [
+.BI \-\-confusername " username"
+] [
+.BI \-\-confpassword " password"
 ] [
 .BI \-\-dhcpif " dev"
 ] [
@@ -196,7 +208,7 @@ override the options given in the configuration file.
 .BI --interval " seconds"
 Re-read configuration file and do DNS lookups every interval
 seconds. This has the same effect as sending the HUP signal. If 
-.BI --interval
+.BI interval
 is 0 (zero) this feature is disabled.
 
 .I file
@@ -228,9 +240,9 @@ or <address>/<prefix> (192.168.182.0/24).
 .BI --dynip " net"
 Dynamic IP address pool. Specifies a pool of dynamic IP addresses. If
 this option is omitted the network address specified by the
-.BI --net
+.BI net
 option is used for dynamic IP address allocation. See the 
-.BI --net
+.BI net
 option for a description of the network address format.
 
 .TP
@@ -270,10 +282,22 @@ Executed with the following parameters: <devicename> <ip address>
 <mask>
 
 .TP
+.BI --conup " script"
+Script executed after a user has been authenticated.
+Executed with the following parameters: <devicename> <ip address>
+<mask> <user ip address> <user mac address> <filter ID>
+
+.TP
+.BI --condown " script"
+Script executed after a user has logged off.
+Executed with the following parameters: <devicename> <ip address>
+<mask> <user ip address> <user mac address> <filter ID>
+
+.TP
 .BI --radiuslisten " host"
 Local interface IP address to use for the radius interface. This option
 also determines the value for the NAS-IP-Address radius attribute. If
-.BI --radiuslisten 
+.BI radiuslisten 
 is omitted then the NAS-IP-Address attribute will be set to "0.0.0.0"
 and the source IP address of the radius requests will be determined by
 the operating system routing tables.
@@ -305,6 +329,20 @@ secret should be changed in order not to compromise security.
 Network access server identifier (default=nas01).
 
 .TP
+.BI --radiusnasip " host"
+IP address to report in NAS-IP-Address attribute. Defaults to the IP address
+specified by the 
+.BI radiuslisten
+option.
+
+.TP
+.BI --radiuscalled " name"
+Name to report in Called-Station-ID attribute. Defaults to mac address
+of wireless interface which can be specified by the
+.BI dhcpmac
+option.
+
+.TP
 .BI --radiuslocationid " id"
 WISPr Location ID. Should be in the format: isocc=<ISO_Country_Code>,
 cc=<E.164_Country_Code>,ac=<E.164_Area_Code>,network=<ssid/ZONE>. This
@@ -333,9 +371,9 @@ UDP port to listen to for accepting radius disconnect requests.
 If this option is given no check is performed on the source IP address
 of radius disconnect requests. Otherwise it is checked that radius
 disconnect requests originate from 
-.BI --radiusserver1
+.BI radiusserver1
 or
-.BI --radiusserver2.
+.BI radiusserver2.
 
 
 .TP
@@ -354,7 +392,34 @@ server will not accept radius requests.
 .TP
 .BI --proxysecret " secret"
 Radius shared secret for clients. If not specified it defaults to
-.BI --radiussecret.
+.BI radiussecret.
+
+
+.TP
+.BI --confusername " username"
+If
+.BI confusername
+is specified together with
+.BI confpassword
+chillispot will at regular intervals specified by the
+.BI interval
+option query the radius server for configuration information. The
+reply from the radius server must have the Service-Type attribute set
+to ChilliSpot-Authorize-Only in order to have any effect. Currently
+ChilliSpot-UAM-Allowed, ChilliSpot-MAC-Allowed and ChilliSpot-Interval
+is supported. These attributes override the
+.BI uamallowed
+,
+.BI macallowed
+and
+.BI interval
+options respectively.
+
+.TP
+.BI --confpassword " password"
+See under the 
+.BI confusername
+option.
 
 .TP
 .BI --dhcpif " dev"
@@ -399,7 +464,7 @@ URL of web server to use for authenticating clients.
 .TP
 .BI --uamhomepage " url"
 URL of homepage to redirect unauthenticated users to. If not specified this defaults to 
-.BI --uamserver.
+.BI uamserver.
 
 .TP
 .BI --uamsecret " secret"
@@ -449,7 +514,7 @@ DNS servers specified by the
 and
 .BI dns2
 options. If the
-.BI --uamanydns
+.BI uamanydns
 option is given ChilliSpot will allow the client to use all DNS
 servers. This is convenient for clients which are configured to
 use a fixed set of DNS servers. For security reasons this option
@@ -462,11 +527,11 @@ If this option is given ChilliSpot will try to authenticate all users
 based on their mac address alone. The User-Name sent to the radius
 server will consist of the MAC address and an optional suffix which
 is specified by the
-.BI --macsuffix
+.BI macsuffix
 option. If the 
-.BI --macauth
+.BI macauth
 option is specified the 
-.BI --macallowed
+.BI macallowed
 option is ignored.
 
 .TP
@@ -478,11 +543,11 @@ Example:
 
 The User-Name sent to the radius server will consist of the MAC address
 and an optional suffix which is specified by the
-.BI --macsuffix
+.BI macsuffix
 option. If the 
-.BI --macauth
+.BI macauth
 option is specified the 
-.BI --macallowed
+.BI macallowed
 option is ignored.
 
 It is possible to specify the 

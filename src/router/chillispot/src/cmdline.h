@@ -70,6 +70,10 @@ struct gengetopt_args_info
   char * radiussecret_orig;	/* Radius shared secret original value given at command line.  */
   char * radiusnasid_arg;	/* Radius NAS-Identifier (default='nas01').  */
   char * radiusnasid_orig;	/* Radius NAS-Identifier original value given at command line.  */
+  char * radiusnasip_arg;	/* Radius NAS-IP-Address.  */
+  char * radiusnasip_orig;	/* Radius NAS-IP-Address original value given at command line.  */
+  char * radiuscalled_arg;	/* Radius Called-Station-ID.  */
+  char * radiuscalled_orig;	/* Radius Called-Station-ID original value given at command line.  */
   char * radiuslocationid_arg;	/* WISPr Location ID.  */
   char * radiuslocationid_orig;	/* WISPr Location ID original value given at command line.  */
   char * radiuslocationname_arg;	/* WISPr Location Name.  */
@@ -87,6 +91,10 @@ struct gengetopt_args_info
   char * proxyclient_orig;	/* IP address of proxy client(s) original value given at command line.  */
   char * proxysecret_arg;	/* Radius proxy shared secret.  */
   char * proxysecret_orig;	/* Radius proxy shared secret original value given at command line.  */
+  char * confusername_arg;	/* Username for remote config.  */
+  char * confusername_orig;	/* Username for remote config original value given at command line.  */
+  char * confpassword_arg;	/* Password for remote config.  */
+  char * confpassword_orig;	/* Password for remote config original value given at command line.  */
   char * dhcpif_arg;	/* Local Ethernet interface.  */
   char * dhcpif_orig;	/* Local Ethernet interface original value given at command line.  */
   char * dhcpmac_arg;	/* Interface MAC address.  */
@@ -141,6 +149,8 @@ struct gengetopt_args_info
   int radiusacctport_given ;	/* Whether radiusacctport was given.  */
   int radiussecret_given ;	/* Whether radiussecret was given.  */
   int radiusnasid_given ;	/* Whether radiusnasid was given.  */
+  int radiusnasip_given ;	/* Whether radiusnasip was given.  */
+  int radiuscalled_given ;	/* Whether radiuscalled was given.  */
   int radiuslocationid_given ;	/* Whether radiuslocationid was given.  */
   int radiuslocationname_given ;	/* Whether radiuslocationname was given.  */
   int radiusnasporttype_given ;	/* Whether radiusnasporttype was given.  */
@@ -150,6 +160,8 @@ struct gengetopt_args_info
   int proxyport_given ;	/* Whether proxyport was given.  */
   int proxyclient_given ;	/* Whether proxyclient was given.  */
   int proxysecret_given ;	/* Whether proxysecret was given.  */
+  int confusername_given ;	/* Whether confusername was given.  */
+  int confpassword_given ;	/* Whether confpassword was given.  */
   int dhcpif_given ;	/* Whether dhcpif was given.  */
   int dhcpmac_given ;	/* Whether dhcpmac was given.  */
   int lease_given ;	/* Whether lease was given.  */
