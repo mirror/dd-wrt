@@ -31,15 +31,19 @@
 #$userpassword=1;
 
 # Our own path
-$loginpath = "/cgi-bin/hotspotlogin.cgi";
+$loginpath = $ENV{'SCRIPT_URL'};
 
 use Digest::MD5  qw(md5 md5_hex md5_base64);
 
 # Make sure that the form parameters are clean
 $OK_CHARS='-a-zA-Z0-9_.@&=%!';
-$_ = $input = <STDIN>;
+$| = 1;
+if ($ENV{'CONTENT_LENGTH'}) {
+    read (STDIN, $_, $ENV{'CONTENT_LENGTH'});
+}
 s/[^$OK_CHARS]/_/go;
 $input = $_;
+
 
 # Make sure that the get query parameters are clean
 $OK_CHARS='-a-zA-Z0-9_.@&=%!';
@@ -151,7 +155,7 @@ print "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">
   <meta http-equiv=\"Cache-control\" content=\"no-cache\">
   <meta http-equiv=\"Pragma\" content=\"no-cache\">";
     if ((defined $uamsecret) && defined($userpassword)) {
-	print "  <meta http-equiv=\"refresh\" content=\"0;url=http://$uamip:$uamport/logon?username=$username&password=$pappassword\">";
+	print "  <meta http-equiv=\"refresh\" content=\"0;url=http://$uamip:$uamport/logon?username=$username&password=$pappassword&userurl=$userurl\">";
     } else {
 	print "  <meta http-equiv=\"refresh\" content=\"0;url=http://$uamip:$uamport/logon?username=$username&response=$response&userurl=$userurl\">";
     }
@@ -329,6 +333,9 @@ print "Content-type: text/html\n\n
         if (redirurl) {
           opener.location = redirurl;
         }
+        else if (userurl) {
+          opener.location = userurl;
+        }
         else if (opener.home) {
           opener.home();
         }
@@ -385,7 +392,7 @@ if ($result == 2 || $result == 5) {
   <INPUT TYPE=\"hidden\" NAME=\"challenge\" VALUE=\"$challenge\">
   <INPUT TYPE=\"hidden\" NAME=\"uamip\" VALUE=\"$uamip\">
   <INPUT TYPE=\"hidden\" NAME=\"uamport\" VALUE=\"$uamport\">
-  <INPUT TYPE=\"hidden\" NAME=\"userurl\" VALUE=\"$userurl\">
+  <INPUT TYPE=\"hidden\" NAME=\"userurl\" VALUE=\"$userurldecode\">
   <center>
   <table border=\"0\" cellpadding=\"5\" cellspacing=\"0\" style=\"width: 217px;\">
     <tbody>

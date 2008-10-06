@@ -1,5 +1,37 @@
 /* 
  * TUN interface functions.
+ *
+ * Copyright (c) 2006, Jens Jakobsen 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *   Redistributions of source code must retain the above copyright notice,
+ *   this list of conditions and the following disclaimer.
+ *
+ *   Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the distribution.
+ *
+ *   Neither the names of copyright holders nor the names of its contributors
+ *   may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *
  * Copyright (C) 2002, 2003, 2004 Mondru AB.
  * 
  * The contents of this file may be used under the terms of the GNU
@@ -50,7 +82,7 @@ typedef u_int8_t __u8;
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
-#elif defined (__FreeBSD__)
+#elif defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__)
 #include <net/if.h>
 #include <net/if_tun.h>
 
@@ -338,7 +370,7 @@ int tun_addaddr(struct tun_t *this,
   this->addrs++;
   return 0;
 
-#elif defined (__FreeBSD__) || defined (__APPLE__)
+#elif defined (__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
 
   int fd;
   struct ifaliasreq      areq;
@@ -417,7 +449,7 @@ int tun_setaddr(struct tun_t *this,
 #if defined(__linux__)
   ifr.ifr_netmask.sa_family = AF_INET;
 
-#elif defined(__FreeBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
   ((struct sockaddr_in *) &ifr.ifr_addr)->sin_len = 
     sizeof (struct sockaddr_in);
   ((struct sockaddr_in *) &ifr.ifr_dstaddr)->sin_len = 
@@ -469,7 +501,7 @@ int tun_setaddr(struct tun_t *this,
     ((struct sockaddr_in *) &ifr.ifr_netmask)->sin_addr.s_addr = 
       netmask->s_addr;
 
-#elif defined(__FreeBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
     ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr.s_addr = 
       netmask->s_addr;
 
@@ -498,7 +530,7 @@ int tun_setaddr(struct tun_t *this,
 
   tun_sifflags(this, IFF_UP | IFF_RUNNING);
 
-#if defined(__FreeBSD__) || defined (__APPLE__)
+#if defined(__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
   tun_addroute(this, dstaddr, addr, netmask);
   this->routes = 1;
 #endif
@@ -557,7 +589,7 @@ int tun_route(struct tun_t *this,
   close(fd);
   return 0;
   
-#elif defined(__FreeBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
 
 struct {
   struct rt_msghdr rt;
@@ -646,7 +678,7 @@ int tun_new(struct tun_t **tun)
 #if defined(__linux__)
   struct ifreq ifr;
 
-#elif defined(__FreeBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
   char devname[IFNAMSIZ+5]; /* "/dev/" + ifname */
   int devnum;
   struct ifaliasreq areq;
@@ -694,7 +726,7 @@ int tun_new(struct tun_t **tun)
   ioctl((*tun)->fd, TUNSETNOCSUM, 1); /* Disable checksums */
   return 0;
   
-#elif defined(__FreeBSD__) || defined (__APPLE__)
+#elif defined(__FreeBSD__) defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
 
   /* Find suitable device */
   for (devnum = 0; devnum < 255; devnum++) { /* TODO 255 */ 
@@ -826,7 +858,7 @@ int tun_set_cb_ind(struct tun_t *this,
 int tun_decaps(struct tun_t *this)
 {
 
-#if defined(__linux__) || defined (__FreeBSD__) || defined (__APPLE__)
+#if defined(__linux__) || defined (__FreeBSD__) || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
 
   unsigned char buffer[PACKET_MAX];
   int status;
@@ -854,8 +886,13 @@ int tun_decaps(struct tun_t *this)
     return -1;
   }
 
+/* tun interface adds 4 bytes to front of packet under OpenBSD */
   if (this->cb_ind)
+#if defined (__OpenBSD__)
+    return this->cb_ind(this, buffer+4, sbuf.len);
+#else
     return this->cb_ind(this, buffer, sbuf.len);
+#endif
 
   return 0;
   
@@ -867,7 +904,17 @@ int tun_decaps(struct tun_t *this)
 int tun_encaps(struct tun_t *tun, void *pack, unsigned len)
 {
 
-#if defined(__linux__) || defined (__FreeBSD__) || defined (__APPLE__)
+#if defined (__OpenBSD__)
+
+  unsigned char buffer[PACKET_MAX+4];
+
+/* TODO: Can we user writev here to be more efficient??? */
+  *((long*)(&buffer))=htonl(AF_INET);
+  memcpy(&buffer[4], pack, PACKET_MAX);
+
+  return write(tun->fd, buffer, len+4);
+
+#elif defined(__linux__) || defined (__FreeBSD__)  || defined (__NetBSD__) || defined (__APPLE__)
 
   return write(tun->fd, pack, len);
 

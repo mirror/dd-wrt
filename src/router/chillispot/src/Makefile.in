@@ -174,9 +174,8 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 
 # add -pg to enable gprof
-AM_CFLAGS = -D_GNU_SOURCE -fno-builtin -ansi -DSBINDIR='"$(sbindir)"' 
+AM_CFLAGS = -D_GNU_SOURCE -fno-builtin -DSBINDIR='"$(sbindir)"' 
 chilli_SOURCES = chilli.c defs.h tun.c tun.h cmdline.c cmdline.h ippool.c ippool.h radius.h radius.c md5.c md5.h redir.h redir.c dhcp.c dhcp.h syserr.c syserr.h iphash.c iphash.h lookup.c lookup.h
-chilli_LDFLAGS = -lcrypt
 all: all-am
 
 .SUFFIXES:
@@ -461,6 +460,8 @@ uninstall-am: uninstall-info-am uninstall-sbinPROGRAMS
 	tags uninstall uninstall-am uninstall-info-am \
 	uninstall-sbinPROGRAMS
 
+
+# chilli_LDFLAGS = -lcrypt
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

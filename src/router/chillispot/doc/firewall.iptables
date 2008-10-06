@@ -19,6 +19,12 @@ IPTABLES="/sbin/iptables"
 EXTIF="eth0"
 INTIF="eth1"
 
+#Flush all rules
+$IPTABLES -F 
+$IPTABLES -F -t nat
+$IPTABLES -F -t mangle
+
+#Set default behaviour
 $IPTABLES -P INPUT DROP
 $IPTABLES -P FORWARD ACCEPT
 $IPTABLES -P OUTPUT ACCEPT
@@ -40,6 +46,9 @@ $IPTABLES -A INPUT -p tcp -m tcp --dport 443 --syn -j ACCEPT
 
 #Allow 3990 on other interfaces (input).
 $IPTABLES -A INPUT -p tcp -m tcp --dport 3990 --syn -j ACCEPT
+
+#Allow ICMP echo on other interfaces (input).
+$IPTABLES -A INPUT -p icmp --icmp-type echo-request -j ACCEPT
 
 #Allow everything on loopback interface.
 $IPTABLES -A INPUT -i lo -j ACCEPT
