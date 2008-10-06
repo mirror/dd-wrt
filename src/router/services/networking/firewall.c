@@ -718,12 +718,8 @@ static void nat_postrouting( void )
 
 	    loopmask = getmask( nmask );
 
-	    save2file
-		( "-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
-		  lanface );
-	    save2file
-		( "-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j MASQUERADE\n",
-		  lanface, lan_cclass, loopmask, lan_cclass, loopmask );
+	    save2file( "-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",lanface );
+	    save2file( "-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j MASQUERADE\n",lanface, lan_cclass, loopmask, lan_cclass, loopmask );
 	    char *next;
 	    char dev[16];
 	    char var[80];
