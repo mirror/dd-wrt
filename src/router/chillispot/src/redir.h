@@ -61,6 +61,7 @@
 #define REDIR_STATUS     7
 #define REDIR_MSDOWNLOAD 25
 
+
 #define REDIR_ALREADY        50 /* Reply to /logon while allready logged on */
 #define REDIR_FAILED_REJECT  51 /* Reply to /logon if authentication reject */
 #define REDIR_FAILED_OTHER   52 /* Reply to /logon if authentication timeout */
@@ -137,6 +138,8 @@ struct redir_t {
   uint16_t radiusacctport;
   char *radiussecret;
   char *radiusnasid;
+  struct in_addr radiusnasip;
+  char *radiuscalled;
   char* radiuslocationid;
   char* radiuslocationname;
   int radiusnasporttype;
@@ -182,6 +185,7 @@ extern void redir_set(struct redir_t *redir, int debug,
 		      struct in_addr *radiusserver1,
 		      uint16_t radiusauthport, uint16_t radiusacctport,
 		      char* radiussecret, char* radiusnasid,
+		      struct in_addr *radiusnasip, char* radiuscalled,
 		      char* radiuslocationid, char* radiuslocationname,
 		      int radiusnasporttype);
 
