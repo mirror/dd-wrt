@@ -1986,6 +1986,15 @@ BCMINITFN (initvars_srom_sb) (sb_t * sbh, osl_t * osh, void *curmap,
 	}
     }
 #endif /* BCM4325 */
+#ifdef BCM4322
+	if (sbh->chip == BCM4322_CHIP_ID) {
+		/* Access OTP if it is present and programmed */
+		if ((oh = otp_init(sbh)) != NULL && (otp_status(oh) & OTPS_GUP_SW)) {
+			sz = otp_size(oh);
+			sel = 1;
+		}
+	}
+#endif	/* BCM4322 */
 
   /* Read CIS in OTP/SPROM */
   if (sel != 0)

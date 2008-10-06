@@ -1015,25 +1015,6 @@ pktsetprio (void *pkt, bool update_vtag)
 	  uint8 *ip_body = pktdata + sizeof (struct ethervlan_header);
 	  uint8 tos_tc = IP_TOS (ip_body);
 	  dscp_prio = (int) (tos_tc >> IPV4_TOS_PREC_SHIFT);
-	  if ((IP_VER (ip_body) == IP_VER_4)
-	      && (IPV4_PROT (ip_body) == IP_PROT_TCP))
-	    {
-	      int ip_len;
-	      int src_port;
-	      bool src_port_exc;
-	      uint8 *tcp_hdr;
-
-	      ip_len = IPV4_PAYLOAD_LEN (ip_body);
-	      tcp_hdr = IPV4_NO_OPTIONS_PAYLOAD (ip_body);
-	      src_port = TCP_SRC_PORT (tcp_hdr);
-	      src_port_exc = (src_port == 10110) || (src_port == 10120) ||
-		(src_port == 10130) || (src_port == 10140);
-
-	      if ((ip_len == 40) && src_port_exc && TCP_IS_ACK (tcp_hdr))
-		{
-		  dscp_prio = 7;
-		}
-	    }
 	}
 
       /* DSCP priority gets precedence over 802.1P (vlan tag) */
@@ -1068,25 +1049,6 @@ pktsetprio (void *pkt, bool update_vtag)
       uint8 tos_tc = IP_TOS (ip_body);
       priority = (int) (tos_tc >> IPV4_TOS_PREC_SHIFT);
       rc |= PKTPRIO_DSCP;
-      if ((IP_VER (ip_body) == IP_VER_4)
-	  && (IPV4_PROT (ip_body) == IP_PROT_TCP))
-	{
-	  int ip_len;
-	  int src_port;
-	  bool src_port_exc;
-	  uint8 *tcp_hdr;
-
-	  ip_len = IPV4_PAYLOAD_LEN (ip_body);
-	  tcp_hdr = IPV4_NO_OPTIONS_PAYLOAD (ip_body);
-	  src_port = TCP_SRC_PORT (tcp_hdr);
-	  src_port_exc = (src_port == 10110) || (src_port == 10120) ||
-	    (src_port == 10130) || (src_port == 10140);
-
-	  if ((ip_len == 40) && src_port_exc && TCP_IS_ACK (tcp_hdr))
-	    {
-	      priority = 7;
-	    }
-	}
     }
 
   ASSERT (priority >= 0 && priority <= MAXPRIO);

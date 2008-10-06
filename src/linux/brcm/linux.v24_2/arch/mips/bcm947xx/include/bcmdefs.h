@@ -97,7 +97,7 @@ extern bool bcmreclaimed;
  * There is a compile time check in wlc.c which ensure that this value is at least as big
  * as TXOFF. This value is used in dma_rxfill (hnddma.c).
  */
-#define BCMEXTRAHDROOM 160
+#define BCMEXTRAHDROOM 164
 
 /* Headroom required for dongle-to-host communication.  Packets allocated
  * locally in the dongle (e.g. for CDC ioctls or RNDIS messages) should

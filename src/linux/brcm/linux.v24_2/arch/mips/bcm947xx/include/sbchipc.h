@@ -866,7 +866,7 @@ typedef volatile struct {
 #define RES5354_BB_PLL_PU		19	/* 0x80000 */
 #endif	/* BCM5354 */
 
-#if defined(BCM4325) || defined(BCM4312)
+#if defined(BCM4325) || defined(BCMPMU)
 /* pllcontrol registers */
 /* ndiv_pwrdn, pwrdn_ch<x>, refcomp_pwrdn, dly_ch<x>, p1div, p2div, _bypsss_sdmod */
 #define PMU1_PLL0_PLLCTL0		0
@@ -913,6 +913,10 @@ typedef volatile struct {
 
 #endif	
 
+/* PMU rev 2 control words */
+#define PMU2_PHY_PLL_PLLCTL		4
+#define PMU2_SB_PLL_PLLCTL		10
+
 #if defined(BCM4325)
 #define RES4325_BUCK_BOOST_BURST	0	/* 0x00000001 */
 #define RES4325_CBUCK_BURST		1	/* 0x00000002 */
@@ -953,7 +957,8 @@ typedef volatile struct {
 #define CST4325_PMUTOP_2B_SHIFT   	9
 #endif	/* BCM4325 */
 
-#if defined(BCM4312)
+/* all PMU chips with little memory constraint */
+#if defined(BCMPMU)
 #define RES4312_SWITCHER_BURST		0	/* 0x00000001 */
 #define RES4312_SWITCHER_PWM    	1	/* 0x00000002 */
 #define RES4312_PA_REF_LDO		2	/* 0x00000004 */
@@ -969,7 +974,48 @@ typedef volatile struct {
 #define RES4312_BB_PLL_FILTBYP		12	/* 0x00001000 */
 #define RES4312_RF_PLL_FILTBYP		13	/* 0x00002000 */
 #define RES4312_HT_AVAIL		14	/* 0x00004000 */
-#endif	/* BCM4312 */
+
+#define RES4322_RF_LDO			0
+#define RES4322_ILP_REQUEST		1
+#define RES4322_XTAL_PU			2
+#define RES4322_ALP_AVAIL		3
+#define RES4322_SB_PLL_ON		4
+#define RES4322_HT_SB_AVAIL		5
+#define RES4322_PHY_PLL_ON		6
+#define RES4322_HT_PHY_AVAIL		7
+#define RES4322_OTP_PU			8
+
+/* Chip specific ChipStatus register bits */
+#define CST4322_XTAL_FREQ_20_40MHZ	0x00000020
+#define CST4322_SPROM_OTP_SEL_MASK	0x000000c0
+#define CST4322_SPROM_OTP_SEL_SHIFT	6
+#define CST4322_NO_SPROM_OTP		0	/* no OTP, no SPROM */
+#define CST4322_SPROM_PRESENT		1	/* SPROM is present */
+#define CST4322_OTP_PRESENT		2	/* OTP is present */
+#define CST4322_PCI_OR_USB		0x00000100
+#define CST4322_BOOT_MASK		0x00000600
+#define CST4322_BOOT_SHIFT		9
+#define CST4322_BOOT_FROM_SRAM		0	/* boot from SRAM, ARM in reset */
+#define CST4322_BOOT_FROM_ROM		1	/* boot from ROM */
+#define CST4322_BOOT_FROM_FLASH		2	/* boot from FLASH */
+#define CST4322_BOOT_FROM_INVALID	3
+#define CST4322_ILP_DIV_EN		0x00000800
+#define CST4322_FLASH_TYPE_MASK		0x00001000
+#define CST4322_FLASH_TYPE_SHIFT	12
+#define CST4322_FLASH_TYPE_SHIFT_ST	0	/* ST serial FLASH */
+#define CST4322_FLASH_TYPE_SHIFT_ATMEL	1	/* ATMEL flash */
+#define CST4322_ARM_TAP_SEL		0x00002000
+#define CST4322_RES_INIT_MODE_MASK	0x0000c000
+#define CST4322_RES_INIT_MODE_SHIFT	14
+#define CST4322_RES_INIT_MODE_ILPAVAIL	0	/* resinitmode: ILP available */
+#define CST4322_RES_INIT_MODE_ILPREQ	1	/* resinitmode: ILP request */
+#define CST4322_RES_INIT_MODE_ALPAVAIL	2	/* resinitmode: ALP available */
+#define CST4322_RES_INIT_MODE_HTAVAIL	3	/* resinitmode: HT avilable */
+#define CST4322_PCIPLLCLK_GATING	0x00010000
+#define CST4322_CLK_SWITCH_PCI_TO_ALP	0x00020000
+#define CST4322_PCI_CARDBUS_MODE	0x00040000
+
+#endif	/* BCM4322 || BCMPMU */
 
 
 /*
