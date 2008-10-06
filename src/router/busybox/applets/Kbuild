@@ -1,0 +1,34 @@
+# Makefile for busybox
+#
+# Copyright (C) 1999-2005 by Erik Andersen <andersen@codepoet.org>
+#
+# Licensed under the GPL v2, see the file LICENSE in this tarball.
+
+obj-y :=
+obj-y += applets.o
+
+hostprogs-y:=
+hostprogs-y += usage applet_tables
+
+always:= $(hostprogs-y)
+
+# Generated files need additional love
+
+HOSTCFLAGS_usage.o = -I$(srctree)/include
+
+applets/applets.o: include/usage_compressed.h include/applet_tables.h
+
+applets/usage:         .config $(srctree)/applets/usage_compressed
+applets/applet_tables: .config
+
+quiet_cmd_gen_usage_compressed = GEN     include/usage_compressed.h
+      cmd_gen_usage_compressed = $(srctree)/applets/usage_compressed include/usage_compressed.h applets
+
+include/usage_compressed.h: applets/usage $(srctree)/applets/usage_compressed
+	$(call cmd,gen_usage_compressed)
+
+quiet_cmd_gen_applet_tables = GEN     include/applet_tables.h
+      cmd_gen_applet_tables = applets/applet_tables include/applet_tables.h
+
+include/applet_tables.h: applets/applet_tables
+	$(call cmd,gen_applet_tables)
