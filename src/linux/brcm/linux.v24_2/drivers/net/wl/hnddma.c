@@ -513,7 +513,10 @@ dma_attach (osl_t * osh, char *name, sb_t * sbh, void *dmaregstx,
       else
 	{
 	  /* pci(DMA32/DMA64) or pcie with DMA32 */
-	  di->ddoffsetlow = SB_PCI_DMA;
+	    if (sbh->chip == BCM4322_CHIP_ID)
+		    di->ddoffsetlow = SB_PCI_DMA2;
+		else
+		    di->ddoffsetlow = SB_PCI_DMA;
 	  di->ddoffsethigh = 0;
 	}
       di->dataoffsetlow = di->ddoffsetlow;
