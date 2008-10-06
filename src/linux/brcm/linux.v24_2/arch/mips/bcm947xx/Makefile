@@ -3,7 +3,7 @@
 # under Linux.
 #
 
-EXTRA_CFLAGS+=-I$(TOPDIR)/arch/mips/bcm947xx/include -DBCMDRIVER -DBCM5354 -DBCMWPA2
+EXTRA_CFLAGS+=-I$(TOPDIR)/arch/mips/bcm947xx/include -DBCMDRIVER -DBCM5354 -DBCMWPA2 -DBCMPMU -DBCM4322
 
 O_TARGET        := bcm947xx.o
 
