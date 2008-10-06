@@ -170,6 +170,9 @@ int start_pptpd( void )
 	mss = atoi( nvram_safe_get( "wan_mtu" ) ) - 40 - 108;
     else
 	mss = 1500 - 40 - 108;
+    char bcast[32];
+    strcpy(bcast,nvram_safe_get("lan_ipaddr"));
+    get_broadcast(bcast,nvram_safe_get("lan_netmask"));
 
     fp = fopen( "/tmp/pptpd/ip-up", "w" );
     fprintf( fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
@@ -185,7 +188,8 @@ int start_pptpd( void )
 	     "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
 	     "iptables -I INPUT -i $1 -j ACCEPT\n"
 	     "iptables -I FORWARD -i $1 -j ACCEPT\n"
-	     "%s\n", mss + 1, mss,
+	     "iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	     
+	     "%s\n", mss + 1, mss, bcast,
 	     nvram_get( "pptpd_ipup_script" ) ?
 	     nvram_get( "pptpd_ipup_script" ) : "" );
     fclose( fp );
@@ -194,7 +198,8 @@ int start_pptpd( void )
 	     "iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
 	     "iptables -D INPUT -i $1 -j ACCEPT\n"
 	     "iptables -D FORWARD -i $1 -j ACCEPT\n"
-	     "%s\n", mss + 1, mss,
+	     "iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	     
+	     "%s\n", mss + 1, mss, bcast, 
 	     nvram_get( "pptpd_ipdown_script" ) ?
 	     nvram_get( "pptpd_ipdown_script" ) : "" );
     fclose( fp );
