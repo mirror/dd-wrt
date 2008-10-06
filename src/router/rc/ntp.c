@@ -110,12 +110,12 @@ int do_ntp( void )		// called from ntp_main and
     tv.tv_sec += ( int )( fofs * 3600 );	// <-- cast it or this will
     // be off (?)
 
-    if( ( dst >= 1 ) && ( dst <= 7 ) )
+    if( ( dst >= 1 ) && ( dst <= 8 ) )
     {
 	struct tm *tm = localtime( &tv.tv_sec );
 	int mon = tm->tm_mon + 1;
 	int day = tm->tm_mday;
-	int yi = tm->tm_year + 1900 - 2006;	// dst table starts at 2006
+	int yi = tm->tm_year + 1900 - 2008;	// dst table starts at 2008
 	int mbeg = dstEntry[dst].startMonth;
 	int mend = dstEntry[dst].endMonth;
 	int dbeg = dstEntry[dst].startDay[yi];
