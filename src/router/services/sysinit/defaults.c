@@ -516,6 +516,12 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl0_nreqd", "0", 0},	/* Require 802.11n support */
     {"wl0_vlan_prio_mode", "off", 0},	/* VLAN Priority support */
     {"wl0_leddc", "0x640000", 0},	/* 100% duty cycle for LED on router */
+    { "wl_rxstreams", "0", 0},		/* 802.11n Rx Streams, 0 is invalid, WLCONF will
+    					 * change it to a radio appropriate default
+    					 */
+    { "wl_txstreams", "0", 0},		/* 802.11n Tx Streams 0, 0 is invalid, WLCONF will
+    					 * change it to a radio appropriate default
+    					 */
     {"wl0_sta_retry_time", "5", 0},	/* 100% duty cycle for LED on router */
 #endif
 #ifdef HAVE_DDLAN
@@ -2052,6 +2058,19 @@ struct nvram_tuple srouter_defaults[] = {
 
     {"wl_maxassoc", "128", 0},	/* Max associations driver could support */
     {"wl1_maxassoc", "128", 0},	/* Max associations driver could support */
+
+	/* Per AC Tx parameters */
+	{ "wl_wme_txp_be", "7 3 4 2 0", 0 },	/* WME AC_BE Tx parameters */
+	{ "wl_wme_txp_bk", "7 3 4 2 0", 0 },	/* WME AC_BK Tx parameters */
+	{ "wl_wme_txp_vi", "7 3 4 2 0", 0 },	/* WME AC_VI Tx parameters */
+	{ "wl_wme_txp_vo", "7 3 4 2 0", 0 },	/* WME AC_VO Tx parameters */
+
+	{ "wl1_wme_txp_be", "7 3 4 2 0", 0 },	/* WME AC_BE Tx parameters */
+	{ "wl1_wme_txp_bk", "7 3 4 2 0", 0 },	/* WME AC_BK Tx parameters */
+	{ "wl1_wme_txp_vi", "7 3 4 2 0", 0 },	/* WME AC_VI Tx parameters */
+	{ "wl1_wme_txp_vo", "7 3 4 2 0", 0 },	/* WME AC_VO Tx parameters */
+
+
 #ifdef HAVE_ZEROIP
     {"shat_enable", "0", 0},
     {"shat_range", "192.168.2.96/27", 0},

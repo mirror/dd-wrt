@@ -1728,11 +1728,24 @@ wl_adv.label23="Transmission Minimum Rate";
 wl_adv.label22="Bluetooth Coexistence Mode";
 wl_adv.label24="Antenna Alignment";
 wl_adv.table1="EDCA AP Parameters (AP to Client)";
+
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
+
+wl_adv.table3="WMM Tx retry limits, fallback limits and max rate parameters.";
+wl_adv.txpcol1="S. Retry";
+wl_adv.txpcol2="S. Fallbk";
+wl_adv.txpcol3="L. Retry";
+wl_adv.txpcol4="L. Fallbk";
+wl_adv.txpcol5="Max Rate";
+wl_adv.txprow1="AC BE TX Parameters";
+wl_adv.txprow2="AC BK TX Parameters";
+wl_adv.txprow3="AC VI TX Parameters";
+wl_adv.txprow4="AC VO TX Parameters";
+
 wl_adv.col6="Admin Forced";
 wl_adv.row1="Background";
 wl_adv.row2="Best Effort";

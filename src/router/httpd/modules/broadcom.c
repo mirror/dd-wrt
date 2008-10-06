@@ -296,6 +296,10 @@ void Initnvramtab(  )
 		    {
 			tmp->validatename = "validate_wl_wme_params";
 		    }
+		    if( !stricmp( tmpstr, "WMETXPARAM" ) )
+		    {
+			tmp->validatename = "validate_wl_wme_tx_params";
+		    }
 		    if( !stricmp( tmpstr, "PASSWORD" ) )
 		    {
 			tmp->validatename = "validate_password";

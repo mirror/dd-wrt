@@ -881,6 +881,89 @@ void validate_lan_ipaddr( webs_t wp, char *value, struct variable *v )
     nvram_set( "lan_netmask", lan_netmask );
 
 }
+#define SRL_VALID(v)        (((v) > 0) && ((v) <= 15))
+#define SFBL_VALID(v)       (((v) > 0) && ((v) <= 15))
+#define LRL_VALID(v)        (((v) > 0) && ((v) <= 15))
+#define LFBL_VALID(v)       (((v) > 0) && ((v) <= 15))
+
+void
+validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v, char *varname)
+{
+	int srl = 0, sfbl = 0, lrl = 0, lfbl = 0, max_rate = 0, nmode = 0;
+	char *s, *errmsg;
+	char tmp[256];
+
+
+
+	/* return if wme is not enabled */
+	if (!(s = websGetVar(wp, "wl0_wme", NULL))) {
+		return;
+	} else if (!strcmp(s, "off")) {
+		return;
+	}
+
+	/* return if afterburner enabled */
+	if ((s = websGetVar(wp, "wl0_afterburner", NULL)) && (!strcmp(s, "auto"))) {
+		return;
+	}
+
+	if (!value || atoi(value) != 5) {		/* Number of INPUTs */
+		return;
+	}
+
+	s = nvram_get(v->name);
+
+	if (s != NULL)
+		sscanf(s, "%d %d %d %d %d", &srl, &sfbl, &lrl, &lfbl, &max_rate);
+
+	if ((value = websGetVar(wp, strcat_r(v->name, "0", tmp), NULL)) != NULL)
+		srl = atoi(value);
+
+	if (!SRL_VALID(srl)) {
+		errmsg = "Short Retry Limit must be in the range 1 to 15";
+	return;
+	}
+
+	if ((value = websGetVar(wp, strcat_r(v->name, "1", tmp), NULL)) != NULL)
+		sfbl = atoi(value);
+
+	if (!SFBL_VALID(sfbl)) {
+		errmsg = "Short Fallback Limit must be in the range 1 to 15";
+	return;
+	}
+
+	if ((value = websGetVar(wp, strcat_r(v->name, "2", tmp), NULL)) != NULL)
+		lrl = atoi(value);
+
+	if (!LRL_VALID(lrl)) {
+		errmsg = "Long Retry Limit must be in the range 1 to 15";
+	return;
+	}
+
+	if ((value = websGetVar(wp, strcat_r(v->name, "3", tmp), NULL)) != NULL)
+		lfbl = atoi(value);
+
+	if (!LFBL_VALID(lfbl)) {
+		errmsg = "Long Fallback Limit must be in the range 1 to 15";
+	return;
+	}
+
+	if ((value = websGetVar(wp, strcat_r(v->name, "4", tmp), NULL)) != NULL)
+		max_rate = atoi(value);
+
+	s = nvram_get("wl0_nmode");
+	if (s != NULL)
+		nmode = atoi(s);
+
+	sprintf(tmp, "%d %d %d %d %d",
+	        srl, sfbl, lrl, lfbl, max_rate);
+
+	nvram_set(v->name, tmp);
+
+
+	return;
+
+}
 
 void validate_wl_wme_params( webs_t wp, char *value, struct variable *v )
 {
