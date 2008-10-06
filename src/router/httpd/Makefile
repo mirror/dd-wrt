@@ -187,6 +187,9 @@ endif
 ifeq ($(CONFIG_FONERA),y)
 CFLAGS += -DHAVE_FONERA
 endif
+ifeq ($(CONFIG_ALPHA),y)
+CFLAGS += -DHAVE_ALPHA
+endif
 ifeq ($(CONFIG_FONERA2200),y)
 CFLAGS += -DHAVE_FONERA2200
 endif
