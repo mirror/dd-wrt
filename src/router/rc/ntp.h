@@ -21,8 +21,8 @@
 
 struct dstTable_
 {
-    unsigned char startDay[17];
-    unsigned char endDay[17];
+    unsigned char startDay[15];
+    unsigned char endDay[15];
     unsigned char startMonth;
     unsigned char endMonth;
     unsigned char diffMonth;
