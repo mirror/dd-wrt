@@ -771,6 +771,7 @@ idx.summt_opt4="Dernier Dim. Octobre - Dernier Dim. Mars";
 idx.summt_opt5="2ème Dim. Mars - Premier Dim. Novembre";
 idx.summt_opt6="Premier Dim. Octobre - 3ème Dim. Novembre";
 idx.summt_opt7="Dernier Dim. Septembre - Premier Dim. Avril";
+idx.summt_opt8="3ème Dim. Octobre - 3ème Dim. Mars";
 idx.portsetup="Gestion du Port WAN";
 idx.wanport="Affectation du Port WAN";
 idx.ntp_client="Client NTP";
