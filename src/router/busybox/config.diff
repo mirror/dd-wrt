@@ -1,0 +1,123 @@
+Index: .config_fonera
+===================================================================
+--- .config_fonera	(revision 10461)
++++ .config_fonera	(working copy)
+@@ -13,6 +13,7 @@
+ # General Configuration
+ #
+ # CONFIG_DESKTOP is not set
++# CONFIG_EXTRA_COMPAT is not set
+ # CONFIG_FEATURE_ASSUME_UNICODE is not set
+ CONFIG_FEATURE_BUFFERS_USE_MALLOC=y
+ # CONFIG_FEATURE_BUFFERS_GO_ON_STACK is not set
+@@ -57,6 +58,7 @@
+ # CONFIG_DMALLOC is not set
+ # CONFIG_EFENCE is not set
+ # CONFIG_INCLUDE_SUSv2 is not set
++# CONFIG_PARSE is not set
+ 
+ #
+ # Installation Options
+@@ -99,6 +101,10 @@
+ #
+ # Archival Utilities
+ #
++# CONFIG_FEATURE_SEAMLESS_LZMA is not set
++# CONFIG_FEATURE_SEAMLESS_BZ2 is not set
++# CONFIG_FEATURE_SEAMLESS_GZ is not set
++# CONFIG_FEATURE_SEAMLESS_Z is not set
+ # CONFIG_AR is not set
+ # CONFIG_FEATURE_AR_LONG_FILENAMES is not set
+ # CONFIG_BUNZIP2 is not set
+@@ -109,17 +115,11 @@
+ # CONFIG_DPKG_DEB is not set
+ # CONFIG_FEATURE_DPKG_DEB_EXTRACT_ONLY is not set
+ # CONFIG_GUNZIP is not set
+-# CONFIG_FEATURE_GUNZIP_UNCOMPRESS is not set
+ # CONFIG_GZIP is not set
+ # CONFIG_RPM2CPIO is not set
+ # CONFIG_RPM is not set
+-# CONFIG_FEATURE_RPM_BZ2 is not set
+ CONFIG_TAR=y
+ CONFIG_FEATURE_TAR_CREATE=y
+-CONFIG_FEATURE_TAR_GZIP=y
+-# CONFIG_FEATURE_TAR_BZIP2 is not set
+-# CONFIG_FEATURE_TAR_LZMA is not set
+-# CONFIG_FEATURE_TAR_COMPRESS is not set
+ # CONFIG_FEATURE_TAR_AUTODETECT is not set
+ # CONFIG_FEATURE_TAR_FROM is not set
+ # CONFIG_FEATURE_TAR_OLDGNU_COMPATIBILITY is not set
+@@ -133,13 +133,6 @@
+ # CONFIG_UNZIP is not set
+ 
+ #
+-# Common options for cpio and tar
+-#
+-# CONFIG_FEATURE_DEB_TAR_GZ is not set
+-# CONFIG_FEATURE_DEB_TAR_BZ2 is not set
+-# CONFIG_FEATURE_DEB_TAR_LZMA is not set
+-
+-#
+ # Coreutils
+ #
+ CONFIG_BASENAME=y
+@@ -217,6 +210,7 @@
+ # CONFIG_SHA1SUM is not set
+ CONFIG_SLEEP=y
+ CONFIG_FEATURE_FANCY_SLEEP=y
++# CONFIG_FEATURE_FLOAT_SLEEP is not set
+ # CONFIG_SORT is not set
+ # CONFIG_FEATURE_SORT_BIG is not set
+ # CONFIG_SPLIT is not set
+@@ -288,8 +282,10 @@
+ # CONFIG_FEATURE_RESIZE_PRINT is not set
+ # CONFIG_SETCONSOLE is not set
+ # CONFIG_FEATURE_SETCONSOLE_LONG_OPTIONS is not set
++# CONFIG_SETFONT is not set
+ # CONFIG_SETKEYCODES is not set
+ # CONFIG_SETLOGCONS is not set
++# CONFIG_SHOWKEY is not set
+ 
+ #
+ # Debian Utilities
+@@ -423,12 +419,16 @@
+ # CONFIG_E2FSCK is not set
+ # CONFIG_FSCK is not set
+ # CONFIG_LSATTR is not set
++# CONFIG_MKE2FS is not set
+ # CONFIG_TUNE2FS is not set
+ # CONFIG_E2LABEL is not set
+ 
+ #
+ # Linux Module Utilities
+ #
++# CONFIG_MODPROBE_SMALL is not set
++# CONFIG_FEATURE_MODPROBE_SMALL_OPTIONS_ON_CMDLINE is not set
++# CONFIG_FEATURE_MODPROBE_SMALL_CHECK_ALREADY_LOADED is not set
+ # CONFIG_DEPMOD is not set
+ # CONFIG_FEATURE_DEPMOD_PRUNE_FANCY is not set
+ # CONFIG_FEATURE_DEPMOD_ALIAS is not set
+@@ -527,6 +527,7 @@
+ # CONFIG_FEATURE_MOUNT_FSTAB is not set
+ # CONFIG_PIVOT_ROOT is not set
+ # CONFIG_RDATE is not set
++# CONFIG_RDEV is not set
+ # CONFIG_READPROFILE is not set
+ # CONFIG_RTCWAKE is not set
+ # CONFIG_SCRIPT is not set
+@@ -685,6 +686,7 @@
+ # CONFIG_NC_EXTRA is not set
+ # CONFIG_NETSTAT is not set
+ # CONFIG_FEATURE_NETSTAT_WIDE is not set
++# CONFIG_FEATURE_NETSTAT_PRG is not set
+ CONFIG_NSLOOKUP=y
+ CONFIG_PING=y
+ # CONFIG_PING6 is not set
+@@ -793,6 +795,7 @@
+ # CONFIG_HUSH_TICK is not set
+ # CONFIG_HUSH_IF is not set
+ # CONFIG_HUSH_LOOPS is not set
++# CONFIG_HUSH_CASE is not set
+ # CONFIG_LASH is not set
+ # CONFIG_MSH is not set
+ 

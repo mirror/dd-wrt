@@ -1,0 +1,4 @@
+d=/bin
+du -m "$d" > logfile.gnu
+busybox du -m "$d" > logfile.bb
+cmp logfile.gnu logfile.bb

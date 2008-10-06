@@ -1,0 +1,593 @@
+diff -urN busybox-1.11.1/Makefile busybox/Makefile
+--- busybox-1.11.1/Makefile	2008-08-13 17:22:25.256043165 +0200
++++ busybox/Makefile	2008-10-06 21:02:11.000000000 +0200
+@@ -450,6 +450,10 @@
+ 		coreutils/libcoreutils/ \
+ 		debianutils/ \
+ 		e2fsprogs/ \
++		e2fsprogs/blkid/ \
++		e2fsprogs/e2p/ \
++		e2fsprogs/ext2fs/ \
++		e2fsprogs/uuid/ \
+ 		editors/ \
+ 		findutils/ \
+ 		init/ \
+@@ -585,7 +589,7 @@
+       "$(CFLAGS) $(CFLAGS_busybox)" \
+       "$(LDFLAGS) $(EXTRA_LDFLAGS)" \
+       "$(core-y)" \
+-      "$(libs-y)" \
++      "$(libs-y) $(LIBRARIES)" \
+       "$(LDLIBS)"
+ 
+ # Generate System.map
+diff -urN busybox-1.11.1/Makefile.flags busybox/Makefile.flags
+--- busybox-1.11.1/Makefile.flags	2008-08-13 17:22:34.524043214 +0200
++++ busybox/Makefile.flags	2008-10-06 21:02:11.000000000 +0200
+@@ -1,6 +1,11 @@
+ # ==========================================================================
+ # Build system
+ # ==========================================================================
++ifndef top_builddir
++top_builddir=$(CURDIR)
++endif
++
++include $(top_builddir)/../.config
+ 
+ BB_VER = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ export BB_VER
+@@ -11,31 +16,38 @@
+ 
+ CPPFLAGS += \
+ 	-Iinclude -Ilibbb \
+-	$(if $(KBUILD_SRC),-Iinclude2 -I$(srctree)/include -I$(srctree)/libbb) \
++	$(if $(KBUILD_SRC),-Iinclude2 -I$(srctree)/include) -I$(srctree)/libbb \
+ 	-include include/autoconf.h \
+ 	-D_GNU_SOURCE -DNDEBUG \
+ 	$(if $(CONFIG_LFS),-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64) \
+ 	-D"BB_VER=KBUILD_STR($(BB_VER))" -DBB_BT=AUTOCONF_TIMESTAMP
+ 
+-CFLAGS += $(call cc-option,-Wall,)
+-CFLAGS += $(call cc-option,-Wshadow,)
+-CFLAGS += $(call cc-option,-Wwrite-strings,)
+-CFLAGS += $(call cc-option,-Wundef,)
+-CFLAGS += $(call cc-option,-Wstrict-prototypes,)
++# flag checks are grouped together to speed the checks up a bit..
++CFLAGS += $(call cc-option,-Wall -Wshadow -Wwrite-strings,)
++CFLAGS += $(call cc-option,-Wundef -Wstrict-prototypes,)
+ CFLAGS += $(call cc-option,-Wunused -Wunused-parameter,)
+-CFLAGS += $(call cc-option,-Wmissing-prototypes -Wmissing-declarations,)
+-# warn about C99 declaration after statement
+-CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
+-# If you want to add more -Wsomething above, make sure that it is
+-# still possible to build bbox without warnings.
++# If you want to add "-Wmissing-prototypes -Wmissing-declarations" above
++# (or anything else for that matter) make sure that it is still possible
++# to build bbox without warnings. Current offender: find.c:alloc_action().
++# Looks more like gcc bug: gcc will warn on it with or without prototype.
++# But still, warning-free compile is a must, or else we will drown
++# in warnings pretty soon.
+ 
+ ifeq ($(CONFIG_WERROR),y)
+-CFLAGS += $(call cc-option,-Werror,)
++#CFLAGS += $(call cc-option,-Werror,)
++else
++# for development, warn a little bit about unused results..
++CPPFLAGS += -D_FORTIFY_SOURCE=2
+ endif
+ # gcc 3.x emits bogus "old style proto" warning on find.c:alloc_action()
+ CFLAGS += $(call cc-ifversion, -ge, 0400, -Wold-style-definition)
+ 
+-CFLAGS += $(call cc-option,-fno-builtin-strlen -finline-limit=0 -fomit-frame-pointer -ffunction-sections -fdata-sections,)
++# gcc emits bogus "no prev proto" warning on find.c:alloc_action()
++ifneq ($(CONFIG_WERROR),y)
++CFLAGS += $(call cc-option,-Wmissing-prototypes -Wmissing-declarations,)
++endif
++
++CFLAGS += $(call cc-option,-Os -fno-builtin-strlen -finline-limit=0 -fomit-frame-pointer -ffunction-sections -fdata-sections,)
+ # -fno-guess-branch-probability: prohibit pseudo-random guessing
+ # of branch probabilities (hopefully makes bloatcheck more stable):
+ CFLAGS += $(call cc-option,-fno-guess-branch-probability,)
+@@ -58,7 +70,7 @@
+ endif
+ 
+ # If arch/$(ARCH)/Makefile did not override it (with, say, -fPIC)...
+-ARCH_FPIC ?= -fpic
++ARCH_FPIC ?= 
+ ARCH_FPIE ?= -fpie
+ ARCH_PIE ?= -pie
+ 
+@@ -98,13 +110,17 @@
+ LDLIBS += dmalloc
+ endif
+ 
+-# If a flat binary should be built, CFLAGS_busybox="-Wl,-elf2flt"
+-# env var should be set for make invocation.
+-# Here we check whether CFLAGS_busybox indeed contains that flag.
+-# (For historical reasons, we also check LDFLAGS, which doesn't
+-# seem to be entirely correct variable to put "-Wl,-elf2flt" into).
+-W_ELF2FLT = -Wl,-elf2flt
+-ifneq (,$(findstring $(W_ELF2FLT),$(LDFLAGS) $(CFLAGS_busybox)))
++#LDFLAGS += -nostdlib
++
++
++ifeq ($(CONFIG_NOMESSAGE),y)
++CFLAGS += -DHAVE_NOMESSAGE
++endif
++CFLAGS += -DNEED_PRINTF
++CFLAGS += $(COPTS)
++
++LDFLAGS_ELF2FLT = -Wl,-elf2flt
++ifneq (,$(findstring $(LDFLAGS_ELF2FLT),$(LDFLAGS)))
+ SKIP_STRIP = y
+ endif
+ 
+diff -urN busybox-1.11.1/applets/applet_tables.c busybox/applets/applet_tables.c
+--- busybox-1.11.1/applets/applet_tables.c	2008-08-13 17:22:33.092043293 +0200
++++ busybox/applets/applet_tables.c	2008-10-06 21:02:11.000000000 +0200
+@@ -43,6 +43,7 @@
+ 	return strcmp(aa->name, bb->name);
+ }
+ 
++
+ int main(int argc, char **argv)
+ {
+ 	int i;
+diff -urN busybox-1.11.1/applets/individual.c busybox/applets/individual.c
+--- busybox-1.11.1/applets/individual.c	2008-08-13 17:22:33.072043222 +0200
++++ busybox/applets/individual.c	2008-10-06 21:02:11.000000000 +0200
+@@ -11,14 +11,25 @@
+ #include <stdlib.h>
+ #include "usage.h"
+ 
++
++#ifdef HAVE_DHCPFWD
++  extern int dhcpforward_main(int argc,char *argv[]);
++#endif
++
+ int main(int argc, char **argv)
+ {
++  char *base = strrchr (argv[0], '/');
++  base = base ? base + 1 : argv[0];
+ 	applet_name = argv[0];
++
+ 	return APPLET_main(argc,argv);
+ }
+ 
++#ifndef HAVE_NOMESSAGE
+ void bb_show_usage(void)
+ {
+-	fputs(APPLET_full_usage "\n", stdout);
++ 	fputs(APPLET_full_usage "\n", stdout);
++
+ 	exit(EXIT_FAILURE);
+ }
++#endif
+\ No newline at end of file
+diff -urN busybox-1.11.1/applets/usage.c busybox/applets/usage.c
+--- busybox-1.11.1/applets/usage.c	2008-08-13 17:22:33.088045625 +0200
++++ busybox/applets/usage.c	2008-10-06 21:02:11.000000000 +0200
+@@ -21,7 +21,6 @@
+ #include "usage.h"
+ #include "applets.h"
+ ;
+-
+ int main(void)
+ {
+ 	write(STDOUT_FILENO, usage_messages, sizeof(usage_messages));
+diff -urN busybox-1.11.1/include/applets.h busybox/include/applets.h
+--- busybox-1.11.1/include/applets.h	2008-08-13 17:22:34.356043130 +0200
++++ busybox/include/applets.h	2008-10-06 21:02:10.000000000 +0200
+@@ -129,8 +129,8 @@
+ USE_DU(APPLET(du, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_DUMPKMAP(APPLET(dumpkmap, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_APP_DUMPLEASES(APPLET(dumpleases, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+-//USE_E2FSCK(APPLET(e2fsck, _BB_DIR_SBIN, _BB_SUID_NEVER))
+-//USE_E2LABEL(APPLET_ODDNAME(e2label, tune2fs, _BB_DIR_SBIN, _BB_SUID_NEVER, e2label))
++USE_E2FSCK(APPLET(e2fsck, _BB_DIR_SBIN, _BB_SUID_NEVER))
++USE_E2LABEL(APPLET_ODDNAME(e2label, tune2fs, _BB_DIR_SBIN, _BB_SUID_NEVER, e2label))
+ USE_ECHO(APPLET_NOFORK(echo, echo, _BB_DIR_BIN, _BB_SUID_NEVER, echo))
+ USE_ED(APPLET(ed, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_FEATURE_GREP_EGREP_ALIAS(APPLET_ODDNAME(egrep, grep, _BB_DIR_BIN, _BB_SUID_NEVER, egrep))
+@@ -152,12 +152,13 @@
+ USE_FEATURE_GREP_FGREP_ALIAS(APPLET_ODDNAME(fgrep, grep, _BB_DIR_BIN, _BB_SUID_NEVER, fgrep))
+ USE_FIND(APPLET_NOEXEC(find, find, _BB_DIR_USR_BIN, _BB_SUID_NEVER, find))
+ USE_FINDFS(APPLET(findfs, _BB_DIR_SBIN, _BB_SUID_NEVER))
++//USE_FINDFS(APPLET_NOUSAGE(findfs, tune2fs, _BB_DIR_SBIN, _BB_SUID_NEVER))
+ USE_FOLD(APPLET(fold, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_FREE(APPLET(free, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_FREERAMDISK(APPLET(freeramdisk, _BB_DIR_SBIN, _BB_SUID_NEVER))
+ USE_FSCK(APPLET(fsck, _BB_DIR_SBIN, _BB_SUID_NEVER))
+-//USE_E2FSCK(APPLET_ODDNAME(fsck.ext2, e2fsck, _BB_DIR_SBIN, _BB_SUID_NEVER, fsck_ext2))
+-//USE_E2FSCK(APPLET_ODDNAME(fsck.ext3, e2fsck, _BB_DIR_SBIN, _BB_SUID_NEVER, fsck_ext3))
++USE_E2FSCK(APPLET_ODDNAME(fsck.ext2, e2fsck, _BB_DIR_SBIN, _BB_SUID_NEVER, fsck_ext2))
++USE_E2FSCK(APPLET_ODDNAME(fsck.ext3, e2fsck, _BB_DIR_SBIN, _BB_SUID_NEVER, fsck_ext3))
+ USE_FSCK_MINIX(APPLET_ODDNAME(fsck.minix, fsck_minix, _BB_DIR_SBIN, _BB_SUID_NEVER, fsck_minix))
+ USE_FTPGET(APPLET_ODDNAME(ftpget, ftpgetput, _BB_DIR_USR_BIN, _BB_SUID_NEVER, ftpget))
+ USE_FTPPUT(APPLET_ODDNAME(ftpput, ftpgetput, _BB_DIR_USR_BIN, _BB_SUID_NEVER, ftpput))
+@@ -240,10 +241,10 @@
+ USE_MESG(APPLET(mesg, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_MICROCOM(APPLET(microcom, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_MKDIR(APPLET_NOFORK(mkdir, mkdir, _BB_DIR_BIN, _BB_SUID_NEVER, mkdir))
+-//USE_MKE2FS(APPLET(mke2fs, _BB_DIR_SBIN, _BB_SUID_NEVER))
++USE_MKE2FS(APPLET(mke2fs, _BB_DIR_SBIN, _BB_SUID_NEVER))
+ USE_MKFIFO(APPLET(mkfifo, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+-//USE_MKE2FS(APPLET_ODDNAME(mkfs.ext2, mke2fs, _BB_DIR_SBIN, _BB_SUID_NEVER, mkfs_ext2))
+-//USE_MKE2FS(APPLET_ODDNAME(mkfs.ext3, mke2fs, _BB_DIR_SBIN, _BB_SUID_NEVER, mkfs_ext3))
++USE_MKE2FS(APPLET_ODDNAME(mkfs.ext2, mke2fs, _BB_DIR_SBIN, _BB_SUID_NEVER, mke2fs))
++USE_MKE2FS(APPLET_ODDNAME(mkfs.ext3, mke2fs, _BB_DIR_SBIN, _BB_SUID_NEVER, mke2fs))
+ USE_MKFS_MINIX(APPLET_ODDNAME(mkfs.minix, mkfs_minix, _BB_DIR_SBIN, _BB_SUID_NEVER, mkfs_minix))
+ USE_MKNOD(APPLET(mknod, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_MKSWAP(APPLET(mkswap, _BB_DIR_SBIN, _BB_SUID_NEVER))
+@@ -363,7 +364,7 @@
+ USE_TRUE(APPLET_NOFORK(true, true, _BB_DIR_BIN, _BB_SUID_NEVER, true))
+ USE_TTY(APPLET(tty, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_TTYSIZE(APPLET(ttysize, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+-//USE_TUNE2FS(APPLET(tune2fs, _BB_DIR_SBIN, _BB_SUID_NEVER))
++USE_TUNE2FS(APPLET(tune2fs, _BB_DIR_SBIN, _BB_SUID_NEVER))
+ USE_APP_UDHCPC(APPLET(udhcpc, _BB_DIR_SBIN, _BB_SUID_NEVER))
+ USE_APP_UDHCPD(APPLET(udhcpd, _BB_DIR_USR_SBIN, _BB_SUID_NEVER))
+ USE_UDPSVD(APPLET_ODDNAME(udpsvd, tcpudpsvd, _BB_DIR_USR_BIN, _BB_SUID_NEVER, udpsvd))
+@@ -384,7 +385,7 @@
+ USE_VLOCK(APPLET(vlock, _BB_DIR_USR_BIN, _BB_SUID_ALWAYS))
+ USE_WATCH(APPLET(watch, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_WATCHDOG(APPLET(watchdog, _BB_DIR_SBIN, _BB_SUID_NEVER))
+-USE_WC(APPLET(wc, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
++USE_WC(APPLET(wc, _BB_DIR_BIN, _BB_SUID_NEVER))
+ USE_WGET(APPLET(wget, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_WHICH(APPLET(which, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+ USE_WHO(APPLET(who, _BB_DIR_USR_BIN, _BB_SUID_NEVER))
+diff -urN busybox-1.11.1/include/libbb.h busybox/include/libbb.h
+--- busybox-1.11.1/include/libbb.h	2008-08-13 17:22:34.384043284 +0200
++++ busybox/include/libbb.h	2008-10-06 21:02:10.000000000 +0200
+@@ -854,6 +854,21 @@
+ extern int xfunc_error_retval;
+ extern jmp_buf die_jmp;
+ extern void xfunc_die(void) ATTRIBUTE_NORETURN;
++
++#ifdef HAVE_NOMESSAGE
++#define bb_show_usage() exit(-1) 
++#define bb_error_msg(fmt, args...)
++#define bb_error_msg_and_die(fmt, arg...) exit(-1)
++#define bb_perror_msg(fmt, args...)
++#define bb_simple_perror_msg(fmt)
++#define bb_perror_msg_and_die(fmt, arg...) exit(-1)
++#define bb_simple_perror_msg_and_die(fmt) exit(-1)
++#define bb_herror_msg(fmt, arg...)
++#define bb_herror_msg_and_die(fmt, arg...) exit(-1)
++#define bb_perror_nomsg_and_die() exit(-1)
++#define bb_perror_nomsg()
++#define bb_info_msg(fmt, arg...)
++#else
+ extern void bb_show_usage(void) ATTRIBUTE_NORETURN;
+ extern void bb_error_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2)));
+ extern void bb_error_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
+@@ -866,6 +881,7 @@
+ extern void bb_perror_nomsg_and_die(void) ATTRIBUTE_NORETURN;
+ extern void bb_perror_nomsg(void);
+ extern void bb_info_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2)));
++#endif
+ extern void bb_verror_msg(const char *s, va_list p, const char *strerr);
+ 
+ /* We need to export XXX_main from libbusybox
+@@ -1045,6 +1061,7 @@
+  * (otherwise we risk having same salt generated)
+  */
+ extern int crypt_make_salt(char *p, int cnt, int rnd);
++
+ /* Returns number of lines changed, or -1 on error */
+ extern int update_passwd(const char *filename, const char *username,
+ 			const char *new_pw);
+@@ -1058,10 +1075,9 @@
+ extern void print_login_issue(const char *issue_file, const char *tty);
+ extern void print_login_prompt(void);
+ 
+-/* NB: typically you want to pass fd 0, not 1. Think 'applet | grep something' */
++  /* NB: typically you want to pass fd 0, not 1. Think 'applet | grep something' */
+ int get_terminal_width_height(int fd, unsigned *width, unsigned *height);
+ 
+-/* NB: "unsigned request" is crucial! "int request" will break some arches! */
+ int ioctl_or_perror(int fd, unsigned request, void *argp, const char *fmt,...) __attribute__ ((format (printf, 4, 5)));
+ int ioctl_or_perror_and_die(int fd, unsigned request, void *argp, const char *fmt,...) __attribute__ ((format (printf, 4, 5)));
+ #if ENABLE_IOCTL_HEX2STR_ERROR
+diff -urN busybox-1.11.1/include/usage.h busybox/include/usage.h
+--- busybox-1.11.1/include/usage.h	2008-08-13 17:22:34.488042977 +0200
++++ busybox/include/usage.h	2008-10-06 21:02:10.000000000 +0200
+@@ -2455,6 +2455,15 @@
+        "/tmp/foo/bar/baz: No such file or directory\n" \
+        "$ mkdir -p /tmp/foo/bar/baz\n"
+ 
++#define e2label_trivial_usage " none "
++#define e2label_full_usage " none "
++
++#define fsck_ext2_trivial_usage " none "
++#define fsck_ext2_full_usage " none "
++
++#define fsck_ext3_trivial_usage " none "
++#define fsck_ext3_full_usage " none "
++
+ #define mke2fs_trivial_usage \
+        "[-c|-l filename] [-b block-size] [-f fragment-size] [-g blocks-per-group] " \
+        "[-i bytes-per-inode] [-j] [-J journal-options] [-N number-of-inodes] [-n] " \
+diff -urN busybox-1.11.1/libbb/appletlib.c busybox/libbb/appletlib.c
+--- busybox-1.11.1/libbb/appletlib.c	2008-08-13 17:22:25.904043250 +0200
++++ busybox/libbb/appletlib.c	2008-10-06 21:02:10.000000000 +0200
+@@ -101,6 +101,8 @@
+ 	full_write(STDERR_FILENO, str, strlen(str));
+ }
+ 
++#ifndef HAVE_NOMESSAGE
++
+ void bb_show_usage(void)
+ {
+ 	if (ENABLE_SHOW_USAGE) {
+@@ -144,6 +146,7 @@
+ 	}
+ 	xfunc_die();
+ }
++#endif 
+ 
+ #if NUM_APPLETS > 8
+ /* NB: any char pointer will work as well, not necessarily applet_names */
+diff -urN busybox-1.11.1/libbb/error_msg.c busybox/libbb/error_msg.c
+--- busybox-1.11.1/libbb/error_msg.c	2008-08-13 17:22:25.904043250 +0200
++++ busybox/libbb/error_msg.c	2008-10-06 21:02:10.000000000 +0200
+@@ -9,6 +9,7 @@
+ 
+ #include "libbb.h"
+ 
++#ifndef HAVE_NOMESSAGE
+ void bb_error_msg(const char *s, ...)
+ {
+ 	va_list p;
+@@ -17,3 +18,4 @@
+ 	bb_verror_msg(s, p, NULL);
+ 	va_end(p);
+ }
++#endif
+diff -urN busybox-1.11.1/libbb/error_msg_and_die.c busybox/libbb/error_msg_and_die.c
+--- busybox-1.11.1/libbb/error_msg_and_die.c	2008-08-13 17:22:25.812042985 +0200
++++ busybox/libbb/error_msg_and_die.c	2008-10-06 21:02:10.000000000 +0200
+@@ -9,6 +9,34 @@
+ 
+ #include "libbb.h"
+ 
++int die_sleep;
++#if ENABLE_FEATURE_PREFER_APPLETS || ENABLE_HUSH
++jmp_buf die_jmp;
++#endif
++
++void xfunc_die(void)
++{
++	if (die_sleep) {
++		if ((ENABLE_FEATURE_PREFER_APPLETS || ENABLE_HUSH)
++		 && die_sleep < 0
++		) {
++			/* Special case. We arrive here if NOFORK applet
++			 * calls xfunc, which then decides to die.
++			 * We don't die, but jump instead back to caller.
++			 * NOFORK applets still cannot carelessly call xfuncs:
++			 * p = xmalloc(10);
++			 * q = xmalloc(10); // BUG! if this dies, we leak p!
++			 */
++			/* -2222 means "zero" (longjmp can't pass 0)
++			 * run_nofork_applet() catches -2222. */
++			longjmp(die_jmp, xfunc_error_retval ? xfunc_error_retval : -2222);
++		}
++		sleep(die_sleep);
++	}
++	exit(xfunc_error_retval);
++}
++#ifndef HAVE_NOMESSAGE
++
+ void bb_error_msg_and_die(const char *s, ...)
+ {
+ 	va_list p;
+@@ -18,3 +46,4 @@
+ 	va_end(p);
+ 	xfunc_die();
+ }
++#endif
+\ No newline at end of file
+diff -urN busybox-1.11.1/libbb/herror_msg.c busybox/libbb/herror_msg.c
+--- busybox-1.11.1/libbb/herror_msg.c	2008-08-13 17:22:25.760043139 +0200
++++ busybox/libbb/herror_msg.c	2008-10-06 21:02:10.000000000 +0200
+@@ -8,6 +8,7 @@
+  */
+ 
+ #include "libbb.h"
++#ifndef HAVE_NOMESSAGE
+ 
+ void bb_herror_msg(const char *s, ...)
+ {
+@@ -17,3 +18,4 @@
+ 	bb_verror_msg(s, p, hstrerror(h_errno));
+ 	va_end(p);
+ }
++#endif
+\ No newline at end of file
+diff -urN busybox-1.11.1/libbb/herror_msg_and_die.c busybox/libbb/herror_msg_and_die.c
+--- busybox-1.11.1/libbb/herror_msg_and_die.c	2008-08-13 17:22:25.356043514 +0200
++++ busybox/libbb/herror_msg_and_die.c	2008-10-06 21:02:10.000000000 +0200
+@@ -8,6 +8,7 @@
+  */
+ 
+ #include "libbb.h"
++#ifndef HAVE_NOMESSAGE
+ 
+ void bb_herror_msg_and_die(const char *s, ...)
+ {
+@@ -18,3 +19,4 @@
+ 	va_end(p);
+ 	xfunc_die();
+ }
++#endif
+\ No newline at end of file
+diff -urN busybox-1.11.1/libbb/info_msg.c busybox/libbb/info_msg.c
+--- busybox-1.11.1/libbb/info_msg.c	2008-08-13 17:22:25.820043627 +0200
++++ busybox/libbb/info_msg.c	2008-10-06 21:02:10.000000000 +0200
+@@ -9,6 +9,7 @@
+ 
+ #include "libbb.h"
+ #include <syslog.h>
++#ifndef HAVE_NOMESSAGE
+ 
+ void bb_info_msg(const char *s, ...)
+ {
+@@ -28,3 +29,4 @@
+ 	va_end(p2);
+ 	va_end(p);
+ }
++#endif
+\ No newline at end of file
+diff -urN busybox-1.11.1/libbb/login.c busybox/libbb/login.c
+--- busybox-1.11.1/libbb/login.c	2008-08-13 17:22:25.716043096 +0200
++++ busybox/libbb/login.c	2008-10-06 21:02:10.000000000 +0200
+@@ -88,12 +88,24 @@
+ 
+ void print_login_prompt(void)
+ {
+-	char *hostname = safe_gethostname();
++	char buf[MAXHOSTNAMELEN+1];
++/* Login Prompt by BrainSlayer */
++  FILE *fp = fopen ("/tmp/loginprompt", "rb");
++  if (fp)
++    {    
++      while (!feof (fp))
++	{
++	  putc (getc (fp), stdout);
++	}
++      fclose (fp);
++    }
++  fputs("\n",stdout);
+ 
+-	fputs(hostname, stdout);
++ 	char *hostname = safe_gethostname(); 	
++ 	fputs(hostname, stdout);
+ 	fputs(LOGIN, stdout);
+ 	fflush(stdout);
+-	free(hostname);
++ 	free(hostname);
+ }
+ 
+ /* Clear dangerous stuff, set PATH */
+diff -urN busybox-1.11.1/libbb/perror_msg.c busybox/libbb/perror_msg.c
+--- busybox-1.11.1/libbb/perror_msg.c	2008-08-13 17:22:25.820043627 +0200
++++ busybox/libbb/perror_msg.c	2008-10-06 21:02:10.000000000 +0200
+@@ -8,6 +8,7 @@
+  */
+ 
+ #include "libbb.h"
++#ifndef HAVE_NOMESSAGE
+ 
+ void bb_perror_msg(const char *s, ...)
+ {
+@@ -23,3 +24,4 @@
+ {
+ 	bb_perror_msg("%s", s);
+ }
++#endif
+\ No newline at end of file
+diff -urN busybox-1.11.1/libbb/perror_msg_and_die.c busybox/libbb/perror_msg_and_die.c
+--- busybox-1.11.1/libbb/perror_msg_and_die.c	2008-08-13 17:22:25.820043627 +0200
++++ busybox/libbb/perror_msg_and_die.c	2008-10-06 21:02:10.000000000 +0200
+@@ -8,6 +8,7 @@
+  */
+ 
+ #include "libbb.h"
++#ifndef HAVE_NOMESSAGE
+ 
+ void bb_perror_msg_and_die(const char *s, ...)
+ {
+@@ -24,3 +25,4 @@
+ {
+ 	bb_perror_msg_and_die("%s", s);
+ }
++#endif
+\ No newline at end of file
+diff -urN busybox-1.11.1/libbb/perror_nomsg.c busybox/libbb/perror_nomsg.c
+--- busybox-1.11.1/libbb/perror_nomsg.c	2008-08-13 17:22:25.820043627 +0200
++++ busybox/libbb/perror_nomsg.c	2008-10-06 21:02:10.000000000 +0200
+@@ -11,6 +11,7 @@
+  * modified definition without "attribute (format)"
+  * instead of including libbb.h */
+ //#include "libbb.h"
++#ifndef HAVE_NOMESSAGE
+ extern void bb_perror_msg(const char *s, ...);
+ 
+ /* suppress gcc "no previous prototype" warning */
+@@ -19,3 +20,4 @@
+ {
+ 	bb_perror_msg(0);
+ }
++#endif
+\ No newline at end of file
+diff -urN busybox-1.11.1/libbb/perror_nomsg_and_die.c busybox/libbb/perror_nomsg_and_die.c
+--- busybox-1.11.1/libbb/perror_nomsg_and_die.c	2008-08-13 17:22:25.408043081 +0200
++++ busybox/libbb/perror_nomsg_and_die.c	2008-10-06 21:02:10.000000000 +0200
+@@ -11,6 +11,7 @@
+  * modified definition without "attribute (format)"
+  * instead of including libbb.h */
+ //#include "libbb.h"
++#ifndef HAVE_NOMESSAGE
+ extern void bb_perror_msg_and_die(const char *s, ...);
+ 
+ /* suppress gcc "no previous prototype" warning */
+@@ -19,3 +20,4 @@
+ {
+ 	bb_perror_msg_and_die(0);
+ }
++#endif
+\ No newline at end of file
+diff -urN busybox-1.11.1/libbb/vdprintf.c busybox/libbb/vdprintf.c
+--- busybox-1.11.1/libbb/vdprintf.c	2008-08-13 17:22:25.352043053 +0200
++++ busybox/libbb/vdprintf.c	2008-10-06 21:02:10.000000000 +0200
+@@ -19,3 +19,4 @@
+ 	return write(d, buf, len);
+ }
+ #endif
++
+diff -urN busybox-1.11.1/libbb/xfuncs.c busybox/libbb/xfuncs.c
+--- busybox-1.11.1/libbb/xfuncs.c	2008-08-13 17:22:25.904043250 +0200
++++ busybox/libbb/xfuncs.c	2008-10-06 21:02:10.000000000 +0200
+@@ -289,3 +289,4 @@
+ 
+ 	return ret;
+ }
++
+diff -urN busybox-1.11.1/modutils/insmod.c busybox/modutils/insmod.c
+--- busybox-1.11.1/modutils/insmod.c	2008-08-13 17:22:29.504045499 +0200
++++ busybox/modutils/insmod.c	2008-10-06 21:02:09.000000000 +0200
+@@ -839,10 +839,7 @@
+ 				struct obj_symbol *sym,
+ 				ElfW(RelM) *rel, ElfW(Addr) v)
+ {
+-#if defined(__arm__) || defined(__i386__) || defined(__mc68000__) \
+- || defined(__sh__) || defined(__s390__) || defined(__x86_64__)
+ 	struct arch_file *ifile = (struct arch_file *) f;
+-#endif
+ 	enum obj_reloc ret = obj_reloc_ok;
+ 	ElfW(Addr) *loc = (ElfW(Addr) *) (targsec->contents + rel->r_offset);
+ #if defined(__arm__) || defined(__H8300H__) || defined(__H8300S__) \
+@@ -3018,7 +3015,9 @@
+ 					sym->value = 0;
+ 				} else {
+ 					if (!flag_quiet)
++						{
+ 						bb_error_msg_and_die("unresolved symbol %s", sym->name);
++						}
+ 				}
+ 			}
+ 	}
+diff -urN busybox-1.11.1/modutils/rmmod.c busybox/modutils/rmmod.c
+--- busybox-1.11.1/modutils/rmmod.c	2008-08-13 17:22:29.420043362 +0200
++++ busybox/modutils/rmmod.c	2008-10-06 21:02:09.000000000 +0200
+@@ -68,7 +68,7 @@
+ 			if (delete_module(NULL, flags) != 0) {
+ 				if (errno == EFAULT)
+ 					return ret;
+-				bb_perror_msg_and_die("rmmod");
++				exit(0);
+ 			}
+ 			pnmod = nmod;
+ 			// the 1 here is QM_MODULES.
