@@ -15,3 +15,14 @@ VENDOR          ChilliSpot                   14559
 ATTRIBUTE       ChilliSpot-Max-Input-Octets        1       integer ChilliSpot
 ATTRIBUTE       ChilliSpot-Max-Output-Octets       2       integer ChilliSpot
 ATTRIBUTE       ChilliSpot-Max-Total-Octets        3       integer ChilliSpot
+
+# Configuration management parameters
+ATTRIBUTE       ChilliSpot-UAM-Allowed           100       string ChilliSpot
+ATTRIBUTE       ChilliSpot-MAC-Allowed           101       string ChilliSpot
+ATTRIBUTE       ChilliSpot-Interval              102       integer ChilliSpot
+
+
+# Inline with RFC 2882 use of VSE-Authorize-Only for remote config
+# Note that 14559 = 0x38df is used as prefix for the VSE.
+# This is recognized as the best (but bad) way of doing VSEs.
+VALUE     Service-Type     ChilliSpot-Authorize-Only	0x38df0001

@@ -1,5 +1,37 @@
 /* 
  * chilli - ChilliSpot.org. A Wireless LAN Access Point Controller.
+ *
+ * Copyright (c) 2006, Jens Jakobsen 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *   Redistributions of source code must retain the above copyright notice,
+ *   this list of conditions and the following disclaimer.
+ *
+ *   Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the distribution.
+ *
+ *   Neither the names of copyright holders nor the names of its contributors
+ *   may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *
  * Copyright (C) 2003, 2004, 2005 Mondru AB.
  *
  * The contents of this file may be used under the terms of the GNU
@@ -31,6 +63,22 @@
 
 #elif defined (__FreeBSD__)  || defined (__APPLE__)
 #include <netinet/in.h>
+#endif
+
+#if defined (__OpenBSD__)
+#include <netinet/in.h>
+#include <net/if_tun.h>
+#ifndef EIDRM
+#define EIDRM   EINVAL
+#endif
+#ifndef ENOMSG
+#define ENOMSG  EAGAIN
+#endif
+#endif
+
+#if defined (__NetBSD__)
+#include <netinet/in.h>
+#include <net/if_tun.h>
 #endif
 
 #include <time.h>
@@ -80,6 +128,7 @@ static int do_sighup = 0;
 
 /* Forward declarations */
 int static acct_req(struct app_conn_t *conn, int status_type);
+int static config_radius();
 
 /* Fireman catches falling childs and eliminates zombies */
 void static fireman(int signum) { 
@@ -126,6 +175,7 @@ void static log_pid(char *pidfile) {
   (void) fclose(file);
 }
 
+#ifndef NO_LEAKY_BUCKET
 /* Perform leaky bucket on up- and downlink traffic */
 int static leaky_bucket(struct app_conn_t *conn, int octetsup, int octetsdown) {
   
@@ -183,6 +233,7 @@ int static leaky_bucket(struct app_conn_t *conn, int octetsup, int octetsdown) {
     
   return result;
 }
+#endif /* ifndef NO_LEAKY_BUCKET */
 
 /* Run external script */
 
@@ -246,7 +297,7 @@ int runscript(struct app_conn_t *appconn, char* script) {
   set_env("MASK", NULL, 0, &appconn->mask, NULL, NULL);
   set_env("ADDR", NULL, 0, &appconn->ourip,NULL, NULL);
   set_env("USER_NAME", appconn->proxyuser, 0, NULL, NULL, NULL);
-  set_env("NAS_IP_ADDRESS", NULL, 0, &options.radiuslisten, NULL, NULL);
+  set_env("NAS_IP_ADDRESS", NULL, 0, &options.radiusnasip, NULL, NULL);
   set_env("SERVICE_TYPE", "1", 0, NULL, NULL, NULL);
   set_env("FRAMED_IP_ADDRESS", NULL, 0, &appconn->hisip, NULL, NULL);
   set_env("FILTER_ID", appconn->filteridbuf, 0, NULL, NULL, NULL);
@@ -255,7 +306,7 @@ int runscript(struct app_conn_t *appconn, char* script) {
   set_env("SESSION_TIMEOUT", NULL, 0, NULL, NULL, &appconn->sessiontimeout);
   set_env("IDLE_TIMEOUT", NULL, 0, NULL, NULL, &appconn->idletimeout);
   set_env("CALLING_STATION_ID", NULL, 0, NULL, appconn->hismac, NULL);
-  set_env("CALLED_STATION_ID", NULL, 0, NULL, appconn->ourmac, NULL);
+  set_env("CALLED_STATION_ID", options.radiuscalled, 0, NULL, NULL, NULL);
   set_env("NAS_ID", options.radiusnasid, 0, NULL, NULL, NULL);
   set_env("NAS_PORT_TYPE", "19", 0, NULL, NULL, NULL);
   set_env("ACCT_SESSION_ID", appconn->sessionid, 0, NULL, NULL, NULL);
@@ -284,6 +335,7 @@ int runscript(struct app_conn_t *appconn, char* script) {
 
   exit(0);
 }
+
 
 
 /* Extract domain name and port from URL */
@@ -349,6 +401,143 @@ int static get_namepart(char *src, char *host, int hostsize, int *port) {
   return 0;
 }
 
+int static set_uamallowed(char *uamallowed, int len) {
+  char *p1 = NULL;
+  char *p2 = NULL;
+  char *p3 = malloc(len+1);
+  struct hostent *host;
+  char hostname[USERURLSIZE];
+
+  memcpy(p3, uamallowed, len);
+
+  p3[len] = 0;
+  p1 = p3;
+  if ((p2 = strchr(p1, ','))) {
+    *p2 = '\0';
+  }
+  while (p1) {
+    if (strchr(p1, '/')) {
+      if (options.uamoknetlen>=UAMOKNET_MAX) {
+	sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+		"Too many network segments in uamallowed %s!",
+		p3);
+	free(p3);
+	return -1;
+      }
+      if(ippool_aton(&options.uamokaddr[options.uamoknetlen], 
+		     &options.uamokmask[options.uamoknetlen], 
+		     p1, 0)) {
+	sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+		"Invalid uamallowed network address or mask %s!", 
+		p3);
+	free(p3);
+	return -1;
+      }
+      options.uamoknetlen++;
+    }
+    else {
+      if (!(host = gethostbyname(p1))) {
+	sys_err(LOG_ERR, __FILE__, __LINE__, 0, 
+		"Invalid uamallowed domain or address: %s!", 
+		p3);
+	free(p3);
+	return -1;
+      }
+      else {
+	int j = 0;
+	while (host->h_addr_list[j] != NULL) {
+	  if (options.debug & DEBUG_CONF) {
+	    printf("Uamallowed IP address #%d:%d: %s\n", 
+		   j, options.uamokiplen,
+		   inet_ntoa(*(struct in_addr*) host->h_addr_list[j]));
+	  }
+	  if (options.uamokiplen>=UAMOKIP_MAX) {
+	    sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+		    "Too many domains or IPs in uamallowed %s!",
+		    p3);
+	    free(p3);
+	    return -1;
+	  }
+	  else {
+	    options.uamokip[options.uamokiplen++] = 
+	      *((struct in_addr*) host->h_addr_list[j++]);
+	  }
+	}
+      }
+    }
+    if (p2) {
+      p1 = p2+1;
+      if ((p2 = strchr(p1, ','))) {
+	*p2 = '\0';
+      }
+    }
+    else {
+      p1 = NULL;
+    }
+  }
+  free(p3);
+  return 0;
+}
+
+int static set_macallowed(char *macallowed, int len) {
+  char *p1 = NULL;
+  char *p2 = NULL;
+  char *p3 = malloc(len+1);
+  p3[len] = 0;
+  int i;
+  strcpy(p3, macallowed);
+  p1 = p3;
+  if ((p2 = strchr(p1, ','))) {
+    *p2 = '\0';
+  }
+  while (p1) {
+    if (options.macoklen>=MACOK_MAX) {
+      sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+	      "Too many addresses in macallowed %s!",
+	      p3);
+      free(p3);
+      return -1;
+    }
+    /* Replace anything but hex and comma with space */
+    for (i=0; i<strlen(p1); i++) 
+      if (!isxdigit(p1[i])) p1[i] = 0x20;
+    
+    if (sscanf (p1, "%2x %2x %2x %2x %2x %2x",
+		&options.macok[options.macoklen][0], 
+		&options.macok[options.macoklen][1], 
+		&options.macok[options.macoklen][2], 
+		&options.macok[options.macoklen][3], 
+		&options.macok[options.macoklen][4], 
+		&options.macok[options.macoklen][5]) != 6) {
+      sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+	      "Failed to convert macallowed option to MAC Address");
+      free(p3);
+      return -1;
+    }
+    if (options.debug & DEBUG_CONF) {
+      printf("Macallowed address #%d: %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n", 
+	     options.macoklen,
+	     options.macok[options.macoklen][0],
+	     options.macok[options.macoklen][1],
+	     options.macok[options.macoklen][2],
+	     options.macok[options.macoklen][3],
+	     options.macok[options.macoklen][4],
+	     options.macok[options.macoklen][5]);
+    }
+    options.macoklen++;
+    
+    if (p2) {
+      p1 = p2+1;
+      if ((p2 = strchr(p1, ','))) {
+	*p2 = '\0';
+      }
+    }
+    else {
+      p1 = NULL;
+    }
+  }
+  free(p3);
+}
 
 int static process_options(int argc, char **argv, int firsttime) {
   struct gengetopt_args_info args_info;
@@ -567,75 +756,9 @@ int static process_options(int argc, char **argv, int firsttime) {
       printf ("Uamallowed #%d: %s\n", 
 	      numargs, args_info.uamallowed_arg[numargs]);
     }
-    char *p1 = NULL;
-    char *p2 = NULL;
-    char *p3 = malloc(strlen(args_info.uamallowed_arg[numargs])+1);
-    strcpy(p3, args_info.uamallowed_arg[numargs]);
-    p1 = p3;
-    if ((p2 = strchr(p1, ','))) {
-      *p2 = '\0';
-    }
-    while (p1) {
-      if (strchr(p1, '/')) {
-	if (options.uamoknetlen>=UAMOKNET_MAX) {
-	  sys_err(LOG_ERR, __FILE__, __LINE__, 0,
-		  "Too many network segments in uamallowed %s!",
-		  args_info.uamallowed_arg[numargs]);
-	  free(p3);
-	  return -1;
-	}
-	if(ippool_aton(&options.uamokaddr[options.uamoknetlen], 
-		       &options.uamokmask[options.uamoknetlen], 
-		       p1, 0)) {
-	  sys_err(LOG_ERR, __FILE__, __LINE__, 0,
-		  "Invalid uamallowed network address or mask %s!", 
-		  args_info.uamallowed_arg[numargs]);
-	  free(p3);
-	  return -1;
-	}
-	options.uamoknetlen++;
-      }
-      else {
-	if (!(host = gethostbyname(p1))) {
-	  sys_err(LOG_ERR, __FILE__, __LINE__, 0, 
-		  "Invalid uamallowed domain or address: %s!", 
-		  args_info.uamallowed_arg[numargs]);
-	  free(p3);
-	  return -1;
-	}
-	else {
-	  int j = 0;
-	  while (host->h_addr_list[j] != NULL) {
-	    if (options.debug & DEBUG_CONF) {
-	      printf("Uamallowed IP address #%d:%d: %s\n", 
-		     j, options.uamokiplen,
-		     inet_ntoa(*(struct in_addr*) host->h_addr_list[j]));
-	    }
-	    if (options.uamokiplen>=UAMOKIP_MAX) {
-	      sys_err(LOG_ERR, __FILE__, __LINE__, 0,
-		      "Too many domains or IPs in uamallowed %s!",
-		      args_info.uamallowed_arg[numargs]);
-	      free(p3);
-	      return -1;
-	    }
-	    else {
-	      options.uamokip[options.uamokiplen++] = 
-		*((struct in_addr*) host->h_addr_list[j++]);
-	    }
-	  }
-	}
-      }
-      if (p2) {
-	p1 = p2+1;
-	if ((p2 = strchr(p1, ','))) {
-	  *p2 = '\0';
-	}
-      }
-      else {
-	p1 = NULL;
-      }
-    }
-    free(p3);
+    if (set_uamallowed(args_info.uamallowed_arg[numargs],
+		       strlen(args_info.uamallowed_arg[numargs])))
+      return -1;
   }
 
   /* uamanydns                                                    */
@@ -727,6 +850,12 @@ int static process_options(int argc, char **argv, int firsttime) {
   /* condown */
   options.condown = args_info.condown_arg;
 
+  /* conup */
+  options.conup = args_info.conup_arg;
+
+  /* condown */
+  options.condown = args_info.condown_arg;
+
 
 
   /* radiuslisten                                                 */
@@ -804,6 +933,52 @@ int static process_options(int argc, char **argv, int firsttime) {
   /* radiusnasid */
   options.radiusnasid = args_info.radiusnasid_arg;
 
+  /* radiusnasip                                                  */
+  /* If not specified default to radiuslisten                     */
+  /* Do hostname lookup to translate hostname to IP address       */
+  if (args_info.radiusnasip_arg) {
+    if (!(host = gethostbyname(args_info.radiusnasip_arg))) {
+      sys_err(LOG_ERR, __FILE__, __LINE__, 0, 
+	      "Invalid nasip address: %s!", 
+	      args_info.radiusnasip_arg);
+      return -1;
+    }
+    else {
+      memcpy(&options.radiusnasip.s_addr, host->h_addr, host->h_length);
+    }
+  }
+  else {
+    options.radiusnasip.s_addr = options.radiuslisten.s_addr;
+  }
+
+  /* radiuscalled (Called-Station-ID)                             */
+  /* If not specified default to dhcpmac                          */
+  /* If no dhcpmac default to real mac address                    */
+  if (args_info.radiuscalled_arg) {
+    options.radiuscalled = args_info.radiuscalled_arg;
+  }
+  else if (options.dhcpusemac == 1) {
+    options.radiuscalled = malloc(MACSTRLEN+1);
+    (void) snprintf(options.radiuscalled, MACSTRLEN+1,
+		    "%.2X-%.2X-%.2X-%.2X-%.2X-%.2X",
+		    options.dhcpmac[0], options.dhcpmac[1],
+		    options.dhcpmac[2], options.dhcpmac[3],
+		    options.dhcpmac[4], options.dhcpmac[5]);
+  }
+  else if (options.dhcpif) {
+    unsigned char macaddr[DHCP_ETH_ALEN];
+    (void) dhcp_getmac(options.dhcpif, (char*) macaddr);
+    options.radiuscalled = malloc(MACSTRLEN+1);
+    (void) snprintf(options.radiuscalled, MACSTRLEN+1,
+		    "%.2X-%.2X-%.2X-%.2X-%.2X-%.2X",
+		    macaddr[0], macaddr[1],
+		    macaddr[2], macaddr[3],
+		    macaddr[4], macaddr[5]);
+  }
+  else {
+    options.radiuscalled = NULL;
+  }
+
   /* radiuslocationid */
   options.radiuslocationid = args_info.radiuslocationid_arg;
 
@@ -871,6 +1046,10 @@ int static process_options(int argc, char **argv, int firsttime) {
   options.macpasswd = args_info.macpasswd_arg;
 
 
+  /* Radius remote configuration management */
+  options.confusername = args_info.confusername_arg;
+  options.confpassword = args_info.confpassword_arg;
+
   /* macallowed                                                   */
   memset(options.macok, 0, sizeof(options.macok));
   options.macoklen = 0;
@@ -879,62 +1058,10 @@ int static process_options(int argc, char **argv, int firsttime) {
       printf ("Macallowed #%d: %s\n", numargs, 
 	      args_info.macallowed_arg[numargs]);
     }
-    char *p1 = NULL;
-    char *p2 = NULL;
-    char *p3 = malloc(strlen(args_info.macallowed_arg[numargs])+1);
-    int i;
-    strcpy(p3, args_info.macallowed_arg[numargs]);
-    p1 = p3;
-    if ((p2 = strchr(p1, ','))) {
-      *p2 = '\0';
-    }
-    while (p1) {
-      if (options.macoklen>=MACOK_MAX) {
-	sys_err(LOG_ERR, __FILE__, __LINE__, 0,
-		"Too many addresses in macallowed %s!",
-		args_info.macallowed_arg);
-	free(p3);
-	return -1;
-      }
-      /* Replace anything but hex and comma with space */
-      for (i=0; i<strlen(p1); i++) 
-	if (!isxdigit(p1[i])) p1[i] = 0x20;
-      
-      if (sscanf (p1, "%2x %2x %2x %2x %2x %2x",
-		  &options.macok[options.macoklen][0], 
-		  &options.macok[options.macoklen][1], 
-		  &options.macok[options.macoklen][2], 
-		  &options.macok[options.macoklen][3], 
-		  &options.macok[options.macoklen][4], 
-		  &options.macok[options.macoklen][5]) != 6) {
-	sys_err(LOG_ERR, __FILE__, __LINE__, 0,
-		"Failed to convert macallowed option to MAC Address");
-	free(p3);
-	return -1;
-      }
-      if (options.debug & DEBUG_CONF) {
-	printf("Macallowed address #%d: %.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n", 
-	       options.macoklen,
-	       options.macok[options.macoklen][0],
-	       options.macok[options.macoklen][1],
-	       options.macok[options.macoklen][2],
-	       options.macok[options.macoklen][3],
-	       options.macok[options.macoklen][4],
-	       options.macok[options.macoklen][5]);
-      }
-      options.macoklen++;
-      
-      if (p2) {
-	p1 = p2+1;
-	if ((p2 = strchr(p1, ','))) {
-	  *p2 = '\0';
-	}
-      }
-      else {
-	p1 = NULL;
-      }
-    }
-    free(p3);
+
+    if (set_macallowed(args_info.macallowed_arg[numargs],
+		       strlen(args_info.macallowed_arg[numargs]))) 
+      return -1;
   }
 
 
@@ -1022,8 +1149,11 @@ void static reprocess_options(int argc, char **argv) {
 		   &options.radiusserver1, &options.radiusserver2,
 		   options.radiusauthport, options.radiusacctport,
 		   options.radiussecret, options.radiusnasid,
+		   &options.radiusnasip, options.radiuscalled,
 		   options.radiuslocationid, options.radiuslocationname,
 		   options.radiusnasporttype);
+
+  (void) config_radius();
 }
 
 /* 
@@ -1389,18 +1519,14 @@ int static macauth_radius(struct app_conn_t *appconn) {
 		 (uint8_t*) mac, MACSTRLEN);
   
   /* Include our MAC address */
-  (void) snprintf(mac, MACSTRLEN+1, "%.2X-%.2X-%.2X-%.2X-%.2X-%.2X",
-	   dhcpconn->ourmac[0], dhcpconn->ourmac[1],
-	   dhcpconn->ourmac[2], dhcpconn->ourmac[3],
-	   dhcpconn->ourmac[4], dhcpconn->ourmac[5]);
-  
-  (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_CALLED_STATION_ID, 0, 0, 0,
-		 (uint8_t*) mac, MACSTRLEN);
+  if (options.radiuscalled)
+    (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_CALLED_STATION_ID, 0, 0, 0,
+			(uint8_t*) options.radiuscalled, strlen(options.radiuscalled));
   
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_NAS_PORT, 0, 0,
 		 appconn->unit, NULL, 0);
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_NAS_IP_ADDRESS, 0, 0,
-		 ntohl(options.radiuslisten.s_addr), NULL, 0);
+		 ntohl(options.radiusnasip.s_addr), NULL, 0);
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_SERVICE_TYPE, 0, 0,
 		 RADIUS_SERVICE_TYPE_LOGIN, NULL, 0); /* WISPr_V1.0 */
   
@@ -1432,6 +1558,57 @@ int static macauth_radius(struct app_conn_t *appconn) {
   
   return radius_req(radius, &radius_pack, appconn);
 }
+
+
+int static config_radius() {
+  struct radius_packet_t radius_pack;
+
+  if (!options.confusername || !options.confpassword) return 0;
+
+  if (radius_default_pack(radius, &radius_pack, RADIUS_CODE_ACCESS_REQUEST)) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+	    "radius_default_pack() failed");
+    return -1;
+  }
+  
+  (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_USER_NAME, 0, 0, 0,
+			(uint8_t*) options.confusername, strlen(options.confusername));
+
+  (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_USER_PASSWORD, 0, 0, 0,
+		 (uint8_t*) options.confpassword, strlen(options.confpassword));
+
+  if (options.radiuscalled)
+    (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_CALLED_STATION_ID, 0, 0, 0,
+			  (uint8_t*) options.radiuscalled, strlen(options.radiuscalled));
+  
+  (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_NAS_IP_ADDRESS, 0, 0,
+		 ntohl(options.radiusnasip.s_addr), NULL, 0);
+  (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_SERVICE_TYPE, 0, 0,
+		 RADIUS_SERVICE_TYPE_CHILLISPOT_AUTHORIZE_ONLY, NULL, 0);
+  
+  /* Include NAS-Identifier if given in configuration options */
+  if (options.radiusnasid)
+    (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_NAS_IDENTIFIER, 0, 0, 0,
+		   (uint8_t*) options.radiusnasid, strlen(options.radiusnasid));
+
+  (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_MESSAGE_AUTHENTICATOR, 
+		 0, 0, 0, NULL, RADIUS_MD5LEN);
+
+  if (options.radiuslocationid)
+    (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_VENDOR_SPECIFIC,
+		   RADIUS_VENDOR_WISPR, RADIUS_ATTR_WISPR_LOCATION_ID, 0,
+		   (uint8_t*) options.radiuslocationid, 
+		   strlen(options.radiuslocationid));
+
+  if (options.radiuslocationname)
+    (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_VENDOR_SPECIFIC,
+		   RADIUS_VENDOR_WISPR, RADIUS_ATTR_WISPR_LOCATION_NAME, 0,
+		   (uint8_t*) options.radiuslocationname, 
+		   strlen(options.radiuslocationname));
+  
+  return radius_req(radius, &radius_pack, NULL);
+}
+
 
 /*********************************************************
  *
@@ -1575,7 +1752,6 @@ int static acct_req(struct app_conn_t *conn, int status_type)
   uint32_t timediff;
 
   if (RADIUS_STATUS_TYPE_START == status_type) {
-
     gettimeofday(&conn->start_time, NULL);
     conn->interim_time = conn->start_time;
     conn->last_time = conn->start_time;
@@ -1620,9 +1796,10 @@ int static acct_req(struct app_conn_t *conn, int status_type)
 	   conn->ourmac[0], conn->ourmac[1],
 	   conn->ourmac[2], conn->ourmac[3],
 	   conn->ourmac[4], conn->ourmac[5]);
-  
-  (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_CALLED_STATION_ID, 0, 0, 0,
-		 (uint8_t*) mac, MACSTRLEN);
+
+  if (options.radiuscalled)
+    (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_CALLED_STATION_ID, 0, 0, 0,
+			  (uint8_t*) options.radiuscalled, strlen(options.radiuscalled));
 
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_NAS_PORT_TYPE, 0, 0,
 			options.radiusnasporttype, NULL, 0);
@@ -1635,7 +1812,7 @@ int static acct_req(struct app_conn_t *conn, int status_type)
 		 (uint8_t*) portid, strlen(portid));
   
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_NAS_IP_ADDRESS, 0, 0,
-		 ntohl(options.radiuslisten.s_addr), NULL, 0);
+		 ntohl(options.radiusnasip.s_addr), NULL, 0);
 
   /* Include NAS-Identifier if given in configuration options */
   if (options.radiusnasid)
@@ -1954,14 +2131,18 @@ int cb_tun_ind(struct tun_t *tun, void *pack, unsigned len) {
   appconn = (struct app_conn_t*) ipm->peer;
 
   if (appconn->authenticated == 1) {
+#ifndef NO_LEAKY_BUCKET
 #ifndef COUNT_DOWNLINK_DROP
     if (leaky_bucket(appconn, 0, len)) return 0;
-#endif
+#endif /* ifndef COUNT_DOWNLINK_DROP */
+#endif /* ifndef NO_LEAKY_BUCKET */
     appconn->output_packets++;
     appconn->output_octets += len;
+#ifndef NO_LEAKY_BUCKET
 #ifdef COUNT_DOWNLINK_DROP
     if (leaky_bucket(appconn, 0, len)) return 0;
-#endif
+#endif /* ifdef COUNT_DOWNLINK_DROP */
+#endif /* ifndef NO_LEAKY_BUCKET */
   }
 
   switch (appconn->dnprot) {
@@ -2498,21 +2679,16 @@ int access_request(struct radius_packet_t *pack,
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_CALLING_STATION_ID, 0, 0, 0,
 		 (uint8_t*) mac, MACSTRLEN);
   
-  /* Include our MAC address */
-  (void) snprintf(mac, MACSTRLEN+1, "%.2X-%.2X-%.2X-%.2X-%.2X-%.2X",
-	   appconn->proxyourmac[0], appconn->proxyourmac[1],
-	   appconn->proxyourmac[2], appconn->proxyourmac[3],
-	   appconn->proxyourmac[4], appconn->proxyourmac[5]);
-
-  (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_CALLED_STATION_ID, 0, 0, 0,
-		 (uint8_t*) mac, MACSTRLEN);
+  if (options.radiuscalled)
+    (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_CALLED_STATION_ID, 0, 0, 0,
+			  (uint8_t*) options.radiuscalled, strlen(options.radiuscalled));
   
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_NAS_PORT_TYPE, 0, 0,
 		 options.radiusnasporttype, NULL, 0);
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_NAS_PORT, 0, 0,
 		 appconn->unit, NULL, 0);
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_NAS_IP_ADDRESS, 0, 0,
-		 ntohl(options.radiuslisten.s_addr), NULL, 0);
+		 ntohl(options.radiusnasip.s_addr), NULL, 0);
   
   /* Include NAS-Identifier if given in configuration options */
   if (options.radiusnasid)
@@ -2614,6 +2790,111 @@ int upprot_getip(struct app_conn_t *appconn,
  *
  *********************************************************/
 
+/* Radius handler for configuration management */
+int radius_conf(struct radius_t *radius, 
+		struct radius_packet_t *pack,
+		struct radius_packet_t *pack_req) {
+
+  struct radius_attr_t *hisipattr = NULL;
+  struct radius_attr_t *lmntattr = NULL;
+  struct radius_attr_t *sendattr = NULL;
+  struct radius_attr_t *recvattr = NULL;
+  struct radius_attr_t *succattr = NULL;
+  struct radius_attr_t *policyattr = NULL;
+  struct radius_attr_t *typesattr = NULL;
+
+  struct radius_attr_t *eapattr = NULL;
+  struct radius_attr_t *stateattr = NULL;
+  struct radius_attr_t *classattr = NULL;
+  struct radius_attr_t *interimattr = NULL;
+
+  struct radius_attr_t *attr = NULL;
+
+  char attrs[RADIUS_ATTR_VLEN+1];
+  struct tm stt;
+  int tzhour, tzmin;
+  char *tz;
+
+  int instance = 0;
+  int n;
+  int result;
+  struct in_addr *hisip = NULL;
+  int statip = 0;
+
+  if (options.debug)
+    printf("Received configuration management message from radius server\n");
+  
+
+  if (!pack) { /* Timeout */
+    sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+	    "Radius request timed out");
+    return 0;
+  }
+
+  /* ACCESS-REJECT */
+  if (pack->code == RADIUS_CODE_ACCESS_REJECT) {
+    if (options.debug)
+      printf("Received access reject from radius server\n");
+    return 0;
+  }
+
+  /* ACCESS-CHALLENGE */
+  if (pack->code == RADIUS_CODE_ACCESS_CHALLENGE) {
+    if (options.debug)
+      printf("Received access reject from radius server\n");
+    return 0;
+  }
+  
+  /* ACCESS-ACCEPT */
+  if (pack->code != RADIUS_CODE_ACCESS_ACCEPT) {
+    sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+	    "Unknown code of radius access request confirmation");
+    return 0;
+  }
+
+  /* Get Service Type */
+  if (!radius_getattr(pack, &attr, RADIUS_ATTR_SERVICE_TYPE, 0, 0, 0)) {
+    if(ntohl(attr->v.i) != RADIUS_SERVICE_TYPE_CHILLISPOT_AUTHORIZE_ONLY) {
+      sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+	      "Chillispot-Authorize-Only Service-Type not in Access-Accept");
+      return 0;
+    }
+  }
+
+  if (!radius_getattr(pack, &attr, RADIUS_ATTR_VENDOR_SPECIFIC,
+		      RADIUS_VENDOR_CHILLISPOT,
+		      RADIUS_ATTR_CHILLISPOT_UAM_ALLOWED, 0)) {
+    memset(options.uamokip, 0, sizeof(options.uamokip));
+    options.uamokiplen = 0;
+    memset(options.uamokaddr, 0, sizeof(options.uamokaddr));
+    memset(options.uamokmask, 0, sizeof(options.uamokmask));
+    options.uamoknetlen = 0;
+    (void) set_uamallowed((char*)attr->v.t, attr->l-2);
+  }
+  
+  if (!radius_getattr(pack, &attr, RADIUS_ATTR_VENDOR_SPECIFIC,
+		      RADIUS_VENDOR_CHILLISPOT,
+		      RADIUS_ATTR_CHILLISPOT_MAC_ALLOWED, 0)) {
+    memset(options.macok, 0, sizeof(options.macok));
+    options.macoklen = 0;
+    (void) set_macallowed((char*)attr->v.t, attr->l-2);
+  }
+  
+  if (!radius_getattr(pack, &attr, RADIUS_ATTR_VENDOR_SPECIFIC,
+		      RADIUS_VENDOR_CHILLISPOT,
+		      RADIUS_ATTR_CHILLISPOT_INTERVAL, 0)) {
+    options.interval = ntohl(attr->v.i);
+    if (options.interval < 0) options.interval = 0;
+  }
+
+
+  /* Reinit DHCP parameters */
+  (void) dhcp_set(dhcp, (options.debug & DEBUG_DHCP),
+		  options.uamserver, options.uamserverlen, options.uamanydns,
+		  options.uamokip, options.uamokiplen,
+		  options.uamokaddr, options.uamokmask, options.uamoknetlen);
+}
+
 /* Radius callback when access accept/reject/challenge has been received */
 int cb_radius_auth_conf(struct radius_t *radius, 
 			struct radius_packet_t *pack,
@@ -2650,9 +2931,10 @@ int cb_radius_auth_conf(struct radius_t *radius,
     printf("Received access request confirmation from radius server\n");
   
   if (!appconn) {
-    sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+    return radius_conf(radius, pack, pack_req);
+    /*sys_err(LOG_ERR, __FILE__, __LINE__, 0,
 	    "No peer protocol defined");
-    return 0;
+	    return 0;*/
   }
 
   /* Initialise */
@@ -2717,6 +2999,15 @@ int cb_radius_auth_conf(struct radius_t *radius,
     sys_err(LOG_ERR, __FILE__, __LINE__, 0,
 	    "Unknown code of radius access request confirmation");
     return dnprot_reject(appconn);
+  }
+
+  /* Get Service Type */
+  if (!radius_getattr(pack, &stateattr, RADIUS_ATTR_SERVICE_TYPE, 0, 0, 0)) {
+    if(ntohl(attr->v.i) == RADIUS_SERVICE_TYPE_CHILLISPOT_AUTHORIZE_ONLY) {
+      sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+	      "Chillispot-Authorize-Only Service-Type in Access-Accept");
+      return dnprot_reject(appconn);
+    }
   }
 
   /* Get State */
@@ -2948,6 +3239,19 @@ int cb_radius_auth_conf(struct radius_t *radius,
     appconn->sessionterminatetime = 0;
   }
 
+  /* Filter ID */
+  if (!radius_getattr(pack, &attr, RADIUS_ATTR_FILTER_ID,
+		      0, 0, 0)) {
+    appconn->filteridlen = attr->l-2;
+    memcpy(appconn->filteridbuf, attr->v.t, attr->l-2);
+    appconn->filteridbuf[attr->l-2] = 0;
+    /*conn->filterid = conn->filteridbuf;*/
+  }
+  else {
+    appconn->filteridlen = 0;
+    appconn->filteridbuf[0] = 0;
+    /*conn->filterid = NULL;*/
+  }
 
 
   /* EAP Message */
@@ -3359,14 +3663,18 @@ int cb_dhcp_data_ind(struct dhcp_conn_t *conn, void *pack, unsigned len) {
   }
 
   if (appconn->authenticated == 1) {
+#ifndef NO_LEAKY_BUCKET
 #ifndef COUNT_UPLINK_DROP
     if (leaky_bucket(appconn, len, 0)) return 0;
-#endif
+#endif /* ifndef COUNT_UPLINK_DROP */
+#endif /* ifndef NO_LEAKY_BUCKET */
     appconn->input_packets++;
     appconn->input_octets +=len;
+#ifndef NO_LEAKY_BUCKET
 #ifdef COUNT_UPLINK_DROP
     if (leaky_bucket(appconn, len, 0)) return 0;
-#endif
+#endif /* ifdef COUNT_UPLINK_DROP */
+#endif /* ifndef NO_LEAKY_BUCKET */
   }
 
   return tun_encaps(tun, pack, len);
@@ -3450,7 +3758,7 @@ int cb_dhcp_eap_ind(struct dhcp_conn_t *conn, void *pack, unsigned len) {
   
   
   (void) radius_addattr(radius, &radius_pack, RADIUS_ATTR_NAS_IP_ADDRESS, 0, 0,
-		 ntohl(options.radiuslisten.s_addr), NULL, 0);
+		 ntohl(options.radiusnasip.s_addr), NULL, 0);
   
   /* Include NAS-Identifier if given in configuration options */
   if (options.radiusnasid)
@@ -3581,6 +3889,7 @@ int static uam_msg(struct redir_msg_t *msg) {
       (void) acct_req(appconn, RADIUS_STATUS_TYPE_STOP);
       set_sessionid(appconn);
     }
+
     return 0;
   }
   else if (msg->type == REDIR_ABORT) {
@@ -3735,6 +4044,9 @@ int main(int argc, char **argv)
   (void) radius_set_cb_ind(radius, cb_radius_ind);
   (void) radius_set_cb_coa_ind(radius, cb_radius_coa_ind);
 
+  /* Get remote config from radius server */
+  (void) config_radius();
+
 
   /* Create an instance of redir */
   if (redir_new(&redir,
@@ -3752,6 +4064,7 @@ int main(int argc, char **argv)
 	    &options.radiusserver1, &options.radiusserver2,
 	    options.radiusauthport, options.radiusacctport,
 	    options.radiussecret, options.radiusnasid,
+	    &options.radiusnasip, options.radiuscalled,
 	    options.radiuslocationid, options.radiuslocationname,
 	    options.radiusnasporttype);
 
@@ -3785,6 +4098,11 @@ int main(int argc, char **argv)
     log_pid(options.pidfile);
   }
 
+  /* Store the process ID in pidfile */
+  if (options.pidfile) {
+    log_pid(options.pidfile);
+  }
+
   if (options.debug) 
     printf("Waiting for client request...\n");
 
@@ -3814,7 +4132,7 @@ int main(int argc, char **argv)
     if (dhcp) FD_SET(dhcp->fd, &fds);
     if ((dhcp) && (dhcp->arp_fd)) FD_SET(dhcp->arp_fd, &fds);
     if ((dhcp) && (dhcp->eapol_fd)) FD_SET(dhcp->eapol_fd, &fds);
-#elif defined (__FreeBSD__)  || defined (__APPLE__)
+#elif defined (__FreeBSD__)  || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__) 
     if (dhcp) FD_SET(dhcp->fd, &fds);
 #endif
     if (radius->fd != -1) FD_SET(radius->fd, &fds);
@@ -3903,7 +4221,8 @@ EndJAC*/
 	sys_err(LOG_ERR, __FILE__, __LINE__, 0,
 		"dhcp_eapol_ind() failed!");
       }
-#elif defined (__FreeBSD__)  || defined (__APPLE__)
+
+#elif defined (__FreeBSD__)  || defined (__OpenBSD__) || defined (__NetBSD__) || defined (__APPLE__)
       if ((dhcp) && FD_ISSET(dhcp->fd, &fds) && 
 	  dhcp_receive(dhcp) < 0) {
 	sys_err(LOG_ERR, __FILE__, __LINE__, 0,
