@@ -106,9 +106,9 @@ int redial_main( int argc, char **argv )
 			sleep( 1 );
 			start_service( "wan_redial" );
 		    }
-#endif
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
 		    else
+#endif
 #endif
 #ifdef HAVE_PPTP
 		    if( nvram_match( "wan_proto", "pptp" ) )
@@ -117,9 +117,9 @@ int redial_main( int argc, char **argv )
 			sleep( 1 );
 			start_service( "wan_redial" );
 		    }
-#endif
 #if defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
 		    else
+#endif
 #endif
 #ifdef HAVE_L2TP
 		    if( nvram_match( "wan_proto", "l2tp" ) )
@@ -128,6 +128,9 @@ int redial_main( int argc, char **argv )
 			sleep( 1 );
 			start_service( "l2tp_redial" );
 		    }
+#ifdef HAVE_HEARTBEAT
+		    else
+#endif
 #endif
 		    // Moded by Boris Bakchiev
 		    // We dont need this at all.
@@ -135,7 +138,7 @@ int redial_main( int argc, char **argv )
 		    // we might have to do this.
 
 #ifdef HAVE_HEARTBEAT
-		    else if( nvram_match( "wan_proto", "heartbeat" ) )
+		    if( nvram_match( "wan_proto", "heartbeat" ) )
 		    {
 			if( is_running( "bpalogin" ) == 0 )
 			{
