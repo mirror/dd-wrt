@@ -1,7 +1,7 @@
 /*
  * Broadcom SiliconBackplane hardware register definitions.
  *
- * Copyright 2007, Broadcom Corporation
+ * Copyright 2008, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id$
+ * $Id: sbconfig.h,v 13.65 2007/06/01 06:50:20 Exp $
  */
 
 #ifndef	_SBCONFIG_H
@@ -46,6 +46,7 @@
 #define	SB_ARM_FLASH1_SZ	0x00010000	/* ARM Size of Flash Region 1 */
 
 #define SB_PCI_DMA		0x40000000	/* Client Mode sb2pcitranslation2 (1 GB) */
+#define SB_PCI_DMA2		0x80000000	/* Client Mode sb2pcitranslation2 (1 GB) */
 #define SB_PCI_DMA_SZ		0x40000000	/* Client Mode sb2pcitranslation2 size in bytes */
 #define SB_PCIE_DMA_L32		0x00000000	/* PCIE Client Mode sb2pcitranslation2
 						 * (2 ZettaBytes), low 32 bits

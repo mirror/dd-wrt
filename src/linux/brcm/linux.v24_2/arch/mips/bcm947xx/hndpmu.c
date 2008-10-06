@@ -117,7 +117,7 @@ sb_pmu_set_ldo_voltage (sb_t * sbh, osl_t * osh, uint8 ldo, uint8 voltage)
 	}
       break;
 #endif /* defined(BCM4328) || defined(BCM5354) */
-#if defined(BCM4312)
+#if defined(BCMPMU)
     case BCM4312_CHIP_ID:
       switch (ldo)
 	{
@@ -165,7 +165,7 @@ sb_pmu_paref_ldo_enable (sb_t * sbh, osl_t * osh, bool enable)
       ldo = RES5354_PA_REF_LDO;
       break;
 #endif /* defined(BCM5354) */
-#if defined(BCM4312)
+#if defined(BCMPMU)
     case BCM4312_CHIP_ID:
       ldo = RES4312_PA_REF_LDO;
       break;
@@ -192,9 +192,8 @@ uint16 BCMINITFN (sb_pmu_fast_pwrup_delay) (sb_t * sbh, osl_t * osh)
       break;
 #endif /* BCM4328 */
 
-#if defined(BCM4325) || defined(BCM4312)
+#if defined(BCM4325)
     case BCM4325_CHIP_ID:
-    case BCM4312_CHIP_ID:
 #ifdef BCMQT
       delay = 70;
 #else
@@ -202,6 +201,14 @@ uint16 BCMINITFN (sb_pmu_fast_pwrup_delay) (sb_t * sbh, osl_t * osh)
 #endif
       break;
 #endif /* BCM4325 || BCM4312 */
+#if defined(BCMPMU)
+	case BCM4312_CHIP_ID:
+		delay = 7000;
+		break;
+	case BCM4322_CHIP_ID:
+		delay = 7000;
+		break;
+#endif /* BCMPMU */
 
     default:
       PMU_MSG (("No PMU fast power up delay specified "
@@ -389,15 +396,27 @@ void BCMINITFN (sb_pmu_res_init) (sb_t * sbh, osl_t * osh)
       pmu_res_depend_table_sz = ARRAYSIZE (bcm4328a0_res_depend);
       break;
 #endif /* BCM4328 */
-#if defined(BCM4312)
-    case BCM4312_CHIP_ID:
-      /* keep default
-       * min_mask = 0xcbb; max_mask = 0x7ffff;
-       * pmu_res_updown_table_sz = 0;
-       * pmu_res_depend_table_sz = 0;
-       */
-      break;
-#endif /* BCM4312 */
+#if defined(BCMPMU)
+	case BCM4312_CHIP_ID:
+		/* default min_mask = 0x80000cbb is wrong */
+		min_mask = 0xcbb;
+
+		/*
+		 * max_mask = 0x7fff;
+		 * pmu_res_updown_table_sz = 0;
+		 * pmu_res_depend_table_sz = 0;
+		 */
+
+		break;
+	case BCM4322_CHIP_ID:
+		if (sbh->chiprev < 2) {
+			/* clear OTP_PU as it's not applicable, request ALP(can skip for A1) */
+			min_mask = PMURES_BIT(RES4322_RF_LDO) |	PMURES_BIT(RES4322_XTAL_PU)
+				| PMURES_BIT(RES4322_ALP_AVAIL);
+			max_mask = 0xff;
+		}
+		break;
+#endif /* BCMPMU */
 #if defined(BCM5354)
     case BCM5354_CHIP_ID:
       /* Allow (but don't require) PLL to turn on */
@@ -1078,11 +1097,17 @@ void BCMINITFN (sb_pmu_pll_init) (sb_t * sbh, osl_t * osh, uint xtalfreq)
       sb_pmu1_pllinit0 (sbh, osh, cc, xtalfreq);
       break;
 #endif
-#if defined(BCM4312)
-    case BCM4312_CHIP_ID:
-      sb_pmu1_pllinit0 (sbh, osh, cc, xtalfreq);
-      break;
-#endif
+#if defined(BCMPMU)
+	case BCM4312_CHIP_ID:
+		/* assume default works */
+		break;
+	case BCM4322_CHIP_ID:
+		if (sbh->pmurev == 2) {
+			W_REG(osh, &cc->pllcontrol_addr, PMU2_SB_PLL_PLLCTL);
+			W_REG(osh, &cc->pllcontrol_data, 0x380005c0);
+		}
+		break;
+#endif /* BCMPMU */
     default:
       PMU_MSG (("No PLL init done for chip %x rev %d pmurev %d\n",
 		sbh->chip, sbh->chiprev, sbh->pmurev));
@@ -1123,13 +1148,16 @@ uint32 BCMINITFN (sb_pmu_alp_clock) (sb_t * sbh, osl_t * osh)
       clock = sb_pmu1_alpclk0 (sbh, osh, cc);
       break;
 #endif
-#if defined(BCM4312)
-    case BCM4312_CHIP_ID:
-      clock = sb_pmu1_alpclk0 (sbh, osh, cc);
-      /* always 20Mhz */
-      clock = 20000 * 1000;
-      break;
-#endif
+#if defined(BCMPMU)
+	case BCM4312_CHIP_ID:
+		/* always 20Mhz */
+		clock = 20000 * 1000;
+		break;
+	case BCM4322_CHIP_ID:
+		/* always 20Mhz */
+		clock = 20000 * 1000;
+		break;
+#endif /* BCMPMU */
     default:
       PMU_MSG (("No ALP clock specified "
 		"for chip %x rev %d pmurev %d, using default %d Hz\n",
@@ -1177,6 +1205,12 @@ uint BCMINITFN (sb_pmu_cpu_clock) (sb_t * sbh, osl_t * osh)
       clock = sb_pmu1_cpuclk0 (sbh, osh, cc);
       break;
 #endif
+#if defined(BCMPMU)
+	case BCM4322_CHIP_ID:
+		/* 96MHz backplane clock */
+		clock = 96000 * 1000;
+		break;
+#endif /* BCMPMU */
     default:
       PMU_MSG (("No CPU clock specified "
 		"for chip %x rev %d pmurev %d, using default %d Hz\n",

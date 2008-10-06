@@ -183,10 +183,14 @@ static bool sb_onetimeinit = FALSE;
 #define	ILP_DIV_5MHZ		0	/* ILP = 5 MHz */
 #define	ILP_DIV_1MHZ		4	/* ILP = 1 MHz */
 
-/* force HT war check */
-#define FORCEHT_WAR32414(si)	\
-	(((PCIE(si)) && (si->sb.chip == BCM4311_CHIP_ID) && ((si->sb.chiprev <= 1))) || \
-	((PCI(si) || PCIE(si)) && (si->sb.chip == BCM4321_CHIP_ID) && (si->sb.chiprev <= 3)))
+#ifndef __mips__
+ #define FORCEHT_WAR32414(si)	\
+ 	(((PCIE(si)) && (si->sb.chip == BCM4311_CHIP_ID) && ((si->sb.chiprev <= 1))) || \
+ 	((PCI(si) || PCIE(si)) && (si->sb.chip == BCM4321_CHIP_ID) && (si->sb.chiprev <= 3)))
+#else
+#define FORCEHT_WAR32414(si)   0
+#endif /* __mips__ */
+
 
 #define PCIE_ASPMWARS(si)	\
 	((PCIE(si)) && ((si->sb.buscorerev >= 3) && (si->sb.buscorerev <= 5)))

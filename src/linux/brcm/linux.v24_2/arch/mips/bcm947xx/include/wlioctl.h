@@ -403,6 +403,7 @@ typedef struct {
 #ifdef BCMWPA2
 #define WPA2_AUTH_UNSPECIFIED	0x0040	/* over 802.1x */
 #define WPA2_AUTH_PSK		0x0080	/* Pre-shared key */
+#define BRCM_AUTH_PSK		0x0100  /* BRCM specific PSK */
 #endif	/* BCMWPA2 */
 
 #ifdef BCMWPA2
@@ -522,7 +523,15 @@ typedef struct {
 	wl_rateset_t		rateset;	/* rateset in use */
 	uint32			in;		/* seconds elapsed since associated */
 	uint32			listen_interval_inms; /* Min Listen interval in ms for this STA */
+	uint32			tx_pkts;	/* # of packets transmitted */
+	uint32			tx_failures;	/* # of packets failed */
+	uint32			rx_ucast_pkts;	/* # of unicast packets received */
+	uint32			rx_mcast_pkts;	/* # of multicast packets received */
+	uint32			tx_rate;	/* Rate of last successful tx frame */
+	uint32			rx_rate;	/* Rate of last successful rx frame */
 } sta_info_t;
+
+#define WL_OLD_STAINFO_SIZE	OFFSETOF(sta_info_t, tx_pkts)
 
 #define WL_STA_VER		2
 
@@ -541,6 +550,7 @@ typedef struct {
 #define WL_STA_APSD_VI		0x800		/* APSD delv/trigger for AC_VI is default enabled */
 #define WL_STA_APSD_VO		0x1000		/* APSD delv/trigger for AC_VO is default enabled */
 #define WL_STA_N_CAP		0x2000		/* STA 802.11n capable */
+#define WL_STA_SCBSTATS		0x4000		/* Per STA debug stats */
 
 #define WL_WDS_LINKUP		WL_STA_WDS_LINKUP	/* deprecated */
 
@@ -1147,8 +1157,26 @@ typedef struct {
 	int max_deltat_lp;  /* Maximum deltat for long pulses */
 	int min_deltat; /* Minimum spacing between pulses */
 	int max_deltat; /* Maximum spacing between pulses */
+	uint16 autocorr;	/* Radar detection, autocorr on or off */
+	uint16 st_level_time;	/* Radar detection, start_timing level */
+	uint32 version; /* version */
 } wl_radar_args_t;
 /* End: wl_radar_args_t */
+#define WL_RADAR_ARGS_VERSION 1
+
+typedef struct {
+	uint32 version; /* version */
+	uint16 thresh0_20_lo;	/* Radar detection, thresh 0 (range 5250-5350MHz) for BW 20MHz */
+	uint16 thresh1_20_lo;	/* Radar detection, thresh 1 (range 5250-5350MHz) for BW 20MHz */
+	uint16 thresh0_40_lo;	/* Radar detection, thresh 0 (range 5250-5350MHz) for BW 40MHz */
+	uint16 thresh1_40_lo;	/* Radar detection, thresh 1 (range 5250-5350MHz) for BW 40MHz */
+	uint16 thresh0_20_hi;	/* Radar detection, thresh 0 (range 5470-5725MHz) for BW 20MHz */
+	uint16 thresh1_20_hi;	/* Radar detection, thresh 1 (range 5470-5725MHz) for BW 20MHz */
+	uint16 thresh0_40_hi;	/* Radar detection, thresh 0 (range 5470-5725MHz) for BW 40MHz */
+	uint16 thresh1_40_hi;	/* Radar detection, thresh 1 (range 5470-5725MHz) for BW 40MHz */
+} wl_radar_thr_t;
+#define WL_RADAR_THR_VERSION 1
+#define WL_THRESHOLD_LO_BAND	70	/* range from 5250MHz - 5350MHz */
 
 /* radar iovar SET defines */
 #define WL_RADAR_DETECTOR_OFF		0	/* radar detector off */
@@ -1832,7 +1860,7 @@ typedef struct wl_pfn_param {
 							 * of PFN such as sort criteria auto
 							 * enable switch and back ground scan
 							 */
-#if defined(WLPFN_AUTO_CONNECT) || !defined(BCMDRIVER)
+#if !defined(BCMDRIVER)
 	int16 rssi_margin;				/* Margin to avoid jitter for choosing a
 							 * PFN based on RSSI sort criteria
 							 */
@@ -1844,7 +1872,7 @@ typedef struct wl_pfn_param {
 typedef struct wl_pfn {
 	wlc_ssid_t		ssid;			/* ssid name and its length */
 	int32			bss_type;		/* IBSS or infrastructure */
-#if defined(WLPFN_AUTO_CONNECT) || !defined(BCMDRIVER)
+#if !defined(BCMDRIVER)
 	int32			infra;			/* BSS Vs IBSS */
 	int32			auth;			/* Open Vs Closed */
 	int32			wpa_auth;		/* WPA type */
@@ -1963,5 +1991,11 @@ typedef struct {
 	uint			count;
 	wl_wowl_pattern_t	pattern[1];
 } wl_wowl_pattern_list_t;
+
+#if defined(DSLCPE_DELAY)
+#define WL_DELAYMODE_DEFER	0	/* defer by scheduler's choice, make this driver default */
+#define WL_DELAYMODE_FORCE	1	/* force, this is driver default */
+#define WL_DELAYMODE_AUTO	2	/* defer if no sta associated, force if sta associated */
+#endif
 
 #endif /* _wlioctl_h_ */
