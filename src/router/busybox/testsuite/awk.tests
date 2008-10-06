@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# Copyright 2007 by Denys Vlasenko <vda.linux@googlemail.com>
+# Licensed under GPL v2, see file LICENSE for details.
+
+. testing.sh
+
+# testing "description" "command" "result" "infile" "stdin"
+
+testing "awk -F case 0" "awk -F '[#]' '{ print NF }'" ""    "" ""
+testing "awk -F case 1" "awk -F '[#]' '{ print NF }'" "0\n" "" "\n"
+testing "awk -F case 2" "awk -F '[#]' '{ print NF }'" "2\n" "" "#\n"
+testing "awk -F case 3" "awk -F '[#]' '{ print NF }'" "3\n" "" "#abc#\n"
+testing "awk -F case 4" "awk -F '[#]' '{ print NF }'" "3\n" "" "#abc#zz\n"
+testing "awk -F case 5" "awk -F '[#]' '{ print NF }'" "4\n" "" "#abc##zz\n"
+testing "awk -F case 6" "awk -F '[#]' '{ print NF }'" "4\n" "" "z#abc##zz\n"
+testing "awk -F case 7" "awk -F '[#]' '{ print NF }'" "5\n" "" "z##abc##zz\n"
+
+tar xjf awk_t1.tar.bz2
+testing "awk 'gcc build bug'" \
+	"awk -f awk_t1_opt-functions.awk -f awk_t1_opth-gen.awk <awk_t1_input | md5sum" \
+	"f842e256461a5ab1ec60b58d16f1114f  -\n" \
+	"" ""
+rm -rf awk_t1_*
+
+exit $FAILCOUNT

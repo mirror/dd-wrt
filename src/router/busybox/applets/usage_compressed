@@ -1,0 +1,34 @@
+#!/bin/sh
+
+target="$1"
+loc="$2"
+
+test "$target" || exit 1
+test "$loc" || loc=.
+test -x "$loc/usage" || exit 1
+test "$SED" || SED=sed
+
+sz=`"$loc/usage" | wc -c` || exit 1
+
+exec >"$target"
+
+echo 'static const char packed_usage[] ALIGN1 = {'
+
+## Breaks on big-endian systems!
+## # Extra effort to avoid using "od -t x1": -t is not available
+## # in non-CONFIG_DESKTOPed busybox od
+## 
+## "$loc/usage" | bzip2 -1 | od -v -x \
+## | $SED -e 's/^[^ ]*//' \
+## | $SED -e 's/ //g' \
+## | grep -v '^$' \
+## | $SED -e 's/\(..\)\(..\)/0x\2,0x\1,/g'
+
+"$loc/usage" | bzip2 -1 | od -v -t x1 \
+| $SED -e 's/^[^ ]*//' \
+| $SED -e 's/ //g' \
+| grep -v '^$' \
+| $SED -e 's/\(..\)/0x\1,/g'
+
+echo '};'
+echo '#define SIZEOF_usage_messages' `expr 0 + $sz`
