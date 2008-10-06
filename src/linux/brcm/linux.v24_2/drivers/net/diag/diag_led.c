@@ -39,6 +39,7 @@
 #include <bcmdevs.h>
 #include <osl.h>
 #include <sbutils.h>
+#include <bcm4710.h>
 
 extern char * nvram_get(const char *name);
 static void *sbh;
