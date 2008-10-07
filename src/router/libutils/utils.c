@@ -1536,6 +1536,28 @@ return 0;
 	}
     }
 
+	if ( (boardnum == 83258 || boardnum == 01)
+    && nvram_match("boardtype", "0x048e")
+	&& nvram_match("boardrev", "0x11")
+	&& nvram_match("boardflags", "0x750")
+	&& nvram_match ("sdram_init", "0x000A") )
+    {
+	cprintf( "router is Netgear WGR614L\n" );
+	setRouter( "Netgear WGR614L" );
+	return ROUTER_NETGEAR_WGR614L;  //WGR614L, cfe v1.5, 16MB ram
+    }
+    
+	if ( (boardnum == 83258 || boardnum == 001)
+    && nvram_match("boardtype", "0x48E")
+	&& nvram_match("boardrev", "0x10")
+	&& nvram_match("boardflags", "0x0750")
+	&& nvram_match ("sdram_init", "0x0002") )
+    {
+	cprintf( "router is Netgear WGR614v9\n" );
+	setRouter( "Netgear WGR614v9" );
+	return ROUTER_NETGEAR_WGR614L;  //WGR614v9, cfe v1.5, 8MB ram
+    }	
+    
     if( ( boardnum == 83258 || boardnum == 01 ) 
     && (nvram_match( "boardtype", "0x48E" ) || nvram_match( "boardtype", "0x048e" ) )
 	&& (nvram_match( "boardrev", "0x10" ) || nvram_match( "boardrev", "0x11" ) )
@@ -1543,7 +1565,7 @@ return 0;
     {
 	cprintf( "router is Netgear WGR614v8/v9/L/WW\n" );
 	setRouter( "Netgear WGR614v8/v9/L/WW" );
-	return ROUTER_NETGEAR_WGR614L;
+	return ROUTER_NETGEAR_WGR614L;  //for testing
     }
 
     if( boardnum == 56 &&
