@@ -16,7 +16,7 @@ ncurses-configure:
 		--with-default-terminfo-dir=/etc/terminfo 
 
 ncurses:
-	make -C ncurses
+	make -j 4 -C ncurses
 
 ncurses-install:
 	make -C ncurses install.libs DESTDIR=$(INSTALLDIR)/ncurses
