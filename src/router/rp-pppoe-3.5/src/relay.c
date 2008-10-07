@@ -13,11 +13,11 @@
 *
 * LIC: GPL
 *
-* $Id: relay.c,v 1.28 2006/02/23 15:40:42 dfs Exp $
+* $Id$
 *
 ***********************************************************************/
 static char const RCSID[] =
-"$Id: relay.c,v 1.28 2006/02/23 15:40:42 dfs Exp $";
+"$Id$";
 
 #define _GNU_SOURCE 1 /* For SA_RESTART */
 

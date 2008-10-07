@@ -10,7 +10,7 @@
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
 *
-* $Id: event.h,v 1.5 2002/07/05 19:37:26 dfs Exp $
+* $Id$
 *
 * LIC: GPL
 *
