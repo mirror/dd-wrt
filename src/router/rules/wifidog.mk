@@ -2,7 +2,7 @@ wifidog-configure:
 	cd wifidog && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 wifidog:
-	$(MAKE) -C wifidog
+	$(MAKE) -j 4 -C wifidog
 
 wifidog-clean:
 	if test -e "wifidog/Makefile"; then make -C wifidog clean; fi
