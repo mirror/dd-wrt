@@ -1,5 +1,5 @@
 openssl:
-	$(MAKE) -C openssl CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc 
+	$(MAKE) -j 4 -C openssl CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc 
 #ifeq ($(ARCH),mipsel)
 #ifneq ($(ARCHITECTURE),rb532)
 #	rm -f openssl/libcrypto.so.0.9.8
@@ -7,10 +7,10 @@ openssl:
 #endif
 #endif
 openssl-shared: openssl
-	$(MAKE) -C openssl build-shared CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc 
+	$(MAKE) -j 4-C openssl build-shared CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc 
 
 openssl-apps: openssl-shared
-	$(MAKE) -C openssl build_apps CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc
+	$(MAKE) -j 4 -C openssl build_apps CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc
 
 openssl-install:
 ifeq ($(CONFIG_MADWIFI),y)

@@ -54,7 +54,7 @@ bird-symlinks:
 	)
 
 bird: bird-symlinks
-	$(MAKE) -C bird
+	$(MAKE) -j 4 -C bird
 
 bird-install:
 	@true
