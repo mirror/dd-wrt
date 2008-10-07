@@ -135,7 +135,7 @@ ohs_cmd_olsrd(const char *args)
       if(1) /* config file is set */
 	{
 	  olsrd_args[argc++] = "-f";
-	  olsrd_args[argc++] = "/etc/olsrd-emu.conf";
+	  olsrd_args[argc++] = "/tmp/olsrd-emu.conf";
 	}
       olsrd_args[argc++] = "-hemu";
       olsrd_args[argc++] = tok_buf;
