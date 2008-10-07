@@ -1,5 +1,5 @@
 sputnik: shared nvram wireless-tools
-	if test -e "sputnik/Makefile"; then make -C sputnik; fi
+	if test -e "sputnik/Makefile"; then make -j 4 -C sputnik; fi
 	@true
 sputnik-clean:
 	if test -e "sputnik/Makefile"; then make -C sputnik clean; fi
