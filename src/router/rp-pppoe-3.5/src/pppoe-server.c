@@ -11,14 +11,14 @@
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
 *
-* $Id: pppoe-server.c,v 1.96 2006/02/23 15:40:42 dfs Exp $
+* $Id$
 *
 * LIC: GPL
 *
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: pppoe-server.c,v 1.96 2006/02/23 15:40:42 dfs Exp $";
+"$Id$";
 
 #include "config.h"
 
@@ -119,6 +119,9 @@ int NumInterfaces = 0;
 /* The number of session slots */
 size_t NumSessionSlots;
 
+/* Maximum number of sessions per MAC address */
+int MaxSessionsPerMac;
+
 /* Number of active sessions */
 size_t NumActiveSessions = 0;
 
@@ -177,6 +180,18 @@ static PPPoETag receivedCookie;
 static PPPoETag requestedService;
 
 #define HOSTNAMELEN 256
+
+static int
+count_sessions_from_mac(unsigned char *eth)
+{
+    int n=0;
+    ClientSession *s = BusySessions;
+    while(s) {
+	if (!memcmp(eth, s->eth, ETH_ALEN)) n++;
+	s = s->next;
+    }
+    return n;
+}
 
 /**********************************************************************
 *%FUNCTION: childHandler
@@ -531,6 +546,22 @@ processPADI(Interface *ethif, PPPoEPacket *packet, int len)
 	return;
     }
 
+    /* If number of sessions per MAC is limited, check here and don't
+       send PADO if already max number of sessions. */
+    if (MaxSessionsPerMac) {
+	if (count_sessions_from_mac(packet->ethHdr.h_source) >= MaxSessionsPerMac) {
+	    syslog(LOG_INFO, "PADI: Client %02x:%02x:%02x:%02x:%02x:%02x attempted to create more than %d session(s)",
+		   packet->ethHdr.h_source[0],
+		   packet->ethHdr.h_source[1],
+		   packet->ethHdr.h_source[2],
+		   packet->ethHdr.h_source[3],
+		   packet->ethHdr.h_source[4],
+		   packet->ethHdr.h_source[5],
+		   MaxSessionsPerMac);
+	    return;
+	}
+    }
+
     acname.type = htons(TAG_AC_NAME);
     acname_len = strlen(ACName);
     acname.length = htons(acname_len);
@@ -728,6 +759,21 @@ processPADR(Interface *ethif, PPPoEPacket *packet, int len)
 	return;
     }
 
+    /* If number of sessions per MAC is limited, check here and don't
+       send PADS if already max number of sessions. */
+    if (MaxSessionsPerMac) {
+	if (count_sessions_from_mac(packet->ethHdr.h_source) >= MaxSessionsPerMac) {
+	    syslog(LOG_INFO, "PADR: Client %02x:%02x:%02x:%02x:%02x:%02x attempted to create more than %d session(s)",
+		   packet->ethHdr.h_source[0],
+		   packet->ethHdr.h_source[1],
+		   packet->ethHdr.h_source[2],
+		   packet->ethHdr.h_source[3],
+		   packet->ethHdr.h_source[4],
+		   packet->ethHdr.h_source[5],
+		   MaxSessionsPerMac);
+	    return;
+	}
+    }
     parsePacket(packet, parsePADRTags, NULL);
 
     /* Check that everything's cool */
@@ -962,6 +1008,7 @@ usage(char const *argv0)
     printf( "   -u             -- Pass 'unit' option to pppd.\n");
     printf( "   -r             -- Randomize session numbers.\n");
     printf( "   -d             -- Debug session creation.\n");
+    printf( "   -x n           -- Limit to 'n' sessions/MAC address.\n");
     printf( "   -P             -- Check pool file for correctness and exit.\n");
 #ifdef HAVE_LICENSE
     printf( "   -c secret:if:port -- Enable clustering on interface 'if'.\n");
@@ -1006,9 +1053,9 @@ pppoeserver_main(int argc, char **argv)
 #endif
 
 #ifndef HAVE_LINUX_KERNEL_PPPOE
-    char *options = "hI:C:L:R:T:m:FN:f:O:o:sp:lrudPc:S:1";
+    char *options = "x:hI:C:L:R:T:m:FN:f:O:o:sp:lrudPc:S:1";
 #else
-    char *options = "hI:C:L:R:T:m:FN:f:O:o:skp:lrudPc:S:1";
+    char *options = "x:hI:C:L:R:T:m:FN:f:O:o:skp:lrudPc:S:1";
 #endif
 
     if (getuid() != geteuid() ||
@@ -1024,11 +1071,22 @@ pppoeserver_main(int argc, char **argv)
 
     /* Default number of session slots */
     NumSessionSlots = DEFAULT_MAX_SESSIONS;
+    MaxSessionsPerMac = 0; /* No limit */
     NumActiveSessions = 0;
 
     /* Parse command-line options */
     while((opt = getopt(argc, argv, options)) != -1) {
 	switch(opt) {
+	case 'x':
+	    if (sscanf(optarg, "%d", &MaxSessionsPerMac) != 1) {
+		usage(argv[0]);
+		exit(EXIT_FAILURE);
+	    }
+	    if (MaxSessionsPerMac < 0) {
+		MaxSessionsPerMac = 0;
+	    }
+	    break;
+
 #ifdef HAVE_LINUX_KERNEL_PPPOE
 	case 'k':
 	    UseLinuxKernelModePPPoE = 1;

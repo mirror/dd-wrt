@@ -14,7 +14,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: pppoe.c,v 1.43 2006/02/23 15:40:42 dfs Exp $";
+"$Id$";
 
 #include "pppoe.h"
 
@@ -232,9 +232,6 @@ session(PPPoEConnection *conn)
     int maxFD = 0;
     int r;
 
-    /* Open a session socket */
-    conn->sessionSocket = openInterface(conn->ifName, Eth_PPPOE_Session, conn->myEth);
-
     /* Drop privileges */
     dropPrivs();
 
@@ -409,6 +406,7 @@ main(int argc, char *argv[])
     unsigned int s;		/* Temporary to hold session */
     FILE *pidfile;
     unsigned int discoveryType, sessionType;
+    char const *options;
 
     PPPoEConnection conn;
 
@@ -434,7 +432,6 @@ main(int argc, char *argv[])
     /* Initialize syslog */
     openlog("pppoe", LOG_PID, LOG_DAEMON);
 
-    char const *options;
 #ifdef DEBUGGING_ENABLED
     options = "I:VAT:D:hS:C:Usm:np:e:kdf:F:t:";
 #else
@@ -617,6 +614,8 @@ main(int argc, char *argv[])
 	    if (conn.printACNames) {
 		printf( "Sending discovery flood %d\n", n+1);
 	    }
+            conn.discoverySocket =
+	        openInterface(conn.ifName, Eth_PPPOE_Discovery, conn.myEth);
 	    discovery(&conn);
 	    conn.discoveryState = STATE_SENT_PADI;
 	    close(conn.discoverySocket);
@@ -624,7 +623,22 @@ main(int argc, char *argv[])
 	exit(EXIT_SUCCESS);
     }
 
-    discovery(&conn);
+    /* Open session socket before discovery phase, to avoid losing session */
+    /* packets sent by peer just after PADS packet (noted on some Cisco    */
+    /* server equipment).                                                  */
+    /* Opening this socket just before waitForPADS in the discovery()      */
+    /* function would be more appropriate, but it would mess-up the code   */
+    if (!optSkipSession)
+        conn.sessionSocket = openInterface(conn.ifName, Eth_PPPOE_Session, conn.myEth);
+
+    /* Skip discovery and don't open discovery socket? */
+    if (conn.skipDiscovery && conn.noDiscoverySocket) {
+	conn.discoveryState = STATE_SESSION;
+    } else {
+        conn.discoverySocket =
+	    openInterface(conn.ifName, Eth_PPPOE_Discovery, conn.myEth);
+        discovery(&conn);
+    }
     if (optSkipSession) {
 	printf("%u:%02x:%02x:%02x:%02x:%02x:%02x\n",
 	       ntohs(conn.session),
