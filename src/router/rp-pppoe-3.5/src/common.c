@@ -16,7 +16,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: common.c,v 1.21 2006/01/03 03:20:38 dfs Exp $";
+"$Id$";
 /* For vsnprintf prototype */
 #define _ISOC99_SOURCE 1
 

@@ -16,7 +16,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: if.c,v 1.18 2006/01/03 03:05:06 dfs Exp $";
+"$Id$";
 
 #include "pppoe.h"
 
@@ -99,7 +99,7 @@ static	int	dl_addrlen;
 
 static unsigned char *bpfBuffer;	/* Packet filter buffer */
 static int bpfLength = 0;		/* Packet filter buffer length */
-static int bpfSize = 0;		        /* Number of unread bytes in buffer */
+       int bpfSize = 0;		        /* Number of unread bytes in buffer */
 static int bpfOffset = 0;		/* Current offset in bpfBuffer */
 #endif
 
