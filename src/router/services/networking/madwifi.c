@@ -1574,9 +1574,11 @@ else
 #elif defined(HAVE_TRIMAX)
   eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "trimax"));
 #else
+#ifdef HAVE_REGISTER
 if (!isregistered())
   eval ("iwconfig", dev, "essid", "need_activation");
 else
+#endif
   eval ("iwconfig", dev, "essid", nvram_default_get (ssid, "dd-wrt"));
 #endif
   cprintf ("set broadcast flag\n");	// hide ssid
