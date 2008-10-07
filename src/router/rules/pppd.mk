@@ -12,16 +12,16 @@ pppd-symlinks:
 	)
 
 pppd: pppd-symlinks
-	$(MAKE) -C pppd.new/pppd
+	$(MAKE) -j 4 -C pppd.new/pppd
 ifeq ($(CONFIG_PPPD_CHAT),y)
-	$(MAKE) -C pppd.new/chat
+	$(MAKE) -j 4 -C pppd.new/chat
 endif
 ifeq ($(CONFIG_PPPSTATS),y)
-	$(MAKE) -C pppd.new/pppstats
+	$(MAKE) -j 4 -C pppd.new/pppstats
 endif
-	$(MAKE) -C pppd.new/pppd/plugins/rp-pppoe
+	$(MAKE) -j 4 -C pppd.new/pppd/plugins/rp-pppoe
 ifeq ($(CONFIG_RADIUSPLUGIN),y)
-	$(MAKE) -C pppd.new/pppd/plugins/radius
+	$(MAKE) -j 4 -C pppd.new/pppd/plugins/radius
 endif
 #	$(MAKE) -C pppd/pppd/plugins/pppoatm
 
