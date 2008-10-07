@@ -380,7 +380,7 @@ else
 endif
 
 clean:
-#	rm -f countrycode/countrycode_$(ARCH).o
+	rm -f countrycode/countrycode_$(ARCH).o
 	rm -f *.o *.so
 	rm -f *.a
 	rm -f *.h~
