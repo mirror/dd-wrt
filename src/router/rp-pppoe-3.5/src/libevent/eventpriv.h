@@ -11,7 +11,7 @@
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
 *
-* $Id: eventpriv.h,v 1.3 2002/04/09 17:28:40 dfs Exp $
+* $Id$
 *
 * LIC: GPL
 *
