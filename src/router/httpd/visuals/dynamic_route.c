@@ -63,9 +63,9 @@ void ej_dump_route_table( webs_t wp, int argc, char_t ** argv )
 	    dest_ip.s_addr = dest;
 	    gw_ip.s_addr = gw;
 	    netmask_ip.s_addr = netmask;
-
-	    strcpy( sdest, ( dest_ip.s_addr == 0 ? "0.0.0.0" : inet_ntoa( dest_ip ) ) );	// default
-	    strcpy( sgw, ( gw_ip.s_addr == 0 ? "0.0.0.0" : inet_ntoa( gw_ip ) ) );	// *
+	    char client[32];
+	    strcpy( sdest, ( dest_ip.s_addr == 0 ? "0.0.0.0" : inet_ntop(AF_INET, &dest_ip,client,16) ) );	// default
+	    strcpy( sgw, ( gw_ip.s_addr == 0 ? "0.0.0.0" : inet_ntop(AF_INET, &gw_ip,client,16) ) );	// *
 
 	    /*
 	     * not 0x0001 route usable 
@@ -114,7 +114,7 @@ void ej_dump_route_table( webs_t wp, int argc, char_t ** argv )
 	    websWrite( wp, "%s%c'%s','%s','%s','%s'\n",
 		       debug ? "//" : "",
 		       blank ? ' ' : ',',
-		       sdest, inet_ntoa( netmask_ip ), sgw, ifname );
+		       sdest, inet_ntop(AF_INET, &netmask_ip,client,16), sgw, ifname );
 
 	    if( debug && blank )
 		blank = 1;

@@ -594,7 +594,9 @@ get_client_ip( int conn_fp )
     static char ip[20];
 
     getpeername( conn_fp, ( struct sockaddr * )&sa, &len );
-    strcpy( ip, inet_ntoa( sa.sin_addr ) );
+    char client[32];
+    char *peer = inet_ntop(AF_INET, &sa.sin_addr,client,16);
+    strcpy( ip, peer );
     return ( ip );
 }
 #endif

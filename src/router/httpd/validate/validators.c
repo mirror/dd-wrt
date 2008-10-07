@@ -390,9 +390,6 @@ int valid_ipaddr( webs_t wp, char *value, struct variable *v )
 	{
 	    ( void )inet_aton( nvram_safe_get( v->argv[0] ), &netaddr );
 	    ( void )inet_aton( nvram_safe_get( v->argv[1] ), &netmask );
-	    websDebugWrite( wp, "Invalid <b>%s</b> %s: not in the %s/",
-			    v->longname, value, inet_ntoa( netaddr ) );
-	    websDebugWrite( wp, "%s network<br>", inet_ntoa( netmask ) );
 	    return FALSE;
 	}
     }

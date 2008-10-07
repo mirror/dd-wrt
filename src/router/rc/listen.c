@@ -109,42 +109,32 @@ read_interface( char *interface, int *ifindex, u_int32_t * addr,
 	    {
 		sin = ( struct sockaddr_in * )&ifr.ifr_addr;
 		*addr = sin->sin_addr.s_addr;
-		DEBUG( "%s (our ip) = %s \n", ifr.ifr_name,
-		       inet_ntoa( sin->sin_addr ) );
 	    }
 	    else
 	    {
-		DEBUG( "SIOCGIFADDR failed!: \n" );
 		return -1;
 	    }
 	}
 
 	if( ioctl( fd, SIOCGIFINDEX, &ifr ) == 0 )
 	{
-	    DEBUG( "adapter index %d \n", ifr.ifr_ifindex );
 	    *ifindex = ifr.ifr_ifindex;
 	}
 	else
 	{
-	    DEBUG( "SIOCGIFINDEX failed!: \n" );
 	    return -1;
 	}
 	if( ioctl( fd, SIOCGIFHWADDR, &ifr ) == 0 )
 	{
 	    memcpy( arp, ifr.ifr_hwaddr.sa_data, 6 );
-	    DEBUG
-		( "adapter hardware address %02x:%02x:%02x:%02x:%02x:%02x \n",
-		  arp[0], arp[1], arp[2], arp[3], arp[4], arp[5] );
 	}
 	else
 	{
-	    DEBUG( "SIOCGIFHWADDR failed!: \n" );
 	    return -1;
 	}
     }
     else
     {
-	DEBUG( "socket failed!: \n" );
 	return -1;
     }
     close( fd );
