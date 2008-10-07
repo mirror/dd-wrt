@@ -1516,9 +1516,11 @@ configure_single (int count)
 #elif defined(HAVE_TRIMAX)
       eval ("iwconfig", var, "essid", nvram_default_get (ssid, "trimax_vap"));
 #else
+#ifdef HAVE_REGISTER
 if (!isregistered())
   eval ("iwconfig", dev, "essid", "need_activation");
 else
+#endif
   eval ("iwconfig", var, "essid", nvram_default_get (ssid, "dd-wrt_vap"));
 #endif
       cprintf ("set broadcast flag vif %s\n", var);	// hide ssid
