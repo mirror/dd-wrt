@@ -540,7 +540,8 @@ bool set_forward_port( int which, const netconf_nat_t * nat )
      * Set LAN IP address 
      */
     cur = safe_snprintf( cur, &len, ">" );
-    cur = safe_snprintf( cur, &len, inet_ntoa( nat->ipaddr ) );
+    char client[32];
+    cur = safe_snprintf( cur, &len, inet_ntop(AF_INET, &nat->ipaddr,client,16));
 
     /*
      * Set LAN destination port range 

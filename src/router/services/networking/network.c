@@ -2960,7 +2960,8 @@ void start_wan( int status )
 		printf( "Wait ppp inteface to init (1) ...\n" );
 		sleep( 1 );
 	    };
-	    nvram_set( "wan_ipaddr", inet_ntoa( sin_addr( &ifr.ifr_addr ) ) );
+	    char client[32];
+	    nvram_set( "wan_ipaddr", inet_ntop(AF_INET, &sin_addr( &ifr.ifr_addr ),client,16 ) );
 	    nvram_set( "wan_netmask", "255.255.255.255" );
 
 	    /*
@@ -2973,8 +2974,8 @@ void start_wan( int status )
 		printf( "Wait ppp inteface to init (2) ...\n" );
 		sleep( 1 );
 	    }
-	    nvram_set( "wan_gateway",
-		       inet_ntoa( sin_addr( &ifr.ifr_dstaddr ) ) );
+		char *peer = inet_ntop(AF_INET,  &sin_addr( &ifr.ifr_dstaddr ),client,16);
+	    nvram_set( "wan_gateway", peer );
 
 	    start_wan_done( "ppp0" );
 

@@ -223,7 +223,8 @@ void ej_dumpleases( webs_t wp, int argc, char_t ** argv )
 		cprintf( "entry dumpleases:%d\n", __LINE__ );
 		addr.s_addr = lease.yiaddr;
 
-		ipaddr = inet_ntoa( addr );
+		char client[32];
+		ipaddr = inet_ntop(AF_INET, &addr,client,16);
 
 		expires = ntohl( lease.expires );
 
@@ -280,7 +281,7 @@ void ej_dumpleases( webs_t wp, int argc, char_t ** argv )
 			   count ? ',' : ' ',
 			   !*lease.hostname ? "&nbsp;" : lease.hostname,
 			   ipaddr, mac, expires_time,
-			   get_single_ip( inet_ntoa( addr ), 3 ) );
+			   get_single_ip( ipaddr, 3 ) );
 		cprintf( "entry dumpleases:%d\n", __LINE__ );
 		count++;
 	    }
