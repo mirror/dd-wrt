@@ -246,7 +246,9 @@ int dhcp_lease_table_init( void )
 		if( !strcmp( "00:00:00:00:00:00", mac ) )
 		    continue;
 		addr.s_addr = lease.yiaddr;
-		fprintf( fp_w, "%s %s %s\n", mac, inet_ntoa( addr ),
+		char client[32];
+		char *peer = inet_ntop(AF_INET, &addr,client,16);
+		fprintf( fp_w, "%s %s %s\n", mac, peer,
 			 lease.hostname );
 		count++;
 	    }
