@@ -413,11 +413,11 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	}																 //checksum is @ 0x003AFFF8
 
 	if ((boardnum == 83258 || boardnum == 001)
-	  && nvram_match("boardtype", "0x48E")
-	  && nvram_match("boardrev", "0x10")
-	  && nvram_match("boardflags", "0x0750")
-	  && nvram_match ("sdram_init", "0x000A") ) {
-		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //NOT CONFIRMED! : Netgear WGR614v8, cfe v1.3, 16MB ram
+	&& (nvram_match( "boardtype", "0x48E" ) || nvram_match( "boardtype", "0x048e" ) )
+	&& (nvram_match( "boardrev", "0x10" ) || nvram_match( "boardrev", "0x11" ) )
+	&& (nvram_match ( "boardflags", "0x750" ) || nvram_match ( "boardflags", "0x0750" ))
+	&& nvram_match ("sdram_init", "0x000A") ) {
+		board_data_size = 6 * ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //NOT CONFIRMED! : Netgear WGR614v8, cfe v1.3, 16MB ram
 	}
 		
 	if ((boardnum == 83258 || boardnum == 001)
