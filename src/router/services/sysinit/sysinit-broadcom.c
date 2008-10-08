@@ -1452,6 +1452,7 @@ int start_sysinit( void )
     led_control( LED_SES, LED_OFF );
     led_control( LED_BRIDGE, LED_OFF );
     led_control( LED_WLAN, LED_OFF );
+    led_control( LED_CONNECTED, LED_OFF);
 
     if( brand == ROUTER_WRT54G3G )
     {
