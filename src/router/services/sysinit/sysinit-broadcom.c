@@ -206,6 +206,9 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	case ROUTER_BELKIN_F5D7231:
 	    nvram_set( "wl0gpio3", "136" );
 	    break;
+	case ROUTER_NETGEAR_WGR614L:
+	    nvram_set( "wl0gpio5", "8" );
+	    break;
     }
 #else // v23
 
