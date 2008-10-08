@@ -404,29 +404,15 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WNDR-3300
 	}	
 	
-	if ( (boardnum == 83258 || boardnum == 01)
-	  && nvram_match("boardtype", "0x048e")
-	  && nvram_match("boardrev", "0x11")
-	  && nvram_match("boardflags", "0x750")
-	  && nvram_match ("sdram_init", "0x000A") ) {
-		board_data_size = 6 * ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WGR614L, cfe v1.5, 16MB ram
-	}																 //checksum is @ 0x003AFFF8
-
-	if ((boardnum == 83258 || boardnum == 001)
-	&& (nvram_match( "boardtype", "0x48E" ) || nvram_match( "boardtype", "0x048e" ) )
-	&& (nvram_match( "boardrev", "0x10" ) || nvram_match( "boardrev", "0x11" ) )
-	&& (nvram_match ( "boardflags", "0x750" ) || nvram_match ( "boardflags", "0x0750" ))
-	&& nvram_match ("sdram_init", "0x000A") ) {
-		board_data_size = 6 * ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //NOT CONFIRMED! : Netgear WGR614v8, cfe v1.3, 16MB ram
-	}
-		
-	if ((boardnum == 83258 || boardnum == 001)
-	  && nvram_match("boardtype", "0x48E")
-	  && nvram_match("boardrev", "0x10")
-	  && nvram_match("boardflags", "0x0750")
-	  && nvram_match ("sdram_init", "0x0002") ) {
-		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WGR614v9, cfe v1.5, 8MB ram
-	}															 //checksum is @ 0x001F9FFF8
+	if ( (boardnum == 83258 || boardnum == 01)  //or 001 or 0x01
+	  && (nvram_match("boardtype", "0x048e") || nvram_match("boardtype", "0x48E"))
+	  && (nvram_match("boardrev", "0x11") || nvram_match("boardrev", "0x10"))
+	  && (nvram_match("boardflags", "0x750") || nvram_match("boardflags", "0x0750")) ) {
+		  if (nvram_match ("sdram_init", "0x000A") )  //Netgear WGR614v8/L/WW 16MB ram, cfe v1.3 or v1.5
+			board_data_size = 6 * ROUNDUP(NVRAM_SPACE, mtd->erasesize);  // checksum is @ 0x003AFFF8
+		  else if (nvram_match ("sdram_init", "0x0002") )  //Netgear WGR614v9, cfe v1.5, 8MB ram
+			board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  // checksum is @ 0x001F9FFF8
+	}																
 
 	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
 		return NULL;
