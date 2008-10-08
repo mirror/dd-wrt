@@ -2655,6 +2655,11 @@ int led_control( int type, int act )
 	case ROUTER_USR_5461:
 	    usb_gpio = 0x01;
 	    break;
+	case ROUTER_NETGEAR_WGR614L:
+	    // power_gpio = 0x17;	// don't use - resets router
+	    diag_gpio = 0x06;
+	    connected_gpio = 0x14;
+	    break;	
 #endif
     }
     if( type == LED_DIAG && v1func == 1 )
