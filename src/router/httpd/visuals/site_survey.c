@@ -16,7 +16,7 @@
 #include <proto/802.11.h>
 
 #define SITE_SURVEY_DB  "/tmp/site_survey"
-#define SITE_SURVEY_NUM 50
+#define SITE_SURVEY_NUM 256
 
 struct site_survey_list
 {
