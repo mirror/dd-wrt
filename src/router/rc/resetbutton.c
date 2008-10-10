@@ -362,7 +362,16 @@ void period_check( int sig )
 #ifdef HAVE_XSCALE
 	fscanf( fp, "%d", &val );
 #else
+	if( brand == ROUTER_NETGEAR_WGR614L )  //gpio 7 power led shared with reset button
+	{
+	set_gpio( 7, 1 );  //disable power led
+	val = get_gpio( 7 ) << 7;  //read and shift value
+	set_gpio( 7, 0 );  //enable power led
+	}
+	else
+	{
 	fread( &val, 4, 1, fp );
+	}
 #endif
 	fclose( fp );
     }
