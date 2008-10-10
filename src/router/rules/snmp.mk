@@ -22,7 +22,7 @@ endif
 
 snmp:
 ifeq ($(CONFIG_SNMP),y)
-	$(MAKE) -j 4 -C snmp 
+	$(MAKE) -C snmp 
 else
 	@true
 endif
