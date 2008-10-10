@@ -89,7 +89,7 @@ copy_essid( char buf[], size_t bufsize, const u_int8_t * essid,
 
 #define sys_restart() kill(1, SIGHUP)
 #define SITE_SURVEY_DB	"/tmp/site_survey"
-#define SITE_SURVEY_NUM	50
+#define SITE_SURVEY_NUM	256
 
 int write_site_survey( void );
 static int open_site_survey( void );
@@ -130,7 +130,7 @@ int site_survey_main( int argc, char *argv[] )
     unlink( SITE_SURVEY_DB );
     int ap = 0, oldap = 0;
 
-    unsigned char buf[24 * 1024];
+    unsigned char buf[sizeof( struct ieee80211req_scan_result )*256];
     char ssid[31];
     unsigned char *cp;
     int len;
