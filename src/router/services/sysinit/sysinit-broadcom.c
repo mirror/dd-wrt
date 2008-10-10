@@ -1027,8 +1027,6 @@ int start_sysinit( void )
 	    nvram_set ("sromrev", "3");    // This is a fix for WGR614L NA - which has a wrong sromrev
 	    need_reboot = 1;
         }
-        eval( "gpio", "enable", "7" );	// turn off power led /fix gpio 7 for reset
-        eval( "gpio", "init", "7" );	// enable gpio 7 for reset
 	    break;	    
 	 
 	case ROUTER_ALLNET01:
