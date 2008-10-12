@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -75,6 +75,7 @@
 #define D_CLOSE              LOGLEV(2, 22, 0)        /* show socket and TUN/TAP close */
 #define D_SHOW_OCC_HASH      LOGLEV(2, 23, 0)        /* show MD5 hash of option compatibility string */
 #define D_PROXY              LOGLEV(2, 24, 0)        /* show http proxy control packets */
+#define D_ARGV               LOGLEV(2, 25, 0)        /* show struct argv errors */
 
 #define D_TLS_DEBUG_LOW      LOGLEV(3, 20, 0)        /* low frequency info from tls_session routines */
 #define D_GREMLIN            LOGLEV(3, 30, 0)        /* show simulated outage info from gremlin module */
@@ -137,6 +138,7 @@
 #define D_PING               LOGLEV(7, 70, M_DEBUG)  /* PING send/receive messages */
 #define D_PS_PROXY_DEBUG     LOGLEV(7, 70, M_DEBUG)  /* port share proxy debug */
 #define D_AUTO_USERID        LOGLEV(7, 70, M_DEBUG)  /* AUTO_USERID debugging */
+#define D_TLS_KEYSELECT      LOGLEV(7, 70, M_DEBUG)  /* show information on key selection for data channel */
 #define D_PF_DROPPED_BCAST   LOGLEV(7, 71, M_DEBUG)  /* packet filter dropped a broadcast packet */
 #define D_PF_DEBUG           LOGLEV(7, 72, M_DEBUG)  /* packet filter debugging, must also define PF_DEBUG in pf.h */
 

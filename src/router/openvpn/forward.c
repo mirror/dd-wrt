@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -31,6 +31,7 @@
 #include "mss.h"
 #include "event.h"
 #include "ps.h"
+#include "dhcp.h"
 
 #include "memdbg.h"
 
@@ -976,6 +977,8 @@ process_ipv4_header (struct context *c, unsigned int flags, struct buffer *buf)
   if (!c->options.passtos)
     flags &= ~PIPV4_PASSTOS;
 #endif
+  if (!c->options.route_gateway_via_dhcp || !route_list_default_gateway_needed (c->c1.route_list))
+    flags &= ~PIPV4_EXTRACT_DHCP_ROUTER;
 
   if (buf->len > 0)
     {
@@ -1001,6 +1004,13 @@ process_ipv4_header (struct context *c, unsigned int flags, struct buffer *buf)
 	      /* possibly alter the TCP MSS */
 	      if (flags & PIPV4_MSSFIX)
 		mss_fixup (&ipbuf, MTU_TO_MSS (TUN_MTU_SIZE_DYNAMIC (&c->c2.frame)));
+
+	      /* possibly extract a DHCP router message */
+	      if (flags & PIPV4_EXTRACT_DHCP_ROUTER)
+		{
+		  const in_addr_t dhcp_router = dhcp_extract_router_msg (&ipbuf);
+		  route_list_add_default_gateway (c->c1.route_list, c->c2.es, dhcp_router);
+		}
 	    }
 	}
     }
@@ -1149,7 +1159,7 @@ process_outgoing_tun (struct context *c)
    * The --mssfix option requires
    * us to examine the IPv4 header.
    */
-  process_ipv4_header (c, PIPV4_MSSFIX|PIPV4_OUTGOING, &c->c2.to_tun);
+  process_ipv4_header (c, PIPV4_MSSFIX|PIPV4_EXTRACT_DHCP_ROUTER|PIPV4_OUTGOING, &c->c2.to_tun);
 
   if (c->c2.to_tun.len <= MAX_RW_SIZE_TUN (&c->c2.frame))
     {
@@ -1280,11 +1290,11 @@ io_wait_dowork (struct context *c, const unsigned int flags)
   struct event_set_return esr[4];
 
   /* These shifts all depend on EVENT_READ and EVENT_WRITE */
-  static const int socket_shift = 0;     /* depends on SOCKET_READ and SOCKET_WRITE */
-  static const int tun_shift = 2;        /* depends on TUN_READ and TUN_WRITE */
-  static const int err_shift = 4;        /* depends on ES_ERROR */
+  static int socket_shift = 0;     /* depends on SOCKET_READ and SOCKET_WRITE */
+  static int tun_shift = 2;        /* depends on TUN_READ and TUN_WRITE */
+  static int err_shift = 4;        /* depends on ES_ERROR */
 #ifdef ENABLE_MANAGEMENT
-  static const int management_shift = 6; /* depends on MANAGEMENT_READ and MANAGEMENT_WRITE */
+  static int management_shift = 6; /* depends on MANAGEMENT_READ and MANAGEMENT_WRITE */
 #endif
 
   /*

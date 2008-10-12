@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -288,7 +288,7 @@ init_proxy (struct context *c, const int scope)
 }
 
 static inline void
-uninit_proxy (struct context *c, const int scope)
+uninit_proxy (struct context *c)
 {
 }
 
@@ -923,7 +923,7 @@ do_route (const struct options *options,
     {
       struct argv argv = argv_new ();
       setenv_str (es, "script_type", "route-up");
-      argv_printf (&argv, "%s", options->route_script);
+      argv_printf (&argv, "%sc", options->route_script);
       openvpn_execve_check (&argv, es, S_SCRIPT, "Route script failed");
       argv_reset (&argv);
     }
@@ -1957,6 +1957,9 @@ do_option_warnings (struct context *c)
     msg (M_WARN, "WARNING: using --pull/--client and --ifconfig together is probably not what you want");
 
 #if P2MP_SERVER
+  if (o->server_bridge_defined | o->server_bridge_proxy_dhcp)
+    msg (M_WARN, "NOTE: when bridging your LAN adapter with the TAP adapter, note that the new bridge adapter will often take on its own IP address that is different from what the LAN adapter was previously set to");
+
   if (o->mode == MODE_SERVER)
     {
       if (o->duplicate_cn && o->client_config_dir)
@@ -1976,6 +1979,8 @@ do_option_warnings (struct context *c)
     msg (M_WARN, "WARNING: You have disabled Crypto IVs (--no-iv) which may make " PACKAGE_NAME " less secure");
 
 #ifdef USE_SSL
+  if (o->tls_server)
+    warn_on_use_of_common_subnets ();
   if (o->tls_client
       && !o->tls_verify
       && !o->tls_remote
@@ -2665,6 +2670,8 @@ open_management (struct context *c)
 			       c->options.management_addr,
 			       c->options.management_port,
 			       c->options.management_user_pass,
+			       c->options.management_client_user,
+			       c->options.management_client_group,
 			       c->options.management_log_history_cache,
 			       c->options.management_echo_buffer_size,
 			       c->options.management_state_buffer_size,

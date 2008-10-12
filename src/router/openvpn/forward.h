@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -75,6 +75,7 @@ bool send_control_channel_string (struct context *c, const char *str, int msglev
 #define PIPV4_PASSTOS         (1<<0)
 #define PIPV4_MSSFIX          (1<<1)
 #define PIPV4_OUTGOING        (1<<2)
+#define PIPV4_EXTRACT_DHCP_ROUTER (1<<3)
 
 void process_ipv4_header (struct context *c, unsigned int flags, struct buffer *buf);
 

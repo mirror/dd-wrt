@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -358,8 +358,8 @@ extract_x509_field_ssl (X509_NAME *x509, const char *field_name, char *out, int 
   int tmp = -1;
   X509_NAME_ENTRY *x509ne = 0;
   ASN1_STRING *asn1 = 0;
-  unsigned char *buf = 0;
-  int nid = OBJ_txt2nid(field_name);
+  unsigned char *buf = (unsigned char *)1; /* bug in OpenSSL 0.9.6b ASN1_STRING_to_UTF8 requires this workaround */
+  int nid = OBJ_txt2nid((char *)field_name);
 
   ASSERT (size > 0);
   *out = '\0';
@@ -718,7 +718,7 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
 
       setenv_str (opt->es, "script_type", "tls-verify");
 
-      argv_printf (&argv, "%s %d %s",
+      argv_printf (&argv, "%sc %d %s",
 		   opt->verify_command,
 		   ctx->error_depth,
 		   subject);
@@ -2937,7 +2937,7 @@ verify_user_pass_script (struct tls_session *session, const struct user_pass *up
       setenv_untrusted (session);
 
       /* format command line */
-      argv_printf (&argv, "%s %s", session->opt->auth_user_pass_verify_script, tmp_file);
+      argv_printf (&argv, "%sc %s", session->opt->auth_user_pass_verify_script, tmp_file);
       
       /* call command */
       retval = openvpn_execve (&argv, session->opt->es, S_SCRIPT);
@@ -3439,6 +3439,14 @@ key_method_2_read (struct buffer *buf, struct tls_multi *multi, struct tls_sessi
   return false;
 }
 
+static int
+auth_deferred_expire_window (const struct tls_options *o)
+{
+  const int hw = o->handshake_window;
+  const int r2 = o->renegotiate_seconds / 2;
+  return min_int (hw, r2);
+}
+
 /*
  * This is the primary routine for processing TLS stuff inside the
  * the main event loop.  When this routine exits
@@ -3519,7 +3527,8 @@ tls_process (struct tls_multi *multi,
 	      buf = reliable_get_buf_output_sequenced (ks->send_reliable);
 	      if (buf)
 		{
-		  ks->auth_deferred_expire = ks->must_negotiate = now + session->opt->handshake_window;
+		  ks->must_negotiate = now + session->opt->handshake_window;
+		  ks->auth_deferred_expire = now + auth_deferred_expire_window (session->opt);
 
 		  /* null buffer */
 		  reliable_mark_active_outgoing (ks->send_reliable, buf, ks->initial_opcode);
@@ -4084,8 +4093,8 @@ tls_pre_decrypt (struct tls_multi *multi,
 		  ASSERT (buf_advance (buf, 1));
 		  ++ks->n_packets;
 		  ks->n_bytes += buf->len;
-		  dmsg (D_TLS_DEBUG,
-		       "TLS: data channel, key_id=%d, IP=%s",
+		  dmsg (D_TLS_KEYSELECT,
+		       "TLS: tls_pre_decrypt, key_id=%d, IP=%s",
 		       key_id, print_link_socket_actual (from, &gc));
 		  gc_free (&gc);
 		  return ret;
@@ -4592,6 +4601,7 @@ tls_pre_encrypt (struct tls_multi *multi,
   if (buf->len > 0)
     {
       int i;
+      struct key_state *ks_select = NULL;
       for (i = 0; i < KEY_SCAN_SIZE; ++i)
 	{
 	  struct key_state *ks = multi->key_scan[i];
@@ -4600,25 +4610,36 @@ tls_pre_encrypt (struct tls_multi *multi,
 #ifdef ENABLE_DEF_AUTH
 	      && !ks->auth_deferred
 #endif
-	      && (!ks->key_id || now >= ks->auth_deferred_expire))
+	      )
 	    {
-	      opt->key_ctx_bi = &ks->key;
-	      opt->packet_id = multi->opt.replay ? &ks->packet_id : NULL;
-	      opt->pid_persist = NULL;
-	      opt->flags &= multi->opt.crypto_flags_and;
-	      opt->flags |= multi->opt.crypto_flags_or;
-	      multi->save_ks = ks;
-	      dmsg (D_TLS_DEBUG, "TLS: tls_pre_encrypt: key_id=%d", ks->key_id);
-	      return;
+	      if (!ks_select)
+		ks_select = ks;
+	      if (now >= ks->auth_deferred_expire)
+		{
+		  ks_select = ks;
+		  break;
+		}
 	    }
 	}
 
-      {
-	struct gc_arena gc = gc_new ();
-	dmsg (D_TLS_NO_SEND_KEY, "TLS Warning: no data channel send key available: %s",
-	     print_key_id (multi, &gc));
-	gc_free (&gc);
-      }
+      if (ks_select)
+	{
+	  opt->key_ctx_bi = &ks_select->key;
+	  opt->packet_id = multi->opt.replay ? &ks_select->packet_id : NULL;
+	  opt->pid_persist = NULL;
+	  opt->flags &= multi->opt.crypto_flags_and;
+	  opt->flags |= multi->opt.crypto_flags_or;
+	  multi->save_ks = ks_select;
+	  dmsg (D_TLS_KEYSELECT, "TLS: tls_pre_encrypt: key_id=%d", ks_select->key_id);
+	  return;
+	}
+      else
+	{
+	  struct gc_arena gc = gc_new ();
+	  dmsg (D_TLS_KEYSELECT, "TLS Warning: no data channel send key available: %s",
+		print_key_id (multi, &gc));
+	  gc_free (&gc);
+	}
     }
 
   buf->len = 0;
