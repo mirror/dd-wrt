@@ -6800,7 +6800,7 @@ void ej_portsetup( webs_t wp, int argc, char_t ** argv )
 
 	sprintf( mcast, "%s_multicast", var );
 	nvram_default_get( mcast, "0" );
-	showOption( wp, "wl_basic.multicast", mcast );
+	showRadio( wp, "wl_basic.multicast", mcast );
 	show_ipnetmask( wp, var );
 	websWrite( wp, "</div>\n" );
 	websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n " );
