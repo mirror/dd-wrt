@@ -95,7 +95,7 @@ int write_site_survey( void );
 static int open_site_survey( void );
 int write_site_survey( void );
 
-struct site_survey_list
+static struct site_survey_list
 {
     unsigned char SSID[33];
     unsigned char BSSID[18];
@@ -129,21 +129,24 @@ int site_survey_main( int argc, char *argv[] )
 
     unlink( SITE_SURVEY_DB );
     int ap = 0, oldap = 0;
+    unsigned char *buf=malloc(24*1024);
 
-    unsigned char buf[24*1024];
     char ssid[31];
     unsigned char *cp;
     int len;
     char *sta = nvram_safe_get( "wifi_display" );
     memset(site_survey_lists,sizeof(site_survey_lists),0);
+    memset(buf,24*1024,0);
     eval( "iwlist", sta, "scan" );
-    len =
-	do80211priv( sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof( buf ) );
+    len = do80211priv( sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof( buf ) );
 
     if( len == -1 )
 	fprintf( stderr, "unable to get scan results" );
     if( len < sizeof( struct ieee80211req_scan_result ) )
+	{
+	free(buf);
 	return;
+	}
     cp = buf;
     do
     {
@@ -174,6 +177,7 @@ int site_survey_main( int argc, char *argv[] )
 	i++;
     }
     while( len >= sizeof( struct ieee80211req_scan_result ) );
+    free(buf);
     write_site_survey(  );
     open_site_survey(  );
     for( i = 0;
