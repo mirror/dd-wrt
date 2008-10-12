@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -322,6 +322,8 @@ void frame_adjust_path_mtu (struct frame *frame, int pmtu, int proto);
 
 void link_socket_close (struct link_socket *sock);
 
+void sd_close (socket_descriptor_t *sd);
+
 #define PS_SHOW_PORT_IF_DEFINED (1<<0)
 #define PS_SHOW_PORT            (1<<1)
 #define PS_SHOW_PKTINFO         (1<<2)
@@ -396,13 +398,38 @@ void link_socket_update_buffer_sizes (struct link_socket *ls, int rcvbuf, int sn
 #define OIA_IP         1
 #define OIA_ERROR     -1
 int openvpn_inet_aton (const char *dotted_quad, struct in_addr *addr);
+
+/* integrity validation on pulled options */
 bool ip_addr_dotted_quad_safe (const char *dotted_quad);
+bool ip_or_dns_addr_safe (const char *addr, const bool allow_fqdn);
+bool mac_addr_safe (const char *mac_addr);
 
 socket_descriptor_t create_socket_tcp (void);
 
 socket_descriptor_t socket_do_accept (socket_descriptor_t sd,
 				      struct link_socket_actual *act,
 				      const bool nowait);
+
+#if UNIX_SOCK_SUPPORT
+
+socket_descriptor_t create_socket_unix (void);
+
+void socket_bind_unix (socket_descriptor_t sd,
+		       struct sockaddr_un *local,
+		       const char *prefix);
+
+socket_descriptor_t socket_accept_unix (socket_descriptor_t sd,
+					struct sockaddr_un *remote);
+
+void sockaddr_unix_init (struct sockaddr_un *local, const char *path);
+
+const char *sockaddr_unix_name (const struct sockaddr_un *local, const char *null);
+
+void socket_delete_unix (const struct sockaddr_un *local);
+
+bool unix_socket_get_peer_uid_gid (const socket_descriptor_t sd, int *uid, int *gid);
+
+#endif
 
 /*
  * DNS resolution
