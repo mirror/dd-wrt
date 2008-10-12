@@ -3,11 +3,11 @@ iptables-clean:
 	$(MAKE) -C iptables clean
 
 iptables:
-	$(MAKE) -C iptables.linksys clean
-	$(MAKE) -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
+	$(MAKE) -j 4 -C iptables.linksys clean
+	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
 
 iptables-devel:
-	$(MAKE) -C iptables install-devel LIBDIR=/opt/openwrt/lib/ KERNEL_DIR=$(LINUXDIR)
+	$(MAKE) -j 4 -C iptables install-devel LIBDIR=/opt/openwrt/lib/ KERNEL_DIR=$(LINUXDIR)
 
 
 iptables-install:
