@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -169,7 +169,7 @@ static const char usage_message[] =
   "                  netmask default: 255.255.255.255\n"
   "                  gateway default: taken from --route-gateway or --ifconfig\n"
   "                  Specify default by leaving blank or setting to \"nil\".\n"
-  "--route-gateway gw : Specify a default gateway for use with --route.\n"
+  "--route-gateway gw|'dhcp' : Specify a default gateway for use with --route.\n"
   "--route-metric m : Specify a default metric for use with --route.\n"
   "--route-delay n [w] : Delay n seconds after connection initiation before\n"
   "                  adding routes (may be 0).  If not specified, routes will\n"
@@ -180,6 +180,8 @@ static const char usage_message[] =
   "                  --route-up script using environmental variables.\n"
   "--route-nopull  : When used with --client or --pull, accept options pushed\n"
   "                  by server EXCEPT for routes.\n"
+  "--allow-pull-fqdn : Allow client to pull DNS names from server for\n"
+  "                    --ifconfig, --route, and --route-gateway.\n"
   "--redirect-gateway [flags]: (Experimental) Automatically execute routing\n"
   "                  commands to redirect all outgoing IP traffic through the\n"
   "                  VPN.  Add 'local' flag if both " PACKAGE_NAME " servers are directly\n"
@@ -309,6 +311,10 @@ static const char usage_message[] =
   "--management ip port [pass] : Enable a TCP server on ip:port to handle\n"
   "                  management functions.  pass is a password file\n"
   "                  or 'stdin' to prompt from console.\n"
+#if UNIX_SOCK_SUPPORT
+  "                  To listen on a unix domain socket, specific the pathname\n"
+  "                  in place of ip and use 'unix' as the port number.\n"
+#endif
   "--management-client : Management interface will connect as a TCP client to\n"
   "                      ip/port rather than listen as a TCP server.\n"
   "--management-query-passwords : Query management channel for private key\n"
@@ -320,6 +326,12 @@ static const char usage_message[] =
   "                                 event occurs.\n"
   "--management-log-cache n : Cache n lines of log file history for usage\n"
   "                  by the management channel.\n"
+#if UNIX_SOCK_SUPPORT
+  "--management-client-user u  : When management interface is a unix socket, only\n"
+  "                              allow connections from user u.\n"
+  "--management-client-group g : When management interface is a unix socket, only\n"
+  "                              allow connections from group g.\n"
+#endif
 #ifdef MANAGEMENT_DEF_AUTH
   "--management-client-auth : gives management interface client the responsibility\n"
   "                           to authenticate clients after their client certificate\n"
@@ -339,7 +351,7 @@ static const char usage_message[] =
   "\n"
   "Multi-Client Server options (when --mode server is used):\n"
   "--server network netmask : Helper option to easily configure server mode.\n"
-  "--server-bridge IP netmask pool-start-IP pool-end-IP : Helper option to\n"
+  "--server-bridge [IP netmask pool-start-IP pool-end-IP] : Helper option to\n"
   "                    easily configure ethernet bridging server mode.\n"
   "--push \"option\" : Push a config file option back to the peer for remote\n"
   "                  execution.  Peer must specify --pull in its config file.\n"
@@ -890,7 +902,7 @@ dhcp_option_address_parse (const char *name, const char *parm, in_addr_t *array,
     }
   else
     {
-      if (ip_addr_dotted_quad_safe (parm))
+      if (ip_addr_dotted_quad_safe (parm)) /* FQDN -- IP address only */
 	{
 	  bool error = false;
 	  const in_addr_t addr = get_ip_addr (parm, msglevel, &error);
@@ -1226,6 +1238,8 @@ show_settings (const struct options *o)
   SHOW_INT (route_delay_window);
   SHOW_BOOL (route_delay_defined);
   SHOW_BOOL (route_nopull);
+  SHOW_BOOL (route_gateway_via_dhcp);
+  SHOW_BOOL (allow_pull_fqdn);
   if (o->routes)
     print_route_options (o->routes, D_SHOW_PARMS);
 
@@ -1236,6 +1250,8 @@ show_settings (const struct options *o)
   SHOW_INT (management_log_history_cache);
   SHOW_INT (management_echo_buffer_size);
   SHOW_STR (management_write_peer_info_file);
+  SHOW_STR (management_client_user);
+  SHOW_STR (management_client_group);
   SHOW_INT (management_flags);
 #endif
 #ifdef ENABLE_PLUGIN
@@ -1550,6 +1566,14 @@ options_postprocess_verify_ce (const struct options *options, const struct conne
        || options->management_write_peer_info_file
        || options->management_log_history_cache != defaults.management_log_history_cache))
     msg (M_USAGE, "--management is not specified, however one or more options which modify the behavior of --management were specified");
+
+  if ((options->management_flags & (MF_LISTEN_UNIX|MF_CONNECT_AS_CLIENT))
+      == (MF_LISTEN_UNIX|MF_CONNECT_AS_CLIENT))
+    msg (M_USAGE, "--management-client does not support unix domain sockets");
+
+  if ((options->management_client_user || options->management_client_group)
+      && !(options->management_flags & MF_LISTEN_UNIX))
+    msg (M_USAGE, "--management-client-(user|group) can only be used on unix domain sockets");
 #endif
 
   /*
@@ -1888,7 +1912,7 @@ static void
 options_postprocess_mutate_ce (struct options *o, struct connection_entry *ce)
 {
 #if P2MP_SERVER
-  if (o->server_defined || o->server_bridge_defined)
+  if (o->server_defined || o->server_bridge_defined || o->server_bridge_proxy_dhcp)
     {
       if (ce->proto == PROTO_TCPv4)
 	ce->proto = PROTO_TCPv4_SERVER;
@@ -2675,7 +2699,7 @@ usage_version (void)
 {
   msg (M_INFO|M_NOPREFIX, "%s", title_string);
   msg (M_INFO|M_NOPREFIX, "Developed by James Yonan");
-  msg (M_INFO|M_NOPREFIX, "Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>");
+  msg (M_INFO|M_NOPREFIX, "Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>");
   openvpn_exit (OPENVPN_EXIT_STATUS_USAGE); /* exit point */
 }
 
@@ -3248,9 +3272,9 @@ add_option (struct options *options,
 	    struct env_set *es)
 {
   struct gc_arena gc = gc_new ();
-  ASSERT (MAX_PARMS >= 5);
   const bool pull_mode = BOOL_CAST (permission_mask & OPT_P_PULL_MODE);
 
+  ASSERT (MAX_PARMS >= 5);
   if (!file)
     {
       file = "[CMD-LINE]";
@@ -3315,14 +3339,26 @@ add_option (struct options *options,
 #ifdef ENABLE_MANAGEMENT
   else if (streq (p[0], "management") && p[1] && p[2])
     {
-      int port;
+      int port = 0;
 
       VERIFY_PERMISSION (OPT_P_GENERAL);
-      port = atoi (p[2]);
-      if (!legal_ipv4_port (port))
+      if (streq (p[2], "unix"))
 	{
-	  msg (msglevel, "port number associated with --management directive is out of range");
+#if UNIX_SOCK_SUPPORT
+	  options->management_flags |= MF_LISTEN_UNIX;
+#else
+	  msg (msglevel, "MANAGEMENT: this platform does not support unix domain sockets");
 	  goto err;
+#endif
+	}
+      else
+	{
+	  port = atoi (p[2]);
+	  if (!legal_ipv4_port (port))
+	    {
+	      msg (msglevel, "port number associated with --management directive is out of range");
+	      goto err;
+	    }
 	}
 
       options->management_addr = p[1];
@@ -3331,6 +3367,16 @@ add_option (struct options *options,
 	{
 	  options->management_user_pass = p[3];
 	}
+    }
+  else if (streq (p[0], "management-client-user") && p[1])
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->management_client_user = p[1];
+    }
+  else if (streq (p[0], "management-client-group") && p[1])
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->management_client_group = p[1];
     }
   else if (streq (p[0], "management-query-passwords"))
     {
@@ -3432,11 +3478,11 @@ add_option (struct options *options,
   else if (streq (p[0], "lladdr") && p[1])
     {
       VERIFY_PERMISSION (OPT_P_UP);
-      if (ip_addr_dotted_quad_safe (p[1]))
+      if (mac_addr_safe (p[1])) /* MAC address only */
 	options->lladdr = p[1];
       else
 	{
-	  msg (msglevel, "lladdr parm '%s' must be an IP address", p[1]);
+	  msg (msglevel, "lladdr parm '%s' must be a MAC address", p[1]);
 	  goto err;
 	}
     }
@@ -3460,14 +3506,14 @@ add_option (struct options *options,
   else if (streq (p[0], "ifconfig") && p[1] && p[2])
     {
       VERIFY_PERMISSION (OPT_P_UP);
-      if (ip_addr_dotted_quad_safe (p[1]) && ip_addr_dotted_quad_safe (p[2]))
+      if (ip_or_dns_addr_safe (p[1], options->allow_pull_fqdn) && ip_or_dns_addr_safe (p[2], options->allow_pull_fqdn)) /* FQDN -- may be DNS name */
 	{
 	  options->ifconfig_local = p[1];
 	  options->ifconfig_remote_netmask = p[2];
 	}
       else
 	{
-	  msg (msglevel, "ifconfig parms '%s' and '%s' must be IP addresses", p[1], p[2]);
+	  msg (msglevel, "ifconfig parms '%s' and '%s' must be valid addresses", p[1], p[2]);
 	  goto err;
 	}
     }
@@ -4216,19 +4262,19 @@ add_option (struct options *options,
       rol_check_alloc (options);
       if (pull_mode)
 	{
-	  if (!ip_addr_dotted_quad_safe (p[1]) && !is_special_addr (p[1]))
+	  if (!ip_or_dns_addr_safe (p[1], options->allow_pull_fqdn) && !is_special_addr (p[1])) /* FQDN -- may be DNS name */
 	    {
-	      msg (msglevel, "route parameter network/IP '%s' is not an IP address", p[1]);
+	      msg (msglevel, "route parameter network/IP '%s' must be a valid address", p[1]);
 	      goto err;
 	    }
-	  if (p[2] && !ip_addr_dotted_quad_safe (p[2]))
+	  if (p[2] && !ip_addr_dotted_quad_safe (p[2])) /* FQDN -- must be IP address */
 	    {
-	      msg (msglevel, "route parameter netmask '%s' is not an IP address", p[2]);
+	      msg (msglevel, "route parameter netmask '%s' must be an IP address", p[2]);
 	      goto err;
 	    }
-	  if (p[3] && !ip_addr_dotted_quad_safe (p[3]) && !is_special_addr (p[3]))
+	  if (p[3] && !ip_or_dns_addr_safe (p[3], options->allow_pull_fqdn) && !is_special_addr (p[3])) /* FQDN -- may be DNS name */
 	    {
-	      msg (msglevel, "route parameter gateway '%s' is not an IP address", p[3]);
+	      msg (msglevel, "route parameter gateway '%s' must be a valid address", p[3]);
 	      goto err;
 	    }
 	}
@@ -4237,14 +4283,21 @@ add_option (struct options *options,
   else if (streq (p[0], "route-gateway") && p[1])
     {
       VERIFY_PERMISSION (OPT_P_ROUTE_EXTRAS);
-      if (ip_addr_dotted_quad_safe (p[1]) || is_special_addr (p[1]))
+      if (streq (p[1], "dhcp"))
 	{
-	  options->route_default_gateway = p[1];
+	  options->route_gateway_via_dhcp = true;
 	}
       else
 	{
-	  msg (msglevel, "route-gateway parm '%s' must be an IP address", p[1]);
-	  goto err;
+	  if (ip_or_dns_addr_safe (p[1], options->allow_pull_fqdn) || is_special_addr (p[1])) /* FQDN -- may be DNS name */
+	    {
+	      options->route_default_gateway = p[1];
+	    }
+	  else
+	    {
+	      msg (msglevel, "route-gateway parm '%s' must be a valid address", p[1]);
+	      goto err;
+	    }
 	}
     }
   else if (streq (p[0], "route-metric") && p[1])
@@ -4285,6 +4338,11 @@ add_option (struct options *options,
     {
       VERIFY_PERMISSION (OPT_P_GENERAL);
       options->route_nopull = true;
+    }
+  else if (streq (p[0], "allow-pull-fqdn"))
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->allow_pull_fqdn = true;
     }
   else if (streq (p[0], "redirect-gateway"))
     {
@@ -4394,6 +4452,11 @@ add_option (struct options *options,
       options->server_bridge_netmask = netmask;
       options->server_bridge_pool_start = pool_start;
       options->server_bridge_pool_end = pool_end;
+    }
+  else if (streq (p[0], "server-bridge") && !p[1])
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->server_bridge_proxy_dhcp = true;
     }
   else if (streq (p[0], "push") && p[1])
     {

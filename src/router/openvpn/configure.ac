@@ -4,7 +4,7 @@ dnl             session authentication and key exchange,
 dnl             packet encryption, packet authentication, and
 dnl             packet compression.
 dnl
-dnl  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+dnl  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
 dnl
 dnl  This program is free software; you can redistribute it and/or modify
 dnl  it under the terms of the GNU General Public License as published by
@@ -339,7 +339,7 @@ AC_CHECK_HEADERS(fcntl.h stdlib.h dnl
 
 if test "${WIN32}" != "yes"; then
    AC_HEADER_SYS_WAIT
-   AC_CHECK_HEADERS(sys/time.h sys/socket.h sys/ioctl.h sys/stat.h dnl
+   AC_CHECK_HEADERS(sys/time.h sys/socket.h sys/un.h sys/ioctl.h sys/stat.h dnl
 		 sys/mman.h fcntl.h sys/file.h stdlib.h stdint.h dnl
 		 stdarg.h unistd.h signal.h stdio.h string.h dnl
 		 strings.h ctype.h errno.h syslog.h pwd.h grp.h dnl
@@ -458,17 +458,25 @@ AC_CHECK_SIZEOF(unsigned long)
 
 AC_CACHE_SAVE
 
+AC_CHECK_FUNCS([ctime memset vsnprintf strdup], ,
+               [AC_MSG_ERROR([Required library function not found])])
 AC_CHECK_FUNCS(daemon chroot getpwnam setuid nice system getpid dup dup2 dnl
 	       getpass strerror syslog openlog mlockall getgrnam setgid dnl
-	       setgroups stat flock readv writev setsockopt getsockopt dnl
+	       setgroups stat flock readv writev time dnl
 	       setsid chdir putenv getpeername unlink dnl
-	       poll chsize ftruncate sendmsg recvmsg getsockname dnl
-	       execve)
-AC_CACHE_SAVE
+	       chsize ftruncate execve getpeereid umask)
+
+# Windows use stdcall for winsock so we cannot auto detect these
+m4_define([SOCKET_FUNCS], [socket recv recvfrom send sendto listen dnl
+          accept connect bind select gethostbyname inet_ntoa])
+m4_define([SOCKET_OPT_FUNCS], [setsockopt getsockopt getsockname poll])
 
 if test "${WIN32}" = "yes"; then
 
 	AC_DEFINE([HAVE_GETTIMEOFDAY], [1], [We fake gettimeofday for win32 at otime.c])
+	m4_foreach([F], m4_split(SOCKET_FUNCS SOCKET_OPT_FUNCS),
+		m4_define(UF, [[m4_join([_], [HAVE], m4_toupper(F))]])
+		AC_DEFINE([UF], [1], [Win32 builtin]))
 
 else
 
@@ -489,10 +497,9 @@ else
 
 	AC_CHECK_FUNCS(gettimeofday)
 
-	AC_CHECK_FUNCS(socket recv recvfrom send sendto listen dnl
-		       accept connect bind select gethostbyname dnl
-		       inet_ntoa time ctime memset vsnprintf strdup, [],
-		       [AC_MSG_ERROR([Required library function not found])])
+	AC_CHECK_FUNCS(SOCKET_FUNCS, ,
+	       [AC_MSG_ERROR([Required library function not found])])
+	AC_CHECK_FUNCS(SOCKET_OPT_FUNCS sendmsg recvmsg)
 
 fi
 

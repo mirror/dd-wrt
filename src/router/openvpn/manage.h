@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -202,12 +202,17 @@ struct man_settings {
   bool defined;
   unsigned int flags; /* MF_x flags */
   struct openvpn_sockaddr local;
+#if UNIX_SOCK_SUPPORT
+  struct sockaddr_un local_unix;
+#endif
   bool management_over_tunnel;
   struct user_pass up;
   int log_history_cache;
   int echo_buffer_size;
   int state_buffer_size;
   char *write_peer_info_file;
+  int client_uid;
+  int client_gid;
 
 /* flags for handling the management interface "signal" command */
 # define MANSIG_IGNORE_USR1_HUP  (1<<0)
@@ -295,10 +300,14 @@ struct management *management_init (void);
 #ifdef MANAGEMENT_PF
 # define MF_CLIENT_PF         (1<<7)
 #endif
+# define MF_LISTEN_UNIX       (1<<8)
+
 bool management_open (struct management *man,
 		      const char *addr,
 		      const int port,
 		      const char *pass_file,
+		      const char *client_user,
+		      const char *client_group,
 		      const int log_history_cache,
 		      const int echo_buffer_size,
 		      const int state_buffer_size,

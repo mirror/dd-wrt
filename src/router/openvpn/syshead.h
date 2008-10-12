@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -86,6 +86,10 @@
 
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+
+#ifdef HAVE_SYS_UN_H
+#include <sys/un.h>
 #endif
 
 #ifdef HAVE_SYS_IOCTL_H
@@ -513,6 +517,15 @@ socket_defined (const socket_descriptor_t sd)
 #endif
 #if defined(PLUGIN_PF) || defined(MANAGEMENT_PF)
 #define ENABLE_PF
+#endif
+
+/*
+ * Do we support Unix domain sockets?
+ */
+#if defined(PF_UNIX) && !defined(WIN32)
+#define UNIX_SOCK_SUPPORT 1
+#else
+#define UNIX_SOCK_SUPPORT 0
 #endif
 
 /*

@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -119,7 +119,7 @@ void warn_if_group_others_accessible(const char* filename);
 
 /* interpret the status code returned by system()/execve() */
 bool system_ok(int);
-int system_executed (int stat);
+bool system_executed (int stat);
 const char *system_error_message (int, struct gc_arena *gc);
 
 /* wrapper around the execve() call */
@@ -221,9 +221,6 @@ bool delete_file (const char *filename);
 /* return true if pathname is absolute */
 bool absolute_pathname (const char *pathname);
 
-/* return the next largest power of 2 */
-unsigned int adjust_power_of_2 (unsigned int u);
-
 /*
  * Get and store a username/password
  */
@@ -299,5 +296,62 @@ extern const char *iproute_path;
 #define SSEC_SCRIPTS   2 /* allow calling of built-in programs and user-defined scripts */
 #define SSEC_PW_ENV    3 /* allow calling of built-in programs and user-defined scripts that may receive a password as an environmental variable */
 extern int script_security; /* GLOBAL */
+
+/* return the next largest power of 2 */
+size_t adjust_power_of_2 (size_t u);
+
+/*
+ * A printf-like function (that only recognizes a subset of standard printf
+ * format operators) that prints arguments to an argv list instead
+ * of a standard string.  This is used to build up argv arrays for passing
+ * to execve.
+ */
+void argv_init (struct argv *a);
+struct argv argv_new (void);
+void argv_reset (struct argv *a);
+char *argv_term (const char **f);
+const char *argv_str (const struct argv *a, struct gc_arena *gc, const unsigned int flags);
+struct argv argv_insert_head (const struct argv *a, const char *head);
+void argv_msg (const int msglev, const struct argv *a);
+void argv_msg_prefix (const int msglev, const struct argv *a, const char *prefix);
+
+#define APA_CAT (1<<0) /* concatentate onto existing struct argv list */
+void argv_printf_arglist (struct argv *a, const char *format, const unsigned int flags, va_list arglist);
+
+void argv_printf (struct argv *a, const char *format, ...)
+#ifdef __GNUC__
+  __attribute__ ((format (printf, 2, 3)))
+#endif
+  ;
+
+void argv_printf_cat (struct argv *a, const char *format, ...)
+#ifdef __GNUC__
+  __attribute__ ((format (printf, 2, 3)))
+#endif
+  ;
+
+/*
+ * Extract UID or GID
+ */
+
+static inline int
+user_state_uid (const struct user_state *s)
+{
+#if defined(HAVE_GETPWNAM) && defined(HAVE_SETUID)
+  if (s->pw)
+    return s->pw->pw_uid;
+#endif
+  return -1;
+}
+
+static inline int
+group_state_gid (const struct group_state *s)
+{
+#if defined(HAVE_GETGRNAM) && defined(HAVE_SETGID)
+  if (s->gr)
+    return s->gr->gr_gid;
+#endif
+  return -1;
+}
 
 #endif

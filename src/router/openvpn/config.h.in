@@ -135,6 +135,9 @@
 /* Define to 1 if you have the `getpass' function. */
 #undef HAVE_GETPASS
 
+/* Define to 1 if you have the `getpeereid' function. */
+#undef HAVE_GETPEEREID
+
 /* Define to 1 if you have the `getpeername' function. */
 #undef HAVE_GETPEERNAME
 
@@ -372,6 +375,9 @@
 /* Define to 1 if you have the <sys/uio.h> header file. */
 #undef HAVE_SYS_UIO_H
 
+/* Define to 1 if you have the <sys/un.h> header file. */
+#undef HAVE_SYS_UN_H
+
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 #undef HAVE_SYS_WAIT_H
 
@@ -380,6 +386,9 @@
 
 /* struct tun_pi needed for IPv6 support */
 #undef HAVE_TUN_PI
+
+/* Define to 1 if you have the `umask' function. */
+#undef HAVE_UMASK
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
@@ -495,6 +504,9 @@
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
+
+/* Win32 builtin */
+#undef UF
 
 /* Use OpenSSL crypto library */
 #undef USE_CRYPTO
