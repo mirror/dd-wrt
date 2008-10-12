@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -42,6 +42,8 @@
 
 #define GREMLIN_UP_DOWN_SHIFT            (7)
 #define GREMLIN_UP_DOWN_MASK             (0x03)
+
+/* 512:1/500 1024:1/100 1536:1/50 */
 
 #define GREMLIN_DROP_SHIFT               (9)
 #define GREMLIN_DROP_MASK                (0x03)

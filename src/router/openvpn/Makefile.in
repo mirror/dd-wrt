@@ -21,7 +21,7 @@
 #             packet encryption, packet authentication, and
 #             packet compression.
 #
-#  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+#  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License version 2
@@ -90,20 +90,21 @@ am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)" \
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
 am_openvpn_OBJECTS = base64.$(OBJEXT) buffer.$(OBJEXT) \
-	crypto.$(OBJEXT) error.$(OBJEXT) event.$(OBJEXT) \
-	fdmisc.$(OBJEXT) forward.$(OBJEXT) fragment.$(OBJEXT) \
-	gremlin.$(OBJEXT) helper.$(OBJEXT) lladdr.$(OBJEXT) \
-	init.$(OBJEXT) interval.$(OBJEXT) list.$(OBJEXT) lzo.$(OBJEXT) \
-	manage.$(OBJEXT) mbuf.$(OBJEXT) misc.$(OBJEXT) \
-	mroute.$(OBJEXT) mss.$(OBJEXT) mtcp.$(OBJEXT) mtu.$(OBJEXT) \
-	mudp.$(OBJEXT) multi.$(OBJEXT) ntlm.$(OBJEXT) occ.$(OBJEXT) \
-	pkcs11.$(OBJEXT) openvpn.$(OBJEXT) options.$(OBJEXT) \
-	otime.$(OBJEXT) packet_id.$(OBJEXT) perf.$(OBJEXT) \
-	pf.$(OBJEXT) ping.$(OBJEXT) plugin.$(OBJEXT) pool.$(OBJEXT) \
-	proto.$(OBJEXT) proxy.$(OBJEXT) ieproxy.$(OBJEXT) ps.$(OBJEXT) \
-	push.$(OBJEXT) reliable.$(OBJEXT) route.$(OBJEXT) \
-	schedule.$(OBJEXT) session_id.$(OBJEXT) shaper.$(OBJEXT) \
-	sig.$(OBJEXT) socket.$(OBJEXT) socks.$(OBJEXT) ssl.$(OBJEXT) \
+	crypto.$(OBJEXT) dhcp.$(OBJEXT) error.$(OBJEXT) \
+	event.$(OBJEXT) fdmisc.$(OBJEXT) forward.$(OBJEXT) \
+	fragment.$(OBJEXT) gremlin.$(OBJEXT) helper.$(OBJEXT) \
+	lladdr.$(OBJEXT) init.$(OBJEXT) interval.$(OBJEXT) \
+	list.$(OBJEXT) lzo.$(OBJEXT) manage.$(OBJEXT) mbuf.$(OBJEXT) \
+	misc.$(OBJEXT) mroute.$(OBJEXT) mss.$(OBJEXT) mtcp.$(OBJEXT) \
+	mtu.$(OBJEXT) mudp.$(OBJEXT) multi.$(OBJEXT) ntlm.$(OBJEXT) \
+	occ.$(OBJEXT) pkcs11.$(OBJEXT) openvpn.$(OBJEXT) \
+	options.$(OBJEXT) otime.$(OBJEXT) packet_id.$(OBJEXT) \
+	perf.$(OBJEXT) pf.$(OBJEXT) ping.$(OBJEXT) plugin.$(OBJEXT) \
+	pool.$(OBJEXT) proto.$(OBJEXT) proxy.$(OBJEXT) \
+	ieproxy.$(OBJEXT) ps.$(OBJEXT) push.$(OBJEXT) \
+	reliable.$(OBJEXT) route.$(OBJEXT) schedule.$(OBJEXT) \
+	session_id.$(OBJEXT) shaper.$(OBJEXT) sig.$(OBJEXT) \
+	socket.$(OBJEXT) socks.$(OBJEXT) ssl.$(OBJEXT) \
 	status.$(OBJEXT) thread.$(OBJEXT) tun.$(OBJEXT) \
 	win32.$(OBJEXT) cryptoapi.$(OBJEXT)
 openvpn_OBJECTS = $(am_openvpn_OBJECTS)
@@ -294,7 +295,8 @@ dist_noinst_HEADERS = \
 dist_noinst_SCRIPTS = \
 	$(TESTS) \
 	doclean \
-	domake-win
+	domake-win \
+	t_cltsrv-down.sh
 
 dist_noinst_DATA = openvpn.spec COPYRIGHT.GPL PORTS INSTALL-win32.txt \
 	$(am__append_1)
@@ -305,6 +307,7 @@ openvpn_SOURCES = \
 	circ_list.h \
 	common.h \
 	crypto.c crypto.h \
+	dhcp.c dhcp.h \
 	errlevel.h \
 	error.c error.h \
 	event.c event.h \
@@ -462,6 +465,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cryptoapi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dhcp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/event.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fdmisc.Po@am__quote@

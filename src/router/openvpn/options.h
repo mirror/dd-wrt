@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -302,6 +302,8 @@ struct options
   bool route_delay_defined;
   struct route_option_list *routes;
   bool route_nopull;
+  bool route_gateway_via_dhcp;
+  bool allow_pull_fqdn; /* as a client, allow server to push a FQDN for certain parameters */
 
 #ifdef ENABLE_OCC
   /* Enable options consistency check between peers */
@@ -316,6 +318,9 @@ struct options
   int management_echo_buffer_size;
   int management_state_buffer_size;
   const char *management_write_peer_info_file;
+
+  const char *management_client_user;
+  const char *management_client_group;
 
   /* Mask of MF_ values of manage.h */
   unsigned int management_flags;
@@ -339,6 +344,8 @@ struct options
 
 # define SF_NOPOOL (1<<0)
   unsigned int server_flags;
+
+  bool server_bridge_proxy_dhcp;
 
   bool server_bridge_defined;
   in_addr_t server_bridge_ip;
@@ -606,9 +613,9 @@ char *options_string (const struct options *o,
 		      bool remote,
 		      struct gc_arena *gc);
 
-int options_cmp_equal_safe (char *actual, const char *expected, size_t actual_n);
+bool options_cmp_equal_safe (char *actual, const char *expected, size_t actual_n);
 void options_warning_safe (char *actual, const char *expected, size_t actual_n);
-int options_cmp_equal (char *actual, const char *expected);
+bool options_cmp_equal (char *actual, const char *expected);
 void options_warning (char *actual, const char *expected);
 
 #endif

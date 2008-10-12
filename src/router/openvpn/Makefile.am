@@ -5,7 +5,7 @@
 #             packet encryption, packet authentication, and
 #             packet compression.
 #
-#  Copyright (C) 2002-2008 Telethra, Inc. <sales@openvpn.net>
+#  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License version 2
@@ -64,7 +64,8 @@ dist_noinst_HEADERS = \
 dist_noinst_SCRIPTS = \
 	$(TESTS) \
 	doclean \
-	domake-win
+	domake-win \
+	t_cltsrv-down.sh
 
 dist_noinst_DATA = \
 	openvpn.spec \
@@ -79,6 +80,7 @@ openvpn_SOURCES = \
 	circ_list.h \
 	common.h \
 	crypto.c crypto.h \
+	dhcp.c dhcp.h \
 	errlevel.h \
 	error.c error.h \
 	event.c event.h \
