@@ -130,12 +130,12 @@ int site_survey_main( int argc, char *argv[] )
     unlink( SITE_SURVEY_DB );
     int ap = 0, oldap = 0;
 
-    unsigned char buf[sizeof( struct ieee80211req_scan_result )*256];
+    unsigned char buf[24*1024];
     char ssid[31];
     unsigned char *cp;
     int len;
     char *sta = nvram_safe_get( "wifi_display" );
-
+    memset(site_survey_lists,sizeof(site_survey_lists),0);
     eval( "iwlist", sta, "scan" );
     len =
 	do80211priv( sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof( buf ) );
@@ -174,13 +174,13 @@ int site_survey_main( int argc, char *argv[] )
 	i++;
     }
     while( len >= sizeof( struct ieee80211req_scan_result ) );
-
     write_site_survey(  );
     open_site_survey(  );
     for( i = 0;
 	 i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]
 	 && site_survey_lists[i].channel != 0; i++ )
     {
+        
 	fprintf( stderr,
 		 "[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d]\n",
 		 i, site_survey_lists[i].SSID, site_survey_lists[i].BSSID,
@@ -222,3 +222,4 @@ static int open_site_survey( void )
     }
     return 0;
 }
+
