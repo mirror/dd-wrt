@@ -1770,7 +1770,6 @@ static void showOption( webs_t wp, char *propname, char *nvname )
     websWrite( wp, "//]]>\n</script>\n</select>\n</div>\n" );
 
 }
-#ifdef HAVE_MADWIFI
 static void showRadio( webs_t wp, char *propname, char *nvname )
 {
     websWrite( wp, "<div class=\"setting\">\n" );
@@ -1789,6 +1788,7 @@ static void showRadio( webs_t wp, char *propname, char *nvname )
 	       "" );
     websWrite( wp, "</div>\n" );
 }
+#ifdef HAVE_MADWIFI
 static void showAutoOption( webs_t wp, char *propname, char *nvname )
 {
     websWrite( wp, "<div class=\"setting\">\n" );
@@ -2856,10 +2856,10 @@ static char *bg_rates[] =
     { "1", "2", "5.5", "6", "9", "11", "12", "18", "24", "36", "48", "54" };
 // static char *g_rates[] = { "1", "2", "5.5", "11", "12", "18", "24", "36",
 // "48", "54" };
-static char *xr_rates[] =
-    { "0.25", "0.5", "1", "2", "3", "6", "9", "12", "18", "24", "36", "48",
-    "54"
-};
+//static char *xr_rates[] =
+//    { "0.25", "0.5", "1", "2", "3", "6", "9", "12", "18", "24", "36", "48",
+//    "54"
+//};
 static char *half_rates[] = { "3", "4.5", "6", "9", "12", "18", "24", "27" };
 static char *quarter_rates[] =
     { "1.5", "2", "3", "4.5", "6", "9", "12", "13.5" };
@@ -3224,7 +3224,7 @@ static void showbridgesettings( webs_t wp, char *var, int mcast )
 
 	sprintf( mcast, "%s_multicast", var );
 	nvram_default_get( mcast, "0" );
-	showOption( wp, "wl_basic.multicast", mcast );
+	showRadio( wp, "wl_basic.multicast", mcast );
     }
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
@@ -3448,10 +3448,10 @@ static int show_virtualssid( webs_t wp, char *prefix )
 	websWrite( wp, "</select>\n" );
 	websWrite( wp, "</div>\n" );
 	sprintf( wmm, "%s_wmm", var );
-	showOption( wp, "wl_adv.label18", wmm );
+        showRadio( wp, "wl_adv.label18", wmm );
 #endif
 	sprintf( ssid, "%s_ap_isolate", var );
-	showOption( wp, "wl_adv.label11", ssid );
+	showRadio( wp, "wl_adv.label11", ssid );
 	sprintf( wl_mode, "%s_mode", var );
 	showbridgesettings( wp, var, 1 );
 	websWrite( wp, "</fieldset><br />\n" );
@@ -3517,26 +3517,6 @@ void ej_showad( webs_t wp, int argc, char_t ** argv )
 }
 
 #ifdef HAVE_MSSID
-#ifdef HAVE_MADWIFI
-
-static int getMaxPower( char *ifname )
-{
-    sysprintf( "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",
-	       ifname );
-    FILE *in = fopen( "/tmp/.power", "rb" );
-
-    if( in == NULL )
-	return 1000;
-    char buf2[16];
-    char buf[16];
-    int max;
-
-    fscanf( in, "%s %s %d", buf, buf2, &max );
-    fclose( in );
-    return max;
-}
-
-#endif
 
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel( void )
@@ -3554,15 +3534,13 @@ int inline issuperchannel( void )
 #ifdef HAVE_MADWIFI
 void ej_show_countrylist( webs_t wp, int argc, char_t ** argv )
 {
-    char *name;
-
     if( argc < 1 )
     {
 	return;
     }
     char *list = getCountryList(  );
 
-    showOptionsChoose( wp, name, list, nvram_safe_get( argv[0] ) );
+    showOptionsChoose( wp, argv[0], list, nvram_safe_get( argv[0] ) );
 }
 #endif
 void ej_show_wireless_single( webs_t wp, char *prefix )
@@ -5060,8 +5038,6 @@ void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
 
 void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
 {
-    char *dev = NULL;
-
     int channel = wifi_getchannel( nvram_safe_get( "wifi_display" ) );
 
     if( channel > 0 && channel < 1000 )
@@ -5113,11 +5089,6 @@ static const char *ieee80211_ntoa( const uint8_t mac[IEEE80211_ADDR_LEN] )
     i = snprintf( a, sizeof( a ), "%02x:%02x:%02x:%02x:%02x:%02x",
 		  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
     return ( i < 17 ? NULL : a );
-}
-
-static u_int rssi2dbm( u_int rssi )
-{
-    return rssi - 95;
 }
 
 int
