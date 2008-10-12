@@ -39,7 +39,7 @@
 #include <wlutils.h>
 
 #define SITE_SURVEY_DB	"/tmp/site_survey"
-#define SITE_SURVEY_NUM	50
+#define SITE_SURVEY_NUM	256
 
 static int open_site_survey( void );
 
