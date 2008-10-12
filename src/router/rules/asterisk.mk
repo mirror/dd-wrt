@@ -30,7 +30,7 @@ asterisk-configure:
 #	--with-popt="$(STAGING_DIR)/usr" \
 
 asterisk:
-	make -C asterisk
+	make -j 4 -C asterisk
 
 asterisk-install:
 	make -C asterisk install DESTDIR=$(INSTALLDIR)/asterisk
