@@ -116,7 +116,7 @@ static int image_check_bcom( int imagefd, const char *mtd )
     if( buflen < 32 )
     {
 	fprintf( stdout,
-		 "Could not get image header, file too small (%ld bytes)\n",
+		 "Could not get image header, file too small (%d bytes)\n",
 		 buflen );
 	return 0;
     }
