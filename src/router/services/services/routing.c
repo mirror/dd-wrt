@@ -207,7 +207,11 @@ int zebra_ospf_init( void )
 	return errno;
     }
 
-    if( nvram_match( "ospfd_copt", "1" ) )
+    if( nvram_match( "ospfd_copt", "1" ) && strlen(nvram_safe_get("ospfd_conf")))
+    {
+	fwritenvram( "ospfd_conf", fp );
+    }
+    else
     {
 	fprintf( fp, "!\n" );
 	// fprintf (fp, "password %s\n", nvram_safe_get ("http_passwd"));
@@ -277,11 +281,6 @@ int zebra_ospf_init( void )
 	}
 
 	fprintf( fp, "!\nline vty\n!\n" );
-    }
-
-    if( strlen( nvram_safe_get( "ospfd_conf" ) ) > 0 )
-    {
-	fwritenvram( "ospfd_conf", fp );
     }
 
     fflush( fp );
