@@ -15,7 +15,8 @@
 #include <linux_osl.h>
 #include <time.h>
 #include <stdarg.h>
-#include <linux/in.h>
+#include <netinet/in.h>
+#include <unistd.h>
 
 #include <shutils.h>
 
