@@ -138,10 +138,13 @@ int site_survey_main( int argc, char *argv[] )
     memset(site_survey_lists,sizeof(site_survey_lists),0);
     memset(buf,24*1024,0);
     eval( "iwlist", sta, "scan" );
-    len = do80211priv( sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, sizeof( buf ) );
+    len = do80211priv( sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24*1024 );
 
     if( len == -1 )
+	{
 	fprintf( stderr, "unable to get scan results" );
+	return;
+	}
     if( len < sizeof( struct ieee80211req_scan_result ) )
 	{
 	free(buf);
