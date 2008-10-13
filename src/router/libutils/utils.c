@@ -2774,7 +2774,7 @@ int insmod( char *module )
 
 void rmmod( char *module )
 {
-    return eval( "rmmod", module );
+    eval( "rmmod", module );
 }
 
 #ifdef HAVE_X86

@@ -36,6 +36,7 @@
 #include <linux/sockios.h>
 #include <cymac.h>
 #include <broadcom.h>
+#include <md5.h>
 
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
@@ -160,7 +161,7 @@ char *substring( int start, int stop, const char *src, char *dst )
  */
 int weekday( int month, int day, int year )
 {
-    int ix, tx, vx;
+    int ix, tx, vx = 0;
 
     switch ( month )
     {
@@ -1310,7 +1311,7 @@ void get_network( char *ipaddr, char *netmask )
 int get_net(char *netmask)
 {
 if (!netmask)
-    return;
+    return -1;
 unsigned int mask[4];
 sscanf( netmask, "%d.%d.%d.%d", &mask[0], &mask[1], &mask[2], &mask[3] );
 unsigned int value=0;
