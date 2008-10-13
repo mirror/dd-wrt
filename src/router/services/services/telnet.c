@@ -59,7 +59,7 @@ int start_telnetd( void )
 
 int stop_telnetd( void )
 {
-    int ret;
+    int ret = 0;
 
     if( pidof( "telnetd" ) > 0 )
     {
