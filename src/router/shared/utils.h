@@ -7,6 +7,9 @@
 #include <cy_conf.h>
 #endif
 #include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
 
 /*
  * 2 byte router ID number; Eko 4.jul.06
@@ -672,6 +675,10 @@ void addList( char *listname, char *value );
 int searchfor( FILE * fp, char *str, int scansize );
 int insmod( char *module );
 void rmmod( char *module );
+
+int do80211priv( const char *ifname, int op, void *data, size_t len );
+int getsocket( void );
+
 
 #ifndef HAVE_SYSLOG
 #define dd_syslog(a, args...) do { } while(0);

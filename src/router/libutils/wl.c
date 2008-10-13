@@ -187,7 +187,7 @@ int getNoise( char *ifname, unsigned char *macname )
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 
-static int getsocket( void )
+int getsocket( void )
 {
     static int s = -1;
 
@@ -461,7 +461,6 @@ int wifi_getfreq( char *ifname )
 {
     struct iwreq wrq;
     float freq;
-    int channel;
 
     strncpy( wrq.ifr_name, ifname, IFNAMSIZ );
     ioctl( getsocket(  ), SIOCGIWFREQ, &wrq );
@@ -498,81 +497,6 @@ int get_radiostate( char *ifname )
     return 0;
 }
 
-#define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
-static int
-do80211priv( struct iwreq *iwr, const char *ifname, int op, void *data,
-	     size_t len )
-{
-#define	N(a)	(sizeof(a)/sizeof(a[0]))
-
-    memset( iwr, 0, sizeof( struct iwreq ) );
-    strncpy( iwr->ifr_name, ifname, IFNAMSIZ );
-    if( len < IFNAMSIZ )
-    {
-	/*
-	 * Argument data fits inline; put it there.
-	 */
-	memcpy( iwr->u.name, data, len );
-    }
-    else
-    {
-	/*
-	 * Argument data too big for inline transfer; setup a
-	 * parameter block instead; the kernel will transfer
-	 * the data for the driver.
-	 */
-	iwr->u.data.pointer = data;
-	iwr->u.data.length = len;
-    }
-
-    if( ioctl( getsocket(  ), op, iwr ) < 0 )
-    {
-	static const char *opnames[] = {
-	    IOCTL_ERR( IEEE80211_IOCTL_SETPARAM ),
-	    IOCTL_ERR( IEEE80211_IOCTL_GETPARAM ),
-	    IOCTL_ERR( IEEE80211_IOCTL_SETMODE ),
-	    IOCTL_ERR( IEEE80211_IOCTL_GETMODE ),
-	    IOCTL_ERR( IEEE80211_IOCTL_SETWMMPARAMS ),
-	    IOCTL_ERR( IEEE80211_IOCTL_GETWMMPARAMS ),
-	    IOCTL_ERR( IEEE80211_IOCTL_SETCHANLIST ),
-	    IOCTL_ERR( IEEE80211_IOCTL_GETCHANLIST ),
-	    IOCTL_ERR( IEEE80211_IOCTL_CHANSWITCH ),
-	    IOCTL_ERR( IEEE80211_IOCTL_GETCHANINFO ),
-	    IOCTL_ERR( IEEE80211_IOCTL_SETOPTIE ),
-	    IOCTL_ERR( IEEE80211_IOCTL_GETOPTIE ),
-	    IOCTL_ERR( IEEE80211_IOCTL_SETMLME ),
-	    IOCTL_ERR( IEEE80211_IOCTL_SETKEY ),
-	    IOCTL_ERR( IEEE80211_IOCTL_DELKEY ),
-	    IOCTL_ERR( IEEE80211_IOCTL_ADDMAC ),
-	    IOCTL_ERR( IEEE80211_IOCTL_DELMAC ),
-	    IOCTL_ERR( IEEE80211_IOCTL_WDSADDMAC ),
-#ifdef OLD_MADWIFI
-	    IOCTL_ERR( IEEE80211_IOCTL_WDSDELMAC ),
-#else
-	    IOCTL_ERR( IEEE80211_IOCTL_WDSSETMAC ),
-#endif
-	};
-	op -= SIOCIWFIRSTPRIV;
-	if( 0 <= op && op < N( opnames ) )
-	    perror( opnames[op] );
-	else
-	    perror( "ioctl[unknown???]" );
-	return -1;
-    }
-    return 0;
-#undef N
-}
-
-int get80211priv( const char *ifname, int op, void *data, size_t len )
-{
-    struct iwreq iwr;
-
-    if( do80211priv( &iwr, ifname, op, data, len ) < 0 )
-	return -1;
-    if( len < IFNAMSIZ )
-	memcpy( data, iwr.u.name, len );
-    return iwr.u.data.length;
-}
 
 struct wifi_channels
 {
@@ -664,10 +588,10 @@ static struct wifi_channels *list_channelsext( const char *ifname,
     struct ieee80211req_chaninfo chans;
     struct ieee80211req_chaninfo achans;
     const struct ieee80211_channel *c;
-    int i, half;
+    int i;
 
     // fprintf (stderr, "list channels for %s\n", ifname);
-    if( get80211priv
+    if( do80211priv
 	( ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof( chans ) ) < 0 )
     {
 	fprintf( stderr, "unable to get channel information\n" );
@@ -677,7 +601,7 @@ static struct wifi_channels *list_channelsext( const char *ifname,
     {
 	uint8_t active[64];
 
-	if( get80211priv
+	if( do80211priv
 	    ( ifname, IEEE80211_IOCTL_GETCHANLIST, &active,
 	      sizeof( active ) ) < 0 )
 	{
@@ -818,19 +742,6 @@ int getdevicecount( void )
     return 0;
 }
 
-static u_int rssi2dbm( u_int rssi )
-{
-    return rssi - 95;
-}
-static const char *ieee80211_ntoa( const uint8_t mac[IEEE80211_ADDR_LEN] )
-{
-    static char a[18];
-    int i;
-
-    i = snprintf( a, sizeof( a ), "%02x:%02x:%02x:%02x:%02x:%02x",
-		  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
-    return ( i < 17 ? NULL : a );
-}
 
 int getRssi( char *ifname, unsigned char *mac )
 {
@@ -863,7 +774,6 @@ int getRssi( char *ifname, unsigned char *mac )
     len = iwr.u.data.length;
     if( len < sizeof( struct ieee80211req_sta_info ) )
 	return 0;
-    int cnt = 0;
 
     cp = buf;
     char maccmp[6];
@@ -923,7 +833,6 @@ int getNoise( char *ifname, unsigned char *mac )
     len = iwr.u.data.length;
     if( len < sizeof( struct ieee80211req_sta_info ) )
 	return -1;
-    int cnt = 0;
 
     cp = buf;
     char maccmp[6];
@@ -1018,7 +927,6 @@ int getassoclist( char *ifname, unsigned char *list )
 	free( buf );
 	return mincount;
     }
-    int cnt = 0;
 
     cp = buf;
     unsigned char *l = ( unsigned char * )list;

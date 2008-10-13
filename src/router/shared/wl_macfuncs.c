@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <memory.h>
+int getsocket( void );
 #ifndef HAVE_MADWIFI
 #include <wlutils.h>
 #include <wlioctl.h>
@@ -86,19 +87,6 @@ void kick_mac( char *iface, char *mac )
  * Atheros 
  */
 
-static int socket_handle = -1;
-
-static int getsocket( void )
-{
-
-    if( socket_handle < 0 )
-    {
-	socket_handle = socket( AF_INET, SOCK_DGRAM, 0 );
-	if( socket_handle < 0 )
-	    err( 1, "socket(SOCK_DGRAM)" );
-    }
-    return socket_handle;
-}
 
 #define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
 static int
@@ -165,7 +153,7 @@ set80211priv( struct iwreq *iwr, const char *ifname, int op, void *data,
 #undef N
 }
 
-static int do80211priv( const char *ifname, int op, void *data, size_t len )
+int do80211priv( const char *ifname, int op, void *data, size_t len )
 {
     struct iwreq iwr;
 
