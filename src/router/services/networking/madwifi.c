@@ -171,8 +171,6 @@ extern int br_add_interface (const char *br, const char *dev);
 static int
 setsysctrl (const char *dev, const char *control, u_long value)
 {
-  char buffer[256];
-
   sysprintf ("echo %li > /proc/sys/dev/%s/%s", value, dev, control);
 
   return 0;
@@ -481,7 +479,9 @@ if (!isregistered())
       if (nvram_prefix_match ("8021xtype", prefix, "ttls"))
 	{
 	  fprintf (fp, "\tkey_mgmt=WPA-EAP\n");
-	  fprintf (fp, "\teap=TTLS\n");
+	  fprintf (fp, "\teap=TTLS PEAP\n");
+	  fprintf (fp, "\tpairwise=CCMP TKIP\n");
+	  fprintf (fp, "\tgroup=CCMP TKIP\n");
 	  fprintf (fp, "\tidentity=\"%s\"\n",
 		   nvram_prefix_get ("ttls8021xuser", prefix));
 	  fprintf (fp, "\tpassword=\"%s\"\n",
