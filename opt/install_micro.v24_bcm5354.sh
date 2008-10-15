@@ -71,7 +71,7 @@ export TARGETDIR=../src/router/mipsel-uclibc/target
 #./make_kernel.v24.sh
 ../tools/trx -o dd-wrt.v23.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz -a 1024 target.squashfs
 ../tools/trx_gs -o dd-wrt.v23_gs.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
-../tools/trx_wrh -o dd-wrt.v23_wrh.trx ./loader-0.02/loader ../src/router/mipsel-uclibc/vmlinuz target.squashfs
+../tools/trx -o dd-wrt.v23_wrh.trx ./loader-0.02/loader ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 #./asus/asustrx -p WL500gx -v 1.9.2.7 -o dd-wrt.v23_asus.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 #add pattern
 #./tools/addpattern -4 -p W54U -v v4.20.6 -i dd-wrt.v23.trx -o dd-wrt.v23_wrtsl54gs.bin -g
