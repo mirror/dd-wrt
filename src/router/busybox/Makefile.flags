@@ -112,14 +112,13 @@ LDLIBS += dmalloc
 endif
 
 #LDFLAGS += -nostdlib
-
+# LDFLAGS += -lgcc
 
 ifeq ($(CONFIG_NOMESSAGE),y)
 CFLAGS += -DHAVE_NOMESSAGE
 endif
 CFLAGS += -DNEED_PRINTF
 CFLAGS += $(COPTS)
-
 LDFLAGS_ELF2FLT = -Wl,-elf2flt
 ifneq (,$(findstring $(LDFLAGS_ELF2FLT),$(LDFLAGS)))
 SKIP_STRIP = y
