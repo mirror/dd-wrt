@@ -107,9 +107,10 @@ int waitfor( int fd, int timeout )
 
 int system2( char *command )
 {
-#ifndef HAVE_SILENCE
+if (nvram_match("console_debug","1"))
+{
     fprintf( stderr, "system: %s\n", command );
-#endif
+}    
     return system( command );
 }
 
@@ -136,8 +137,8 @@ int _evalpid( char *const argv[], char *path, int timeout, int *ppid )
     // if (debugfp==NULL)
     // debugfp = fopen("/tmp/evallog.log","wb");
     // char buf[254] = "";
-#ifndef HAVE_SILENCE
-
+if (nvram_match("console_debug","1"))
+{
     int i = 0;
 
     while( argv[i] != NULL )
@@ -145,7 +146,7 @@ int _evalpid( char *const argv[], char *path, int timeout, int *ppid )
 	fprintf( stderr, "%s ", argv[i++] );
     }
     fprintf( stderr, "\n" );
-#endif
+}
 
     switch ( pid = fork(  ) )
     {
