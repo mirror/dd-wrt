@@ -88,7 +88,7 @@ void start_vlantagging( void )
     }
     char eths[256];
 
-    getIfLists( eths, 256 );
+/*    getIfLists( eths, 256 );
     foreach( word, eths, next )
     {
 	if( strcmp( get_wan_face(  ), word )
@@ -103,13 +103,11 @@ void start_vlantagging( void )
 	    }
 	    else
 	    {
-
-		ifconfig( word, IFUP, nvram_nget( "%s_ipaddr", word ),
-			  nvram_nget( "%s_netmask", word ) );
+		eval( "ifconfig", word, nvram_nget( "%s_ipaddr", word ),"netmask",nvram_nget( "%s_netmask", word ), "up" );
 	    }
 	}
     }
-
+*/
     start_set_routes(  );
 }
 
