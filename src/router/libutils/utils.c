@@ -933,7 +933,7 @@ return 0;
 	    setRouter( "Buffalo WVR-G54-NF" );
 	    return ROUTER_BUFFALO_WZRRSG54;
 	}
-	if( nvram_match( "melco_id", "31095" ) )
+	if( nvram_match( "product_name", "WZR-G108" ) || melco_id == 31095 || melco_id == 30153)
 	{
 	    cprintf( "router is Buffalo WZR-G108\n" );
 	    setRouter( "Buffalo WZR-G108" );
