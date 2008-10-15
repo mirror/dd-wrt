@@ -789,7 +789,12 @@ void ej_get_clkfreq( webs_t wp, int argc, char_t ** argv )
 
     if( clk == NULL )
     {
-	websWrite( wp, "125" );
+	if (getcpurev( ) == 0)  //BCM4710
+		websWrite( wp, "125" );
+	else if (getcpurev( ) == 29)  //BCM5354
+		websWrite( wp, "240" );
+	else		
+		websWrite( wp, "unknown" );	
 	return;
     }
     char buf[64];
