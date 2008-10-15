@@ -180,11 +180,15 @@ void start_bridging( void )
     {
 	char *stp = word;
 	char *bridge = strsep( &stp, ">" );
-	char *mtu = stp;
-	char *prio = strsep( &mtu, ">" );
-
-	if( prio )
-	    strsep( &mtu, ">" );
+	char *prio = stp;
+	stp = strsep( &prio, ">" );
+	char *mtu = prio;
+	prio = strsep( &mtu, ">" );
+	if (!prio)
+	    {
+	    prio = mtu;
+	    mtu = NULL;
+	    }
 	if( !bridge || !stp )
 	    break;
 
