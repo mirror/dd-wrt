@@ -2387,13 +2387,25 @@ void ej_show_bridgenames( webs_t wp, int argc, char_t ** argv )
     wordlist = nvram_safe_get( "bridges" );
     foreach( word, wordlist, next )
     {
+
 	char *stp = word;
+	char *bridge = strsep( &stp, ">" );
+	char *prio = stp;
+	stp = strsep( &prio, ">" );
+	char *mtu = prio;
+	prio = strsep( &mtu, ">" );
+	if (!prio)
+	    {
+	    prio = mtu;
+	    mtu = "1500";
+	    }
+	
+
+/*	char *stp = word;
 	char *bridge = strsep( &stp, ">" );
 	char *mtu = stp;
 	char *prio = strsep( &mtu, ">" );
-
-	if( prio )
-	    strsep( &mtu, ">" );
+*/
 	if( !bridge || !stp )
 	    break;
 
@@ -2635,7 +2647,7 @@ void ej_show_bridgeifnames( webs_t wp, int argc, char_t ** argv )
 	sprintf( vlan_name, "bridgeifprio%d", count );
 	websWrite( wp,
 		   "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n",
-		   vlan_name, prio != NULL ? prio : "128" );
+		   vlan_name, prio != NULL ? prio : "63" );
 	websWrite( wp,
 		   "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 		   count );
