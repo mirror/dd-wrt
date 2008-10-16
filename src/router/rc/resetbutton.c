@@ -98,13 +98,21 @@ int getbuttonstate(  )
 {
     FILE *in;
     int ret;
-
+#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610)
+    in = fopen( "/proc/gpio/5_in", "rb" );
+    if( in == NULL )
+	return 0;
+    fscanf( in, "%d", &ret );
+    fclose( in );
+    return 1-ret;
+#else
     in = fopen( "/proc/gpio/6_in", "rb" );
     if( in == NULL )
 	return 0;
     fscanf( in, "%d", &ret );
     fclose( in );
     return ret;
+#endif
 }
 #elif defined(HAVE_LSX)
 int getbuttonstate(  )
