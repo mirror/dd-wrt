@@ -203,6 +203,13 @@ ifeq ($(CONFIG_MERAKI),y)
 CFLAGS += -DHAVE_MERAKI
 CFLAGS += -DHAVE_FONERA
 endif
+ifeq ($(CONFIG_EAP3660),y)
+  CFLAGS += -DHAVE_EAP3660
+endif
+ifeq ($(CONFIG_EOC2610),y)
+  CFLAGS += -DHAVE_EOC2610
+endif
+
 ifeq ($(CONFIG_LS2),y)
 CFLAGS += -DHAVE_LS2
 endif
