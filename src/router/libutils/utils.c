@@ -627,6 +627,12 @@ return 0;
 #elif HAVE_WBD500
     setRouter( "Wiligear WBD-500" );
     return ROUTER_BOARD_FONERA;
+#elif HAVE_EOC2610
+    setRouter( "Senao EOC-2610" );
+    return ROUTER_BOARD_FONERA;
+#elif HAVE_EAP3660
+    setRouter( "Senao EAP-3660" );
+    return ROUTER_BOARD_FONERA;
 #elif HAVE_FONERA
     struct mii_ioctl_data *data;
     struct ifreq iwr;
