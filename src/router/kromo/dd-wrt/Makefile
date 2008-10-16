@@ -271,6 +271,9 @@ endif
 ifeq ($(CONFIG_TRIMAX),y)
 	cp -f trimax/logo.png $(INSTALLDIR)/www/style/logo.png
 endif
+ifeq ($(CONFIG_CNC),y)
+	cp -f cnc/common.js $(INSTALLDIR)/www/common.js
+endif
 ifeq ($(CONFIG_MAKSAT),y)
 	cp -f maksat/SuperChannel.asp $(INSTALLDIR)/www
 	cp -f maksat/logo.png $(INSTALLDIR)/www/style/logo.png
