@@ -157,6 +157,12 @@ endif
 ifeq ($(CONFIG_LS2),y)
   CFLAGS += -DHAVE_LS2
 endif
+ifeq ($(CONFIG_EAP3660),y)
+  CFLAGS += -DHAVE_EAP3660
+endif
+ifeq ($(CONFIG_EOC2610),y)
+  CFLAGS += -DHAVE_EOC2610
+endif
 ifeq ($(CONFIG_NS2),y)
   CFLAGS += -DHAVE_NS2
 endif
