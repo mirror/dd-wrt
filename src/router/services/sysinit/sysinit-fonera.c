@@ -128,6 +128,12 @@ int start_sysinit( void )
     insmod( "ar2313" );
     insmod( "ath_hal" );
     insmod( "ath_ahb" );
+
+#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610)
+    system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
+#endif
+
     // eval ("ifconfig", "wifi0", "up");
 #ifdef HAVE_LS2
     eval( "ifconfig", "eth0", "up" );	// wan
