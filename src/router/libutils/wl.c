@@ -328,6 +328,8 @@ int wifi_gettxpower( char *ifname )
 
 #ifdef HAVE_ALPHA
     poweroffset = 10;
+#elif HAVE_EAP3660
+    poweroffset = 7;
 #else
     int vendor;
     int devcount;
@@ -418,6 +420,8 @@ int wifi_gettxpoweroffset( char *ifname )
 
 #ifdef HAVE_ALPHA
     poweroffset = 10;
+#elif HAVE_EAP3660
+    poweroffset = 7;
 #else
     int vendor;
     int devcount;
