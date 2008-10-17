@@ -369,6 +369,9 @@ int wifi_gettxpower( char *ifname )
 	case 25:		// ubnt ns5
 	    poweroffset = 5;
 	    break;
+	case 26:		// senao eoc2610
+	    poweroffset = 8;
+	    break;
 	default:
 	    poweroffset = 0;
 	    break;
@@ -456,6 +459,9 @@ int wifi_gettxpoweroffset( char *ifname )
 	    break;
 	case 25:		// ubnt ns5
 	    poweroffset = 5;
+	    break;
+	case 26:		// senao eoc2610
+	    poweroffset = 8;
 	    break;
 	default:
 	    poweroffset = 0;
