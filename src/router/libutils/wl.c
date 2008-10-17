@@ -454,6 +454,9 @@ int wifi_gettxpoweroffset( char *ifname )
 	case 24:		// ubnt sr4
 	    poweroffset = 7;
 	    break;
+	case 25:		// ubnt ns5
+	    poweroffset = 5;
+	    break;
 	default:
 	    poweroffset = 0;
 	    break;
