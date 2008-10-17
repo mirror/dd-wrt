@@ -944,6 +944,7 @@ management.lang_french="french";
 management.lang_german="german";
 management.lang_italian="italian";
 management.lang_brazilian="brazilian";
+management.lang_russian="russian";
 management.lang_slovenian="slovenian";
 management.lang_spanish="spanish";
 management.lang_swedish="swedish";
