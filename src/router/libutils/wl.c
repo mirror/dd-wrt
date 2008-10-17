@@ -370,7 +370,7 @@ int wifi_gettxpower( char *ifname )
 	    poweroffset = 5;
 	    break;
 	case 26:		// senao eoc2610
-	    poweroffset = 8;
+	    poweroffset = 7;
 	    break;
 	default:
 	    poweroffset = 0;
@@ -461,7 +461,7 @@ int wifi_gettxpoweroffset( char *ifname )
 	    poweroffset = 5;
 	    break;
 	case 26:		// senao eoc2610
-	    poweroffset = 8;
+	    poweroffset = 7;
 	    break;
 	default:
 	    poweroffset = 0;
