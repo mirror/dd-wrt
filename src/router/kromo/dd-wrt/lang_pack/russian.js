@@ -3,10 +3,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
-var lang_charset = new Object();
 lang_charset.set="cp-1251";
 
-var share = new Object();
 share.firmware="Прошивка";
 share.time="Время";
 share.interipaddr="IP-адрес WAN";
@@ -43,7 +41,7 @@ share.about="O";
 share.everyday="Ежедневно";
 share.sun="Воскресенье";
 share.sun_s="Вс";
-share.sun_s1=Вс";
+share.sun_s1="Вс";
 share.mon="Понедельник";
 share.mon_s="Пн";
 share.mon_s1="Пн";
@@ -186,7 +184,6 @@ share.preempt="Приоритетное прерывание";
 share.acktiming="Выбор времени ACK";
 
 
-var sbutton = new Object();
 sbutton.save="Сохранить";
 sbutton.savetitle="Сохранить, но не применять";
 sbutton.apply="Применить";
@@ -240,7 +237,6 @@ sbutton.allways_off="Выключить постоянно";
 
 
 // ** COMMON ERROR MESSAGES  **//
-var errmsg = new Object();
 errmsg.err0="Вы должны ввести имя пользователя.";
 errmsg.err1="Вы должны ввести имя маршрутизатора.";
 errmsg.err2="Выход за пределы, исправьте начальный IP-адрес или число пользователей.";
@@ -347,7 +343,6 @@ errmsg.err101="Восстановление конфигурации...<br/>Пожалуйста, подождите.";
 errmsg.err102="Обновление прошивки...<br/>Пожалуйста, подождите.";
 
 // **  COMMON MENU ENTRIES  **//
-var bmenu= new Object();
 bmenu.setup="Установка";
 bmenu.setupbasic="Основные установки";
 bmenu.setupddns="DDNS";
@@ -425,7 +420,6 @@ bmenu.statuSysInfo="Сведения о системе";
 bmenu.statuActivate="Активация";
 
 // ** Alive.asp **//
-var alive = new Object();
 alive.titl="Поддержание жизни";
 alive.h2="Поддержание жизни";
 alive.legend="Плановая перезагрузка";
@@ -440,13 +434,11 @@ alive.IP2="IP-адрес прокси";
 alive.port="Порт прокси";
 
 //help container
-var halive = new Object();
 halive.right2="Задайте время перезагрузки маршрутизатора. На вкладке &#39;Управление&#39; должен быть включен cron.";
 halive.right4="Допускается максимум три IP-адреса, разделенных <em>ПРОБЕЛАМИ</em>.<BR/>IP вводятся в формате xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
-var config = new Object();
 config.titl="Сохранение и восстановление";
 config.h2="Сохранение конфигурации";
 config.legend="Параметры сохранения";
@@ -458,13 +450,11 @@ config.mess3="П Р Е Д У П Р Е Ж Д Е Н И Е";
 config.mess4="Восстанавливайте конфигурацию лишь из тех файлов, которые были получены в той же версии прошивки и для такой же модели маршрутизатора.<br />Не используйте файлы, которые были получены с помощью других прошивок!";
 
 //help container
-var hconfig = new Object();
 hconfig.right2="Вы можете сохранить текущую конфигурацию, если вам нужно сбросить установки маршрутизатора в их значения по умолчанию.<br /><br />Нажмите кнопку <em>Сохранить</em> для сохранения текущей конфигурации.";
 hconfig.right4="Нажмите кнопку <em>Выбрать файл...</em>, чтобы выбрать файл конфигурации, сохраненный вами ранее на своем компьютере.<br /><br />Нажмите кнопку <em>" + sbutton.restore + "</em>, чтобы заменить текущие значения всех параметров на их значения из файла конфигурации.";
 
 
 // ** DDNS.asp **//
-var ddns = new Object();
 ddns.titl="Динамический DNS"
 ddns.h2="Динамический DNS (DDNS)";
 ddns.legend="DDNS";
@@ -479,7 +469,6 @@ ddns.system="Сервер DYNDNS";
 ddns.options="Дополнительные опции DDNS";
 ddns.forceupd="Интервал принудительного обновления";
 
-var ddnsm = new Object();
 ddnsm.all_closed="Сервер DDNS не отвечает";
 ddnsm.all_resolving="Разрешение имени домена";
 ddnsm.all_errresolv="Не удалось разрешить имя домена";
@@ -489,13 +478,11 @@ ddnsm.all_disabled="DDNS отключен";
 ddnsm.all_noip="Нет соединения с Интернетом";
 
 //help container
-var hddns = new Object();
 hddns.right2="DDNS позволяет осуществлять доступ к вашей сети из Интернета по имени домена вместо IP-адреса. Эта служба отслеживает изменение IP-адресов и динамически обновляет информацию о вашем домене. Вы должны подписаться на обслуживание на DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com или ином сервере.";
 hddns.right4="Введите целое число в поле ввода, чтобы установить интервал принудительного обновления (в сутках). Обновления должны выполняться автоматически, когда ваш IP-адрес меняется. Во избежание блокировки имени вашего домена или хоста провайдером DDNS избегайте некорректного (слишком частого) обновления.";
 
 
 // ** Diagnostics.asp **//
-var diag = new Object();
 diag.titl="Диагностика";
 diag.h2="Диагностика";
 diag.legend="Командный процессор";
@@ -505,12 +492,10 @@ diag.firewall="Брандмауэр";
 diag.custom="Пользовательский скрипт";
 
 //help container
-var hdiag = new Object();
 hdiag.right2="Вы можете выполнять команды с помощью веб-интерфейса. Введите команду в текстовое поле и нажмите кнопку <em>" + sbutton.runcmd + "</em>, чтобы выполнить ее.";
 
 
 // ** DMZ.asp **//
-var dmz = new Object();
 dmz.titl="DMZ";
 dmz.h2="Демилитаризованная зона (DMZ)";
 dmz.legend="DMZ";
@@ -518,12 +503,10 @@ dmz.serv="Использование DMZ";
 dmz.host="IP-адрес компьютера DMZ";
 
 //help container
-var hdmz = new Object();
 hdmz.right2="Включение этой опции откроет к вашему компьютеру полный доступ из Интернета. Все его порты будут доступны извне.";
 
 
 // ** Factory_Defaults.asp **//
-var factdef = new Object();
 factdef.titl="Заводские установки";
 factdef.h2="Заводские установки";
 factdef.legend="Сброс установок маршрутизатора";
@@ -531,12 +514,10 @@ factdef.restore="Восстановление заводских установок";
 factdef.mess1="Предупреждение! Если вы нажмете OK, значения параметров устройства будут установлены по умолчанию и все ваши настройки будут потеряны.";
 
 //help container
-var hfactdef = new Object();
 hfactdef.right1="Значения всех параметров устройства будут установлены по умолчанию. Все ваши настройки будут потеряны.";
 
 
 // ** FilterIPMAC.asp **//
-var filterIP = new Object();
 filterIP.titl="Список клиентов";
 filterIP.h2="Список клиентов";
 filterIP.h3="Введите MAC-адрес клиентов в следующем формате: xx:xx:xx:xx:xx:xx";
@@ -546,7 +527,6 @@ filterIP.ip_range="Диапазон IP-адресов";
 
 
 // ** Filter.asp **//
-var filter = new Object();
 filter.titl="Ограничения доступа";
 filter.h2="Доступ в Интернет";
 filter.legend="Политика доступа";
@@ -566,7 +546,6 @@ filter.mess2="Вы должны задать по крайней мере один день.";
 filter.mess3="Время окончания должно быть больше времени начала.";
 
 //help container
-var hfilter = new Object();
 hfilter.right2="Вы можете определить до 10 политик доступа. Нажмите кнопку <em>" + sbutton.del + "</em> для удаления политики и кнопку <em>" + sbutton.summary + "</em> для просмотра сводки данной политики.";
 hfilter.right4="Включить или отключить политику.";
 hfilter.right6="Вы можете дать название вашей политике.";
@@ -578,7 +557,6 @@ hfilter.right16="Вы можете заблокировать доступ к определенным сайтам по ключевы
 
 
 // ** FilterSummary.asp **//
-var filterSum = new Object();
 filterSum.titl="Сводка ограничений доступа";
 filterSum.h2="Сводка интернет-политики";
 filterSum.polnum="№";
@@ -586,7 +564,6 @@ filterSum.polday="Время суток";
 
 
 // ** Firewall.asp **//
-var firewall = new Object();
 firewall.titl="Брандмауэр";
 firewall.h2="Безопасность";
 firewall.legend="Защита с помощью брандмауэра";
@@ -603,24 +580,20 @@ filter.nat="Фильтр NAT-перенаправления WAN";
 filter.port113="Фильтр IDENT (порт 113)";
 
 //help container
-var hfirewall = new Object();
 hfirewall.right2="Включение/отключение брандмауэра SPI.";
 
 
 // ** Forward.asp **//
-var prforward = new Object();
 prforward.titl="Перенаправление групп портов";
 prforward.h2="Перенаправление групп портов";
 prforward.legend="Перенаправления";
 prforward.app="Приложение";
 
 //help container
-var hprforward = new Object();
 hprforward.right2="Некоторые приложения для своей корректной работы требуют открыть определенные порты. К таким приложениям относятся, например, серверы и определенные онлайн-игры. Когда из Интернета на определенный порт придет запрос, маршрутизатор перенаправит его на указанный вами компьютер. По соображениям безопасности вы можете ограничить перенаправление портов только теми портами, которые действительно используются, и снять отметку с клетки <em>" + share.enable +"</em> для не используемых в данное время портов.";
 
 
 // ** P2P.asp **//
-var p2p = new Object();
 p2p.titl="Приложения Peer-to-Peer";
 p2p.h2="Клиент BitTorrent";
 p2p.legend="CTorrent";
@@ -628,12 +601,10 @@ p2p.ctorrent_srv="Служба Ctorrent";
 
 
 //help container
-//var hp2p = new Object();
 //hpp2p.right2="Некоторые приложения для своей корректной работы требуют открыть определенные порты. К таким приложениям относятся, например, серверы и определенные онлайн-игры. Когда из Интернета на определенный порт придет запрос, маршрутизатор перенаправит его на указанный вами компьютер. По соображениям безопасности вы можете ограничить перенаправление портов только теми портами, которые действительно используются, и снять отметку с клетки <em>" + share.enable +"</em> для не используемых в данное время портов.";
 
 
 // ** ForwardSpec.asp **//
-var pforward = new Object();
 pforward.titl="Перенаправление портов";
 pforward.h2="Перенаправление портов";
 pforward.legend="Перенаправления";
@@ -642,12 +613,10 @@ pforward.from="Порт-источник";
 pforward.to="Порт-приемник";
 
 //help container
-var hpforward = new Object();
 hpforward.right2="Некоторые приложения для своей корректной работы требуют открыть определенные порты. К таким приложениям относятся, например, серверы и определенные онлайн-игры. Когда из Интернета на определенный порт придет запрос, маршрутизатор перенаправит его на указанный вами компьютер. По соображениям безопасности вы можете ограничить перенаправление портов только теми портами, которые действительно используются, и снять отметку с клетки <em>" + share.enable +"</em> для не используемых в данное время портов.";
 
 
 // ** Hotspot.asp **//
-var hotspot = new Object();
 hotspot.titl="Хот-спот";
 hotspot.h2="Портал хот-спота";
 hotspot.legend="Chillispot";
@@ -715,7 +684,6 @@ hotspot.wifidog_authsrvsslport="Порт AuthServer SSL";
 hotspot.wifidog_authsrvhttpport="Порт AuthServer HTTP";
 hotspot.wifidog_authsrvpath="Путь AuthServer";
 
-var anchorfree = new Object();
 anchorfree.anchorfree="AnchorFree";
 anchorfree.titl="Моя рекламная сеть";
 anchorfree.h2="Рекламная сеть AnchorFree";
@@ -741,7 +709,6 @@ anchorfree.validcat="пожалуйста, выберите рекламную категорию вашего хот-спота";
 anchorfree.validcountry="пожалуйста, выберите страну вашего хот-спота";
 anchorfree.validterms="Вы должны принять условия соглашения!";
 
-var hanchorfree = new Object();
 hanchorfree.right1="Присоединяйтесь к рекламной сети хот-спотов AnchorFree";
 hanchorfree.right2="AnchorFree заведует рекламной сетью хот-спотов, которая позволяет пользователям DD-WRT получать растущие доходы от своего маршрутизатора.";
 hanchorfree.right3="Получайте растущий доход от распространения рекламы AnchorFree";
@@ -754,7 +721,6 @@ hanchorfree.right9="У вас есть вопросы? Напишите нам: boxhelp@anchorfree.com";
 
 
 // ** Info.htm **//
-var info = new Object();
 info.titl="Информация";
 info.h2="Сведения о системе";
 info.wlanmac="MAC беспроводного адаптера";
@@ -763,7 +729,6 @@ info.ap="Точка доступа";
 
 
 // ** index_heartbeat.asp **//
-var idx_h = new Object();
 idx_h.srv="Сервер Heart Beat";
 idx_h.con_strgy="Стратегия соединания";
 idx_h.max_idle="Соединение по запросу: макс.время бездействия";
@@ -772,17 +737,14 @@ idx_h.reconnect="Принудительный реконнект";
 
 
 // ** index_l2tp.asp **//
-var idx_l = new Object();
 idx_l.srv="Сервер L2TP";
 
 
 // ** index_pppoe.asp **//
-var idx_pppoe = new Object();
 idx_pppoe.use_rp="Использование RP PPPoE";
 
 
 // ** index_pptp.asp **//
-var idx_pptp = new Object();
 idx_pptp.srv="Использование DHCP";
 idx_pptp.wan_ip="IP-адрес WAN";
 idx_pptp.gateway="Шлюз (сервер PPTP)";
@@ -790,12 +752,10 @@ idx_pptp.encrypt="PPTP-шифрование";
 
 
 // ** index_static.asp **//
-var idx_static = new Object();
 idx_static.dns="Статический DNS";
 
 
 // ** index.asp **//
-var idx = new Object();
 idx.titl="Установка";
 idx.h2="Установка WAN";
 idx.h22="Установка беспроводной сети";
@@ -839,7 +799,6 @@ idx.wanport="Назначение порта WAN";
 idx.ntp_client="Клиент службы времени (NTP)";
 
 //help container
-var hidx = new Object();
 hidx.right2="Этот тип соединения чаще всего используется кабельными операторами.";
 hidx.right4="Введите имя хоста, выданное вашим провайдером.";
 hidx.right6="Введите имя домена, выданное вашим провайдером.";
@@ -852,7 +811,6 @@ hidx.right18="Выберите часовой пояс и период действия летнего времени (DST). Мар
 
 
 // ** Join.asp **//
-var join = new Object();
 
 //sshd.webservices
 join.titl="Соединение";
@@ -860,7 +818,6 @@ join.mess1="Успешное соединение как клиента со следующей сетью: ";
 
 
 // ** Log_incoming.asp **//
-var log_in = new Object();
 log_in.titl="Журнал входящих пакетов";
 log_in.h2="Журнал входящих пакетов";
 log_in.th_ip="IP отправителя";
@@ -868,7 +825,6 @@ log_in.th_port="Номер порта получателя";
 
 
 // ** Log_outgoing.asp **//
-var log_out = new Object();
 log_out.titl="Журнал исходящих пакетов";
 log_out.h2="Журнал исходящих пакетов";
 log_out.th_lanip="Локальный IP";
@@ -877,7 +833,6 @@ log_out.th_port="Служба/номер порта";
 
 
 // ** Log.asp **//
-var log = new Object();
 log.titl="Журнал";
 log.h2="Обслуживание журнала";
 log.legend="Журнал";
@@ -888,7 +843,6 @@ log.accept="Принятые";
 
 
 // ** Management.asp **//
-var management = new Object();
 management.titl="Техническое обслуживание";
 management.h2="Управление маршрутизатором";
 management.changepassword="В настоящее время ваш маршрутизатор использует небезопасную комбинацию имени пользователя и пароля по умолчанию и не защищен. Пожалуйста, измените их в следующем диалоге!";
@@ -971,18 +925,15 @@ management.SIPatH_domain="Домен SIP";
 management.gui_style="Стиль GUI маршрутизатора";
 
 //help container
-var hmanagement = new Object();
 hmanagement.right1="Автообновление:";
 hmanagement.right2="Устанавливает интервал автоматического обновления страниц графического интерфейса. Значение 0 полностью отключает данную функцию.";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
-var portserv = new Object();
 portserv.titl="Службы портов";
 portserv.h2="Службы портов";
 
 
 // ** Networking.asp **//
-var networking = new Object();
 networking.h2="Тегирование VLAN";
 networking.legend="Тегирование";
 networking.h22="Мосты";
@@ -997,7 +948,6 @@ networking.legend5="Множественный сервер DHCP";
 
 
 // ** QoS.asp **//
-var qos = new Object();
 qos.titl="Качество обслуживания";
 qos.h2="Качество обслуживания (QoS)";
 qos.legend="Установки QoS";
@@ -1023,7 +973,6 @@ qos.legend6="Ширина канала по умолчанию";
 qos.bandwidth="Ширина канала, КБит";
 
 //help container
-var hqos = new Object();
 hqos.right1="Исходящий поток:";
 hqos.right2="Установите значение 80%-95% (макс.) от вашего лимита скорости передачи.";
 hqos.right3="Входящий поток:";
@@ -1035,14 +984,12 @@ hqos.right12="Вы можете управлять потоками данных в зависимости от того, к каком
 
 
 // ** RouteTable.asp **//
-var routetbl = new Object();
 routetbl.titl="Таблица маршрутов";
 routetbl.h2="Таблица маршрутов";
 routetbl.th1="Сеть назначения";
 
 
 // ** Routing.asp **//
-var route = new Object();
 route.titl="Маршрутизация";
 route.h2="Маршруты";
 route.metric="Метрика";
@@ -1075,7 +1022,6 @@ route.static_name="Имя маршрута";
 route.static_ip="Локальная сеть назначения";
 
 //help container
-var hroute = new Object();
 hroute.right2="Если данный маршрутизатор поддерживает соединение с Интернетом, выберите режим <em>Шлюз</em>. Если в вашей сети есть другой маршрутизатор, выберите режим <em>Маршрутизатор</em>.";
 hroute.right4="Это уникальный номер маршрута, вы можете создать до 20 маршрутов.";
 hroute.right6="Введите имя, которое вы хотите дать данному маршруту.";
@@ -1084,14 +1030,12 @@ hroute.right10="Определяет размер подсети, в которой находится удаленный хост.";
 
 
 // ** Site_Survey.asp **//
-var survey = new Object();
 survey.titl="Обзор сайта";
 survey.h2="Соседние беспроводные сети";
 survey.thjoin="Присоединение к сайту";
 
 
 // ** Services.asp **//
-var service = new Object();
 service.titl="Службы";
 service.h2="Управление службами";
 
@@ -1295,7 +1239,6 @@ service.hmilkfish_right26="not implemented yet - leave empty";
 
 
 // ** eop-tunnel.asp **//
-var eoip = new Object();
 eoip.titl="Туннель EoIP";
 eoip.tunnel="Туннель";
 eoip.legend="Туннель Ethernet Over IP";
@@ -1311,14 +1254,12 @@ eoip.bridging="Bridging";
 
 
 // ** Sipath.asp + cgi **//
-var sipath = new Object();
 sipath.titl="Обзор SiPath";
 sipath.phone_titl="Адресная книга";
 sipath.status_titl="Статус";
 
 
 // ** Status_Lan.asp **//
-var status_lan = new Object();
 status_lan.titl="Статус LAN";
 status_lan.h2="Локальная сеть";
 status_lan.legend="Статус LAN";
@@ -1330,7 +1271,6 @@ status_lan.concount="Число сессий";
 status_lan.conratio="Процент";
 
 //help container
-var hstatus_lan = new Object();
 hstatus_lan.right2="Это MAC-адрес маршрутизатора в вашей локальной проводной сети.";
 hstatus_lan.right4="Это IP-адрес маршрутизатора в вашей локальной проводной сети.";
 hstatus_lan.right6="Здесь отображается маска подсети для локальной сети.";
@@ -1339,7 +1279,6 @@ hstatus_lan.right10="Щелкнув по любому MAC-адресу, вы получите соответствующий у
 
 
 // ** Status_Bandwidth.asp **//
-var status_band = new Object();
 status_band.titl="Мониторинг загрузки сетей";
 status_band.h2="Мониторинг загрузки сетей";
 status_band.chg_unit="Сменить единицы на ";
@@ -1352,13 +1291,11 @@ status_band.follow="текущ.";
 status_band.up="макс.";
 
 //help container
-var hstatus_band = new Object();
 hstatus_band.svg="Для отображения графиков загрузки сетей требуется плагин SVG фирмы Adobe.";
 hstatus_band.right1="Щелкните по надписи для смены единиц измерения (байт/с или бит/с).";
 hstatus_band.right2="Щелкните по надписи для выбора способа масштабирования.";
 
 // ** Status_Router.asp **//
-var status_router = new Object();
 status_router.titl="Статус маршрутизатора";
 status_router.h2="Сведения о маршрутизаторе";
 status_router.legend="Система";
@@ -1388,7 +1325,6 @@ status_router.inpvolt="Напряжение питания";
 status_router.cputemp="Температура процессора";
 
 //help container
-var hstatus_router = new Object();
 hstatus_router.right2="Это имя маршрутизатора, которое задается на вкладке <i>Установка</i>.";
 hstatus_router.right4="Это MAC-адрес маршрутизатора, который видит ваш провайдер.";
 hstatus_router.right6="Это текущая версия прошивки маршрутизатора.";
@@ -1397,7 +1333,6 @@ hstatus_router.right10="Это время, прошедшее с момента последней перезагрузки си
 hstatus_router.right12="Эти три числа представляют собой загрузку системы в течение последней минуты, последних пяти и пятнадцати минут.";
 
 // ** Status_Internet.asp **//
-var status_inet = new Object();
 status_inet.titl="Статус WAN";
 status_inet.h11="WAN";
 status_inet.conft="Тип конфигурации";
@@ -1416,27 +1351,23 @@ status_inet.delete_confirm="ПРЕДУПРЕЖДЕНИЕ! Будут удалены все данные о траффике.
 
 
 //help container
-var hstatus_inet = new Object();
 hstatus_inet.right2="Здесь показана информация, которая требуется для соединения с вашим Интернет-провайдером. Эта информация задается на вкладке <em>Установка</em>. Вы можете <em>Подключить</em> или <em>Отключить</em> соединение, нажав соответствующую кнопку на данной странице.";
 hstatus_inet.right4="Здеь показан Интернет-траффик вашего маршрутизатора с момента последней перезагрузки.";
 hstatus_inet.right6=" Здеь показан Интернет-траффик вашего маршрутизатора в течение месяца. Наведите указатель мыши на столбец графика, чтобы увидеть данные за указанный день. Данные сохраняются в энергонезависимой памяти (NVRAM).";
 
 
 // ** Status_Conntrack.asp **//
-var status_conn = new Object();
 status_conn.titl="Таблица активных IP-соединений";
 status_conn.h2="Активные IP-соединения";
 
 
 // ** Status_SputnikAPD.asp **//
-var status_sputnik = new Object();
 status_sputnik.titl="Статус Sputnik Agent";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="Managed By";
 status_sputnik.license="SCC License No.";
 
 //help container
-var hstatus_sputnik = new Object();
 hstatus_sputnik.right1="Статус Sputnik Agent";
 hstatus_sputnik.right2="Этот экран отображает статус процесса Sputnik Agent.";
 hstatus_sputnik.right4="Центр управления Sputnik, к которому подсоединена данная точка доступа.";
@@ -1445,7 +1376,6 @@ hstatus_sputnik.right8="Номер лицензии вашего центра управления Sputnik.";
 
 
 // ** Status_Wireless.asp **//
-var status_wireless = new Object();
 status_wireless.titl="Статус беспроводной сети";
 status_wireless.h2="Беспроводная сеть";
 status_wireless.legend="Статус беспроводной сети";
@@ -1460,7 +1390,6 @@ status_wireless.signal_qual="Качество сигнала";
 status_wireless.wds="Узлы WDS";
 
 // ** GPS info **//
-var status_gpsi = new Object();
 status_gpsi.legend="Информация GPS";
 status_gpsi.status="Статус";
 status_gpsi.lon="Долгота";
@@ -1469,18 +1398,15 @@ status_gpsi.alt="Высота";
 status_gpsi.sat="Видимые спутники";
 
 //help container
-var hstatus_wireless = new Object();
 hstatus_wireless.right2="Это MAC-адрес маршрутизатора в вашей беспроводной локальной сети.";
 hstatus_wireless.right4="Здесь отображается текущий режим работы беспроводной сети (Смешанный, Только G, Только B или Отключено) согласно настройкам на вкладке WiFi.";
 
 
 // ** Status_OpenVPN.asp **//
-var status_openvpn = new Object();
 status_openvpn.titl="Статус OpenVPN";
 
 
 // ** Triggering.asp **//
-var trforward = new Object();
 trforward.titl="Запуск портов";
 trforward.h2="Запуск портов";
 trforward.legend="Перенаправления";
@@ -1489,7 +1415,6 @@ trforward.fwdrange="Группа перенаправляемых портов";
 trforward.app="Приложение";
 
 //help container
-var htrforward = new Object();
 htrforward.right2="Введите имя приложения, запускающего порты.";
 htrforward.right4="Для каждого приложения задайте список групп портов, подлежащих запуску. При необходимости уточните номера портов в документации по приложению.";
 htrforward.right6="Для каждого приложения задайте список групп портов, подлежащих перенаправлению. При необходимости уточните номера портов в документации по приложению.";
@@ -1498,7 +1423,6 @@ htrforward.right10="Введите номер последнего порта в группе запускаемых и перена
 
 
 // ** Upgrade.asp **//
-var upgrad = new Object();
 upgrad.titl="Обновление прощивки";
 upgrad.h2="Управление прошивкой";
 upgrad.legend="Обновление прошивки";
@@ -1510,12 +1434,10 @@ upgrad.warning="П Р Е Д У П Р Е Ж Д Е Н И Е";
 upgrad.mess1="Обновление прошивки может занять несколько минут.<br />Не выключайте питание маршрутизатора и не нажимайте кнопку сброса!";
 
 //help container
-var hupgrad = new Object();
 hupgrad.right2="Нажмите на кнопку <em>Выбрать файл...</em>, чтобы выбрать файл прошивки для загрузки в маршрутизатор.<br /><br /> Нажмите кнопку <em>Обновить</em>, чтобы начать обновление. Процесс обновления нельзя прерывать.";
 
 
 // ** UPnP.asp **//
-var upnp = new Object();
 upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Перенаправления";
@@ -1527,13 +1449,11 @@ upnp.msg1="Щелкните здесь для удаления записи";
 upnp.msg2="Удалить все записи?";
 
 //help container
-var hupnp = new Object();
 hupnp.right2="Щелкните по значку мусорной корзины для удаления отдельной записи.";
 hupnp.right4="Позволяет приложениям автоматически устанавливать перенаправления портов.";
 
 
 // ** VPN.asp **//
-var vpn = new Object();
 vpn.titl="VPN";
 vpn.h2="Виртуальная частная сеть (VPN)";
 vpn.legend="Транзит VPN";
@@ -1542,12 +1462,10 @@ vpn.pptp="Транзит PPTP";
 vpn.l2tp="Транзит L2TP";
 
 //help container
-var hvpn = new Object();
 hvpn.right1="Вы можете разрешить транзит IPSec, PPTP и/или L2TP, чтобы позволить устройствам вашей сети устанавливать связи с VPN.";
 
 
 // ** Vlan.asp **//
-var vlan = new Object();
 vlan.titl=" LAN";
 vlan.h2="Виртуальная локальная сеть (VLAN)";
 vlan.legend="VLAN";
@@ -1559,13 +1477,11 @@ vlan.trunk="Транк";
 
 
 // ** WEP.asp **//
-var wep = new Object();
 wep.defkey="Ключ передачи по умолчанию";
 wep.passphrase="Идентификационная фраза";
 
 
 // ** WOL.asp **//
-var wol = new Object();
 wol.titl="WOL";
 wol.h2="Разбудить через сеть (WOL)";
 wol.legend="Доступные хосты";
@@ -1583,14 +1499,12 @@ wol.srv="Демон WOL";
 wol.pass="Пароль";
 
 //help container
-var hwol = new Object();
 hwol.right2="Эта страница позволяет вам <em>Разбудить</em> хосты вашей локальной сети (т.е. локально соединенные с вашим маршрутизатором). Вы можете будить хосты вручную, нажав кнопку <em>"+sbutton.wol+"</em>. Вы также можете запрограммировать автоматическое пробуждение хостов по расписанию: для этого используется "+wol.srv+".";
 hwol.right4="MAC-адрес(а) нужно вводить в формате xx:xx:xx:xx:xx:xx (напр., 01:23:45:67:89:AB) и разделять <em>ПРОБЕЛОМ</em>";
 hwol.right6="IP-адрес обычно является широковещательным адресом вашей локальной сети, но может быть и удаленным адресом в том случае, если хост не принадлежит локальной сети маршрутизатора."
 
 
 // ** WanMAC.asp **//
-var wanmac = new Object();
 wanmac.titl="Клонирование MAC-адреса";
 wanmac.h2="Клонирование MAC-адреса";
 wanmac.legend="Клонирование MAC";
@@ -1598,12 +1512,10 @@ wanmac.wan="Клонирование MAC-адреса WAN";
 wanmac.wlan="Клонирование MAC-адреса беспроводной сети";
 
 //help container
-var hwanmac = new Object();
 hwanmac.right2="Некоторые Интернет-провайдеры регистрируют ваш MAC-адрес. Если вы не желаете регистрировать новый MAC-адрес, вы можете клонировать на маршрутизаторе адрес, который зарегистрирован у вашего провайдера.";
 
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
-var wpa = new Object();
 wpa.titl="Безопасность беспроводной сети";
 wpa.h2="Безопасность беспроводной сети";
 wpa.secmode="Режим безопасности";
@@ -1619,25 +1531,21 @@ wpa.radius_key="Ключ RADIUS";
 wpa.algorithms="Алгоритмы WPA";
 wpa.shared_key="Общий ключ WPA";
 
-var sec80211x = new Object();
 sec80211x.xsuptype="XSupplicant Type";
 sec80211x.servercertif="Public Server Certificate";
 sec80211x.clientcertif="Client Certificate";
 
 //help container
-var hwpa = new Object();
 hwpa.right2="Возможный выбор: Отключено, WEP, WPA Personal, WPA Enterprise или RADIUS. Все устройства в вашей сети должны использовать один и тот же режим безопасности.";
 
 
 // ** WL_FilterTable.asp **//
-var wl_filter = new Object();
 wl_filter.titl="Список фильтра MAC-адресов";
 wl_filter.h2="Список фильтра MAC-адресов";
 wl_filter.h3="Введите MAC-адрес в следующем формате&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
 // ** WL_ActiveTable.asp **//
-var wl_active = new Object();
 wl_active.titl="Список MAC-адресов активных клиентов беспроводной сети";
 wl_active.h2="Список MAC-адресов клиентов беспроводной сети";
 wl_active.h3="Включить MAC-фильтр";
@@ -1646,7 +1554,6 @@ wl_active.inactive="Неактивные клиенты";
 
 
 // ** Wireless_WDS.asp **//
-var wds = new Object();
 wds.titl="WDS";
 wds.h2="Беспроводная распределенная система (WDS)";
 wds.legend="Параметры WDS";
@@ -1661,7 +1568,6 @@ wds.legend2="Дополнительные опции";
 
 
 // ** Wireless_radauth.asp **//
-var radius = new Object();
 radius.titl="Radius";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius";
@@ -1679,7 +1585,6 @@ radius.label17="Общий секрет сервера учета Radius";
 radius.label18="Учет Radius";
 
 // ** Wireless_MAC.asp **//
-var wl_mac = new Object();
 wl_mac.titl="MAC-фильтр";
 wl_mac.h2="MAC-фильтр беспроводной сети";
 wl_mac.legend="MAC-фильтр";
@@ -1689,7 +1594,6 @@ wl_mac.deny="Запретить доступ к сети клиентам из списка";
 wl_mac.allow="Разрешить доступ к сети только клиентам из списка";
 
 // ** WiMAX
-var wl_wimax = new Object();
 wl_wimax.titl="WiMAX";
 wl_wimax.h2="Worldwide Interoperability for Microwave Access";
 wl_wimax.downstream="Частота приема";
@@ -1701,7 +1605,6 @@ wl_wimax.mac="Subscriber MAC Address";
 
 
 // ** Wireless_Advanced.asp **//
-var wl_adv = new Object();
 wl_adv.titl="Дополнительные параметры беспроводой сети";
 wl_adv.h2="Дополнительные параметры беспроводой сети";
 wl_adv.legend="Дополнительные параметры";
@@ -1759,11 +1662,9 @@ wl_adv.lng="Long"; 					//************* don't use .long ! *************
 wl_adv.shrt="Short"; 				//************* don't use .short ! **************
 
 //help container
-var hwl_adv = new Object();
 hwl_adv.right2="Вы можете задать режимы Авто и Общий ключ. Аутентификация на основе общего ключа более надежна, но все устройства в вашей сети должны поддерживать даный режим аутентификации.";
 
 // ** Wireless_Basic.asp **//
-var wl_basic = new Object();
 wl_basic.titl="Беспроводная сеть";
 wl_basic.h2="Беспроводная сеть";
 wl_basic.legend="Основные параметры";
@@ -1833,20 +1734,17 @@ wl_basic.ofdm_weak_det="Обнаружение слабого сигнала OFDM";
 wl_basic.radar="Обнаружение радара";
 
 //help container
-var hwl_basic = new Object();
 hwl_basic.right2="Если вы хотите исключить беспроводных G-клиентов, выберите режим <em>Только B</em>. Если вы хотите отключить беспроводной доступ, выберите <em>Отключить</em>.<br/><b>Замечание :</b> при изменении режима беспроводной сети также подлежат изменению некоторые чувствительные к режиму параметры (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" или \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Выбор времени ACK: ";
 hwl_basic.right4="Настраивает время ожидания ACK. Для устройств на базе Broadcom значение 0 полностью отключает время ожидания подтверждения. Для устройств на базе Atheros это значение означает автоматическую установку времени ожидания подтверждения";
 hwl_basic.right6="Щелкните по любому часу, чтобы включить или отключить радиосигнал в указанный час. (<em>Зеленый</em> цвет означает, что радиодоступ разрешен, а <em>красный</em> - что радиодоступ заблокирован)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
-var fail = new Object();
 fail.mess1="Вы ввели неверные данные. Пожалуйста, попробуйте ещё раз.";
 fail.mess2="Обновдение завершилось неуспешно.";
 
 
 // ** Success*.asp / Reboot.asp  **//
-var success = new Object();
 success.saved="Значения сохранены.";
 success.restore="Значения восстановлены.<br/>Идет перезагрузка. Пожалуйста, подождите...";
 success.upgrade="Обновление успешно завершено.<br/>Идет перезагрузка. Пожалуйста, подождите ...";
@@ -1859,17 +1757,14 @@ success.alert2="Если вы изменили IP-адрес вашего маршрутизатора, учтите, что вы 
 success.alert3="Если вы подключаетесь по беспроводной сети, присоединитесь к сети и нажмите <em>Продолжить</em>.";
 
 // ** Logout.asp  **//
-var logout = new Object();
 logout.message="Вы отключились от системы.<br />Благодарим вас за использование DD-WRT !";
 
 
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
-var dhcp = new Object();
 dhcp.titl="Таблица активных IP-адресов DHCP";
 dhcp.h2="Таблица активных IP-адресов DHCP";
 dhcp.server="IP-адрес DHCP-сервера :";
 dhcp.tclient="Имя хоста клиента";
 
-var donate = new Object();
 donate.mb="Вы можете также внести пожертвование через систему Moneybookers на счет mb@dd-wrt.com";
