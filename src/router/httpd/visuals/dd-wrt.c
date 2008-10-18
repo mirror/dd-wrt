@@ -1755,6 +1755,7 @@ void ej_show_wifiselect( webs_t wp, int argc, char_t ** argv )
 }
 
 #endif
+#if 0
 static void showOption( webs_t wp, char *propname, char *nvname )
 {
     websWrite( wp, "<div class=\"setting\">\n" );
@@ -1775,6 +1776,7 @@ static void showOption( webs_t wp, char *propname, char *nvname )
     websWrite( wp, "//]]>\n</script>\n</select>\n</div>\n" );
 
 }
+#endif
 static void showRadio( webs_t wp, char *propname, char *nvname )
 {
     websWrite( wp, "<div class=\"setting\">\n" );
@@ -1936,7 +1938,7 @@ void ej_show_olsrd( webs_t wp, int argc, char_t ** argv )
 			  nvram_default_get( "olsrd_redundancy", "2" ) );
 	show_inputlabel( wp, "route.olsrd_mpr", "olsrd_coverage", 5, "num",
 			 5 );
-	showOption( wp, "route.olsrd_lqfe", "olsrd_lqfisheye" );
+	showRadio( wp, "route.olsrd_lqfe", "olsrd_lqfisheye" );
 	show_inputlabel( wp, "route.olsrd_lqag", "olsrd_lqaging", 5, "num",
 			 5 );
 
@@ -1958,7 +1960,7 @@ void ej_show_olsrd( webs_t wp, int argc, char_t ** argv )
 	showOptionsLabel( wp, "route.olsrd_lqlvl", "olsrd_lqlevel",
 			  "0 1 2", nvram_default_get( "olsrd_lqlevel",
 						      "2" ) );
-	showOption( wp, "route.olsrd_hysteresis", "olsrd_hysteresis" );
+	showRadio( wp, "route.olsrd_hysteresis", "olsrd_hysteresis" );
 	char *wordlist = nvram_safe_get( "olsrd_interfaces" );
 	char *next;
 	char word[128];
