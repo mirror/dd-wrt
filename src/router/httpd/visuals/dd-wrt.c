@@ -3890,7 +3890,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       nvram_match( wl_txantenna,
 			    "1" ) ? "selected=\\\"selected\\\"" : "" );
     websWrite( wp,
-	       "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.adaptive + \"</option>\");\n",
+	       "document.write(\"<option value=\\\"3\\\" %s >\" + wl_basic.adaptive + \"</option>\");\n",
 	       nvram_match( wl_txantenna,
 			    "3" ) ? "selected=\\\"selected\\\"" : "" );
     websWrite( wp,
