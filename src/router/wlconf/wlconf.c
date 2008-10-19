@@ -206,6 +206,8 @@ wlconf_akm_options(char *prefix)
 			akm_ret_val |= WPA2_AUTH_UNSPECIFIED;
 		if (!strcmp(akm, "psk2"))
 			akm_ret_val |= WPA2_AUTH_PSK;
+		if (!strcmp(akm, "brcm_psk"))
+			akm_ret_val |= BRCM_AUTH_PSK;
 #endif
 	}
 	return akm_ret_val;
@@ -276,7 +278,8 @@ wlconf_set_wme(char *name, char *prefix)
 	char *cwmin, *cwmax, *aifsn, *txop_b, *txop_ag, *admin_forced, *oldest_first;
 	char **locals[] = { &cwmin, &cwmax, &aifsn, &txop_b, &txop_ag, &admin_forced,
 	                    &oldest_first };
-	struct {char *req; char *str;} mode[] = {{"wme_ac_sta", "sta"}, {"wme_ac_ap", "ap"}};
+	struct {char *req; char *str;} mode[] = {{"wme_ac_sta", "sta"}, {"wme_ac_ap", "ap"},
+	                                         {"wme_tx_params", "txp"}};
 
 	/* query the phy type */
 	WL_IOCTL(name, WLC_GET_PHYTYPE, &phytype, sizeof(phytype));
@@ -353,6 +356,52 @@ wlconf_set_wme(char *name, char *prefix)
 	/* set per-AC discard policy */
 	strcpy(buf, "wme_dp");
 	WL_IOVAR_SETINT(name, "wme_dp", dp[1]);
+
+	/* WME Tx parameters setting */
+	{
+		wme_tx_params_t txparams[AC_COUNT];
+		char *srl, *sfbl, *lrl, *lfbl, *maxrate;
+		char **locals[] = { &srl, &sfbl, &lrl, &lfbl, &maxrate };
+
+		/* build request block */
+		memset(txparams, 0, sizeof(txparams));
+
+		for (j = 0; j < AC_COUNT; j++) {
+			/* get packed nvram parameter */
+			snprintf(nv, sizeof(nv), nv_name, prefix, mode[2].str, ac[j]);
+			nv_value = nvram_safe_get(nv);
+			strcpy(nv, nv_value);
+			/* unpack it */
+			v = nv;
+			for (k = 0; k < (sizeof(locals) / sizeof(locals[0])); k++) {
+				*locals[k] = v;
+				while (*v && *v != ' ')
+					v++;
+				if (*v) {
+					*v = 0;
+					v++;
+				}
+			}
+
+			/* update short retry limit */
+			txparams[j].short_retry = atoi(srl);
+
+			/* update short fallback limit */
+			txparams[j].short_fallback = atoi(sfbl);
+
+			/* update long retry limit */
+			txparams[j].long_retry = atoi(lrl);
+
+			/* update long fallback limit */
+			txparams[j].long_fallback = atoi(lfbl);
+
+			/* update max rate */
+			txparams[j].max_rate = atoi(maxrate);
+		}
+
+		/* set the WME tx parameters */
+		WL_IOVAR_SET(name, mode[2].req, txparams, sizeof(txparams));
+	}
 }
 
 #if defined(linux)
@@ -605,6 +654,7 @@ wlconf(char *name)
 	int btc_mode;
 	uint32 leddc;
 	bool ure_enab = FALSE;
+	int nmode = OFF; /* 802.11n support */
 
 	/* wlconf doesn't work for virtual i/f, so if we are given a
 	 * virtual i/f return 0 if that interface is in it's parent's "vifs"
@@ -1103,6 +1153,11 @@ cprintf("set channel %s\n",name);
 		uint channel;
 		uint nbw;
 		uint nctrlsb = WL_CHANSPEC_CTL_SB_NONE;
+		nmode = AUTO;	/* enable by default for NPHY */
+		/* Set n mode */
+		strcat_r(prefix, "nmode", tmp);
+		if (nvram_match(tmp, "0"))
+			nmode = OFF;
 
 		channel = val;
 		/* Get BW */
@@ -1150,6 +1205,52 @@ cprintf("set channel %s\n",name);
 
 		WL_IOVAR_SETINT(name, "chanspec", (uint32)chanspec);
 	}
+
+	/* Set up number of Tx and Rx streams */
+	if (phytype == PHY_TYPE_N) {
+		int count;
+		int streams;
+
+		wl_iovar_getint(name, "txchain_cnt", &count);
+		/* update NVRAM with capabilities */
+		snprintf(var, sizeof(var), "%d", count);
+		nvram_set(strcat_r(prefix, "txchain_cnt", tmp), var);
+
+		/* Verify that there is an NVRAM param for txstreams, if not create it and
+		 * set it to txchain_cnt
+		 */
+		streams = atoi(nvram_safe_get(strcat_r(prefix, "txstreams", tmp)));
+		if (streams == 0) {
+			/* invalid - NVRAM needs to be fixed/initialized */
+			nvram_set(strcat_r(prefix, "txstreams", tmp), var);
+			streams = count;
+		}
+		/* Apply user configured txstreams, use 1 if user disabled nmode */
+		if (nmode == OFF)
+			streams = 1;
+		WL_IOVAR_SETINT(name, "txstreams", streams);
+
+		wl_iovar_getint(name, "rxchain_cnt", &count);
+		/* update NVRAM with capabilities */
+		snprintf(var, sizeof(var), "%d", count);
+		nvram_set(strcat_r(prefix, "rxchain_cnt", tmp), var);
+
+		/* Verify that there is an NVRAM param for rxstreams, if not create it and
+		 * set it to txchain_cnt
+		 */
+		streams = atoi(nvram_safe_get(strcat_r(prefix, "rxstreams", tmp)));
+		if (streams == 0) {
+			/* invalid - NVRAM needs to be fixed/initialized */
+			nvram_set(strcat_r(prefix, "rxstreams", tmp), var);
+			streams = count;
+		}
+
+		/* Apply user configured rxstreams, use 1 if user disabled nmode */
+		if (nmode == OFF)
+			streams = 1;
+		WL_IOVAR_SETINT(name, "rxstreams", streams);
+	}
+
 
 cprintf("set rate set %s\n",name);
 	/* Reset to hardware rateset (band may have changed) */
