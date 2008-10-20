@@ -554,10 +554,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_ssid", "SKYTRON Network", 0},	/* Service set ID (network name) */
 #elif HAVE_SAGAR
     {"wl_ssid", "hotspot-internet", 0},	/* Service set ID (network name) */
-#elif HAVE_GGEW
-#ifndef HAVE_NS5
+#elif defined(HAVE_GGEW) && !defined(HAVE_NS5) && !defined(HAVE_NS2)
     {"wl_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
-#endif
 #elif HAVE_NEWMEDIA
     {"wl_ssid", "changeme", 0},	/* Service set ID (network name) */
 #elif HAVE_MAKSAT
@@ -587,7 +585,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl0_ssid", "trimax", 0},	/* Service set ID (network name) */
     {"ath0_ssid", "trimax", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
-    {"ath0_ssid", "GGEWnet-wartung", 0},	/* Service set ID (network name) */
+    {"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_DDLAN)
     {"wl0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
     {"ath0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
