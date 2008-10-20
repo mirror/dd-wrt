@@ -689,7 +689,9 @@ int start_pptp( int status )
 	// terminated.
 
 	fprintf( fp, "mtu %s\n", nvram_safe_get( "wan_mtu" ) );
-
+#ifdef HAVE_GGEW
+	fprintf( fp, "mru %s\n", nvram_safe_get( "wan_mtu" ) );
+#endif
 	if( nvram_match( "ppp_demand", "1" ) )
 	{			// demand mode
 	    fprintf( fp, "idle %d\n",
