@@ -343,6 +343,7 @@ typedef struct {
 #define WPA_AUTH_NONE		0x0001	/* none (IBSS) */
 #define WPA_AUTH_UNSPECIFIED	0x0002	/* over 802.1x */
 #define WPA_AUTH_PSK		0x0004	/* Pre-shared key */
+#define BRCM_AUTH_PSK		0x0100  /* BRCM specific PSK */
 /* #define WPA_AUTH_8021X 0x0020 */	/* 802.1x, reserved */
 #ifdef BCMWPA2
 #define WPA2_AUTH_UNSPECIFIED	0x0040	/* over 802.1x */
@@ -478,7 +479,15 @@ typedef struct {
 	wl_rateset_t		rateset;	/* rateset in use */
 	uint32			in;		/* seconds elapsed since associated */
 	uint32			listen_interval_inms; /* Min Listen interval in ms for this STA */
+	uint32			tx_pkts;	/* # of packets transmitted */
+	uint32			tx_failures;	/* # of packets failed */
+	uint32			rx_ucast_pkts;	/* # of unicast packets received */
+	uint32			rx_mcast_pkts;	/* # of multicast packets received */
+	uint32			tx_rate;	/* Rate of last successful tx frame */
+	uint32			rx_rate;	/* Rate of last successful rx frame */
 } sta_info_t;
+
+#define WL_OLD_STAINFO_SIZE	OFFSETOF(sta_info_t, tx_pkts)
 
 #define WL_STA_VER		2
 
@@ -497,6 +506,7 @@ typedef struct {
 #define WL_STA_APSD_VI		0x800		/* APSD delv/trigger for AC_VI is default enabled */
 #define WL_STA_APSD_VO		0x1000		/* APSD delv/trigger for AC_VO is default enabled */
 #define WL_STA_N_CAP		0x2000		/* STA 802.11n capable */
+#define WL_STA_SCBSTATS		0x4000		/* Per STA debug stats */
 
 #define WL_WDS_LINKUP		WL_STA_WDS_LINKUP	/* deprecated */
 
@@ -960,7 +970,26 @@ typedef struct {
 	int max_deltat_lp;  /* Maximum deltat for long pulses */
 	int min_deltat; /* Minimum spacing between pulses */
 	int max_deltat; /* Maximum spacing between pulses */
+	uint16 autocorr;	/* Radar detection, autocorr on or off */
+	uint16 st_level_time;	/* Radar detection, start_timing level */
+	uint32 version; /* version */
 } wl_radar_args_t;
+
+#define WL_RADAR_ARGS_VERSION 1
+
+typedef struct {
+	uint32 version; /* version */
+	uint16 thresh0_20_lo;	/* Radar detection, thresh 0 (range 5250-5350MHz) for BW 20MHz */
+	uint16 thresh1_20_lo;	/* Radar detection, thresh 1 (range 5250-5350MHz) for BW 20MHz */
+	uint16 thresh0_40_lo;	/* Radar detection, thresh 0 (range 5250-5350MHz) for BW 40MHz */
+	uint16 thresh1_40_lo;	/* Radar detection, thresh 1 (range 5250-5350MHz) for BW 40MHz */
+	uint16 thresh0_20_hi;	/* Radar detection, thresh 0 (range 5470-5725MHz) for BW 20MHz */
+	uint16 thresh1_20_hi;	/* Radar detection, thresh 1 (range 5470-5725MHz) for BW 20MHz */
+	uint16 thresh0_40_hi;	/* Radar detection, thresh 0 (range 5470-5725MHz) for BW 40MHz */
+	uint16 thresh1_40_hi;	/* Radar detection, thresh 1 (range 5470-5725MHz) for BW 40MHz */
+} wl_radar_thr_t;
+#define WL_RADAR_THR_VERSION 1
+#define WL_THRESHOLD_LO_BAND	70	/* range from 5250MHz - 5350MHz */
 
 
 /* radar iovar SET defines */
