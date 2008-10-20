@@ -229,6 +229,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
     {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif defined(HAVE_GGEW) && defined(HAVE_NS2)
+    {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_X86
 #ifdef HAVE_GW700
     {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
@@ -691,12 +693,13 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_SKYTRON
     {"wl_mode", "sta", 0},
     {"wl0_mode", "sta", 0},
-#elif HAVE_GGEW
+#elif HAVE_GGEW && !defined(HAVE_NS5) && !defined(HAVE_NS2)
     {"wl_mode", "sta", 0},
     {"wl0_mode", "sta", 0},
 #else
 
 #ifdef HAVE_MSSID
+
 #ifdef HAVE_FON
     {"wl_mode", "apsta", 0},
     {"wl0_mode", "apsta", 0},
@@ -711,6 +714,8 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_DDLAN
     {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
+    {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#elif defined(HAVE_GGEW) && defined(HAVE_NS2)
     {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #else
     {"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
