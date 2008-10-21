@@ -207,7 +207,7 @@ static struct MAIN maincalls[] = {
 #ifdef HAVE_WOL
     {"wol", NULL, &wol_main},
 #endif
-    // {"event", NULL, &event_main},
+    {"event", NULL, &event_main},
     {"switch", "switch", NULL},
 #ifdef HAVE_MICRO
     {"brctl", "brctl", NULL},
