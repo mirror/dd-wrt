@@ -1723,7 +1723,7 @@ int doMultiCast( void )
     return ifcount;
 }
 
-/*
+
 static int sockaddr_to_dotted( struct sockaddr *saddr, char *buf )
 {
     buf[0] = '\0';
@@ -1740,32 +1740,15 @@ static int sockaddr_to_dotted( struct sockaddr *saddr, char *buf )
 	return 0;
     }
     return -1;
-}*/
+}
+
 
 void getIPFromName( char *name, char *ip )
 {
-    struct hostent *host;
-    
-    
-    host = gethostbyname(name);
-    if (!host)
-	host = gethostbyname(name);
-    if (host)
-	{
-	if (host->h_addr)
-	strcpy(ip, host->h_addr);
-	else
-	sprintf( ip, "0.0.0.0" );	
-	}
-	else
-	{
-	sprintf( ip, "0.0.0.0" );	
-	}
-
-
-/*    struct addrinfo *result = NULL;
+    struct addrinfo *result = NULL;
     int rc;
     struct addrinfo hint;
+    res_init();
 
     memset( &hint, 0, sizeof( hint ) );
     hint.ai_socktype = SOCK_STREAM;
@@ -1776,10 +1759,12 @@ void getIPFromName( char *name, char *ip )
     if( result )
     {
 	sockaddr_to_dotted( result->ai_addr, ip );
+	freeaddrinfo(result);
     }
     else
-	sprintf( ip, "0.0.0.0" );*/
+	sprintf( ip, "0.0.0.0" );
 }
+
 
 /*
  * Example: legal_ip_netmask("192.168.1.1","255.255.255.0","192.168.1.100");
