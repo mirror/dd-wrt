@@ -3971,28 +3971,19 @@ int init_mtu( char *wan_proto )
     else if( strcmp( wan_proto, "pptp" ) == 0
 	     || strcmp( wan_proto, "l2tp" ) == 0 )
     {				// 1200 < mtu < 1400 (1460)
-	if( nvram_match( "mtu_enable", "0" ) )
-	{			// Auto
-	    nvram_set( "mtu_enable", "1" );
-#ifdef HAVE_GGEW 
-	    nvram_set( "wan_mtu", "1450" );	// set max value (linksys
-#else
-	    nvram_set( "wan_mtu", "1460" );	// set max value (linksys
-						// request to set to 1460)
-						// 2003/06/23
-#endif
-	}
-	else
+//	if( nvram_match( "mtu_enable", "0" ) )
+//	{			// Auto
+//	    nvram_set( "mtu_enable", "1" );
+//	    nvram_set( "wan_mtu", "1460" );	// set max value (linksys
+//						// request to set to 1460)						// 2003/06/23
+//	}
+//	else
 	{			// Manual
 	    if( atoi( nvram_safe_get( "wan_mtu" ) ) > 1460 )
 	    {
-#ifdef HAVE_GGEW 
-	    nvram_set( "wan_mtu", "1450" );	// set max value (linksys
-#else
 	    nvram_set( "wan_mtu", "1460" );	// set max value (linksys
 						// request to set to 1460)
 						// 2003/06/23
-#endif
 	    }
 	    if( atoi( nvram_safe_get( "wan_mtu" ) ) < 1200 )
 	    {
