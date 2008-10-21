@@ -2066,8 +2066,8 @@ static void filter_forward( void )
     /*
      * Clamp TCP MSS to PMTU of WAN interface 
      */
-    if( atoi( nvram_safe_get( "wan_mtu" ) ) > 0 )
-	save2file("-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu ");
+//    if( atoi( nvram_safe_get( "wan_mtu" ) ) > 0 )
+    save2file("-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu ");
 //	save2file
 //	    ( "-A FORWARD -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS "
 //	      "--set-mss %d\n", atoi( nvram_safe_get( "wan_mtu" ) ) - 39,
