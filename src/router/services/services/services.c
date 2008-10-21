@@ -447,23 +447,6 @@ int stop_syslog( void )
 }
 #endif
 
-int start_redial( void )
-{
-    int ret;
-    pid_t pid;
-    char *redial_argv[] = { "/tmp/ppp/redial",
-	nvram_safe_get( "ppp_redialperiod" ),
-	NULL
-    };
-
-    symlink( "/sbin/rc", "/tmp/ppp/redial" );
-
-    ret = _evalpid( redial_argv, NULL, 0, &pid );
-    dd_syslog( LOG_INFO, "ppp_redial : redial process successfully started\n" );
-
-    cprintf( "done\n" );
-    return ret;
-}
 
 int stop_redial( void )
 {
@@ -474,6 +457,28 @@ int stop_redial( void )
 		"ppp_redial : redial daemon successfully stopped\n" );
     // ret = killps("redial","-9");
     ret = killall( "redial", SIGKILL );
+
+    cprintf( "done\n" );
+    return ret;
+}
+
+int start_redial( void )
+{
+    int ret;
+    pid_t pid;
+    char *redial_argv[] = { "/tmp/ppp/redial",
+	nvram_safe_get( "ppp_redialperiod" ),
+	NULL
+    };
+    if( pidof( "redial" ) > 0 )
+	{
+	return 0;// not required, already running
+	}
+
+    symlink( "/sbin/rc", "/tmp/ppp/redial" );
+
+    ret = _evalpid( redial_argv, NULL, 0, &pid );
+    dd_syslog( LOG_INFO, "ppp_redial : redial process successfully started\n" );
 
     cprintf( "done\n" );
     return ret;
@@ -613,48 +618,12 @@ int stop_dhcpc( void )
 }
 
 #ifdef HAVE_PPTP
-int start_pptp( int status )
+
+static void create_pptp_config(char *servername,char *username)
 {
-    int ret;
-    FILE *fp;
-    char *pptp_argv[] = { "pppd",
-	NULL
-    };
-    char username[80], passwd[80];
 
-    stop_dhcpc(  );
-#ifdef HAVE_PPPOE
-    stop_pppoe(  );
-#endif
-    stop_vpn_modules(  );
+FILE *fp;
 
-    if( nvram_match( "aol_block_traffic", "0" ) )
-    {
-	snprintf( username, sizeof( username ), "%s",
-		  nvram_safe_get( "ppp_username" ) );
-	snprintf( passwd, sizeof( passwd ), "%s",
-		  nvram_safe_get( "ppp_passwd" ) );
-    }
-    else
-    {
-	if( !strcmp( nvram_safe_get( "aol_username" ), "" ) )
-	{
-	    snprintf( username, sizeof( username ), "%s",
-		      nvram_safe_get( "ppp_username" ) );
-	    snprintf( passwd, sizeof( passwd ), "%s",
-		      nvram_safe_get( "ppp_passwd" ) );
-	}
-	else
-	{
-	    snprintf( username, sizeof( username ), "%s",
-		      nvram_safe_get( "aol_username" ) );
-	    snprintf( passwd, sizeof( passwd ), "%s",
-		      nvram_safe_get( "aol_passwd" ) );
-	}
-    }
-
-    if( status != REDIAL )
-    {
 	mkdir( "/tmp/ppp", 0777 );
 	symlink( "/sbin/rc", "/tmp/ppp/ip-up" );
 	symlink( "/sbin/rc", "/tmp/ppp/ip-down" );
@@ -666,7 +635,7 @@ int start_pptp( int status )
 	if( !( fp = fopen( "/tmp/ppp/options", "w" ) ) )
 	{
 	    perror( "/tmp/ppp/options" );
-	    return -1;
+	    return;
 	}
 	fprintf( fp, "defaultroute\n" );	// Add a default route to the 
 						// system routing tables,
@@ -675,7 +644,7 @@ int start_pptp( int status )
 	fprintf( fp, "usepeerdns\n" );	// Ask the peer for up to 2 DNS
 					// server addresses
 	fprintf( fp, "pty 'pptp %s --nolaunchpppd",
-		 nvram_safe_get( "pptp_server_name" ) );
+		 servername );
 
 	// PPTP client also supports synchronous mode.
 	// This should improve the speeds.
@@ -748,6 +717,51 @@ int start_pptp( int status )
 
 	fclose( fp );
 
+}
+
+int start_pptp( int status )
+{
+    int ret;
+    FILE *fp;
+    char *pptp_argv[] = { "pppd",
+	NULL
+    };
+    char username[80], passwd[80];
+
+    stop_dhcpc(  );
+#ifdef HAVE_PPPOE
+    stop_pppoe(  );
+#endif
+    stop_vpn_modules(  );
+
+    if( nvram_match( "aol_block_traffic", "0" ) )
+    {
+	snprintf( username, sizeof( username ), "%s",
+		  nvram_safe_get( "ppp_username" ) );
+	snprintf( passwd, sizeof( passwd ), "%s",
+		  nvram_safe_get( "ppp_passwd" ) );
+    }
+    else
+    {
+	if( !strcmp( nvram_safe_get( "aol_username" ), "" ) )
+	{
+	    snprintf( username, sizeof( username ), "%s",
+		      nvram_safe_get( "ppp_username" ) );
+	    snprintf( passwd, sizeof( passwd ), "%s",
+		      nvram_safe_get( "ppp_passwd" ) );
+	}
+	else
+	{
+	    snprintf( username, sizeof( username ), "%s",
+		      nvram_safe_get( "aol_username" ) );
+	    snprintf( passwd, sizeof( passwd ), "%s",
+		      nvram_safe_get( "aol_passwd" ) );
+	}
+    }
+
+    if( status != REDIAL )
+    {
+	create_pptp_config(nvram_safe_get("pptp_server_name"),username);
 	/*
 	 * Generate pap-secrets file 
 	 */
@@ -790,6 +804,7 @@ int start_pptp( int status )
 	wan_ifname = getSTA(  );
     }
 
+    nvram_set("pptp_ifname",wan_ifname);
     /*
      * Bring up WAN interface 
      */
@@ -805,6 +820,7 @@ int start_pptp( int status )
 
 	nvram_set( "wan_get_dns", "" );
 	nvram_unset( "dhcpc_done" );
+	//dirty hack
 	start_dhcpc( wan_ifname );
 	int timeout;
 
@@ -814,6 +830,7 @@ int start_pptp( int status )
 	    sleep( 1 );
 	}
 	stop_dhcpc(  );		/* we don't need dhcp client anymore */
+	create_pptp_config(nvram_safe_get("pptp_server_ip"),username);
 
 	/*
 	 * //this stuff has already been configured in dhcpc->bound

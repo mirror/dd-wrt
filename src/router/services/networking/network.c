@@ -3211,7 +3211,7 @@ void start_wan_done( char *wan_ifname )
     /*
      * Delete all default routes 
      */
-    // while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0);
+//     while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0);
 
     /*
      * Set default route to gateway if specified 
