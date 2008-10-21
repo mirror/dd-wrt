@@ -122,8 +122,12 @@ int ipup_main( int argc, char **argv )
 
     if( ( value = getenv( "IPREMOTE" ) ) )
 	{
-	eval("route","del","default");
 	nvram_set( "wan_gateway", value );
+	if( nvram_match( "wan_proto", "pptp" ) )
+	{
+	eval("route","del","default");
+	route_add( wan_ifname, 0, "0.0.0.0", value, "0.0.0.0" );
+	}
 	}
     strcpy( buf, "" );
     if( getenv( "DNS1" ) )
@@ -183,8 +187,8 @@ int ipdown_main( int argc, char **argv )
     {
 	eval("route","del","default");
 	nvram_set( "wan_gateway", nvram_safe_get( "wan_gateway_buf" ) );
-	route_add( nvram_safe_get( "wan_ifname" ), 0, "0.0.0.0",
-		   nvram_safe_get( "wan_gateway" ), "0.0.0.0" );
+	eval("route","add","default","gw",nvram_safe_get( "wan_gateway" ));
+        sysprintf("iptables -t nat -A POSTROUTING -o %s -j MASQUERADE\n", nvram_safe_get("pptp_ifname"));
     }
 
     nvram_set( "pppoe_ifname", "" );
