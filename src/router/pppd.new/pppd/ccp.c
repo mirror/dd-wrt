@@ -1364,6 +1364,7 @@ ccp_reqci(f, p, lenp, dont_nak)
     int *lenp;
     int dont_nak;
 {
+    int mtu;
     int ret, newret, res;
     u_char *p0, *retp, p2, p5;
     int len, clen, type, nb;
@@ -1655,7 +1656,7 @@ ccp_reqci(f, p, lenp, dont_nak)
 		 * because MPPE frames **grow**.  The kernel [must]
 		 * allocate MPPE_PAD extra bytes in xmit buffers.
 		 */
-/*
+
 		mtu = netif_get_mtu(f->unit);
 		if (mtu) {
 		    netif_set_mtu(f->unit, mtu - MPPE_PAD);
@@ -1666,7 +1667,7 @@ ccp_reqci(f, p, lenp, dont_nak)
 			lcp_close(f->unit, "Cannot adjust MTU needed by MPPE.");
 		    }
 		}
-*/
+
 		break;
 #endif /* MPPE */
 
