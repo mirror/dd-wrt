@@ -306,14 +306,27 @@ static int bound( void )
 	struct dns_lists *dns_list = NULL;
 
 	dns_to_resolv(  );
-	getIPFromName( nvram_safe_get( "pptp_server_name" ), pptpip );
-	nvram_set( "pptp_server_ip", pptpip );
+
+	dns_list = get_dns_list(  );
 	int i = 0;
 
+	if( dns_list )
+	{
+	    for( i = 0; i < dns_list->num_servers; i++ )
+		route_add( wan_ifname, 0, dns_list->dns_server[i],
+			   nvram_safe_get( "wan_gateway" ),
+			   "255.255.255.255" );
+	    free( dns_list );
+	}
 	route_add( wan_ifname, 0, "0.0.0.0", nvram_safe_get( "wan_gateway" ),
 		   "0.0.0.0" );
 
 	nvram_set( "wan_gateway_buf", nvram_get( "wan_gateway" ) );
+
+
+	getIPFromName( nvram_safe_get( "pptp_server_name" ), pptpip );
+	nvram_set( "pptp_server_ip", pptpip );
+
 
 	/*
 	 * Delete all default routes 
@@ -332,16 +345,6 @@ static int bound( void )
 		       nvram_safe_get( "wan_gateway" ),
 		       nvram_safe_get( "wan_netmask" ) );
 
-	dns_list = get_dns_list(  );
-
-	if( dns_list )
-	{
-	    for( i = 0; i < dns_list->num_servers; i++ )
-		route_add( wan_ifname, 0, dns_list->dns_server[i],
-			   nvram_safe_get( "wan_gateway" ),
-			   "255.255.255.255" );
-	    free( dns_list );
-	}
 
     }
 #endif
