@@ -28,7 +28,7 @@ endif
 
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-OBJS := rc.o servicemanager.o crc.o 
+OBJS := rc.o servicemanager.o crc.o event.o
 #http.o stats.o
 OBJS += watchdog.o services.o mtd_main.o
 
@@ -456,7 +456,7 @@ install: all
 	install check_ps $(INSTALLDIR)/sbin	
 	install nvram $(INSTALLDIR)/usr/sbin	
 	install ledtool $(INSTALLDIR)/sbin	
-	install event $(INSTALLDIR)/sbin	
+#	install event $(INSTALLDIR)/sbin	
 	install radio_timer $(INSTALLDIR)/sbin	
 	install listen $(INSTALLDIR)/sbin
 ifeq ($(CONFIG_USB),y)
@@ -479,7 +479,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
 #	cd $(INSTALLDIR)/sbin && ln -sf rc stats
-#	cd $(INSTALLDIR)/sbin && ln -sf rc event
+	cd $(INSTALLDIR)/sbin && ln -sf rc event
 	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
 	cd $(INSTALLDIR)/sbin && ln -sf rc filter
 #	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
@@ -579,7 +579,7 @@ rc: $(OBJS)
 	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram
 	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o event event.c
+#	$(CC) $(CFLAGS) -o event event.c
 	$(CC) $(CFLAGS) -o radio_timer radio_timer.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o listen listen.c $(LDFLAGS)
 ifeq ($(CONFIG_USB),y)
