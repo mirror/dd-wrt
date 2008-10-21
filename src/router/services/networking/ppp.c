@@ -121,7 +121,10 @@ int ipup_main( int argc, char **argv )
     }
 
     if( ( value = getenv( "IPREMOTE" ) ) )
+	{
+	eval("route","del","default");
 	nvram_set( "wan_gateway", value );
+	}
     strcpy( buf, "" );
     if( getenv( "DNS1" ) )
 	sprintf( buf, "%s", getenv( "DNS1" ) );
@@ -173,6 +176,13 @@ int ipdown_main( int argc, char **argv )
 	/*
 	 * Set default route to gateway if specified 
 	 */
+	route_add( nvram_safe_get( "wan_ifname" ), 0, "0.0.0.0",
+		   nvram_safe_get( "wan_gateway" ), "0.0.0.0" );
+    }
+    if( nvram_match( "wan_proto", "pptp" ) )
+    {
+	eval("route","del","default");
+	nvram_set( "wan_gateway", nvram_safe_get( "wan_gateway_buf" ) );
 	route_add( nvram_safe_get( "wan_ifname" ), 0, "0.0.0.0",
 		   nvram_safe_get( "wan_gateway" ), "0.0.0.0" );
     }
