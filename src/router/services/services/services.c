@@ -688,10 +688,9 @@ int start_pptp( int status )
 	// fprintf(fp, "persist\n"); // Do not exit after a connection is
 	// terminated.
 
-	fprintf( fp, "mtu %s\n", nvram_safe_get( "wan_mtu" ) );
-#ifdef HAVE_GGEW
-	fprintf( fp, "mru %s\n", nvram_safe_get( "wan_mtu" ) );
-#endif
+	if( nvram_match( "mtu_enable", "1" ) )
+	    fprintf( fp, "mtu %s\n", nvram_safe_get( "wan_mtu" ) );
+	
 	if( nvram_match( "ppp_demand", "1" ) )
 	{			// demand mode
 	    fprintf( fp, "idle %d\n",
