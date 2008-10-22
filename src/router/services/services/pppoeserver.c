@@ -81,15 +81,15 @@ static void makeipup( void )
 	     // target 
 	     // route 
 	     // exists
-	     "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
+	     "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 	     "iptables -I INPUT -i $1 -j ACCEPT\n"
-	     "iptables -I FORWARD -i $1 -j ACCEPT\n", mss + 1, mss );
+	     "iptables -I FORWARD -i $1 -j ACCEPT\n");
     fclose( fp );
     fp = fopen( "/tmp/pppoeserver/ip-down", "w" );
     fprintf( fp, "#!/bin/sh\n"
-	     "iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS --set-mss %d\n"
+	     "iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 	     "iptables -D INPUT -i $1 -j ACCEPT\n"
-	     "iptables -D FORWARD -i $1 -j ACCEPT\n", mss + 1, mss );
+	     "iptables -D FORWARD -i $1 -j ACCEPT\n");
     fclose( fp );
     chmod( "/tmp/pppoeserver/ip-up", 0744 );
     chmod( "/tmp/pppoeserver/ip-down", 0744 );
