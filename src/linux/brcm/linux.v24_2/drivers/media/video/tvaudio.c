@@ -1635,7 +1635,7 @@ static int chip_command(struct i2c_client *client,
 	case VIDIOCSFREQ:
 	{
 	    	chip->mode = 0; /* automatic */
-		if (desc->checkmode) {
+		if (desc->checkmode && desc->setmode) {
 			desc->setmode(chip,VIDEO_SOUND_MONO);
 		    	if (chip->prevmode != VIDEO_SOUND_MONO)
 		    		chip->prevmode = -1; /* reset previous mode */
