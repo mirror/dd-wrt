@@ -1163,7 +1163,7 @@ cprintf("set channel %s\n",name);
 		/* Get BW */
 		val = atoi(nvram_safe_get(strcat_r(prefix, "nbw", tmp)));
 		fprintf(stderr,"nbw = %d\n",val);
-		if (nvram_match(strcat_r(prefix, "net_mode", tmp),"b-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"g-only") || nvram_match(strcat_r(prefix, "net_mode", tmp),"a-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"bg-mixed"))
+		if (nvram_match(strcat_r(prefix, "net_mode", tmp),"b-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"g-only") || nvram_match(strcat_r(prefix, "net_mode", tmp),"a-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"bg-mixed") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"mixed"))
 			val = 20;
 		
 		fprintf(stderr,"channel %d, val %d\n",channel,val);
