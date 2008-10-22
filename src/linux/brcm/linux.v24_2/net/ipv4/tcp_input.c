@@ -2814,6 +2814,7 @@ static int tcp_ack(struct sock *sk, struct sk_buff *skb, int flag)
 	 * log. Something worked...
 	 */
 	sk->err_soft = 0;
+	tp->probes_out = 0;
 	tp->rcv_tstamp = tcp_time_stamp;
 	if ((prior_packets = tp->packets_out) == 0)
 		goto no_queue;
@@ -2845,8 +2846,6 @@ static int tcp_ack(struct sock *sk, struct sk_buff *skb, int flag)
 	return 1;
 
 no_queue:
-	tp->probes_out = 0;
-
 	/* If this ack opens up a zero window, clear backoff.  It was
 	 * being used to time the probes, and is probably far higher than
 	 * it needs to be for normal retransmission.
