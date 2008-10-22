@@ -228,6 +228,9 @@ endif
 ifeq ($(CONFIG_ALPHA),y)
 CFLAGS += -DHAVE_ALPHA
 endif
+ifeq ($(CONFIG_EOC2610),y)
+CFLAGS += -DHAVE_EOC2610
+endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
