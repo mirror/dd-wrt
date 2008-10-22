@@ -172,8 +172,6 @@ match(const struct sk_buff *skb,
        hdrlen -= 2;
        if ( !(optinfo->flags & IP6T_OPTS_OPTS) ){
 	       return ret;
-	} else if (optinfo->flags & IP6T_OPTS_NSTRICT) {
-		DEBUGP("Not strict - not implemented");
 	} else {
 		DEBUGP("Strict ");
 		DEBUGP("#%d ",optinfo->optsnr);
@@ -252,6 +250,10 @@ checkentry(const char *tablename,
               DEBUGP("ip6t_opts: unknown flags %X\n",
                       optsinfo->invflags);
               return 0;
+       }
+       if (optsinfo->flags & IP6T_OPTS_NSTRICT) {
+	       DEBUGP("ip6t_opts: Not strict - not implemented");
+	       return 0;
        }
 
        return 1;

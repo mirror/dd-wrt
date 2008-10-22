@@ -296,7 +296,14 @@ static struct dentry * real_lookup(struct dentry * parent, struct qstr * name, i
 	 */
 	result = d_lookup(parent, name);
 	if (!result) {
-		struct dentry * dentry = d_alloc(parent, name);
+		struct dentry *dentry;
+
+		/* Don't create child dentry for a dead directory. */
+		result = ERR_PTR(-ENOENT);
+		if (IS_DEADDIR(dir))
+			goto out_unlock;
+
+		dentry = d_alloc(parent, name);
 		result = ERR_PTR(-ENOMEM);
 		if (dentry) {
 			lock_kernel();
@@ -307,6 +314,7 @@ static struct dentry * real_lookup(struct dentry * parent, struct qstr * name, i
 			else
 				result = dentry;
 		}
+	out_unlock:
 		up(&dir->i_sem);
 		return result;
 	}
@@ -798,7 +806,14 @@ struct dentry * lookup_hash(struct qstr *name, struct dentry * base)
 
 	dentry = cached_lookup(base, name, 0);
 	if (!dentry) {
-		struct dentry *new = d_alloc(base, name);
+		struct dentry *new;
+
+		/* Don't create child dentry for a dead directory. */
+		dentry = ERR_PTR(-ENOENT);
+		if (IS_DEADDIR(inode))
+			goto out;
+
+		new = d_alloc(base, name);
 		dentry = ERR_PTR(-ENOMEM);
 		if (!new)
 			goto out;

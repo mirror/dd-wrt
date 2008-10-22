@@ -109,6 +109,8 @@ int do_truncate(struct dentry *dentry, loff_t length)
 	down(&inode->i_sem);
 	newattrs.ia_size = length;
 	newattrs.ia_valid = ATTR_SIZE | ATTR_CTIME;
+	/* Remove suid/sgid on truncate too */
+	remove_suid(inode);
 	error = notify_change(dentry, &newattrs);
 	up(&inode->i_sem);
 	up_write(&inode->i_alloc_sem);

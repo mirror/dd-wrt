@@ -61,6 +61,10 @@ unsigned char pckbd_sysrq_xlate[128] =
 	"\r\000/";					/* 0x60 - 0x6f */
 #endif
 
+/* Warning: do not redefine kbd_controller_present on ia64, mips and mips64 */
+#ifndef kbd_controller_present
+#define kbd_controller_present() keyboard_controller_present
+
 int keyboard_controller_present __initdata = 1;
 static int __init removable_keyb(char *str)
 {
@@ -68,6 +72,7 @@ static int __init removable_keyb(char *str)
         return 0;
 }
 __setup("nokeyb", removable_keyb);
+#endif
 
 static void kbd_write_command_w(int data);
 static void kbd_write_output_w(int data);
@@ -76,8 +81,6 @@ static void aux_write_ack(int val);
 static void __aux_write_ack(int val);
 static int aux_reconnect = 0;
 #endif
-
-#define kbd_controller_present() keyboard_controller_present
 
 static spinlock_t kbd_controller_lock = SPIN_LOCK_UNLOCKED;
 static unsigned char handle_kbd_event(void);
@@ -905,7 +908,7 @@ static char * __init initialize_kbd(void)
 
 void __init pckbd_init_hw(void)
 {
-	if (!keyboard_controller_present) {
+	if (!kbd_controller_present()) {
 		kbd_exists = 0;
 		return;
 	}
