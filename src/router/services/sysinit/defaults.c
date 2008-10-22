@@ -1432,7 +1432,11 @@ struct nvram_tuple srouter_defaults[] = {
     {"pptpd_lip", "", 0},
     {"pptpd_rip", "", 0},
     {"pptpd_auth", "", 0},
+#ifdef HAVE_GGEW
+    {"pptp_encrypt", "1", 0},
+#else
     {"pptp_encrypt", "0", 0},
+#endif
     {"resetbutton_enable", "1", 0},
 #ifdef HAVE_SKYTRON
     {"telnetd_enable", "0", 0},
