@@ -731,6 +731,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
     {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#elif defined(HAVE_GGEW) && defined(HAVE_NS2)
+    {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #else
     {"ath0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
     {"ath1_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
