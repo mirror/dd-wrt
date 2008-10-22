@@ -218,8 +218,10 @@ getMaxPower (char *ifname)
 void
 setupSupplicant (char *prefix, char *ssidoverride)
 {
+#ifdef HAVE_REGISTER
 if (!isregistered())
     return;
+#endif
   char akm[16];
   char bridged[32];
   char wmode[16];
@@ -433,8 +435,10 @@ supplicant_main (int argc, char *argv[])
 void
 setupHostAP (char *prefix, int iswan)
 {
+#ifdef HAVE_REGISTER
 if (!isregistered())
     return;
+#endif
   char psk[32];
   char akm[16];
 
