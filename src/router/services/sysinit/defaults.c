@@ -222,6 +222,13 @@ struct nvram_tuple srouter_defaults[] = {
     {"wan_gateway", "10.0.0.1", 0},	/* WAN gateway */
     {"wan_dns", "213.146.232.2 213.146.230.2", 0},	/* x.x.x.x x.x.x.x
 							 * ... */
+#elif HAVE_TRIMAX
+    {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+
+    {"wan_ipaddr", "0.0.0.0", 0},	/* WAN IP address */
+    {"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
+    {"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
+    {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
 #elif HAVE_DDLAN
     {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 
