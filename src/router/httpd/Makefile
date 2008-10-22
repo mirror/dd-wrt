@@ -537,13 +537,13 @@ endif
 endif
 
 ifeq ($(CONFIG_MATRIXSSL),y)
-CONFIG_XYSSL=y
+#CONFIG_XYSSL=y
 
-#CFLAGS += -I$(TOP)/matrixssl
-#SSLLDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
-#CFLAGS += -DHAVE_MATRIXSSL
-#CFLAGS += -DHAVE_HTTPS
-#OBJS += matrixssl_xface.o
+CFLAGS += -I$(TOP)/matrixssl
+SSLLDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
+CFLAGS += -DHAVE_MATRIXSSL
+CFLAGS += -DHAVE_HTTPS
+OBJS += matrixssl_xface.o
 endif
 
 ifeq ($(CONFIG_XYSSL),y)
