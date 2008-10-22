@@ -24,7 +24,7 @@ LDFLAGS	+= -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lutils -ffunction-sections 
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DBUFFALO_COUNTRY="\"$(CONFIG_COUNTRY)\""
 endif
-ifneq ($(CONFIG_5354),y)
+ifneq ($(CONFIG_BCM5354),y)
 CFLAGS += -DHAVE_VINT
 endif
 
