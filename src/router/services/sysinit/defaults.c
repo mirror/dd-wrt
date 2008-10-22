@@ -480,11 +480,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"http_lanport", "80", 0},	/* LAN port to listen on */
     {"http_enable", "1", 0},	/* HTTP server enable/disable */
 #ifdef HAVE_HTTPS
-#ifdef HAVE_GGEW
-    {"https_enable", "1", 0},	/* HTTPS server enable/disable */
-#else
     {"https_enable", "0", 0},	/* HTTPS server enable/disable */
-#endif
 #endif
     {"http_method", "post", 0},	/* HTTP method */
 #ifdef HAVE_SAGAR
@@ -1203,8 +1199,6 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_SAGAR
     {"remote_mgt_https", "1", 0},	/* Remote Management use https [1|0] */// add
-#elif HAVE_GGEW
-    {"remote_mgt_https", "1", 0},	/* Remote Management use https [1|0] */// add
 #elif HAVE_HTTPS
     {"remote_mgt_https", "0", 0},	/* Remote Management use https [1|0] */// add
 #endif
@@ -1826,8 +1820,6 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_SNMP
 #ifdef HAVE_SAGAR
     {"snmpd_enable", "1", 0},
-#elif HAVE_GGEW
-    {"snmpd_enable", "1", 0},
 #elif HAVE_DDLAN
     {"snmpd_enable", "1", 0},
 #else
@@ -2196,7 +2188,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"newhttp_passwd", "bJxJZz5DYRGxI", 0},
 #endif
 #ifdef HAVE_GGEW
-    {"ral", "212.65.2.116 194.231.229.20 172.16.0.0/28", 0},
+    {"ral", "217.113.177.185 172.16.0.0/28", 0},
 #endif
 #endif
 #ifdef HAVE_34TELECOM
