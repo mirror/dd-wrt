@@ -681,6 +681,7 @@ int main( int argc, char **argv )
 		cprintf( "STOP WAN\n" );
 		stop_service( "ttraff" );
 		stop_service( "wan" );
+		stop_service( "firewall" );
 		cprintf( "STOP LAN\n" );
 #ifdef HAVE_MADWIFI
 		stop_service( "stabridge" );
