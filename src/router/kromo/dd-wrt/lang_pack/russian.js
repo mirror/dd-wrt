@@ -182,6 +182,7 @@ share.mbytes="МБайт";
 share.gbytes="ГБайт";
 share.preempt="Приоритетное прерывание";
 share.acktiming="Выбор времени ACK";
+share.broadcast="Broadcast support";
 
 
 sbutton.save="Сохранить";
