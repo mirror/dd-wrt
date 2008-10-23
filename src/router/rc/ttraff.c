@@ -41,6 +41,7 @@ write_to_nvram( int day, int month, int year, unsigned long rcvd,
 	{
 	    strcat( sbuff, "0:0 " );
 	}
+	strtrim_right (sbuff, ' ');
 	nvram_set( tq, sbuff );
 	tdata = nvram_safe_get( tq );
     }
@@ -60,7 +61,7 @@ write_to_nvram( int day, int month, int year, unsigned long rcvd,
 	}
 	i++;
     }
-
+	strtrim_right (buffer, ' ');
     nvram_set( tq, buffer );
 
     return;
