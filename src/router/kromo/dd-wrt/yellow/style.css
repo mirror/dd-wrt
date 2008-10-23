@@ -2,22 +2,22 @@
 #menuSub,
 #menuMainList li span, 
 #help h2 {
-background:#cc0;
+background:#eec900;
 color:#000;
 border-color:#ee3 #880 #880 #ee3;
 }
 #menuSubList li a {
-background:#dd5;
+background:#ffd700;
 color:#660;
 border-color:#ee7 #bb4 #bb4 #ee7;
 }
 #menuSubList li a:hover {
-background:#ee7;
+background:#eec900;
 color:#000;
 border-color:#ff9 #cc5 #cc5 #ff9;
 }
 fieldset legend {
-color:#990;
+color:#eec900;
 }
 #help a {
 color:#660;
@@ -26,7 +26,7 @@ color:#660;
 color:#000;
 }
 .meter .bar {
-background-color: #dd5;
+background-color: #ffd700;
 }
 .meter .text {
 color:#000;
@@ -38,14 +38,14 @@ font-size:.09em;
 border-width:.09em;
 }
 .progressbarblock {
-background-color: #dd5;
+background-color: #ffd700;
 font-size:.09em;
 }
 input.button {
-background: #dd5;
+background: #eec900;
 color: #660;
 }
 input.button:hover {
-background: #ee7;
+background: #ffd700;
 color: #000;
 }
