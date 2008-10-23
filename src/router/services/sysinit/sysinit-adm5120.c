@@ -180,18 +180,31 @@ int start_sysinit( void )
     memset( mac, 0, 6 );
     FILE *fp;
     int mtd = getMTD( "boot" );
+    int foundmac = 0;
 
     sprintf( mtdpath, "/dev/mtdblock/%d", mtd );
     fp = fopen( mtdpath, "rb" );
     if( fp != NULL )
     {
-	int s = searchfor( fp, "mgmc", 0x20000 - 5 );
+	//check for osbridge
+	fseek( fp, 0xff90 - 2, SEEK_SET );
+	char os[32];
 
-	if( s != -1 )
+	fread( os, 32, 1, fp );
+	if( strcmp( os, "OSBRiDGE 5XLi" ) == 0 )
 	{
-	    // fseek(fp,ftell(fp),SEEK_SET);
-	    // fprintf(stderr,"found mac at 0x%08X\n",ftell(fp));
-	    fread( mac, 6, 1, fp );
+	    foundmac = 1;
+	    fprintf( stderr, "found OSBRiDGE 5XLi\n" );
+	    fseek( fp, 0xff82, SEEK_SET );
+	    fread( os, 12, 1, fp );
+	    int i;
+	    int count = 0;
+
+	    for( i = 0; i < 6; i++ )
+	    {
+		mac[i] = (os[count++]-'0') << 4;
+		mac[i] |= (os[count++]-'0');
+	    }
 	    struct ifreq ifr;
 	    int s;
 
@@ -208,7 +221,6 @@ int start_sysinit( void )
 		ioctl( s, SIOCSIFHWADDR, &ifr );
 		close( s );
 	    }
-
 	    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
 	    {
 		strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
@@ -218,9 +230,48 @@ int start_sysinit( void )
 				       sa_data, eabuf ) );
 		close( s );
 	    }
-
 	}
-	else
+	if( !foundmac )
+	{
+	    int s = searchfor( fp, "mgmc", 0x20000 - 5 );
+
+	    if( s != -1 )
+	    {
+		// fseek(fp,ftell(fp),SEEK_SET);
+		// fprintf(stderr,"found mac at 0x%08X\n",ftell(fp));
+		fread( mac, 6, 1, fp );
+		struct ifreq ifr;
+		int s;
+
+		foundmac = 1;
+		fprintf( stderr, "found Tonze-AP120\n" );
+		if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+		{
+		    strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+		    ioctl( s, SIOCGIFHWADDR, &ifr );
+		    // fprintf(stderr,"old mac %s\n",ether_etoa ((unsigned char
+		    // *) ifr.ifr_hwaddr.sa_data,eabuf));
+		    memcpy( ( unsigned char * )ifr.ifr_hwaddr.sa_data, mac,
+			    6 );
+		    // fprintf( stderr, "new mac %s\n",
+		    // ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.
+		    // sa_data, eabuf ) );
+		    ioctl( s, SIOCSIFHWADDR, &ifr );
+		    close( s );
+		}
+		if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+		{
+		    strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+		    ioctl( s, SIOCGIFHWADDR, &ifr );
+		    nvram_set( "et0macaddr_safe",
+			       ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.
+					   sa_data, eabuf ) );
+		    close( s );
+		}
+	    }
+	}
+
+	if( foundmac==0 )
 	{
 	    fprintf( stderr, "error: no valid mac address found for eth0\n" );
 	}
