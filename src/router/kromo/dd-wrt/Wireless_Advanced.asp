@@ -6,8 +6,8 @@ var wl_net_mode = '<% nvram_get("wl_net_mode"); %>';
 
 function initWlTimer(radio_on_time)
 {
-	var color_red='#FF0000';
-	var color_green='#00FF00';
+	var color_red='#CD0000';
+	var color_green='#228B22';
 	
 	for(var i = 0; i < radio_on_time.length; i++){
 		if(radio_on_time.charAt(i)==1){
