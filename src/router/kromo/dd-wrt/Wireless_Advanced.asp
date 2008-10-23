@@ -34,8 +34,8 @@ function initWlTimer(radio_on_time)
 
 function setWlTimer(id, state)
 {
-	var color_red='#FF0000';
-	var color_green='#00FF00';
+	var color_red='#CD0000';
+	var color_green='#228B22';
 	
 	if(id=='all'){
 		if(state){
