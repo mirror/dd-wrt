@@ -1125,12 +1125,12 @@ void start_restore_defaults( void )
 	if( !nvram_get( "vlan1ports" ) || nvram_match( "vlan1ports", "" ) )
 	{
 	    nvram_set( "vlan1ports", "4 8" );
-	    nvram_set( "vlan2ports", "0 1 2 3 8" );
+	    nvram_set( "vlan2ports", "0 1 2 3 8*" );
 	}
 	if( !nvram_get( "vlan2ports" ) || nvram_match( "vlan2ports", "" ) )
 	{
 	    nvram_set( "vlan1ports", "4 8" );
-	    nvram_set( "vlan2ports", "0 1 2 3 8" );
+	    nvram_set( "vlan2ports", "0 1 2 3 8*" );
 	}
 
     }
