@@ -2232,6 +2232,27 @@ static void skipline( FILE * in )
     }
 }
 
+/*
+ * strips trailing char(s) c from string
+ */
+void strtrim_right( char *p, int c )
+{
+    char *end;
+    int len;
+
+    len = strlen( p);
+    while ( *p && len)
+    {
+        end = p + len-1;
+        if( c == *end)
+            *end = 0;
+        else
+            break;
+        len = strlen( p);
+    }
+	return;
+}
+
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
 int getIfList( char *buffer, const char *ifprefix )
