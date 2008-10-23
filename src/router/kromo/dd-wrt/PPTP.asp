@@ -68,7 +68,7 @@ addEvent(window, "unload", function() {
 	<div id="idpptp">
 		<div class="setting">
 			<div class="label"><% tran("share.broadcast"); %></div>
-			<input size="25" name="pptpd_bcrelay" value="<% nvram_get("pptpd_lip"); %>" />
+			<input size="25" name="pptpd_bcrelay" value="<% nvram_get("pptpd_bcrelay"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.srvip"); %></div>
