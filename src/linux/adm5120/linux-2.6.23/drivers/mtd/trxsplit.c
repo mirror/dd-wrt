@@ -173,10 +173,21 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 	for (i=0;i<3;i++)
 	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
 	
-
+	/*
+	detect OSBridge 
+	*/
+	mtd->read(mtd,0xff90-2,32, &retlen, buf);
+	int bootmul=2;
+	if (strcmp(buf,"OSBRiDGE 5XLi")==0)
+	    {
+	    printk(KERN_EMERG "found osbridge 5XLi");
+	    bootmul=1;
+	    trx_parts[0].offset = 0x10000;
+	    trx_parts[0].size = (mtd->size-mtd->erasesize) - trx_parts[0].offset;
+	    }
 	boot.name="boot";
 	boot.offset=0;
-	boot.size=mtd->erasesize*2;
+	boot.size=mtd->erasesize*bootmul;
 	err = add_mtd_partitions(mtd, &boot, 1);
 	for (i=0;i<3;i++)
 	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
