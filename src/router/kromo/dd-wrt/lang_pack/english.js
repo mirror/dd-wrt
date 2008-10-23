@@ -184,6 +184,7 @@ share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
 share.acktiming="ACK Timing";
+share.broadcast="Broadcast support";
 
 
 var sbutton = new Object();
