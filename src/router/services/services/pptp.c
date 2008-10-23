@@ -154,10 +154,10 @@ int start_pptpd( void )
 
     // Create pptpd.conf options file for pptpd daemon
     fp = fopen( "/tmp/pptpd/pptpd.conf", "w" );
-    fprintf( fp, "bcrelay %s\n"
-	     "localip %s\n"
-	     "remoteip %s\n", nvram_safe_get( "lan_ifname" ),
-	     nvram_safe_get( "pptpd_lip" ), nvram_safe_get( "pptpd_rip" ) );
+    if (nvram_match("pptpd_bcrelay","1"))
+	fprintf( fp, "bcrelay %s\n",nvram_safe_get( "lan_ifname" ));
+    fprintf( fp, "localip %s\n"
+	     "remoteip %s\n",nvram_safe_get( "pptpd_lip" ), nvram_safe_get( "pptpd_rip" ) );
     fclose( fp );
 
     // Create ip-up and ip-down scripts that are unique to pptpd to avoid
