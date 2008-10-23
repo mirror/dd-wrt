@@ -150,6 +150,8 @@ share.expired="abgelaufen";
 share.standard="Standard";
 share.user="Nutzer";
 share.preempt="Bevorzugung";
+share.broadcast="Broadcast Unterstützung"
+
 
 sbutton.save="Speichern";
 sbutton.apply="Anwenden";
