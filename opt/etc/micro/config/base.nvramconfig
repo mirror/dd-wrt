@@ -58,6 +58,7 @@
  "nas_enable"  "NAS"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "ntp_enable"  "NTP Client"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "pptpd_enable"  "PPTPD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
+ "pptpd_bcrelay"  "PPTPD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "pptpd_lip"  "PPTPD"  "NULL"   "FALSE" "0"  
  "pptpd_rip"  "PPTPD"  "NULL"  "FALSE" "0"  
  "pptpd_auth"  "PPTPD"  "NULL"  "FALSE" "0"  
