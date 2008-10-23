@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <dlfcn.h>
+#include <utils.h>
 
 #include <broadcom.h>
 #include <cyutils.h>
@@ -378,8 +379,11 @@ td_file_in( char *url, webs_t wp, int len, char *boundary )  //load and set traf
 		 name = strtok (buf, "=");
 		 if (strlen (name) == 13)  //only set ttraf-XX-XXXX
 		 {
-		   data = strtok (NULL, "");	 
-		   nvram_set (name, data);
+		   data = strtok (NULL, "");
+		   strtrim_right (data, '\n');  //strip all LF+CR+spaces
+		   strtrim_right (data, '\r');
+		   strtrim_right (data, ' ');
+		   nvram_set (name, data);  
 	     } 
 	    }
     }
