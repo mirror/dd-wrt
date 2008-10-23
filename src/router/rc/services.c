@@ -276,6 +276,7 @@ static void handle_index( void )
     unlink( "/tmp/ppp/log" );
     void *handle = NULL;
 
+    handle = stop_service_nofree( "wan", handle );
     handle = stop_service_nofree( "radio_timer", handle );
 #ifdef HAVE_MULTICAST
     handle = stop_service_nofree( "igmp_proxy", handle );
@@ -342,6 +343,7 @@ static void handle_index( void )
     // anymore on wan/lan 
     // ip changes changes
     handle = start_service_nofree( "anchorfreednat", handle );
+    handle = start_service_nofree( "wan_boot", handle );
     if( handle )
 	dlclose( handle );
 }
