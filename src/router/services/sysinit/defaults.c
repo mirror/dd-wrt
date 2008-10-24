@@ -1430,7 +1430,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"pptpd_radius","0",0},
     {"pptpd_radserver","0.0.0.0",0},
     {"pptpd_radport","1812",0},
-    {"pptpd_acctport","1812",0},
+    {"pptpd_acctport","1813",0},
     {"pptpd_radpass","",0},
 #ifdef HAVE_GGEW
     {"pptp_encrypt", "1", 0},
