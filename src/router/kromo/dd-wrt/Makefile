@@ -263,6 +263,12 @@ endif
 	cp -f ddlan/common.css $(INSTALLDIR)/www/style
 endif
 
+
+ifeq ($(CONFIG_NOLOGO),y)
+	rm -f $(INSTALLDIR)/www/style/logo.png
+	rm -f $(INSTALLDIR)/www/images/logo.png
+endif
+
 ifeq ($(CONFIG_MAKSAT_CORAL_ELEGANT),y)
 	mkdir $(INSTALLDIR)/www/style/maksat_coral_elegant
 	cp maksat/style-coral.css $(INSTALLDIR)/www/style/maksat_coral_elegant/style.css

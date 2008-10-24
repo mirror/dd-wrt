@@ -22,6 +22,7 @@ var update;
 addEvent(window, "load", function() {
 
 		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvram_else_match("pptpd_radius", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
 		
 		update = new StatusbarUpdate();
@@ -87,6 +88,42 @@ addEvent(window, "unload", function() {
 				document.getElementById("pptpd_auth").value = var_pptpd_auth;
 			//]]>
 			</script>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.pptp_srv"); %></div>
+			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="pptpd_radius" value="0" <% nvram_checked("pptpd_radius", "0"); %> onclick="show_layer_ext(this, 'idradius', false)" /><% tran("share.disable"); %>
+		</div>
+		<div id="idradius">
+	<fieldset>
+		<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
+			<div class="setting">
+				<div class="label"><% tran("service.pppoesrv_radip"); %></div>
+				<input maxlength="15" size="24" name="pptpd_radserver" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pptpd_radserver"); %>" />
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
+				<input size="5" maxlength="5" class="num" name="pptpd_radport" value="<% nvram_get("pptpd_radport"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 1812)");
+				//]]>
+				</script></span>
+			</div>			
+			<div class="setting">
+				<div class="label"><% tran("service.pppoesrv_radaccport"); %></div>
+				<input size="5" maxlength="5" class="num" name="pptpd_acctport" value="<% nvram_get("pptpd_acctport"); %>" />
+				<span class="default"><script type="text/javascript">
+				//<![CDATA[
+				document.write("(" + share.deflt + ": 1813)");
+				//]]>
+				</script></span>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.pppoesrv_radkey"); %></div>
+				<input size="20" maxlength="63" type="password" name="pptpd_radpass" value="d6nw5v1x2pc7st9m" />
+			</div>
+	</fieldset>
 		</div>
 	</div>
 </fieldset><br/>
