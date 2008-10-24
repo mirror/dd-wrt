@@ -13,9 +13,8 @@ void ej_show_index_setting( webs_t wp, int argc, char_t ** argv )
     char *type;
 
     type = GOZILA_GET( wp, "wan_proto" );
-
-    // cprintf("change to %s mode\n",type);
-
+    if (type==NULL)
+	type=nvram_safe_get("wan_proto");
     if( !strcmp( type, "static" ) )
 	do_ej(NULL, "index_static.asp", wp, NULL );
     else if( !strcmp( type, "pppoe" ) )
@@ -26,7 +25,6 @@ void ej_show_index_setting( webs_t wp, int argc, char_t ** argv )
 	do_ej(NULL, "index_l2tp.asp", wp, NULL );
     else if( !strcmp( type, "heartbeat" ) )
 	do_ej(NULL, "index_heartbeat.asp", wp, NULL );
-
 }
 
 void ej_get_wl_max_channel( webs_t wp, int argc, char_t ** argv )

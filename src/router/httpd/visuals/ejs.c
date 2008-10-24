@@ -317,6 +317,8 @@ void ej_nvram_gozila_get( webs_t wp, int argc, char_t ** argv )
     }
 #endif
     type = GOZILA_GET( wp, argv[0] );
+    if (type==NULL)
+	type=nvram_safe_get(argv[0]);
 
     websWrite( wp, "%s", type );
 }
@@ -968,7 +970,8 @@ void ej_get_mtu( webs_t wp, int argc, char_t ** argv )
 	return;
     }
 #endif
-
+    if (proto==NULL)
+	proto=nvram_safe_get("wan_proto");
     mtu_list = get_mtu( proto );
 
     if( !strcmp( type, "min" ) )
