@@ -1224,6 +1224,8 @@ int main( int argc, char **argv )
 //  if (strstr(argv[0],"httpsclient"))
 //    return https_main(argc,argv);
 //#endif
+    nvram_set( "gozila_action", "0" );
+
 #ifdef FILTER_DEBUG
     debout = fopen( "/tmp/filterdebug.log", "wb" );
 #endif
