@@ -641,10 +641,14 @@ void ej_get_wep_value( webs_t wp, int argc, char_t ** argv )
     cprintf( "get wep value %s\n", type );
 #ifdef HAVE_MADWIFI
     bit = GOZILA_GET( wp, "ath0_wep_bit" );
+    if (bit==NULL)
+	bit=nvram_safe_get("ath0_wep_bit");
 
     value = get_wep_value(temp, type, bit, "ath0" );
 #else
     bit = GOZILA_GET( wp, "wl_wep_bit" );
+    if (bit==NULL)
+	bit=nvram_safe_get("ath0_wep_bit");
     cprintf( "bit = %s\n", bit );
     value = get_wep_value(temp, type, bit, "wl" );
 #endif
@@ -805,6 +809,8 @@ void ej_show_wpa_setting( webs_t wp, int argc, char_t ** argv, char *prefix )
 #endif
     rep( var, '.', 'X' );
     security_mode = GOZILA_GET( wp, var );
+    if (security_mode==NULL)
+	security_mode=nvram_safe_get(var);
     rep( var, 'X', '.' );
     cprintf( "security mode %s = %s\n", security_mode, var );
     if( !strcmp( security_mode, "psk" )
@@ -848,6 +854,9 @@ void ej_show_wpa_setting( webs_t wp, int argc, char_t ** argv )
 
     security_mode = GOZILA_GET( wp, "security_mode" );
 
+    if (security_mode==NULL)
+	security_mode=nvram_safe_get("security_mode");
+
     if( !strcmp( security_mode, "psk" )
 	|| !strcmp( security_mode, "psk2" )
 	|| !strcmp( security_mode, "psk psk2" ) )
@@ -867,7 +876,6 @@ void ej_show_wpa_setting( webs_t wp, int argc, char_t ** argv )
 	do_ej(NULL, "WPA_Radius.asp", wp, NULL );
     else if( !strcmp( security_mode, "wep" ) )
 	do_ej(NULL, "WEP.asp", wp, NULL );
-
     return;
 }
 
