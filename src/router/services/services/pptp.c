@@ -50,7 +50,7 @@ int start_pptpd( void )
     fp = fopen( "/tmp/pptpd/options.pptpd", "w" );
     cprintf( "adding radius plugin\n" );
     if( nvram_match( "pptpd_radius", "1" ) )
-	fprintf( fp, "plugin /usr/lib/radius.so\nplugin radattr.so\n"
+	fprintf( fp, "plugin radius.so\nplugin radattr.so\n"
 		 "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n");
     cprintf( "check if wan_wins = zero\n" );
     int nowins = 0;
