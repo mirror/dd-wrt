@@ -1001,15 +1001,15 @@ function getOUIFromMAC(mac) {
 
 /* Added by Botho 25.April.06 */
 /* write in asp file dynamicaly wait_time and scroll_count dipending of the CPU frequency */
-/* reference values (125 Mhz cpu): 60 sec for a reboot or restore config file, 90 for a reset nvram + reboot */
+/* reference values (125 Mhz cpu): 90 sec for a reboot or restore config file, 120 for a reset nvram + reboot */
 function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;								// 60 seconds without rest to factory default ==> need to be tested
 	var scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
-	var coef = 1.0;
+	var coef = 1.5;
 
     if (clk == 125 || clk == 240) {	                            // old 125 MHz cpus need some more.... 
-		coef = 1.2;												// also 5354 @ 240 MHz needs more
+		coef = 2.0;												// also 5354 @ 240 MHz needs more
 	}
 	
 	if (rest_default == 1) {	// if restore default is ask (in upgrade process or restore default process) then timeout is doubled

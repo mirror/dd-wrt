@@ -912,9 +912,9 @@ win.focus();
 function getTimeOut(clk,_cd,_ce){
 var _cf=60;
 var _d0=(_cf/5)-3;
-var _d1=1;
+var _d1=1.5;
 if(clk==125||clk==240){
-_d1=1.2;
+_d1=2.0;
 }
 if(_cd==1){
 _d1=_d1*1.5;
