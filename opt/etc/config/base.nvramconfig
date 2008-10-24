@@ -84,7 +84,7 @@
  "pptpd_radserver"  "PPTPD"  "NULL"   "FALSE" "0"
  "pptpd_radport"  "PPTPD"  "NULL"   "FALSE" "0"
  "pptpd_acctport"  "PPTPD"  "NULL"   "FALSE" "0"
- "pptpd_radpass"  "PPTPD"  "NULL"   "FALSE" "0"
+ "pptpd_radpass" "PPTPD" "PASSWORD2" "63" "TRUE" "0" 
  "pptpd_lip"  "PPTPD"  "NULL"   "FALSE" "0"
  "pptpd_rip"  "PPTPD"  "NULL"  "FALSE" "0"
  "pptpd_auth"  "PPTPD"  "NULL"  "FALSE" "0"
