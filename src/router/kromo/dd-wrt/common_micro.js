@@ -926,10 +926,10 @@ function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;
 	var scroll_count = (wait_time / 5) - 3;
-	var coef = 1.0;
+	var coef = 1.5;
 
     if (clk == 125  || clk == 240) {
-		coef = 1.2;
+		coef = 2.0;
 	}	
 	
 	if (rest_default == 1) {
