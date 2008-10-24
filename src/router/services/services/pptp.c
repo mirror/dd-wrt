@@ -50,11 +50,8 @@ int start_pptpd( void )
     fp = fopen( "/tmp/pptpd/options.pptpd", "w" );
     cprintf( "adding radius plugin\n" );
     if( nvram_match( "pptpd_radius", "1" ) )
-	fprintf( fp, "plugin /usr/lib/pppd/radius.so\n"
-		 "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n"
-		 "%s%s\n", nvram_get( "pptpd_radavpair" ) ? "avpair " : "",
-		 nvram_get( "pptpd_radavpair" ) ?
-		 nvram_get( "pptpd_radavpair" ) : "" );
+	fprintf( fp, "plugin /usr/lib/radius.so\nplugin radattr.so\n"
+		 "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n");
     cprintf( "check if wan_wins = zero\n" );
     int nowins = 0;
 
@@ -122,25 +119,23 @@ int start_pptpd( void )
 		     "radius_timeout 10\n"
 		     "nologin /etc/nologin\n"
 		     "servers /tmp/pptpd/radius/servers\n"
-		     "dictionary /etc/radiusclient/dictionary\n"
+		     "dictionary /etc/dictionary\n"
 		     "seqfile /var/run/radius.seq\n"
-		     "mapfile /etc/radiusclient/port-id-map\n"
+		     "mapfile /etc/port-id-map\n"
 		     "radius_retries 3\n"
 		     "authserver %s:%s\n", nvram_get( "pptpd_radserver" ),
 		     nvram_get( "pptpd_radport" ) ?
 		     nvram_get( "pptpd_radport" ) : "radius" );
 
-	    if( nvram_get( "pptpd_acctserver" ) != NULL
-		&& nvram_get( "pptpd_acctpass" ) != NULL )
+	    if( nvram_get( "pptpd_radserver" ) != NULL
+		&& nvram_get( "pptpd_acctport" ) != NULL )
 		fprintf( fp, "acctserver %s:%s\n",
-			 nvram_get( "pptpd_acctserver" ),
+			 nvram_get( "pptpd_radserver" ),
 			 nvram_get( "pptpd_acctport" ) ?
 			 nvram_get( "pptpd_acctport" ) : "radacct" );
 	    fclose( fp );
 
 	    fp = fopen( "/tmp/pptpd/radius/servers", "w" );
-	    fprintf( fp, "%s\t%s\n", nvram_get( "pptpd_acctserver" ),
-		     nvram_get( "pptpd_acctpass" ) );
 	    fprintf( fp, "%s\t%s\n", nvram_get( "pptpd_radserver" ),
 		     nvram_get( "pptpd_radpass" ) );
 	    fclose( fp );
