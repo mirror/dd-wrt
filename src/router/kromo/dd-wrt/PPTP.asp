@@ -91,7 +91,7 @@ addEvent(window, "unload", function() {
 			</script>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.pptp_srv"); %></div>
+			<div class="label"><% tran("radius.legend"); %></div>
 			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" name="pptpd_radius" value="0" <% nvram_checked("pptpd_radius", "0"); %> onclick="show_layer_ext(this, 'idradius', false)" /><% tran("share.disable"); %>
 		</div>
