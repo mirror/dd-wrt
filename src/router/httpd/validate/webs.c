@@ -2623,6 +2623,7 @@ static void save_prefix( webs_t wp, char *prefix )
     if (nvram_match(n,"sta"))
 	{
 	char *wl = websGetVar( wp, n, NULL );
+	if (wl)
 	if (!strcmp(wl,"ap") || !strcmp(wl,"wdsap") || !strcmp(wl,"infra") || !strcmp(wl,"wdssta"))
 	    {
 	    nvram_set("wan_proto","disabled");
