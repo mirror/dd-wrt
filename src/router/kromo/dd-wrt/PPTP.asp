@@ -69,7 +69,8 @@ addEvent(window, "unload", function() {
 	<div id="idpptp">
 		<div class="setting">
 			<div class="label"><% tran("share.broadcast"); %></div>
-			<input size="25" name="pptpd_bcrelay" value="<% nvram_get("pptpd_bcrelay"); %>" />
+			<input class="spaceradio" type="radio" name="pptpd_bcrelay" value="1" <% nvram_checked("pptpd_bcrelay", "1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="pptpd_bcrelay" value="0" <% nvram_checked("pptpd_bcrelay", "0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.srvip"); %></div>
