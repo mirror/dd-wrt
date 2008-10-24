@@ -184,6 +184,7 @@ share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Predkup";
 share.acktiming="ACK uèasenje";
+share.broadcast="Broadcast podpora";
 
 
 
