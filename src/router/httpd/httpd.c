@@ -337,6 +337,9 @@ send_headers( int status, char *title, char *extra_header, char *mime_type,
     strftime( timebuf, sizeof( timebuf ), RFC1123FMT, gmtime( &now ) );
     wfprintf( conn_fp, "Date: %s\r\n", timebuf );
     wfprintf( conn_fp, "Connection: close\r\n" );
+    wfprintf( conn_fp, "Cache-Control: no-store, no-cache, must-revalidate\r\n" );
+    wfprintf( conn_fp, "Cache-Control: post-check=0, pre-check=0\r\n" );
+    wfprintf( conn_fp, "Pragma: no-cache\r\n" );
     if (attach_file)
 	wfprintf( conn_fp, "Content-Disposition: attachment; filename=%s\r\n", attach_file );
     if( extra_header != ( char * )0 && *extra_header )
