@@ -2620,6 +2620,14 @@ static void save_prefix( webs_t wp, char *prefix )
 
     copytonv( wp, "%s_ap_isolate", prefix );
     sprintf( n, "%s_mode", prefix );
+    if (nvram_match(n,"sta"))
+	{
+	char *wl = websGetVar( wp, n, NULL );
+	if (!strcmp(wl,"ap") || !strcmp(wl,"wdsap") || !strcmp(wl,"infra") || !strcmp(wl,"wdssta"))
+	    {
+	    nvram_set("wan_proto","disabled");
+	    }
+	}
     copytonv( wp, n );
     if( !strcmp( prefix, "wl0" ) || !strcmp( prefix, "wl1" ) )
     {
