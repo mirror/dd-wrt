@@ -266,7 +266,7 @@ int start_setup_vlans( void )
 
     if( !nvram_get( "port5vlans" ) || nvram_match( "vlans", "0" ) )
 	return 0;		// for some reason VLANs are not set up, and
-				// we don't want to disable everything!
+    // we don't want to disable everything!
 
     if( nvram_match( "wan_vdsl", "1" ) && !nvram_match( "fromvdsl", "1" ) )
     {
@@ -288,7 +288,7 @@ int start_setup_vlans( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 
     int vlanmap[6] = { 0, 1, 2, 3, 4, 5 };	// 0=wan; 1,2,3,4=lan;
-						// 5=internal 
+    // 5=internal 
 
     if( nvram_match( "vlan1ports", "0 5" ) )
     {
@@ -309,7 +309,7 @@ int start_setup_vlans( void )
 	    vlanmap[4] = 3;
 	}
 	else			// nvram_match ("vlan0ports", "1 2 3 4 5*")
-				// nothing to do
+	    // nothing to do
 	{
 	}
     }
@@ -345,7 +345,6 @@ int start_setup_vlans( void )
 
     if( strstr( asttemp, "5*" ) || strstr( asttemp, "8*" ) )
 	ast = 1;
-
 
     memset( &portsettings[0][0], 0, 16 * 64 );
     memset( &tagged[0], 0, 16 );

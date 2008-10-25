@@ -49,8 +49,8 @@ void setupSupplicant( char *prefix )
 	    {
 		sprintf( bul, "[%d]", cnt++ );
 		eval( "iwconfig", prefix, "key", bul, athkey );	// setup wep
-								// encryption 
-								// key
+		// encryption 
+		// key
 	    }
 	}
 	sprintf( key, "%s_key", prefix );
@@ -171,8 +171,8 @@ void setupSupplicant( char *prefix )
 	{
 	    fprintf( fp, "\tkey_mgmt=WPA-EAP\n" );
 	    fprintf( fp, "\teap=PEAP\n" );
-	    fprintf (fp, "\tpairwise=CCMP TKIP\n");
-	    fprintf (fp, "\tgroup=CCMP TKIP\n");
+	    fprintf( fp, "\tpairwise=CCMP TKIP\n" );
+	    fprintf( fp, "\tgroup=CCMP TKIP\n" );
 	    fprintf( fp, "\tphase1=\"peapver=0\"\n" );
 	    fprintf( fp, "\tidentity=\"%s\"\n",
 		     nvram_prefix_get( "peap8021xuser", prefix ) );
@@ -185,24 +185,24 @@ void setupSupplicant( char *prefix )
 	    write_nvram( psk, ath );
 	    fprintf( fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix );
 	}
-      if (nvram_prefix_match ("8021xtype", prefix, "ttls"))
+	if( nvram_prefix_match( "8021xtype", prefix, "ttls" ) )
 	{
-	  fprintf (fp, "\tkey_mgmt=WPA-EAP\n");
-	  fprintf (fp, "\teap=TTLS PEAP\n");
-	  fprintf (fp, "\tpairwise=CCMP TKIP\n");
-	  fprintf (fp, "\tgroup=CCMP TKIP\n");
-	  fprintf (fp, "\tidentity=\"%s\"\n",
-		   nvram_prefix_get ("ttls8021xuser", prefix));
-	  fprintf (fp, "\tpassword=\"%s\"\n",
-		   nvram_prefix_get ("ttls8021xpasswd", prefix));
-	  if (strlen (nvram_nget ("%s_ttls8021xca", prefix)) > 0)
+	    fprintf( fp, "\tkey_mgmt=WPA-EAP\n" );
+	    fprintf( fp, "\teap=TTLS PEAP\n" );
+	    fprintf( fp, "\tpairwise=CCMP TKIP\n" );
+	    fprintf( fp, "\tgroup=CCMP TKIP\n" );
+	    fprintf( fp, "\tidentity=\"%s\"\n",
+		     nvram_prefix_get( "ttls8021xuser", prefix ) );
+	    fprintf( fp, "\tpassword=\"%s\"\n",
+		     nvram_prefix_get( "ttls8021xpasswd", prefix ) );
+	    if( strlen( nvram_nget( "%s_ttls8021xca", prefix ) ) > 0 )
 	    {
-	      sprintf (psk, "/tmp/%s", prefix);
-	      mkdir (psk);
-	      sprintf (psk, "/tmp/%s/ca.pem", prefix);
-	      sprintf (ath, "%s_ttls8021xca", prefix);
-	      write_nvram (psk, ath);
-	      fprintf (fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
+		sprintf( psk, "/tmp/%s", prefix );
+		mkdir( psk );
+		sprintf( psk, "/tmp/%s/ca.pem", prefix );
+		sprintf( ath, "%s_ttls8021xca", prefix );
+		write_nvram( psk, ath );
+		fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
 	    }
 	}
 	if( nvram_prefix_match( "8021xtype", prefix, "leap" ) )

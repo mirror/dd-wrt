@@ -203,7 +203,7 @@ void aqos_tables( void )
     {
 	system2( "tc qdisc del dev br0 root" );
 	system2( "tc qdisc add dev br0 root handle 1: htb" );	// fixup for
-								// br0 class
+	// br0 class
 	// enumerate other possible interface
 	char iflist[256];
 
@@ -230,7 +230,9 @@ void aqos_tables( void )
 
     do
     {
-	if( sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2 , type) < 4 )
+	if( sscanf
+	    ( qos_mac, "%31s %31s %31s %31s |", data, level, level2,
+	      type ) < 4 )
 	    break;
 	fprintf( outmacs, "%s\n", data );
 	add_usermac( data, qosidx, level, level2 );
@@ -274,11 +276,9 @@ int svqos_iptables( void )
     system2( "iptables -t mangle -X SVQOS_IN" );
     system2( "iptables -t mangle -N SVQOS_IN" );
 
-    sysprintf( "iptables -t mangle -D PREROUTING -i %s -j SVQOS_IN",
-	       dev );
+    sysprintf( "iptables -t mangle -D PREROUTING -i %s -j SVQOS_IN", dev );
 
-    sysprintf( "iptables -t mangle -I PREROUTING -i %s -j SVQOS_IN",
-	       dev );
+    sysprintf( "iptables -t mangle -I PREROUTING -i %s -j SVQOS_IN", dev );
 
     // enable IMQ device for ingress policing
     insmod( "imq" );
@@ -292,11 +292,9 @@ int svqos_iptables( void )
 	    ( "iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
 	      "br0" );
 	sysprintf
-	    ( "iptables -t mangle -D FORWARD -i %s -j IMQ --todev 0",
-	      dev );
+	    ( "iptables -t mangle -D FORWARD -i %s -j IMQ --todev 0", dev );
 	sysprintf
-	    ( "iptables -t mangle -I FORWARD -i %s -j IMQ --todev 0",
-	      dev );
+	    ( "iptables -t mangle -I FORWARD -i %s -j IMQ --todev 0", dev );
 	char iflist[256];
 
 	getIfList( iflist, NULL );
@@ -325,24 +323,16 @@ int svqos_iptables( void )
 	    ( "iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
 	      "br0" );
     }
-    sysprintf
-	( "iptables -t mangle -D POSTROUTING -o %s -j SVQOS_OUT",
-	  dev );
-    sysprintf
-	( "iptables -t mangle -I POSTROUTING -o %s -j SVQOS_OUT",
-	  dev );
+    sysprintf( "iptables -t mangle -D POSTROUTING -o %s -j SVQOS_OUT", dev );
+    sysprintf( "iptables -t mangle -I POSTROUTING -o %s -j SVQOS_OUT", dev );
     insmod( "ipt_mark" );
     insmod( "xt_mark" );
     insmod( "ipt_CONNMARK" );
     insmod( "xt_CONNMARK" );
-    system2
-	( "iptables -t mangle -A SVQOS_OUT -j CONNMARK --restore-mark" );
-    system2
-	( "iptables -t mangle -A SVQOS_OUT -m mark ! --mark 0 -j RETURN" );
-    system2
-	( "iptables -t mangle -A SVQOS_IN -j CONNMARK --restore-mark" );
-    system2
-	( "iptables -t mangle -A SVQOS_IN -m mark ! --mark 0 -j RETURN" );
+    system2( "iptables -t mangle -A SVQOS_OUT -j CONNMARK --restore-mark" );
+    system2( "iptables -t mangle -A SVQOS_OUT -m mark ! --mark 0 -j RETURN" );
+    system2( "iptables -t mangle -A SVQOS_IN -j CONNMARK --restore-mark" );
+    system2( "iptables -t mangle -A SVQOS_IN -m mark ! --mark 0 -j RETURN" );
     // if OSPF is active put it into the Express bucket for outgoing QoS
     if( nvram_match( "wk_mode", "ospf" ) )
 	system2
@@ -554,11 +544,9 @@ int svqos_iptables( void )
     while( ( qos_svcs = strpbrk( ++qos_svcs, "|" ) ) && qos_svcs++ );
     // set port priority and port bandwidth
     svqos_set_ports(  );
-    system2
-	( "iptables -t mangle -A SVQOS_OUT -j CONNMARK --save-mark" );
+    system2( "iptables -t mangle -A SVQOS_OUT -j CONNMARK --save-mark" );
     system2( "iptables -t mangle -A SVQOS_OUT -j RETURN" );
-    system2
-	( "iptables -t mangle -A SVQOS_IN -j CONNMARK --save-mark" );
+    system2( "iptables -t mangle -A SVQOS_IN -j CONNMARK --save-mark" );
     system2( "iptables -t mangle -A SVQOS_IN -j RETURN" );
     return 0;
 }
@@ -609,11 +597,9 @@ int start_wshaper( void )
 #elif defined(HAVE_SVQOS)
     svqos_iptables(  );
     if( nvram_match( "qos_type", "0" ) )
-	ret =
-	    eval( "svqos", dl_val, ul_val, dev_val, mtu_val, "0" );
+	ret = eval( "svqos", dl_val, ul_val, dev_val, mtu_val, "0" );
     else
-	ret =
-	    eval( "svqos2", ul_val, dl_val, dev_val, mtu_val, "0" );
+	ret = eval( "svqos2", ul_val, dl_val, dev_val, mtu_val, "0" );
 #ifdef HAVE_AQOS
     aqos_tables(  );
 #endif

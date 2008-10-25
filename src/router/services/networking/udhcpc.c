@@ -323,16 +323,14 @@ static int bound( void )
 
 	nvram_set( "wan_gateway_buf", nvram_get( "wan_gateway" ) );
 
-
 	getIPFromName( nvram_safe_get( "pptp_server_name" ), pptpip );
 	nvram_set( "pptp_server_ip", pptpip );
 
-
 	/*
 	 * Delete all default routes 
-	 */	
-//	while( route_del( wan_ifname, 0, NULL, NULL, NULL ) == 0
-//	       || i++ < 10 );
+	 */
+//      while( route_del( wan_ifname, 0, NULL, NULL, NULL ) == 0
+//             || i++ < 10 );
 
 	// Add the route to the PPTP server on the wan interface for pptp
 	// client to reach it
@@ -344,7 +342,6 @@ static int bound( void )
 	    route_add( wan_ifname, 0, nvram_safe_get( "pptp_server_ip" ),
 		       nvram_safe_get( "wan_gateway" ),
 		       nvram_safe_get( "wan_netmask" ) );
-
 
     }
 #endif

@@ -602,9 +602,9 @@ static int wlconf_up( char *name )
 	    if( notexists == 0 )	// file exists
 	    {
 		eval( "/etc/txackset.sh", "1" );	// enable ack timing
-							// (not required,
-							// enable per
-							// default)
+		// (not required,
+		// enable per
+		// default)
 		unlink( "/tmp/ackdisabled" );
 	    }
 #endif
@@ -691,7 +691,7 @@ static void do_portsetup( char *lan, char *ifname )
     sprintf( var, "%s_bridged", ifname );
     if( nvram_default_match( var, "1", "1" ) )
     {
-	br_add_interface( getBridge(ifname), ifname );
+	br_add_interface( getBridge( ifname ), ifname );
     }
     else
     {
@@ -763,14 +763,14 @@ void start_lan( void )
     if( strlen( nvram_safe_get( "wan_default" ) ) > 0 )
     {
 	PORTSETUPWAN( nvram_safe_get( "wan_default" ) );	// setup
-								// default
-								// wan ports, 
-								// or
-								// reassign
-								// wan if
-								// required
-								// by network 
-								// setup
+	// default
+	// wan ports, 
+	// or
+	// reassign
+	// wan if
+	// required
+	// by network 
+	// setup
 	set_fullswitch(  );	// for broadcom - add wan to switch ...
     }
     struct ifreq ifr;
@@ -1535,7 +1535,7 @@ void start_lan( void )
 #else
 	    cprintf( "configure %s\n", name );
 	    if( strcmp( name, "wl0" ) )	// check if the interface is a
-					// buffalo wireless
+		// buffalo wireless
 	    {
 		do_portsetup( lan_ifname, name );
 	    }
@@ -1564,21 +1564,22 @@ void start_lan( void )
 		    || nvram_match( wl_name, "apstawet" ) )
 		{
 		    ifconfig( name, IFUP | IFF_ALLMULTI, NULL, NULL );	// from 
-									// up
+		    // up
 		    br_add_interface( getBridge( name ), name );
 		    led_control( LED_BRIDGE, LED_ON );
 #ifdef HAVE_MSSID
-		/* Enable host DHCP relay */
-		if (nvram_match("lan_dhcp", "1"))
-			{
-		    wl_iovar_set( name, "wet_host_mac",
-				  ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN );
-			}
-		/* Enable WET DHCP relay if requested */
-		if (nvram_match("dhcp_relay", "1"))  // seems to fix some dhcp problems, also Netgear does it this way
-			{
-		    enable_dhcprelay( lan_ifname );
-			}
+		    /* Enable host DHCP relay */
+		    if( nvram_match( "lan_dhcp", "1" ) )
+		    {
+			wl_iovar_set( name, "wet_host_mac",
+				      ifr.ifr_hwaddr.sa_data,
+				      ETHER_ADDR_LEN );
+		    }
+		    /* Enable WET DHCP relay if requested */
+		    if( nvram_match( "dhcp_relay", "1" ) )	// seems to fix some dhcp problems, also Netgear does it this way
+		    {
+			enable_dhcprelay( lan_ifname );
+		    }
 		    do_mssid( name );
 #endif
 		}
@@ -1587,7 +1588,7 @@ void start_lan( void )
 		if( nvram_match( wl_name, "bridge" ) )
 		{
 		    ifconfig( name, IFUP | IFF_ALLMULTI, NULL, NULL );	// from 
-									// up
+		    // up
 		    br_add_interface( getBridge( name ), name );
 		    led_control( LED_BRIDGE, LED_ON );
 		}
@@ -2072,10 +2073,10 @@ void start_lan( void )
 
 	    if( nvram_match( "lan_stp", "0" ) )
 		br_set_stp_state( "br1", 0 );	// eval ("brctl", "stp",
-						// "br1", "off");
+	    // "br1", "off");
 	    else
 		br_set_stp_state( "br1", 1 );	// eval ("brctl", "stp",
-						// "br1", "off");
+	    // "br1", "off");
 
 	    /*
 	     * Bring up and configure br1 interface 
@@ -2087,12 +2088,12 @@ void start_lan( void )
 
 		if( nvram_match( "lan_stp", "0" ) )
 		    br_set_stp_state( "br1", 0 );	// eval ("brctl",
-							// "stp", "br1",
-							// "off");
+		// "stp", "br1",
+		// "off");
 		else
 		    br_set_stp_state( "br1", 1 );	// eval ("brctl",
-							// "stp", "br1",
-							// "off");
+		// "stp", "br1",
+		// "off");
 
 		sleep( 2 );
 #ifndef HAVE_MADWIFI
@@ -2792,7 +2793,7 @@ void start_wan( int status )
 	{
 	    sprintf( vlannic, "%s.0007", pppoe_wan_ifname );
 	    if( nvram_match( "wan_vdsl", "1" ) )	// Deutsche Telekom
-							// VDSL2 Vlan 7 Tag
+		// VDSL2 Vlan 7 Tag
 	    {
 		if( !ifexists( vlannic ) )
 		{
@@ -2961,7 +2962,10 @@ void start_wan( int status )
 		sleep( 1 );
 	    };
 	    char client[32];
-	    nvram_set( "wan_ipaddr", inet_ntop(AF_INET, &sin_addr( &ifr.ifr_addr ),client,16 ) );
+
+	    nvram_set( "wan_ipaddr",
+		       inet_ntop( AF_INET, &sin_addr( &ifr.ifr_addr ), client,
+				  16 ) );
 	    nvram_set( "wan_netmask", "255.255.255.255" );
 
 	    /*
@@ -2974,7 +2978,9 @@ void start_wan( int status )
 		printf( "Wait ppp inteface to init (2) ...\n" );
 		sleep( 1 );
 	    }
-		char *peer = inet_ntop(AF_INET,  &sin_addr( &ifr.ifr_dstaddr ),client,16);
+	    char *peer =
+		inet_ntop( AF_INET, &sin_addr( &ifr.ifr_dstaddr ), client,
+			   16 );
 	    nvram_set( "wan_gateway", peer );
 
 	    start_wan_done( "ppp0" );
@@ -3113,8 +3119,8 @@ void start_wan( int status )
 	br_init(  );
 #endif
 
-	br_set_stp_state( "br0", 0 );	
-					
+	br_set_stp_state( "br0", 0 );
+
 #ifdef HAVE_MICRO
 	br_shutdown(  );
 #endif
@@ -3126,7 +3132,7 @@ void start_wan( int status )
 	br_init(  );
 #endif
 
-	br_set_stp_state( "br0", 1 );	
+	br_set_stp_state( "br0", 1 );
 #ifdef HAVE_MICRO
 	br_shutdown(  );
 #endif
@@ -3240,12 +3246,12 @@ void start_wan_done( char *wan_ifname )
 	route_add( nvram_safe_get( "wan_iface" ), 0,
 		   nvram_safe_get( "l2tp_get_ip" ), NULL, "255.255.255.255" );
 	route_add( nvram_safe_get( "wan_ifname" ), 0, nvram_safe_get( "l2tp_server_ip" ), nvram_safe_get( "wan_gateway_buf" ), "255.255.255.255" );	// fixed 
-																			// routing 
-																			// problem 
-																			// in 
-																			// Israel 
-																			// by 
-																			// kanki
+	// routing 
+	// problem 
+	// in 
+	// Israel 
+	// by 
+	// kanki
     }
 
     /*
@@ -3282,7 +3288,7 @@ void start_wan_done( char *wan_ifname )
     {
 	if( nvram_match( "ppp_demand", "1" ) )
 	{			// ntp and ddns will trigger DOD, so we must
-				// stop them when wan is unavaile.
+	    // stop them when wan is unavaile.
 	    FILE *fp;
 
 	    if( ( fp = fopen( "/tmp/ppp/link", "r" ) ) )
@@ -3410,9 +3416,10 @@ void start_wan_done( char *wan_ifname )
     cprintf( "trigger gpio" );
 
     led_control( LED_CONNECTED, LED_ON );
-    
-    if (!nvram_match ("wan_proto", "disabled"))
-    dd_syslog( LOG_INFO, "WAN is up. IP: %s\n", nvram_safe_get( "wan_ipaddr" ) );
+
+    if( !nvram_match( "wan_proto", "disabled" ) )
+	dd_syslog( LOG_INFO, "WAN is up. IP: %s\n",
+		   nvram_safe_get( "wan_ipaddr" ) );
 
     float sys_uptime;
     FILE *up;
@@ -3581,7 +3588,7 @@ void stop_wan( void )
      */
     ifconfig( wan_ifname, 0, NULL, NULL );
     eval( "ifconfig", wan_ifname, "down" );	// to allow for MAC clone to
-						// take effect
+    // take effect
 #ifdef HAVE_PPP
 #endif
 #ifndef HAVE_FON
@@ -3910,8 +3917,8 @@ int start_hotplug_net( void )
 	if( !strncmp( interface, "wds", 3 )
 	    && nvram_match( "wl_lazywds", "1" ) )
 	    br_add_interface( "br0", interface );	// eval ("brctl",
-							// "addif", "br0",
-							// interface);
+	// "addif", "br0",
+	// interface);
 	/*
 	 * Notify NAS of adding the interface 
 	 */
@@ -3920,10 +3927,10 @@ int start_hotplug_net( void )
 	notify_nas( "lan", interface, "up" );
 #endif
 	if( nvram_match( "lan_stp", "0" ) )
-	    br_set_stp_state( "br0", 0 );	
-						
+	    br_set_stp_state( "br0", 0 );
+
 	else
-	    br_set_stp_state( "br0", 1 );	
+	    br_set_stp_state( "br0", 1 );
 #ifdef HAVE_MICRO
 	br_shutdown(  );
 #endif
@@ -3938,7 +3945,7 @@ int init_mtu( char *wan_proto )
 {
     if( strcmp( wan_proto, "pppoe" ) == 0 )
     {				// 576 < mtu < 1454(linksys japan) |
-				// 1492(other)
+	// 1492(other)
 	if( nvram_match( "mtu_enable", "0" ) )
 	{			// Auto
 	    nvram_set( "mtu_enable", "1" );
@@ -3971,19 +3978,19 @@ int init_mtu( char *wan_proto )
     else if( strcmp( wan_proto, "pptp" ) == 0
 	     || strcmp( wan_proto, "l2tp" ) == 0 )
     {				// 1200 < mtu < 1400 (1460)
-//	if( nvram_match( "mtu_enable", "0" ) )
-//	{			// Auto
-//	    nvram_set( "mtu_enable", "1" );
-//	    nvram_set( "wan_mtu", "1460" );	// set max value (linksys
-//						// request to set to 1460)						// 2003/06/23
-//	}
-//	else
+//      if( nvram_match( "mtu_enable", "0" ) )
+//      {                       // Auto
+//          nvram_set( "mtu_enable", "1" );
+//          nvram_set( "wan_mtu", "1460" );     // set max value (linksys
+//                                              // request to set to 1460)                                              // 2003/06/23
+//      }
+//      else
 	{			// Manual
 	    if( atoi( nvram_safe_get( "wan_mtu" ) ) > 1460 )
 	    {
-	    nvram_set( "wan_mtu", "1460" );	// set max value (linksys
-						// request to set to 1460)
-						// 2003/06/23
+		nvram_set( "wan_mtu", "1460" );	// set max value (linksys
+		// request to set to 1460)
+		// 2003/06/23
 	    }
 	    if( atoi( nvram_safe_get( "wan_mtu" ) ) < 1200 )
 	    {

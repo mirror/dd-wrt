@@ -64,7 +64,6 @@ typedef struct _GPIO_IOC_DATA
 #define IOCTL_SET_GPIO                  _IOW(DEVICE_MAJOR_EXPERIMENTAL, 0, GPIO_IOC_DATA)
 
 static int serrGPIOClose( void )
-
 /********************************************
 *  Return 0: Closed Successfully.
 *     -1: I/F has not been opened for access.
@@ -80,7 +79,6 @@ static int serrGPIOClose( void )
 }
 
 static int serrGPIOOpen(  /*IP*/ unsigned char *pc01DevName )
-
 /*******************************************************
 *  Open An Interface for Get/Set Operation:
 *  Return 0: Interface is opened successfully for IOCTL.
@@ -108,7 +106,6 @@ static int serrGPIOOpen(  /*IP*/ unsigned char *pc01DevName )
 static int
 serrGPIOIssue(  /*IP*/ int sintCommand,
 	       /*IP*/ int sintGPIONumber, /*IP*/ int sintGPIOPattern )
-
 /*******************************************************
 *  Issue an IOCTL command:
 *  Return 0: Interface is opened successfully for IOCTL.
@@ -160,7 +157,6 @@ serrGPIOIssue(  /*IP*/ int sintCommand,
 #define BCM4712_CPUTYPE "0x4712"
 
 int serrTurnOnLED(  /*IP*/ int sintLEDName )
-
 /****************************************
 *  Issue an IOCTL command to turn on the
 *  given LED sintLEDName.
@@ -181,7 +177,6 @@ int serrTurnOnLED(  /*IP*/ int sintLEDName )
 }
 
 int serrTurnOffLED(  /*IP*/ int sintLEDName )
-
 /*****************************************
 *  Issue an IOCTL command to turn off the
 *  given LED sintLEDName.

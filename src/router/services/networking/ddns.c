@@ -198,29 +198,29 @@ int start_ddns( void )
     mkdir( "/tmp/ddns", 0744 );
 
     if( strcmp( nvram_safe_get( "ddns_enable_buf" ), nvram_safe_get( "ddns_enable" ) ) ||	// ddns 
-												// mode 
-												// change
+	// mode 
+	// change
 	strcmp( nvram_safe_get( "ddns_username_buf" ), nvram_safe_get( _username ) ) ||	// ddns 
-											// username 
-											// chane
+	// username 
+	// chane
 	strcmp( nvram_safe_get( "ddns_passwd_buf" ), nvram_safe_get( _passwd ) ) ||	// ddns 
-											// password 
-											// change
+	// password 
+	// change
 	strcmp( nvram_safe_get( "ddns_hostname_buf" ), nvram_safe_get( _hostname ) ) ||	// ddns 
-											// hostname 
-											// change
+	// hostname 
+	// change
 	strcmp( nvram_safe_get( "ddns_dyndnstype_buf" ), nvram_safe_get( _dyndnstype ) ) ||	// ddns 
-												// dyndnstype 
-												// change
+	// dyndnstype 
+	// change
 	strcmp( nvram_safe_get( "ddns_wildcard_buf" ), nvram_safe_get( _wildcard ) ) ||	// ddns 
-											// wildcard 
-											// change
+	// wildcard 
+	// change
 	strcmp( nvram_safe_get( "ddns_url_buf" ), nvram_safe_get( _url ) ) ||	// ddns 
-										// url 
-										// change
+	// url 
+	// change
 	strcmp( nvram_safe_get( "ddns_conf_buf" ), nvram_safe_get( _conf ) ) ||	// ddns 
-										// conf 
-										// change
+	// conf 
+	// change
 	strcmp( nvram_safe_get( "ddns_custom_5_buf" ),
 		nvram_safe_get( "ddns_custom_5" ) ) )
     {
@@ -253,20 +253,20 @@ int start_ddns( void )
 	}
 	if( nvram_match( "ddns_enable", "7" ) )
 	    fprintf( fp, " --update_period_sec %s", "900" );	// check ip
-								// every 15
-								// mins
+	// every 15
+	// mins
 	else
 	    fprintf( fp, " --update_period_sec %s", "360" );	// check ip
-								// every 6
-								// mins
+	// every 6
+	// mins
 	// fprintf (fp, " --forced_update_period %s", "2419200"); //force
 	// update after 28days
 	fprintf( fp, " --forced_update_period %d", atoi( nvram_safe_get( "ddns_force" ) ) * 24 * 60 * 60 );	// force 
-														// update 
-														// after 
-														// 28days
+	// update 
+	// after 
+	// 28days
 	fprintf( fp, " --log_file %s", "/tmp/ddns/ddns.log" );	// log to
-								// file
+	// file
 	fprintf( fp, " --cache_dir %s", "/tmp/ddns" );	// cache dir
 	fprintf( fp, " --exec %s", "ddns_success" );	// run after update
 	if( nvram_match( "ddns_enable", "5" ) )
