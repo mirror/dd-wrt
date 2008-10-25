@@ -100,14 +100,14 @@ void start_mmc( void )
 	sprintf( ddcs, "DDCS=0x%X", 1 << mmc_cs );
 
 	if( ( mmc_di + mmc_do + mmc_clk + mmc_cs ) > 5 )	// eval only
-								// if at
-								// least 0,
-								// 1, 2, 3
+	    // if at
+	    // least 0,
+	    // 1, 2, 3
 	    res = eval( "insmod", "mmc", dddi, dddo, ddclk, ddcs );	// eval("insmod","mmc", 
-									// "DDDI=0x04", 
-									// "DDDO=0x10", 
-									// "DDCLK=0x08", 
-									// "DDCS=0x80");
+	// "DDDI=0x04", 
+	// "DDDO=0x10", 
+	// "DDCLK=0x08", 
+	// "DDCS=0x80");
 
 	if( !res )
 	{
@@ -118,8 +118,7 @@ void start_mmc( void )
 		( "/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL, NULL ) )
 	    {
 		// device not formated
-		eval( "mke2fs", "-F", "-b", "1024",
-		      "/dev/mmc/disc0/part1" );
+		eval( "mke2fs", "-F", "-b", "1024", "/dev/mmc/disc0/part1" );
 		mount( "/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL,
 		       NULL );
 	    }

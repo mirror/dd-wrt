@@ -51,7 +51,7 @@ int start_pptpd( void )
     cprintf( "adding radius plugin\n" );
     if( nvram_match( "pptpd_radius", "1" ) )
 	fprintf( fp, "plugin radius.so\nplugin radattr.so\n"
-		 "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n");
+		 "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n" );
     cprintf( "check if wan_wins = zero\n" );
     int nowins = 0;
 
@@ -82,22 +82,53 @@ int start_pptpd( void )
 	     "chap-secrets /tmp/pptpd/chap-secrets\n"
 	     "ip-up-script /tmp/pptpd/ip-up\n"
 	     "ip-down-script /tmp/pptpd/ip-down\n"
-	     "ms-dns %s\n" "%s%s%s" "%s%s%s" "mtu %s\n" "mru %s\n",
-	     // Crude but very effective one-liners. Speed is not an issue as 
-	     // this is only run at startup.
-	     // Since we need NULL's returned by nvram_get's we cant use
-	     // nvram_safe_get
-	     nvram_get( "pptpd_dns1" ) ? nvram_get( "pptpd_dns1" ) :
-	     nvram_safe_get( "lan_ipaddr" ),
-	     nvram_get( "pptpd_dns2" ) ? "ms-dns " : "",
-	     nvram_get( "pptpd_dns2" ) ? nvram_get( "pptpd_dns2" ) : "",
-	     nvram_get( "pptpd_dns2" ) ? "\n" : "", !nowins ? "ms-wins " : "",
-	     !nowins ? nvram_get( "wan_wins" ) : "", !nowins ? "\n" : "",
-	     // nvram_get ("pptpd_wins2") ? "ms-wins " : "",
-	     // nvram_get ("pptpd_wins2") ? nvram_get ("pptpd_wins2") : "",
-	     // nvram_get ("pptpd_wins2") ? "\n" : "",
+	     "mtu %s\n" "mru %s\n",
 	     nvram_get( "pptpd_mtu" ) ? nvram_get( "pptpd_mtu" ) : "1450",
 	     nvram_get( "pptpd_mru" ) ? nvram_get( "pptpd_mru" ) : "1450" );
+
+    struct dns_lists *dns_list = get_dns_list(  );
+
+    if( nvram_match( "dnsmasq_enable", "1" ) )
+    {
+	if( nvram_invmatch( "lan_ipaddr", "" ) )
+	    fprintf( fp, "ms-dns %s\n", nvram_safe_get( "lan_ipaddr" ) );
+    }
+    else if( nvram_match( "local_dns", "1" ) )
+    {
+	if( dns_list
+	    && ( nvram_invmatch( "lan_ipaddr", "" )
+		 || strlen( dns_list->dns_server[0] ) > 0
+		 || strlen( dns_list->dns_server[1] ) > 0
+		 || strlen( dns_list->dns_server[2] ) > 0 ) )
+	{
+
+	    if( nvram_invmatch( "lan_ipaddr", "" ) )
+		fprintf( fp, "ms-dns %s\n", nvram_safe_get( "lan_ipaddr" ) );
+	    if( strlen( dns_list->dns_server[0] ) > 0 )
+		fprintf( fp, "ms-dns %s\n", dns_list->dns_server[0] );
+	    if( strlen( dns_list->dns_server[1] ) > 0 )
+		fprintf( fp, "ms-dns %s\n", dns_list->dns_server[1] );
+	    if( strlen( dns_list->dns_server[2] ) > 0 )
+		fprintf( fp, "ms-dns %s\n", dns_list->dns_server[2] );
+	}
+    }
+    else
+    {
+	if( dns_list
+	    && ( strlen( dns_list->dns_server[0] ) > 0
+		 || strlen( dns_list->dns_server[1] ) > 0
+		 || strlen( dns_list->dns_server[2] ) > 0 ) )
+	{
+	    if( strlen( dns_list->dns_server[0] ) > 0 )
+		fprintf( fp, "ms-dns  %s\n", dns_list->dns_server[0] );
+	    if( strlen( dns_list->dns_server[1] ) > 0 )
+		fprintf( fp, "ms-dns  %s\n", dns_list->dns_server[1] );
+	    if( strlen( dns_list->dns_server[2] ) > 0 )
+		fprintf( fp, "ms-dns  %s\n", dns_list->dns_server[2] );
+	}
+    }
+    if( dns_list )
+	free( dns_list );
 
     // Following is all crude and need to be revisited once testing confirms
     // that it does work
@@ -149,10 +180,11 @@ int start_pptpd( void )
 
     // Create pptpd.conf options file for pptpd daemon
     fp = fopen( "/tmp/pptpd/pptpd.conf", "w" );
-    if (nvram_match("pptpd_bcrelay","1"))
-	fprintf( fp, "bcrelay %s\n",nvram_safe_get( "lan_ifname" ));
+    if( nvram_match( "pptpd_bcrelay", "1" ) )
+	fprintf( fp, "bcrelay %s\n", nvram_safe_get( "lan_ifname" ) );
     fprintf( fp, "localip %s\n"
-	     "remoteip %s\n",nvram_safe_get( "pptpd_lip" ), nvram_safe_get( "pptpd_rip" ) );
+	     "remoteip %s\n", nvram_safe_get( "pptpd_lip" ),
+	     nvram_safe_get( "pptpd_rip" ) );
     fclose( fp );
 
     // Create ip-up and ip-down scripts that are unique to pptpd to avoid
@@ -166,35 +198,29 @@ int start_pptpd( void )
     else
 	mss = 1500 - 40 - 108;
     char bcast[32];
-    strcpy(bcast,nvram_safe_get("lan_ipaddr"));
-    get_broadcast(bcast,nvram_safe_get("lan_netmask"));
+
+    strcpy( bcast, nvram_safe_get( "lan_ipaddr" ) );
+    get_broadcast( bcast, nvram_safe_get( "lan_netmask" ) );
 
     fp = fopen( "/tmp/pptpd/ip-up", "w" );
     fprintf( fp, "#!/bin/sh\n" "startservice set_routes\n"	// reinitialize 
-									// routing, 
-									// just 
-									// in 
-									// case 
-									// that 
-									// a
-									// target 
-									// route 
-									// exists
-	     "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-	     "iptables -I INPUT -i $1 -j ACCEPT\n"
-	     "iptables -I FORWARD -i $1 -j ACCEPT\n"
-	     "iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	     // rule for wake on lan over pptp tunnel
+	     // routing, 
+	     // just 
+	     // in 
+	     // case 
+	     // that 
+	     // a
+	     // target 
+	     // route 
+	     // exists
+	     "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" "iptables -I INPUT -i $1 -j ACCEPT\n" "iptables -I FORWARD -i $1 -j ACCEPT\n" "iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	// rule for wake on lan over pptp tunnel
 	     "%s\n", bcast,
 	     nvram_get( "pptpd_ipup_script" ) ?
 	     nvram_get( "pptpd_ipup_script" ) : "" );
     fclose( fp );
     fp = fopen( "/tmp/pptpd/ip-down", "w" );
-    fprintf( fp, "#!/bin/sh\n"
-	     "iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
-	     "iptables -D INPUT -i $1 -j ACCEPT\n"
-	     "iptables -D FORWARD -i $1 -j ACCEPT\n"
-	     "iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	      // rule for wake on lan over pptp tunnel
-	     "%s\n", bcast, 
+    fprintf( fp, "#!/bin/sh\n" "iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" "iptables -D INPUT -i $1 -j ACCEPT\n" "iptables -D FORWARD -i $1 -j ACCEPT\n" "iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s "	// rule for wake on lan over pptp tunnel
+	     "%s\n", bcast,
 	     nvram_get( "pptpd_ipdown_script" ) ?
 	     nvram_get( "pptpd_ipdown_script" ) : "" );
     fclose( fp );

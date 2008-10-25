@@ -296,7 +296,8 @@ int stop_splashd( void )
 
     if( pidof( "splashd" ) > 0 )
     {
-	dd_syslog( LOG_INFO, "splashd : splash daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO,
+		   "splashd : splash daemon successfully stopped\n" );
 	// ret = killps("splashd",NULL);
 	ret = killall( "splashd", SIGTERM );
 	eval( "/usr/libexec/nocat/clear.fw" );

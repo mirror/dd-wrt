@@ -34,8 +34,7 @@
 #include <wlutils.h>
 #include <bcmutils.h>
 
-
-int start_nas_notify (char *ifname)
+int start_nas_notify( char *ifname )
 {
     char *argv[] = { "nas4not", "lan", ifname, "up",
 	NULL,			/* role */
@@ -46,7 +45,8 @@ int start_nas_notify (char *ifname)
 	NULL
     };
     char *str = NULL;
-    char tmp[100], prefix[] = "wlXXXXXXXXXX_", pidfile[] = "/tmp/nas.wlXXXXXXXlan.pid";
+    char tmp[100], prefix[] = "wlXXXXXXXXXX_", pidfile[] =
+	"/tmp/nas.wlXXXXXXXlan.pid";
     int unit;
     char remote[ETHER_ADDR_LEN];
     char ssid[48], pass[80], auth[16], crypto[16], role[8];
@@ -59,7 +59,7 @@ int start_nas_notify (char *ifname)
     snprintf( prefix, sizeof( prefix ), "wl%d_", unit );
     snprintf( pidfile, sizeof( pidfile ), "/tmp/nas.wl%dlan.pid", unit );
 
-    if( !( str = file2str( pidfile)) ) // no pidfile means no nas was run (required)
+    if( !( str = file2str( pidfile ) ) )	// no pidfile means no nas was run (required)
     {
 	return -1;
     }
@@ -169,7 +169,7 @@ static void convert_wds( int instance )
     char buf[254];
 
     if( nvram_nmatch( "", "wl%d_wds", instance ) )	// For Router, accept 
-							// all WDS link
+	// all WDS link
 	strcpy( wds_mac, "*" );
     else			// For AP, assign remote WDS MAC
 	strcpy( wds_mac, nvram_nget( "wl%d_wds", instance ) );
@@ -404,20 +404,21 @@ int start_nas( void )
 	{
 	    cprintf( "start nas lan\n" );
 	    start_nas_lan( c );
-	    
-	int s;
-	for( s = 1; s <= MAX_WDS_DEVS; s++ )
-	{
-	    char *dev;
 
-	    if( nvram_nmatch( "0", "wl%d_wds%d_enable", c, s ) )
-		continue;
-		
-	    dev = nvram_nget( "wl%d_wds%d_if", c, s );
+	    int s;
 
-        start_nas_notify (dev);
-	}
-	   
+	    for( s = 1; s <= MAX_WDS_DEVS; s++ )
+	    {
+		char *dev;
+
+		if( nvram_nmatch( "0", "wl%d_wds%d_enable", c, s ) )
+		    continue;
+
+		dev = nvram_nget( "wl%d_wds%d_if", c, s );
+
+		start_nas_notify( dev );
+	    }
+
 	}
     }
 
@@ -503,8 +504,8 @@ int start_nas_single( char *type, char *prefix )
 	{
 	    mode = "-A";
 	    dd_syslog( LOG_INFO,
-		    "NAS : NAS lan (%s interface) successfully started\n",
-		    prefix );
+		       "NAS : NAS lan (%s interface) successfully started\n",
+		       prefix );
 #ifdef HAVE_MSSID
 	    fnas = fopen( "/tmp/.nas", "a" );
 	    fputc( 'L', fnas );	// L as LAN
@@ -515,8 +516,8 @@ int start_nas_single( char *type, char *prefix )
 	{
 	    mode = "-S";
 	    dd_syslog( LOG_INFO,
-		    "NAS : NAS wan (%s interface) successfully started\n",
-		    prefix );
+		       "NAS : NAS wan (%s interface) successfully started\n",
+		       prefix );
 #ifdef HAVE_MSSID
 	    fnas = fopen( "/tmp/.nas", "a" );
 	    fputc( 'W', fnas );	// W as WAN
@@ -596,15 +597,15 @@ int start_nas_single( char *type, char *prefix )
 		    {
 			char *argv[] =
 			    { "nas", "-P", pidfile, "-H", "34954", "-i",
-		     iface, mode,
+			    iface, mode,
 			    "-m",
 			    auth_mode, "-r", key, "-s",
-				nvram_safe_get( ssid ), "-w",
+			    nvram_safe_get( ssid ), "-w",
 			    sec_mode, "-g", nvram_safe_get( rekey ), "-h",
 			    nvram_safe_get( radius ), "-p", nvram_safe_get( port ),	// "-t", 
-											// //radius 
-											// rekey 
-											// time
+			    // //radius 
+			    // rekey 
+			    // time
 			    NULL
 			};
 			_evalpid( argv, NULL, 0, &pid );
@@ -615,12 +616,12 @@ int start_nas_single( char *type, char *prefix )
 			    { "nas", "-P", pidfile, "-H", "34954", "-l",
 			    getBridge( iface ), "-i", iface, mode, "-m",
 			    auth_mode, "-r", key, "-s",
-				nvram_safe_get( ssid ), "-w",
+			    nvram_safe_get( ssid ), "-w",
 			    sec_mode, "-g", nvram_safe_get( rekey ), "-h",
 			    nvram_safe_get( radius ), "-p", nvram_safe_get( port ),	// "-t", 
-											// //radius 
-											// rekey 
-											// time
+			    // //radius 
+			    // rekey 
+			    // time
 			    NULL
 			};
 			_evalpid( argv, NULL, 0, &pid );
@@ -650,16 +651,16 @@ int start_nas_single( char *type, char *prefix )
 		    {
 			char *argv[] =
 			    { "nas", "-P", pidfile, "-H", "34954", "-i",
-		     iface, mode,
+			    iface, mode,
 			    "-m",
 			    auth_mode, "-r", key, "-s",
-				nvram_safe_get( ssid ), "-w",
+			    nvram_safe_get( ssid ), "-w",
 			    sec_mode, "-I", nvram_safe_get( index ), "-k",
 			    nvram_safe_get( wepkey ), "-h",
 			    nvram_safe_get( radius ), "-p", nvram_safe_get( port ),	// "-t", 
-											// //radius 
-											// rekey 
-											// time
+			    // //radius 
+			    // rekey 
+			    // time
 			    NULL
 			};
 			_evalpid( argv, NULL, 0, &pid );
@@ -670,13 +671,13 @@ int start_nas_single( char *type, char *prefix )
 			    { "nas", "-P", pidfile, "-H", "34954", "-l",
 			    getBridge( iface ), "-i", iface, mode, "-m",
 			    auth_mode, "-r", key, "-s",
-				nvram_safe_get( ssid ), "-w",
+			    nvram_safe_get( ssid ), "-w",
 			    sec_mode, "-I", nvram_safe_get( index ), "-k",
 			    nvram_safe_get( wepkey ), "-h",
 			    nvram_safe_get( radius ), "-p", nvram_safe_get( port ),	// "-t", 
-											// //radius 
-											// rekey 
-											// time
+			    // //radius 
+			    // rekey 
+			    // time
 			    NULL
 			};
 
@@ -705,10 +706,10 @@ int start_nas_single( char *type, char *prefix )
 		    {
 			char *argv[] =
 			    { "nas", "-P", pidfile, "-H", "34954", "-i",
-		     iface, mode,
+			    iface, mode,
 			    "-m",
 			    auth_mode, "-k", key, "-s",
-				nvram_safe_get( ssid ), "-w",
+			    nvram_safe_get( ssid ), "-w",
 			    sec_mode, "-g",
 			    nvram_safe_get( rekey ), NULL
 			};
@@ -720,7 +721,7 @@ int start_nas_single( char *type, char *prefix )
 			    { "nas", "-P", pidfile, "-H", "34954", "-l",
 			    getBridge( iface ), "-i", iface, mode, "-m",
 			    auth_mode, "-k", key, "-s",
-				nvram_safe_get( ssid ), "-w",
+			    nvram_safe_get( ssid ), "-w",
 			    sec_mode, "-g",
 			    nvram_safe_get( rekey ), NULL
 			};
@@ -765,7 +766,8 @@ int stop_nas( void )
 
     if( pidof( "wrt-radauth" ) > 0 )
     {
-	dd_syslog( LOG_INFO, "RADAUTH : RADAUTH daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO,
+		   "RADAUTH : RADAUTH daemon successfully stopped\n" );
 	killall( "wrt-radauth", SIGKILL );
     }
 
