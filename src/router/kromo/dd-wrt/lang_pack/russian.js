@@ -37,7 +37,9 @@ share.remove="Удалить";
 share.descr="Описание";
 share.from="От";
 share.to="До";
-share.about="O";
+// share.from2="Из";  // This is share.from variable for page NAT-QoS/UPnP
+// share.to2="В";  // This is share.to variable for page NAT-QoS/UPnP
+share.about="про";
 share.everyday="Ежедневно";
 share.sun="Воскресенье";
 share.sun_s="Вс";
@@ -75,9 +77,9 @@ share.dec="Декабрь";
 share.expires="Срок истекает";
 share.yes="Да";
 share.no="Нет";
-share.filter="Фильтр";
+share.filter="Фильтровать";
 share.deny="Запретить";
-share.range="Диапазон";
+share.range="Пределы";
 share.use="Использовать";
 share.mins="мин";
 share.secs="с";
@@ -106,14 +108,14 @@ share.point2point="Точка-точка";
 share.nat="NAT";
 share.subnet="Маска подсети";
 share.unmask="Не скрывать";
-share.deflt="По умолчанию";  //don't use share.default !!!
+share.deflt="По умолч.";  //don't use share.default !!!
 share.all="Все";
 share.auto="Авто";
 share.right="Правая";
 share.left="Левая";
 share.share_key="Общий ключ";
 share.inter="Интервал (в секундах)";
-share.srv="Имя сервиса";
+share.srv="Имя службы";
 share.port_range="Интервал портов";
 share.priority="Приоритет";
 share.gateway="Шлюз";
@@ -127,7 +129,7 @@ share.srvipname="IP/Имя сервера";
 share.localdns="Локальный DNS";
 share.minutes="минут";
 share.oui="Поиск OUI";
-share.sttic="Статический";
+share.sttic="Static";
 share.connecting="Подключаюсь";
 share.connect="Подключить";
 share.connected="Подключено";
@@ -141,8 +143,8 @@ share.key="Ключ";
 share.wireless="Радио";
 share.dhcp="DHCP";
 share.styl="Стиль";
-share.err="ошибка";
-share.errs="ошибки";
+share.err="ошибок";
+share.errs="ошибок";
 share.meters="метров";
 share.turbo="Турбо (40 МГц)";
 share.full="Полная (20 МГц)";
@@ -172,17 +174,18 @@ share._24h="Каждый день";
 share._48h="Каждые 2 дня";
 share._168h="Каждую неделю";
 share.days="Дни";
-share.standard="Стандартно";
+// share.days_genetive="Дней";  // This is share.days for page Setup/DDNS
+share.standard="Стандартный";
 share.execscript="Выполнить скрипт";
 share.user="Пользователь";
 share.privatekey="Приватный ключ";
-share.bytes="байт";
+share.bytes="Байт";
 share.kbytes="КБайт";
 share.mbytes="МБайт";
 share.gbytes="ГБайт";
-share.preempt="Приоритетное прерывание";
+share.preempt="Приоритетн.прерывание";
 share.acktiming="Выбор времени ACK";
-share.broadcast="Broadcast support";
+share.broadcast="Поддержка Broadcast";
 
 
 sbutton.save="Сохранить";
@@ -207,16 +210,16 @@ sbutton.backup="Сохранить";
 sbutton.restore="Восстановить";
 sbutton.cptotext="Редактировать";
 sbutton.runcmd="Выполнить команды";
-sbutton.startup="Сохранить параметры запуска";
-sbutton.firewall="Сохранить брандмауэр";
-sbutton.custom="Сохранить скрипт пользователя";
+sbutton.startup="Сохр. параметры запуска";
+sbutton.firewall="Сохр. брандмауэр";
+sbutton.custom="Сохр. скрипт";
 sbutton.wol="Разбудить";
 sbutton.add_wol="Добавить хост";
 sbutton.manual_wol="Разбудить вручную";
 sbutton.summary="Сводка";
 sbutton.filterIP="Редактировать список клиентов";
 sbutton.filterMac="Редактировать список MAC-фильтра";
-sbutton.filterSer="Добавить/редактировать сервис";
+sbutton.filterSer="Добавить/редактировать службу";
 sbutton.reboot="Перезагрузить маршрутизатор";
 sbutton.help="   Помощь  ";
 sbutton.wl_client_mac="Список MAC беспроводных клиентов";
@@ -224,12 +227,12 @@ sbutton.update_filter="Обновить список фильтра";
 sbutton.join="Присоединить";
 sbutton.log_in="Входящий журнал";
 sbutton.log_out="Исходящий журнал";
-sbutton.edit_srv="Добавить/редактировать сервис";
+sbutton.edit_srv="Добавить/редактировать службу";
 sbutton.routingtab="Показать таблицу маршрутов";
 sbutton.wanmac="Получить MAC-адрес данного компьютера";
 sbutton.dhcprel="Сбросить DHCP";
 sbutton.dhcpren="Обновить DHCP";
-sbutton.survey="Обзор сайта";
+sbutton.survey="Обзор беспр.сетей";
 sbutton.upgrading="Обновляется";
 sbutton.upgrade="Обновить";
 sbutton.preview="Предварительный просмотр";
@@ -301,7 +304,7 @@ errmsg.err44="Общее количество проверок превышает 128.";
 errmsg.err47="неверный SSID.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS несовместим с текущей конфигурацией маршрутизатора. Проверьте нижеследующие условия:\n * Должен быть установлен режим беспроводной сети &#39;Точка доступа&#39; \n * WPA2 не поддерживается в WDS \n * Режим беспроводной сети &#39;Только B&#39; не поддерживается в WDS";
+errmsg.err48="WDS несовместим с текущей конфигурацией маршрутизатора. Проверьте нижеследующие условия:\n * Должен быть установлен тип беспроводной сети &#39;Точка доступа&#39; \n * WPA2 не поддерживается в WDS \n * Режим беспроводной сети &#39;Только B&#39; не поддерживается в WDS";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="Radius возможен только в режиме точки доступа.";
@@ -315,8 +318,8 @@ errmsg.err52="Строки в полях пароля и подтверждения пароля не совпадают.";
 
 // Port_Services.asp error messages
 errmsg.err53="По завершении всех действий нажмите кнопку &#39;Применить&#39;, чтобы сохранить настройки.";
-errmsg.err54="Вы должны ввести имя сервиса.";
-errmsg.err55="Данное имя сервиса уже существует.";
+errmsg.err54="Вы должны ввести имя службы.";
+errmsg.err55="Данное имя службы уже существует.";
 
 // QoS.asp error messages
 errmsg.err56="Номер порта вне допустимых пределов [0 - 65535]";
@@ -443,10 +446,10 @@ halive.right4="Допускается максимум три IP-адреса, разделенных <em>ПРОБЕЛАМИ</em
 config.titl="Сохранение и восстановление";
 config.h2="Сохранение конфигурации";
 config.legend="Параметры сохранения";
-config.mess1="Нажмите на кнопку \"" + sbutton.backup + "\" для сохранения файла конфигурации на вашем компьютере.";
+config.mess1="Нажмите кнопку \"" + sbutton.backup + "\" для сохранения файла конфигурации на вашем компьютере.";
 config.h22="Восстановление конфигурации";
 config.legend2="Параметры восстановления";
-config.mess2="Пожалуйста, выберите файл для восстановления";
+config.mess2="Выберите файл для восстановления";
 config.mess3="П Р Е Д У П Р Е Ж Д Е Н И Е";
 config.mess4="Восстанавливайте конфигурацию лишь из тех файлов, которые были получены в той же версии прошивки и для такой же модели маршрутизатора.<br />Не используйте файлы, которые были получены с помощью других прошивок!";
 
@@ -468,7 +471,7 @@ ddns.wildcard="Wildcard";
 ddns.statu="Статус DDNS";
 ddns.system="Сервер DYNDNS";
 ddns.options="Дополнительные опции DDNS";
-ddns.forceupd="Интервал принудительного обновления";
+ddns.forceupd="Период принудит. обновления";
 
 ddnsm.all_closed="Сервер DDNS не отвечает";
 ddnsm.all_resolving="Разрешение имени домена";
@@ -480,7 +483,7 @@ ddnsm.all_noip="Нет соединения с Интернетом";
 
 //help container
 hddns.right2="DDNS позволяет осуществлять доступ к вашей сети из Интернета по имени домена вместо IP-адреса. Эта служба отслеживает изменение IP-адресов и динамически обновляет информацию о вашем домене. Вы должны подписаться на обслуживание на DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com или ином сервере.";
-hddns.right4="Введите целое число в поле ввода, чтобы установить интервал принудительного обновления (в сутках). Обновления должны выполняться автоматически, когда ваш IP-адрес меняется. Во избежание блокировки имени вашего домена или хоста провайдером DDNS избегайте некорректного (слишком частого) обновления.";
+hddns.right4="Введите целое число в поле ввода, чтобы установить период принудительного обновления (в сутках). Обновления должны выполняться автоматически, когда ваш IP-адрес меняется. Во избежание блокировки имени вашего домена или хоста провайдером DDNS избегайте некорректного (слишком частого) обновления.";
 
 
 // ** Diagnostics.asp **//
@@ -522,7 +525,7 @@ hfactdef.right1="Значения всех параметров устройства будут установлены по умолча
 filterIP.titl="Список клиентов";
 filterIP.h2="Список клиентов";
 filterIP.h3="Введите MAC-адрес клиентов в следующем формате: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Введите IP-адрес клиентов";
+filterIP.h32="Введите IP-адреса клиентов";
 filterIP.h33="Введите диапазон IP-адресов клиентов";
 filterIP.ip_range="Диапазон IP-адресов";
 
@@ -548,7 +551,7 @@ filter.mess3="Время окончания должно быть больше времени начала.";
 
 //help container
 hfilter.right2="Вы можете определить до 10 политик доступа. Нажмите кнопку <em>" + sbutton.del + "</em> для удаления политики и кнопку <em>" + sbutton.summary + "</em> для просмотра сводки данной политики.";
-hfilter.right4="Включить или отключить политику.";
+hfilter.right4="Включение или отключение политики";
 hfilter.right6="Вы можете дать название вашей политике.";
 hfilter.right8="Выберите дни недели, в которые должна действовать данная политика.";
 hfilter.right10="Задайте время суток, в течение которого должна действовать данная политика.";
@@ -667,7 +670,7 @@ hotspot.sputnik_mode="Режим Sputnik";
 hotspot.sputnik_id="ID сервера Sputnik";
 hotspot.sputnik_instant="Использовать Sputnik Instant Setup";
 hotspot.sputnik_express="Использовать SputnikNet Express";
-hotspot.sputnik_about="О Sputnik";
+hotspot.sputnik_about="про Sputnik";
 hotspot.sputnik_learn="Узнать больше";
 hotspot.wifidog_legend="Wifidog";
 hotspot.wifidog_srv="Демон Wifidog";
@@ -689,7 +692,7 @@ anchorfree.anchorfree="AnchorFree";
 anchorfree.titl="Моя рекламная сеть";
 anchorfree.h2="Рекламная сеть AnchorFree";
 anchorfree.anchorfree_revenue="Создайте рекламный хот-спот AnchorFree и зарабатывайте деньги";
-anchorfree.email="Запрашивайте отчеты о доходах по электронной почте";
+anchorfree.email="Высылать отчеты на E-Mail";
 anchorfree.ssid="Использовать другой SSID";
 anchorfree.ssid_name="SSID";
 anchorfree.address_1="Адрес";
@@ -699,7 +702,7 @@ anchorfree.zip="Почтовый или Zip-код";
 anchorfree.state="Округ/штат/область";
 anchorfree.country="Страна";
 anchorfree.category="Категория";
-anchorfree.publish="Опубликовать ваш хот-спот на карте бесплатных точек WiFi";
+anchorfree.publish="Опубликовать хот-спот на карте WiFi";
 anchorfree.serviceid="ID службы";
 anchorfree.servicestatus="Статус службы";
 anchorfree.agreement="Условия соглашения";
@@ -766,7 +769,7 @@ idx.stp="STP";
 idx.stp_mess="(отключено для провайдера COMCAST)";
 idx.optional="Необязательные настройки";
 idx.mtu="MTU";
-idx.h23="Установка сети";
+idx.h23="Установка локальной сети";
 idx.routerip="IP-адрес маршрутизатора";
 idx.lanip="Локальный IP-адрес";
 idx.legend2="Порт WAN";
@@ -775,7 +778,7 @@ idx.legend3="Настройки времени";
 idx.timeset="Часовой пояс";
 idx.dsttime="Летнее время (DST)";
 idx.static_ip="Статический IP";
-idx.dhcp="Автоматическая конфигурация - DHCP";
+idx.dhcp="Динамический IP - DHCP";
 idx.dhcp_legend="Настройки сервера сетевых адресов (DHCP)";
 idx.dhcp_type="Тип DHCP";
 idx.dhcp_srv="Сервер DHCP";
@@ -788,13 +791,13 @@ idx.dhcp_dnsmasq="Использование DNSMasq для DHCP";
 idx.dns_dnsmasq="Использование DNSMasq для DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
 idx.summt_opt1="нет";
-idx.summt_opt2="первое воскр. апреля – последнее воскр. октября";
-idx.summt_opt3="последнее воскр. марта - последнее воскр. октября";
-idx.summt_opt4="последнее воскр. октября - последнее воскр. марта";
-idx.summt_opt5="2-е воскр. марта - первое воскр. ноября";
-idx.summt_opt6="первое воскр. октября - 3-е воскр. марта";
-idx.summt_opt7="последнее воскр. сентября - первое воскр. апреля";
-idx.summt_opt8="3-е воскр. октября - 3-е воскр. марта";
+idx.summt_opt2="первое воскр.апреля – последнее воскр.октября";
+idx.summt_opt3="последнее воскр.марта - последнее воскр.октября";
+idx.summt_opt4="последнее воскр.октября - последнее воскр.марта";
+idx.summt_opt5="2-е воскр.марта - первое воскр.ноября";
+idx.summt_opt6="первое воскр.октября - 3-е воскр.марта";
+idx.summt_opt7="последнее воскр.сентября - первое воскр.апреля";
+idx.summt_opt8="3-е воскр.октября - 3-е воскр.марта";
 idx.portsetup="Установка портов";
 idx.wanport="Назначение порта WAN";
 idx.ntp_client="Клиент службы времени (NTP)";
@@ -805,7 +808,7 @@ hidx.right4="Введите имя хоста, выданное вашим провайдером.";
 hidx.right6="Введите имя домена, выданное вашим провайдером.";
 hidx.right8="Это адрес маршрутизатора.";
 hidx.right10="Это маска подсети маршрутизатора.";
-hidx.right12="Позводяет маршрутизатору управлять вашими IP-адресами.";
+hidx.right12="Позволяет маршрутизатору управлять вашими IP-адресами.";
 hidx.right14="Адрес, с которого желательно начать распределение адресов.";
 hidx.right16="Вы можете ограничить число адресов, распределяемых вашим маршрутизатором. 0 означает, что будут распределяться только предварительно определенные статические адреса.";
 hidx.right18="Выберите часовой пояс и период действия летнего времени (DST). Маршрутизатор может использовать местное или всемирное время (UTC).";
@@ -899,7 +902,6 @@ management.lang_french="французский";
 management.lang_german="немецкий";
 management.lang_italian="итальянский";
 management.lang_brazilian="бразильский";
-management.lang_russian="русский";
 management.lang_slovenian="словенский";
 management.lang_spanish="испанский";
 management.lang_swedish="шведский";
@@ -917,7 +919,7 @@ management.mmc_srv="Устройство MMC";
 management.mmc_gpiosel="Выбор контактов GPIO";
 management.mmc_gpiopins="Конакты GPIO";
 management.samba_legend="Автомонтирование CIFS";
-management.samba_srv="Общая файловая система Интернет (CIFS)";
+management.samba_srv="Файловая система Интернет (CIFS)";
 management.samba_share="Разделяемые ресурсы";
 management.samba_stscript="Стартовый скрипт";
 management.SIPatH_srv="SIPatH";
@@ -1020,7 +1022,7 @@ route.gateway_legend="Динамическая маршрутизация";
 route.static_legend="Статическая маршрутизация";
 route.static_setno="Выбор номера маршрута";
 route.static_name="Имя маршрута";
-route.static_ip="Локальная сеть назначения";
+route.static_ip="Cеть назначения";
 
 //help container
 hroute.right2="Если данный маршрутизатор поддерживает соединение с Интернетом, выберите режим <em>Шлюз</em>. Если в вашей сети есть другой маршрутизатор, выберите режим <em>Маршрутизатор</em>.";
@@ -1031,7 +1033,7 @@ hroute.right10="Определяет размер подсети, в которой находится удаленный хост.";
 
 
 // ** Site_Survey.asp **//
-survey.titl="Обзор сайта";
+survey.titl="Обзор беспр.сетей";
 survey.h2="Соседние беспроводные сети";
 survey.thjoin="Присоединение к сайту";
 
@@ -1054,9 +1056,9 @@ service.dhcp_vendor="Установить Vendorclass";
 service.dhcp_reqip="Запросить IP";
 service.dhcp_legend2="Сервер DHCP";
 service.dhcp_srv="Демон DHCP";
-service.dhcp_jffs2="Использовать JFFS2 для базы данных клиентов";
-service.dhcp_nvramlease="Использовать NVRAM для базы данных клиентов";
-service.dhcp_domain="Использованный домен";
+service.dhcp_jffs2="Хранить БД клиентов в JFFS2";
+service.dhcp_nvramlease="Хранить БД клиентов в  NVRAM";
+service.dhcp_domain="Используемый домен";
 service.dhcp_landomain="Домен LAN";
 service.dhcp_option="Дополнительные опции DHCPd";
 service.dnsmasq_legend="DNSMasq";
@@ -1153,7 +1155,7 @@ service.ssh_forwarding="Перенаправление TCP SSH";
 
 //radiooff.webservices
 service.radiooff_legend="Кнопка SES / AOSS / EZ-SETUP";
-service.radiooff_srv="Используйте эту кнопку для отключения радио";
+service.radiooff_srv="Эта кнопка отключает радио";
 service.radiooff_bootoff="Отключить радио при загрузке";
 
 //ses.webservices ====> might replace the above radiooff_button
@@ -1347,14 +1349,14 @@ status_inet.traffin="Входящий";
 status_inet.traffout="Исходящий";
 status_inet.previous="Предыдущий месяц";
 status_inet.next="Следующий месяц";
-status_inet.dataadmin="Управление данными";
+status_inet.dataadmin="Управление данными о траффике";
 status_inet.delete_confirm="ПРЕДУПРЕЖДЕНИЕ! Будут удалены все данные о траффике. Продолжить?";
 
 
 //help container
 hstatus_inet.right2="Здесь показана информация, которая требуется для соединения с вашим Интернет-провайдером. Эта информация задается на вкладке <em>Установка</em>. Вы можете <em>Подключить</em> или <em>Отключить</em> соединение, нажав соответствующую кнопку на данной странице.";
-hstatus_inet.right4="Здеь показан Интернет-траффик вашего маршрутизатора с момента последней перезагрузки.";
-hstatus_inet.right6=" Здеь показан Интернет-траффик вашего маршрутизатора в течение месяца. Наведите указатель мыши на столбец графика, чтобы увидеть данные за указанный день. Данные сохраняются в энергонезависимой памяти (NVRAM).";
+hstatus_inet.right4="Здесь показан Интернет-траффик вашего маршрутизатора с момента последней перезагрузки.";
+hstatus_inet.right6=" Здесь показан Интернет-траффик вашего маршрутизатора в течение месяца. Наведите указатель мыши на столбец графика, чтобы увидеть данные за указанный день. Данные сохраняются в энергонезависимой памяти (NVRAM).";
 
 
 // ** Status_Conntrack.asp **//
@@ -1435,7 +1437,7 @@ upgrad.warning="П Р Е Д У П Р Е Ж Д Е Н И Е";
 upgrad.mess1="Обновление прошивки может занять несколько минут.<br />Не выключайте питание маршрутизатора и не нажимайте кнопку сброса!";
 
 //help container
-hupgrad.right2="Нажмите на кнопку <em>Обзор...</em>, чтобы выбрать файл прошивки для загрузки в маршрутизатор.<br /><br /> Нажмите кнопку <em>Обновить</em>, чтобы начать обновление. Процесс обновления нельзя прерывать.";
+hupgrad.right2="Нажмите кнопку <em>Обзор...</em>, чтобы выбрать файл прошивки для загрузки в маршрутизатор.<br /><br /> Нажмите кнопку <em>Обновить</em>, чтобы начать обновление. Процесс обновления нельзя прерывать.";
 
 
 // ** UPnP.asp **//
@@ -1444,7 +1446,7 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Перенаправления";
 upnp.legend2="Конфигурация UPnP";
 upnp.serv="Служба UPnP";
-upnp.clear="Очищать перенаправления портов при старте";
+upnp.clear="Очистка перенаправлений при старте";
 upnp.url="Послать презентационный URL";
 upnp.msg1="Щелкните здесь для удаления записи";
 upnp.msg2="Удалить все записи?";
@@ -1510,7 +1512,7 @@ wanmac.titl="Клонирование MAC-адреса";
 wanmac.h2="Клонирование MAC-адреса";
 wanmac.legend="Клонирование MAC";
 wanmac.wan="Клонирование MAC-адреса WAN";
-wanmac.wlan="Клонирование MAC-адреса беспроводной сети";
+wanmac.wlan="Клонирование MAC-адреса WiFi";
 
 //help container
 hwanmac.right2="Некоторые Интернет-провайдеры регистрируют ваш MAC-адрес. Если вы не желаете регистрировать новый MAC-адрес, вы можете клонировать на маршрутизаторе адрес, который зарегистрирован у вашего провайдера.";
@@ -1576,10 +1578,10 @@ radius.label="MAC-адрес клиента Radius";
 radius.label2="Формат MAC";
 radius.label3="Адрес сервера аутентификации Radius";
 radius.label4="Порт сервера аутентификации Radius";
-radius.label5="Макс.число неаутентифицированных пользователей";
+radius.label5="Макс.число неаутентиф.пользователей";
 radius.label6="Формат пароля";
-radius.label7="Общий секрет сервера аутентификации Radius";
-radius.label8="Игнорировать Radius, если сервер недоступен";
+radius.label7="Общий секрет аутентификации Radius";
+radius.label8="Игнор.Radius, если сервер недоступен";
 radius.label13="Адрес сервера учета Radius";
 radius.label14="Порт сервера учета Radius";
 radius.label17="Общий секрет сервера учета Radius";
@@ -1615,7 +1617,7 @@ wl_adv.label2="Базовая скорость";
 wl_adv.label3="Фиксированная скорость передачи";
 wl_adv.label4="Режим защиты CTS";
 wl_adv.label5="Frame Burst";
-wl_adv.label6="Интервал сигнальных кадров";
+wl_adv.label6="Интервал beacon";
 wl_adv.label7="Интервал DTIM";
 wl_adv.label8="Порог фрагментации";
 wl_adv.label9="Порог RTS";
@@ -1669,9 +1671,9 @@ hwl_adv.right2="Вы можете задать режимы Авто и Общий ключ. Аутентификация на осн
 wl_basic.titl="Беспроводная сеть";
 wl_basic.h2="Беспроводная сеть";
 wl_basic.legend="Основные параметры";
-wl_basic.label="Режим беспроводной сети";
+wl_basic.label="Тип беспроводной сети";
 wl_basic.label2="Режим беспроводной сети";
-wl_basic.label3="Идентификатор беспроводной сети (SSID)";
+wl_basic.label3="Имя беспроводной сети (SSID)";
 wl_basic.label4="Беспроводной канал";
 wl_basic.label5="SSID передается в эфир";
 wl_basic.label6="Выбор времени ACK";
@@ -1697,8 +1699,8 @@ wl_basic.protmode="Режим защиты";
 wl_basic.legend2="Ограничения радиодоступа";
 wl_basic.radio="Радио";
 wl_basic.radiotimer="Расписание работы радио";
-wl_basic.radio_on="Радио включено";
-wl_basic.radio_off="Радио отключено";
+wl_basic.radio_on="Radio is ON";
+wl_basic.radio_off="Radio is OFF";
 wl_basic.h2_v24="Беспроводные физические интерфейсы";
 wl_basic.h2_vi="Виртуальные интерфейсы";
 wl_basic.regdom="Управляющий домен";
