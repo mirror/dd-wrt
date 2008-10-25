@@ -142,10 +142,10 @@ int start_sysinit( void )
     stime( &tm );
     nvram_set( "wl0_ifname", "ath0" );
     //disable led's 
-    eval("gpio","disable","1");
-    eval("gpio","disable","2");
-    eval("gpio","disable","3");
-    eval("gpio","disable","5");
+    eval( "gpio", "disable", "1" );
+    eval( "gpio", "disable", "2" );
+    eval( "gpio", "disable", "3" );
+    eval( "gpio", "disable", "5" );
     return 0;
     cprintf( "done\n" );
 }

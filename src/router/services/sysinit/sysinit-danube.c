@@ -128,7 +128,6 @@ int start_sysinit( void )
 	close( s );
     }
 
-
     insmod( "ipv6" );
 
     /*
