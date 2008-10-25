@@ -202,8 +202,8 @@ int start_sysinit( void )
 
 	    for( i = 0; i < 6; i++ )
 	    {
-		mac[i] = (os[count++]-'0') << 4;
-		mac[i] |= (os[count++]-'0');
+		mac[i] = ( os[count++] - '0' ) << 4;
+		mac[i] |= ( os[count++] - '0' );
 	    }
 	    struct ifreq ifr;
 	    int s;
@@ -271,7 +271,7 @@ int start_sysinit( void )
 	    }
 	}
 
-	if( foundmac==0 )
+	if( foundmac == 0 )
 	{
 	    fprintf( stderr, "error: no valid mac address found for eth0\n" );
 	}

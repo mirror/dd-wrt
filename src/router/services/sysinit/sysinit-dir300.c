@@ -135,7 +135,7 @@ int start_sysinit( void )
 	    fp = fopen( "/tmp/radio", "wb" );
 	    fwrite( block, 65536, 1, fp );
 	    eval( "mtd", "-f", "write", "/tmp/radio", "board_config" );	// writes 
-									// 
+	    // 
 	    // back 
 	    // new 
 	    // config 
@@ -211,7 +211,7 @@ int start_sysinit( void )
 		fwrite( block, 65536, 1, fp );
 		fclose( fp );
 		eval( "mtd", "-f", "write", "/tmp/radio", "board_config" );	// writes 
-										// 
+		// 
 		// back 
 		// new 
 		// config 
@@ -337,7 +337,7 @@ void start_fixboard( void )
 	    fp = fopen( "/tmp/radio", "wb" );
 	    fwrite( block, 65536, 1, fp );
 	    eval( "mtd", "-f", "write", "/tmp/radio", "board_config" );	// writes 
-									// 
+	    // 
 	    // back 
 	    // new 
 	    // config 
