@@ -83,13 +83,13 @@ static void makeipup( void )
 	     // exists
 	     "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 	     "iptables -I INPUT -i $1 -j ACCEPT\n"
-	     "iptables -I FORWARD -i $1 -j ACCEPT\n");
+	     "iptables -I FORWARD -i $1 -j ACCEPT\n" );
     fclose( fp );
     fp = fopen( "/tmp/pppoeserver/ip-down", "w" );
     fprintf( fp, "#!/bin/sh\n"
 	     "iptables -D FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n"
 	     "iptables -D INPUT -i $1 -j ACCEPT\n"
-	     "iptables -D FORWARD -i $1 -j ACCEPT\n");
+	     "iptables -D FORWARD -i $1 -j ACCEPT\n" );
     fclose( fp );
     chmod( "/tmp/pppoeserver/ip-up", 0744 );
     chmod( "/tmp/pppoeserver/ip-down", 0744 );
@@ -148,7 +148,7 @@ void start_pppoeserver( void )
 		     nvram_safe_get( "pppoeserver_lcpechofail" ) );
 	    struct dns_lists *dns_list = get_dns_list(  );
 
-	    if( !dns_list || dns_list->num_servers == 0 )
+	    if( nvram_match( "dnsmasq_enable", "1" ) )
 	    {
 		if( nvram_invmatch( "lan_ipaddr", "" ) )
 		    fprintf( fp, "ms-dns %s\n",
@@ -292,7 +292,7 @@ void start_pppoeserver( void )
 
 	    struct dns_lists *dns_list = get_dns_list(  );
 
-	    if( !dns_list || dns_list->num_servers == 0 )
+	    if( nvram_match( "dnsmasq_enable", "1" ) )
 	    {
 		if( nvram_invmatch( "lan_ipaddr", "" ) )
 		    fprintf( fp, "ms-dns %s\n",

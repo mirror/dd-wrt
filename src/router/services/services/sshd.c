@@ -123,11 +123,11 @@ int stop_sshd( void )
 
     if( pidof( "dropbear" ) > 0 )
     {
-    killall( "dropbear", SIGTERM );
-    sleep( 1 );
-    ret = killall( "dropbear", SIGKILL );
+	killall( "dropbear", SIGTERM );
+	sleep( 1 );
+	ret = killall( "dropbear", SIGKILL );
 	dd_syslog( LOG_INFO, "dropbear : ssh daemon successfully stopped\n" );
-	}
+    }
 
     cprintf( "done\n" );
 

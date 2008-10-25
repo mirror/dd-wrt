@@ -127,13 +127,13 @@ int start_udhcpd( void )
 #ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
     if( nvram_match( "wl0_mode", "wet" ) || nvram_match( "wl0_mode", "apstawet" ) )	// dont 
-											// start 
-											// any 
-											// dhcp 
-											// services 
-											// in 
-											// bridge 
-											// mode
+	// start 
+	// any 
+	// dhcp 
+	// services 
+	// in 
+	// bridge 
+	// mode
     {
 	nvram_set( "lan_proto", "static" );
 	return 0;
