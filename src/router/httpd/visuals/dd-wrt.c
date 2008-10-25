@@ -4312,6 +4312,57 @@ void show_radius( webs_t wp, char *prefix, int showmacformat )
 
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
+
+static void init_80211x_layers( webs_t wp, char *prefix )
+{
+if (nvram_prefix_match( "8021xtype", prefix, "tls"))
+    {
+    websWrite(wp,"enable_idtls(%s);\n",prefix);
+    }
+if (nvram_prefix_match( "8021xtype", prefix, "leap"))
+    {
+    websWrite(wp,"enable_idleap(%s);\n",prefix);
+    }
+if (nvram_prefix_match( "8021xtype", prefix, "ttls"))
+    {
+    websWrite(wp,"enable_idttls(%s);\n",prefix);
+    }
+if (nvram_prefix_match( "8021xtype", prefix, "peap"))
+    {
+    websWrite(wp,"enable_idpeap(%s);\n",prefix);
+    }
+}
+
+void ej_init_80211x_layers( webs_t wp, int argc, char_t ** argv )
+{
+#ifndef HAVE_MADWIFI
+    int c = get_wl_instances(  );
+    int i;
+
+    for( i = 0; i < c; i++ )
+    {
+	char buf[16];
+
+	sprintf( buf, "wl%d", i );
+	init_80211x_layers( wp, buf );
+    }
+    return;
+#else
+    int c = getdevicecount(  );
+    int i;
+
+    for( i = 0; i < c; i++ )
+    {
+	char buf[16];
+
+	sprintf( buf, "ath%d", i );
+	init_80211x_layers( wp, buf );
+    }
+    return;
+#endif
+
+}
+
 void show_80211X( webs_t wp, char *prefix )
 {
     /*
@@ -4369,7 +4420,7 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.servercertif)</script></div>\n" );
     websWrite( wp,
-	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_ttls8021xca\" name=\"%s_ttls8021xca\"></textarea><script language=\"text/javascript\">\n//<![CDATA[\n ",
+	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_ttls8021xca\" name=\"%s_ttls8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
     websWrite( wp, "var %s_ttls8021xca = fix_cr( '%s' );\n", prefix,
 	       nvram_prefix_get( "ttls8021xca", prefix ) );
@@ -4398,7 +4449,7 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.servercertif)</script></div>\n" );
     websWrite( wp,
-	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_peap8021xca\" name=\"%s_peap8021xca\"></textarea><script language=\"text/javascript\">\n//<![CDATA[\n ",
+	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_peap8021xca\" name=\"%s_peap8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
     websWrite( wp, "var %s_peap8021xca = fix_cr( '%s' );\n", prefix,
 	       nvram_prefix_get( "peap8021xca", prefix ) );
@@ -4443,7 +4494,7 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.servercertif)</script></div>\n" );
     websWrite( wp,
-	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xca\" name=\"%s_tls8021xca\"></textarea><script language=\"text/javascript\">\n//<![CDATA[\n ",
+	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xca\" name=\"%s_tls8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
     websWrite( wp, "var %s_tls8021xca = fix_cr( '%s' );\n", prefix,
 	       nvram_prefix_get( "tls8021xca", prefix ) );
@@ -4457,7 +4508,7 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.clientcertif)</script></div>\n" );
     websWrite( wp,
-	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xpem\" name=\"%s_tls8021xpem\"></textarea><script language=\"text/javascript\">\n//<![CDATA[\n ",
+	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xpem\" name=\"%s_tls8021xpem\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
     websWrite( wp, "var %s_tls8021xpem = fix_cr( '%s' );\n", prefix,
 	       nvram_prefix_get( "tls8021xpem", prefix ) );
@@ -4471,7 +4522,7 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.privatekey)</script></div>\n" );
     websWrite( wp,
-	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xprv\" name=\"%s_tls8021xprv\"></textarea><script language=\"text/javascript\">\n//<![CDATA[\n ",
+	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xprv\" name=\"%s_tls8021xprv\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
     websWrite( wp, "var %s_tls8021xprv = fix_cr( '%s' );\n", prefix,
 	       nvram_prefix_get( "tls8021xprv", prefix ) );
