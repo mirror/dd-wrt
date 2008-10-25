@@ -577,7 +577,7 @@ int start_sysinit( void )
 	case ROUTER_BUFFALO_WBR54G:	// for WLA-G54
 	    basic_params = generic1;
 	    if( nvram_match( "wan_to_lan", "yes" ) && nvram_invmatch( "wan_proto", "disabled" ) )	// = 
-													// 
+		// 
 		// no 
 		// lan
 	    {
@@ -594,7 +594,7 @@ int start_sysinit( void )
 	    nvram_set( "wan_ifname", "eth0" );	// WAN to nonexist. iface.
 	    nvram_set( "port_swap", "1" );
 	    if( nvram_match( "wan_to_lan", "yes" ) && nvram_invmatch( "wan_proto", "disabled" ) )	// = 
-													// 
+		// 
 		// no 
 		// lan
 	    {
@@ -608,18 +608,18 @@ int start_sysinit( void )
 	    break;
 
 	case ROUTER_NETGEAR_WNR834BV2:
-	    if( nvram_match ("force_vlan_supp", "enabled") )
+	    if( nvram_match( "force_vlan_supp", "enabled" ) )
 	    {
 		nvram_set( "lan_ifnames", "vlan0 eth2" );
 		nvram_set( "wan_ifname", "eth1" );
 		nvram_set( "vlan0ports", "3 2 1 0 5*" );
-		nvram_set( "vlan1ports", "4 5" );  //dummy
+		nvram_set( "vlan1ports", "4 5" );	//dummy
 		nvram_set( "vlan0hwname", "et0" );
 	    }
 	    else
 	    {
-	    basic_params = generic1;
-    	}
+		basic_params = generic1;
+	    }
 
 	    if( nvram_get( "pci/1/1/macaddr" ) == NULL )
 		need_reboot = 1;
@@ -699,12 +699,12 @@ int start_sysinit( void )
 		need_reboot = 1;
 
 	    {
-	    unsigned char mac[20];
+		unsigned char mac[20];
 
-	    strcpy( mac, nvram_safe_get( "et0macaddr" ) );
-	    nvram_set( "pci/1/3/macaddr", mac );
-	    MAC_SUB( mac );
-	    nvram_set( "pci/1/1/macaddr", mac );
+		strcpy( mac, nvram_safe_get( "et0macaddr" ) );
+		nvram_set( "pci/1/3/macaddr", mac );
+		MAC_SUB( mac );
+		nvram_set( "pci/1/1/macaddr", mac );
 	    }
 
 	    struct nvram_tuple wndr3300_pci_1_1_params[] = {
@@ -883,7 +883,7 @@ int start_sysinit( void )
 	    nvram_set( "port_swap", "1" );
 	    eval( "gpio", "disable", "7" );
 	    if( nvram_match( "wan_to_lan", "yes" ) && nvram_invmatch( "wan_proto", "disabled" ) )	// = 
-													// 
+		// 
 		// no 
 		// lan
 	    {
@@ -908,21 +908,21 @@ int start_sysinit( void )
 	case ROUTER_MICROSOFT_MN700:
 	    nvram_set( "wan_ifname", "eth1" );
 	    break;
-	    
+
 	case ROUTER_WRTSL54GS:
 	    nvram_set( "wan_ifname", "eth1" );
-	    if( nvram_match ("force_vlan_supp", "enabled") )
+	    if( nvram_match( "force_vlan_supp", "enabled" ) )
 	    {
 		nvram_set( "lan_ifnames", "vlan0 eth2" );
 		nvram_set( "vlan0ports", "0 1 2 3 5*" );
-		nvram_set( "vlan1ports", "4 5" );  //dummy
-		nvram_set( "vlan0hwname", "et0" );		
+		nvram_set( "vlan1ports", "4 5" );	//dummy
+		nvram_set( "vlan0hwname", "et0" );
 	    }
 	    else
 	    {
-		nvram_set( "lan_ifnames", "eth0 eth2" );		
-	    }	    
-	    break;			
+		nvram_set( "lan_ifnames", "eth0 eth2" );
+	    }
+	    break;
 
 	case ROUTER_WRT54G1X:
 	    if( check_vlan_support(  ) )
@@ -950,7 +950,7 @@ int start_sysinit( void )
 	    nvram_set( "lan_ifnames", "vlan0 eth2" );
 	    nvram_set( "wl0_ifname", "eth2" );
 	    nvram_set( "wan_ifname", "vlan1" );	// fix for Asus WL500gPremium 
-						// 
+	    // 
 	    // WAN problem.
 	    if( nvram_match( "vlan1ports", "0 5u" ) )
 		nvram_set( "vlan1ports", "0 5" );
@@ -974,7 +974,7 @@ int start_sysinit( void )
 	    nvram_set( "wan_ifname", "eth2" );	// map WAN port to
 	    // nonexistant interface
 	    if( nvram_match( "wan_to_lan", "yes" ) && nvram_invmatch( "wan_proto", "disabled" ) )	// = 
-													// 
+		// 
 		// no 
 		// lan
 	    {
@@ -1016,40 +1016,45 @@ int start_sysinit( void )
 	    if( nvram_match( "vlan1ports", "0 5u" ) )
 		nvram_set( "vlan1ports", "0 5" );
 	    break;
-	    
+
 	case ROUTER_NETGEAR_WGR614L:
 	    if( nvram_match( "vlan1ports", "0 5u" ) )
 		nvram_set( "vlan1ports", "0 5" );
-	    if( nvram_match( "sromrev", "2" )   
-	      && nvram_match ("boardrev", "0x10")
-	      && nvram_match ("boardtype", "0x48E") )
+	    if( nvram_match( "sromrev", "2" )
+		&& nvram_match( "boardrev", "0x10" )
+		&& nvram_match( "boardtype", "0x48E" ) )
 	    {
-	    nvram_set ("sromrev", "3");    // This is a fix for WGR614L NA - which has a wrong sromrev
-	    need_reboot = 1;
-        }
-	    break;	    
-	 
+		nvram_set( "sromrev", "3" );	// This is a fix for WGR614L NA - which has a wrong sromrev
+		need_reboot = 1;
+	    }
+	    break;
+
 	case ROUTER_ALLNET01:
 	    nvram_set( "wl0_ifname", "eth1" );
-	    if( nvram_match( "vlan1ports", "5u" ) ) //correct bad parameters
-		{
+	    if( nvram_match( "vlan1ports", "5u" ) )	//correct bad parameters
+	    {
 		nvram_set( "vlan1ports", "4 5u" );
 		nvram_set( "vlan0ports", "0 1 2 3 5*" );
-		}
-	    if (!nvram_match("no_sercom","1"))
+	    }
+	    if( !nvram_match( "no_sercom", "1" ) )
 	    {
-	    //fix mac
-	    unsigned char mac[6];
-	    FILE *in=fopen("/dev/mtdblock/0","rb");
-	    if (in!=NULL) //special sercom mac address handling
+		//fix mac
+		unsigned char mac[6];
+		FILE *in = fopen( "/dev/mtdblock/0", "rb" );
+
+		if( in != NULL )	//special sercom mac address handling
 		{
-		fseek(in,0x1ffa0,SEEK_SET);
-		fread(mac,6,1,in);
-		fclose(in);
-		char macstr[32];
-		sprintf(macstr,"%02X:%02X:%02X:%02X:%02X:%02X",(int)mac[0]&0xff,(int)mac[1]&0xff,(int)mac[2]&0xff,(int)mac[3]&0xff,(int)mac[4]&0xff,(int)mac[5]&0xff);
-		nvram_set("et0macaddr",macstr);
-		eval("ifconfig","eth0","hw","ether",macstr);
+		    fseek( in, 0x1ffa0, SEEK_SET );
+		    fread( mac, 6, 1, in );
+		    fclose( in );
+		    char macstr[32];
+
+		    sprintf( macstr, "%02X:%02X:%02X:%02X:%02X:%02X",
+			     ( int )mac[0] & 0xff, ( int )mac[1] & 0xff,
+			     ( int )mac[2] & 0xff, ( int )mac[3] & 0xff,
+			     ( int )mac[4] & 0xff, ( int )mac[5] & 0xff );
+		    nvram_set( "et0macaddr", macstr );
+		    eval( "ifconfig", "eth0", "hw", "ether", macstr );
 		}
 	    }
 	    break;
@@ -1152,33 +1157,37 @@ int start_sysinit( void )
 #endif
 	    }
 	    break;
-	    
+
 	case ROUTER_WRTSL54GS:
-	    if(nvram_match ("force_vlan_supp", "enabled") && nvram_match( "boardflags", "0x0018" ) )
+	    if( nvram_match( "force_vlan_supp", "enabled" )
+		&& nvram_match( "boardflags", "0x0018" ) )
 	    {
-		nvram_set( "boardflags", "0x0118" );  //enable lan vlans
-		need_reboot = 1;		
+		nvram_set( "boardflags", "0x0118" );	//enable lan vlans
+		need_reboot = 1;
 	    }
-	    else if(!nvram_match ("force_vlan_supp", "enabled") && nvram_match( "boardflags", "0x0118" ) )
+	    else if( !nvram_match( "force_vlan_supp", "enabled" )
+		     && nvram_match( "boardflags", "0x0118" ) )
 	    {
-		nvram_set( "boardflags", "0x0018" );  //disable vlans
-		need_reboot = 1;		    
-	    }	    
+		nvram_set( "boardflags", "0x0018" );	//disable vlans
+		need_reboot = 1;
+	    }
 	    break;
-	    
+
 	case ROUTER_NETGEAR_WNR834BV2:
-	    if(nvram_match ("force_vlan_supp", "enabled") && nvram_match( "boardflags", "0x10" ) )
+	    if( nvram_match( "force_vlan_supp", "enabled" )
+		&& nvram_match( "boardflags", "0x10" ) )
 	    {
-		nvram_set( "boardflags", "0x110" );  //enable lan vlans
-		need_reboot = 1;		
+		nvram_set( "boardflags", "0x110" );	//enable lan vlans
+		need_reboot = 1;
 	    }
-	    else if(!nvram_match ("force_vlan_supp", "enabled") && nvram_match( "boardflags", "0x110" ) )
+	    else if( !nvram_match( "force_vlan_supp", "enabled" )
+		     && nvram_match( "boardflags", "0x110" ) )
 	    {
-		nvram_set( "boardflags", "0x10" );  //disable vlans
-		need_reboot = 1;		    
-	    }	    
+		nvram_set( "boardflags", "0x10" );	//disable vlans
+		need_reboot = 1;
+	    }
 	    break;
-	
+
     }
 
     if( need_reboot )
@@ -1454,7 +1463,7 @@ int start_sysinit( void )
     led_control( LED_SES, LED_OFF );
     led_control( LED_BRIDGE, LED_OFF );
     led_control( LED_WLAN, LED_OFF );
-    led_control( LED_CONNECTED, LED_OFF);
+    led_control( LED_CONNECTED, LED_OFF );
 
     if( brand == ROUTER_WRT54G3G )
     {
@@ -1779,7 +1788,7 @@ char *enable_dtag_vlan( int enable )
 	vlan7ports = "1t 5";
     }
     if( nvram_match( "vlan2ports", "0 8" ) || nvram_match( "vlan2ports", "0 8*" ) || nvram_match( "vlan2ports", "0 8t" ) || nvram_match( "vlan1ports", "4 8" ) )	// special 
-																					// 
+	// 
 	// condition 
 	// for 
 	// Broadcom 

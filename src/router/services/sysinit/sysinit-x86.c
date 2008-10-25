@@ -230,12 +230,12 @@ int start_sysinit( void )
     else if( detect( "82546" ) )	// Intel Gigabit
 	insmod( "e1000" );
     else if( detect( "82545" ) )	// Intel Gigabit / VMWare 64 bit mode 
-					// 
+	// 
 	// (nice trick to get gigabit out of
 	// it)
 	insmod( "e1000" );
     else if( detect( "82543" ) )	// Intel Gigabit / VMWare 64 bit mode 
-					// 
+	// 
 	// (nice trick to get gigabit out of
 	// it)
 	insmod( "e1000" );

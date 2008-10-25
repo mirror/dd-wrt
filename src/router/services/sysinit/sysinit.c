@@ -116,14 +116,14 @@ void runStartup( char *folder, char *extension )
 	if( endswith( entry->d_name, extension ) )
 	{
 #ifdef HAVE_REGISTER
-	if (!isregistered_real())
+	    if( !isregistered_real(  ) )
 	    {
-	if( endswith( entry->d_name, "wdswatchdog.startup") )
-	    continue;
-	if( endswith( entry->d_name, "schedulerb.startup") )
-	    continue;
-	if( endswith( entry->d_name, "proxywatchdog.startup") )
-	    continue;
+		if( endswith( entry->d_name, "wdswatchdog.startup" ) )
+		    continue;
+		if( endswith( entry->d_name, "schedulerb.startup" ) )
+		    continue;
+		if( endswith( entry->d_name, "proxywatchdog.startup" ) )
+		    continue;
 	    }
 #endif
 	    sysprintf( "%s/%s 2>&1 > /dev/null&\n", folder, entry->d_name );
@@ -995,7 +995,7 @@ void start_restore_defaults( void )
 		nvram_set( "vlan0ports", "4 3 2 1 5*" );
 		nvram_set( "vlan1ports", "0 5" );
 		break;
-		case ROUTER_USR_5461:
+	    case ROUTER_USR_5461:
 		nvram_set( "vlan0ports", "4 1 2 3 5*" );
 		nvram_set( "vlan1ports", "0 5" );
 		break;
@@ -1183,8 +1183,8 @@ void start_restore_defaults( void )
 		    nvram_set( "vlan0ports", "4 3 2 1 5*" );
 		    break;
 		case ROUTER_USR_5461:
-		nvram_set( "vlan0ports", "4 1 2 3 5*" );
-		break;
+		    nvram_set( "vlan0ports", "4 1 2 3 5*" );
+		    break;
 		default:
 		    if( nvram_match( "bootnv_ver", "4" )
 			|| nvram_match( "boardnum", "WAP54GV3_8M_0614" ) )
@@ -1401,7 +1401,7 @@ int start_nvram( void )
     CONVERT_NV( "d11g_dtim", "wl_dtim" );
 
     nvram_unset( "wl0_hwaddr" );	// When disbale wireless, we must get 
-					// 
+    // 
     // null wireless mac */
 
     nvram_set( "wan_get_dns", "" );
@@ -1525,14 +1525,14 @@ int start_nvram( void )
     nvram_unset( "filter_services7" );
 
     nvram_unset( "vdsl_state" );	// important (this value should never 
-					// 
+    // 
     // be commited, but if this will fix
     // the vlan7 issue)
     nvram_unset( "fromvdsl" );	// important (this value should never be
     // commited, but if this will fix the vlan7
     // issue)
-    
-    nvram_unset ("do_reboot");  //for GUI, see broadcom.c
+
+    nvram_unset( "do_reboot" );	//for GUI, see broadcom.c
 
 #ifdef DIST
     nvram_set( "dist_type", DIST );
@@ -1547,11 +1547,12 @@ int start_nvram( void )
 
 #ifdef HAVE_ROUTERSTYLE
 	char *style = nvram_safe_get( "router_style" );
+
 	if( !strstr( "blue cyan elegant green orange red yellow", style ) )
 #endif
-      {
+	{
 	    nvram_set( "router_style", "elegant" );
-      }
+	}
 #endif
 #endif
 #endif
@@ -1579,27 +1580,33 @@ int start_nvram( void )
 	nvram_set( "hopseq", channel );
     }
 #endif
-    nvram_unset("lasthour");
-#ifdef HAVE_AQOS 
+    nvram_unset( "lasthour" );
+#ifdef HAVE_AQOS
     //filter hostapd shaping rules
     char *qos_mac = nvram_safe_get( "svqos_macs" );
-    if (strlen(qos_mac)>0)
+
+    if( strlen( qos_mac ) > 0 )
     {
-    char *newqos = malloc(strlen(qos_mac));
-    memset(newqos,0,strlen(qos_mac));
-    char level[32], level2[32], data[32], type[32];
-    do
-    {
-	if( sscanf( qos_mac, "%31s %31s %31s %31s |", data, level, level2 , type) < 4 )
-	    break;
-	if (strcmp(type,"hostapd"))
+	char *newqos = malloc( strlen( qos_mac ) );
+
+	memset( newqos, 0, strlen( qos_mac ) );
+	char level[32], level2[32], data[32], type[32];
+
+	do
+	{
+	    if( sscanf
+		( qos_mac, "%31s %31s %31s %31s |", data, level, level2,
+		  type ) < 4 )
+		break;
+	    if( strcmp( type, "hostapd" ) )
 	    {
-	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);
+		sprintf( newqos, "%s %s %s %s %s |", newqos, data, level,
+			 level2, type );
 	    }
-    }
-    while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
-    nvram_set("svqos_macs",newqos);
-    free(newqos);
+	}
+	while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
+	nvram_set( "svqos_macs", newqos );
+	free( newqos );
     }
 #endif
     return 0;
