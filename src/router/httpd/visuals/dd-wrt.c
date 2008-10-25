@@ -789,12 +789,12 @@ void ej_get_clkfreq( webs_t wp, int argc, char_t ** argv )
 
     if( clk == NULL )
     {
-	if (getcpurev( ) == 0)  //BCM4710
-		websWrite( wp, "125" );
-	else if (getcpurev( ) == 29)  //BCM5354
-		websWrite( wp, "240" );
-	else		
-		websWrite( wp, "unknown" );	
+	if( getcpurev(  ) == 0 )	//BCM4710
+	    websWrite( wp, "125" );
+	else if( getcpurev(  ) == 29 )	//BCM5354
+	    websWrite( wp, "240" );
+	else
+	    websWrite( wp, "unknown" );
 	return;
     }
     char buf[64];
@@ -1795,6 +1795,7 @@ static void showRadio( webs_t wp, char *propname, char *nvname )
 	       "" );
     websWrite( wp, "</div>\n" );
 }
+
 #ifdef HAVE_MADWIFI
 static void showAutoOption( webs_t wp, char *propname, char *nvname )
 {
@@ -1841,6 +1842,7 @@ showOptions( webs_t wp, char *propname, char *names, char *select )
     }
     websWrite( wp, "//]]>\n</script>\n</select>\n" );
 }
+
 #ifdef HAVE_MADWIFI
 static void
 showOptionsChoose( webs_t wp, char *propname, char *names, char *select )
@@ -2046,10 +2048,10 @@ void ej_show_olsrd( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp, "</fieldset><br />\n" );
     }
 }
-#else  //!HAVE_OLSRD
+#else //!HAVE_OLSRD
 void ej_show_olsrd( webs_t wp, int argc, char_t ** argv )
 {
-	return;
+    return;
 }
 #endif
 
@@ -2173,10 +2175,10 @@ void ej_show_bondings( webs_t wp, int argc, char_t ** argv )
 	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bond_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n" );
     websWrite( wp, "</fieldset><br />\n" );
 }
-#else  //!HAVE_BONDING
+#else //!HAVE_BONDING
 void ej_show_bondings( webs_t wp, int argc, char_t ** argv )
 {
-	return;
+    return;
 }
 #endif
 
@@ -2393,15 +2395,16 @@ void ej_show_bridgenames( webs_t wp, int argc, char_t ** argv )
 	char *stp = word;
 	char *bridge = strsep( &stp, ">" );
 	char *prio = stp;
+
 	stp = strsep( &prio, ">" );
 	char *mtu = prio;
+
 	prio = strsep( &mtu, ">" );
-	if (!prio)
-	    {
+	if( !prio )
+	{
 	    prio = mtu;
 	    mtu = "1500";
-	    }
-	
+	}
 
 /*	char *stp = word;
 	char *bridge = strsep( &stp, ">" );
@@ -3170,6 +3173,7 @@ static void show_netmode( webs_t wp, char *prefix )
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );
 }
+
 #ifdef HAVE_MADWIFI
 static void showrtssettings( webs_t wp, char *var )
 {
@@ -3469,7 +3473,7 @@ static int show_virtualssid( webs_t wp, char *prefix )
 	websWrite( wp, "</select>\n" );
 	websWrite( wp, "</div>\n" );
 	sprintf( wmm, "%s_wmm", var );
-        showRadio( wp, "wl_adv.label18", wmm );
+	showRadio( wp, "wl_adv.label18", wmm );
 #endif
 	sprintf( ssid, "%s_ap_isolate", var );
 	showRadio( wp, "wl_adv.label11", ssid );
@@ -3977,7 +3981,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       wl_ssid, nvram_safe_get( wl_ssid ) );
 
 #ifdef HAVE_MADWIFI
-    showRadio( wp, "wl_basic.radar", wl_doth );    
+    showRadio( wp, "wl_basic.radar", wl_doth );
     show_chanshift( wp, prefix );
 #endif
     if( nvram_match( wl_mode, "ap" ) || nvram_match( wl_mode, "wdsap" )
@@ -4315,21 +4319,21 @@ void show_radius( webs_t wp, char *prefix, int showmacformat )
 
 static void init_80211x_layers( webs_t wp, char *prefix )
 {
-if (nvram_prefix_match( "8021xtype", prefix, "tls"))
+    if( nvram_prefix_match( "8021xtype", prefix, "tls" ) )
     {
-    websWrite(wp,"enable_idtls(\"%s\");\n",prefix);
+	websWrite( wp, "enable_idtls(\"%s\");\n", prefix );
     }
-if (nvram_prefix_match( "8021xtype", prefix, "leap"))
+    if( nvram_prefix_match( "8021xtype", prefix, "leap" ) )
     {
-    websWrite(wp,"enable_idleap(\"%s\");\n",prefix);
+	websWrite( wp, "enable_idleap(\"%s\");\n", prefix );
     }
-if (nvram_prefix_match( "8021xtype", prefix, "ttls"))
+    if( nvram_prefix_match( "8021xtype", prefix, "ttls" ) )
     {
-    websWrite(wp,"enable_idttls(\"%s\");\n",prefix);
+	websWrite( wp, "enable_idttls(\"%s\");\n", prefix );
     }
-if (nvram_prefix_match( "8021xtype", prefix, "peap"))
+    if( nvram_prefix_match( "8021xtype", prefix, "peap" ) )
     {
-    websWrite(wp,"enable_idpeap(\"%s\");\n",prefix);
+	websWrite( wp, "enable_idpeap(\"%s\");\n", prefix );
     }
 }
 
@@ -4639,7 +4643,8 @@ void show_wep( webs_t wp, char *prefix )
 
     char p_temp[128];
     char temp[256];
-    sprintf( p_temp, "%s", get_wep_value(temp, "passphrase", bit, prefix ) );
+
+    sprintf( p_temp, "%s", get_wep_value( temp, "passphrase", bit, prefix ) );
     nvram_set( "passphrase_temp", p_temp );
     tf_webWriteESCNV( wp, "passphrase_temp" );
     nvram_unset( "passphrase_temp" );
@@ -4663,22 +4668,26 @@ void show_wep( webs_t wp, char *prefix )
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 1</div>\n" );
     websWrite( wp,
 	       "<input name=%s_key1 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	       prefix, mlen2, mlen, get_wep_value(temp, "key1", bit, prefix ) );
+	       prefix, mlen2, mlen, get_wep_value( temp, "key1", bit,
+						   prefix ) );
     websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 2</div>\n" );
     websWrite( wp,
 	       "<input name=%s_key2 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	       prefix, mlen2, mlen, get_wep_value(temp, "key2", bit, prefix ) );
+	       prefix, mlen2, mlen, get_wep_value( temp, "key2", bit,
+						   prefix ) );
     websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 3</div>\n" );
     websWrite( wp,
 	       "<input name=%s_key3 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	       prefix, mlen2, mlen, get_wep_value(temp, "key3", bit, prefix ) );
+	       prefix, mlen2, mlen, get_wep_value( temp, "key3", bit,
+						   prefix ) );
     websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(share.key)</script> 4</div>\n" );
     websWrite( wp,
 	       "<input name=%s_key4 size=\"%s\" maxlength=\"%s\" value=\"%s\" /></div>\n",
-	       prefix, mlen2, mlen, get_wep_value(temp, "key4", bit, prefix ) );
+	       prefix, mlen2, mlen, get_wep_value( temp, "key4", bit,
+						   prefix ) );
     websWrite( wp, "</div>\n" );
 }
 
