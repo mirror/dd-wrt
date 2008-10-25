@@ -4317,19 +4317,19 @@ static void init_80211x_layers( webs_t wp, char *prefix )
 {
 if (nvram_prefix_match( "8021xtype", prefix, "tls"))
     {
-    websWrite(wp,"enable_idtls(%s);\n",prefix);
+    websWrite(wp,"enable_idtls(\"%s\");\n",prefix);
     }
 if (nvram_prefix_match( "8021xtype", prefix, "leap"))
     {
-    websWrite(wp,"enable_idleap(%s);\n",prefix);
+    websWrite(wp,"enable_idleap(\"%s\");\n",prefix);
     }
 if (nvram_prefix_match( "8021xtype", prefix, "ttls"))
     {
-    websWrite(wp,"enable_idttls(%s);\n",prefix);
+    websWrite(wp,"enable_idttls(\"%s\");\n",prefix);
     }
 if (nvram_prefix_match( "8021xtype", prefix, "peap"))
     {
-    websWrite(wp,"enable_idpeap(%s);\n",prefix);
+    websWrite(wp,"enable_idpeap(\"%s\");\n",prefix);
     }
 }
 
