@@ -688,16 +688,17 @@ static void nat_postrouting( void )
 {
     if( ( nvram_match( "chilli_enable", "1" ) )
 	&& ( nvram_match( "wan_proto", "disabled" ) ) )
-	{
-	if (strlen(nvram_safe_get("chilli_net"))>0)
-	save2file
-	    ( "-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-	      nvram_safe_get("chilli_net"),nvram_safe_get( "lan_ipaddr" ) );
-	else	
-	save2file
-	    ( "-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-	      nvram_safe_get( "lan_ipaddr" ) );
-	}
+    {
+	if( strlen( nvram_safe_get( "chilli_net" ) ) > 0 )
+	    save2file
+		( "-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+		  nvram_safe_get( "chilli_net" ),
+		  nvram_safe_get( "lan_ipaddr" ) );
+	else
+	    save2file
+		( "-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+		  nvram_safe_get( "lan_ipaddr" ) );
+    }
 #ifdef HAVE_PPPOESERVER
     if( nvram_match( "pppoeserver_enabled", "1" ) )
 	save2file( "-I POSTROUTING -s %s/%s -j SNAT --to-source=%s\n",
@@ -714,22 +715,28 @@ static void nat_postrouting( void )
 	// "--to-ports 5056-5071\n", wanface);
 	if( strlen( wanface ) > 0 )
 	    save2file( "-A POSTROUTING -o %s -j MASQUERADE\n", wanface );
-	if (nvram_match("wan_proto","pptp"))
-	    {
-	    save2file( "-A POSTROUTING -o %s -j MASQUERADE\n", nvram_safe_get("pptp_ifname"));
-	    }
+	if( nvram_match( "wan_proto", "pptp" ) )
+	{
+	    save2file( "-A POSTROUTING -o %s -j MASQUERADE\n",
+		       nvram_safe_get( "pptp_ifname" ) );
+	}
 	if( nvram_match( "loopback_enable", "1" ) )
 	{
 	    // added for logic test
 	    int loopmask = 0;
 	    char *nmask = nvram_safe_get( "lan_netmask" );	// assuming
-								// lan_netmask 
-								// is valid
+
+	    // lan_netmask 
+	    // is valid
 
 	    loopmask = getmask( nmask );
 
-	    save2file( "-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",lanface );
-	    save2file( "-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j MASQUERADE\n",lanface, lan_cclass, loopmask, lan_cclass, loopmask );
+	    save2file
+		( "-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
+		  lanface );
+	    save2file
+		( "-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j MASQUERADE\n",
+		  lanface, lan_cclass, loopmask, lan_cclass, loopmask );
 	    char *next;
 	    char dev[16];
 	    char var[80];
@@ -1286,9 +1293,9 @@ void fw_get_filter_services( char *services )
     }
 
     strcat( services, nvram_safe_get( "filter_services" ) );	// this is
-								// user
-								// defined
-								// filters
+    // user
+    // defined
+    // filters
     strcat( services, nvram_safe_get( "filter_services_1" ) );
 
     return;
@@ -1770,7 +1777,8 @@ static void filter_input( void )
 
 #ifdef HAVE_PPTP
     if( nvram_match( "pptpd_enable", "1" )
-	|| nvram_match( "pptpd_client_enable", "1" ) || nvram_match( "wan_proto", "pptp" ) )
+	|| nvram_match( "pptpd_client_enable", "1" )
+	|| nvram_match( "wan_proto", "pptp" ) )
     {
 	save2file( "-A INPUT -p tcp -m tcp --dport 1723 -j ACCEPT\n" );
 	save2file( "-A INPUT -p 47 -j ACCEPT\n" );
@@ -2070,11 +2078,12 @@ static void filter_forward( void )
      * Clamp TCP MSS to PMTU of WAN interface 
      */
 //    if( atoi( nvram_safe_get( "wan_mtu" ) ) > 0 )
-    save2file("-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
-//	save2file
-//	    ( "-A FORWARD -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS "
-//	      "--set-mss %d\n", atoi( nvram_safe_get( "wan_mtu" ) ) - 39,
-//	      atoi( nvram_safe_get( "wan_mtu" ) ) - 40 );
+    save2file
+	( "-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" );
+//      save2file
+//          ( "-A FORWARD -p tcp --tcp-flags SYN,RST SYN -m tcpmss --mss %d: -j TCPMSS "
+//            "--set-mss %d\n", atoi( nvram_safe_get( "wan_mtu" ) ) - 39,
+//            atoi( nvram_safe_get( "wan_mtu" ) ) - 40 );
 
     /*
      * Filter Web application 
@@ -2118,9 +2127,9 @@ static void filter_forward( void )
     if( nvram_match( "wk_mode", "bgp" ) )
     {
 	save2file( "-A FORWARD -p tcp --sport 179 -j ACCEPT\n" );	// BGP 
-									// port
+	// port
 	save2file( "-A FORWARD -p tcp --dport 179 -j ACCEPT\n" );	// BGP 
-									// port
+	// port
     }
 #ifdef HAVE_OLSRD
     if( nvram_match( "wk_mode", "olsr" ) )
