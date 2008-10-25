@@ -77,7 +77,7 @@ static int start_heartbeat( int status )
 	     ( nvram_match( "wan_get_domain", "vic.bigpond.net.au" ) ) ||	// Victoria
 	     ( nvram_match( "wan_get_domain", "qld.bigpond.net.au" ) ) ||	// Queensland
 	     ( nvram_match( "wan_get_domain", "sa.bigpond.net.au" ) ) ||	// South 
-										// Australia
+	     // Australia
 	     ( nvram_match( "wan_get_domain", "wa.bigpond.net.au" ) ) )
     {				// Western Australia
 	snprintf( authserver, sizeof( authserver ), "%s", "sm-server" );

@@ -94,18 +94,18 @@ int ipup_main( int argc, char **argv )
 	if( nvram_match( "wan_proto", "pppoe" ) )
 	{
 	    nvram_set( "wan_ipaddr_buf", nvram_safe_get( "wan_ipaddr" ) );	// Store 
-										// last 
-										// ip 
-										// address
+	    // last 
+	    // ip 
+	    // address
 	    nvram_set( "wan_ipaddr", value );
 	    nvram_set( "wan_netmask", "255.255.255.255" );
 	}
 	else if( nvram_match( "wan_proto", "pptp" ) )
 	{
 	    nvram_set( "wan_ipaddr_buf", nvram_safe_get( "pptp_get_ip" ) );	// Store 
-										// last 
-										// ip 
-										// address
+	    // last 
+	    // ip 
+	    // address
 	    nvram_set( "wan_ipaddr", value );
 	    nvram_set( "wan_netmask", "255.255.255.255" );
 	    nvram_set( "pptp_get_ip", value );
@@ -113,22 +113,22 @@ int ipup_main( int argc, char **argv )
 	else if( nvram_match( "wan_proto", "l2tp" ) )
 	{
 	    nvram_set( "wan_ipaddr_buf", nvram_safe_get( "l2tp_get_ip" ) );	// Store 
-										// last 
-										// ip 
-										// address
+	    // last 
+	    // ip 
+	    // address
 	    nvram_set( "l2tp_get_ip", value );
 	}
     }
 
     if( ( value = getenv( "IPREMOTE" ) ) )
-	{
+    {
 	nvram_set( "wan_gateway", value );
 	if( nvram_match( "wan_proto", "pptp" ) )
 	{
-	eval("route","del","default");
-	route_add( wan_ifname, 0, "0.0.0.0", value, "0.0.0.0" );
+	    eval( "route", "del", "default" );
+	    route_add( wan_ifname, 0, "0.0.0.0", value, "0.0.0.0" );
 	}
-	}
+    }
     strcpy( buf, "" );
     if( getenv( "DNS1" ) )
 	sprintf( buf, "%s", getenv( "DNS1" ) );
@@ -185,10 +185,12 @@ int ipdown_main( int argc, char **argv )
     }
     if( nvram_match( "wan_proto", "pptp" ) )
     {
-	eval("route","del","default");
+	eval( "route", "del", "default" );
 	nvram_set( "wan_gateway", nvram_safe_get( "wan_gateway_buf" ) );
-	eval("route","add","default","gw",nvram_safe_get( "wan_gateway" ));
-        sysprintf("iptables -t nat -A POSTROUTING -o %s -j MASQUERADE\n", nvram_safe_get("pptp_ifname"));
+	eval( "route", "add", "default", "gw",
+	      nvram_safe_get( "wan_gateway" ) );
+	sysprintf( "iptables -t nat -A POSTROUTING -o %s -j MASQUERADE\n",
+		   nvram_safe_get( "pptp_ifname" ) );
     }
 
     nvram_set( "pppoe_ifname", "" );
@@ -224,7 +226,7 @@ int ipdown_main( int argc, char **argv )
 	snprintf( buffer, 63, "%lld", out );
 	nvram_set( "ppp_byte_out", buffer );
 	if( ( stamp = time( NULL ) ) < 1087818160 )	// clock is not set
-							// properly
+	    // properly
 	    stamp = 0;
 	snprintf( buffer, 63, "%ld", stamp );
 	nvram_set( "ppp_byte_stamp", buffer );
