@@ -143,7 +143,8 @@ int start_sysinit( void )
     struct utsname name;
     struct stat tmp_stat;
     time_t tm = 0;
-    eval("ledtool","4","1"); // blink the led 4 times
+
+    eval( "ledtool", "4", "1" );	// blink the led 4 times
     unlink( "/etc/nvram/.lock" );
     cprintf( "sysinit() proc\n" );
     /*
@@ -222,7 +223,6 @@ int start_sysinit( void )
 	insmod( "e1000" );
     }
 
-
 #ifndef HAVE_NOWIFI
     insmod( "ath_hal" );
     if( nvram_get( "rate_control" ) != NULL )
@@ -230,7 +230,7 @@ int start_sysinit( void )
 	char rate[64];
 
 	sprintf( rate, "ratectl=%s", nvram_safe_get( "rate_control" ) );
-	eval("insmod", "ath_pci", rate );
+	eval( "insmod", "ath_pci", rate );
     }
     else
     {
