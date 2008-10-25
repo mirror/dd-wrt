@@ -108,11 +108,12 @@ void start_overclock( void )	// hidden feature. must be called with
 
 #ifdef HAVE_CA8
     FILE *in = fopen( "/dev/mtdblock/2", "rb" );	// zLoader Board Data 
-							// access. the board
-							// data section
-							// contains also the
-							// cpu programming
-							// code
+
+    // access. the board
+    // data section
+    // contains also the
+    // cpu programming
+    // code
 #else
     FILE *in = fopen( "/dev/mtdblock/0", "rb" );
 #endif
@@ -226,7 +227,7 @@ void start_overclock( void )	// hidden feature. must be called with
 	fseek( in, 0x1e3, SEEK_SET );
 	if( clk == 184 )
 	    putc( 0x3, in );	// set divisor 5 = 40/5 = 8 mhz base which
-				// allows 184 clock setting
+	// allows 184 clock setting
 	else
 	    putc( 0x1, in );
 	fseek( in, 0x1ef, SEEK_SET );
@@ -348,11 +349,11 @@ void start_overclock( void )	// hidden feature. must be called with
 	eval( "mtd", "-f", "write", "/tmp/boot", "RedBoot" );
     }
     else if( zmul == 0x9 || zmul == 0xa || zmul == 0xb || zmul == 0xc )	// special 
-									// handling 
-									// for 
-									// zLoader 
-									// based 
-									// boards
+	// handling 
+	// for 
+	// zLoader 
+	// based 
+	// boards
     {
 	fprintf( stderr, "viper (ar2313) found (zLoader)\n" );
 	if( clk == 180 && zmul == 0x9 )
