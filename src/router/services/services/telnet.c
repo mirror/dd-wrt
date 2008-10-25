@@ -34,8 +34,7 @@ int start_telnetd( void )
 
     char *telnetd_argv[] = { "telnetd", NULL };
 #ifdef HAVE_REGISTER
-    char *telnetd_argv_reg[] =
-	{ "telnetd", "-l", "/sbin/regshell", NULL };
+    char *telnetd_argv_reg[] = { "telnetd", "-l", "/sbin/regshell", NULL };
 #endif
     stop_telnetd(  );
 
@@ -63,7 +62,8 @@ int stop_telnetd( void )
 
     if( pidof( "telnetd" ) > 0 )
     {
-	dd_syslog( LOG_INFO, "telnetd : telnet daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO,
+		   "telnetd : telnet daemon successfully stopped\n" );
 	ret = killall( "telnetd", SIGTERM );
     }
     cprintf( "done\n" );

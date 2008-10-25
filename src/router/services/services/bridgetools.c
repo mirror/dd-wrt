@@ -156,7 +156,8 @@ int br_add_bridge( const char *brname )
     sprintf( netmask, "%s_netmask", brname );
     int ret = eval( "brctl", "addbr", brname );
 
-    if(nvram_get(ipaddr) && nvram_get(netmask) &&  !nvram_match( ipaddr, "0.0.0.0" )
+    if( nvram_get( ipaddr ) && nvram_get( netmask )
+	&& !nvram_match( ipaddr, "0.0.0.0" )
 	&& !nvram_match( netmask, "0.0.0.0" ) )
     {
 	eval( "ifconfig", brname, nvram_safe_get( ipaddr ), "netmask",
@@ -164,7 +165,7 @@ int br_add_bridge( const char *brname )
 	      "up" );
     }
     else
-	eval( "ifconfig", brname, "mtu", getBridgeMTU( brname ));
+	eval( "ifconfig", brname, "mtu", getBridgeMTU( brname ) );
     return ret;
 }
 
@@ -186,9 +187,9 @@ int br_add_interface( const char *br, const char *dev )
     char netmask[32];
 
     sprintf( netmask, "%s_netmask", dev );
-    
 
-    if(nvram_get(ipaddr) && nvram_get(netmask) && !nvram_match( ipaddr, "0.0.0.0" )
+    if( nvram_get( ipaddr ) && nvram_get( netmask )
+	&& !nvram_match( ipaddr, "0.0.0.0" )
 	&& !nvram_match( netmask, "0.0.0.0" ) )
     {
 	eval( "ifconfig", dev, nvram_safe_get( ipaddr ), "netmask",
