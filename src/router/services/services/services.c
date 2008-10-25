@@ -126,18 +126,19 @@ void start_vpn_modules( void )
     {
 	insmod( "nf_conntrack_proto_gre" );
 	dd_syslog( LOG_INFO,
-		"vpn modules : nf_conntrack_proto_gre successfully loaded\n" );
+		   "vpn modules : nf_conntrack_proto_gre successfully loaded\n" );
 	insmod( "nf_nat_proto_gre" );
 	dd_syslog( LOG_INFO,
-		"vpn modules : nf_nat_proto_gre successfully loaded\n" );
+		   "vpn modules : nf_nat_proto_gre successfully loaded\n" );
     }
     if( nvram_match( "pptp_pass", "1" ) )
     {
 	insmod( "nf_conntrack_pptp" );
 	dd_syslog( LOG_INFO,
-		"vpn modules : nf_conntrack_pptp successfully loaded\n" );
+		   "vpn modules : nf_conntrack_pptp successfully loaded\n" );
 	insmod( "nf_nat_pptp" );
-	dd_syslog( LOG_INFO, "vpn modules : nf_nat_pptp successfully loaded\n" );
+	dd_syslog( LOG_INFO,
+		   "vpn modules : nf_nat_pptp successfully loaded\n" );
     }
 
 #else
@@ -146,18 +147,19 @@ void start_vpn_modules( void )
     {
 	insmod( "ip_conntrack_proto_gre" );
 	dd_syslog( LOG_INFO,
-		"vpn modules : ip_conntrack_proto_gre successfully loaded\n" );
+		   "vpn modules : ip_conntrack_proto_gre successfully loaded\n" );
 	insmod( "ip_nat_proto_gre" );
 	dd_syslog( LOG_INFO,
-		"vpn modules : ip_nat_proto_gre successfully loaded\n" );
+		   "vpn modules : ip_nat_proto_gre successfully loaded\n" );
     }
     if( nvram_match( "pptp_pass", "1" ) )
     {
 	insmod( "ip_conntrack_pptp" );
 	dd_syslog( LOG_INFO,
-		"vpn modules : ip_conntrack_pptp successfully loaded\n" );
+		   "vpn modules : ip_conntrack_pptp successfully loaded\n" );
 	insmod( "ip_nat_pptp" );
-	dd_syslog( LOG_INFO, "vpn modules : ip_nat_pptp successfully loaded\n" );
+	dd_syslog( LOG_INFO,
+		   "vpn modules : ip_nat_pptp successfully loaded\n" );
     }
 #endif
 }
@@ -169,13 +171,15 @@ void stop_vpn_modules( void )
     rmmod( "nf_conntrack_pptp" );
     rmmod( "nf_nat_proto_gre" );
     rmmod( "nf_conntrack_proto_gre" );
-    dd_syslog( LOG_INFO, "vpn modules : vpn modules successfully unloaded\n" );
+    dd_syslog( LOG_INFO,
+	       "vpn modules : vpn modules successfully unloaded\n" );
 #else
     rmmod( "ip_nat_pptp" );
     rmmod( "ip_nat_proto_gre" );
     rmmod( "ip_conntrack_pptp" );
     rmmod( "ip_conntrack_proto_gre" );
-    dd_syslog( LOG_INFO, "vpn modules : vpn modules successfully unloaded\n" );
+    dd_syslog( LOG_INFO,
+	       "vpn modules : vpn modules successfully unloaded\n" );
 
 #endif
 }
@@ -203,7 +207,8 @@ int stop_dns_clear_resolv( void )
     FILE *fp_w;
 
     if( pidof( "dnsmasq" ) > 0 )
-	dd_syslog( LOG_INFO, "dnsmasq : dnsmasq daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO,
+		   "dnsmasq : dnsmasq daemon successfully stopped\n" );
     // int ret = killps("dnsmasq",NULL);
     int ret = killall( "dnsmasq", SIGTERM );
 
@@ -239,7 +244,8 @@ int start_ntpc( void )
 	pid_t pid;
 
 	_evalpid( nas_argv, NULL, 0, &pid );
-	dd_syslog( LOG_INFO, "ntpclient : ntp client successfully started\n" );
+	dd_syslog( LOG_INFO,
+		   "ntpclient : ntp client successfully started\n" );
     }
 
     cprintf( "done\n" );
@@ -249,7 +255,8 @@ int start_ntpc( void )
 int stop_ntpc( void )
 {
     if( pidof( "ntpclient" ) > 0 )
-	dd_syslog( LOG_INFO, "ntpclient : ntp client successfully stopped\n" );
+	dd_syslog( LOG_INFO,
+		   "ntpclient : ntp client successfully stopped\n" );
     int ret = killall( "ntpclient", SIGTERM );
 
     cprintf( "done\n" );
@@ -263,7 +270,7 @@ int start_resetbutton( void )
 
     ret = eval( "resetbutton" );
     dd_syslog( LOG_INFO,
-	    "reset button : resetbutton daemon successfully started\n" );
+	       "reset button : resetbutton daemon successfully started\n" );
 
     cprintf( "done\n" );
     return ret;
@@ -275,7 +282,7 @@ int stop_resetbutton( void )
 
     if( pidof( "resetbutton" ) > 0 )
 	dd_syslog( LOG_INFO,
-		"reset button : resetbutton daemon successfully stopped\n" );
+		   "reset button : resetbutton daemon successfully stopped\n" );
     ret = killall( "resetbutton", SIGKILL );
 
     cprintf( "done\n" );
@@ -302,7 +309,7 @@ int stop_iptqueue( void )
 
     if( pidof( "iptqueue" ) > 0 )
 	dd_syslog( LOG_INFO,
-		"iptqueue : iptqueue daemon successfully stopped\n" );
+		   "iptqueue : iptqueue daemon successfully stopped\n" );
     ret = killall( "iptqueue", SIGKILL );
 
     cprintf( "done\n" );
@@ -419,8 +426,7 @@ int start_syslog( void )
 	return 0;
 
     if( strlen( nvram_safe_get( "syslogd_rem_ip" ) ) > 0 )
-	ret1 =
-	    eval( "syslogd", "-R", nvram_safe_get( "syslogd_rem_ip" ) );
+	ret1 = eval( "syslogd", "-R", nvram_safe_get( "syslogd_rem_ip" ) );
     else
 	ret1 = eval( "syslogd", "-L" );
 
@@ -439,7 +445,8 @@ int stop_syslog( void )
 	dd_syslog( LOG_INFO, "klogd : klog daemon successfully stopped\n" );
     ret = killall( "klogd", SIGKILL );
     if( pidof( "syslogd" ) > 0 )
-	dd_syslog( LOG_INFO, "syslogd : syslog daemon successfully stopped\n" );
+	dd_syslog( LOG_INFO,
+		   "syslogd : syslog daemon successfully stopped\n" );
     ret += killall( "syslogd", SIGKILL );
 
     cprintf( "done\n" );
@@ -447,14 +454,13 @@ int stop_syslog( void )
 }
 #endif
 
-
 int stop_redial( void )
 {
     int ret;
 
     if( pidof( "redial" ) > 0 )
 	dd_syslog( LOG_INFO,
-		"ppp_redial : redial daemon successfully stopped\n" );
+		   "ppp_redial : redial daemon successfully stopped\n" );
     // ret = killps("redial","-9");
     ret = killall( "redial", SIGKILL );
 
@@ -471,14 +477,15 @@ int start_redial( void )
 	NULL
     };
     if( pidof( "redial" ) > 0 )
-	{
-	return 0;// not required, already running
-	}
+    {
+	return 0;		// not required, already running
+    }
 
     symlink( "/sbin/rc", "/tmp/ppp/redial" );
 
     ret = _evalpid( redial_argv, NULL, 0, &pid );
-    dd_syslog( LOG_INFO, "ppp_redial : redial process successfully started\n" );
+    dd_syslog( LOG_INFO,
+	       "ppp_redial : redial process successfully started\n" );
 
     cprintf( "done\n" );
     return ret;
@@ -610,7 +617,7 @@ int stop_dhcpc( void )
 
     if( pidof( "udhcpc" ) > 0 )
 	dd_syslog( LOG_INFO,
-		"udhcpc : udhcp client process successfully stopped\n" );
+		   "udhcpc : udhcp client process successfully stopped\n" );
     ret = killall( "udhcpc", SIGTERM );
 
     cprintf( "done\n" );
@@ -619,103 +626,102 @@ int stop_dhcpc( void )
 
 #ifdef HAVE_PPTP
 
-static void create_pptp_config(char *servername,char *username)
+static void create_pptp_config( char *servername, char *username )
 {
 
-FILE *fp;
+    FILE *fp;
 
-	mkdir( "/tmp/ppp", 0777 );
-	symlink( "/sbin/rc", "/tmp/ppp/ip-up" );
-	symlink( "/sbin/rc", "/tmp/ppp/ip-down" );
-	symlink( "/dev/null", "/tmp/ppp/connect-errors" );
+    mkdir( "/tmp/ppp", 0777 );
+    symlink( "/sbin/rc", "/tmp/ppp/ip-up" );
+    symlink( "/sbin/rc", "/tmp/ppp/ip-down" );
+    symlink( "/dev/null", "/tmp/ppp/connect-errors" );
 
-	/*
-	 * Generate options file 
-	 */
-	if( !( fp = fopen( "/tmp/ppp/options", "w" ) ) )
-	{
-	    perror( "/tmp/ppp/options" );
-	    return;
-	}
-	fprintf( fp, "defaultroute\n" );	// Add a default route to the 
-						// system routing tables,
-						// using the peer as the
-						// gateway
-	fprintf( fp, "usepeerdns\n" );	// Ask the peer for up to 2 DNS
-					// server addresses
-	fprintf( fp, "pty 'pptp %s --nolaunchpppd",
-		 servername );
+    /*
+     * Generate options file 
+     */
+    if( !( fp = fopen( "/tmp/ppp/options", "w" ) ) )
+    {
+	perror( "/tmp/ppp/options" );
+	return;
+    }
+    fprintf( fp, "defaultroute\n" );	// Add a default route to the 
+    // system routing tables,
+    // using the peer as the
+    // gateway
+    fprintf( fp, "usepeerdns\n" );	// Ask the peer for up to 2 DNS
+    // server addresses
+    fprintf( fp, "pty 'pptp %s --nolaunchpppd", servername );
 
-	// PPTP client also supports synchronous mode.
-	// This should improve the speeds.
-	if( nvram_match( "pptp_synchronous", "1" ) )
-	    fprintf( fp, " --sync'\nsync\n" );
-	else
-	    fprintf( fp, "'\n" );
+    // PPTP client also supports synchronous mode.
+    // This should improve the speeds.
+    if( nvram_match( "pptp_synchronous", "1" ) )
+	fprintf( fp, " --sync'\nsync\n" );
+    else
+	fprintf( fp, "'\n" );
 
-	fprintf( fp, "user '%s'\n", username );
-	// fprintf(fp, "persist\n"); // Do not exit after a connection is
+    fprintf( fp, "user '%s'\n", username );
+    // fprintf(fp, "persist\n"); // Do not exit after a connection is
+    // terminated.
+
+    if( nvram_match( "mtu_enable", "1" ) )
+	fprintf( fp, "mtu %s\n", nvram_safe_get( "wan_mtu" ) );
+
+    if( nvram_match( "ppp_demand", "1" ) )
+    {				// demand mode
+	fprintf( fp, "idle %d\n",
+		 nvram_match( "ppp_demand",
+			      "1" ) ?
+		 atoi( nvram_safe_get( "ppp_idletime" ) ) * 60 : 0 );
+	fprintf( fp, "demand\n" );	// Dial on demand
+	fprintf( fp, "persist\n" );	// Do not exit after a connection is
 	// terminated.
+	fprintf( fp, "%s:%s\n", PPP_PSEUDO_IP, PPP_PSEUDO_GW );	// <local 
+	// IP>:<remote 
+	// IP>
+	fprintf( fp, "ipcp-accept-remote\n" );
+	fprintf( fp, "ipcp-accept-local\n" );
+	fprintf( fp, "connect true\n" );
+	fprintf( fp, "noipdefault\n" );	// Disables the default
+	// behaviour when no local IP 
+	// address is specified
+	fprintf( fp, "ktune\n" );	// Set /proc/sys/net/ipv4/ip_dynaddr
+	// to 1 in demand mode if the local
+	// address changes
+    }
+    else
+    {				// keepalive mode
+	start_redial(  );
+    }
+    if( nvram_match( "pptp_encrypt", "0" ) )
+    {
+	fprintf( fp, "nomppe\n" );	// Disable mppe negotiation
+	fprintf( fp, "noccp\n" );	// Disable CCP (Compression Control
+	// Protocol)
+    }
+    else
+    {
+	fprintf( fp, "mppe required,stateless\n" );
+    }
+    fprintf( fp, "default-asyncmap\n" );	// Disable asyncmap
+    // negotiation
+    fprintf( fp, "nopcomp\n" );	// Disable protocol field compression
+    fprintf( fp, "noaccomp\n" );	// Disable Address/Control
+    // compression
+    fprintf( fp, "novj\n" );	// Disable Van Jacobson style TCP/IP
+    // header compression
+    fprintf( fp, "nobsdcomp\n" );	// Disables BSD-Compress compression
+    fprintf( fp, "nodeflate\n" );	// Disables Deflate compression
+    fprintf( fp, "lcp-echo-interval 0\n" );	// Don't send an LCP
+    // echo-request frame to the
+    // peer
+    fprintf( fp, "noipdefault\n" );
+    fprintf( fp, "lock\n" );
+    fprintf( fp, "noauth\n" );
 
-	if( nvram_match( "mtu_enable", "1" ) )
-	    fprintf( fp, "mtu %s\n", nvram_safe_get( "wan_mtu" ) );
-	
-	if( nvram_match( "ppp_demand", "1" ) )
-	{			// demand mode
-	    fprintf( fp, "idle %d\n",
-		     nvram_match( "ppp_demand",
-				  "1" ) ?
-		     atoi( nvram_safe_get( "ppp_idletime" ) ) * 60 : 0 );
-	    fprintf( fp, "demand\n" );	// Dial on demand
-	    fprintf( fp, "persist\n" );	// Do not exit after a connection is
-					// terminated.
-	    fprintf( fp, "%s:%s\n", PPP_PSEUDO_IP, PPP_PSEUDO_GW );	// <local 
-									// IP>:<remote 
-									// IP>
-	    fprintf( fp, "ipcp-accept-remote\n" );
-	    fprintf( fp, "ipcp-accept-local\n" );
-	    fprintf( fp, "connect true\n" );
-	    fprintf( fp, "noipdefault\n" );	// Disables the default
-						// behaviour when no local IP 
-						// address is specified
-	    fprintf( fp, "ktune\n" );	// Set /proc/sys/net/ipv4/ip_dynaddr
-					// to 1 in demand mode if the local
-					// address changes
-	}
-	else
-	{			// keepalive mode
-	    start_redial(  );
-	}
-	if( nvram_match( "pptp_encrypt", "0" ) )
-	{
-	    fprintf( fp, "nomppe\n" );	// Disable mppe negotiation
-	    fprintf( fp, "noccp\n" );	// Disable CCP (Compression Control
-					// Protocol)
-	}
-	else
-	{
-	    fprintf( fp, "mppe required,stateless\n" );
-	}
-	fprintf( fp, "default-asyncmap\n" );	// Disable asyncmap
-						// negotiation
-	fprintf( fp, "nopcomp\n" );	// Disable protocol field compression
-	fprintf( fp, "noaccomp\n" );	// Disable Address/Control
-					// compression
-	fprintf( fp, "novj\n" );	// Disable Van Jacobson style TCP/IP
-					// header compression
-	fprintf( fp, "nobsdcomp\n" );	// Disables BSD-Compress compression
-	fprintf( fp, "nodeflate\n" );	// Disables Deflate compression
-	fprintf( fp, "lcp-echo-interval 0\n" );	// Don't send an LCP
-						// echo-request frame to the
-						// peer
-	fprintf( fp, "noipdefault\n" );
-	fprintf( fp, "lock\n" );
-	fprintf( fp, "noauth\n" );
+    if( nvram_invmatch( "pptp_extraoptions", "" ) )
+	fprintf( fp, "%s\n", nvram_safe_get( "pptp_extraoptions" ) );
 
-	if( nvram_invmatch( "pptp_extraoptions", "" ) )
-	    fprintf( fp, "%s\n", nvram_safe_get( "pptp_extraoptions" ) );
-
-	fclose( fp );
+    fclose( fp );
 
 }
 
@@ -761,7 +767,7 @@ int start_pptp( int status )
 
     if( status != REDIAL )
     {
-	create_pptp_config(nvram_safe_get("pptp_server_name"),username);
+	create_pptp_config( nvram_safe_get( "pptp_server_name" ), username );
 	/*
 	 * Generate pap-secrets file 
 	 */
@@ -804,7 +810,7 @@ int start_pptp( int status )
 	wan_ifname = getSTA(  );
     }
 
-    nvram_set("pptp_ifname",wan_ifname);
+    nvram_set( "pptp_ifname", wan_ifname );
     /*
      * Bring up WAN interface 
      */
@@ -830,7 +836,7 @@ int start_pptp( int status )
 	    sleep( 1 );
 	}
 	stop_dhcpc(  );		/* we don't need dhcp client anymore */
-	create_pptp_config(nvram_safe_get("pptp_server_ip"),username);
+	create_pptp_config( nvram_safe_get( "pptp_server_ip" ), username );
 
 	/*
 	 * //this stuff has already been configured in dhcpc->bound
@@ -1003,17 +1009,17 @@ int start_pppoe( int pppoe_num )
 	"-u", username,
 	"-p", passwd,
 	"-r", nvram_safe_get( "wan_mtu" ),	// del by honor, add by
-						// tallest.
+	// tallest.
 	"-t", nvram_safe_get( "wan_mtu" ),
 	"-i", nvram_match( ppp_demand[pppoe_num], "1" ) ? idletime : "0",
 	"-I", "30",		// Send an LCP echo-request frame to the
-				// server every 30 seconds
+	// server every 30 seconds
 	"-T", "3",		// pppd will presume the server to be dead if 
-				// 5 LCP echo-requests are sent without
-				// receiving a valid LCP echo-reply
+	// 5 LCP echo-requests are sent without
+	// receiving a valid LCP echo-reply
 	"-P", param,		// PPPOE session number.
 	"-N", retry_num,	// To avoid kill pppd when pppd has been
-				// connecting.
+	// connecting.
 #if LOG_PPPOE == 2
 	"-d",
 #endif
@@ -1229,11 +1235,11 @@ int start_l2tp( int status )
 	}
 	fprintf( fp, "global\n" );	// Global section
 	fprintf( fp, "load-handler \"sync-pppd.so\"\n" );	// Load
-								// handlers
+	// handlers
 	fprintf( fp, "load-handler \"cmd.so\"\n" );
 	fprintf( fp, "listen-port 1701\n" );	// Bind address
 	fprintf( fp, "section sync-pppd\n" );	// Configure the sync-pppd
-						// handler
+	// handler
 	fprintf( fp, "section peer\n" );	// Peer section
 	fprintf( fp, "peer %s\n", nvram_safe_get( "l2tp_server_ip" ) );
 	fprintf( fp, "port 1701\n" );
@@ -1250,11 +1256,11 @@ int start_l2tp( int status )
 	    return -1;
 	}
 	fprintf( fp, "defaultroute\n" );	// Add a default route to the 
-						// system routing tables,
-						// using the peer as the
-						// gateway
+	// system routing tables,
+	// using the peer as the
+	// gateway
 	fprintf( fp, "usepeerdns\n" );	// Ask the peer for up to 2 DNS
-					// server addresses
+	// server addresses
 	// fprintf(fp, "pty 'pptp %s
 	// --nolaunchpppd'\n",nvram_safe_get("pptp_server_ip")); 
 	fprintf( fp, "user '%s'\n", username );
@@ -1281,11 +1287,11 @@ int start_l2tp( int status )
 	    fprintf( fp, "ipcp-accept-local\n" );
 	    fprintf( fp, "connect true\n" );
 	    fprintf( fp, "noipdefault\n" );	// Disables the default
-						// behaviour when no local IP 
-						// address is specified
+	    // behaviour when no local IP 
+	    // address is specified
 	    fprintf( fp, "ktune\n" );	// Set /proc/sys/net/ipv4/ip_dynaddr
-					// to 1 in demand mode if the local
-					// address changes
+	    // to 1 in demand mode if the local
+	    // address changes
 	}
 	else
 	{			// keepalive mode
@@ -1293,19 +1299,19 @@ int start_l2tp( int status )
 	}
 
 	fprintf( fp, "default-asyncmap\n" );	// Disable asyncmap
-						// negotiation
+	// negotiation
 	fprintf( fp, "nopcomp\n" );	// Disable protocol field compression
 	fprintf( fp, "noaccomp\n" );	// Disable Address/Control
-					// compression 
+	// compression 
 	fprintf( fp, "noccp\n" );	// Disable CCP (Compression Control
-					// Protocol)
+	// Protocol)
 	fprintf( fp, "novj\n" );	// Disable Van Jacobson style TCP/IP
-					// header compression
+	// header compression
 	fprintf( fp, "nobsdcomp\n" );	// Disables BSD-Compress compression
 	fprintf( fp, "nodeflate\n" );	// Disables Deflate compression
 	fprintf( fp, "lcp-echo-interval 0\n" );	// Don't send an LCP
-						// echo-request frame to the
-						// peer
+	// echo-request frame to the
+	// peer
 	fprintf( fp, "lock\n" );
 	fprintf( fp, "noauth\n" );
 
@@ -1489,7 +1495,7 @@ int start_radio_timer( void )
     int ret = _evalpid( argv, NULL, 0, &pid );
 
     dd_syslog( LOG_INFO,
-	    "radio_timer : radio timer daemon successfully started\n" );
+	       "radio_timer : radio timer daemon successfully started\n" );
 
     cprintf( "done" );
 
@@ -1502,7 +1508,7 @@ int stop_radio_timer( void )
 
     if( pidof( "radio_timer" ) > 0 )
 	dd_syslog( LOG_INFO,
-		"radio_timer : radio timer daemon successfully stopped\n" );
+		   "radio_timer : radio timer daemon successfully stopped\n" );
     ret = killall( "radio_timer", SIGKILL );
 
     cprintf( "done\n" );
@@ -1526,7 +1532,7 @@ int start_ttraff( void )
     int ret = _evalpid( argv, NULL, 0, &pid );
 
     dd_syslog( LOG_INFO,
-	    "ttraff : traffic counter daemon successfully started\n" );
+	       "ttraff : traffic counter daemon successfully started\n" );
 
     cprintf( "done" );
 
@@ -1539,7 +1545,7 @@ int stop_ttraff( void )
 
     if( pidof( "ttraff" ) > 0 )
 	dd_syslog( LOG_INFO,
-		"ttraff : traffic counter daemon successfully stopped\n" );
+		   "ttraff : traffic counter daemon successfully stopped\n" );
     ret = killall( "ttraff", SIGKILL );
 
     cprintf( "done\n" );

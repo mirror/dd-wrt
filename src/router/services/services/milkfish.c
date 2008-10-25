@@ -49,7 +49,7 @@ void start_milkfish( void )
     {
 	start_milkfish_boot(  );
 	eval( "/etc/config/milkfish.netup" );	// start rtpproxy and
-						// openserctl
+	// openserctl
 
 	dd_syslog( LOG_INFO, "Milkfish service successfully started\n" );
     }

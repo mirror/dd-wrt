@@ -31,8 +31,7 @@
 
 #ifdef HAVE_QUAGGA
 
-
-void fwritenvram(char *key,FILE *fp);
+void fwritenvram( char *key, FILE * fp );
 
 int zebra_ospf_init( void );
 int zebra_bgp_init( void );
@@ -83,10 +82,10 @@ void start_quagga_writememory( void )
 	int len = ftell( in );
 
 	rewind( in );
-	char *buf = malloc( len +1);
+	char *buf = malloc( len + 1 );
 
 	fread( buf, len, 1, in );
-	buf[len]=0;
+	buf[len] = 0;
 	fclose( in );
 	nvram_set( "zebra_copt", "1" );
 	nvram_set( "zebra_conf", buf );
@@ -105,10 +104,10 @@ void start_quagga_writememory( void )
 	int len = ftell( in );
 
 	rewind( in );
-	char *buf = malloc( len +1);
+	char *buf = malloc( len + 1 );
 
 	fread( buf, len, 1, in );
-	buf[len]=0;
+	buf[len] = 0;
 	fclose( in );
 	nvram_set( "ospfd_copt", "1" );
 	nvram_set( "ospfd_conf", buf );
@@ -128,10 +127,10 @@ void start_quagga_writememory( void )
 	int len = ftell( in );
 
 	rewind( in );
-	char *buf = malloc( len +1);
+	char *buf = malloc( len + 1 );
 
 	fread( buf, len, 1, in );
-	buf[len]=0;
+	buf[len] = 0;
 	fclose( in );
 	nvram_set( "bgpd_copt", "1" );
 	nvram_set( "bgpd_conf", buf );
@@ -151,10 +150,10 @@ void start_quagga_writememory( void )
 	int len = ftell( in );
 
 	rewind( in );
-	char *buf = malloc( len +1);
+	char *buf = malloc( len + 1 );
 
 	fread( buf, len, 1, in );
-	buf[len]=0;
+	buf[len] = 0;
 	fclose( in );
 	nvram_set( "ripd_copt", "1" );
 	nvram_set( "ripd_conf", buf );
@@ -207,7 +206,8 @@ int zebra_ospf_init( void )
 	return errno;
     }
 
-    if( nvram_match( "ospfd_copt", "1" ) && strlen(nvram_safe_get("ospfd_conf")))
+    if( nvram_match( "ospfd_copt", "1" )
+	&& strlen( nvram_safe_get( "ospfd_conf" ) ) )
     {
 	fwritenvram( "ospfd_conf", fp );
     }
@@ -311,9 +311,10 @@ int zebra_ripd_init( void )
 
     // printf("Start zebra\n");
     if( !strcmp( lt, "0" ) && !strcmp( lr, "0" ) &&
-	!strcmp( wt, "0" ) && !strcmp( wr, "0" ) && !nvram_match("zebra_copt","1"))
+	!strcmp( wt, "0" ) && !strcmp( wr, "0" )
+	&& !nvram_match( "zebra_copt", "1" ) )
     {
-	fprintf(stderr, "zebra disabled.\n" );
+	fprintf( stderr, "zebra disabled.\n" );
 	return 0;
     }
 
@@ -414,9 +415,9 @@ int zebra_bgp_init( void )
     FILE *fp;
     int ret1, ret2;
 
-    
     if( !strcmp( lt, "0" ) && !strcmp( lr, "0" ) &&
-	!strcmp( wt, "0" ) && !strcmp( wr, "0" ) && !nvram_match("zebra_copt","1"))
+	!strcmp( wt, "0" ) && !strcmp( wr, "0" )
+	&& !nvram_match( "zebra_copt", "1" ) )
     {
 	return 0;
     }
@@ -456,10 +457,13 @@ int zebra_bgp_init( void )
     }
     else
     {
-	fprintf( fp, "router bgp %s\n" ,nvram_safe_get( "routing_bgp_as" ));
-	fprintf( fp, "  network %s/%d\n", nvram_safe_get("lan_ipaddr"),get_net(nvram_safe_get("lan_netmask")));
-	if( wf && strlen( wf ) > 0 && !nvram_match("wan_ipaddr","0.0.0.0") )
-	    fprintf( fp, "  network %s/%s\n", nvram_safe_get("wan_ipaddr"),nvram_safe_get("wan_netmask"));
+	fprintf( fp, "router bgp %s\n", nvram_safe_get( "routing_bgp_as" ) );
+	fprintf( fp, "  network %s/%d\n", nvram_safe_get( "lan_ipaddr" ),
+		 get_net( nvram_safe_get( "lan_netmask" ) ) );
+	if( wf && strlen( wf ) > 0
+	    && !nvram_match( "wan_ipaddr", "0.0.0.0" ) )
+	    fprintf( fp, "  network %s/%s\n", nvram_safe_get( "wan_ipaddr" ),
+		     nvram_safe_get( "wan_netmask" ) );
 	fprintf( fp, "neighbor %s local-as %s\n", lf,
 		 nvram_safe_get( "routing_bgp_as" ) );
 	if( wf && strlen( wf ) > 0 )
@@ -640,7 +644,8 @@ int stop_zebra( void )
 #ifdef HAVE_QUAGGA
     int ret2 = 0, ret3 = 0, ret4 = 0;
 
-    if( pidof( "zebra" ) > 0 || pidof( "ripd" ) > 0 || pidof( "ospfd" ) > 0 || pidof( "bgpd" ) > 0 )
+    if( pidof( "zebra" ) > 0 || pidof( "ripd" ) > 0 || pidof( "ospfd" ) > 0
+	|| pidof( "bgpd" ) > 0 )
     {
 	dd_syslog( LOG_INFO,
 		   "zebra : zebra (ripd and ospfd) daemon successfully stopped\n" );
@@ -651,7 +656,8 @@ int stop_zebra( void )
 
 	while( !
 	       ( killall( "zebra", SIGTERM ) && killall( "ripd", SIGTERM )
-		 && killall( "ospfd", SIGTERM ) && killall( "bgpd", SIGTERM ) ) )
+		 && killall( "ospfd", SIGTERM )
+		 && killall( "bgpd", SIGTERM ) ) )
 	    sleep( 1 );
 
 	cprintf( "done\n" );
