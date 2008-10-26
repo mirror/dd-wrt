@@ -1674,7 +1674,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 		}
 	}
 
-	if (!chain_trusted) {
+/*	if (!chain_trusted) {
 		wpa_printf(MSG_DEBUG, "X509: Did not find any of the issuers "
 			   "from the list of trusted certificates");
 		if (trusted) {
@@ -1683,7 +1683,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 		}
 		wpa_printf(MSG_DEBUG, "X509: Certificate chain validation "
 			   "disabled - ignore unknown CA issue");
-	}
+	}*/
 
 	wpa_printf(MSG_DEBUG, "X509: Certificate chain valid");
 
