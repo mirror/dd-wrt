@@ -85,7 +85,10 @@ int start_pptpd( void )
 	     "mtu %s\n" "mru %s\n",
 	     nvram_get( "pptpd_mtu" ) ? nvram_get( "pptpd_mtu" ) : "1450",
 	     nvram_get( "pptpd_mru" ) ? nvram_get( "pptpd_mru" ) : "1450" );
-
+    if( !nowins )
+    {
+	fprintf( fp, "ms-wins %s\n", nvram_safe_get( "wan_wins" ) );
+    }
     struct dns_lists *dns_list = get_dns_list(  );
 
     if( nvram_match( "dnsmasq_enable", "1" ) )
