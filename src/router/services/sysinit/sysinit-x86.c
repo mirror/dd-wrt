@@ -197,6 +197,15 @@ int start_sysinit( void )
 
     if( detect( "Rhine-" ) )	// VIA Rhine-I, Rhine-II, Rhine-III
 	insmod( "via-rhine" );
+    if( detect( "VT6120" ) )	// VIA Rhine-I, Rhine-II, Rhine-III
+	insmod( "via-velocity" );
+    else
+    if( detect( "VT6121" ) )	// VIA Rhine-I, Rhine-II, Rhine-III
+	insmod( "via-velocity" );
+    else
+    if( detect( "VT6122" ) )	// VIA Rhine-I, Rhine-II, Rhine-III
+	insmod( "via-velocity" );
+    
     if( detect( "DP8381" ) )
 	insmod( "natsemi" );
     if( detect( "PCnet32" ) )	// vmware?
