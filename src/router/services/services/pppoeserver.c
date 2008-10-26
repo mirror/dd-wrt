@@ -101,6 +101,15 @@ void start_pppoeserver( void )
     if( nvram_default_match( "pppoeserver_enabled", "1", "0" ) )
     {
 	add_pppoe_natrule(  );
+	int nowins = 0;
+
+	if( nvram_match( "wan_wins", "0.0.0.0" ) )
+	{
+	    nvram_set( "wan_wins", "" );
+	    nowins = 1;
+	}
+	if( strlen( nvram_safe_get( "wan_wins" ) ) == 0 )
+	    nowins = 1;
 	if( nvram_default_match( "pppoeradius_enabled", "0", "0" ) )
 	{
 	    FILE *fp;
@@ -146,6 +155,10 @@ void start_pppoeserver( void )
 		     "lcp-echo-failure %s\n",
 		     nvram_safe_get( "pppoeserver_lcpechoint" ),
 		     nvram_safe_get( "pppoeserver_lcpechofail" ) );
+	    if( !nowins )
+	    {
+		fprintf( fp, "ms-wins %s\n", nvram_safe_get( "wan_wins" ) );
+	    }
 	    struct dns_lists *dns_list = get_dns_list(  );
 
 	    if( nvram_match( "dnsmasq_enable", "1" ) )
@@ -289,6 +302,10 @@ void start_pppoeserver( void )
 	    }
 	    else
 		fprintf( fp, "nomppe\n" );
+	    if( !nowins )
+	    {
+		fprintf( fp, "ms-wins %s\n", nvram_safe_get( "wan_wins" ) );
+	    }
 
 	    struct dns_lists *dns_list = get_dns_list(  );
 
