@@ -1490,11 +1490,6 @@ int start_nvram( void )
     if( !nvram_match( "boot_wait_web", "0" ) )
 	nvram_set( "boot_wait_web", "1" );
 #endif
-
-#ifndef HAVE_MSSID
-    nvram_set( "wl0_country_code", "JP" );
-    nvram_set( "wl0_country", "Japan" );
-#endif
 #ifndef HAVE_BUFFALO
     if( check_hw_type(  ) == BCM5352E_CHIP )
     {
