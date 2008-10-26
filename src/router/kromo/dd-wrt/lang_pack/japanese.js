@@ -157,6 +157,10 @@ share._24h="毎日";
 share._48h="2日おき";
 share._168h="毎週";
 share.days="日間";
+share.from2 = share.from;
+share.to2 = share.to;
+share.days_genetive = share.days;
+
 share.standard="Normal";
 share.execscript="実行スクリプト";
 share.user="ユーザ";

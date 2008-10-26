@@ -171,6 +171,10 @@ share._48h="每 2 天";
 share._168h="每週";
 share.days="天";
 share.standard="標準（Standard）";
+share.from2 = share.from;
+share.to2 = share.to;
+share.days_genetive = share.days;
+
 share.execscript="執行 script";
 share.user="用戶";
 share.privatekey="私人金鑰";
