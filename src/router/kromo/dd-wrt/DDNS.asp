@@ -488,7 +488,7 @@ addEvent(window, "unload", function() {
 									<span class="default">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("(" + share.deflt + ": 10 " + share.days + ")");
+									document.write("(" + share.deflt + ": 10 " + share.days_genetive + ")");
 									//]]>
 									</script></span>
 								</div>
