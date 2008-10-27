@@ -4564,7 +4564,7 @@ void show_80211X( webs_t wp, char *prefix )
 #ifndef HAVE_WPA_SUPPLICANT
 void ej_init_80211x_layers( webs_t wp, int argc, char_t ** argv )
 {
-	return;
+    return;
 }
 #endif
 
@@ -6833,24 +6833,32 @@ void ej_portsetup( webs_t wp, int argc, char_t ** argv )
     websWrite( wp,
 	       "<h2><script type=\"text/javascript\">Capture(idx.portsetup)</script></h2>\n" );
     websWrite( wp, "<fieldset>\n" );
-    websWrite( wp,
-	       "<legend><script type=\"text/javascript\">Capture(idx.portsetup)</script></legend>\n" );
-    memset( eths, 0, 256 );
-    getIfLists( eths, 256 );
-    websWrite( wp,
-	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n" );
-    websWrite( wp, "<select name=\"wan_ifname\">\n" );
-    websWrite( wp, "<option value=\"\" %s >Disabled</option>\n",
-	       nvram_match( "wan_ifname2",
-			    "" ) ? "selected=\"selected\"" : "" );
-    foreach( var, eths, next )
-    {
-	websWrite( wp, "<option value=\"%s\" %s >%s</option>\n", var,
-		   nvram_match( "wan_ifname2",
-				var ) ? "selected=\"selected\"" : "", var );
-    }
-    websWrite( wp, "</select></div>\n" );
 
+    char *wanifname = nvram_safe_get( "wan_ifname2" );
+
+    if( strlen( wanifname ) == 0 )
+	wanifname = nvram_safe_get( "wan_ifname" );
+    if( strlen( wanifname ) > 0 )
+    {
+
+	websWrite( wp,
+		   "<legend><script type=\"text/javascript\">Capture(idx.portsetup)</script></legend>\n" );
+	memset( eths, 0, 256 );
+	getIfLists( eths, 256 );
+	websWrite( wp,
+		   "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n" );
+	websWrite( wp, "<select name=\"wan_ifname\">\n" );
+
+	websWrite( wp, "<option value=\"\" %s >Disabled</option>\n",
+		   strlen( wanifname ) == 0 ? "selected=\"selected\"" : "" );
+	foreach( var, eths, next )
+	{
+	    websWrite( wp, "<option value=\"%s\" %s >%s</option>\n", var,
+		       !strcmp( wanifname,
+				var ) ? "selected=\"selected\"" : "", var );
+	}
+	websWrite( wp, "</select></div>\n" );
+    }
     foreach( var, eths, next )
     {
 	if( !strcmp( get_wan_face(  ), var ) )
