@@ -1382,7 +1382,7 @@ status_router.cputemp="CPU 溫度";
 hstatus_router.right2="這是您在 <i>設定</i> 標籤中所指定的路由器的名稱.";
 hstatus_router.right4="這是您的ISP所看到的路由器的MAC位址.";
 hstatus_router.right6="這是路由器目前的韌體.";
-hstatus_router.right8="這是由ntp伺服器所設定得到 <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> 時間";
+hstatus_router.right8="這是由ntp伺服器所設定得到 <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> 時間";
 hstatus_router.right10="這個數值表示路由器\"啟動\"並且運行的時間.";
 hstatus_router.right12="這裏給的三個數位表示系統在過去1、5、15分鐘時間內的系統負載.";
 

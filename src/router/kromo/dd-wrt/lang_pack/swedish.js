@@ -1322,7 +1322,7 @@ status_router.cputemp="CPU Temperatur";
 hstatus_router.right2="Routerns specifika namn, som du sätter upp på <i>Setup</i> fliken.";
 hstatus_router.right4="Detta är routerns MAC Adress, som den ses utifrån internet.";
 hstatus_router.right6="Detta är routerns aktuella firmware.";
-hstatus_router.right8="Denna tid är mottagen från tidsservern som du angett på <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> fliken.";
+hstatus_router.right8="Denna tid är mottagen från tidsservern som du angett på <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> fliken.";
 hstatus_router.right10="Denna tid har routern varit \"uppe\" och körts.";
 hstatus_router.right12="Detta är systemets laster mätt i tre intervaller, sista minuten, 5 minuter och 15 minuters perioder.";
 

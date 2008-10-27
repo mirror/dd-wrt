@@ -1292,7 +1292,7 @@ status_router.cputemp="Température CPU";
 hstatus_router.right2="Nom du routeur que vous avez configuré dans l'onglet <em>Configuration</em>.";
 hstatus_router.right4="Adresse Mac vue par votre provider Internet";
 hstatus_router.right6="Micrologiciel utilisé sur votre routeur";
-hstatus_router.right8="Ceci est la date reçue depuis le serveur NTP configurable dans l'onglet <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em>.";
+hstatus_router.right8="Ceci est la date reçue depuis le serveur NTP configurable dans l'onglet <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>.";
 hstatus_router.right10="Temps écoulé depuis le dernier arrêt/relance du routeur.";
 hstatus_router.right12="Ce sont 3 nombres qui mesurent la charge de votre routeur sur une période de 1, 5 et 15 minutes.";
 
