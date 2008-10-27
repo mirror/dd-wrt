@@ -1489,31 +1489,16 @@ void start_lan( void )
 			ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 			strncpy( ifr.ifr_name, wl_face, IFNAMSIZ );
 
-#ifndef HAVE_MADWIFI
 			eval( "wl", "-i", name, "down" );
-#endif
 			if( ioctl( s, SIOCSIFHWADDR, &ifr ) == -1 )
 			    perror( "Write wireless mac fail : " );
 			else
 			    cprintf( "Write wireless mac successfully\n" );
-#ifndef HAVE_MADWIFI
 			eval( "wl", "-i", name, "up" );
 			start_config_macs( name );
-#endif
 		    }
 		}
 
-#else
-
-		    ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-		    strncpy( ifr.ifr_name, wl_face, IFNAMSIZ );
-
-		    if( ioctl( s, SIOCSIFHWADDR, &ifr ) == -1 )
-			perror( "Write wireless mac fail : \n" );
-		    else
-			cprintf( "Write wireless mac successfully\n" );
-		    start_config_macs( wl_face );
-		}
 #endif
 #ifdef HAVE_MSSID
 		/*
@@ -1717,12 +1702,13 @@ void start_lan( void )
 	ether_atoe( nvram_safe_get( "def_whwaddr" ), ifr.ifr_hwaddr.sa_data );
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	strncpy( ifr.ifr_name, wl_face, IFNAMSIZ );
+	eval("ifconfig",wl_face,"down");
 
 	if( ioctl( s, SIOCSIFHWADDR, &ifr ) == -1 )
 	    perror( "Write wireless mac fail : " );
 	else
 	    cprintf( "Write wireless mac successfully\n" );
-	start_config_macs( wl_face );
+	eval("ifconfig",wl_face,"up");
     }
 
 #endif
@@ -2610,7 +2596,6 @@ void start_wan( int status )
     {
 	ether_atoe( nvram_safe_get( "def_hwaddr" ), ifr.ifr_hwaddr.sa_data );
     }
-#ifndef HAVE_MADWIFI
     else
     {
 
@@ -2632,21 +2617,24 @@ void start_wan( int status )
 #ifndef HAVE_MADWIFI
 	if( wlifname && !strcmp( wan_ifname, wlifname ) )
 	    eval( "wl", "-i", wan_ifname, "down" );
+#else
+	    eval("ifconfig",wan_ifname,"down");
 #endif
 	ioctl( s, SIOCSIFHWADDR, &ifr );
-#ifndef HAVE_MADWIFI
 	if( wlifname && !strcmp( wan_ifname, wlifname ) )
 	{
+#ifndef HAVE_MADWIFI
 	    eval( "wl", "-i", wan_ifname, "up" );
 	    start_config_macs( wan_ifname );
-	}
+#else
+	    eval("ifconfig",wan_ifname,"up");
 #endif
+	}
 	cprintf( "Write WAN mac successfully\n" );
     }
     else
 	perror( "Write WAN mac fail : \n" );
 
-#endif
     // fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
     /*
