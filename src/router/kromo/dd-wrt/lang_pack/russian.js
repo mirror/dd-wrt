@@ -902,6 +902,7 @@ management.lang_french="французский";
 management.lang_german="немецкий";
 management.lang_italian="итальянский";
 management.lang_brazilian="бразильский";
+management.lang_russian="русский";
 management.lang_slovenian="словенский";
 management.lang_spanish="испанский";
 management.lang_swedish="шведский";
