@@ -1328,7 +1328,7 @@ status_router.cputemp="CPU Temperature";
 hstatus_router.right2="E' il nome del router inserito nella finestra <i>Setup</i>.";
 hstatus_router.right4="E' l'indirizzo MAC del router, come è visto dal tuo ISP.";
 hstatus_router.right6="E' il firmware corrente del router.";
-hstatus_router.right8="E' l'ora ricevutadal server NTP specificato nella finestra <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em>.";
+hstatus_router.right8="E' l'ora ricevuta dal server NTP specificato nella finestra <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>.";
 hstatus_router.right10="Misura da quanto tempo il router è stato avviato.";
 hstatus_router.right12="Composto da tre numeri che rappresentano il carico del sistema durante l'ultimo minuto, ultimi 5 min e ultimi 15 min.";
 

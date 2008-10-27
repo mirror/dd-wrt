@@ -1297,7 +1297,7 @@ status_router.cputemp="CPU 温度";
 hstatus_router.right2="この機器に付けられている名称です。<i>基本</i> ページで設定を行うことができます。";
 hstatus_router.right4="インターネット側で使用されるMACアドレスです。ISPでは、このMACアドレスが識別に用いられます。";
 hstatus_router.right6="この機器に適用されているファームウェアの情報です";
-hstatus_router.right8="<em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> ページで設定されたNTPサーバから取得した現在時刻を表示します。";
+hstatus_router.right8="<em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> ページで設定されたNTPサーバから取得した現在時刻を表示します。";
 hstatus_router.right10="機器が起動してからの時間です。";
 hstatus_router.right12="CPUの利用率を表示します。それぞれ1分、5分、15分それぞれの間の、CPU平均稼働率が表示されます";
 
