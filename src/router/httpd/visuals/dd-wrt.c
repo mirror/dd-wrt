@@ -6841,12 +6841,12 @@ void ej_portsetup( webs_t wp, int argc, char_t ** argv )
 	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n" );
     websWrite( wp, "<select name=\"wan_ifname\">\n" );
     websWrite( wp, "<option value=\"\" %s >Disabled</option>\n",
-	       nvram_match( "wan_ifname",
+	       nvram_match( "wan_ifname2",
 			    "" ) ? "selected=\"selected\"" : "" );
     foreach( var, eths, next )
     {
 	websWrite( wp, "<option value=\"%s\" %s >%s</option>\n", var,
-		   nvram_match( "wan_ifname",
+		   nvram_match( "wan_ifname2",
 				var ) ? "selected=\"selected\"" : "", var );
     }
     websWrite( wp, "</select></div>\n" );
