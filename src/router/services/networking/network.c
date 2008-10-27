@@ -841,7 +841,7 @@ void start_lan( void )
 	else
 	{
 	    nvram_set( "lan_ifname", "br0" );
-	    nvram_set( "lan_ifnames", "vlan0 ath0" );
+	    nvram_set( "lan_ifnames", "vlan1 vlan0 ath0" );
 	    PORTSETUPWAN( "vlan1" );
 	}
     }
@@ -857,7 +857,7 @@ void start_lan( void )
 	else
 	{
 	    nvram_set( "lan_ifname", "br0" );
-	    nvram_set( "lan_ifnames", "ath0" );
+	    nvram_set( "lan_ifnames", "eth0 ath0" );
 	    PORTSETUPWAN( "eth0" );
 	}
     }
@@ -877,7 +877,7 @@ void start_lan( void )
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "vlan0 ath0" );
+	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
 	PORTSETUPWAN( "vlan2" );
     }
     strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
@@ -896,7 +896,7 @@ void start_lan( void )
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "ath0" );
+	nvram_set( "lan_ifnames", "eth0 ath0" );
 	PORTSETUPWAN( "eth0" );
     }
     strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
@@ -915,7 +915,7 @@ void start_lan( void )
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "ath0" );
+	nvram_set( "lan_ifnames", "eth0 ath0" );
 	PORTSETUPWAN( "eth0" );
     }
     strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
@@ -934,7 +934,7 @@ void start_lan( void )
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "ath0" );
+	nvram_set( "lan_ifnames", "eth0 ath0" );
 	PORTSETUPWAN( "eth0" );
     }
     strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
@@ -953,7 +953,7 @@ void start_lan( void )
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "ath0" );
+	nvram_set( "lan_ifnames", "eth0 ath0" );
 	PORTSETUPWAN( "eth0" );
     }
     strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
@@ -972,7 +972,7 @@ void start_lan( void )
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "vlan1 ath0" );
+	nvram_set( "lan_ifnames", "vlan1 vlan2 ath0" );
 	PORTSETUPWAN( "vlan2" );
     }
     strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
@@ -998,7 +998,7 @@ void start_lan( void )
     {
 #ifdef HAVE_NS2
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "ath0" );
+	nvram_set( "lan_ifnames", "eth0 ath0" );
 	PORTSETUPWAN( "eth0" );
 #else
 	nvram_set( "lan_ifname", "br0" );
@@ -1023,7 +1023,7 @@ void start_lan( void )
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "ath0" );
+	nvram_set( "lan_ifnames", "eth0 ath0" );
 	PORTSETUPWAN( "eth0" );
     }
 
@@ -1043,7 +1043,7 @@ void start_lan( void )
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "ath0 ath1" );
+	nvram_set( "lan_ifnames", "eth0 ath0 ath1" );
 	PORTSETUPWAN( "eth0" );
     }
 
@@ -1063,7 +1063,7 @@ void start_lan( void )
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "eth1 ath0 ath1" );
+	nvram_set( "lan_ifnames", "eth0 eth1 ath0 ath1" );
 	PORTSETUPWAN( "eth0" );
     }
 
@@ -1083,7 +1083,7 @@ void start_lan( void )
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "eth0 ath0 ath1" );
+	nvram_set( "lan_ifnames", "eth0 eth1 ath0 ath1" );
 	PORTSETUPWAN( "eth1" );
     }
 
@@ -1114,13 +1114,13 @@ void start_lan( void )
 	if( getRouterBrand(  ) == ROUTER_BOARD_CA8PRO )
 	{
 	    nvram_set( "lan_ifname", "br0" );
-	    nvram_set( "lan_ifnames", "vlan0 ath0" );
+	    nvram_set( "lan_ifnames", "vlan0 vlan1 ath0" );
 	    PORTSETUPWAN( "vlan1" );
 	}
 	else
 	{
 	    nvram_set( "lan_ifname", "br0" );
-	    nvram_set( "lan_ifnames", "ath0" );
+	    nvram_set( "lan_ifnames", "eth0 ath0" );
 	    PORTSETUPWAN( "eth0" );
 	}
     }
