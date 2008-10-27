@@ -2474,7 +2474,7 @@ void start_wan( int status )
 #elif HAVE_LS2
     char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
 					     "" ) ?
-	nvram_safe_get( "pppoe_wan_ifname" ) : "vlan0";
+	nvram_safe_get( "pppoe_wan_ifname" ) : nvram_safe_get( "wan_ifname" );
 #elif HAVE_LSX
     char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
 					     "" ) ?
