@@ -6,7 +6,7 @@
     <x>0</x>
     <y>0</y>
     <width>410</width>
-    <height>510</height>
+    <height>534</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -329,6 +329,20 @@
            </property>
           </widget>
          </item>
+         <item row="1" column="0" >
+          <widget class="QLabel" name="phase2Label" >
+           <property name="text" >
+            <string>Inner auth</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1" >
+          <widget class="QComboBox" name="phase2Select" >
+           <property name="enabled" >
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
@@ -368,7 +382,7 @@
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11" />
- <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
+ <pixmapfunction></pixmapfunction>
  <tabstops>
   <tabstop>ssidEdit</tabstop>
   <tabstop>authSelect</tabstop>
@@ -388,6 +402,7 @@
   <tabstop>wep3Edit</tabstop>
   <tabstop>idstrEdit</tabstop>
   <tabstop>prioritySpinBox</tabstop>
+  <tabstop>phase2Select</tabstop>
   <tabstop>addButton</tabstop>
   <tabstop>removeButton</tabstop>
   <tabstop>cancelButton</tabstop>

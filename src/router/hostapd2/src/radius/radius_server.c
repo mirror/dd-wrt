@@ -85,7 +85,12 @@ struct radius_server_data {
 	void *eap_sim_db_priv;
 	void *ssl_ctx;
 	u8 *pac_opaque_encr_key;
-	char *eap_fast_a_id;
+	u8 *eap_fast_a_id;
+	size_t eap_fast_a_id_len;
+	char *eap_fast_a_id_info;
+	int eap_fast_prov;
+	int pac_key_lifetime;
+	int pac_key_refresh_time;
 	int eap_sim_aka_result_ind;
 	int tnc;
 	int ipv6;
@@ -311,6 +316,11 @@ radius_server_get_new_session(struct radius_server_data *data,
 	eap_conf.eap_server = 1;
 	eap_conf.pac_opaque_encr_key = data->pac_opaque_encr_key;
 	eap_conf.eap_fast_a_id = data->eap_fast_a_id;
+	eap_conf.eap_fast_a_id_len = data->eap_fast_a_id_len;
+	eap_conf.eap_fast_a_id_info = data->eap_fast_a_id_info;
+	eap_conf.eap_fast_prov = data->eap_fast_prov;
+	eap_conf.pac_key_lifetime = data->pac_key_lifetime;
+	eap_conf.pac_key_refresh_time = data->pac_key_refresh_time;
 	eap_conf.eap_sim_aka_result_ind = data->eap_sim_aka_result_ind;
 	eap_conf.tnc = data->tnc;
 	sess->eap = eap_server_sm_init(sess, &radius_server_eapol_cb,
@@ -1014,8 +1024,19 @@ radius_server_init(struct radius_server_conf *conf)
 		os_memcpy(data->pac_opaque_encr_key, conf->pac_opaque_encr_key,
 			  16);
 	}
-	if (conf->eap_fast_a_id)
-		data->eap_fast_a_id = os_strdup(conf->eap_fast_a_id);
+	if (conf->eap_fast_a_id) {
+		data->eap_fast_a_id = os_malloc(conf->eap_fast_a_id_len);
+		if (data->eap_fast_a_id) {
+			os_memcpy(data->eap_fast_a_id, conf->eap_fast_a_id,
+				  conf->eap_fast_a_id_len);
+			data->eap_fast_a_id_len = conf->eap_fast_a_id_len;
+		}
+	}
+	if (conf->eap_fast_a_id_info)
+		data->eap_fast_a_id_info = os_strdup(conf->eap_fast_a_id_info);
+	data->eap_fast_prov = conf->eap_fast_prov;
+	data->pac_key_lifetime = conf->pac_key_lifetime;
+	data->pac_key_refresh_time = conf->pac_key_refresh_time;
 	data->get_eap_user = conf->get_eap_user;
 	data->eap_sim_aka_result_ind = conf->eap_sim_aka_result_ind;
 	data->tnc = conf->tnc;
@@ -1065,6 +1086,7 @@ void radius_server_deinit(struct radius_server_data *data)
 
 	os_free(data->pac_opaque_encr_key);
 	os_free(data->eap_fast_a_id);
+	os_free(data->eap_fast_a_id_info);
 	os_free(data);
 }
 
