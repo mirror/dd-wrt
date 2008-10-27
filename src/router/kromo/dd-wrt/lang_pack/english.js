@@ -1396,7 +1396,7 @@ var hstatus_router = new Object();
 hstatus_router.right2="This is the specific name for the router, which you set on the <i>Setup</i> tab.";
 hstatus_router.right4="This is the router's MAC Address, as seen by your ISP.";
 hstatus_router.right6="This is the router's current firmware.";
-hstatus_router.right8="This is time received from the ntp server set on the <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> tab.";
+hstatus_router.right8="This is time received from the ntp server set on the <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> tab.";
 hstatus_router.right10="This is a measure of the time the router has been \"up\" and running.";
 hstatus_router.right12="This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.";
 
