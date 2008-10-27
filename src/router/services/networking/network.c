@@ -1693,23 +1693,31 @@ void start_lan( void )
     free( lan_ifnames );
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_NOWIFI
-    configure_wifi(  );
-
     if( nvram_match( "mac_clone_enable", "1" ) &&
 	nvram_invmatch( "def_whwaddr", "00:00:00:00:00:00" ) &&
 	nvram_invmatch( "def_whwaddr", "" ) )
     {
 	ether_atoe( nvram_safe_get( "def_whwaddr" ), ifr.ifr_hwaddr.sa_data );
-	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-	strncpy( ifr.ifr_name, wl_face, IFNAMSIZ );
-	eval("ifconfig",wl_face,"down");
-
+	ifr.ifr_hwaddr.sa_family = ARPHRD_IEEE80211;
+	char *ifs = getSTA();
+	if (!ifs)
+	    ifs = getWET();
+	char *wifi=NULL;
+	if (ifs)
+	    wifi = getWifi(ifs);
+	if (wifi)
+	{
+	strncpy( ifr.ifr_name, wifi, IFNAMSIZ );
+	eval("ifconfig",wifi,"down");
 	if( ioctl( s, SIOCSIFHWADDR, &ifr ) == -1 )
 	    perror( "Write wireless mac fail : " );
 	else
 	    cprintf( "Write wireless mac successfully\n" );
-	eval("ifconfig",wl_face,"up");
+	eval("ifconfig",wifi,"up");
+	}
     }
+    configure_wifi(  );
+
 
 #endif
 #endif
@@ -2617,24 +2625,24 @@ void start_wan( int status )
 #ifndef HAVE_MADWIFI
 	if( wlifname && !strcmp( wan_ifname, wlifname ) )
 	    eval( "wl", "-i", wan_ifname, "down" );
-#else
-	    eval("ifconfig",wan_ifname,"down");
-#endif
 	ioctl( s, SIOCSIFHWADDR, &ifr );
+#else
+	if (!wlifname)
+	{
+	    ioctl( s, SIOCSIFHWADDR, &ifr );
+	}
+#endif
+#ifndef HAVE_MADWIFI
 	if( wlifname && !strcmp( wan_ifname, wlifname ) )
 	{
-#ifndef HAVE_MADWIFI
 	    eval( "wl", "-i", wan_ifname, "up" );
 	    start_config_macs( wan_ifname );
-#else
-	    eval("ifconfig",wan_ifname,"up");
-#endif
 	}
+#endif
 	cprintf( "Write WAN mac successfully\n" );
     }
     else
 	perror( "Write WAN mac fail : \n" );
-
     // fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
     /*

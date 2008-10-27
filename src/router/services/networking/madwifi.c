@@ -1153,7 +1153,7 @@ static void configure_single( int count )
     sprintf( doth, "%s_doth", dev );
     eval( "iwpriv", dev, "doth", nvram_default_get( doth, "0" ) );
     // eval ("iwpriv", dev, "uapsd","0");
-    eval( "iwpriv", dev, "scandisable", "0" );
+//    eval( "iwpriv", dev, "scandisable", "0" );
     int disablescan = 0;
 
 #ifdef MADWIFI_OLD
@@ -1164,7 +1164,7 @@ static void configure_single( int count )
 
 	if( strcmp( ch, "0" ) == 0 )
 	{
-	    eval( "iwpriv", dev, "scandisable", "0" );
+//	    eval( "iwpriv", dev, "scandisable", "0" );
 	    eval( "iwconfig", dev, "channel", "0" );
 	}
 	else
@@ -1172,7 +1172,7 @@ static void configure_single( int count )
 	    char freq[64];
 
 	    sprintf( freq, "%sM", ch );
-	    eval( "iwpriv", dev, "scandisable", "1" );
+//	    eval( "iwpriv", dev, "scandisable", "1" );
 	    disablescan = 1;
 	    eval( "iwconfig", dev, "freq", freq );
 	}
@@ -1371,7 +1371,7 @@ static void configure_single( int count )
 	    if( strcmp( ch, "0" ) == 0 )
 	    {
 #ifdef OLD_MADWIFI
-		eval( "iwpriv", var, "scandisable", "0" );
+//		eval( "iwpriv", var, "scandisable", "0" );
 #endif
 		eval( "iwconfig", var, "channel", "0" );
 	    }
@@ -1381,7 +1381,7 @@ static void configure_single( int count )
 
 		sprintf( freq, "%sM", ch );
 #ifdef OLD_MADWIFI
-		eval( "iwpriv", var, "scandisable", "1" );
+//		eval( "iwpriv", var, "scandisable", "1" );
 		disablescan = 1;
 #endif
 		eval( "iwconfig", var, "freq", freq );
@@ -1430,7 +1430,7 @@ static void configure_single( int count )
 	    eval( "iwpriv", var, "wdssep", "0" );
 #ifdef OLD_MADWIFI
 	if( disablescan )
-	    eval( "iwpriv", var, "scandisable", "1" );
+//	    eval( "iwpriv", var, "scandisable", "1" );
 #endif
 	eval( "iwpriv", var, "hostroaming", "0" );
 	cnt++;
@@ -1587,7 +1587,7 @@ static void configure_single( int count )
 	foreach( var, vifs, next )
 	{
 	    setMacFilter( var );
-	    eval( "iwpriv", var, "scandisable", "1" );
+//	    eval( "iwpriv", var, "scandisable", "1" );
 
 	    sprintf( mode, "%s_mode", var );
 	    char *m2 = nvram_default_get( mode, "ap" );
@@ -1637,7 +1637,7 @@ static void configure_single( int count )
     }
 
     m = nvram_default_get( wl, "ap" );
-    eval( "iwpriv", dev, "scandisable", "0" );
+//    eval( "iwpriv", dev, "scandisable", "0" );
     if( strcmp( m, "sta" ) && strcmp( m, "wdssta" ) && strcmp( m, "wet" ) )
     {
 	cprintf( "set channel\n" );
@@ -1652,7 +1652,7 @@ static void configure_single( int count )
 	    char freq[64];
 
 	    sprintf( freq, "%sM", ch );
-	    eval( "iwpriv", dev, "scandisable", "1" );
+//	    eval( "iwpriv", dev, "scandisable", "1" );
 	    eval( "iwconfig", dev, "freq", freq );
 	    sleep( 1 );
 	    eval( "ifconfig", dev, "down" );
