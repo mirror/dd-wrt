@@ -1307,7 +1307,7 @@ status_router.cputemp="CPU Temperatuur";
 hstatus_router.right2="Dit is de specifieke naam gegeven aan de router, U kan deze veranderen op de <i>Setup</i> tab.";
 hstatus_router.right4="Dit is het MAC Adres van de router, zoals uw ISP het zal herkennen.";
 hstatus_router.right6="Dit is de huidige firmware van de router.";
-hstatus_router.right8="Dit is de tijd verkregen van de ntp server ingesteld op de <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> tab.";
+hstatus_router.right8="Dit is de tijd verkregen van de ntp server ingesteld op de <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em> tab.";
 hstatus_router.right10="Dit is een berekening van de tijd dat de router \"up and running\" was.";
 hstatus_router.right12="Dit is een gegeven van drie nummers dat de belasting van het systeem voorstelt gedurende de laatste één, vijf of vijftien minuten.";
 
