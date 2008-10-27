@@ -1954,6 +1954,15 @@ int diag_led( int type, int act )
 static char *stalist[] = {
     "ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"
 };
+
+char *getWifi(char *ifname)
+{
+if (!strcmp(ifname,"ath0"))return "wifi0";
+if (!strcmp(ifname,"ath1"))return "wifi1";
+if (!strcmp(ifname,"ath2"))return "wifi2";
+if (!strcmp(ifname,"ath3"))return "wifi3";
+return NULL;
+}
 char *getSTA( void )
 {
 
