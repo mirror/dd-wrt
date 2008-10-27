@@ -4,7 +4,7 @@
 @c Set variables
 @set PACKAGE_NAME Quagga
 @set PACKAGE_TARNAME quagga
-@set PACKAGE_STRING Quagga 0.99.10
+@set PACKAGE_STRING Quagga 0.99.11
 @set AUTHORS Kunihiro Ishiguro, et al.
 @set COPYRIGHT_YEAR 1999-2005
 @set COPYRIGHT_STR Copyright @copyright{} @value{COPYRIGHT_YEAR} @value{AUTHORS}

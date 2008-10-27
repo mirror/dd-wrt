@@ -235,9 +235,8 @@ bgp_update_packet_eor (struct peer *peer, afi_t afi, safi_t safi)
   struct stream *s;
   struct stream *packet;
 
-#ifdef DISABLE_BGP_ANNOUNCE
-  return;
-#endif /* DISABLE_BGP_ANNOUNCE */
+  if (DISABLE_BGP_ANNOUNCE)
+    return NULL;
 
   if (BGP_DEBUG (normal, NORMAL))
     zlog_debug ("send End-of-RIB for %s to %s", afi_safi_print (afi, safi), peer->host);
@@ -369,9 +368,8 @@ bgp_default_update_send (struct peer *peer, struct attr *attr,
   char attrstr[BUFSIZ];
   char buf[BUFSIZ];
 
-#ifdef DISABLE_BGP_ANNOUNCE
-  return;
-#endif /* DISABLE_BGP_ANNOUNCE */
+  if (DISABLE_BGP_ANNOUNCE)
+    return;
 
   if (afi == AFI_IP)
     str2prefix ("0.0.0.0/0", &p);
@@ -438,9 +436,8 @@ bgp_default_withdraw_send (struct peer *peer, afi_t afi, safi_t safi)
   bgp_size_t total_attr_len;
   char buf[BUFSIZ];
 
-#ifdef DISABLE_BGP_ANNOUNCE
-  return;
-#endif /* DISABLE_BGP_ANNOUNCE */
+  if (DISABLE_BGP_ANNOUNCE)
+    return;
 
   if (afi == AFI_IP)
     str2prefix ("0.0.0.0/0", &p);
@@ -958,9 +955,8 @@ bgp_route_refresh_send (struct peer *peer, afi_t afi, safi_t safi,
   struct bgp_filter *filter;
   int orf_refresh = 0;
 
-#ifdef DISABLE_BGP_ANNOUNCE
-  return;
-#endif /* DISABLE_BGP_ANNOUNCE */
+  if (DISABLE_BGP_ANNOUNCE)
+    return;
 
   filter = &peer->filter[afi][safi];
 
@@ -1235,7 +1231,7 @@ bgp_open_receive (struct peer *peer, bgp_size_t size)
         zlog_debug ("%s [AS4] OPEN remote_as is AS_TRANS, but no AS4."
                     " Odd, but proceeding.", peer->host);
       else if (as4 < BGP_AS_MAX && BGP_DEBUG (as4, AS4))
-        zlog_debug ("%s [AS4] OPEN remote_as is AS_TRANS, but AS4 fits "
+        zlog_debug ("%s [AS4] OPEN remote_as is AS_TRANS, but AS4 (%u) fits "
                     "in 2-bytes, very odd peer.", peer->host, as4);
       if (as4)
         remote_as = as4;
@@ -1311,6 +1307,51 @@ bgp_open_receive (struct peer *peer, bgp_size_t size)
 		 && realpeer->status != OpenConfirm)
 
  	{
+ 	  /* XXX: This is an awful problem.. 
+ 	   *
+ 	   * According to the RFC we should just let this connection (of the
+ 	   * accepted 'peer') continue on to Established if the other
+ 	   * connection (the 'realpeer' one) is in state Connect, and deal
+ 	   * with the more larval FSM as/when it gets far enough to receive
+ 	   * an Open. We don't do that though, we instead close the (more
+ 	   * developed) accepted connection.
+ 	   *
+ 	   * This means there's a race, which if hit, can loop:
+ 	   *
+ 	   *       FSM for A                        FSM for B
+ 	   *  realpeer     accept-peer       realpeer     accept-peer
+ 	   *
+ 	   *  Connect                        Connect
+ 	   *               Active
+ 	   *               OpenSent          OpenSent
+ 	   *               <arrive here,
+ 	   *               Notify, delete>   
+ 	   *                                 Idle         Active
+ 	   *   OpenSent                                   OpenSent
+ 	   *                                              <arrive here,
+ 	   *                                              Notify, delete>
+ 	   *   Idle
+ 	   *   <wait>                        <wait>
+ 	   *   Connect                       Connect
+ 	   *
+           *
+ 	   * If both sides are Quagga, they're almost certain to wait for
+ 	   * the same amount of time of course (which doesn't preclude other
+ 	   * implementations also waiting for same time). The race is
+ 	   * exacerbated by high-latency (in bgpd and/or the network).
+ 	   *
+ 	   * The reason we do this is because our FSM is tied to our peer
+ 	   * structure, which carries our configuration information, etc. 
+ 	   * I.e. we can't let the accepted-peer FSM continue on as it is,
+ 	   * cause it's not associated with any actual peer configuration -
+ 	   * it's just a dummy.
+ 	   *
+ 	   * It's possible we could hack-fix this by just bgp_stop'ing the
+ 	   * realpeer and continueing on with the 'transfer FSM' below. 
+ 	   * Ideally, we need to seperate FSMs from struct peer.
+ 	   *
+ 	   * Setting one side to passive avoids the race, as a workaround.
+ 	   */
  	  if (BGP_DEBUG (events, EVENTS))
 	    zlog_debug ("%s peer status is %s close connection",
 			realpeer->host, LOOKUP (bgp_status_msg,
