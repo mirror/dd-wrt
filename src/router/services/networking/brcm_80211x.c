@@ -183,7 +183,7 @@ void setupSupplicant( char *prefix )
 	    sprintf( psk, "/tmp/%s/ca.pem", prefix );
 	    sprintf( ath, "%s_peap8021xca", prefix );
 	    write_nvram( psk, ath );
-	    fprintf( fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix );
+	    fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
 	}
 	if( nvram_prefix_match( "8021xtype", prefix, "ttls" ) )
 	{
