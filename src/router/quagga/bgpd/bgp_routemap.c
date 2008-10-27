@@ -47,6 +47,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "bgpd/bgp_filter.h"
 #include "bgpd/bgp_mplsvpn.h"
 #include "bgpd/bgp_ecommunity.h"
+#include "bgpd/bgp_vty.h"
 
 /* Memo of route-map commands.
 
@@ -244,9 +245,8 @@ route_match_peer (void *rule, struct prefix *prefix, route_map_object_t type,
             {
               if (sockunion_same (su, &peer->su))
                 return RMAP_MATCH;
-
-              return RMAP_NOMATCH;
             }
+          return RMAP_NOMATCH;
         }
     }
   return RMAP_NOMATCH;
@@ -2573,7 +2573,7 @@ ALIAS (no_match_ip_route_source,
        "Match advertising source address of route\n"
        "IP access-list number\n"
        "IP access-list number (expanded range)\n"
-       "IP standard access-list name\n");
+       "IP standard access-list name\n")
 
 DEFUN (match_ip_address_prefix_list, 
        match_ip_address_prefix_list_cmd,
@@ -2684,7 +2684,7 @@ ALIAS (no_match_ip_route_source_prefix_list,
        IP_STR
        "Match advertising source address of route\n"
        "Match entries of prefix-lists\n"
-       "IP prefix-list name\n");
+       "IP prefix-list name\n")
 
 DEFUN (match_metric, 
        match_metric_cmd,
@@ -3451,7 +3451,7 @@ DEFUN (no_set_atomic_aggregate,
 
 DEFUN (set_aggregator_as,
        set_aggregator_as_cmd,
-       "set aggregator as CMD_AS_RANGE A.B.C.D",
+       "set aggregator as " CMD_AS_RANGE " A.B.C.D",
        SET_STR
        "BGP aggregator attribute\n"
        "AS number of aggregator\n"
@@ -3523,7 +3523,7 @@ DEFUN (no_set_aggregator_as,
 
 ALIAS (no_set_aggregator_as,
        no_set_aggregator_as_val_cmd,
-       "no set aggregator as CMD_AS_RANGE A.B.C.D",
+       "no set aggregator as " CMD_AS_RANGE " A.B.C.D",
        NO_STR
        SET_STR
        "BGP aggregator attribute\n"

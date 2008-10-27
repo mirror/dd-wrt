@@ -35,7 +35,7 @@ target_triplet = @target@
 subdir = doc
 DIST_COMMON = $(quagga_TEXINFOS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/defines.texi.in \
-	$(srcdir)/stamp-vti $(srcdir)/version.texi ChangeLog mdate-sh \
+	$(srcdir)/stamp-vti $(srcdir)/version.texi mdate-sh \
 	texinfo.tex
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
@@ -148,6 +148,8 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
+PICFLAGS = @PICFLAGS@
+PILDFLAGS = @PILDFLAGS@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@

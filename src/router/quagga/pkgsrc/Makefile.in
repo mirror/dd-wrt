@@ -37,7 +37,7 @@ subdir = pkgsrc
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/bgpd.sh.in $(srcdir)/ospf6d.sh.in \
 	$(srcdir)/ospfd.sh.in $(srcdir)/ripd.sh.in \
-	$(srcdir)/ripngd.sh.in $(srcdir)/zebra.sh.in ChangeLog
+	$(srcdir)/ripngd.sh.in $(srcdir)/zebra.sh.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -129,6 +129,8 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
+PICFLAGS = @PICFLAGS@
+PILDFLAGS = @PILDFLAGS@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@

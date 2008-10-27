@@ -1,5 +1,5 @@
 # Solaris packages automake file
-# $Id: Makefile.am,v 1.9 2008/01/13 18:52:15 paul Exp $
+# $Id$
 
 # XXX This file uses GNU make extensions.
 

@@ -14,8 +14,8 @@
  * into proprietary software; there is no requirement for such software to
  * contain a copyright notice related to this source.
  *
- * $Id: dict.c,v 1.5 2007/08/07 18:49:18 paul Exp $
- * $Name:  $
+ * $Id$
+ * $Name$
  */
 
 #include <stdlib.h>
