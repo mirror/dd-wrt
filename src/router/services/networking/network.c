@@ -1002,7 +1002,7 @@ void start_lan( void )
 	PORTSETUPWAN( "eth0" );
 #else
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "vlan2 ath0" );
+	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
 	PORTSETUPWAN( "vlan0" );
 #endif
     }
