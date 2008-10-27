@@ -763,11 +763,11 @@ static int i802_sta_add2(const char *ifname, void *priv,
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
-	int ret = -1;
+	int ret = -ENOBUFS;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		goto out;
+		return -ENOMEM;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_NEW_STATION, 0);
@@ -791,19 +791,10 @@ static int i802_sta_add2(const char *ifname, void *priv,
 #endif /* NL80211_ATTR_HT_CAPABILITY */
 #endif /* CONFIG_IEEE80211N */
 
-	ret = nl_send_auto_complete(drv->nl_handle, msg);
-	if (ret < 0)
-		goto nla_put_failure;
-
-	ret = nl_wait_for_ack(drv->nl_handle);
-	/* ignore EEXIST, this happens if a STA associates while associated */
-	if (ret == -EEXIST || ret >= 0)
+	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
+	if (ret == -EEXIST)
 		ret = 0;
-
  nla_put_failure:
-	nlmsg_free(msg);
-
- out:
 	return ret;
 }
 
