@@ -1963,6 +1963,32 @@ if (!strcmp(ifname,"ath2"))return "wifi2";
 if (!strcmp(ifname,"ath3"))return "wifi3";
 return NULL;
 }
+
+
+char *getWDSSTA( void )
+{
+
+    int c = getifcount( "wifi" );
+    int i;
+
+    for( i = 0; i < c; i++ )
+    {
+	char mode[32];
+	char netmode[32];
+
+	sprintf( mode, "ath%d_mode", i );
+	sprintf( netmode, "ath%d_net_mode", i );
+	if( nvram_match( mode, "wdssta" )
+	    && !nvram_match( netmode, "disabled" ) )
+	{
+	    return stalist[i];
+	}
+
+    }
+    return NULL;
+}
+
+
 char *getSTA( void )
 {
 
