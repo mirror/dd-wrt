@@ -4315,7 +4315,6 @@ void show_radius( webs_t wp, char *prefix, int showmacformat )
 }
 
 #ifdef HAVE_WPA_SUPPLICANT
-#ifndef HAVE_MICRO
 
 static void init_80211x_layers( webs_t wp, char *prefix )
 {
@@ -4561,6 +4560,12 @@ void show_80211X( webs_t wp, char *prefix )
 
 }
 #endif
+
+#ifndef HAVE_WPA_SUPPLICANT
+void ej_init_80211x_layers( webs_t wp, int argc, char_t ** argv )
+{
+	return;
+}
 #endif
 
 void show_wparadius( webs_t wp, char *prefix )
