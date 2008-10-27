@@ -364,6 +364,9 @@
 
 #define ROUTER_BUFFALO_WCAG 0x6404
 
+// Asus WL-330GE (BCM5354, no switch, fccid: MSQWL330GE)
+#define ROUTER_ASUS_330GE 0x650f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith( char *source, char *cmp )
