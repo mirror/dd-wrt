@@ -1538,6 +1538,12 @@ return 0;
 	    setRouter( "Asus WL-500G Premium V2" );
 	    return ROUTER_ASUS_WL500G_PRE_V2;
 	}
+	else if( startswith (hwver, "WL330GE" ) )
+	{
+	    cprintf( "router is Asus WL-330GE\n" );
+	    setRouter( "Asus WL-330GE" );
+	    return ROUTER_ASUS_330GE;
+	}	
 	else
 	{
 	    cprintf( "router is Asus WL-520GU/GC\n" );
