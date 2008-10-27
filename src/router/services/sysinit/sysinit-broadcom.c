@@ -969,6 +969,7 @@ int start_sysinit( void )
 	case ROUTER_BELKIN_F5D7230_V2000:
 	case ROUTER_NETGEAR_WG602_V3:
 	case ROUTER_NETGEAR_WG602_V4:
+	case ROUTER_ASUS_330GE:
 	    nvram_set( "lan_ifnames", "eth0 eth1" );
 	    nvram_set( "wl0_ifname", "eth1" );
 	    nvram_set( "wan_ifname", "eth2" );	// map WAN port to
