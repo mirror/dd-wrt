@@ -1694,15 +1694,36 @@ void start_lan( void )
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_NOWIFI
     if( nvram_match( "mac_clone_enable", "1" ) &&
+	nvram_invmatch( "def_hwaddr", "00:00:00:00:00:00" ) &&
+	nvram_invmatch( "def_hwaddr", "" ) )
+    {
+	ether_atoe( nvram_safe_get( "def_whwaddr" ), ifr.ifr_hwaddr.sa_data );
+	ifr.ifr_hwaddr.sa_family = ARPHRD_IEEE80211;
+	char *ifs = getSTA();
+	char *wifi=NULL;
+	if (ifs)
+	    wifi = getWifi(ifs);
+	if (wifi)
+	{
+	strncpy( ifr.ifr_name, wifi, IFNAMSIZ );
+	eval("ifconfig",wifi,"down");
+	if( ioctl( s, SIOCSIFHWADDR, &ifr ) == -1 )
+	    perror( "Write wireless mac fail : " );
+	else
+	    cprintf( "Write wireless mac successfully\n" );
+	eval("ifconfig",wifi,"up");
+	}
+    }
+    if( nvram_match( "mac_clone_enable", "1" ) &&
 	nvram_invmatch( "def_whwaddr", "00:00:00:00:00:00" ) &&
 	nvram_invmatch( "def_whwaddr", "" ) )
     {
 	ether_atoe( nvram_safe_get( "def_whwaddr" ), ifr.ifr_hwaddr.sa_data );
 	ifr.ifr_hwaddr.sa_family = ARPHRD_IEEE80211;
-	char *ifs = getSTA();
+	char *ifs = getWDSSTA();
+	char *wifi=NULL;
 	if (!ifs)
 	    ifs = getWET();
-	char *wifi=NULL;
 	if (ifs)
 	    wifi = getWifi(ifs);
 	if (wifi)
