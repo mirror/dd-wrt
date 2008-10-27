@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # Solaris packages automake file
-# $Id: Makefile.am,v 1.9 2008/01/13 18:52:15 paul Exp $
+# $Id$
 
 # XXX This file uses GNU make extensions.
 VPATH = @srcdir@
@@ -38,7 +38,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = solaris
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in ChangeLog
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -126,6 +126,8 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
+PICFLAGS = @PICFLAGS@
+PILDFLAGS = @PILDFLAGS@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@
