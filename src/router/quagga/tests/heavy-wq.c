@@ -1,5 +1,5 @@
 /*
- * $Id: heavy-wq.c,v 1.4 2006/08/27 06:53:24 paul Exp $
+ * $Id$
  *
  * This file is part of Quagga.
  *

@@ -33,7 +33,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = m4
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in ChangeLog
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -121,6 +121,8 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
+PICFLAGS = @PICFLAGS@
+PILDFLAGS = @PILDFLAGS@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@
@@ -198,7 +200,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = ChangeLog Makefile.am README.txt
+EXTRA_DIST = Makefile.am README.txt
 all: all-am
 
 .SUFFIXES:
