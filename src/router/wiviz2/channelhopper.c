@@ -25,7 +25,11 @@ void channelHopper(wiviz_cfg * cfg) {
     hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
     //Set the channel
     fprintf(stderr, "It sets the channel to %i\n", nc);
+#ifdef HAVE_MADWIFI
+	    sysprintf("iwconfig %s channel %d\n",wl_dev,nc);
+#else        
     wl_ioctl(get_wdev(), WLC_SET_CHANNEL, &nc, 4);
+#endif
     //Sleep
     usleep(cfg->channelDwellTime * 1000);
     }

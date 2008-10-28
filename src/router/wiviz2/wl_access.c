@@ -6,6 +6,7 @@
 #include <net/if.h>
 
 #include "wl_access.h"
+#ifndef HAVE_MADWIFI
 int wl_ioctl(char *name, int cmd, void *buf, int len)
 {
 	struct ifreq ifr;
@@ -31,6 +32,7 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 	close(s);
 	return ret;
 }
+#endif
 
 int get_mac(char *name, void *buf)
 {
