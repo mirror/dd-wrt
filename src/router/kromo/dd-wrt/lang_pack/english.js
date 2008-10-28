@@ -188,7 +188,7 @@ share.gbytes="GB";
 share.preempt="Preemption";
 share.acktiming="ACK Timing";
 share.broadcast="Broadcast support";
-
+share.xmit="Xmit";
 
 var sbutton = new Object();
 sbutton.save="Save";

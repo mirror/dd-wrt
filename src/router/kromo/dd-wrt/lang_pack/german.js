@@ -155,6 +155,7 @@ share.standard="Standard";
 share.user="Nutzer";
 share.preempt="Bevorzugung";
 share.broadcast="Broadcast Unterstützung"
+share.xmit="Leistung";
 
 
 sbutton.save="Speichern";
