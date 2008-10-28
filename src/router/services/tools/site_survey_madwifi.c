@@ -105,7 +105,7 @@ static struct site_survey_list
     unsigned short beacon_period;	/* units are Kusec */
     unsigned short capability;	/* Capability information */
     // unsigned char athcaps;
-    unsigned char ENCINFO[32];	/* encryption info */
+    unsigned char ENCINFO[64];	/* encryption info */
     int rate_count;		/* # rates in this set */
     unsigned char dtim_period;	/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
