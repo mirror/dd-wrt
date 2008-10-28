@@ -1,9 +1,6 @@
 //wl_access.h - functions for accessing broadcom crap
 
 
-typedef unsigned int uint32;
-typedef unsigned char uchar;
-typedef int bool;
 
 typedef struct ether_addr {
 	uchar addr[6];

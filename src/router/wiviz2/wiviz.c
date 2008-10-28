@@ -13,6 +13,34 @@ To add:
 #include <net/if.h>
 #include <linux/if_packet.h>
 #include <linux/if_ether.h>
+#include <sys/mman.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
+#include <fcntl.h>
+
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <err.h>
+
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <bcmnvram.h>
+#include <bcmutils.h>
+#include <shutils.h>
+#include <utils.h>
+#include <unistd.h>
 
 #define HOST_TIMEOUT 300
 
@@ -80,11 +108,15 @@ int main(int argc, char * * argv) {
 	  wl_ioctl(wl_dev, WLC_SET_MONITOR, &newMonitor, 4);
 	}
 
+#else
+	  sysprintf("wlanconfig %s create wlandev %s wlanmode monitor",get_monitor(),getWifi(get_wdev()));
+	  sysprintf("ifconfig %s up",get_monitor());
+	  cfg.readFromWl = 1;
 #endif
   reloadConfig();
 
 #ifdef HAVE_MADWIFI
-  s = openMonitorSocket("mon0"); // for testing we use ath0
+  s = openMonitorSocket(get_monitor()); // for testing we use ath0
 #else
   s = openMonitorSocket("prism0");
 #endif
@@ -125,8 +157,10 @@ int main(int argc, char * * argv) {
 #endif
 #ifndef HAVE_MADWIFI
   wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
+#else
+  sysprintf("ifconfig %s down",get_monitor());
+  sysprintf("wlanconfig %s destroy",get_monitor());
 #endif
-
   close(s);
   return 0;
   }
@@ -264,7 +298,8 @@ void reloadConfig() {
           cfg->curChannel = val;
           if (cfg->readFromWl) {
 #ifdef HAVE_MADWIFI
-	    sysprintf("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
+	    set_channel(wl_dev,cfg->curChannel);
+//	    sysprintf("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
 #else        
             if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &cfg->curChannel, 4) < 0) {
               printf( "Channel set to %i failed\n", cfg->curChannel);
@@ -324,14 +359,12 @@ void __cdecl signal_handler(int signum) {
 ////////////////////////////////////////////////////////////////////////////////
 void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet) {
   ieee802_11_hdr * hWifi;
-  prism_hdr * hPrism;
   wiviz_host * host;
   wiviz_host * emergebss;
   host_type type = typeUnknown;
   int wfType;
   int rssi = 0;
   int to_ds, from_ds;
-  prism_did * i;
   ieee_802_11_tag * e;
   ieee_802_11_mgt_frame * m;
   char * src = "\0\0\0\0\0\0";
@@ -342,9 +375,29 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet) {
   int adhocbeacon = 0;
   u_char ssidlen = 0;
   ap_enc_type encType = aetUnknown;
-
   if (!packet) return;
+
+#ifdef HAVE_MADWIFI
+int noise;
+  if (packet[0]>0)
+    {
+    printf( "Wrong radiotap header version.\n" );
+    return;
+    }
+  int number = packet[2] | (unsigned int)((unsigned int)packet[3]<<8);
+    if (number<=0 || number>=pktlen)
+	{
+	printf("something wrong %d\n",number);
+	return;
+	}
+    noise = packet[number-3];
+    rssi = -(100-(packet[number-4]-noise));
+    hWifi = (ieee802_11_hdr *) (packet + (number));
+#else
+  prism_hdr * hPrism;
+  prism_did * i;
   if (pktlen < sizeof(prism_hdr) + sizeof(ieee802_11_hdr)) return;
+
   hPrism = (prism_hdr *) packet;
   hWifi = (ieee802_11_hdr *) (packet + (hPrism->msg_length));
 
@@ -354,9 +407,11 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet) {
     if (i->did == pdn_rssi) rssi = *(int *)(i+1);
     i = (prism_did *) ((int)(i+1) + i->length);
     }
+#endif
 
   //Establish the frame type
   wfType = ((hWifi->frame_control & 0xF0) >> 4) + ((hWifi->frame_control & 0xC) << 2);
+
   switch (wfType) {
     case mgt_assocRequest:
     case mgt_reassocRequest:
@@ -518,7 +573,7 @@ wiviz_host * gotHost(wiviz_cfg * cfg, u_char * mac, host_type type) {
     } 
   if (!h->occupied) {
     printf( "New host, ");
-    //fprint_mac(stderr, mac, ", type=");
+    fprint_mac(stdout, mac, ", type=");
     printf( "%s\n", (type==typeAP) ? "AP" : ((type==typeSta) ? "Sta" : "Unk"));
     }
   h->occupied = 1;
@@ -599,7 +654,7 @@ void readWL(wiviz_cfg * cfg) {
 		
 	get_mac(wl_dev, mac);
 	printf( "AP mac: ");
-	//print_mac(mac, "\n");
+	print_mac(mac, "\n");
 	if (!nonzeromac(mac)) return;
 	if (nvram_nmatch("ap","%s_mode",wl_dev))
 	    ap=1;
@@ -630,7 +685,9 @@ void readWL(wiviz_cfg * cfg) {
 		
 		macs = (maclist_t *) malloc(4 + MAX_STA_COUNT * sizeof(ether_addr_t));
 		macs->count = MAX_STA_COUNT;
-		if (getassoclist(wl_dev,macs)>-1)
+		int code = getassoclist(wl_dev,macs);
+		printf("code :%d\n",code);
+		if (code>0)
 		{
 		    for (i = 0; i < macs->count; i++) {
 			  sta = gotHost(cfg, (char *)&macs->ea[i], typeSta);
