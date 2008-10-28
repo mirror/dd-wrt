@@ -55,6 +55,14 @@
 
 extern void vlan_init( int num );
 
+
+unsigned char toNumeric(unsigned char value)
+{
+if (value>('0'-1) && value<('9'+1))return value-'0';
+if (value>('a'-1) && value<('f'+1))return value-'a'+10;
+if (value>('A'-1) && value<('F'+1))return value-'A'+10;
+return value;
+}
 int start_sysinit( void )
 {
     char buf[PATH_MAX];
@@ -203,8 +211,9 @@ int start_sysinit( void )
 
 	    for( i = 0; i < 6; i++ )
 	    {
-		mac[i] = ((int)( os[count++] - '0' ) * 16);
-		mac[i] |= ((int)( os[count++] - '0' ));
+		mac[i] = toNumeric(os[count++]) * 16;
+		mac[i] |= toNumericos[count++]);
+		fprintf(stderr,"mac = 0x%02X\n",mac[i]);
 	    }
 	    struct ifreq ifr;
 	    int s;
