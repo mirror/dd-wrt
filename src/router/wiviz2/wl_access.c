@@ -4,6 +4,34 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <sys/mman.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
+#include <fcntl.h>
+
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <err.h>
+
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <bcmnvram.h>
+#include <bcmutils.h>
+#include <shutils.h>
+#include <utils.h>
+#include <unistd.h>
 
 #include "wl_access.h"
 #ifndef HAVE_MADWIFI
@@ -31,6 +59,18 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 	/* cleanup */
 	close(s);
 	return ret;
+}
+#else
+
+
+char *get_monitor(void)
+{
+int devcount;
+char *ifname = get_wdev();
+sscanf( ifname, "ath%d", &devcount );
+static char mon[32];
+sprintf(mon,"mon%d",devcount);
+return mon;
 }
 #endif
 

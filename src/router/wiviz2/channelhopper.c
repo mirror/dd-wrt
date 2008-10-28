@@ -2,14 +2,103 @@
 #include <pcap.h>
 #include <signal.h>
 #include <sys/time.h>
+#ifdef HAVE_MADWIFI
+#include <sys/mman.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
+#include <fcntl.h>
+
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <err.h>
+
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <bcmnvram.h>
+#include <bcmutils.h>
+#include <shutils.h>
+#include <utils.h>
+#include <unistd.h>
+#include "wireless.h"
+#endif
 #include "wl_access.h"
 #include "channelhopper.h"
 #include "structs.h"
+
 
 void ch_sig_handler(int i) {
 
   }
 
+#define IEEE80211_CHAN_2GHZ 1
+#define IEEE80211_CHAN_5GHZ 2
+u_int ieee80211_ieee2mhz(u_int chan, u_int flags)
+{
+	if (flags & IEEE80211_CHAN_2GHZ) {	/* 2GHz band */
+		if (chan == 14)
+			return 2484;
+		if (chan < 14)
+			return ((2407) + chan * 5);
+		else {
+			if (chan > 236 && chan < 256) {
+				//recalculate offset
+				int newchan = chan - 256;
+				int newfreq = (2407) + (newchan * 5);
+				return newfreq;
+			} else
+				return ((2512) + ((chan - 15) * 20));
+		}
+	} else if (flags & IEEE80211_CHAN_5GHZ)	/* 5Ghz band */
+		return ((5000) + (chan * 5));
+	else {			/* either, guess */
+		if (chan == 14)
+			return 2484;
+		if (chan < 14)	/* 0-13 */
+			return ((2407) + chan * 5);
+		if (chan < 27)	/* 15-26 */
+			return ((2512) + ((chan - 15) * 20));
+		if (chan > 236 && chan < 256) {
+			//recalculate offset
+			int newchan = chan - 256;
+			int newfreq = (2407) + (newchan * 5);
+			return newfreq;
+		} else
+			return ((5000) + (chan * 5));
+	}
+}
+
+
+void set_channel(char *dev,int channel)
+{
+    struct iwreq wrq;
+    memset( &wrq, 0, sizeof( struct iwreq ) );
+    strncpy( wrq.ifr_name, get_monitor(), IFNAMSIZ );
+    wrq.u.freq.m = (double) ieee80211_ieee2mhz(channel,1) * 100000;
+    wrq.u.freq.e = (double) 1;
+    
+    if( ioctl( getsocket(), SIOCSIWFREQ, &wrq ) < 0 )
+    {
+        usleep( 10000 ); /* madwifi needs a second chance */
+
+        if( ioctl( getsocket(), SIOCSIWFREQ, &wrq ) < 0 )
+        {
+            return;
+        }
+    }
+
+}
 void channelHopper(wiviz_cfg * cfg) {
   int hopPos;
   int nc;
@@ -24,9 +113,8 @@ void channelHopper(wiviz_cfg * cfg) {
     nc = cfg->channelHopSeq[hopPos];
     hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
     //Set the channel
-    fprintf(stderr, "It sets the channel to %i\n", nc);
 #ifdef HAVE_MADWIFI
-	    sysprintf("iwconfig %s channel %d\n",wl_dev,nc);
+    set_channel(get_wdev(),nc);
 #else        
     wl_ioctl(get_wdev(), WLC_SET_CHANNEL, &nc, 4);
 #endif
