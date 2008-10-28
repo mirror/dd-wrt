@@ -212,7 +212,7 @@ int start_sysinit( void )
 	    for( i = 0; i < 6; i++ )
 	    {
 		mac[i] = toNumeric(os[count++]) * 16;
-		mac[i] |= toNumericos[count++]);
+		mac[i] |= toNumeric(os[count++]);
 		fprintf(stderr,"mac = 0x%02X\n",mac[i]);
 	    }
 	    struct ifreq ifr;
