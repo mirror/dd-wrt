@@ -110,6 +110,7 @@ void channelHopper(wiviz_cfg * cfg) {
 
   //Start hoppin'!
   hopPos = 0;
+    printf("set hop %d\n",nc);
   while (1) {
     int hop = cfg->channelHopSeq[hopPos];
     if (hop==0)
@@ -119,8 +120,10 @@ void channelHopper(wiviz_cfg * cfg) {
     nc = hop;
     hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
     }
+    if (nc>255)nc=1;
     //Set the channel
 #ifdef HAVE_MADWIFI
+    printf("set channel %d\n",nc);
     int ret = set_channel(get_wdev(),nc);
     if (ret==-1)
 	continue;
