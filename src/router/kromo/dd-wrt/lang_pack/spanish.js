@@ -135,7 +135,6 @@ share.never="never";
 share.unknown="unknown";
 share.expired="expired";
 share.standard="Estándar";
-share.xmit="Xmit";
 
 
 

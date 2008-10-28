@@ -136,7 +136,6 @@ share.never="never";
 share.unknown="unknown";
 share.expired="expired";
 share.standard="Padrão";
-share.xmit="Xmit";
 
 sbutton.save="Salvar Configurações";
 sbutton.saving="Salvo";
