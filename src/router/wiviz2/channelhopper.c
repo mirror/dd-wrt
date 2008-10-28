@@ -2,7 +2,6 @@
 #include <pcap.h>
 #include <signal.h>
 #include <sys/time.h>
-#ifdef HAVE_MADWIFI
 #include <sys/mman.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -31,6 +30,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
+#ifdef HAVE_MADWIFI
 #include "wireless.h"
 #endif
 #include "wl_access.h"
@@ -42,6 +42,7 @@ void ch_sig_handler(int i) {
 
   }
 
+#ifdef HAVE_MADWIFI
 #define IEEE80211_CHAN_2GHZ 1
 #define IEEE80211_CHAN_5GHZ 2
 u_int ieee80211_ieee2mhz(u_int chan, u_int flags)
@@ -103,6 +104,7 @@ int set_channel(char *dev,int channel)
     }
 return 0;
 }
+#endif
 void channelHopper(wiviz_cfg * cfg) {
   int hopPos;
   int nc;
