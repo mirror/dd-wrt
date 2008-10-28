@@ -28,7 +28,7 @@
 			Scanning options
 		</div>
 		<div class='slidingbodyshow'>
-			<center>Status</center>
+			<center><% tran("share.statu"); %></center>
 			Monitoring<br>
 			<center>Channel setting</center> 
 			<form name="channelform" action="apply.cgi" method="post" />
@@ -38,6 +38,7 @@
 						<input type="hidden" name="submit_type" value="Set" />
 						<input type="hidden" name="commit" value="1" />
 			<select name='hopseq' onChange='this.form.submit()'>
+				<option value='0' <% nvram_selected("hopseq","0"); %> ><% tran("share.all"); %></option>
 				<option value='1' <% nvram_selected("hopseq","1"); %> >1</option>
 				<option value='2' <% nvram_selected("hopseq","2"); %> >2</option>
 				<option value='3' <% nvram_selected("hopseq","3"); %> >3</option>
@@ -141,7 +142,7 @@
 	</div> -->
 		<div class='expando'>
 		<div class='slidingheader' id='configuration' onClick="self.close()">
-			Close
+			<% tran("sbutton.clos"); %>
 		</div>
 		</div>
 	
