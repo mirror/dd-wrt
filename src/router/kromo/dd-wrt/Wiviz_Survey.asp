@@ -2,6 +2,8 @@
 	<head>
 		<title><% nvram_get("router_name"); %> - Wi-viz 2.0: Wireless Network Visualization</title>
 		<script type="text/javascript" src="js/wiviz2.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<link type="text/css" rel="stylesheet" href="style/wiviz2.css" />
 		<!-- The proper way to deal with memory leaks -->
 		<meta http-equiv="refresh" content="1800">
