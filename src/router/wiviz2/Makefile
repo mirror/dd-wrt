@@ -13,15 +13,15 @@ OBJS=wiviz.o wl_access.o channelhopper.o
 TARGET=wiviz
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
-CCOPTS	+= -I$(SRCBASE)/include.bcm -L../shared -L../nvram -L../libutils
+CCOPTS	+= -I$(SRCBASE)/include.bcm -L../shared -L../nvram -L../libutils -I../shared
 else
-CCOPTS	+= -I$(SRCBASE)/include.v24 -L../shared -L../nvram -L../libutils
+CCOPTS	+= -I$(SRCBASE)/include.v24 -L../shared -L../nvram -L../libutils -I../shared
 endif
 else
-CCOPTS	+= -I$(SRCBASE)/include.v23 -L../shared -L../nvram -L../libutils
+CCOPTS	+= -I$(SRCBASE)/include.v23 -L../shared -L../nvram -L../libutils -I../shared
 endif
 ifeq ($(CONFIG_MADWIFI),y)
-CCOPTS+=-DHAVE_MADWIFI -I../shared  -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -DHEADERS_KERNEL
+CCOPTS+=-DHAVE_MADWIFI   -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -DHEADERS_KERNEL
 endif
 
 wiviz: ${OBJS}
