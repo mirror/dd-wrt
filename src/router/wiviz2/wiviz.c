@@ -56,8 +56,8 @@ int main(int argc, char * * argv) {
   signal(SIGUSR1, &signal_handler);
   signal(SIGUSR2, &signal_handler);
 
-  fprintf(stderr, "Wi-Viz 2 infogathering daemon by Nathan True\n");
-  fprintf(stderr, "http://wiviz.natetrue.com\n");
+  printf( "Wi-Viz 2 infogathering daemon by Nathan True\n");
+  printf( "http://wiviz.natetrue.com\n");
   
   memset(&cfg, 0, sizeof(wiviz_cfg));
   cfg.numHosts = 0;
@@ -69,7 +69,7 @@ int main(int argc, char * * argv) {
 
   wl_ioctl(wl_dev, WLC_GET_MAGIC, &i, 4);
 	if (i != WLC_IOCTL_MAGIC) {
-		fprintf(stderr, "Wireless magic not correct, not querying wl for info %X!=%X\n",i,WLC_IOCTL_MAGIC);
+		printf( "Wireless magic not correct, not querying wl for info %X!=%X\n",i,WLC_IOCTL_MAGIC);
 		cfg.readFromWl = 0;
 	}
 	else {
@@ -135,7 +135,7 @@ int openMonitorSocket(char * dev) {
   memset(&ifr,0,sizeof(ifr));
   strcpy(ifr.ifr_name, dev);
   if(ioctl(s, SIOCGIFINDEX, &ifr) !=0) {
-    fprintf(stderr, "ioctl IFINDEX failed!!!\n");
+    printf( "ioctl IFINDEX failed!!!\n");
     return -1;
     }
   close(s);
@@ -146,7 +146,7 @@ int openMonitorSocket(char * dev) {
   addr.sll_ifindex=ifr.ifr_ifindex;
   addr.sll_protocol=0;
   if (bind(s, (struct sockaddr *)&addr, sizeof(addr))<0) {
-    fprintf(stderr, "bind failed!!! (%s)\n", dev);
+    printf( "bind failed!!! (%s)\n", dev);
     return -1;
     }
 
@@ -161,7 +161,7 @@ void writeJavascript() {
 
   outf = fopen("/tmp/wiviz2-dump", "w");
   if (!outf) {
-    fprintf(stderr, "Failure to open output file\n");
+    printf( "Failure to open output file\n");
     return;
     }
 
@@ -206,22 +206,22 @@ void reloadConfig() {
   int newHopSeq[12];
   int newHopSeqLen = 0;
 
-  fprintf(stderr, "Loading config file\n");
+  printf( "Loading config file\n");
 
   cnf = fopen("/tmp/wiviz2-cfg", "r");
   if (!cnf) {
-    fprintf(stderr, "Wiviz: No config file (/tmp/wiviz2-cfg) present, using defaults\n");
+    printf( "Wiviz: No config file (/tmp/wiviz2-cfg) present, using defaults\n");
     return;
     }
 
   fblen = fread(filebuffer, 1, 512, cnf);
   fclose(cnf);
   if (fblen >= 512) {
-    fprintf(stderr, "Error reading config file\n");
+    printf( "Error reading config file\n");
     return;
     }
   filebuffer[fblen] = 0;
-  fprintf(stderr, "Read %i bytes from config file\n", fblen);
+  printf( "Read %i bytes from config file\n", fblen);
 
   fbptr = filebuffer;
 
@@ -234,7 +234,7 @@ void reloadConfig() {
     //Find end of value
     for (; *fbptr != '&' && *fbptr != 0; fbptr++);
     *(fbptr++) = 0;
-    fprintf(stderr, "Config: %s=%s\n", p, v);
+    printf( "Config: %s=%s\n", p, v);
     //Apply configuration
     if (!strcmp(p, "channelsel")) {
       //Channel selector
@@ -251,17 +251,17 @@ void reloadConfig() {
       else {
         val = atoi(v);
         if (val < 1 || val > 14) {
-          fprintf(stderr, "Channel setting in config file invalid (%i)\n", cfg->curChannel);
+          printf( "Channel setting in config file invalid (%i)\n", cfg->curChannel);
         }
         else {
           cfg->curChannel = val;
           if (cfg->readFromWl) {
             if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &cfg->curChannel, 4) < 0) {
-              fprintf(stderr, "Channel set to %i failed\n", cfg->curChannel);
+              printf( "Channel set to %i failed\n", cfg->curChannel);
               }
             }
           else {
-            fprintf(stderr, "Can't set channel, no Broadcom wireless device present\n");
+            printf( "Can't set channel, no Broadcom wireless device present\n");
             }
           }
         }
@@ -399,7 +399,23 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet) {
       if (e->tag == tagVendorSpecific) {
         if (e->length >= 4 && memcmp(e + 1, "\x00\x50\xf2\x01", 4) == 0) {
           //WPA encryption
+          if (encType != aetEncWPAmix)
+          {
+          if (encType==aetEncWPA2)
+          encType = aetEncWPAmix;
+            else
           encType = aetEncWPA;
+          }
+          }
+        if (e->length >= 4 && memcmp(e + 1, "\x00\x0f\xac\x01", 4) == 0) {
+          //WPA2 encryption
+          if (encType != aetEncWPAmix)
+          {
+          if (encType==aetEncWPA)
+          encType = aetEncWPAmix;
+            else
+          encType = aetEncWPA2;
+          }
           }
         }
       e = (ieee_802_11_tag *) ((int)(e + 1) + e->length);
@@ -490,9 +506,9 @@ wiviz_host * gotHost(wiviz_cfg * cfg, u_char * mac, host_type type) {
     if (c > MAX_PROBES) break;
     } 
   if (!h->occupied) {
-    fprintf(stderr, "New host, ");
-    fprint_mac(stderr, mac, ", type=");
-    fprintf(stderr, "%s\n", (type==typeAP) ? "AP" : ((type==typeSta) ? "Sta" : "Unk"));
+    printf( "New host, ");
+    //fprint_mac(stderr, mac, ", type=");
+    printf( "%s\n", (type==typeAP) ? "AP" : ((type==typeSta) ? "Sta" : "Unk"));
     }
   h->occupied = 1;
   h->lastSeen = time(NULL);
@@ -551,6 +567,8 @@ void print_host(FILE * outf, wiviz_host * host) {
       case aetEncUnknown: fprintf(outf, "'yes'; h.enctype = 'unknown';\n"); break;
       case aetEncWEP: fprintf(outf, "'yes'; h.enctype = 'wep';\n"); break;
       case aetEncWPA: fprintf(outf, "'yes'; h.enctype = 'wpa';\n"); break;
+      case aetEncWPA2: fprintf(outf, "'yes'; h.enctype = 'wpa2';\n"); break;
+      case aetEncWPAmix: fprintf(outf, "'yes'; h.enctype = 'wpa wpa2';\n"); break;
       }
     }
   fprintf(outf, "h.age = %i;\n", time(0) - host->lastSeen);
@@ -568,8 +586,8 @@ void readWL(wiviz_cfg * cfg) {
         sta_rssi_t starssi;
 		
 	get_mac(wl_dev, mac);
-	fprintf(stderr, "AP mac: ");
-	print_mac(mac, "\n");
+	printf( "AP mac: ");
+	//print_mac(mac, "\n");
 	if (!nonzeromac(mac)) return;
 	wl_ioctl(wl_dev, WLC_GET_AP, &ap, 4);
 	if (ap) {
@@ -590,7 +608,7 @@ void readWL(wiviz_cfg * cfg) {
         memcpy(starssi.mac, &macs->ea[i], 6);
         starssi.RSSI = 3000;
         starssi.zero_ex_forty_one = 0x41;
-				if (wl_ioctl(wl_dev, WLC_GET_RSSI, &starssi, 12) < 0) fprintf(stderr, "rssifail\n");
+				if (wl_ioctl(wl_dev, WLC_GET_RSSI, &starssi, 12) < 0) printf("rssifail\n");
 				sta->RSSI = -starssi.RSSI * 100;
 				sta->staInfo->state = ssAssociated;
 				memcpy(sta->staInfo->connectedBSSID, host->apInfo->bssid, 6);
@@ -610,7 +628,7 @@ void readWL(wiviz_cfg * cfg) {
 	}
   if (wl_ioctl(wl_dev, WLC_GET_CHANNEL, &channel, sizeof(channel_info_t)) >= 0) {
     cfg->curChannel = channel.hw_channel;
-    fprintf(stderr, "Current channel is %i\n", cfg->curChannel);
+    printf( "Current channel is %i\n", cfg->curChannel);
     }
 }
 
