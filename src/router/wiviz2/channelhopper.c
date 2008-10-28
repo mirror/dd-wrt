@@ -128,7 +128,8 @@ void channelHopper(wiviz_cfg * cfg) {
     if (ret==-1)
 	continue;
 #else        
-    wl_ioctl(get_wdev(), WLC_SET_CHANNEL, &nc, 4);
+    if (wl_ioctl(get_wdev(), WLC_SET_CHANNEL, &nc, 4)<0)
+	continue;
 #endif
     //Sleep
     usleep(cfg->channelDwellTime * 1000);
