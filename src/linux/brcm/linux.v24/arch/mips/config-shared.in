@@ -208,6 +208,7 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    fi
    define_bool CONFIG_MIPS_RTC y
 fi
+dep_bool 'Optimize for Size' CONFIG_SIZE $CONFIG_MIPS_BRCM
 dep_bool 'Support for Broadcom MIPS-based boards' CONFIG_MIPS_BRCM $CONFIG_EXPERIMENTAL
 dep_bool 'Support for Broadcom BCM947XX' CONFIG_BCM947XX $CONFIG_MIPS_BRCM
 if [ "$CONFIG_BCM947XX" = "y" ] ; then
