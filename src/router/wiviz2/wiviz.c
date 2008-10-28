@@ -291,7 +291,7 @@ void reloadConfig() {
         }
       else {
         val = atoi(v);
-        if (val < 1 || val > 14) {
+        if (val < 1 || val > 254) {
           printf( "Channel setting in config file invalid (%i)\n", cfg->curChannel);
         }
         else {
