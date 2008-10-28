@@ -277,9 +277,9 @@ static void wl_rsn_ie_dump(bcm_tlv_t *ie, char *sum)
 					break;
 				case RSN_AKM_PSK:
 					if (rsn)
-					strcat(sum,"WPA-PSK ");
-					else
 					strcat(sum,"WPA2-PSK ");
+					else
+					strcat(sum,"WPA-PSK ");
 					break;
 				default:
 					sprintf(sum,"Unknown-%s(#%d)  ",
