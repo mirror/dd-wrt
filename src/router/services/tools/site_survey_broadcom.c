@@ -156,7 +156,7 @@ wl_rsn_ie_parse_info(uint8* rsn_buf, uint len, rsn_parse_info_t *rsn)
 }
 
 
-static char * wl_rsn_ie_dump(bcm_tlv_t *ie)
+static void wl_rsn_ie_dump(bcm_tlv_t *ie, char *sum)
 {
 	int i;
 	int rsn;
@@ -169,8 +169,6 @@ static char * wl_rsn_ie_dump(bcm_tlv_t *ie)
 	uint16 capabilities;
 	uint cntrs;
 	int err;
-	static char sum[64]={0};
-	memset(sum,0,sizeof(sum));
 	if (ie->id == DOT11_MNG_RSN_ID) {
 		rsn = TRUE;
 		memcpy(std_oui, WPA2_OUI, WPA_OUI_LEN);
@@ -183,8 +181,10 @@ static char * wl_rsn_ie_dump(bcm_tlv_t *ie)
 		                           &rsn_info);
 	}
 	if (err || rsn_info.version != WPA_VERSION)
-		return "WEP";
-
+		{
+		strcat(sum,"WEP ");
+		return;
+		}
 
 	/* Check for multicast suite */
 	if (rsn_info.mcast) {
@@ -294,7 +294,6 @@ static char * wl_rsn_ie_dump(bcm_tlv_t *ie)
 			}
 		}
 	}
-    return sum;
 }
 
 static uint8 *
@@ -333,17 +332,21 @@ wl_dump_wpa_rsn_ies(uint8* cp, uint len)
 	uint parse_len = len;
 	uint8 *wpaie;
 	uint8 *rsnie;
+	static char sum[64]={0};
+	memset(sum,0,sizeof(sum));
 
 	while ((wpaie = wlu_parse_tlvs(parse, parse_len, DOT11_MNG_WPA_ID)))
 		if (wlu_is_wpa_ie(&wpaie, &parse, &parse_len))
 			break;
 	if (wpaie)
-		return wl_rsn_ie_dump((bcm_tlv_t*)wpaie);
+		wl_rsn_ie_dump((bcm_tlv_t*)wpaie,sum);
 
 	rsnie = wlu_parse_tlvs(cp, len, DOT11_MNG_RSN_ID);
 	if (rsnie)
-		return wl_rsn_ie_dump((bcm_tlv_t*)rsnie);
-
+		wl_rsn_ie_dump((bcm_tlv_t*)rsnie,sum);
+	if (wpaie || rsnie)
+	    return sum;
+	    
 	return "WEP";
 }
 
