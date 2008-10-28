@@ -169,7 +169,7 @@ static char * wl_rsn_ie_dump(bcm_tlv_t *ie)
 	uint16 capabilities;
 	uint cntrs;
 	int err;
-	static char sum[64]={0};
+	char sum[64]={0};
 	if (ie->id == DOT11_MNG_RSN_ID) {
 		rsn = TRUE;
 		memcpy(std_oui, WPA2_OUI, WPA_OUI_LEN);
