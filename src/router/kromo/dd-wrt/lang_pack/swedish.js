@@ -187,7 +187,6 @@ share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
 share.acktiming="ACK Tid";
-share.xmit="Xmit";
 
 
 sbutton.save="Spara";
