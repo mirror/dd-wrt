@@ -136,7 +136,6 @@ share.unknown="Ismeretlen";
 share.expired="lejárt";
 share.standard="Standard";
 share.user="Felhasználó";
-share.xmit="Xmit";
 
 sbutton.save="Mentés";
 sbutton.apply="Alkalmaz";

@@ -185,7 +185,6 @@ share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
 share.acktiming="ACK Timing";
-share.xmit="Xmit";
 
 
 sbutton.save="Salva Impostazioni";
