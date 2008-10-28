@@ -204,7 +204,7 @@ int start_sysinit( void )
 	    for( i = 0; i < 6; i++ )
 	    {
 		mac[i] = ((int)( os[count++] - '0' ) * 16);
-		mac[i] |= ((int)( os[count++] - '0' );
+		mac[i] |= ((int)( os[count++] - '0' ));
 	    }
 	    struct ifreq ifr;
 	    int s;
