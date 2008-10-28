@@ -165,10 +165,11 @@ share.standard="Normal";
 share.execscript="実行スクリプト";
 share.user="ユーザ";
 share.privatekey="秘密鍵";
-share.bytes="bytes";
 share.kbytes="KB";
+share.bytes="bytes";
 share.mbytes="MB";
 share.gbytes="GB";
+share.xmit="Xmit";
 
 sbutton.save="設定(保存のみ)";
 sbutton.savetitle="パラメータの保存のみ行います(動作には反映されません)";
