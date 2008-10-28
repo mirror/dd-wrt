@@ -164,7 +164,7 @@ NOTES:
 */
 
 /* platform independent options- uncomment to enable */
-/* #define HAVE_TFTP */
+#define HAVE_TFTP
 /* #define HAVE_BROKEN_RTC */
 /* #define HAVE_ISC_READER */
 /* #define HAVE_DBUS */
