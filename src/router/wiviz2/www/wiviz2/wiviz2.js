@@ -823,7 +823,9 @@ function updateCenteredInfo() {
 	        s += "Channel: " + h.channel + "<br>";
 	        s += "Encryption: ";
 			if (h.encrypted == 'yes') {
-				if (h.enctype == 'wpa') s += "WPA/WPA2";
+				if (h.enctype == 'wpa') s += "WPA";
+				if (h.enctype == 'wpa2') s += "WPA2";
+				if (h.enctype == 'wpa wpa2') s += "WPA/WPA2";
 				if (h.enctype == 'wep') s += "WEP";
 				if (h.enctype == 'unknown') s += "Unknown type";
 			}

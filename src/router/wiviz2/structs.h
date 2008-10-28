@@ -106,7 +106,9 @@ typedef enum {
   aetUnencrypted,
   aetEncUnknown,
   aetEncWEP,
-  aetEncWPA
+  aetEncWPA,
+  aetEncWPA2,
+  aetEncWPAmix
   } ap_enc_type;
 
 typedef struct {
