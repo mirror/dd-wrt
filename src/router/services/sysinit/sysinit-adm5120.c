@@ -168,6 +168,7 @@ int start_sysinit( void )
     insmod( "ppp_generic" );
     insmod( "ppp_async" );
     insmod( "ppp_synctty" );
+    insmod( "ppp_mppe_mppc ");
     insmod( "pppox" );
     insmod( "pppoe" );
 
