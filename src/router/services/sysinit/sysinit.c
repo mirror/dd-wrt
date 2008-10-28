@@ -1595,8 +1595,13 @@ int start_nvram( void )
 		break;
 	    if( strcmp( type, "hostapd" ) )
 	    {
-		sprintf( newqos, "%s %s %s %s %s |", newqos, data, level,
-			 level2, type );
+		if( strlen( newqos ) > 0 )
+		    sprintf( newqos, "%s %s %s %s %s |", newqos, data, level,
+			     level2, type );
+		else
+		    sprintf( newqos, "%s %s %s %s |", data, level,
+			     level2, type );
+
 	    }
 	}
 	while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
