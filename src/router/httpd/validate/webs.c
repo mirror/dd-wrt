@@ -1477,10 +1477,10 @@ void qos_save( webs_t wp )
 	level2 = websGetVar( wp, field, NULL );
 
 	if( strlen( svqos_var ) > 0 )
-	    sprintf( svqos_var, "%s %s %s %s |", svqos_var, data, level,
+	    sprintf( svqos_var, "%s %s %s %s user |", svqos_var, data, level,
 		     level2 );
 	else
-	    sprintf( svqos_var, "%s %s %s |", data, level, level2 );
+	    sprintf( svqos_var, "%s %s %s user |", data, level, level2 );
 #endif
 
     }
