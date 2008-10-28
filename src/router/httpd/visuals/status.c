@@ -170,7 +170,7 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
 	    else
 	    {
 		status1 = "share.statu";
-		status2 = "share.disconnect";
+		status2 = "share.disconnected";
 		if (trans)
 		    button1 = "share.connect";
 		else		
