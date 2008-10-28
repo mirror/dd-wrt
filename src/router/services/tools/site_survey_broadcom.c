@@ -31,6 +31,7 @@
 #include <wlioctl.h>
 #include <wlutils.h>
 #include <utils.h>
+#include <bcmutils.h>
 
 #define sys_restart() kill(1, SIGHUP)
 #define SITE_SURVEY_DB	"/tmp/site_survey"
@@ -55,205 +56,297 @@ struct site_survey_list
     uint8 dtim_period;		/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
 
-static bool wpa_ie( uint8 ** wpaie, uint8 ** tlvs, uint * tlvs_len )
+/* 802.11i/WPA RSN IE parsing utilities */
+typedef struct {
+	uint16 version;
+	wpa_suite_mcast_t *mcast;
+	wpa_suite_ucast_t *ucast;
+	wpa_suite_auth_key_mgmt_t *akm;
+	uint8 *capabilities;
+} rsn_parse_info_t;
+
+static int
+wlu_bcmp(const void *b1, const void *b2, int len)
 {
-    uint8 *ie = *wpaie;
-
-    if( ( ie[1] >= 6 ) && !memcmp( &ie[2], WPA_OUI "\x01", 4 ) )
-    {
-	return TRUE;
-    }
-    ie += ie[1] + 2;
-    *tlvs_len -= ( int )( ie - *tlvs );
-    *tlvs = ie;
-
-    return FALSE;
+	return (memcmp(b1, b2, len));
 }
 
-static uint8 *parse_tlvs( uint8 * tlv_buf, int buflen, uint key )
+static INLINE uint16
+ltoh16_ua(void *bytes)
 {
-    uint8 *cp;
-    int totlen;
-
-    cp = tlv_buf;
-    totlen = buflen;
-
-    /*
-     * find tagged parameter 
-     */
-    while( totlen >= 2 )
-    {
-	uint tag;
-	int len;
-
-	tag = *cp;
-	len = *( cp + 1 );
-
-	/*
-	 * validate remaining totlen 
-	 */
-	if( ( tag == key ) && ( totlen >= ( len + 2 ) ) )
-	    return ( cp );
-
-	cp += ( len + 2 );
-	totlen -= ( len + 2 );
-    }
-
-    return NULL;
+	return (((uint8*)bytes)[1]<<8)+((uint8 *)bytes)[0];
 }
 
-static char *dump_bss_ie( uint8 * cp, uint len )
+static bool
+wlu_is_wpa_ie(uint8 **wpaie, uint8 **tlvs, uint *tlvs_len)
 {
-    uint8 *wpaie;
-    int i;
-    int n;
-    int offset;
-    uint8 *parse = cp;
-    uint parse_len = len;
-    uint16 capabilities;
-    int unicast_count = 0;
-    uint8 oui[3];
-    uint8 idx = 0;
+	uint8 *ie = *wpaie;
 
-    while( ( wpaie = parse_tlvs( parse, parse_len, DOT11_MNG_WPA_ID ) ) )
-	if( wpa_ie( &wpaie, &parse, &parse_len ) )
-	    break;
-    if( wpaie == NULL )
-	// return "Unknown";
-	return "WEP";		// Eko, testing...
-
-    if( ( wpaie[6] | ( wpaie[7] << 8 ) ) != WPA_VERSION )
-	return "WPA-Unsupported";	/* WPA version unsupported */
-
-    // We got WPA
-    char sum[64] = { 0 };
-    /*
-     * Check for multicast suite 
-     */
-    if( wpaie[1] >= 10 )
-    {
-	if( !memcmp( &wpaie[8], WPA_OUI, 3 ) )
-	{
-	    switch ( wpaie[11] )
-	    {
-		case WPA_CIPHER_NONE:
-		    strcat( sum, "MULTINONE " );
-		    break;
-		case WPA_CIPHER_WEP_40:
-		    strcat( sum, "MULTIWEP64 " );
-		    break;
-		case WPA_CIPHER_WEP_104:
-
-		    strcat( sum, "MULTIWEP128 " );
-		    break;
-		case WPA_CIPHER_TKIP:
-		    strcat( sum, "MULTITKIP " );
-		    break;
-		case WPA_CIPHER_AES_OCB:
-		    strcat( sum, "MULTIAESOCB " );
-		    break;
-		case WPA_CIPHER_AES_CCM:
-		    strcat( sum, "MULTIAESCCMP " );
-		    break;
-		default:	/* unknown WPA cipher */
-		    strcat( sum, "MULTIWPAUNKOWN " );
-		    break;
-	    }
+	/* If the contents match the WPA_OUI and type=1 */
+	if ((ie[1] >= 6) && !wlu_bcmp(&ie[2], WPA_OUI "\x01", 4)) {
+		return TRUE;
 	}
-    }
 
-    /*
-     * Check for unicast suite(s) 
-     */
-    if( wpaie[1] >= 12 )
-    {
-	unicast_count = ( wpaie[12] | ( wpaie[13] << 8 ) );
-	for( i = 0; i < unicast_count; i++ )
-	{
+	/* point to the next ie */
+	ie += ie[1] + 2;
+	/* calculate the length of the rest of the buffer */
+	*tlvs_len -= (int)(ie - *tlvs);
+	/* update the pointer to the start of the buffer */
+	*tlvs = ie;
 
-	    if( wpaie[1] < ( 12 + ( i * 4 ) + 4 ) )
-		break;
+	return FALSE;
+}
 
-	    memcpy( oui, &wpaie[2 + 12 + ( i * 4 )], 3 );
-	    idx = wpaie[2 + 12 + ( i * 4 ) + 3];
+static int
+wl_rsn_ie_parse_info(uint8* rsn_buf, uint len, rsn_parse_info_t *rsn)
+{
+	uint16 count;
 
-	    if( !memcmp( oui, WPA_OUI, 3 ) )
-	    {
-		switch ( idx )
-		{
-		    case WPA_CIPHER_NONE:
-			break;
-		    case WPA_CIPHER_WEP_40:
-			strcat( sum, "WEP64 " );
-			break;
-		    case WPA_CIPHER_WEP_104:
-			strcat( sum, "WEP128 " );
-			break;
-		    case WPA_CIPHER_TKIP:
-			strcat( sum, "TKIP " );
-			break;
-		    case WPA_CIPHER_AES_OCB:
-			strcat( sum, "AESOCB " );
-			break;
-		    case WPA_CIPHER_AES_CCM:
-			strcat( sum, "AESCCMP " );
-			break;
-		    default:
-			break;
+	memset(rsn, 0, sizeof(rsn_parse_info_t));
+
+	/* version */
+	if (len < sizeof(uint16))
+		return 1;
+
+	rsn->version = ltoh16_ua(rsn_buf);
+	len -= sizeof(uint16);
+	rsn_buf += sizeof(uint16);
+
+	/* Multicast Suite */
+	if (len < sizeof(wpa_suite_mcast_t))
+		return 0;
+
+	rsn->mcast = (wpa_suite_mcast_t*)rsn_buf;
+	len -= sizeof(wpa_suite_mcast_t);
+	rsn_buf += sizeof(wpa_suite_mcast_t);
+
+	/* Unicast Suite */
+	if (len < sizeof(uint16))
+		return 0;
+
+	count = ltoh16_ua(rsn_buf);
+
+	if (len < (sizeof(uint16) + count * sizeof(wpa_suite_t)))
+		return 1;
+
+	rsn->ucast = (wpa_suite_ucast_t*)rsn_buf;
+	len -= (sizeof(uint16) + count * sizeof(wpa_suite_t));
+	rsn_buf += (sizeof(uint16) + count * sizeof(wpa_suite_t));
+
+	/* AKM Suite */
+	if (len < sizeof(uint16))
+		return 0;
+
+	count = ltoh16_ua(rsn_buf);
+
+	if (len < (sizeof(uint16) + count * sizeof(wpa_suite_t)))
+		return 1;
+
+	rsn->akm = (wpa_suite_auth_key_mgmt_t*)rsn_buf;
+	len -= (sizeof(uint16) + count * sizeof(wpa_suite_t));
+	rsn_buf += (sizeof(uint16) + count * sizeof(wpa_suite_t));
+
+	/* Capabilites */
+	if (len < sizeof(uint16))
+		return 0;
+
+	rsn->capabilities = rsn_buf;
+
+	return 0;
+}
+
+
+static char * wl_rsn_ie_dump(bcm_tlv_t *ie)
+{
+	int i;
+	int rsn;
+	wpa_ie_fixed_t *wpa = NULL;
+	rsn_parse_info_t rsn_info;
+	wpa_suite_t *suite;
+	uint8 std_oui[3];
+	int unicast_count = 0;
+	int akm_count = 0;
+	uint16 capabilities;
+	uint cntrs;
+	int err;
+	static char sum[64]={0};
+	if (ie->id == DOT11_MNG_RSN_ID) {
+		rsn = TRUE;
+		memcpy(std_oui, WPA2_OUI, WPA_OUI_LEN);
+		err = wl_rsn_ie_parse_info(ie->data, ie->len, &rsn_info);
+	} else {
+		rsn = FALSE;
+		memcpy(std_oui, WPA_OUI, WPA_OUI_LEN);
+		wpa = (wpa_ie_fixed_t*)ie;
+		err = wl_rsn_ie_parse_info((uint8*)&wpa->version, wpa->length - WPA_IE_OUITYPE_LEN,
+		                           &rsn_info);
+	}
+	if (err || rsn_info.version != WPA_VERSION)
+		return "WEP";
+
+	if (rsn)
+		strcat(sum,"WPA2:");
+	else
+		strcat(sum,"WPA:");
+
+	/* Check for multicast suite */
+	if (rsn_info.mcast) {
+		strcat(sum,"MCAST ");
+		if (!wlu_bcmp(rsn_info.mcast->oui, std_oui, 3)) {
+			switch (rsn_info.mcast->type) {
+			case WPA_CIPHER_NONE:
+				strcat(sum,"NONE ");
+				break;
+			case WPA_CIPHER_WEP_40:
+				strcat(sum,"WEP64 ");
+				break;
+			case WPA_CIPHER_WEP_104:
+				strcat(sum,"WEP128 ");
+				break;
+			case WPA_CIPHER_TKIP:
+				strcat(sum,"TKIP ");
+				break;
+			case WPA_CIPHER_AES_OCB:
+				strcat(sum,"AES-OCB ");
+				break;
+			case WPA_CIPHER_AES_CCM:
+				strcat(sum,"AES-CCMP ");
+				break;
+			default:
+				sprintf(sum,"Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA",
+				       rsn_info.mcast->type);
+				break;
+			}
 		}
-	    }
-	    else
-	    {
-		strcat( sum, "UNICHIPHERWPAUNKNOWN " );
-	    }
-	}
-    }
-    /*
-     * Authentication Key Management 
-     */
-    /*
-     * Fixed 8, Group 4 , 2 + min one Unicast 4 - 2 bytes of VerID and Len 
-     */
-    if( wpaie[1] >= 16 )
-    {
-	offset = 8 + 4 + 2 + ( unicast_count * 4 );
-	n = wpaie[offset] + ( wpaie[offset + 1] << 8 );
-	if( wpaie[1] < ( offset + ( n * 4 ) ) )
-	{
-	    return sum;
-	}
-	for( i = 0; i < n; i++ )
-	{
-
-	    memcpy( oui, &wpaie[offset + 2 + ( i * 4 )], 3 );
-	    idx = wpaie[offset + 2 + ( i * 4 ) + 3];
-
-	    if( !memcmp( oui, WPA_OUI, 3 ) )
-	    {
-		switch ( idx )
-		{
-		    case RSN_AKM_NONE:
-			strcat( sum, "WPA-NONE" );
-			break;
-		    case RSN_AKM_UNSPECIFIED:
-			strcat( sum, "WPA" );
-			break;
-		    case RSN_AKM_PSK:
-			strcat( sum, "WPA-PSK" );
-			break;
-		    default:
-			strcat( sum, "WPA-Unknown" );
-			break;
+		else {
+			sprintf(sum,"%s Unknown-%02X:%02X:%02X(#%d) ",
+			       sum,rsn_info.mcast->oui[0], rsn_info.mcast->oui[1],
+			       rsn_info.mcast->oui[2], rsn_info.mcast->type);
 		}
-	    }
-	    else
-	    {
-		strcat( sum, "WPA-Unknown" );
-	    }
 	}
-    }
+
+	/* Check for unicast suite(s) */
+	if (rsn_info.ucast) {
+		unicast_count = ltoh16_ua(&rsn_info.ucast->count);
+		for (i = 0; i < unicast_count; i++) {
+			suite = &rsn_info.ucast->list[i];
+			if (!wlu_bcmp(suite->oui, std_oui, 3)) {
+				switch (suite->type) {
+				case WPA_CIPHER_NONE:
+					strcat(sum,"NONE ");
+					break;
+				case WPA_CIPHER_WEP_40:
+					strcat(sum,"WEP64 ");
+					break;
+				case WPA_CIPHER_WEP_104:
+					strcat(sum,"WEP128 ");
+					break;
+				case WPA_CIPHER_TKIP:
+					strcat(sum,"TKIP ");
+					break;
+				case WPA_CIPHER_AES_OCB:
+					strcat(sum,"AES-OCB ");
+					break;
+				case WPA_CIPHER_AES_CCM:
+					strcat(sum,"AES-CCMP ");
+					break;
+				default:
+					sprintf(sum,"WPA-Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA",
+					       suite->type);
+					break;
+				}
+			}
+			else {
+				sprintf(sum,"%s Unknown-%02X:%02X:%02X(#%d) ",
+					sum,suite->oui[0], suite->oui[1], suite->oui[2],
+					suite->type);
+			}
+		}
+		printf("\n");
+	}
+	/* Authentication Key Management */
+	if (rsn_info.akm) {
+		akm_count = ltoh16_ua(&rsn_info.akm->count);
+		for (i = 0; i < akm_count; i++) {
+			suite = &rsn_info.akm->list[i];
+			if (!wlu_bcmp(suite->oui, std_oui, 3)) {
+				switch (suite->type) {
+				case RSN_AKM_NONE:
+					strcat(sum,"None ");
+					break;
+				case RSN_AKM_UNSPECIFIED:
+					strcat(sum,"WPA ");
+					break;
+				case RSN_AKM_PSK:
+					strcat(sum,"WPA-PSK ");
+					break;
+				default:
+					sprintf(sum,"Unknown-%s(#%d)  ",
+					       rsn ? "WPA2" : "WPA", suite->type);
+					break;
+				}
+			}
+			else {
+				sprintf(sum,"%s Unknown-%02X:%02X:%02X(#%d)  ",
+					sum,suite->oui[0], suite->oui[1], suite->oui[2],
+					suite->type);
+			}
+		}
+	}
     return sum;
 }
+
+static uint8 *
+wlu_parse_tlvs(uint8 *tlv_buf, int buflen, uint key)
+{
+	uint8 *cp;
+	int totlen;
+
+	cp = tlv_buf;
+	totlen = buflen;
+
+	/* find tagged parameter */
+	while (totlen >= 2) {
+		uint tag;
+		int len;
+
+		tag = *cp;
+		len = *(cp +1);
+
+		/* validate remaining totlen */
+		if ((tag == key) && (totlen >= (len + 2)))
+			return (cp);
+
+		cp += (len + 2);
+		totlen -= (len + 2);
+	}
+
+	return NULL;
+}
+
+
+static char *
+wl_dump_wpa_rsn_ies(uint8* cp, uint len)
+{
+	uint8 *parse = cp;
+	uint parse_len = len;
+	uint8 *wpaie;
+	uint8 *rsnie;
+
+	while ((wpaie = wlu_parse_tlvs(parse, parse_len, DOT11_MNG_WPA_ID)))
+		if (wlu_is_wpa_ie(&wpaie, &parse, &parse_len))
+			break;
+	if (wpaie)
+		return wl_rsn_ie_dump((bcm_tlv_t*)wpaie);
+
+	rsnie = wlu_parse_tlvs(cp, len, DOT11_MNG_RSN_ID);
+	if (rsnie)
+		return wl_rsn_ie_dump((bcm_tlv_t*)rsnie);
+
+	return "WEP";
+}
+
+
 
 static char *getEncInfo( wl_bss_info_t * bi )
 {
@@ -262,11 +355,11 @@ static char *getEncInfo( wl_bss_info_t * bi )
 	if( bi->ie_length )
 #ifdef HAVE_MSSID
 	    return
-		dump_bss_ie( ( uint8 * ) ( ( ( uint8 * ) bi ) +
+		wl_dump_wpa_rsn_ies( ( uint8 * ) ( ( ( uint8 * ) bi ) +
 					   bi->ie_offset ), bi->ie_length );
 #else
 	    return
-		dump_bss_ie( ( uint8 * ) ( ( ( uint8 * ) bi ) +
+		wl_dump_wpa_rsn_ies( ( uint8 * ) ( ( ( uint8 * ) bi ) +
 					   sizeof( wl_bss_info_t ) ),
 			     bi->ie_length );
 #endif
