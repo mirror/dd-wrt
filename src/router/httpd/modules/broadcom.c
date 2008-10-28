@@ -1758,6 +1758,8 @@ char *live_translate( char *tran )
     char *temp2;
     char *lang = getLanguageName(  );
     char buf[64];
+    memset(temp,0,sizeof(temp));
+    memset(temp1,0,sizeof(temp));
 
     sprintf( buf, "%s", lang );
     free( lang );

@@ -98,11 +98,11 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
     char *wan_proto = nvram_safe_get( "wan_proto" );
     struct dns_lists *dns_list = NULL;
     int wan_link = check_wan_link( 0 );
-
+    int trans=0;
 #ifdef FASTWEB
-    ejArgs( argc, argv, "%s", &type );
+    ejArgs( argc, argv, "%s %d", &type,&trans );
 #else
-    if( ejArgs( argc, argv, "%s", &type ) < 1 )
+    if( ejArgs( argc, argv, "%s %d", &type, &trans ) < 2 )
     {
 	websError( wp, 400, "Insufficient args\n" );
 	return;
@@ -160,28 +160,37 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
 	    // retry_count != -1){
 	    if( retry_count != -1 )
 	    {
-		status1 = live_translate( "share.statu");
-		status2 = live_translate( "share.connecting");
-		button1 = live_translate( "share.disconnect");
+		status1 = "share.statu";
+		status2 = "share.connecting";
+		if (trans)
+		    button1 = "share.disconnect";
+		else		
+		    button1 = "Disconnect";
 	    }
 	    else
 	    {
-		status1 = live_translate( "share.statu");
-		status2 = live_translate( "share.disconnect");
-		button1 = live_translate( "share.connect");
+		status1 = "share.statu";
+		status2 = "share.disconnect";
+		if (trans)
+		    button1 = "share.connect";
+		else		
+		    button1 = "Connect";
 	    }
 	}
 	else
 	{
 	    retry_count = -1;
-	    status1 = live_translate( "share.statu");
-	    status2 = live_translate( "share.connected");
-	    button1 = live_translate( "share.disconnect");
+	    status1 = "share.statu";
+	    status2 = "share.connected";
+		if (trans)
+		    button1 = "share.disconnect";
+		else		
+		    button1 = "Disconnect";
 	}
     }
     else
     {
-	status1 = live_translate( "share.disable");;	// only for nonbrand
+	status1 = "share.disable";	// only for nonbrand
 	status2 = "&nbsp;";
 	hidden1 = "<!--";
 	hidden2 = "-->";
@@ -211,11 +220,16 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
 	    websWrite( wp, "%s", dns_list->dns_server[2] );
     }
     else if( !strcmp( type, "status1" ) )
-	websWrite( wp, "%s", status1 );
+	websWrite( wp, "%s", live_translate(status1) );
     else if( !strcmp( type, "status2" ) )
-	websWrite( wp, "%s", status2 );
+	websWrite( wp, "%s", live_translate(status2) );
     else if( !strcmp( type, "button1" ) )
-	websWrite( wp, "%s", button1 );
+	{
+	if (trans)
+		websWrite( wp, "%s", live_translate(button1) );
+	    else
+		websWrite( wp, "%s", button1 );
+	}
     else if( !strcmp( type, "hidden1" ) )
 	websWrite( wp, "%s", hidden1 );
     else if( !strcmp( type, "hidden2" ) )
