@@ -1,6 +1,6 @@
 dnsmasq:
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
-	$(MAKE) -j 4 -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS)"
+	$(MAKE) -j 4 -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 else
 ifeq ($(CONFIG_DIST),"micro")
 	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
