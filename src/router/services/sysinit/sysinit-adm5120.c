@@ -233,8 +233,6 @@ int start_sysinit( void )
 
 	    if( s != -1 )
 	    {
-		// fseek(fp,ftell(fp),SEEK_SET);
-		// fprintf(stderr,"found mac at 0x%08X\n",ftell(fp));
 		fread( mac, 6, 1, fp );
 		struct ifreq ifr;
 		int s;
