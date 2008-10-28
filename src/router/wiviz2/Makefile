@@ -6,7 +6,7 @@ include $(TOP)/.config
 
 LIBS=../libpcap_noring/libpcap.a -lcrypt -lnvram -lshared -lutils
 
-CCOPTS=$(COPTS) 
+CCOPTS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 INCLUDE=../libpcap_noring
 SOURCES=wiviz.c wl_access.c channelhopper.c
 OBJS=wiviz.o wl_access.o channelhopper.o
