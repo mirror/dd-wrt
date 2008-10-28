@@ -213,12 +213,7 @@ int start_sysinit( void )
 	    {
 		strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
 		ioctl( s, SIOCGIFHWADDR, &ifr );
-		// fprintf(stderr,"old mac %s\n",ether_etoa ((unsigned char
-		// *) ifr.ifr_hwaddr.sa_data,eabuf));
 		memcpy( ( unsigned char * )ifr.ifr_hwaddr.sa_data, mac, 6 );
-		// fprintf( stderr, "new mac %s\n",
-		// ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.
-		// sa_data, eabuf ) );
 		ioctl( s, SIOCSIFHWADDR, &ifr );
 		close( s );
 	    }
@@ -250,13 +245,8 @@ int start_sysinit( void )
 		{
 		    strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
 		    ioctl( s, SIOCGIFHWADDR, &ifr );
-		    // fprintf(stderr,"old mac %s\n",ether_etoa ((unsigned char
-		    // *) ifr.ifr_hwaddr.sa_data,eabuf));
 		    memcpy( ( unsigned char * )ifr.ifr_hwaddr.sa_data, mac,
 			    6 );
-		    // fprintf( stderr, "new mac %s\n",
-		    // ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.
-		    // sa_data, eabuf ) );
 		    ioctl( s, SIOCSIFHWADDR, &ifr );
 		    close( s );
 		}
