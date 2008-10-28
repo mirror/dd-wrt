@@ -21,7 +21,7 @@ else
 CCOPTS	+= -I$(SRCBASE)/include.v23 -L../shared -L../nvram -L../libutils
 endif
 ifeq ($(CONFIG_MADWIFI),y)
-CCOPTS+=-DHAVE_MADWIFI -DNEED_PRINTF -I../shared  -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -DHEADERS_KERNEL
+CCOPTS+=-DHAVE_MADWIFI -I../shared  -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -DHEADERS_KERNEL
 endif
 
 wiviz: ${OBJS}
