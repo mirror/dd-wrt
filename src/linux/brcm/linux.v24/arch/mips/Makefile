@@ -46,6 +46,11 @@ GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe -DBCMGPIO2
 GCCFLAGS	+= $(call check_gcc, -finline-limit=100000,)
 LINKFLAGS	+= -G 0 -static -n -nostdlib
 MODFLAGS	+= -mlong-calls -fno-common
+ifdef CONFIG_SIZE
+GCCFLAGS	+= -Os
+else
+GCCFLAGS	+= -O2
+endif
 
 ifdef CONFIG_REMOTE_DEBUG
 GCCFLAGS	+= -g
