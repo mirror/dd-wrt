@@ -126,7 +126,7 @@ static void deconfigure_single( int count )
 
     for( s = 1; s <= 10; s++ )
     {
-	sprintf( dev, "wdsath%d.%d", count, s );
+	sprintf( dev, "ath%d.wds%d", count, s-1 );
 	if( ifexists( dev ) )
 	{
 	    br_del_interface( "br0", dev );
