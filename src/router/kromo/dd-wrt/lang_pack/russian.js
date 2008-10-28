@@ -186,6 +186,7 @@ share.gbytes="ГБайт";
 share.preempt="Приоритетн.прерывание";
 share.acktiming="Выбор времени ACK";
 share.broadcast="Поддержка Broadcast";
+share.xmit="Xmit";
 
 
 sbutton.save="Сохранить";

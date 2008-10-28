@@ -160,28 +160,28 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
 	    // retry_count != -1){
 	    if( retry_count != -1 )
 	    {
-		status1 = "Status";
-		status2 = "Connecting";
-		button1 = "Disconnect";
+		status1 = live_translate( "share.statu");
+		status2 = live_translate( "share.connecting");
+		button1 = live_translate( "share.disconnect");
 	    }
 	    else
 	    {
-		status1 = "Status";
-		status2 = "Disconnected";
-		button1 = "Connect";
+		status1 = live_translate( "share.statu");
+		status2 = live_translate( "share.disconnect");
+		button1 = live_translate( "share.connect");
 	    }
 	}
 	else
 	{
 	    retry_count = -1;
-	    status1 = "Status";
-	    status2 = "Connected";
-	    button1 = "Disconnect";
+	    status1 = live_translate( "share.statu");
+	    status2 = live_translate( "share.connected");
+	    button1 = live_translate( "share.disconnect");
 	}
     }
     else
     {
-	status1 = "Disable";	// only for nonbrand
+	status1 = live_translate( "share.disable");;	// only for nonbrand
 	status2 = "&nbsp;";
 	hidden1 = "<!--";
 	hidden2 = "-->";
