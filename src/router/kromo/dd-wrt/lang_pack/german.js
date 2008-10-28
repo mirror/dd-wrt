@@ -155,7 +155,6 @@ share.standard="Standard";
 share.user="Nutzer";
 share.preempt="Bevorzugung";
 share.broadcast="Broadcast Unterstützung"
-share.xmit="Leistung";
 
 
 sbutton.save="Speichern";
@@ -1666,7 +1665,7 @@ wl_basic.radio_off="WLAN ist Aus";
 
 wl_basic.h2_v24="Drahtloses Physisikalisches Interface";
 wl_basic.regdom="Regulatory Domain";
-wl_basic.TXpower="TX Power";
+wl_basic.TXpower="Sendeleistung";
 wl_basic.diversity="Diversity";
 wl_basic.primary="Primär";
 wl_basic.secondary="Sekundär";
