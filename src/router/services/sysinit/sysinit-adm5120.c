@@ -189,7 +189,7 @@ int start_sysinit( void )
     {
 	//check for osbridge
 	fseek( fp, 0xff90 - 2, SEEK_SET );
-	char os[32];
+	unsigned char os[32];
 
 	fread( os, 32, 1, fp );
 	if( strcmp( os, "OSBRiDGE 5XLi" ) == 0 )
@@ -203,8 +203,8 @@ int start_sysinit( void )
 
 	    for( i = 0; i < 6; i++ )
 	    {
-		mac[i] = ( os[count++] - '0' ) << 4;
-		mac[i] |= ( os[count++] - '0' );
+		mac[i] = ((int)( os[count++] - '0' ) * 16);
+		mac[i] |= ((int)( os[count++] - '0' );
 	    }
 	    struct ifreq ifr;
 	    int s;
