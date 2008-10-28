@@ -85,7 +85,10 @@ int set_channel(char *dev,int channel)
     struct iwreq wrq;
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, get_monitor(), IFNAMSIZ );
-    wrq.u.freq.m = (double) ieee80211_ieee2mhz(channel,1) * 100000;
+    if (channel>14)
+	wrq.u.freq.m = (double) ieee80211_ieee2mhz(channel,2) * 100000;
+    else
+	wrq.u.freq.m = (double) ieee80211_ieee2mhz(channel,1) * 100000;
     wrq.u.freq.e = (double) 1;
     
     if( ioctl( getsocket(), SIOCSIWFREQ, &wrq ) < 0 )
