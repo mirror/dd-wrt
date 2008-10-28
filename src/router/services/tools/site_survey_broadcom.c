@@ -51,7 +51,7 @@ struct site_survey_list
     uint16 beacon_period;	/* units are Kusec */
     uint16 capability;		/* Capability information */
     // unsigned char athcaps;
-    unsigned char ENCINFO[32];	/* encryption info */
+    unsigned char ENCINFO[64];	/* encryption info */
     uint rate_count;		/* # rates in this set */
     uint8 dtim_period;		/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
@@ -169,7 +169,7 @@ static char * wl_rsn_ie_dump(bcm_tlv_t *ie)
 	uint16 capabilities;
 	uint cntrs;
 	int err;
-	char sum[64]={0};
+	static char sum[64]={0};
 	if (ie->id == DOT11_MNG_RSN_ID) {
 		rsn = TRUE;
 		memcpy(std_oui, WPA2_OUI, WPA_OUI_LEN);
@@ -184,33 +184,27 @@ static char * wl_rsn_ie_dump(bcm_tlv_t *ie)
 	if (err || rsn_info.version != WPA_VERSION)
 		return "WEP";
 
-	if (rsn)
-		strcat(sum,"WPA2:");
-	else
-		strcat(sum,"WPA:");
 
 	/* Check for multicast suite */
 	if (rsn_info.mcast) {
-		strcat(sum,"MCAST ");
 		if (!wlu_bcmp(rsn_info.mcast->oui, std_oui, 3)) {
 			switch (rsn_info.mcast->type) {
 			case WPA_CIPHER_NONE:
-				strcat(sum,"NONE ");
 				break;
 			case WPA_CIPHER_WEP_40:
-				strcat(sum,"WEP64 ");
+				strcat(sum,"Group-WEP64 ");
 				break;
 			case WPA_CIPHER_WEP_104:
-				strcat(sum,"WEP128 ");
+				strcat(sum,"Group-WEP128 ");
 				break;
 			case WPA_CIPHER_TKIP:
-				strcat(sum,"TKIP ");
+				strcat(sum,"Group-TKIP ");
 				break;
 			case WPA_CIPHER_AES_OCB:
-				strcat(sum,"AES-OCB ");
+				strcat(sum,"Group-AES-OCB ");
 				break;
 			case WPA_CIPHER_AES_CCM:
-				strcat(sum,"AES-CCMP ");
+				strcat(sum,"Group-AES-CCMP ");
 				break;
 			default:
 				sprintf(sum,"Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA",
@@ -233,22 +227,22 @@ static char * wl_rsn_ie_dump(bcm_tlv_t *ie)
 			if (!wlu_bcmp(suite->oui, std_oui, 3)) {
 				switch (suite->type) {
 				case WPA_CIPHER_NONE:
-					strcat(sum,"NONE ");
+					strcat(sum,"Pair-NONE ");
 					break;
 				case WPA_CIPHER_WEP_40:
-					strcat(sum,"WEP64 ");
+					strcat(sum,"Pair-WEP64 ");
 					break;
 				case WPA_CIPHER_WEP_104:
-					strcat(sum,"WEP128 ");
+					strcat(sum,"Pair-WEP128 ");
 					break;
 				case WPA_CIPHER_TKIP:
-					strcat(sum,"TKIP ");
+					strcat(sum,"Pair-TKIP ");
 					break;
 				case WPA_CIPHER_AES_OCB:
-					strcat(sum,"AES-OCB ");
+					strcat(sum,"Pair-AES-OCB ");
 					break;
 				case WPA_CIPHER_AES_CCM:
-					strcat(sum,"AES-CCMP ");
+					strcat(sum,"Pair-AES-CCMP ");
 					break;
 				default:
 					sprintf(sum,"WPA-Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA",
@@ -275,10 +269,16 @@ static char * wl_rsn_ie_dump(bcm_tlv_t *ie)
 					strcat(sum,"None ");
 					break;
 				case RSN_AKM_UNSPECIFIED:
+					if (rsn)
+					strcat(sum,"WPA2 ");
+					else
 					strcat(sum,"WPA ");
 					break;
 				case RSN_AKM_PSK:
+					if (rsn)
 					strcat(sum,"WPA-PSK ");
+					else
+					strcat(sum,"WPA2-PSK ");
 					break;
 				default:
 					sprintf(sum,"Unknown-%s(#%d)  ",
