@@ -2,8 +2,6 @@
 	<head>
 		<title><% nvram_get("router_name"); %> - Wi-viz 2.0: Wireless Network Visualization</title>
 		<script type="text/javascript" src="js/wiviz2.js"></script>
-		<script type="text/javascript" src="lang_pack/english.js"></script>
-		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<link type="text/css" rel="stylesheet" href="style/wiviz2.css" />
 		<!-- The proper way to deal with memory leaks -->
 		<meta http-equiv="refresh" content="1800">
@@ -30,7 +28,7 @@
 			Scanning options
 		</div>
 		<div class='slidingbodyshow'>
-			<center><% tran("share.statu"); %></center>
+			<center>Status</center>
 			Monitoring<br>
 			<center>Channel setting</center> 
 			<form name="channelform" action="apply.cgi" method="post" />
@@ -40,7 +38,7 @@
 						<input type="hidden" name="submit_type" value="Set" />
 						<input type="hidden" name="commit" value="1" />
 			<select name='hopseq' onChange='this.form.submit()'>
-				<option value='0' <% nvram_selected("hopseq","0"); %> ><% tran("share.all"); %></option>
+				<option value='0' <% nvram_selected("hopseq","0"); %> >All</option>
 				<option value='1' <% nvram_selected("hopseq","1"); %> >1</option>
 				<option value='2' <% nvram_selected("hopseq","2"); %> >2</option>
 				<option value='3' <% nvram_selected("hopseq","3"); %> >3</option>
@@ -144,7 +142,7 @@
 	</div> -->
 		<div class='expando'>
 		<div class='slidingheader' id='configuration' onClick="self.close()">
-			<% tran("sbutton.clos"); %>
+			Close
 		</div>
 		</div>
 	
