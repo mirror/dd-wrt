@@ -80,7 +80,7 @@ u_int ieee80211_ieee2mhz(u_int chan, u_int flags)
 }
 
 
-void set_channel(char *dev,int channel)
+int set_channel(char *dev,int channel)
 {
     struct iwreq wrq;
     memset( &wrq, 0, sizeof( struct iwreq ) );
@@ -90,14 +90,15 @@ void set_channel(char *dev,int channel)
     
     if( ioctl( getsocket(), SIOCSIWFREQ, &wrq ) < 0 )
     {
-        usleep( 10000 ); /* madwifi needs a second chance */
+	return -1;
+//        usleep( 10000 ); /* madwifi needs a second chance */
 
-        if( ioctl( getsocket(), SIOCSIWFREQ, &wrq ) < 0 )
-        {
-            return;
-        }
+//        if( ioctl( getsocket(), SIOCSIWFREQ, &wrq ) < 0 )
+//        {
+//            return;
+//        }
     }
-
+return 0;
 }
 void channelHopper(wiviz_cfg * cfg) {
   int hopPos;
@@ -110,11 +111,19 @@ void channelHopper(wiviz_cfg * cfg) {
   //Start hoppin'!
   hopPos = 0;
   while (1) {
-    nc = cfg->channelHopSeq[hopPos];
+    int hop = cfg->channelHopSeq[hopPos];
+    if (hop==0)
+	nc++;
+    else
+    {
+    nc = hop;
     hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
+    }
     //Set the channel
 #ifdef HAVE_MADWIFI
-    set_channel(get_wdev(),nc);
+    int ret = set_channel(get_wdev(),nc);
+    if (ret==-1)
+	continue;
 #else        
     wl_ioctl(get_wdev(), WLC_SET_CHANNEL, &nc, 4);
 #endif
