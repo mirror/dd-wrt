@@ -118,7 +118,7 @@ addEvent(window, "unload", function() {
 									<div id="wan_info" style="display:none">
 										<div class="setting" id="wan_connection">
 											<div class="label"><% tran("status_inet.www_loginstatus"); %></div>
-											<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>');" /></span>
+											<span id="wan_status"><% nvram_status_get("status2","1"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1","1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1","0"); %>_<% nvram_get("wan_proto"); %>');" /></span>
 										</div>
 										 <div class="setting">
 											<div class="label"><% tran("status_inet.wanuptime"); %></div>
@@ -126,27 +126,27 @@ addEvent(window, "unload", function() {
 										</div>
 										<div class="setting">
 											<div class="label"><% tran("share.ip"); %></div>
-											<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
+											<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr","0"); %></span>&nbsp;
 										</div>
 										<div class="setting">
 											<div class="label"><% tran("share.subnet"); %></div>
-											<span id="wan_netmask"><% nvram_status_get("wan_netmask"); %></span>&nbsp;
+											<span id="wan_netmask"><% nvram_status_get("wan_netmask","0"); %></span>&nbsp;
 										</div>
 										<div class="setting">
 											<div class="label"><% tran("share.gateway"); %></div>
-											<span id="wan_gateway"><% nvram_status_get("wan_gateway"); %></span>&nbsp;
+											<span id="wan_gateway"><% nvram_status_get("wan_gateway","0"); %></span>&nbsp;
 										</div>
 										<div class="setting">
 											<div class="label">DNS 1</div>
-											<span id="wan_dns0"><% nvram_status_get("wan_dns0"); %></span>&nbsp;
+											<span id="wan_dns0"><% nvram_status_get("wan_dns0","0"); %></span>&nbsp;
 										</div>
 										<div class="setting">
 											<div class="label">DNS 2</div>
-											<span id="wan_dns1"><% nvram_status_get("wan_dns1"); %></span>&nbsp;
+											<span id="wan_dns1"><% nvram_status_get("wan_dns1","0"); %></span>&nbsp;
 										</div>
 										<div class="setting">
 											<div class="label">DNS 3</div>
-											<span id="wan_dns2"><% nvram_status_get("wan_dns2"); %></span>&nbsp;
+											<span id="wan_dns2"><% nvram_status_get("wan_dns2","0"); %></span>&nbsp;
 										</div>
 										<div id="wan_dhcp">
 											<div class="setting">
