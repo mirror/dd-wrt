@@ -3788,7 +3788,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     sprintf( wl_rxantenna, "%s_rxantenna", prefix );
     sprintf( wl_txantenna, "%s_txantenna", prefix );
     sprintf( wl_width, "%s_channelbw", prefix );
-    sprintf( wl_comp, "%s_compression", prefix );
+//    sprintf( wl_comp, "%s_compression", prefix );
     sprintf( wl_ff, "%s_ff", prefix );
     sprintf( wl_preamble, "%s_preamble", prefix );
     sprintf( wl_preambletime, "%s_preambletime", prefix );
@@ -3847,7 +3847,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     show_rates( wp, prefix, 1 );
     showRadio( wp, "wl_basic.preamble", wl_preamble );
     showRadio( wp, "wl_basic.extrange", wl_xr );
-    showRadio( wp, "wl_basic.supergcomp", wl_comp );
+//    showRadio( wp, "wl_basic.supergcomp", wl_comp );
     showRadio( wp, "wl_basic.supergff", wl_ff );
 
     // showOption (wp, "wl_basic.extchannel", wl_xchanmode);

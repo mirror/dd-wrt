@@ -2547,7 +2547,7 @@ static void save_prefix( webs_t wp, char *prefix )
     copytonv( wp, "%s_maxrate", prefix );
     copytonv( wp, "%s_xr", prefix );
     copytonv( wp, "%s_outdoor", prefix );
-    copytonv( wp, "%s_compression", prefix );	// Atheros SuperG header
+//    copytonv( wp, "%s_compression", prefix );	// Atheros SuperG header
 						// compression
     copytonv( wp, "%s_ff", prefix );	// ff = 0, Atheros SuperG fast
 					// framing disabled, 1 fast framing
