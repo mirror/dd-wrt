@@ -510,7 +510,7 @@ static void do_madwifi_check( void )
     for( i = 0; i < c; i++ )
     {
 	sprintf( dev, "ath%d", i );
-	for( s = 1; s <= 10; s++ )
+/*	for( s = 1; s <= 10; s++ )
 	{
 	    char wdsvarname[32] = { 0 };
 	    char wdsdevname[32] = { 0 };
@@ -539,7 +539,7 @@ static void do_madwifi_check( void )
 		    eval( "startservice", "set_routes" );
 		}
 	    }
-	}
+	}*/
 	char mode[32];
 
 	sprintf( mode, "%s_mode", dev );
