@@ -1021,7 +1021,6 @@ static void configure_single( int count )
     sprintf( athmac, "ath%d_hwaddr", count );
     // create base device
     cprintf( "configure base interface %d\n", count );
-    eval( "ifconfig", wif, "up" );
     sprintf( net, "%s_net_mode", dev );
     if( nvram_match( net, "disabled" ) )
 	return;

@@ -118,7 +118,6 @@ int start_sysinit( void )
     insmod( "ar2313" );
     insmod( "ath_hal" );
     insmod( "ath_ahb" );
-    eval( "ifconfig", "wifi0", "up" );
 
 #ifdef HAVE_LS2
 #ifndef HAVE_NS2
