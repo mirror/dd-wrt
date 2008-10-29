@@ -1042,7 +1042,7 @@ static void configure_single( int count )
 	hwaddr = nvram_get( wdsmacname );
 	if( hwaddr != NULL )
 	{
-	    sysprintf("iwpriv %s wds_add",dev,hwaddr);
+	    sysprintf("iwpriv %s wds_add %s",dev,hwaddr);
 	}
     }
 
