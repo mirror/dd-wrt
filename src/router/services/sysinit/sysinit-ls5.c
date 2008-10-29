@@ -123,7 +123,6 @@ int start_sysinit( void )
     insmod( "ath_hal" );
     insmod( "ath_ahb" );
 
-    // eval ("ifconfig", "wifi0", "up");
 
     insmod( "ipv6" );
 
