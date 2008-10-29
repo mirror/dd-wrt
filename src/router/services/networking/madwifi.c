@@ -893,7 +893,7 @@ void setMacFilter( char *iface )
 {
     char *next;
     char var[32];
-
+    sysprintf("ifconfig %s down",iface);
     sysprintf("iwpriv %s maccmd 3",iface);
 
     char nvvar[32];
@@ -902,6 +902,7 @@ void setMacFilter( char *iface )
     if( nvram_match( nvvar, "deny" ) )
     {
 	sysprintf("iwpriv %s maccmd 2",iface);
+	sysprintf("ifconfig %s up",iface);
 	char nvlist[32];
 
 	sprintf( nvlist, "%s_maclist", iface );
@@ -914,6 +915,7 @@ void setMacFilter( char *iface )
     if( nvram_match( nvvar, "allow" ) )
     {
 	sysprintf("iwpriv %s maccmd 1",iface);
+	sysprintf("ifconfig %s up",iface);
 	
 	char nvlist[32];
 
@@ -1398,6 +1400,7 @@ static void configure_single( int count )
 	{
 	    ifconfig( dev, IFUP, NULL, NULL );
 	    br_add_interface( getBridge( dev ), dev );
+	    sysprintf( "ifconfig %s 0.0.0.0 up",dev);
 	}
 	else
 	{
@@ -1413,7 +1416,7 @@ static void configure_single( int count )
 	if( nvram_default_match( bridged, "0", "1" ) )
 	{
 	    sysprintf( "ifconfig %s mtu 1500",dev);
-	    sysprintf( "ifconfig %s %s netmask %s down", dev, nvram_nget("%s_ipaddr",dev),nvram_nget("%s_netmask",dev));
+	    sysprintf( "ifconfig %s %s netmask %s up", dev, nvram_nget("%s_ipaddr",dev),nvram_nget("%s_netmask",dev));
 	}
     }
     if( strcmp( m, "sta" ) && strcmp( m, "wdssta" ) && strcmp( m, "wet" ) )
@@ -1461,10 +1464,12 @@ static void configure_single( int count )
 		    br_add_interface( getBridge( var ), var );
 		    if( !strcmp( m, "sta" ) || !strcmp( m, "wdssta" )
 			|| !strcmp( m, "wet" ) )
-			sysprintf( "ifconfig %s down",var);
+			sysprintf( "ifconfig %s 0.0.0.0 down",var);
 		    else
 		    {
-			sysprintf( "ifconfig %s down",var);
+			sysprintf( "ifconfig %s 0.0.0.0 down",var);
+			sleep(1);
+			sysprintf( "ifconfig %s 0.0.0.0 up",var);
 		    }
 		}
 		else
@@ -1482,7 +1487,9 @@ static void configure_single( int count )
 			sysprintf( "ifconfig %s down",var);
 		    else
 		    {
-			sysprintf( "ifconfig %s %s netmask %s down", var, nvram_safe_get( ip ),nvram_safe_get( mask ));
+			sysprintf( "ifconfig %s down",var);
+			sleep(1);
+			sysprintf( "ifconfig %s %s netmask %s up", var, nvram_safe_get( ip ),nvram_safe_get( mask ));
 		    }
 		}
 	    }
@@ -1504,8 +1511,10 @@ static void configure_single( int count )
 	    char freq[64];
 
 	    sysprintf( "iwconfig %s freq %sM" , dev, ch);
-	}
+	    sysprintf( "ifconfig %s down",dev);
+	    sleep(1);
 	    sysprintf( "ifconfig %s up",dev);
+	}
     }
 
     for( s = 1; s <= 10; s++ )
@@ -1530,7 +1539,7 @@ static void configure_single( int count )
 	    sysprintf("ifconfig %s 0.0.0.0 up",wdsdev);
 	}
     }
-    sysprintf("ifconfig %s up",dev);
+/*    sysprintf("ifconfig %s up",dev);
     vifs = nvram_safe_get( wifivifs );
     if( vifs != NULL && strlen( vifs ) > 0 )
     {
@@ -1538,7 +1547,7 @@ static void configure_single( int count )
 	{
 	sysprintf("ifconfig %s up",var);
 	}
-    }
+    }*/
 }
 
 void start_vifs( void )
