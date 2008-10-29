@@ -159,7 +159,7 @@ int main(int argc, char * * argv) {
   wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
 #else
   // return to original channel
-  sysprintf("iwconfig %s channel %sMhz",get_monitor(),nvram_nget("%s_channel",get_wdev()));
+  sysprintf("iwconfig %s channel %sM",get_monitor(),nvram_nget("%s_channel",get_wdev()));
   sleep(1);
   sysprintf("ifconfig %s down",get_monitor());
   sysprintf("wlanconfig %s destroy",get_monitor());
