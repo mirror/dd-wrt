@@ -576,7 +576,9 @@ wiviz_host * gotHost(wiviz_cfg * cfg, u_char * mac, host_type type) {
     } 
   if (!h->occupied) {
     printf( "New host, ");
+    #ifdef NEED_PRINTF
     fprint_mac(stdout, mac, ", type=");
+    #endif
     printf( "%s\n", (type==typeAP) ? "AP" : ((type==typeSta) ? "Sta" : "Unk"));
     }
   h->occupied = 1;
@@ -657,7 +659,9 @@ void readWL(wiviz_cfg * cfg) {
 		
 	get_mac(wl_dev, mac);
 	printf( "AP mac: ");
+	#ifdef NEED_PRINTF
 	print_mac(mac, "\n");
+	#endif
 	if (!nonzeromac(mac)) return;
 	if (nvram_nmatch("ap","%s_mode",wl_dev))
 	    ap=1;
