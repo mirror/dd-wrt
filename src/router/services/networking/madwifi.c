@@ -691,7 +691,7 @@ static void set_netmode( char *wif, char *dev, char *use )
     sprintf( net, "%s_net_mode", dev );
     sprintf( bw, "%s_channelbw", dev );
     sprintf( xr, "%s_xr", dev );
-    sprintf( comp, "%s_compression", dev );
+//    sprintf( comp, "%s_compression", dev );
     sprintf( ff, "%s_ff", dev );
 #ifdef HAVE_WHRAG108
     char *netmode;
@@ -780,10 +780,10 @@ static void set_netmode( char *wif, char *dev, char *use )
 	    }
 	}
     }
-    if( nvram_default_match( comp, "1", "0" ) )
-	sysprintf("iwpriv %s compression 1",use);
-    else
-	sysprintf("iwpriv %s compression 0",use);
+//    if( nvram_default_match( comp, "1", "0" ) )
+//	sysprintf("iwpriv %s compression 1",use);
+//    else
+//	sysprintf("iwpriv %s compression 0",use);
 
     if( nvram_default_match( ff, "1", "0" ) )
 	sysprintf("iwpriv %s ff 1",use);
@@ -821,7 +821,7 @@ static void setRTS( char *use )
 	sysprintf("iwpriv %s protmode 2",use);
 }
 
-static void set_compression( int count )
+/*static void set_compression( int count )
 {
     char comp[32];
     char wif[32];
@@ -833,7 +833,7 @@ static void set_compression( int count )
     else
 	setsysctrl( wif, "compression", 0 );
 }
-
+*/
 void setMacFilter( char *iface )
 {
     char *next;
@@ -916,7 +916,7 @@ static void configure_single( int count )
 	return;
     if( !count )
 	strcpy( iflist, dev );
-    set_compression( count );
+//    set_compression( count );
     // create wds interface(s)
     int s;
 
