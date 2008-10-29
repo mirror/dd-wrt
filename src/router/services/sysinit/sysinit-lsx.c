@@ -131,7 +131,6 @@ int start_sysinit( void )
     insmod( "ath_pci" );
     // insmod("ath_mimo_pci");
 
-    // eval ("ifconfig", "wifi0", "up");
 
     system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
     system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
