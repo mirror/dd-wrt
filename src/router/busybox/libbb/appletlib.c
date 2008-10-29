@@ -646,6 +646,7 @@ static int busybox_main(char **argv)
 		output_width -= MAX_APPLET_NAME_LEN + 8;
 
 		dup2(1, 2);
+#ifndef HAVE_NOMESSAGE
 		full_write2_str(bb_banner); /* reuse const string... */
 		full_write2_str(" multi-call binary\n"
 		       "Copyright (C) 1998-2008 Erik Andersen, Rob Landley, Denys Vlasenko\n"
@@ -676,6 +677,7 @@ static int busybox_main(char **argv)
 			a += len + 1;
 		}
 		full_write2_str("\n\n");
+#endif
 		return 0;
 	}
 
