@@ -584,60 +584,6 @@ void start_hostapdwan( void )
 }
 
 #define SIOCSSCANLIST  		(SIOCDEVPRIVATE+6)
-#ifdef MADWIFI_OLD
-static void set_scanlist( char *dev, char *wif )
-{
-
-    char *next;
-    struct iwreq iwr;
-    char scanlist[32];
-    unsigned short list[1024];
-
-    sprintf( scanlist, "%s_scanlist", dev );
-    char *sl = nvram_default_get( scanlist, "default" );
-    memset( list, 0, 1024 * sizeof( unsigned short ) );
-    int c = 0;
-
-    if( strlen( sl ) > 0 && strcmp( sl, "default" ) )
-    {
-	foreach( var, sl, next )
-	{
-	    int ch = atoi( var );
-
-	    if( ch < 1000 || ch > 7000 )
-	    {
-		c = 1;
-		break;
-	    }
-	    u_int16_t chan = ch;
-
-	    // fprintf(stderr,"scanlist %d\n",chan);
-	    list[c++] = chan;
-	}
-    }
-    else
-	c = 1;
-
-    memset( &iwr, 0, sizeof( struct iwreq ) );
-    strncpy( iwr.ifr_name, wif, IFNAMSIZ );
-    {
-	/*
-	 * Argument data too big for inline transfer; setup a
-	 * parameter block instead; the kernel will transfer
-	 * the data for the driver.
-	 */
-	iwr.u.data.pointer = &list[0];
-	iwr.u.data.length = 1024 * sizeof( unsigned short );
-    }
-
-    int r = ioctl( getsocket(  ), SIOCSSCANLIST, &iwr );
-
-    if( r < 0 )
-    {
-	fprintf( stderr, "error while setting scanlist on %s, %d\n", wif, r );
-    }
-}
-#else
 static void set_scanlist( char *dev, char *wif )
 {
     char var[32];
@@ -664,7 +610,6 @@ static void set_scanlist( char *dev, char *wif )
 	sysprintf("iwpriv %s setscanlist +ALL",dev);
     }
 }
-#endif
 
 static void set_rate( char *dev )
 {
@@ -1251,9 +1196,7 @@ static void configure_single( int count )
 		break;
 	}
 	m = nvram_default_get( mode, "ap" );
-#ifndef OLD_MADWIFI
 	set_scanlist( dev, wif );
-#endif
 	setRTS( var );
 
 	if( strcmp( m, "sta" ) && strcmp( m, "wdssta" )
@@ -1270,12 +1213,6 @@ static void configure_single( int count )
 	    {
 		sysprintf( "iwconfig %s freq %sM", var, ch);
 	    }
-	}
-	else
-	{
-#ifdef OLD_MADWIFI
-	    set_scanlist( dev, wif );
-#endif
 	}
 	sysprintf("iwpriv %s bgscan 0",var);
 #ifdef HAVE_MAKSAT
