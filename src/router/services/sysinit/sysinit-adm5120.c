@@ -53,6 +53,9 @@
 #include <utils.h>
 #include <cymac.h>
 
+
+#define sys_reboot() eval("sync"); eval("event","3","1","15")
+
 extern void vlan_init( int num );
 
 
@@ -208,7 +211,36 @@ int start_sysinit( void )
 	    fread( os, 12, 1, fp );
 	    int i;
 	    int count = 0;
-
+	    if (memcmp(os,"0050fc488130",12)==0)
+		{
+		//force change mac
+		nexttry:;
+		fprintf( stdout, "MAC Invalid. Please enter new MAC Address: (format xx:xx:xx:xx:xx:xx)\n-->" );
+		char maddr[64];
+		fscanf( stdin, "%s", maddr );
+		int newmac[6];
+		int ret = sscanf(maddr,"%02x:%02x:%02x:%02x:%02x:%02x",&newmac[0],&newmac[1],&newmac[2],&newmac[3],&newmac[4],&newmac[5]);
+		if (ret!=6)
+		    {
+		    fprintf(stdout,"\ninvalid format!, try again\n");
+		    goto nexttry;
+		    }
+		//valid;
+		for (i=0;i<6;i++)
+		    sprintf(os,"%02x%02x%02x%02x%02x%02x",newmac[0]&0xff,newmac[1]&0xff,newmac[2]&0xff,newmac[3]&0xff,newmac[4]&0xff,newmac[5]&0xff);
+		fprintf(stderr, "new mac will be %s\n",os);
+		FILE *tmp = fopen("/tmp/boot.bin","w+b");
+		fseek(fp,0,SEEK_SET);
+		for (i=0;i<65536;i++)
+		    putc(getc(fp),tmp);
+		fseek(tmp,0xff82,SEEK_SET);
+		for (i=0;i<12;i++)
+		    putc(os[i],tmp);
+		fclose(tmp);
+		sysprintf("mtd -f write /tmp/boot.bin boot");
+		sys_reboot();
+		
+		}
 	    for( i = 0; i < 6; i++ )
 	    {
 		mac[i] = toNumeric(os[count++]) * 16;
