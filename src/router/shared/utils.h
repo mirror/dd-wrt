@@ -29,6 +29,7 @@
 // Linksys WRT54Gv8.2, WRT54GSv7.2 (BCM5354 cpu, fccid: Linksys
 // Q87-WRT54GV82, Q87-WRT54GSV72)
 // Linksys WRT54Gv7.2 (EMEA only - same hardware as v8)
+// Linksys WRT54G2 V1 (BCM5354 cpu, fccid: Linksys Q87-WRT54G2V1)
 #define ROUTER_WRT54G_V8 0x0216
 
 // Linksys WRT54G v1.0 and v1.1, Alnet ALL0277 (BCM4702 cpu, fccid: v1:
@@ -315,8 +316,8 @@
 // Broadcom, fccid: Netgear PY307300072)
 #define ROUTER_NETGEAR_WNDR3300 0x4f16
 
-// Linksys WRT54G2 V1 (BCM5354 cpu, fccid: Linksys Q87-WRT54G2V1)
-#define ROUTER_WRT54G2V1 0x500f
+// Asus WL-330GE (BCM5354, no switch, fccid: MSQWL330GE)
+#define ROUTER_ASUS_330GE 0x500f
 
 // Linksys WRT54Gv8.1 (BCM5354 cpu, fccid: Linksys Q87-WRT54GV81)
 #define ROUTER_WRT54G_V81 0x5117
@@ -364,8 +365,6 @@
 
 #define ROUTER_BUFFALO_WCAG 0x6404
 
-// Asus WL-330GE (BCM5354, no switch, fccid: MSQWL330GE)
-#define ROUTER_ASUS_330GE 0x650f
 
 #define NVROUTER "DD_BOARD"
 
