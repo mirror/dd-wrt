@@ -51,7 +51,7 @@ struct site_survey_list
     uint16 beacon_period;	/* units are Kusec */
     uint16 capability;		/* Capability information */
     // unsigned char athcaps;
-    unsigned char ENCINFO[64];	/* encryption info */
+    unsigned char ENCINFO[128];	/* encryption info */
     uint rate_count;		/* # rates in this set */
     uint8 dtim_period;		/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
@@ -332,7 +332,7 @@ wl_dump_wpa_rsn_ies(uint8* cp, uint len)
 	uint parse_len = len;
 	uint8 *wpaie;
 	uint8 *rsnie;
-	static char sum[64]={0};
+	static char sum[128]={0};
 	memset(sum,0,sizeof(sum));
 
 	while ((wpaie = wlu_parse_tlvs(parse, parse_len, DOT11_MNG_WPA_ID)))
