@@ -1469,7 +1469,7 @@ return 0;
 	&& nvram_match( "boardrev", "0x10" ) )
     {
 	cprintf( "router is wrt54gv8/gsv7/g2v1\n" );
-	setRouter( "Linksys WRT54Gv8 / GSv7 /G2v1" );
+	setRouter( "Linksys WRT54Gv8 / GSv7 / G2v1" );
 	return ROUTER_WRT54G_V8;
     }
 
