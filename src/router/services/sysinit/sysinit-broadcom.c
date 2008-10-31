@@ -1188,7 +1188,14 @@ int start_sysinit( void )
 		need_reboot = 1;
 	    }
 	    break;
-
+	    
+	case ROUTER_NETGEAR_WG602_V4:
+	    if( nvram_match( "boardflags", "0x650" ) )
+		{
+		nvram_set( "boardflags", "0x0458" );
+		need_reboot = 1;		
+		}
+	    break;
     }
 
     if( need_reboot )
