@@ -1484,7 +1484,8 @@ return 0;
 
     if( boardnum == 01 &&
 	nvram_match( "boardtype", "0x048e" )
-	&& nvram_match( "boardrev", "0x11" ) && nvram_match( "boardflags", "0x650" ))
+	&& nvram_match( "boardrev", "0x11" )
+	&& ( nvram_match( "boardflags", "0x650" ) || nvram_match( "boardflags", "0x0458" ) ) )
     {
 	cprintf( "router is Netgear WG602 v4\n" );
 	setRouter( "Netgear WG602 v4" );
