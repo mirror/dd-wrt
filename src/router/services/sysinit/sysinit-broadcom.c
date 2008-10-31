@@ -182,12 +182,15 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	case ROUTER_WRT610N:
 	case ROUTER_WRT350N:
 	case ROUTER_WRT310N:
-	case ROUTER_NETGEAR_WG602_V4:
+	case ROUTER_WRT300NV11:	
 	case ROUTER_USR_5461:
 	    nvram_set( "wl0gpio0", "8" );
 	    break;
-	case ROUTER_WRT300NV11:
+	case ROUTER_NETGEAR_WG602_V4:
 	    nvram_set( "wl0gpio0", "8" );
+	    nvram_set( "wl0gpio1", "0" );
+	    nvram_set( "wl0gpio2", "0" );
+	    nvram_set( "wl0gpio3", "0" );
 	    break;
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
