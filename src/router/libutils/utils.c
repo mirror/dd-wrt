@@ -2732,7 +2732,11 @@ int led_control( int type, int act )
 	    // power_gpio = 0x17;	// don't use - resets router
 	    diag_gpio = 0x06;
 	    connected_gpio = 0x14;
-	    break;	
+	    break;
+	case ROUTER_NETGEAR_WG602_V4:
+	    power_gpio = 0x11;  // trick: make lan led green for 100Mbps
+	    break;
+		
 #endif
     }
     if( type == LED_DIAG && v1func == 1 )
