@@ -2219,20 +2219,12 @@ void convert_wl_gmode( char *value, char *prefix )
 #endif
 	else if( !strcmp( value, "a-only" ) )
 	{
-	    if (!nvram_nmatch("n","%s_phytypes",prefix))
-	    {
-	    nvram_nset( value, "%s_net_mode", prefix );
-	    nvram_nset( "a", "%s_phytype", prefix );
-	    nvram_nset( "0", "%s_nreqd", prefix );
-	    }else
-	    {
 	    nvram_nset( value, "%s_net_mode", prefix );
 	    nvram_nset( "0", "%s_nmode", prefix );
-	    nvram_nset( "1", "%s_nband", prefix);
+	    if (!nvram_nmatch("n","%s_phytypes",prefix))
+	    nvram_nset( "a", "%s_phytype", prefix );
 	    nvram_nset( "0", "%s_nreqd", prefix );
-	    nvram_nset( "n", "%s_phytype", prefix );
-	    }
-
+	    nvram_nset( "1", "%s_nband", prefix);
 	}
     }
 }
