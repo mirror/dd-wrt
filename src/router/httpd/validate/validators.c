@@ -2103,32 +2103,6 @@ void validate_wl_gmode( webs_t wp, char *value, struct variable *v )
 
 void convert_wl_gmode( char *value, char *prefix )
 {
-    /*
-     * if (nvram_match("wl_mode","ap")) { if(!strcmp(value, "disabled")){
-     * nvram_set("wl_net_mode", value); nvram_set("wl_gmode", "-1"); } else
-     * if(!strcmp(value, "mixed")){ nvram_set("wl_net_mode", value);
-     * nvram_set("wl_gmode", "6"); nvram_set("wl_afterburner", "auto"); //
-     * From 3.61.13.0 // nvram_set("wl_afterburner_override", "-1");
-     * nvram_set("wl_rateset", "default"); nvram_set("wl_frameburst", "on");
-     * // nvram_set("wl_gmode_protection", "off"); } else if(!strcmp(value,
-     * "g-only")){ nvram_set("wl_net_mode", value); // In order to backward
-     * compatiable old firmware, we reserve original value "6", and we will
-     * exec "wl gmode 1" later nvram_set("wl_gmode", "6");
-     * nvram_set("wl_afterburner", "auto"); nvram_set("wl_rateset", "all");
-     * nvram_set("wl_frameburst", "on"); //nvram_set("wl_gmode_protection",
-     * "off"); } else if(!strcmp(value, "speedbooster")){
-     * nvram_set("wl_net_mode", value); nvram_set("wl_gmode", "6");
-     * nvram_set("wl_afterburner_override", "1"); nvram_set("wl_rateset",
-     * "all"); nvram_set("wl_frameburst", "on"); //
-     * nvram_set("wl_gmode_protection", "off"); }
-     * 
-     * else if(!strcmp(value, "b-only")){ nvram_set("wl_net_mode", value);
-     * nvram_set("wl_gmode", "0"); nvram_set("wl_afterburner", "off");
-     * nvram_set("wl_rateset", "default"); nvram_set("wl_frameburst", "on");
-     * 
-     * } }else
-     */
-    {
 #ifndef HAVE_MSSID
 	if( nvram_nmatch( value, "%s_net_mode", prefix ) )
 	{
@@ -2237,7 +2211,6 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "0", "%s_nreqd", prefix );
 	    nvram_nset( "1", "%s_nband", prefix );
 	}
-    }
 }
 
 void validate_wl_net_mode( webs_t wp, char *value, struct variable *v )
