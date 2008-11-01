@@ -2209,7 +2209,6 @@ void convert_wl_gmode( char *value, char *prefix )
 	else if( !strcmp( value, "na-only" ) )
 	{
 	    nvram_nset( value, "%s_net_mode", prefix );
-	    nvram_nset( "1", "%s_gmode", prefix );
 	    nvram_nset( "2", "%s_nmode", prefix );
 	    nvram_nset( "1", "%s_nreqd", prefix );
 	    nvram_nset( "off", "%s_afterburner", prefix );	// From
@@ -2220,11 +2219,20 @@ void convert_wl_gmode( char *value, char *prefix )
 #endif
 	else if( !strcmp( value, "a-only" ) )
 	{
-	    nvram_nset( value, "%s_net_mode", prefix );
 	    if (!nvram_nmatch("n","%s_phytypes",prefix))
-		nvram_nset( "a", "%s_phytype", prefix );
+	    {
+	    nvram_nset( value, "%s_net_mode", prefix );
+	    nvram_nset( "a", "%s_phytype", prefix );
 	    nvram_nset( "0", "%s_nreqd", prefix );
+	    }else
+	    {
+	    nvram_nset( value, "%s_net_mode", prefix );
+	    nvram_nset( "0", "%s_nmode", prefix );
 	    nvram_nset( "1", "%s_nband", prefix);
+	    nvram_nset( "0", "%s_nreqd", prefix );
+	    nvram_nset( "n", "%s_phytype", prefix );
+	    }
+
 	}
     }
 }
