@@ -46,8 +46,6 @@ extern FILE *debout;
 #define D(a)
 #endif
 
-
-
 void ( *do_ej_buffer ) ( char *buffer, webs_t stream );
 int ( *httpd_filter_name ) ( char *old_name, char *new_name, size_t size,
 			     int type );
@@ -878,87 +876,100 @@ void validate_lan_ipaddr( webs_t wp, char *value, struct variable *v )
     nvram_set( "lan_netmask", lan_netmask );
 
 }
+
 #define SRL_VALID(v)        (((v) > 0) && ((v) <= 15))
 #define SFBL_VALID(v)       (((v) > 0) && ((v) <= 15))
 #define LRL_VALID(v)        (((v) > 0) && ((v) <= 15))
 #define LFBL_VALID(v)       (((v) > 0) && ((v) <= 15))
 
 void
-validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v, char *varname)
+validate_wl_wme_tx_params( webs_t wp, char *value, struct variable *v,
+			   char *varname )
 {
-	int srl = 0, sfbl = 0, lrl = 0, lfbl = 0, max_rate = 0, nmode = 0;
-	char *s, *errmsg;
-	char tmp[256];
+    int srl = 0, sfbl = 0, lrl = 0, lfbl = 0, max_rate = 0, nmode = 0;
+    char *s, *errmsg;
+    char tmp[256];
 
-
-
-	/* return if wme is not enabled */
-	if (!(s = websGetVar(wp, "wl0_wme", NULL))) {
-		return;
-	} else if (!strcmp(s, "off")) {
-		return;
-	}
-
-	/* return if afterburner enabled */
-	if ((s = websGetVar(wp, "wl0_afterburner", NULL)) && (!strcmp(s, "auto"))) {
-		return;
-	}
-
-	if (!value || atoi(value) != 5) {		/* Number of INPUTs */
-		return;
-	}
-
-	s = nvram_get(v->name);
-
-	if (s != NULL)
-		sscanf(s, "%d %d %d %d %d", &srl, &sfbl, &lrl, &lfbl, &max_rate);
-
-	if ((value = websGetVar(wp, strcat_r(v->name, "0", tmp), NULL)) != NULL)
-		srl = atoi(value);
-
-	if (!SRL_VALID(srl)) {
-		errmsg = "Short Retry Limit must be in the range 1 to 15";
+    /* return if wme is not enabled */
+    if( !( s = websGetVar( wp, "wl0_wme", NULL ) ) )
+    {
 	return;
-	}
-
-	if ((value = websGetVar(wp, strcat_r(v->name, "1", tmp), NULL)) != NULL)
-		sfbl = atoi(value);
-
-	if (!SFBL_VALID(sfbl)) {
-		errmsg = "Short Fallback Limit must be in the range 1 to 15";
+    }
+    else if( !strcmp( s, "off" ) )
+    {
 	return;
-	}
+    }
 
-	if ((value = websGetVar(wp, strcat_r(v->name, "2", tmp), NULL)) != NULL)
-		lrl = atoi(value);
-
-	if (!LRL_VALID(lrl)) {
-		errmsg = "Long Retry Limit must be in the range 1 to 15";
+    /* return if afterburner enabled */
+    if( ( s = websGetVar( wp, "wl0_afterburner", NULL ) )
+	&& ( !strcmp( s, "auto" ) ) )
+    {
 	return;
-	}
+    }
 
-	if ((value = websGetVar(wp, strcat_r(v->name, "3", tmp), NULL)) != NULL)
-		lfbl = atoi(value);
-
-	if (!LFBL_VALID(lfbl)) {
-		errmsg = "Long Fallback Limit must be in the range 1 to 15";
+    if( !value || atoi( value ) != 5 )
+    {				/* Number of INPUTs */
 	return;
-	}
+    }
 
-	if ((value = websGetVar(wp, strcat_r(v->name, "4", tmp), NULL)) != NULL)
-		max_rate = atoi(value);
+    s = nvram_get( v->name );
 
-	s = nvram_get("wl0_nmode");
-	if (s != NULL)
-		nmode = atoi(s);
+    if( s != NULL )
+	sscanf( s, "%d %d %d %d %d", &srl, &sfbl, &lrl, &lfbl, &max_rate );
 
-	sprintf(tmp, "%d %d %d %d %d",
-	        srl, sfbl, lrl, lfbl, max_rate);
+    if( ( value =
+	  websGetVar( wp, strcat_r( v->name, "0", tmp ), NULL ) ) != NULL )
+	srl = atoi( value );
 
-	nvram_set(v->name, tmp);
-
-
+    if( !SRL_VALID( srl ) )
+    {
+	errmsg = "Short Retry Limit must be in the range 1 to 15";
 	return;
+    }
+
+    if( ( value =
+	  websGetVar( wp, strcat_r( v->name, "1", tmp ), NULL ) ) != NULL )
+	sfbl = atoi( value );
+
+    if( !SFBL_VALID( sfbl ) )
+    {
+	errmsg = "Short Fallback Limit must be in the range 1 to 15";
+	return;
+    }
+
+    if( ( value =
+	  websGetVar( wp, strcat_r( v->name, "2", tmp ), NULL ) ) != NULL )
+	lrl = atoi( value );
+
+    if( !LRL_VALID( lrl ) )
+    {
+	errmsg = "Long Retry Limit must be in the range 1 to 15";
+	return;
+    }
+
+    if( ( value =
+	  websGetVar( wp, strcat_r( v->name, "3", tmp ), NULL ) ) != NULL )
+	lfbl = atoi( value );
+
+    if( !LFBL_VALID( lfbl ) )
+    {
+	errmsg = "Long Fallback Limit must be in the range 1 to 15";
+	return;
+    }
+
+    if( ( value =
+	  websGetVar( wp, strcat_r( v->name, "4", tmp ), NULL ) ) != NULL )
+	max_rate = atoi( value );
+
+    s = nvram_get( "wl0_nmode" );
+    if( s != NULL )
+	nmode = atoi( s );
+
+    sprintf( tmp, "%d %d %d %d %d", srl, sfbl, lrl, lfbl, max_rate );
+
+    nvram_set( v->name, tmp );
+
+    return;
 
 }
 
@@ -1075,7 +1086,7 @@ void validate_security_mode( webs_t wp, char *value, struct variable *v )
     if( !strcmp( value, "enabled" ) )
     {
 	if( nvram_match( "security_mode_last", "" ) )	// from index.asp and 
-							// first time
+	    // first time
 	    return;
 	else
 	{
@@ -1121,18 +1132,18 @@ void validate_security_mode( webs_t wp, char *value, struct variable *v )
 	nvram_set( "wl_akm", "" );
 	nvram_set( "wl_auth_mode", "radius" );
 	nvram_set( "wl_wep", "enabled" );	// the nas need this value,
-						// the "restricted" is no
-						// longer need. (20040624 by
-						// honor)
+	// the "restricted" is no
+	// longer need. (20040624 by
+	// honor)
     }
     else if( !strcmp( value, "wep" ) )
     {
 	nvram_set( "wl_akm", "" );
 	nvram_set( "wl_auth_mode", "none" );
 	nvram_set( "wl_wep", "enabled" );	// the nas need this value,
-						// the "restricted" is no
-						// longer need. (20040624 by
-						// honor)
+	// the "restricted" is no
+	// longer need. (20040624 by
+	// honor)
     }
     else if( !strcmp( value, "psk2" ) )
     {				// WPA2 Only Mode
@@ -1384,8 +1395,8 @@ void validate_wl_wep_key( webs_t wp, char *value, struct variable *v )
 	nvram_set( "wl_key4", wep_key4 );
 
 	if( !strcmp( wep_key1, "" ) && !strcmp( wep_key2, "" ) && !strcmp( wep_key3, "" ) && !strcmp( wep_key4, "" ) )	// Allow 
-															// null 
-															// wep
+	    // null 
+	    // wep
 	    nvram_set( "wl_wep", "off" );
 	else
 	    nvram_set( "wl_wep", "restricted" );
@@ -1519,8 +1530,8 @@ void validate_wl_wep_key( webs_t wp, char *value, struct variable *v )
 	nvram_set( "wl_key4", wep_key4 );
 
 	if( !strcmp( wep_key1, "" ) && !strcmp( wep_key2, "" ) && !strcmp( wep_key3, "" ) && !strcmp( wep_key4, "" ) )	// Allow 
-															// null 
-															// wep
+	    // null 
+	    // wep
 	    nvram_set( "wl_wep", "off" );
 	else
 	    nvram_set( "wl_wep", "restricted" );
@@ -2132,7 +2143,7 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "-1", "%s_nmode", prefix );
 #endif
 	    nvram_nset( "0", "%s_nreqd", prefix );
-	    nvram_nset( "2", "%s_nband", prefix);
+	    nvram_nset( "2", "%s_nband", prefix );
 	}
 	else if( !strcmp( value, "mixed" ) )
 	{
@@ -2146,10 +2157,10 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "auto", "%s_afterburner", prefix );
 	    nvram_nset( "default", "%s_rateset", prefix );
 	    nvram_nset( "on", "%s_frameburst", prefix );
-	    if (!nvram_nmatch("n","%s_phytypes",prefix))
-	    nvram_nset( "g", "%s_phytype", prefix );
+	    if( !has_mimo( prefix ) )
+		nvram_nset( "g", "%s_phytype", prefix );
 	    nvram_nset( "0", "%s_nreqd", prefix );
-	    nvram_nset( "2", "%s_nband", prefix);
+	    nvram_nset( "2", "%s_nband", prefix );
 	}
 #ifdef HAVE_MSSID
 	else if( !strcmp( value, "bg-mixed" ) )
@@ -2160,10 +2171,10 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "default", "%s_rateset", prefix );
 	    nvram_nset( "on", "%s_frameburst", prefix );
 	    nvram_nset( "0", "%s_nmode", prefix );
-	    if (!nvram_nmatch("n","%s_phytypes",prefix))
-	    nvram_nset( "g", "%s_phytype", prefix );
+	    if( !has_mimo( prefix ) )
+		nvram_nset( "g", "%s_phytype", prefix );
 	    nvram_nset( "0", "%s_nreqd", prefix );
-	    nvram_nset( "2", "%s_nband", prefix);
+	    nvram_nset( "2", "%s_nband", prefix );
 	}
 #endif
 	else if( !strcmp( value, "g-only" ) )
@@ -2173,11 +2184,11 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "0", "wl_nmode", prefix );
 #endif
 	    nvram_nset( "2", "wl_gmode", prefix );
-	    if (!nvram_nmatch("n","%s_phytypes",prefix))
-	    nvram_nset( "g", "wl_phytype", prefix );
+	    if( !has_mimo( prefix ) )
+		nvram_nset( "g", "wl_phytype", prefix );
 	    nvram_nset( "0", "wl_nreqd", prefix );
 
-	    nvram_nset( "2", "%s_nband", prefix);
+	    nvram_nset( "2", "%s_nband", prefix );
 	}
 	else if( !strcmp( value, "b-only" ) )
 	{
@@ -2189,10 +2200,10 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "off", "%s_afterburner", prefix );
 	    nvram_nset( "default", "%s_rateset", prefix );
 	    nvram_nset( "on", "%s_frameburst", prefix );
-	    if (!nvram_nmatch("n","%s_phytypes",prefix))
-	    nvram_nset( "g", "%s_phytype", prefix );
+	    if( !has_mimo( prefix ) )
+		nvram_nset( "g", "%s_phytype", prefix );
 	    nvram_nset( "0", "%s_nreqd", prefix );
-	    nvram_nset( "2", "%s_nband", prefix);
+	    nvram_nset( "2", "%s_nband", prefix );
 	}
 #ifdef HAVE_MSSID
 	else if( !strcmp( value, "n-only" ) )
@@ -2202,9 +2213,9 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "2", "%s_nmode", prefix );
 	    nvram_nset( "1", "%s_nreqd", prefix );
 	    nvram_nset( "off", "%s_afterburner", prefix );	// From
-								// 3.61.13.0
+	    // 3.61.13.0
 	    nvram_nset( "n", "%s_phytype", prefix );
-	    nvram_nset( "2", "%s_nband", prefix);
+	    nvram_nset( "2", "%s_nband", prefix );
 	}
 	else if( !strcmp( value, "na-only" ) )
 	{
@@ -2212,19 +2223,19 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "2", "%s_nmode", prefix );
 	    nvram_nset( "1", "%s_nreqd", prefix );
 	    nvram_nset( "off", "%s_afterburner", prefix );	// From
-								// 3.61.13.0
+	    // 3.61.13.0
 	    nvram_nset( "n", "%s_phytype", prefix );
-	    nvram_nset( "1", "%s_nband", prefix);
+	    nvram_nset( "1", "%s_nband", prefix );
 	}
 #endif
 	else if( !strcmp( value, "a-only" ) )
 	{
 	    nvram_nset( value, "%s_net_mode", prefix );
 	    nvram_nset( "0", "%s_nmode", prefix );
-	    if (!nvram_nmatch("n","%s_phytypes",prefix))
-	    nvram_nset( "a", "%s_phytype", prefix );
+	    if( !has_mimo( prefix ) )
+		nvram_nset( "a", "%s_phytype", prefix );
 	    nvram_nset( "0", "%s_nreqd", prefix );
-	    nvram_nset( "1", "%s_nband", prefix);
+	    nvram_nset( "1", "%s_nband", prefix );
 	}
     }
 }
@@ -2701,7 +2712,7 @@ void validate_staticleases( webs_t wp, char *value, struct variable *v )
 void dhcp_check( webs_t wp, char *value, struct variable *v )
 {
     return;			// The udhcpd can valid lease table when
-				// re-load udhcpd.leases. by honor 2003-08-05
+    // re-load udhcpd.leases. by honor 2003-08-05
 }
 
 void validate_wds( webs_t wp, char *value, struct variable *v )
@@ -3505,7 +3516,7 @@ void validate_static_route( webs_t wp, char *value, struct variable *v )
     char temp[30], *val = NULL;
 
     name = websGetVar( wp, "route_name", "" );	// default empty if no find
-						// route_name
+    // route_name
     metric = websGetVar( wp, "route_metric", "0" );
     /*
      * validate ip address 

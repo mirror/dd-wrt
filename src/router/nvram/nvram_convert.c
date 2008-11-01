@@ -102,6 +102,7 @@ struct nvram_convert nvram_converts[] = {
   {WL ("nmode"), WL0 ("nmode"), ""},
   {WL ("radauth"), WL0 ("radauth"), ""},
   {WL ("btc_mode"), WL0 ("btc_mode"), ""},
+  {WL ("phytypes"), WL0 ("phytypes"), ""},
 
   // for PPPoE
   {PPP ("username"), PPPOE ("username"), ""},
