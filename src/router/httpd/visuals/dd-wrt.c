@@ -2855,7 +2855,7 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 //		websWrite( wp, ", \"%0.3f\"", ofs );
 		char channelstring[32];
 		sprintf(channelstring,"%d",chanlist[i]);
-	    websWrite( wp,"document.write(\"<option value=%d %s>%d - %f GHz</option>\");\n",chanlist[i],nvram_nmatch(channelstring,"%s_channel",prefix)?"selected":"",ofs );
+	    websWrite( wp,"document.write(\"<option value=%d %s>%d - %f GHz</option>\");\n",chanlist[i],nvram_nmatch(channelstring,"%s_channel",prefix)?"selected":"",chanlist[i],ofs );
 	    }
 //	    websWrite( wp, ");\n" );
 //	    websWrite( wp, "for(i=0; i<=max_channel ; i++) {\n" );
@@ -3161,11 +3161,18 @@ static void show_netmode( webs_t wp, char *prefix )
     
     if (nvram_nmatch("n","%s_phytypes",prefix))
     if( nvram_nmatch("ab" "%s_bandlist", prefix ) || nvram_nmatch("ba", "%s_bandlist", prefix ) || nvram_nmatch( "a","%s_bandlist", prefix ) )
+    {
 	websWrite( wp,
+		   "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
+		   nvram_match( wl_net_mode,
+				"a-only" ) ? "selected=\\\"selected\\\"" :
+		   "" );
+    	websWrite( wp,
 		   "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
 		   nvram_match( wl_net_mode,
 				"na-only" ) ? "selected=\\\"selected\\\"" :
 		   "" );
+    }
 #else
 #if HAVE_WHRAG108
     if( !strcmp( prefix, "ath0" ) )

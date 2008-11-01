@@ -2700,8 +2700,8 @@ static void save_prefix( webs_t wp, char *prefix )
 	cprintf( "copy value %s which is [%s] to nvram\n", n, wl );
 	if( wl && !strcmp( prefix, "wl0" ) )
 	    nvram_set( "wl_channel", wl );
-	else
-	    nvram_set( "wl1_wchannel", wl );
+	else if (wl)
+	    nvram_set( "wl1_channel", wl );
     }
     copytonv( wp, n );
 
@@ -2713,7 +2713,7 @@ static void save_prefix( webs_t wp, char *prefix )
 	cprintf( "copy value %s which is [%s] to nvram\n", n, wl );
 	if( wl && !strcmp( prefix, "wl0" ) )
 	    nvram_set( "wl_wchannel", wl );
-	else
+	else if (wl)
 	    nvram_set( "wl1_wchannel", wl );
 
     }
