@@ -3159,8 +3159,12 @@ static void show_netmode( webs_t wp, char *prefix )
 				"a-only" ) ? "selected=\\\"selected\\\"" :
 		   "" );
     
-    if (nvram_nmatch("n","%s_phytypes",prefix))
-    if( nvram_nmatch("ab" "%s_bandlist", prefix ) || nvram_nmatch("ba", "%s_bandlist", prefix ) || nvram_nmatch( "a","%s_bandlist", prefix ) )
+    if( has_mimo( prefix ) )
+    {
+    char band[64];
+    sprintf(band,"%s_bandlist",prefix);
+    char *b=nvram_safe_get(band);
+    if (contains(b,'a'))
     {
 	websWrite( wp,
 		   "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
@@ -3172,6 +3176,7 @@ static void show_netmode( webs_t wp, char *prefix )
 		   nvram_match( wl_net_mode,
 				"na-only" ) ? "selected=\\\"selected\\\"" :
 		   "" );
+    }
     }
 #else
 #if HAVE_WHRAG108
@@ -3998,7 +4003,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 	       wl_ssid, nvram_safe_get( wl_ssid ) );
-
+    
 #ifdef HAVE_MADWIFI
     showRadio( wp, "wl_basic.radar", wl_doth );
     show_chanshift( wp, prefix );
@@ -4009,29 +4014,27 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 
 	if( has_mimo( prefix )
 	    && ( nvram_nmatch( "n-only", "%s_net_mode", prefix )
-		 || nvram_nmatch( "mixed," "%s_net_mode", prefix ) || nvram_nmatch( "na-only," "%s_net_mode", prefix ) ) )
+		 || nvram_nmatch( "mixed," "%s_net_mode", prefix ) || nvram_nmatch( "na-only", "%s_net_mode", prefix ) ) )
 	{
 
 	    websWrite( wp, "<div class=\"setting\">\n" );
 	    websWrite( wp,
 		       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div>\n" );
-	    websWrite( wp, "<select name=\"wl0_nbw\">\n" );
+	    websWrite( wp, "<select name=\"%s_nbw\">\n",prefix );
 	    websWrite( wp,
 		       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
-		       nvram_match( "wl0_nbw",
-				    "0" ) ? "selected=\\\"selected\\\"" :
+		       nvram_nmatch( "0","%s_nbw",
+				    prefix) ? "selected=\\\"selected\\\"" :
 		       "" );
 	    websWrite( wp, "<option value=\"10\" %s>10 MHz</option>",
-		       nvram_match( "wl0_nbw",
-				    "10" ) ? "selected=\\\"selected\\\"" :
+		       nvram_nmatch( "10","%s_nbw",
+				    prefix) ? "selected=\\\"selected\\\"" :
 		       "" );
 	    websWrite( wp, "<option value=\"20\" %s>20 MHz</option>",
-		       nvram_match( "wl0_nbw",
-				    "20" ) ? "selected=\\\"selected\\\"" :
+		       nvram_nmatch( "20","%s_nbw",prefix) ? "selected=\\\"selected\\\"" :
 		       "" );
 	    websWrite( wp, "<option value=\"40\" %s>40 MHz</option>",
-		       nvram_match( "wl0_nbw",
-				    "40" ) ? "selected=\\\"selected\\\"" :
+		       nvram_nmatch("40", "%s_nbw",prefix) ? "selected=\\\"selected\\\"" :
 		       "" );
 	    websWrite( wp, "</select>\n" );
 	    websWrite( wp, "</div>\n" );
@@ -4039,7 +4042,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	    websWrite( wp, "<div class=\"setting\">\n" );
 	    websWrite( wp,
 		       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n" );
-	    websWrite( wp, "<select name=\"wl0_wchannel\" ></select>\n" );
+	    websWrite( wp, "<select name=\"%s_wchannel\" ></select>\n",prefix );
 	    websWrite( wp, "</div>\n" );
 
 	    show_channel( wp, prefix, prefix, 1 );
