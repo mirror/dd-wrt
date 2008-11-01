@@ -205,8 +205,12 @@ int weekday( int month, int day, int year )
 
 int has_mimo( char *prefix )
 {
-    if( nvram_nmatch( "n", "%s_phytypes", prefix ) )
-	return 1;
+char mimo[32];
+sprintf(mimo,"%s_phytypes",prefix);
+char *phy = nvram_safe_get(mimo);
+if (contains(phy,'n'))
+    return 1;
+else 
     return 0;
 }
 
