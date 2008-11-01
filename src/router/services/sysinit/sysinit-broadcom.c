@@ -696,18 +696,18 @@ int start_sysinit( void )
 	    nvram_set( "wan_ifname", "eth1" );
 	    nvram_set( "wl0_ifname", "eth2" );
 	    nvram_set( "wl1_ifname", "eth3" );
+	    eval ("gpio", "disable", "7");
 
 	    if( nvram_get( "pci/1/1/macaddr" ) == NULL
 		|| nvram_get( "pci/1/3/macaddr" ) == NULL )
-		need_reboot = 1;
-
-	    {
+		{
 		unsigned char mac[20];
 
 		strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 		nvram_set( "pci/1/3/macaddr", mac );
 		MAC_SUB( mac );
 		nvram_set( "pci/1/1/macaddr", mac );
+		need_reboot = 1;
 	    }
 
 	    struct nvram_tuple wndr3300_pci_1_1_params[] = {
