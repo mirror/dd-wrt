@@ -2799,7 +2799,7 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 	if( !strcmp( prefix, "wl1" ) )
 	    instance = 1;
 	if( type == 1 && !nvram_match( wl_net_mode, "g-only" )
-	    && !nvram_match( wl_net_mode, "a-only" )
+	    && !nvram_match( wl_net_mode, "a-only") && !nvram_match( wl_net_mode, "na-only" )
 	    && !nvram_match( wl_net_mode, "bg-mixed" )
 	    && nvram_match( wl_nbw, "40" ) )
 	{
@@ -3147,12 +3147,20 @@ static void show_netmode( webs_t wp, char *prefix )
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 #ifndef HAVE_MADWIFI
 
-    if( nvram_match( "wl0_phytypes", "ga" )
-	|| nvram_match( "wl0_phytypes", "a" ) )
+    if( nvram_nmatch( "ga","%s_phytypes", prefix )
+	|| nvram_nmatch( "a","%s_phytypes", prefix ) )
 	websWrite( wp,
 		   "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n",
 		   nvram_match( wl_net_mode,
 				"a-only" ) ? "selected=\\\"selected\\\"" :
+		   "" );
+    
+    if (nvram_nmatch("n","%s_phytypes",prefix))
+    if( nvram_nmatch("ab" "%s_bandlist", prefix ) || nvram_nmatch("ba", "%s_bandlist", prefix ) || nvram_nmatch( "a","%s_bandlist", prefix ) )
+	websWrite( wp,
+		   "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n",
+		   nvram_match( wl_net_mode,
+				"na-only" ) ? "selected=\\\"selected\\\"" :
 		   "" );
 #else
 #if HAVE_WHRAG108

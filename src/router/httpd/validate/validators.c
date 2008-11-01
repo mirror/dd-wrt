@@ -2132,6 +2132,7 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "-1", "%s_nmode", prefix );
 #endif
 	    nvram_nset( "0", "%s_nreqd", prefix );
+	    nvram_nset( "2", "%s_nband", prefix);
 	}
 	else if( !strcmp( value, "mixed" ) )
 	{
@@ -2145,8 +2146,10 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "auto", "%s_afterburner", prefix );
 	    nvram_nset( "default", "%s_rateset", prefix );
 	    nvram_nset( "on", "%s_frameburst", prefix );
+	    if (!nvram_nmatch("n","%s_phytypes",prefix))
 	    nvram_nset( "g", "%s_phytype", prefix );
 	    nvram_nset( "0", "%s_nreqd", prefix );
+	    nvram_nset( "2", "%s_nband", prefix);
 	}
 #ifdef HAVE_MSSID
 	else if( !strcmp( value, "bg-mixed" ) )
@@ -2157,8 +2160,10 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "default", "%s_rateset", prefix );
 	    nvram_nset( "on", "%s_frameburst", prefix );
 	    nvram_nset( "0", "%s_nmode", prefix );
+	    if (!nvram_nmatch("n","%s_phytypes",prefix))
 	    nvram_nset( "g", "%s_phytype", prefix );
 	    nvram_nset( "0", "%s_nreqd", prefix );
+	    nvram_nset( "2", "%s_nband", prefix);
 	}
 #endif
 	else if( !strcmp( value, "g-only" ) )
@@ -2168,9 +2173,11 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "0", "wl_nmode", prefix );
 #endif
 	    nvram_nset( "2", "wl_gmode", prefix );
+	    if (!nvram_nmatch("n","%s_phytypes",prefix))
 	    nvram_nset( "g", "wl_phytype", prefix );
 	    nvram_nset( "0", "wl_nreqd", prefix );
 
+	    nvram_nset( "2", "%s_nband", prefix);
 	}
 	else if( !strcmp( value, "b-only" ) )
 	{
@@ -2182,8 +2189,10 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "off", "%s_afterburner", prefix );
 	    nvram_nset( "default", "%s_rateset", prefix );
 	    nvram_nset( "on", "%s_frameburst", prefix );
+	    if (!nvram_nmatch("n","%s_phytypes",prefix))
 	    nvram_nset( "g", "%s_phytype", prefix );
 	    nvram_nset( "0", "%s_nreqd", prefix );
+	    nvram_nset( "2", "%s_nband", prefix);
 	}
 #ifdef HAVE_MSSID
 	else if( !strcmp( value, "n-only" ) )
@@ -2195,13 +2204,27 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "off", "%s_afterburner", prefix );	// From
 								// 3.61.13.0
 	    nvram_nset( "n", "%s_phytype", prefix );
+	    nvram_nset( "2", "%s_nband", prefix);
+	}
+	else if( !strcmp( value, "na-only" ) )
+	{
+	    nvram_nset( value, "%s_net_mode", prefix );
+	    nvram_nset( "1", "%s_gmode", prefix );
+	    nvram_nset( "2", "%s_nmode", prefix );
+	    nvram_nset( "1", "%s_nreqd", prefix );
+	    nvram_nset( "off", "%s_afterburner", prefix );	// From
+								// 3.61.13.0
+	    nvram_nset( "n", "%s_phytype", prefix );
+	    nvram_nset( "1", "%s_nband", prefix);
 	}
 #endif
 	else if( !strcmp( value, "a-only" ) )
 	{
 	    nvram_nset( value, "%s_net_mode", prefix );
-	    nvram_nset( "a", "%s_phytype", prefix );
+	    if (!nvram_nmatch("n","%s_phytypes",prefix))
+		nvram_nset( "a", "%s_phytype", prefix );
 	    nvram_nset( "0", "%s_nreqd", prefix );
+	    nvram_nset( "1", "%s_nband", prefix);
 	}
     }
 }
