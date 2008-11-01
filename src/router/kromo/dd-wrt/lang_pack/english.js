@@ -1788,6 +1788,7 @@ wl_basic.mixed="Mixed";
 wl_basic.preamble="Short Preamble";
 wl_basic.b="B-Only";
 wl_basic.a="A-Only";
+wl_basic.na="NA-Only";
 wl_basic.g="G-Only";
 wl_basic.bg="BG-Mixed";
 wl_basic.n="N-Only";
