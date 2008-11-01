@@ -2840,6 +2840,7 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 //	    websWrite( wp, "var freq = new Array(\"Auto\"" );
 	    int i;
 
+	    websWrite( wp,"document.write(\"<option value=0 %s>\" + share.auto + \"</option>\");\n",nvram_nmatch("0","%s_channel",prefix)?"selected":"" );
 	    for( i = 0; i < chancount; i++ )
 	    {
 		float ofs;
@@ -4001,7 +4002,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 
 	if( has_mimo( prefix )
 	    && ( nvram_nmatch( "n-only", "%s_net_mode", prefix )
-		 || nvram_nmatch( "mixed," "%s_net_mode", prefix ) ) )
+		 || nvram_nmatch( "mixed," "%s_net_mode", prefix ) || nvram_nmatch( "na-only," "%s_net_mode", prefix ) ) )
 	{
 
 	    websWrite( wp, "<div class=\"setting\">\n" );
