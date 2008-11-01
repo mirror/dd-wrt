@@ -2833,12 +2833,11 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 	    char *ifn = get_wl_instance_name( instance );
 	    int chancount = getchannels( chanlist, ifn );
 
-	    websWrite( wp, "var max_channel = %d;\n", chancount );
-	    websWrite( wp, "var wl%d_channel = '%s';\n", instance,
-		       nvram_safe_get( wl_channel ) );
-	    websWrite( wp, "var offset = %d;\n", chanlist[0] );
-	    websWrite( wp, "var buf = \"\";\n" );
-//          websWrite( wp, "var freq = new Array(\"Auto\"" );
+//	    websWrite( wp, "var max_channel = %d;\n", chancount );
+//	    websWrite( wp, "var wl%d_channel = '%s';\n", instance, nvram_safe_get( wl_channel ) );
+//	    websWrite( wp, "var offset = %d;\n", chanlist[0] );
+//	    websWrite( wp, "var buf = \"\";\n" );
+//      websWrite( wp, "var freq = new Array(\"Auto\"" );
 	    int i;
 
 	    websWrite( wp,
@@ -2862,7 +2861,7 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 
 		sprintf( channelstring, "%d", chanlist[i] );
 		websWrite( wp,
-			   "document.write(\"<option value=\\\"%d\\\" %s>%d - %f GHz</option>\");\n",
+			   "document.write(\"<option value=\\\"%d\\\" %s>%d - %0.3f GHz</option>\");\n",
 			   chanlist[i], nvram_nmatch( channelstring,
 						      "%s_channel",
 						      prefix ) ?
