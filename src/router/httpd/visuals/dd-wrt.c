@@ -2840,7 +2840,7 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 //	    websWrite( wp, "var freq = new Array(\"Auto\"" );
 	    int i;
 
-	    websWrite( wp,"document.write(\"<option value=0 %s>\" + share.auto + \"</option>\");\n",nvram_nmatch("0","%s_channel",prefix)?"selected":"" );
+	    websWrite( wp,"document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",nvram_nmatch("0","%s_channel",prefix)?"selected=\\\"selected\\\"":"" );
 	    for( i = 0; i < chancount; i++ )
 	    {
 		float ofs;
@@ -2855,7 +2855,7 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 //		websWrite( wp, ", \"%0.3f\"", ofs );
 		char channelstring[32];
 		sprintf(channelstring,"%d",chanlist[i]);
-	    websWrite( wp,"document.write(\"<option value=%d %s>%d - %f GHz</option>\");\n",chanlist[i],nvram_nmatch(channelstring,"%s_channel",prefix)?"selected":"",chanlist[i],ofs );
+	    websWrite( wp,"document.write(\"<option value=\\\"%d\\\" %s>%d - %f GHz</option>\");\n",chanlist[i],nvram_nmatch(channelstring,"%s_channel",prefix)?"selected=\\\"selected\\\"":"",chanlist[i],ofs );
 	    }
 //	    websWrite( wp, ");\n" );
 //	    websWrite( wp, "for(i=0; i<=max_channel ; i++) {\n" );
