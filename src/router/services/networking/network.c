@@ -2313,8 +2313,12 @@ void start_lan( void )
     eval( "wl", "radio",
 	  nvram_invmatch( "wl_net_mode", "disabled" ) ? "on" : "off" );
 #else
-    eval( "wl", "radio",
-	  nvram_invmatch( "wl0_net_mode", "disabled" ) ? "on" : "off" );
+    int cc = get_wl_instances(  );
+    int ii;
+    for( ii = 0; ii < cc; ii++ )
+    {
+	eval( "wl", "-i", get_wl_instance_name( ii ), "radio", nvram_nmatch( "disabled", "wl%d_net_mode", ii ) ? "off" : "on");
+    }
 #endif
 #endif
     /*
