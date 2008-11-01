@@ -1772,6 +1772,7 @@ wl_basic.mixed="Me¹ano";
 wl_basic.preamble="Kratka preambula";
 wl_basic.b="Samo B";
 wl_basic.a="Samo A";
+wl_basic.na="Samo NA";
 wl_basic.g="Samo G";
 wl_basic.bg="BG me¹ano";
 wl_basic.n="Samo N";
