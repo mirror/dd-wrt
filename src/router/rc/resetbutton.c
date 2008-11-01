@@ -340,6 +340,8 @@ void period_check( int sig )
 	ses_mode = 1;
 	initses = 0;
     }
+	int cc = get_wl_instances(  );
+	int ii;
 #endif
 
     // time_t t;
@@ -586,15 +588,18 @@ void period_check( int sig )
 	    {
 #ifndef HAVE_BUFFALO
 		dd_syslog( LOG_DEBUG,
-			"SES / AOSS / EZ-setup button: turning radio on\n" );
+			"SES / AOSS / EZ-setup button: turning radio(s) on\n" );
 #else
-		dd_syslog( LOG_DEBUG, "AOSS button: turning radio on\n" );
+		dd_syslog( LOG_DEBUG, "AOSS button: turning radio(s) on\n" );
 #endif
 		if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
 		{
 		    eval( "stopservice", "nas" );
 		}
-		eval( "wl", "-i", get_wl_instance_name( 0 ), "radio", "on" );
+	    for( ii = 0; ii < cc; ii++ )
+	    {
+			eval( "wl", "-i", get_wl_instance_name( ii ), "radio", "on" );
+	    }
 		eval( "startservice", "nas" );
 #ifdef HAVE_MSSID
 		eval( "startservice", "guest_nas" );
@@ -614,15 +619,18 @@ void period_check( int sig )
 	    {
 #ifndef HAVE_BUFFALO
 		dd_syslog( LOG_DEBUG,
-			"SES / AOSS / EZ-setup button: turning radio off\n" );
+			"SES / AOSS / EZ-setup button: turning radio(s) off\n" );
 #else
-		dd_syslog( LOG_DEBUG, "AOSS button: turning radio off\n" );
+		dd_syslog( LOG_DEBUG, "AOSS button: turning radio(s) off\n" );
 #endif
 		if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
 		{
 		    eval( "stopservice", "nas" );
 		}
-		eval( "wl", "-i", get_wl_instance_name( 0 ), "radio", "off" );
+	    for( ii = 0; ii < cc; ii++ )
+	    {
+			eval( "wl", "-i", get_wl_instance_name( ii ), "radio", "off" );
+	    }
 	    }
 #endif
 
