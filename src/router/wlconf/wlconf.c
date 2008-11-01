@@ -624,6 +624,7 @@ wlconf(char *name)
 	struct bsscfg_info *bsscfg;
 	char tmp[100], prefix[PREFIX_LEN];
 	char var[80], *next, phy[] = "a", *str, *addr = NULL;
+	int bandlist[3];
 	char buf[WLC_IOCTL_MAXLEN];
 	char *country;
 	wlc_rev_info_t rev;
@@ -1075,6 +1076,20 @@ cprintf("set radio flag %s\n",name);
 	WL_IOCTL(name, WLC_SET_RADIO, &val, sizeof(val));
 
 cprintf("get phy flags %s\n",name);
+	WL_IOCTL(name, WLC_GET_BANDLIST, bandlist, sizeof(bandlist));
+	if (bandlist[0] > 2)
+		bandlist[0] = 2;
+
+	*buf='\0';
+	for (i = 1; i <= bandlist[0]; i++)
+		if (bandlist[i] == WLC_BAND_5G)
+			strcat(buf,"a");
+		else if (bandlist[i] == WLC_BAND_2G)
+			strcat(buf,"b");
+
+	nvram_set(strcat_r(prefix, "bandlist", tmp), buf);
+    
+
 	/* Get supported phy types */
 	WL_IOCTL(name, WLC_GET_PHYLIST, var, sizeof(var));
 
