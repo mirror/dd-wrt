@@ -50,7 +50,7 @@ void start_chilli( void )
     if( !( fp = fopen( "/tmp/fonusers.local", "w" ) ) )
     {
 	perror( "/tmp/fonusers.local" );
-	return errno;
+	return;
     }
     char *users = nvram_safe_get( "fon_userlist" );
     char *u = ( char * )malloc( strlen( users ) + 1 );
@@ -74,7 +74,7 @@ void start_chilli( void )
     if( !( fp = fopen( "/tmp/chilli.conf", "w" ) ) )
     {
 	perror( "/tmp/chilli.conf" );
-	return errno;
+	return;
     }
 
     fprintf( fp, "radiusserver1 %s\n", nvram_get( "chilli_radius" ) );
@@ -171,7 +171,7 @@ void start_chilli( void )
     dd_syslog( LOG_INFO, "chilli : chilli daemon successfully started\n" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 void stop_chilli( void )

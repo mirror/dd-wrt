@@ -148,7 +148,7 @@ void start_modules( void )
     runStartup( "/jffs/etc/config", ".startup" );	// if available
     runStartup( "/mmc/etc/config", ".startup" );	// if available
 #endif
-    return 0;
+    return;
 }
 
 void start_wanup( void )
@@ -163,19 +163,19 @@ void start_wanup( void )
     runStartup( "/mmc/etc/config", ".wanup" );	// if available
     runStartup( "/tmp/etc/config", ".wanup" );	// if available
 #endif
-    return 0;
+    return;
 }
 
 void start_create_rc_startup( void )
 {
     create_rc_file( RC_STARTUP );
-    return 0;
+    return;
 }
 
 void start_create_rc_shutdown( void )
 {
     create_rc_file( RC_SHUTDOWN );
-    return 0;
+    return;
 }
 
 int create_rc_file( char *name )
@@ -1609,7 +1609,7 @@ void start_nvram( void )
 	free( newqos );
     }
 #endif
-    return 0;
+    return;
 }
 
 static void unset_nvram( void )

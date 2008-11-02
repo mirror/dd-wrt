@@ -420,7 +420,7 @@ void start_sysinit( void )
      */
     stime( &tm );
     cprintf( "done\n" );
-    return 0;
+    return;
 }
 
 int check_cfe_nv( void )

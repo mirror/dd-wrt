@@ -146,7 +146,7 @@ void start_sysinit( void )
     eval( "gpio", "disable", "2" );
     eval( "gpio", "disable", "3" );
     eval( "gpio", "disable", "5" );
-    return 0;
+    return;
     cprintf( "done\n" );
 }
 
