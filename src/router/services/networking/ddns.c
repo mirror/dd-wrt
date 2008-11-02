@@ -186,14 +186,14 @@ void start_ddns( void )
      * Get correct username, password and hostname 
      */
     if( init_ddns(  ) < 0 )
-	return -1;
+	return;
 
     /*
      * We don't want to update, if user don't input below field 
      */
     if( nvram_match( _username, "" ) ||
 	nvram_match( _passwd, "" ) || nvram_match( _hostname, "" ) )
-	return -1;
+	return;
 
     mkdir( "/tmp/ddns", 0744 );
 
@@ -285,7 +285,7 @@ void start_ddns( void )
     else
     {
 	perror( "/tmp/ddns/inadyn.conf" );
-	return -1;
+	return;
     }
 
     /*
@@ -303,7 +303,7 @@ void start_ddns( void )
 
     cprintf( "done\n" );
 
-    return ret;
+    return;
 }
 
 void stop_ddns( void )
@@ -318,7 +318,7 @@ void stop_ddns( void )
 
     cprintf( "done\n" );
 
-    return ret;
+    return;
 }
 
 int ddns_success_main( int argc, char *argv[] )

@@ -27,6 +27,7 @@
 #include <syslog.h>
 #include <signal.h>
 
+void stop_igmp_proxy( void );
 void start_igmp_proxy( void )
 {
     int ret = 0;
@@ -80,7 +81,7 @@ void start_igmp_proxy( void )
 	// config
     {
 	// ret = _evalpid (igmp_proxybr_argv, NULL, 0, &pid);
-	return ret;
+	return;
     }
     else
     {
@@ -93,7 +94,7 @@ void start_igmp_proxy( void )
     }
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 void stop_igmp_proxy( void )

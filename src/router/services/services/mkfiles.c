@@ -105,7 +105,7 @@ void start_mkfiles( void )
     if( !( fp = fopen( PASSWD_FILE, "w" ) ) )
     {
 	perror( PASSWD_FILE );
-	return errno;
+	return;
     }
     cprintf( "%s:%d", __func__, __LINE__ );
 #ifdef HAVE_REGISTER
@@ -124,7 +124,7 @@ void start_mkfiles( void )
     if( !( fp = fopen( GROUP_FILE, "w" ) ) )
     {
 	perror( GROUP_FILE );
-	return errno;
+	return;
     }
     cprintf( "%s:%d", __func__, __LINE__ );
     fprintf( fp, "root:x:0:\n" );
@@ -152,5 +152,5 @@ void start_mkfiles( void )
     dns_to_resolv(  );
     cprintf( "%s:%d", __func__, __LINE__ );
 
-    return 0;
+    return;
 }

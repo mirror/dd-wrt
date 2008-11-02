@@ -193,7 +193,7 @@ void start_config_vlan( void )
      * create vlan interfaces 
      */
     if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) < 0 )
-	return errno;
+	return;
 
     for( i = 0; i < MAX_VLAN_GROUPS; i++ )
     {
@@ -247,7 +247,7 @@ void start_config_vlan( void )
 
     close( s );
 
-    return 0;
+    return;
 }
 
 /*
@@ -265,7 +265,7 @@ void start_setup_vlans( void )
      */
 
     if( !nvram_get( "port5vlans" ) || nvram_match( "vlans", "0" ) )
-	return 0;		// for some reason VLANs are not set up, and
+	return;		// for some reason VLANs are not set up, and
     // we don't want to disable everything!
 
     if( nvram_match( "wan_vdsl", "1" ) && !nvram_match( "fromvdsl", "1" ) )

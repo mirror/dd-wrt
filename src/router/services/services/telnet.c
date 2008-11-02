@@ -39,7 +39,7 @@ void start_telnetd( void )
     stop_telnetd(  );
 
     if( !nvram_invmatch( "telnetd_enable", "0" ) )
-	return 0;
+	return;
 
 #ifdef HAVE_REGISTER
     if( isregistered_real(  ) )
@@ -47,13 +47,13 @@ void start_telnetd( void )
 	ret = _evalpid( telnetd_argv, NULL, 0, &pid );
 #ifdef HAVE_REGISTER
     else
-	return 0;
+	return;
     // ret = _evalpid (telnetd_argv_reg, NULL, 0, &pid);
 #endif
     dd_syslog( LOG_INFO, "telnetd : telnet daemon successfully started\n" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 void stop_telnetd( void )
@@ -67,6 +67,6 @@ void stop_telnetd( void )
 	ret = killall( "telnetd", SIGTERM );
     }
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 #endif

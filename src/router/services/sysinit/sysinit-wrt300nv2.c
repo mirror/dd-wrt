@@ -194,7 +194,7 @@ void start_sysinit( void )
 
     nvram_set( "use_crypto", "0" );
     cprintf( "done\n" );
-    return 0;
+    return;
 }
 
 int check_cfe_nv( void )
