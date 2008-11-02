@@ -54,7 +54,7 @@
 
 // highly experimental
 
-int start_sysinit( void )
+void start_sysinit( void )
 {
     struct utsname name;
     time_t tm = 0;

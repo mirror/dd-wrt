@@ -44,7 +44,7 @@
 #include <shutils.h>
 #include <utils.h>
 
-int start_sysinit( void )
+void start_sysinit( void )
 {
     char buf[PATH_MAX];
     struct utsname name;

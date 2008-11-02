@@ -2444,7 +2444,7 @@ int wan_valid( char *ifname )
     return 0;
 }
 
-int start_force_to_dial( void );
+void start_force_to_dial( void );
 
 void start_wan( int status )
 {
@@ -3823,7 +3823,7 @@ static int notify_nas( char *type, char *ifname, char *action )
  * 
  * } 
  */
-int start_hotplug_net( void )
+void start_hotplug_net( void )
 {
 #ifdef HAVE_MADWIFI
     char *interface, *action;

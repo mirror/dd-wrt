@@ -35,7 +35,7 @@
 
 #define WOL_INTERVAL 15
 
-int stop_wol( void )
+void stop_wol( void )
 {
     int ret;
 
@@ -43,10 +43,9 @@ int stop_wol( void )
 
     cprintf( "done\n" );
 
-    return ret;
 }
 
-int start_wol( void )
+void start_wol( void )
 {
     int ret;
     pid_t pid;
@@ -61,7 +60,6 @@ int start_wol( void )
 
     ret = _evalpid( wol_argv, NULL, 0, &pid );
 
-    return ret;
 }
 
 #endif /* HAVE_WOL */

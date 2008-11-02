@@ -62,7 +62,7 @@ void setPassword( char *passwd )
     fclose( fp );
 }
 
-int start_mkfiles( void )
+void start_mkfiles( void )
 {
     FILE *fp;
     struct stat buf;

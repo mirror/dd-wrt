@@ -27,7 +27,7 @@
 #include <syslog.h>
 #include <signal.h>
 
-int start_igmp_proxy( void )
+void start_igmp_proxy( void )
 {
     int ret = 0;
     pid_t pid;
@@ -96,7 +96,7 @@ int start_igmp_proxy( void )
     return ret;
 }
 
-int stop_igmp_proxy( void )
+void stop_igmp_proxy( void )
 {
     int ret = 0;
 
@@ -107,6 +107,6 @@ int stop_igmp_proxy( void )
 	ret = killall( "igmprt", SIGKILL );
     }
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 #endif

@@ -551,7 +551,7 @@ int svqos_iptables( void )
     return 0;
 }
 #endif
-int start_wshaper( void )
+void start_wshaper( void )
 {
     int ret = 0;
     char *dev_val;
@@ -608,7 +608,7 @@ int start_wshaper( void )
     return ret;
 }
 
-int stop_wshaper( void )
+void stop_wshaper( void )
 {
     int ret = 0;
 

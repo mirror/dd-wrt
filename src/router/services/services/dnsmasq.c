@@ -37,7 +37,7 @@ extern int usejffs;
 
 extern void addHost( char *host, char *ip );
 
-int stop_dnsmasq( void );
+void stop_dnsmasq( void );
 
 char *getmdhcp( int count, int index )
 {
@@ -80,7 +80,7 @@ char *getmdhcp( int count, int index )
     return "";
 }
 
-int start_dnsmasq( void )
+void start_dnsmasq( void )
 {
     FILE *fp;
     struct dns_lists *dns_list = NULL;
@@ -98,7 +98,7 @@ int start_dnsmasq( void )
     if( !nvram_invmatch( "dnsmasq_enable", "0" ) )
     {
 	stop_dnsmasq(  );
-	return 0;
+	return;
     }
 
     usejffs = 0;
@@ -122,7 +122,7 @@ int start_dnsmasq( void )
     if( !( fp = fopen( "/tmp/dnsmasq.conf", "w" ) ) )
     {
 	perror( "/tmp/dnsmasq.conf" );
-	return errno;
+	return;
     }
 
     if( nvram_match( "fon_enable", "1" )
@@ -371,10 +371,10 @@ int start_dnsmasq( void )
     dd_syslog( LOG_INFO, "dnsmasq : dnsmasq daemon successfully started\n" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
-int stop_dnsmasq( void )
+void stop_dnsmasq( void )
 {
     int ret = 0;
 
@@ -386,6 +386,6 @@ int stop_dnsmasq( void )
 
 	cprintf( "done\n" );
     }
-    return ret;
+    return;
 }
 #endif

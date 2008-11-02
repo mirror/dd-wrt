@@ -57,7 +57,7 @@
 
 extern void vlan_init( int num );
 
-int start_sysinit( void )
+void start_sysinit( void )
 {
     char buf[PATH_MAX];
     struct utsname name;
