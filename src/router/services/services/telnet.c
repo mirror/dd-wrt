@@ -27,7 +27,7 @@
 #include <syslog.h>
 #include <signal.h>
 
-int start_telnetd( void )
+void start_telnetd( void )
 {
     int ret = 0;
     pid_t pid;
@@ -56,7 +56,7 @@ int start_telnetd( void )
     return ret;
 }
 
-int stop_telnetd( void )
+void stop_telnetd( void )
 {
     int ret = 0;
 

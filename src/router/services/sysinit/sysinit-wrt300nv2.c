@@ -47,7 +47,7 @@
 #include <utils.h>
 #include <cymac.h>
 
-int start_sysinit( void )
+void start_sysinit( void )
 {
     struct utsname name;
     struct stat tmp_stat;

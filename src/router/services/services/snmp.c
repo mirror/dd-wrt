@@ -35,7 +35,7 @@
 
 #define SNMP_CONF_FILE	"/var/snmp/snmpd.conf"
 
-int start_snmp( void )
+void start_snmp( void )
 {
     int ret = 0;
     pid_t pid;
@@ -46,11 +46,11 @@ int start_snmp( void )
     stop_snmp(  );
 
     if( !nvram_invmatch( "snmpd_enable", "0" ) )
-	return 0;
+	return;
 
     fp = fopen( SNMP_CONF_FILE, "w" );
     if( NULL == fp )
-	return -1;
+	return;
 
     if( strlen( nvram_safe_get( "snmpd_syslocation" ) ) > 0 )
 	fprintf( fp, "syslocation %s\n",
@@ -75,10 +75,10 @@ int start_snmp( void )
     cprintf( "done\n" );
     dd_syslog( LOG_INFO, "snmpd : SNMP daemon successfully started\n" );
 
-    return ret;
+    return;
 }
 
-int stop_snmp( void )
+void stop_snmp( void )
 {
     int ret = 0;
 
@@ -88,6 +88,6 @@ int stop_snmp( void )
 	dd_syslog( LOG_INFO, "snmpd : SNMP daemon successfully stopped\n" );
 	ret = killall( "snmpd", SIGKILL );
     }
-    return ret;
+    return;
 }
 #endif

@@ -77,7 +77,7 @@ extern void start_overclocking( void );
 extern int check_cfe_nv( void );
 extern int check_pmon_nv( void );
 static void unset_nvram( void );
-int start_nvram( void );
+void start_nvram( void );
 
 extern struct nvram_tuple srouter_defaults[];
 
@@ -136,7 +136,7 @@ void runStartup( char *folder, char *extension )
 /*
  * SeG dd-wrt addition for module startup scripts 
  */
-int start_modules( void )
+void start_modules( void )
 {
     runStartup( "/etc/config", ".startup" );
 
@@ -151,7 +151,7 @@ int start_modules( void )
     return 0;
 }
 
-int start_wanup( void )
+void start_wanup( void )
 {
     runStartup( "/etc/config", ".wanup" );
 #ifdef HAVE_RB500
@@ -166,13 +166,13 @@ int start_wanup( void )
     return 0;
 }
 
-int start_create_rc_startup( void )
+void start_create_rc_startup( void )
 {
     create_rc_file( RC_STARTUP );
     return 0;
 }
 
-int start_create_rc_shutdown( void )
+void start_create_rc_shutdown( void )
 {
     create_rc_file( RC_SHUTDOWN );
     return 0;
@@ -1380,7 +1380,7 @@ int do_timer( void )
 	if(nvram_get(old)) \
 		nvram_set(new, nvram_safe_get(old));
 
-int start_nvram( void )
+void start_nvram( void )
 {
     int i = 0;
 

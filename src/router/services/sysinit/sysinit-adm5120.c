@@ -66,7 +66,46 @@ if (value>('a'-1) && value<('f'+1))return value-'a'+10;
 if (value>('A'-1) && value<('F'+1))return value-'A'+10;
 return value;
 }
-int start_sysinit( void )
+
+void start_change_mac(void)
+{
+int i;
+FILE *fp;
+unsigned char os[32];
+    char mtdpath[32];
+
+    int mtd = getMTD( "boot" );
+
+    sprintf( mtdpath, "/dev/mtdblock/%d", mtd );
+    fp = fopen( mtdpath, "rb" );
+		nexttry:;
+		fprintf( stdout, "MAC Invalid. Please enter new MAC Address: (format xx:xx:xx:xx:xx:xx)\n-->" );
+		char maddr[64];
+		fscanf( stdin, "%s", maddr );
+		int newmac[6];
+		int ret = sscanf(maddr,"%02x:%02x:%02x:%02x:%02x:%02x",&newmac[0],&newmac[1],&newmac[2],&newmac[3],&newmac[4],&newmac[5]);
+		if (ret!=6)
+		    {
+		    fprintf(stdout,"\ninvalid format!, try again\n");
+		    goto nexttry;
+		    }
+		//valid;
+		for (i=0;i<6;i++)
+		    sprintf(os,"%02x%02x%02x%02x%02x%02x",newmac[0]&0xff,newmac[1]&0xff,newmac[2]&0xff,newmac[3]&0xff,newmac[4]&0xff,newmac[5]&0xff);
+		fprintf(stderr, "new mac will be %s\n",os);
+		FILE *tmp = fopen("/tmp/boot.bin","w+b");
+		fseek(fp,0,SEEK_SET);
+		for (i=0;i<65536;i++)
+		    putc(getc(fp),tmp);
+		fseek(tmp,0xff82,SEEK_SET);
+		for (i=0;i<12;i++)
+		    putc(os[i],tmp);
+		fclose(tmp);
+		sysprintf("mtd -f write /tmp/boot.bin boot");
+		fclose(fp);
+
+}
+void start_sysinit( void )
 {
     char buf[PATH_MAX];
     struct utsname name;
@@ -214,30 +253,8 @@ int start_sysinit( void )
 	    if (memcmp(os,"0050fc488130",12)==0)
 		{
 		//force change mac
-		nexttry:;
-		fprintf( stdout, "MAC Invalid. Please enter new MAC Address: (format xx:xx:xx:xx:xx:xx)\n-->" );
-		char maddr[64];
-		fscanf( stdin, "%s", maddr );
-		int newmac[6];
-		int ret = sscanf(maddr,"%02x:%02x:%02x:%02x:%02x:%02x",&newmac[0],&newmac[1],&newmac[2],&newmac[3],&newmac[4],&newmac[5]);
-		if (ret!=6)
-		    {
-		    fprintf(stdout,"\ninvalid format!, try again\n");
-		    goto nexttry;
-		    }
-		//valid;
-		for (i=0;i<6;i++)
-		    sprintf(os,"%02x%02x%02x%02x%02x%02x",newmac[0]&0xff,newmac[1]&0xff,newmac[2]&0xff,newmac[3]&0xff,newmac[4]&0xff,newmac[5]&0xff);
-		fprintf(stderr, "new mac will be %s\n",os);
-		FILE *tmp = fopen("/tmp/boot.bin","w+b");
-		fseek(fp,0,SEEK_SET);
-		for (i=0;i<65536;i++)
-		    putc(getc(fp),tmp);
-		fseek(tmp,0xff82,SEEK_SET);
-		for (i=0;i<12;i++)
-		    putc(os[i],tmp);
-		fclose(tmp);
-		sysprintf("mtd -f write /tmp/boot.bin boot");
+		fclose(fp);
+		start_change_mac();
 		sys_reboot();
 		
 		}

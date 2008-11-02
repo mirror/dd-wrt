@@ -27,7 +27,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-int start_httpd( void )
+void start_httpd( void )
 {
     int ret = 0;
 
@@ -67,10 +67,10 @@ int start_httpd( void )
 #endif
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
-int stop_httpd( void )
+void stop_httpd( void )
 {
     int ret = 0;
 
@@ -85,5 +85,5 @@ int stop_httpd( void )
 #ifdef HAVE_HTTPS
     unlink( "/var/run/httpsd.pid" );
 #endif
-    return ret;
+    return;
 }

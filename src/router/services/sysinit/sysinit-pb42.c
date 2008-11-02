@@ -52,7 +52,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 
-int start_sysinit( void )
+void start_sysinit( void )
 {
     char buf[PATH_MAX];
     struct utsname name;

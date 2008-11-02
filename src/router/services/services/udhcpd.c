@@ -38,7 +38,7 @@
 
 extern int usejffs;
 
-int stop_udhcpd( void );
+void stop_udhcpd( void );
 extern void addHost( char *host, char *ip );
 
 static int adjust_dhcp_range( void )
@@ -114,7 +114,7 @@ static int adjust_dhcp_range( void )
     return 1;
 }
 
-int start_udhcpd( void )
+void start_udhcpd( void )
 {
     FILE *fp = NULL;
     struct dns_lists *dns_list = NULL;
@@ -122,7 +122,7 @@ int start_udhcpd( void )
 
     if( nvram_match( "dhcpfwd_enable", "1" ) )
     {
-	return 0;
+	return;
     }
 #ifndef HAVE_RB500
 #ifndef HAVE_XSCALE
@@ -136,7 +136,7 @@ int start_udhcpd( void )
 	// mode
     {
 	nvram_set( "lan_proto", "static" );
-	return 0;
+	return;
     }
 #endif
 #endif
@@ -145,7 +145,7 @@ int start_udhcpd( void )
 	|| nvram_match( "dhcp_dnsmasq", "1" ) )
     {
 	stop_udhcpd(  );
-	return 0;
+	return;
     }
 
     /*
@@ -184,7 +184,7 @@ int start_udhcpd( void )
 	if( !( fp = fopen( "/tmp/udhcpd.leases", "a" ) ) )
 	{
 	    perror( "/tmp/udhcpd.leases" );
-	    return errno;
+	    return;
 	}
     }
     fclose( fp );
@@ -195,7 +195,7 @@ int start_udhcpd( void )
     if( !( fp = fopen( "/tmp/udhcpd.conf", "w" ) ) )
     {
 	perror( "/tmp/udhcpd.conf" );
-	return errno;
+	return;
     }
     fprintf( fp, "pidfile /var/run/udhcpd.pid\n" );
     fprintf( fp, "start %d.%d.%d.%s\n",
@@ -336,7 +336,7 @@ int start_udhcpd( void )
     if( !( fp = fopen( "/tmp/udhcpd.statics", "w" ) ) )
     {
 	perror( "/tmp/udhcpd.statics" );
-	return errno;
+	return;
     }
 
     if( nvram_match( "local_dns", "1" ) )
@@ -396,10 +396,10 @@ int start_udhcpd( void )
     // eval ("killall", sigusr1, "udhcpd");
 
     cprintf( "done\n" );
-    return 0;
+    return;
 }
 
-int stop_udhcpd( void )
+void stop_udhcpd( void )
 {
     if( pidof( "udhcpd" ) > 0 )
     {
@@ -407,7 +407,7 @@ int stop_udhcpd( void )
 	softkill( "udhcpd" );
     }
     cprintf( "done\n" );
-    return 0;
+    return;
 }
 
 #endif
