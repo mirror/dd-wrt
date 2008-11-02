@@ -28,7 +28,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/stat.h>
-
+#include <services.h>
 #define NOCAT_CONF      "/tmp/etc/nocat.conf"
 
 /*
