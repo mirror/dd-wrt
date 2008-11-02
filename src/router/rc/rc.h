@@ -93,7 +93,7 @@ extern void start_dhcpfwd( void );
 extern void stop_dhcpfwd( void );
 extern void start_ntpc( void );
 extern void stop_ntpc( void );
-extern void start_services_main( int argc, char **argv );
+extern int start_services_main( int argc, char **argv );
 
 extern int config_vlan( void );
 extern void config_loopback( void );
@@ -288,9 +288,9 @@ extern void start_service( char *name );
 extern void stop_service( char *name );
 extern void *start_service_nofree( char *name, void *handle );
 extern void *stop_service_nofree( char *name, void *handle );
-extern void startstop_main( int argc, char **argv );
+extern int startstop_main( int argc, char **argv );
 extern void *startstop_nofree( char *name, void *handle );
-extern void start_main( char *name, int argc, char **argv );
+extern int start_main( char *name, int argc, char **argv );
 extern void start_servicei( char *name, int param );
 
 extern int zebra_ospf_init( void );
@@ -316,7 +316,7 @@ extern int redial_main( int argc, char **argv );
 
 extern void del_routes( char *route );
 
-extern void start_single_service_main( int argc, char **argv );
+extern int start_single_service_main( int argc, char **argv );
 
 extern int write_boot( const char *path, const char *mtd );
 extern void do_mssid( char *wlname );
@@ -327,7 +327,7 @@ extern char *range( char *start, char *end );
 // static void start_heartbeat (int status);
 extern void stop_heartbeat( void );
 extern int hb_connect_main( int argc, char **argv );
-extern void stop_services_main( int argc, char **argv );
+extern int stop_services_main( int argc, char **argv );
 extern int hb_disconnect_main( int argc, char **argv );
 extern int check_ps_main( int argc, char **argv );
 extern int listen_main( int argc, char **argv );

@@ -28,9 +28,9 @@ int pptpd_main( int argc, char **argv )
 	return EINVAL;
     }
     else if( strstr( argv[1], "start" ) )
-	return start_service( "pptpd" );
+	start_service( "pptpd" );
     else if( strstr( argv[1], "stop" ) )
-	return stop_service( "pptpd" );
+	stop_service( "pptpd" );
     else if( strstr( argv[1], "restart" ) )
     {
 	startstop( "pptpd" );
