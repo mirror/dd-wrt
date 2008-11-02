@@ -259,7 +259,8 @@ int main( int argc, char **argv )
 	    puts( "try to be professional\n" );
 	    return 0;
 	}
-	return start_service( argv[1] );
+	start_service( argv[1] );
+	return 0;
     }
     if( strstr( base, "stopservice" ) )
     {
@@ -268,7 +269,8 @@ int main( int argc, char **argv )
 	    puts( "try to be professional\n" );
 	    return 0;
 	}
-	return stop_service( argv[1] );
+	stop_service( argv[1] );
+	return 0;
     }
 
 #ifndef HAVE_RB500
@@ -359,10 +361,16 @@ int main( int argc, char **argv )
 	{
 	    // fprintf (stderr, "hotplug %s\n", argv[1]);
 	    if( !strcmp( argv[1], "net" ) )
-		return start_service( "hotplug_net" );
+		{
+		start_service( "hotplug_net" );
+		return;
+		}
 #ifdef HAVE_USBHOTPLUG
 	    if( !strcmp( argv[1], "usb" ) )
-		return start_service( "hotplug_usb" );
+		{
+		start_service( "hotplug_usb" );
+		return;
+		}
 #endif
 #ifdef HAVE_XSCALE
 	    if( !strcmp( argv[1], "firmware" ) )
@@ -379,7 +387,10 @@ int main( int argc, char **argv )
     // ////////////////////////////////////////////////////
     // 
     if( strstr( base, "filtersync" ) )
-	return start_service( "filtersync" );
+	{
+	start_service( "filtersync" );
+	return;
+	}
     /* 
      * filter [add|del] number 
      */
@@ -392,9 +403,15 @@ int main( int argc, char **argv )
 	    if( ( num = atoi( argv[2] ) ) > 0 )
 	    {
 		if( strcmp( argv[1], "add" ) == 0 )
-		    return start_servicei( "filter_add", num );
+		    {
+		    start_servicei( "filter_add", num );
+		    return;
+		    }
 		else if( strcmp( argv[1], "del" ) == 0 )
-		    return start_servicei( "filter_del", num );
+		    {
+		    start_servicei( "filter_del", num );
+		    return;
+		    }
 	    }
 	}
 	else
