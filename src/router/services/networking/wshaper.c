@@ -33,6 +33,7 @@
 #include <cy_conf.h>
 #include <code_pattern.h>
 #include <rc.h>
+#include <services.h>
 
 char *get_wshaper_dev( void )
 {

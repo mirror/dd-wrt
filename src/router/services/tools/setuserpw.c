@@ -18,6 +18,7 @@
 #include <cy_conf.h>
 #include <code_pattern.h>
 #include <rc.h>
+#include <services.h>
 
 int setuserpasswd_main( int argc, char **argv )
 {
@@ -31,4 +32,5 @@ int setuserpasswd_main( int argc, char **argv )
     nvram_set( "http_passwd", zencrypt( argv[2] ) );
     nvram_commit(  );
     start_mkfiles(  );
+    return 0;
 }

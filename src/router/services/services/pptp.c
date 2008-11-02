@@ -28,6 +28,8 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <services.h>
+
 void start_pptpd( void )
 {
     int ret = 0, mss = 0;

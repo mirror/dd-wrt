@@ -54,6 +54,7 @@
 #include <wlutils.h>
 #include <cy_conf.h>
 #endif /* DEVELOPE_ENV */
+#include <services.h>
 
 /*
  * Same as the file "linux/netfilter_ipv4/ipt_webstr.h" 

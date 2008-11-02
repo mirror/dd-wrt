@@ -42,6 +42,7 @@
 #include <code_pattern.h>
 #include <cy_conf.h>
 #include <utils.h>
+#include <services.h>
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
