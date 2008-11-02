@@ -64,7 +64,7 @@ void start_sshd( void )
     // char buf[255] = { 0 };
     cprintf( "check for ssh\n" );
     if( !nvram_invmatch( "sshd_enable", "0" ) )
-	return 0;
+	return;
     cprintf( "empty dir check\n" );
     empty_dir_check(  );
     cprintf( "write key file\n" );
@@ -114,7 +114,7 @@ void start_sshd( void )
     dd_syslog( LOG_INFO, "dropbear : ssh daemon successfully started\n" );
     // ret = _eval (sshd_argv, NULL, 0, &pid);
 
-    return ret;
+    return;
 }
 
 void stop_sshd( void )
@@ -131,7 +131,7 @@ void stop_sshd( void )
 
     cprintf( "done\n" );
 
-    return ret;
+    return;
 }
 
 static void empty_dir_check( void )

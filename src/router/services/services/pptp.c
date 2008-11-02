@@ -247,7 +247,7 @@ void start_pptpd( void )
 	      "/tmp/pptpd/options.pptpd" );
 
     dd_syslog( LOG_INFO, "pptpd : pptp daemon successfully started\n" );
-    return ret;
+    return;
 }
 
 void stop_pptpd( void )

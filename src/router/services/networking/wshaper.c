@@ -569,14 +569,14 @@ void start_wshaper( void )
 
     stop_wshaper(  );
     if( !nvram_invmatch( "wshaper_enable", "0" ) )
-	return 0;
+	return;
     dev_val = get_wshaper_dev(  );
     if( ( dl_val = nvram_safe_get( "wshaper_downlink" ) ) == NULL &&
 	atoi( dl_val ) > 0 )
-	return 0;
+	return;
     if( ( ul_val = nvram_safe_get( "wshaper_uplink" ) ) == NULL &&
 	atoi( ul_val ) > 0 )
-	return 0;
+	return;
     nopriohostsrc_val = nvram_safe_get( "wshaper_nopriohostsrc" );
     nopriohostdst_val = nvram_safe_get( "wshaper_nopriohostdst" );
     noprioportsrc_val = nvram_safe_get( "wshaper_noprioportsrc" );
@@ -605,7 +605,7 @@ void start_wshaper( void )
 #endif
 #endif
     nvram_set( "qos_done", "1" );
-    return ret;
+    return;
 }
 
 void stop_wshaper( void )
@@ -715,5 +715,5 @@ void stop_wshaper( void )
 	rmmod( "ebtables" );
     }
     rmmod( "imq" );
-    return ret;
+    return;
 }

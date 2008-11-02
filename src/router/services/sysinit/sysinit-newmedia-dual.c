@@ -146,7 +146,7 @@ void start_sysinit( void )
      */
     stime( &tm );
 
-    return 0;
+    return;
     cprintf( "done\n" );
 }
 

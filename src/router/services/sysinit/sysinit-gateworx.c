@@ -450,7 +450,7 @@ void start_sysinit( void )
 	eval( "/sbin/mtd", "erase", "nvram" );
 	nvram_commit(  );
     }
-    return 0;
+    return;
 }
 
 int check_cfe_nv( void )
