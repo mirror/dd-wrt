@@ -191,7 +191,7 @@ int start_servicep( char *name, char *param )
     return 0;
 }
 
-int start_servicei( char *name, int param )
+void start_servicei( char *name, int param )
 {
     // lcdmessaged("Starting Service",name);
     cprintf( "start_servicei\n" );
@@ -199,7 +199,7 @@ int start_servicei( char *name, int param )
 
     if( handle == NULL )
     {
-	return -1;
+	return;
     }
     void ( *fptr ) ( int );
     char service[64];
@@ -213,17 +213,17 @@ int start_servicei( char *name, int param )
 	fprintf( stderr, "function %s not found \n", service );
     dlclose( handle );
     cprintf( "start_sevicei done()\n" );
-    return 0;
+    return;
 }
 
-int start_main( char *name, int argc, char **argv )
+void start_main( char *name, int argc, char **argv )
 {
     cprintf( "start_main\n" );
     void *handle = load_service( name );
 
     if( handle == NULL )
     {
-	return -1;
+	return;
     }
     int ( *fptr ) ( int, char ** );
     char service[64];
@@ -237,10 +237,10 @@ int start_main( char *name, int argc, char **argv )
 	fprintf( stderr, "function %s not found \n", service );
     dlclose( handle );
     cprintf( "start_main done()\n" );
-    return 0;
+    return;
 }
 
-int stop_service( char *name )
+void stop_service( char *name )
 {
     // lcdmessaged("Stopping Service",name);
     cprintf( "stop service()\n" );
@@ -248,7 +248,7 @@ int stop_service( char *name )
 
     if( handle == NULL )
     {
-	return -1;
+	return;
     }
     void ( *fptr ) ( void );
     char service[64];
@@ -263,7 +263,7 @@ int stop_service( char *name )
     dlclose( handle );
     cprintf( "stop_service done()\n" );
 
-    return 0;
+    return;
 }
 
 void *stop_service_nofree( char *name, void *handle )
@@ -302,9 +302,10 @@ void startstop( char *name )
 	dlclose( handle );
 }
 
-void startstop_main( int argc, char **argv )
+int startstop_main( int argc, char **argv )
 {
     startstop( argv[1] );
+    return 0;
 }
 
 void *startstop_nofree( char *name, void *handle )
