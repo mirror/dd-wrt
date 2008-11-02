@@ -3830,13 +3830,13 @@ void start_hotplug_net( void )
 
     interface = getenv( "INTERFACE" );
     if( !interface )
-	return 0;
+	return;
     action = getenv( "ACTION" );
     if( !action )
-	return 0;
+	return;
     // sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
     if( strncmp( interface, "ath", 3 ) )
-	return 0;
+	return;
 
     // try to parse
     char ifname[32];
@@ -3845,12 +3845,12 @@ void start_hotplug_net( void )
     int index = indexof( interface, '.' );
 
     if( index == -1 )
-	return 0;
+	return;
     strncpy( ifname, interface + index + 1,
 	     strlen( interface ) - ( index + 1 ) );
     if( strncmp( ifname, "sta", 3 ) )
     {
-	return 0;
+	return;
     }
     char nr[32];
 
@@ -3907,7 +3907,7 @@ void start_hotplug_net( void )
 	if( nvram_match( bridged, "1" ) )
 	    br_del_interface( getBridge( ifname ), interface );
     }
-    return 0;
+    return;
 #else
 
     // char *lan_ifname = nvram_safe_get("lan_ifname");
@@ -3915,10 +3915,10 @@ void start_hotplug_net( void )
 
     if( !( interface = getenv( "INTERFACE" ) )
 	|| !( action = getenv( "ACTION" ) ) )
-	return EINVAL;
+	return;
 
     if( strncmp( interface, "wds", 3 ) )
-	return 0;
+	return;
     cprintf( "action: %s\n", action );
     if( !strcmp( action, "register" ) )
     {
@@ -3958,7 +3958,7 @@ void start_hotplug_net( void )
 
     }
     cprintf( "config done()\n" );
-    return 0;
+    return;
 #endif
 }
 

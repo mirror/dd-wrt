@@ -218,13 +218,13 @@ void stop_dns_clear_resolv( void )
     if( !( fp_w = fopen( RESOLV_FILE, "w" ) ) )
     {
 	perror( RESOLV_FILE );
-	return errno;
+	return;
     }
     fprintf( fp_w, " " );
     fclose( fp_w );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 #if 0
@@ -233,7 +233,7 @@ void start_ntpc( void )
     char *servers = nvram_safe_get( "ntp_server" );
 
     if( !nvram_invmatch( "ntpd_enable", "0" ) )
-	return 0;
+	return;
 
     if( strlen( servers ) )
     {
@@ -249,7 +249,7 @@ void start_ntpc( void )
     }
 
     cprintf( "done\n" );
-    return 0;
+    return;
 }
 #endif
 void stop_ntpc( void )
@@ -260,7 +260,7 @@ void stop_ntpc( void )
     int ret = killall( "ntpclient", SIGTERM );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 // ///////////////////////////////////////////////////
@@ -294,7 +294,7 @@ void start_iptqueue( void )
     int ret = 0;
 
     if( !nvram_invmatch( "iptqueue_enable", "0" ) )
-	return 0;
+	return;
 
     ret = eval( "iptqueue" );
     dd_syslog( LOG_INFO, "iptqueue successfully started\n" );
@@ -465,7 +465,7 @@ void stop_redial( void )
     ret = killall( "redial", SIGKILL );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 void start_redial( void )
@@ -478,7 +478,7 @@ void start_redial( void )
     };
     if( pidof( "redial" ) > 0 )
     {
-	return 0;		// not required, already running
+	return;		// not required, already running
     }
 
     symlink( "/sbin/rc", "/tmp/ppp/redial" );
@@ -488,7 +488,7 @@ void start_redial( void )
 	       "ppp_redial : redial process successfully started\n" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 #ifdef HAVE_RADVD
@@ -501,9 +501,9 @@ void start_radvd( void )
     FILE *fp;
 
     if( !nvram_match( "radvd_enable", "1" ) )
-	return 0;
+	return;
     if( !nvram_match( "ipv6_enable", "1" ) )
-	return 0;
+	return;
     buf = nvram_safe_get( "radvd_conf" );
     if( buf != NULL )
     {
@@ -533,7 +533,7 @@ void start_radvd( void )
     dd_syslog( LOG_INFO, "radvd : RADV daemon successfully started\n" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 void stop_radvd( void )
@@ -548,7 +548,7 @@ void stop_radvd( void )
     unlink( "/var/run/radvd.pid" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 #endif
 #ifdef HAVE_IPV6
@@ -557,13 +557,13 @@ void start_ipv6( void )
     int ret = 0;
 
     if( !nvram_invmatch( "ipv6_enable", "0" ) )
-	return 0;
+	return;
 
     ret = insmod( "ipv6" );
     dd_syslog( LOG_INFO, "ipv6 successfully started\n" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 #endif
 
@@ -585,7 +585,7 @@ void stop_pppoe( void )
     // ret += killall ("ip-down", SIGKILL);
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 void stop_single_pppoe( int pppoe_num )
@@ -608,7 +608,7 @@ void stop_single_pppoe( int pppoe_num )
     stop_dns_clear_resolv(  );
 
     dprintf( "done\n" );
-    return ret;
+    return;
 }
 #endif
 void stop_dhcpc( void )
@@ -621,7 +621,7 @@ void stop_dhcpc( void )
     ret = killall( "udhcpc", SIGTERM );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 #ifdef HAVE_PPTP
@@ -774,7 +774,7 @@ void start_pptp( int status )
 	if( !( fp = fopen( "/tmp/ppp/pap-secrets", "w" ) ) )
 	{
 	    perror( "/tmp/ppp/pap-secrets" );
-	    return -1;
+	    return;
 	}
 	fprintf( fp, "\"%s\" * \"%s\" *\n", username, passwd );
 	fclose( fp );
@@ -786,7 +786,7 @@ void start_pptp( int status )
 	if( !( fp = fopen( "/tmp/ppp/chap-secrets", "w" ) ) )
 	{
 	    perror( "/tmp/ppp/chap-secrets" );
-	    return -1;
+	    return;
 	}
 	fprintf( fp, "\"%s\" * \"%s\" *\n", username, passwd );
 	fclose( fp );
@@ -912,7 +912,7 @@ void start_pptp( int status )
     start_wshaper(  );
     start_wland(  );
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 void stop_pptp( void )
@@ -931,7 +931,7 @@ void stop_pptp( void )
     ret += killall( "listen", SIGKILL );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 #endif
@@ -1090,7 +1090,7 @@ void start_pppoe( int pppoe_num )
 
     }
     cprintf( "done. session %d\n", pppoe_num );
-    return 0;
+    return;
 }
 #endif
 /*
@@ -1231,7 +1231,7 @@ void start_l2tp( int status )
 	if( !( fp = fopen( "/tmp/l2tp.conf", "w" ) ) )
 	{
 	    perror( "/tmp/l2tp.conf" );
-	    return -1;
+	    return;
 	}
 	fprintf( fp, "global\n" );	// Global section
 	fprintf( fp, "load-handler \"sync-pppd.so\"\n" );	// Load
@@ -1253,7 +1253,7 @@ void start_l2tp( int status )
 	if( !( fp = fopen( "/tmp/ppp/options", "w" ) ) )
 	{
 	    perror( "/tmp/ppp/options" );
-	    return -1;
+	    return;
 	}
 	fprintf( fp, "defaultroute\n" );	// Add a default route to the 
 	// system routing tables,
@@ -1323,7 +1323,7 @@ void start_l2tp( int status )
 	if( !( fp = fopen( "/tmp/ppp/pap-secrets", "w" ) ) )
 	{
 	    perror( "/tmp/ppp/pap-secrets" );
-	    return -1;
+	    return;
 	}
 	fprintf( fp, "\"%s\" * \"%s\" *\n", username, passwd );
 	fclose( fp );
@@ -1335,7 +1335,7 @@ void start_l2tp( int status )
 	if( !( fp = fopen( "/tmp/ppp/chap-secrets", "w" ) ) )
 	{
 	    perror( "/tmp/ppp/chap-secrets" );
-	    return -1;
+	    return;
 	}
 	fprintf( fp, "\"%s\" * \"%s\" *\n", username, passwd );
 	fclose( fp );
@@ -1384,17 +1384,17 @@ void start_l2tp( int status )
 		   nvram_safe_get( "l2tp_server_ip" ) );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 void start_l2tp_redial( void )
 {
-    return start_l2tp( REDIAL );
+    start_l2tp( REDIAL );
 }
 
 void start_l2tp_boot( void )
 {
-    return start_l2tp( BOOT );
+    start_l2tp( BOOT );
 }
 
 void stop_l2tp( void )
@@ -1411,7 +1411,7 @@ void stop_l2tp( void )
     ret += killall( "listen", SIGKILL );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 #endif
 
@@ -1422,7 +1422,7 @@ void stop_wland( void )
     int ret = killall( "wland", SIGKILL );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 void start_wland( void )
@@ -1441,13 +1441,13 @@ void start_wland( void )
     ret = _evalpid( wland_argv, NULL, 0, &pid );
     dd_syslog( LOG_INFO, "wland : WLAN daemon successfully started\n" );
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 void start_process_monitor( void )
 {
     if( nvram_match( "pmonitor_enable", "0" ) )
-	return 0;
+	return;
 
     pid_t pid;
 
@@ -1458,7 +1458,7 @@ void start_process_monitor( void )
 
     cprintf( "done" );
 
-    return ret;
+    return;
 }
 
 void stop_process_monitor( void )
@@ -1471,14 +1471,14 @@ void stop_process_monitor( void )
 
     cprintf( "done\n" );
 
-    return ret;
+    return;
 }
 
 void start_radio_timer( void )
 {
     if( nvram_match( "radio0_timer_enable", "0" )
 	&& nvram_match( "radio1_timer_enable", "0" ) )
-	return 0;
+	return;
 #ifdef HAVE_MADWIFI
     if( nvram_match( "ath0_net_mode", "disabled" ) )
 #elif HAVE_MSSID
@@ -1487,7 +1487,7 @@ void start_radio_timer( void )
 #else
     if( nvram_match( "wl_net_mode", "disabled" ) )
 #endif
-	return 0;
+	return;
 
     pid_t pid;
 
@@ -1499,7 +1499,7 @@ void start_radio_timer( void )
 
     cprintf( "done" );
 
-    return ret;
+    return;
 }
 
 void stop_radio_timer( void )
@@ -1513,18 +1513,18 @@ void stop_radio_timer( void )
 
     cprintf( "done\n" );
 
-    return ret;
+    return;
 }
 
 void start_ttraff( void )
 {
     if( !nvram_match( "ttraff_enable", "1" ) )
-	return 0;
+	return;
 
     if( nvram_match( "wan_proto", "disabled" )
 	|| nvram_match( "wl0_mode", "wet" )
 	|| nvram_match( "wl0_mode", "apstawet" ) )
-	return 0;
+	return;
 
     pid_t pid;
 
@@ -1536,7 +1536,7 @@ void start_ttraff( void )
 
     cprintf( "done" );
 
-    return ret;
+    return;
 }
 
 void stop_ttraff( void )
@@ -1550,7 +1550,7 @@ void stop_ttraff( void )
 
     cprintf( "done\n" );
 
-    return ret;
+    return;
 }
 
 extern void start_heartbeat_boot( void );
@@ -1579,19 +1579,19 @@ void start_force_to_dial( void )
 
 	sysprintf( "l2tp-control \"start-session %s\"",
 		   nvram_safe_get( "l2tp_server_ip" ) );
-	return ret;
+	return;
     }
 #endif
 #ifdef HAVE_HEARTBEAT
     if( nvram_match( "wan_proto", "heartbeat" ) )
     {
 	start_heartbeat_boot(  );
-	return ret;
+	return ;
     }
 #endif
     _evalpid( ping_argv, NULL, 3, NULL );
 
-    return ret;
+    return;
 }
 
 #ifdef HAVE_CPUTEMP
@@ -1644,6 +1644,6 @@ void start_hotplug_usb( void )
     fprintf( stderr, "devfs %s\n", devfs != NULL ? devfs : "" );
     fprintf( stderr, "device %s\n", device != NULL ? device : "" );
 
-    return 0;
+    return;
 }
 #endif

@@ -27,6 +27,8 @@
 #include <syslog.h>
 #include <signal.h>
 
+void stop_upnp( void );
+
 void start_upnp( void )
 {
     char *wan_ifname = get_wan_face(  );

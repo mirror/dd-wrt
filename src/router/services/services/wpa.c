@@ -61,7 +61,7 @@ void start_nas_notify( char *ifname )
 
     if( !( str = file2str( pidfile ) ) )	// no pidfile means no nas was run (required)
     {
-	return -1;
+	return;
     }
     free( str );
     sleep( 3 );
@@ -114,7 +114,7 @@ void start_nas_notify( char *ifname )
     }
     int pid;
 
-    return _evalpid( argv, ">/dev/console", 0, &pid );
+    _evalpid( argv, ">/dev/console", 0, &pid );
 }
 
 void start_radius( char *prefix )
@@ -225,7 +225,7 @@ void start_guest_nas( void )
      * index = get_ipconfig_index(name); if (index < 0) continue;
      * snprintf(lan,sizeof(lan),"lan%d",index); start_nas(lan); } 
      */
-    return 0;
+    return;
 }
 #endif
 char *getSecMode( char *prefix )
@@ -422,7 +422,7 @@ void start_nas( void )
 	}
     }
 
-    return 1;
+    return;
 }
 
 void start_nas_single( char *type, char *prefix )
@@ -446,7 +446,7 @@ void start_nas_single( char *type, char *prefix )
     {
     0};
     if( nvram_nmatch( "disabled", "%s_net_mode", prefix ) )
-	return 0;
+	return;
     if( !strcmp( prefix, "wl0" ) )
 	convert_wds( 0 );
     else
@@ -465,7 +465,7 @@ void start_nas_single( char *type, char *prefix )
 	sprintf( apmode, "%s_mode", prefix );
 	if( !strcmp( type, "wan" ) && nvram_match( apmode, "ap" ) )
 	{
-	    return 0;
+	    return;
 	}
 
 	// if (!strcmp (type, "lan"))
@@ -496,7 +496,7 @@ void start_nas_single( char *type, char *prefix )
 	sec_mode = getSecMode( prefix );
 	auth_mode = getAuthMode( prefix );
 	if( auth_mode == NULL )
-	    return 0;		// no nas required
+	    return;		// no nas required
 	if( strcmp( nvram_safe_get( apmode ), "sta" )
 	    && strcmp( nvram_safe_get( apmode ), "wet" )
 	    && strcmp( nvram_safe_get( apmode ), "apstawet" )
@@ -749,7 +749,7 @@ void start_nas_single( char *type, char *prefix )
 
 	    cprintf( "done\n" );
 	}
-	return 0;
+	return;
     }
 }
 
@@ -816,5 +816,5 @@ void stop_nas( void )
 #endif
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }

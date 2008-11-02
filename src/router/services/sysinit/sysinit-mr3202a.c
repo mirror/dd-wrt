@@ -129,7 +129,7 @@ void start_sysinit( void )
     stime( &tm );
     nvram_set( "wl0_ifname", "ath0" );
 
-    return 0;
+    return;
 }
 
 int check_cfe_nv( void )
