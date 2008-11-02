@@ -18,6 +18,7 @@
 #ifndef _LANGUAGE_ASSEMBLY
 
 #include <typedefs.h>
+#include <stdio.h>
 
 struct nvram_header {
 	uint32 magic;
@@ -152,6 +153,9 @@ extern int nvram_getall(char *buf, int count);
 
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
+
+extern void fwritenvram(char *var,FILE *fp);
+extern void writenvram(char *var,char *file);
 
 #endif /* _LANGUAGE_ASSEMBLY */
 
