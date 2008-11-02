@@ -177,7 +177,7 @@ int init_ddns( void )
     return 0;
 }
 
-int start_ddns( void )
+void start_ddns( void )
 {
     int ret;
     FILE *fp;
@@ -306,7 +306,7 @@ int start_ddns( void )
     return ret;
 }
 
-int stop_ddns( void )
+void stop_ddns( void )
 {
     int ret;
 

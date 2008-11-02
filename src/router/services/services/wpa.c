@@ -34,7 +34,7 @@
 #include <wlutils.h>
 #include <bcmutils.h>
 
-int start_nas_notify( char *ifname )
+void start_nas_notify( char *ifname )
 {
     char *argv[] = { "nas4not", "lan", ifname, "up",
 	NULL,			/* role */
@@ -159,7 +159,7 @@ void start_radius( char *prefix )
 
 }
 
-int start_nas_single( char *type, char *prefix );
+void start_nas_single( char *type, char *prefix );
 
 // #define HAVE_NASCONF //use this to parse nas parameters from conf file. 
 
@@ -212,7 +212,7 @@ static void convert_wds( int instance )
 }
 
 #ifdef HAVE_MSSID
-int start_guest_nas( void )
+void start_guest_nas( void )
 {
 
     /*
@@ -369,7 +369,7 @@ void start_nas_wan( int c )
 #ifdef HAVE_WPA_SUPPLICANT
 extern void setupSupplicant( char *prefix );
 #endif
-int start_nas( void )
+void start_nas( void )
 {
 #ifdef HAVE_MSSID
     unlink( "/tmp/.nas" );
@@ -425,7 +425,7 @@ int start_nas( void )
     return 1;
 }
 
-int start_nas_single( char *type, char *prefix )
+void start_nas_single( char *type, char *prefix )
 {
 #ifdef HAVE_MSSID
     FILE *fnas;
@@ -753,7 +753,7 @@ int start_nas_single( char *type, char *prefix )
     }
 }
 
-int stop_nas( void )
+void stop_nas( void )
 {
     int ret = 0;
 

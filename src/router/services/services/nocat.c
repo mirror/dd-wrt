@@ -252,20 +252,20 @@ int mk_nocat_conf( void )
     return 0;
 }
 
-int start_splashd( void )
+void start_splashd( void )
 {
     int ret = 0;
     FILE *fp;
 
     if( !nvram_match( "NC_enable", "1" ) )
-	return 0;
+	return;
 
     /*
      * Irving - make sure our WAN link is up first. if not, check_ps will
      * start us later 
      */
     if( nvram_match( "wan_ipaddr", "0.0.0.0" ) )
-	return 0;
+	return;
     insmod( "ipt_mark" );
     insmod( "ipt_mac" );
     insmod( "xt_mark" );
@@ -276,7 +276,7 @@ int start_splashd( void )
     if( !( fp = fopen( "/tmp/start_splashd.sh", "w" ) ) )
     {
 	perror( "/tmp/start_splashd.sh" );
-	return errno;
+	return;
     }
     fprintf( fp, "#!/bin/sh\n" );
     fprintf( fp, "sleep 20\n" );
@@ -287,10 +287,10 @@ int start_splashd( void )
     dd_syslog( LOG_INFO, "splashd : splash daemon successfully started\n" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
-int stop_splashd( void )
+void stop_splashd( void )
 {
     int ret = 0;
 
@@ -309,7 +309,7 @@ int stop_splashd( void )
 	start_wland(  );
 	cprintf( "done\n" );
     }
-    return ret;
+    return;
 }
 
 #endif

@@ -614,30 +614,30 @@ int bird_init( void )
 /*
  * Written by Sparq in 2002/07/16 
  */
-int start_zebra( void )
+void start_zebra( void )
 {
 
     if( !nvram_invmatch( "zebra_enable", "0" ) )
-	return 0;
+	return;
 
 #ifdef HAVE_BIRD
 
     if( bird_init(  ) != 0 )
-	return -1;
+	return;
 
 #elif defined(HAVE_QUAGGA)
 
     if( zebra_init(  ) != 0 )
-	return -1;
+	return;
 
 #endif /* HAVE_BIRD */
-    return 0;
+    return;
 }
 
 /*
  * Written by Sparq in 2002/07/16 
  */
-int stop_zebra( void )
+void stop_zebra( void )
 {
     int ret1 = 0;
 
@@ -662,7 +662,7 @@ int stop_zebra( void )
 
 	cprintf( "done\n" );
     }
-    return ret1 | ret2 | ret3 | ret4;
+    return;
 
 #elif defined(HAVE_BIRD)
     if( pidof( "bird" ) > 0 )
@@ -672,10 +672,10 @@ int stop_zebra( void )
 
 	cprintf( "done\n" );
     }
-    return ret1;
+    return;
 
 #else
-    return -1;
+    return;
 #endif
 }
 

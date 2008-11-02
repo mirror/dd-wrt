@@ -292,7 +292,8 @@ int powerled_ctrl( int on )
     return 0;
 }				// powerled_ctrl
 
-int start_powerled_ctrl_1( void )
+void start_powerled_ctrl_1( void )
 {
-    return powerled_ctrl( 1 );
+    powerled_ctrl( 1 );
+    return;
 }

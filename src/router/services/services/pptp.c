@@ -28,7 +28,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <sys/stat.h>
-int start_pptpd( void )
+void start_pptpd( void )
 {
     int ret = 0, mss = 0;
     char *lpTemp;
@@ -37,7 +37,7 @@ int start_pptpd( void )
     if( !nvram_invmatch( "pptpd_enable", "0" ) )
     {
 	stop_pptpd(  );
-	return 0;
+	return;
     }
     // cprintf("stop vpn modules\n");
     // stop_vpn_modules ();
@@ -250,7 +250,7 @@ int start_pptpd( void )
     return ret;
 }
 
-int stop_pptpd( void )
+void stop_pptpd( void )
 {
     int ret = 0;
 
@@ -260,6 +260,6 @@ int stop_pptpd( void )
 	ret = killall( "pptpd", SIGKILL );
 	killall( "bcrelay", SIGKILL );
     }
-    return ret;
+    return;
 }
 #endif
