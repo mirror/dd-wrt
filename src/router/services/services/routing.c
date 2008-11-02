@@ -28,10 +28,10 @@
 #include <signal.h>
 #include <errno.h>
 #include <wlutils.h>
+#include <services.h>
 
 #ifdef HAVE_QUAGGA
 
-void fwritenvram( char *key, FILE * fp );
 
 int zebra_ospf_init( void );
 int zebra_bgp_init( void );

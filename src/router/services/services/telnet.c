@@ -26,6 +26,7 @@
 #include <utils.h>
 #include <syslog.h>
 #include <signal.h>
+#include <services.h>
 
 void start_telnetd( void )
 {

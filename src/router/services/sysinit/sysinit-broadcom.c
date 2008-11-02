@@ -45,6 +45,7 @@
 #include <utils.h>
 #include <bcmdevs.h>
 #include <cymac.h>
+#include <services.h>
 
 #define sys_restart() eval("event","3","1","1")
 #define sys_reboot() eval("sync"); eval("event","3","1","15")
@@ -1482,7 +1483,7 @@ void start_sysinit( void )
     }
 
     cprintf( "done\n" );
-    return 0;
+    return;
 
 }
 static int check_nv( char *name, char *value )

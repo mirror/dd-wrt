@@ -89,6 +89,7 @@ typedef u_int8_t __u8;
 #include <nvparse.h>
 #include <etsockio.h>
 #include <bcmparams.h>
+#include <services.h>
 
 extern int br_add_bridge( const char *brname );
 extern int br_del_bridge( const char *brname );

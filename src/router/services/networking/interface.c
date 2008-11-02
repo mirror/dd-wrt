@@ -43,6 +43,7 @@
 
 #include <cy_conf.h>
 #include <cymac.h>
+#include <services.h>
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)

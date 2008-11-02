@@ -28,6 +28,7 @@
 #include <bcmnvram.h>
 #include <bcmutils.h>
 #include <shutils.h>
+#include <services.h>
 
 #ifdef HAVE_OPENVPN
 

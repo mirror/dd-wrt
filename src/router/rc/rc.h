@@ -66,82 +66,31 @@ extern int route_del( char *name, int metric, char *dst, char *gateway,
 /*
  * network 
  */
-extern void start_lan( void );
-extern void stop_lan( void );
-extern void start_wan( int status );
-extern void start_wan_done( char *ifname );
-extern void stop_wan( void );
-extern int hotplug_net( void );
 extern int isClient( void );
 extern char *get_wdev( void );
 
 /*
  * services 
  */
-#ifdef HAVE_CHILLI
-extern void start_chilli( void );
-extern void stop_chilli( void );
-#endif
+
 
 extern int check_process( char *name );
-extern void stop_l2tp( void );
-extern void start_udhcpd( void );
-extern void stop_udhcpd( void );
-extern void start_dnsmasq( void );
-extern void stop_dnsmasq( void );
-extern void start_dhcpfwd( void );
-extern void stop_dhcpfwd( void );
-extern void start_ntpc( void );
-extern void stop_ntpc( void );
 extern int start_services_main( int argc, char **argv );
 
 extern int config_vlan( void );
 extern void config_loopback( void );
 
-#ifdef HAVE_NOCAT
-extern void start_splashd( void );
-extern void stop_splashd( void );
-#endif
 
-#ifdef HAVE_MILKFISH
-extern void start_milkfish( void );
-extern void stop_milkfish( void );
-#endif
 
-/*
- * lonewolf mods 
- */
 extern int flush_interfaces( void );
 extern void start_nonstd_interfaces( void );
 extern int setup_vlans( void );
 
-/*
- * end lonewolf mods 
- */
 
-extern void start_nas( void );
-extern void stop_nas( void );
 
-#ifdef HAVE_MULTICAST
-extern void start_igmp_proxy( void );
-extern void stop_igmp_proxy( void );
-#endif
-#ifdef HAVE_SPUTNIK_APD
-extern void start_sputnik( void );
-extern void stop_sputnik( void );
-extern void start_sputnik_apd( void );
-extern void stop_sputnik_apd( void );
-#endif
 /*
  * firewall 
  */
-#ifdef __CONFIG_NETCONF__
-extern void start_firewall( void );
-extern void stop_firewall( void );
-#else
-// #define start_firewall() do {} while (0)
-// #define stop_firewall() do {} while (0)
-#endif
 
 /*
  * routes 
@@ -164,63 +113,8 @@ extern int set_routes( void );
 #define REDIAL 1
 #define DELAY_PING
 
-extern void start_resetbutton( void );
-extern void stop_resetbutton( void );
 
-extern void start_tftpd( void );
-extern void stop_tftpd( void );
 
-extern void start_cron( void );
-extern void stop_cron( void );
-
-extern void start_zebra( void );
-extern void stop_zebra( void );
-
-extern void start_redial( void );
-extern void stop_redial( void );
-
-extern void start_ddns( void );
-extern void stop_ddns( void );
-
-#ifdef HAVE_UPNP
-extern void start_upnp( void );
-extern void stop_upnp( void );
-#endif
-
-extern void start_pptp( int status );
-extern void stop_pptp( void );
-
-extern void start_syslog( void );
-extern void stop_syslog( void );
-
-extern void start_process_monitor( void );
-extern void stop_process_monitor( void );
-
-extern void stop_dhcpc(  );
-
-extern void stop_pppoe( void );
-
-void start_custom_script( void );
-
-extern void start_httpd( void );
-extern void stop_httpd( void );
-
-#ifdef HAVE_TELNET
-extern void start_telnetd( void );
-extern void stop_telnetd( void );
-#endif
-
-extern void start_ipv6( void );
-
-#ifdef HAVE_SSHD
-extern void start_sshd( void );
-extern void stop_sshd( void );
-#endif
-
-#ifdef HAVE_RADVD
-extern void start_radvd( void );
-extern void stop_radvd( void );
-#endif
 
 extern int httpd_main( int argc, char **argv );
 extern int bird_main( int argc, char **argv );
@@ -247,32 +141,8 @@ extern int roaming_daemon_main( int argc, char *argv[] );
 
 #ifdef HAVE_PPTPD
 extern int pptpd_main( int argc, char **argv );
-extern void start_pptpd( void );
-extern void stop_pptpd( void );
 #endif
 
-#ifdef HAVE_MMC
-extern void start_mmc( void );
-#endif
-
-#ifdef HAVE_SNMP
-extern void start_snmp( void );
-extern void stop_snmp( void );
-#endif
-
-#ifdef HAVE_WOL
-extern void start_wol( void );
-extern void stop_wol( void );
-#endif
-
-extern void start_shorewall( void );
-extern void stop_shorewall( void );
-
-extern void start_wshaper( void );
-extern void stop_wshaper( void );
-
-extern void start_wland( void );
-extern void stop_wland( void );
 extern int is_running( char *process_name );
 
 extern int create_rc_file( char *name );
