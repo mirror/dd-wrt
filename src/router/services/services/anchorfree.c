@@ -34,7 +34,7 @@
 #include <syslog.h>
 #include <signal.h>
 #include <netdb.h>
-
+#include <services.h>
 #include "md5.h"
 
 #ifndef HAVE_MADWIFI
@@ -183,7 +183,7 @@ void start_anchorfree( void )
 	    if( getSTA(  ) )
 	    {
 		stop_wan(  );
-		start_wan(  );
+		start_wan_boot();
 		return;
 	    }
 	}
@@ -211,7 +211,7 @@ void start_anchorfree( void )
 	    if( getSTA(  ) )
 	    {
 		stop_wan(  );
-		start_wan(  );
+		start_wan_boot(  );
 		return;
 	    }
 	}
@@ -239,7 +239,7 @@ void start_anchorfree( void )
 		if( getSTA(  ) )
 		{
 		    stop_wan(  );
-		    start_wan(  );
+		    start_wan_boot(  );
 		    return;
 		}
 	    }

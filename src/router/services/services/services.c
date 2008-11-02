@@ -49,10 +49,10 @@
 #include <cy_conf.h>
 #include <code_pattern.h>
 #include <rc.h>
-#include "mkfiles.h"
 #include <wlutils.h>
 #include <nvparse.h>
 #include <syslog.h>
+#include <services.h>
 
 #define WL_IOCTL(name, cmd, buf, len) (wl_ioctl((name), (cmd), (buf), (len)))
 

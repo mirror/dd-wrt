@@ -43,6 +43,7 @@
 #include <cy_conf.h>
 #include <code_pattern.h>
 #include <rc.h>
+#include <services.h>
 
 #define RSA_HOST_KEY_FILE	"/tmp/root/.ssh/ssh_host_rsa_key"
 #define DSS_HOST_KEY_FILE	"/tmp/root/.ssh/ssh_host_dss_key"
