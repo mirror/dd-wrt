@@ -138,7 +138,7 @@ void checkupdate( void )
 
 #endif
 #endif
-int start_sysinit( void )
+void start_sysinit( void )
 {
     struct utsname name;
     struct stat tmp_stat;

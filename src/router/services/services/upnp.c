@@ -27,7 +27,7 @@
 #include <syslog.h>
 #include <signal.h>
 
-int start_upnp( void )
+void start_upnp( void )
 {
     char *wan_ifname = get_wan_face(  );
     int ret;
@@ -35,7 +35,7 @@ int start_upnp( void )
     if( nvram_match( "upnp_enable", "0" ) )
     {
 	stop_upnp(  );
-	return 0;
+	return;
     }
     /*
      * Make sure its not running first 
@@ -52,10 +52,10 @@ int start_upnp( void )
     }
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
-int stop_upnp( void )
+void stop_upnp( void )
 {
     if( pidof( "upnp" ) > 0 )
     {
@@ -64,6 +64,6 @@ int stop_upnp( void )
 	killall( "upnp", SIGTERM );
 	cprintf( "done\n" );
     }
-    return 0;
+    return;
 }
 #endif

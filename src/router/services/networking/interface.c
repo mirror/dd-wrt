@@ -159,7 +159,7 @@ static char *getPhyDev(  )
 /*
  * configure vlan interface(s) based on nvram settings 
  */
-int start_config_vlan( void )
+void start_config_vlan( void )
 {
     int s;
     struct ifreq ifr;
@@ -254,10 +254,10 @@ int start_config_vlan( void )
  * begin lonewolf mods 
  */
 
-int start_setup_vlans( void )
+void start_setup_vlans( void )
 {
 #if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120)
-    return 0;
+    return;
 #else
     /*
      * VLAN #16 is just a convieniant way of storing tagging info.  There is
@@ -272,7 +272,7 @@ int start_setup_vlans( void )
     {
 	nvram_set( "vdsl_state", "0" );
 	enable_dtag_vlan( 1 );
-	return 0;
+	return;
     }
 
     int ports[21][6], i, j, ret = 0, tmp, workaround = 0, found;
@@ -485,7 +485,7 @@ int start_setup_vlans( void )
 	sysprintf( "echo %s > /proc/switch/eth0/vlan/%d/ports",
 		   portsettings[i], i );
     }
-    return ret;
+    return;
 #endif
 }
 

@@ -56,7 +56,7 @@ static int write_key_file( char *keyname, char *keyfile, int chmodval );
 static int generate_dropbear_rsa_host_key( void );
 static int generate_dropbear_dss_host_key( void );
 
-int start_sshd( void )
+void start_sshd( void )
 {
     int ret = 0;
 
@@ -117,7 +117,7 @@ int start_sshd( void )
     return ret;
 }
 
-int stop_sshd( void )
+void stop_sshd( void )
 {
     int ret = 0;
 

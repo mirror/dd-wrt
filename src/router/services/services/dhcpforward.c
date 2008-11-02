@@ -34,7 +34,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 
-int start_dhcpfwd( void )
+void start_dhcpfwd( void )
 {
     if( nvram_match( "wl0_mode", "wet" ) || nvram_match( "wl0_mode", "apstawet" ) )	// dont 
 	// start 
@@ -46,7 +46,7 @@ int start_dhcpfwd( void )
 	// mode
     {
 	nvram_set( "lan_proto", "static" );
-	return 0;
+	return;
     }
 #ifdef HAVE_DHCPFORWARD
     FILE *fp;
@@ -130,7 +130,7 @@ int start_dhcpfwd( void )
 	eval( "dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf" );
 	syslog( LOG_INFO,
 		"dhcpfwd : dhcp forwarder daemon successfully started\n" );
-	return 0;
+	return;
     }
 #endif
 #ifdef HAVE_DHCPRELAY
@@ -141,7 +141,7 @@ int start_dhcpfwd( void )
 	syslog( LOG_INFO, "dhcrelay : dhcp relay successfully started\n" );
     }
 #endif
-    return 0;
+    return;
 }
 
 void stop_dhcpfwd( void )

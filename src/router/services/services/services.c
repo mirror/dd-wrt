@@ -66,7 +66,7 @@
  */
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
-int start_force_to_dial( void );
+void start_force_to_dial( void );
 
 static int alreadyInHost( char *host )
 {
@@ -202,7 +202,7 @@ int write_nvram( char *name, char *nv )
 
 int usejffs = 0;
 
-int stop_dns_clear_resolv( void )
+void stop_dns_clear_resolv( void )
 {
     FILE *fp_w;
 
@@ -228,7 +228,7 @@ int stop_dns_clear_resolv( void )
 }
 
 #if 0
-int start_ntpc( void )
+void start_ntpc( void )
 {
     char *servers = nvram_safe_get( "ntp_server" );
 
@@ -252,7 +252,7 @@ int start_ntpc( void )
     return 0;
 }
 #endif
-int stop_ntpc( void )
+void stop_ntpc( void )
 {
     if( pidof( "ntpclient" ) > 0 )
 	dd_syslog( LOG_INFO,
@@ -264,7 +264,7 @@ int stop_ntpc( void )
 }
 
 // ///////////////////////////////////////////////////
-int start_resetbutton( void )
+void start_resetbutton( void )
 {
     int ret = 0;
 
@@ -273,10 +273,10 @@ int start_resetbutton( void )
 	       "reset button : resetbutton daemon successfully started\n" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
-int stop_resetbutton( void )
+void stop_resetbutton( void )
 {
     int ret = 0;
 
@@ -286,10 +286,10 @@ int stop_resetbutton( void )
     ret = killall( "resetbutton", SIGKILL );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
-int start_iptqueue( void )
+void start_iptqueue( void )
 {
     int ret = 0;
 
@@ -300,10 +300,10 @@ int start_iptqueue( void )
     dd_syslog( LOG_INFO, "iptqueue successfully started\n" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
-int stop_iptqueue( void )
+void stop_iptqueue( void )
 {
     int ret = 0;
 
@@ -313,16 +313,16 @@ int stop_iptqueue( void )
     ret = killall( "iptqueue", SIGKILL );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
-int start_cron( void )
+void start_cron( void )
 {
     int ret = 0;
     struct stat buf;
 
     if( nvram_match( "cron_enable", "0" ) )
-	return 0;
+	return;
 
     /*
      * Create cron's database directory 
@@ -401,10 +401,10 @@ int start_cron( void )
     dd_syslog( LOG_INFO, "cron : cron daemon successfully started\n" );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
-int stop_cron( void )
+void stop_cron( void )
 {
     int ret = 0;
 
@@ -414,16 +414,16 @@ int stop_cron( void )
     ret = killall( "cron", SIGKILL );
     eval( "rm", "-rf", "/tmp/cron.d" );
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 #ifdef HAVE_SYSLOG
-int start_syslog( void )
+void start_syslog( void )
 {
     int ret1 = 0, ret2 = 0;
 
     if( !nvram_invmatch( "syslogd_enable", "0" ) )
-	return 0;
+	return;
 
     if( strlen( nvram_safe_get( "syslogd_rem_ip" ) ) > 0 )
 	ret1 = eval( "syslogd", "-R", nvram_safe_get( "syslogd_rem_ip" ) );
@@ -434,10 +434,10 @@ int start_syslog( void )
     ret2 = eval( "klogd" );
     dd_syslog( LOG_INFO, "klogd : klog daemon successfully started\n" );
 
-    return ret1 | ret2;
+    return;
 }
 
-int stop_syslog( void )
+void stop_syslog( void )
 {
     int ret;
 
@@ -450,11 +450,11 @@ int stop_syslog( void )
     ret += killall( "syslogd", SIGKILL );
 
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 #endif
 
-int stop_redial( void )
+void stop_redial( void )
 {
     int ret;
 
@@ -468,7 +468,7 @@ int stop_redial( void )
     return ret;
 }
 
-int start_redial( void )
+void start_redial( void )
 {
     int ret;
     pid_t pid;
@@ -492,7 +492,7 @@ int start_redial( void )
 }
 
 #ifdef HAVE_RADVD
-int start_radvd( void )
+void start_radvd( void )
 {
     int ret = 0;
     int c = 0;
@@ -536,7 +536,7 @@ int start_radvd( void )
     return ret;
 }
 
-int stop_radvd( void )
+void stop_radvd( void )
 {
     int ret = 0;
 
@@ -552,7 +552,7 @@ int stop_radvd( void )
 }
 #endif
 #ifdef HAVE_IPV6
-int start_ipv6( void )
+void start_ipv6( void )
 {
     int ret = 0;
 
@@ -568,7 +568,7 @@ int start_ipv6( void )
 #endif
 
 #ifdef HAVE_PPPOE
-int stop_pppoe( void )
+void stop_pppoe( void )
 {
     int ret;
 
@@ -588,7 +588,7 @@ int stop_pppoe( void )
     return ret;
 }
 
-int stop_single_pppoe( int pppoe_num )
+void stop_single_pppoe( int pppoe_num )
 {
     int ret;
     char pppoe_pid[15], pppoe_ifname[15];
@@ -611,7 +611,7 @@ int stop_single_pppoe( int pppoe_num )
     return ret;
 }
 #endif
-int stop_dhcpc( void )
+void stop_dhcpc( void )
 {
     int ret = 0;
 
@@ -725,7 +725,7 @@ static void create_pptp_config( char *servername, char *username )
 
 }
 
-int start_pptp( int status )
+void start_pptp( int status )
 {
     int ret;
     FILE *fp;
@@ -915,7 +915,7 @@ int start_pptp( int status )
     return ret;
 }
 
-int stop_pptp( void )
+void stop_pptp( void )
 {
     int ret;
 
@@ -944,7 +944,7 @@ int stop_pptp( void )
  * This function build the pppoe instuction & execute it.
  */
 #ifdef HAVE_PPPOE
-int start_pppoe( int pppoe_num )
+void start_pppoe( int pppoe_num )
 {
     char idletime[20], retry_num[20], param[4];
     char username[80], passwd[80];
@@ -1176,7 +1176,7 @@ void start_tmp_ppp( int num )
 // =====================================================================================================
 
 #ifdef HAVE_L2TP
-int start_l2tp( int status )
+void start_l2tp( int status )
 {
     int ret;
     FILE *fp;
@@ -1387,17 +1387,17 @@ int start_l2tp( int status )
     return ret;
 }
 
-int start_l2tp_redial( void )
+void start_l2tp_redial( void )
 {
     return start_l2tp( REDIAL );
 }
 
-int start_l2tp_boot( void )
+void start_l2tp_boot( void )
 {
     return start_l2tp( BOOT );
 }
 
-int stop_l2tp( void )
+void stop_l2tp( void )
 {
     int ret = 0;
 
@@ -1415,7 +1415,7 @@ int stop_l2tp( void )
 }
 #endif
 
-int stop_wland( void )
+void stop_wland( void )
 {
     if( pidof( "wland" ) > 0 )
 	dd_syslog( LOG_INFO, "wland : WLAN daemon successfully stopped\n" );
@@ -1425,7 +1425,7 @@ int stop_wland( void )
     return ret;
 }
 
-int start_wland( void )
+void start_wland( void )
 {
     int ret;
     pid_t pid;
@@ -1444,7 +1444,7 @@ int start_wland( void )
     return ret;
 }
 
-int start_process_monitor( void )
+void start_process_monitor( void )
 {
     if( nvram_match( "pmonitor_enable", "0" ) )
 	return 0;
@@ -1461,7 +1461,7 @@ int start_process_monitor( void )
     return ret;
 }
 
-int stop_process_monitor( void )
+void stop_process_monitor( void )
 {
     int ret;
 
@@ -1474,7 +1474,7 @@ int stop_process_monitor( void )
     return ret;
 }
 
-int start_radio_timer( void )
+void start_radio_timer( void )
 {
     if( nvram_match( "radio0_timer_enable", "0" )
 	&& nvram_match( "radio1_timer_enable", "0" ) )
@@ -1502,7 +1502,7 @@ int start_radio_timer( void )
     return ret;
 }
 
-int stop_radio_timer( void )
+void stop_radio_timer( void )
 {
     int ret;
 
@@ -1516,7 +1516,7 @@ int stop_radio_timer( void )
     return ret;
 }
 
-int start_ttraff( void )
+void start_ttraff( void )
 {
     if( !nvram_match( "ttraff_enable", "1" ) )
 	return 0;
@@ -1539,7 +1539,7 @@ int start_ttraff( void )
     return ret;
 }
 
-int stop_ttraff( void )
+void stop_ttraff( void )
 {
     int ret;
 
@@ -1558,7 +1558,7 @@ extern void start_heartbeat_boot( void );
 /*
  * Trigger Connect On Demand 
  */
-int start_force_to_dial( void )
+void start_force_to_dial( void )
 {
     // force_to_dial( char *whichone){
     int ret = 0;
@@ -1625,7 +1625,7 @@ void start_hwmon( void )
 #endif
 
 #ifdef HAVE_USBHOTPLUG
-int start_hotplug_usb( void )
+void start_hotplug_usb( void )
 {
     // char *lan_ifname = nvram_safe_get("lan_ifname");
     char *interface = getenv( "INTERFACE" );

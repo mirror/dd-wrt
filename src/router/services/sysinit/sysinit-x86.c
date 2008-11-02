@@ -101,7 +101,7 @@ static int getdiscindex( void )	// works only for squashfs
     return -1;
 }
 
-int start_sysinit( void )
+void start_sysinit( void )
 {
     struct utsname name;
     time_t tm = 0;

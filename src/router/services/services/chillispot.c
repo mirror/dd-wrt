@@ -36,14 +36,14 @@
 
 #ifdef HAVE_CHILLI
 
-int start_chilli( void )
+void start_chilli( void )
 {
     int ret = 0;
     FILE *fp;
     int i;
 
     if( !nvram_match( "chilli_enable", "1" ) )
-	return 0;
+	return;
 
 #ifdef HAVE_CHILLILOCAL
 
@@ -174,7 +174,7 @@ int start_chilli( void )
     return ret;
 }
 
-int stop_chilli( void )
+void stop_chilli( void )
 {
     int ret = 0;
 
@@ -184,7 +184,7 @@ int stop_chilli( void )
 	ret = killall( "chilli", SIGKILL );
     }
     cprintf( "done\n" );
-    return ret;
+    return;
 }
 
 #endif /* HAVE_CHILLI */

@@ -1618,17 +1618,17 @@ static int update_filter( int mode, int seq )
     return 0;
 }
 
-int start_filter_add( int seq )
+void start_filter_add( int seq )
 {
     DEBUG( "filter_add:\n" );
-    return update_filter( 1, seq );
+    update_filter( 1, seq );
 
 }
 
-int start_filter_del( int seq )
+void start_filter_del( int seq )
 {
     DEBUG( "filter_del:\n" );
-    return update_filter( 0, seq );
+    update_filter( 0, seq );
 }
 
 void start_filtersync( void )
@@ -1652,9 +1652,9 @@ void start_filtersync( void )
     for( seq = 1; seq <= NR_RULES; seq++ )
     {
 	if( if_tod_intime( seq ) > 0 )
-	    ret = start_filter_add( seq );
+	    start_filter_add( seq );
 	else
-	    ret = start_filter_del( seq );
+	    start_filter_del( seq );
 	DEBUG( "seq=%d, ret=%d\n", seq, ret );
     }
 }
@@ -2787,11 +2787,11 @@ void app_udp_settable( void )
 
 int isregistered_real( void );
 
-int
+
 #ifdef DEVELOPE_ENV
-main( void )
+int main( void )
 #else
-start_firewall( void )
+void start_firewall( void )
 #endif
 {
     DIR *dir;
@@ -3185,7 +3185,7 @@ start_firewall( void )
     return 0;
 }
 
-int stop_firewall( void )
+void stop_firewall( void )
 {
     stop_anchorfree(  );
     /*

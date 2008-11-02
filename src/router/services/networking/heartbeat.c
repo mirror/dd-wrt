@@ -45,7 +45,7 @@
 #define MY_LOG(level, fmt, args...)
 #endif
 
-static int start_heartbeat( int status )
+static void start_heartbeat( int status )
 {
     FILE *fp;
     int ret;
@@ -54,7 +54,7 @@ static int start_heartbeat( int status )
     char buf[254];
 
     if( nvram_invmatch( "wan_proto", "heartbeat" ) )
-	return 0;
+	return;
 
     openlog( "heartbeat", LOG_PID | LOG_NDELAY, LOG_DAEMON );
 
@@ -104,7 +104,7 @@ static int start_heartbeat( int status )
     {
 	MY_LOG( LOG_ERR, "Can't write %s\n", "/tmp/bpalogin.conf" );
 	perror( "/tmp/bpalogin.conf" );
-	return errno;
+	return;
     }
     fprintf( fp, "username %s\n", nvram_safe_get( "ppp_username" ) );
     fprintf( fp, "password %s\n", nvram_safe_get( "ppp_passwd" ) );
@@ -138,10 +138,10 @@ static int start_heartbeat( int status )
 	    start_redial(  );
     }
 
-    return ret;
+    return;
 }
 
-int stop_heartbeat( void )
+void stop_heartbeat( void )
 {
     int ret;
 
@@ -150,7 +150,7 @@ int stop_heartbeat( void )
 
     cprintf( "done\n" );
 
-    return ret;
+    return;
 }
 
 void start_heartbeat_boot( void )
