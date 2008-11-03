@@ -122,7 +122,9 @@ sflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, co
 {
 	struct sflash_mtd *sflash = (struct sflash_mtd *) mtd->priv;
 	int bytes, ret = 0;
-
+	
+	if (retlen)
+		*retlen = 0;
 	/* Check address range */
 	if (!len)
 		return 0;
@@ -142,7 +144,8 @@ sflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, co
 		to += (loff_t) bytes;
 		len -= bytes;
 		buf += bytes;
-		*retlen += bytes;
+		if (retlen)
+			*retlen += bytes;
 	}
 
 	up(&sflash->lock);
