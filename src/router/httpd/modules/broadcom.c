@@ -646,7 +646,8 @@ int variables_arraysize( void )
 }
 
 // and now the tricky part (more dirty as dirty)
-void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query )
+void do_filtertable( struct mime_handler *handler, char *path, webs_t stream,
+		     char *query )
 {
     char *temp2 = &path[indexof( path, '-' ) + 1];
     char ifname[16];
@@ -668,7 +669,8 @@ void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, cha
     do_ej_buffer( temp, stream );
 }
 
-void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query )
+void do_wds( struct mime_handler *handler, char *path, webs_t stream,
+	     char *query )
 {
     char *temp2 = &path[indexof( path, '-' ) + 1];
     char ifname[16];
@@ -791,7 +793,7 @@ static struct gozila_action gozila_actions[] = {
     {"ccontrol", "execute", "", 1, REFRESH, "execute"},
 #endif
     {"WanMAC", "clone_mac", "", 1, REFRESH, "clone_mac"},	// for cisco
-								// style
+    // style
     {"DHCPTable", "delete", "", 2, REFRESH, "delete_leases"},
     {"Info", "refresh", "", 0, REFRESH, "save_wifi"},
     {"Status_Wireless", "refresh", "", 0, REFRESH, "save_wifi"},
@@ -799,44 +801,44 @@ static struct gozila_action gozila_actions[] = {
     {"Status", "renew", "", 3, REFRESH, "dhcp_renew"},
     {"Status", "Connect", "start_pppoe", 1, RESTART, NULL},
     {"Status_Internet", "release", "dhcp_release", 0, SYS_RESTART, "dhcp_release"},	// for 
-											// cisco 
-											// style
+    // cisco 
+    // style
     {"Status_Internet", "renew", "", 3, REFRESH, "dhcp_renew"},	// for cisco
-								// style
+    // style
     {"Status_Internet", "Disconnect", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},	// for 
-											// cisco 
-											// style
+    // cisco 
+    // style
     {"Status_Internet", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},	// for 
-										// cisco 
-										// style
+    // cisco 
+    // style
     {"Status_Internet", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},	// for 
-											// cisco 
-											// style
+    // cisco 
+    // style
     {"Status_Internet", "Connect_pptp", "start_pptp", 1, RESTART, NULL},	// for 
-										// cisco 
-										// style
+    // cisco 
+    // style
     {"Status_Internet", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, "stop_ppp"},	// for 
-											// cisco 
-											// style
+    // cisco 
+    // style
     {"Status_Internet", "Connect_l2tp", "start_l2tp", 1, RESTART, NULL},	// for 
-										// cisco 
-										// style
+    // cisco 
+    // style
     {"Status_Internet", "Disconnect_l2tp", "stop_l2tp", 2, SYS_RESTART, "stop_ppp"},	// for 
-											// cisco 
-											// style{ 
-											// "Status_Router", 
-											// "Connect_heartbeat", 
-											// "start_heartbeat", 
-											// 1, 
-											// RESTART, 
-											// NULL}, 
-											// // 
-											// for 
-											// cisco 
-											// style
+    // cisco 
+    // style{ 
+    // "Status_Router", 
+    // "Connect_heartbeat", 
+    // "start_heartbeat", 
+    // 1, 
+    // RESTART, 
+    // NULL}, 
+    // // 
+    // for 
+    // cisco 
+    // style
     {"Status_Internet", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, "stop_ppp"},	// for 
-												// cisco 
-												// style
+    // cisco 
+    // style
     {"Status_Internet", "delete_ttraffdata", "", 0, REFRESH, "ttraff_erase"},
     {"Status", "Disconnect", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},
     {"Status", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},
@@ -1061,13 +1063,13 @@ gozila_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
     cprintf( "refresh to %s\n", path );
     if( !strncmp( path, "WL_FilterTable", strlen( "WL_FilterTable" ) ) )
-	do_filtertable(NULL, path, wp, NULL );	// refresh
+	do_filtertable( NULL, path, wp, NULL );	// refresh
     // #ifdef HAVE_MADWIFI
     else if( !strncmp( path, "Wireless_WDS", strlen( "Wireless_WDS" ) ) )
-	do_wds(NULL, path, wp, NULL );	// refresh
+	do_wds( NULL, path, wp, NULL );	// refresh
     // #endif
     else
-	do_ej(NULL, path, wp, NULL );	// refresh
+	do_ej( NULL, path, wp, NULL );	// refresh
     websDone( wp, 200 );
 
     nvram_set( "gozila_action", "0" );
@@ -1095,10 +1097,10 @@ struct apply_action apply_actions[] = {
      * WIRELESS 
      */
     {"Wireless_Basic", "wireless", 0, SERVICE_RESTART, NULL},	// Only for
-								// V23, since 
-								// V24 it's a 
-								// gozilla
-								// save
+    // V23, since 
+    // V24 it's a 
+    // gozilla
+    // save
     {"Wireless_Advanced", "wireless_2", 0, SERVICE_RESTART, NULL},
     {"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, "save_macmode"},
     {"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
@@ -1221,9 +1223,11 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     {
 	goto footer;
     }
-    if( legal_ip_netmask( "lan_ipaddr", "lan_netmask",nvram_safe_get( "http_client_ip" ) ) == TRUE )
+    if( legal_ip_netmask
+	( "lan_ipaddr", "lan_netmask",
+	  nvram_safe_get( "http_client_ip" ) ) == TRUE )
 	nvram_set( "browser_method", "USE_LAN" );
-        else
+    else
 	nvram_set( "browser_method", "USE_WAN" );
 
   /**********   get all webs var **********/
@@ -1294,7 +1298,7 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	eval( "rm", "-f", "/tmp/nvram/*" );	// delete nvram database
 	eval( "rm", "-f", "/tmp/nvram/.lock" );	// delete nvram database
 	eval( "rm", "-f", "/usr/local/nvram/*" );	// delete nvram
-							// database
+	// database
 	eval( "mount", "/usr/local", "-o", "remount,ro" );
 #elif HAVE_RB500
 	eval( "rm", "-f", "/tmp/nvram/*" );	// delete nvram database
@@ -1319,7 +1323,7 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     /** GUI Logout **/// Experimental, not work yet ... 
     else if( !strncmp( value, "Logout", 6 ) )
     {
-	do_ej(NULL, "Logout.asp", wp, NULL );
+	do_ej( NULL, "Logout.asp", wp, NULL );
 	websDone( wp, 200 );
 	do_logout(  );
 	return 1;
@@ -1363,17 +1367,17 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
 	cprintf( "refresh to %s\n", path );
 	if( !strncmp( path, "WL_FilterTable", strlen( "WL_FilterTable" ) ) )
-	    do_filtertable(NULL, path, wp, NULL );	// refresh
+	    do_filtertable( NULL, path, wp, NULL );	// refresh
 	else if( !strncmp( path, "Wireless_WDS", strlen( "Wireless_WDS" ) ) )
-	    do_wds(NULL, path, wp, NULL );	// refresh
+	    do_wds( NULL, path, wp, NULL );	// refresh
 	else
-	    do_ej(NULL, path, wp, NULL );	// refresh
+	    do_ej( NULL, path, wp, NULL );	// refresh
 	websDone( wp, 200 );
     }
     else
     {
 #ifndef HAVE_WRK54G
-	do_ej(NULL, "Reboot.asp", wp, NULL );
+	do_ej( NULL, "Reboot.asp", wp, NULL );
 	websDone( wp, 200 );
 #endif
 	// sleep (5);
@@ -1391,7 +1395,6 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     return 1;
 
 }
-
 
 #ifdef HAVE_SKYTRON
 int do_auth( char *userid, char *passwd, char *realm )
@@ -1433,12 +1436,11 @@ int do_cauth( char *userid, char *passwd, char *realm )
 #ifdef HAVE_REGISTER
 int do_auth_reg( char *userid, char *passwd, char *realm )
 {
-    if (!isregistered())
+    if( !isregistered(  ) )
 	return -1;
-    return do_auth(userid,passwd,realm);
+    return do_auth( userid, passwd, realm );
 }
 #endif
-
 
 #undef HAVE_DDLAN
 
@@ -1496,16 +1498,18 @@ do_apply_post( char *url, webs_t stream, int len, char *boundary )
 }
 
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
-static void do_cfebackup(struct mime_handler *handler, char *url, webs_t stream, char *query )
+static void do_cfebackup( struct mime_handler *handler, char *url,
+			  webs_t stream, char *query )
 {
     system2( "cat /dev/mtd/0 > /tmp/cfe.bin" );
-    do_file_attach(handler, "/tmp/cfe.bin", stream, NULL,"cfe.bin" );
+    do_file_attach( handler, "/tmp/cfe.bin", stream, NULL, "cfe.bin" );
     unlink( "/tmp/cfe.bin" );
 }
 #endif
 
 #ifdef HAVE_ROUTERSTYLE
-static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, char *query )
+static void do_stylecss( struct mime_handler *handler, char *url,
+			 webs_t stream, char *query )
 {
     char *style = nvram_get( "router_style" );
 
@@ -1516,7 +1520,7 @@ static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, 
 
     long blue[30] =
 	{ 0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f, 0x57f, 0xccf, 0x78f,
-0x35d,
+	0x35d,
 	0x35c, 0x78f,
 	0x78f, 0xfff, 0x9af, 0x46e, 0x46e, 0x9af, 0x36f, 0xccf, 0xfff, 0x69f,
 	0xfff, 0xfff,
@@ -1525,7 +1529,7 @@ static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, 
 
     long cyan[30] =
 	{ 0x099, 0xfff, 0x3bb, 0x066, 0x066, 0x3bb, 0x3bb, 0xcff, 0x4cc,
-0x1aa,
+	0x1aa,
 	0x1aa, 0x4cc,
 	0x6cc, 0xfff, 0x8dd, 0x5bb, 0x5bb, 0x8dd, 0x099, 0xcff, 0xfff, 0x3bb,
 	0xfff, 0xfff,
@@ -1536,14 +1540,14 @@ static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, 
 	{ 0x30519c, 0xfff, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7, 0x496fc7,
 	0xfff, 0x6384cf, 0x6384cf, 0x6384cf, 0x6384cf,
 	0x6384cf, 0xfff, 0x849dd9, 0x849dd9, 0x849dd9, 0x849dd9, 0x30519c,
-	    0xfff,
+	0xfff,
 	0xfff, 0x496fc7, 0xfff, 0xfff,
 	0x999, 0x496fc7, 0x496fc7, 0xfff, 0x6384cf, 0xfff
     };
 
     long green[30] =
 	{ 0x090, 0xfff, 0x3b3, 0x060, 0x060, 0x3b3, 0x3b3, 0xcfc, 0x4c4,
-0x1a1,
+	0x1a1,
 	0x1a1, 0x4c4,
 	0x6c6, 0xfff, 0x8d8, 0x5b5, 0x5b5, 0x8d8, 0x090, 0xcfc, 0xfff, 0x3b3,
 	0xfff, 0xfff,
@@ -1554,14 +1558,14 @@ static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, 
 	{ 0xf26522, 0xfff, 0xff8400, 0xff8400, 0xff8400, 0xff8400, 0xff8400,
 	0xfff, 0xfeb311, 0xfeb311, 0xfeb311, 0xfeb311,
 	0xff9000, 0xfff, 0xffa200, 0xffa200, 0xffa200, 0xffa200, 0xf26522,
-	    0xfff,
+	0xfff,
 	0xfff, 0xff8400, 0xfff, 0xfff,
 	0x999, 0xff8400, 0xff8400, 0xfff, 0xff9000, 0xfff
     };
 
     long red[30] =
 	{ 0xc00, 0xfff, 0xe33, 0x800, 0x800, 0xe33, 0xd55, 0xfcc, 0xe77,
- 0xc44,
+	0xc44,
 	0xc44, 0xe77,
 	0xe77, 0xfff, 0xf99, 0xd55, 0xd55, 0xf99, 0xc00, 0xfcc, 0xfff, 0xd55,
 	0xfff, 0xfff,
@@ -1572,29 +1576,23 @@ static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, 
 	{ 0xeec900, 0x000, 0xee3, 0x880, 0x880, 0xee3, 0xffd700, 0x660, 0xee7,
 	0xbb4,
 	0xbb4, 0xee7,
-	0xeec900, 0x000, 0xff9, 0xcc5, 0xcc5, 0xff9, 0xeec900, 0x660, 0x000, 0xffd700,
+	0xeec900, 0x000, 0xff9, 0xcc5, 0xcc5, 0xff9, 0xeec900, 0x660, 0x000,
+	    0xffd700,
 	0x000, 0xfff,
 	0x999, 0xffd700, 0xeec900, 0x660, 0xffd700, 0x000
     };
 
-
-
     if( !strcmp( style, "blue" ) )
-	memcpy( sdata, blue, 30 * sizeof( long ) );	
-    else
-    if( !strcmp( style, "cyan" ) )
+	memcpy( sdata, blue, 30 * sizeof( long ) );
+    else if( !strcmp( style, "cyan" ) )
 	memcpy( sdata, cyan, 30 * sizeof( long ) );
-    else
-    if( !strcmp( style, "yellow" ) )
+    else if( !strcmp( style, "yellow" ) )
 	memcpy( sdata, yellow, 30 * sizeof( long ) );
-    else
-    if( !strcmp( style, "green" ) )
+    else if( !strcmp( style, "green" ) )
 	memcpy( sdata, green, 30 * sizeof( long ) );
-    else
-    if( !strcmp( style, "orange" ) )
+    else if( !strcmp( style, "orange" ) )
 	memcpy( sdata, orange, 30 * sizeof( long ) );
-    else
-    if( !strcmp( style, "red" ) )
+    else if( !strcmp( style, "red" ) )
 	memcpy( sdata, red, 30 * sizeof( long ) );
     else			// default to elegant
 	memcpy( sdata, elegant, 30 * sizeof( long ) );
@@ -1656,7 +1654,8 @@ static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, 
 
 }
 
-static void do_stylecss_ie(struct mime_handler *handler, char *url, webs_t stream, char *query )
+static void do_stylecss_ie( struct mime_handler *handler, char *url,
+			    webs_t stream, char *query )
 {
     websWrite( stream, ".submitFooter input {\n"
 	       "padding:.362em .453em;\n"
@@ -1671,14 +1670,16 @@ static void do_stylecss_ie(struct mime_handler *handler, char *url, webs_t strea
 #endif
 
 #ifdef HAVE_REGISTER
-static void do_trial_logo(struct mime_handler *handler, char *url, webs_t stream, char *query )
+static void do_trial_logo( struct mime_handler *handler, char *url,
+			   webs_t stream, char *query )
 {
-if (!isregistered_real())
+    if( !isregistered_real(  ) )
     {
-    do_file(handler,"style/logo-trial.png",stream,query);
-    }else
+	do_file( handler, "style/logo-trial.png", stream, query );
+    }
+    else
     {
-    do_file(handler, url,stream,query);    
+	do_file( handler, url, stream, query );
     }
 }
 
@@ -1689,7 +1690,8 @@ if (!isregistered_real())
  * do_file ("kromo.css", stream, NULL); else do_file (style, stream, NULL); } 
  */
 
-static void do_fetchif(struct mime_handler *handler, char *url, webs_t stream, char *query )
+static void do_fetchif( struct mime_handler *handler, char *url,
+			webs_t stream, char *query )
 {
     char line[256];
     int i, llen;
@@ -1758,8 +1760,9 @@ char *live_translate( char *tran )
     char *temp2;
     char *lang = getLanguageName(  );
     char buf[64];
-    memset(temp,0,sizeof(temp));
-    memset(temp1,0,sizeof(temp));
+
+    memset( temp, 0, sizeof( temp ) );
+    memset( temp1, 0, sizeof( temp ) );
 
     sprintf( buf, "%s", lang );
     free( lang );
@@ -1813,7 +1816,8 @@ char *live_translate( char *tran )
 
 }
 
-static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, char *query )
+static void do_ttgraph( struct mime_handler *handler, char *url,
+			webs_t stream, char *query )
 {
 #define COL_WIDTH 16		/* single column width */
 
@@ -1833,12 +1837,12 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
     };
     unsigned long rcvd[31] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-0,
+	0,
 	0, 0, 0, 0, 0, 0, 0
     };
     unsigned long sent[31] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-0,
+	0,
 	0, 0, 0, 0, 0, 0, 0
     };
     unsigned long max = 5, smax = 5, f = 1;
@@ -1850,7 +1854,7 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 
     days = daysformonth( month, year );
     wd = weekday( month, 1, year );	// first day in month (mon=0, tue=1,
-					// ..., sun=6)
+    // ..., sun=6)
 
     char tq[32];
 
@@ -1897,6 +1901,9 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 	       "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" );
     websWrite( stream, "<html>\n" );
     websWrite( stream, "<head>\n" );
+    websWrite( stream,
+	       "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
+	       live_translate( "lang_charset.set" ) );
     websWrite( stream, "<title>dd-wrt traffic graph</title>\n" );
 
     websWrite( stream, "<script type=\"text/javascript\">\n" );
@@ -1930,17 +1937,17 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 	       "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n" );
     websWrite( stream, "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n" );
     websWrite( stream, "#t-graph li.rcvd {left: 3px; background: #228B22;}\n" );	// set 
-											// rcvd 
-											// bar 
-											// colour 
-											// here 
-											// (green)
+    // rcvd 
+    // bar 
+    // colour 
+    // here 
+    // (green)
     websWrite( stream, "#t-graph li.sent {left: 8px; background: #CD0000;}\n" );	// set 
-											// sent 
-											// bar 
-											// colour 
-											// here 
-											// (red)
+    // sent 
+    // bar 
+    // colour 
+    // here 
+    // (red)
 
     for( i = 0; i < days - 1; i++ )
     {
@@ -2008,18 +2015,21 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 
 }
 
-static void ttraff_backup(struct mime_handler *handler, char *url, webs_t stream, char *query )
+static void ttraff_backup( struct mime_handler *handler, char *url,
+			   webs_t stream, char *query )
 {
-	system2( "echo TRAFF-DATA > /tmp/traffdata.bak" );
+    system2( "echo TRAFF-DATA > /tmp/traffdata.bak" );
     system2( "nvram show | grep traff- >> /tmp/traffdata.bak" );
-    do_file_attach(handler, "/tmp/traffdata.bak", stream, NULL,"traffdata.bak" );
+    do_file_attach( handler, "/tmp/traffdata.bak", stream, NULL,
+		    "traffdata.bak" );
     unlink( "/tmp/traffdata.bak" );
 }
 
-
-static void do_apply_cgi(struct mime_handler *handler, char *url, webs_t stream, char *q )
+static void do_apply_cgi( struct mime_handler *handler, char *url,
+			  webs_t stream, char *q )
 {
     char *path, *query;
+
     if( post == 1 )
     {
 	query = post_buf;
@@ -2044,13 +2054,13 @@ extern int getdevicecount( void );
 #endif
 
 #ifdef HAVE_LANGUAGE
-static void do_language(struct mime_handler *handler, char *path, webs_t stream, char *query )	// jimmy, 
+static void do_language( struct mime_handler *handler, char *path, webs_t stream, char *query )	// jimmy, 
 									// https, 
 									// 8/4/2003
 {
     char *lang = getLanguageName(  );
 
-    do_file(handler, lang, stream, NULL );
+    do_file( handler, lang, stream, NULL );
     free( lang );
     return;
 }
@@ -2065,101 +2075,111 @@ struct mime_handler mime_handlers[] = {
     // { "ezconfig.asp", "text/html", ezc_version, do_apply_ezconfig_post,
     // do_ezconfig_asp, do_auth },
 #ifdef HAVE_SKYTRON
-    {"setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
+    {"setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
 #endif
 #ifdef HAVE_DDLAN
-    {"Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"Management*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"Services*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"WL_*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"WPA*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"Log*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"Alive*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"Wol*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"config*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
+    {"Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"Management*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"Services*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"Log*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"config*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
 #endif
 
-    {"changepass.asp", "text/html", no_cache, NULL, do_ej, NULL,1},
+    {"changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, 1},
 #ifdef HAVE_REGISTER
-    {"register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg,1},
+    {"register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, 1},
 #endif
-    {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth,1},
+    {"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable, do_auth,
+     1},
     // #endif
     // #ifdef HAVE_MADWIFI
-    {"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth,1},
+    {"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1},
     // #endif
-    {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth,1},
-    {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL,0},
+    {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1},
+    {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL, 0},
     // {"style.css", "text/css", NULL, NULL, do_style, NULL},
-    {"common.js", "text/javascript", NULL, NULL, do_file, NULL,0},
+    {"common.js", "text/javascript", NULL, NULL, do_file, NULL, 0},
 #ifdef HAVE_LANGUAGE
-    {"lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL,0},
+    {"lang_pack/language.js", "text/javascript", NULL, NULL, do_language,
+     NULL, 0},
 #endif
-    {"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth,1},
+    {"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1},
 #ifdef HAVE_SKYTRON
-    {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth,1},
-    {"**.htm", "text/html", no_cache, NULL, do_ej, do_auth2,1},
-    {"**.html", "text/html", no_cache, NULL, do_ej, do_auth2,1},
+    {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, 1},
+    {"**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
+    {"**.html", "text/html", no_cache, NULL, do_ej, do_auth2, 1},
 #else
-    {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth,1},
-    {"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth,1},
-    {"**.htm", "text/html", no_cache, NULL, do_ej, NULL,1},
-    {"**.html", "text/html", no_cache, NULL, do_ej, NULL,1},
+    {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, 1},
+    {"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, 1},
+    {"**.htm", "text/html", no_cache, NULL, do_ej, NULL, 1},
+    {"**.html", "text/html", no_cache, NULL, do_ej, NULL, 1},
 
 #endif
 #ifdef HAVE_ROUTERSTYLE
-    {"style/blue/style.css", "text/css", NULL, NULL, do_stylecss, NULL,1},
-    {"style/cyan/style.css", "text/css", NULL, NULL, do_stylecss, NULL,1},
-    {"style/elegant/style.css", "text/css", NULL, NULL, do_stylecss, NULL,1},
-    {"style/green/style.css", "text/css", NULL, NULL, do_stylecss, NULL,1},
-    {"style/orange/style.css", "text/css", NULL, NULL, do_stylecss, NULL,1},
-    {"style/red/style.css", "text/css", NULL, NULL, do_stylecss, NULL,1},
-    {"style/yellow/style.css", "text/css", NULL, NULL, do_stylecss, NULL,1},
-    {"style/blue/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,1},
-    {"style/cyan/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,1},
-    {"style/elegant/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,1},
-    {"style/green/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,1},
-    {"style/orange/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,1},
-    {"style/red/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,1},
-    {"style/yellow/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,1},
+    {"style/blue/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
+    {"style/cyan/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
+    {"style/elegant/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
+    {"style/green/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
+    {"style/orange/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
+    {"style/red/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
+    {"style/yellow/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
+    {"style/blue/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,
+     1},
+    {"style/cyan/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,
+     1},
+    {"style/elegant/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
+     NULL, 1},
+    {"style/green/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,
+     1},
+    {"style/orange/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
+     NULL, 1},
+    {"style/red/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,
+     1},
+    {"style/yellow/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
+     NULL, 1},
 #endif
 #ifdef HAVE_REGISTER
-    {"style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL,0},
+    {"style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, 0},
 #endif
-    {"**.css", "text/css", NULL, NULL, do_file, NULL,0},
-    {"**.svg", "image/svg+xml", NULL, NULL, do_file, NULL,0},
-    {"**.gif", "image/gif", NULL, NULL, do_file, NULL,0},
-    {"**.png", "image/png", NULL, NULL, do_file, NULL,0},
-    {"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL,0},
-    {"**.ico", "image/x-icon", NULL, NULL, do_file, NULL,0},
-    {"**.js", "text/javascript", NULL, NULL, do_file, NULL,0},
-    {"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL,0},
-    {"**.pdf", "application/pdf", NULL, NULL, do_file, NULL,0},
+    {"**.css", "text/css", NULL, NULL, do_file, NULL, 0},
+    {"**.svg", "image/svg+xml", NULL, NULL, do_file, NULL, 0},
+    {"**.gif", "image/gif", NULL, NULL, do_file, NULL, 0},
+    {"**.png", "image/png", NULL, NULL, do_file, NULL, 0},
+    {"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, 0},
+    {"**.ico", "image/x-icon", NULL, NULL, do_file, NULL, 0},
+    {"**.js", "text/javascript", NULL, NULL, do_file, NULL, 0},
+    {"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL, 0},
+    {"**.pdf", "application/pdf", NULL, NULL, do_file, NULL, 0},
 #ifdef HAVE_SKYTRON
     {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-     do_auth2,1},
+     do_auth2, 1},
 #elif HAVE_DDLAN
     {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-     NULL,1},
+     NULL, 1},
 #else
     {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-     do_auth,1},
+     do_auth, 1},
 #endif
-    {"fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth,1},
+    {"fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, 1},
 #ifdef HAVE_DDLAN
-    {"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL,1},
+    {"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL,
+     1},
     {"upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
-     NULL,1},
+     NULL, 1},
 #else
     {"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
-     do_auth,1},
+     do_auth, 1},
     {"upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
-     do_auth,1},
+     do_auth, 1},
 #endif
     // {"Gozila.cgi*", "text/html", no_cache, NULL, do_setup_wizard,
     // do_auth}, // for setup wizard
@@ -2169,41 +2189,42 @@ struct mime_handler mime_handlers[] = {
      */
 #ifdef HAVE_DDLAN
     {"restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
-     NULL,1},
+     NULL, 1},
 #else
     {"restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
-     do_auth,1},
+     do_auth, 1},
 #endif
     {"test.bin**", "application/octet-stream", no_cache, NULL, do_file,
-     do_auth,0},
+     do_auth, 0},
 
 #ifdef HAVE_DDLAN
     {"nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out,
-     do_auth2,0},
+     do_auth2, 0},
     {"nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
      nv_file_out,
-     do_auth2,0},
-    {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL,1},
+     do_auth2, 0},
+    {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL, 1},
 #else
     {"nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out,
-     do_auth,0},
+     do_auth, 0},
     {"nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
      nv_file_out,
-     do_auth,0},
-    {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth,1},
+     do_auth, 0},
+    {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth,
+     1},
 #endif
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
     {"backup/cfe.bin", "application/octet-stream", no_cache, NULL,
      do_cfebackup,
-     do_auth,0},
+     do_auth, 0},
 #endif
-    {"ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth,1},
+    {"ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, 1},
     {"traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup,
-     do_auth,0},
+     do_auth, 0},
     {"tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi,
-     NULL,1},
+     NULL, 1},
     // for ddm
-    {NULL, NULL, NULL, NULL, NULL, NULL,0}
+    {NULL, NULL, NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -2262,7 +2283,7 @@ int httpd_filter_name( char *old_name, char *new_name, size_t size, int type )
 		    if( strlen( new_name ) + 1 > size )
 		    {
 			cprintf( "%s(): overflow\n", __FUNCTION__ );	// avoid 
-									// overflow
+			// overflow
 			new_name[strlen( new_name )] = '\0';
 			return 1;
 		    }
