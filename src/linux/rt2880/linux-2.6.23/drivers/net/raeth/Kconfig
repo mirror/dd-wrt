@@ -1,0 +1,88 @@
+config RAETH
+        tristate "Ralink GMAC"
+        ---help---
+          This driver supports Ralink gigabit ethernet family of
+          adapters.
+
+config RAETH_NAPI
+        bool "Use Rx Polling (NAPI)"
+        depends on RAETH
+
+config RAETH_JUMBOFRAME
+        bool "Jumbo Frame up to 4K bytes"
+        depends on RAETH && !RALINK_RT3052
+
+config RAETH_QOS
+        bool "QoS Feature"
+        depends on RAETH && !RALINK_RT2880
+
+config RAETH_GMAC2
+        bool "GMAC2 Support"
+        depends on RAETH && RALINK_RT2883
+
+
+config  RAETH_ROUTER
+        bool "IC+"
+        depends on !RALINK_RT3052
+
+config  ICPLUS_PHY
+        bool "100PHY"
+        depends on !RALINK_RT3052
+
+config  MAC_TO_MAC_MODE
+        bool "VITESSE"
+        depends on !RALINK_RT3052
+
+config  RT_3052_ESW
+        bool "RT3052 Embedded Switch"
+	select LAN_WAN_SUPPORT
+        depends on RALINK_RT3052
+
+config  GIGAPHY
+        bool "MARVELL"
+        depends on !RALINK_RT3052
+
+
+
+config LAN_WAN_SUPPORT
+        bool "LAN/WAN Partition"
+        depends on RAETH_ROUTER || RT_3052_ESW
+
+choice
+        prompt "Board Layout Type"
+        depends on LAN_WAN_SUPPORT
+	default WAN_AT_P0
+
+	config  WAN_AT_P4
+	        bool "LLLL/W"
+		
+	config  WAN_AT_P0
+	        bool "W/LLLL"
+endchoice
+
+config	ESW_DOUBLE_VLAN_TAG
+	bool "Double VLAN Tag Support"
+	depends on RT_3052_ESW
+
+config RAETH_RT3052_P5
+        bool "Port 5 Support"
+        depends on RAETH && RALINK_RT3052
+choice
+        prompt "Target Mode"
+        depends on RAETH_RT3052_P5
+	default P5_RGMII_TO_MAC_MODE
+
+	config P5_MAC_TO_PHY_MODE
+		bool "Ethernet_Phy"
+	config P5_RGMII_TO_MAC_MODE
+		bool "Giga_Switch"
+	config P5_MII_TO_MAC_MODE
+		bool "External_CPU(MII_RvMII)"
+	config P5_RMII_TO_MAC_MODE
+		bool "External_CPU(RvMII_MII)"
+endchoice
+
+config  MAC_TO_GIGAPHY_MODE_ADDR
+        hex "Phy Address"
+	default 0x1F
+        depends on GIGAPHY || P5_MAC_TO_PHY_MODE
