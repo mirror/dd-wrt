@@ -742,48 +742,6 @@ static void nat_postrouting( void )
 	    char dev[16];
 	    char var[80];
 
-	    /*
-	     * #ifdef HAVE_MSSID
-	     * 
-	     * #ifdef HAVE_MADWIFI int i;
-	     * 
-	     * char wifivifs[16]; int devcount = getdevicecount (); for (i =
-	     * 0; i < devcount; i++) { sprintf (wifivifs, "ath%d_vifs", i);
-	     * if (nvram_nmatch ("0", "ath%d_bridged", i)) { save2file ("-A
-	     * POSTROUTING -o ath%d -m pkttype --pkt-type broadcast -j
-	     * RETURN\n", i); save2file ("-A POSTROUTING -o ath%d -s %s/%d -d 
-	     * %s/%d -j MASQUERADE\n", i, nvram_nget ("ath%d_ipaddr", i),
-	     * getmask (nvram_nget ("ath%d_netmask", i)), nvram_nget
-	     * ("ath%d_ipaddr", i), getmask (nvram_nget ("ath%d_netmask",
-	     * i))); } char *vifs = nvram_safe_get (wifivifs); if (vifs !=
-	     * NULL) foreach (var, vifs, next) { if (nvram_nmatch ("0",
-	     * "%s_bridged", var)) { save2file ("-A POSTROUTING -o %s -m
-	     * pkttype --pkt-type broadcast -j RETURN\n", var); save2file
-	     * ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j MASQUERADE\n",
-	     * var, nvram_nget ("%s_ipaddr", var), getmask (nvram_nget
-	     * ("%s_netmask", var)), nvram_nget ("%s_ipaddr", var), getmask
-	     * (nvram_nget ("%s_netmask", var))); } } } #else int i; char
-	     * wifivifs[16]; int devcount = get_wl_instances (); for (i = 0;
-	     * i < devcount; i++) { sprintf (wifivifs, "wl%d_vifs", i); char
-	     * *iname = get_wl_instance_name (i); if (nvram_nmatch ("0",
-	     * "%s_bridged", iname)) { save2file ("-A POSTROUTING -o %s -m
-	     * pkttype --pkt-type broadcast -j RETURN\n", iname); save2file
-	     * ("-A POSTROUTING -o %s -s %s/%d -d %s/%d -j MASQUERADE\n",
-	     * iname, nvram_nget ("%s_ipaddr", iname), getmask (nvram_nget
-	     * ("%s_netmask", iname)), nvram_nget ("%s_ipaddr", iname),
-	     * getmask (nvram_nget ("%s_netmask", iname))); } char *vifs =
-	     * nvram_safe_get (wifivifs); if (vifs != NULL) foreach (var,
-	     * vifs, next) { if (nvram_nmatch ("0", "%s_bridged", var)) {
-	     * save2file ("-A POSTROUTING -o %s -m pkttype --pkt-type
-	     * broadcast -j RETURN\n", var); save2file ("-A POSTROUTING -o %s 
-	     * -s %s/%d -d %s/%d -j MASQUERADE\n", var, nvram_nget
-	     * ("%s_ipaddr", var), getmask (nvram_nget ("%s_netmask", var)),
-	     * nvram_nget ("%s_ipaddr", var), getmask (nvram_nget
-	     * ("%s_netmask", var))); } } } #endif
-	     * 
-	     * 
-	     * #endif
-	     */
 	    char vifs[256];
 
 	    getIfLists( vifs, 256 );
@@ -1946,27 +1904,6 @@ static void filter_input( void )
     char dev[16];
     char var[80];
 
-#ifdef HAVE_MSSID
-
-    /*
-     * #ifdef HAVE_MADWIFI int i;
-     * 
-     * char wifivifs[16]; int devcount = getdevicecount (); for (i = 0; i <
-     * devcount; i++) { sprintf (wifivifs, "ath%d_vifs", i); if (nvram_nmatch 
-     * ("0", "ath%d_bridged", i)) { save2file ("-A INPUT -i ath%d -j
-     * ACCEPT\n", i); } char *vifs = nvram_safe_get (wifivifs); if (vifs !=
-     * NULL) foreach (var, vifs, next) { if (nvram_nmatch ("0", "%s_bridged", 
-     * var)) { save2file ("-A INPUT -i %s -j ACCEPT\n", var); } } } #else int 
-     * i; char wifivifs[16]; int devcount = get_wl_instances (); for (i = 0;
-     * i < devcount; i++) { sprintf (wifivifs, "wl%d_vifs", i); char *iname = 
-     * get_wl_instance_name (i); if (nvram_nmatch ("0", "%s_bridged", iname))
-     * { save2file ("-A INPUT -i %s -j ACCEPT\n", iname); } char *vifs =
-     * nvram_safe_get (wifivifs); if (vifs != NULL) foreach (var, vifs, next)
-     * { if (nvram_nmatch ("0", "%s_bridged", var)) { save2file ("-A INPUT -i
-     * %s -j ACCEPT\n", var); } } } #endif
-     */
-
-#endif
     char vifs[256];
 
     getIfLists( vifs, 256 );
@@ -2020,27 +1957,6 @@ static void filter_forward( void )
     char dev[16];
     char var[80];
 
-    /*
-     * #ifdef HAVE_MSSID
-     * 
-     * #ifdef HAVE_MADWIFI int i; char wifivifs[16]; int devcount =
-     * getdevicecount (); for (i = 0; i < devcount; i++) { sprintf (wifivifs, 
-     * "ath%d_vifs", i); if (nvram_nmatch ("0", "ath%d_bridged", i)) {
-     * save2file ("-A FORWARD -i ath%d -j ACCEPT\n", i); } char *vifs =
-     * nvram_safe_get (wifivifs); if (vifs != NULL) foreach (var, vifs, next)
-     * { if (nvram_nmatch ("0", "%s_bridged", var)) { save2file ("-A FORWARD
-     * -i %s -j ACCEPT\n", var); } } } #else int i; char wifivifs[16]; int
-     * devcount = get_wl_instances (); for (i = 0; i < devcount; i++) {
-     * sprintf (wifivifs, "wl%d_vifs", i); char *iname = get_wl_instance_name
-     * (i); if (nvram_nmatch ("0", "%s_bridged", iname)) { save2file ("-A
-     * FORWARD -i %s -j ACCEPT\n", iname); } char *vifs = nvram_safe_get
-     * (wifivifs); if (vifs != NULL) foreach (var, vifs, next) { if
-     * (nvram_nmatch ("0", "%s_bridged", var)) { save2file ("-A FORWARD -i %s
-     * -j ACCEPT\n", var); } } } #endif
-     * 
-     * 
-     * #endif
-     */
     char vifs[256];		// 
 
     getIfLists( vifs, 256 );

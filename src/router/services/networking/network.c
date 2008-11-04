@@ -340,7 +340,9 @@ static int wlc_noack( int value )
 #endif
 
 #ifndef HAVE_MADWIFI
+#ifndef HAVE_RT2880
 static int notify_nas( char *type, char *ifname, char *action );
+#endif
 #endif
 
 void start_dhcpc( char *wan_ifname )
@@ -454,7 +456,7 @@ static int wlconf_up( char *name )
     char tmp[100];
     int phytype, gmode, val, ret;
 
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
     return -1;
 #endif
     if( !strncmp( name, "vlan", 4 ) )
@@ -653,7 +655,7 @@ static int wlconf_up( char *name )
 	eval( "wl", "-i", name, "ssid", nvram_nget( "wl%d_ssid", instance ) );
     }
 #ifdef HAVE_MSSID
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     eval( "wl", "-i", name, "vlan_mode", "0" );
     char ifinst[32];
 
@@ -1331,7 +1333,7 @@ void start_lan( void )
     // find wireless interface
     diag_led( DIAG, STOP_LED );	// stop that blinking
     strcpy( wl_face, get_wdev(  ) );
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 #ifndef HAVE_NOWIFI
     deconfigure_wifi(  );
 #endif
@@ -1347,7 +1349,7 @@ void start_lan( void )
      */
     cprintf( "configure wl_face %s\n", wl_face );
     ifconfig( wl_face, 0, 0, 0 );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 
     if( nvram_match( "mac_clone_enable", "1" ) &&
 	nvram_invmatch( "def_whwaddr", "00:00:00:00:00:00" ) &&
@@ -1446,7 +1448,7 @@ void start_lan( void )
 	     * Set the logical bridge address to that of the first interface 
 	     */
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	    strncpy( ifr.ifr_name, lan_ifname, IFNAMSIZ );
 	    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 &&
 		memcmp( ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0",
@@ -1471,7 +1473,7 @@ void start_lan( void )
 	    /*
 	     * If not a wl i/f then simply add it to the bridge 
 	     */
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	    if( wlconf_up( name ) )
 	    {
 		// #ifdef HAVE_PORTSETUP
@@ -1490,7 +1492,6 @@ void start_lan( void )
 		    ether_atoe( nvram_safe_get( "def_whwaddr" ),
 				ifr.ifr_hwaddr.sa_data );
 
-#ifndef HAVE_MADWIFI
 		}
 		else
 		{
@@ -1519,24 +1520,6 @@ void start_lan( void )
 		    }
 		}
 
-#endif
-#ifdef HAVE_MSSID
-		/*
-		 * char tmac[16]; sprintf (tmac, "%s_hwaddr", "wl0");
-		 * nvram_set (tmac, mac);
-		 * 
-		 * char *next2; char var[80]; char *vifs = nvram_safe_get
-		 * ("wl0_vifs"); if (vifs != NULL) foreach (var, vifs, next2)
-		 * { sprintf (tmac, "%s_hwaddr", var); MAC_ADD (mac);
-		 * nvram_set (tmac, mac); ether_atoe (mac,
-		 * ifr.ifr_hwaddr.sa_data); ifr.ifr_hwaddr.sa_family =
-		 * ARPHRD_ETHER; strncpy (ifr.ifr_name, var, IFNAMSIZ); if
-		 * (ioctl (s, SIOCSIFHWADDR, &ifr) == -1) perror ("Write
-		 * wireless mac fail : "); else cprintf ("Write wireless mac
-		 * successfully\n"); }
-		 */
-#endif
-
 #else
 	    cprintf( "configure %s\n", name );
 	    if( strcmp( name, "wl0" ) )	// check if the interface is a
@@ -1554,10 +1537,10 @@ void start_lan( void )
 		char wl_name[] = "wlXXXXXXXXXX_mode";
 		int unit;
 
-#ifndef HAVE_MADWIFI
-		wl_ioctl( name, WLC_GET_INSTANCE, &unit, sizeof( unit ) );
-#else
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 		unit = 0;
+#else
+		wl_ioctl( name, WLC_GET_INSTANCE, &unit, sizeof( unit ) );
 #endif
 		snprintf( wl_name, sizeof( wl_name ), "wl%d_mode", unit );
 		/*
@@ -1612,7 +1595,7 @@ void start_lan( void )
 #ifdef HAVE_MSSID
 		if( nvram_match( wl_name, "apsta" ) )
 		{
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		    // eval ("wl", "ap", "0");
 		    eval( "wl", "-i", name, "ap", "0" );
 		    // eval ("wl", "infra", "1");
@@ -1622,7 +1605,7 @@ void start_lan( void )
 #endif
 		    // eval("wlconf", name, "up");
 		    ifconfig( name, IFUP | IFF_ALLMULTI, NULL, NULL );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		    // eval ("wl", "ap", "0");
 		    eval( "wl", "-i", name, "ap", "0" );
 #ifndef HAVE_MSSID
@@ -1647,7 +1630,7 @@ void start_lan( void )
 		 */
 		if( nvram_match( wl_name, "infra" ) )
 		{
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		    // eval ("wl", "ap", "0");
 		    eval( "wl", "-i", name, "ap", "0" );
 		    // eval ("wl", "infra", "0");
@@ -1667,7 +1650,7 @@ void start_lan( void )
 
 		if( nvram_match( wl_name, "sta" ) )
 		{
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		    // eval ("wl", "ap", "0");
 		    eval( "wl", "-i", name, "ap", "0" );
 		    // eval ("wl", "infra", "1");
@@ -1677,7 +1660,7 @@ void start_lan( void )
 #endif
 		    // eval("wlconf", name, "up");
 		    ifconfig( name, IFUP | IFF_ALLMULTI, NULL, NULL );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		    // eval ("wl", "ap", "0");
 		    eval( "wl", "-i", name, "ap", "0" );
 #ifndef HAVE_MSSID
@@ -1711,7 +1694,7 @@ void start_lan( void )
     free( lan_ifname );
     free( wan_ifname );
     free( lan_ifnames );
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 #ifndef HAVE_NOWIFI
     if( nvram_match( "mac_clone_enable", "1" ) &&
 	nvram_invmatch( "def_hwaddr", "00:00:00:00:00:00" ) &&
@@ -1777,7 +1760,7 @@ void start_lan( void )
 	 * Bring up interface 
 	 */
 	ifconfig( lan_ifname, IFUP, NULL, NULL );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	/*
 	 * config wireless i/f 
 	 */
@@ -2069,6 +2052,8 @@ void start_lan( void )
      */
 #ifdef HAVE_MADWIFI
     int cnt = getifcount( "wifi" );
+#elif HAVE_RT2880
+    int cnt = 1;
 #else
     int cnt = get_wl_instances(  );
 #endif
@@ -2134,7 +2119,7 @@ void start_lan( void )
 		// "off");
 
 		sleep( 2 );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		notify_nas( "lan", "br1", "up" );
 #endif
 	    }
@@ -2321,7 +2306,7 @@ void start_lan( void )
 	      nvram_safe_get( "lan_gateway" ), "dev", "br0" );
 
 #ifdef HAVE_MSSID
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     eval( "wl", "vlan_mode", "0" );
 #endif
 #endif
@@ -2334,7 +2319,7 @@ void start_lan( void )
      * Set additional lan static routes if need 
      */
     start_set_routes(  );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 #ifndef HAVE_MSSID
     eval( "wl", "radio",
 	  nvram_invmatch( "wl_net_mode", "disabled" ) ? "on" : "off" );
@@ -2363,17 +2348,6 @@ void start_lan( void )
 	    diag_led( DMZ, STOP_LED );
     }
 
-#ifndef HAVE_MADWIFI
-#ifndef HAVE_MSSID
-    // if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode",
-    // "sta"))
-    // {
-    // system2 ("wl wep sw");
-    // sleep (1);
-    // system2 ("wl wep hw");
-    // }
-#endif
-#endif
     if( nvram_match( "lan_stp", "0" ) )
 	br_set_stp_state( "br0", 0 );
     else
@@ -2409,7 +2383,7 @@ void stop_lan( void )
 #endif
 
 #ifdef HAVE_MSSID
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     br_del_interface( lan_ifname, "wl0.1" );
     ifconfig( "wl0.1", 0, NULL, NULL );
     br_del_interface( lan_ifname, "wl0.2" );
@@ -2431,7 +2405,7 @@ void stop_lan( void )
 		continue;
 	    if( !ifexists( name ) )
 		continue;
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	    eval( "wlconf", name, "down" );
 #endif
 	    ifconfig( name, 0, NULL, NULL );
@@ -2442,7 +2416,7 @@ void stop_lan( void )
     /*
      * Bring down specific interface 
      */
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     else if( strcmp( lan_ifname, "" ) )
 	eval( "wlconf", lan_ifname, "down" );
 #endif
@@ -2584,7 +2558,7 @@ void start_wan( int status )
 #endif
 
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     if( getWET(  ) )
     {
 	dns_to_resolv(  );
@@ -2677,7 +2651,8 @@ void start_wan( int status )
     if( memcmp( ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN ) )
     {
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+
 	if( wlifname && !strcmp( wan_ifname, wlifname ) )
 	    eval( "wl", "-i", wan_ifname, "down" );
 	ioctl( s, SIOCSIFHWADDR, &ifr );
@@ -2687,7 +2662,7 @@ void start_wan( int status )
 	    ioctl( s, SIOCSIFHWADDR, &ifr );
 	}
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	if( wlifname && !strcmp( wan_ifname, wlifname ) )
 	{
 	    eval( "wl", "-i", wan_ifname, "up" );
@@ -3571,7 +3546,7 @@ void start_wan_done( char *wan_ifname )
 #ifdef HAVE_MICRO
     br_shutdown(  );
 #endif
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 #ifndef HAVE_NOWIFI
     start_hostapdwan(  );
 #endif
@@ -3722,7 +3697,7 @@ void start_set_routes( void )
     }
 }
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 static int notify_nas( char *type, char *ifname, char *action )
 {
     char *argv[] = { "nas4not", type, ifname, action,
@@ -3895,36 +3870,6 @@ void start_hotplug_net( void )
     if( !strcmp( action, "add" ) )
     {
 	fprintf( stderr, "adding WDS %s\n", interface );
-/*	struct ifreq ifr;
-	int s;
-
-	if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
-	{
-      struct ifreq ifr;
-      int s;
-      if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)))
-	{
-	  char eabuf[32];
-	  strncpy (ifr.ifr_name, ifname, IFNAMSIZ);
-	  ioctl (s, SIOCGIFHWADDR, &ifr);
-	  char macaddr[32];
-	  ifr.ifr_hwaddr.sa_data[0]|=0x02; // mask first byte to 0x02
-	  strcpy (macaddr,
-		  ether_etoa ((unsigned char *) ifr.ifr_hwaddr.sa_data,
-			      eabuf));
-	  fprintf(stderr,"interface number is %s\n",nr);
-	  int count = atoi(nr);
-	  int i;
-	  if (count>=0)
-	    for (i=0;i<count+1;i++)
-		MAC_ADD (macaddr);
-	 fprintf(stderr,"set %s mac addr to %s\n",interface,macaddr);
-	  ether_atoe (macaddr, (unsigned char *) ifr.ifr_hwaddr.sa_data);
-	  strncpy (ifr.ifr_name, interface, IFNAMSIZ);
-//	  eval ("ifconfig", interface, "down");
-	  ioctl (s, SIOCSIFHWADDR, &ifr);
-	  close (s);
-	}*/
 
 	eval( "ifconfig", interface, "up" );
 	if( nvram_match( bridged, "1" ) )
@@ -3974,7 +3919,7 @@ void start_hotplug_net( void )
 	 * Notify NAS of adding the interface 
 	 */
 	sleep( 5 );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	notify_nas( "lan", interface, "up" );
 #endif
 	if( nvram_match( "lan_stp", "0" ) )
