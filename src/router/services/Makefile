@@ -96,14 +96,18 @@ endif
 
 ifeq ($(CONFIG_WPA_SUPPLICANT),y)
 ifneq ($(CONFIG_MADWIFI),y)
+ifneq ($(CONFIG_RT2880),y)
 CFLAGS += -DHAVE_WPA_SUPPLICANT
 OBJS += brcm_80211x.o
+endif
 endif
 endif
 ifeq ($(CONFIG_WPA_SUPPLICANT2),y)
 ifneq ($(CONFIG_MADWIFI),y)
+ifneq ($(CONFIG_RT2880),y)
 CFLAGS += -DHAVE_WPA_SUPPLICANT
 OBJS += brcm_80211x.o
+endif
 endif
 endif
 ifeq ($(CONFIG_DNSMASQ),y)
@@ -252,6 +256,10 @@ endif
 ifeq ($(CONFIG_HEARTBEAT),y)
 CFLAGS += -DHAVE_HEARTBEAT
 OBJS += heartbeat.o
+endif
+
+ifeq ($(CONFIG_RT2880),y)
+OBJS += rt2880.o
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
