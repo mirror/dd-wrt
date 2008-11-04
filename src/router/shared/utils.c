@@ -203,6 +203,14 @@ int weekday( int month, int day, int year )
 
 }
 
+#ifdef HAVE_RT2880
+
+int has_mimo( char *prefix)
+{
+return 1;
+}
+#else
+
 int has_mimo( char *prefix )
 {
 char mimo[32];
@@ -213,6 +221,7 @@ if (contains(phy,'n'))
 else 
     return 0;
 }
+#endif
 
 char *get_mac_from_ip( char *ip )
 {
@@ -1421,6 +1430,10 @@ void getIfLists( char *eths, int size )
 #ifdef HAVE_MADWIFI
     memset( eths2, 0, 256 );
     getIfList( eths2, "ath" );
+    sprintf( eths, "%s %s", eths, eths2 );
+#elif HAVE_RT2880
+    memset( eths2, 0, 256 );
+    getIfList( eths2, "ra" );
     sprintf( eths, "%s %s", eths, eths2 );
 #else
     memset( eths2, 0, 256 );
