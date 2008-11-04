@@ -257,7 +257,7 @@ void start_config_vlan( void )
 
 void start_setup_vlans( void )
 {
-#if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120)
+#if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880)
     return;
 #else
     /*
@@ -503,6 +503,10 @@ int flush_interfaces( void )
     snprintf( all_ifnames, 255, "%s %s %s", "eth0",
 	      nvram_safe_get( "lan_ifnames" ),
 	      nvram_safe_get( "wan_ifnames" ) );
+#elif HAVE_RT2880
+    snprintf( all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
+	      nvram_safe_get( "lan_ifnames" ),
+	      nvram_safe_get( "wan_ifnames" ) );
 #elif HAVE_MAGICBOX
     snprintf( all_ifnames, 255, "%s %s %s", "eth0 eth1",
 	      nvram_safe_get( "lan_ifnames" ),
@@ -568,6 +572,10 @@ int flush_interfaces( void )
 	      nvram_safe_get( "lan_ifnames" ),
 	      nvram_safe_get( "wan_ifnames" ) );
 #endif
+#elif HAVE_RT2880
+    snprintf( all_ifnames, 255, "%s %s %s", "vlan1 vlan2",
+	      nvram_safe_get( "lan_ifnames" ),
+	      nvram_safe_get( "wan_ifnames" ) );
 #else
     if( wl_probe( "eth2" ) )
 	snprintf( all_ifnames, 255, "%s %s %s", "eth0",

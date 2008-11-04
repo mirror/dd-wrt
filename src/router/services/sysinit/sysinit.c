@@ -263,6 +263,17 @@ void start_restore_defaults( void )
 	{"wan_ifnames", "eth0", 0},
 	{0, 0, 0}
     };
+#elif HAVE_RT2880
+    struct nvram_tuple generic[] = {
+	{"lan_ifname", "br0", 0},
+	{"lan_ifnames", "vlan1 vlan2 ra0",
+	 0},
+	{"wan_ifname2", "vlan2", 0},
+	{"wan_ifname", "vlan2", 0},
+	{"wan_default", "vlan2", 0},
+	{"wan_ifnames", "vlan2", 0},
+	{0, 0, 0}
+    };
 #elif HAVE_GATEWORX
     struct nvram_tuple generic[] = {
 	{"lan_ifname", "br0", 0},
@@ -606,6 +617,16 @@ void start_restore_defaults( void )
     {
 	restore_defaults = 1;
     }
+#elif HAVE_RT2880
+    linux_overrides = generic;
+    int brand = getRouterBrand(  );
+
+    if( nvram_invmatch( "sv_restore_defaults", "0" ) )	// ||
+	// nvram_invmatch("os_name", 
+	// "linux"))
+    {
+	restore_defaults = 1;
+    }
 #elif HAVE_LS2
     linux_overrides = generic;
     int brand = getRouterBrand(  );
@@ -902,6 +923,12 @@ void start_restore_defaults( void )
     {
 	eval( "rm", "-f", "/tmp/nvram/*" );	// delete nvram database
 	eval( "rm", "-f", "/tmp/nvram/.lock" );	// delete nvram database
+	eval( "erase", "nvram" );
+    }
+#endif
+#ifdef HAVE_RT2880
+    if( restore_defaults )
+    {
 	eval( "erase", "nvram" );
     }
 #endif
