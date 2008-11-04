@@ -281,7 +281,7 @@ static void handle_index( void )
 #ifdef HAVE_MULTICAST
     handle = stop_service_nofree( "igmp_proxy", handle );
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = stop_service_nofree( "nas", handle );
 #endif
 #ifdef HAVE_MADWIFI
@@ -326,7 +326,7 @@ static void handle_index( void )
     handle = start_service_nofree( "vlantagging", handle );
     handle = start_service_nofree( "bridgesif", handle );
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "nas", handle );
 #ifdef HAVE_MSSID
     handle = start_service_nofree( "guest_nas", handle );
@@ -471,7 +471,7 @@ static void handle_management( void )
 {
     void *handle = NULL;
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = stop_service_nofree( "nas", handle );
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
@@ -502,7 +502,7 @@ static void handle_management( void )
 #ifdef HAVE_WOL
     handle = startstop_nofree( "wol", handle );
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "nas", handle );
 #ifdef HAVE_MSSID
     handle = start_service_nofree( "guest_nas", handle );
@@ -521,7 +521,7 @@ static void handle_pppoe( void )
     void *handle = NULL;
 
     handle = stop_service_nofree( "radio_timer", handle );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = stop_service_nofree( "nas", handle );
 #endif
 #ifdef HAVE_MADWIFI
@@ -556,7 +556,7 @@ static void handle_pppoe( void )
     handle = start_service_nofree( "vlantagging", handle );
     handle = start_service_nofree( "bridgesif", handle );
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "nas", handle );
 #ifdef HAVE_MSSID
     handle = start_service_nofree( "guest_nas", handle );
@@ -739,11 +739,11 @@ static void handle_wireless( void )
     void *handle = NULL;
 
     handle = stop_service_nofree( "radio_timer", handle );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     eval( "wlconf", nvram_safe_get( "wl0_ifname" ), "down" );
 #endif
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = stop_service_nofree( "nas", handle );
 #endif
 #ifdef HAVE_MADWIFI
@@ -772,7 +772,7 @@ static void handle_wireless( void )
 	|| nvram_match( "wl_akm", "radius" ) )
 	sleep( 4 );
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "wlconf", handle );
 #endif
 #ifdef HAVE_VLANTAGGING
@@ -791,7 +791,7 @@ static void handle_wireless( void )
     handle = start_service_nofree( "vlantagging", handle );
     handle = start_service_nofree( "bridgesif", handle );
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "nas", handle );
 #ifdef HAVE_MSSID
     handle = start_service_nofree( "guest_nas", handle );
@@ -809,11 +809,11 @@ static void handle_wireless_2( void )
     void *handle = NULL;
 
     handle = stop_service_nofree( "radio_timer", handle );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     eval( "wlconf", nvram_safe_get( "wl0_ifname" ), "down" );
 #endif
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = stop_service_nofree( "nas", handle );
 #endif
 #ifdef HAVE_MADWIFI
@@ -845,7 +845,7 @@ static void handle_wireless_2( void )
 	|| nvram_match( "wl_akm", "radius" ) )
 	sleep( 4 );
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "wlconf", handle );
 #endif
 #ifdef HAVE_VLANTAGGING
@@ -868,7 +868,7 @@ static void handle_wireless_2( void )
     handle = start_service_nofree( "vlantagging", handle );
     handle = start_service_nofree( "bridgesif", handle );
 #endif
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "nas", handle );
 #ifdef HAVE_MSSID
     handle = start_service_nofree( "guest_nas", handle );
