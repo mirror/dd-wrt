@@ -643,7 +643,7 @@ int main( int argc, char **argv )
 
 		cprintf( "RESTART\n" );
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		eval( "wlconf", nvram_safe_get( "wl0_ifname" ), "down" );
 #ifdef HAVE_MSSID
 		char *next;
@@ -675,7 +675,7 @@ int main( int argc, char **argv )
 
 		stop_services(  );
 		stop_service( "radio_timer" );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		stop_service( "nas" );
 #endif
 		cprintf( "STOP WAN\n" );
@@ -735,7 +735,7 @@ int main( int argc, char **argv )
 		start_service( "resetbutton" );
 #endif
 		start_service( "setup_vlans" );
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		start_service( "wlconf" );
 #endif
 
@@ -770,7 +770,7 @@ int main( int argc, char **argv )
 		start_service( "bridgesif" );
 #endif
 		
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 #ifdef HAVE_RADIOOFF
 		if( nvram_match( "radiooff_button", "1" )
 		    && nvram_match( "radiooff_boot_off", "1" ) )

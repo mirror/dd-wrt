@@ -668,8 +668,6 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	fprintf( fp, "AutoChannelSelect=0\n" );
 
 //encryption setup
-    fprintf( fp, "AuthMode=OPEN\n" );
-    fprintf( fp, "IEEE8021X=0\n" );
     fprintf( fp, "IEEE8021X=0\n" );
     fprintf( fp, "IEEE80211H=0\n" );
     char keyidstr[64] = { 0 };
@@ -786,8 +784,8 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	count++;
     }
     fprintf( fp, "DefaultKeyID=%s\n", keyidstr );
-    fprintf( fp, "EncrypType=%s", encryptype );
-    fprintf( fp, "AuthMode=%s", authmode );
+    fprintf( fp, "EncrypType=%s\n", encryptype );
+    fprintf( fp, "AuthMode=%s\n", authmode );
 
     fprintf( fp, "CSPeriod=10\n" );
     fprintf( fp, "WirelessEvent=0\n" );
@@ -795,7 +793,6 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "RekeyInterval=0\n" );
     fprintf( fp, "RekeyMethod=DISABLE\n" );
     fprintf( fp, "PMKCachePeriod=10\n" );
-    fprintf( fp, "WPAPSK=\n" );
     fprintf( fp, "HSCounter=0\n" );
     fprintf( fp, "AccessPolicy0=0\n" );
     fprintf( fp, "AccessControlList0=\n" );
