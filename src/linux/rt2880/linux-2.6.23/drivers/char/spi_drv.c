@@ -74,7 +74,8 @@ void spi_master_init(void)
 {
 	int i;
 	/* reset spi block */
-	RT2880_REG(RT2880_RSTCTRL_REG) = RSTCTRL_SPI_RESET;
+	RT2880_REG(RT2880_RSTCTRL_REG) |= RSTCTRL_SPI_RESET;
+	RT2880_REG(RT2880_RSTCTRL_REG) &= ~(RSTCTRL_SPI_RESET);
 	/* udelay(500); */
 	for ( i = 0; i < 1000; i++);
 	
@@ -190,7 +191,8 @@ static void spi_si3220_master_init(void)
 {
 	int i;
 	/* reset spi block */
-	RT2880_REG(RT2880_RSTCTRL_REG) = RSTCTRL_SPI_RESET;
+	RT2880_REG(RT2880_RSTCTRL_REG) |= RSTCTRL_SPI_RESET;
+	RT2880_REG(RT2880_RSTCTRL_REG) &= ~(RSTCTRL_SPI_RESET);
 	/* udelay(500); */
 	for ( i = 0; i < 1000; i++);
 	

@@ -35,9 +35,14 @@ unsigned long i2cdrv_addr = ATMEL_ADDR;
 /*----------------------------------------------------------------------*/
 void i2c_master_init(void)
 {
-	int i;
+	u32 i;
 	/* reset i2c block */
-	RT2880_REG(RT2880_RSTCTRL_REG) = RSTCTRL_I2C_RESET;
+	i = RT2880_REG(RT2880_RSTCTRL_REG) | RSTCTRL_I2C_RESET;
+    RT2880_REG(RT2880_RSTCTRL_REG) = i;
+
+    // force to clear i2c reset bit for RT2883.
+    RT2880_REG(RT2880_RSTCTRL_REG) = i & ~(RSTCTRL_I2C_RESET);
+
 	for(i = 0; i < 50000; i++);
 	// udelay(500);
 	

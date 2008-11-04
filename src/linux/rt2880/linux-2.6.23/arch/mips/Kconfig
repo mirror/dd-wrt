@@ -668,6 +668,10 @@ source "arch/mips/tx4927/Kconfig"
 source "arch/mips/tx4938/Kconfig"
 source "arch/mips/vr41xx/Kconfig"
 
+#config SERIAL_CONSOLE 
+#	bool
+#	default y
+
 endmenu
 
 config RWSEM_GENERIC_SPINLOCK

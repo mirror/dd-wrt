@@ -117,7 +117,7 @@ typedef struct {
 #define RALINK_GPIO_LED_LOW_ACT		1
 #define RALINK_GPIO_LED_INFINITY	4000
 typedef struct {
-	int gpio;			//gpio number (-1, 0 ~ 24)
+	int gpio;			//gpio number (0 ~ 23)
 	unsigned int on;		//interval of led on
 	unsigned int off;		//interval of led off
 	unsigned int blinks;		//number of blinking cycles

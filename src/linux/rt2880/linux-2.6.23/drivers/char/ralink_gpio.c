@@ -15,7 +15,7 @@
  * written consent of Ralink Technology, Inc. is obtained.
  ***************************************************************************
  *
- * $Id: ralink_gpio.c,v 1.8 2008-06-20 06:13:33 winfred Exp $
+ * $Id: ralink_gpio.c,v 1.9 2008-08-15 11:22:57 steven Exp $
  */
 #include <linux/init.h>
 #include <linux/version.h>
@@ -439,6 +439,9 @@ int __init ralink_gpio_init(void)
 
 	//config these pins to gpio mode
 	gpiomode = le32_to_cpu(*(volatile u32 *)(RALINK_REG_GPIOMODE));
+#if defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT2883)
+	gpiomode &= ~0x1C;  //clear bit[2:4]UARTF_SHARE_MODE
+#endif
 	gpiomode |= RALINK_GPIOMODE_DFT;
 	*(volatile u32 *)(RALINK_REG_GPIOMODE) = cpu_to_le32(gpiomode);
 

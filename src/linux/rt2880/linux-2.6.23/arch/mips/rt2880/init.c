@@ -354,6 +354,7 @@ __init void prom_init(void)
 #if defined(CONFIG_RT2880_FPGA) || defined(CONFIG_RT3052_FPGA) || defined(CONFIG_RT2883_FPGA)
 	prom_printf("\n THIS IS FPGA\n");
 #elif defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT3052_ASIC) || defined (CONFIG_RT2883_ASIC)
+	printk("\n this is a serial test\n");
 	prom_printf("\n THIS IS ASIC\n");
 #endif
 
