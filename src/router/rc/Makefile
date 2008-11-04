@@ -431,6 +431,9 @@ endif
 ifeq ($(CONFIG_MILKFISH),y)
 CFLAGS += -DHAVE_MILKFISH
 endif
+ifeq ($(CONFIG_RT2880),y)
+CFLAGS += -DHAVE_RT2880
+endif
 
 ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
@@ -449,7 +452,9 @@ install: all
 	install -d $(INSTALLDIR)/sbin
 	install rc $(INSTALLDIR)/sbin	
 	install ttraff $(INSTALLDIR)/sbin	
+ifneq ($(CONFIG_RT2880),y)
 	install wland $(INSTALLDIR)/sbin	
+endif
 	install process_monitor $(INSTALLDIR)/sbin	
 	install resetbutton $(INSTALLDIR)/sbin	
 	install init $(INSTALLDIR)/sbin	

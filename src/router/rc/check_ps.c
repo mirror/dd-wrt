@@ -86,7 +86,7 @@ int search_process( char *name, int count )
 
 void checknas( void )		// for broadcom v24 only
 {
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 #ifdef HAVE_MSSID
 
     char buf[32];
@@ -198,8 +198,9 @@ int do_mon( void )
 
     checkupgrade(  );
     checknas(  );
+#ifndef HAVE_RT2880
     softcontrol_wlan_led(  );
-
+#endif
     for( v = mons; v < &mons[sizeof( mons ) / sizeof( struct mon )]; v++ )
     {
 	if( v->name == NULL )
