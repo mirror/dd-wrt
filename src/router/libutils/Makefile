@@ -105,6 +105,12 @@ endif
 ifeq ($(CONFIG_NOP8670),y)
   CFLAGS += -DHAVE_NOP8670
 endif
+ifeq ($(CONFIG_RT2880),y)
+  CFLAGS += -DHAVE_RT2880
+endif
+ifeq ($(CONFIG_WHRG300N),y)
+  CFLAGS += -DHAVE_WHRG300N
+endif
 ifeq ($(CONFIG_X86),y)
   CFLAGS += -DHAVE_X86
 endif

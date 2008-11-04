@@ -811,6 +811,7 @@ static void nat_postrouting( void )
 
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
+#ifndef HAVE_RT2880
 #ifndef HAVE_LS2
 #ifndef HAVE_LS5
 #ifndef HAVE_PB42
@@ -825,6 +826,7 @@ static void nat_postrouting( void )
 #ifndef HAVE_RB500
 #ifndef HAVE_TW6600
 	    system2( "echo 1 > /proc/sys/net/ipv4/conf/br0/loop" );
+#endif
 #endif
 #endif
 #endif
@@ -3021,6 +3023,16 @@ void start_firewall( void )
     else
 	perror( "/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout" );
 #elif HAVE_FONERA
+    if( ( fp =
+	  fopen( "/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
+		 "r+" ) ) )
+    {
+	fprintf( fp, "%d", 65 );
+	fclose( fp );
+    }
+    else
+	perror( "/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout" );
+#elif HAVE_RT2880
     if( ( fp =
 	  fopen( "/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",
 		 "r+" ) ) )

@@ -924,6 +924,25 @@ void start_lan( void )
     nvram_set( "et0macaddr", ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
+#ifdef HAVE_RT2880
+    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+	|| nvram_match( "wan_proto", "disabled" ) )
+    {
+	nvram_set( "lan_ifname", "br0" );
+	nvram_set( "lan_ifnames", "vlan1 vlan2 ra0" );
+	PORTSETUPWAN( "" );
+    }
+    else
+    {
+	nvram_set( "lan_ifname", "br0" );
+	nvram_set( "lan_ifnames", "vlan1 vlan2 ra0" );
+	PORTSETUPWAN( "vlan2" );
+    }
+    strncpy( ifr.ifr_name, "eth2", IFNAMSIZ );
+    ioctl( s, SIOCGIFHWADDR, &ifr );
+    nvram_set( "et0macaddr", ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    strcpy( mac, nvram_safe_get( "et0macaddr" ) );
+#endif
 #ifdef HAVE_STORM
     if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
 	|| nvram_match( "wan_proto", "disabled" ) )
@@ -1406,7 +1425,7 @@ void start_lan( void )
 		continue;
 	    if( !ifexists( name ) )
 		continue;
-#if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_ADM5120)
+#if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880)
 	    if( !strcmp( name, "eth2" ) )
 	    {
 		strcpy( realname, "ath0" );
@@ -1855,6 +1874,9 @@ void start_lan( void )
 #ifdef HAVE_FONERA
 	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
 #endif
+#ifdef HAVE_RT2880
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
 #ifdef HAVE_LS2
 	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
 #endif
@@ -2217,6 +2239,9 @@ void start_lan( void )
 #ifdef HAVE_MAGICBOX
 #define HAVE_RB500
 #endif
+#ifdef HAVE_RT2880
+#define HAVE_RB500
+#endif
 #ifdef HAVE_FONERA
 #define HAVE_RB500
 #endif
@@ -2473,6 +2498,10 @@ void start_wan( int status )
 					     "" ) ?
 	nvram_safe_get( "pppoe_wan_ifname" ) : "eth0";
 #elif HAVE_DIR300
+    char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
+					     "" ) ?
+	nvram_safe_get( "pppoe_wan_ifname" ) : "vlan2";
+#elif HAVE_RT2880
     char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
 					     "" ) ?
 	nvram_safe_get( "pppoe_wan_ifname" ) : "vlan2";

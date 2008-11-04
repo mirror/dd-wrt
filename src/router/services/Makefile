@@ -608,6 +608,13 @@ CFLAGS += -DHAVE_SPUTNIK_APD
 OBJS += sputnik.o
 endif
 
+ifeq ($(CONFIG_RT2880),y)
+  CFLAGS += -DHAVE_RT2880
+endif
+ifeq ($(CONFIG_WHRG300N),y)
+  CFLAGS += -DHAVE_WHRG300N
+endif
+
 vpath %.c sysinit sysinit/switchlib services tools networking $(TOP)/shared $(SRCBASE)/rts/src
 
 all: services.so services.a

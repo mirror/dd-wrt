@@ -60,6 +60,7 @@ void svqos_reset_ports( void )
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
+#ifndef HAVE_RT2880
 #ifndef HAVE_LS2
 #ifndef HAVE_LS5
 #ifndef HAVE_X86
@@ -123,6 +124,7 @@ void svqos_reset_ports( void )
 #endif
 #endif
 #endif
+#endif
 }
 
 int svqos_set_ports( void )
@@ -130,6 +132,7 @@ int svqos_set_ports( void )
 #ifndef HAVE_XSCALE
 #ifndef HAVE_MAGICBOX
 #ifndef HAVE_FONERA
+#ifndef HAVE_RT2880
 #ifndef HAVE_LS2
 #ifndef HAVE_LS5
 #ifndef HAVE_WHRAG108
@@ -171,6 +174,7 @@ int svqos_set_ports( void )
 		  atoi( level ) / 10 - 1, loop );
 	}
     }
+#endif
 #endif
 #endif
 #endif
@@ -654,6 +658,10 @@ void stop_wshaper( void )
     ret = eval( script_name, "stop", "XX", "vlan1" );
     ret = eval( script_name, "stop", "XX", "vlan2" );
     ret = eval( script_name, "stop", "XX", "ath0" );
+#elif HAVE_RT2880
+    ret = eval( script_name, "stop", "XX", "vlan1" );
+    ret = eval( script_name, "stop", "XX", "vlan2" );
+    ret = eval( script_name, "stop", "XX", "ra0" );
 #elif HAVE_FONERA
     ret = eval( script_name, "stop", "XX", "eth0" );
     ret = eval( script_name, "stop", "XX", "vlan0" );

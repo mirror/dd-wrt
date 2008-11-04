@@ -60,6 +60,12 @@ endif
 ifeq ($(CONFIG_SAMBA),y)
   CFLAGS += -DHAVE_SAMBA
 endif
+ifeq ($(CONFIG_RT2880),y)
+  CFLAGS += -DHAVE_RT2880
+endif
+ifeq ($(CONFIG_WHRG300N),y)
+  CFLAGS += -DHAVE_WHRG300N
+endif
 ifeq ($(CONFIG_GEMTEK),y)
   CFLAGS += -DHAVE_GEMTEK
 endif
