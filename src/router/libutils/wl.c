@@ -30,6 +30,26 @@ struct nvram_tuple router_defaults[] = {
  */
 
 #ifndef HAVE_MADWIFI
+
+#ifdef HAVE_RT2880
+int getchannels( unsigned int *list, char *ifname )
+{
+list[0]=1;
+list[1]=2;
+list[2]=3;
+list[3]=4;
+list[4]=5;
+list[5]=6;
+list[6]=7;
+list[7]=8;
+list[8]=9;
+list[9]=10;
+list[10]=11;
+list[11]=12;
+list[12]=13;
+return 13;
+}
+#else
 int getchannels( unsigned int *list, char *ifname )
 {
     // int ret, num;
@@ -61,7 +81,7 @@ int getchannels( unsigned int *list, char *ifname )
     return count;
 #endif
 }
-
+#endif
 int wl_getbssid( char *wl, char *mac )
 {
     int ret;
@@ -1056,6 +1076,26 @@ int getassoclist( char *ifname, unsigned char *list )
 
 #endif
 
+
+
+#ifdef HAVE_RT2880
+char *get_wl_instance_name( int instance )
+{
+    return "ra0";
+}
+int get_wl_instances( void )
+{
+    return 1;
+}
+
+int get_wl_instance( char *name )
+{
+    return 1;
+}
+
+
+
+#else
 char *get_wl_instance_name( int instance )
 {
     if( get_wl_instance( "eth1" ) == instance )
@@ -1096,7 +1136,7 @@ int get_wl_instance( char *name )
 	return unit;
     return ret;
 }
-
+#endif
     /*
      * return wireless interface 
      */
@@ -1109,6 +1149,8 @@ char *get_wdev( void )
     {
 	return "ath0";
     }
+#elif HAVE_RT2880
+    return "ra0";
 #else
     if( !wl_probe( "eth1" ) )
 	return "eth1";

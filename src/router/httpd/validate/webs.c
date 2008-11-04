@@ -2584,12 +2584,15 @@ static void save_prefix( webs_t wp, char *prefix )
 #ifndef HAVE_MADWIFI
     char *ifname = "wl0";
 
+#ifndef HAVE_RT2880
+
     if( !strcmp( prefix, "wl0" ) )
 	ifname = get_wl_instance_name( 0 );
     else if( !strcmp( prefix, "wl1" ) )
 	ifname = get_wl_instance_name( 1 );
     else
 	ifname = prefix;
+#endif
     copytonv( wp, "%s_multicast", ifname );
     copytonv( wp, "%s_bridged", ifname );
 

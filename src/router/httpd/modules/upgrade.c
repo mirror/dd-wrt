@@ -96,6 +96,8 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
 	write_argv[2] = "linux";
 #elif HAVE_LS2
 	write_argv[2] = "linux";
+#elif HAVE_RT2880
+	write_argv[2] = "linux";
 #elif HAVE_USR5453
 	write_argv[2] = "rootfs";
 #elif HAVE_CA8
@@ -148,6 +150,9 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
 	return eval( "write", url, "linux" );
 #elif HAVE_LS2
     eval( "fischecksum" );
+    if( url )
+	return eval( "write", url, "linux" );
+#elif HAVE_RT2880
     if( url )
 	return eval( "write", url, "linux" );
 #elif HAVE_LSX
