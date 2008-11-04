@@ -169,6 +169,8 @@ int main( int argc, char **argv )
 			syslog( LOG_DEBUG, "Turning radio 0 on\n" );
 #ifdef HAVE_MADWIFI
 			eval( "ifconfig", "ath0", "up" );
+#elif HAVE_RT2880
+			eval("iwpriv","ra0","set","RadioOn=1");
 #elif HAVE_MSSID
 			if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
 			{
@@ -187,6 +189,8 @@ int main( int argc, char **argv )
 			syslog( LOG_DEBUG, "Turning radio 0 off\n" );
 #ifdef HAVE_MADWIFI
 			eval( "ifconfig", "ath0", "down" );
+#elif HAVE_RT2880
+			eval("iwpriv","ra0","set","RadioOn=0");
 #elif HAVE_MSSID
 			if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
 			{
