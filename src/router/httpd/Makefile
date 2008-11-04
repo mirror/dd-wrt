@@ -522,6 +522,13 @@ CFLAGS += -DHAVE_MILKFISH
 VISOBJS += milkfish.o
 endif
 
+ifeq ($(CONFIG_RT2880),y)
+  CFLAGS += -DHAVE_RT2880
+endif
+ifeq ($(CONFIG_WHRG300N),y)
+  CFLAGS += -DHAVE_WHRG300N
+endif
+
 
 #use this do disable number of arguments checking (less code and faster exec)
 CFLAGS += -DFASTWEB
