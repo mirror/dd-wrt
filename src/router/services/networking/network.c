@@ -685,6 +685,11 @@ void start_wlconf( void )
 }
 
 // #ifdef HAVE_PORTSETUP
+#ifdef HAVE_RT2880
+#define IFMAP(a) getRADev(a)
+#else
+#define IFMAP(a) (a)
+#endif
 
 static void do_portsetup( char *lan, char *ifname )
 {
@@ -694,7 +699,7 @@ static void do_portsetup( char *lan, char *ifname )
     sprintf( var, "%s_bridged", ifname );
     if( nvram_default_match( var, "1", "1" ) )
     {
-	br_add_interface( getBridge( ifname ), ifname );
+	br_add_interface( getBridge( IFMAP(ifname) ), ifname );
     }
     else
     {
@@ -1553,7 +1558,7 @@ void start_lan( void )
 		{
 		    ifconfig( name, IFUP | IFF_ALLMULTI, NULL, NULL );	// from 
 		    // up
-		    br_add_interface( getBridge( name ), name );
+		    br_add_interface( getBridge( IFMAP(name) ), name );
 		    led_control( LED_BRIDGE, LED_ON );
 #ifdef HAVE_MSSID
 		    /* Enable host DHCP relay */
@@ -1577,7 +1582,7 @@ void start_lan( void )
 		{
 		    ifconfig( name, IFUP | IFF_ALLMULTI, NULL, NULL );	// from 
 		    // up
-		    br_add_interface( getBridge( name ), name );
+		    br_add_interface( getBridge( IFMAP(name) ), name );
 		    led_control( LED_BRIDGE, LED_ON );
 		}
 #endif

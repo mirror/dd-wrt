@@ -32,6 +32,20 @@ struct nvram_tuple router_defaults[] = {
 #ifndef HAVE_MADWIFI
 
 #ifdef HAVE_RT2880
+char *getRADev(char *prefix)
+{
+char *ifname="ra0";
+	if (!strcmp(prefix,"wl0"))ifname="ra0";
+	if (!strcmp(prefix,"wl0.1"))ifname="ra1";
+	if (!strcmp(prefix,"wl0.2"))ifname="ra2";
+	if (!strcmp(prefix,"wl0.3"))ifname="ra3";
+	if (!strcmp(prefix,"wl0.4"))ifname="ra4";
+	if (!strcmp(prefix,"wl0.5"))ifname="ra5";
+	if (!strcmp(prefix,"wl0.6"))ifname="ra6";
+	if (!strcmp(prefix,"wl0.7"))ifname="ra7";
+return prefix;
+}
+
 int getchannels( unsigned int *list, char *ifname )
 {
 list[0]=1;
