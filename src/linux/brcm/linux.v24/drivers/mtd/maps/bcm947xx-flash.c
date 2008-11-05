@@ -457,6 +457,10 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 			bcm947xx_parts[4].size = size - bcm947xx_parts[3].size - 
 				bcm947xx_parts[4].offset - board_data_size;
 		}
+		/* do not make zero size jffs2 partition */
+		if (bcm947xx_parts[4].size < mtd->erasesize) {
+			bcm947xx_parts[4].name = NULL;
+		}
 	}
 
 	return bcm947xx_parts;
