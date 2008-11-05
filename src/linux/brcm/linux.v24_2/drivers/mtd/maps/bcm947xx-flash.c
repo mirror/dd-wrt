@@ -328,6 +328,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 
 		/* Update the squashfs partition size based on the superblock info */
 		part->size = sb->bytes_used;
+		//part->size = part->size + 1024; /* uncomment for belkin v2000 ! */
 		len = part->offset + part->size;
 		len +=  (mtd->erasesize - 1);
 		len &= ~(mtd->erasesize - 1);
@@ -389,29 +390,32 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	int cfe_size;
 
 	int board_data_size = 0; // e.g Netgear 0x003e0000-0x003f0000 : "board_data", we exclude this part from our mapping
-
+	int jffs_exclude_size = 0;  // to prevent overwriting len/checksum on e.g. Netgear WGR614v8/L/WW
+	
 	uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );	
 		
 	if ( (boardnum == 8 || boardnum == 01)
 	  && nvram_match ("boardtype", "0x0472")
 	  && nvram_match ("cardbus", "1") ) {
-		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WNR834B, Netgear WNR834Bv2
+		board_data_size = 0x10000;  //Netgear WNR834B, Netgear WNR834Bv2
 	}
 
 	if ( boardnum == 01
 	  && nvram_match ("boardtype", "0x0472")
 	  && nvram_match ("boardrev", "0x23") ) {
-		board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  //Netgear WNDR-3300
+		board_data_size = 0x10000;  //Netgear WNDR-3300
 	}	
 	
 	if ( (boardnum == 83258 || boardnum == 01)  //or 001 or 0x01
 	  && (nvram_match("boardtype", "0x048e") || nvram_match("boardtype", "0x48E"))
 	  && (nvram_match("boardrev", "0x11") || nvram_match("boardrev", "0x10"))
 	  && (nvram_match("boardflags", "0x750") || nvram_match("boardflags", "0x0750")) ) {
-		  if (nvram_match ("sdram_init", "0x000A") )  //Netgear WGR614v8/L/WW 16MB ram, cfe v1.3 or v1.5
-			board_data_size = 5 * ROUNDUP(NVRAM_SPACE, mtd->erasesize);  // checksum is @ 0x003AFFF8
-		  else if (nvram_match ("sdram_init", "0x0002") )  //Netgear WGR614v9, cfe v1.5, 8MB ram
-			board_data_size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);  // checksum is @ 0x001F9FFF8
+		if (nvram_match ("sdram_init", "0x000A") ) {  //Netgear WGR614v8/L/WW 16MB ram, cfe v1.3 or v1.5
+			board_data_size = 4 * 0x10000;  // checksum is @ 0x003AFFF8
+			jffs_exclude_size = 0x10000;
+		}
+		else if (nvram_match ("sdram_init", "0x0002") )  //Netgear WGR614v9, cfe v1.5, 8MB ram
+			board_data_size = 0x10000;  // checksum is @ 0x001F9FFF8
 	}																
 
 	if ((cfe_size = find_cfe_size(mtd,size)) < 0)
@@ -463,7 +467,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 					(bcm947xx_parts[4].offset % mtd->erasesize);
 			}
 			bcm947xx_parts[4].size = bcm947xx_parts[3].offset - 
-				bcm947xx_parts[4].offset - board_data_size;
+				bcm947xx_parts[4].offset - board_data_size - jffs_exclude_size;
 		} else {
 			bcm947xx_parts[4].offset = bcm947xx_parts[2].offset + 
 				bcm947xx_parts[2].size;
@@ -472,7 +476,11 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 					(bcm947xx_parts[4].offset % mtd->erasesize);
 			}
 			bcm947xx_parts[4].size = size - bcm947xx_parts[3].size - 
-				bcm947xx_parts[4].offset - board_data_size;
+				bcm947xx_parts[4].offset - board_data_size - jffs_exclude_size;
+		}
+		/* do not make zero size jffs2 partition  */
+		if (bcm947xx_parts[4].size < mtd->erasesize) {
+			bcm947xx_parts[4].name = NULL;
 		}
 	}
 
