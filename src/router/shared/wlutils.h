@@ -82,8 +82,14 @@ unsigned int getCountry( const char *country );
 char *getCountryList( void );
 u_int ieee80211_mhz2ieee( u_int freq );
 
+
+#endif
+#ifdef HAVE_RT2880
 int wifi_getchannel( char *ifname );
 int wifi_getfreq( char *ifname );
+u_int ieee80211_mhz2ieee( u_int freq );
+int get_radiostate( char *ifname );
+
 
 #endif
 /*
