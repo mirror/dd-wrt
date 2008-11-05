@@ -4988,33 +4988,7 @@ void ej_get_br1_netmask( webs_t wp, int argc, char_t ** argv )
 
 }
 
-#ifndef HAVE_MADWIFI
-
-void ej_get_currate( webs_t wp, int argc, char_t ** argv )
-{
-    int rate = 0;
-
-    wl_ioctl( get_wdev(  ), WLC_GET_RATE, &rate, sizeof( rate ) );
-
-    if( rate > 0 )
-	websWrite( wp, "%d%s Mbps", ( rate / 2 ), ( rate & 1 ) ? ".5" : "" );
-    else
-	websWrite( wp, "%s", live_translate( "share.unknown" ) );
-
-    return;
-}
-
-void ej_show_acktiming( webs_t wp, int argc, char_t ** argv )
-{
-    return;
-}
-
-void ej_update_acktiming( webs_t wp, int argc, char_t ** argv )
-{
-    return;
-}
-
-#else
+#ifdef HAVE_MADWIFI
 
 int get_acktiming( void )
 {
@@ -5104,6 +5078,94 @@ void ej_get_currate( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp, "%s", live_translate( "share.auto" ) );
 
 }
+
+#elif HAVE_RT2880
+extern float wifi_getrate( char *ifname );
+
+#define KILO	1e3
+#define MEGA	1e6
+#define GIGA	1e9
+
+void ej_get_currate( webs_t wp, int argc, char_t ** argv )
+{
+    char mode[32];
+    int state = get_radiostate( "wl0" );
+
+    if( state == 0 || state == -1 )
+    {
+	websWrite( wp, "%s", live_translate( "share.disabled" ) );
+	return;
+    }
+    float rate = wifi_getrate( "ra0" );
+    char scale;
+    int divisor;
+
+    if( rate >= GIGA )
+    {
+	scale = 'G';
+	divisor = GIGA;
+    }
+    else
+    {
+	if( rate >= MEGA )
+	{
+	    scale = 'M';
+	    divisor = MEGA;
+	}
+	else
+	{
+	    scale = 'k';
+	    divisor = KILO;
+	}
+    }
+    if( rate > 0.0 )
+    {
+	websWrite( wp, "%g %cb/s", rate / divisor, scale );
+    }
+    else
+	websWrite( wp, "%s", live_translate( "share.auto" ) );
+
+}
+
+
+void ej_show_acktiming( webs_t wp, int argc, char_t ** argv )
+{
+    return;
+}
+
+void ej_update_acktiming( webs_t wp, int argc, char_t ** argv )
+{
+    return;
+}
+
+
+#else
+
+void ej_get_currate( webs_t wp, int argc, char_t ** argv )
+{
+    int rate = 0;
+
+    wl_ioctl( get_wdev(  ), WLC_GET_RATE, &rate, sizeof( rate ) );
+
+    if( rate > 0 )
+	websWrite( wp, "%d%s Mbps", ( rate / 2 ), ( rate & 1 ) ? ".5" : "" );
+    else
+	websWrite( wp, "%s", live_translate( "share.unknown" ) );
+
+    return;
+}
+
+void ej_show_acktiming( webs_t wp, int argc, char_t ** argv )
+{
+    return;
+}
+
+void ej_update_acktiming( webs_t wp, int argc, char_t ** argv )
+{
+    return;
+}
+
+
 #endif
 
 void ej_get_uptime( webs_t wp, int argc, char_t ** argv )
@@ -5154,30 +5216,7 @@ void ej_get_wan_uptime( webs_t wp, int argc, char_t ** argv )
 
 }
 
-#ifndef HAVE_MADWIFI
-
-void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
-{
-    channel_info_t ci;
-
-    memset( &ci, 0, sizeof( ci ) );
-    wl_ioctl( get_wdev(  ), WLC_GET_CHANNEL, &ci, sizeof( ci ) );
-    if( ci.scan_channel > 0 )
-    {
-	websWrite( wp, "%d (scanning)", ci.scan_channel );
-    }
-    else if( ci.hw_channel > 0 )
-    {
-	websWrite( wp, "%d", ci.hw_channel );
-    }
-    else
-	// websWrite (wp, "unknown");
-	websWrite( wp, "%s", live_translate( "share.unknown" ) );
-    return;
-
-}
-
-#else
+#ifdef HAVE_MADWIFI
 
 void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
 {
@@ -5204,8 +5243,48 @@ void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
 	// websWrite (wp, "unknown");
 	websWrite( wp, "%s", live_translate( "share.unknown" ) );
     return;
+}
+
+#elif HAVE_RT2880
+void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
+{
+    int channel = wifi_getchannel( "ra0");
+
+    if( channel > 0 && channel < 1000 )
+    {
+	websWrite( wp, "%d (%d Mhz)", channel,
+		   wifi_getfreq( "ra0" ) );
+    }
+    else
+	// websWrite (wp, "unknown");
+	websWrite( wp, "%s", live_translate( "share.unknown" ) );
+    return;
+}
+
+
+#else
+
+void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
+{
+    channel_info_t ci;
+
+    memset( &ci, 0, sizeof( ci ) );
+    wl_ioctl( get_wdev(  ), WLC_GET_CHANNEL, &ci, sizeof( ci ) );
+    if( ci.scan_channel > 0 )
+    {
+	websWrite( wp, "%d (scanning)", ci.scan_channel );
+    }
+    else if( ci.hw_channel > 0 )
+    {
+	websWrite( wp, "%d", ci.hw_channel );
+    }
+    else
+	// websWrite (wp, "unknown");
+	websWrite( wp, "%s", live_translate( "share.unknown" ) );
+    return;
 
 }
+
 #endif
 #ifdef HAVE_MADWIFI
 #include <sys/types.h>
@@ -5422,7 +5501,177 @@ void ej_active_wireless( webs_t wp, int argc, char_t ** argv )
     }
 }
 
+#elif HAVE_RT2880
+
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <err.h>
+
+#include "wireless_copy.h"
+static const char *ieee80211_ntoa( const uint8_t mac[6] )
+{
+    static char a[18];
+    int i;
+
+    i = snprintf( a, sizeof( a ), "%02x:%02x:%02x:%02x:%02x:%02x",
+		  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
+    return ( i < 17 ? NULL : a );
+}
+typedef union _MACHTTRANSMIT_SETTING {
+	struct  {
+		unsigned short  MCS:7;  // MCS
+		unsigned short  BW:1;   //channel bandwidth 20MHz or 40 MHz
+		unsigned short  ShortGI:1;
+		unsigned short  STBC:2; //SPACE
+		unsigned short  rsv:3;
+		unsigned short  MODE:2; // Use definition MODE_xxx.
+	} field;
+	unsigned short      word;
+} MACHTTRANSMIT_SETTING;
+
+typedef struct _RT_802_11_MAC_ENTRY {
+	unsigned char            Addr[6];
+	unsigned char            Aid;
+	unsigned char            Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
+	unsigned char            MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
+	char                     AvgRssi0;
+	char                     AvgRssi1;
+	char                     AvgRssi2;
+	unsigned int             ConnectedTime;
+	MACHTTRANSMIT_SETTING    TxRate;
+} RT_802_11_MAC_ENTRY;
+
+typedef struct _RT_802_11_MAC_TABLE {
+	unsigned long            Num;
+	RT_802_11_MAC_ENTRY      Entry[32]; //MAX_LEN_OF_MAC_TABLE = 32
+} RT_802_11_MAC_TABLE;
+
+#define RTPRIV_IOCTL_GET_MAC_TABLE		(SIOCIWFIRSTPRIV + 0x0F)
+
+int
+ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
+		       char *ifname, int cnt, int turbo, int macmask )
+{
+
+    RT_802_11_MAC_TABLE table = {0};
+
+    unsigned char *cp;
+    int s, len,i;
+    struct iwreq iwr;
+
+    if( !ifexists( ifname ) )
+    {
+	printf( "IOCTL_STA_INFO ifresolv %s failed!\n", ifname );
+	return cnt;
+    }
+    int state = get_radiostate( ifname );
+
+    if( state == 0 || state == -1 )
+    {
+	printf( "IOCTL_STA_INFO radio %s not enabled!\n", ifname );
+	return cnt;
+    }
+    s = socket( AF_INET, SOCK_DGRAM, 0 );
+    if( s < 0 )
+    {
+	fprintf( stderr, "socket(SOCK_DRAGM)\n" );
+	return cnt;
+    }
+    ( void )memset( &iwr, 0, sizeof( struct iwreq ) );
+    ( void )strncpy( iwr.ifr_name, ifname, sizeof( iwr.ifr_name ) );
+
+    iwr.u.data.pointer = (caddr_t) &table;
+//    iwr.u.data.length = 24 * 1024;
+    if( ioctl( s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr ) < 0 )
+    {
+	fprintf( stderr, "IOCTL_STA_INFO for %s failed!\n", ifname );
+	close( s );
+	return cnt;
+    }
+
+
+for (i = 0; i < table.Num; i++) {
+	if( cnt )
+	    websWrite( wp, "," );
+	cnt++;
+	char mac[32];
+	strcpy( mac, ieee80211_ntoa( table.Entry[i].Addr ) );
+	if( nvram_match( "maskmac", "1" ) && macmask )
+	{
+	    mac[0] = 'x';
+	    mac[1] = 'x';
+	    mac[3] = 'x';
+	    mac[4] = 'x';
+	    mac[6] = 'x';
+	    mac[7] = 'x';
+	    mac[9] = 'x';
+	    mac[10] = 'x';
+	}
+#if 0	
+	if( si->isi_rates
+	    && ( ( si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL ) != 0 )
+	    && ( ( si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL ) !=
+		 0 ) )
+	{
+	    websWrite( wp, "'%s','%s','%3dM','%3dM','%d','%d','%d'",
+		       mac, ifname,
+		       ( ( si->
+			   isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL ) /
+			 2 ) * turbo,
+		       ( ( si->
+			   isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL ) /
+			 2 ) * turbo, -95 + table.Entry[i].AvgRssi0,
+		       -95, table.Entry[i].AvgRssi0 );
+	}
+	else
+#endif	
+	{
+	    websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac,
+		       ifname, table.Entry[i].AvgRssi0, -95,
+		        -95 - table.Entry[i].AvgRssi0 );
+	}
+    }
+    close( s );
+
+    return cnt;
+}
+extern char *getiflist( void );
+
+void ej_active_wireless( webs_t wp, int argc, char_t ** argv )
+{
+    char devs[32];
+    int i;
+    int cnt = 0;
+    char turbo[32];
+    int t;
+    int macmask;
+
+#ifdef FASTWEB
+    ejArgs( argc, argv, "%d", &macmask );
 #else
+    if( ejArgs( argc, argv, "%d", &macmask ) < 1 )
+    {
+	websError( wp, 400, "Insufficient args\n" );
+	return;
+    }
+#endif
+	sprintf( devs, "ra0");
+	t = 1;
+	cnt = ej_active_wireless_if( wp, argc, argv, "ra0", cnt, t, macmask );
+
+}
+
+
+#else
+
 #define RSSI_TMP	"/tmp/.rssi"
 #define ASSOCLIST_CMD	"wl assoclist"
 #define RSSI_CMD	"wl rssi"
@@ -5685,7 +5934,7 @@ void ej_active_wds( webs_t wp, int argc, char_t ** argv )
 void
 ej_active_wds_instance( webs_t wp, int argc, char_t ** argv, int instance )
 {
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     int rssi = 0, i;
     FILE *fp2;
     char *mode;
