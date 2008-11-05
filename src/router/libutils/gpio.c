@@ -310,6 +310,143 @@ int get_gpio( int gpio )
     return _bit.state;
 }
 
+#elif HAVE_RT2880
+#include <linux/mii.h>
+#include <linux/sockios.h>
+#include <net/if.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
+
+#define GPIO_DEV	"/dev/gpio"
+#define	RALINK_GPIO_SET_DIR		0x01
+#define RALINK_GPIO_SET_DIR_IN		0x11
+#define RALINK_GPIO_SET_DIR_OUT		0x12
+#define	RALINK_GPIO_READ		0x02
+#define	RALINK_GPIO_WRITE		0x03
+#define	RALINK_GPIO_SET			0x21
+#define	RALINK_GPIO_CLEAR		0x31
+#define	RALINK_GPIO_READ_BIT		0x04
+#define	RALINK_GPIO_WRITE_BIT		0x05
+#define	RALINK_GPIO_READ_BYTE		0x06
+#define	RALINK_GPIO_WRITE_BYTE		0x07
+#define	RALINK_GPIO_READ_INT		0x02 //same as read
+#define	RALINK_GPIO_WRITE_INT		0x03 //same as write
+#define	RALINK_GPIO_SET_INT		0x21 //same as set
+#define	RALINK_GPIO_CLEAR_INT		0x31 //same as clear
+#define RALINK_GPIO_ENABLE_INTP		0x08
+#define RALINK_GPIO_DISABLE_INTP	0x09
+#define RALINK_GPIO_REG_IRQ		0x0A
+#define RALINK_GPIO_LED_SET		0x41
+
+
+int gpio_set_dir_in(int gpio)
+{
+	int fd;
+
+	fd = open(GPIO_DEV, O_RDONLY);
+	if (fd < 0) {
+		perror(GPIO_DEV);
+		return -1;
+	}
+	if (ioctl(fd, RALINK_GPIO_SET_DIR_IN, gpio) < 0) {
+		perror("ioctl");
+		close(fd);
+		return -1;
+	}
+	close(fd);
+	return 0;
+}
+
+int gpio_set_dir_out(int gpio)
+{
+	int fd;
+
+	fd = open(GPIO_DEV, O_RDONLY);
+	if (fd < 0) {
+		perror(GPIO_DEV);
+		return -1;
+	}
+	if (ioctl(fd, RALINK_GPIO_SET_DIR_OUT, gpio) < 0) {
+		perror("ioctl");
+		close(fd);
+		return -1;
+	}
+	close(fd);
+	return 0;
+}
+
+#define RALINK_GPIO_DATA_LEN		24
+
+int gpio_read_bit(int idx, int *value)
+{
+	int fd, req;
+
+	*value = 0;
+	fd = open(GPIO_DEV, O_RDONLY);
+	if (fd < 0) {
+		perror(GPIO_DEV);
+		return -1;
+	}
+	if (0L <= idx && idx < RALINK_GPIO_DATA_LEN)
+		req = RALINK_GPIO_READ_BIT | (idx << RALINK_GPIO_DATA_LEN);
+	else {
+		close(fd);
+		printf("gpio_read_bit: index %d out of range\n", idx);
+		return -1;
+	}
+	if (ioctl(fd, req, value) < 0) {
+		perror("ioctl");
+		close(fd);
+		return -1;
+	}
+	close(fd);
+	return 0;
+}
+
+int gpio_write_bit(int idx, int value)
+{
+	int fd, req;
+
+	fd = open(GPIO_DEV, O_RDONLY);
+	if (fd < 0) {
+		perror(GPIO_DEV);
+		return -1;
+	}
+	value &= 1;
+	if (0L <= idx && idx < RALINK_GPIO_DATA_LEN)
+		req = RALINK_GPIO_WRITE_BIT | (idx << RALINK_GPIO_DATA_LEN);
+	else {
+		close(fd);
+		printf("gpio_write_bit: index %d out of range\n", idx);
+		return -1;
+	}
+	if (ioctl(fd, req, value) < 0) {
+		perror("ioctl");
+		close(fd);
+		return -1;
+	}
+	close(fd);
+	return 0;
+}
+
+
+void set_gpio( int pin, int value )
+{
+gpio_set_dir_out(pin);
+gpio_write_bit(pin,value);
+}
+
+int get_gpio( int pin)
+{
+int value;
+gpio_set_dir_in(pin);
+gpio_read_bit(pin,&value);
+return value;
+}
+
+
 #else
 
 void set_gpio( int pin, int value )
