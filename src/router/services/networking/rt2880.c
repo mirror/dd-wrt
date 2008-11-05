@@ -919,7 +919,11 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     else
 	fprintf( fp, "HT_OpMode=0\n" );
 	
-
+    int mcs = atoi(nvram_default_get("wl0_nmcsidx","-1"));
+    if (mcs==-1)
+    fprintf( fp, "HT_MCS=33\n" );
+    else
+    fprintf( fp, "HT_MCS=%d\n",mcs );
     
     fprintf( fp, "CSPeriod=10\n" );
     fprintf( fp, "WirelessEvent=0\n" );
@@ -951,7 +955,6 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "HT_BAWinSize=64\n" );
     fprintf( fp, "HT_GI=1\n" );
     fprintf( fp, "HT_STBC=1\n" );
-    fprintf( fp, "HT_MCS=33\n" );
     fclose( fp );
     insmod( "rt2860v2_ap" );
 
