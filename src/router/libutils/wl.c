@@ -125,7 +125,7 @@ int wifi_getchannel( char *ifname )
     int i;
 
     freq = ( float )wrq.u.freq.m;
-    if (freq<1000)
+    if (freq<1000.0f)
 	{
 	return (int)freq;
 	}
@@ -149,7 +149,7 @@ int wifi_getfreq( char *ifname )
     int i;
 
     freq = ( float )wrq.u.freq.m;
-    if (freq<1000)
+    if (freq<1000.0f)
 	{
 	return ieee80211_ieee2mhz((unsigned int)freq);
 	}
