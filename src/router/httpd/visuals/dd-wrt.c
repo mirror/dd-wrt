@@ -6979,6 +6979,8 @@ void ej_wl_packet_get( webs_t wp, int argc, char_t ** argv )
 
 #ifdef HAVE_MADWIFI
     char *ifname = nvram_safe_get( "wifi_display" );
+#elif HAVE_RT2880
+    char *ifname = "ra0";
 #else
     char *ifname = nvram_safe_get( "wl0_ifname" );
 #endif
