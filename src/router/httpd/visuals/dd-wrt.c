@@ -3539,6 +3539,8 @@ static int show_virtualssid( webs_t wp, char *prefix )
     websWrite( wp, "<div class=\"center\">\n" );
 #ifdef HAVE_MADWIFI
     if( count < 8 )
+#elif HAVE_RT2880
+    if( count < 7 )
 #else
     if( count < WL_MAXBSSCFG )
 #endif
