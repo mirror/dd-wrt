@@ -19,6 +19,8 @@
  *
  * $Id:
  */
+#ifdef HAVE_NAS
+
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -818,3 +820,4 @@ void stop_nas( void )
     cprintf( "done\n" );
     return;
 }
+#endif
