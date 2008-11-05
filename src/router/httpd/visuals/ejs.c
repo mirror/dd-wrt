@@ -2410,6 +2410,8 @@ void ej_getwirelessnetmode( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp, "Capture(share.disabled)" );
     if( nvram_match( mode, "mixed" ) )
 	websWrite( wp, "Capture(wl_basic.mixed)" );
+    if( nvram_match( mode, "bg-mixed" ) )
+	websWrite( wp, "Capture(wl_basic.bg)" );
     if( nvram_match( mode, "g-only" ) )
 	websWrite( wp, "Capture(wl_basic.g)" );
     if( nvram_match( mode, "b-only" ) )
@@ -2469,6 +2471,7 @@ void ej_show_openvpn_status( webs_t wp, int argc, char_t ** argv )
 
 }
 
+
 void ej_get_radio_state( webs_t wp, int argc, char_t ** argv )
 {
     int radiooff = -1;
@@ -2498,6 +2501,25 @@ void ej_get_radio_state( webs_t wp, int argc, char_t ** argv )
     {
 	websWrite( wp, "%s", live_translate( "share.unknown" ) );
     }
+#elif HAVE_RT2880
+
+	int state = get_radiostate( "wl0" );
+
+	switch ( state )
+	{
+	    case 1:
+		websWrite( wp, "%s", live_translate( "wl_basic.radio_on" ) );
+		break;
+	    case -1:
+		websWrite( wp, "%s", live_translate( "share.unknown" ) );
+		break;
+	    default:		// 1: software disabled, 2: hardware
+				// disabled, 3: both are disabled
+		websWrite( wp, "%s", live_translate( "wl_basic.radio_off" ) );
+		break;
+	}
+
+
 #else
     wl_ioctl( get_wdev(  ), WLC_GET_RADIO, &radiooff, sizeof( int ) );
 
