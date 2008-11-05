@@ -426,7 +426,7 @@ int getNoise( char *ifname, unsigned char *macname )
      * ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) { if
      * (wl_ioctl(name, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0) noise = 
      * 0; } else { // somehow the structure doesn't fit here rssi = buf[82];
-[5~     * noise = buf[84]; } 
+     * noise = buf[84]; } 
      */
     return noise;
 }
