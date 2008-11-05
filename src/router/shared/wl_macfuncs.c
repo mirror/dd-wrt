@@ -23,53 +23,7 @@
 #include <string.h>
 #include <memory.h>
 int getsocket( void );
-#ifndef HAVE_MADWIFI
-#include <wlutils.h>
-#include <wlioctl.h>
-
-#include <bcmnvram.h>
-void set_maclist( char *iface, char *buf )
-{
-    wl_ioctl( iface, WLC_SET_MACLIST, buf, WLC_IOCTL_MAXLEN );
-}
-
-void security_disable( char *iface )
-{
-    int val;
-
-    val = WLC_MACMODE_DISABLED;
-    wl_ioctl( iface, WLC_SET_MACMODE, &val, sizeof( val ) );
-}
-
-void security_deny( char *iface )
-{
-    int val;
-
-    val = WLC_MACMODE_DENY;
-    wl_ioctl( iface, WLC_SET_MACMODE, &val, sizeof( val ) );
-}
-
-void security_allow( char *iface )
-{
-    int val;
-
-    val = WLC_MACMODE_ALLOW;
-    wl_ioctl( iface, WLC_SET_MACMODE, &val, sizeof( val ) );
-}
-
-void kick_mac( char *iface, char *mac )
-{
-    scb_val_t scb_val;
-
-    scb_val.val = ( uint32 ) DOT11_RC_NOT_AUTH;
-    memcpy( &scb_val.ea, mac, ETHER_ADDR_LEN );
-    wl_ioctl( iface, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val, sizeof( scb_val ) );	/* Kick 
-											 * station 
-											 * off 
-											 * AP 
-											 */
-}
-#else
+#ifdef HAVE_MADWIFI
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
@@ -178,5 +132,117 @@ void kick_mac( char *iface, char *mac )
     memcpy( mlme.im_macaddr, mac, 6 );
 
     do80211priv( iface, IEEE80211_IOCTL_SETMLME, &mlme, sizeof( mlme ) );
+}
+#elif HAVE_RT2880
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <net/ethernet.h>
+#include <bcmnvram.h>
+#include <stdio.h>
+
+
+
+struct maclist
+{
+    uint count;			/* number of MAC addresses */
+    struct ether_addr ea[1];	/* variable length array of MAC addresses */
+};
+
+void security_disable( char *iface )
+{
+	sysprintf("iwpriv %s set ACLClearAll=1",iface);
+	sysprintf("iwpriv %s set AccessPolicy=0",iface);
+
+}
+static const char *ieee80211_ntoa( const unsigned char
+				   mac[6] )
+{
+    static char a[18];
+    int i;
+
+    i = snprintf( a, sizeof( a ), "%02x:%02x:%02x:%02x:%02x:%02x",
+		  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
+    return ( i < 17 ? NULL : a );
+}
+
+void set_maclist( char *iface, char *buf )
+{
+    struct maclist *maclist = ( struct maclist * )buf;
+
+    if( maclist->count == 0 )
+	security_disable( iface );
+    uint i;
+
+    for( i = 0; i < maclist->count; i++ )
+    {
+	sysprintf("iwpriv %s set ACLAddEntry=%s",iface,ieee80211_ntoa( ( unsigned char * )&maclist->ea[i] ));
+    }
+}
+void security_deny( char *iface )
+{
+
+    sysprintf("iwpriv %s set AccessPolicy=2",iface);
+}
+
+void security_allow( char *iface )
+{
+    sysprintf("iwpriv %s set AccessPolicy=1",iface);
+}
+
+void kick_mac( char *iface, char *mac )
+{
+
+sysprintf("iwpriv %s set DisConnectSta=%s",iface,ieee80211_ntoa( mac ));
+}
+
+
+
+#else
+
+#include <wlutils.h>
+#include <wlioctl.h>
+
+#include <bcmnvram.h>
+void set_maclist( char *iface, char *buf )
+{
+    wl_ioctl( iface, WLC_SET_MACLIST, buf, WLC_IOCTL_MAXLEN );
+}
+
+void security_disable( char *iface )
+{
+    int val;
+
+    val = WLC_MACMODE_DISABLED;
+    wl_ioctl( iface, WLC_SET_MACMODE, &val, sizeof( val ) );
+}
+
+void security_deny( char *iface )
+{
+    int val;
+
+    val = WLC_MACMODE_DENY;
+    wl_ioctl( iface, WLC_SET_MACMODE, &val, sizeof( val ) );
+}
+
+void security_allow( char *iface )
+{
+    int val;
+
+    val = WLC_MACMODE_ALLOW;
+    wl_ioctl( iface, WLC_SET_MACMODE, &val, sizeof( val ) );
+}
+
+void kick_mac( char *iface, char *mac )
+{
+    scb_val_t scb_val;
+
+    scb_val.val = ( uint32 ) DOT11_RC_NOT_AUTH;
+    memcpy( &scb_val.ea, mac, ETHER_ADDR_LEN );
+    wl_ioctl( iface, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val, sizeof( scb_val ) );	/* Kick 
+											 * station 
+											 * off 
+																				 */
 }
 #endif
