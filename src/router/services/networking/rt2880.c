@@ -746,6 +746,11 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	strcat( authmode, "OPEN" );
 	strcat( encryptype, "WEP" );
     }
+    if( nvram_match( "wl0_akm", "disabled" ) )
+    {
+	strcat( authmode, "OPEN" );
+	strcat( encryptype, "NONE" );
+    }
     if( nvram_match( "wl0_akm", "psk2" ) )
     {
 	fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
@@ -818,6 +823,11 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 		strcat( encryptype, ";AES" );
 	    if( nvram_nmatch( "tkip+aes", "%s_crypto", var ) )
 		strcat( encryptype, ";TKIPAES" );
+	}
+	if( nvram_nmatch( "disabled", "%s_akm", var ) )
+	{
+	    strcat( authmode, ";OPEN" );
+	    strcat( encryptype, ";NONE" );
 	}
 	if( nvram_nmatch( "psk psk2", "%s_akm", var ) )
 	{
