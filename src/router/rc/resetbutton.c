@@ -367,6 +367,12 @@ void period_check( int sig )
 #endif
 
 #else
+if (brand==ROUTER_BOARD_WHRG300N)
+    {
+    val = get_gpio(10)<<10;
+    }else
+    {
+
     if( ( fp = fopen( GPIO_FILE, "r" ) ) )
     {
 #ifdef HAVE_XSCALE
@@ -382,11 +388,13 @@ void period_check( int sig )
 	{
 	fread( &val, 4, 1, fp );
 	}
+
 #endif
 	fclose( fp );
     }
     else
 	perror( GPIO_FILE );
+    }
 #endif
     DEBUG( "resetbutton: GPIO = 0x%x\n", val );
 
@@ -405,6 +413,7 @@ void period_check( int sig )
 	state = ( val & gpio );
     else
 	state = !( val & gpio );
+	
 
     /* 
      * 1 byte router's SES (AOSS) button gpio number and polarity; Eko
