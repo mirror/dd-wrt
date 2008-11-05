@@ -3238,12 +3238,11 @@ if (nvram_nmatch("n-only","%s_net_mode",prefix))
     websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
     websWrite( wp,
 	       "document.write(\"<option value=\\\"0\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
-	       nvram_default_match( wl_greenfield,
-			    "0" ) ? "selected=\\\"selected\\\"" : "","0" );
+	       nvram_default_match( wl_greenfield,"0","0" ) ? "selected=\\\"selected\\\"" : "");
     websWrite( wp,
 	       "document.write(\"<option value=\\\"1\\\" %s>\" + wl_basic.greenfield + \"</option>\");\n",
 	       nvram_default_match( wl_greenfield,
-			    "1" ) ? "selected=\\\"selected\\\"" : "","0" );
+			    "1","0" ) ? "selected=\\\"selected\\\"" : "");
     websWrite( wp, "//]]>\n</script>\n" );
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );
