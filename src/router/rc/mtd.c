@@ -51,6 +51,15 @@
 #error unkown endianness!
 #endif
 
+/* Netgear WGR614 v8/L defines */
+static unsigned long calculate_checksum (int action, char *s, int size);
+#define WGR614_FLASH_SIZE              4 * 1024 * 1024
+#define WGR614_FLASH_BASE              0xBC000000
+#define WGR614_KERNEL_FLASH_ADDR       0xBC020000
+#define WGR614_KERNEL_LEN_ADDR         (WGR614_FLASH_BASE + WGR614_FLASH_SIZE - 0x50000 - 8)
+#define WGR614_KERNEL_CHKSUM_ADDR      (WGR614_KERNEL_LEN_ADDR + 4)
+/* end */
+
 /* 
  * Open an MTD device
  * @param       mtd     path to or partition name of MTD device
@@ -172,6 +181,7 @@ int mtd_write( const char *path, const char *mtd )
     int squashfound = 0;
     unsigned int crc_data = 0;
     unsigned int data_len = 0;
+    unsigned int cal_chksum = 0;
     FILE *fp;
     char *buf = NULL;
     long count, len, off;
@@ -326,6 +336,7 @@ int mtd_write( const char *path, const char *mtd )
 							 flag_version ),
 		 CRC32_INIT_VALUE );
     crc_data = 0;
+    calculate_checksum (0, NULL, 0); // init
     /* 
      * Write file or URL to MTD device 
      */
@@ -365,6 +376,8 @@ int mtd_write( const char *path, const char *mtd )
 	 * Update CRC 
 	 */
 	crc = crc32( &buf[off], count - off, crc );
+	calculate_checksum (1, buf, count);
+
 	if( !squashfound )
 	{
 	    for( i = 0; i < ( count - off ); i++ )
@@ -409,6 +422,74 @@ int mtd_write( const char *path, const char *mtd )
 	    goto fail;
 	}
     }
+    
+	if ( getRouterBrand(  ) == ROUTER_NETGEAR_WGR614L )  //Write len and checksum at the end of mtd1
+	{
+	cal_chksum = calculate_checksum ( 2, NULL, 0 );
+	
+	int offset = WGR614_KERNEL_LEN_ADDR - WGR614_KERNEL_FLASH_ADDR;
+	char imageInfo[8];
+	
+	trx.len = STORE32_LE( trx.len );
+	cal_chksum = STORE32_LE( cal_chksum );
+	memcpy( &imageInfo[0], (char *)&trx.len, 4 );
+	memcpy( &imageInfo[4], (char *)&cal_chksum, 4 );
+	
+	int sector_start = ( offset / mtd_info.erasesize ) * mtd_info.erasesize;
+	
+	if( lseek( mtd_fd, sector_start, SEEK_SET) <= 0 )
+	{
+		//fprintf( stderr, "Error seeking the file descriptor\n" );
+		goto fail;
+	}
+
+	free( buf );
+	
+	if( !( buf = malloc( mtd_info.erasesize ) ) ) 
+	{
+		//fprintf( stderr, "Error allocating image block\n");
+		goto fail;
+	}
+
+	memset( buf, 0, mtd_info.erasesize );
+
+	if ( read( mtd_fd, buf, mtd_info.erasesize ) != mtd_info.erasesize ) 
+	{
+		//fprintf( stderr, "Error reading last block from MTD device\n" );
+		goto fail;
+	}
+
+	if( lseek(mtd_fd, sector_start, SEEK_SET) <= 0)
+	{
+		//fprintf( stderr, "Error seeking the file descriptor\n" );
+		goto fail;
+	}
+
+	erase_info.start = sector_start;
+	erase_info.length = mtd_info.erasesize;
+	ioctl( mtd_fd, MEMUNLOCK, &erase_info );
+		
+	if ( ioctl( mtd_fd, MEMERASE, &erase_info ) != 0 ) 
+	{
+		//fprintf( stderr, "Error erasing MTD block\n" );
+		goto fail;
+	}
+	
+	char *tmp;	
+	tmp = buf + ( offset % mtd_info.erasesize );
+	memcpy( tmp, imageInfo, sizeof( imageInfo ) );	
+
+	if ( write( mtd_fd, buf, mtd_info.erasesize ) != mtd_info.erasesize ) 
+	{
+		//fprintf( stderr, "Error writing chksum to MTD device\n" );
+		goto fail;
+	}
+	
+	//fprintf( stderr, "TRX LEN = %x , CHECKSUM = %x\n", trx.len, cal_chksum );	
+	fprintf( stderr, "Write len/chksum @ 0x003AFFF8...done.\n" );
+		
+	} // end
+
 
     ret = 0;
 
@@ -424,6 +505,7 @@ int mtd_write( const char *path, const char *mtd )
 
     if( mtd_fd >= 0 )
 	close( mtd_fd );
+	
     if( fp )
 	fclose( fp );
 #ifdef HAVE_CA8
@@ -495,5 +577,40 @@ int mtd_unlock( const char *mtd )
     }
 
     close( mtd_fd );
+    return 0;
+}
+
+// Netgear image checksum
+static unsigned long calculate_checksum (int action, char *s, int size)
+{
+    static unsigned long c0, c1;
+    unsigned long checksum, b;
+    int i;
+
+    switch (action)
+    {
+        case 0:
+            c0 = c1 = 0;
+            break;
+
+        case 1:
+            for (i = 0; i < size; i++)
+            {
+                c0 += s[i] & 0xff;
+                c1 += c0;
+            }
+            break;
+
+        case 2:
+            b = (c0 & 65535) + ((c0 >> 16) & 65535);
+            c0 = ((b >> 16) + b) & 65535;
+
+            b = (c1 & 65535) + ((c1 >> 16) & 65535);
+            c1 = ((b >> 16) + b) & 65535;
+
+            checksum = ((c1 << 16) | c0);
+
+            return checksum;
+    }
     return 0;
 }
