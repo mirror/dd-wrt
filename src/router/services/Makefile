@@ -622,6 +622,9 @@ endif
 ifeq ($(CONFIG_WHRG300N),y)
   CFLAGS += -DHAVE_WHRG300N
 endif
+ifeq ($(CONFIG_NAS),y)
+  CFLAGS += -DHAVE_NAS
+endif
 
 vpath %.c sysinit sysinit/switchlib services tools networking $(TOP)/shared $(SRCBASE)/rts/src
 
