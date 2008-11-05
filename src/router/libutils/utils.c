@@ -2063,7 +2063,7 @@ char *getSTA(  )
 	    || nvram_nmatch( "apsta", "wl%d_mode", i ) )
 	{
 	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
-		return "ra0cli0";
+		return "apcli0";
 	}
 
     }
@@ -2081,7 +2081,7 @@ char *getWET(  )
 	    || nvram_nmatch( "apstawet", "wl%d_mode", i ) )
 	{
 	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
-		return "ra0cli0";
+		return "apcli0";
 
 	}
 
