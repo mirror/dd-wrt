@@ -1785,6 +1785,7 @@ wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Station";
 wl_basic.wdsap="WDS AP";
 wl_basic.mixed="Mixed";
+wl_basic.greenfield="Green Field";
 wl_basic.preamble="Short Preamble";
 wl_basic.b="B-Only";
 wl_basic.a="A-Only";
