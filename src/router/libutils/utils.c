@@ -2569,6 +2569,11 @@ int led_control( int type, int act )
 	    connected_gpio = 0x14;
 	    break;
 #endif
+	case ROUTER_BOARD_WHRG300N:
+	    diag_gpio = 0x17;
+	    connected_gpio = 0x19;
+	    ses_gpio =0x1e;
+	    break;
 	case ROUTER_BUFFALO_WBR54G:
 	    diag_gpio = 0x17;
 	    break;
