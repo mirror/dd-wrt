@@ -49,6 +49,149 @@ list[11]=12;
 list[12]=13;
 return 13;
 }
+
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <err.h>
+#include <linux/socket.h>
+#include <linux/if.h>
+
+#include "wireless.h"
+
+int getsocket( void )
+{
+    static int s = -1;
+
+    if( s < 0 )
+    {
+	s = socket( AF_INET, SOCK_DGRAM, 0 );
+	if( s < 0 )
+	    err( 1, "socket(SOCK_DGRAM)" );
+    }
+    return s;
+}
+
+
+u_int ieee80211_mhz2ieee( u_int freq )
+{
+    if( freq == 2484)
+	return 14;
+    if( freq < 2484)
+	return ( freq - ( 2407) ) / 5;
+    if( freq < 4990 && freq > 4940 )
+	return ( ( freq * 10 ) + ( ( ( freq % 5 ) == 2 ) ? 5 : 0 ) -
+		 49400 ) / 5;
+    if( freq < 5000 )
+	return 15 + ( ( freq - ( 2512) ) / 20 );
+
+    return ( freq - ( 5000 ) ) / 5;
+}
+
+
+unsigned int ieee80211_ieee2mhz(unsigned int chan)
+{
+		if (chan == 14)
+			return 2484;
+		if (chan < 14)
+			return ((2407) + chan * 5);
+		else {
+			if (chan > 236 && chan < 256) {
+				//recalculate offset
+				int newchan = chan - 256;
+				int newfreq = (2407) + (newchan * 5);
+				return newfreq;
+			} else
+				return ((2512) + ((chan - 15) * 20));
+		}
+}
+
+int wifi_getchannel( char *ifname )
+{
+    struct iwreq wrq;
+    float freq;
+    int channel;
+
+    strncpy( wrq.ifr_name, ifname, IFNAMSIZ );
+    ioctl( getsocket(  ), SIOCGIWFREQ, &wrq );
+
+    int i;
+
+    freq = ( float )wrq.u.freq.m;
+    if (freq<1000)
+	{
+	return (int)freq;
+	}
+    for( i = 0; i < wrq.u.freq.e; i++ )
+	freq *= 10;
+    freq /= 1000000;
+    cprintf( "wifi channel %f\n", freq );
+    channel = ieee80211_mhz2ieee( freq );
+
+    return channel;
+}
+
+int wifi_getfreq( char *ifname )
+{
+    struct iwreq wrq;
+    float freq;
+
+    strncpy( wrq.ifr_name, ifname, IFNAMSIZ );
+    ioctl( getsocket(  ), SIOCGIWFREQ, &wrq );
+
+    int i;
+
+    freq = ( float )wrq.u.freq.m;
+    if (freq<1000)
+	{
+	return ieee80211_ieee2mhz((unsigned int)freq);
+	}
+    for( i = 0; i < wrq.u.freq.e; i++ )
+	freq *= 10;
+    freq /= 1000000;
+    cprintf( "wifi channel %f\n", freq );
+    return freq;
+}
+
+float wifi_getrate( char *ifname )
+{
+    struct iwreq wrq;
+
+    strncpy( wrq.ifr_name, ifname, IFNAMSIZ );
+    ioctl( getsocket(  ), SIOCGIWRATE, &wrq );
+    return wrq.u.bitrate.value;
+}
+
+int get_radiostate( char *ifname )
+{
+    char mode[32];
+
+    sprintf( mode, "%s_net_mode", ifname );
+    if( nvram_match( mode, "disabled" ) )
+	return 0;
+    struct ifreq ifr;
+    int skfd = getsocket(  );
+
+    strncpy( ifr.ifr_name, "ra0", sizeof( ifr.ifr_name ) );
+    if( ioctl( skfd, SIOCGIFFLAGS, &ifr ) < 0 )
+    {
+	return -1;
+    }
+    if( ( ifr.ifr_flags & IFF_UP ) )
+    {
+	return 1;
+    }
+    return 0;
+}
+
+
 #else
 int getchannels( unsigned int *list, char *ifname )
 {
@@ -89,6 +232,7 @@ int wl_getbssid( char *wl, char *mac )
 
     wl_ioctl( wl, WLC_GET_BSSID, &ea, ETHER_ADDR_LEN );
     ether_etoa( &ea, mac );
+    return 0;
 }
 
 int getassoclist( char *name, unsigned char *list )
@@ -186,7 +330,6 @@ int getNoise( char *ifname, unsigned char *macname )
  * 
  * return &wstats; }
  */
-
 #else
 #include <sys/types.h>
 #include <sys/file.h>
@@ -541,59 +684,6 @@ int get_wifioffset( char *ifname )
 #else
 #define OFFSET 0
 #endif
-u_int ieee80211_mhz2ieee( u_int freq )
-{
-    if( freq == 2484 + OFFSET )
-	return 14;
-    if( freq < 2484 + OFFSET )
-	return ( freq - ( 2407 + OFFSET ) ) / 5;
-    if( freq < 4990 && freq > 4940 )
-	return ( ( freq * 10 ) + ( ( ( freq % 5 ) == 2 ) ? 5 : 0 ) -
-		 49400 ) / 5;
-    if( freq < 5000 )
-	return 15 + ( ( freq - ( 2512 + OFFSET ) ) / 20 );
-
-    return ( freq - ( 5000 + OFFSET ) ) / 5;
-}
-
-int wifi_getchannel( char *ifname )
-{
-    struct iwreq wrq;
-    float freq;
-    int channel;
-
-    strncpy( wrq.ifr_name, ifname, IFNAMSIZ );
-    ioctl( getsocket(  ), SIOCGIWFREQ, &wrq );
-
-    int i;
-
-    freq = ( float )wrq.u.freq.m;
-    for( i = 0; i < wrq.u.freq.e; i++ )
-	freq *= 10;
-    freq /= 1000000;
-    cprintf( "wifi channel %f\n", freq );
-    channel = ieee80211_mhz2ieee( freq );
-
-    return channel;
-}
-
-int wifi_getfreq( char *ifname )
-{
-    struct iwreq wrq;
-    float freq;
-
-    strncpy( wrq.ifr_name, ifname, IFNAMSIZ );
-    ioctl( getsocket(  ), SIOCGIWFREQ, &wrq );
-
-    int i;
-
-    freq = ( float )wrq.u.freq.m;
-    for( i = 0; i < wrq.u.freq.e; i++ )
-	freq *= 10;
-    freq /= 1000000;
-    cprintf( "wifi channel %f\n", freq );
-    return freq;
-}
 
 int get_radiostate( char *ifname )
 {
