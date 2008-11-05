@@ -968,8 +968,8 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     {
 	sysprintf( "ifconfig %s mtu 1500", "ra0" );
 	sysprintf( "ifconfig %s %s netmask %s down", "ra0",
-		   nvram_nget( "%s_ipaddr", dev ), nvram_nget( "%s_netmask",
-							       dev ) );
+		   nvram_nget( "%s_ipaddr", getRADev(dev) ), nvram_nget( "%s_netmask",
+							       getRADev(dev) ) );
     }
     char vathmac[32];
     sprintf( vathmac, "wl0_hwaddr");
@@ -999,11 +999,11 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 		char ip[32];
 		char mask[32];
 
-		sprintf( ip, "%s_ipaddr", var );
-		sprintf( mask, "%s_netmask", var );
+		sprintf( ip, "%s_ipaddr", getRADev(var) );
+		sprintf( mask, "%s_netmask", getRADev(var) );
 		sysprintf( "ifconfig ra%d mtu 1500", count );
 		sysprintf( "ifconfig ra%d %s netmask %s up", count,
-			   nvram_safe_get( ip ), nvram_safe_get( mask ) );
+			   nvram_safe_get( ip), nvram_safe_get(mask ) );
 	    }
 
 	    sprintf( vathmac, "%s_hwaddr", var );
