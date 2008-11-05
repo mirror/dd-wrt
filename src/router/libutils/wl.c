@@ -64,7 +64,12 @@ list[9]=10;
 list[10]=11;
 list[11]=12;
 list[12]=13;
+#ifdef BUFFALO_JP
+list[13]=14;
+return 14;
+#else
 return 13;
+#endif
 }
 
 #include <sys/types.h>
