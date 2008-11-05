@@ -3768,6 +3768,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 		       nvram_match( wl_mode,
 				    "ap" ) ? "selected=\\\"selected\\\"" :
 		       "" );
+#ifndef HAVE_RT2880
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
 		       nvram_match( wl_mode,
@@ -3783,17 +3784,20 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 		       nvram_match( wl_mode,
 				    "infra" ) ? "selected=\\\"selected\\\"" :
 		       "" );
+#endif
 #ifndef HAVE_MADWIFI
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n",
 		       nvram_match( wl_mode,
 				    "apsta" ) ? "selected=\\\"selected\\\"" :
 		       "" );
+#ifndef HAVE_RT2880
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n",
 		       nvram_match( wl_mode,
 				    "apstawet" ) ? "selected=\\\"selected\\\""
 		       : "" );
+#endif
 #else
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n",

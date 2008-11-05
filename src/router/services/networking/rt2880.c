@@ -248,9 +248,16 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "CountryRegion=1\n" );
     fprintf( fp, "CountryRegionABand=7\n" );
     fprintf( fp, "CountryCode=DE\n" );
+
+ int count = 2;
+// if( nvram_match( "wl0_mode", "apsta" )
+//    {
+//     int count--;
+//    }
+
     fprintf( fp, "SSID1=%s\n", nvram_safe_get( "wl0_ssid" ) );
     char *vifs = nvram_nget( "wl0_vifs" );
-    int count = 2;
+
 
     if( vifs != NULL )
 	foreach( var, vifs, next )
@@ -258,10 +265,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	fprintf( fp, "SSID%d=%s\n", count, nvram_nget( "%s_ssid", var ) );
 	count++;
     }
-//    if( nvram_match( "wl0_mode", "sta" ) || nvram_match( "wl0_mode", "wet" ) )
-//	fprintf( fp, "BssidNum=0\n" );
-//    else
-	fprintf( fp, "BssidNum=%d\n", count - 1 );
+    fprintf( fp, "BssidNum=%d\n", count - 1 );
     if( nvram_match( "wl0_net_mode", "bg-mixed" ) )
 	fprintf( fp, "WirelessMode=0\n" );
     if( nvram_match( "wl0_net_mode", "b-only" ) )
@@ -679,8 +683,9 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     {
     if( getSTA(  ) || getWET(  ) )
 	{
-	sysprintf( "ifconfig ra0 up");
+	sysprintf( "ifconfig ra0 0.0.0.0 up");
 	sysprintf( "ifconfig %s 0.0.0.0 up", "apcli0" );	
+	br_add_interface( getBridge( "ra0" ), "ra0" );
 	}else{
 	sysprintf( "ifconfig %s 0.0.0.0 up", "ra0" );
 	br_add_interface( getBridge( "ra0" ), "ra0" );
@@ -690,9 +695,9 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     {
     if( getSTA(  ) || getWET(  ) )
 	{
-	sysprintf( "ifconfig ra0 up");
+	sysprintf( "ifconfig ra0 0.0.0.0 up");
 	sysprintf( "ifconfig %s mtu 1500", "apcli0" );
-	sysprintf( "ifconfig %s %s netmask %s up", "apcli0",
+	sysprintf( "ifconfig %s %s netmask %s up", "ra0",
 		   nvram_nget( "%s_ipaddr", getRADev( dev ) ),
 		   nvram_nget( "%s_netmask", getRADev( dev ) ) );	
 	}else
