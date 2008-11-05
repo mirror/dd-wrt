@@ -2050,6 +2050,46 @@ char *getWET( void )
     }
     return NULL;
 }
+#elif HAVE_RT2880
+
+char *getSTA(  )
+{
+    int c = get_wl_instances(  );
+    int i;
+
+    for( i = 0; i < c; i++ )
+    {
+	if( nvram_nmatch( "sta", "wl%d_mode", i )
+	    || nvram_nmatch( "apsta", "wl%d_mode", i ) )
+	{
+	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
+		return "ra0cli0";
+	}
+
+    }
+    return NULL;
+}
+
+char *getWET(  )
+{
+    int c = get_wl_instances(  );
+    int i;
+
+    for( i = 0; i < c; i++ )
+    {
+	if( nvram_nmatch( "wet", "wl%d_mode", i )
+	    || nvram_nmatch( "apstawet", "wl%d_mode", i ) )
+	{
+	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
+		return "ra0cli0";
+
+	}
+
+    }
+    return NULL;
+}
+
+
 #else
 char *getSTA(  )
 {
