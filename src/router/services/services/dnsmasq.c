@@ -80,6 +80,28 @@ char *getmdhcp( int count, int index )
     return "";
 }
 
+int landhcp( void )
+{
+    if( !nvram_match( "wl0_mode", "wet" )
+	&& !nvram_match( "wl0_mode", "apstawet" ) )
+	if( nvram_match( "dhcp_dnsmasq", "1" )
+	    && nvram_match( "lan_proto", "dhcp" )
+	    && nvram_match( "dhcpfwd_enable", "0" ) )
+	    return 1;
+    return 0;
+}
+
+int hasdhcp( void )
+{
+    int count = 0;
+    int ret = landhcp(  );
+
+    if( nvram_get( "mdhcpd_count" ) != NULL )
+	count = atoi( nvram_safe_get( "mdhcpd_count" ) );
+    ret |= count;
+    return ret > 0 ? 1 : 0;
+}
+
 void start_dnsmasq( void )
 {
     FILE *fp;
@@ -145,17 +167,24 @@ void start_dnsmasq( void )
 
     if( nvram_get( "mdhcpd_count" ) != NULL )
     {
-	if( nvram_match( "dhcp_dnsmasq", "1" )
-	    && nvram_match( "lan_proto", "dhcp" )
-	    && nvram_match( "dhcpfwd_enable", "0" ) )
+	mdhcpcount = atoi( nvram_safe_get( "mdhcpd_count" ) );
+	for( i = 0; i < mdhcpcount; i++ )
 	{
-	    mdhcpcount = atoi( nvram_safe_get( "mdhcpd_count" ) );
-	    for( i = 0; i < mdhcpcount; i++ )
+	    if( strlen( nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) ) == 0
+		|| strlen( nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) )
+		== 0 )
+		continue;
+	    if( landhcp(  ) == 0 && i == 0 )
 	    {
-		if( strlen( nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) ) == 0
-		    || strlen( nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) )
-		    == 0 )
-		    continue;
+		if( nvram_match( "pptpd_enable", "1" ) )
+		    fprintf( fp, "%s",
+			     nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) );
+		else
+		    fprintf( fp, "%s", getmdhcp( 0, i ) );
+
+	    }
+	    else
+	    {
 		if( nvram_match( "pptpd_enable", "1" ) )
 		    fprintf( fp, ",%s",
 			     nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) );
@@ -187,87 +216,91 @@ void start_dnsmasq( void )
     /*
      * DD-WRT use dnsmasq as DHCP replacement 
      */
-    if( !nvram_match( "wl0_mode", "wet" )
-	&& !nvram_match( "wl0_mode", "apstawet" ) )
-	if( nvram_match( "dhcp_dnsmasq", "1" )
-	    && nvram_match( "lan_proto", "dhcp" )
-	    && nvram_match( "dhcpfwd_enable", "0" ) )
-	{
-	    /*
-	     * DHCP leasefile 
-	     */
-	    if( nvram_match( "dhcpd_usenvram", "1" ) )
-	    {
-		fprintf( fp, "leasefile-ro\n" );
-		fprintf( fp, "dhcp-script=%s\n", "/etc/lease_update.sh" );
-	    }
-	    else
-	    {
-		if( usejffs )
-		    fprintf( fp, "dhcp-leasefile=/jffs/dnsmasq.leases\n" );
-		else
-		    fprintf( fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n" );
-	    }
 
-	    int dhcp_max =
+    //bs mod
+    if( hasdhcp(  ) )
+    {
+	/*
+	 * DHCP leasefile 
+	 */
+	if( nvram_match( "dhcpd_usenvram", "1" ) )
+	{
+	    fprintf( fp, "leasefile-ro\n" );
+	    fprintf( fp, "dhcp-script=%s\n", "/etc/lease_update.sh" );
+	}
+	else
+	{
+	    if( usejffs )
+		fprintf( fp, "dhcp-leasefile=/jffs/dnsmasq.leases\n" );
+	    else
+		fprintf( fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n" );
+	}
+
+	int dhcp_max = 0;
+
+	if( landhcp(  ) )
+	    dhcp_max +=
 		atoi( nvram_safe_get( "dhcp_num" ) ) +
 		atoi( nvram_safe_get( "static_leasenum" ) );
-	    for( i = 0; i < mdhcpcount; i++ )
-	    {
-		if( strlen( nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) ) == 0
-		    || strlen( nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) )
-		    == 0 )
-		    continue;
-		dhcp_max += atoi( getmdhcp( 3, i ) );
-	    }
-	    fprintf( fp, "dhcp-lease-max=%d\n", dhcp_max );
+	for( i = 0; i < mdhcpcount; i++ )
+	{
+	    if( strlen( nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) ) == 0
+		|| strlen( nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) )
+		== 0 )
+		continue;
+	    dhcp_max += atoi( getmdhcp( 3, i ) );
+	}
+	fprintf( fp, "dhcp-lease-max=%d\n", dhcp_max );
+	if( landhcp(  ) )
 	    fprintf( fp, "dhcp-option=lan,3,%s\n",
 		     nvram_safe_get( "lan_ipaddr" ) );
-	    for( i = 0; i < mdhcpcount; i++ )
+	for( i = 0; i < mdhcpcount; i++ )
+	{
+	    if( strlen( nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) ) == 0
+		|| strlen( nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) )
+		== 0 )
+		continue;
+	    fprintf( fp, "dhcp-option=%s,3,", getmdhcp( 0, i ) );
+	    fprintf( fp, "%s\n",
+		     nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) );
+	}
+	if( nvram_invmatch( "wan_wins", "" )
+	    && nvram_invmatch( "wan_wins", "0.0.0.0" ) )
+	    fprintf( fp, "dhcp-option=44,%s\n",
+		     nvram_safe_get( "wan_wins" ) );
+
+	if( nvram_match( "dns_dnsmasq", "0" ) )
+	{
+	    dns_list = get_dns_list(  );
+
+	    if( dns_list
+		&& ( strlen( dns_list->dns_server[0] ) > 0
+		     || strlen( dns_list->dns_server[1] ) > 0
+		     || strlen( dns_list->dns_server[2] ) > 0 ) )
 	    {
-		if( strlen( nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) ) == 0
-		    || strlen( nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) )
-		    == 0 )
-		    continue;
-		fprintf( fp, "dhcp-option=%s,3,", getmdhcp( 0, i ) );
-		fprintf( fp, "%s\n",
-			 nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) );
-	    }
-	    if( nvram_invmatch( "wan_wins", "" )
-		&& nvram_invmatch( "wan_wins", "0.0.0.0" ) )
-		fprintf( fp, "dhcp-option=44,%s\n",
-			 nvram_safe_get( "wan_wins" ) );
 
-	    if( nvram_match( "dns_dnsmasq", "0" ) )
-	    {
-		dns_list = get_dns_list(  );
+		fprintf( fp, "dhcp-option=6" );
 
-		if( dns_list
-		    && ( strlen( dns_list->dns_server[0] ) > 0
-			 || strlen( dns_list->dns_server[1] ) > 0
-			 || strlen( dns_list->dns_server[2] ) > 0 ) )
-		{
+		if( strlen( dns_list->dns_server[0] ) > 0 )
+		    fprintf( fp, ",%s", dns_list->dns_server[0] );
 
-		    fprintf( fp, "dhcp-option=6" );
+		if( strlen( dns_list->dns_server[1] ) > 0 )
+		    fprintf( fp, ",%s", dns_list->dns_server[1] );
 
-		    if( strlen( dns_list->dns_server[0] ) > 0 )
-			fprintf( fp, ",%s", dns_list->dns_server[0] );
+		if( strlen( dns_list->dns_server[2] ) > 0 )
+		    fprintf( fp, ",%s", dns_list->dns_server[2] );
 
-		    if( strlen( dns_list->dns_server[1] ) > 0 )
-			fprintf( fp, ",%s", dns_list->dns_server[1] );
-
-		    if( strlen( dns_list->dns_server[2] ) > 0 )
-			fprintf( fp, ",%s", dns_list->dns_server[2] );
-
-		    fprintf( fp, "\n" );
-		}
-
-		if( dns_list )
-		    free( dns_list );
+		fprintf( fp, "\n" );
 	    }
 
-	    if( nvram_match( "auth_dnsmasq", "1" ) )
-		fprintf( fp, "dhcp-authoritative\n" );
+	    if( dns_list )
+		free( dns_list );
+	}
+
+	if( nvram_match( "auth_dnsmasq", "1" ) )
+	    fprintf( fp, "dhcp-authoritative\n" );
+	if( landhcp(  ) )
+	{
 	    fprintf( fp, "dhcp-range=lan," );
 	    fprintf( fp, "%d.%d.%d.%s,",
 		     get_single_ip( nvram_safe_get( "lan_ipaddr" ), 0 ),
@@ -289,71 +322,69 @@ void start_dnsmasq( void )
 	    }
 	    fprintf( fp, "%s,", nvram_safe_get( "lan_netmask" ) );
 	    fprintf( fp, "%sm\n", nvram_safe_get( "dhcp_lease" ) );
-
-	    for( i = 0; i < mdhcpcount; i++ )
-	    {
-		if( strcmp( getmdhcp( 1, i ), "On" ) )
-		    continue;
-		if( strlen( nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) ) == 0
-		    || strlen( nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) )
-		    == 0 )
-		    continue;
-		fprintf( fp, "dhcp-range=%s,", getmdhcp( 0, i ) );
-		fprintf( fp, "%d.%d.%d.",
-			 get_single_ip( nvram_nget
-					( "%s_ipaddr", getmdhcp( 0, i ) ),
-					0 ),
-			 get_single_ip( nvram_nget
-					( "%s_ipaddr", getmdhcp( 0, i ) ),
-					1 ),
-			 get_single_ip( nvram_nget
-					( "%s_ipaddr", getmdhcp( 0, i ) ),
-					2 ) );
-		fprintf( fp, "%s,", getmdhcp( 2, i ) );
-		fprintf( fp, "%d.%d.%d.",
-			 get_single_ip( nvram_nget
-					( "%s_ipaddr", getmdhcp( 0, i ) ),
-					0 ),
-			 get_single_ip( nvram_nget
-					( "%s_ipaddr", getmdhcp( 0, i ) ),
-					1 ),
-			 get_single_ip( nvram_nget
-					( "%s_ipaddr", getmdhcp( 0, i ) ),
-					2 ) );
-		int end = atoi( getmdhcp( 2, i ) );
-
-		end += atoi( getmdhcp( 3, i ) );
-		fprintf( fp, "%d,", end );
-		fprintf( fp, "%s,",
-			 nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) );
-		fprintf( fp, "%sm\n", getmdhcp( 4, i ) );
-	    }
-
-	    int leasenum = atoi( nvram_safe_get( "static_leasenum" ) );
-
-	    if( leasenum > 0 )
-	    {
-		char *lease = nvram_safe_get( "static_leases" );
-		char *leasebuf = ( char * )malloc( strlen( lease ) + 1 );
-		char *cp = leasebuf;
-
-		strcpy( leasebuf, lease );
-		for( i = 0; i < leasenum; i++ )
-		{
-		    char *mac = strsep( &leasebuf, "=" );
-		    char *host = strsep( &leasebuf, "=" );
-		    char *ip = strsep( &leasebuf, " " );
-
-		    if( mac == NULL || host == NULL || ip == NULL )
-			continue;
-
-		    fprintf( fp, "dhcp-host=%s,%s,%s,infinite\n", mac, host,
-			     ip );
-		    addHost( host, ip );
-		}
-		free( cp );
-	    }
 	}
+
+	for( i = 0; i < mdhcpcount; i++ )
+	{
+	    if( strcmp( getmdhcp( 1, i ), "On" ) )
+		continue;
+	    if( strlen( nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) ) == 0
+		|| strlen( nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) )
+		== 0 )
+		continue;
+	    fprintf( fp, "dhcp-range=%s,", getmdhcp( 0, i ) );
+	    fprintf( fp, "%d.%d.%d.",
+		     get_single_ip( nvram_nget
+				    ( "%s_ipaddr", getmdhcp( 0, i ) ),
+				    0 ),
+		     get_single_ip( nvram_nget
+				    ( "%s_ipaddr", getmdhcp( 0, i ) ),
+				    1 ),
+		     get_single_ip( nvram_nget
+				    ( "%s_ipaddr", getmdhcp( 0, i ) ), 2 ) );
+	    fprintf( fp, "%s,", getmdhcp( 2, i ) );
+	    fprintf( fp, "%d.%d.%d.",
+		     get_single_ip( nvram_nget
+				    ( "%s_ipaddr", getmdhcp( 0, i ) ),
+				    0 ),
+		     get_single_ip( nvram_nget
+				    ( "%s_ipaddr", getmdhcp( 0, i ) ),
+				    1 ),
+		     get_single_ip( nvram_nget
+				    ( "%s_ipaddr", getmdhcp( 0, i ) ), 2 ) );
+	    int end = atoi( getmdhcp( 2, i ) );
+
+	    end += atoi( getmdhcp( 3, i ) );
+	    fprintf( fp, "%d,", end );
+	    fprintf( fp, "%s,",
+		     nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) );
+	    fprintf( fp, "%sm\n", getmdhcp( 4, i ) );
+	}
+
+	int leasenum = atoi( nvram_safe_get( "static_leasenum" ) );
+
+	if( leasenum > 0 )
+	{
+	    char *lease = nvram_safe_get( "static_leases" );
+	    char *leasebuf = ( char * )malloc( strlen( lease ) + 1 );
+	    char *cp = leasebuf;
+
+	    strcpy( leasebuf, lease );
+	    for( i = 0; i < leasenum; i++ )
+	    {
+		char *mac = strsep( &leasebuf, "=" );
+		char *host = strsep( &leasebuf, "=" );
+		char *ip = strsep( &leasebuf, " " );
+
+		if( mac == NULL || host == NULL || ip == NULL )
+		    continue;
+
+		fprintf( fp, "dhcp-host=%s,%s,%s,infinite\n", mac, host, ip );
+		addHost( host, ip );
+	    }
+	    free( cp );
+	}
+    }
 
     /*
      * Additional options 
