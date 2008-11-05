@@ -521,6 +521,22 @@ void stop_vifs( void )
 }
 extern void adjust_regulatory( int count );
 
+char *getWDSDev(char *wdsdev)
+{
+char *newdev="";
+	    if (!strcmp(wdsdev,"wds0.1"))newdev="wds0";
+	    if (!strcmp(wdsdev,"wds0.2"))newdev="wds1";
+	    if (!strcmp(wdsdev,"wds0.3"))newdev="wds2";
+	    if (!strcmp(wdsdev,"wds0.4"))newdev="wds3";
+	    if (!strcmp(wdsdev,"wds0.5"))newdev="wds4";
+	    if (!strcmp(wdsdev,"wds0.6"))newdev="wds5";
+	    if (!strcmp(wdsdev,"wds0.7"))newdev="wds6";
+	    if (!strcmp(wdsdev,"wds0.8"))newdev="wds7";
+	    if (!strcmp(wdsdev,"wds0.9"))newdev="wds8";
+	    if (!strcmp(wdsdev,"wds0.10"))newdev="wds9";
+return newdev;
+}
+
 void deconfigure_wifi( void )
 {
 
@@ -783,9 +799,61 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 
 	count++;
     }
+
     fprintf( fp, "DefaultKeyID=%s\n", keyidstr );
     fprintf( fp, "EncrypType=%s\n", encryptype );
     fprintf( fp, "AuthMode=%s\n", authmode );
+
+
+//wds entries
+    char wdsentries[128] = { 0 };
+    int wdscount = 0;
+    int s;
+
+    for( s = 1; s <= 10; s++ )
+    {
+	char wdsvarname[32] = { 0 };
+	char wdsdevname[32] = { 0 };
+	char wdsmacname[32] = { 0 };
+	char *wdsdev;
+	char *hwaddr;
+	char *dev = "wl0";
+
+	sprintf( wdsvarname, "%s_wds%d_enable", dev, s );
+	sprintf( wdsdevname, "%s_wds%d_if", dev, s );
+	sprintf( wdsmacname, "%s_wds%d_hwaddr", dev, s );
+	wdsdev = nvram_safe_get( wdsdevname );
+	if( strlen( wdsdev ) == 0 )
+	    continue;
+	if( nvram_match( wdsvarname, "0" ) )
+	    continue;
+	hwaddr = nvram_get( wdsmacname );
+	if( hwaddr != NULL )
+	{
+	    sprintf( wdsentries, "%s;%s", wdsentries, hwaddr );
+	    wdscount++;
+	}
+    }
+
+    if( wdscount )
+    {
+	if( nvram_match( "wl0_lazy_wds", "1" ) )
+	    fprintf( fp, "WdsEnable=4\n" );	// 2 is exclusive
+	else
+	    fprintf( fp, "WdsEnable=3\n" );	// 2 is exclusive
+	fprintf( fp, "WdsEncrypType=NONE\n" );	//for now we do not support encryption
+	fprintf( fp, "WdsList=%s\n", wdsentries );
+	fprintf( fp, "WdsKey=\n" );
+    }
+    else
+    {
+	fprintf( fp, "WdsEnable=0\n" );
+	fprintf( fp, "WdsEncrypType=NONE\n" );
+	fprintf( fp, "WdsList=\n" );
+	fprintf( fp, "WdsKey=\n" );
+
+    }
+
 
     fprintf( fp, "CSPeriod=10\n" );
     fprintf( fp, "WirelessEvent=0\n" );
@@ -802,10 +870,6 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "AccessControlList2=\n" );
     fprintf( fp, "AccessPolicy3=0\n" );
     fprintf( fp, "AccessControlList3=\n" );
-    fprintf( fp, "WdsEnable=0\n" );
-    fprintf( fp, "WdsEncrypType=NONE\n" );
-    fprintf( fp, "WdsList=\n" );
-    fprintf( fp, "WdsKey=\n" );
     fprintf( fp, "RADIUS_Server=192.168.2.3\n" );
     fprintf( fp, "RADIUS_Port=1812\n" );
     fprintf( fp, "RADIUS_Key=ralink\n" );
@@ -876,7 +940,34 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    count++;
 	}
     }
+    
+    for( s = 1; s <= 10; s++ )
+    {
+	char wdsvarname[32] = { 0 };
+	char wdsdevname[32] = { 0 };
+	char wdsmacname[32] = { 0 };
+	char *wdsdev;
+	char *dev = "wl0";
+	char *hwaddr;
+
+	sprintf( wdsvarname, "%s_wds%d_enable", dev, ( 11 - s ) );
+	sprintf( wdsdevname, "%s_wds%d_if", dev, ( 11 - s ) );
+	sprintf( wdsmacname, "%s_wds%d_hwaddr", dev, ( 11 - s ) );
+	wdsdev = nvram_safe_get( wdsdevname );
+	if( strlen( wdsdev ) == 0 )
+	    continue;
+	if( nvram_match( wdsvarname, "0" ) )
+	    continue;
+	hwaddr = nvram_get( wdsmacname );
+	if( hwaddr != NULL )
+	{
+	    char *newdev = getWDSDev(wdsdev);
+	    sysprintf("ifconfig %s 0.0.0.0 up",newdev);
+	}
+    }
+
 }
+
 void start_configurewifi( void )
 {
     configure_wifi(  );
