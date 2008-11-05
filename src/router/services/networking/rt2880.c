@@ -602,6 +602,12 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     eval( "ifconfig", "wds1", "down" );
     eval( "ifconfig", "wds2", "down" );
     eval( "ifconfig", "wds3", "down" );
+    eval( "ifconfig", "wds4", "down" );
+    eval( "ifconfig", "wds5", "down" );
+    eval( "ifconfig", "wds6", "down" );
+    eval( "ifconfig", "wds7", "down" );
+    eval( "ifconfig", "wds8", "down" );
+    eval( "ifconfig", "wds9", "down" );
     eval( "ifconfig", "apcli0", "down" );
 
     rmmod( "rt2860v2_ap" );
@@ -894,8 +900,27 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	fprintf( fp, "WdsKey=\n" );
 
     }
+//channel width
+    if (nvram_match("wl0_nbw","20"))
+	fprintf( fp, "HT_BW=0\n" );
+    else
+	fprintf( fp, "HT_BW=1\n" );
+    
+    int channel = atoi(nvram_safe_get("wl0_channel"));
+    if (channel<=4)
+        fprintf( fp, "HT_EXTCHA=1\n" );
+    else if (channel >=8 )    
+        fprintf( fp, "HT_EXTCHA=0\n" );
+    else
+        fprintf( fp, "HT_EXTCHA=0\n" );
+    
+    if (nvram_default_match("wl0_greenfield","1","0"))
+	fprintf( fp, "HT_OpMode=1\n" ); // green field mode
+    else
+	fprintf( fp, "HT_OpMode=0\n" );
+	
 
-
+    
     fprintf( fp, "CSPeriod=10\n" );
     fprintf( fp, "WirelessEvent=0\n" );
     fprintf( fp, "PreAuth=0\n" );
@@ -919,11 +944,8 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "PreAuthifname=br0\n" );
     fprintf( fp, "HT_HTC=0\n" );
     fprintf( fp, "HT_RDG=1\n" );
-    fprintf( fp, "HT_EXTCHA=0\n" );
     fprintf( fp, "HT_LinkAdapt=0\n" );
-    fprintf( fp, "HT_OpMode=0\n" );
     fprintf( fp, "HT_MpduDensity=5\n" );
-    fprintf( fp, "HT_BW=1\n" );
     fprintf( fp, "HT_AutoBA=1\n" );
     fprintf( fp, "HT_AMSDU=0\n" );
     fprintf( fp, "HT_BAWinSize=64\n" );
