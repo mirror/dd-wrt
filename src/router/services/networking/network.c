@@ -699,11 +699,11 @@ static void do_portsetup( char *lan, char *ifname )
     sprintf( var, "%s_bridged", IFMAP(ifname) );
     if( nvram_default_match( var, "1", "1" ) )
     {
-	br_add_interface( getBridge( IFMAP(ifname) ), ifname );
+	br_add_interface( getBridge( IFMAP(ifname) ), IFMAP(ifname) );
     }
     else
     {
-	ifconfig( ifname, IFUP, nvram_nget( "%s_ipaddr", ifname ),
+	ifconfig( ifname, IFUP, nvram_nget( "%s_ipaddr", IFMAP(ifname) ),
 		  nvram_nget( "%s_netmask", ifname ) );
     }
 
