@@ -962,7 +962,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     if( nvram_default_match( bridged, "1", "1" ) )
     {
 	sysprintf( "ifconfig %s 0.0.0.0 up", "ra0" );
-	br_add_interface( getBridge( dev ), "ra0" );
+	br_add_interface( getBridge( "ra0" ), "ra0" );
     }
     else
     {
@@ -987,7 +987,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 
 		sprintf( ra, "ra%d", count );
 		sysprintf( "ifconfig ra%d 0.0.0.0 up", count );
-		br_add_interface( getBridge( var ), ra );
+		br_add_interface( getBridge( getRADev(var) ), ra );
 	    }
 	    else
 	    {
