@@ -687,6 +687,9 @@ void rmmod( char *module );
 int do80211priv( const char *ifname, int op, void *data, size_t len );
 int getsocket( void );
 
+#ifdef HAVE_RT2880
+char *getRADev(char *prefix);
+#endif
 
 #ifndef HAVE_SYSLOG
 #define dd_syslog(a, args...) do { } while(0);
