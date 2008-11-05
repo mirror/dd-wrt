@@ -542,6 +542,47 @@ void deconfigure_wifi( void )
 
 }
 
+
+void start_radius(void)
+{
+    char psk[64];
+
+    // wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
+    char ifname[32];
+
+    char *prefix="wl0";
+    strcpy( ifname, "ra0");
+
+    if( nvram_nmatch( "1", "%s_radauth", prefix )
+	&& nvram_nmatch( "ap", "%s_mode", prefix ) )
+    {
+	char *server = nvram_nget( "%s_radius_ipaddr", prefix );
+	char *port = nvram_nget( "%s_radius_port", prefix );
+	char *share = nvram_nget( "%s_radius_key", prefix );
+	char type[32];
+
+	sprintf( type, "%s_radmactype", prefix );
+	char *pragma = "";
+
+	if( nvram_default_match( type, "0", "0" ) )
+	    pragma = "-n1 ";
+	if( nvram_match( type, "1" ) )
+	    pragma = "-n2 ";
+	if( nvram_match( type, "2" ) )
+	    pragma = "-n3 ";
+	if( nvram_match( type, "3" ) )
+	    pragma = "";
+	sleep( 1 );		// some delay is usefull
+	sysprintf( "wrt-radauth %s %s %s %s %s %s %s %s &", pragma, ifname,
+		   server, port, share, nvram_nget( "%s_radius_override",
+						    prefix ),
+		   nvram_nget( "%s_radmacpassword", prefix ),
+		   nvram_nget( "%s_max_unauth_users", prefix ) );
+    }
+
+}
+
+
 void configure_wifi( void )	// madwifi implementation for atheros based
 				// cards
 {
@@ -965,7 +1006,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    sysprintf("ifconfig %s 0.0.0.0 up",newdev);
 	}
     }
-
+    start_radius();
 }
 
 void start_configurewifi( void )
