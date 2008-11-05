@@ -3554,7 +3554,11 @@ static int show_virtualssid( webs_t wp, char *prefix )
 	sprintf( ssid, "%s_ap_isolate", var );
 	showRadio( wp, "wl_adv.label11", ssid );
 	sprintf( wl_mode, "%s_mode", var );
+#ifdef HAVE_RT2880
+	showbridgesettings( wp, getRADev(var), 1 );
+#else
 	showbridgesettings( wp, var, 1 );
+#endif
 	websWrite( wp, "</fieldset><br />\n" );
 	count++;
     }
@@ -4176,7 +4180,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 #ifdef HAVE_MADWIFI
     showbridgesettings( wp, prefix, 1 );
 #elif HAVE_RT2880
-    showbridgesettings( wp, "wl0", 1 );
+    showbridgesettings( wp, "ra0", 1 );
 #else
     if( !strcmp( prefix, "wl0" ) )
 	showbridgesettings( wp, get_wl_instance_name( 0 ), 1 );
