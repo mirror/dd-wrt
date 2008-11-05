@@ -2592,6 +2592,8 @@ static void save_prefix( webs_t wp, char *prefix )
 	ifname = get_wl_instance_name( 1 );
     else
 	ifname = prefix;
+#else
+    ifname = getRADev(prefix);
 #endif
     copytonv( wp, "%s_multicast", ifname );
     copytonv( wp, "%s_bridged", ifname );
