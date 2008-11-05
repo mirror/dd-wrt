@@ -245,10 +245,15 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     FILE *fp = fopen( "/tmp/RT2860.dat", "wb" );	// config file for driver (don't ask me, its really the worst config thing i have seen)
 
     fprintf( fp, "Default\n" );
+#ifdef BUFFALO_JP
+    fprintf( fp, "CountryRegion=5\n" );
+    fprintf( fp, "CountryRegionABand=7\n" );
+    fprintf( fp, "CountryCode=JP\n" );
+#else
     fprintf( fp, "CountryRegion=1\n" );
     fprintf( fp, "CountryRegionABand=7\n" );
     fprintf( fp, "CountryCode=DE\n" );
-
+#endif
  int count = 2;
 // if( nvram_match( "wl0_mode", "apsta" )
 //    {
