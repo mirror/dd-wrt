@@ -5635,7 +5635,7 @@ for (i = 0; i < table.Num; i++) {
 	{
 	    websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac,
 		       ifname, table.Entry[i].AvgRssi0, -95,
-		        -95 - table.Entry[i].AvgRssi0 );
+		        (table.Entry[i].AvgRssi0 - (-95)) );
 	}
     }
     close( s );
