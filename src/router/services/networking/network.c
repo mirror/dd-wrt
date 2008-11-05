@@ -2167,6 +2167,9 @@ void start_lan( void )
 	    dev = nvram_safe_get( wdsdevname );
 	    if( strlen( dev ) == 0 )
 		continue;
+#ifdef HAVE_RT2880
+	    dev = getWDSDev(dev);
+#endif
 	    ifconfig( dev, 0, 0, 0 );
 
 	    // eval ("ifconfig", dev, "down");
