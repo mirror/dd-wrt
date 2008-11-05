@@ -311,7 +311,7 @@ main (int argc, char **argv)
       if (maxun != NULL && strlen (maxun) > 0)
 	maxunauthenticated_users = atoi (maxun);	//read nvram variable
     }
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
   if (wl_probe (iface))
     {
       printf ("Interface %s is not broadcom wireless!\n", iface);
