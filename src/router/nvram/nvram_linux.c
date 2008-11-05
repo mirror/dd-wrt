@@ -56,7 +56,6 @@ nvram_init (void *unused)
   return 0;
 
 err:
-  perror (PATH_DEV_NVRAM);
   return errno;
 }
 

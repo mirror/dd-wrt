@@ -522,10 +522,15 @@ int main( int argc, char **argv )
 
     set_ip_forward( '1' );
     system( "/etc/preinit" );	// sets default values for ip_conntrack
-    system( "/bin/echo 0 > /proc/sys/net/ipv4/tcp_westwood" );
-    system( "/bin/echo 1 > /proc/sys/net/ipv4/tcp_vegas_cong_avoid" );
-    system( "/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_alpha" );
-    system( "/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_beta" );
+    FILE *check = fopen("/proc/sys/net/ipv4/tcp_westwood","rb");
+    if (check)
+	{
+	fclose(check);
+	system( "/bin/echo 0 > /proc/sys/net/ipv4/tcp_westwood" );
+	system( "/bin/echo 1 > /proc/sys/net/ipv4/tcp_vegas_cong_avoid" );
+	system( "/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_alpha" );
+	system( "/bin/echo 3 > /proc/sys/net/ipv4/tcp_vegas_beta" );
+	}
     system( "/bin/echo vegas > /proc/sys/net/ipv4/tcp_congestion_control" );
 
 #ifdef HAVE_JFFS2
