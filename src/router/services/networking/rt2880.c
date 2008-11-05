@@ -958,7 +958,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     char *dev = "wl0";
     char bridged[32];
 
-    sprintf( bridged, "%s_bridged", dev );
+    sprintf( bridged, "%s_bridged", getRADev(dev) );
     if( nvram_default_match( bridged, "1", "1" ) )
     {
 	sysprintf( "ifconfig %s 0.0.0.0 up", "ra0" );
@@ -985,7 +985,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	foreach( var, vifs, next )
 	{
 
-	    sprintf( bridged, "%s_bridged", var );
+	    sprintf( bridged, "%s_bridged", getRADev(var) );
 	    if( nvram_default_match( bridged, "1", "1" ) )
 	    {
 		char ra[32];

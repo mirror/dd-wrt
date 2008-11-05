@@ -696,7 +696,7 @@ static void do_portsetup( char *lan, char *ifname )
     char var[64];
     char var2[64];
 
-    sprintf( var, "%s_bridged", ifname );
+    sprintf( var, "%s_bridged", IFMAP(ifname) );
     if( nvram_default_match( var, "1", "1" ) )
     {
 	br_add_interface( getBridge( IFMAP(ifname) ), ifname );
