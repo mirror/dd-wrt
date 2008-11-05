@@ -3225,6 +3225,30 @@ static void show_netmode( webs_t wp, char *prefix )
     websWrite( wp, "//]]>\n</script>\n" );
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );
+
+#ifdef HAVE_RT2880
+if (nvram_nmatch("n-only","%s_net_mode",prefix))
+   {
+    char wl_greenfield[32];
+    sprintf(wl_greenfield,"%s_greenfield",prefix);
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label2)</script></div><select name=\"%s\" >\n",
+	       wl_greenfield );
+    websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"0\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
+	       nvram_default_match( wl_greenfield,
+			    "0" ) ? "selected=\\\"selected\\\"" : "","0" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"1\\\" %s>\" + wl_basic.greenfield + \"</option>\");\n",
+	       nvram_default_match( wl_greenfield,
+			    "1" ) ? "selected=\\\"selected\\\"" : "","0" );
+    websWrite( wp, "//]]>\n</script>\n" );
+    websWrite( wp, "</select>\n" );
+    websWrite( wp, "</div>\n" );
+    }
+#endif
 }
 
 #ifdef HAVE_MADWIFI
@@ -4053,6 +4077,17 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	    websWrite( wp,
 		       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div>\n" );
 	    websWrite( wp, "<select name=\"%s_nbw\">\n", prefix );
+#ifdef HAVE_RT2880
+	    websWrite( wp,
+		       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >20 Mhz</option>\");\n//]]>\n</script>\n",
+		       nvram_nmatch( "20", "%s_nbw",
+				     prefix ) ? "selected=\\\"selected\\\"" :
+		       "" );
+	    websWrite( wp, "<option value=\"40\" %s>40 MHz</option>",
+		       nvram_nmatch( "40", "%s_nbw",
+				     prefix ) ? "selected=\\\"selected\\\"" :
+		       "" );
+#else
 	    websWrite( wp,
 		       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
 		       nvram_nmatch( "0", "%s_nbw",
@@ -4070,6 +4105,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 		       nvram_nmatch( "40", "%s_nbw",
 				     prefix ) ? "selected=\\\"selected\\\"" :
 		       "" );
+#endif
 	    websWrite( wp, "</select>\n" );
 	    websWrite( wp, "</div>\n" );
 
