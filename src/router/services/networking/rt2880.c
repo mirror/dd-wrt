@@ -974,7 +974,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     char vathmac[32];
     sprintf( vathmac, "wl0_hwaddr");
     char vmacaddr[32];
-    getMacAddr( var, vmacaddr );
+    getMacAddr( "ra0", vmacaddr );
     nvram_set( vathmac, vmacaddr );
 
     vifs = nvram_safe_get( "wl0_vifs" );
@@ -1007,9 +1007,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    }
 
 	    sprintf( vathmac, "%s_hwaddr", var );
-	    char vmacaddr[32];
-
-	    getMacAddr( var, vmacaddr );
+	    getMacAddr( getRADev(var), vmacaddr );
 	    nvram_set( vathmac, vmacaddr );
 
 
