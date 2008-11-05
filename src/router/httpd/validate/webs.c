@@ -2649,6 +2649,9 @@ static void save_prefix( webs_t wp, char *prefix )
 #endif
     }
     int chanchanged = 0;
+#ifdef HAVE_RT2880
+    copytonv( wp, "%s_greenfield", prefix );
+#endif
 
 #ifndef HAVE_MADWIFI
     if( !strcmp( prefix, "wl0" ) || !strcmp( prefix, "wl1" ) )
