@@ -967,7 +967,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     else
     {
 	sysprintf( "ifconfig %s mtu 1500", "ra0" );
-	sysprintf( "ifconfig %s %s netmask %s down", "ra0",
+	sysprintf( "ifconfig %s %s netmask %s up", "ra0",
 		   nvram_nget( "%s_ipaddr", getRADev(dev) ), nvram_nget( "%s_netmask",
 							       getRADev(dev) ) );
     }
