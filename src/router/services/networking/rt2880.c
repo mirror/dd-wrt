@@ -971,6 +971,11 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 		   nvram_nget( "%s_ipaddr", dev ), nvram_nget( "%s_netmask",
 							       dev ) );
     }
+    char vathmac[32];
+    sprintf( vathmac, "wl0_hwaddr");
+    char vmacaddr[32];
+    getMacAddr( var, vmacaddr );
+    nvram_set( vathmac, vmacaddr );
 
     vifs = nvram_safe_get( "wl0_vifs" );
     if( vifs != NULL && strlen( vifs ) > 0 )
@@ -1000,6 +1005,14 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 		sysprintf( "ifconfig ra%d %s netmask %s up", count,
 			   nvram_safe_get( ip ), nvram_safe_get( mask ) );
 	    }
+
+	    sprintf( vathmac, "%s_hwaddr", var );
+	    char vmacaddr[32];
+
+	    getMacAddr( var, vmacaddr );
+	    nvram_set( vathmac, vmacaddr );
+
+
 	    count++;
 	}
     }
