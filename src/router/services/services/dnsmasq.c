@@ -174,23 +174,11 @@ void start_dnsmasq( void )
 		|| strlen( nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) )
 		== 0 )
 		continue;
-	    if( landhcp(  ) == 0 && i == 0 )
-	    {
-		if( nvram_match( "pptpd_enable", "1" ) )
-		    fprintf( fp, "%s",
-			     nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) );
-		else
-		    fprintf( fp, "%s", getmdhcp( 0, i ) );
-
-	    }
-	    else
-	    {
 		if( nvram_match( "pptpd_enable", "1" ) )
 		    fprintf( fp, ",%s",
 			     nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) );
 		else
 		    fprintf( fp, ",%s", getmdhcp( 0, i ) );
-	    }
 	}
     }
     fprintf( fp, "\n" );
