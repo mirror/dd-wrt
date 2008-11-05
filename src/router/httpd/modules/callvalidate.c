@@ -296,7 +296,8 @@ void *start_validator_nofree( char *name, void *handle, webs_t wp,
 
 void *call_ej( char *name, void *handle, webs_t wp, int argc, char_t ** argv )
 {
-    // fprintf (stderr,"call_ej %s\n", name);
+    if (nvram_match("console_debug","1"))
+	fprintf (stderr,"call_ej %s\n", name);
     char service[64];
     int nohandle = 0;
 
