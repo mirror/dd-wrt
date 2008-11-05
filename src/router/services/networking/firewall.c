@@ -685,6 +685,7 @@ static void nat_prerouting( void )
 
 }
 
+
 static void nat_postrouting( void )
 {
     if( ( nvram_match( "chilli_enable", "1" ) )
