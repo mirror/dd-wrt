@@ -191,6 +191,114 @@ int get_radiostate( char *ifname )
     return 0;
 }
 
+static const char *ieee80211_ntoa( const uint8_t mac[6] )
+{
+    static char a[18];
+    int i;
+
+    i = snprintf( a, sizeof( a ), "%02x:%02x:%02x:%02x:%02x:%02x",
+		  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
+    return ( i < 17 ? NULL : a );
+}
+typedef union _MACHTTRANSMIT_SETTING {
+	struct  {
+		unsigned short  MCS:7;  // MCS
+		unsigned short  BW:1;   //channel bandwidth 20MHz or 40 MHz
+		unsigned short  ShortGI:1;
+		unsigned short  STBC:2; //SPACE
+		unsigned short  rsv:3;
+		unsigned short  MODE:2; // Use definition MODE_xxx.
+	} field;
+	unsigned short      word;
+} MACHTTRANSMIT_SETTING;
+
+typedef struct _RT_802_11_MAC_ENTRY {
+	unsigned char            Addr[6];
+	unsigned char            Aid;
+	unsigned char            Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
+	unsigned char            MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
+	char                     AvgRssi0;
+	char                     AvgRssi1;
+	char                     AvgRssi2;
+	unsigned int             ConnectedTime;
+	MACHTTRANSMIT_SETTING    TxRate;
+} RT_802_11_MAC_ENTRY;
+
+typedef struct _RT_802_11_MAC_TABLE {
+	unsigned long            Num;
+	RT_802_11_MAC_ENTRY      Entry[32]; //MAX_LEN_OF_MAC_TABLE = 32
+} RT_802_11_MAC_TABLE;
+
+#define RTPRIV_IOCTL_GET_MAC_TABLE		(SIOCIWFIRSTPRIV + 0x0F)
+
+int getassoclist( char *ifname, unsigned char *list )
+{
+    struct iwreq iwr;
+    char type[32];
+    char netmode[32];
+    unsigned int *count = ( unsigned int * )list;
+
+    RT_802_11_MAC_TABLE table = {0};
+    int s, i;
+
+    sprintf( type, "%s_mode", ifname );
+    sprintf( netmode, "%s_net_mode", ifname );
+    if( nvram_match( netmode, "disabled" ) )
+    {
+	return 0;
+    }
+
+    if( !ifexists( ifname ) )
+    {
+	printf( "IOCTL_STA_INFO ifresolv %s failed!\n", ifname );
+	return 0;
+    }
+    int state = get_radiostate( ifname );
+
+    if( state == 0 || state == -1 )
+    {
+	printf( "IOCTL_STA_INFO radio %s not enabled!\n", ifname );
+	return 0;
+    }
+    s = socket( AF_INET, SOCK_DGRAM, 0 );
+    if( s < 0 )
+    {
+	fprintf( stderr, "socket(SOCK_DRAGM)\n" );
+	return 0;
+    }
+    ( void )memset( &iwr, 0, sizeof( struct iwreq ) );
+    ( void )strncpy( iwr.ifr_name, ifname, sizeof( iwr.ifr_name ) );
+
+    iwr.u.data.pointer = (caddr_t) &table;
+    if( ioctl( s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr ) < 0 )
+    {
+	fprintf( stderr, "IOCTL_STA_INFO for %s failed!\n", ifname );
+	close( s );
+	return 0;
+    }
+
+
+    unsigned char *l = ( unsigned char * )list;
+
+    count[0] = 0;
+    l += 4;
+    for (i=0;i<table.Num;i++)
+    {
+	memcpy( l, &table.Entry[i].Addr, 6 );
+	if( l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0 && l[4] == 0
+	    && l[5] == 0 )
+	    break;
+	l += 6;
+	count[0]++;
+    }
+    close( s );
+
+    return count[0];
+}
+
+
+
+
 
 #else
 int getchannels( unsigned int *list, char *ifname )
@@ -224,7 +332,6 @@ int getchannels( unsigned int *list, char *ifname )
     return count;
 #endif
 }
-#endif
 int wl_getbssid( char *wl, char *mac )
 {
     int ret;
@@ -271,6 +378,7 @@ int getassoclist( char *name, unsigned char *list )
 	return -1;
     return count[0];
 }
+#endif
 
 int getwdslist( char *name, unsigned char *list )
 {
