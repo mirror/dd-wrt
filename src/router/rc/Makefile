@@ -531,7 +531,7 @@ ifeq ($(CONFIG_ADM5120),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
-	cd $(INSTALLDIR)/sbin && ln -sf rc switch
+#	cd $(INSTALLDIR)/sbin && ln -sf rc switch
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservices
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_single_service

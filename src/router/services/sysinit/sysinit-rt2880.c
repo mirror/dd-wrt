@@ -142,6 +142,46 @@ void start_sysinit( void )
     eval( "vconfig", "add", "eth2", "2" ); //WAN
 
     insmod("rt2860v2_ap");
+    
+    /* switch config */
+    sysprintf("switch reg w 14 405555");
+    sysprintf("switch reg w 50 2001");
+    sysprintf("switch reg w 98 7f3f");
+    sysprintf("switch reg w e4 3f");
+    sysprintf("switch reg w 40 1001");
+    sysprintf("switch reg w 44 1001");
+    sysprintf("switch reg w 48 1002");
+    sysprintf("switch reg w 70 ffff506f");
+
+    
+
+/*
+
+	switch reg w 14 405555
+	switch reg w 50 2001
+	switch reg w 98 7f3f
+	if [ "$CONFIG_ESW_DOUBLE_VLAN_TAG" == "y" ]; then
+		switch reg w e4 3f
+	fi
+	if [ "$1" = "LLLLW" ]; then
+		switch reg w 40 1001
+		switch reg w 44 1001
+		switch reg w 48 1002
+		switch reg w 70 ffff506f
+	elif [ "$1" = "WLLLL" ]; then
+		switch reg w 40 1002
+		switch reg w 44 1001
+		switch reg w 48 1001
+		switch reg w 70 ffff417e
+	elif [ "$1" = "GW" ]; then
+		switch reg w 40 1001
+		switch reg w 44 1001
+		switch reg w 48 2001
+		switch reg w 70 ffff605f
+	fi
+
+
+*/
     return;
 }
 
@@ -159,7 +199,32 @@ int check_pmon_nv( void )
 void start_overclocking( void )
 {
 }
-void enable_dtag_vlan( int enable )
+char *enable_dtag_vlan( int enable )
 {
-
+/*
+if (enable)
+    {
+    sysprintf("switch reg w 14 405555");
+    sysprintf("switch reg w 50 2001");
+    sysprintf("switch reg w 98 7f4f");
+    sysprintf("switch reg w e4 3f");
+    sysprintf("switch reg w 40 1001");
+    sysprintf("switch reg w 44 1001");
+    sysprintf("switch reg w 48 1007");
+    sysprintf("switch reg w 70 ffff7f6f");
+    // now we got vlan7, how do we trunk now. lets find out
+    return "eth2";
+    }else
+    {
+    sysprintf("switch reg w 14 405555");
+    sysprintf("switch reg w 50 2001");
+    sysprintf("switch reg w 98 7f3f");
+    sysprintf("switch reg w e4 3f");
+    sysprintf("switch reg w 40 1001");
+    sysprintf("switch reg w 44 1001");
+    sysprintf("switch reg w 48 1002");
+    sysprintf("switch reg w 70 ffff506f");
+    return "eth2";
+    }
+    */
 }
