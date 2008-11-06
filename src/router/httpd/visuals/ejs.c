@@ -704,7 +704,7 @@ void ej_ifndef( webs_t wp, int argc, char_t ** argv )
     // HAVE_AFTERBURNER
     if( !strcmp( name, "AFTERBURNER" ) )
     {
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 	return;
 #else
 	int afterburner = 0;
