@@ -469,7 +469,7 @@ void Radius_msg_make_authenticator(struct radius_msg *msg, u8 *data, size_t len)
  * payload if a vendor attribute with ms_type is found, otherwise returns NULL.
  * The returned payload is allocated with malloc() and caller must free it.
  */
-static u8 *Radius_msg_get_ms_attr(struct radius_msg *msg, u8 ms_type, size_t *alen)
+u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor, u8 ms_type, size_t *alen)
 {
 	u8 *data, *pos;
 	int i;
@@ -498,7 +498,7 @@ static u8 *Radius_msg_get_ms_attr(struct radius_msg *msg, u8 ms_type, size_t *al
 		pos += 4;
 		left -= 4;
 
-		if (ntohl(vendor_id) != RADIUS_VENDOR_ID_MICROSOFT)
+		if (ntohl(vendor_id) != vendor)
 			continue;
 
 		while (left >= sizeof(*ms))
@@ -616,14 +616,14 @@ Radius_msg_get_ms_keys(struct radius_msg *msg, struct radius_msg *sent_msg,
 
 	memset(keys, 0, sizeof(*keys));
 
-	key = Radius_msg_get_ms_attr(msg, RADIUS_VENDOR_ATTR_MS_MPPE_SEND_KEY, &keylen);
+	key = radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_MICROSOFT, RADIUS_VENDOR_ATTR_MS_MPPE_SEND_KEY, &keylen);
 	if (key)
 	{
 		keys->send = decrypt_ms_key(key, keylen, sent_msg, secret, secret_len, &keys->send_len);
 		free(key);
 	}
     DBGPRINT(RT_DEBUG_INFO," secret_len = %d, secret= %s\n",secret_len,secret);
-	key = Radius_msg_get_ms_attr(msg, RADIUS_VENDOR_ATTR_MS_MPPE_RECV_KEY, &keylen);
+	key = radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_MICROSOFT, RADIUS_VENDOR_ATTR_MS_MPPE_RECV_KEY, &keylen);
 	if (key)
 	{
 		keys->recv = decrypt_ms_key(key, keylen, sent_msg, secret, secret_len, &keys->recv_len);

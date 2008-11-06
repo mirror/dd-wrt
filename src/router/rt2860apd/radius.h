@@ -69,9 +69,9 @@ enum { RADIUS_ATTR_USER_NAME = 1,
 /* NAS-Port-Type */
 #define RADIUS_NAS_PORT_TYPE_IEEE_802_11 19
 
+#define RADIUS_VENDOR_ID_MICROSOFT 311
 
 /* RFC 2548 - Microsoft Vendor-specific RADIUS Attributes */
-#define RADIUS_VENDOR_ID_MICROSOFT 311
 
 struct radius_attr_vendor_microsoft {
 	u8 vendor_type;
@@ -80,6 +80,15 @@ struct radius_attr_vendor_microsoft {
 
 enum { RADIUS_VENDOR_ATTR_MS_MPPE_SEND_KEY = 16,
        RADIUS_VENDOR_ATTR_MS_MPPE_RECV_KEY = 17
+};
+
+#define RADIUS_VENDOR_ID_WISPR 14122
+
+enum {
+       RADIUS_ATTR_WISPR_BANDWIDTH_MIN_UP = 5,     
+       RADIUS_ATTR_WISPR_BANDWIDTH_MIN_DOWN = 6,
+       RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP = 7,     
+       RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN = 8,
 };
 
 struct radius_ms_mppe_keys {
@@ -140,6 +149,8 @@ struct radius_attr_hdr *
 Radius_msg_add_attr_user_password(struct radius_msg *msg,
 				  u8 *data, size_t data_len, u8 *secret, size_t secret_len);
 int Radius_msg_get_attr(struct radius_msg *msg, u8 type, u8 *buf, size_t len);
+
+u8 *radius_msg_get_vendor_attr(struct radius_msg *msg, u32 vendor, u8 ms_type, size_t *alen);
 
 static inline int Radius_msg_add_attr_int32(struct radius_msg *msg, u8 type, u32 value)
 {
