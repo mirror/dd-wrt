@@ -2760,7 +2760,7 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 
 	sprintf( wl_wchannel, "%s_wchannel", prefix );
 	char wl_nbw[16];
-
+	nvram_default_get(wl_wchannel,"0");
 	sprintf( wl_nbw, "%s_nbw", prefix );
 
 	websWrite( wp, "<div class=\"setting\">\n" );
@@ -4116,12 +4116,9 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	    websWrite( wp, "</div>\n" );
 
 	    websWrite( wp, "<div class=\"setting\">\n" );
-	    websWrite( wp,
-		       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n" );
-	    websWrite( wp, "<select name=\"%s_wchannel\" ></select>\n",
-		       prefix );
+	    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n" );
+	    websWrite( wp, "<select name=\"%s_wchannel\" ></select>\n",prefix );
 	    websWrite( wp, "</div>\n" );
-
 	    show_channel( wp, prefix, prefix, 1 );
 	}
 	else
