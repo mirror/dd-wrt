@@ -3382,22 +3382,22 @@ static void showbridgesettings( webs_t wp, char *var, int mcast , int dual)
 if (dual)
 {
     char dl[32];
-    sprintf(dl,"%s_duallink",prefix);
+    sprintf(dl,"%s_duallink",var);
     websWrite( wp,
 	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.duallink)</script></div>\n" );
     websWrite( wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idduallink', true);\" name=\"%s_duallink\" %s><script type=\"text/javascript\">Capture(shared.enable)</script></input>&nbsp;\n",
-	       prefix, prefix, nvram_default_match( dl, "1",
+	       var, var, nvram_default_match( dl, "1",
 					       "0" ) ? "checked=\"checked\"" :
 	       "" );
     websWrite( wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idduallink', false);\" name=\"%s_duallink\" %s><script type=\"text/javascript\">Capture(shared.disable)</script></input>\n",
-	       prefix, prefix, nvram_default_match( dl, "0",
+	       var, var, nvram_default_match( dl, "0",
 					       "0" ) ? "checked=\"checked\"" :
 	       "" );
     websWrite( wp, "</div>\n" );
 
-    websWrite( wp, "<div id=\"%s_iddualink\">\n", prefix );
+    websWrite( wp, "<div id=\"%s_iddualink\">\n", var );
 
     sprintf( ip, "%s_duallink_parent", var );
     websWrite( wp, "<div class=\"setting\">\n" );
