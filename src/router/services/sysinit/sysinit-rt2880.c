@@ -201,17 +201,17 @@ void start_overclocking( void )
 }
 char *enable_dtag_vlan( int enable )
 {
-/*
+
 if (enable)
     {
     sysprintf("switch reg w 14 405555");
-    sysprintf("switch reg w 50 2001");
-    sysprintf("switch reg w 98 7f4f");
+    sysprintf("switch reg w 50 7001");
+    sysprintf("switch reg w 98 7f3f");
     sysprintf("switch reg w e4 3f");
     sysprintf("switch reg w 40 1001");
     sysprintf("switch reg w 44 1001");
     sysprintf("switch reg w 48 1007");
-    sysprintf("switch reg w 70 ffff7f6f");
+    sysprintf("switch reg w 70 ffff506f");
     // now we got vlan7, how do we trunk now. lets find out
     return "eth2";
     }else
@@ -224,7 +224,8 @@ if (enable)
     sysprintf("switch reg w 44 1001");
     sysprintf("switch reg w 48 1002");
     sysprintf("switch reg w 70 ffff506f");
+    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
+    eval( "vconfig", "add", "eth2", "2" ); //WAN
     return "eth2";
     }
-    */
 }

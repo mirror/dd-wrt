@@ -25,16 +25,16 @@ function create_wchannel_auto(F)
 
 }
 
-function create_wchannel(F)
+function create_wchannel(num,F)
 {
 	var max_channel = '14';
 	var wch;
 
 	if(wl_nctrlsb == "lower") {
-		wch = parseInt(wl_channel)+2;
+		wch = parseInt(F.wl0_channel)+2;
 	}
 	else {
-		wch = parseInt(wl_channel)-2;
+		wch = parseInt(F.wl0_channel)-2;
 	}
 
 	F.wl0_wchannel.length = parseInt(max_channel)-4;
