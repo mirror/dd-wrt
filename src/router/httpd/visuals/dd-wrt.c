@@ -55,6 +55,13 @@ static unsigned int type7_clocks[10] =
     { 183, 187, 198, 200, 216, 225, 233, 237, 250, 0 };
 #endif
 
+
+#ifdef HAVE_RT2880
+#define IFMAP(a) getRADev(a)
+#else
+#define IFMAP(a) (a)
+#endif
+
 void show_ipnetmask( webs_t wp, char *var )
 {
     websWrite( wp, "<div class=\"setting\">\n" );
@@ -1522,7 +1529,7 @@ ej_show_security_single( webs_t wp, int argc, char_t ** argv, char *prefix )
     // cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
     websWrite( wp,
 	       "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
-	       prefix );
+	       IFMAP(prefix) );
     tf_webWriteESCNV( wp, ssid );	// fix for broken html page if ssid
     // contains html tag
     websWrite( wp, "] HWAddr [%s]</legend>\n", nvram_safe_get( mac ) );
@@ -1535,7 +1542,7 @@ ej_show_security_single( webs_t wp, int argc, char_t ** argv, char *prefix )
 	// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
 	websWrite( wp,
 		   "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
-		   var );
+		   IFMAP(var) );
 	tf_webWriteESCNV( wp, ssid );	// fix for broken html page if ssid
 	// contains html tag
 	websWrite( wp, "]</legend>\n" );
@@ -3487,7 +3494,7 @@ static int show_virtualssid( webs_t wp, char *prefix )
 	sprintf( ssid, "%s_ssid", var );
 	websWrite( wp,
 		   "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
-		   var );
+		   IFMAP(var) );
 	tf_webWriteESCNV( wp, ssid );	// fix for broken html page if ssid
 	// contains html tag
 	websWrite( wp, "]</legend>\n" );
@@ -3665,16 +3672,8 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s</h2>\n",
 	       prefix );
     websWrite( wp, "<fieldset>\n" );
-    websWrite( wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [", prefix ), tf_webWriteESCNV( wp, wl_ssid );	// fix 
-    // for 
-    // broken 
-    // html 
-    // page 
-    // if 
-    // ssid 
-    // contains 
-    // html 
-    // tag
+    websWrite( wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [", IFMAP(prefix) );
+    tf_webWriteESCNV( wp, wl_ssid );	// fix 
     websWrite( wp, "] HWAddr [%s]</legend>\n", nvram_safe_get( wl_macaddr ) );
     char power[16];
 
