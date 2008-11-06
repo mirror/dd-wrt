@@ -88,44 +88,40 @@ void start_hostapdwan( void )
 
 }
 
-void setMacFilter( char *iface )
+void setMacFilter(char *iface)
 {
     char *next;
     char var[32];
-
-    sysprintf( "ifconfig %s down", iface );
-    sysprintf( "iwpriv %s maccmd 3", iface );
-
     char nvvar[32];
+    sysprintf("iwpriv %s set ACLClearAll=1",getRADev(iface));
+    sysprintf("iwpriv %s set AccessPolicy=0",getRADev(iface));
 
-    sprintf( nvvar, "%s_macmode", iface );
+    sprintf( nvvar, "%s_macmode",iface);
     if( nvram_match( nvvar, "deny" ) )
     {
-	sysprintf( "iwpriv %s maccmd 2", iface );
-	sysprintf( "ifconfig %s up", iface );
+	sysprintf("iwpriv %s set AccessPolicy=2",getRADev(iface));
 	char nvlist[32];
 
-	sprintf( nvlist, "%s_maclist", iface );
+	sprintf( nvlist, "%s_maclist",iface);
 
 	foreach( var, nvram_safe_get( nvlist ), next )
 	{
-	    sysprintf( "iwpriv %s addmac %s", iface, var );
+	    sysprintf("iwpriv %s set ACLAddEntry=%s",getRADev(iface),var);
 	}
     }
     if( nvram_match( nvvar, "allow" ) )
     {
-	sysprintf( "iwpriv %s maccmd 1", iface );
-	sysprintf( "ifconfig %s up", iface );
-
+	sysprintf("iwpriv %s set AccessPolicy=1",getRADev(iface));
+	
 	char nvlist[32];
-
-	sprintf( nvlist, "%s_maclist", iface );
+	sprintf( nvlist, "%s_maclist",iface);
 
 	foreach( var, nvram_safe_get( nvlist ), next )
 	{
-	    sysprintf( "iwpriv %s addmac %s", iface, var );
+	    sysprintf("iwpriv %s set ACLAddEntry=%s",getRADev(iface),var);
 	}
     }
+
 
 }
 
@@ -213,6 +209,7 @@ void start_radius( void )
     }
 
 }
+
 
 void configure_wifi( void )	// madwifi implementation for atheros based
 				// cards
@@ -783,6 +780,24 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    sysprintf( "ifconfig %s 0.0.0.0 up", newdev );
 	}
     }
+    /*
+    
+    set macfilter
+    */
+    
+    setMacFilter("wl0");
+    vifs = nvram_safe_get( "wl0_vifs" );
+    if( vifs != NULL && strlen( vifs ) > 0 )
+    {
+	foreach( var, vifs, next )
+	{
+	    setMacFilter(var);
+	}
+
+    }
+
+
+
     start_radius(  );
 }
 
