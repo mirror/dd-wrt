@@ -1648,6 +1648,7 @@ wl_basic.label3="WLAN-Netzwerk-Name (SSID)";
 wl_basic.label4="WLAN-Kanal";
 wl_basic.label5="WLAN-SSID-Broadcast";
 wl_basic.label6="Empfindlichkeitsbereich (ACK Timing)";
+wl_basic.parent="Partner IP";
 wl_basic.ap="AP";
 wl_basic.client="Client";
 wl_basic.clientBridge="Client-Bridge";
