@@ -2621,6 +2621,11 @@ static void save_prefix( webs_t wp, char *prefix )
     if( get_merge_ipaddr( wp, n, addr ) )
 	nvram_set( n, addr );
 
+    copytonv( wp, "%s_duallink", prefix );
+    sprintf( n, "%s_duallink_parent", prefix );
+    if( get_merge_ipaddr( wp, n, addr ) )
+	nvram_set( n, addr );
+
 #endif
 
     copytonv( wp, "%s_ap_isolate", prefix );
