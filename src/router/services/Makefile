@@ -629,7 +629,10 @@ endif
 vpath %.c sysinit sysinit/switchlib services tools networking $(TOP)/shared $(SRCBASE)/rts/src
 
 all: services.so services.a
-
+ifeq ($(CONFIG_RT2880),y)
+	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c
+endif
+    
 clean:
 	rm -f *.o *.a *.so
 	rm -f *.c~ services/*.c~ networking/*.c~ tools/*.c~ sysinit/*.c~
@@ -638,6 +641,10 @@ clean:
 install: all
 	install -d $(INSTALLDIR)/services/usr/lib	
 	install services.so $(INSTALLDIR)/services/usr/lib
+ifeq ($(CONFIG_RT2880),y)
+	install -d $(INSTALLDIR)/services/sbin	
+	install switch $(INSTALLDIR)/services/sbin
+endif
 
 services.so: $(OBJS)
 #	$(AR) arc -o $@.a $^
