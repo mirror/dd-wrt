@@ -63,16 +63,127 @@ char *getiflist( void )
 
 static int need_commit = 0;
 
-/*
- * MADWIFI Encryption Setup 
- */
-void setupSupplicant( char *prefix, char *ssidoverride )
+void setupSupplicant( char *prefix )
 {
+    char akm[16];
+
+    sprintf( akm, "%s_akm", prefix );
+    char wmode[16];
+
+    sprintf( wmode, "%s_mode", prefix );
+    if( nvram_match( akm, "8021X" ) )
+    {
+	char fstr[32];
+	char psk[64];
+	char ath[64];
+
+	sprintf( fstr, "/tmp/%s_wpa_supplicant.conf", prefix );
+	FILE *fp = fopen( fstr, "wb" );
+
+	fprintf( fp, "ap_scan=1\n" );
+	fprintf( fp, "fast_reauth=1\n" );
+	fprintf( fp, "eapol_version=2\n" );
+	fprintf( fp, "network={\n" );
+	sprintf( psk, "%s_ssid", prefix );
+	fprintf( fp, "\tssid=\"%s\"\n", nvram_safe_get( psk ) );
+	fprintf( fp, "\tscan_ssid=1\n" );
+	if( nvram_prefix_match( "8021xtype", prefix, "tls" ) )
+	{
+	    fprintf( fp, "\tkey_mgmt=IEEE8021X\n" );
+	    fprintf( fp, "\teap=TLS\n" );
+	    fprintf( fp, "\tidentity=\"%s\"\n",
+		     nvram_prefix_get( "tls8021xuser", prefix ) );
+	    sprintf( psk, "/tmp/%s", prefix );
+	    mkdir( psk );
+	    sprintf( psk, "/tmp/%s/ca.pem", prefix );
+	    sprintf( ath, "%s_tls8021xca", prefix );
+	    write_nvram( psk, ath );
+	    sprintf( psk, "/tmp/%s/user.pem", prefix );
+	    sprintf( ath, "%s_tls8021xpem", prefix );
+	    write_nvram( psk, ath );
+
+	    sprintf( psk, "/tmp/%s/user.prv", prefix );
+	    sprintf( ath, "%s_tls8021xprv", prefix );
+	    write_nvram( psk, ath );
+	    fprintf( fp, "\tca_cert=/tmp/%s/ca.pem\n", prefix );
+	    fprintf( fp, "\tclient_cert=/tmp/%s/user.pem\n", prefix );
+	    fprintf( fp, "\tprivate_key=/tmp/%s/user.prv\n", prefix );
+	    fprintf( fp, "\tprivate_key_passwd=\"%s\"\n",
+		     nvram_prefix_get( "tls8021xpasswd", prefix ) );
+	    fprintf( fp, "\teapol_flags=3\n" );
+	}
+	if( nvram_prefix_match( "8021xtype", prefix, "peap" ) )
+	{
+	    fprintf( fp, "\tkey_mgmt=WPA-EAP\n" );
+	    fprintf( fp, "\teap=PEAP\n" );
+	    fprintf( fp, "\tpairwise=CCMP TKIP\n" );
+	    fprintf( fp, "\tgroup=CCMP TKIP\n" );
+	    fprintf( fp, "\tphase1=\"peapver=0\"\n" );
+	    fprintf( fp, "\tidentity=\"%s\"\n",
+		     nvram_prefix_get( "peap8021xuser", prefix ) );
+	    fprintf( fp, "\tpassword=\"%s\"\n",
+		     nvram_prefix_get( "peap8021xpasswd", prefix ) );
+	    sprintf( psk, "/tmp/%s", prefix );
+	    mkdir( psk );
+	    sprintf( psk, "/tmp/%s/ca.pem", prefix );
+	    sprintf( ath, "%s_peap8021xca", prefix );
+	    write_nvram( psk, ath );
+	    fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
+	}
+	if( nvram_prefix_match( "8021xtype", prefix, "ttls" ) )
+	{
+	    fprintf( fp, "\tkey_mgmt=WPA-EAP\n" );
+	    fprintf( fp, "\teap=TTLS PEAP\n" );
+	    fprintf( fp, "\tpairwise=CCMP TKIP\n" );
+	    fprintf( fp, "\tgroup=CCMP TKIP\n" );
+	    fprintf( fp, "\tidentity=\"%s\"\n",
+		     nvram_prefix_get( "ttls8021xuser", prefix ) );
+	    fprintf( fp, "\tpassword=\"%s\"\n",
+		     nvram_prefix_get( "ttls8021xpasswd", prefix ) );
+	    if( strlen( nvram_nget( "%s_ttls8021xca", prefix ) ) > 0 )
+	    {
+		sprintf( psk, "/tmp/%s", prefix );
+		mkdir( psk );
+		sprintf( psk, "/tmp/%s/ca.pem", prefix );
+		sprintf( ath, "%s_ttls8021xca", prefix );
+		write_nvram( psk, ath );
+		fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
+	    }
+	}
+	if( nvram_prefix_match( "8021xtype", prefix, "leap" ) )
+	{
+	    fprintf( fp, "\tkey_mgmt=WPA-EAP\n" );
+	    fprintf( fp, "\teap=LEAP\n" );
+	    fprintf( fp, "\tauth_alg=LEAP\n" );
+	    fprintf( fp, "\tproto=WPA RSN\n" );
+	    fprintf( fp, "\tpairwise=CCMP TKIP\n" );
+	    fprintf( fp, "\tgroup=CCMP TKIP\n" );
+	    fprintf( fp, "\tidentity=\"%s\"\n",
+		     nvram_prefix_get( "leap8021xuser", prefix ) );
+	    fprintf( fp, "\tpassword=\"%s\"\n",
+		     nvram_prefix_get( "leap8021xpasswd", prefix ) );
+	}
+	fprintf( fp, "}\n" );
+	fclose( fp );
+	sprintf( psk, "-i%s", getRADev( prefix ) );
+
+	char bvar[32];
+
+	sprintf( bvar, "%s_bridged", prefix );
+	if( nvram_match( bvar, "1" )
+	    && ( nvram_match( wmode, "wdssta" )
+		 || nvram_match( wmode, "wet" ) ) )
+	    eval( "wpa_supplicant", "-b", nvram_safe_get( "lan_ifname" ),
+		  "-B", "-Dralink", psk, "-c", fstr );
+	else
+	    eval( "wpa_supplicant", "-B", "-Dralink", psk, "-c", fstr );
+    }
 
 }
+
 void supplicant_main( int argc, char *argv[] )
 {
-    setupSupplicant( argv[1], argv[2] );
+    setupSupplicant( argv[1]);
 }
 
 void setupHostAP( char *prefix, int iswan )
@@ -204,7 +315,14 @@ void start_radius( void )
     }
 
 }
+static int isSTA(  )
+{
 
+    if( nvram_match( "wl0_mode", "sta" ) || nvram_match( "wl0_mode", "wet" )
+	|| nvram_match( "wl0_mode", "infra" ) )
+	return 1;
+    return 0;
+}
 void configure_wifi( void )	// madwifi implementation for atheros based
 				// cards
 {
@@ -234,6 +352,8 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     eval( "ifconfig", "apcli0", "down" );
 
     rmmod( "rt2860v2_ap" );
+    rmmod( "rt2860v2_sta " );
+
     FILE *fp = fopen( "/tmp/RT2860.dat", "wb" );	// config file for driver (don't ask me, its really the worst config thing i have seen)
 
     fprintf( fp, "Default\n" );
@@ -253,16 +373,32 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 //     int count--;
 //    }
 
-    fprintf( fp, "SSID1=%s\n", nvram_safe_get( "wl0_ssid" ) );
-    char *vifs = nvram_nget( "wl0_vifs" );
+    char *vifs;
 
-    if( vifs != NULL )
-	foreach( var, vifs, next )
+    if( isSTA(  ) )
     {
-	fprintf( fp, "SSID%d=%s\n", count, nvram_nget( "%s_ssid", var ) );
-	count++;
+	fprintf( fp, "SSID=%s\n", nvram_safe_get( "wl0_ssid" ) );
+	fprintf( fp, "BssidNum=1\n" );
+	if( nvram_match( "wl0_mode", "sta" )
+	    || nvram_match( "wl0_mode", "wet" ) )
+	    fprintf( fp, "NetworkType=Infra\n" );
+	if( nvram_match( "wl0_mode", "infra" ) )
+	    fprintf( fp, "NetworkType=Adhoc\n" );
+	nvram_set( "wl0_vifs", "" );
     }
-    fprintf( fp, "BssidNum=%d\n", count - 1 );
+    else
+    {
+	fprintf( fp, "SSID1=%s\n", nvram_safe_get( "wl0_ssid" ) );
+	vifs = nvram_nget( "wl0_vifs" );
+
+	if( vifs != NULL )
+	    foreach( var, vifs, next )
+	{
+	    fprintf( fp, "SSID%d=%s\n", count, nvram_nget( "%s_ssid", var ) );
+	    count++;
+	}
+	fprintf( fp, "BssidNum=%d\n", count - 1 );
+    }
     if( nvram_match( "wl0_net_mode", "bg-mixed" ) )
 	fprintf( fp, "WirelessMode=0\n" );
     if( nvram_match( "wl0_net_mode", "b-only" ) )
@@ -322,14 +458,24 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	strcat( authmode, "OPEN" );
 	strcat( encryptype, "WEP" );
 	strcat( x80211, "0" );
-	fprintf( fp, "Key1Str1=%s\n", nvram_safe_get( "wl0_key1" ) );
-	fprintf( fp, "Key2Str1=%s\n", nvram_safe_get( "wl0_key2" ) );
-	fprintf( fp, "Key3Str1=%s\n", nvram_safe_get( "wl0_key3" ) );
-	fprintf( fp, "Key4Str1=%s\n", nvram_safe_get( "wl0_key4" ) );
-	fprintf( fp, "Key1Type=0\n" );
-	fprintf( fp, "Key2Type=0\n" );
-	fprintf( fp, "Key3Type=0\n" );
-	fprintf( fp, "Key4Type=0\n" );
+	if( isSTA(  ) )
+	{
+	    fprintf( fp, "Key1=%s\n", nvram_safe_get( "wl0_key1" ) );
+	    fprintf( fp, "Key2=%s\n", nvram_safe_get( "wl0_key2" ) );
+	    fprintf( fp, "Key3=%s\n", nvram_safe_get( "wl0_key3" ) );
+	    fprintf( fp, "Key4=%s\n", nvram_safe_get( "wl0_key4" ) );
+	}
+	else
+	{
+	    fprintf( fp, "Key1Str1=%s\n", nvram_safe_get( "wl0_key1" ) );
+	    fprintf( fp, "Key2Str1=%s\n", nvram_safe_get( "wl0_key2" ) );
+	    fprintf( fp, "Key3Str1=%s\n", nvram_safe_get( "wl0_key3" ) );
+	    fprintf( fp, "Key4Str1=%s\n", nvram_safe_get( "wl0_key4" ) );
+	    fprintf( fp, "Key1Type=0\n" );
+	    fprintf( fp, "Key2Type=0\n" );
+	    fprintf( fp, "Key3Type=0\n" );
+	    fprintf( fp, "Key4Type=0\n" );
+	}
 	strcat( radius_server, "0.0.0.0" );
 	strcat( radius_port, "1812" );
 	strcat( radius_key, "ralink" );
@@ -345,8 +491,14 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
     if( nvram_match( "wl0_akm", "psk2" ) )
     {
-	fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
-	strcat( authmode, "WPAPSK2" );
+	if( isSTA(  ) )
+	    fprintf( fp, "WPAPSK=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
+	else
+	    fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
+	if( nvram_match( "wl0_mode", "infra" ) )
+	    strcat( authmode, "WPANONE" );
+	else
+	    strcat( authmode, "WPAPSK2" );
 	strcat( radius_server, "0.0.0.0" );
 	strcat( radius_port, "1812" );
 	strcat( radius_key, "ralink" );
@@ -360,7 +512,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
     if( nvram_match( "wl0_akm", "psk psk2" ) )
     {
-	fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
+	if( isSTA(  ) )
+	    fprintf( fp, "WPAPSK=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
+	else
+	    fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
 	strcat( authmode, "WPAPSKWPAPSK2" );
 	strcat( radius_server, "0.0.0.0" );
 	strcat( radius_port, "1812" );
@@ -376,8 +531,14 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 
     if( nvram_match( "wl0_akm", "psk" ) )
     {
-	fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
-	strcat( authmode, "WPAPSK" );
+	if( isSTA(  ) )
+	    fprintf( fp, "WPAPSK=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
+	else
+	    fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
+	if( nvram_match( "wl0_mode", "infra" ) )
+	    strcat( authmode, "WPANONE" );
+	else
+	    strcat( authmode, "WPAPSK" );
 	strcat( radius_server, "0.0.0.0" );
 	strcat( radius_port, "1812" );
 	strcat( radius_key, "ralink" );
@@ -391,7 +552,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
     if( nvram_match( "wl0_akm", "wpa" ) )
     {
-	fprintf( fp, "WPAPSK1=\n" );
+	if( isSTA(  ) )
+	    fprintf( fp, "WPAPSK=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
+	else
+	    fprintf( fp, "WPAPSK1=\n" );
 	strcat( authmode, "WPA" );
 	strcat( radius_server, nvram_safe_get( "wl0_radius_ipaddr" ) );
 	strcat( radius_port, nvram_safe_get( "wl0_radius_port" ) );
@@ -406,7 +570,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
     if( nvram_match( "wl0_akm", "wpa2" ) )
     {
-	fprintf( fp, "WPAPSK1=\n" );
+	if( isSTA(  ) )
+	    fprintf( fp, "WPAPSK=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
+	else
+	    fprintf( fp, "WPAPSK1=\n" );
 	strcat( authmode, "WPA" );
 	strcat( radius_server, nvram_safe_get( "wl0_radius_ipaddr" ) );
 	strcat( radius_port, nvram_safe_get( "wl0_radius_port" ) );
@@ -421,7 +588,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
     if( nvram_match( "wl0_akm", "wpa wpa2" ) )
     {
-	fprintf( fp, "WPAPSK1=\n" );
+	if( isSTA(  ) )
+	    fprintf( fp, "WPAPSK=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
+	else
+	    fprintf( fp, "WPAPSK1=\n" );
 	strcat( authmode, "WPA1WPA2" );
 	strcat( radius_server, nvram_safe_get( "wl0_radius_ipaddr" ) );
 	strcat( radius_port, nvram_safe_get( "wl0_radius_port" ) );
@@ -436,7 +606,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
     if( nvram_match( "wl0_akm", "radius" ) )
     {
-	fprintf( fp, "WPAPSK1=\n" );
+	if( isSTA(  ) )
+	    fprintf( fp, "WPAPSK=\n" );
+	else
+	    fprintf( fp, "WPAPSK1=\n" );
 	strcat( authmode, "OPEN" );
 	sprintf( radius_server, "%s", nvram_nget( "%s_radius_ipaddr", var ) );
 	sprintf( radius_port, "%s", nvram_nget( "%s_radius_port", var ) );
@@ -714,7 +887,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     else
 	fprintf( fp, "TxRate=0\n" );
 
-    fprintf( fp, "Channel=%s\n", nvram_safe_get( "wl0_channel" ) );
+    if( isSTA(  ) )
+	fprintf( fp, "Channel=0\n" );
+    else
+	fprintf( fp, "Channel=%s\n", nvram_safe_get( "wl0_channel" ) );
     if( nvram_match( "wl0_rateset", "12" ) )
 	fprintf( fp, "BasicRate=3\n" );
     if( nvram_match( "wl0_rateset", "default" ) )
@@ -752,7 +928,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 
 //station
 
-    if( getSTA(  ) || getWET(  ) )
+    if( getSTA(  ) || getWET(  ) && !isSTA(  ) )
     {
 	fprintf( fp, "ApCliEnable=1\n" );
 	fprintf( fp, "ApCliSsid=%s\n", nvram_safe_get( "wl0_ssid" ) );
@@ -837,35 +1013,17 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "HT_STBC=1\n" );
 
     fclose( fp );
-    insmod( "rt2860v2_ap" );
 
-    char *dev = "wl0";
-    char bridged[32];
-
-    sprintf( bridged, "%s_bridged", getRADev( dev ) );
-    if( nvram_default_match( bridged, "1", "1" ) )
+    if( isSTA(  ) )
     {
-	if( getSTA(  ) || getWET(  ) )
+	insmod( "rt2860v2_sta" );
+	char *dev = "wl0";
+	char bridged[32];
+
+	sprintf( bridged, "%s_bridged", getRADev( dev ) );
+	if( nvram_default_match( bridged, "1", "1" ) )
 	{
 	    sysprintf( "ifconfig ra0 0.0.0.0 up" );
-	    sysprintf( "ifconfig %s 0.0.0.0 up", "apcli0" );
-	    br_add_interface( getBridge( "ra0" ), "ra0" );
-	}
-	else
-	{
-	    sysprintf( "ifconfig %s 0.0.0.0 up", "ra0" );
-	    br_add_interface( getBridge( "ra0" ), "ra0" );
-	}
-    }
-    else
-    {
-	if( getSTA(  ) || getWET(  ) )
-	{
-	    sysprintf( "ifconfig ra0 0.0.0.0 up" );
-	    sysprintf( "ifconfig %s mtu 1500", "apcli0" );
-	    sysprintf( "ifconfig %s %s netmask %s up", "ra0",
-		       nvram_nget( "%s_ipaddr", getRADev( dev ) ),
-		       nvram_nget( "%s_netmask", getRADev( dev ) ) );
 	}
 	else
 	{
@@ -874,84 +1032,126 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 		       nvram_nget( "%s_ipaddr", getRADev( dev ) ),
 		       nvram_nget( "%s_netmask", getRADev( dev ) ) );
 	}
+	setupSupplicant( "wl0" );
     }
-    char vathmac[32];
-
-    sprintf( vathmac, "wl0_hwaddr" );
-    char vmacaddr[32];
-
-    getMacAddr( "ra0", vmacaddr );
-    nvram_set( vathmac, vmacaddr );
-
-    vifs = nvram_safe_get( "wl0_vifs" );
-    if( vifs != NULL && strlen( vifs ) > 0 )
+    else
     {
-	int count = 1;
+	insmod( "rt2860v2_ap" );
 
-	foreach( var, vifs, next )
+	char *dev = "wl0";
+	char bridged[32];
+
+	sprintf( bridged, "%s_bridged", getRADev( dev ) );
+	if( nvram_default_match( bridged, "1", "1" ) )
 	{
-
-	    sprintf( bridged, "%s_bridged", getRADev( var ) );
-	    if( nvram_default_match( bridged, "1", "1" ) )
+	    if( getSTA(  ) || getWET(  ) )
 	    {
-		char ra[32];
-
-		sprintf( ra, "ra%d", count );
-		sysprintf( "ifconfig ra%d 0.0.0.0 up", count );
-		br_add_interface( getBridge( getRADev( var ) ), ra );
+		sysprintf( "ifconfig ra0 0.0.0.0 up" );
+		sysprintf( "ifconfig %s 0.0.0.0 up", "apcli0" );
+		br_add_interface( getBridge( "ra0" ), "ra0" );
 	    }
 	    else
 	    {
-		char ip[32];
-		char mask[32];
-
-		sprintf( ip, "%s_ipaddr", getRADev( var ) );
-		sprintf( mask, "%s_netmask", getRADev( var ) );
-		sysprintf( "ifconfig ra%d mtu 1500", count );
-		sysprintf( "ifconfig ra%d %s netmask %s up", count,
-			   nvram_safe_get( ip ), nvram_safe_get( mask ) );
+		sysprintf( "ifconfig %s 0.0.0.0 up", "ra0" );
+		br_add_interface( getBridge( "ra0" ), "ra0" );
 	    }
-
-	    sprintf( vathmac, "%s_hwaddr", var );
-	    getMacAddr( getRADev( var ), vmacaddr );
-	    nvram_set( vathmac, vmacaddr );
-
-	    count++;
 	}
-    }
-
-    for( s = 1; s <= 10; s++ )
-    {
-	char wdsvarname[32] = { 0 };
-	char wdsdevname[32] = { 0 };
-	char wdsmacname[32] = { 0 };
-	char *wdsdev;
-	char *dev = "wl0";
-	char *hwaddr;
-
-	sprintf( wdsvarname, "%s_wds%d_enable", dev, ( 11 - s ) );
-	sprintf( wdsdevname, "%s_wds%d_if", dev, ( 11 - s ) );
-	sprintf( wdsmacname, "%s_wds%d_hwaddr", dev, ( 11 - s ) );
-	wdsdev = nvram_safe_get( wdsdevname );
-	if( strlen( wdsdev ) == 0 )
-	    continue;
-	if( nvram_match( wdsvarname, "0" ) )
-	    continue;
-	hwaddr = nvram_get( wdsmacname );
-	if( hwaddr != NULL )
+	else
 	{
-	    char *newdev = getWDSDev( wdsdev );
-
-	    sysprintf( "ifconfig %s 0.0.0.0 up", newdev );
+	    if( getSTA(  ) || getWET(  ) )
+	    {
+		sysprintf( "ifconfig ra0 0.0.0.0 up" );
+		sysprintf( "ifconfig %s mtu 1500", "apcli0" );
+		sysprintf( "ifconfig %s %s netmask %s up", "ra0",
+			   nvram_nget( "%s_ipaddr", getRADev( dev ) ),
+			   nvram_nget( "%s_netmask", getRADev( dev ) ) );
+	    }
+	    else
+	    {
+		sysprintf( "ifconfig %s mtu 1500", "ra0" );
+		sysprintf( "ifconfig %s %s netmask %s up", "ra0",
+			   nvram_nget( "%s_ipaddr", getRADev( dev ) ),
+			   nvram_nget( "%s_netmask", getRADev( dev ) ) );
+	    }
 	}
+	char vathmac[32];
+
+	sprintf( vathmac, "wl0_hwaddr" );
+	char vmacaddr[32];
+
+	getMacAddr( "ra0", vmacaddr );
+	nvram_set( vathmac, vmacaddr );
+
+	vifs = nvram_safe_get( "wl0_vifs" );
+	if( vifs != NULL && strlen( vifs ) > 0 )
+	{
+	    int count = 1;
+
+	    foreach( var, vifs, next )
+	    {
+
+		sprintf( bridged, "%s_bridged", getRADev( var ) );
+		if( nvram_default_match( bridged, "1", "1" ) )
+		{
+		    char ra[32];
+
+		    sprintf( ra, "ra%d", count );
+		    sysprintf( "ifconfig ra%d 0.0.0.0 up", count );
+		    br_add_interface( getBridge( getRADev( var ) ), ra );
+		}
+		else
+		{
+		    char ip[32];
+		    char mask[32];
+
+		    sprintf( ip, "%s_ipaddr", getRADev( var ) );
+		    sprintf( mask, "%s_netmask", getRADev( var ) );
+		    sysprintf( "ifconfig ra%d mtu 1500", count );
+		    sysprintf( "ifconfig ra%d %s netmask %s up", count,
+			       nvram_safe_get( ip ), nvram_safe_get( mask ) );
+		}
+
+		sprintf( vathmac, "%s_hwaddr", var );
+		getMacAddr( getRADev( var ), vmacaddr );
+		nvram_set( vathmac, vmacaddr );
+
+		count++;
+	    }
+	}
+
+	for( s = 1; s <= 10; s++ )
+	{
+	    char wdsvarname[32] = { 0 };
+	    char wdsdevname[32] = { 0 };
+	    char wdsmacname[32] = { 0 };
+	    char *wdsdev;
+	    char *dev = "wl0";
+	    char *hwaddr;
+
+	    sprintf( wdsvarname, "%s_wds%d_enable", dev, ( 11 - s ) );
+	    sprintf( wdsdevname, "%s_wds%d_if", dev, ( 11 - s ) );
+	    sprintf( wdsmacname, "%s_wds%d_hwaddr", dev, ( 11 - s ) );
+	    wdsdev = nvram_safe_get( wdsdevname );
+	    if( strlen( wdsdev ) == 0 )
+		continue;
+	    if( nvram_match( wdsvarname, "0" ) )
+		continue;
+	    hwaddr = nvram_get( wdsmacname );
+	    if( hwaddr != NULL )
+	    {
+		char *newdev = getWDSDev( wdsdev );
+
+		sysprintf( "ifconfig %s 0.0.0.0 up", newdev );
+	    }
+	}
+
+	/*
+
+	   set macfilter
+	 */
+
+	eval( "rt2860apd" );
     }
-    /*
-
-       set macfilter
-     */
-
-    eval( "rt2860apd" );
-
     setMacFilter( "wl0" );
     vifs = nvram_safe_get( "wl0_vifs" );
     if( vifs != NULL && strlen( vifs ) > 0 )
@@ -968,8 +1168,11 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 
 void start_hostapdwan( void )
 {
-    killall( "rt2860apd", SIGTERM );
-    eval( "rt2860apd" );
+    if( !isSTA(  ) )
+    {
+	killall( "rt2860apd", SIGTERM );
+	eval( "rt2860apd" );
+    }
 }
 
 void start_configurewifi( void )
