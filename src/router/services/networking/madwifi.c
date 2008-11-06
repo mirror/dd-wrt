@@ -1566,6 +1566,38 @@ void stop_vifs( void )
     }
 
 }
+
+void start_duallink(void)
+{
+
+if (nvram_match("duallink","master"))
+{
+sysprintf("ip route flush table 100");
+sysprintf("ip route flush table 200");
+sysprintf("ip route del fwmark 1 table 200");
+sysprintf("iptables -t mangle -F PREROUTING");
+sysprintf("ip route add %s/%s dev ath0 src %s table 100",nvram_safe_get("ath0_ipaddr"),nvram_safe_get("ath0_netmask"),nvram_safe_get("ath0_ipaddr"));
+sysprintf("ip route default via %s table 100",nvram_safe_get("ath0_duallink_parent"));
+sysprintf("ip route add %s/%s dev ath0 src %s table 200",nvram_safe_get("ath1_ipaddr"),nvram_safe_get("ath1_netmask"),nvram_safe_get("ath1_ipaddr"));
+sysprintf("ip route default via %s table 200",nvram_safe_get("ath1_duallink_parent"));
+sysprintf("iptables -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
+sysprintf("ip rule add fwmark 1 table 200");
+}
+if (nvram_match("duallink","slave"))
+{
+sysprintf("ip route flush table 100");
+sysprintf("ip route flush table 200");
+sysprintf("ip route del fwmark 1 table 100");
+sysprintf("iptables -t mangle -F PREROUTING");
+sysprintf("ip route add %s/%s dev ath0 src %s table 100",nvram_safe_get("ath0_ipaddr"),nvram_safe_get("ath0_netmask"),nvram_safe_get("ath0_ipaddr"));
+sysprintf("ip route default via %s table 100",nvram_safe_get("ath0_duallink_parent"));
+sysprintf("ip route add %s/%s dev ath0 src %s table 200",nvram_safe_get("ath1_ipaddr"),nvram_safe_get("ath1_netmask"),nvram_safe_get("ath1_ipaddr"));
+sysprintf("ip route default via %s table 200",nvram_safe_get("ath1_duallink_parent"));
+sysprintf("iptables -t mangle -A PREROUTING -i br0 -j MARK --set-mark 1");
+sysprintf("ip rule add fwmark 1 table 100");
+}
+
+}
 extern void adjust_regulatory( int count );
 
 void configure_wifi( void )	// madwifi implementation for atheros based
