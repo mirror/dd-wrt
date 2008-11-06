@@ -796,6 +796,78 @@ static void ieee802_1x_get_keys(rtapd *rtapd, struct sta_info *sta,
 	}
 }
 
+#ifdef HAVE_AQOS
+int stricmp( char *a, char *b )
+{
+    int l1 = strlen( a );
+    int l2 = strlen( b );
+
+    if( l1 != l2 )
+	return -1;
+    int i;
+
+    for( i = 0; i < l1; i++ )
+    {
+	if( toupper( a[i] ) != toupper( b[i] ) )
+	    return -1;
+    }
+    return 0;
+}
+extern void add_usermac( char *mac, int idx, char *upstream,
+			 char *downstream );
+
+int addrule( char *mac, char *upstream, char *downstream )
+{
+    char *qos_mac = nvram_safe_get( "svqos_macs" );
+    int ret = 0;
+
+    if( strlen( qos_mac ) > 0 )
+    {
+	char *newqos = malloc( strlen( qos_mac ) * 2 );
+
+	memset( newqos, 0, strlen( qos_mac ) );
+	char level[32], level2[32], data[32], type[32];
+
+	do
+	{
+	    if( sscanf
+		( qos_mac, "%31s %31s %31s %31s |", data, level, level2,
+		  type ) < 4 )
+		break;
+	    if( !stricmp( data, mac ) && !strcmp( level, upstream )
+		&& !strcmp( level2, downstream ) )
+	    {
+		sprintf( newqos, "%s %s %s %s %s |", newqos, data, upstream,
+			 downstream, "hostapd" );
+		ret |= 2;
+	    }
+	    else
+	    {
+		if( !stricmp( data, mac ) )
+		{
+		    ret |= 1;
+		}
+		sprintf( newqos, "%s %s %s %s %s |", newqos, data, level,
+			 level2, type );
+	    }
+	}
+	while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
+	nvram_set( "svqos_macs", newqos );
+	free( newqos );
+    }
+    else
+    {
+	char newqos[128];
+
+	sprintf( newqos, "%s %s %s %s |", mac, upstream, downstream,
+		 "hostapd" );
+	nvram_set( "svqos_macs", newqos );
+    }
+    return ret;
+
+}
+#endif
+
 /* Process the RADIUS frames from Authentication Server */
 static RadiusRxResult
 ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg *req,
@@ -804,6 +876,7 @@ ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg 
 	struct sta_info *sta;
 	u32 session_timeout = 88, termination_action;
 	int session_timeout_set, free_flag = 0;
+	static int qosidx = 500;
 
 	DBGPRINT(RT_DEBUG_TRACE,"Receive IEEE802_1X Response Packet From Radius Server. \n");
 
@@ -851,6 +924,69 @@ ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg 
 	switch (msg->hdr->code)
 	{
 		case RADIUS_CODE_ACCESS_ACCEPT:
+#ifdef HAVE_AQOS
+	    DBGPRINT(RT_DEBUG_WARN, "check user bandwith shaping\n" );
+	    u32 *down, *up;
+	    size_t len;
+
+	    if( ( down =
+		  ( u32 * ) radius_msg_get_vendor_attr( msg,
+							RADIUS_VENDOR_ID_WISPR,
+							RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN,
+							&len ) ) == NULL )
+	    {
+		DBGPRINT(RT_DEBUG_WARN, "no downstream level found\n" );
+	    }
+	    else
+	    {
+		if( ( up =
+		      ( u32 * ) radius_msg_get_vendor_attr( msg,
+							    RADIUS_VENDOR_ID_WISPR,
+							    RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP,
+							    &len ) ) == NULL )
+		{
+		    DBGPRINT(RT_DEBUG_WARN, "no up level found\n" );
+		    free( down );
+		}
+		else
+		{
+		    *down = ntohl( *down );
+		    *up = ntohl( *up );
+		    DBGPRINT(RT_DEBUG_WARN,
+				"downstream %d kbits, upstream %d kbits level found\n",
+				*down, *up );
+		    char mac[64];
+
+		    sprintf( mac, MACSTR, MAC2STR( sta->addr ) );
+		    char uplevel[64];
+		    char downlevel[64];
+
+		    sprintf( uplevel, "%d", *up );
+		    sprintf( downlevel, "%d", *down );
+		    int ret = addrule( mac, uplevel, downlevel );
+
+		    //case 0 = does not exists, should just be added, no restart
+		    //case 1 = no change required, already added
+		    //case 2 = change required, exists, but new settings
+		    //case 3 = change required, exists, new setting 
+		    if( !ret )
+		    {
+			qosidx += 2;
+			if( qosidx > 500 )
+			    qosidx = 0;
+			add_usermac( mac, qosidx, uplevel, downlevel );
+		    }
+		    else if( ret > 1 )
+		    {
+			system( "stopservice wshaper" );
+			system( "startservice wshaper" );
+		    }
+		    free( up );
+		    free( down );
+		}
+
+	    }
+#endif
 			/* draft-congdon-radius-8021x-22.txt, Ch. 3.17 */
 			if (session_timeout_set && termination_action == RADIUS_TERMINATION_ACTION_RADIUS_REQUEST)
 			{
