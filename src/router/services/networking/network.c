@@ -3567,7 +3567,9 @@ void start_wan_done( char *wan_ifname )
     cprintf( "ready\n" );
     start_anchorfree(  );
     start_anchorfreednat(  );
-
+#ifdef HAVE_MADWIFI
+    start_duallink();
+#endif
 }
 
 void stop_wan( void )
