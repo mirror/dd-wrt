@@ -3298,11 +3298,9 @@ static void showrtssettings( webs_t wp, char *var )
 
 }
 #endif
-static void showbridgesettings( webs_t wp, char *var, int mcast )
+static void showbridgesettings( webs_t wp, char *var, int mcast , int dual)
 {
 
-    websWrite( wp,
-	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script></div>\n" );
     char ssid[32];
 
     sprintf( ssid, "%s_bridged", var );
@@ -3310,6 +3308,8 @@ static void showbridgesettings( webs_t wp, char *var, int mcast )
 
     strcpy( vvar, var );
     rep( vvar, '.', 'X' );
+    websWrite( wp,
+	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script></div>\n" );
     websWrite( wp,
 	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnetvifs', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>&nbsp;\n",
 	       vvar, var, nvram_default_match( ssid, "0",
@@ -3377,13 +3377,72 @@ static void showbridgesettings( webs_t wp, char *var, int mcast )
 	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />.",
 	       var, get_single_ip( ipv, 3 ) );
     websWrite( wp, "</div>\n" );
+
+#ifdef HAVE_MADWIFI
+if (dual)
+{
+    char dl[32];
+    sprintf(dl,"%s_duallink",prefix);
+    websWrite( wp,
+	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.duallink)</script></div>\n" );
+    websWrite( wp,
+	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idduallink', true);\" name=\"%s_duallink\" %s><script type=\"text/javascript\">Capture(shared.enable)</script></input>&nbsp;\n",
+	       prefix, prefix, nvram_default_match( dl, "1",
+					       "0" ) ? "checked=\"checked\"" :
+	       "" );
+    websWrite( wp,
+	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idduallink', false);\" name=\"%s_duallink\" %s><script type=\"text/javascript\">Capture(shared.disable)</script></input>\n",
+	       prefix, prefix, nvram_default_match( dl, "0",
+					       "0" ) ? "checked=\"checked\"" :
+	       "" );
     websWrite( wp, "</div>\n" );
+
+    websWrite( wp, "<div id=\"%s_iddualink\">\n", prefix );
+
+    sprintf( ip, "%s_duallink_parent", var );
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.parent)</script></div>\n" );
+    ipv = nvram_default_get( ip,"0.0.0.0" );
+    websWrite( wp,
+	       "<input type=\"hidden\" name=\"%s_duallink_parent\" value=\"4\" />\n",
+	       var );
+    websWrite( wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_duallink_parent_0\" value=\"%d\" />.",
+	       var, get_single_ip( ipv, 0 ) );
+    websWrite( wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_duallink_parent_1\" value=\"%d\" />.",
+	       var, get_single_ip( ipv, 1 ) );
+    websWrite( wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_duallink_parent_2\" value=\"%d\" />.",
+	       var, get_single_ip( ipv, 2 ) );
+    websWrite( wp,
+	       "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_duallink_parent_3\" value=\"%d\" />.",
+	       var, get_single_ip( ipv, 3 ) );
+    websWrite( wp, "</div>\n" );
+
+    websWrite( wp, "</div>\n" );
+
+    websWrite( wp, "<script>\n//<![CDATA[\n " );
+    websWrite( wp,
+	       "show_layer_ext(document.getElementsByName(\"%s_duallink\"), \"%s_idduallink\", %s);\n",
+	       var, vvar, nvram_match( dl, "1" ) ? "true" : "false" );
+    websWrite( wp, "//]]>\n</script>\n" );
+}
+#endif
+
+    websWrite( wp, "</div>\n" );
+
+
+
+
+
 
     websWrite( wp, "<script>\n//<![CDATA[\n " );
     websWrite( wp,
 	       "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnetvifs\", %s);\n",
 	       var, vvar, nvram_match( ssid, "0" ) ? "true" : "false" );
     websWrite( wp, "//]]>\n</script>\n" );
+
 
 }
 
@@ -3559,9 +3618,9 @@ static int show_virtualssid( webs_t wp, char *prefix )
 	showRadio( wp, "wl_adv.label11", ssid );
 	sprintf( wl_mode, "%s_mode", var );
 #ifdef HAVE_RT2880
-	showbridgesettings( wp, getRADev(var), 1 );
+	showbridgesettings( wp, getRADev(var), 1,0 );
 #else
-	showbridgesettings( wp, var, 1 );
+	showbridgesettings( wp, var, 1,0 );
 #endif
 	websWrite( wp, "</fieldset><br />\n" );
 	count++;
@@ -4175,14 +4234,14 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     // end ACK timing
 #endif
 #ifdef HAVE_MADWIFI
-    showbridgesettings( wp, prefix, 1 );
+    showbridgesettings( wp, prefix, 1 ,1);
 #elif HAVE_RT2880
-    showbridgesettings( wp, "ra0", 1 );
+    showbridgesettings( wp, "ra0", 1 ,1);
 #else
     if( !strcmp( prefix, "wl0" ) )
-	showbridgesettings( wp, get_wl_instance_name( 0 ), 1 );
+	showbridgesettings( wp, get_wl_instance_name( 0 ), 1 ,1);
     if( !strcmp( prefix, "wl1" ) )
-	showbridgesettings( wp, get_wl_instance_name( 1 ), 1 );
+	showbridgesettings( wp, get_wl_instance_name( 1 ), 1 ,1);
 #endif
     websWrite( wp, "</fieldset>\n" );
     websWrite( wp, "<br />\n" );
@@ -4840,7 +4899,7 @@ void ej_showbridgesettings( webs_t wp, int argc, char_t ** argv )
 	return;
     }
 #endif
-    showbridgesettings( wp, interface, mcast );
+    showbridgesettings( wp, interface, mcast,0 );
 }
 
 void ej_get_wds_ip( webs_t wp, int argc, char_t ** argv )
