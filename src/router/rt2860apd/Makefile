@@ -1,3 +1,6 @@
+-include ../.config
+
+
 PLATFORM = RT2880
 
 ifndef CFLAGS
@@ -6,6 +9,11 @@ endif
 
 # If you want to support multiple radius server for multiple bssid, add following line
 CFLAGS +=  -DMULTIPLE_RADIUS -DNEED_PRINTF
+
+ifeq ($(CONFIG_AQOS),y)
+CFLAGS += -DHAVE_AQOS 
+LDFLAGS += -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram 
+endif
 
 # If you want to debug daemon, add following line
 CFLAGS +=  -DDBG 
@@ -17,7 +25,7 @@ OBJS =	rt2860apd.o eloop.o eapol_sm.o radius.o md5.o  \
 all: rt2860apd
 
 rt2860apd: $(OBJS)
-	$(CC) -o rt2860apd $(OBJS)
+	$(CC) -o rt2860apd $(OBJS) $(LDFLAGS)
 
 clean:
 	rm -f core *~ *.o rt2860apd *.d
