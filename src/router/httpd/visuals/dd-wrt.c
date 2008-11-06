@@ -3240,7 +3240,7 @@ if (nvram_nmatch("n-only","%s_net_mode",prefix))
     sprintf(wl_greenfield,"%s_greenfield",prefix);
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label2)</script></div><select name=\"%s\" >\n",
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label7)</script></div><select name=\"%s\" >\n",
 	       wl_greenfield );
     websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
     websWrite( wp,
