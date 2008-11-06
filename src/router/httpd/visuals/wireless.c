@@ -701,21 +701,6 @@ void ej_show_wl_wep_setting( webs_t wp, int argc, char_t ** argv )
     return;
 }
 
-/*
- * void validate_macmode (webs_t wp, char *value, struct variable *v) { char
- * *wl_macmode1, *wl_macmode;
- * 
- * wl_macmode = websGetVar (wp, "wl_macmode", NULL); wl_macmode1 = websGetVar 
- * (wp, "wl_macmode1", NULL);
- * 
- * if (!wl_macmode1) return;
- * 
- * if (!strcmp (wl_macmode1, "disabled")) { nvram_set ("wl_macmode1",
- * "disabled"); nvram_set ("wl_macmode", "disabled"); } else if (!strcmp
- * (wl_macmode1, "other")) { if (!wl_macmode) nvram_set ("wl_macmode",
- * "deny"); else nvram_set ("wl_macmode", wl_macmode); nvram_set
- * ("wl_macmode1", "other"); } }
- */
 
 void wl_active_onload( webs_t wp, char *arg )
 {
