@@ -1373,25 +1373,9 @@ void ej_show_security( webs_t wp, int argc, char_t ** argv )
 	       selmatch( "security_mode", "psk", "selected=\"selected\"" ) );
     websWrite( wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
 	       selmatch( "security_mode", "wpa", "selected=\"selected\"" ) );
+#ifndef HAVE_RT2880
     if( !nvram_match( "wl0_mode", "wet" ) && nvram_match( "wl_wds1_enable", "0" ) && nvram_match( "wl_wds2_enable", "0" ) && nvram_match( "wl_wds3_enable", "0" ) && nvram_match( "wl_wds4_enable", "0" ) && nvram_match( "wl_wds5_enable", "0" ) && nvram_match( "wl_wds6_enable", "0" ) && nvram_match( "wl_wds7_enable", "0" ) && nvram_match( "wl_wds8_enable", "0" ) && nvram_match( "wl_wds9_enable", "0" ) && nvram_match( "wl_wds10_enable", "0" ) )	// botho 
-	// 10/04/06 
-	// : 
-	// if 
-	// wireless 
-	// client 
-	// bridge 
-	// mode 
-	// selected 
-	// or 
-	// WDS 
-	// activated 
-	// => 
-	// we 
-	// don't 
-	// display 
-	// WPA2 
-	// security 
-	// modes
+#endif
     {
 	websWrite( wp,
 		   "<option value=\"psk2\" %s>WPA2 Personal</option>\n",
@@ -1400,6 +1384,7 @@ void ej_show_security( webs_t wp, int argc, char_t ** argv )
 		   selmatch( "security_mode", "wpa2",
 			     "selected=\"selected\"" ) );
     }
+
     websWrite( wp,
 	       "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
 	       selmatch( "security_mode", "psk psk2", "selected" ) );
@@ -1475,9 +1460,13 @@ show_security_prefix( webs_t wp, int argc, char_t ** argv, char *prefix,
 	websWrite( wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
 		   selmatch( var, "wpa2", "selected=\"selected\"" ) );
     }
+#ifdef HAVE_RT2880
+    if( !primary || nvram_match( sta, "ap" ))
+#endif
     websWrite( wp,
 	       "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
 	       selmatch( var, "psk psk2", "selected=\"selected\"" ) );
+	       
     if( !primary || nvram_match( sta, "ap" ) || nvram_match( sta, "wdsap" ) )
     {
 	websWrite( wp,
@@ -1492,12 +1481,20 @@ show_security_prefix( webs_t wp, int argc, char_t ** argv, char *prefix,
 	       selmatch( var, "wep", "selected=\"selected\"" ) );
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
+#ifndef HAVE_RT2880
     if( !primary || nvram_match( sta, "sta" ) || nvram_match( sta, "wdssta" )
 	|| nvram_match( sta, "apsta" ) || nvram_match( sta, "wet" ) )
     {
 	websWrite( wp, "<option value=\"8021X\" %s>802.1x</option>\n",
 		   selmatch( var, "8021X", "selected=\"selected\"" ) );
     }
+#else
+    if( nvram_match( sta, "sta" ) || nvram_match( sta, "wet" ) )
+    {
+	websWrite( wp, "<option value=\"8021X\" %s>802.1x</option>\n",
+		   selmatch( var, "8021X", "selected=\"selected\"" ) );
+    }
+#endif
 #endif
 #endif
 
@@ -3767,7 +3764,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 		       nvram_match( wl_mode,
 				    "ap" ) ? "selected=\\\"selected\\\"" :
 		       "" );
-#ifndef HAVE_RT2880
+//#ifndef HAVE_RT2880
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
 		       nvram_match( wl_mode,
@@ -3783,7 +3780,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 		       nvram_match( wl_mode,
 				    "infra" ) ? "selected=\\\"selected\\\"" :
 		       "" );
-#endif
+//#endif
 #ifndef HAVE_MADWIFI
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n",
