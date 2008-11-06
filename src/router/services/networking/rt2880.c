@@ -63,10 +63,6 @@ char *getiflist( void )
 
 static int need_commit = 0;
 
-static int getMaxPower( char *ifname )
-{
-}
-
 /*
  * MADWIFI Encryption Setup 
  */
@@ -83,45 +79,44 @@ void setupHostAP( char *prefix, int iswan )
 {
 
 }
-void start_hostapdwan( void )
-{
 
-}
-
-void setMacFilter(char *iface)
+void setMacFilter( char *iface )
 {
     char *next;
     char var[32];
     char nvvar[32];
-    sysprintf("iwpriv %s set ACLClearAll=1",getRADev(iface));
-    sysprintf("iwpriv %s set AccessPolicy=0",getRADev(iface));
 
-    sprintf( nvvar, "%s_macmode",iface);
+    sysprintf( "iwpriv %s set ACLClearAll=1", getRADev( iface ) );
+    sysprintf( "iwpriv %s set AccessPolicy=0", getRADev( iface ) );
+
+    sprintf( nvvar, "%s_macmode", iface );
     if( nvram_match( nvvar, "deny" ) )
     {
-	sysprintf("iwpriv %s set AccessPolicy=2",getRADev(iface));
+	sysprintf( "iwpriv %s set AccessPolicy=2", getRADev( iface ) );
 	char nvlist[32];
 
-	sprintf( nvlist, "%s_maclist",iface);
+	sprintf( nvlist, "%s_maclist", iface );
 
 	foreach( var, nvram_safe_get( nvlist ), next )
 	{
-	    sysprintf("iwpriv %s set ACLAddEntry=%s",getRADev(iface),var);
+	    sysprintf( "iwpriv %s set ACLAddEntry=%s", getRADev( iface ),
+		       var );
 	}
     }
     if( nvram_match( nvvar, "allow" ) )
     {
-	sysprintf("iwpriv %s set AccessPolicy=1",getRADev(iface));
-	
+	sysprintf( "iwpriv %s set AccessPolicy=1", getRADev( iface ) );
+
 	char nvlist[32];
-	sprintf( nvlist, "%s_maclist",iface);
+
+	sprintf( nvlist, "%s_maclist", iface );
 
 	foreach( var, nvram_safe_get( nvlist ), next )
 	{
-	    sysprintf("iwpriv %s set ACLAddEntry=%s",getRADev(iface),var);
+	    sysprintf( "iwpriv %s set ACLAddEntry=%s", getRADev( iface ),
+		       var );
 	}
     }
-
 
 }
 
@@ -210,7 +205,6 @@ void start_radius( void )
 
 }
 
-
 void configure_wifi( void )	// madwifi implementation for atheros based
 				// cards
 {
@@ -218,6 +212,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     char *next;
 
     deconfigure_wifi(  );
+    killall( "rt2860apd", SIGTERM );
     eval( "ifconfig", "ra0", "down" );
     eval( "ifconfig", "ra1", "down" );
     eval( "ifconfig", "ra2", "down" );
@@ -251,7 +246,8 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "CountryRegionABand=7\n" );
     fprintf( fp, "CountryCode=DE\n" );
 #endif
- int count = 2;
+    int count = 2;
+
 // if( nvram_match( "wl0_mode", "apsta" )
 //    {
 //     int count--;
@@ -259,7 +255,6 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 
     fprintf( fp, "SSID1=%s\n", nvram_safe_get( "wl0_ssid" ) );
     char *vifs = nvram_nget( "wl0_vifs" );
-
 
     if( vifs != NULL )
 	foreach( var, vifs, next )
@@ -306,20 +301,27 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	fprintf( fp, "AutoChannelSelect=0\n" );
 
 //encryption setup
-    fprintf( fp, "IEEE8021X=0\n" );
     fprintf( fp, "IEEE80211H=0\n" );
     char keyidstr[64] = { 0 };
     char encryptype[64] = { 0 };
     char authmode[64] = { 0 };
+    char radius_server[256] = { 0 };
+    char radius_port[256] = { 0 };
+    char radius_key[1024] = { 0 };
+    char x80211[32] = { 0 };
+
+    fprintf( fp, "own_ip_addr=%s\n", nvram_safe_get( "lan_ipaddr" ) );
 
     if( nvram_match( "wl0_key", "" ) )
 	strcat( keyidstr, "1" );
     else
 	strcat( keyidstr, nvram_safe_get( "wl0_key" ) );
+
     if( nvram_match( "wl0_akm", "wep" ) )
     {
 	strcat( authmode, "OPEN" );
 	strcat( encryptype, "WEP" );
+	strcat( x80211, "0" );
 	fprintf( fp, "Key1Str1=%s\n", nvram_safe_get( "wl0_key1" ) );
 	fprintf( fp, "Key2Str1=%s\n", nvram_safe_get( "wl0_key2" ) );
 	fprintf( fp, "Key3Str1=%s\n", nvram_safe_get( "wl0_key3" ) );
@@ -328,17 +330,27 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	fprintf( fp, "Key2Type=0\n" );
 	fprintf( fp, "Key3Type=0\n" );
 	fprintf( fp, "Key4Type=0\n" );
-
+	strcat( radius_server, "0.0.0.0" );
+	strcat( radius_port, "1812" );
+	strcat( radius_key, "ralink" );
     }
     if( nvram_match( "wl0_akm", "disabled" ) )
     {
 	strcat( authmode, "OPEN" );
 	strcat( encryptype, "NONE" );
+	strcat( x80211, "0" );
+	strcat( radius_server, "0.0.0.0" );
+	strcat( radius_port, "1812" );
+	strcat( radius_key, "ralink" );
     }
     if( nvram_match( "wl0_akm", "psk2" ) )
     {
 	fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
 	strcat( authmode, "WPAPSK2" );
+	strcat( radius_server, "0.0.0.0" );
+	strcat( radius_port, "1812" );
+	strcat( radius_key, "ralink" );
+	strcat( x80211, "0" );
 	if( nvram_match( "wl0_crypto", "tkip" ) )
 	    strcat( encryptype, "TKIP" );
 	if( nvram_match( "wl0_crypto", "aes" ) )
@@ -350,6 +362,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     {
 	fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
 	strcat( authmode, "WPAPSKWPAPSK2" );
+	strcat( radius_server, "0.0.0.0" );
+	strcat( radius_port, "1812" );
+	strcat( radius_key, "ralink" );
+	strcat( x80211, "0" );
 	if( nvram_match( "wl0_crypto", "tkip" ) )
 	    strcat( encryptype, "TKIP" );
 	if( nvram_match( "wl0_crypto", "aes" ) )
@@ -362,12 +378,71 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     {
 	fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
 	strcat( authmode, "WPAPSK" );
+	strcat( radius_server, "0.0.0.0" );
+	strcat( radius_port, "1812" );
+	strcat( radius_key, "ralink" );
+	strcat( x80211, "0" );
 	if( nvram_match( "wl0_crypto", "tkip" ) )
 	    strcat( encryptype, "TKIP" );
 	if( nvram_match( "wl0_crypto", "aes" ) )
 	    strcat( encryptype, "AES" );
 	if( nvram_match( "wl0_crypto", "tkip+aes" ) )
 	    strcat( encryptype, "TKIPAES" );
+    }
+    if( nvram_match( "wl0_akm", "wpa" ) )
+    {
+	fprintf( fp, "WPAPSK1=\n" );
+	strcat( authmode, "WPA" );
+	strcat( radius_server, nvram_safe_get( "wl0_radius_ipaddr" ) );
+	strcat( radius_port, nvram_safe_get( "wl0_radius_port" ) );
+	strcat( radius_key, nvram_safe_get( "wl0_radius_key" ) );
+	strcat( x80211, "0" );
+	if( nvram_match( "wl0_crypto", "tkip" ) )
+	    strcat( encryptype, "TKIP" );
+	if( nvram_match( "wl0_crypto", "aes" ) )
+	    strcat( encryptype, "AES" );
+	if( nvram_match( "wl0_crypto", "tkip+aes" ) )
+	    strcat( encryptype, "TKIPAES" );
+    }
+    if( nvram_match( "wl0_akm", "wpa2" ) )
+    {
+	fprintf( fp, "WPAPSK1=\n" );
+	strcat( authmode, "WPA" );
+	strcat( radius_server, nvram_safe_get( "wl0_radius_ipaddr" ) );
+	strcat( radius_port, nvram_safe_get( "wl0_radius_port" ) );
+	strcat( radius_key, nvram_safe_get( "wl0_radius_key" ) );
+	strcat( x80211, "0" );
+	if( nvram_match( "wl0_crypto", "tkip" ) )
+	    strcat( encryptype, "TKIP" );
+	if( nvram_match( "wl0_crypto", "aes" ) )
+	    strcat( encryptype, "AES" );
+	if( nvram_match( "wl0_crypto", "tkip+aes" ) )
+	    strcat( encryptype, "TKIPAES" );
+    }
+    if( nvram_match( "wl0_akm", "wpa wpa2" ) )
+    {
+	fprintf( fp, "WPAPSK1=\n" );
+	strcat( authmode, "WPA1WPA2" );
+	strcat( radius_server, nvram_safe_get( "wl0_radius_ipaddr" ) );
+	strcat( radius_port, nvram_safe_get( "wl0_radius_port" ) );
+	strcat( radius_key, nvram_safe_get( "wl0_radius_key" ) );
+	strcat( x80211, "0" );
+	if( nvram_match( "wl0_crypto", "tkip" ) )
+	    strcat( encryptype, "TKIP" );
+	if( nvram_match( "wl0_crypto", "aes" ) )
+	    strcat( encryptype, "AES" );
+	if( nvram_match( "wl0_crypto", "tkip+aes" ) )
+	    strcat( encryptype, "TKIPAES" );
+    }
+    if( nvram_match( "wl0_akm", "radius" ) )
+    {
+	fprintf( fp, "WPAPSK1=\n" );
+	strcat( authmode, "OPEN" );
+	sprintf( radius_server, "%s", nvram_nget( "%s_radius_ipaddr", var ) );
+	sprintf( radius_port, "%s", nvram_nget( "%s_radius_port", var ) );
+	sprintf( radius_key, "%s", nvram_nget( "%s_radius_key", var ) );
+	strcat( x80211, "1" );
+	strcat( encryptype, "WEP" );
     }
 
     count = 2;
@@ -380,8 +455,23 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    strcat( keyidstr, "1" );
 	else
 	    strcat( keyidstr, nvram_nget( "%s_key", var ) );
+	if( nvram_nmatch( "disabled", "%s_akm", var ) )
+	{
+	    strcat( authmode, ";OPEN" );
+	    strcat( encryptype, ";NONE" );
+	    strcat( radius_server, ";0.0.0.0" );
+	    strcat( radius_port, ";1812" );
+	    strcat( radius_key, ";ralink" );
+	    strcat( x80211, ";0" );
+	}
 	if( nvram_nmatch( "wep", "%s_akm", var ) )
 	{
+	    sprintf( radius_server, "%s;0.0.0.0", radius_server );
+	    sprintf( radius_port, "%s;1812", radius_port );
+	    sprintf( radius_key, "%s;ralink", radius_key );
+	    strcat( authmode, ";OPEN" );
+	    strcat( encryptype, ";WEP" );
+	    strcat( x80211, ";0" );
 	    fprintf( fp, "Key1Str%d=%s\n", count,
 		     nvram_nget( "%s_key1", var ) );
 	    fprintf( fp, "Key2Str%d=%s\n", count,
@@ -393,6 +483,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	}
 	if( nvram_nmatch( "psk", "%s_akm", var ) )
 	{
+	    sprintf( radius_server, "%s;0.0.0.0", radius_server );
+	    sprintf( radius_port, "%s;1812", radius_port );
+	    sprintf( radius_key, "%s;ralink", radius_key );
+	    strcat( x80211, ";0" );
 	    fprintf( fp, "WPAPSK%d=%s\n", count,
 		     nvram_nget( "%s_wpa_psk", var ) );
 	    strcat( authmode, ";WPAPSK" );
@@ -403,13 +497,12 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    if( nvram_nmatch( "tkip+aes", "%s_crypto", var ) )
 		strcat( encryptype, ";TKIPAES" );
 	}
-	if( nvram_nmatch( "disabled", "%s_akm", var ) )
-	{
-	    strcat( authmode, ";OPEN" );
-	    strcat( encryptype, ";NONE" );
-	}
 	if( nvram_nmatch( "psk psk2", "%s_akm", var ) )
 	{
+	    sprintf( radius_server, "%s;0.0.0.0", radius_server );
+	    sprintf( radius_port, "%s;1812", radius_port );
+	    sprintf( radius_key, "%s;ralink", radius_key );
+	    strcat( x80211, ";0" );
 	    fprintf( fp, "WPAPSK%d=%s\n", count,
 		     nvram_nget( "%s_wpa_psk", var ) );
 	    strcat( authmode, ";WPAPSKWPA2PSK" );
@@ -422,6 +515,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	}
 	if( nvram_nmatch( "psk2", "%s_akm", var ) )
 	{
+	    sprintf( radius_server, "%s;0.0.0.0", radius_server );
+	    sprintf( radius_port, "%s;1812", radius_port );
+	    sprintf( radius_key, "%s;ralink", radius_key );
+	    strcat( x80211, ";0" );
 	    fprintf( fp, "WPAPSK%d=%s\n", count,
 		     nvram_nget( "%s_wpa_psk", var ) );
 	    strcat( authmode, ";WPAPSK2" );
@@ -432,6 +529,73 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    if( nvram_nmatch( "tkip+aes", "%s_crypto", var ) )
 		strcat( encryptype, ";TKIPAES" );
 	}
+	if( nvram_nmatch( "wpa", "%s_akm", var ) )
+	{
+	    fprintf( fp, "WPAPSK%d=\n", count );
+	    strcat( authmode, ";WPA" );
+	    sprintf( radius_server, "%s;%s", radius_server,
+		     nvram_nget( "%s_radius_ipaddr", var ) );
+	    sprintf( radius_port, "%s;%s", radius_port,
+		     nvram_nget( "%s_radius_port", var ) );
+	    sprintf( radius_key, "%s;%s", radius_key,
+		     nvram_nget( "%s_radius_key", var ) );
+	    strcat( x80211, ";0" );
+	    if( nvram_nmatch( "tkip", "%s_crypto", var ) )
+		strcat( encryptype, ";TKIP" );
+	    if( nvram_nmatch( "aes", "%s_crypto", var ) )
+		strcat( encryptype, ";AES" );
+	    if( nvram_nmatch( "tkip+aes", "%s_crypto", var ) )
+		strcat( encryptype, ";TKIPAES" );
+	}
+	if( nvram_nmatch( "wpa2", "%s_akm", var ) )
+	{
+	    fprintf( fp, "WPAPSK%d=\n", count );
+	    strcat( authmode, ";WPA2" );
+	    sprintf( radius_server, "%s;%s", radius_server,
+		     nvram_nget( "%s_radius_ipaddr", var ) );
+	    sprintf( radius_port, "%s;%s", radius_port,
+		     nvram_nget( "%s_radius_port", var ) );
+	    sprintf( radius_key, "%s;%s", radius_key,
+		     nvram_nget( "%s_radius_key", var ) );
+	    strcat( x80211, ";0" );
+	    if( nvram_nmatch( "tkip", "%s_crypto", var ) )
+		strcat( encryptype, ";TKIP" );
+	    if( nvram_nmatch( "aes", "%s_crypto", var ) )
+		strcat( encryptype, ";AES" );
+	    if( nvram_nmatch( "tkip+aes", "%s_crypto", var ) )
+		strcat( encryptype, ";TKIPAES" );
+	}
+	if( nvram_nmatch( "wpa wpa2", "%s_akm", var ) )
+	{
+	    fprintf( fp, "WPAPSK%d=\n", count );
+	    strcat( authmode, ";WPA1WPA2" );
+	    sprintf( radius_server, "%s;%s", radius_server,
+		     nvram_nget( "%s_radius_ipaddr", var ) );
+	    sprintf( radius_port, "%s;%s", radius_port,
+		     nvram_nget( "%s_radius_port", var ) );
+	    sprintf( radius_key, "%s;%s", radius_key,
+		     nvram_nget( "%s_radius_key", var ) );
+	    strcat( x80211, ";0" );
+	    if( nvram_nmatch( "tkip", "%s_crypto", var ) )
+		strcat( encryptype, ";TKIP" );
+	    if( nvram_nmatch( "aes", "%s_crypto", var ) )
+		strcat( encryptype, ";AES" );
+	    if( nvram_nmatch( "tkip+aes", "%s_crypto", var ) )
+		strcat( encryptype, ";TKIPAES" );
+	}
+	if( nvram_nmatch( "radius", "%s_akm", var ) )
+	{
+	    fprintf( fp, "WPAPSK%d=\n", count );
+	    strcat( authmode, ";OPEN" );
+	    sprintf( radius_server, "%s;%s", radius_server,
+		     nvram_nget( "%s_radius_ipaddr", var ) );
+	    sprintf( radius_port, "%s;%s", radius_port,
+		     nvram_nget( "%s_radius_port", var ) );
+	    sprintf( radius_key, "%s;%s", radius_key,
+		     nvram_nget( "%s_radius_key", var ) );
+	    strcat( x80211, ";1" );
+	    strcat( encryptype, ";WEP" );
+	}
 
 	count++;
     }
@@ -440,6 +604,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "EncrypType=%s\n", encryptype );
     fprintf( fp, "AuthMode=%s\n", authmode );
 
+    fprintf( fp, "RADIUS_Server=%s\n", radius_server );
+    fprintf( fp, "RADIUS_Port=%s\n", radius_port );
+    fprintf( fp, "RADIUS_Key=%s\n", radius_key );
+    fprintf( fp, "IEEE8021X=%s\n", x80211 );
 //wds entries
     char wdsentries[128] = { 0 };
     int wdscount = 0;
@@ -656,10 +824,6 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "AccessControlList2=\n" );
     fprintf( fp, "AccessPolicy3=0\n" );
     fprintf( fp, "AccessControlList3=\n" );
-    fprintf( fp, "RADIUS_Server=192.168.2.3\n" );
-    fprintf( fp, "RADIUS_Port=1812\n" );
-    fprintf( fp, "RADIUS_Key=ralink\n" );
-    fprintf( fp, "own_ip_addr=192.168.5.234\n" );
     fprintf( fp, "EAPifname=br0\n" );
     fprintf( fp, "PreAuthifname=br0\n" );
     fprintf( fp, "HT_HTC=0\n" );
@@ -678,36 +842,37 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     char *dev = "wl0";
     char bridged[32];
 
-
-
     sprintf( bridged, "%s_bridged", getRADev( dev ) );
     if( nvram_default_match( bridged, "1", "1" ) )
     {
-    if( getSTA(  ) || getWET(  ) )
+	if( getSTA(  ) || getWET(  ) )
 	{
-	sysprintf( "ifconfig ra0 0.0.0.0 up");
-	sysprintf( "ifconfig %s 0.0.0.0 up", "apcli0" );	
-	br_add_interface( getBridge( "ra0" ), "ra0" );
-	}else{
-	sysprintf( "ifconfig %s 0.0.0.0 up", "ra0" );
-	br_add_interface( getBridge( "ra0" ), "ra0" );
+	    sysprintf( "ifconfig ra0 0.0.0.0 up" );
+	    sysprintf( "ifconfig %s 0.0.0.0 up", "apcli0" );
+	    br_add_interface( getBridge( "ra0" ), "ra0" );
+	}
+	else
+	{
+	    sysprintf( "ifconfig %s 0.0.0.0 up", "ra0" );
+	    br_add_interface( getBridge( "ra0" ), "ra0" );
 	}
     }
     else
     {
-    if( getSTA(  ) || getWET(  ) )
+	if( getSTA(  ) || getWET(  ) )
 	{
-	sysprintf( "ifconfig ra0 0.0.0.0 up");
-	sysprintf( "ifconfig %s mtu 1500", "apcli0" );
-	sysprintf( "ifconfig %s %s netmask %s up", "ra0",
-		   nvram_nget( "%s_ipaddr", getRADev( dev ) ),
-		   nvram_nget( "%s_netmask", getRADev( dev ) ) );	
-	}else
+	    sysprintf( "ifconfig ra0 0.0.0.0 up" );
+	    sysprintf( "ifconfig %s mtu 1500", "apcli0" );
+	    sysprintf( "ifconfig %s %s netmask %s up", "ra0",
+		       nvram_nget( "%s_ipaddr", getRADev( dev ) ),
+		       nvram_nget( "%s_netmask", getRADev( dev ) ) );
+	}
+	else
 	{
-	sysprintf( "ifconfig %s mtu 1500", "ra0" );
-	sysprintf( "ifconfig %s %s netmask %s up", "ra0",
-		   nvram_nget( "%s_ipaddr", getRADev( dev ) ),
-		   nvram_nget( "%s_netmask", getRADev( dev ) ) );
+	    sysprintf( "ifconfig %s mtu 1500", "ra0" );
+	    sysprintf( "ifconfig %s %s netmask %s up", "ra0",
+		       nvram_nget( "%s_ipaddr", getRADev( dev ) ),
+		       nvram_nget( "%s_netmask", getRADev( dev ) ) );
 	}
     }
     char vathmac[32];
@@ -781,24 +946,30 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	}
     }
     /*
-    
-    set macfilter
-    */
-    
-    setMacFilter("wl0");
+
+       set macfilter
+     */
+
+    eval( "rt2860apd" );
+
+    setMacFilter( "wl0" );
     vifs = nvram_safe_get( "wl0_vifs" );
     if( vifs != NULL && strlen( vifs ) > 0 )
     {
 	foreach( var, vifs, next )
 	{
-	    setMacFilter(var);
+	    setMacFilter( var );
 	}
 
     }
 
-
-
     start_radius(  );
+}
+
+void start_hostapdwan( void )
+{
+    killall( "rt2860apd", SIGTERM );
+    eval( "rt2860apd" );
 }
 
 void start_configurewifi( void )
