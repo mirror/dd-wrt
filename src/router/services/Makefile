@@ -176,7 +176,11 @@ ifeq ($(CONFIG_MADWIFI),y)
 OBJS += site_survey_madwifi.o
 OBJS += stabridge.o beep.o
 else
+ifeq ($(CONFIG_RT2880),y)
+OBJS += site_survey_ralink.o
+else
 OBJS += site_survey_broadcom.o
+endif
 endif
 
 ifeq ($(CONFIG_MAGICBOX),y)
