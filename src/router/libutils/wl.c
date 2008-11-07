@@ -32,43 +32,52 @@ struct nvram_tuple router_defaults[] = {
 #ifndef HAVE_MADWIFI
 
 #ifdef HAVE_RT2880
-char *getRADev(char *prefix)
+char *getRADev( char *prefix )
 {
-char *ifname=NULL;
-	if (!strcmp(prefix,"wl0"))ifname="ra0";
-	if (!strcmp(prefix,"wl0.1"))ifname="ra1";
-	if (!strcmp(prefix,"wl0.2"))ifname="ra2";
-	if (!strcmp(prefix,"wl0.3"))ifname="ra3";
-	if (!strcmp(prefix,"wl0.4"))ifname="ra4";
-	if (!strcmp(prefix,"wl0.5"))ifname="ra5";
-	if (!strcmp(prefix,"wl0.6"))ifname="ra6";
-	if (!strcmp(prefix,"wl0.7"))ifname="ra7";
-if (ifname)
-    return ifname;
-else 
-    return prefix;
+    char *ifname = NULL;
+
+    if( !strcmp( prefix, "wl0" ) )
+	ifname = "ra0";
+    if( !strcmp( prefix, "wl0.1" ) )
+	ifname = "ra1";
+    if( !strcmp( prefix, "wl0.2" ) )
+	ifname = "ra2";
+    if( !strcmp( prefix, "wl0.3" ) )
+	ifname = "ra3";
+    if( !strcmp( prefix, "wl0.4" ) )
+	ifname = "ra4";
+    if( !strcmp( prefix, "wl0.5" ) )
+	ifname = "ra5";
+    if( !strcmp( prefix, "wl0.6" ) )
+	ifname = "ra6";
+    if( !strcmp( prefix, "wl0.7" ) )
+	ifname = "ra7";
+    if( ifname )
+	return ifname;
+    else
+	return prefix;
 }
 
 int getchannels( unsigned int *list, char *ifname )
 {
-list[0]=1;
-list[1]=2;
-list[2]=3;
-list[3]=4;
-list[4]=5;
-list[5]=6;
-list[6]=7;
-list[7]=8;
-list[8]=9;
-list[9]=10;
-list[10]=11;
-list[11]=12;
-list[12]=13;
+    list[0] = 1;
+    list[1] = 2;
+    list[2] = 3;
+    list[3] = 4;
+    list[4] = 5;
+    list[5] = 6;
+    list[6] = 7;
+    list[7] = 8;
+    list[8] = 9;
+    list[9] = 10;
+    list[10] = 11;
+    list[11] = 12;
+    list[12] = 13;
 #ifdef BUFFALO_JP
-list[13]=14;
-return 14;
+    list[13] = 14;
+    return 14;
 #else
-return 13;
+    return 13;
 #endif
 }
 
@@ -101,38 +110,40 @@ int getsocket( void )
     return s;
 }
 
-
 u_int ieee80211_mhz2ieee( u_int freq )
 {
-    if( freq == 2484)
+    if( freq == 2484 )
 	return 14;
-    if( freq < 2484)
-	return ( freq - ( 2407) ) / 5;
+    if( freq < 2484 )
+	return ( freq - ( 2407 ) ) / 5;
     if( freq < 4990 && freq > 4940 )
 	return ( ( freq * 10 ) + ( ( ( freq % 5 ) == 2 ) ? 5 : 0 ) -
 		 49400 ) / 5;
     if( freq < 5000 )
-	return 15 + ( ( freq - ( 2512) ) / 20 );
+	return 15 + ( ( freq - ( 2512 ) ) / 20 );
 
     return ( freq - ( 5000 ) ) / 5;
 }
 
-
-unsigned int ieee80211_ieee2mhz(unsigned int chan)
+unsigned int ieee80211_ieee2mhz( unsigned int chan )
 {
-		if (chan == 14)
-			return 2484;
-		if (chan < 14)
-			return ((2407) + chan * 5);
-		else {
-			if (chan > 236 && chan < 256) {
-				//recalculate offset
-				int newchan = chan - 256;
-				int newfreq = (2407) + (newchan * 5);
-				return newfreq;
-			} else
-				return ((2512) + ((chan - 15) * 20));
-		}
+    if( chan == 14 )
+	return 2484;
+    if( chan < 14 )
+	return ( ( 2407 ) + chan * 5 );
+    else
+    {
+	if( chan > 236 && chan < 256 )
+	{
+	    //recalculate offset
+	    int newchan = chan - 256;
+	    int newfreq = ( 2407 ) + ( newchan * 5 );
+
+	    return newfreq;
+	}
+	else
+	    return ( ( 2512 ) + ( ( chan - 15 ) * 20 ) );
+    }
 }
 
 int wifi_getchannel( char *ifname )
@@ -147,10 +158,10 @@ int wifi_getchannel( char *ifname )
     int i;
 
     freq = ( float )wrq.u.freq.m;
-    if (freq<1000.0f)
-	{
-	return (int)freq;
-	}
+    if( freq < 1000.0f )
+    {
+	return ( int )freq;
+    }
     for( i = 0; i < wrq.u.freq.e; i++ )
 	freq *= 10;
     freq /= 1000000;
@@ -171,10 +182,10 @@ int wifi_getfreq( char *ifname )
     int i;
 
     freq = ( float )wrq.u.freq.m;
-    if (freq<1000.0f)
-	{
-	return ieee80211_ieee2mhz((unsigned int)freq);
-	}
+    if( freq < 1000.0f )
+    {
+	return ieee80211_ieee2mhz( ( unsigned int )freq );
+    }
     for( i = 0; i < wrq.u.freq.e; i++ )
 	freq *= 10;
     freq /= 1000000;
@@ -222,34 +233,125 @@ static const char *ieee80211_ntoa( const uint8_t mac[6] )
 		  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
     return ( i < 17 ? NULL : a );
 }
-typedef union _MACHTTRANSMIT_SETTING {
-	struct  {
-		unsigned short  MCS:7;  // MCS
-		unsigned short  BW:1;   //channel bandwidth 20MHz or 40 MHz
-		unsigned short  ShortGI:1;
-		unsigned short  STBC:2; //SPACE
-		unsigned short  rsv:3;
-		unsigned short  MODE:2; // Use definition MODE_xxx.
-	} field;
-	unsigned short      word;
+typedef union _MACHTTRANSMIT_SETTING
+{
+    struct
+    {
+	unsigned short MCS:7;	// MCS
+	unsigned short BW:1;	//channel bandwidth 20MHz or 40 MHz
+	unsigned short ShortGI:1;
+	unsigned short STBC:2;	//SPACE
+	unsigned short rsv:3;
+	unsigned short MODE:2;	// Use definition MODE_xxx.
+    } field;
+    unsigned short word;
 } MACHTTRANSMIT_SETTING;
 
-typedef struct _RT_802_11_MAC_ENTRY {
-	unsigned char            Addr[6];
-	unsigned char            Aid;
-	unsigned char            Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
-	unsigned char            MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
-	char                     AvgRssi0;
-	char                     AvgRssi1;
-	char                     AvgRssi2;
-	unsigned int             ConnectedTime;
-	MACHTTRANSMIT_SETTING    TxRate;
+typedef struct _RT_802_11_MAC_ENTRY
+{
+    unsigned char Addr[6];
+    unsigned char Aid;
+    unsigned char Psm;		// 0:PWR_ACTIVE, 1:PWR_SAVE
+    unsigned char MimoPs;	// 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
+    char AvgRssi0;
+    char AvgRssi1;
+    char AvgRssi2;
+    unsigned int ConnectedTime;
+    MACHTTRANSMIT_SETTING TxRate;
 } RT_802_11_MAC_ENTRY;
 
-typedef struct _RT_802_11_MAC_TABLE {
-	unsigned long            Num;
-	RT_802_11_MAC_ENTRY      Entry[32]; //MAX_LEN_OF_MAC_TABLE = 32
+typedef struct _RT_802_11_MAC_TABLE
+{
+    unsigned long Num;
+    RT_802_11_MAC_ENTRY Entry[32];	//MAX_LEN_OF_MAC_TABLE = 32
 } RT_802_11_MAC_TABLE;
+
+typedef struct STAINFO
+{
+    char mac[6];
+    char rssi;
+    char noise;
+    char ifname[32];
+} STAINFO;
+
+int OidQueryInformation( unsigned long OidQueryCode, int socket_id,
+			 char *DeviceName, void *ptr,
+			 unsigned long PtrLength )
+{
+    struct iwreq wrq;
+
+    strcpy( wrq.ifr_name, DeviceName );
+    wrq.u.data.length = PtrLength;
+    wrq.u.data.pointer = ( caddr_t ) ptr;
+    wrq.u.data.flags = OidQueryCode;
+
+    return ( ioctl( socket_id, ( SIOCIWFIRSTPRIV + 0x0E ), &wrq ) );
+}
+
+#include "stapriv.h"
+#include "oid.h"
+
+STAINFO *getRaStaInfo( char *ifname )
+{
+    char G_bRadio = 1;		//TRUE
+
+    int ConnectStatus = 0;
+    unsigned char BssidQuery[6];
+
+    if( !nvram_nmatch( "sta", "%s_mode", ifname )
+	&& !nvram_nmatch( "apsta", "%s_mode", ifname )
+	&& !nvram_nmatch( "apstawet", "%s_mode", ifname ) )
+    {
+	return NULL;
+    }
+    char *ifn = "ra0";
+
+    if( nvram_nmatch( "apsta", "%s_mode", ifname )
+	|| nvram_nmatch( "apstawet", "%s_mode", ifname ) )
+	ifn = "apcli0";
+
+    int s;
+
+    s = getsocket(  );
+    if( OidQueryInformation
+	( OID_GEN_MEDIA_CONNECT_STATUS, s, ifn, &ConnectStatus,
+	  sizeof( ConnectStatus ) ) < 0 )
+    {
+	return NULL;
+    }
+    if( OidQueryInformation
+	( RT_OID_802_11_RADIO, s, ifn, &G_bRadio, sizeof( G_bRadio ) ) < 0 )
+    {
+	return NULL;
+    }
+    if( G_bRadio && ConnectStatus == 1 )
+    {
+	memset( &BssidQuery, 0x00, sizeof( BssidQuery ) );
+	OidQueryInformation( OID_802_11_BSSID, s, ifn, &BssidQuery,
+			     sizeof( BssidQuery ) );
+	long RSSI;
+	int nNoiseDbm;
+	unsigned char lNoise; // this value is (ULONG) in Ndis driver (NOTICE!!!)
+
+	OidQueryInformation( RT_OID_802_11_RSSI, s, ifn, &RSSI,
+			     sizeof( RSSI ) );
+	OidQueryInformation(RT_OID_802_11_QUERY_NOISE_LEVEL, s, "ra0", &lNoise, sizeof(lNoise));
+	nNoiseDbm = lNoise;
+	nNoiseDbm -= 143;
+
+
+
+	STAINFO *ret = malloc( sizeof( STAINFO ) );
+
+	memcpy( ret->mac, BssidQuery, 6 );
+	strcpy( ret->ifname, ifn );
+	ret->rssi = RSSI;
+	ret->noise = nNoiseDbm;
+	return ret;
+    }
+    return NULL;
+
+}
 
 #define RTPRIV_IOCTL_GET_MAC_TABLE		(SIOCIWFIRSTPRIV + 0x0F)
 
@@ -260,7 +362,7 @@ int getassoclist( char *ifname, unsigned char *list )
     char netmode[32];
     unsigned int *count = ( unsigned int * )list;
 
-    RT_802_11_MAC_TABLE table = {0};
+    RT_802_11_MAC_TABLE table = { 0 };
     int s, i;
 
     sprintf( type, "%s_mode", ifname );
@@ -270,57 +372,126 @@ int getassoclist( char *ifname, unsigned char *list )
 	return 0;
     }
 
-    if( !ifexists( ifname ) )
-    {
-	printf( "IOCTL_STA_INFO ifresolv %s failed!\n", ifname );
-	return 0;
-    }
     int state = get_radiostate( ifname );
+    int ignore = 0;
 
     if( state == 0 || state == -1 )
     {
-	printf( "IOCTL_STA_INFO radio %s not enabled!\n", ifname );
-	return 0;
+	ignore = 1;
     }
-    s = socket( AF_INET, SOCK_DGRAM, 0 );
-    if( s < 0 )
+    if( !ignore )
     {
-	fprintf( stderr, "socket(SOCK_DRAGM)\n" );
-	return 0;
-    }
-    ( void )memset( &iwr, 0, sizeof( struct iwreq ) );
-    ( void )strncpy( iwr.ifr_name, ifname, sizeof( iwr.ifr_name ) );
+	s = getsocket(  );
+	if( s < 0 )
+	{
+	    ignore = 1;
+	}
+	( void )memset( &iwr, 0, sizeof( struct iwreq ) );
+	( void )strncpy( iwr.ifr_name, ifname, sizeof( iwr.ifr_name ) );
 
-    iwr.u.data.pointer = (caddr_t) &table;
-    if( ioctl( s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr ) < 0 )
-    {
-	fprintf( stderr, "IOCTL_STA_INFO for %s failed!\n", ifname );
-	close( s );
-	return 0;
+	iwr.u.data.pointer = ( caddr_t ) & table;
+	if( ioctl( s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr ) < 0 )
+	{
+	    ignore = 1;
+	}
     }
-
 
     unsigned char *l = ( unsigned char * )list;
 
     count[0] = 0;
     l += 4;
-    for (i=0;i<table.Num;i++)
+    STAINFO *sta = getRaStaInfo( ifname );
+
+    if( sta != NULL )
     {
-	memcpy( l, &table.Entry[i].Addr, 6 );
-	if( l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0 && l[4] == 0
-	    && l[5] == 0 )
-	    break;
+	memcpy( l, sta->mac, 6 );
 	l += 6;
 	count[0]++;
+	free( sta );
     }
-    close( s );
+    if( !ignore )
+	for( i = 0; i < table.Num; i++ )
+	{
+	    memcpy( l, &table.Entry[i].Addr, 6 );
+	    if( l[0] == 0 && l[1] == 0 && l[2] == 0 && l[3] == 0 && l[4] == 0
+		&& l[5] == 0 )
+		break;
+	    l += 6;
+	    count[0]++;
+	}
 
     return count[0];
 }
+int getRssi( char *ifname, unsigned char *mac )
+{
+    struct iwreq iwr;
+    char type[32];
+    char netmode[32];
 
+    RT_802_11_MAC_TABLE table = { 0 };
+    int s, i;
 
+    sprintf( type, "%s_mode", ifname );
+    sprintf( netmode, "%s_net_mode", ifname );
+    if( nvram_match( netmode, "disabled" ) )
+    {
+	return 0;
+    }
 
+    int state = get_radiostate( ifname );
+    int ignore = 0;
 
+    if( state == 0 || state == -1 )
+    {
+	ignore = 1;
+    }
+    if( !ignore )
+    {
+	s = getsocket(  );
+	if( s < 0 )
+	{
+	    ignore = 1;
+	}
+	( void )memset( &iwr, 0, sizeof( struct iwreq ) );
+	( void )strncpy( iwr.ifr_name, ifname, sizeof( iwr.ifr_name ) );
+
+	iwr.u.data.pointer = ( caddr_t ) & table;
+	if( ioctl( s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr ) < 0 )
+	{
+	    ignore = 1;
+	}
+    }
+
+    STAINFO *sta = getRaStaInfo( ifname );
+
+    if( sta != NULL )
+    {
+	if( !memcmp( mac, sta->mac, 6 ) )
+	{
+	    int retu = sta->rssi;
+
+	    free( sta );
+	    return -95 + retu;
+	}
+	free( sta );
+    }
+    if( !ignore )
+	for( i = 0; i < table.Num; i++ )
+	{
+	    if( !memcmp( mac, &table.Entry[i].Addr, 6 ) )
+	    {
+		return -95 + table.Entry[i].AvgRssi0;
+	    }
+	}
+    return 0;
+}
+
+int getNoise( char *ifname, unsigned char *mac )
+{
+
+    return -95;
+
+}
 
 #else
 int getchannels( unsigned int *list, char *ifname )
@@ -415,6 +586,7 @@ int getwdslist( char *name, unsigned char *list )
     return ( ret );
 }
 
+#ifndef HAVE_RT2880
 int getNoise( char *ifname, unsigned char *macname )
 {
     unsigned int noise;
@@ -435,7 +607,7 @@ int getNoise( char *ifname, unsigned char *macname )
      */
     return noise;
 }
-
+#endif
 /*
  * struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
  * { wl_bss_info_t *bss_info = (wl_bss_info_t *) buf; get_pktcnt_t pkt;
@@ -480,8 +652,6 @@ int getNoise( char *ifname, unsigned char *macname )
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 
-
-
 int getsocket( void )
 {
     static int s = -1;
@@ -495,11 +665,9 @@ int getsocket( void )
     return s;
 }
 
-
 /*
  * Atheros 
  */
-
 
 #define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
 static int
@@ -890,7 +1058,6 @@ int get_radiostate( char *ifname )
     return 0;
 }
 
-
 struct wifi_channels
 {
     int channel;
@@ -1135,7 +1302,6 @@ int getdevicecount( void )
     return 0;
 }
 
-
 int getRssi( char *ifname, unsigned char *mac )
 {
     unsigned char *buf = malloc( 24 * 1024 );
@@ -1349,8 +1515,6 @@ int getassoclist( char *ifname, unsigned char *list )
 
 #endif
 
-
-
 #ifdef HAVE_RT2880
 char *get_wl_instance_name( int instance )
 {
@@ -1365,8 +1529,6 @@ int get_wl_instance( char *name )
 {
     return 1;
 }
-
-
 
 #else
 char *get_wl_instance_name( int instance )
