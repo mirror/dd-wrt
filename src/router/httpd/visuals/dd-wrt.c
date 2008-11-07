@@ -3379,7 +3379,7 @@ static void showbridgesettings( webs_t wp, char *var, int mcast , int dual)
     websWrite( wp, "</div>\n" );
 
 #ifdef HAVE_MADWIFI
-if (dual)
+/*if (dual)
 {
     char dl[32];
     sprintf(dl,"%s_duallink",var);
@@ -3427,7 +3427,7 @@ if (dual)
 	       "show_layer_ext(document.getElementsByName(\"%s_duallink\"), \"%s_idduallink\", %s);\n",
 	       var, vvar, nvram_match( dl, "1" ) ? "true" : "false" );
     websWrite( wp, "//]]>\n</script>\n" );
-}
+}*/
 #endif
 
     websWrite( wp, "</div>\n" );
@@ -3823,23 +3823,23 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 		       nvram_match( wl_mode,
 				    "ap" ) ? "selected=\\\"selected\\\"" :
 		       "" );
-//#ifndef HAVE_RT2880
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n",
 		       nvram_match( wl_mode,
 				    "sta" ) ? "selected=\\\"selected\\\"" :
 		       "" );
+#ifndef HAVE_RT2880
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"wet\\\" %s >\" + wl_basic.clientBridge + \"</option>\");\n",
 		       nvram_match( wl_mode,
 				    "wet" ) ? "selected=\\\"selected\\\"" :
 		       "" );
+#endif
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"infra\\\" %s >\" + wl_basic.adhoc + \"</option>\");\n",
 		       nvram_match( wl_mode,
 				    "infra" ) ? "selected=\\\"selected\\\"" :
 		       "" );
-//#endif
 #ifndef HAVE_MADWIFI
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"apsta\\\" %s >\" + wl_basic.repeater + \"</option>\");\n",
