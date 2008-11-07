@@ -96,6 +96,10 @@ if (!strcmp(argv[1],"terminate"))
 #elif HAVE_RT2880
   nvram_set("wl0_mode",nvram_safe_get("wl0_oldmode"));
   sysprintf("startservice configurewifi");
+  if (nvram_match("wl0_mode","sta") || nvram_match("wl0_mode","apsta"))
+    {
+    sysprintf("startstop wan");
+    }
 #else
   wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
 #endif  
