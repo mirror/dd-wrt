@@ -23,6 +23,7 @@ int autokill_wiviz_main( int argc, char **argv )
 	    killall( "wiviz", SIGTERM );
 	    unlink( "/tmp/wiviz2-cfg" );
 	    unlink( "/tmp/wiviz2-dump" );
+	    eval("wiviz","terminate");
 	    exit( 0 );
 	    break;
 	default:
