@@ -98,7 +98,8 @@ if (!strcmp(argv[1],"terminate"))
   sysprintf("startservice configurewifi");
 #else
   wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
-#endif    
+#endif  
+    return 0;  
     }
 
   global_cfg = &cfg;
