@@ -111,8 +111,9 @@ int site_survey_main( int argc, char *argv[] )
 {
 #define DOT11_CAP_ESS				0x0001
 #define DOT11_CAP_IBSS				0x0002
+#define DOT11_CAP_PRIVACY			0x0010	/* d11 cap. privacy */
 
-    unsigned char b1[32],b2[32],b3[32],b4[32],b5[32],b6[32],b7[32],b8[32];
+    unsigned char b1[32],b2[64],b3[32],b4[32],b5[32],b6[32],b7[32],b8[32];
     int i = 0;
 
     unlink( SITE_SURVEY_DB );
@@ -120,9 +121,11 @@ int site_survey_main( int argc, char *argv[] )
     int len;
     
     memset( site_survey_lists, sizeof( site_survey_lists ), 0 );
-    
+    if (nvram_match("wl0_mode","ap") || nvram_match("wl0_mode","apsta"))
+    {
     eval( "iwpriv", "ra0","set","SiteSurvey=1" ); // only in ap mode
     sleep(4); //wait 4 seconds per spec
+    }
     
     FILE *scan = popen("iwpriv ra0 get_site_survey","rb");
     fscanf(scan,"%s %s",b1,b2); // skip first line
@@ -132,8 +135,14 @@ int site_survey_main( int argc, char *argv[] )
     {
 	if (feof(scan))
 	    break;
-	int ret = fscanf(scan,"%s %s %s %s %s %s %s %s",b1,b2,b3,b4,b5,b6,b7,b8); //skip second line
-	if (ret<8)
+	fread(b1,4,1,scan);
+	b1[4]=0;
+	b1[strlen(b1)]=0;
+	fread(b2,33,1,scan);
+	b2[32]=0;
+	b2[strlen(b2)]=0;
+	int ret = fscanf(scan,"%s %s %s %s %s %s",b3,b4,b5,b6,b7,b8); //skip second line
+	if (ret<6)
 	    break;
 	site_survey_lists[i].channel = atoi(b1); // channel
 	strcpy(site_survey_lists[i].SSID,b2);//SSID
@@ -156,6 +165,10 @@ int site_survey_main( int argc, char *argv[] )
 
 	if (!strcmp(b8,"Ad"))
 	    site_survey_lists[i].capability=DOT11_CAP_IBSS;	
+
+	if (strcmp(b5,"OPEN"))
+	    site_survey_lists[i].capability|=DOT11_CAP_PRIVACY;	
+	    
 	i++;
     }
     while(1);
