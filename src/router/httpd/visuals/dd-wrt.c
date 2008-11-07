@@ -5652,6 +5652,14 @@ typedef struct _RT_802_11_MAC_TABLE {
 
 #define RTPRIV_IOCTL_GET_MAC_TABLE		(SIOCIWFIRSTPRIV + 0x0F)
 
+typedef struct STAINFO {
+	char mac[6];
+	char rssi;
+	char noise;
+	char ifname[32];
+} STAINFO;
+
+
 int
 ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 		       char *ifname, int cnt, int turbo, int macmask )
@@ -5662,6 +5670,7 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
     unsigned char *cp;
     int s, len,i;
     struct iwreq iwr;
+    int ignore=0;
 
     if( !ifexists( ifname ) )
     {
@@ -5672,13 +5681,11 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 
     if( state == 0 || state == -1 )
     {
-	printf( "IOCTL_STA_INFO radio %s not enabled!\n", ifname );
 	return cnt;
     }
     s = socket( AF_INET, SOCK_DGRAM, 0 );
     if( s < 0 )
     {
-	fprintf( stderr, "socket(SOCK_DRAGM)\n" );
 	return cnt;
     }
     ( void )memset( &iwr, 0, sizeof( struct iwreq ) );
@@ -5688,12 +5695,9 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 //    iwr.u.data.length = 24 * 1024;
     if( ioctl( s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr ) < 0 )
     {
-	fprintf( stderr, "IOCTL_STA_INFO for %s failed!\n", ifname );
-	close( s );
-	return cnt;
+	ignore=1;
     }
-
-
+if (!ignore)
 for (i = 0; i < table.Num; i++) {
 	if( cnt )
 	    websWrite( wp, "," );
@@ -5735,8 +5739,17 @@ for (i = 0; i < table.Num; i++) {
 		        (table.Entry[i].AvgRssi0 - (-95)) );
 	}
     }
-    close( s );
-
+STAINFO *sta = getRaStaInfo("wl0");
+    if (sta)
+	{
+	char mac[32];
+	strcpy( mac, ieee80211_ntoa( sta->mac ) );
+	    websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac,sta->ifname, sta->rssi, sta->noise,(sta->rssi - (sta->noise)) );
+	free(sta);
+	
+	}
+    
+close(s);
     return cnt;
 }
 extern char *getiflist( void );
