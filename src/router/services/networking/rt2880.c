@@ -328,6 +328,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 {
     char var[64];
     char *next;
+    int startradius=0;
 
     deconfigure_wifi(  );
     killall( "rt2860apd", SIGTERM );
@@ -352,7 +353,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     eval( "ifconfig", "apcli0", "down" );
 
     rmmod( "rt2860v2_ap" );
-    rmmod( "rt2860v2_sta " );
+    rmmod( "rt2860v2_sta" );
 
     FILE *fp = fopen( "/tmp/RT2860.dat", "wb" );	// config file for driver (don't ask me, its really the worst config thing i have seen)
 
@@ -552,6 +553,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
     if( nvram_match( "wl0_akm", "wpa" ) )
     {
+	startradius=1;
 	if( isSTA(  ) )
 	    fprintf( fp, "WPAPSK=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
 	else
@@ -570,6 +572,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
     if( nvram_match( "wl0_akm", "wpa2" ) )
     {
+	startradius=1;
 	if( isSTA(  ) )
 	    fprintf( fp, "WPAPSK=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
 	else
@@ -588,6 +591,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
     if( nvram_match( "wl0_akm", "wpa wpa2" ) )
     {
+	startradius=1;
 	if( isSTA(  ) )
 	    fprintf( fp, "WPAPSK=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
 	else
@@ -606,6 +610,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
     if( nvram_match( "wl0_akm", "radius" ) )
     {
+	startradius=1;
 	if( isSTA(  ) )
 	    fprintf( fp, "WPAPSK=\n" );
 	else
@@ -704,6 +709,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	}
 	if( nvram_nmatch( "wpa", "%s_akm", var ) )
 	{
+	startradius=1;
 	    fprintf( fp, "WPAPSK%d=\n", count );
 	    strcat( authmode, ";WPA" );
 	    sprintf( radius_server, "%s;%s", radius_server,
@@ -722,6 +728,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	}
 	if( nvram_nmatch( "wpa2", "%s_akm", var ) )
 	{
+	startradius=1;
 	    fprintf( fp, "WPAPSK%d=\n", count );
 	    strcat( authmode, ";WPA2" );
 	    sprintf( radius_server, "%s;%s", radius_server,
@@ -740,6 +747,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	}
 	if( nvram_nmatch( "wpa wpa2", "%s_akm", var ) )
 	{
+	startradius=1;
 	    fprintf( fp, "WPAPSK%d=\n", count );
 	    strcat( authmode, ";WPA1WPA2" );
 	    sprintf( radius_server, "%s;%s", radius_server,
@@ -758,6 +766,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	}
 	if( nvram_nmatch( "radius", "%s_akm", var ) )
 	{
+	startradius=1;
 	    fprintf( fp, "WPAPSK%d=\n", count );
 	    strcat( authmode, ";OPEN" );
 	    sprintf( radius_server, "%s;%s", radius_server,
@@ -887,7 +896,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     else
 	fprintf( fp, "TxRate=0\n" );
 
-    if( isSTA(  ) )
+    if( isSTA(  ) && !nvram_match("wl0_mode","infra"))
 	fprintf( fp, "Channel=0\n" );
     else
 	fprintf( fp, "Channel=%s\n", nvram_safe_get( "wl0_channel" ) );
@@ -1024,6 +1033,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	if( nvram_default_match( bridged, "1", "1" ) )
 	{
 	    sysprintf( "ifconfig ra0 0.0.0.0 up" );
+	    if (nvram_match("wl0_mode","infra"))
+		{
+		br_add_interface( getBridge( "ra0" ), "ra0" );
+		}
 	}
 	else
 	{
@@ -1032,6 +1045,13 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 		       nvram_nget( "%s_ipaddr", getRADev( dev ) ),
 		       nvram_nget( "%s_netmask", getRADev( dev ) ) );
 	}
+	char vathmac[32];
+
+	sprintf( vathmac, "wl0_hwaddr" );
+	char vmacaddr[32];
+
+	getMacAddr( "ra0", vmacaddr );
+	nvram_set( vathmac, vmacaddr );
 	setupSupplicant( "wl0" );
     }
     else
@@ -1149,10 +1169,11 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 
 	   set macfilter
 	 */
-
+	
+	if (startradius)
 	eval( "rt2860apd" );
+	setMacFilter( "wl0" );
     }
-    setMacFilter( "wl0" );
     vifs = nvram_safe_get( "wl0_vifs" );
     if( vifs != NULL && strlen( vifs ) > 0 )
     {
