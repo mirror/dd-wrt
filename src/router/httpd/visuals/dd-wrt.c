@@ -3616,7 +3616,17 @@ static int show_virtualssid( webs_t wp, char *prefix )
 #endif
 	sprintf( ssid, "%s_ap_isolate", var );
 	showRadio( wp, "wl_adv.label11", ssid );
-	sprintf( wl_mode, "%s_mode", var );
+
+	sprintf( power, "%s_maxassoc", prefix );
+	websWrite( wp, "<div class=\"setting\">\n" );
+	websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label10)</script></div>\n" );
+	websWrite( wp,
+	       "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_adv.label10)\" value=\"%s\" />\n",
+	       power, nvram_default_get( power, "256" ) );
+	websWrite( wp,
+	       "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n" );
+	websWrite( wp, "</div>\n" );
 #ifdef HAVE_RT2880
 	showbridgesettings( wp, getRADev(var), 1,0 );
 #else
@@ -4234,6 +4244,16 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     // end ACK timing
 #endif
 #ifdef HAVE_MADWIFI
+    sprintf( power, "%s_maxassoc", prefix );
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label10)</script></div>\n" );
+    websWrite( wp,
+	       "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_basic.label6)\" value=\"%s\" />\n",
+	       power, nvram_default_get( power, "256" ) );
+    websWrite( wp,
+	       "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n" );
+    websWrite( wp, "</div>\n" );
     showbridgesettings( wp, prefix, 1 ,1);
 #elif HAVE_RT2880
     showbridgesettings( wp, "ra0", 1 ,1);

@@ -897,7 +897,7 @@ static void configure_single( int count )
     char rxantenna[32];
     char txantenna[32];
     char athmac[16];
-
+    char maxassoc[32];
     sprintf( wif, "wifi%d", count );
     sprintf( dev, "ath%d", count );
     sprintf( wifivifs, "ath%d_vifs", count );
@@ -909,6 +909,7 @@ static void configure_single( int count )
     sprintf( txantenna, "ath%d_txantenna", count );
     sprintf( rxantenna, "ath%d_rxantenna", count );
     sprintf( athmac, "ath%d_hwaddr", count );
+    
     // create base device
     cprintf( "configure base interface %d\n", count );
     sprintf( net, "%s_net_mode", dev );
@@ -1131,6 +1132,9 @@ static void configure_single( int count )
 
     sprintf( chanshift_s, "%s_chanshift", dev );
     char *chanshift = nvram_default_get( chanshift_s, "0" );
+    
+    sprintf( maxassoc, "%s_maxassoc",dev);
+    sysprintf("iwpriv %s maxassoc %s",dev,nvram_default_get(maxassoc,"256"));
 
     switch ( atoi( chanshift ) )
     {
@@ -1168,6 +1172,8 @@ static void configure_single( int count )
 	    continue;
 	sprintf( ssid, "%s_ssid", var );
 	sprintf( mode, "%s_mode", var );
+	sprintf( maxassoc, "%s_maxassoc",var);
+	sysprintf("iwpriv %s maxassoc %s",var,nvram_default_get(maxassoc,"256"));
 	switch ( atoi( chanshift ) )
 	{
 	    case 15:
