@@ -1435,6 +1435,14 @@ void getIfLists( char *eths, int size )
     memset( eths2, 0, 256 );
     getIfList( eths2, "ra" );
     sprintf( eths, "%s %s", eths, eths2 );
+
+    memset( eths2, 0, 256 );
+    getIfList( eths2, "apcli" );
+    sprintf( eths, "%s %s", eths, eths2 );
+
+    memset( eths2, 0, 256 );
+    getIfList( eths2, "wds" );
+    sprintf( eths, "%s %s", eths, eths2 );
 #else
     memset( eths2, 0, 256 );
     getIfList( eths2, "wl" );
