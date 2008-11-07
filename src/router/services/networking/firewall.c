@@ -2242,8 +2242,15 @@ static void filter_table( void )
     }
     if( nvram_match( "chilli_enable", "1" ) )
     {
+	if (nvram_match("wk_mode","gateway"))
+	{
 	save2file( "-I INPUT -m state --state NEW -i tun0 -j ACCEPT\n" );
 	save2file( "-I FORWARD -m state --state NEW -i tun0 -j ACCEPT\n" );
+	}else
+	{
+	save2file( "-I INPUT -i tun0 -j ACCEPT\n" );
+	save2file( "-I FORWARD -i tun0 -j ACCEPT\n" );	
+	}
     }
 
     /*
