@@ -79,7 +79,11 @@ int main(int argc, char * * argv) {
   int i;
   int defaultHopSeq[] = { 1, 3, 6, 8, 11 };
   int s, one;
+#ifdef HAVE_RT2880
+  wl_dev="ra0";
+#else
   wl_dev=get_wdev();
+#endif
   global_cfg = &cfg;
   signal(SIGUSR1, &signal_handler);
   signal(SIGUSR2, &signal_handler);
@@ -95,7 +99,7 @@ int main(int argc, char * * argv) {
   cfg.channelHopSeqLen = 5;
   memcpy(cfg.channelHopSeq, defaultHopSeq, sizeof(defaultHopSeq));
 
-#ifndef HAVE_MADWIFI
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
   wl_ioctl(wl_dev, WLC_GET_MAGIC, &i, 4);
 	if (i != WLC_IOCTL_MAGIC) {
 		printf( "Wireless magic not correct, not querying wl for info %X!=%X\n",i,WLC_IOCTL_MAGIC);
@@ -108,6 +112,12 @@ int main(int argc, char * * argv) {
 	  wl_ioctl(wl_dev, WLC_SET_MONITOR, &newMonitor, 4);
 	}
 
+#elif HAVE_RT2880
+	  nvram_set("wl0_oldmode",nvram_safe_get("wl0_mode"));
+	  nvram_set("wl0_mode","sta");
+	  sysprintf("startservice configurewifi");
+	  sysprintf("iwconfig ra0 mode monitor");
+	  cfg.readFromWl = 1;
 #else
 	  sysprintf("wlanconfig %s create wlandev %s wlanmode monitor",get_monitor(),getWifi(get_wdev()));
 	  sysprintf("ifconfig %s up",get_monitor());
@@ -115,7 +125,7 @@ int main(int argc, char * * argv) {
 #endif
   reloadConfig();
 
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
   s = openMonitorSocket(get_monitor()); // for testing we use ath0
 #else
   s = openMonitorSocket("prism0");
@@ -155,14 +165,17 @@ int main(int argc, char * * argv) {
     if (cfg.hosts[i].staInfo) free(cfg.hosts[i].staInfo);
     }
 #endif
-#ifndef HAVE_MADWIFI
-  wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
-#else
+#ifdef HAVE_MADWIFI
   // return to original channel
   sysprintf("iwconfig %s channel %sM",get_monitor(),nvram_nget("%s_channel",get_wdev()));
   sleep(1);
   sysprintf("ifconfig %s down",get_monitor());
   sysprintf("wlanconfig %s destroy",get_monitor());
+#elif HAVE_RT2880
+  nvram_set("wl0_mode",nvram_safe_get("wl0_oldmode"));
+  sysprintf("startservice configurewifi");
+#else
+  wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
 #endif
   close(s);
   return 0;
@@ -303,7 +316,9 @@ void reloadConfig() {
 #ifdef HAVE_MADWIFI
 	    set_channel(wl_dev,cfg->curChannel);
 //	    sysprintf("iwconfig %s channel %d\n",wl_dev,cfg->curChannel);
-#else        
+#elif HAVE_RT2880
+	    sysprintf("iwpriv ra0 set Channel=%d",cfg->curChannel);
+#else
             if (wl_ioctl(wl_dev, WLC_SET_CHANNEL, &cfg->curChannel, 4) < 0) {
               printf( "Channel set to %i failed\n", cfg->curChannel);
               }
@@ -663,19 +678,31 @@ void readWL(wiviz_cfg * cfg) {
 	print_mac(mac, "\n");
 	#endif
 	if (!nonzeromac(mac)) return;
+#ifdef HAVE_RT2880
+	if (nvram_match("ap","wl0_oldmode"))
+	    ap=1;
+#else
 	if (nvram_nmatch("ap","%s_mode",wl_dev))
 	    ap=1;
 	if (nvram_nmatch("wdsap","%s_mode",wl_dev))
 	    ap=1;
+#endif
 //	wl_ioctl(wl_dev, WLC_GET_AP, &ap, 4);
 	if (ap) {
 		host = gotHost(cfg, mac, typeAP);
     host->isSelf = 1;
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+#ifdef HAVE_RT2880
+		strcpy(host->apInfo->ssid,nvram_safe_get("wl0_ssid"));
+		host->apInfo->ssidlen = strlen(host->apInfo->ssid);
+		ether_atoe (nvram_safe_get("wl0_hwaddr"),buf);
+		memcpy(host->apInfo->bssid,buf,6);
+#else
 		strcpy(host->apInfo->ssid,nvram_nget("%s_ssid",wl_dev));
 		host->apInfo->ssidlen = strlen(host->apInfo->ssid);
 		ether_atoe (nvram_nget("%s_hwaddr",wl_dev),buf);
 		memcpy(host->apInfo->bssid,buf,6);
+#endif
 #else
 		wl_ioctl(wl_dev, WLC_GET_BSSID, host->apInfo->bssid, 6);
 		wl_ioctl(wl_dev, WLC_GET_SSID, &ssid, sizeof(wlc_ssid_t));
@@ -685,6 +712,8 @@ void readWL(wiviz_cfg * cfg) {
 		host->RSSI = 0;
 #ifdef HAVE_MADWIFI
 		host->apInfo->channel = wifi_getchannel( wl_dev );
+#elif HAVE_RT2880
+		host->apInfo->channel = atoi(nvram_safe_get("wl0_channel"));
 #else		
 		wl_ioctl(wl_dev, WLC_GET_CHANNEL, &channel, sizeof(channel_info_t));
 		host->apInfo->channel = channel.hw_channel;
@@ -700,6 +729,8 @@ void readWL(wiviz_cfg * cfg) {
 			  sta = gotHost(cfg, (char *)&macs->ea[i], typeSta);
     			    #ifdef HAVE_MADWIFI
     				sta->RSSI = -getRssi(wl_dev,macs->ea)*100;
+    			    #elif HAVE_RT2880
+    				sta->RSSI = -getRssi(wl_dev,macs->ea)*100; // needs to be solved    			    
     			    #else
     				memcpy(starssi.mac, &macs->ea[i], 6);
     				starssi.RSSI = 3000;
@@ -716,7 +747,7 @@ void readWL(wiviz_cfg * cfg) {
 		host = gotHost(cfg, mac, typeSta);
     host->isSelf = 1;
 		host->RSSI = 0;
-		#ifdef HAVE_MADWIFI
+		#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 		if (getassoclist(wl_dev,macs)>-1)
 		    {
 		    if (macs->count>0){
@@ -741,7 +772,7 @@ void readWL(wiviz_cfg * cfg) {
 		}
 		#endif
 	}
-#ifdef HAVE_MADWIFI
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 cfg->curChannel = wifi_getchannel(wl_dev);
 
 #else

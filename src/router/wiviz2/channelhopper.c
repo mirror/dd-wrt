@@ -132,7 +132,9 @@ void channelHopper(wiviz_cfg * cfg) {
     int ret = set_channel(get_wdev(),nc);
     if (ret==-1)
 	continue;
-#else        
+#elif HAVE_RT2880
+    sysprintf("iwpriv ra0 set Channel=%d",nc);
+#else
     if (wl_ioctl(get_wdev(), WLC_SET_CHANNEL, &nc, 4)<0)
 	continue;
 #endif
