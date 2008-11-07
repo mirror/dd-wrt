@@ -2563,6 +2563,7 @@ static void save_prefix( webs_t wp, char *prefix )
 
     copytonv( wp, "%s_chanshift", prefix );
     copytonv( wp, "%s_doth", prefix );
+    copytonv( wp, "%s_maxassoc", prefix);
 
     sprintf( chanbw, "%s_channelbw", prefix );
     char *cbw = websGetVar( wp, chanbw, NULL );
