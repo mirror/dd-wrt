@@ -3525,7 +3525,7 @@ static int show_virtualssid( webs_t wp, char *prefix )
     char var[80];
     char ssid[80];
     char vif[16];
-
+    char power[32];
 #ifdef HAVE_MADWIFI
     char wmm[32];
     char wl_protmode[32];
