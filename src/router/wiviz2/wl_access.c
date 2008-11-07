@@ -35,6 +35,15 @@
 
 #include "wl_access.h"
 #ifndef HAVE_MADWIFI
+
+#ifdef HAVE_RT2880
+
+char *get_monitor(void)
+{
+return "ra0";
+}
+
+#else
 int wl_ioctl(char *name, int cmd, void *buf, int len)
 {
 	struct ifreq ifr;
@@ -60,6 +69,7 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 	close(s);
 	return ret;
 }
+#endif
 #else
 
 
