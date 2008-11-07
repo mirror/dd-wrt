@@ -323,13 +323,13 @@ static int isSTA(  )
 	return 1;
     return 0;
 }
+static int startradius=0;
 void configure_wifi( void )	// madwifi implementation for atheros based
 				// cards
 {
     char var[64];
     char *next;
-    int startradius=0;
-
+    startradius=0;
     deconfigure_wifi(  );
     killall( "rt2860apd", SIGTERM );
     eval( "ifconfig", "ra0", "down" );
@@ -1189,7 +1189,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 
 void start_hostapdwan( void )
 {
-    if( !isSTA(  ) )
+    if( !isSTA(  ) && startradius )
     {
 	killall( "rt2860apd", SIGTERM );
 	eval( "rt2860apd" );
