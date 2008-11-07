@@ -65,13 +65,13 @@ void print_host(FILE * outf, wiviz_host * host);
 void __cdecl signal_handler(int);
 void readWL(wiviz_cfg * cfg);
 void reloadConfig();
-
+int stop = 0;
+ 
 wiviz_cfg * global_cfg;
 char *wl_dev;
 ////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char * * argv) {
   char *dev;                          
-  int stop = 0;
   int oldMonitor, newMonitor;        
   u_char packet[4096];                 
   int pktlen;
@@ -84,6 +84,23 @@ int main(int argc, char * * argv) {
 #else
   wl_dev=get_wdev();
 #endif
+if (argc>1)
+if (!strcmp(argv[1],"terminate"))
+    {
+#ifdef HAVE_MADWIFI
+  // return to original channel
+  sysprintf("iwconfig %s channel %sM",get_monitor(),nvram_nget("%s_channel",get_wdev()));
+  sleep(1);
+  sysprintf("ifconfig %s down",get_monitor());
+  sysprintf("wlanconfig %s destroy",get_monitor());
+#elif HAVE_RT2880
+  nvram_set("wl0_mode",nvram_safe_get("wl0_oldmode"));
+  sysprintf("startservice configurewifi");
+#else
+  wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
+#endif    
+    }
+
   global_cfg = &cfg;
   signal(SIGUSR1, &signal_handler);
   signal(SIGUSR2, &signal_handler);
@@ -115,6 +132,7 @@ int main(int argc, char * * argv) {
 #elif HAVE_RT2880
 	  nvram_set("wl0_oldmode",nvram_safe_get("wl0_mode"));
 	  nvram_set("wl0_mode","sta");
+	  if (!nvram_match("wl0_oldmode","sta"))
 	  sysprintf("startservice configurewifi");
 	  sysprintf("iwconfig ra0 mode monitor");
 	  cfg.readFromWl = 1;
@@ -164,18 +182,6 @@ int main(int argc, char * * argv) {
     if (cfg.hosts[i].apInfo) free(cfg.hosts[i].apInfo);
     if (cfg.hosts[i].staInfo) free(cfg.hosts[i].staInfo);
     }
-#endif
-#ifdef HAVE_MADWIFI
-  // return to original channel
-  sysprintf("iwconfig %s channel %sM",get_monitor(),nvram_nget("%s_channel",get_wdev()));
-  sleep(1);
-  sysprintf("ifconfig %s down",get_monitor());
-  sysprintf("wlanconfig %s destroy",get_monitor());
-#elif HAVE_RT2880
-  nvram_set("wl0_mode",nvram_safe_get("wl0_oldmode"));
-  sysprintf("startservice configurewifi");
-#else
-  wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
 #endif
   close(s);
   return 0;
@@ -372,6 +378,7 @@ void reloadConfig() {
 void __cdecl signal_handler(int signum) {
   if (signum == SIGUSR1) writeJavascript();
   if (signum == SIGUSR2) reloadConfig();
+  if (signum == SIGTERM) stop=1;
   }
 
 ////////////////////////////////////////////////////////////////////////////////

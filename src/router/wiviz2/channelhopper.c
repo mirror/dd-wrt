@@ -125,7 +125,13 @@ void channelHopper(wiviz_cfg * cfg) {
     nc = hop;
     hopPos = (hopPos + 1) % cfg->channelHopSeqLen;
     }
+#ifdef HAVE_MADWIFI
     if (nc>255)nc=1;
+#elif HAVE_RT2880
+    if (nc>14)nc=1;
+#else
+    if (nc>255)nc=1;
+#endif
     //Set the channel
 #ifdef HAVE_MADWIFI
     printf("set channel %d\n",nc);
