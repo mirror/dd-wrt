@@ -2796,12 +2796,12 @@ void ej_show_eop_tunnels( webs_t wp, int argc, char_t ** argv )
 		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.bridging)</script></div>\n" );
 	sprintf( temp, "oet%d_bridged", tun );
 	websWrite( wp,
-		   "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idbridged%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		   "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idbridged%d', false)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 		   temp,
 		   ( nvram_match( temp, "1" ) ? "checked=\"checked\"" : "" ),
 		   tun );
 	websWrite( wp,
-		   " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idbridged%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+		   " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idbridged%d', true)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
 		   temp,
 		   ( nvram_match( temp, "0" ) ? "checked=\"checked\"" : "" ),
 		   tun );
