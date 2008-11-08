@@ -430,7 +430,7 @@ void print_tunnel(struct ip_tunnel_parm *p)
 	/* Do not use format_host() for local addr,
 	 * symbolic name will not be useful.
 	 */
-	printf("%s: %s/ip  remote %s  local %s ",
+	fprintf(stdout,"%s: %s/ip  remote %s  local %s ",
 	       p->name,
 	       p->iph.protocol == IPPROTO_IPIP ? "ip" :
 	       (p->iph.protocol == IPPROTO_GRE ? "gre" :
@@ -442,60 +442,60 @@ void print_tunnel(struct ip_tunnel_parm *p)
 	if (p->link) {
 		char *n = do_ioctl_get_ifname(p->link);
 		if (n)
-			printf(" dev %s ", n);
+			fprintf(stdout," dev %s ", n);
 	}
 
 	if (p->iph.ttl)
 	{
-		printf(" ttl %d ", p->iph.ttl);
+		fprintf(stdout," ttl %d ", p->iph.ttl);
 	}
 	else
 	{
-		printf(" ttl inherit ");
+		fprintf(stdout," ttl inherit ");
 	}
 	
 	if (p->iph.tos) {
 		SPRINT_BUF(b1);
-		printf(" tos");
+		fprintf(stdout," tos");
 		if (p->iph.tos&1)
 		{
-			printf(" inherit");
+			fprintf(stdout," inherit");
 		}
 		if (p->iph.tos&~1)
 		{
-			printf("%c%s ", p->iph.tos&1 ? '/' : ' ',
+			fprintf(stdout,"%c%s ", p->iph.tos&1 ? '/' : ' ',
 			       rtnl_dsfield_n2a(p->iph.tos&~1, b1, sizeof(b1)));
 		}
 	}
 
 	if (!(p->iph.frag_off&htons(IP_DF)))
 	{
-		printf(" nopmtudisc");
+		fprintf(stdout," nopmtudisc");
 	}
 
 	if ((p->i_flags&GRE_KEY) && (p->o_flags&GRE_KEY) && p->o_key == p->i_key)
 	{
-		printf(" key %s", s3);
+		fprintf(stdout," key %s", s3);
 	}
 	else if ((p->i_flags|p->o_flags)&GRE_KEY) {
 		if (p->i_flags&GRE_KEY)
 		{
-			printf(" ikey %s ", s3);
+			fprintf(stdout," ikey %s ", s3);
 		}
 		if (p->o_flags&GRE_KEY)
 		{
-			printf(" okey %s ", s4);
+			fprintf(stdout," okey %s ", s4);
 		}
 	}
 
 	if (p->i_flags&GRE_SEQ)
-		printf("%s  Drop packets out of sequence.\n", _SL_);
+		fprintf(stdout,"%s  Drop packets out of sequence.\n", _SL_);
 	if (p->i_flags&GRE_CSUM)
-		printf("%s  Checksum in received packet is required.", _SL_);
+		fprintf(stdout,"%s  Checksum in received packet is required.", _SL_);
 	if (p->o_flags&GRE_SEQ)
-		printf("%s  Sequence packets on output.", _SL_);
+		fprintf(stdout,"%s  Sequence packets on output.", _SL_);
 	if (p->o_flags&GRE_CSUM)
-		printf("%s  Checksum output packets.", _SL_);
+		fprintf(stdout,"%s  Checksum output packets.", _SL_);
 }
 
 static int do_tunnels_list(struct ip_tunnel_parm *p)
@@ -552,15 +552,15 @@ static int do_tunnels_list(struct ip_tunnel_parm *p)
 			continue;
 		print_tunnel(&p1);
 		if (show_stats) {
-			printf("%s", _SL_);
-			printf("RX: Packets    Bytes        Errors CsumErrs OutOfSeq Mcasts%s", _SL_);
-			printf("    %-10ld %-12ld %-6ld %-8ld %-8ld %-8ld%s",
+			fprintf(stdout,"%s", _SL_);
+			fprintf(stdout,"RX: Packets    Bytes        Errors CsumErrs OutOfSeq Mcasts%s", _SL_);
+			fprintf(stdout,"    %-10ld %-12ld %-6ld %-8ld %-8ld %-8ld%s",
 			       rx_packets, rx_bytes, rx_errs, rx_frame, rx_fifo, rx_multi, _SL_);
-			printf("TX: Packets    Bytes        Errors DeadLoop NoRoute  NoBufs%s", _SL_);
-			printf("    %-10ld %-12ld %-6ld %-8ld %-8ld %-6ld",
+			fprintf(stdout,"TX: Packets    Bytes        Errors DeadLoop NoRoute  NoBufs%s", _SL_);
+			fprintf(stdout,"    %-10ld %-12ld %-6ld %-8ld %-8ld %-6ld",
 			       tx_packets, tx_bytes, tx_errs, tx_colls, tx_carrier, tx_drops);
 		}
-		printf("\n");
+		fprintf(stdout,"\n");
 	}
 	return 0;
 }
@@ -594,7 +594,7 @@ static int do_show(int argc, char **argv)
 		return -1;
 
 	print_tunnel(&p);
-	printf("\n");
+	fprintf(stdout,"\n");
 	return 0;
 }
 
