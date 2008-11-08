@@ -2580,7 +2580,11 @@ void ej_show_bridgeifnames( webs_t wp, int argc, char_t ** argv )
     memset( bufferif2, 0, 256 );
     getIfList( bufferif2, "ofdm" );
     sprintf( bufferif, "%s %s", bufferif, bufferif2 );
-
+#ifdef HAVE_RT2880
+    memset( bufferif2, 0, 256 );
+    getIfList( bufferif2, "ra" );
+    sprintf( bufferif, "%s %s", bufferif, bufferif2 );
+#endif
     memset( bufferif2, 0, 256 );
     getIfList( bufferif2, "br" );
     foreach( word, bufferif2, next )
@@ -2630,7 +2634,7 @@ void ej_show_bridgeifnames( webs_t wp, int argc, char_t ** argv )
 	if( nvram_nmatch( "1", "oet%d_bridged", i )
 	    && nvram_nmatch( "1", "oet%d_en", i ) )
 	{
-	    sprintf( EOP, "EOP%d", i );
+	    sprintf( EOP, "oet%d", i );
 	    sprintf( bufferif, "%s %s", bufferif, EOP );
 	}
     }
