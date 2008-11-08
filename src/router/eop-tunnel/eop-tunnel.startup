@@ -22,7 +22,7 @@ do
 			/usr/sbin/brctl addif $(/sbin/getbridge oet${i}) oet${i} 2>&1 > /dev/null
 			/usr/sbin/brctl setportprio $(/sbin/getbridge oet${i}) oet${i} $(/sbin/getbridgeprio oet${i})
 		else
-			/usr/sbin/ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $($nv get oet${i}_ip)/$($nv get oet${i}_netmask)
+			/usr/sbin/ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $($nv get oet${i}_ip)
 			/usr/sbin/ip link set dev oet${i} up
 			/usr/sbin/ip addr add $($nv get oet${i}_ip) netmask $($nv get oet${i}_netmask) dev  oet${i} 2>&1 > /dev/null
     		fi
