@@ -86,7 +86,7 @@ void start_sysinit( void )
     eval( "mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3" );
     eval( "mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4" );
 
-    eval( "mkdir", "/dev/mtd" );
+/*    eval( "mkdir", "/dev/mtd" );
     eval( "mknod", "/dev/mtd/0", "c", "90", "0" );
     eval( "mknod", "/dev/mtd/0ro", "c", "90", "1" );
     eval( "mknod", "/dev/mtd/1", "c", "90", "2" );
@@ -97,7 +97,7 @@ void start_sysinit( void )
     eval( "mknod", "/dev/mtd/3ro", "c", "90", "7" );
     eval( "mknod", "/dev/mtd/4", "c", "90", "8" );
     eval( "mknod", "/dev/mtd/4ro", "c", "90", "9" );
-
+*/
     eval( "mknod", "/dev/gpio", "c", "252", "0" );
 
     cprintf( "sysinit() var\n" );
