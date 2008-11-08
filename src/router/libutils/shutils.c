@@ -110,10 +110,10 @@ int system2( char *command )
 #ifndef HAVE_X86 //we must disable this on x86 since nvram is not available at startup
 
     if (nvram_match("console_debug","1"))
-#endif
 {
     fprintf( stderr, "system: %s\n", command );
 }    
+#endif
     return system( command );
 }
 
@@ -143,8 +143,6 @@ int _evalpid( char *const argv[], char *path, int timeout, int *ppid )
 #ifndef HAVE_X86 //we must disable this on x86 since nvram is not available at startup
 
 if (nvram_match("console_debug","1"))
-
-#endif
 {
     int i = 0;
 
@@ -154,6 +152,7 @@ if (nvram_match("console_debug","1"))
     }
     fprintf( stderr, "\n" );
 }
+#endif
 
     switch ( pid = fork(  ) )
     {
