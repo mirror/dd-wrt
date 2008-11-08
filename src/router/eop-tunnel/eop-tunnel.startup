@@ -13,15 +13,17 @@ do
 	fi
 	if [ "$($nv get oet${i}_en)" = "1" ]
 	then
-		/usr/sbin/ip tunnel add oet${i} mode etherip ttl 64 remote $($nv get oet${i}_rem) local $($nv get oet${i}_ip)/$($nv get oet${i}_netmask)
-		/usr/sbin/ip link set dev oet${i} up
 		if [ "$($nv get oet${i}_bridged)" = "1" ]
 		then
+			/usr/sbin/ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
+			/usr/sbin/ip link set dev oet${i} up
 			/sbin/ifconfig oet${i} up 2>&1 > /dev/null
 			/sbin/ifconfig oet${i} PROMISC 2>&1 > /dev/null
 			/usr/sbin/brctl addif $(/sbin/getbridge oet${i}) oet${i} 2>&1 > /dev/null
 			/usr/sbin/brctl setportprio $(/sbin/getbridge oet${i}) oet${i} $(/sbin/getbridgeprio oet${i})
 		else
+			/usr/sbin/ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $($nv get oet${i}_ip)/$($nv get oet${i
+			/usr/sbin/ip link set dev oet${i} up
 			/usr/sbin/ip addr add $($nv get oet${i}_ip) netmask $($nv get oet${i}_netmask) dev  oet${i} 2>&1 > /dev/null
     		fi
 		id=$($nv get oet${i}_id)
