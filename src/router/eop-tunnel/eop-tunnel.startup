@@ -2,72 +2,29 @@
 nv=/usr/sbin/nvram
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
+insmod etherip
 for i in 1 2 3 4 5 6 7 8 9 10
 do
 	if test -e "${i}.pid"
 	then 
-	    /bin/kill -9 `cat ${i}.pid` 2>&1 > /dev/null
-	    /usr/sbin/brctl delif $(/sbin/getbridge EOP${i}) tap10${i} 2>&1 > /dev/null
-	    /usr/sbin/openvpn --rmtun --dev tap10${i} 2>&1 > /dev/null
+	    /usr/sbin/brctl delif $(/sbin/getbridge oet${i}) oet${i} 2>&1 > /dev/null
+	    /usr/sbin/ip tunnel del oet${i}
+	    rm -f ${i}
 	fi
 	if [ "$($nv get oet${i}_en)" = "1" ]
 	then
-		/usr/sbin/openvpn --mktun --dev tap10${i} 2>&1 > /dev/null
+		/usr/sbin/ip tunnel add oet${i} mode etherip ttl 64 remote $($nv get oet${i}_rem) local $($nv get oet${i}_ip)/$($nv get oet${i}_netmask)
+		/usr/sbin/ip link set dev oet${i} up
 		if [ "$($nv get oet${i}_bridged)" = "1" ]
 		then
-			/sbin/ifconfig tap10${i} up 2>&1 > /dev/null
-			/sbin/ifconfig tap10${i} PROMISC 2>&1 > /dev/null
-			/usr/sbin/brctl addif $(/sbin/getbridge EOP${i}) tap10${i} 2>&1 > /dev/null
-			/usr/sbin/brctl setportprio $(/sbin/getbridge EOP${i}) tap10${i} $(/sbin/getbridgeprio EOP${i})
+			/sbin/ifconfig oet${i} up 2>&1 > /dev/null
+			/sbin/ifconfig oet${i} PROMISC 2>&1 > /dev/null
+			/usr/sbin/brctl addif $(/sbin/getbridge oet${i}) oet${i} 2>&1 > /dev/null
+			/usr/sbin/brctl setportprio $(/sbin/getbridge oet${i}) oet${i} $(/sbin/getbridgeprio oet${i})
 		else
-			/sbin/ifconfig tap10${i} $($nv get oet${i}_ip) netmask $($nv get oet${i}_netmask) up 2>&1 > /dev/null
+			/usr/sbin/ip addr add $($nv get oet${i}_ip) netmask $($nv get oet${i}_netmask) dev  oet${i} 2>&1 > /dev/null
     		fi
 		id=$($nv get oet${i}_id)
-		if [ "$($nv get oet${i}_comp)" = "1" ]
-		then
-			comp="--comp-lzo"
-		else
-			comp=""
-		fi
-		if [ "$($nv get oet${i}_pt)" = "1" ]
-		then
-			pt="--passtos"
-		else
-			pt=""
-		fi
-		if [ "$($nv get oet${i}_mssfix)" = "1" ]
-		then
-			mssfix="--mssfix"
-		else
-			mssfix=""
-		fi
-		if [ "$($nv get oet${i}_fragment)" != "0" ]
-		then
-			fragment="--fragment $($nv get oet${i}_fragment)"
-		else
-			fragment=""
-		fi
-		if [ "$($nv get oet${i}_shaper)" != "0" ]
-		then
-			shaper="--shaper $($nv get oet${i}_shaper)"
-		else
-			shaper=""
-		fi
-	/usr/sbin/openvpn --mode p2p \
-		--daemon \
-		${pt} \
-		--status ../${i}.txt \
-		--status-version 2 \
-		--tun-mtu 1500 \
-		${fragment} \
-		${mssfix} \
-		--ping 5 \
-		--persist-tun \
-		--remote $($nv get oet${i}_rem) \
-		--port $((35000+$id)) \
-		${comp} \
-		${shaper} \
-	 	--dev tap10${i} \
-		--writepid ${i}.pid
+		cat enable > ${i}.pid
 	fi
 done
