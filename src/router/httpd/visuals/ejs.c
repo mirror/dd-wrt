@@ -2815,7 +2815,7 @@ void ej_show_eop_tunnels( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp,
 		   "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n" );
 	websWrite( wp,
-		   "<input type=\"hidden\" name=\"oet%d_ip\" value=\"0.0.0.0\"/>\n",
+		   "<input type=\"hidden\" name=\"oet%d_ipaddr\" value=\"0.0.0.0\"/>\n",
 		   tun );
 	sprintf( temp, "oet%d_ipaddr", tun );
 	websWrite( wp,
