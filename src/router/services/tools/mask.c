@@ -35,7 +35,7 @@ int getmask_main( int argc, char **argv )
 	fprintf( stderr, "%s <netmask>\n", argv[0] );
 	exit( 1 );
     }
-    fprintf(stdout,"%d",getmask(argv[2]));
+    fprintf(stdout,"%d",getmask(argv[1]));
 
     return 0;
 }
