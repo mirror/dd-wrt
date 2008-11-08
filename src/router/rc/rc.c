@@ -215,6 +215,7 @@ static struct MAIN maincalls[] = {
     {"getbridgeprio", "getbridgeprio", NULL},
     {"setuserpasswd", "setuserpasswd", NULL},
     {"getbridge", "getbridge", NULL},
+    {"getmask", "getmask", NULL},
     {"stopservices", NULL, stop_services_main},
     {"startservices", NULL, start_services_main},
     {"start_single_service", NULL, start_single_service_main},
