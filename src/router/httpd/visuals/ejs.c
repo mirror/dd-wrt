@@ -2722,14 +2722,17 @@ void ej_show_eop_tunnels( webs_t wp, int argc, char_t ** argv )
 		   get_single_ip( nvram_safe_get( temp ), 2 ), temp,
 		   get_single_ip( nvram_safe_get( temp ), 3 ) );
 	websWrite( wp, "</div>\n" );
+/*
 	websWrite( wp, "<div class=\"setting\">\n" );
 	websWrite( wp,
 		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.tunnelID)</script></div>\n" );
-	sprintf( temp, "oet%d_id", tun );
+		  	sprintf( temp, "oet%d_id", tun );
 	websWrite( wp,
 		   "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.tunnelID)\" value=\"%s\" />\n",
 		   temp, nvram_get( temp ) );
 	websWrite( wp, "</div>\n" );
+
+
 	websWrite( wp, "<div class=\"setting\">\n" );
 	websWrite( wp,
 		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.comp)</script></div>\n" );
@@ -2791,6 +2794,7 @@ void ej_show_eop_tunnels( webs_t wp, int argc, char_t ** argv )
 		   "<input size=\"6\" maxlength=\"6\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,100000,eoip.shaper)\" value=\"%s\" />\n",
 		   temp, nvram_get( temp ) );
 	websWrite( wp, "</div>\n" );
+*/
 	websWrite( wp, "<div class=\"setting\">\n" );
 	websWrite( wp,
 		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.bridging)</script></div>\n" );
@@ -2813,7 +2817,7 @@ void ej_show_eop_tunnels( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp,
 		   "<input type=\"hidden\" name=\"oet%d_ip\" value=\"0.0.0.0\"/>\n",
 		   tun );
-	sprintf( temp, "oet%d_ip", tun );
+	sprintf( temp, "oet%d_ipaddr", tun );
 	websWrite( wp,
 		   "<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_0\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_1\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_2\" onblur=\"valid_range(this,0,255,share.ip)\" value=\"%d\" />.<input size=\"3\" maxlength=\"3\" class=\"num\" name=\"%s_3\" onblur=\"valid_range(this,1,254,share.ip)\" value=\"%d\" />\n",
 		   temp, get_single_ip( nvram_safe_get( temp ), 0 ), temp,
