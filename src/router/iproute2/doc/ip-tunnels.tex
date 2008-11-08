@@ -148,7 +148,8 @@ listed in the following table:
 Mode & Description  & Base device \\
 ipip & IP over IP & tunl0 \\
 sit & IPv6 over IP & sit0 \\
-gre & ANY over GRE over IP & gre0
+gre & ANY over GRE over IP & gre0 \\
+etherip & Ethernet over IP & etherip0
 \end{tabular}
 
 \vspace{2mm}
@@ -166,8 +167,8 @@ different tunnel characteristics.
 \begin{itemize}
 
 \item
-\verb|mode <MODE>| sets tunnel mode. Three modes are available now
-	\verb|ipip|, \verb|sit| and \verb|gre|.
+\verb|mode <MODE>| sets tunnel mode. Four modes are available now
+	\verb|ipip|, \verb|sit|, \verb|gre| and \verb|etherip|.
 
 \item
 \verb|remote <D>| sets remote endpoint of the tunnel to IP
@@ -250,8 +251,8 @@ Command \verb|ip tunnel add| has several additional options.
 
 \end{itemize}
 
-\verb|ipip| and \verb|sit| tunnels have no more options. \verb|gre|
-tunnels are more complicated:
+\verb|ipip|, \verb|sit| and \verb|etherip| tunnels have no more options.
+\verb|gre| tunnels are more complicated:
 
 \begin{itemize}
 
