@@ -28,14 +28,6 @@
 #include <utils.h>
 #include <wlutils.h>
 
-void beep( int gpio, int time, int polarity )
-{
-    set_gpio( gpio, 1 - polarity );
-    usleep( time * 1000 );
-    set_gpio( gpio, 0 + polarity );
-    usleep( time * 1000 );
-}
-
 int getmask_main( int argc, char **argv )
 {
 
