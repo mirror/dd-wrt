@@ -107,7 +107,10 @@ int waitfor( int fd, int timeout )
 
 int system2( char *command )
 {
-if (nvram_match("console_debug","1"))
+#ifndef HAVE_X86 //we must disable this on x86 since nvram is not available at startup
+
+    if (nvram_match("console_debug","1"))
+#endif
 {
     fprintf( stderr, "system: %s\n", command );
 }    
@@ -137,7 +140,11 @@ int _evalpid( char *const argv[], char *path, int timeout, int *ppid )
     // if (debugfp==NULL)
     // debugfp = fopen("/tmp/evallog.log","wb");
     // char buf[254] = "";
+#ifndef HAVE_X86 //we must disable this on x86 since nvram is not available at startup
+
 if (nvram_match("console_debug","1"))
+
+#endif
 {
     int i = 0;
 
