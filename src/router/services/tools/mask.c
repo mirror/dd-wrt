@@ -30,16 +30,12 @@
 
 int getmask_main( int argc, char **argv )
 {
-
-    unsigned int gpio;
-
     if( argc != 2 )
     {
 	fprintf( stderr, "%s <netmask>\n", argv[0] );
 	exit( 1 );
     }
-    gpio = atoi( argv[2] );
-    fprintf(stdout,"%d",getmask(gpio));
+    fprintf(stdout,"%d",getmask(argv[2]));
 
     return 0;
 }
