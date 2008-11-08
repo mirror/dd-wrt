@@ -27,6 +27,6 @@ do
 			/usr/sbin/ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
     		fi
 		id=$($nv get oet${i}_id)
-		cat enable > ${i}.pid
+		echo enable > ${i}.pid
 	fi
 done
