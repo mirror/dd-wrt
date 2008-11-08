@@ -1,6 +1,6 @@
 "oet1_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet1_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
-"oet1_ip"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
+"oet1_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet1_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet1_id"  "tunnel id"  "NULL" "FALSE" "0"
 "oet1_comp"  "compression"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
@@ -12,7 +12,7 @@
 
 "oet2_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet2_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
-"oet2_ip"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
+"oet2_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet2_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet2_id"  "tunnel id"  "NULL" "FALSE" "0"
 "oet2_comp"  "compression"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
@@ -24,7 +24,7 @@
 
 "oet3_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet3_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
-"oet3_ip"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
+"oet3_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet3_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet3_id"  "tunnel id"  "NULL" "FALSE" "0"
 "oet3_comp"  "compression"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
@@ -36,7 +36,7 @@
 
 "oet4_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet4_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
-"oet4_ip"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
+"oet4_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet4_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet4_id"  "tunnel id"  "NULL" "FALSE" "0"
 "oet4_comp"  "compression"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
@@ -48,7 +48,7 @@
 
 "oet5_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet5_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
-"oet5_ip"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
+"oet5_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet5_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet5_id"  "tunnel id"  "NULL" "FALSE" "0"
 "oet5_comp"  "compression"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
@@ -60,7 +60,7 @@
 
 "oet6_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet6_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
-"oet6_ip"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
+"oet6_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet6_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet6_id"  "tunnel id"  "NULL" "FALSE" "0"
 "oet6_comp"  "compression"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
@@ -72,7 +72,7 @@
 
 "oet7_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet7_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
-"oet7_ip"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
+"oet7_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet7_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet7_id"  "tunnel id"  "NULL" "FALSE" "0"
 "oet7_comp"  "compression"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
@@ -84,7 +84,7 @@
 
 "oet8_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet8_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
-"oet8_ip"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
+"oet8_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet8_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet8_id"  "tunnel id"  "NULL" "FALSE" "0"
 "oet8_comp"  "compression"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
@@ -96,7 +96,7 @@
 
 "oet9_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet9_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
-"oet9_ip"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
+"oet9_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet9_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet9_id"  "tunnel id"  "NULL" "FALSE" "0"
 "oet9_comp"  "compression"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
@@ -108,7 +108,7 @@
 
 "oet10_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet10_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
-"oet10_ip"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
+"oet10_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet10_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet10_id"  "tunnel id"  "NULL" "FALSE" "0"
 "oet10_comp"  "compression"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
