@@ -18,7 +18,7 @@ do
 			/usr/sbin/ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
 			/usr/sbin/ip link set dev oet${i} up
 			/sbin/ifconfig oet${i} up 2>&1 > /dev/null
-			/sbin/ifconfig oet${i} PROMISC 2>&1 > /dev/null
+			/sbin/ifconfig oet${i} promisc 2>&1 > /dev/null
 			/usr/sbin/brctl addif $(/sbin/getbridge oet${i}) oet${i} 2>&1 > /dev/null
 			/usr/sbin/brctl setportprio $(/sbin/getbridge oet${i}) oet${i} $(/sbin/getbridgeprio oet${i})
 		else
