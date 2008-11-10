@@ -938,6 +938,10 @@ int wifi_gettxpoweroffset( char *ifname )
 
 int get_wifioffset( char *ifname )
 {
+if (nvram_get("frequencyoffset")!=NULL)
+	{
+	return atoi(nvram_safe_get("frequencyoffset"));
+	}
     int vendor;
     int devcount;
     char readid[64];
