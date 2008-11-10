@@ -1348,7 +1348,7 @@ static void configure_single( int count )
 	else
 	{
 	    sysprintf( "ifconfig %s mtu 1500",dev);
-	    sysprintf( "ifconfig %s %s netmask %s down", dev, nvram_nget("%s_ipaddr",dev),nvram_nget("%s_netmask",dev));
+	    sysprintf( "ifconfig %s %s netmask %s up", dev, nvram_nget("%s_ipaddr",dev),nvram_nget("%s_netmask",dev));
 	}
     }
     else
