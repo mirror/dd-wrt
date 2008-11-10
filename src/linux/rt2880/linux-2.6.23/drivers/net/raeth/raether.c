@@ -1544,9 +1544,9 @@ void rt305x_esw_init(void)
 
         *(unsigned long *)(0xb01100E4) = 0x00000000;
         *(unsigned long *)(0xb0110014) = 0x00405555;
-        *(unsigned long *)(0xb0110050) = 0x00002001;
-        *(unsigned long *)(0xb0110090) = 0x00007f7f;
-        *(unsigned long *)(0xb0110098) = 0x00007f3f; //disable VLAN
+        *(unsigned long *)(0xb0110050) = 0x00002001; //membership for vlan 0 -1
+        *(unsigned long *)(0xb0110090) = 0x00007f7f; 
+        *(unsigned long *)(0xb0110098) = 0x00007f3f; //disable VLAN  (0 - 7 remove vlan tag)
         *(unsigned long *)(0xb01100CC) = 0x00d6500c;
         *(unsigned long *)(0xb011009C) = 0x0008a301; //hashing algorithm=XOR48, aging interval=300sec
         *(unsigned long *)(0xb011008C) = 0x02404040;
