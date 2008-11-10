@@ -200,10 +200,10 @@ void *__symbol_get_gpl(const char *symbol);
 	__EXPORT_SYMBOL(sym, "")
 
 #define EXPORT_SYMBOL_GPL(sym)					\
-	__EXPORT_SYMBOL(sym, "_gpl")
+	__EXPORT_SYMBOL(sym, "")
 
 #define EXPORT_SYMBOL_GPL_FUTURE(sym)				\
-	__EXPORT_SYMBOL(sym, "_gpl_future")
+	__EXPORT_SYMBOL(sym, "")
 
 
 #ifdef CONFIG_UNUSED_SYMBOLS
