@@ -14,15 +14,12 @@
  *      spin_lock_irqsave/restore() changed to spin_lock_bh()/spin_unlock_bh()
  *	Thanks Zilvinas Valinskas <gpl@wilibox.com>
  *
- *  October, 2007
- *      VLAN (802.1Q) support added.
- *	Note: PPPOE is not supported with VLAN yet.
- *      Kestutis Barkauskas <gpl@ubnt.com>
+ *  August, 2007
  *
- *  November, 2007
- *      IP conflict issue on ethernet side clients after device reboot fix.
- *	Thanks Zilvinas Valinskas <gpl@wilibox.com>
+ *  	adapted for 2.6.22 by Kestutis Kupciunas <gpl@ubnt.com>
  */
+
+#include <linux/version.h>
 
 #include <linux/netfilter_bridge/ebtables.h>
 #include <linux/netfilter_bridge/ebt_nat.h>
@@ -30,7 +27,6 @@
 #include <linux/if_arp.h>
 #include <linux/if_ether.h>
 #include <linux/if_pppox.h>
-#include <linux/if_vlan.h>
 #include <linux/rtnetlink.h>
 #include <linux/list.h>
 #include <linux/spinlock.h>
@@ -284,28 +280,25 @@ __STATIC int arpnat_get_info(char *buffer, char **start, off_t offset, int lengt
 /**
  * Do ARP NAT on input chain
  **/
-__STATIC int do_arp_in(struct sk_buff **pskb, const struct net_device *in, int *target, int vlan)
+__STATIC int do_arp_in(struct sk_buff **pskb, const struct net_device *in, int *target)
 {
 	struct arphdr *ah = arp_hdr(*pskb);
 	uint8_t* eth_dmac = eth_hdr(*pskb)->h_dest;
-	uint32_t* arp_sip;
-	uint32_t* arp_dip;
+	uint32_t* arp_sip, arp_saddr;
+	uint32_t* arp_dip, arp_daddr;
 	uint8_t* arp_dmac;
+	uint8_t _mac[ETH_ALEN];
 	struct mac2ip* entry;
-	uint8_t* nh_raw = skb_network_header(*pskb);
-
-	if (vlan) {
-	    ah = (struct arphdr*)((uint8_t*)ah + 4);
-	    nh_raw += 4;
-	}
-
 
 	if (ah->ar_hln == ETH_ALEN && ah->ar_pro == htons(ETH_P_IP) &&
 		ah->ar_pln == 4)
 	{
-		arp_sip = (uint32_t*)(nh_raw + sizeof(struct arphdr) + ah->ar_hln);
-		arp_dip = (uint32_t*)(nh_raw + sizeof(struct arphdr) + (2* ah->ar_hln) + ah->ar_pln);
-		arp_dmac = nh_raw + sizeof(struct arphdr) + ah->ar_hln + ah->ar_pln;
+		arp_sip = skb_header_pointer(*pskb, sizeof(struct arphdr) + ah->ar_hln, 
+					     sizeof(arp_saddr), &arp_saddr);
+		arp_dip = skb_header_pointer(*pskb, sizeof(struct arphdr) + 2*ah->ar_hln+sizeof(arp_saddr),
+					     sizeof(arp_daddr), &arp_daddr);
+		arp_dmac = skb_header_pointer(*pskb, sizeof(struct arphdr) + ah->ar_hln + ah->ar_pln,
+                                                sizeof(_mac), &_mac);
 	}
 	else
 		return 1;
@@ -333,7 +326,7 @@ __STATIC int do_arp_in(struct sk_buff **pskb, const struct net_device *in, int *
 			 {
 			 if (debug)
 			 printk("SEND ARP REQUEST: "STRIP" -> "STRIP"\n", IP2STR(sip), IP2STR(dip));
-			 arp_send(ARPOP_REQUEST, ETH_P_ARP, dip, &in->br_port->br->dev, sip, NULL, in->br_port->br->dev.dev_addr, NULL);
+			 arp_send(ARPOP_REQUEST, ETH_P_ARP, dip, &in->br_port->br->dev, sip, NULL, in->br_port->br->dev->dev_addr, NULL);
 			 }*/
 			return 0;
 		}
@@ -372,16 +365,12 @@ __STATIC int forge_arp(const struct net_device *in, uint32_t sip, uint32_t dip, 
 /**
  * Do IP NAT on input chain
  **/
-__STATIC int do_ip_in(struct sk_buff **pskb, const struct net_device *in, int *target, int vlan)
+__STATIC int do_ip_in(struct sk_buff **pskb, const struct net_device *in, int *target)
 {
 	uint8_t* eth_dmac = eth_hdr(*pskb)->h_dest;
 	struct mac2ip* entry;
 	struct iphdr *iph = ip_hdr(*pskb);
 	struct udphdr *uh;
-
-	if (vlan) {
-	    iph = (struct iphdr *)((uint8_t*)iph + 4);
-	}
 
 	if ((*pskb)->len < sizeof(struct ethhdr) + sizeof(struct iphdr))
 		return 0;
@@ -454,10 +443,10 @@ __STATIC int do_ip_in(struct sk_buff **pskb, const struct net_device *in, int *t
 			uint32_t sip = iph->saddr;
 			if (sip && sip != dip && dip != 0xffffffff)
 			{
-				uint8_t* eth_smac = eth_hdr(*pskb)->h_source;
+				uint8_t* eth_smac =  eth_hdr(*pskb)->h_source;
 				struct net_bridge_fdb_entry* fdb_entry = br_fdb_get(in->br_port->br, eth_smac);
 				if (!fdb_entry)
-					forge_arp(in, sip, dip, eth_smac);
+					forge_arp(in, dip, sip, eth_smac);
 				/* FIXME: 
 				* if entry is not found we should attempt to find our 
 				* own gateway hwaddr and use it as destination MAC.
@@ -475,13 +464,13 @@ __STATIC int do_ip_in(struct sk_buff **pskb, const struct net_device *in, int *t
 /**
  * Do PPPOE DISCOVERY NAT on input chain
  **/
-__STATIC int do_pppoed_in(struct sk_buff **pskb, const struct net_device *in, int *target, int vlan)
+__STATIC int do_pppoed_in(struct sk_buff **pskb, const struct net_device *in, int *target)
 {
 	uint8_t* eth_dmac = eth_hdr(*pskb)->h_dest;
-	struct pppoe_hdr* pppoe = (struct pppoe_hdr*)skb_network_header(*pskb);
+	struct pppoe_hdr* pppoe = pppoe_hdr(*pskb);
 	struct pppoe_tag* tag = (struct pppoe_tag*)(pppoe + 1);
 
-	while (tag && tag->tag_type != PTT_EOL && (uint8_t*)tag < (uint8_t*)(skb_network_header(*pskb)) + sizeof(*pppoe) + ntohs(pppoe->length))
+	while (tag && tag->tag_type != PTT_EOL && (uint8_t*)tag < (uint8_t*)pppoe + sizeof(*pppoe) + ntohs(pppoe->length))
 	{
 		if (tag->tag_type == PTT_RELAY_SID)
 		{
@@ -515,9 +504,9 @@ __STATIC int do_pppoed_in(struct sk_buff **pskb, const struct net_device *in, in
 /**
  * Do PPPOE SESSION NAT on input chain
  **/
-__STATIC int do_pppoes_in(struct sk_buff **pskb, const struct net_device *in, int *target, int vlan)
+__STATIC int do_pppoes_in(struct sk_buff **pskb, const struct net_device *in, int *target)
 {
-	struct pppoe_hdr* pppoe = (struct pppoe_hdr*)skb_network_header(*pskb);
+	struct pppoe_hdr* pppoe = pppoe_hdr(*pskb);
 	uint8_t* eth_dmac = eth_hdr(*pskb)->h_dest;
 	struct mac2ip* entry;
 
@@ -535,43 +524,35 @@ __STATIC int do_in(struct sk_buff **pskb, const struct net_device *in, int targe
 {
 	int nat = 1;
 	uint8_t* eth_dmac = eth_hdr(*pskb)->h_dest;
-	uint16_t proto = eth_hdr(*pskb)->h_proto;
-	int vlan = 0;
 
-	if (proto == __constant_htons(ETH_P_8021Q))
-	{
-	    	struct vlan_ethhdr *hdr = (struct vlan_ethhdr *)eth_hdr(*pskb);
-                proto = hdr->h_vlan_encapsulated_proto;
-                vlan = 1;
-	}
-
-	switch (proto)
+	switch (eth_hdr(*pskb)->h_proto)
 	{
 	case __constant_htons(ETH_P_ARP):
-		nat = do_arp_in(pskb, in, &target, vlan);
+		nat = do_arp_in(pskb, in, &target);
 		break;
 	case __constant_htons(ETH_P_IP):
-		nat = do_ip_in(pskb, in, &target, vlan);
+		nat = do_ip_in(pskb, in, &target);
 		break;
 	case __constant_htons(ETH_P_PPP_DISC):
 		if (pppoenat)
-			nat = do_pppoed_in(pskb, in, &target, vlan);
+			nat = do_pppoed_in(pskb, in, &target);
 		break;
 	case __constant_htons(ETH_P_PPP_SES):
 		if (pppoenat)
-			nat = do_pppoes_in(pskb, in, &target, vlan);
+			nat = do_pppoes_in(pskb, in, &target);
 		break;
 	}
 	if (nat && ! (eth_dmac[0] & 1))
 	{
 #ifdef DROP_PACKETS_NOT_FOR_ME
-		if (memcmp(in->br_port->br->dev.dev_addr, eth_dmac, ETH_ALEN) &&
+		if (memcmp(in->br_port->br->dev->dev_addr, eth_dmac, ETH_ALEN) &&
 			memcmp(in->dev_addr, eth_dmac, ETH_ALEN))
 			return EBT_DROP;
 #endif
 		if (debug)
 		{
-			printk("DMAC["STRMAC"]->BRMAC["STRMAC"]\n", MAC2STR(eth_dmac), MAC2STR(in->br_port->br->dev->dev_addr));
+			printk("DMAC["STRMAC"]->BRMAC["STRMAC"]\n", 
+			       MAC2STR(eth_dmac), MAC2STR(in->br_port->br->dev->dev_addr));
 		}
        	memcpy(eth_dmac, in->br_port->br->dev->dev_addr, ETH_ALEN);
 	}
@@ -582,25 +563,23 @@ __STATIC int do_in(struct sk_buff **pskb, const struct net_device *in, int targe
 /**
  * Do ARP NAT on output chain
  **/
-__STATIC int do_arp_out(struct sk_buff **pskb, const struct net_device *out, int *target, int vlan)
+__STATIC int do_arp_out(struct sk_buff **pskb, const struct net_device *out, int *target)
 {
 	struct arphdr *ah = arp_hdr(*pskb);
-	uint32_t* arp_sip;
+	uint32_t* arp_sip, arp_saddr;
+	uint32_t* arp_dip, arp_daddr;
 	uint8_t* arp_smac;
-	uint32_t* arp_dip;
-	uint8_t* nh_raw = skb_network_header(*pskb);
-
-	if (vlan) {
-		ah = (struct arphdr*)((uint8_t*)ah + 4);
-		nh_raw += 4;
-	}
+	uint8_t _mac[ETH_ALEN];
 
 	if (ah->ar_hln == ETH_ALEN && ah->ar_pro == htons(ETH_P_IP) &&
 		ah->ar_pln == 4)
 	{
-		arp_sip = (uint32_t*)(nh_raw + sizeof(*ah) + ah->ar_hln);
-		arp_smac = nh_raw + sizeof(*ah);
-		arp_dip = (uint32_t*)(nh_raw + sizeof(*ah) + (2 * ah->ar_hln) + ah->ar_pln);
+		arp_sip = skb_header_pointer(*pskb, sizeof(struct arphdr) + ah->ar_hln, 
+					     sizeof(arp_saddr), &arp_saddr);
+		arp_dip = skb_header_pointer(*pskb, sizeof(struct arphdr) + 2*ah->ar_hln+sizeof(arp_saddr),
+					     sizeof(arp_daddr), &arp_daddr);
+		arp_smac = skb_header_pointer(*pskb, sizeof(struct arphdr),
+                                                sizeof(_mac), &_mac);
 	}
 	else
 		//Not IP ARP just NAT it
@@ -621,11 +600,8 @@ __STATIC int do_arp_out(struct sk_buff **pskb, const struct net_device *out, int
 		*pskb = skb_unshare(*pskb, GFP_ATOMIC);
 		if (debug)
 			printk("OUT ARPNAT: "STRMAC" -> "STRMAC"\n", MAC2STR(eth_hdr(*pskb)->h_source), MAC2STR(out->dev_addr));
-		//We have new skb so remap nh_raw
-		nh_raw = skb_network_header(*pskb);
-		if (vlan)
-		    nh_raw += 4;
-		arp_smac = nh_raw + sizeof(*ah);
+		arp_smac = skb_header_pointer(*pskb, sizeof(struct arphdr),
+                                                sizeof(_mac), &_mac);
 		memcpy(arp_smac, out->dev_addr, ETH_ALEN);
 		break;
 	}
@@ -635,16 +611,12 @@ __STATIC int do_arp_out(struct sk_buff **pskb, const struct net_device *out, int
 /**
  * Do BOOTP NAT on output chain
  **/
-__STATIC int do_bootp_out(struct sk_buff **pskb, const struct net_device *out, int *target, int vlan)
+__STATIC int do_bootp_out(struct sk_buff **pskb, const struct net_device *out, int *target)
 {
 	struct iphdr *iph = ip_hdr(*pskb);
 	struct udphdr *uh = (struct udphdr*)((u_int32_t *)iph + iph->ihl);
 	uint32_t ihl;
 	uint32_t size;
-	if (vlan) {
-		iph = (struct iphdr *)((uint8_t*)iph + 4);
-		uh = (struct udphdr *)((uint8_t*)uh + 4);
-	}
 
 	if (!memcmp(out->br_port->br->dev->dev_addr, eth_hdr(*pskb)->h_source, ETH_ALEN) ||
 		iph->protocol != htons(IPPROTO_UDP) ||
@@ -688,12 +660,12 @@ __STATIC int do_bootp_out(struct sk_buff **pskb, const struct net_device *out, i
 /**
  * Do PPPOE NAT on output chain
  **/
-__STATIC int do_pppoe_out(struct sk_buff **pskb, const struct net_device *out, int *target, int vlan)
+__STATIC int do_pppoe_out(struct sk_buff **pskb, const struct net_device *out, int *target)
 {
-	struct pppoe_hdr* pppoe = (struct pppoe_hdr*)skb_network_header(*pskb);
+	struct pppoe_hdr* pppoe = pppoe_hdr(*pskb);
 	struct pppoe_tag* tag = (struct pppoe_tag*)(pppoe + 1);
 
-	while (tag && tag->tag_type != PTT_EOL && (uint8_t*)tag < (uint8_t*)(skb_network_header(*pskb)) + sizeof(*pppoe) + ntohs(pppoe->length) )
+	while (tag && tag->tag_type != PTT_EOL && (uint8_t*)tag < (uint8_t*)pppoe + sizeof(*pppoe) + ntohs(pppoe->length) )
 	{
 		if (tag->tag_type == PTT_RELAY_SID)
 		{
@@ -733,28 +705,19 @@ __STATIC int do_pppoe_out(struct sk_buff **pskb, const struct net_device *out, i
 __STATIC int do_out(struct sk_buff **pskb, const struct net_device *out, int target)
 {
 	int nat = 1;
-	uint16_t proto = eth_hdr(*pskb)->h_proto;
-	int vlan = 0;
 
-	if (proto == __constant_htons(ETH_P_8021Q))
-	{
-	    	struct vlan_ethhdr *hdr = (struct vlan_ethhdr *)eth_hdr(*pskb);
-                proto = hdr->h_vlan_encapsulated_proto;
-                vlan = 1;
-	}
-
-	switch (proto)
+	switch (eth_hdr(*pskb)->h_proto)
 	{
 	case __constant_htons(ETH_P_ARP):
-		nat = do_arp_out(pskb, out, &target, vlan);
+		nat = do_arp_out(pskb, out, &target);
 		break;
 	case __constant_htons(ETH_P_IP):
 		if (bootpnat)
-			nat = do_bootp_out(pskb, out, &target, vlan);
+			nat = do_bootp_out(pskb, out, &target);
 		break;
 	case __constant_htons(ETH_P_PPP_DISC):
 		if (pppoenat)
-			nat = do_pppoe_out(pskb, out, &target, vlan);
+			nat = do_pppoe_out(pskb, out, &target);
 		break;
 	}
 	if (nat)
@@ -776,7 +739,7 @@ __STATIC int ebt_target_arpnat(struct sk_buff **pskb, unsigned int hooknr,
 	else if (out)
 	{
 #ifdef NOT_IN_THIS_RELEASE_HAVE_SET_MAC_ADDR  		 
-		uint8_t* smac = ((*pskb)->mac.ethernet)->h_source;
+		uint8_t* smac = eth_hdr(*pskb)->h_source;
 		uint8_t* mac = ((struct ebt_nat_info *)data)->mac; 
 		if (mac[0] == 0xff && !(smac[0] & 1))
 		{	
@@ -843,4 +806,7 @@ static void __exit fini(void)
 
 module_init(init);
 module_exit(fini);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+EXPORT_NO_SYMBOLS;
+#endif
 MODULE_LICENSE("GPL");
