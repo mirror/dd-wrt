@@ -142,14 +142,15 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 			    {
 			    mtd->read(mtd,offset,32, &retlen, buf);
 
-			    printk(KERN_EMERG "scanning squashfs at %X\n",offset);
+//			    printk(KERN_EMERG "scanning squashfs at %X\n",offset);
 			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
 				    {
 				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 					trx_parts[1].offset=offset;					
 					break;
 				    } 
-			    offset+=mtd->erasesize;
+//			    offset+=mtd->erasesize;
+			    offset+=4096; //scan in smaller blocks
 			    }
 	trx_parts[1].size = (mtd->size-mtd->erasesize) - trx_parts[1].offset;
 	i = 0;
