@@ -226,7 +226,7 @@ void prom_init_sysclk(void)
 #else
 	surfboard_sysclk = mips_cpu_feq/2;
 #endif
-	printk("\n The CPU feqenuce set to %d MHz\n",mips_cpu_feq / 1000 / 1000);
+	printk("\n The CPU frequency set to %d MHz\n",mips_cpu_feq / 1000 / 1000);
 }
 
 /*
@@ -354,7 +354,6 @@ __init void prom_init(void)
 #if defined(CONFIG_RT2880_FPGA) || defined(CONFIG_RT3052_FPGA) || defined(CONFIG_RT2883_FPGA)
 	prom_printf("\n THIS IS FPGA\n");
 #elif defined(CONFIG_RT2880_ASIC) || defined(CONFIG_RT3052_ASIC) || defined (CONFIG_RT2883_ASIC)
-	printk("\n this is a serial test\n");
 	prom_printf("\n THIS IS ASIC\n");
 #endif
 
