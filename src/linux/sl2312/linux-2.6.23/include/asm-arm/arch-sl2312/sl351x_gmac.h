@@ -15,6 +15,8 @@
 #ifndef _GMAC_SL351x_H
 #define _GMAC_SL351x_H
 #include <linux/skbuff.h>
+#include <linux/mii.h>
+#include <linux/spinlock.h>
 
 #define SL351x_GMAC_WORKAROUND		1
 
@@ -2172,6 +2174,8 @@ typedef struct gmac_private{
 #ifdef SL351x_GMAC_WORKAROUND
     unsigned long		short_frames_cnt;
 #endif
+    spinlock_t mii_lock;
+    struct mii_if_info mii;
 }GMAC_INFO_T ;
 
 typedef struct toe_private {
