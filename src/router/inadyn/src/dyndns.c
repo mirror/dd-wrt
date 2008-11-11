@@ -48,6 +48,7 @@ static int get_req_for_dyndns_server(DYN_DNS_CLIENT *this, int nr, DYNDNS_SYSTEM
 static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_generic_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_noip_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
+static int get_req_for_zoneedit_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_easydns_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_tzo_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 
@@ -93,19 +94,21 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
             DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
 			"freedns.afraid.org", "/dynamic/update.php?", NULL}},
 
-    {ZONE_EDIT_DEFAULT, 
-        {"default@zoneedit.com", NULL,  
-            (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_zoneedit_server_rsp_ok, 
-            (DNS_SYSTEM_REQUEST_FUNC) get_req_for_generic_http_dns_server,
-            "dynamic.zoneedit.com", "/checkip.html", 
-			"dynamic.zoneedit.com", "/auth/dynamic.html?host=", ""}},
-
     {NOIP_DEFAULT, 
         {"default@no-ip.com", NULL,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_noip_http_dns_server,
             "ip1.dynupdate.no-ip.com", "/", 
 			"dynupdate.no-ip.com", "/nic/update?hostname=", ""}},
+
+
+    {ZONE_EDIT_DEFAULT, 
+        {"default@zoneedit.com", NULL,  
+            (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_zoneedit_server_rsp_ok, 
+            (DNS_SYSTEM_REQUEST_FUNC) get_req_for_zoneedit_http_dns_server,
+            "dynamic.zoneedit.com", "/checkip.html", 
+			"dynamic.zoneedit.com", "/auth/dynamic.html?host=", ""}},
+
 
     {EASYDNS_DEFAULT, 
         {"default@easydns.com", NULL,  
@@ -127,7 +130,7 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_tzo_http_dns_server,
             DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL, 
 			"cgi.tzo.com", "/webclient/signedon.html?TZOName=", ""}},
-//milkfish
+/* milkfish */
     {DYNSIP_DEFAULT, 
         {"default@dynsip.org", NULL, 
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC) is_dyndns_server_rsp_ok, 
@@ -233,6 +236,20 @@ static int get_req_for_noip_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DY
 		p_self->info.dyndns_server_name.name		
 		);
 }
+
+static int get_req_for_zoneedit_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info)
+{
+	(void)p_sys_info;
+	return sprintf(p_self->p_req_buffer, GENERIC_ZONEEDIT_AUTH_MY_IP_REQUEST_FORMAT,
+		p_self->info.dyndns_server_url,		
+		p_self->alias_info.names[cnt].name,
+		p_self->info.my_ip_address.name,
+        p_self->info.credentials.p_enc_usr_passwd_buffer,
+		p_self->info.dyndns_server_name.name		
+		);
+}
+
+
 static int get_req_for_easydns_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info)
 {
 	(void)p_sys_info;
@@ -449,6 +466,7 @@ BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_s
 	return 
 	(		
 		(strstr(p_rsp, "CODE=\"200\"") != NULL) ||
+		(strstr(p_rsp, "CODE=\"201\"") != NULL) ||
 		(strstr(p_rsp, "CODE=\"707\"") != NULL)
 	);	
 }
