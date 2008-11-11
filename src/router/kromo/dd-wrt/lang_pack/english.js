@@ -717,6 +717,7 @@ hotspot.wifidog_authsrvssl="AuthServer SSL Available";
 hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
+hotspot.wifidog_config="Firewall Ruleset";
 
 var anchorfree = new Object();
 anchorfree.anchorfree="AnchorFree";
