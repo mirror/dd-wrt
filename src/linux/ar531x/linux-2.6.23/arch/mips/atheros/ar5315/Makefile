@@ -8,4 +8,4 @@
 # Copyright (C) 2007 Felix Fietkau <nbd@openwrt.org>
 #
 
-obj-y := board.o irq.o
+obj-y := board.o irq.o 
