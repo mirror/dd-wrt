@@ -85,7 +85,6 @@
 				<input class="spaceradio" type="radio" name="local_dns" value="1" <% nvram_checked("local_dns", "1"); %> /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="local_dns" value="0" <% nvram_checked("local_dns", "0"); %> /><% tran("share.disable"); %>
 			</div>
-			<% nvram_invmatch("expert_mode","1","<!--"); %>
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_opt"); %></div>
 					<textarea cols="60" rows="4" id="dnsmasq_options" name="dnsmasq_options"></textarea>
@@ -96,7 +95,6 @@
 					//]]>
 					</script>
 			</div>
-			<% nvram_invmatch("expert_mode","1","-->"); %>
 		</div>
 </fieldset><br />
 
