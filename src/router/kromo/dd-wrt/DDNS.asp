@@ -457,7 +457,6 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
-		<% nvram_invmatch("expert_mode","1","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.options"); %></div>
 									<textarea cols="60" rows="4" id="ddns_conf" name="ddns_conf"></textarea>
@@ -468,7 +467,6 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>
 								</div>
-					<% nvram_invmatch("expert_mode","1","-->"); %>
 
 					<% nvram_selmatch("ddns_enable","1","-->"); %>
 					<% nvram_selmatch("ddns_enable","2","-->"); %>
