@@ -332,7 +332,7 @@ struct tty_ldisc *tty_ldisc_get(int disc)
 	return ld;
 }
 
-EXPORT_SYMBOL_GPL(tty_ldisc_get);
+EXPORT_SYMBOL(tty_ldisc_get);
 
 void tty_ldisc_put(int disc)
 {
@@ -350,7 +350,7 @@ void tty_ldisc_put(int disc)
 	spin_unlock_irqrestore(&tty_ldisc_lock, flags);
 }
       
-EXPORT_SYMBOL_GPL(tty_ldisc_put);
+EXPORT_SYMBOL(tty_ldisc_put);
 
 void tty_ldisc_assign(struct tty_struct *tty, struct tty_ldisc *ld)
 {
@@ -406,7 +406,7 @@ struct tty_ldisc *tty_ldisc_ref_wait(struct tty_struct *tty)
 	return &tty->ldisc;
 }
 
-EXPORT_SYMBOL_GPL(tty_ldisc_ref_wait);
+EXPORT_SYMBOL(tty_ldisc_ref_wait);
 
 /**
  *     tty_ldisc_ref           -       get the tty ldisc
@@ -424,7 +424,7 @@ struct tty_ldisc *tty_ldisc_ref(struct tty_struct *tty)
 	return NULL;
 }
 
-EXPORT_SYMBOL_GPL(tty_ldisc_ref);
+EXPORT_SYMBOL(tty_ldisc_ref);
 
 
 void tty_ldisc_deref(struct tty_ldisc *ld)
@@ -445,7 +445,7 @@ void tty_ldisc_deref(struct tty_ldisc *ld)
 	spin_unlock_irqrestore(&tty_ldisc_lock, flags);
 }
 
-EXPORT_SYMBOL_GPL(tty_ldisc_deref);
+EXPORT_SYMBOL(tty_ldisc_deref);
 
 /**
   *     tty_ldisc_enable        -       allow ldisc use
