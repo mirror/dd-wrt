@@ -12,14 +12,14 @@ do
 	fi
 	if [ "$($nv get oet${i}_en)" = "1" ]
 	then
+		/usr/sbin/iptables -D INPUT -p etherip -s $($nv get oet${i}_rem) -j ACCEPT 2>&1 > /dev/null
+		/usr/sbin/iptables -I INPUT -p etherip -s $($nv get oet${i}_rem) -j ACCEPT 2>&1 > /dev/null
 		if [ "$($nv get oet${i}_bridged)" != "1" ]
 		then
 
 			/usr/sbin/iptables -I FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
 			/usr/sbin/iptables -I FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
 			/usr/sbin/iptables -I INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
-			/usr/sbin/iptables -D INPUT -p etherip -s $($nv get oet${i}_rem) -j ACCEPT 2>&1 > /dev/null
-			/usr/sbin/iptables -I INPUT -p etherip -s $($nv get oet${i}_rem) -j ACCEPT 2>&1 > /dev/null
 		fi
 	fi
 done
