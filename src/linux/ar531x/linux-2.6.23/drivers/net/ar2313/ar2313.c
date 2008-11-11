@@ -840,6 +840,7 @@ static void ar2313_load_rx_ring(struct net_device *dev, int nr_bufs)
 	for (i = 0; i < nr_bufs; i++) {
 		struct sk_buff *skb;
 		ar2313_descr_t *rd;
+		int offset = RX_OFFSET;
 
 		if (sp->rx_skb[idx]) {
 #if DEBUG_RX
@@ -861,7 +862,9 @@ static void ar2313_load_rx_ring(struct net_device *dev, int nr_bufs)
 		 * Make sure IP header starts on a fresh cache line.
 		 */
 		skb->dev = dev;
-		skb_reserve(skb, RX_OFFSET);
+		if (sp->phy_dev)
+			offset += sp->phy_dev->pkt_align;
+		skb_reserve(skb, offset);
 		sp->rx_skb[idx] = skb;
 
 		rd = (ar2313_descr_t *) & sp->rx_ring[idx];
@@ -952,6 +955,7 @@ static int ar2313_rx_int(struct net_device *dev)
 			/* alloc new buffer. */
 			skb_new = dev_alloc_skb(AR2313_BUFSIZE + RX_OFFSET + 128);
 			if (skb_new != NULL) {
+				int offset;
 
 				skb = sp->rx_skb[idx];
 				/* set skb */
@@ -965,7 +969,10 @@ static int ar2313_rx_int(struct net_device *dev)
 
 				skb_new->dev = dev;
 				/* 16 bit align */
-				skb_reserve(skb_new, RX_OFFSET + 32);
+				offset = RX_OFFSET + 32;
+				if (sp->phy_dev)
+					offset += sp->phy_dev->pkt_align;
+				skb_reserve(skb_new, offset);
 				/* reset descriptor's curr_addr */
 				rxdesc->addr = virt_to_phys(skb_new->data);
 
