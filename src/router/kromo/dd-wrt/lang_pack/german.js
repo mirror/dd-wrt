@@ -664,6 +664,7 @@ hotspot.wifidog_authsrvssl="AuthServer SSL Verfügbar";
 hotspot.wifidog_authsrvsslport="AuthServer SSL Port";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP Port";
 hotspot.wifidog_authsrvpath="AuthServer Path";
+hotspot.wifidog_config="Firewall Regeln";
 
 // **************************************************************** AnchorFree.asp *********************************************************//
 

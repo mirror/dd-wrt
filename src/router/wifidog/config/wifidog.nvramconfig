@@ -11,3 +11,4 @@
 "wd_sslport" "Authserver ssl port" "NULL" "TRUE" "0"
 "wd_httpport" "Authserver http port" "NULL" "TRUE" "0"
 "wd_path" "Authserver path" "NULL" "TRUE" "0"
+"wd_config" "additional config" NULL" "TRUE" "0"
