@@ -3607,7 +3607,7 @@ static int show_virtualssid( webs_t wp, char *prefix )
 	sprintf( ssid, "%s_ap_isolate", var );
 	showRadio( wp, "wl_adv.label11", ssid );
 
-if (nvram_nmatch("ap","%s_mode",prefix) && nvram_nmatch("wdsap","%s_mode",prefix) && nvram_nmatch("infra","%s_mode",prefix))
+if (nvram_nmatch("ap","%s_mode",prefix) || nvram_nmatch("wdsap","%s_mode",prefix) || nvram_nmatch("infra","%s_mode",prefix))
     {
 	sprintf( power, "%s_maxassoc", prefix );
 	websWrite( wp, "<div class=\"setting\">\n" );
@@ -4239,7 +4239,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     // end ACK timing
 #endif
 #ifdef HAVE_MADWIFI
-if (nvram_nmatch("ap","%s_mode",prefix) && nvram_nmatch("wdsap","%s_mode",prefix) && nvram_nmatch("infra","%s_mode",prefix))
+if (nvram_nmatch("ap","%s_mode",prefix) || nvram_nmatch("wdsap","%s_mode",prefix) || nvram_nmatch("infra","%s_mode",prefix))
     {
     sprintf( power, "%s_maxassoc", prefix );
     websWrite( wp, "<div class=\"setting\">\n" );
