@@ -14,7 +14,7 @@
 #include <linux/fs.h>
 #include <asm/uaccess.h>	/* for copy_from_user */
 #include "ar531x.h"
-#include "ar5315/ar5315.h"
+#include "ar5315.h"
 
 #define PROCFS_MAX_SIZE 64
 extern const char *get_arch_type( void );
