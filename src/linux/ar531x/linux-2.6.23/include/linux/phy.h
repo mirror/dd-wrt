@@ -300,6 +300,9 @@ struct phy_device {
 	 */
 	int (*netif_receive_skb)(struct sk_buff *skb);
 	int (*netif_rx)(struct sk_buff *skb);
+
+	/* alignment offset for packets */
+	int pkt_align;
 };
 #define to_phy_device(d) container_of(d, struct phy_device, dev)
 
