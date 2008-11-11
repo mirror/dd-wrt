@@ -175,7 +175,9 @@ ar2315_wdt_interrupt(int irq, void *dev_id)
   {
 	if (started) {
 		printk(KERN_CRIT "Watchdog rebooting...\n");
-		sysRegWrite(AR5315_COLD_RESET, RESET_SYSTEM);
+//		sysRegWrite(AR5315_COLD_RESET, RESET_SYSTEM);
+		emergency_restart(); //2315 needs gpio based restart unlike 2317
+		
 	} else {
 		sysRegWrite(AR5315_WDC, AR531X_WD_CTRL_DEFAULT);
 		sysRegWrite(AR5315_WD, 0);
