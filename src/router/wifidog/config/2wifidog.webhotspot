@@ -95,5 +95,15 @@
 			<div class="label"><% tran("hotspot.wifidog_authsrvpath"); %></div>
 			<input class="text" maxlength="100" size="39" name="wd_path" value="<% nvram_get("wd_path"); %>" />
 		</div>
+		<div class="setting">
+				<div class="label"><% tran("hotspot.wifidog_config"); %></div>
+				<textarea cols="60" rows="4" id="dnsmasq_options" name="wd_config"></textarea>
+				<script type="text/javascript">
+				//<![CDATA[
+					var wd_config = fix_cr( '<% nvram_get("wd_config"); %>' );
+					document.getElementById("dnsmasq_options").value = wd_config;
+				//]]>
+				</script>
+		</div>
 	</div>
 </fieldset><br />

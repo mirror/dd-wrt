@@ -60,22 +60,28 @@ void start_wifidog( void )
 	fprintf( fp, "HTTPPort %s\n", nvram_safe_get( "wd_httpport" ) );
 	fprintf( fp, "Path %s\n", nvram_safe_get( "wd_path" ) );
 	fprintf( fp, "}\n" );
-	fprintf( fp, "FirewallRuleSet validating-users {\n" );
-	fprintf( fp, "FirewallRule allow to 0.0.0.0/0\n" );
-	fprintf( fp, "}\n" );
-	fprintf( fp, "FirewallRuleSet known-users {\n" );
-	fprintf( fp, "FirewallRule allow to 0.0.0.0/0\n" );
-	fprintf( fp, "}\n" );
-	fprintf( fp, "FirewallRuleSet unknown-users {\n" );
-	fprintf( fp, "FirewallRule allow udp port 53\n" );
-	fprintf( fp, "FirewallRule allow tcp port 53\n" );
-	fprintf( fp, "FirewallRule allow udp port 67\n" );
-	fprintf( fp, "FirewallRule allow tcp port 67\n" );
-	fprintf( fp, "}\n" );
-	fprintf( fp, "FirewallRuleSet locked-users {\n" );
-	fprintf( fp, "FirewallRule block to 0.0.0.0/0\n" );
-	fprintf( fp, "}\n" );
-
+	if( strlen( nvram_safe_get( "wd_config" ) ) > 0 )
+	{
+	    fwritenvram( "wd_config", fp );
+	}
+	else
+	{
+	    fprintf( fp, "FirewallRuleSet validating-users {\n" );
+	    fprintf( fp, "FirewallRule allow to 0.0.0.0/0\n" );
+	    fprintf( fp, "}\n" );
+	    fprintf( fp, "FirewallRuleSet known-users {\n" );
+	    fprintf( fp, "FirewallRule allow to 0.0.0.0/0\n" );
+	    fprintf( fp, "}\n" );
+	    fprintf( fp, "FirewallRuleSet unknown-users {\n" );
+	    fprintf( fp, "FirewallRule allow udp port 53\n" );
+	    fprintf( fp, "FirewallRule allow tcp port 53\n" );
+	    fprintf( fp, "FirewallRule allow udp port 67\n" );
+	    fprintf( fp, "FirewallRule allow tcp port 67\n" );
+	    fprintf( fp, "}\n" );
+	    fprintf( fp, "FirewallRuleSet locked-users {\n" );
+	    fprintf( fp, "FirewallRule block to 0.0.0.0/0\n" );
+	    fprintf( fp, "}\n" );
+	}
 	fclose( fp );
 	eval( "wifidog" );
 	dd_syslog( LOG_INFO, "wifidog successfully started\n" );
