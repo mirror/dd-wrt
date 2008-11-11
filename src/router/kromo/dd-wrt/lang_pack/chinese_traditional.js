@@ -1,12 +1,12 @@
 ////////////////////////////////////////////////////////////////////////////////
-//Chinese (Traditional) translation file - DD-WRT V23/V24 2008/08/02 UTF-8    //
+//Chinese (Traditional) translation file - DD-WRT V23/V24 2008/11/08 UTF-8    //
 ////////////////////////////////////////////////////////////////////////////////
 // ** COMMON SHARE LABEL **//
-
-lang_charset.set="UTF-8";
-
+lang_charset.set="UTF-8"; 
 
 
+
+ 
 share.firmware="Firmware";
 share.time="Time";
 share.interipaddr="WAN IP 位址";
@@ -20,6 +20,7 @@ share.usrname="帳號";
 share.passwd="密碼";
 share.hostname="主機名";
 share.vdsl="DTAG VDSL Vlan Tagging";
+share.wan_vlantag="Vlan Tag ID";
 share.compression="PPP 壓縮";
 share.domainname="網域名稱";
 share.wandomainname="WAN 網域名稱";
@@ -95,6 +96,8 @@ share.openn="打開";
 share.dtim="dtim";
 share.rates="速率";
 share.rate="速率";
+share.txrate="傳輸速率";
+share.rxrate="接收速率";
 share.low="低";
 share.medium="中";
 share.high="高";
@@ -140,22 +143,23 @@ share.key="金鑰";
 share.wireless="無線";
 share.dhcp="DHCP";
 share.styl="風格";
-share.err="error";
-share.errs="errors";
+share.err="錯誤";
+share.errs="錯誤";
 share.meters="公尺";
+share.turbo="Turbo (40 Mhz)";
 share.full="全部 (20 Mhz)";
 share.half="一半 (10 Mhz)";
 share.quarter="1/4 (5 Mhz)";
-share.seealso="See also";
+share.seealso="參照";
 share.never="never";
-share.unknown="Unknown";
-share.expired="expired";
+share.unknown="未知";
+share.expired="過期";
 share.logout="登出";
 share.nmounted="未掛載";
 share.fssize="合計 / 剩餘大小";
 share.src="來源位址";
 share.dst="遠端位址";
-share.name_resolution="Name Resolution";
+share.name_resolution="名稱解析";
 share.timeout="Timeout (s)";
 share.detail="查看細項";
 share.tmpmem="暫存記憶體";
@@ -170,11 +174,10 @@ share._24h="每天";
 share._48h="每 2 天";
 share._168h="每週";
 share.days="天";
-share.standard="標準（Standard）";
 share.from2 = share.from;
 share.to2 = share.to;
 share.days_genetive = share.days;
-
+share.standard="Standard";
 share.execscript="執行 script";
 share.user="用戶";
 share.privatekey="私人金鑰";
@@ -184,7 +187,7 @@ share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
 share.acktiming="ACK Timing";
-
+share.broadcast="Broadcast support";
 
 //
 sbutton.save="儲存設定";
@@ -235,8 +238,8 @@ sbutton.survey="選址（Site Survey）";
 sbutton.upgrading="正在更新";
 sbutton.upgrade="更新";
 sbutton.preview="預覽";
-sbutton.allways_on="一直開啟";
-sbutton.allways_off="一直關閉";
+sbutton.allways_on="持續開啟";
+sbutton.allways_off="持續關閉";
 
 
 // ** COMMON ERROR MESSAGES  **//
@@ -361,6 +364,7 @@ bmenu.wireless="無線網路";
 bmenu.wirelessBasic="基本設定";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="SuperChannel";
+bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="無線安全";
 bmenu.wirelessMac="MAC連線限制";
 bmenu.wirelessAdvanced="進階設定";
@@ -410,7 +414,7 @@ bmenu.servicesPppoesrv="PPPoE 伺服器";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesHotspot="熱點";
 bmenu.servicesMilkfish="Milkfish SIP Router";
-bmenu.servicesMilkfish="Milkfish";
+bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="機器狀態";
 bmenu.statuRouter="路由器";
@@ -421,6 +425,7 @@ bmenu.statuWLAN="無線網路";
 bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="頻寬監控";
 bmenu.statuSysInfo="系統資訊";
+bmenu.statuActivate="啟用";
 
 // ** Alive.asp **//
 //
@@ -475,7 +480,7 @@ ddns.wildcard="萬用字元";
 ddns.statu="DDNS狀態";
 ddns.system="DYNDNS 伺服器";
 ddns.options="DDNS 附加選項";
-ddns.forceupd="Force Update Interval";
+ddns.forceupd="更新間隔";
 
 
 ddnsm.all_closed="DDNS伺服器目前處於關閉狀態";
@@ -698,7 +703,7 @@ hotspot.sputnik_express="使用SputnikNet Express";
 hotspot.sputnik_about="關於Sputnik";
 hotspot.sputnik_learn="更多";
 hotspot.wifidog_legend="Wifidog";
-hotspot.wifidog_srv="Wifidog daemon";
+hotspot.wifidog_srv="Wifidog 背景程式";
 hotspot.wifidog_id="Gateway ID";
 hotspot.wifidog_url="Portal's URL";
 hotspot.wifidog_port="埠";
@@ -715,7 +720,8 @@ hotspot.wifidog_authsrvpath="AuthServer 路徑";
 
 //
 anchorfree.anchorfree="AnchorFree";
-anchorfree.title="賺取 Hotspot 的收入";
+anchorfree.title="My Ad Network";
+anchorfree.h2="AnchorFree Ad Network";
 anchorfree.anchorfree_revenue="透過建立支持廣告的 AnchorFree Hotspot 賺取收入";
 anchorfree.email="Email 收入的報告";
 anchorfree.ssid="使用不同的 SSID";
@@ -829,6 +835,8 @@ idx.summt_opt3="last Sun Mar - last Sun Oct";
 idx.summt_opt4="last Sun Oct - last Sun Mar";
 idx.summt_opt5="2nd Sun Mar - first Sun Nov";
 idx.summt_opt6="first Sun Oct - 3rd Sun Mar";
+idx.summt_opt7="last Sun Sep - first Sun Apr";
+idx.summt_opt8="3rd Sun Oct - 3rd Sun Mar";
 idx.portsetup="埠設定";
 idx.wanport="WAN 埠的指派";
 idx.ntp_client="網路校時";
@@ -917,7 +925,7 @@ management.rst_legend="Reset 鍵";
 management.rst_srv="Reset 鍵";
 management.routing_legend="Routing";
 management.routing_srv="Routing";
-management.ipv6_legend="IPv6 支持";
+management.ipv6_legend="IPv6 支援";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd 已開啟";
 management.ipv6_radconf="Radvd 設定";
@@ -939,6 +947,7 @@ management.lang_french="法語";
 management.lang_german="德語";
 management.lang_italian="義大利";
 management.lang_brazilian="巴西";
+management.lang_russian="俄羅斯";
 management.lang_slovenian="斯洛維尼亞";
 management.lang_spanish="西班牙";
 management.lang_swedish="瑞典";
@@ -1102,7 +1111,7 @@ service.dhcp_legend="DHCP 用戶端";
 service.dhcp_vendor="Set Vendorclass";
 service.dhcp_reqip="Request IP";
 service.dhcp_legend2="DHCP 伺服器";
-service.dhcp_srv="DHCP Daemon";
+service.dhcp_srv="DHCP 背景程式";
 service.dhcp_jffs2="用 JFFS2 儲存用戶端租約資料庫";
 service.dhcp_nvramlease="用 NVRAM 儲存用戶端租約資料庫";
 service.dhcp_domain="使用的網域";
@@ -1127,6 +1136,10 @@ service.syslog_ip="遠端伺服器";
 //telnet.webservices
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
+
+//ftp.webservices
+service.proftpd_legend="ProFTPD";
+service.proftpd_srv="ProFTPD";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP 用戶端";
@@ -1238,7 +1251,7 @@ service.usb_printer="USB 印表機驅動";
 
 //ttraff.webservices
 service.ttraff_legend="WAN 傳輸流量";
-service.ttraff_daemon="WAN 傳輸流量";
+service.ttraff_daemon="傳輸流量 背景程式";
 
 //milkfish.webservices
 service.milkfish_siprouter="Milkfish SIP Router";
@@ -1309,15 +1322,15 @@ sipath.status_titl="狀態";
 
 // ** Status_Lan.asp **//
 //
-status_lan.titl="LAN資訊";
+status_lan.titl="LAN 資訊";
 status_lan.h2="本地網路";
 status_lan.legend="LAN 資訊";
-status_lan.h22="動態主機配置協定";
-status_lan.legend2="DHCP資訊";
-status_lan.legend3="DHCP用戶端";
+status_lan.h22="動態主機設定協定";
+status_lan.legend2="DHCP 資訊";
+status_lan.legend3="DHCP 用戶端";
 status_lan.legend4="使用中的用戶端";
-status_lan.concount="Conn. Count";
-status_lan.conratio="Ratio";
+status_lan.concount="連線數量";
+status_lan.conratio="比例";
 
 //help container
 //
@@ -1358,8 +1371,8 @@ status_router.sys_time="目前時間";
 status_router.sys_up="開機時間";
 status_router.sys_load="平均負載";
 status_router.legend2="CPU";
-status_router.cpu="CPU型號";
-status_router.clock="CPU頻率";
+status_router.cpu="CPU 型號";
+status_router.clock="CPU 頻率";
 status_router.legend3="記憶體";
 status_router.mem_tot="可用的";
 status_router.mem_free="未使用";
@@ -1401,6 +1414,8 @@ status_inet.traffin="下載";
 status_inet.traffout="上傳";
 status_inet.previous="上一個月";
 status_inet.next="下一個月";
+status_inet.dataadmin="流量數據管理";
+status_inet.delete_confirm="請注意！這將會刪除所有的流量數據.繼續嗎？";
 
 
 //help container
@@ -1566,8 +1581,8 @@ wol.broadcast="網路廣播";
 wol.udp="UDP埠";
 wol.msg1="移除WOL主機";
 wol.h22="自動的Wake-On-LAN";
-wol.legend5="Wake-On-LAN daemon";
-wol.srv="WOL daemon";
+wol.legend5="Wake-On-LAN 背景程式";
+wol.srv="WOL 背景程式";
 wol.pass="安全的密碼";
 
 //help container
@@ -1655,12 +1670,16 @@ radius.h2="遠端授權撥入用戶伺服器（Radius）";
 radius.legend="Radius";
 radius.label="MAC Radius用戶端";
 radius.label2="MAC格式";
-radius.label3="RADIUS伺服器IP";
-radius.label4="RADIUS伺服器埠";
+radius.label3="RADIUS 伺服器IP";
+radius.label4="RADIUS 伺服器埠";
 radius.label5="最大非授權用戶數";
 radius.label6="密碼格式";
-radius.label7="RADIUS Shared Secret";
-radius.label8="如果伺服器不可用則越過Radius";
+radius.label7="Radius Auth Shared Secret";
+radius.label8="Override Radius if server is unavailable";
+radius.label13="Radius Acct Server Address";
+radius.label14="Radius Acct Server Port";
+radius.label17="Radius Acct Shared Secret";
+radius.label18="Radius Accounting";
 
 // ** Wireless_MAC.asp **//
 //
@@ -1676,9 +1695,9 @@ wl_mac.allow="允許所列的MAC連接無線網路";
 //
 wl_wimax.titl="WiMAX";
 wl_wimax.h2="Worldwide Interoperability for Microwave Access 縮寫 WiMAX";
-wl_wimax.downstream="Downstream Frequency";
-wl_wimax.upstream="Upstream Frequency";
-wl_wimax.width="Channel Width";
+wl_wimax.downstream="下鏈頻率";
+wl_wimax.upstream="上鏈頻率";
+wl_wimax.width="頻道寬度";
 wl_wimax.duplex="雙工模式";
 wl_wimax.mode="操作模式";
 wl_wimax.mac="用戶的 MAC 位址";
@@ -1692,7 +1711,7 @@ wl_adv.legend2="無線多媒體支援設定";
 wl_adv.label="認證類型";
 wl_adv.label2="基本速率";
 wl_adv.label3="傳輸速率";
-wl_adv.label4="CTS保護模式";
+wl_adv.label4="CTS 保護模式";
 wl_adv.label5="Frame Burst";
 wl_adv.label6="SSID 發送間隔";
 wl_adv.label7="DTIM 間隔";
@@ -1711,21 +1730,34 @@ wl_adv.label19="No-Acknowledgement";
 wl_adv.label20="Shortslot Override";
 wl_adv.label21="Transmission Maximum Rate";
 wl_adv.label23="Transmission Minimum Rate";
-wl_adv.label22="Bluetooth Coexistence Mode";
-wl_adv.label24="天線對準";
+wl_adv.label22="與藍芽共存模式";
+wl_adv.label24="天線定位";
 wl_adv.table1="EDCA AP 參數（AP到用戶端）";
+
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
+
+wl_adv.table3="WMM Tx retry limits, fallback limits and max rate parameters.";
+wl_adv.txpcol1="S. Retry";
+wl_adv.txpcol2="S. Fallbk";
+wl_adv.txpcol3="L. Retry";
+wl_adv.txpcol4="L. Fallbk";
+wl_adv.txpcol5="Max Rate";
+wl_adv.txprow1="AC BE TX 參數";
+wl_adv.txprow2="AC BK TX 參數";
+wl_adv.txprow3="AC VI TX 參數";
+wl_adv.txprow4="AC VO TX 參數";
+
 wl_adv.col6="Admin Forced";
 wl_adv.row1="背景";
 wl_adv.row2="Best Effort";
 wl_adv.row3="視訊";
 wl_adv.row4="語音";
-wl_adv.table2="EDCA STA參數（用戶端到AP）";
-wl_adv.lng="長"; 					//************* don't use .long ! *************
+wl_adv.table2="EDCA STA 參數（用戶端到AP）";
+wl_adv.lng="長"; 				//************* don't use .long ! *************
 wl_adv.shrt="短"; 				//************* don't use .short ! **************
 
 //help container
@@ -1743,7 +1775,10 @@ wl_basic.label3="無線網路名（SSID）";
 wl_basic.label4="無線頻道";
 wl_basic.label5="SSID廣播";
 wl_basic.label6="感度範圍（ACK Timing）";
+wl_basic.label7="802.11n 傳輸模式";
 wl_basic.scanlist="ScanList";
+wl_basic.duallink="Dual Link";
+wl_basic.parent="Parent IP";
 wl_basic.ap="AP";
 wl_basic.client="Client";
 wl_basic.repeater="Repeater";
@@ -1753,12 +1788,17 @@ wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="WDS Station";
 wl_basic.wdsap="WDS AP";
 wl_basic.mixed="混合模式";
+wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Short Preamble";
 wl_basic.b="B_模式";
 wl_basic.a="A_模式";
+wl_basic.na="NA-Only";
 wl_basic.g="G_模式";
 wl_basic.bg="BG_模式";
 wl_basic.n="N_模式";
+wl_basic.rts="RTS Threshold";
+wl_basic.rtsvalue="Threshold";
+wl_basic.protmode="Protection Mode";
 wl_basic.legend2="無線網路自動 開/關 ";
 wl_basic.radio="無線網路";
 wl_basic.radiotimer="無線網路開關設定";
@@ -1785,9 +1825,10 @@ wl_basic.supergcomp="Super G 壓縮";
 wl_basic.supergff="Super G 快速框架";
 wl_basic.extchannel="延長通道模式";
 wl_basic.outband="Outdoor Band";
-wl_basic.channel_width="通道寬度";
-wl_basic.channel_wide="Wide Channel";
-wl_basic.regulatory="管理";
+wl_basic.channel_width="頻道寬度";
+wl_basic.channel_wide="寬頻道";
+wl_basic.regulatory="SuperChannel";
+wl_basic.chanshift="頻道 Shifting";
 wl_basic.specialmode="2.3 Ghz 模式";
 wl_basic.wifi_bonding="Wifi Bonding";
 wl_basic.sifstime="OFDM SIFS Time";
@@ -1796,6 +1837,8 @@ wl_basic.multicast="多點傳播轉送";
 wl_basic.intmit="雜訊消除";
 wl_basic.noise_immunity="雜訊消除等級";
 wl_basic.ofdm_weak_det="OFDM Weak Detection";
+wl_basic.radar="雷達探測";
+
 //help container
 //
 hwl_basic.right2="如果您想排除無線-G用戶端,選擇 <em>B</em> 模式.如果您想關閉無線連線,選擇 <em>關閉</em>.";
@@ -1830,8 +1873,8 @@ logout.message="您已成功登出.<br />感謝您使用 DD-WRT !";
 // **********		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
 //
-dhcp.titl="DHCP連線中IP清單";
-dhcp.h2="DHCP連線中IP清單";
+dhcp.titl="DHCP 連線中IP清單";
+dhcp.h2="DHCP 連線中IP清單";
 dhcp.server="DHCP 伺服器IP位址 :";
 dhcp.tclient="用戶端主機名";
 
