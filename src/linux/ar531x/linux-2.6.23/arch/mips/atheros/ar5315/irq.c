@@ -23,7 +23,7 @@
 #include <asm/bootinfo.h>
 #include <asm/irq_cpu.h>
 #include <asm/io.h>
-#include "../ar531x.h"
+#include "ar531x.h"
 
 static u32 gpiointmask = 0, gpiointval = 0;
 
