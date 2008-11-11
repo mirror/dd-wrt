@@ -39,7 +39,6 @@
 		<div class="label"><% tran("service.dhcp_landomain"); %></div>
 		<input maxlength="79" size="20" name="lan_domain" onblur="valid_name(this,service.dhcp_landomain,SPACE_NO)" value="<% nvram_get("lan_domain"); %>" />
 	</div>
-	<% nvram_invmatch("expert_mode","1","<!--"); %>
 	<div class="setting">
 		<div class="label"><% tran("service.dhcp_option"); %></div>
 		<textarea cols="60" rows="4" id="dhcpd_options" name="dhcpd_options"></textarea>
@@ -50,7 +49,6 @@
 		//]]>
 		</script>
 	</div>
-	<% nvram_invmatch("expert_mode","1","-->"); %>
 	<table class="table center" summary="static lease table">
 		<tr>
 			<th colspan="3"><% tran("share.static_lease"); %></th>
