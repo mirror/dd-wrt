@@ -239,7 +239,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
     {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
-    {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+    {"wan_proto", "pptp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_X86
 #ifdef HAVE_GW700
     {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
@@ -2116,9 +2116,14 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
     {"dns_dnsmasq", "1", 0},
     {"auth_dnsmasq", "1", 0},
+#ifdef HAVE_GGEW
+    {"pptp_use_dhcp", "1", 0},	/* pptp will use dhcp to obtain ip address, netmask and gateway */
+    {"pptp_server_name", "proxy2.wlan.ggew-net.de", 0},
+#else
+    {"pptp_use_dhcp", "0", 0},	/* pptp will use dhcp to obtain ip address, netmask and gateway */
+    {"pptp_server_name", "", 0},	
+#endif
 
-    {"pptp_use_dhcp", "0", 0},	/* pptp will use dhcp to obtain ip address,
-				 * netmask and gateway */
     {"forward_entries", "0", 0},
     {"forwardspec_entries", "0", 0},
     {"trigger_entries", "0", 0},
