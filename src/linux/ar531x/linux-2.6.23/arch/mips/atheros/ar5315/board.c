@@ -316,7 +316,7 @@ static void __init ar5315_time_init(void)
 
 void __init ar5315_prom_init(void)
 {
-	u32 memsize, memcfg;
+	u32 memsize, memcfg, devid;
 
 	is_5315 = 1;
 	memcfg = sysRegRead(AR5315_MEM_CFG);
