@@ -121,5 +121,6 @@ void start_defaults( void )
     {
 	nvram_set( t->name, t->value );
     }
+    free(buf);
     nvram_commit(  );
 }
