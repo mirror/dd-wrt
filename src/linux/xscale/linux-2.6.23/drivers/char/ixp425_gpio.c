@@ -42,6 +42,11 @@ struct gpio_bit {
 #define GPIO_MAJOR 127
 //#define DEBUG
 
+#define GPIO_GET_BIT  0x0000001
+#define GPIO_SET_BIT  0x0000002
+#define GPIO_GET_CONFIG 0x0000003
+#define GPIO_SET_CONFIG 0x0000004
+
 /*
  * GPIO interface
  */
