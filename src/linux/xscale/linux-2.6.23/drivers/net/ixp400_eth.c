@@ -155,9 +155,12 @@ static int npe_learning = 0;      /* default : NPE learning & filtering enable *
 static int log_level = 0;         /* default : no log */
 static int no_ixp400_sw_init = 0; /* default : init core components of the IXP400 Software */
 #if defined(CONFIG_MACH_CAMBRIA)
-static int no_phy_scan = 1;       /* default : do phy discovery */
+static int no_phy_scan = 0;       /* default : do phy discovery */
 static int hss_coexist = 1;	  /* default : HSS coexist disabled */
 #elif  defined(CONFIG_TONZE)
+static int no_phy_scan = 0;       /* default : do phy discovery */
+static int hss_coexist = 0;	  /* default : HSS coexist disabled */
+#elif  defined(CONFIG_ARCH_ADI_COYOTE_WRT300N)
 static int no_phy_scan = 0;       /* default : do phy discovery */
 static int hss_coexist = 0;	  /* default : HSS coexist disabled */
 #else
@@ -727,6 +730,9 @@ static phy_cfg_t default_phy_cfg[] =
 #if defined(CONFIG_TONZE)
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}, /* Port 0: monitor the link*/
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}  /* Port 1: monitor the link*/
+#elif defined(CONFIG_ARCH_ADI_COYOTE_WRT300N)
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}, /* Port 0: monitor the phy */
+    {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,FALSE}  /* Port 1: monitor the link */
 #elif defined(CONFIG_ARCH_IXDP425)
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}, /* Port 0: monitor the phy */
     {PHY_SPEED_100, PHY_DUPLEX_FULL, PHY_AUTONEG_ON,TRUE}  /* Port 1: monitor the link */
