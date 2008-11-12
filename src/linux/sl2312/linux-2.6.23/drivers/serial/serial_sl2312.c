@@ -804,6 +804,7 @@ struct uart_driver sl2312_reg = {
 	.owner         = NULL,
 	.driver_name	= SERIAL_SL2312_NAME,
 	.dev_name		= SERIAL_SL2312_NAME,
+	.devfs_name		= "tts/",
 	.major          = SERIAL_SL2312_MAJOR,
 	.minor			= SERIAL_SL2312_MINOR,
 	.nr				= UART_NR,
