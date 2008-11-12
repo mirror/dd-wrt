@@ -40,6 +40,7 @@
 #include <linux/ip.h>
 #include <linux/tcp.h>
 #include <linux/udp.h>
+#include <net/ip.h>
 
 #include <linux/mtd/kvctl.h>
 
@@ -79,8 +80,8 @@
 #ifdef CONFIG_SL351x_NAT
 #endif
 #define GMAX_TX_INTR_DISABLED			1
-#define DO_HW_CHKSUM					1
-#define ENABLE_TSO						1
+//#define DO_HW_CHKSUM					1
+//#define ENABLE_TSO						1
 #define GMAC_USE_TXQ0					1
 // #define NAT_WORKAROUND_BY_RESET_GMAC	1
 // #define HW_RXBUF_BY_KMALLOC			1
@@ -159,9 +160,8 @@ struct net_device_stats * gmac_get_stats(struct net_device *dev);
 static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev);
 static void gmac_set_rx_mode(struct net_device *dev);
 static irqreturn_t toe_gmac_interrupt (int irq, void *dev_instance);
-static void toe_gmac_handle_default_rxq(struct net_device *dev, GMAC_INFO_T *tp);
-unsigned int mii_read(unsigned char phyad,unsigned char regad);
-void mii_write(unsigned char phyad,unsigned char regad,unsigned int value);
+static unsigned int mii_read(unsigned char phyad,unsigned char regad);
+static void mii_write(unsigned char phyad,unsigned char regad,unsigned int value);
 void mac_init_drv(void);
 
 static void toe_init_free_queue(void);
@@ -204,6 +204,7 @@ unsigned int Giga_switch=0;
 unsigned int switch_port_no=0;
 unsigned int ever_dwon=0;
 #endif
+static struct ethtool_ops gmac_ethtool_ops;
 
 /************************************************/
 /*            GMAC function declare             */
@@ -237,6 +238,20 @@ void mac_set_MRxCRx(int mac, int rule, int ctrlreg, u32 data);
 /*----------------------------------------------------------------------
 *	Ethernet Driver init
 *----------------------------------------------------------------------*/
+
+static int mdio_read(struct net_device *dev, int phy_id, int location)
+{
+	int value;
+
+	value = mii_read(phy_id, location);
+
+	return value;
+}
+
+static void mdio_write(struct net_device *dev, int phy_id, int location, int value)
+{
+	mii_write(phy_id, location, value);
+}
 
 static int __init gmac_init_module(void)
 {
@@ -321,14 +336,22 @@ static int __init gmac_init_module(void)
 		dev->priv=tp;
 		tp->dev = dev;
 
+		tp->mii.phy_id = tp->phy_addr;
+		tp->mii.phy_id_mask = 0x1F;
+		tp->mii.reg_num_mask = 0x1F;
+		tp->mii.dev = dev;
+		tp->mii.mdio_read = mdio_read;
+		tp->mii.mdio_write = mdio_write;
+		spin_lock_init(&tp->mii_lock);
+
 		SET_MODULE_OWNER(dev);
 
-		// spin_lock_init(&tp->lock);
+		spin_lock_init(&tp->lock);
 		spin_lock_init(&gmac_fq_lock);
 		dev->base_addr = tp->base_addr;
 		dev->irq = tp->irq;
-	    dev->open = gmac_open;
-	    dev->stop = gmac_close;
+		dev->open = gmac_open;
+		dev->stop = gmac_close;
 		dev->hard_start_xmit = gmac_start_xmit;
 		dev->get_stats = gmac_get_stats;
 		dev->set_multicast_list = gmac_set_rx_mode;
@@ -336,6 +359,7 @@ static int __init gmac_init_module(void)
 		dev->do_ioctl = gmac_netdev_ioctl;
 		dev->tx_timeout = gmac_tx_timeout;
 		dev->watchdog_timeo = GMAC_DEV_TX_TIMEOUT;
+		dev->ethtool_ops = &gmac_ethtool_ops;
 #ifdef	L2_jumbo_frame
 		dev->mtu = 2018; //2002  ,2018
 #endif
@@ -343,7 +367,6 @@ static int __init gmac_init_module(void)
 			dev->tx_queue_len = TOE_GMAC0_SWTXQ_DESC_NUM;
 		else
 			dev->tx_queue_len = TOE_GMAC1_SWTXQ_DESC_NUM;
-
 #ifdef DO_HW_CHKSUM
 		dev->features |= NETIF_F_SG|NETIF_F_HW_CSUM;
 #ifdef ENABLE_TSO
@@ -628,7 +651,7 @@ static void toe_init_free_queue(void)
 		sw_desc_ptr->word1.bits.sw_id = 0;	// used to locate skb
 		if ( (skb = dev_alloc_skb(SW_RX_BUF_SIZE))==NULL)  /* allocate socket buffer */
 		{
-			printk("%s::skb buffer allocation fail !\n",__func__); while(1);
+			printk("%s::skb buffer allocation fail !\n",__func__); BUG();
 		}
 
 		data = skb->data;
@@ -646,7 +669,7 @@ static void toe_init_free_queue(void)
 #ifdef CONFIG_SL351x_NAT
 	if (sizeof(skb->cb) < 64)
 	{
-			printk("==> %s:: sk structure is incorrect -->Change to cb[64] !\n",__func__); while(1);
+			printk("==> %s:: sk structure is incorrect -->Change to cb[64] !\n",__func__); BUG();
 	}
 	// init hardware free queues
 	desc_buf = (unsigned int)DMA_MALLOC((TOE_HW_FREEQ_DESC_NUM * sizeof(GMAC_RXDESC_T)),
@@ -680,7 +703,7 @@ static void toe_init_free_queue(void)
 	if (!buf_ptr)
 	{
 		printk("===> %s::Failed to allocate HW TxQ Buffers!\n",__func__);
-		while(1);	// could not be happened, if happened, adjust the buffer descriptor number
+		BUG();	// could not be happened, if happened, adjust the buffer descriptor number
 		return;
 	}
 
@@ -1064,11 +1087,11 @@ static void toe_init_gmac(struct net_device *dev)
 	                            GMAC0_SWTQ01_FIN_INT_BIT | GMAC0_SWTQ01_EOF_INT_BIT |
 	                            GMAC0_SWTQ00_FIN_INT_BIT | GMAC0_SWTQ00_EOF_INT_BIT;
 
-#ifdef GMAX_TX_INTR_DISABLED
-	    tp->intr0_enabled =		0;
-#else
+//#ifdef GMAX_TX_INTR_DISABLED
+//	    tp->intr0_enabled =		0;
+//#else
 	    tp->intr0_enabled =		GMAC0_SWTQ00_FIN_INT_BIT | GMAC0_SWTQ00_EOF_INT_BIT;
-#endif
+//#endif
 
 	    tp->intr1_selected =	TOE_IQ_ALL_BITS			 | TOE_CLASS_RX_INT_BITS	|
 	    						GMAC0_HWTQ03_EOF_INT_BIT | GMAC0_HWTQ02_EOF_INT_BIT |
@@ -1162,15 +1185,7 @@ static void toe_init_gmac(struct net_device *dev)
 	gmac_write_reg(TOE_GLOBAL_BASE, GLOBAL_INTERRUPT_ENABLE_4_REG,
 					tp->intr4_enabled, tp->intr4_selected);
 
-    /* start DMA process */
-	toe_gmac_hw_start(dev);
-
-    /* enable tx/rx register */
-    toe_gmac_enable_tx_rx(dev);
-
-//	toe_gmac_enable_interrupt(tp->irq);
-
-    return ;
+	return ;
 }
 
 
@@ -1361,7 +1376,6 @@ static int toe_gmac_init_chip(struct net_device *dev)
 	#endif
 
 	weight = gmac_read_reg(tp->dma_base_addr, GMAC_AHB_WEIGHT_REG);
-	printk("====> %08X\n", weight);
 
 	#if defined(CONFIG_SL351x_NAT) || defined(CONFIG_SL351x_RXTOE)
 	gmac_write_reg(tp->dma_base_addr, GMAC_SPR0, IPPROTO_TCP, 0xffffffff);
@@ -1563,6 +1577,7 @@ static  void toe_gmac_tx_complete(GMAC_INFO_T *tp, unsigned int tx_qid,
 //	struct net_device_stats *isPtr = (struct net_device_stats *)&tp->ifStatics;
 	GMAC_SWTXQ_T			*swtxq;
 	DMA_RWPTR_T				rwptr;
+	int desc_completed = 0;
 
 	/* get tx H/W completed descriptor virtual address */
 	/* check tx status and accumulate tx statistics */
@@ -1578,14 +1593,17 @@ static  void toe_gmac_tx_complete(GMAC_INFO_T *tp, unsigned int tx_qid,
 		word0.bits32 = curr_desc->word0.bits32;
 		word1.bits32 = curr_desc->word1.bits32;
 
-		if (word0.bits.status_tx_ok)
+		if (1/*word0.bits.status_tx_ok*/)
 		{
-			tp->ifStatics.tx_bytes += word1.bits.byte_count;
+			if(word0.bits.status_tx_ok)
+				tp->ifStatics.tx_bytes += word1.bits.byte_count;
+			else
+				tp->ifStatics.tx_errors++;
 			desc_count = word0.bits.desc_count;
 			if (desc_count==0)
 			{
 				printk("%s::Desc 0x%x = 0x%x, desc_count=%d\n",__func__, (u32)curr_desc, word0.bits32, desc_count);
-				while(1);
+				BUG();
 			}
 			while (--desc_count)
 			{
@@ -1617,7 +1635,8 @@ static  void toe_gmac_tx_complete(GMAC_INFO_T *tp, unsigned int tx_qid,
 				dev_kfree_skb(swtxq->tx_skb[swtxq->finished_idx]);
 				swtxq->tx_skb[swtxq->finished_idx] = NULL;
 			} else {
-				BUG();
+				printk("%s %s: skb=NULL!!!\n", dev->name, __func__);
+				//BUG();
 			}
 
 			curr_desc->word0.bits32 = word0.bits32;
@@ -1625,7 +1644,9 @@ static  void toe_gmac_tx_complete(GMAC_INFO_T *tp, unsigned int tx_qid,
  			swtxq->total_finished++;
   			tp->ifStatics.tx_packets++;
 			swtxq->finished_idx = RWPTR_ADVANCE_ONE(swtxq->finished_idx, swtxq->total_desc_num);
+			desc_completed++;
 		}
+#if 0		
 		else
 		{
 			// tp->ifStatics.tx_errors++;
@@ -1633,13 +1654,46 @@ static  void toe_gmac_tx_complete(GMAC_INFO_T *tp, unsigned int tx_qid,
 			// wait ready by breaking
 			break;
 		}
+#endif		
 	}
 
-	if (netif_queue_stopped(dev))
-	{
+	if (netif_queue_stopped(dev) && desc_completed)
 		netif_wake_queue(dev);
-	}
 }
+
+#if 0
+static int gmac_trim_padding(struct sk_buff *skb)
+{
+	struct ethhdr *eh;
+
+	/* Trim padding on small IP packets, NetEngine will do that for us
+	 * just fine. If packet not trimmed, NetEngine will adjust IP and
+	 * TCP headers and padding becomes 'data'. Which is really wrong !
+	 */
+
+	eh = (struct ethhdr*)skb->data;
+	if (eh->h_proto == ntohs(ETH_P_IP)) {
+		struct iphdr *ih;
+		size_t length;
+
+		ih = (struct iphdr *) ((char *)eh + ETH_HLEN);
+
+		if (ih->frag_off & htons(IP_MF | IP_OFFSET))
+			goto out;
+
+		if (ih->protocol != IPPROTO_TCP &&
+		    ih->protocol != IPPROTO_UDP)
+			goto out;
+
+		length = ntohs(ih->tot_len) + ETH_HLEN;
+
+		return length;
+	}
+out:
+	return skb->len;
+}
+#endif
+
 
 /*----------------------------------------------------------------------
 *	gmac_start_xmit
@@ -1651,7 +1705,7 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	GMAC_TXDESC_T *curr_desc;
 	int snd_pages = skb_shinfo(skb)->nr_frags + 1;  /* get number of descriptor */
 	int frag_id = 0;
-	int len, total_len = skb->len;
+	int len, total_len;
 	struct net_device_stats *isPtr;
 	unsigned int free_desc;
 	GMAC_SWTXQ_T *swtxq;
@@ -1671,79 +1725,45 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	int total_pages;
 	total_pages = snd_pages;
 #endif
+	total_len = skb->len/*gmac_trim_padding(skb)*/;
 
 	isPtr = (struct net_device_stats *)&tp->ifStatics;
 #if 1
 	if (skb->len >= 0x10000)
 	{
-//		spin_unlock(&tp->tx_mutex);
 		isPtr->tx_dropped++;
 		printk("%s::[GMAC %d] skb->len %d >= 64K\n", __func__, tp->port_id, skb->len);
-		netif_stop_queue(dev);
-		return 1;
-    }
+		dev_kfree_skb(skb);
+		dev->trans_start = jiffies;
+		return 0;
+    	}
 #endif
 
 #ifdef GMAC_USE_TXQ0
 	#define tx_qid 	0
 #endif
 
-	swtxq = &tp->swtxq[tx_qid];
-
-//	spin_lock(&tp->tx_mutex);
-    rwptr.bits32 = readl(swtxq->rwptr_reg);
-	wptr = rwptr.bits.wptr;
-	rptr = rwptr.bits.rptr;
-
 	// check finished desc or empty BD
 	// cannot check by read ptr of RW PTR register,
 	// because the HW complete to send but the SW may NOT handle it
-#ifndef	GMAX_TX_INTR_DISABLED
-	if (wptr >= swtxq->finished_idx)
-		free_desc = swtxq->total_desc_num - wptr - 1 + swtxq->finished_idx;
-	else
-		free_desc = swtxq->finished_idx - wptr - 1;
-
-	if (free_desc < snd_pages)
-	{
-//		spin_unlock(&tp->tx_mutex);
-		isPtr->tx_dropped++;
-//		printk("GMAC %d No available descriptor!\n", tp->port_id);
-		netif_stop_queue(dev);
-		return 1;
-    }
-#else
-	toe_gmac_tx_complete(tp, tx_qid, dev, 0);
+#ifdef	GMAX_TX_INTR_DISABLED
+//	toe_gmac_tx_complete(tp, tx_qid, dev, 0);
+#endif
+	swtxq = &tp->swtxq[tx_qid];
+	rwptr.bits32 = readl(swtxq->rwptr_reg);
+	wptr = rwptr.bits.wptr;
+	rptr = rwptr.bits.rptr;
 
 	if (wptr >= swtxq->finished_idx)
-		free_desc = swtxq->total_desc_num - wptr + swtxq->finished_idx;
+		free_desc = swtxq->total_desc_num - (wptr - swtxq->finished_idx);
 	else
 		free_desc = swtxq->finished_idx - wptr;
-	if (free_desc < snd_pages)
-	{
-//		spin_unlock(&tp->tx_mutex);
-		isPtr->tx_dropped++;
-//		printk("GMAC %d No available descriptor!\n", tp->port_id);
-		netif_stop_queue(dev);
-		return 1;
-    }
 
-#if 0
-	printk("1: free_desc=%d, wptr=%d, finished_idx=%d\n", free_desc, wptr, swtxq->finished_idx);
-	if ((free_desc < (snd_pages << 2)) ||
-	    (free_desc < (swtxq->total_desc_num >> 2)))
+	if (free_desc <= snd_pages)
 	{
-		printk("2: free_desc = %d\n", free_desc);
-		toe_gmac_tx_complete(tp, tx_qid, dev, 0);
-		rwptr.bits32 = readl(swtxq->rwptr_reg);
-		wptr = rwptr.bits.wptr;
-		if (wptr>= swtxq->finished_idx)
-			free_desc = swtxq->total_desc_num - wptr -1 + swtxq->finished_idx;
-		else
-			free_desc = swtxq->finished_idx - wptr - 1;
+		netif_stop_queue(dev);
+		return NETDEV_TX_BUSY;
 	}
-#endif
-#endif
 
 #ifdef	L2_jumbo_frame
 //		data_len = skb->len - 14 - ip_hdr->ihl *4 - tcp_hdr_len;
@@ -1794,7 +1814,7 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
     	if (swtxq->tx_skb[wptr])
     	{
     		printk("Error! Stop due to TX descriptor's buffer is not freed!\n");
-    		while(1);
+    		BUG();
     		dev_kfree_skb(swtxq->tx_skb[wptr]);
     		swtxq->tx_skb[wptr] = NULL;
 		}
@@ -1842,7 +1862,7 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 #ifdef	L2_jumbo_frame
 		if (total_len >= (dev->mtu+14) && (skb->nh.iph->protocol == 0x011) && skb->nh.iph && (skb->nh.iph->frag_off & __constant_htons(0x3fff)))
 #else
-		if (total_len <= 1514 && ip_hdr(skb) && (ip_hdr(skb)->frag_off & __constant_htons(0x3fff)))
+		if (total_len <= 1514 && skb->nh.iph && (skb->nh.iph->frag_off & __constant_htons(0x3fff)))
 #endif
 			word1  = total_len |
 					TSS_IP_CHKSUM_BIT  |
@@ -1856,7 +1876,7 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 					TSS_IPV6_ENABLE_BIT |
 					TSS_MTU_ENABLE_BIT;
 #else
-		word1 = total_len | TSS_MTU_ENABLE_BIT;
+		word1 = total_len | BIT(21)/* Bypass TSS bit*/ /*| TSS_MTU_ENABLE_BIT*/;
 #endif
 		word2 = (unsigned long)__pa(pkt_datap);
 
@@ -1945,7 +1965,6 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
     swtxq->total_sent++;
 	SET_WPTR(swtxq->rwptr_reg, wptr);
 	dev->trans_start = jiffies;
-
 
 	// printk("MAC %d Qid %d rwptr = 0x%x, curr_desc=0x%x\n", skb->tx_port_id, tx_qid, rwptr.bits32, curr_desc);
 //#ifdef	GMAX_TX_INTR_DISABLED
@@ -2321,13 +2340,14 @@ void mac_set_rx_mode(int pid, unsigned int data)
 
 static int gmac_open (struct net_device *dev)
 {
+	unsigned long flags;
 	GMAC_INFO_T  *tp = (GMAC_INFO_T *)dev->priv;
 	int    					retval;
 	TOE_INFO_T				*toe;
 	toe = (TOE_INFO_T *)&toe_private_data;
 
     /* hook ISR */
-	retval = request_irq (dev->irq, toe_gmac_interrupt, IRQF_DISABLED, dev->name, dev);
+	retval = request_irq (dev->irq, toe_gmac_interrupt, SA_INTERRUPT, dev->name, dev);
 	if (retval)
 		return retval;
 
@@ -2346,9 +2366,29 @@ static int gmac_open (struct net_device *dev)
     	}
     }
 
+	spin_lock_irqsave(&tp->lock, flags);
+	toe_init_interrupt_config();
+	toe_gmac_disable_tx_rx(dev);
+	toe_gmac_hw_stop(dev);
+
+	toe_gmac_fill_free_q(5);
+	toe_gmac_tx_complete(dev->priv, 0, dev, 0);
+	
+	toe_init_gmac(dev);
+	/* set PHY register to start autonegition process */
+	gmac_set_phy_status(dev);
+
 	tp->operation = 1;
 
+	netif_poll_enable(dev);
    	netif_start_queue (dev);
+	spin_unlock_irqrestore(&tp->lock, flags);
+
+	/* start DMA process */
+	toe_gmac_hw_start(dev);
+
+	/* enable tx/rx register */
+	toe_gmac_enable_tx_rx(dev);
 
 	return (0);
 }
@@ -2358,30 +2398,32 @@ static int gmac_open (struct net_device *dev)
 *----------------------------------------------------------------------*/
 static int gmac_close(struct net_device *dev)
 {
-    TOE_INFO_T			*toe;
-// 	GMAC_RXDESC_T		*sw_desc_ptr,*desc_ptr;
-// 	unsigned int		buf_ptr;
-	GMAC_INFO_T 	*tp = dev->priv;
-	unsigned int		ret;
+	GMAC_INFO_T *tp = dev->priv;
+	unsigned long flags;
 
-	toe = (TOE_INFO_T *)&toe_private_data;
+	spin_lock_irqsave(&tp->lock, flags);
+
+	/* irqs off, stop GMA/DMA tx/rx  */
+	toe_init_interrupt_config();
+	toe_gmac_disable_tx_rx(dev);
+	toe_gmac_hw_stop(dev);
 
 	tp->operation = 0;
 
-    netif_stop_queue(dev);
-    mdelay(20);
+	spin_unlock_irqrestore(&tp->lock, flags);
 
-    /* stop tx/rx packet */
-    toe_gmac_disable_tx_rx(dev);
-    mdelay(20);
+	netif_poll_disable(dev);
 
     /* stop the chip's Tx and Rx DMA processes */
 	toe_gmac_hw_stop(dev);
 
+    netif_stop_queue(dev);
+    /* stop tx/rx packet */
+    toe_gmac_disable_tx_rx(dev);
+
 	toe_gmac_disable_interrupt(tp->irq);
 
     /* disable interrupts by clearing the interrupt mask */
-    synchronize_irq();
     free_irq(dev->irq,dev);
 
 //	DMA_MFREE(sw_desc_ptr, (TOE_SW_FREEQ_DESC_NUM * sizeof(GMAC_RXDESC_T),(dma_addr_t *)&toe->sw_freeq_desc_base_dma);
@@ -2400,7 +2442,9 @@ static int gmac_close(struct net_device *dev)
 	{
     	if (tp->thr_pid >= 0)
     	{
-		    tp->time_to_die = 1;
+		int ret;
+
+		tp->time_to_die = 1;
     		wmb();
     		ret = kill_proc (tp->thr_pid, SIGTERM, 1);
     		if (ret)
@@ -2424,7 +2468,7 @@ static inline void toe_gmac_fill_free_q(int count)
 	struct sk_buff	*skb;
 	volatile DMA_RWPTR_T	fq_rwptr;
 	volatile GMAC_RXDESC_T	*fq_desc;
-	unsigned long flags;
+	// unsigned long flags;
 	unsigned short index;
 	int filled = 0;
 	static int entered;
@@ -2465,9 +2509,9 @@ static inline void toe_gmac_fill_free_q(int count)
 
 		// printk("refill skb: %p, idx: %hu\n", skb, index);
 		fq_desc->word2.buf_adr = (unsigned int)__pa(skb->data);
-	writel(0x07960202, TOE_GMAC0_BASE+GMAC_CONFIG0);
+//	writel(0x07960202, TOE_GMAC0_BASE+GMAC_CONFIG0);
 		SET_WPTR(TOE_GLOBAL_BASE+GLOBAL_SWFQ_RWPTR_REG, index);
-	writel(0x07960200, TOE_GMAC0_BASE+GMAC_CONFIG0);
+//	writel(0x07960200, TOE_GMAC0_BASE+GMAC_CONFIG0);
 
 		index = RWPTR_ADVANCE_ONE(index, TOE_SW_FREEQ_DESC_NUM);
 		fq_desc = (GMAC_RXDESC_T*)toe_private_data.swfq_desc_base+index;
@@ -2520,20 +2564,31 @@ static void gmac_registers(const char *message)
 /*----------------------------------------------------------------------
 * toe_gmac_interrupt
 *----------------------------------------------------------------------*/
-static irqreturn_t toe_gmac_interrupt (int irq, void *dev_instance)
+static irqreturn_t toe_gmac_interrupt (int irq, void *devid)
 {
-	struct net_device   *dev = (struct net_device *)dev_instance;
-	TOE_INFO_T			*toe;
-	GMAC_INFO_T 		*tp = (GMAC_INFO_T *)dev->priv;
-	unsigned int		status0;
-	unsigned int		status1;
-	unsigned int		status2;
-	unsigned int		status3;
-	unsigned int		status4;
+	struct net_device_stats *ns;
+	uint32_t status0, status1,
+		 status2, status3,
+		 status4;
+	GMAC_INFO_T *tp = NULL;
+	struct net_device *dev = devid;
 
-	toe = (TOE_INFO_T *)&toe_private_data;
+	if (unlikely(dev == NULL))
+		return IRQ_NONE;
 
-	if (0 && rx_poll_enabled) {
+	tp = dev->priv;
+	ns = &tp->ifStatics;	/* dumb name - rename */
+
+	/* Closes real race's between RX and dev_close() */
+	if (unlikely(!netif_running(dev))) {
+		toe_init_interrupt_config();
+		toe_gmac_disable_tx_rx(dev);
+		toe_gmac_hw_stop(dev);
+	
+		return IRQ_HANDLED;
+	}
+
+	if (rx_poll_enabled) {
 		gmac_registers("interrupt handler");
 	}
 
@@ -2544,31 +2599,27 @@ static irqreturn_t toe_gmac_interrupt (int irq, void *dev_instance)
 	status3 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_STATUS_3_REG);
 	status4 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_STATUS_4_REG);
 
-#if 0
-	/* handle freeq interrupt first */
-	if (status4 & SWFQ_EMPTY_INT_BIT)
-	{
-		toe_gmac_fill_free_q();
-		writel(status4 & SWFQ_EMPTY_INT_BIT, TOE_GLOBAL_BASE+GLOBAL_INTERRUPT_STATUS_4_REG);
-		tp->sw_fq_empty_cnt++;
-	}
-#endif
+	/* shared interrupt ? status registers empty. */
+	if (!(status0|status1|status2|status3|status4))
+		return IRQ_NONE;
 
-	if (status4 & GMAC0_MIB_INT_BIT)
-		writel(GMAC0_MIB_INT_BIT, TOE_GLOBAL_BASE+GLOBAL_INTERRUPT_STATUS_4_REG);
+	if (status4 & (GMAC0_MIB_INT_BIT|GMAC0_RESERVED_INT_BIT))
+		writel(GMAC0_MIB_INT_BIT|GMAC0_RESERVED_INT_BIT, TOE_GLOBAL_BASE+GLOBAL_INTERRUPT_STATUS_4_REG);
 
-	if (status4 & GMAC0_RX_OVERRUN_INT_BIT)
+	if (status4 & GMAC0_RX_OVERRUN_INT_BIT) {
 		writel(GMAC0_RX_OVERRUN_INT_BIT, TOE_GLOBAL_BASE+GLOBAL_INTERRUPT_STATUS_4_REG);
+		++ ns->rx_over_errors;
+	}
 
-	if (status0)
-		writel(status0 & tp->intr0_enabled, TOE_GLOBAL_BASE+GLOBAL_INTERRUPT_STATUS_0_REG);
+//	if (status0)
+//		writel(status0 & tp->intr0_enabled, TOE_GLOBAL_BASE+GLOBAL_INTERRUPT_STATUS_0_REG);
 	if (status2)
 		writel(status2 & tp->intr2_enabled, TOE_GLOBAL_BASE+GLOBAL_INTERRUPT_STATUS_2_REG);
 	if (status3)
 		writel(status3 & tp->intr3_enabled, TOE_GLOBAL_BASE+GLOBAL_INTERRUPT_STATUS_3_REG);
 
 	// Interrupt Status 1
-	if ((status1 & 3) || (status4 & 1))
+	if ((status1 & 3) || (status4 & (GMAC0_MIB_INT_BIT|1)) || (status0 & (BIT(0)|BIT(12))))
 	{
 		#define G1_INTR0_BITS	(GMAC1_HWTQ13_EOF_INT_BIT | GMAC1_HWTQ12_EOF_INT_BIT | GMAC1_HWTQ11_EOF_INT_BIT | GMAC1_HWTQ10_EOF_INT_BIT)
 		#define G0_INTR0_BITS	(GMAC0_HWTQ03_EOF_INT_BIT | GMAC0_HWTQ02_EOF_INT_BIT | GMAC0_HWTQ01_EOF_INT_BIT | GMAC0_HWTQ00_EOF_INT_BIT)
@@ -2589,13 +2640,17 @@ static irqreturn_t toe_gmac_interrupt (int irq, void *dev_instance)
 				if (status1 & GMAC0_HWTQ00_EOF_INT_BIT)
 					tp->hwtxq[0].eof_cnt++;
 			}
-			if (status1 & DEFAULT_Q0_INT_BIT || status4 & 1)
+			if (status1 & DEFAULT_Q0_INT_BIT || status4 & (GMAC0_MIB_INT_BIT|1) || (status0 & (BIT(0)|BIT(12))))
 			{
 				if (likely(netif_rx_schedule_prep(dev)))
 				{
 					unsigned int data32;
 
-					BUG_ON(rx_poll_enabled == 1);
+					WARN_ON(rx_poll_enabled == 1);
+					data32 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_0_REG);
+					data32 &= ~(GMAC0_SWTQ00_FIN_INT_BIT | GMAC0_SWTQ00_EOF_INT_BIT);
+					writel(data32, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_0_REG);
+
 
 					/* Masks GMAC-0 rx interrupt */
 					data32  = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_1_REG);
@@ -2604,7 +2659,7 @@ static irqreturn_t toe_gmac_interrupt (int irq, void *dev_instance)
 
 					/* Masks GMAC-0 queue empty interrupt */
 					data32  = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_4_REG);
-					data32 &= ~DEFAULT_Q0_INT_BIT;
+					data32 &= ~(DEFAULT_Q0_INT_BIT|GMAC0_MIB_INT_BIT);
 					writel(data32, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_4_REG);
 
 					__netif_rx_schedule(dev);
@@ -2649,14 +2704,14 @@ static irqreturn_t toe_gmac_interrupt (int irq, void *dev_instance)
 			{
 				if (!rx_poll_enabled && likely(netif_rx_schedule_prep(dev)))
 				{
-					unsigned int data32;
-
 					if (rx_poll_enabled)
 						gmac_registers("check #2");
 
 					BUG_ON(rx_poll_enabled == 1);
 
 #if 0
+					unsigned int data32;
+
 					/* Masks GMAC-1 rx interrupt */
 					data32  = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_1_REG);
 					data32 &= ~(DEFAULT_Q1_INT_BIT);
@@ -2847,10 +2902,11 @@ void gmac_set_phy_status(struct net_device *dev)
 {
 	GMAC_INFO_T *tp = dev->priv;
 	GMAC_STATUS_T   status;
-	unsigned int    reg_val, ability,wan_port_id;
-	unsigned int    i = 0;
+	unsigned int    reg_val;
 
 #ifdef VITESSE_G5SWITCH
+	unsigned int 	ability,wan_port_id;
+	unsigned int    i = 0;
 	if((tp->port_id == GMAC_PORT1)&&(Giga_switch==1)){
 #if 0
 		rcv_mask = SPI_read(2,0,0x10);			// Receive mask
@@ -2964,146 +3020,16 @@ void gmac_set_phy_status(struct net_device *dev)
 		mii_write(tp->phy_addr, 0x00, reg_val);
 	}
 
-	status.bits32 = 0;
-	/* set PHY operation mode */
-	status.bits.mii_rmii = tp->phy_mode;
-	status.bits.reserved = 1;
-	mdelay(100);
-	while (((reg_val=mii_read(tp->phy_addr,0x01)) & 0x00000004)!=0x04)
-	{
-		msleep(100);
-		i++;
-		if (i > 30)
-		break;
-	}
-	if (i>30)
-	{
-		tp->pre_phy_status = LINK_DOWN;
-		status.bits.link = LINK_DOWN;
-		//		clear_bit(__LINK_STATE_START, &dev->state);
-		printk("Link Down (0x%04x) ", reg_val);
-#ifdef VITESSE_G5SWITCH
-		if(Giga_switch == 1)
-		{
-				wan_port_id = 1;
-#ifdef CONFIG_SL351x_SYSCTL
-				storlink_ctl.link[ wan_port_id] = 0;
-#endif
-		}
-		else
-		{
-#ifdef CONFIG_SL351x_SYSCTL
-				storlink_ctl.link[ tp->port_id] = 0;
-#endif
-		}
-#endif
-	}
-	else
-	{
-		tp->pre_phy_status = LINK_UP;
-		status.bits.link = LINK_UP;
-		//		set_bit(__LINK_STATE_START, &dev->state);
-		printk("Link Up (0x%04x) ",reg_val);
-#ifdef VITESSE_G5SWITCH
-		if(Giga_switch == 1)
-		{
-				wan_port_id = 1;
-#ifdef CONFIG_SL351x_SYSCTL
-				storlink_ctl.link[ wan_port_id] = 1;
-#endif
-		}
-		else
-		{
-#ifdef CONFIG_SL351x_SYSCTL
-				storlink_ctl.link[ tp->port_id] = 1;
-#endif
-		}
-#endif
-	}
-	//    value = mii_read(PHY_ADDR,0x05);
+	gmac_get_phy_status(dev);
 
-	ability = (mii_read(tp->phy_addr,0x05) & 0x05E0) >> 5;
+	/* Make sure LINK is up between PHY & CPU ? */
+	status.bits32 = gmac_read_reg(tp->base_addr, GMAC_STATUS);
+	status.bits.link = LINK_UP;
 
-	//#ifdef CONFIG_SL3516_ASIC
-	reg_val = mii_read(tp->phy_addr,10);
-	printk("MII REG 10 = 0x%x\n",reg_val);
-
-	if ((reg_val & 0x0800) == 0x0800)
-	{
-		status.bits.duplex = 1;
-		status.bits.speed = 2;
-		if (status.bits.mii_rmii == GMAC_PHY_RGMII_100)
-		status.bits.mii_rmii = GMAC_PHY_RGMII_1000;
-
-		printk(" 1000M/Full \n");
-	}
-	else if ((reg_val & 0x0400) == 0x0400)
-	{
-		status.bits.duplex = 0;
-		status.bits.speed = 2;
-		if (status.bits.mii_rmii == GMAC_PHY_RGMII_100)
-		status.bits.mii_rmii = GMAC_PHY_RGMII_1000;
-
-		printk(" 1000M/Half \n");
-	}
-	//#endif
-	else
-	{
-		#ifdef CONFIG_SL3516_ASIC
-		if (status.bits.mii_rmii == GMAC_PHY_RGMII_1000)
-		status.bits.mii_rmii = GMAC_PHY_RGMII_100;
-		#endif
-		printk("MII REG 5 (bit 5:15) = 0x%x\n", ability);
-		if ((ability & 0x08)==0x08) /* 100M full duplex */
-		{
-			status.bits.duplex = 1;
-			status.bits.speed = 1;
-			printk(" 100M/Full\n");
-
-		}
-		else if ((ability & 0x04)==0x04) /* 100M half duplex */
-		{
-			status.bits.duplex = 0;
-			status.bits.speed = 1;
-			printk(" 100M/Half\n");
-
-		}
-		else if ((ability & 0x02)==0x02) /* 10M full duplex */
-		{
-			status.bits.duplex = 1;
-			status.bits.speed = 0;
-			printk(" 10M/Full\n");
-
-		}
-		else if ((ability & 0x01)==0x01) /* 10M half duplex */
-		{
-			status.bits.duplex = 0;
-			status.bits.speed = 0;
-			printk(" 10M/Half\n");
-
-		}
-	}
-	if ((ability & 0x20)==0x20)
-	{
-		tp->flow_control_enable = 1;
-		printk("Flow Control Enable.\n");
-	}
-	else
-	{
-		tp->flow_control_enable = 0;
-		printk("Flow Control Disable.\n");
-	}
-	tp->full_duplex_status = status.bits.duplex;
-	tp->speed_status = status.bits.speed;
-	if (!tp->auto_nego_cfg)
-	{
-		status.bits.duplex = tp->full_duplex_cfg;
-		status.bits.speed = tp->speed_cfg;
-	}
-	toe_gmac_disable_tx_rx(dev);
-	mdelay(10);
+//	toe_gmac_disable_tx_rx(dev);
+//	mdelay(10);
 	gmac_write_reg(tp->base_addr, GMAC_STATUS, status.bits32, 0x0000007f);
-	toe_gmac_enable_tx_rx(dev);
+//	toe_gmac_enable_tx_rx(dev);
 }
 
 /*----------------------------------------------------------------------
@@ -3145,14 +3071,14 @@ static int gmac_phy_thread (void *data)
 
 		// printk("%s : Polling MAC %d PHY Status...\n",__func__, tp->port_id);
 		rtnl_lock ();
-		if (tp->auto_nego_cfg){
+//		if (tp->auto_nego_cfg){
 #ifdef VITESSE_G5SWITCH
         		if((tp->port_id == GMAC_PORT1)&&(Giga_switch==1))
 	        		gmac_get_switch_status(dev);
         		else
 #endif
         			gmac_get_phy_status(dev); //temp remove
-        	}
+//        	}
 		rtnl_unlock ();
 	}
 	complete_and_exit (&tp->thr_exited, 0);
@@ -3240,158 +3166,67 @@ void gmac_get_phy_status(struct net_device *dev)
 {
 	GMAC_INFO_T *tp = dev->priv;
 	GMAC_CONFIG0_T	config0,config0_mask;
-	GMAC_STATUS_T   status, old_status;
-	unsigned int    reg_val,ability,wan_port_id;
+	GMAC_STATUS_T   status;
+	unsigned int    ability;
 
-	old_status.bits32 = status.bits32 = gmac_read_reg(tp->base_addr, GMAC_STATUS);
+	struct ethtool_cmd cmd;
 
+	mii_ethtool_gset(&tp->mii, &cmd);
 
-	/* read PHY status register */
-	reg_val = mii_read(tp->phy_addr,0x01);
-	if ((reg_val & 0x0024) == 0x0024) /* link is established and auto_negotiate process completed */
-	{
-		ability = (mii_read(tp->phy_addr,0x05) & 0x05E0) >> 5;
-		/* read PHY Auto-Negotiation Link Partner Ability Register */
-		#ifdef CONFIG_SL3516_ASIC
-		reg_val = mii_read(tp->phy_addr,10);
-		if ((reg_val & 0x0800) == 0x0800)
-		{
-			status.bits.duplex = 1;
-			status.bits.speed = 2;
-			if (status.bits.mii_rmii == GMAC_PHY_RGMII_100)
-			status.bits.mii_rmii = GMAC_PHY_RGMII_1000;
-		}
-		else if ((reg_val & 0x0400) == 0x0400)
-		{
-			status.bits.duplex = 0;
-			status.bits.speed = 2;
-			if (status.bits.mii_rmii == GMAC_PHY_RGMII_100)
-			status.bits.mii_rmii = GMAC_PHY_RGMII_1000;
-		}
-		else
-		#endif
-		{
-			#ifdef CONFIG_SL3516_ASIC
-			if (status.bits.mii_rmii == GMAC_PHY_RGMII_1000)
-			status.bits.mii_rmii = GMAC_PHY_RGMII_100;
-			#endif
-			if ((ability & 0x08)==0x08) /* 100M full duplex */
-			{
-				status.bits.duplex = 1;
-				status.bits.speed = 1;
-			}
-			else if ((ability & 0x04)==0x04) /* 100M half duplex */
-			{
-				status.bits.duplex = 0;
-				status.bits.speed = 1;
-			}
-			else if ((ability & 0x02)==0x02) /* 10M full duplex */
-			{
-				status.bits.duplex = 1;
-				status.bits.speed = 0;
-			}
-			else if ((ability & 0x01)==0x01) /* 10M half duplex */
-			{
-				status.bits.duplex = 0;
-				status.bits.speed = 0;
-			}
-		}
-		status.bits.link = LINK_UP; /* link up */
-#ifdef VITESSE_G5SWITCH
-		if(Giga_switch==1)
-		{
-				wan_port_id = 1;
-#ifdef CONFIG_SL351x_SYSCTL
-				storlink_ctl.link[ wan_port_id] = 1;
-		}
-		else
-		{
-				storlink_ctl.link[ tp->port_id] = 1;
-#endif
-		}
-#endif
-		if ((ability & 0x20)==0x20)
-		{
-			if (tp->flow_control_enable == 0)
-			{
-				config0.bits32 = 0;
-				config0_mask.bits32 = 0;
-				config0.bits.tx_fc_en = 1; /* enable tx flow control */
-				config0.bits.rx_fc_en = 1; /* enable rx flow control */
-				config0_mask.bits.tx_fc_en = 1;
-				config0_mask.bits.rx_fc_en = 1;
-				gmac_write_reg(tp->base_addr, GMAC_CONFIG0,config0.bits32,config0_mask.bits32);
-				printk("GMAC-%d Flow Control Enable.\n", tp->port_id);
-			}
-			tp->flow_control_enable = 1;
-		}
-		else
-		{
-			if (tp->flow_control_enable == 1)
-			{
-				config0.bits32 = 0;
-				config0_mask.bits32 = 0;
-				config0.bits.tx_fc_en = 0; /* disable tx flow control */
-				config0.bits.rx_fc_en = 0; /* disable rx flow control */
-				config0_mask.bits.tx_fc_en = 1;
-				config0_mask.bits.rx_fc_en = 1;
-				gmac_write_reg(tp->base_addr, GMAC_CONFIG0,config0.bits32,config0_mask.bits32);
-				printk("GMAC-%d Flow Control Disable.\n", tp->port_id);
-			}
-			tp->flow_control_enable = 0;
-		}
+	if(mii_link_ok(&tp->mii) && !netif_carrier_ok(tp->dev)) {
+		printk(KERN_INFO "link up, %sMbps, %s-duplex\n",
+		       cmd.speed == SPEED_100 ? "100" : "10",
+		       cmd.duplex == DUPLEX_FULL ? "full" : "half");
 
-		if (tp->pre_phy_status == LINK_DOWN)
-		{
-			printk("GMAC-%d LINK_UP......\n",tp->port_id);
-			tp->pre_phy_status = LINK_UP;
-		}
-	}
-	else
-	{
-		status.bits.link = LINK_DOWN; /* link down */
-#ifdef VITESSE_G5SWITCH
-		if(Giga_switch == 1)
-		{
-				wan_port_id = 1;
-#ifdef CONFIG_SL351x_SYSCTL
-				storlink_ctl.link[ wan_port_id] = 0;
-		}
-		else
-		{
-				storlink_ctl.link[ tp->port_id] = 0;
-#endif
-		}
-#endif
-		if (tp->pre_phy_status == LINK_UP)
-		{
-			printk("GMAC-%d LINK_Down......\n",tp->port_id);
-			tp->pre_phy_status = LINK_DOWN;
-		}
+	} else if(!mii_link_ok(&tp->mii) && netif_carrier_ok(tp->dev)) {
+		printk(KERN_INFO "link down\n");
 	}
 
-	tp->full_duplex_status = status.bits.duplex;
-	tp->speed_status = status.bits.speed;
-	if (!tp->auto_nego_cfg)
-	{
-		status.bits.duplex = tp->full_duplex_cfg;
-		status.bits.speed = tp->speed_cfg;
+	mii_check_link(&tp->mii);
+
+	/* reconfigure GMAC0/1 according MII status */
+	status.bits32 = gmac_read_reg(tp->base_addr, GMAC_STATUS);
+
+	if (cmd.duplex == DUPLEX_FULL) {
+		status.bits.duplex = 1;
+	} else {
+		status.bits.duplex = 0;
 	}
 
-	if (old_status.bits32 != status.bits32)
-	{
-		netif_stop_queue(dev);
-		toe_gmac_disable_tx_rx(dev);
-		clear_bit(__LINK_STATE_START, &dev->state);
-		printk("GMAC-%d Change Status Bits 0x%x-->0x%x\n",tp->port_id, old_status.bits32, status.bits32);
-		mdelay(10); // let GMAC consume packet
+	if (cmd.speed == SPEED_10) {
+		status.bits.speed = 0;
+		status.bits.mii_rmii = GMAC_PHY_RGMII_100;
+	} else if (cmd.speed == SPEED_100) {
+		status.bits.speed = 1;
+		status.bits.mii_rmii = GMAC_PHY_RGMII_100;
+	} else if (cmd.speed == SPEED_1000) {
+		status.bits.speed = 2;
+		status.bits.mii_rmii = GMAC_PHY_RGMII_1000;
+	}
+
+	if (tp->full_duplex_status !=  status.bits.duplex ||
+	    tp->speed_status != status.bits.speed) {
+
+		tp->full_duplex_status = status.bits.duplex;
+		tp->speed_status = status.bits.speed;
+
 		gmac_write_reg(tp->base_addr, GMAC_STATUS, status.bits32, 0x0000007f);
-		if (status.bits.link == LINK_UP)
-		{
-			toe_gmac_enable_tx_rx(dev);
-			netif_wake_queue(dev);
-			set_bit(__LINK_STATE_START, &dev->state);
-		}
+
+		ability = mdio_read(tp->dev, tp->mii.phy_id, MII_LPA);
+		tp->flow_control_enable = ((ability & LPA_PAUSE_CAP) != 0);
+
+		/* enable/disable tx flow control */
+		config0.bits32 = 0;
+		config0_mask.bits32 = 0;
+		config0.bits.tx_fc_en = tp->flow_control_enable;
+		config0.bits.rx_fc_en = tp->flow_control_enable;
+		config0_mask.bits.tx_fc_en = 1;
+		config0_mask.bits.rx_fc_en = 1;
+
+		gmac_write_reg(tp->base_addr, GMAC_CONFIG0,config0.bits32,config0_mask.bits32);
+
+		printk(KERN_INFO "GMAC-%d Flow Control %s.\n", tp->port_id,
+		       tp->flow_control_enable ? "Enabled" : "Disabled");
 	}
 }
 
@@ -3577,7 +3412,7 @@ void mii_pre_st(void)
 * phyad -> physical address
 * regad -> register address
 ***************************************** */
-unsigned int mii_read(unsigned char phyad,unsigned char regad)
+static unsigned int mii_read(unsigned char phyad,unsigned char regad)
 {
     unsigned int i,value;
     unsigned int bit;
@@ -3633,12 +3468,11 @@ unsigned int mii_read(unsigned char phyad,unsigned char regad)
 * regad -> register address
 * value -> value to be write
 ***************************************** */
-void mii_write(unsigned char phyad,unsigned char regad,unsigned int value)
+static void mii_write(unsigned char phyad,unsigned char regad,unsigned int value)
 {
     unsigned int i;
     char bit;
 
-	printk("%s: phy_addr=0x%x reg_addr=0x%x value=0x%x \n",__func__,phyad,regad,value);
     if (phyad == GPHY_ADDR)
     {
         GPIO_MDC_PIN = G_MDC_PIN;   /* assigned MDC pin for giga PHY */
@@ -3736,17 +3570,6 @@ static void gmac_set_rx_mode(struct net_device *dev)
 }
 
 #ifdef CONFIG_SL_NAPI
-
-static int gmax_rx(struct net_device *dev, int *budget)
-{
-	return 0;
-}
-
-static int gmac_tx(struct net_device *dev, int *budget)
-{
-	return 0;
-}
-
 /*----------------------------------------------------------------------
 * gmac_rx_poll
 *----------------------------------------------------------------------*/
@@ -3761,9 +3584,8 @@ static int gmac_rx_poll(struct net_device *dev, int *budget)
 	unsigned int	desc_count;
 	unsigned int	good_frame, chksum_status, rx_status;
 	int		rx_pkts_num = 0;
-	int		quota = min(dev->quota, *budget);
 	GMAC_INFO_T	*tp = (GMAC_INFO_T *)dev->priv;
-	unsigned int	status1;
+	unsigned int	status0, status1;
 	unsigned int	status4;
 	struct net_device_stats *isPtr = (struct net_device_stats *)&tp->ifStatics;
 
@@ -3777,9 +3599,24 @@ rx_poll_retry:
 		writel(1, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_STATUS_1_REG);
 	}
 
+	status0 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_STATUS_0_REG);
+	if (status0 & 0x1001) {
+		writel(status0, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_STATUS_0_REG);
+		toe_gmac_tx_complete(&toe_private_data.gmac[0], 0, dev, 0);
+	}
+
+	status4 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_STATUS_4_REG);
+	if (status4 & GMAC0_MIB_INT_BIT) {
+		writel(GMAC0_MIB_INT_BIT, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_STATUS_4_REG);
+	}
+
 	rwptr.bits32 = readl(&tp->default_qhdr->word1);
-	while ((rwptr.bits.rptr != rwptr.bits.wptr) && (rx_pkts_num < quota))
+	while ((rwptr.bits.rptr != rwptr.bits.wptr) && (rx_pkts_num < dev->quota))
 	{
+		if (tp->operation == 0 || !netif_running(dev)) {
+			break;
+		}
+
 		curr_desc = (GMAC_RXDESC_T *)tp->default_desc_base + rwptr.bits.rptr;
 		tp->default_q_cnt++;
 		tp->rx_curr_desc = (unsigned int)curr_desc;
@@ -3815,7 +3652,6 @@ rx_poll_retry:
 
 		{
 			GMAC_RXDESC_T	*fq_desc;
-			void *data;
 			struct sk_buff *skb;
 			unsigned short idx;
 
@@ -3946,13 +3782,7 @@ rx_poll_retry:
 		toe_gmac_fill_free_q(5);
 	}
 
-#if 0
-	/* avoid races with hard_start_xmit() */
-
-	spin_lock(&gmac_fq_lock);
-	toe_gmac_tx_complete(&toe_private_data.gmac[0], 0, dev, 1);
-	spin_unlock(&gmac_fq_lock);
-#endif
+//	toe_gmac_tx_complete(&toe_private_data.gmac[0], 0, dev, 0);
 
 	status4 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_STATUS_4_REG);
 	if (status4 & 1)
@@ -3963,15 +3793,15 @@ rx_poll_retry:
 	}
 
 	rwptr.bits32 = readl(&tp->default_qhdr->word1);
-	if (rwptr.bits.rptr != rwptr.bits.wptr &&
-	    quota > rx_pkts_num)
+	if (netif_running(dev) && tp->operation && rwptr.bits.rptr != rwptr.bits.wptr &&
+	    dev->quota > rx_pkts_num)
 		goto rx_poll_retry;
 
 	dev->quota -= rx_pkts_num;
 	*budget -= rx_pkts_num;
 
 	/* Receive queue is empty now */
-	if (quota >= rx_pkts_num)
+	if (dev->quota > 0)
 	{
 		unsigned long flags;
 
@@ -3989,9 +3819,13 @@ rx_poll_retry:
 
 		spin_lock_irqsave(&gmac_fq_lock, flags);
 
+		data32 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_0_REG);
+		data32 |= GMAC0_SWTQ00_FIN_INT_BIT | GMAC0_SWTQ00_EOF_INT_BIT;
+		writel(data32, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_0_REG);
+
 		data32 = readl(TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_4_REG);
 		if (tp->port_id == 0)
-			data32 |= DEFAULT_Q0_INT_BIT;
+			data32 |= DEFAULT_Q0_INT_BIT|GMAC0_MIB_INT_BIT;
 		else
 			data32 |= DEFAULT_Q1_INT_BIT;
 		writel(data32, TOE_GLOBAL_BASE + GLOBAL_INTERRUPT_ENABLE_4_REG);
@@ -4009,6 +3843,10 @@ rx_poll_retry:
 	}
 	else
 	{
+		if (tp->operation == 0 || !netif_running(dev)) {
+			printk("bbz #2\n");
+		}
+
 		/* not done, will call ->poll() later. */
 		return 1;
 	}
@@ -4244,81 +4082,77 @@ void mac_set_rule_priority(int mac, int p0, int p1, int p2, int p3)
 		mac_set_MRxCRx(mac, i, 0, reg[i].bits32);
 }
 
+static int gmac_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
+{
+	GMAC_INFO_T *tp = dev->priv;
+	int err;
+
+	spin_lock_irq(&tp->mii_lock);
+	err = mii_ethtool_gset(&tp->mii, cmd);
+	spin_unlock_irq(&tp->mii_lock);
+
+	return err;
+}
+
+static int gmac_set_settings(struct net_device *netdev, struct ethtool_cmd *cmd)
+{
+	GMAC_INFO_T *tp = netdev->priv;
+	int err;
+
+	spin_lock_irq(&tp->mii_lock);
+	mdio_write(tp->dev, tp->mii.phy_id, MII_BMCR, BMCR_RESET);
+	err = mii_ethtool_sset(&tp->mii, cmd);
+	spin_unlock_irq(&tp->mii_lock);
+
+	return err;
+}
+
+static void gmac_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *info)
+{
+	strcpy(info->driver, DRV_NAME);
+	strcpy(info->version, DRV_VERSION);
+	// strcpy(info->bus_info, pci_name(tp->pdev));
+}
+
+static int gmac_nway_reset(struct net_device *netdev)
+{
+	GMAC_INFO_T *tp = netdev->priv;
+	int err;
+
+	spin_lock_irq(&tp->mii_lock);
+	err = mii_nway_restart(&tp->mii);
+	spin_unlock_irq(&tp->mii_lock);
+
+	return err;
+}
+
+static u32 gmac_get_link(struct net_device *netdev)
+{
+	GMAC_INFO_T *tp = netdev->priv;
+	int err;
+
+	spin_lock_irq(&tp->mii_lock);
+	err = mii_link_ok(&tp->mii);
+	spin_unlock_irq(&tp->mii_lock);
+
+	return err;
+}
+
+static struct ethtool_ops gmac_ethtool_ops = {
+	.get_settings		= gmac_get_settings,
+	.set_settings		= gmac_set_settings,
+	.get_drvinfo		= gmac_get_drvinfo,
+	.nway_reset		= gmac_nway_reset,
+	.get_link		= gmac_get_link,
+};
+
 /*----------------------------------------------------------------------
 * gmac_netdev_ioctl
 *----------------------------------------------------------------------*/
 static int gmac_netdev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 {
-	int 				rc = 0;
-    unsigned char		*hwa = rq->ifr_ifru.ifru_hwaddr.sa_data;
-
-#ifdef br_if_ioctl
-    struct 				ethtool_cmd ecmd; 	//br_if.c will call this ioctl
-	GMAC_INFO_T 		*tp = dev->priv;
-#endif
-
-#ifdef 	CONFIG_SL351x_NAT
-	if (cmd == SIOCDEVPRIVATE)
-		return sl351x_nat_ioctl(dev, rq, cmd);
-#endif
-
-	switch (cmd) {
-	case SIOCETHTOOL:
-#ifdef br_if_ioctl  	//br_if.c will call this ioctl
-		if (!netif_running(dev))
-		{
-			printk("Before changing the H/W address,please down the device.\n");
-			return -EINVAL;
-		}
-		memset((void *) &ecmd, 0, sizeof (ecmd));
-           	    ecmd.supported =
-                	SUPPORTED_Autoneg | SUPPORTED_TP | SUPPORTED_MII |
-                    SUPPORTED_10baseT_Half | SUPPORTED_10baseT_Full |
-                    SUPPORTED_100baseT_Half | SUPPORTED_100baseT_Full;
-         		    ecmd.port = PORT_TP;
-            	    ecmd.transceiver = XCVR_EXTERNAL;
-            	    ecmd.phy_address = tp->phy_addr;
-            	    switch (tp->speed_status)
-            	    {
-            	    case GMAC_SPEED_10: ecmd.speed = SPEED_10; break;
-             	    case GMAC_SPEED_100: ecmd.speed = SPEED_100; break;
-            	    case GMAC_SPEED_1000: ecmd.speed = SPEED_1000; break;
-            	    default: ecmd.speed = SPEED_10; break;
-            	   }
-            	    ecmd.duplex = tp->full_duplex_status ? DUPLEX_FULL : DUPLEX_HALF;
-            	    ecmd.advertising = ADVERTISED_TP;
-            	    ecmd.advertising |= ADVERTISED_Autoneg;
-           	    ecmd.autoneg = AUTONEG_ENABLE;
-                    if (copy_to_user(rq->ifr_data, &ecmd, sizeof (ecmd)))
-                  	return -EFAULT;
-#endif
-
-        break;
-
-    case SIOCSIFHWADDR:
-		if (!netif_running(dev))
-		{
-			printk("Before changing the H/W address,please down the device.\n");
-			return -EINVAL;
-		}
-        gmac_set_mac_address(dev,hwa);
-        break;
-
-	case SIOCGMIIPHY:	/* Get the address of the PHY in use. */
-        break;
-
-	case SIOCGMIIREG:	/* Read the specified MII register. */
-		break;
-
-	case SIOCSMIIREG:	/* Write the specified MII register */
-		break;
-
-	default:
-		rc = -EOPNOTSUPP;
-		break;
-	}
-
-	return rc;
+	GMAC_INFO_T *tp = dev->priv;
+	return generic_mii_ioctl(&tp->mii, if_mii(rq), cmd, NULL);
 }
 
 #ifdef SL351x_GMAC_WORKAROUND
@@ -4824,7 +4658,7 @@ static void sl351x_gmac_release_sw_free_q(void)
 		struct sk_buff *skb;
 		if ((skb = dev_alloc_skb(SW_RX_BUF_SIZE))==NULL)  /* allocate socket buffer */
 		{
-			printk("%s::skb buffer allocation fail !\n",__func__); while(1);
+			printk("%s::skb buffer allocation fail !\n",__func__); BUG();
 		}
 		// *(unsigned int *)(skb->data) = (unsigned int)skb;
 		REG32(skb->data) = (unsigned long)skb;
@@ -5108,5 +4942,4 @@ static __init int sl351x_mac_address_init(void)
         return 0;
 }
 late_initcall(sl351x_mac_address_init);
-
 
