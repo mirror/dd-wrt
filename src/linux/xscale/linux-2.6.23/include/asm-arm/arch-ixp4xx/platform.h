@@ -210,6 +210,7 @@ static inline void gpio_line_set(u8 line, int value)
 	else if (value == IXP4XX_GPIO_LOW)
 	    *IXP4XX_GPIO_GPOUTR &= ~(1 << line);
 }
+
 static inline void gpio_line_isr_clear(u8 line)
 {
 	*IXP4XX_GPIO_GPISR = (1 << line);
