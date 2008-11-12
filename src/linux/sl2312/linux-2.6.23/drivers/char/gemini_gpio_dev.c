@@ -54,8 +54,7 @@ struct gpio_bit {
 	unsigned char state;
 };
 
-#define GPIO_MAJOR    10
-#define GPIO_MINOR    127
+#define GPIO_MAJOR    127
 
 /*
  * ioctl calls that are permitted to the /dev/gpio interface
@@ -96,14 +95,14 @@ void gpio_line_get(unsigned char pin, u32 * data)
 	unsigned int status,addr;
 
 	addr = (set ? GEMINI_GPIO_BASE2:GEMINI_GPIO_BASE1) + GPIO_DATA_IN;
-	status = readl(addr);
-#ifdef DEBUG
-	printk("status = %08X, pin = %d, set = %d\n", status, pin, set);
-#endif
+	status = __raw_readl(addr);
 	if (set)
 			*data = (status&(1<<(pin-32)))?1:0;
 	else
 			*data = (status&(1<<pin))?1:0;
+#ifdef DEBUG
+	printk(KERN_EMERG "status = %08X, pin = %d, get = %d\n", status, pin, *data);
+#endif
 }
 
 void gpio_line_set(unsigned char pin, u32 high)
@@ -115,7 +114,7 @@ void gpio_line_set(unsigned char pin, u32 high)
 
 	status &= ~(1 << (pin %32));
 	status |= (1 << (pin % 32));
-	writel(status,addr);
+	__raw_writel(status,addr);
 }
 
 /*
@@ -130,33 +129,33 @@ void gpio_line_config(unsigned char pin, unsigned char mode)
 	unsigned int status,addr;
 
 	addr = (set ? GEMINI_GPIO_BASE2:GEMINI_GPIO_BASE1)+GPIO_PIN_DIR;
-	status = readl(addr);
+	status = __raw_readl(addr);
 
 	status &= ~(1 << (pin %32));
 	if (mode == 1)
 			status |= (1 << (pin % 32)); /* PinDir: 0 - input, 1 - output */
 
-	writel(status,addr);
+	__raw_writel(status,addr);
 #if 0
 	/* enable pullup-high if mode is input */
 
 	addr = (set ? GEMINI_GPIO_BASE2:GEMINI_GPIO_BASE1)+GPIO_PULL_ENABLE;
-	status = readl(addr);
+	status = __raw_readl(addr);
 
 	status &= ~(1 << (pin %32));
 	if (mode == 2) /* input */
 			status |= (1 << (pin % 32)); /* PullEnable: 0 - disable, 1 - enable */
 
-	writel(status,addr);
+	__raw_writel(status,addr);
 
 	addr = (set ? GEMINI_GPIO_BASE2:GEMINI_GPIO_BASE1)+GPIO_PULL_TYPE;
-	status = readl(addr);
+	status = __raw_readl(addr);
 
 	status &= ~(1 << (pin %32));
 	if (mode == 2) /* input */
 			status |= (1 << (pin % 32)); /* PullType: 0 - low, 1 - high */
 
-	writel(status,addr);
+	__raw_writel(status,addr);
 #endif
 }
 
@@ -170,19 +169,21 @@ static int gpio_ioctl(struct inode *inode, struct file *file,
 {
 		struct gpio_bit bit;
 		u32 val;
+//		printk(KERN_EMERG "enter ioctl %X\n",cmd);
 
-		if (copy_from_user(&bit, (struct gpio_bit *)arg,
-								sizeof(bit)))
+		if (copy_from_user(&bit, (struct gpio_bit *)arg,sizeof(bit)))
 				return -EFAULT;
-
+//		printk(KERN_EMERG "cmd : %X\n",cmd);
 		switch (cmd) {
-
+				
 				case GPIO_GET_BIT:
 						gpio_line_get(bit.bit, &val);
+						//printk(KERN_EMERG "get bit %d\n",val);
 						bit.state = val;
 						return copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
 				case GPIO_SET_BIT:
 						val = bit.state;
+						//printk(KERN_EMERG "set bit %d = %d\n",bit.bit, val);
 						gpio_line_set(bit.bit, val);
 						return 0;
 				case GPIO_GET_CONFIG:
@@ -190,6 +191,7 @@ static int gpio_ioctl(struct inode *inode, struct file *file,
 						return copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
 				case GPIO_SET_CONFIG:
 						val = bit.state;
+						//printk(KERN_EMERG "set config %d = %d\n",bit.bit, bit.state);
 						gpio_line_config(bit.bit, bit.state);
 						return 0;
 		}
@@ -230,14 +232,6 @@ static struct file_operations gpio_fops = {
         .release        = gpio_release,
 };
 
-static struct miscdevice gpio_dev =
-{
-        .minor          = GPIO_MINOR,
-        .name           = "gpio",
-        .fops           = &gpio_fops,
-};
-
-
 
 
 #ifdef CONFIG_PROC_FS
@@ -257,12 +251,12 @@ static int gpio_get_status(char *buf)
 
 	for (i = 0; i < 0x20; i+=4 ) {
 			addr = IO_ADDRESS(SL2312_GPIO_BASE) + i;
-			val = readl(addr);
+			val = __raw_readl(addr);
 			p+=sprintf(p, "GPIO0: 0x%02X: %08X\n", i, val );
 	}
 	for (i = 0; i < 0x20; i+=4 ) {
 			addr = IO_ADDRESS(SL2312_GPIO_BASE1) + i;
-			val = readl(addr);
+			val = __raw_readl(addr);
 			p+=sprintf(p, "GPIO1: 0x%02X: %08X\n", i, val );
 	}
 #endif
@@ -278,7 +272,7 @@ static int gpio_get_status(char *buf)
 	for (i = 32; i < 64; i++) {
 			gpio_line_get(i, &bit);
 			if (bit)
-					val |= (1 << i);
+					val |= (1 << (i-32));
 	}
 	p += sprintf(p, "gpio1\t: 0x%08x\n", val);
 
@@ -314,15 +308,15 @@ static int __init gpio_init_module(void)
 #endif
 
         /* register /dev/gpio file ops */
-	//retval = register_chrdev(GPIO_MAJOR, DEVICE_NAME, &gpio_fops);
-	retval = misc_register(&gpio_dev);
+	retval = register_chrdev(GPIO_MAJOR, DEVICE_NAME, &gpio_fops);
+	//retval = misc_register(&gpio_dev);
         if(retval < 0)
                 return retval;
 
 #ifdef CONFIG_PROC_FS
 	dir = proc_mkdir("driver/gpio", NULL);
 	if (!dir) {
-		misc_deregister(&gpio_dev);
+//		misc_deregister(&gpio_dev);
 		return -ENOMEM;
 	}
         /* register /proc/driver/gpio */
@@ -330,7 +324,7 @@ static int __init gpio_init_module(void)
 	if (res) {
 		res->read_proc= gpio_read_proc;
 	} else {
-		misc_deregister(&gpio_dev);
+//		misc_deregister(&gpio_dev);
 		return -ENOMEM;
 	}
 #endif
@@ -343,7 +337,7 @@ static int __init gpio_init_module(void)
 static void __exit gpio_cleanup_module(void)
 {
 	remove_proc_entry ("info", dir);
-        misc_deregister(&gpio_dev);
+//        misc_deregister(&gpio_dev);
 
 	printk("%s: GPIO driver unloaded\n", __FILE__);
 }
