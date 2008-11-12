@@ -174,6 +174,11 @@ struct ifreq
 		char	ifru_newname[IFNAMSIZ];
 		void __user *	ifru_data;
 		struct	if_settings ifru_settings;
+		struct {
+			__u16 weight;
+			char slave[IFNAMSIZ];	
+		} ifru_weight;
+
 	} ifr_ifru;
 };
 
@@ -182,6 +187,8 @@ struct ifreq
 #define	ifr_addr	ifr_ifru.ifru_addr	/* address		*/
 #define	ifr_dstaddr	ifr_ifru.ifru_dstaddr	/* other end of p-p lnk	*/
 #define	ifr_broadaddr	ifr_ifru.ifru_broadaddr	/* broadcast address	*/
+#define	ifr_weight_weight ifr_ifru.ifru_weight.weight /* bonding weight*/
+#define	ifr_weight_slave  ifr_ifru.ifru_weight.slave  /* bonding weight slave */
 #define	ifr_netmask	ifr_ifru.ifru_netmask	/* interface net mask	*/
 #define	ifr_flags	ifr_ifru.ifru_flags	/* flags		*/
 #define	ifr_metric	ifr_ifru.ifru_ivalue	/* metric		*/

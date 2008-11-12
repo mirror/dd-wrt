@@ -177,6 +177,7 @@ static struct mtd_partition dir_parts[] = {
         { name: "nvram", offset: 0x3d0000, size: 0x10000, },
         { name: "FIS directory", offset: 0x3e0000, size: 0x10000, },
         { name: "RedBoot config", offset: 0x3e0000, size: 0x10000, },
+        { name: "fullflash", offset: 0x3e0000, size: 0x10000, },
         { name: NULL, },
 };
 
@@ -321,6 +322,9 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	#ifdef CONFIG_TONZE
 	erasesize=0x20000;
 	#endif
+	#ifdef CONFIG_NOP8670
+	erasesize=0x20000;
+	#endif
 	while((offset+erasesize)<mtd->size)
 	    {
 	    printk(KERN_EMERG "[0x%08X]\r",offset);
@@ -368,7 +372,9 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 		
 		
 		//now scan for linux offset
-#ifdef CONFIG_TONZE
+#ifdef CONFIG_NOP8670
+    		p=(unsigned char*)(info->map.virt+mtd->size-erasesize);
+#elif CONFIG_TONZE
     		p=(unsigned char*)(info->map.virt+mtd->size-0x8000);
 #else
     		p=(unsigned char*)(info->map.virt+mtd->size-erasesize);
@@ -462,9 +468,10 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	dir_parts[3].offset = dir_parts[2].offset+dir_parts[2].size;
 	dir_parts[3].size = dir_parts[4].offset-dir_parts[3].offset;
 
+	dir_parts[8].offset = 0;
+	dir_parts[8].size = mtd->size;
 
-
-	err = add_mtd_partitions(mtd, dir_parts, 8);
+	err = add_mtd_partitions(mtd, dir_parts, 9);
 
 /*#ifndef CONFIG_NOP8670
 	err = parse_mtd_partitions(info->mtd, probes, &info->partitions, dev->resource->start);
