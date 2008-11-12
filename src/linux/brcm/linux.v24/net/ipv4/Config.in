@@ -26,6 +26,7 @@ fi
 tristate '  IP: tunneling' CONFIG_NET_IPIP
 tristate '  IP: WCCP v1/v2 support ' CONFIG_NET_IPWCCP
 tristate '  IP: GRE tunnels over IP' CONFIG_NET_IPGRE
+tristate '  IP: Ethernet tunnels over IP' CONFIG_NET_ETHERIP
 if [ "$CONFIG_IP_MULTICAST" = "y" ]; then
    if [ "$CONFIG_NET_IPGRE" != "n" ]; then
       bool '    IP: broadcast GRE over IP' CONFIG_NET_IPGRE_BROADCAST

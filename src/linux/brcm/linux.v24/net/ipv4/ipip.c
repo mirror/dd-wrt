@@ -482,6 +482,7 @@ int ipip_rcv(struct sk_buff *skb)
 		goto out;
 
 	iph = skb->nh.iph;
+
 	skb->mac.raw = skb->nh.raw;
 	skb->nh.raw = skb->data;
 	memset(&(IPCB(skb)->opt), 0, sizeof(struct ip_options));
