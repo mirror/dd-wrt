@@ -41,6 +41,7 @@ enum {
 
   IPPROTO_ESP = 50,            /* Encapsulation Security Payload protocol */
   IPPROTO_AH = 51,             /* Authentication Header protocol       */
+  IPPROTO_ETHERIP = 97,		/* Ethernet-in-IP tunneling (rfc 3378)	*/
   IPPROTO_COMP   = 108,                /* Compression Header protocol */
   IPPROTO_SCTP   = 132,		/* Stream Control Transport Protocol    */
 
