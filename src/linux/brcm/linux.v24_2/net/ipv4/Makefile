@@ -29,5 +29,6 @@ obj-$(CONFIG_NET_IPWCCP) += ip_wccp.o
 obj-$(CONFIG_NET_IPGRE) += ip_gre.o
 obj-$(CONFIG_SYN_COOKIES) += syncookies.o
 obj-$(CONFIG_IP_PNP) += ipconfig.o
+obj-$(CONFIG_NET_ETHERIP) += etherip.o
 
 include $(TOPDIR)/Rules.make
