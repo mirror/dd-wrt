@@ -3159,6 +3159,7 @@ static int dev_ifsioc(struct ifreq *ifr, unsigned int cmd)
 			    cmd <= SIOCDEVPRIVATE + 15) ||
 			    cmd == SIOCBONDENSLAVE ||
 			    cmd == SIOCBONDRELEASE ||
+			    cmd == SIOCBONDSETWEIGHT ||
 			    cmd == SIOCBONDSETHWADDR ||
 			    cmd == SIOCBONDSLAVEINFOQUERY ||
 			    cmd == SIOCBONDINFOQUERY ||
@@ -3320,6 +3321,7 @@ int dev_ioctl(unsigned int cmd, void __user *arg)
 		case SIOCBONDRELEASE:
 		case SIOCBONDSETHWADDR:
 		case SIOCBONDCHANGEACTIVE:
+		case SIOCBONDSETWEIGHT:
 		case SIOCBRADDIF:
 		case SIOCBRDELIF:
 			if (!capable(CAP_NET_ADMIN))
