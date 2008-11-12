@@ -349,7 +349,7 @@ struct hw_pci sl2312_pci __initdata = {
 	.scan           =   sl2312_pci_scan_bus,
 };
 
-static int __init sl2312_pci_init(void)
+static __init int __init sl2312_pci_init(void)
 {
 	if (machine_is_sl2312())
 		pci_common_init(&sl2312_pci);
