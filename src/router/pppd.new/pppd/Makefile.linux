@@ -53,7 +53,12 @@ MPPE=y
 # Uncomment the next line to enable multilink PPP (enabled by default)
 # Linux distributions: Please leave multilink ENABLED in your builds
 # of pppd!
+include ../../.config
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 HAVE_MULTILINK=y
+endif
+endif
 
 # Uncomment the next line to enable the TDB database (enabled by default.)
 # If you enable multilink, then TDB is automatically enabled also.
@@ -79,7 +84,13 @@ INCLUDE_DIRS= -I../include
 
 COMPILE_FLAGS= -DHAVE_PATHS_H -DHAVE_MMAP
 
-CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"' -ffunction-sections -fdata-sections -Wl,--gc-sections
+ifeq ($(ARCHITECTURE),broadcom)
+CFLAGS= -DBROADCOM
+endif
+
+CFLAGS+= -O2 $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"' -ffunction-sections -fdata-sections -Wl,--gc-sections
+
+
 
 ifdef CHAPMS
 CFLAGS   += -DCHAPMS=1
