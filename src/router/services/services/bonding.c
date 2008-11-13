@@ -25,11 +25,32 @@
 #include <shutils.h>
 #include <utils.h>
 #include <syslog.h>
+void stop_bonding( void )
+{
+    int i;
+
+    for( i = 0; i < 10; i++ )
+    {
+	char bond[32];
+
+	sprintf( bond, "bond%d", i );
+	if( ifexists( bond ) )
+	{
+	    char *br = getRealBridge( bond );
+
+	    if( br )
+		br_del_interface( br, bond );
+	    eval( "ifconfig", bond, "down" );
+	}
+    }
+    rmmod( "bonding" );
+}
 
 void start_bonding( void )
 {
     char mode[64];
     char count[64];
+    stop_bonding();
 
     sprintf( mode, "mode=%s",
 	     nvram_default_get( "bonding_type", "balance-rr" ) );
@@ -50,6 +71,12 @@ void start_bonding( void )
 	{
 	    break;
 	}
+	if (!strncmp(port,"ath",3) && nvram_nmatch("wdsap","%s_mode",port))
+	    {
+	    sysprintf("ifconfig %s down",port);
+	    sysprintf("iwpriv %s wdssep 0",port);
+	    sysprintf("ifconfig %s up",port);
+	    }
 	eval( "ifconfig", tag, "0.0.0.0", "up" );
 	eval( "ifenslave", tag, port );
     }
@@ -66,25 +93,26 @@ void start_bonding( void )
 
     }
 }
-void stop_bonding( void )
+
+int isBond(char *ifname)
 {
-    int i;
+    static char word[256];
+    char *next, *wordlist;
 
-    for( i = 0; i < 10; i++ )
+    wordlist = nvram_safe_get( "bondings" );
+    foreach( word, wordlist, next )
     {
-	char bond[32];
+	char *port = word;
+	char *tag = strsep( &port, ">" );
 
-	sprintf( bond, "bond%d", i );
-	if( ifexists( bond ) )
+	if( !tag || !port )
 	{
-	    char *br = getRealBridge( bond );
-
-	    if( br )
-		br_del_interface( br, bond );
-	    eval( "ifconfig", bond, "down" );
+	    break;
 	}
+	if (!strcmp(port,ifname))
+	    return 1;
     }
-    rmmod( "bonding" );
+    return 0;
 }
 
 #endif
