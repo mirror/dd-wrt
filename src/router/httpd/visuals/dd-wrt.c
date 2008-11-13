@@ -2096,7 +2096,7 @@ void ej_show_bondings( webs_t wp, int argc, char_t ** argv )
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp, "<div class=\"label\">Bonding Type</div>\n", count );
     showOptions( wp, "bonding_type",
-		 "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb weighted-rr duplex-master duplex-slave",
+		 "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb weighted-rr duplex",
 		 nvram_default_get( "bonding_type", "balance-rr" ) );
     websWrite( wp, "&nbsp;Bonding Interfaces&nbsp;" );
     websWrite( wp,
