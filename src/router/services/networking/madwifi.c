@@ -1246,10 +1246,14 @@ static void configure_single( int count )
 	if( !strcmp( m, "wdssta" ) || !strcmp( m, "wdsap" ) )
 	    sysprintf("iwpriv %s wds 1",var);
 
+#ifdef HAVE_BONDING
+    if( !strcmp( m, "wdsap" ) && !isBond(var))
+#else
     if( !strcmp( m, "wdsap" ) )
+#endif
 	sysprintf("iwpriv %s wdssep 1",var);
     else
-	sysprintf("iwpriv %s wdssep 1",var);
+	sysprintf("iwpriv %s wdssep 0",var);
 
 	sysprintf("iwpriv %s hostroaming 0",var);
 	cnt++;
