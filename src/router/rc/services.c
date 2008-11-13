@@ -391,7 +391,9 @@ static void handle_hotspot( void )
 	dlclose( handle );
     eval( "/etc/config/http-redirect.firewall" );
     eval( "/etc/config/smtp-redirect.firewall" );
-
+#ifdef HAVE_ZEROIP
+    eval( "/etc/config/shat.startup" );
+#endif
 }
 
 static void handle_services( void )
