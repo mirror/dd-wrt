@@ -52,6 +52,7 @@ EXPORT_SYMBOL(ar7100_flash_spi_up);
 #define AR7100_FLASH_SIZE_2MB          (2*1024*1024)
 #define AR7100_FLASH_SIZE_4MB          (4*1024*1024)
 #define AR7100_FLASH_SIZE_8MB          (8*1024*1024)
+#define AR7100_FLASH_SIZE_16MB          (16*1024*1024)
 #define AR7100_FLASH_SECTOR_SIZE_64KB  (64*1024)
 #define AR7100_FLASH_PG_SIZE_256B       256
 #define AR7100_FLASH_NAME               "ar7100-nor0"
@@ -68,7 +69,11 @@ typedef struct ar7100_flash_geom {
 ar7100_flash_geom_t flash_geom_tbl[AR7100_FLASH_MAX_BANKS] = 
         {
             {
+#ifdef CONFIG_MTD_FLASH_16MB
+                .size           =   AR7100_FLASH_SIZE_16MB,
+#else
                 .size           =   AR7100_FLASH_SIZE_4MB,
+#endif
                 .sector_size    =   AR7100_FLASH_SECTOR_SIZE_64KB,
                 .pgsize         =   AR7100_FLASH_PG_SIZE_256B
             }
@@ -163,7 +168,11 @@ ar7100_flash_write (struct mtd_info *mtd, loff_t to, size_t len,
 
 static struct mtd_partition dir_parts[] = {
         { name: "RedBoot", offset: 0, size: 0x40000, },//, mask_flags: MTD_WRITEABLE, },
+#ifdef CONFIG_MTD_FLASH_16MB
+        { name: "linux", offset: 0x40000, size: 0xf90000, },
+#else
         { name: "linux", offset: 0x40000, size: 0x390000, },
+#endif
         { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
         { name: "ddwrt", offset: 0x0, size: 0x2b0000,}, //must be detected
         { name: "nvram", offset: 0x3d0000, size: 0x10000, },
@@ -258,8 +267,13 @@ static int __init ar7100_flash_init (void)
 		dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size; 
 		dir_parts[6].offset = mtd->size-mtd->erasesize; // board config
 		dir_parts[6].size = mtd->erasesize;
+#ifdef CONFIG_MTD_FLASH_16MB
+		dir_parts[5].offset = dir_parts[6].offset; //fis config
+		dir_parts[5].size = mtd->erasesize;
+#else
 		dir_parts[5].offset = dir_parts[6].offset-mtd->erasesize; //fis config
 		dir_parts[5].size = mtd->erasesize;
+#endif
 		dir_parts[4].offset = dir_parts[5].offset-mtd->erasesize; //nvram
 		dir_parts[4].size = mtd->erasesize;
 		dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
@@ -284,7 +298,6 @@ static int __init ar7100_flash_init (void)
 		    printk(KERN_EMERG "found linux partition at [0x%08lX]\n",fis->flash_base);
 		    dir_parts[1].offset=fis->flash_base&(mtd->size-1);
 		    dir_parts[1].size=(dir_parts[2].offset-dir_parts[1].offset)+rootsize;
-		    dir_parts[7].size=dir_parts[1].size+dir_parts[4].size; // linux + nvram = phy size
 		    }
 		p+=sizeof(struct fis_image_desc);
 		fis = (struct fis_image_desc*)p;
@@ -295,6 +308,8 @@ static int __init ar7100_flash_init (void)
 	    buf+=mtd->erasesize;
 	    }
 	def:;
+	dir_parts[7].offset=0; // linux + nvram = phy size
+	dir_parts[7].size=mtd->size; // linux + nvram = phy size
 	result = add_mtd_partitions(mtd, dir_parts, 8);
     }
 

@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.22.19
-# Tue Apr 22 23:05:33 2008
+# Thu Nov 13 15:40:14 2008
 #
 CONFIG_MIPS=y
 
@@ -176,7 +176,7 @@ CONFIG_SYSCTL=y
 CONFIG_EMBEDDED=y
 # CONFIG_SYSCTL_SYSCALL is not set
 # CONFIG_KALLSYMS is not set
-# CONFIG_HOTPLUG is not set
+CONFIG_HOTPLUG=y
 CONFIG_PRINTK=y
 # CONFIG_BUG is not set
 # CONFIG_ELF_CORE is not set
@@ -234,6 +234,8 @@ CONFIG_MMU=y
 #
 # PCCARD (PCMCIA/CardBus) support
 #
+# CONFIG_PCCARD is not set
+# CONFIG_HOTPLUG_PCI is not set
 
 #
 # Executable file formats
@@ -538,6 +540,7 @@ CONFIG_WIRELESS_EXT=y
 #
 CONFIG_STANDALONE=y
 CONFIG_PREVENT_FIRMWARE_BUILD=y
+# CONFIG_FW_LOADER is not set
 # CONFIG_SYS_HYPERVISOR is not set
 
 #
@@ -605,6 +608,7 @@ CONFIG_MTD_COMPLEX_MAPPINGS=y
 # CONFIG_MTD_DOC2001 is not set
 # CONFIG_MTD_DOC2001PLUS is not set
 CONFIG_MTD_AR7100_SPI_FLASH=y
+# CONFIG_MTD_FLASH_16MB is not set
 # CONFIG_MTD_AR9100_PARALLEL_FLASH is not set
 # CONFIG_MTD_NAND is not set
 # CONFIG_MTD_ONENAND is not set
