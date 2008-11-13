@@ -20,6 +20,7 @@
 #include <asm/serial.h>
 #include <asm/traps.h>
 #include <linux/serial_core.h>
+#include <asm/bootinfo.h>
 
 #include "ar7100.h"
 
@@ -29,7 +30,21 @@
 #define         AG7100_CONSOLE_BAUD (115200)
 #endif
 
-uint32_t ar7100_cpu_freq = 0, ar7100_ahb_freq, ar7100_ddr_freq;
+#define AR71XX_MEM_SIZE_MIN	0x0200000
+#define AR71XX_MEM_SIZE_MAX	0x8000000
+
+#define AR71XX_BASE_FREQ	40000000
+#define AR91XX_BASE_FREQ	5000000
+
+u32 ar71xx_cpu_freq;
+EXPORT_SYMBOL_GPL(ar71xx_cpu_freq);
+
+u32 ar71xx_ahb_freq;
+EXPORT_SYMBOL_GPL(ar71xx_ahb_freq);
+
+u32 ar71xx_ddr_freq;
+EXPORT_SYMBOL_GPL(ar71xx_ddr_freq);
+
 
 static int __init ar7100_init_ioc(void);
 void Uart16550Init(void);
@@ -62,20 +77,31 @@ ar7100_power_off(void)
 const char 
 *get_system_type(void)
 {
-int rev = sysRegRead(AR7100_REV_ID) & 3;
+char *chip;
+u32 id;
+u32 rev;
 static char str[64];
-switch(rev)
-{
-case 0:
-	return "Atheros AR7130 (hydra)";
-case 1:
-	return "Atheros AR7141 (hydra)";
-case 2:
-	return "Atheros AR7161 (hydra)";
-default:
-	sprintf(str,"Atheros AR71xx (rev 0x%2X) (hydra)\n",rev);
-	return str;
-}
+	id = ar71xx_reset_rr(RESET_REG_REV_ID) & REV_ID_MASK;
+	rev = (id >> REV_ID_REVISION_SHIFT) & REV_ID_REVISION_MASK;
+switch (id & REV_ID_CHIP_MASK) {
+	case REV_ID_CHIP_AR7130:
+		chip = "7130";
+		break;
+	case REV_ID_CHIP_AR7141:
+		chip = "7141";
+		break;
+	case REV_ID_CHIP_AR7161:
+		chip = "7161";
+		break;
+	case REV_ID_CHIP_AR9130:
+		chip = "9130";
+		break;
+	default:
+		chip = "71xx";
+	}
+sprintf(str, "Atheros AR%s rev %u (id:0x%02x)",
+		chip, rev, id);
+return str;
 }
 
 #if defined(CONFIG_AR9100)
@@ -114,55 +140,85 @@ EXPORT_SYMBOL(get_wmac_mem_len);
 #endif
 
 EXPORT_SYMBOL(get_system_type);
+
+static void __init ar71xx_detect_mem_size(void)
+{
+	volatile u8 *p;
+	u8 memsave;
+	u32 size;
+
+	p = (volatile u8 *) KSEG1ADDR(0);
+	memsave = *p;
+	for (size = AR71XX_MEM_SIZE_MIN;
+	     size <= (AR71XX_MEM_SIZE_MAX >> 1); size <<= 1) {
+		volatile u8 *r;
+
+		r = (p + size);
+		*p = 0x55;
+		if (*r == 0x55) {
+			/* Mirrored data found, try another pattern */
+			*p = 0xAA;
+			if (*r == 0xAA) {
+				/* Mirrored data found again, stop detection */
+				break;
+			}
+		}
+	}
+	*p = memsave;
+
+	add_memory_region(0, size, BOOT_MEM_RAM);
+}
+
+
 /*
  * The bootloader musta set cpu_pll_config.
  * We extract the pll divider, multiply it by the base freq 40.
  * The cpu and ahb are divided off of that.
  */
-static void
-ar7100_sys_frequency(void)
+static void __init ar91xx_detect_sys_frequency(void)
 {
-	uint32_t pll, pll_div, cpu_div, ahb_div, ddr_div, freq;
+	u32 pll;
+	u32 freq;
+	u32 div;
 
-#ifdef CONFIG_AR7100_EMULATION
-	ar7100_cpu_freq = 33000000;
-	ar7100_ddr_freq = 33000000;
-	ar7100_ahb_freq = ar7100_cpu_freq;
+	pll = ar71xx_pll_rr(PLL_REG_CPU_PLL_CFG);
 
-	return;
-#else
-#ifndef CONFIG_AR9100
+	div = ((pll >> AR91XX_PLL_DIV_SHIFT) & AR91XX_PLL_DIV_MASK);
+	freq = div * AR91XX_BASE_FREQ;
 
-	if (ar7100_cpu_freq)
-		return;
+	ar71xx_cpu_freq = freq;
 
-	pll = ar7100_reg_rd(AR7100_PLL_CONFIG);
+	div = ((pll >> AR91XX_DDR_DIV_SHIFT) & AR91XX_DDR_DIV_MASK) + 1;
+	ar71xx_ddr_freq = freq / div;
 
-	pll_div  = ((pll >> PLL_DIV_SHIFT) & PLL_DIV_MASK) + 1;
-	freq     = pll_div * 40000000;
-	cpu_div  = ((pll >> CPU_DIV_SHIFT) & CPU_DIV_MASK) + 1;
-	ddr_div  = ((pll >> DDR_DIV_SHIFT) & DDR_DIV_MASK) + 1;
-	ahb_div  = (((pll >> AHB_DIV_SHIFT) & AHB_DIV_MASK) + 1)*2;
+	div = (((pll >> AR91XX_AHB_DIV_SHIFT) & AR91XX_AHB_DIV_MASK) + 1) * 2;
+	ar71xx_ahb_freq = ar71xx_cpu_freq / div;
+}
 
-	ar7100_cpu_freq = freq/cpu_div;
-	ar7100_ddr_freq = freq/ddr_div;
-	ar7100_ahb_freq = ar7100_cpu_freq/ahb_div;
-#else
-	if (ar7100_cpu_freq)
-		return;
+static void __init ar71xx_detect_sys_frequency(void)
+{
+	u32 pll;
+	u32 freq;
+	u32 div;
 
-	pll = ar7100_reg_rd(AR7100_PLL_CONFIG);
+	if ((ar71xx_reset_rr(RESET_REG_REV_ID) & REV_ID_MASK) >=
+			REV_ID_CHIP_AR9130) {
+		return ar91xx_detect_sys_frequency();
+	}
 
-	pll_div  = ((pll >> PLL_DIV_SHIFT) & PLL_DIV_MASK);
-	freq     = pll_div * 5000000;
-	ddr_div  = ((pll >> DDR_DIV_SHIFT) & DDR_DIV_MASK) + 1;
-	ahb_div  = (((pll >> AHB_DIV_SHIFT) & AHB_DIV_MASK) + 1)*2;
+	pll = ar71xx_pll_rr(PLL_REG_CPU_PLL_CFG);
 
-	ar7100_cpu_freq = freq;
-	ar7100_ddr_freq = freq/ddr_div;
-	ar7100_ahb_freq = ar7100_cpu_freq/ahb_div;
-#endif
-#endif
+	div = ((pll >> AR71XX_PLL_DIV_SHIFT) & AR71XX_PLL_DIV_MASK) + 1;
+	freq = div * AR71XX_BASE_FREQ;
+
+	div = ((pll >> AR71XX_CPU_DIV_SHIFT) & AR71XX_CPU_DIV_MASK) + 1;
+	ar71xx_cpu_freq = freq / div;
+
+	div = ((pll >> AR71XX_DDR_DIV_SHIFT) & AR71XX_DDR_DIV_MASK) + 1;
+	ar71xx_ddr_freq = freq / div;
+
+	div = (((pll >> AR71XX_AHB_DIV_SHIFT) & AR71XX_AHB_DIV_MASK) + 1) * 2;
+	ar71xx_ahb_freq = ar71xx_cpu_freq / div;
 }
 
 void __init
@@ -174,7 +230,7 @@ serial_setup(void)
 
 	p.flags     = STD_COM_FLAGS;
 	p.iotype    = UPIO_MEM32;
-	p.uartclk   = ar7100_ahb_freq;
+	p.uartclk   = ar71xx_ahb_freq;
 	p.irq       = AR7100_MISC_IRQ_UART;
 	p.regshift  = 2;
 	p.membase   = (u8 *)KSEG1ADDR(AR7100_UART_BASE);
@@ -187,7 +243,7 @@ serial_setup(void)
 static void __init
 ar7100_timer_init(void)
 {
-	mips_hpt_frequency =  ar7100_cpu_freq/2;
+	mips_hpt_frequency =  ar71xx_cpu_freq/2;
 }
 
 #if 1
@@ -261,6 +317,21 @@ void __init plat_mem_setup(void)
 	_machine_halt = ar7100_halt;
 	pm_power_off = ar7100_power_off;
 
+	ar71xx_ddr_base = ioremap_nocache(AR71XX_DDR_CTRL_BASE,
+						AR71XX_DDR_CTRL_SIZE);
+
+	ar71xx_pll_base = ioremap_nocache(AR71XX_PLL_BASE,
+						AR71XX_PLL_SIZE);
+
+	ar71xx_reset_base = ioremap_nocache(AR71XX_RESET_BASE,
+						AR71XX_RESET_SIZE);
+
+	ar71xx_gpio_base = ioremap_nocache(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE);
+
+	ar71xx_usb_ctrl_base = ioremap_nocache(AR71XX_USB_CTRL_BASE,
+						AR71XX_USB_CTRL_SIZE);
+
+	ar71xx_detect_mem_size();
 
 	/* 
 	 ** early_serial_setup seems to conflict with serial8250_register_port() 
@@ -319,8 +390,8 @@ void Uart16550Init()
 {
 	int freq, div;
 
-	ar7100_sys_frequency();
-	freq = ar7100_ahb_freq;
+	ar71xx_detect_sys_frequency();
+	freq = ar71xx_ahb_freq;
 
 	MY_WRITE(0xb8040000, 0xcff);
 	MY_WRITE(0xb8040008, 0x3b);
@@ -474,7 +545,7 @@ ar7100_init_ioc(void)
 }
 unsigned int getCPUClock(void)
 {
-    return ar7100_cpu_freq/1000000;
+    return ar71xx_cpu_freq/1000000;
 }
 
 

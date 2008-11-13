@@ -1,5 +1,6 @@
 //proc_gpio: AR5315 GPIO pins in /proc/gpio/
 // by olg 
+// modification for AR7100 support by Sebastian Gottschall <s.gottschall@newmedia-net.de>
 // GPL'ed
 // some code stolen from Yoshinori Sato <ysato@users.sourceforge.jp>
 
@@ -235,6 +236,6 @@ cleanup_proc (void)
 module_init (register_proc);
 module_exit (cleanup_proc);
 
-MODULE_AUTHOR ("BrainSlayer");
+MODULE_AUTHOR ("Sebastian Gottschall");
 MODULE_DESCRIPTION ("AR7100 GPIO pins in /proc/gpio/");
 MODULE_LICENSE ("GPL");

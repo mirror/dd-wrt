@@ -30,7 +30,7 @@
 #	define wddbg(junk, ...)
 #endif /* AR7100_WDT_TEST_CODE 8*/
 
-extern uint32_t ar7100_ahb_freq;
+extern uint32_t ar71xx_ahb_freq;
 
 typedef struct {
 	int	open: 1,
@@ -61,7 +61,7 @@ ar7100_get_wd_timer(void)
 	uint32_t val;
 
 	val = (uint32_t)ar7100_reg_rd(AR7100_WATCHDOG_TMR);
-	val = (val * USEC_PER_SEC) / ar7100_ahb_freq;
+	val = (val * USEC_PER_SEC) / ar71xx_ahb_freq;
 
 	return val;
 }
@@ -71,7 +71,7 @@ ar7100_get_wd_timer(void)
 static inline void
 ar7100_set_wd_timer(uint32_t usec /* micro seconds */)
 {
-	usec = usec * (ar7100_ahb_freq / USEC_PER_SEC);
+	usec = usec * (ar71xx_ahb_freq / USEC_PER_SEC);
 
 	wddbg("%s: 0x%08x\n", __func__, usec);
 
