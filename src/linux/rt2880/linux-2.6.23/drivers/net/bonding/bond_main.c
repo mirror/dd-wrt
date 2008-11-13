@@ -115,7 +115,7 @@ module_param(mode, charp, 0);
 MODULE_PARM_DESC(mode, "Mode of operation : 0 for balance-rr, "
 		       "1 for active-backup, 2 for balance-xor, "
 		       "3 for broadcast, 4 for 802.3ad, 5 for balance-tlb, "
-		       "6 for balance-alb, 7 for weighted-rr, 8 duplex-master, 9 duplex-slave");
+		       "6 for balance-alb, 7 for weighted-rr, 8 duplex, 9 duplex-slave");
 module_param(primary, charp, 0);
 MODULE_PARM_DESC(primary, "Primary network device to use");
 module_param(lacp_rate, charp, 0);
@@ -165,7 +165,7 @@ struct bond_parm_tbl bond_mode_tbl[] = {
 {	"balance-tlb",		BOND_MODE_TLB},
 {	"balance-alb",		BOND_MODE_ALB},
 {	"weighted-rr",		BOND_MODE_WEIGHTED_RR},
-{	"duplex-master",		BOND_MODE_DUPLEX},
+{	"duplex",		BOND_MODE_DUPLEX},
 {	"duplex-slave",		BOND_MODE_DUPLEX_SLAVE},
 {	NULL,			-1},
 };
@@ -4095,6 +4095,7 @@ static int bond_xmit_duplex_master(struct sk_buff *skb, struct net_device *bond_
 {
 	struct bonding *bond = bond_dev->priv;
 	struct slave *slave, *start_at;
+	int count=0;
 	int i;
 	int res = 1;
 
@@ -4104,27 +4105,16 @@ static int bond_xmit_duplex_master(struct sk_buff *skb, struct net_device *bond_
 		goto out;
 	}
 
-	read_lock(&bond->curr_slave_lock);
-	slave = start_at = bond->curr_active_slave;
-	read_unlock(&bond->curr_slave_lock);
 
-	if (!slave) {
-		goto out;
-	}
-
-try_send:
-	bond_for_each_slave_from(bond, slave, i, start_at) {
-		if ((i % 2) && IS_UP(slave->dev) &&
+	bond_for_each_slave(bond, slave, i) {
+		if ((count % 2)==1 && IS_UP(slave->dev) &&
 			(slave->link == BOND_LINK_UP) &&
 		    (slave->state == BOND_STATE_ACTIVE)) {
 			
 			res = bond_dev_queue_xmit(bond, skb, slave->dev);
-			write_lock(&bond->curr_slave_lock);
-			bond->curr_active_slave = slave->next;
-			write_unlock(&bond->curr_slave_lock);
-
 			goto out;
 		}
+		count++;
 	}
 out:
 	if (res) {
@@ -4139,6 +4129,7 @@ static int bond_xmit_duplex_slave(struct sk_buff *skb, struct net_device *bond_d
 {
 	struct bonding *bond = bond_dev->priv;
 	struct slave *slave, *start_at;
+	int count=0;
 	int i;
 	int res = 1;
 
@@ -4148,27 +4139,14 @@ static int bond_xmit_duplex_slave(struct sk_buff *skb, struct net_device *bond_d
 		goto out;
 	}
 
-	read_lock(&bond->curr_slave_lock);
-	slave = start_at = bond->curr_active_slave;
-	read_unlock(&bond->curr_slave_lock);
-
-	if (!slave) {
-		goto out;
-	}
-
-try_send:
-	bond_for_each_slave_from(bond, slave, i, start_at) {
-		if (!(i % 2) && IS_UP(slave->dev) &&
+	bond_for_each_slave(bond, slave, i) {
+		if ((count % 2)==0 && IS_UP(slave->dev) &&
 			(slave->link == BOND_LINK_UP) &&
 		    (slave->state == BOND_STATE_ACTIVE)) {
-			
 			res = bond_dev_queue_xmit(bond, skb, slave->dev);
-			write_lock(&bond->curr_slave_lock);
-			bond->curr_active_slave = slave->next;
-			write_unlock(&bond->curr_slave_lock);
-
 			goto out;
 		}
+		count++;
 	}
 out:
 	if (res) {
