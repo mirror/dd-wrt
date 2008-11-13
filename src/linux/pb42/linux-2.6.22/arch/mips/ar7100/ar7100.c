@@ -16,6 +16,12 @@
 
 #include "ar7100.h"
 
+void __iomem *ar71xx_ddr_base;
+void __iomem *ar71xx_pll_base;
+void __iomem *ar71xx_reset_base;
+void __iomem *ar71xx_gpio_base;
+void __iomem *ar71xx_usb_ctrl_base;
+
 /* 
  * GPIO Misc IRQ Functions
  */

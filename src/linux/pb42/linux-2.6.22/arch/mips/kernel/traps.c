@@ -42,6 +42,7 @@
 #include <asm/watch.h>
 #include <asm/types.h>
 #include <asm/stacktrace.h>
+#include <asm/time.h>
 
 extern asmlinkage void handle_int(void);
 extern asmlinkage void handle_tlbm(void);

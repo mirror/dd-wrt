@@ -14,7 +14,7 @@
 
 #include <asm/mach-ar7100/ar7100.h>
 
-extern uint32_t ar7100_ahb_freq;
+extern uint32_t ar71xx_ahb_freq;
 
 /* 
  * OHCI (USB full speed host controller) 
@@ -118,7 +118,7 @@ static struct platform_device *ar7100_platform_devices[] __initdata = {
 int __init ar7100_platform_init(void)
 {
         /* need to set clock appropriately */
-        ar7100_uart_data[0].uartclk = ar7100_ahb_freq; 
+        ar7100_uart_data[0].uartclk = ar71xx_ahb_freq; 
 	return platform_add_devices(ar7100_platform_devices, 
                                 ARRAY_SIZE(ar7100_platform_devices));
 }
