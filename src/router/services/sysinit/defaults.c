@@ -2092,7 +2092,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_ZEROIP
     {"shat_enable", "0", 0},
     {"shat_range", "192.168.1.79+20", 0},
-    {"shat_shield", "NO", 0},
+    {"shat_shield", "", 0},
 #endif
 #ifdef HAVE_SKYTRON
     {"dhcp_dnsmasq", "1", 0},
