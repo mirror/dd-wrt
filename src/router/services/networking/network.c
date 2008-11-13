@@ -790,7 +790,7 @@ void start_lan( void )
 	return;
 
 #ifdef HAVE_RB500
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -812,7 +812,7 @@ void start_lan( void )
 #endif
 
 #ifdef HAVE_MAGICBOX
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -839,7 +839,7 @@ void start_lan( void )
 #if defined(HAVE_FONERA) && !defined(HAVE_DIR300) && !defined(HAVE_MR3202A)
     if( getRouterBrand(  ) == ROUTER_BOARD_FONERA2200 )
     {
-	if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+	if( getSTA(  ) || getWET(  ) 
 	    || nvram_match( "wan_proto", "disabled" ) )
 	{
 	    nvram_set( "lan_ifname", "br0" );
@@ -855,7 +855,7 @@ void start_lan( void )
     }
     else
     {
-	if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+	if( getSTA(  ) || getWET(  ) 
 	    || nvram_match( "wan_proto", "disabled" ) )
 	{
 	    nvram_set( "lan_ifname", "br0" );
@@ -875,7 +875,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_DIR300
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -894,7 +894,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_RS
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -912,7 +912,7 @@ void start_lan( void )
     nvram_set( "et0macaddr", ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #elif HAVE_LSX
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -931,7 +931,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_DANUBE
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  )
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -950,7 +950,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_RT2880
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -969,7 +969,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_STORM
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -988,7 +988,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_ADM5120
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -1007,7 +1007,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_MR3202A
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -1026,7 +1026,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_LS2
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 #ifdef HAVE_NS2
@@ -1058,7 +1058,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_LS5
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -1078,7 +1078,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_TW6600
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -1098,7 +1098,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_PB42
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -1118,7 +1118,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_WHRAG108
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -1138,7 +1138,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_CA8
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+    if( getSTA(  ) || getWET(  ) 
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	if( getRouterBrand(  ) == ROUTER_BOARD_CA8PRO )
@@ -1176,8 +1176,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_GATEWORX
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
-	|| nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
     {
 	if( getRouterBrand(  ) == ROUTER_BOARD_GATEWORX_SWAP )
 	{
@@ -1261,7 +1260,7 @@ void start_lan( void )
      */
 #endif
 #ifdef HAVE_X86
-    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" ) )
+    if( getSTA(  ) || getWET(  )  )
     {
 	nvram_set( "lan_ifname", "br0" );
 #ifdef HAVE_NOWIFI
