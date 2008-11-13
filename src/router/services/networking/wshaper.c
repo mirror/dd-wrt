@@ -681,6 +681,8 @@ void stop_wshaper( void )
     ret = eval( script_name, "stop", "XX", "eth0" );
     ret = eval( script_name, "stop", "XX", "eth1" );
     ret = eval( script_name, "stop", "XX", "ath0" );
+    ret = eval( script_name, "stop", "XX", "ath1" );
+    ret = eval( script_name, "stop", "XX", "ath2" );
 #elif HAVE_DANUBE
     ret = eval( script_name, "stop", "XX", "eth0" );
     ret = eval( script_name, "stop", "XX", "ath0" );

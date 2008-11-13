@@ -893,7 +893,25 @@ void start_lan( void )
     nvram_set( "et0macaddr", ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
-#ifdef HAVE_LSX
+#ifdef HAVE_RS
+    if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
+	|| nvram_match( "wan_proto", "disabled" ) )
+    {
+	nvram_set( "lan_ifname", "br0" );
+	nvram_set( "lan_ifnames", "eth0 eth1 ath0 ath1 ath2" );
+	PORTSETUPWAN( "" );
+    }
+    else
+    {
+	nvram_set( "lan_ifname", "br0" );
+	nvram_set( "lan_ifnames", "eth0 eth1 ath0 ath1 ath2" );
+	PORTSETUPWAN( "eth0" );
+    }
+    strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+    ioctl( s, SIOCGIFHWADDR, &ifr );
+    nvram_set( "et0macaddr", ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    strcpy( mac, nvram_safe_get( "et0macaddr" ) );
+#elif HAVE_LSX
     if( getSTA(  ) || getWET(  ) || nvram_match( "ath0_mode", "wdssta" )
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
