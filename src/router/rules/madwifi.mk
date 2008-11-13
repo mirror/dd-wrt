@@ -190,17 +190,17 @@ endif
 else
 ifeq ($(ARCHITECTURE),lsx)
 madwifi:
-ifeq ($(CONFIG_BOESE),y)
+ifeq ($(CONFIG_RS),y)
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ar7100-rs-be-elf BUS=PCI TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=ar7100-rs-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR)
+else
 	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ar7100-be-elf BUS=PCI TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
 	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=ar7100-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR)
-else
-	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=ap51 BUS=AHB TOOLPATH=$(LINUXDIR) LDOPTS="--no-warn-mismatch"
-	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=ap51 BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR)
 endif
 
 madwifi-clean:
-ifeq ($(CONFIG_BOESE),y)
-	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ar7100-be-elf BUS=PCI TOOLPATH=$(LINUXDIR)
+ifeq ($(CONFIG_RS),y)
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ar7100-rs-be-elf BUS=PCI TOOLPATH=$(LINUXDIR)
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean BUS=PCI TOOLPATH=$(LINUXDIR)
 else
 	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=ar7100-be-elf BUS=PCI TOOLPATH=$(LINUXDIR)
@@ -209,12 +209,12 @@ endif
 
 madwifi-install:
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
-ifeq ($(CONFIG_BOESE),y)
+ifeq ($(CONFIG_RS),y)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) install
+	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ar7100-rs-be-elf install
+else
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) install
 	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=PCI TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ar7100-be-elf install
-else
-	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) install
-	make -C madwifi.dev/madwifi.dev/ KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin BUS=AHB TOOLPATH=$(LINUXDIR) DESTDIR=$(INSTALLDIR)/madwifi TARGET=ap51 install 
 endif
 
 else

@@ -131,10 +131,17 @@ void start_sysinit( void )
     insmod( "ath_pci" );
     // insmod("ath_mimo_pci");
 
-
+#ifdef HAVE_RS
     system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
     system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
-
+    system2( "echo 2 >/proc/sys/dev/wifi1/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi1/softled" );
+    system2( "echo 2 >/proc/sys/dev/wifi2/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi2/softled" );
+#else
+    system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
+#endif
     insmod( "ipv6" );
 
     /*
@@ -161,7 +168,7 @@ int check_pmon_nv( void )
 void start_overclocking( void )
 {
 }
-void enable_dtag_vlan( int enable )
+char *enable_dtag_vlan( int enable )
 {
-
+return "eth0";
 }

@@ -713,6 +713,9 @@ return 0;
 #elif HAVE_PB42
     setRouter( "Atheros PB42" );
     return ROUTER_BOARD_PB42;
+#elif HAVE_RS
+    setRouter( "Ubiquiti RouterStation" );
+    return ROUTER_BOARD_PB42;
 #elif HAVE_LSX
     setRouter( "Ubiquiti LSX" );
     return ROUTER_BOARD_PB42;
