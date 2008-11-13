@@ -532,9 +532,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 
 				if (rc == RC_OK)
 				{
-					BOOL update_ok = 
-                        p_self->info.p_dns_system->p_rsp_ok_func((struct _DYN_DNS_CLIENT*)p_self, 
-                            http_tr.p_rsp, 
+					BOOL update_ok = p_self->info.p_dns_system->p_rsp_ok_func((struct _DYN_DNS_CLIENT*)p_self, http_tr.p_rsp, 
 							p_self->info.p_dns_system->p_success_string);
 					if (update_ok)
 					{
@@ -563,7 +561,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 					}
 					else
 					{
-						DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Error validating DYNDNS svr answer. Check usr,pass,hostname!\n", http_tr.p_rsp));
+						DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Error validating DYNDNS svr answer. Check usr,pass,hostname! (%s)\n", http_tr.p_rsp));
 						shutdown++;
 					}
 					if (p_self->dbg.level > 2)
