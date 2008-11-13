@@ -4092,6 +4092,7 @@ static int bond_xmit_duplex(struct sk_buff *skb, struct net_device *bond_dev)
 {
 	struct bonding *bond = bond_dev->priv;
 	struct slave *slave, *start_at;
+	int count=0;
 	int i;
 	int res = 1;
 
@@ -4101,27 +4102,16 @@ static int bond_xmit_duplex(struct sk_buff *skb, struct net_device *bond_dev)
 		goto out;
 	}
 
-	read_lock(&bond->curr_slave_lock);
-	slave = start_at = bond->curr_active_slave;
-	read_unlock(&bond->curr_slave_lock);
 
-	if (!slave) {
-		goto out;
-	}
-
-try_send:
-	bond_for_each_slave_from(bond, slave, i, start_at) {
-		if ((i % 2) && IS_UP(slave->dev) &&
+	bond_for_each_slave(bond, slave, i) {
+		if ((count % 2)==1 && IS_UP(slave->dev) &&
 			(slave->link == BOND_LINK_UP) &&
 		    (slave->state == BOND_STATE_ACTIVE)) {
 			
 			res = bond_dev_queue_xmit(bond, skb, slave->dev);
-			write_lock(&bond->curr_slave_lock);
-			bond->curr_active_slave = slave->next;
-			write_unlock(&bond->curr_slave_lock);
-
 			goto out;
 		}
+		count++;
 	}
 out:
 	if (res) {
