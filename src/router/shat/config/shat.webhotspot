@@ -1,7 +1,6 @@
 
 <fieldset>
 	<legend><% tran("hotspot.shat_legend"); %></legend>
-	<span class="comment"><% tran("hotspot.shat_srv"); %></span>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.shat_srv2"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="shat_enable" <% nvram_checked("shat_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
