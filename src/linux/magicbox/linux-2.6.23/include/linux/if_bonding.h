@@ -70,6 +70,9 @@
 #define BOND_MODE_8023AD        4
 #define BOND_MODE_TLB           5
 #define BOND_MODE_ALB		6 /* TLB + RLB (receive load balancing) */
+#define BOND_MODE_WEIGHTED_RR   7
+#define BOND_MODE_DUPLEX   8
+#define BOND_MODE_DUPLEX_SLAVE   9
 
 /* each slave's link has 4 states */
 #define BOND_LINK_UP    0           /* link is up and running */
