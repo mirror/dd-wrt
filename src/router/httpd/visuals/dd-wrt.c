@@ -5307,6 +5307,11 @@ void ej_get_wan_uptime( webs_t wp, int argc, char_t ** argv )
 
     if( nvram_match( "wan_proto", "disabled" ) )
 	return;
+    if( nvram_match ( "wan_ipaddr", "0.0.0.0") )
+    {
+	websWrite( wp, "%s", live_translate( "status_router.notavail" ) );
+	return;
+    }
     if( !( fp = fopen( "/tmp/.wanuptime", "r" ) ) )
     {
 	websWrite( wp, "%s", live_translate( "status_router.notavail" ) );
