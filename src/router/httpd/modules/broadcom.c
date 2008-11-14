@@ -797,33 +797,33 @@ static struct gozila_action gozila_actions[] = {
     {"DHCPTable", "delete", "", 2, REFRESH, "delete_leases"},
     {"Info", "refresh", "", 0, REFRESH, "save_wifi"},
     {"Status_Wireless", "refresh", "", 0, REFRESH, "save_wifi"},
-    {"Status", "release", "dhcp_release", 0, SYS_RESTART, "dhcp_release"},
-    {"Status", "renew", "", 3, REFRESH, "dhcp_renew"},
-    {"Status", "Connect", "start_pppoe", 1, RESTART, NULL},
-    {"Status_Internet", "release", "dhcp_release", 0, SYS_RESTART, "dhcp_release"},	// for 
+    // {"Status", "release", "dhcp_release", 0, SYS_RESTART, "dhcp_release"},
+    // {"Status", "renew", "", 3, REFRESH, "dhcp_renew"},
+    // {"Status", "Connect", "start_pppoe", 1, RESTART, NULL},
+    {"Status_Internet", "release", "dhcp_release", 0, SERVICE_RESTART, "dhcp_release"},	// for 
     // cisco 
     // style
     {"Status_Internet", "renew", "", 3, REFRESH, "dhcp_renew"},	// for cisco
     // style
-    {"Status_Internet", "Disconnect", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},	// for 
+    {"Status_Internet", "Disconnect", "stop_pppoe", 2, SERVICE_RESTART, "stop_ppp"},	// for 
     // cisco 
     // style
     {"Status_Internet", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},	// for 
     // cisco 
     // style
-    {"Status_Internet", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},	// for 
+    {"Status_Internet", "Disconnect_pppoe", "stop_pppoe", 2, SERVICE_RESTART, "stop_ppp"},	// for 
     // cisco 
     // style
     {"Status_Internet", "Connect_pptp", "start_pptp", 1, RESTART, NULL},	// for 
     // cisco 
     // style
-    {"Status_Internet", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, "stop_ppp"},	// for 
+    {"Status_Internet", "Disconnect_pptp", "stop_pptp", 2, SERVICE_RESTART, "stop_ppp"},	// for 
     // cisco 
     // style
     {"Status_Internet", "Connect_l2tp", "start_l2tp", 1, RESTART, NULL},	// for 
     // cisco 
     // style
-    {"Status_Internet", "Disconnect_l2tp", "stop_l2tp", 2, SYS_RESTART, "stop_ppp"},	// for 
+    {"Status_Internet", "Disconnect_l2tp", "stop_l2tp", 2, SERVICE_RESTART, "stop_ppp"},	// for 
     // cisco 
     // style{ 
     // "Status_Router", 
@@ -836,18 +836,17 @@ static struct gozila_action gozila_actions[] = {
     // for 
     // cisco 
     // style
-    {"Status_Internet", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, "stop_ppp"},	// for 
+    {"Status_Internet", "Disconnect_heartbeat", "stop_heartbeat", 2, SERVICE_RESTART, "stop_ppp"},	// for 
     // cisco 
     // style
     {"Status_Internet", "delete_ttraffdata", "", 0, REFRESH, "ttraff_erase"},
-    {"Status", "Disconnect", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},
-    {"Status", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},
-    {"Status", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},
-    {"Status", "Connect_pptp", "start_pptp", 1, RESTART, NULL},
-    {"Status", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, "stop_ppp"},
-    {"Status", "Connect_heartbeat", "start_heartbeat", 1, RESTART, NULL},
-    {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART,
-     "stop_ppp"},
+    // {"Status", "Disconnect", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},
+    // {"Status", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},
+    // {"Status", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, "stop_ppp"},
+    // {"Status", "Connect_pptp", "start_pptp", 1, RESTART, NULL},
+    // {"Status", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, "stop_ppp"},
+    // {"Status", "Connect_heartbeat", "start_heartbeat", 1, RESTART, NULL},
+    // {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, "stop_ppp"},
     {"Filters", "save", "filters", 1, REFRESH, "save_policy"},
     {"Filters", "delete", "filters", 1, REFRESH, "single_delete_policy"},
     {"FilterSummary", "delete", "filters", 1, REFRESH,
