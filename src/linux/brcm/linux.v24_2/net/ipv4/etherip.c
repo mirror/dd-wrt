@@ -35,7 +35,7 @@
 #include <net/inet_ecn.h>
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Joerg Roedel <joro@zlug.org>");
+MODULE_AUTHOR("Joerg Roedel <joro@zlug.org>, Sebastian Gottschall <s.gottschall@dd-wrt.com>");
 MODULE_DESCRIPTION("Ethernet over IPv4 tunnel driver");
 
 #ifndef IPPROTO_ETHERIP
