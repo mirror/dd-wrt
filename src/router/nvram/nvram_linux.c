@@ -282,6 +282,7 @@ system("/sbin/ledtool 1");
 
   fprintf (stderr, "nvram_commit(): end\n");
   unlock ();
+  sync();
   return ret;
 }
 
