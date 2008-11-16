@@ -122,6 +122,7 @@ void start_sysinit( void )
     mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
     mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
     eval( "mknod", "/dev/ppp", "c", "108", "0" );
+    eval( "mknod", "/dev/nvram", "c", "229", "0" );
     char dev[64];
     int index = getdiscindex(  );
 
@@ -152,13 +153,25 @@ void start_sysinit( void )
 	eval( "/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/" );
     }
     eval( "mkdir", "-p", "/usr/local/nvram" );
+
+    eval ("mkdir", "/tmp/nvram");
+    eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
+    eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+
+    FILE *in = fopen( "/tmp/nvram/nvram.db", "rb" );
+
+    if( in != NULL )
+    {
+	fclose( in );
+	eval( "/usr/sbin/convertnvram" );
+	nvram_commit(  );
+	eval("rm","-f","/etc/nvram/nvram.db");
+	eval("rm","-f","/etc/nvram/offsets.db");
+    }
     eval( "mkdir", "/tmp/www" );
 
     unlink( "/tmp/nvram/.lock" );
     eval( "mkdir", "/tmp/nvram" );
-    eval( "cp", "/etc/nvram/nvram.db", "/tmp/nvram" );
-    // eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
-    eval( "mount", "/usr/local", "-o", "remount,ro" );
 
     cprintf( "sysinit() var\n" );
 
