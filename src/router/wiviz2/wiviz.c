@@ -101,6 +101,8 @@ if (!strcmp(argv[1],"terminate"))
     sysprintf("startstop wan");
     }
 #else
+  oldMonitor=0;
+  sysprintf("ifconfig %s down",wl_dev);
   wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
 #endif  
     return 0;  
