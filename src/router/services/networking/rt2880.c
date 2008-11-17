@@ -133,7 +133,7 @@ void setupSupplicant( char *prefix )
 	if( nvram_prefix_match( "8021xtype", prefix, "ttls" ) )
 	{
 	    fprintf( fp, "\tkey_mgmt=WPA-EAP\n" );
-	    fprintf( fp, "\teap=TTLS PEAP\n" );
+	    fprintf( fp, "\teap=TTLS\n" );
 	    fprintf( fp, "\tpairwise=CCMP TKIP\n" );
 	    fprintf( fp, "\tgroup=CCMP TKIP\n" );
 	    fprintf( fp, "\tidentity=\"%s\"\n",
