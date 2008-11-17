@@ -210,12 +210,9 @@ _nvram_set (const char *name, const char *value)
 int
 nvram_set (const char *name, const char *value)
 {
-//fprintf(stderr,"nvram_set %s=%s\n",name,value);
-
   extern struct nvram_convert nvram_converts[];
   struct nvram_convert *v;
   int ret;
-//lock();
   ret = _nvram_set (name, value);
 
   for (v = nvram_converts; v->name; v++)
@@ -224,19 +221,8 @@ nvram_set (const char *name, const char *value)
 	{
 	  if (strcmp (v->wl0_name, ""))
 	    _nvram_set (v->wl0_name, value);
-	  if (strcmp (v->d11g_name, ""))
-	    _nvram_set (v->d11g_name, value);
-	//Jemmy add for dual band wireless 2008.3.1
-//      if (!nvram_match("restore_defaults", "0") || !nvram_match("os_name", "linux"))	 
-//    {
-//	  if(strcmp(v->wl1_name,""))
-//	    _nvram_set(v->wl1_name, value);
-//	}
-//	  if ((!strcmp(v->wl1_name, "wl1_maclist")) || (!strcmp(v->wl1_name, "wl1_macmode")))
-//		_nvram_set(v->wl1_name, value);	    
 	}
     }
-//unlock();
   return ret;
 }
 int nvram_immed_set (const char *name, const char *value)
