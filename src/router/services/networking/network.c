@@ -3921,6 +3921,9 @@ void start_hotplug_net( void )
 
     if( strncmp( interface, "wds", 3 ) )
 	return;
+	
+    if( strncmp( interface, "prism", 5 ) )
+	return;
     cprintf( "action: %s\n", action );
     if( !strcmp( action, "register" ) )
     {
