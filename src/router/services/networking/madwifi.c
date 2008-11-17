@@ -1222,16 +1222,16 @@ static void configure_single( int count )
 	}
 	sysprintf("iwpriv %s bgscan 0",var);
 #ifdef HAVE_MAKSAT
-	    sysprintf( "iwconfig %s essid %s",var,nvram_default_get( ssid, "maksat_vap" ) );
+	    sysprintf( "iwconfig %s essid \"%s\"",var,nvram_default_get( ssid, "maksat_vap" ) );
 #elif defined(HAVE_TRIMAX)
-	    sysprintf( "iwconfig %s essid %s",var,nvram_default_get( ssid, "trimax_vap" ) );
+	    sysprintf( "iwconfig %s essid \"%s\"",var,nvram_default_get( ssid, "trimax_vap" ) );
 #else
 #ifdef HAVE_REGISTER
 	if( !isregistered(  ) )
 	    sysprintf( "iwconfig %s essid need_activation",var);
 	else
 #endif
-	    sysprintf( "iwconfig %s essid %s",var,nvram_default_get( ssid, "dd-wrt_vap" ) );
+	    sysprintf( "iwconfig %s essid \"%s\"",var,nvram_default_get( ssid, "dd-wrt_vap" ) );
 #endif
 	cprintf( "set broadcast flag vif %s\n", var );	// hide ssid
 	sprintf( broadcast, "%s_closed", var );
@@ -1281,16 +1281,16 @@ static void configure_single( int count )
 
     cprintf( "set ssid\n" );
 #ifdef HAVE_MAKSAT
-	sysprintf("iwconfig %s essid %s",dev,nvram_default_get( ssid, "maksat" ));
+	sysprintf("iwconfig %s essid \"%s\"",dev,nvram_default_get( ssid, "maksat" ));
 #elif defined(HAVE_TRIMAX)
-	sysprintf("iwconfig %s essid %s",dev,nvram_default_get( ssid, "trimax" ));
+	sysprintf("iwconfig %s essid \"%s\"",dev,nvram_default_get( ssid, "trimax" ));
 #else
 #ifdef HAVE_REGISTER
     if( !isregistered(  ) )
 	sysprintf("iwconfig %s essid need_activation", dev);
     else
 #endif
-	sysprintf( "iwconfig %s essid %s", dev, nvram_default_get( ssid, "dd-wrt" ) );
+	sysprintf( "iwconfig %s essid \"%s\"", dev, nvram_default_get( ssid, "dd-wrt" ) );
 #endif
     cprintf( "set broadcast flag\n" );	// hide ssid
     sysprintf( "iwpriv %s hide_ssid %s", dev,nvram_default_get( broadcast, "0" ) );
@@ -1312,11 +1312,11 @@ static void configure_single( int count )
     {
 	cprintf( "set ssid\n" );
 #ifdef HAVE_MAKSAT
-	sysprintf("iwconfig %s essid %s",dev,nvram_default_get( ssid, "maksat" ));
+	sysprintf("iwconfig %s essid \"%s\"",dev,nvram_default_get( ssid, "maksat" ));
 #elif defined(HAVE_TRIMAX)
-	sysprintf("iwconfig %s essid %s",dev,nvram_default_get( ssid, "trimax" ));
+	sysprintf("iwconfig %s essid \"%s\"",dev,nvram_default_get( ssid, "trimax" ));
 #else
-	sysprintf("iwconfig %s essid %s",dev,nvram_default_get( ssid, "dd-wrt" ));
+	sysprintf("iwconfig %s essid \"%s\"",dev,nvram_default_get( ssid, "dd-wrt" ));
 #endif
     }
 
