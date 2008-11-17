@@ -1424,18 +1424,6 @@ void start_nvram( void )
     /*
      * broadcom 3.11.48.7 change some nvram name 
      */
-#ifdef HAVE_MSSID
-    CONVERT_NV( "d11g_channel", "wl_channel" );
-#else
-    CONVERT_NV( "d11g_channel", "wl0_channel" );
-#endif
-    CONVERT_NV( "d11g_rateset", "wl_rateset" );
-    CONVERT_NV( "d11g_rts", "wl_rts" );
-    CONVERT_NV( "d11g_bcn", "wl_bcn" );
-    CONVERT_NV( "d11g_mode", "wl_gmode" );
-    CONVERT_NV( "d11g_rate", "wl_rate" );
-    CONVERT_NV( "d11g_frag", "wl_frag" );
-    CONVERT_NV( "d11g_dtim", "wl_dtim" );
 
     nvram_unset( "wl0_hwaddr" );	// When disbale wireless, we must get 
     // 
