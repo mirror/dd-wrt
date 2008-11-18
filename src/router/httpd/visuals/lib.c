@@ -36,25 +36,25 @@ void ej_compile_time( webs_t wp, int argc, char_t ** argv )
 void ej_get_firmware_version( webs_t wp, int argc, char_t ** argv )
 {
 #ifdef HAVE_BUFFALO
-    websWrite( wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION,
-	       nvram_safe_get( "dist_type" ) );
+    websWrite( wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
+	       nvram_safe_get( "dist_type" ), DIST_OPT );
 #else
 
 #ifdef HAVE_REGISTER
 if (isregistered() && !isregistered_real())
     {
-    websWrite( wp, "%s%s %s %d Hour Trial", CYBERTAN_VERSION, MINOR_VERSION,
-	       nvram_safe_get( "dist_type" ) , getTrialCount());        
+    websWrite( wp, "%s%s %s%s %d Hour Trial", CYBERTAN_VERSION, MINOR_VERSION,
+	       nvram_safe_get( "dist_type" ), DIST_OPT, getTrialCount());        
     }else
     {
-    websWrite( wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION,
-	       nvram_safe_get( "dist_type" ) );    
+    websWrite( wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
+	       nvram_safe_get( "dist_type" ), DIST_OPT );    
     }
 
 #else
 
-    websWrite( wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION,
-	       nvram_safe_get( "dist_type" ) );
+    websWrite( wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
+	       nvram_safe_get( "dist_type" ), DIST_OPT );
 #endif
 #endif
 }
