@@ -42,6 +42,7 @@ CONFIG_SMTPREDIRECT=y
 
 
 CONFIG_DIST="micro"
+CONFIG_DIST_OPT="-plus-ssh"
 
 CONFIG_BBOX="mini"
 
