@@ -214,6 +214,7 @@ sbutton.restore="Obnovitev";
 sbutton.cptotext="Kopiraj v polje z besedilom";
 sbutton.runcmd="Za¾eni ukaze";
 sbutton.startup="Shrani zagon";
+sbutton.shutdown="Shrani zaustavitev";
 sbutton.firewall="Shrani po¾arni zid";
 sbutton.custom="Shrani skript po meri";
 sbutton.wol="Zbujanje";
@@ -505,6 +506,7 @@ diag.h2="Diagnostika";
 diag.legend="Ukazna lupina";
 diag.cmd="Ukazi";
 diag.startup="Zagon";
+diag.shutdown="Zaustavitev";
 diag.firewall="Po¾arni zid";
 diag.custom="Skript po meri";
 
