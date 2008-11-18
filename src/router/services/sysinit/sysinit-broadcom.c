@@ -904,7 +904,6 @@ void start_sysinit( void )
 	case ROUTER_BUFFALO_WZRG300N:
 	case ROUTER_NETGEAR_WNR834B:
 	case ROUTER_WRT150N:
-	case ROUTER_WRT160N:
 	case ROUTER_WRT300N:
 	case ROUTER_ASUS_WL500W:
 	case ROUTER_BUFFALO_WLAH_G54:
@@ -914,6 +913,7 @@ void start_sysinit( void )
 	    break;
 
 	case ROUTER_WRTSL54GS:
+	case ROUTER_WRT160N:
 	    nvram_set( "wan_ifname", "eth1" );
 	    if( nvram_match( "force_vlan_supp", "enabled" ) )
 	    {
@@ -1174,6 +1174,21 @@ void start_sysinit( void )
 		     && nvram_match( "boardflags", "0x0118" ) )
 	    {
 		nvram_set( "boardflags", "0x0018" );	//disable vlans
+		need_reboot = 1;
+	    }
+	    break;
+	    
+	case ROUTER_WRT160N:
+	    if( nvram_match( "force_vlan_supp", "enabled" )
+		&& nvram_match( "boardflags", "0x0010" ) )
+	    {
+		nvram_set( "boardflags", "0x0110" );	//enable lan vlans
+		need_reboot = 1;
+	    }
+	    else if( !nvram_match( "force_vlan_supp", "enabled" )
+		     && nvram_match( "boardflags", "0x0110" ) )
+	    {
+		nvram_set( "boardflags", "0x0010" );	//disable vlans
 		need_reboot = 1;
 	    }
 	    break;
