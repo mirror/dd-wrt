@@ -191,10 +191,13 @@ static const char usage_message[] =
   "                  flag to add a direct route to DHCP server, bypassing tunnel.\n"
   "                  Add 'bypass-dns' flag to similarly bypass tunnel for DNS.\n"
   "--setenv name value : Set a custom environmental variable to pass to script.\n"
-  "--script-security level : 0 -- strictly no calling of external programs\n"
-  "                          1 -- (default) only call built-ins such as ifconfig\n"
-  "                          2 -- allow calling of built-ins and scripts\n"
-  "                          3 -- allow password to be passed to scripts via env\n"
+  "--setenv FORWARD_COMPATIBLE 1 : Relax config file syntax checking to allow\n"
+  "                  directives for future OpenVPN versions to be ignored.\n"
+  "--script-security level mode : mode='execve' (default) or 'system', level=\n"
+  "                  0 -- strictly no calling of external programs\n"
+  "                  1 -- (default) only call built-ins such as ifconfig\n"
+  "                  2 -- allow calling of built-ins and scripts\n"
+  "                  3 -- allow password to be passed to scripts via env\n"
   "--shaper n      : Restrict output to peer to n bytes per second.\n"
   "--keepalive n m : Helper option for setting timeouts in server mode.  Send\n"
   "                  ping once every n seconds, restart if ping not received\n"
@@ -294,7 +297,7 @@ static const char usage_message[] =
   "--mute n        : Log at most n consecutive messages in the same category.\n"
   "--status file n : Write operational status to file every n seconds.\n"
   "--status-version [n] : Choose the status file format version number.\n"
-  "                  Currently, n can be 1 or 2 (default=1).\n"
+  "                  Currently, n can be 1, 2, or 3 (default=1).\n"
 #ifdef ENABLE_OCC
   "--disable-occ   : Disable options consistency check between peers.\n"
 #endif
@@ -381,6 +384,10 @@ static const char usage_message[] =
   "                  run script cmd to verify.  If method='via-env', pass\n"
   "                  user/pass via environment, if method='via-file', pass\n"
   "                  user/pass via temporary file.\n"
+  "--auth-user-pass-optional : Allow connections by clients that don't\n"
+  "                  specify a username/password.\n"
+  "--no-name-remapping : Allow Common Name and X509 Subject to include\n"
+  "                      any printable character.\n"
   "--client-to-client : Internally route client-to-client traffic.\n"
   "--duplicate-cn  : Allow multiple clients with the same common name to\n"
   "                  concurrently connect.\n"
@@ -965,10 +972,9 @@ show_p2mp_parms (const struct options *o)
   SHOW_INT (cf_per);
   SHOW_INT (max_clients);
   SHOW_INT (max_routes_per_client);
-  SHOW_BOOL (client_cert_not_required);
-  SHOW_BOOL (username_as_common_name)
   SHOW_STR (auth_user_pass_verify_script);
   SHOW_BOOL (auth_user_pass_verify_script_via_file);
+  SHOW_INT (ssl_flags);
 #if PORT_SHARE
   SHOW_STR (port_share_host);
   SHOW_INT (port_share_port);
@@ -1702,11 +1708,16 @@ options_postprocess_verify_ce (const struct options *options, const struct conne
 			     || PLUGIN_OPTION_LIST (options)
 			     || MAN_CLIENT_AUTH_ENABLED (options));
 	  const char *postfix = "must be used with --management-client-auth, an --auth-user-pass-verify script, or plugin";
-	  if (options->client_cert_not_required && !ccnr)
+	  if ((options->ssl_flags & SSLF_CLIENT_CERT_NOT_REQUIRED) && !ccnr)
 	    msg (M_USAGE, "--client-cert-not-required %s", postfix);
-	  if (options->username_as_common_name && !ccnr)
+	  if ((options->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME) && !ccnr)
 	    msg (M_USAGE, "--username-as-common-name %s", postfix);
+	  if ((options->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL) && !ccnr)
+	    msg (M_USAGE, "--auth-user-pass-optional %s", postfix);
 	}
+
+	if ((options->ssl_flags & SSLF_NO_NAME_REMAPPING) && script_method == SM_SYSTEM)
+	  msg (M_USAGE, "--script-security method='system' cannot be combined with --no-name-remapping");
     }
   else
     {
@@ -1735,10 +1746,12 @@ options_postprocess_verify_ce (const struct options *options, const struct conne
 	msg (M_USAGE, "--duplicate-cn requires --mode server");
       if (options->cf_max || options->cf_per)
 	msg (M_USAGE, "--connect-freq requires --mode server");
-      if (options->client_cert_not_required)
+      if (options->ssl_flags & SSLF_CLIENT_CERT_NOT_REQUIRED)
 	msg (M_USAGE, "--client-cert-not-required requires --mode server");
-      if (options->username_as_common_name)
+      if (options->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME)
 	msg (M_USAGE, "--username-as-common-name requires --mode server");
+      if (options->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL)
+	msg (M_USAGE, "--auth-user-pass-optional requires --mode server");
       if (options->auth_user_pass_verify_script)
 	msg (M_USAGE, "--auth-user-pass-verify requires --mode server");
 #if PORT_SHARE
@@ -2834,11 +2847,14 @@ parse_line (const char *line,
 	  if (backslash && out)
 	    {
 	      if (!(out == '\\' || out == '\"' || space (out)))
+		{
 #ifdef ENABLE_SMALL
-		msg (msglevel, "%sOptions warning: Bad backslash ('\\') usage in %s:%d", error_prefix, file, line_num);
+		  msg (msglevel, "%sOptions warning: Bad backslash ('\\') usage in %s:%d", error_prefix, file, line_num);
 #else
-		msg (msglevel, "%sOptions warning: Bad backslash ('\\') usage in %s:%d: remember that backslashes are treated as shell-escapes and if you need to pass backslash characters as part of a Windows filename, you should use double backslashes such as \"c:\\\\" PACKAGE "\\\\static.key\"", error_prefix, file, line_num);
+		  msg (msglevel, "%sOptions warning: Bad backslash ('\\') usage in %s:%d: remember that backslashes are treated as shell-escapes and if you need to pass backslash characters as part of a Windows filename, you should use double backslashes such as \"c:\\\\" PACKAGE "\\\\static.key\"", error_prefix, file, line_num);
 #endif
+		  return 0;
+		}
 	    }
 	  backslash = false;
 	}
@@ -3260,6 +3276,12 @@ no_more_than_n_args (const int msglevel,
     return true;
 }
 
+static inline int
+msglevel_forward_compatible (struct options *options, const int msglevel)
+{
+  return options->forward_compatible ? M_WARN : msglevel;
+}
+
 static void
 add_option (struct options *options,
 	    char *p[],
@@ -3273,6 +3295,7 @@ add_option (struct options *options,
 {
   struct gc_arena gc = gc_new ();
   const bool pull_mode = BOOL_CAST (permission_mask & OPT_P_PULL_MODE);
+  int msglevel_fc = msglevel_forward_compatible (options, msglevel);
 
   ASSERT (MAX_PARMS >= 5);
   if (!file)
@@ -3832,9 +3855,9 @@ add_option (struct options *options,
 
       VERIFY_PERMISSION (OPT_P_GENERAL);
       version = atoi (p[1]);
-      if (version < 1 || version > 2)
+      if (version < 1 || version > 3)
 	{
-	  msg (msglevel, "--status-version must be 1 or 2");
+	  msg (msglevel, "--status-version must be 1 to 3");
 	  goto err;
 	}
       options->status_file_version = version;
@@ -4370,6 +4393,11 @@ add_option (struct options *options,
   else if (streq (p[0], "setenv") && p[1])
     {
       VERIFY_PERMISSION (OPT_P_GENERAL);
+      if (streq (p[1], "FORWARD_COMPATIBLE") && p[2] && streq (p[2], "1"))
+	{
+	  options->forward_compatible = true;
+	  msglevel_fc = msglevel_forward_compatible (options, msglevel);
+	}
       setenv_str (es, p[1], p[2] ? p[2] : "");
     }
   else if (streq (p[0], "setenv-safe") && p[1])
@@ -4381,7 +4409,21 @@ add_option (struct options *options,
     {
       VERIFY_PERMISSION (OPT_P_GENERAL);
       script_security = atoi (p[1]);
-    }  
+      if (p[2])
+	{
+	  if (streq (p[2], "execve"))
+	    script_method = SM_EXECVE;
+	  else if (streq (p[2], "system"))
+	    script_method = SM_SYSTEM;
+	  else
+	    {
+	      msg (msglevel, "unknown --script-security method: %s", p[2]);
+	      goto err;
+	    }
+	}
+      else
+	script_method = SM_EXECVE;
+    }
   else if (streq (p[0], "mssfix"))
     {
       VERIFY_PERMISSION (OPT_P_GENERAL);
@@ -4492,7 +4534,8 @@ add_option (struct options *options,
       options->ifconfig_pool_defined = true;
       options->ifconfig_pool_start = start;
       options->ifconfig_pool_end = end;
-      options->ifconfig_pool_netmask = netmask;
+      if (netmask)
+	options->ifconfig_pool_netmask = netmask;
     }
   else if (streq (p[0], "ifconfig-pool-persist") && p[1])
     {
@@ -4559,12 +4602,22 @@ add_option (struct options *options,
   else if (streq (p[0], "client-cert-not-required"))
     {
       VERIFY_PERMISSION (OPT_P_GENERAL);
-      options->client_cert_not_required = true;
+      options->ssl_flags |= SSLF_CLIENT_CERT_NOT_REQUIRED;
     }
   else if (streq (p[0], "username-as-common-name"))
     {
       VERIFY_PERMISSION (OPT_P_GENERAL);
-      options->username_as_common_name = true;
+      options->ssl_flags |= SSLF_USERNAME_AS_COMMON_NAME;
+    }
+  else if (streq (p[0], "auth-user-pass-optional"))
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->ssl_flags |= SSLF_AUTH_USER_PASS_OPTIONAL;
+    }
+  else if (streq (p[0], "no-name-remapping"))
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->ssl_flags |= SSLF_NO_NAME_REMAPPING;
     }
   else if (streq (p[0], "auth-user-pass-verify") && p[1])
     {
@@ -5522,9 +5575,9 @@ add_option (struct options *options,
   else
     {
       if (file)
-	msg (msglevel, "Unrecognized option or missing parameter(s) in %s:%d: %s (%s)", file, line, p[0], PACKAGE_VERSION);
+	msg (msglevel_fc, "Unrecognized option or missing parameter(s) in %s:%d: %s (%s)", file, line, p[0], PACKAGE_VERSION);
       else
-	msg (msglevel, "Unrecognized option or missing parameter(s): --%s (%s)", p[0], PACKAGE_VERSION);
+	msg (msglevel_fc, "Unrecognized option or missing parameter(s): --%s (%s)", p[0], PACKAGE_VERSION);
     }
  err:
   gc_free (&gc);
