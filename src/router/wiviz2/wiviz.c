@@ -102,7 +102,6 @@ if (!strcmp(argv[1],"terminate"))
     }
 #else
     oldMonitor=0;
-    sysprintf("ifconfig prism0 down");
     wl_ioctl(wl_dev, WLC_SET_MONITOR, &oldMonitor, 4);
 #endif  
     return 0;  
