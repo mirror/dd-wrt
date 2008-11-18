@@ -26,7 +26,7 @@
 .\" LP paragraph
 .\" IP indented paragraph
 .\" TP hanging label
-.TH openvpn 8 "3 August 2005"
+.TH openvpn 8 "4 November 2008"
 .\"*********************************************************
 .SH NAME
 openvpn \- secure IP tunnel daemon.
@@ -102,6 +102,7 @@ openvpn \- secure IP tunnel daemon.
 [\ \fB\-\-askpass\fR\ \fI[file]\fR\ ]
 [\ \fB\-\-auth\-nocache\fR\ ]
 [\ \fB\-\-auth\-retry\fR\ \fItype\fR\ ]
+[\ \fB\-\-auth\-user\-pass\-optional\fR\ ]
 [\ \fB\-\-auth\-user\-pass\-verify\fR\ \fIscript\fR\ ]
 [\ \fB\-\-auth\-user\-pass\fR\ \fIup\fR\ ]
 [\ \fB\-\-auth\fR\ \fIalg\fR\ ]
@@ -202,6 +203,7 @@ openvpn \- secure IP tunnel daemon.
 [\ \fB\-\-mute\fR\ \fIn\fR\ ]
 [\ \fB\-\-nice\fR\ \fIn\fR\ ]
 [\ \fB\-\-no\-iv\fR\ ]
+[\ \fB\-\-no\-name\-remapping\fR\ ]
 [\ \fB\-\-no\-replay\fR\ ]
 [\ \fB\-\-bind\fR\ ]
 [\ \fB\-\-nobind\fR\ ]
@@ -2008,6 +2010,19 @@ Set a custom environmental variable
 to pass to script.
 .\"*********************************************************
 .TP
+.B --setenv FORWARD_COMPATIBLE 1
+Relax config file syntax checking so that unknown directives
+will trigger a warning but not a fatal error,
+on the assumption that a given unknown directive might be valid
+in future OpenVPN versions.
+
+This option should be used with caution, as there are good security
+reasons for having OpenVPN fail if it detects problems in a
+config file.  Having said that, there are valid reasons for wanting
+new software features to gracefully degrade when encountered by
+older software versions.
+.\"*********************************************************
+.TP
 .B --setenv-safe name value
 Set a custom environmental variable
 .B OPENVPN_name=value
@@ -2019,9 +2034,11 @@ is a safety precaution to prevent a LD_PRELOAD style attack
 from a malicious or compromised server.
 .\"*********************************************************
 .TP
-.B --script-security level
+.B --script-security level [method]
 This directive offers policy-level control over OpenVPN's usage of external programs
-and scripts.  Lower values are more restrictive, higher values are more permissive.  Settings for
+and scripts.  Lower
+.B level
+values are more restrictive, higher values are more permissive.  Settings for
 .B level:
 
 .B 0 --
@@ -2035,6 +2052,25 @@ Allow calling of built-in executables and user-defined scripts.
 .br
 .B 3 --
 Allow passwords to be passed to scripts via environmental variables (potentially unsafe).
+
+The
+.B method
+parameter indicates how OpenVPN should call external commands and scripts.
+Settings for
+.B method:
+
+.B execve --
+(default) Use execve() function on Unix family OSes and CreateProcess() on Windows.
+.br
+.B system --
+Use system() function (deprecated and less safe since the external program command
+line is subject to shell expansion).
+
+The
+.B --script-security
+option was introduced in OpenVPN 2.1_rc9.  For configuration file compatibility
+with previous OpenVPN versions, use:
+.B --script-security 3 system
 .\"*********************************************************
 .TP
 .B --disable-occ
@@ -2378,7 +2414,7 @@ signal.
 .B --status-version [n]
 Choose the status file format version number.  Currently
 .B n
-can be 1 or 2 and defaults to 1.
+can be 1, 2, or 3 and defaults to 1.
 .\"*********************************************************
 .TP
 .B --mute n
@@ -2627,8 +2663,9 @@ expands as follows:
  push "topology [topology]"
 
  if dev tun AND (topology == net30 OR topology == p2p):
-   ifconfig 10.8.0.1 10.8.0.2 
-   ifconfig-pool 10.8.0.4 10.8.0.251
+   ifconfig 10.8.0.1 10.8.0.2
+   if !nopool:
+     ifconfig-pool 10.8.0.4 10.8.0.251
    route 10.8.0.0 255.255.255.0
    if client-to-client:
      push "route 10.8.0.0 255.255.255.0"
@@ -2637,7 +2674,8 @@ expands as follows:
 
  if dev tap OR (dev tun AND topology == subnet):
    ifconfig 10.8.0.1 255.255.255.0
-   ifconfig-pool 10.8.0.2 10.8.0.254 255.255.255.0
+   if !nopool:
+     ifconfig-pool 10.8.0.2 10.8.0.254 255.255.255.0
    push "route-gateway 10.8.0.1"
 .ft
 .LP
@@ -3250,6 +3288,24 @@ For a sample script that performs PAM authentication, see
 in the OpenVPN source distribution.
 .\"*********************************************************
 .TP
+.B --auth-user-pass-optional
+Allow connections by clients that do not specify a username/password.
+Normally, when
+.B --auth-user-pass-verify
+or
+.B --management-client-auth
+is specified (or an authentication plugin module), the
+OpenVPN server daemon will require connecting clients to specify a
+username and password.  This option makes the submission of a username/password
+by clients optional, passing the responsibility to the user-defined authentication
+module/script to accept or deny the client based on other factors
+(such as the setting of X509 certificate fields).  When this option is used,
+and a connecting client does not submit a username/password, the user-defined
+authentication module/script will see the username and password as being set
+to empty strings ("").  The authentication module/script MUST have logic
+to detect this condition and respond accordingly.
+.\"*********************************************************
+.TP
 .B --client-cert-not-required
 Don't require client certificate, client will authenticate
 using username/password only.  Be aware that using this directive
@@ -3276,6 +3332,27 @@ For
 authentication, use
 the authenticated username as the common name,
 rather than the common name from the client cert.
+.\"*********************************************************
+.TP
+.B --no-name-remapping
+Allow Common Name, X509 Subject, and username strings to include
+any printable character including space, but excluding control
+characters such as tab, newline, and carriage-return.
+
+By default, OpenVPN will remap
+any character other than alphanumeric, underbar ('_'), dash
+('-'), dot ('.'), and slash ('/') to underbar ('_').  The X509
+Subject string as returned by the
+.B tls_id
+environmental variable, can additionally contain colon (':') or
+equal ('=').
+
+While name remapping is performed for security reasons to reduce
+the possibility of introducing string expansion security vulnerabilities
+in user-defined authentication
+scripts, this option is provided for those cases where it is desirable to
+disable the remapping feature.  Don't use this option unless you 
+know what you are doing!
 .\"*********************************************************
 .TP
 .B --port-share host port
@@ -5448,6 +5525,43 @@ Set prior to
 script execution only when the
 .B via-env
 modifier is specified.
+.\"*********************************************************
+.TP
+.B X509_{n}_{subject_field}
+An X509 subject field from the remote peer certificate,
+where
+.B n
+is the verification level.  Only set for TLS connections.  Set prior
+to execution of
+.B --tls-verify
+script.  This variable is similar to
+.B tls_id_{n}
+except the component X509 subject fields are broken out, and
+no string remapping occurs on these field values (except for remapping
+of control characters to "_").
+For example, the following variables would be set on the
+OpenVPN server using the sample client certificate
+in sample-keys (client.crt).
+Note that the verification level is 0 for the client certificate
+and 1 for the CA certificate.
+.RS
+.ft 3
+.nf
+.sp
+X509_0_emailAddress=me@myhost.mydomain
+X509_0_CN=Test-Client
+X509_0_O=OpenVPN-TEST
+X509_0_ST=NA
+X509_0_C=KG
+X509_1_emailAddress=me@myhost.mydomain
+X509_1_O=OpenVPN-TEST
+X509_1_L=BISHKEK
+X509_1_ST=NA
+X509_1_C=KG
+.ft
+.LP
+.RE
+.fi
 .\"*********************************************************
 .SH SIGNALS
 .TP

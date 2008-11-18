@@ -150,6 +150,9 @@ struct options
 # define MODE_SERVER         1
   int mode;
 
+  /* enable forward compatibility for post-2.1 features */
+  bool forward_compatible;
+
   /* persist parms */
   bool persist_config;
   int persist_mode;
@@ -385,10 +388,9 @@ struct options
   int max_clients;
   int max_routes_per_client;
 
-  bool client_cert_not_required;
-  bool username_as_common_name;
   const char *auth_user_pass_verify_script;
   bool auth_user_pass_verify_script_via_file;
+  unsigned int ssl_flags; /* set to SSLF_x flags from ssl.h */
 #if PORT_SHARE
   char *port_share_host;
   int port_share_port;
