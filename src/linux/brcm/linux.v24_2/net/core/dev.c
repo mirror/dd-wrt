@@ -2955,10 +2955,14 @@ static int net_run_sbin_hotplug(struct net_device *dev, char *action)
 {
 	char *argv[3], *envp[5], ifname[12 + IFNAMSIZ], action_str[32];
 	int i;
-
+	if (!strncmp(dev->name,"prism",5))
+	    {
+	    printk(KERN_EMERG "ignore hotplug for %s interface\n",dev->name);
+	    return 0;
+	    }
 	sprintf(ifname, "INTERFACE=%s", dev->name);
 	sprintf(action_str, "ACTION=%s", action);
-
+	
         i = 0;
         argv[i++] = hotplug_path;
         argv[i++] = "net";
@@ -2971,7 +2975,6 @@ static int net_run_sbin_hotplug(struct net_device *dev, char *action)
 	envp [i++] = ifname;
 	envp [i++] = action_str;
 	envp [i] = 0;
-	
 	return call_usermodehelper(argv [0], argv, envp);
 }
 #endif
