@@ -504,6 +504,7 @@ diag.h2="Diagnostics";
 diag.legend="Command Shell";
 diag.cmd="Commands";
 diag.startup="Startup";
+diag.shutdown="Shutdown";
 diag.firewall="Firewall";
 diag.custom="Custom Script";
 
