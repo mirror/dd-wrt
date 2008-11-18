@@ -523,7 +523,7 @@ void
 init_options_dev (struct options *options)
 {
   if (!options->dev)
-    options->dev = dev_component_in_dev_node (options->dev_node);
+    options->dev = openvpn_basename (options->dev_node);
 }
 
 bool
@@ -1756,7 +1756,7 @@ do_init_crypto_tls (struct context *c, const unsigned int flags)
   to.auth_user_pass_verify_script = options->auth_user_pass_verify_script;
   to.auth_user_pass_verify_script_via_file = options->auth_user_pass_verify_script_via_file;
   to.tmp_dir = options->tmp_dir;
-  to.username_as_common_name = options->username_as_common_name;
+  to.ssl_flags = options->ssl_flags;
   if (options->ccd_exclusive)
     to.client_config_dir_exclusive = options->client_config_dir;
 #endif
@@ -1999,8 +1999,13 @@ do_option_warnings (struct context *c)
 
   if (script_security >= SSEC_SCRIPTS)
     msg (M_WARN, "NOTE: the current --script-security setting may allow this configuration to call user-defined scripts");
-  if (script_security >= SSEC_PW_ENV)
+  else if (script_security >= SSEC_PW_ENV)
     msg (M_WARN, "WARNING: the current --script-security setting may allow passwords to be passed to scripts via environmental variables");
+  else
+    msg (M_WARN, "NOTE: " PACKAGE_NAME " 2.1 requires '--script-security 2' or higher to call user-defined scripts or executables");
+
+  if (script_method == SM_SYSTEM)
+    msg (M_WARN, "NOTE: --script-security method='system' is deprecated due to the fact that passed parameters will be subject to shell expansion");
 }
 
 static void
