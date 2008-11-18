@@ -213,6 +213,7 @@ sbutton.restore="Restore";
 sbutton.cptotext="Edit";
 sbutton.runcmd="Run Commands";
 sbutton.startup="Save Startup";
+sbutton.shutdown="Save Shutdown";
 sbutton.firewall="Save Firewall";
 sbutton.custom="Save Custom Script";
 sbutton.wol="Wake Up";
