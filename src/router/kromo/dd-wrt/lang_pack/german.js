@@ -177,6 +177,7 @@ sbutton.restore="Wiederherstellen";
 sbutton.cptotext="In den Textbereich kopieren";
 sbutton.runcmd="Kommandos ausführen";
 sbutton.startup="Startup speichern";
+sbutton.shutdown="Shutdown speichern";
 sbutton.firewall="Firewall speichern";
 sbutton.wol="Aufwecken";
 sbutton.add_wol="Host hinzufügen";
