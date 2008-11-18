@@ -45,6 +45,7 @@
  "https_enable"  "HTTPS Server"  "CHOICE" "2"  "0"  "1"  "TRUE" "0"
  "status_auth" "Status Site Authentication" "NULL"  "FALSE" "0"
  "rc_startup"  "Startup Script"  "NULL"  "FALSE" "0"
+ "rc_shutdown"  "Shutdown Script"  "NULL"  "FALSE" "0"
  "rc_firewall"  "Firewall Script"  "NULL"    "FALSE" "0"
  "rc_custom"  "Custom Script"  "NULL"    "FALSE" "0"
  "lan_gateway"  "LAN Gateway"  "MERGEIPADDRS"   "FALSE" "0"
