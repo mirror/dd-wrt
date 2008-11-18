@@ -4566,6 +4566,12 @@ _ACEOF
 
 
 
+cat >>confdefs.h <<\_ACEOF
+#define _GNU_SOURCE 1
+_ACEOF
+
+
+
 if test "${WIN32}" = "yes"; then
 
 	for ac_prog in man2html

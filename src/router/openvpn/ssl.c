@@ -392,6 +392,57 @@ extract_x509_field_ssl (X509_NAME *x509, const char *field_name, char *out, int 
   }
 }
 
+/*
+ * Save X509 fields to environment, using the naming convention:
+ *
+ *  X509_{cert_depth}_{name}={value}
+ */
+static void
+setenv_x509 (struct env_set *es, const int error_depth, X509_NAME *x509)
+{
+  int i, n;
+  int fn_nid;
+  ASN1_OBJECT *fn;
+  ASN1_STRING *val;
+  X509_NAME_ENTRY *ent;
+  const char *objbuf;
+  unsigned char *buf;
+  char *name_expand;
+  size_t name_expand_size;
+
+  n = X509_NAME_entry_count (x509);
+  for (i = 0; i < n; ++i)
+    {
+      ent = X509_NAME_get_entry (x509, i);
+      if (!ent)
+	continue;
+      fn = X509_NAME_ENTRY_get_object (ent);
+      if (!fn)
+	continue;
+      val = X509_NAME_ENTRY_get_data (ent);
+      if (!val)
+	continue;
+      fn_nid = OBJ_obj2nid (fn);
+      if (fn_nid == NID_undef)
+	continue;
+      objbuf = OBJ_nid2sn (fn_nid);
+      if (!objbuf)
+	continue;
+      buf = (unsigned char *)1; /* bug in OpenSSL 0.9.6b ASN1_STRING_to_UTF8 requires this workaround */
+      if (ASN1_STRING_to_UTF8 (&buf, val) <= 0)
+	continue;
+      name_expand_size = 64 + strlen (objbuf);
+      name_expand = (char *) malloc (name_expand_size);
+      check_malloc_return (name_expand);
+      openvpn_snprintf (name_expand, name_expand_size, "X509_%d_%s", error_depth, objbuf);
+      string_mod (name_expand, CC_PRINT, CC_CRLF, '_');
+      string_mod ((char*)buf, CC_PRINT, CC_CRLF, '_');
+      setenv_str (es, name_expand, (char*)buf);
+      free (name_expand);
+      OPENSSL_free (buf);
+    }
+}
+
 static void
 setenv_untrusted (struct tls_session *session)
 {
@@ -529,6 +580,15 @@ print_nsCertType (int type)
     }
 }
 
+static void
+string_mod_sslname (char *str, const unsigned int restrictive_flags, const unsigned int ssl_flags)
+{
+  if (ssl_flags & SSLF_NO_NAME_REMAPPING)
+    string_mod (str, CC_PRINT, CC_CRLF, '_');
+  else
+    string_mod (str, restrictive_flags, 0, '_');
+}
+
 /*
  * Our verify callback function -- check
  * that an incoming peer certificate is good.
@@ -564,8 +624,11 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
       goto err;
     }
 
+  /* Save X509 fields in environment */
+  setenv_x509 (opt->es, ctx->error_depth, X509_get_subject_name (ctx->current_cert));
+
   /* enforce character class restrictions in X509 name */
-  string_mod (subject, X509_NAME_CHAR_CLASS, 0, '_');
+  string_mod_sslname (subject, X509_NAME_CHAR_CLASS, opt->ssl_flags);
   string_replace_leading (subject, '-', '_');
 
   /* extract the common name */
@@ -580,7 +643,7 @@ verify_callback (int preverify_ok, X509_STORE_CTX * ctx)
 	}
     }
 
-  string_mod (common_name, COMMON_NAME_CHAR_CLASS, 0, '_');
+  string_mod_sslname (common_name, COMMON_NAME_CHAR_CLASS, opt->ssl_flags);
 
 #if 0 /* print some debugging info */
   msg (D_LOW, "LOCAL OPT: %s", opt->local_options);
@@ -1501,7 +1564,7 @@ init_ssl (const struct options *options)
 
   /* Require peer certificate verification */
 #if P2MP_SERVER
-  if (options->client_cert_not_required)
+  if (options->ssl_flags & SSLF_CLIENT_CERT_NOT_REQUIRED)
     {
       msg (M_WARN, "WARNING: POTENTIALLY DANGEROUS OPTION --client-cert-not-required may accept clients which do not present a certificate");
     }
@@ -2904,7 +2967,7 @@ verify_user_pass_script (struct tls_session *session, const struct user_pass *up
   bool ret = false;
 
   /* Is username defined? */
-  if (strlen (up->username))
+  if ((session->opt->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL) || strlen (up->username))
     {
       /* Set environmental variables prior to calling script */
       setenv_str (session->opt->es, "script_type", "user-pass-verify");
@@ -2971,7 +3034,7 @@ verify_user_pass_plugin (struct tls_session *session, const struct user_pass *up
   int retval = OPENVPN_PLUGIN_FUNC_ERROR;
 
   /* Is username defined? */
-  if (strlen (up->username))
+  if ((session->opt->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL) || strlen (up->username))
     {
       /* set username/password in private env space */
       setenv_str (session->opt->es, "username", raw_username);
@@ -3023,7 +3086,7 @@ verify_user_pass_management (struct tls_session *session, const struct user_pass
   int retval = KMDA_ERROR;
 
   /* Is username defined? */
-  if (strlen (up->username))
+  if ((session->opt->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL) || strlen (up->username))
     {
       /* set username/password in private env space */
       setenv_str (session->opt->es, "username", raw_username);
@@ -3282,9 +3345,12 @@ key_method_2_read (struct buffer *buf, struct tls_multi *multi, struct tls_sessi
       if (!read_string (buf, up->username, USER_PASS_LEN)
 	  || !read_string (buf, up->password, USER_PASS_LEN))
 	{
-	  msg (D_TLS_ERRORS, "TLS Error: Auth Username/Password was not provided by peer");
 	  CLEAR (*up);
-	  goto error;
+	  if (!(session->opt->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL))
+	    {
+	      msg (D_TLS_ERRORS, "TLS Error: Auth Username/Password was not provided by peer");
+	      goto error;
+	    }
 	}
 
       /* preserve raw username before string_mod remapping, for plugins */
@@ -3293,7 +3359,7 @@ key_method_2_read (struct buffer *buf, struct tls_multi *multi, struct tls_sessi
       string_mod (raw_username, CC_PRINT, CC_CRLF, '_');
 
       /* enforce character class restrictions in username/password */
-      string_mod (up->username, COMMON_NAME_CHAR_CLASS, 0, '_');
+      string_mod_sslname (up->username, COMMON_NAME_CHAR_CLASS, session->opt->ssl_flags);
       string_mod (up->password, CC_PRINT, CC_CRLF, '_');
 
       /* call plugin(s) and/or script */
@@ -3307,7 +3373,7 @@ key_method_2_read (struct buffer *buf, struct tls_multi *multi, struct tls_sessi
 	s2 = verify_user_pass_script (session, up);
 
       /* check sizing of username if it will become our common name */
-      if (session->opt->username_as_common_name && strlen (up->username) >= TLS_CN_LEN)
+      if ((session->opt->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME) && strlen (up->username) >= TLS_CN_LEN)
 	{
 	  msg (D_TLS_ERRORS, "TLS Auth Error: --username-as-common name specified and username is longer than the maximum permitted Common Name length of %d characters", TLS_CN_LEN);
 	  s1 = OPENVPN_PLUGIN_FUNC_ERROR;
@@ -3330,12 +3396,16 @@ key_method_2_read (struct buffer *buf, struct tls_multi *multi, struct tls_sessi
 	    ks->auth_deferred = true;
 #endif
 	    
-	  if (session->opt->username_as_common_name)
+	  if ((session->opt->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME))
 	    set_common_name (session, up->username);
 	  msg (D_HANDSHAKE, "TLS: Username/Password authentication %s for username '%s' %s",
-	       s1 == OPENVPN_PLUGIN_FUNC_SUCCESS ? "succeeded" : "deferred",
+#ifdef ENABLE_DEF_AUTH
+	       ks->auth_deferred ? "deferred" : "succeeded",
+#else
+	       "succeeded",
+#endif
 	       up->username,
-	       session->opt->username_as_common_name ? "[CN SET]" : "");
+	       (session->opt->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME) ? "[CN SET]" : "");
 	}
       else
 	{
