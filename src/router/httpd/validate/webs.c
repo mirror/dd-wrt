@@ -978,6 +978,22 @@ void ping_startup( webs_t wp )
 
 }
 
+void ping_shutdown( webs_t wp )
+{
+    char *shutdown = websGetVar( wp, "ping_ip", NULL );
+
+    // filter Windows <cr>ud
+    removeLineBreak( shutdown );
+
+    nvram_set( "rc_shutdown", shutdown );
+    nvram_commit(  );
+    nvram2file( "rc_shutdown", "/tmp/.rc_shutdown" );
+    chmod( "/tmp/.rc_shutdown", 0700 );
+
+    return;
+
+}
+
 void ping_firewall( webs_t wp )
 {
     char *firewall = websGetVar( wp, "ping_ip", NULL );

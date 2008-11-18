@@ -451,6 +451,7 @@ diag.h2="Diagnose";
 diag.legend="Kommandozeile";
 diag.cmd="Kommandos";
 diag.startup="Startup";
+diag.shutdown="Shutdown";
 diag.firewall="Firewall";
 
 //help container

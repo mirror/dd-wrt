@@ -13,6 +13,8 @@ function to_submit(F, I) {
 	}
 	else if (I == "startup")
 		F.startup.value = sbutton.saving;
+	else if (I == "shutdown")
+		F.shutdown.value = sbutton.saving;
 	else if (I == "firewall")
 		F.firewall.value = sbutton.saving;
 	else if (I == "custom")
@@ -100,6 +102,20 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<% nvram_match("rc_startup", "", "-->"); %>
+
+							<% nvram_match("rc_shutdown", "", "<!--"); %>
+							<fieldset>
+								<legend><% tran("diag.shutdown"); %></legend>
+								<pre id="shutdown"><% nvram_get("rc_shutdown"); %></pre><br />
+								<div class="center">
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"button_shutdown\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('shutdown').firstChild.data\" />")
+									//]]>
+									</script>
+								</div>
+							</fieldset><br />
+							<% nvram_match("rc_shutdown", "", "-->"); %>
 							
 							<% nvram_match("rc_firewall", "", "<!--"); %>
 							<fieldset>
@@ -134,6 +150,7 @@ addEvent(window, "unload", function() {
 								//<![CDATA[
 								document.write("<input class=\"button\" type=\"button\" name=\"ping\" value=\"" + sbutton.runcmd + "\" onclick=\"to_submit(this.form, 'start');\" />")
 								document.write("<input class=\"button\" type=\"button\" name=\"startup\" value=\"" + sbutton.startup + "\" onclick=\"to_submit(this.form, 'startup');\" />")
+								document.write("<input class=\"button\" type=\"button\" name=\"shutdown\" value=\"" + sbutton.shutdown + "\" onclick=\"to_submit(this.form, 'shutdown');\" />")
 								document.write("<input class=\"button\" type=\"button\" name=\"firewall\" value=\"" + sbutton.firewall + "\" onclick=\"to_submit(this.form, 'firewall');\" />")
 								document.write("<input class=\"button\" type=\"button\" name=\"custom\" value=\"" + sbutton.custom + "\" onclick=\"to_submit(this.form, 'custom');\" />")
 								//]]>
