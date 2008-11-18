@@ -696,8 +696,13 @@ int main( int argc, char **argv )
 #ifndef HAVE_RB500
 		stop_service( "resetbutton" );
 #endif
-		start_service( "create_rc_shutdown" );
-		system( "/tmp/.rc_shutdown" );
+#ifdef HAVE_REGISTER
+		if( isregistered_real(  ) )
+#endif
+		{
+		    start_service( "create_rc_shutdown" );
+		    system( "/tmp/.rc_shutdown" );
+		}
 		if( state == STOP )
 		{
 		    state = IDLE;
