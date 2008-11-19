@@ -261,6 +261,8 @@
  "sshd_wanport"  "SSH WAN Port"  "RANGE"  "1"  "65535"  "TRUE" "0"
  "remote_mgt_telnet"  "Remote Management by Telnet" "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "telnet_wanport"  "Telnet WAN Port"  "RANGE"  "1"  "65535"  "TRUE" "0"
+ "remote_ip_any"  "Remote mgmt IP any" "CHOICE" "2" "0"  "1"  "FALSE" "0"
+ "remote_ip"  "Remote mgmt IPs" "MERGEREMOTEIP" "FALSE" "0"
  "radio0_on_time" "Time restriction for radio signal" "NULL" "TRUE" "0"
  "radio1_on_time" "Time restriction for radio signal" "NULL" "TRUE" "0"
  "radio0_timer_enable"  "Radio Time restriction activation"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
