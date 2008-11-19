@@ -7561,18 +7561,21 @@ void ej_show_rflowif( webs_t wp, int argc, char_t ** argv )
 	       ? "selected=\"selected\"" : "" );
 
     char *lanifs = nvram_safe_get( "lan_ifnames" );
-    char tmp[128];
-    char *lanif;
+    char *next;
+    char var[80];
 
-    if( strlen( lanifs ) != 0 )
+    foreach( var, lanifs, next )
     {
-	strcpy( tmp, lanifs );
-	lanif = strtok( tmp, " " );
-	websWrite( wp, "<option value=\"%s\" %s >LAN</option>\n",
-		   lanif, nvram_match( "rflow_if",
-				       lanif ) ? "selected=\"selected\"" :
-		   "" );
+	if (nvram_match("wan_ifname",var))
+	    continue;
+	if (!ifexists(var))
+	    continue;
+	websWrite( wp, "<option value=\"%s\" %s >%s</option>\n",
+		   var, nvram_match( "rflow_if",
+				       var ) ? "selected=\"selected\"" :
+		   "",var );
     }
+
 
     websWrite( wp, "<option value=\"%s\" %s >WLAN</option>\n",
 	       nvram_safe_get( "wl0_ifname" ), nvram_match( "rflow_if",
