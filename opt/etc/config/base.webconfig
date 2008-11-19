@@ -105,6 +105,7 @@
 		</div>
 		<div class="setting" id="idremip">
 			<div class="label"><% tran("management.remote_ip"); %></div>
+			<input type="hidden" name="remote_ip" value="4" />
 			<input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,223,'IP')" value="<% get_single_ip("remote_ip","0"); %>" name="remote_ip_0" /> .
             <input class="num" maxLength="3" size="3" onBlur="valid_range(this,0,255,'IP')" value="<% get_single_ip("remote_ip","1"); %>" name="remote_ip_1" /> .
             <input class="num" maxLength="3" size="3" onBlur="valid_range(this,0,255,'IP')" value="<% get_single_ip("remote_ip","2"); %>" name="remote_ip_2" /> .
