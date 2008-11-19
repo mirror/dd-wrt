@@ -651,7 +651,7 @@ static void nat_prerouting( void )
 
 		foreach(var, wordlist, next) {
 			save2file("-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
-			  "-j DNAT --to-destination %s:%d\n",
+			  "-j DNAT --to-destination %s:%s\n",
 			  var, wanaddr, nvram_safe_get("sshd_wanport"),
 			  nvram_safe_get("lan_ipaddr"), nvram_safe_get( "sshd_port" ));
 		}
