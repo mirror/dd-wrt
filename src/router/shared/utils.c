@@ -409,6 +409,24 @@ int get_single_ip( char *ipaddr, int which )
     return ip[which];
 }
 
+char *
+get_complete_ip(char *from, char *to)
+{
+	static char ipaddr[20];
+
+	int i[4]; 
+
+	if(!from || !to)
+		return "0.0.0.0";
+
+	if(sscanf(from,"%d.%d.%d.%d",&i[0],&i[1],&i[2],&i[3]) != 4)
+                 return "0.0.0.0";
+
+	snprintf(ipaddr, sizeof(ipaddr), "%d.%d.%d.%s", i[0],i[1],i[2],to);
+
+	return ipaddr;
+}
+
 char *get_complete_lan_ip( char *ip )
 {
     static char ipaddr[20];
