@@ -604,34 +604,83 @@ static void parse_spec_forward( char *wordlist )
 
 static void nat_prerouting( void )
 {
+	char var[256], *wordlist, *next;
+	char from[100], to[100];
+	char *remote_ip_any = nvram_safe_get("remote_ip_any");
+	char *remote_ip = nvram_safe_get("remote_ip");
     /*
      * Enable remote Web GUI management 
      */
-    if( remotemanage )
-	save2file( "-A PREROUTING -p tcp -m tcp -d %s --dport %s "
-		   "-j DNAT --to-destination %s:%d\n", wanaddr,
-		   nvram_safe_get( "http_wanport" ),
-		   nvram_safe_get( "lan_ipaddr" ), web_lanport );
+    if( remotemanage ) {
+	if(!strcmp(remote_ip_any, "1")) {
+		save2file("-A PREROUTING -p tcp -m tcp -d %s --dport %s "
+			"-j DNAT --to-destination %s:%d\n",
+			wanaddr, nvram_safe_get("http_wanport"),
+			nvram_safe_get("lan_ipaddr"), web_lanport);
+	}
+	else {
+		sscanf(remote_ip, "%s %s", from, to);
+
+		wordlist = range(from, get_complete_ip(from,to));
+
+		foreach(var, wordlist, next) {
+			save2file("-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
+			  "-j DNAT --to-destination %s:%d\n",
+			  var, wanaddr, nvram_safe_get("http_wanport"),
+			  nvram_safe_get("lan_ipaddr"), web_lanport);
+		}
+	}
+    }
 
 #ifdef HAVE_SSHD
     /*
      * Enable remote ssh management : Botho 03-05-2006 
      */
-    if( remotessh )
+    if( remotessh ) {
+	if(!strcmp(remote_ip_any, "1")) {
 	save2file( "-A PREROUTING -p tcp -m tcp -d %s --dport %s "
 		   "-j DNAT --to-destination %s:%s\n", wanaddr,
 		   nvram_safe_get( "sshd_wanport" ),
 		   nvram_safe_get( "lan_ipaddr" ),
 		   nvram_safe_get( "sshd_port" ) );
+	}
+	else {
+		sscanf(remote_ip, "%s %s", from, to);
+
+		wordlist = range(from, get_complete_ip(from,to));
+
+		foreach(var, wordlist, next) {
+			save2file("-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
+			  "-j DNAT --to-destination %s:%d\n",
+			  var, wanaddr, nvram_safe_get("sshd_wanport"),
+			  nvram_safe_get("lan_ipaddr"), nvram_safe_get( "sshd_port" ));
+		}
+	}
+    }
 #else
     /*
      * Enable remote telnet management 
      */
-    if( remotetelnet )
+    if( remotetelnet ) {
+	if(!strcmp(remote_ip_any, "1")) {	    
 	save2file( "-A PREROUTING -p tcp -m tcp -d %s --dport %s "
 		   "-j DNAT --to-destination %s:23\n", wanaddr,
 		   nvram_safe_get( "telnet_wanport" ),
 		   nvram_safe_get( "lan_ipaddr" ) );
+	}
+	else {
+		sscanf(remote_ip, "%s %s", from, to);
+
+		wordlist = range(from, get_complete_ip(from,to));
+
+		foreach(var, wordlist, next) {
+			save2file("-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
+			  "-j DNAT --to-destination %s:23\n",
+			  var, wanaddr, nvram_safe_get("sshd_wanport"),
+			  nvram_safe_get("lan_ipaddr") );
+		}
+	}
+    }	
 #endif
 
     /*
