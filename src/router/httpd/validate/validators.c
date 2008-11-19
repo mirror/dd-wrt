@@ -877,6 +877,24 @@ void validate_lan_ipaddr( webs_t wp, char *value, struct variable *v )
 
 }
 
+void
+validate_remote_ip(webs_t wp, char *value, struct variable *v)
+{
+	char from[20], *to;
+	char remote_ip[254];
+
+		get_merge_ipaddr(wp, v->name, from);		
+		to = websGetVar(wp, "remote_ip_4", NULL);
+		
+		if( !valid_ipaddr( wp, from, v ) )
+		return;
+
+		snprintf(remote_ip, sizeof(remote_ip), "%s %s", from, to);
+		nvram_set("remote_ip", remote_ip);
+
+}
+
+
 #define SRL_VALID(v)        (((v) > 0) && ((v) <= 15))
 #define SFBL_VALID(v)       (((v) > 0) && ((v) <= 15))
 #define LRL_VALID(v)        (((v) > 0) && ((v) <= 15))
