@@ -1038,7 +1038,7 @@ void start_sysinit( void )
 	    nvram_set( "wl0_ifname", "eth1" );
 	    if( nvram_match( "vlan1ports", "5u" ) )	//correct bad parameters
 	    {
-		nvram_set( "vlan1ports", "4 5u" );
+		nvram_set( "vlan1ports", "4 5" );
 		nvram_set( "vlan0ports", "0 1 2 3 5*" );
 	    }
 	    if( !nvram_match( "no_sercom", "1" ) )
