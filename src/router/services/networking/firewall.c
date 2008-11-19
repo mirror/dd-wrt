@@ -606,7 +606,7 @@ static void nat_prerouting( void )
 {
 	char var[256], *wordlist, *next;
 	char from[100], to[100];
-	char *remote_ip_any = nvram_safe_get("remote_ip_any");
+	char *remote_ip_any = nvram_default_get("remote_ip_any", "1");
 	char *remote_ip = nvram_safe_get("remote_ip");
     /*
      * Enable remote Web GUI management 
