@@ -165,6 +165,7 @@ extern void validate_ntp( webs_t wp, char *value, struct variable *v );
 extern void validate_catchall( webs_t wp, char *value, struct variable *v );
 extern void validate_lan_ipaddr( webs_t wp, char *value, struct variable *v );
 extern void validate_wan_ipaddr( webs_t wp, char *value, struct variable *v );
+extern void validate_remote_ip(webs_t wp, char *value, struct variable *v);
 extern void validate_portsetup( webs_t wp, char *value, struct variable *v );
 extern void clone_mac( webs_t wp );
 extern void dhcpfwd( webs_t wp );
