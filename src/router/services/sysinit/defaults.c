@@ -478,6 +478,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
 #endif
 
+    {"remote_ip_any", "1", 0},	/* allowed remote ip */
+    {"remote_ip", "0.0.0.0 0", 0},		/* allowed remote ip range */
     {"http_wanport", "8080", 0},	/* WAN port to listen on */
     {"http_lanport", "80", 0},	/* LAN port to listen on */
     {"http_enable", "1", 0},	/* HTTP server enable/disable */
