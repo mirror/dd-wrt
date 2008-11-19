@@ -328,6 +328,14 @@ void Initnvramtab(  )
 		    {
 			tmp->validatename = "validate_wan_ipaddr";
 		    }
+		    if( !stricmp( tmpstr, "MERGEREMOTEIP" ) )
+		    {
+			tmp->validatename = "validate_remote_ip";
+			tmp->argv =
+			    ( char ** )malloc( sizeof( char ** ) * 2 );
+			tmp->argv[0] = getFileString( in );
+			tmp->argv[1] = NULL;
+		    }
 		    if( !stricmp( tmpstr, "MERGEIPADDRS" ) )
 		    {
 			tmp->validatename = "validate_merge_ipaddrs";
