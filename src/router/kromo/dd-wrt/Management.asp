@@ -164,6 +164,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.ipv6_enable0,'idipv6', <% nvram_else_match("ipv6_enable0", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_mgt_ssh, 'idssh', <% nvram_else_match("remote_mgt_ssh", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_mgt_telnet, 'idtelnet', <% nvram_else_match("remote_mgt_telnet", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.remote_ip_any, 'idremip', <% nvram_else_match("remote_ip_any", "1", "0", "1"); %> == 1);
 	show_layer_ext(document.setup.remote_management, 'idhttpd', <% nvram_else_match("remote_management", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.status_auth, 'idsysinfo', <% nvram_else_match("status_auth", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.cron_enable, 'idcron', <% nvram_else_match("cron_enable", "1", "1", "0"); %> == 1);
