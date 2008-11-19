@@ -93,6 +93,19 @@
 			</script></span>
 		</div>
 		<% ifdef("SSHD", "-->"); %>
+		<div class="setting">
+			<div class="label"><% tran("management.remote_allowanyip"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="remote_ip_any" onclick="show_layer_ext(this, 'idremip', false)" <% nvram_checked("remote_ip_any","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="remote_ip_any" onclick="show_layer_ext(this, 'idremip', true)" <% nvram_checked("remote_ip_any","0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting" id="idremip">
+			<div class="label"><% tran("management.remote_ip"); %></div>
+			<input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,223,'IP')" value="<% get_single_ip("remote_ip","0"); %>" name="remote_ip_0" /> .
+            <input class="num" maxLength="3" size="3" onBlur="valid_range(this,0,255,'IP')" value="<% get_single_ip("remote_ip","1"); %>" name="remote_ip_1" /> .
+            <input class="num" maxLength="3" size="3" onBlur="valid_range(this,0,255,'IP')" value="<% get_single_ip("remote_ip","2"); %>" name="remote_ip_2" /> .
+            <input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,254,'IP')" value="<% get_single_ip("remote_ip","3"); %>" name="remote_ip_3" /> <% tran("share.to"); %>
+            <input class="num" maxLength="3" size="3" onBlur="valid_range(this,1,254,'IP')" value="<% nvram_list("remote_ip", "1"); %>" name="remote_ip_4" />	
+		</div>
 	</fieldset><br />
 	
 	<% nvram_match("boot_wait_web","0","<!--"); %>
