@@ -404,6 +404,7 @@ extern int dns_to_resolv( void );
 extern char *get_wan_face( void );
 
 extern int check_wan_link( int num );
+extern char *get_complete_ip(char *from, char *to);
 extern char *get_complete_lan_ip( char *ip );
 extern int get_int_len( int num );
 extern int file_to_buf( char *path, char *buf, int len );
