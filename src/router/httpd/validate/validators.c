@@ -882,10 +882,12 @@ validate_remote_ip(webs_t wp, char *value, struct variable *v)
 {
 	char from[20], *to;
 	char remote_ip[254];
+	char name[32];
 
 		get_merge_ipaddr(wp, v->name, from);
 	
-		to = websGetVar(wp, "remote_ip_4", NULL);
+		snprintf( name, sizeof( name ), "%s_4", v->name );
+		to = websGetVar(wp, name, NULL);
 	
 		if( !valid_ipaddr( wp, from, v ) )
 		return;
