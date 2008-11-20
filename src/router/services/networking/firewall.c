@@ -607,12 +607,16 @@ static void nat_prerouting( void )
 	char var[256], *wordlist, *next;
 	char from[100], to[100];
 	char *remote_ip_any = nvram_default_get("remote_ip_any", "1");
-	char *remote_ip = nvram_safe_get("remote_ip");
+	char *remote_ip = nvram_default_get("remote_ip", "0.0.0.0 0");
+	int remote_any = 0;
+	
+	if ((!strcmp(remote_ip_any, "1") || (strncmp(remote_ip, "0.0.0.0", 7))
+		remote_any = 1;
     /*
      * Enable remote Web GUI management 
      */
     if( remotemanage ) {
-	if(!strcmp(remote_ip_any, "1")) {
+	if( remote_any ) {
 		save2file("-A PREROUTING -p tcp -m tcp -d %s --dport %s "
 			"-j DNAT --to-destination %s:%d\n",
 			wanaddr, nvram_safe_get("http_wanport"),
@@ -637,7 +641,7 @@ static void nat_prerouting( void )
      * Enable remote ssh management : Botho 03-05-2006 
      */
     if( remotessh ) {
-	if(!strcmp(remote_ip_any, "1")) {
+	if( remote_any ) {
 	save2file( "-A PREROUTING -p tcp -m tcp -d %s --dport %s "
 		   "-j DNAT --to-destination %s:%s\n", wanaddr,
 		   nvram_safe_get( "sshd_wanport" ),
@@ -662,7 +666,7 @@ static void nat_prerouting( void )
      * Enable remote telnet management 
      */
     if( remotetelnet ) {
-	if(!strcmp(remote_ip_any, "1")) {	    
+	if( remote_any ) {	    
 	save2file( "-A PREROUTING -p tcp -m tcp -d %s --dport %s "
 		   "-j DNAT --to-destination %s:23\n", wanaddr,
 		   nvram_safe_get( "telnet_wanport" ),
