@@ -56,7 +56,7 @@ u8 *find_board_config(char *flash_limit)
 
 	if (!found) {
 		addr = NULL;
-		if (strstr((char*)(0xbfc00010),"CA804.SOB") || strstr((char*)(0xbfc00010),"CE801.SOB") || strstr((char*)(0xbfc00010),"OVISCA401") || strstr((char*)(0xbfc00010),"OVISCE401"))
+		if (strstr((char*)(0xbfc00010),"CA804.SOB") || strstr((char*)(0xbfc00010),"CE801.SOB") || strstr((char*)(0xbfc00010),"OVISCA401") || strstr((char*)(0xbfc00010),"OVISCE401") || strstr((char*)(0xbfc00010),"RCAAO1") || strstr((char*)(0xbfc00010),"RDAT81.SOB"))
 		 {
 		
  		printk("WARNING: No board configuration data found, creating defaults in memory!\n");
@@ -74,6 +74,12 @@ u8 *find_board_config(char *flash_limit)
  		default_config.cntFreq=0x055d4a80;
  		default_config.pciId=0x13;
  		default_config.memCap=0x800f;
+		if (strstr((char*)(0xbfc00010),"RCAAO1") || strstr((char*)(0xbfc00010),"RDAT81.SOB"))
+		{
+ 		default_config.config=0 | BD_ENET1 | BD_UART0 | BD_RSTFACTORY | BD_SYSLED | BD_WLAN1 | BD_WLAN1_2G_EN | BD_WLAN1_5G_EN;		
+		}
+
+
 		memcpy(wmac,(char*)0xbfc00044,6);
 	x=0x100;
 	for (i=0; i<6; i++) {
