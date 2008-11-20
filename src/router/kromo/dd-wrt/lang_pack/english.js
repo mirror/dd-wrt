@@ -284,6 +284,8 @@ errmsg.err31=" value is illegal.";
 errmsg.err32="IP address and gateway is not at same subnet mask.";
 errmsg.err33="IP address and gateway can't be same.";
 errmsg.err34=" is not allowed to contain a space.";
+errmsg.err110="End number must be bigger then start number";
+errmsg.err111="Invalid IP address";
 
 //Wol.asp error messages
 errmsg.err35="You must input a MAC address to run.";

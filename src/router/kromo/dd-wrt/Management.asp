@@ -139,6 +139,18 @@ function submitcheck(F) {
 		else
 			F.info_passwd.value = 0;
 	}
+	
+	if(F.remote_ip_any[1].checked == true){
+		if(F.remote_ip_0.value == "0" && F.remote_ip_1.value == "0" && F.remote_ip_2.value == "0" && F.remote_ip_3.value == "0" ) {
+			alert(errmsg.err111);
+			return false;
+		}
+		if(parseInt(F.remote_ip_3.value) > parseInt(F.remote_ip_4.value)) {
+			alert(errmsg.err110);
+			F.remote_ip_4.focus();
+			return false;
+		}
+	}
 
 	F.save_button.value = sbutton.saving;
 	return true;
