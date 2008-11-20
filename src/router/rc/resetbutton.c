@@ -238,6 +238,8 @@ int getbuttonstate(  )
 
 #ifdef HAVE_STORM	
 	ret = read_bit(60);
+#elif HAVE_CAMBRIA
+	ret = read_bit( 20 );
 #else
     if( isCompex(  ) )
 	ret = read_bit( 0 );
