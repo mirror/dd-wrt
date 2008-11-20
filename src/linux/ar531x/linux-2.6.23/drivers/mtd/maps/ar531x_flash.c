@@ -175,9 +175,9 @@ int __init init_ar531x(void)
 			    if (retlen != mymtd->erasesize) 
 				goto out;
 	
-			    if (strstr(buf+0x10,"CA804.SOB") || strstr(buf+0x10,"CE801.SOB") || strstr(buf+0x10,"OVISCA401") || strstr(buf+0x10,"OVISCE401")) {
+			    if (strstr(buf+0x10,"CA804.SOB") || strstr(buf+0x10,"CE801.SOB") || strstr(buf+0x10,"OVISCA401") || strstr(buf+0x10,"OVISCE401") || strstr(buf+0x10,"RCAAO1") || strstr((char*)(0xbfc00010),"RDAT81.SOB")) {
 				image_info = buf+0x56;
-				ar531x_partitions[2].size = 0x400000 - 0x70000;	/* Velikost kernelu */
+			    ar531x_partitions[2].size = mymtd->size - 0x70000;	/* Velikost kernelu */
 			    int offset = 0x0;
 			    char *buf = 0xbfc00000;
 			    while((offset+mymtd->erasesize)<mymtd->size)
@@ -187,6 +187,8 @@ int __init init_ar531x(void)
 				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 					ar531x_partitions[3].offset=offset;					
 					ar531x_partitions[3].size = ar531x_partitions[2].size-(offset-0x50000);					
+					ar531x_partitions[5].offset=mymtd->size-mymtd->erasesize; 
+					ar531x_partitions[4].offset=mymtd->size-(mymtd->erasesize*2); 
 					break;
 				    } 
 			    offset+=mymtd->erasesize;
