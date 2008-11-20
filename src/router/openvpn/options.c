@@ -384,6 +384,8 @@ static const char usage_message[] =
   "                  run script cmd to verify.  If method='via-env', pass\n"
   "                  user/pass via environment, if method='via-file', pass\n"
   "                  user/pass via temporary file.\n"
+  "--opt-verify    : Clients that connect with options that are incompatible\n"
+  "                  with those of the server will be disconnected.\n"
   "--auth-user-pass-optional : Allow connections by clients that don't\n"
   "                  specify a username/password.\n"
   "--no-name-remapping : Allow Common Name and X509 Subject to include\n"
@@ -400,6 +402,8 @@ static const char usage_message[] =
   "                  virtual address table to v.\n"
   "--bcast-buffers n : Allocate n broadcast buffers.\n"
   "--tcp-queue-limit n : Maximum number of queued TCP output packets.\n"
+  "--tcp-nodelay   : Macro that sets TCP_NODELAY socket flag on the server\n"
+  "                  as well as pushes it to connecting clients.\n"
   "--learn-address cmd : Run script cmd to validate client virtual addresses.\n"
   "--connect-freq n s : Allow a maximum of n new connections per s seconds.\n"
   "--max-clients n : Allow a maximum of n simultaneously connected clients.\n"
@@ -442,6 +446,8 @@ static const char usage_message[] =
   "--cipher alg    : Encrypt packets with cipher algorithm alg\n"
   "                  (default=%s).\n"
   "                  Set alg=none to disable encryption.\n"
+  "--prng alg [nsl] : For PRNG, use digest algorithm alg, and\n"
+  "                   nonce_secret_len=nsl.  Set alg=none to disable PRNG.\n"
 #ifdef HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH
   "--keysize n     : Size of cipher key in bits (optional).\n"
   "                  If unspecified, defaults to cipher-specific default.\n"
@@ -717,6 +723,8 @@ init_options (struct options *o, const bool init_gc)
   o->ciphername_defined = true;
   o->authname = "SHA1";
   o->authname_defined = true;
+  o->prng_hash = "SHA1";
+  o->prng_nonce_secret_len = 16;
   o->replay = true;
   o->replay_window = DEFAULT_SEQ_BACKTRACK;
   o->replay_time = DEFAULT_TIME_BACKTRACK;
@@ -1272,6 +1280,8 @@ show_settings (const struct options *o)
   SHOW_STR (ciphername);
   SHOW_BOOL (authname_defined);
   SHOW_STR (authname);
+  SHOW_STR (prng_hash);
+  SHOW_INT (prng_nonce_secret_len);
   SHOW_INT (keysize);
   SHOW_BOOL (engine);
   SHOW_BOOL (replay);
@@ -1752,6 +1762,12 @@ options_postprocess_verify_ce (const struct options *options, const struct conne
 	msg (M_USAGE, "--username-as-common-name requires --mode server");
       if (options->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL)
 	msg (M_USAGE, "--auth-user-pass-optional requires --mode server");
+      if (options->ssl_flags & SSLF_NO_NAME_REMAPPING)
+	msg (M_USAGE, "--no-name-remapping requires --mode server");
+      if (options->ssl_flags & SSLF_OPT_VERIFY)
+	msg (M_USAGE, "--opt-verify requires --mode server");
+      if (options->server_flags & SF_TCP_NODELAY_HELPER)
+	msg (M_USAGE, "--tcp-nodelay requires --mode server");
       if (options->auth_user_pass_verify_script)
 	msg (M_USAGE, "--auth-user-pass-verify requires --mode server");
 #if PORT_SHARE
@@ -2053,6 +2069,7 @@ options_postprocess_mutate (struct options *o)
    */
   helper_client_server (o);
   helper_keepalive (o);
+  helper_tcp_nodelay (o);
 
   options_postprocess_mutate_invariant (o);
 
@@ -4619,6 +4636,11 @@ add_option (struct options *options,
       VERIFY_PERMISSION (OPT_P_GENERAL);
       options->ssl_flags |= SSLF_NO_NAME_REMAPPING;
     }
+  else if (streq (p[0], "opt-verify"))
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->ssl_flags |= SSLF_OPT_VERIFY;
+    }
   else if (streq (p[0], "auth-user-pass-verify") && p[1])
     {
       VERIFY_PERMISSION (OPT_P_SCRIPT);
@@ -4779,6 +4801,11 @@ add_option (struct options *options,
     {
       VERIFY_PERMISSION (OPT_P_INSTANCE);
       options->disable = true;
+    }
+  else if (streq (p[0], "tcp-nodelay"))
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->server_flags |= SF_TCP_NODELAY_HELPER;
     }
 #endif /* P2MP_SERVER */
 
@@ -5157,6 +5184,28 @@ add_option (struct options *options,
     {
       VERIFY_PERMISSION (OPT_P_CRYPTO);
       options->ciphername_defined = true;
+    }
+  else if (streq (p[0], "prng") && p[1])
+    {
+      VERIFY_PERMISSION (OPT_P_CRYPTO);
+      if (streq (p[1], "none"))
+	options->prng_hash = NULL;
+      else
+	options->prng_hash = p[1];
+      if (p[2])
+	{
+	  const int sl = atoi (p[2]);
+	  if (sl >= NONCE_SECRET_LEN_MIN && sl <= NONCE_SECRET_LEN_MAX)
+	    {
+	      options->prng_nonce_secret_len = sl;
+	    }
+	  else
+	    {
+	      msg (msglevel, "prng parameter nonce_secret_len must be between %d and %d",
+		   NONCE_SECRET_LEN_MIN, NONCE_SECRET_LEN_MAX);
+	      goto err;
+	    }
+	}
     }
   else if (streq (p[0], "no-replay"))
     {
