@@ -610,7 +610,7 @@ static void nat_prerouting( void )
 	char *remote_ip = nvram_default_get("remote_ip", "0.0.0.0 0");
 	int remote_any = 0;
 	
-	if (!strcmp(remote_ip_any, "1") || strncmp(remote_ip, "0.0.0.0", 7))
+	if (!strcmp(remote_ip_any, "1") || !strncmp(remote_ip, "0.0.0.0", 7))
 		remote_any = 1;
     /*
      * Enable remote Web GUI management 
