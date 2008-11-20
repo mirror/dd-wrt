@@ -33,6 +33,209 @@
 #include <asm-arm/hardware.h>
 #include <asm-arm/arch-ixp4xx/ixp4xx-regs.h>
 
+extern spinlock_t gpio_lock;
+
+#define PLD_SCL_GPIO 6
+#define PLD_SDA_GPIO 7
+
+#define SCL_LO()  gpio_line_set(PLD_SCL_GPIO, IXP4XX_GPIO_LOW);
+#define SCL_HI()  gpio_line_set(PLD_SCL_GPIO, IXP4XX_GPIO_HIGH);
+#define SCL_EN()  gpio_line_config(PLD_SCL_GPIO, IXP4XX_GPIO_OUT);
+#define SDA_LO()  gpio_line_set(PLD_SDA_GPIO, IXP4XX_GPIO_LOW);
+#define SDA_HI()  gpio_line_set(PLD_SDA_GPIO, IXP4XX_GPIO_HIGH);
+#define SDA_EN()  gpio_line_config(PLD_SDA_GPIO, IXP4XX_GPIO_OUT);
+#define SDA_DIS() gpio_line_config(PLD_SDA_GPIO, IXP4XX_GPIO_IN);
+#define SDA_IN(x) gpio_line_get(PLD_SDA_GPIO, &x);
+
+#define SCL_STB() SCL_LO(); SCL_HI()
+#define SDA_BIT_0() SDA_LO(); SCL_STB()
+#define SDA_BIT_1() SDA_HI(); SCL_STB()
+#define PLD_RST() RST_HI(); SCL_STB(); RST_LO()
+
+#define CLK_LO()      SCL_LO()
+#define CLK_HI()      SCL_HI()
+#define CLK_EN()      SCL_EN()
+#define DATA_LO()     SDA_LO()
+#define DATA_HI()     SDA_HI()
+#define DATA_EN()     SDA_EN()
+#define DATA_DIS()    SDA_DIS()
+#define DATA_IN(x)     SDA_IN(x)
+
+static int eeprom_start(unsigned char b) {
+
+  int i = 0;
+
+  DATA_HI();
+  DATA_EN();
+  CLK_EN();
+  CLK_HI();
+  DATA_LO();
+  CLK_LO();
+
+  for (i = 7; i >= 0; i--) {
+    if (b & (1 << i))
+    {
+      DATA_HI();
+    }
+    else
+    {
+      DATA_LO();
+    }
+    CLK_HI();
+    CLK_LO();
+  }
+
+  DATA_DIS();
+  CLK_HI();
+  DATA_IN(i);
+  CLK_LO();
+  DATA_EN();
+
+  return i;
+}
+
+static int
+eeprom_putb(unsigned char b)
+{
+    int i;
+
+
+  for (i = 7; i >= 0; i--) {
+  if (b & (1 << i))
+  {
+      DATA_HI();
+  }
+  else
+  {
+      DATA_LO();
+  }
+  CLK_HI();
+  CLK_LO();
+    }
+    DATA_DIS();
+    CLK_HI();
+    DATA_IN(i);
+    CLK_LO();
+
+    DATA_HI();
+    DATA_EN();
+
+    return i;
+}
+
+static int
+eeprom_getb()
+{
+    int i, j;
+
+  int tmp = 0;
+
+  DATA_DIS();
+  for (i = 7; i >= 0; i--) {
+    CLK_HI();
+    DATA_IN(j);
+    tmp |= j << i;
+    CLK_LO();
+  }
+    return tmp;
+}
+
+unsigned int
+pld_read_gpio_b(int bit)
+{
+  unsigned int i;
+  spin_lock(&gpio_lock);
+    eeprom_start(0xad);
+    i = eeprom_getb();
+    DATA_LO();
+    CLK_HI();
+    DATA_HI();
+    CLK_LO();
+    CLK_HI();
+  spin_unlock(&gpio_lock);
+  return (i >> bit) & 0x1;
+}
+
+unsigned int
+pld_read_gpio()
+{
+  unsigned int i;
+  spin_lock(&gpio_lock);
+    eeprom_start(0xad);
+    i = eeprom_getb();
+    DATA_LO();
+    CLK_HI();
+    DATA_HI();
+    CLK_LO();
+    CLK_HI();
+  spin_unlock(&gpio_lock);
+  return i;
+}
+
+unsigned int
+pld_read_switch_b()
+{
+  unsigned int i;
+  spin_lock(&gpio_lock);
+    eeprom_start(0xaf);
+    i = eeprom_getb();
+    DATA_LO();
+    CLK_HI();
+    DATA_HI();
+    CLK_LO();
+    CLK_HI();
+  spin_unlock(&gpio_lock);
+  return (i >> 1) & 0x1;
+}
+
+unsigned int
+pld_read_switch()
+{
+  unsigned int i;
+  spin_lock(&gpio_lock);
+    eeprom_start(0xaf);
+    i = eeprom_getb();
+    DATA_LO();
+    CLK_HI();
+    DATA_HI();
+    CLK_LO();
+    CLK_HI();
+  spin_unlock(&gpio_lock);
+  return i;
+}
+
+void
+pld_write_gpio(int byte)
+{
+  //printk(KERN_INFO "%s: Enabling LED\n", driver_name);
+
+  spin_lock(&gpio_lock);
+    eeprom_start(0xac);
+    eeprom_putb(byte);
+    DATA_LO();
+    CLK_HI();
+    DATA_HI();
+    CLK_LO();
+    CLK_HI();
+  spin_unlock(&gpio_lock);
+}
+
+void
+pld_write_switch(int byte)
+{
+  //printk(KERN_INFO "%s: Enabling LED\n", driver_name);
+
+  spin_lock(&gpio_lock);
+    eeprom_start(0xac);
+    eeprom_putb(byte);
+    DATA_LO();
+    CLK_HI();
+    DATA_HI();
+    CLK_LO();
+    CLK_HI();
+  spin_unlock(&gpio_lock);
+}
+
 struct gpio_bit {
   unsigned char bit;
   unsigned char state;
@@ -41,11 +244,6 @@ struct gpio_bit {
 #define DEVICE_NAME "gpio"
 #define GPIO_MAJOR 127
 //#define DEBUG
-
-#define GPIO_GET_BIT  0x0000001
-#define GPIO_SET_BIT  0x0000002
-#define GPIO_GET_CONFIG 0x0000003
-#define GPIO_SET_CONFIG 0x0000004
 
 /*
  * GPIO interface
@@ -79,6 +277,7 @@ static int gpio_ioctl(struct inode *inode, struct file *file,
 {
 	struct gpio_bit bit;
 	IXP425_GPIO_SIG val;
+	int temp;
 
 	if (copy_from_user(&bit, (struct gpio_bit *)arg, 
 				sizeof(bit)))
@@ -90,31 +289,73 @@ printk("ixp425_gpio: ioctl cmd 0x%02x, bit %d, state %d\n", cmd, bit.bit, bit.st
         switch (cmd) {
 
         case GPIO_GET_BIT:
+if (bit.bit < 16)
+{
 		ixp425GPIOLineGet(bit.bit, &val);
 		bit.state = val;
 #ifdef DEBUG
              	printk("ixp425_gpio: Read _bit 0x%02x %s\n", bit.bit, (bit.state==0)?"LOW":"HIGH");
 #endif
+}
+else if (bit.bit < 24)
+{
+	bit.state = pld_read_gpio_b(bit.bit - 16);
+}
+else if (bit.bit == 24)
+{
+	bit.state = pld_read_switch_b();
+}
 		return copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
         case GPIO_SET_BIT:
 #ifdef DEBUG
              	printk("ixp425_gpio: Write _bit 0x%02x %s\n", bit.bit, (bit.state==0)?"LOW":"HIGH");
 #endif
+if (bit.bit < 16)
+{
 		val = bit.state;
 		ixp425GPIOLineSet(bit.bit, val);
+}
+else if (bit.bit < 24)
+{
+	temp = pld_read_gpio();
+	if (bit.state == 1)
+		temp |= (0x1 << (bit.bit - 16));
+	else
+		temp &= ~(0x1 << (bit.bit - 16));
+	pld_write_gpio(temp);
+}
 		return OK;
 	case GPIO_GET_CONFIG:
+if (bit.bit < 16)
+{
           	ixp425GPIOLineConfig(bit.bit, bit.state);
 #ifdef DEBUG
-             	printk("ixp425_gpio: Read config _bit 0x%02x %s\n", bit.bit, (bit.state==IXP425_GPIO_IN)?"IN":"OUT");
+             	printk("ixp425_gpio: Read config _bit 0x%02x %s\n", bit.bit, (bit.state==2)?"IN":"OUT");
 #endif
+}
+else if (bit.bit < 24)
+{
+	bit.state = pld_read_gpio_b(bit.bit - 16);
+}
 		return copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
 	case GPIO_SET_CONFIG:
+if (bit.bit < 16)
+{
 		val = bit.state;
 #ifdef DEBUG
-             	printk("ixp425_gpio: Write config _bit 0x%02x %s\n", bit.bit, (bit.state==IXP425_GPIO_IN)?"IN":"OUT");
+             	printk("ixp425_gpio: Write config _bit 0x%02x %s\n", bit.bit, (bit.state==2)?"IN":"OUT");
 #endif
           	ixp425GPIOLineConfig(bit.bit, bit.state);
+}
+else if (bit.bit < 24)
+{
+	temp = pld_read_gpio();
+	if (bit.state == 2)
+	{
+		temp |= (0x1 << (bit.bit - 16));
+		pld_write_gpio(temp);
+	}
+}
 		return OK;
 	}
 	return -EINVAL;
