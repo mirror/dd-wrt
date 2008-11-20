@@ -346,6 +346,7 @@ struct options
   in_addr_t server_netmask;
 
 # define SF_NOPOOL (1<<0)
+# define SF_TCP_NODELAY_HELPER (1<<1)
   unsigned int server_flags;
 
   bool server_bridge_proxy_dhcp;
@@ -418,6 +419,8 @@ struct options
   bool authname_defined;
   const char *authname;
   int keysize;
+  const char *prng_hash;
+  int prng_nonce_secret_len;
   const char *engine;
   bool replay;
   bool mute_replay_warnings;

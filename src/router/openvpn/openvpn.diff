@@ -1,172 +1,62 @@
-diff -urN openvpn-2.1_rc13/ChangeLog openvpn-2.1_rc14/ChangeLog
---- openvpn-2.1_rc13/ChangeLog	2008-10-08 06:53:19.000000000 +0200
-+++ openvpn-2.1_rc14/ChangeLog	2008-11-17 05:38:17.000000000 +0100
-@@ -1,7 +1,99 @@
+diff -urN openvpn-2.1_rc14/ChangeLog openvpn-2.1_rc15/ChangeLog
+--- openvpn-2.1_rc14/ChangeLog	2008-11-17 05:38:17.000000000 +0100
++++ openvpn-2.1_rc15/ChangeLog	2008-11-19 19:17:39.000000000 +0100
+@@ -1,7 +1,34 @@
  OpenVPN
  Copyright (C) 2002-2008 OpenVPN Technologies, Inc. <sales@openvpn.net>
  
--$Id: ChangeLog 3417 2008-10-08 04:53:19Z james $
-+$Id: ChangeLog 3495 2008-11-17 04:28:07Z james $
+-$Id: ChangeLog 3495 2008-11-17 04:28:07Z james $
++$Id: ChangeLog 3525 2008-11-19 18:17:39Z james $
 +
-+2008.11.16 -- Version 2.1_rc14
++2008.11.19 -- Version 2.1_rc15
 +
-+* Added AC_GNU_SOURCE to configure.ac to enable struct ucred,
-+  with the goal of fixing a build issue on Fedora 9 that was
-+  introduced in 2.1_rc13.
++* Fixed issue introduced in 2.1_rc14 that may cause a
++  segfault when a --plugin module is used.
 +
-+* Added additional method parameter to --script-security to preserve
-+  backward compatibility with system() call semantics used in OpenVPN
-+  2.1_rc8 and earlier.  To preserve backward compatibility use:
++* Added server-side --opt-verify option: clients that connect
++  with options that are incompatible with those of the server
++  will be disconnected (without this option, incompatible
++  clients would trigger a warning message in the server log
++  but would not be disconnected).
 +
-+    script-security 3 system
++* Added --tcp-nodelay option: Macro that sets TCP_NODELAY socket
++  flag on the server as well as pushes it to connecting clients.
 +
-+* Added additional warning messages about --script-security 2
-+  or higher being required to execute user-defined scripts or
-+  executables.
++* Minor options check fix: --no-name-remapping is a
++  server-only option and should therefore generate an
++  error when used on the client.
 +
-+* Windows build system changes:
++* Added --prng option to control PRNG (pseudo-random
++  number generator) parameters.  In previous OpenVPN
++  versions, the PRNG was hardcoded to use the SHA1
++  hash.  Now any OpenSSL hash may be used.  This is
++  part of an effort to remove hardcoded references to
++  a specific cipher or cryptographic hash algorithm.
 +
-+  Modified Windows domake-win build system to write all openvpn.nsi
-+  input files to gen, so that gen can be disconnected from
-+  the rest of the source tree and makensis openvpn.nsi will
-+  still function correctly.
-+
-+  Added additional SAMPCONF_(CA|CRT|KEY) macros to settings.in
-+  (commented out by default).
-+
-+  Added optional files SAMPCONF_CONF2 (second sample configuration
-+  file) and SAMPCONF_DH (Diffie-Helman parameters) to Windows
-+  build system, and may be defined in settings.in.
-+
-+* Extended Management Interface "bytecount" command
-+  to work when OpenVPN is running as a server.
-+  Documented Management Interface "bytecount" command in
-+  management/management-notes.txt.
-+
-+* Fixed informational message in ssl.c to properly indicate
-+  deferred authentication.
-+
-+* Added server-side --auth-user-pass-optional directive, to allow
-+  connections by clients that do not specify a username/password, when a
-+  user-defined authentication script/module is in place (via
-+  --auth-user-pass-verify, --management-client-auth, or a plugin module).
-+
-+* Changes to easy-rsa/2.0/pkitool and related openssl.cnf:
-+
-+  Calling scripts can set the KEY_NAME environmental variable to set
-+  the "name" X509 subject field in generated certificates.
-+
-+  Modified pkitool to allow flexibility in separating the Common Name
-+  convention from the cert/key filename convention.
-+
-+  For example:
-+
-+  KEY_CN="James's Laptop" KEY_NAME="james" ./pkitool james
-+
-+  will create a client certificate/key pair of james.crt/james.key
-+  having a Common Name of "James's Laptop" and a Name of "james".
-+
-+* Added --no-name-remapping option to allow Common Name, X509 Subject,
-+  and username strings to include any printable character including
-+  space, but excluding control characters such as tab, newline, and
-+  carriage-return (this is important for compatibility with external
-+  authentication systems).
-+
-+  As a related change, added --status-version 3 format (and "status 3"
-+  in the management interface) which uses the version 2 format except
-+  that tabs are used as delimiters instead of commas so that there
-+  is no ambiguity when parsing a Common Name that contains a comma.
-+
-+  Also, save X509 Subject fields to environment, using the naming
-+  convention:
-+
-+  X509_{cert_depth}_{name}={value}
-+
-+  This is to avoid ambiguities when parsing out the X509 subject string
-+  since "/" characters could potentially be used in the common name.
-+
-+* Fixed some ifconfig-pool issues that precluded it from being combined
-+  with --server directive.
-+
-+  Now, for example, we can configure thusly:
-+
-+    server 10.8.0.0 255.255.255.0 nopool
-+    ifconfig-pool 10.8.0.2 10.8.0.99 255.255.255.0
-+
-+  to have ifconfig-pool manage only a subset
-+  of the VPN subnet.
-+
-+* Added config file option "setenv FORWARD_COMPATIBLE 1" to relax
-+  config file syntax checking to allow directives for future OpenVPN
-+  versions to be ignored.
++* Cleaned up man page synopsis.
  
- 2008.10.07 -- Version 2.1_rc13
+ 2008.11.16 -- Version 2.1_rc14
  
-diff -urN openvpn-2.1_rc13/buffer.h openvpn-2.1_rc14/buffer.h
---- openvpn-2.1_rc13/buffer.h	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/buffer.h	2008-11-16 21:50:03.000000000 +0100
-@@ -58,13 +58,6 @@
- #endif
- };
- 
--/* used by argv_x functions */
--struct argv {
--  size_t capacity;
--  size_t argc;
--  char **argv;
--};
--
- /* for garbage collection */
- 
- struct gc_entry
-diff -urN openvpn-2.1_rc13/common.h openvpn-2.1_rc14/common.h
---- openvpn-2.1_rc13/common.h	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/common.h	2008-11-17 04:05:24.000000000 +0100
-@@ -81,4 +81,9 @@
- #define INLINE_FILE_TAG "[[INLINE]]"
- #endif
- 
-+/*
-+ * Script security warning
-+ */
-+#define SCRIPT_SECURITY_WARNING "openvpn_execve: external program may not be called unless '--script-security 2' or higher is enabled.  Use '--script-security 3 system' for backward compatibility with 2.1_rc8 and earlier.  See --help text or man page for detailed info."
-+
- #endif
-diff -urN openvpn-2.1_rc13/config-win32.h openvpn-2.1_rc14/config-win32.h
---- openvpn-2.1_rc13/config-win32.h	2008-10-08 07:18:35.000000000 +0200
-+++ openvpn-2.1_rc14/config-win32.h	2008-11-17 05:39:49.000000000 +0100
+diff -urN openvpn-2.1_rc14/config-win32.h openvpn-2.1_rc15/config-win32.h
+--- openvpn-2.1_rc14/config-win32.h	2008-11-17 05:39:49.000000000 +0100
++++ openvpn-2.1_rc15/config-win32.h	2008-11-19 19:18:24.000000000 +0100
 @@ -228,7 +228,7 @@
  #define PACKAGE_TARNAME openvpn
  
  /* Define to the version of this package. */
--#define PACKAGE_VERSION 2.1_rc13
-+#define PACKAGE_VERSION 2.1_rc14
+-#define PACKAGE_VERSION 2.1_rc14
++#define PACKAGE_VERSION 2.1_rc15
  
  /* Define to the full name and version of this package. */
  #ifdef DEBUG_LABEL
-diff -urN openvpn-2.1_rc13/config.h.in openvpn-2.1_rc14/config.h.in
---- openvpn-2.1_rc13/config.h.in	2008-10-08 07:18:01.000000000 +0200
-+++ openvpn-2.1_rc14/config.h.in	2008-11-17 05:39:17.000000000 +0100
-@@ -535,6 +535,11 @@
- /* Version number of package */
- #undef VERSION
- 
-+/* Enable GNU extensions on systems that have them.  */
-+#ifndef _GNU_SOURCE
-+# undef _GNU_SOURCE
-+#endif
-+
- /* Define to empty if `const' does not conform to ANSI C. */
- #undef const
- 
-diff -urN openvpn-2.1_rc13/configure openvpn-2.1_rc14/configure
---- openvpn-2.1_rc13/configure	2008-10-08 07:18:00.000000000 +0200
-+++ openvpn-2.1_rc14/configure	2008-11-17 05:39:17.000000000 +0100
+diff -urN openvpn-2.1_rc14/configure openvpn-2.1_rc15/configure
+--- openvpn-2.1_rc14/configure	2008-11-17 05:39:17.000000000 +0100
++++ openvpn-2.1_rc15/configure	2008-11-19 19:17:50.000000000 +0100
 @@ -1,6 +1,6 @@
  #! /bin/sh
  # Guess values for system-dependent variables and create Makefiles.
--# Generated by GNU Autoconf 2.61 for OpenVPN 2.1_rc13.
-+# Generated by GNU Autoconf 2.61 for OpenVPN 2.1_rc14.
+-# Generated by GNU Autoconf 2.61 for OpenVPN 2.1_rc14.
++# Generated by GNU Autoconf 2.61 for OpenVPN 2.1_rc15.
  #
  # Report bugs to <openvpn-users@lists.sourceforge.net>.
  #
@@ -174,10 +64,10 @@ diff -urN openvpn-2.1_rc13/configure openvpn-2.1_rc14/configure
  # Identity of this package.
  PACKAGE_NAME='OpenVPN'
  PACKAGE_TARNAME='openvpn'
--PACKAGE_VERSION='2.1_rc13'
--PACKAGE_STRING='OpenVPN 2.1_rc13'
-+PACKAGE_VERSION='2.1_rc14'
-+PACKAGE_STRING='OpenVPN 2.1_rc14'
+-PACKAGE_VERSION='2.1_rc14'
+-PACKAGE_STRING='OpenVPN 2.1_rc14'
++PACKAGE_VERSION='2.1_rc15'
++PACKAGE_STRING='OpenVPN 2.1_rc15'
  PACKAGE_BUGREPORT='openvpn-users@lists.sourceforge.net'
  
  ac_unique_file="syshead.h"
@@ -185,8 +75,8 @@ diff -urN openvpn-2.1_rc13/configure openvpn-2.1_rc14/configure
    # Omit some internal or obsolete options to make the list less imposing.
    # This message is too long to be a string in the A/UX 3.1 sh.
    cat <<_ACEOF
--\`configure' configures OpenVPN 2.1_rc13 to adapt to many kinds of systems.
-+\`configure' configures OpenVPN 2.1_rc14 to adapt to many kinds of systems.
+-\`configure' configures OpenVPN 2.1_rc14 to adapt to many kinds of systems.
++\`configure' configures OpenVPN 2.1_rc15 to adapt to many kinds of systems.
  
  Usage: $0 [OPTION]... [VAR=VALUE]...
  
@@ -194,8 +84,8 @@ diff -urN openvpn-2.1_rc13/configure openvpn-2.1_rc14/configure
  
  if test -n "$ac_init_help"; then
    case $ac_init_help in
--     short | recursive ) echo "Configuration of OpenVPN 2.1_rc13:";;
-+     short | recursive ) echo "Configuration of OpenVPN 2.1_rc14:";;
+-     short | recursive ) echo "Configuration of OpenVPN 2.1_rc14:";;
++     short | recursive ) echo "Configuration of OpenVPN 2.1_rc15:";;
     esac
    cat <<\_ACEOF
  
@@ -203,8 +93,8 @@ diff -urN openvpn-2.1_rc13/configure openvpn-2.1_rc14/configure
  test -n "$ac_init_help" && exit $ac_status
  if $ac_init_version; then
    cat <<\_ACEOF
--OpenVPN configure 2.1_rc13
-+OpenVPN configure 2.1_rc14
+-OpenVPN configure 2.1_rc14
++OpenVPN configure 2.1_rc15
  generated by GNU Autoconf 2.61
  
  Copyright (C) 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001,
@@ -212,2982 +102,859 @@ diff -urN openvpn-2.1_rc13/configure openvpn-2.1_rc14/configure
  This file contains any messages produced by compilers while
  running configure, to aid debugging if configure makes a mistake.
  
--It was created by OpenVPN $as_me 2.1_rc13, which was
-+It was created by OpenVPN $as_me 2.1_rc14, which was
+-It was created by OpenVPN $as_me 2.1_rc14, which was
++It was created by OpenVPN $as_me 2.1_rc15, which was
  generated by GNU Autoconf 2.61.  Invocation command line was
  
    $ $0 $@
-@@ -4560,6 +4560,12 @@
- fi
- 
- 
-+cat >>confdefs.h <<\_ACEOF
-+#define _GNU_SOURCE 1
-+_ACEOF
-+
-+
-+
- if test "${WIN32}" = "yes"; then
- 
- 	for ac_prog in man2html
-@@ -13229,7 +13235,7 @@
+@@ -13235,7 +13235,7 @@
  # report actual input values of CONFIG_FILES etc. instead of their
  # values after options handling.
  ac_log="
--This file was extended by OpenVPN $as_me 2.1_rc13, which was
-+This file was extended by OpenVPN $as_me 2.1_rc14, which was
+-This file was extended by OpenVPN $as_me 2.1_rc14, which was
++This file was extended by OpenVPN $as_me 2.1_rc15, which was
  generated by GNU Autoconf 2.61.  Invocation command line was
  
    CONFIG_FILES    = $CONFIG_FILES
-@@ -13282,7 +13288,7 @@
+@@ -13288,7 +13288,7 @@
  _ACEOF
  cat >>$CONFIG_STATUS <<_ACEOF
  ac_cs_version="\\
--OpenVPN config.status 2.1_rc13
-+OpenVPN config.status 2.1_rc14
+-OpenVPN config.status 2.1_rc14
++OpenVPN config.status 2.1_rc15
  configured by $0, generated by GNU Autoconf 2.61,
    with options \\"`echo "$ac_configure_args" | sed 's/^ //; s/[\\""\`\$]/\\\\&/g'`\\"
  
-diff -urN openvpn-2.1_rc13/configure.ac openvpn-2.1_rc14/configure.ac
---- openvpn-2.1_rc13/configure.ac	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc14/configure.ac	2008-10-14 06:14:36.000000000 +0200
-@@ -307,6 +307,7 @@
- AC_PROG_CC
- AC_PROG_INSTALL
- AC_PROG_GCC_TRADITIONAL
-+AC_GNU_SOURCE
- 
- if test "${WIN32}" = "yes"; then
- 	AC_ARG_VAR([MAN2HTML], [man2html utility])
-diff -urN openvpn-2.1_rc13/debug/valgrind-suppress openvpn-2.1_rc14/debug/valgrind-suppress
---- openvpn-2.1_rc13/debug/valgrind-suppress	2008-09-30 06:17:37.000000000 +0200
-+++ openvpn-2.1_rc14/debug/valgrind-suppress	2008-10-09 11:45:48.000000000 +0200
-@@ -219,6 +219,88 @@
-    fun:__libc_dlopen_mode
-    fun:__nss_lookup_function
-    obj:/lib/libc-2.7.so
-+   fun:getgrnam_r
-+   fun:getgrnam
-+   fun:get_group
-+   fun:do_init_first_time
-+   fun:init_instance
-+   fun:init_instance_handle_signals
-+   fun:tunnel_server_tcp
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Addr8
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/libc-2.7.so
-+   obj:/lib/ld-2.7.so
-+   fun:__libc_dlopen_mode
-+   fun:__nss_lookup_function
-+   obj:/lib/libc-2.7.so
-+   fun:getgrnam_r
-+   fun:getgrnam
-+   fun:get_group
-+   fun:do_init_first_time
-+   fun:init_instance
-+   fun:init_instance_handle_signals
-+   fun:tunnel_server_udp
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Addr8
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/libc-2.7.so
-+   obj:/lib/ld-2.7.so
-+   fun:__libc_dlopen_mode
-+   fun:__nss_lookup_function
-+   obj:/lib/libc-2.7.so
-+   fun:getgrnam_r
-+   fun:getgrnam
-+   fun:get_group
-+   fun:management_open
-+   fun:open_management
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Addr8
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/ld-2.7.so
-+   obj:/lib/libc-2.7.so
-+   obj:/lib/ld-2.7.so
-+   fun:__libc_dlopen_mode
-+   fun:__nss_lookup_function
-+   obj:/lib/libc-2.7.so
-    fun:getpwnam_r
-    fun:getpwnam
-    fun:get_user
-@@ -234,6 +316,50 @@
-    fun:BN_MONT_CTX_set
-    fun:BN_MONT_CTX_set_locked
-    obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:RSA_verify
-+   fun:EVP_VerifyFinal
-+   fun:ASN1_item_verify
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:X509_verify_cert
-+   fun:ssl_verify_cert_chain
-+   fun:ssl3_get_client_certificate
-+   fun:ssl3_accept
-+   fun:ssl3_read_bytes
-+   fun:ssl3_read
-+   obj:/usr/lib/libssl.so.0.9.8
-+   fun:BIO_read
-+   fun:bio_read
-+   fun:tls_process
-+   fun:tls_multi_process
-+   fun:check_tls_dowork
-+   fun:pre_select
-+   fun:multi_process_post
-+   fun:multi_process_incoming_link
-+   fun:multi_tcp_action
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Cond
-+   fun:BN_div
-+   fun:BN_MONT_CTX_set
-+   fun:BN_MONT_CTX_set_locked
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:ssl3_ctx_ctrl
-+   fun:init_ssl
-+   fun:init_instance
-+   fun:init_instance_handle_signals
-+   fun:tunnel_server_tcp
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Cond
-+   fun:BN_div
-+   fun:BN_MONT_CTX_set
-+   fun:BN_MONT_CTX_set_locked
-+   obj:/usr/lib/libcrypto.so.0.9.8
-    fun:ssl3_ctx_ctrl
-    fun:init_ssl
-    fun:init_instance
-@@ -246,6 +372,79 @@
-    <insert a suppression name here>
-    Memcheck:Cond
-    fun:BN_div
-+   fun:BN_MONT_CTX_set
-+   fun:BN_MONT_CTX_set_locked
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:RSA_sign
-+   fun:ssl3_send_server_key_exchange
-+   fun:ssl3_accept
-+   fun:ssl3_read_bytes
-+   fun:ssl3_read
-+   obj:/usr/lib/libssl.so.0.9.8
-+   fun:BIO_read
-+   fun:bio_read
-+   fun:tls_process
-+   fun:tls_multi_process
-+   fun:check_tls_dowork
-+   fun:pre_select
-+   fun:multi_process_post
-+   fun:multi_process_incoming_link
-+   fun:multi_tcp_action
-+   fun:tunnel_server_tcp
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Cond
-+   fun:BN_div
-+   fun:BN_MONT_CTX_set
-+   fun:BN_mod_exp_mont
-+   fun:BN_BLINDING_create_param
-+   fun:RSA_setup_blinding
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:RSA_sign
-+   fun:ssl3_send_server_key_exchange
-+   fun:ssl3_accept
-+   fun:ssl3_read_bytes
-+   fun:ssl3_read
-+   obj:/usr/lib/libssl.so.0.9.8
-+   fun:BIO_read
-+   fun:bio_read
-+   fun:tls_process
-+   fun:tls_multi_process
-+   fun:check_tls_dowork
-+   fun:pre_select
-+   fun:multi_process_post
-+   fun:multi_process_incoming_link
-+   fun:multi_tcp_action
-+   fun:tunnel_server_tcp
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Cond
-+   fun:BN_div
-+   fun:BN_nnmod
-+   fun:BN_mod_inverse
-+   fun:BN_MONT_CTX_set
-+   fun:BN_MONT_CTX_set_locked
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:ssl3_ctx_ctrl
-+   fun:init_ssl
-+   fun:init_instance
-+   fun:init_instance_handle_signals
-+   fun:tunnel_server_tcp
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Cond
-+   fun:BN_div
-    fun:BN_nnmod
-    fun:BN_mod_inverse
-    fun:BN_MONT_CTX_set
-@@ -266,6 +465,50 @@
-    fun:BN_MONT_CTX_set
-    fun:BN_MONT_CTX_set_locked
-    obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:RSA_verify
-+   fun:EVP_VerifyFinal
-+   fun:ASN1_item_verify
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:X509_verify_cert
-+   fun:ssl_verify_cert_chain
-+   fun:ssl3_get_client_certificate
-+   fun:ssl3_accept
-+   fun:ssl3_read_bytes
-+   fun:ssl3_read
-+   obj:/usr/lib/libssl.so.0.9.8
-+   fun:BIO_read
-+   fun:bio_read
-+   fun:tls_process
-+   fun:tls_multi_process
-+   fun:check_tls_dowork
-+   fun:pre_select
-+   fun:multi_process_post
-+   fun:multi_process_incoming_link
-+   fun:multi_tcp_action
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Cond
-+   fun:BN_mod_inverse
-+   fun:BN_MONT_CTX_set
-+   fun:BN_MONT_CTX_set_locked
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:ssl3_ctx_ctrl
-+   fun:init_ssl
-+   fun:init_instance
-+   fun:init_instance_handle_signals
-+   fun:tunnel_server_tcp
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Cond
-+   fun:BN_mod_inverse
-+   fun:BN_MONT_CTX_set
-+   fun:BN_MONT_CTX_set_locked
-+   obj:/usr/lib/libcrypto.so.0.9.8
-    fun:ssl3_ctx_ctrl
-    fun:init_ssl
-    fun:init_instance
-@@ -277,6 +520,62 @@
- {
-    <insert a suppression name here>
-    Memcheck:Cond
-+   fun:BN_mod_inverse
-+   fun:BN_MONT_CTX_set
-+   fun:BN_MONT_CTX_set_locked
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:RSA_sign
-+   fun:ssl3_send_server_key_exchange
-+   fun:ssl3_accept
-+   fun:ssl3_read_bytes
-+   fun:ssl3_read
-+   obj:/usr/lib/libssl.so.0.9.8
-+   fun:BIO_read
-+   fun:bio_read
-+   fun:tls_process
-+   fun:tls_multi_process
-+   fun:check_tls_dowork
-+   fun:pre_select
-+   fun:multi_process_post
-+   fun:multi_process_incoming_link
-+   fun:multi_tcp_action
-+   fun:tunnel_server_tcp
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Cond
-+   fun:BN_mod_inverse
-+   fun:BN_MONT_CTX_set
-+   fun:BN_mod_exp_mont
-+   fun:BN_BLINDING_create_param
-+   fun:RSA_setup_blinding
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   obj:/usr/lib/libcrypto.so.0.9.8
-+   fun:RSA_sign
-+   fun:ssl3_send_server_key_exchange
-+   fun:ssl3_accept
-+   fun:ssl3_read_bytes
-+   fun:ssl3_read
-+   obj:/usr/lib/libssl.so.0.9.8
-+   fun:BIO_read
-+   fun:bio_read
-+   fun:tls_process
-+   fun:tls_multi_process
-+   fun:check_tls_dowork
-+   fun:pre_select
-+   fun:multi_process_post
-+   fun:multi_process_incoming_link
-+   fun:multi_tcp_action
-+   fun:tunnel_server_tcp
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Cond
-    obj:/lib/ld-2.5.so
-    obj:/lib/ld-2.5.so
-    obj:/lib/ld-2.5.so
-@@ -725,6 +1024,22 @@
-    fun:__nss_lookup_function
-    obj:*
-    obj:*
-+   fun:getgrnam_r
-+   fun:getgrnam
-+   fun:get_group
-+   fun:management_open
-+   fun:open_management
-+   fun:main
-+}
-+
-+{
-+   <insert a suppression name here>
-+   Memcheck:Leak
-+   fun:malloc
-+   fun:tsearch
-+   fun:__nss_lookup_function
-+   obj:*
-+   obj:*
-    fun:getpwnam_r
-    fun:getpwnam
-    fun:get_user
-@@ -810,39 +1125,13 @@
-    fun:__nss_database_lookup
-    obj:*
-    obj:*
--   fun:getpwnam_r
--   fun:getpwnam
--   fun:get_user
--   fun:management_open
--   fun:open_management
--   fun:main
--}
--
--{
--   <insert a suppression name here>
--   Memcheck:Addr8
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/libc-2.7.so
--   obj:/lib/ld-2.7.so
--   fun:__libc_dlopen_mode
--   fun:__nss_lookup_function
--   obj:/lib/libc-2.7.so
-    fun:getgrnam_r
-    fun:getgrnam
-    fun:get_group
-    fun:do_init_first_time
-    fun:init_instance
-    fun:init_instance_handle_signals
--   fun:tunnel_server_udp
-+   fun:tunnel_server_tcp
-    fun:main
+diff -urN openvpn-2.1_rc14/crypto.c openvpn-2.1_rc15/crypto.c
+--- openvpn-2.1_rc14/crypto.c	2008-10-06 09:22:21.000000000 +0200
++++ openvpn-2.1_rc15/crypto.c	2008-11-18 01:51:58.000000000 +0100
+@@ -1640,6 +1640,7 @@
+       engine_initialized = false;
+     }
+ #endif
++  prng_uninit ();
  }
  
-@@ -866,42 +1155,17 @@
+ /*
+@@ -1649,33 +1650,73 @@
+  * IV values and a number of other miscellaneous tasks.
+  */
  
+-#define NONCE_SECRET_LEN 16
++static uint8_t *nonce_data; /* GLOBAL */
++static const EVP_MD *nonce_md = NULL; /* GLOBAL */
++static int nonce_secret_len; /* GLOBAL */
+ 
+-static uint8_t nonce_data [SHA_DIGEST_LENGTH + NONCE_SECRET_LEN]; /* GLOBAL */
++void
++prng_init (const char *md_name, const int nonce_secret_len_parm)
++{
++  prng_uninit ();
++  nonce_md = md_name ? get_md (md_name) : NULL;
++  if (nonce_md)
++    {
++      ASSERT (nonce_secret_len_parm >= NONCE_SECRET_LEN_MIN && nonce_secret_len_parm <= NONCE_SECRET_LEN_MAX);
++      nonce_secret_len = nonce_secret_len_parm;
++      {
++	const int size = EVP_MD_size (nonce_md) + nonce_secret_len;
++	dmsg (D_CRYPTO_DEBUG, "PRNG init md=%s size=%d", EVP_MD_name (nonce_md), size);
++	nonce_data = (uint8_t*) malloc (size);
++	check_malloc_return (nonce_data);
++#if 1 /* Must be 1 for real usage */
++	if (!RAND_bytes (nonce_data, size))
++	  msg (M_FATAL, "ERROR: Random number generator cannot obtain entropy for PRNG");
++#else
++	/* Only for testing -- will cause a predictable PRNG sequence */
++	{
++	  int i;
++	  for (i = 0; i < size; ++i)
++	    nonce_data[i] = (uint8_t) i;
++	}
++#endif
++      }
++    }
++}
+ 
+ void
+-prng_init (void)
++prng_uninit (void)
  {
-    <insert a suppression name here>
--   Memcheck:Addr8
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/ld-2.7.so
--   obj:/lib/libc-2.7.so
--   obj:/lib/ld-2.7.so
--   fun:__libc_dlopen_mode
--   fun:__nss_lookup_function
--   obj:/lib/libc-2.7.so
--   fun:getgrnam_r
--   fun:getgrnam
--   fun:get_group
--   fun:management_open
--   fun:open_management
--   fun:main
--}
--
--{
--   <insert a suppression name here>
-    Memcheck:Leak
-    fun:malloc
--   fun:tsearch
--   fun:__nss_lookup_function
-+   obj:/lib/libc-2.7.so
-+   fun:__nss_database_lookup
-    obj:*
-    obj:*
--   fun:getgrnam_r
--   fun:getgrnam
--   fun:get_group
-+   fun:getpwnam_r
-+   fun:getpwnam
-+   fun:get_user
-    fun:management_open
-    fun:open_management
-    fun:main
+-  if (!RAND_bytes (nonce_data, sizeof(nonce_data)))
+-    msg (M_FATAL, "ERROR: Random number generator cannot obtain entropy for PRNG");
++  free (nonce_data);
++  nonce_data = NULL;
++  nonce_md = NULL;
++  nonce_secret_len = 0;
  }
-+
-diff -urN openvpn-2.1_rc13/domake-win openvpn-2.1_rc14/domake-win
---- openvpn-2.1_rc13/domake-win	2008-10-08 06:47:28.000000000 +0200
-+++ openvpn-2.1_rc14/domake-win	2008-10-24 07:59:13.000000000 +0200
-@@ -127,12 +127,12 @@
- # Get the OpenVPN GUI (must be prebuilt)
- install-win32/getgui
  
--# Produce the license text, install README, and sample config files
--install-win32/maketext
--
- # Get the OpenVPN XML-based GUI (must be prebuilt)
- install-win32/getxgui
+ void
+ prng_bytes (uint8_t *output, int len)
+ {
+-  SHA_CTX ctx;
+-  mutex_lock_static (L_PRNG);
+-  while (len > 0)
++  if (nonce_md)
+     {
+-      const int blen = min_int (len, SHA_DIGEST_LENGTH);
+-      SHA1_Init (&ctx);
+-      SHA1_Update (&ctx, nonce_data, sizeof (nonce_data));
+-      SHA1_Final (nonce_data, &ctx);
+-      memcpy (output, nonce_data, blen);
+-      output += blen;
+-      len -= blen;
++      EVP_MD_CTX ctx;
++      const int md_size = EVP_MD_size (nonce_md);
++      mutex_lock_static (L_PRNG);
++      while (len > 0)
++	{
++	  unsigned int outlen = 0;
++	  const int blen = min_int (len, md_size);
++	  EVP_DigestInit (&ctx, nonce_md);
++	  EVP_DigestUpdate (&ctx, nonce_data, md_size + nonce_secret_len);
++	  EVP_DigestFinal (&ctx, nonce_data, &outlen);
++	  ASSERT (outlen == md_size);
++	  EVP_MD_CTX_cleanup (&ctx);
++	  memcpy (output, nonce_data, blen);
++	  output += blen;
++	  len -= blen;
++	}
++      mutex_unlock_static (L_PRNG);
+     }
+-  mutex_unlock_static (L_PRNG);
++  else
++    RAND_bytes (output, len);
+ }
  
-+# Produce the license text, install README, and sample config files
-+install-win32/maketext
-+
- # This final step builds the OpenVPN installer using generated
- # files from GENOUT
- install-win32/buildinstaller
-diff -urN openvpn-2.1_rc13/easy-rsa/2.0/openssl.cnf openvpn-2.1_rc14/easy-rsa/2.0/openssl.cnf
---- openvpn-2.1_rc13/easy-rsa/2.0/openssl.cnf	2008-09-30 04:34:07.000000000 +0200
-+++ openvpn-2.1_rc14/easy-rsa/2.0/openssl.cnf	2008-10-28 06:39:05.000000000 +0100
-@@ -74,6 +74,7 @@
- organizationName	= match
- organizationalUnitName	= optional
- commonName		= supplied
-+name			= optional
- emailAddress		= optional
+ /* an analogue to the random() function, but use prng_bytes */
+diff -urN openvpn-2.1_rc14/crypto.h openvpn-2.1_rc15/crypto.h
+--- openvpn-2.1_rc14/crypto.h	2008-10-06 09:22:21.000000000 +0200
++++ openvpn-2.1_rc15/crypto.h	2008-11-17 21:00:22.000000000 +0100
+@@ -329,8 +329,11 @@
+ 				    bool packet_id,
+ 				    bool packet_id_long_form);
  
- # For the 'anything' policy
-@@ -86,6 +87,7 @@
- organizationName	= optional
- organizationalUnitName	= optional
- commonName		= supplied
-+name			= optional
- emailAddress		= optional
+-void prng_init (void);
++#define NONCE_SECRET_LEN_MIN 16
++#define NONCE_SECRET_LEN_MAX 64
++void prng_init (const char *md_name, const int nonce_secret_len_parm);
+ void prng_bytes (uint8_t *output, int len);
++void prng_uninit ();
  
- ####################################################################
-@@ -137,6 +139,9 @@
- commonName			= Common Name (eg, your name or your server\'s hostname)
- commonName_max			= 64
+ void test_crypto (const struct crypto_options *co, struct frame* f);
  
-+name				= Name
-+name_max			= 64
-+
- emailAddress			= Email Address
- emailAddress_default		= $ENV::KEY_EMAIL
- emailAddress_max		= 40
-@@ -144,6 +149,7 @@
- # JY -- added for batch mode
- organizationalUnitName_default = $ENV::KEY_OU
- commonName_default = $ENV::KEY_CN
-+name_default = $ENV::KEY_NAME
- 
- # SET-ex3			= SET extension number 3
- 
-diff -urN openvpn-2.1_rc13/easy-rsa/2.0/pkitool openvpn-2.1_rc14/easy-rsa/2.0/pkitool
---- openvpn-2.1_rc13/easy-rsa/2.0/pkitool	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc14/easy-rsa/2.0/pkitool	2008-10-28 21:25:27.000000000 +0100
-@@ -27,6 +27,9 @@
- # Calling scripts can set the certificate organizational 
- # unit with the KEY_OU environmental variable. 
- 
-+# Calling scripts can also set the KEY_NAME environmental
-+# variable to set the "name" X509 subject field.
-+
- PROGNAME=pkitool
- VERSION=2.0
- DEBUG=0
-@@ -237,7 +240,12 @@
-     KEY_OU=""
- fi
- 
--# Set KEY_CN
-+# Set X509 Name string to empty string if undefined
-+if [ -z "$KEY_NAME" ]; then
-+    KEY_NAME=""
-+fi
-+
-+# Set KEY_CN, FN
- if [ $DO_ROOT -eq 1 ]; then
-     if [ -z "$KEY_CN" ]; then
- 	if [ "$1" ]; then
-@@ -247,10 +255,15 @@
- 	fi
-     fi
-     if [ $BATCH ] && [ "$KEY_CN" ]; then
--	echo "Using CA Common Name:" $KEY_CN
-+	echo "Using CA Common Name:" "$KEY_CN"
-+    fi
-+    FN="$KEY_CN"
-+elif [ $BATCH ] && [ "$KEY_CN" ]; then
-+    echo "Using Common Name:" "$KEY_CN"
-+    FN="$KEY_CN"
-+    if [ "$1" ]; then
-+	FN="$1"
-     fi
--elif [ $BATCH ] && [ "$KEY_CN" ] && [ $# -eq 0 ]; then
--    echo "Using Common Name:" $KEY_CN
- else
-     if [ $# -ne 1 ]; then
- 	usage
-@@ -258,9 +271,10 @@
-     else
- 	KEY_CN="$1"
-     fi
-+    FN="$KEY_CN"
- fi
- 
--export CA_EXPIRE KEY_EXPIRE KEY_OU KEY_CN PKCS11_MODULE_PATH PKCS11_PIN
-+export CA_EXPIRE KEY_EXPIRE KEY_OU KEY_NAME KEY_CN PKCS11_MODULE_PATH PKCS11_PIN
- 
- # Show parameters (debugging)
- if [ $DEBUG -eq 1 ]; then
-@@ -277,6 +291,7 @@
-     echo KEY_EXPIRE $KEY_EXPIRE
-     echo CA_EXPIRE $CA_EXPIRE
-     echo KEY_OU $KEY_OU
-+    echo KEY_NAME $KEY_NAME
-     echo DO_P11 $DO_P11
-     echo PKCS11_MODULE_PATH $PKCS11_MODULE_PATH
-     echo PKCS11_SLOT $PKCS11_SLOT
-@@ -333,21 +348,21 @@
- 
-         # Build cert/key
- 	( [ $DO_REQ -eq 0 ] || $OPENSSL req $BATCH -days $KEY_EXPIRE $NODES_REQ -new -newkey rsa:$KEY_SIZE \
--	        -keyout "$KEY_CN.key" -out "$KEY_CN.csr" $REQ_EXT -config "$KEY_CONFIG" $PKCS11_ARGS ) && \
--	    ( [ $DO_CA -eq 0 ]  || $OPENSSL ca $BATCH -days $KEY_EXPIRE -out "$KEY_CN.crt" \
--	        -in "$KEY_CN.csr" $CA_EXT -md sha1 -config "$KEY_CONFIG" ) && \
--	    ( [ $DO_P12 -eq 0 ] || $OPENSSL pkcs12 -export -inkey "$KEY_CN.key" \
--	        -in "$KEY_CN.crt" -certfile "$CA.crt" -out "$KEY_CN.p12" $NODES_P12 ) && \
--	    ( [ $DO_CA -eq 0 -o $DO_P11 -eq 1 ]  || chmod 0600 "$KEY_CN.key" ) && \
--	    ( [ $DO_P12 -eq 0 ] || chmod 0600 "$KEY_CN.p12" )
-+	        -keyout "$FN.key" -out "$FN.csr" $REQ_EXT -config "$KEY_CONFIG" $PKCS11_ARGS ) && \
-+	    ( [ $DO_CA -eq 0 ]  || $OPENSSL ca $BATCH -days $KEY_EXPIRE -out "$FN.crt" \
-+	        -in "$FN.csr" $CA_EXT -md sha1 -config "$KEY_CONFIG" ) && \
-+	    ( [ $DO_P12 -eq 0 ] || $OPENSSL pkcs12 -export -inkey "$FN.key" \
-+	        -in "$FN.crt" -certfile "$CA.crt" -out "$FN.p12" $NODES_P12 ) && \
-+	    ( [ $DO_CA -eq 0 -o $DO_P11 -eq 1 ]  || chmod 0600 "$FN.key" ) && \
-+	    ( [ $DO_P12 -eq 0 ] || chmod 0600 "$FN.p12" )
- 
- 	# Load certificate into PKCS#11 token
- 	if [ $DO_P11 -eq 1 ]; then
--		$OPENSSL x509 -in "$KEY_CN.crt" -inform PEM -out "$KEY_CN.crt.der" -outform DER && \
--		  $PKCS11TOOL --module "$PKCS11_MODULE_PATH" --write-object "$KEY_CN.crt.der" --type cert \
-+		$OPENSSL x509 -in "$FN.crt" -inform PEM -out "$FN.crt.der" -outform DER && \
-+		  $PKCS11TOOL --module "$PKCS11_MODULE_PATH" --write-object "$FN.crt.der" --type cert \
- 			--login --pin "$PKCS11_PIN" \
- 			--slot "$PKCS11_SLOT" --id "$PKCS11_ID" --label "$PKCS11_LABEL" 
--		[ -e "$KEY_CN.crt.der" ]; rm "$KEY_CN.crt.der"
-+		[ -e "$FN.crt.der" ]; rm "$FN.crt.der"
- 	fi
- 
-     fi
-diff -urN openvpn-2.1_rc13/easy-rsa/2.0/revoke-full openvpn-2.1_rc14/easy-rsa/2.0/revoke-full
---- openvpn-2.1_rc13/easy-rsa/2.0/revoke-full	2008-09-30 04:34:07.000000000 +0200
-+++ openvpn-2.1_rc14/easy-rsa/2.0/revoke-full	2008-11-03 14:09:10.000000000 +0100
-@@ -7,7 +7,7 @@
- RT="revoke-test.pem"
- 
- if [ $# -ne 1 ]; then
--    echo "usage: revoke-full <common-name>";
-+    echo "usage: revoke-full <cert-name-base>";
-     exit 1
- fi
- 
-@@ -18,6 +18,7 @@
-     # set defaults
-     export KEY_CN=""
-     export KEY_OU=""
-+    export KEY_NAME=""
- 
-     # revoke key and generate a new CRL
-     $OPENSSL ca -revoke "$1.crt" -config "$KEY_CONFIG"
-diff -urN openvpn-2.1_rc13/errlevel.h openvpn-2.1_rc14/errlevel.h
---- openvpn-2.1_rc13/errlevel.h	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc14/errlevel.h	2008-11-17 03:14:54.000000000 +0100
-@@ -139,6 +139,7 @@
- #define D_PS_PROXY_DEBUG     LOGLEV(7, 70, M_DEBUG)  /* port share proxy debug */
+diff -urN openvpn-2.1_rc14/errlevel.h openvpn-2.1_rc15/errlevel.h
+--- openvpn-2.1_rc14/errlevel.h	2008-11-17 03:14:54.000000000 +0100
++++ openvpn-2.1_rc15/errlevel.h	2008-11-18 01:55:06.000000000 +0100
+@@ -140,6 +140,7 @@
  #define D_AUTO_USERID        LOGLEV(7, 70, M_DEBUG)  /* AUTO_USERID debugging */
  #define D_TLS_KEYSELECT      LOGLEV(7, 70, M_DEBUG)  /* show information on key selection for data channel */
-+#define D_ARGV_PARSE_CMD     LOGLEV(7, 70, M_DEBUG)  /* show parse_line() errors in argv_printf %sc */
+ #define D_ARGV_PARSE_CMD     LOGLEV(7, 70, M_DEBUG)  /* show parse_line() errors in argv_printf %sc */
++#define D_CRYPTO_DEBUG       LOGLEV(7, 70, M_DEBUG)  /* show detailed info from crypto.c routines */
  #define D_PF_DROPPED_BCAST   LOGLEV(7, 71, M_DEBUG)  /* packet filter dropped a broadcast packet */
  #define D_PF_DEBUG           LOGLEV(7, 72, M_DEBUG)  /* packet filter debugging, must also define PF_DEBUG in pf.h */
  
-diff -urN openvpn-2.1_rc13/forward.c openvpn-2.1_rc14/forward.c
---- openvpn-2.1_rc13/forward.c	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/forward.c	2008-10-24 10:05:52.000000000 +0200
-@@ -707,12 +707,17 @@
-       c->c2.original_recv_size = c->c2.buf.len;
- #ifdef ENABLE_MANAGEMENT
-       if (management)
--	management_bytes_in (management, c->c2.buf.len);
-+	{
-+	  management_bytes_in (management, c->c2.buf.len);
-+#ifdef MANAGEMENT_DEF_AUTH
-+	  management_bytes_server (management, &c->c2.link_read_bytes, &c->c2.link_write_bytes, &c->c2.mda_context);
-+#endif
-+	}
- #endif
+@@ -153,7 +154,6 @@
+ #define D_MULTI_TCP          LOGLEV(8, 70, M_DEBUG)  /* show debug info from mtcp.c */
+ 
+ #define D_TLS_DEBUG          LOGLEV(9, 70, M_DEBUG)  /* show detailed info from TLS routines */
+-#define D_CRYPTO_DEBUG       LOGLEV(9, 70, M_DEBUG)  /* show detailed info from crypto.c routines */
+ #define D_COMP               LOGLEV(9, 70, M_DEBUG)  /* show compression info */
+ #define D_READ_WRITE         LOGLEV(9, 70, M_DEBUG)  /* show all tun/tcp/udp reads/writes/opens */
+ #define D_PACKET_CONTENT     LOGLEV(9, 70, M_DEBUG)  /* show before/after encryption packet content */
+diff -urN openvpn-2.1_rc14/helper.c openvpn-2.1_rc15/helper.c
+--- openvpn-2.1_rc14/helper.c	2008-11-02 07:34:00.000000000 +0100
++++ openvpn-2.1_rc15/helper.c	2008-11-18 05:53:58.000000000 +0100
+@@ -96,6 +96,14 @@
+   return BSTR (&out);
+ }
+ 
++static const char *
++print_str (const char *str, struct gc_arena *gc)
++{
++  struct buffer out = alloc_buf_gc (128, gc);
++  buf_printf (&out, "%s", str);
++  return BSTR (&out);
++}
++
+ static void
+ helper_add_route (const in_addr_t network, const in_addr_t netmask, struct options *o)
+ {
+@@ -438,3 +446,34 @@
+ 	}
      }
-   else
-     c->c2.original_recv_size = 0;
--
-+  
- #ifdef ENABLE_DEBUG
-   /* take action to corrupt packet if we are in gremlin test mode */
-   if (c->options.gremlin) {
-@@ -1100,7 +1105,12 @@
- 	      c->c2.link_write_bytes += size;
- #ifdef ENABLE_MANAGEMENT
- 	      if (management)
--		management_bytes_out (management, size);
-+		{
-+		  management_bytes_out (management, size);
-+#ifdef MANAGEMENT_DEF_AUTH
-+		  management_bytes_server (management, &c->c2.link_read_bytes, &c->c2.link_write_bytes, &c->c2.mda_context);
-+#endif
-+		}
- #endif
- 	    }
- 	}
-diff -urN openvpn-2.1_rc13/helper.c openvpn-2.1_rc14/helper.c
---- openvpn-2.1_rc13/helper.c	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc14/helper.c	2008-11-02 07:34:00.000000000 +0100
-@@ -158,7 +158,6 @@
-    *
-    * if tap OR (tun AND topology == subnet):
-    *   ifconfig 10.8.0.1 255.255.255.0
--   *   ifconfig-pool-constraint 10.8.0.0 255.255.255.0
-    *   if !nopool: 
-    *     ifconfig-pool 10.8.0.2 10.8.0.254 255.255.255.0
-    *   push "route-gateway 10.8.0.1"
-@@ -184,7 +183,7 @@
-       if (o->shared_secret_file)
- 	msg (M_USAGE, "--server and --secret cannot be used together (you must use SSL/TLS keys)");
- 
--      if (o->ifconfig_pool_defined)
-+      if (!(o->server_flags & SF_NOPOOL) && o->ifconfig_pool_defined)
- 	msg (M_USAGE, "--server already defines an ifconfig-pool, so you can't also specify --ifconfig-pool explicitly");
- 
-       if (!(dev == DEV_TYPE_TAP || dev == DEV_TYPE_TUN))
-@@ -245,9 +244,9 @@
- 		  o->ifconfig_pool_start = o->server_network + 2;
- 		  o->ifconfig_pool_end = (o->server_network | ~o->server_netmask) - 2;
- 		  ifconfig_pool_verify_range (M_USAGE, o->ifconfig_pool_start, o->ifconfig_pool_end);
--		  o->ifconfig_pool_netmask = o->server_netmask;
- 		}
--
-+	      o->ifconfig_pool_netmask = o->server_netmask;
-+		  
- 	      push_option (o, print_opt_route_gateway (o->server_network + 1, &o->gc), M_USAGE);
- 	    }
- 	  else
-@@ -272,8 +271,8 @@
- 	      o->ifconfig_pool_start = o->server_network + 2;
- 	      o->ifconfig_pool_end = (o->server_network | ~o->server_netmask) - 1;
- 	      ifconfig_pool_verify_range (M_USAGE, o->ifconfig_pool_start, o->ifconfig_pool_end);
--	      o->ifconfig_pool_netmask = o->server_netmask;
- 	    }
-+	  o->ifconfig_pool_netmask = o->server_netmask;
- 
- 	  push_option (o, print_opt_route_gateway (o->server_network + 1, &o->gc), M_USAGE);
- 	}
-@@ -320,7 +319,7 @@
-       if (o->client)
- 	msg (M_USAGE, "--server-bridge and --client cannot be used together");
- 
--      if (o->ifconfig_pool_defined)
-+      if (!(o->server_flags & SF_NOPOOL) && o->ifconfig_pool_defined)
- 	msg (M_USAGE, "--server-bridge already defines an ifconfig-pool, so you can't also specify --ifconfig-pool explicitly");
- 
-       if (o->shared_secret_file)
-diff -urN openvpn-2.1_rc13/init.c openvpn-2.1_rc14/init.c
---- openvpn-2.1_rc13/init.c	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc14/init.c	2008-11-17 04:02:43.000000000 +0100
-@@ -523,7 +523,7 @@
- init_options_dev (struct options *options)
- {
-   if (!options->dev)
--    options->dev = dev_component_in_dev_node (options->dev_node);
-+    options->dev = openvpn_basename (options->dev_node);
  }
- 
- bool
-@@ -1756,7 +1756,7 @@
-   to.auth_user_pass_verify_script = options->auth_user_pass_verify_script;
-   to.auth_user_pass_verify_script_via_file = options->auth_user_pass_verify_script_via_file;
-   to.tmp_dir = options->tmp_dir;
--  to.username_as_common_name = options->username_as_common_name;
-+  to.ssl_flags = options->ssl_flags;
-   if (options->ccd_exclusive)
-     to.client_config_dir_exclusive = options->client_config_dir;
- #endif
-@@ -1999,8 +1999,13 @@
- 
-   if (script_security >= SSEC_SCRIPTS)
-     msg (M_WARN, "NOTE: the current --script-security setting may allow this configuration to call user-defined scripts");
--  if (script_security >= SSEC_PW_ENV)
-+  else if (script_security >= SSEC_PW_ENV)
-     msg (M_WARN, "WARNING: the current --script-security setting may allow passwords to be passed to scripts via environmental variables");
-+  else
-+    msg (M_WARN, "NOTE: " PACKAGE_NAME " 2.1 requires '--script-security 2' or higher to call user-defined scripts or executables");
-+
-+  if (script_method == SM_SYSTEM)
-+    msg (M_WARN, "NOTE: --script-security method='system' is deprecated due to the fact that passed parameters will be subject to shell expansion");
- }
- 
- static void
-diff -urN openvpn-2.1_rc13/install-win32/buildinstaller openvpn-2.1_rc14/install-win32/buildinstaller
---- openvpn-2.1_rc13/install-win32/buildinstaller	2008-09-30 04:34:07.000000000 +0200
-+++ openvpn-2.1_rc14/install-win32/buildinstaller	2008-10-24 07:59:13.000000000 +0200
-@@ -4,19 +4,11 @@
- . autodefs/defs.sh
- 
- # build the installer
--cd install-win32
--rm -f *.exe
--'/c/Program Files/NSIS/makensis' openvpn.nsi &>makensis.log
-+rm -f $GENOUT/*.exe
-+'/c/Program Files/NSIS/makensis' $GENOUT/nsi/openvpn.nsi &>makensis.log
- tail -20 makensis.log
- 
--# copy the installer to GENOUT/install
--ls openvpn*.exe 2>/dev/null || exit 1
--i=`ls -t openvpn*.exe | head -n 1`
--cd ..
--mkdir $GENOUT/install &>/dev/null
--cp install-win32/$i $GENOUT/install
--
- # sign the installer
- if [ -d "$SIGNTOOL" ]; then
--    TARGET_EXE="$(pwd)/$GENOUT/install/$i" $SIGNTOOL/signexe
-+    TARGET_EXE="$(echo $(pwd)/$GENOUT/*.exe)" $SIGNTOOL/signexe
- fi
-diff -urN openvpn-2.1_rc13/install-win32/maketext openvpn-2.1_rc14/install-win32/maketext
---- openvpn-2.1_rc13/install-win32/maketext	2008-09-30 04:34:07.000000000 +0200
-+++ openvpn-2.1_rc14/install-win32/maketext	2008-10-24 08:05:22.000000000 +0200
-@@ -17,4 +17,39 @@
- cp sample-config-files/client.conf $s/client.$PRODUCT_FILE_EXT
- cp sample-config-files/server.conf $s/server.$PRODUCT_FILE_EXT
- cp install-win32/sample.ovpn $s/sample.$PRODUCT_FILE_EXT
--cp easy-rsa/1.0/openssl.cnf $s/openssl.cnf.sample
-+
-+# get easy-rsa (Windows)
-+e=$GENOUT/easy-rsa
-+mkdir -p $e &>/dev/null
-+cp easy-rsa/1.0/openssl.cnf $e/openssl.cnf.sample
-+cp easy-rsa/Windows/* $e
-+
-+# get images
-+i=$GENOUT/images
-+mkdir -p $i &>/dev/null
-+cp images/*.ico $i
-+cp images/*.bmp $i
-+
-+# get NSI files
-+n=$GENOUT/nsi
-+mkdir -p $n &>/dev/null
-+cp autodefs/defs.nsi $n
-+cp autodefs/guidefs.nsi $n
-+cp autodefs/xguidefs.nsi $n
-+cp install-win32/openvpn.nsi $n
-+cp install-win32/setpath.nsi $n
-+cp install-win32/GetWindowsVersion.nsi $n
-+
-+# get OpenVPN client config files
-+if [ -n "$SAMPCONF_DIR" ]; then
-+    c=$GENOUT/conf
-+    mkdir -p $c &>/dev/null
-+    test -n "$SAMPCONF_CONF" && cp "../$SAMPCONF_DIR/$SAMPCONF_CONF" $c
-+    test -n "$SAMPCONF_CONF2" && cp "../$SAMPCONF_DIR/$SAMPCONF_CONF2" $c
-+    test -n "$SAMPCONF_P12" && cp "../$SAMPCONF_DIR/$SAMPCONF_P12" $c
-+    test -n "$SAMPCONF_TA" && cp "../$SAMPCONF_DIR/$SAMPCONF_TA" $c
-+    test -n "$SAMPCONF_CA" && cp "../$SAMPCONF_DIR/$SAMPCONF_CA" $c
-+    test -n "$SAMPCONF_CRT" && cp "../$SAMPCONF_DIR/$SAMPCONF_CRT" $c
-+    test -n "$SAMPCONF_KEY" && cp "../$SAMPCONF_DIR/$SAMPCONF_KEY" $c
-+    test -n "$SAMPCONF_DH" && cp "../$SAMPCONF_DIR/$SAMPCONF_DH" $c
-+fi
-diff -urN openvpn-2.1_rc13/install-win32/openssl/.svn/all-wcprops openvpn-2.1_rc14/install-win32/openssl/.svn/all-wcprops
---- openvpn-2.1_rc13/install-win32/openssl/.svn/all-wcprops	1970-01-01 01:00:00.000000000 +0100
-+++ openvpn-2.1_rc14/install-win32/openssl/.svn/all-wcprops	2008-10-24 07:59:13.000000000 +0200
-@@ -0,0 +1,23 @@
-+K 25
-+svn:wc:ra_dav:version-url
-+V 77
-+/projects/openvpn/!svn/ver/3417/branches/BETA21/openvpn/install-win32/openssl
-+END
-+openssl097.patch
-+K 25
-+svn:wc:ra_dav:version-url
-+V 94
-+/projects/openvpn/!svn/ver/2982/branches/BETA21/openvpn/install-win32/openssl/openssl097.patch
-+END
-+openssl098.patch
-+K 25
-+svn:wc:ra_dav:version-url
-+V 94
-+/projects/openvpn/!svn/ver/3149/branches/BETA21/openvpn/install-win32/openssl/openssl098.patch
-+END
-+README.txt
-+K 25
-+svn:wc:ra_dav:version-url
-+V 88
-+/projects/openvpn/!svn/ver/3417/branches/BETA21/openvpn/install-win32/openssl/README.txt
-+END
-diff -urN openvpn-2.1_rc13/install-win32/openssl/.svn/entries openvpn-2.1_rc14/install-win32/openssl/.svn/entries
---- openvpn-2.1_rc13/install-win32/openssl/.svn/entries	1970-01-01 01:00:00.000000000 +0100
-+++ openvpn-2.1_rc14/install-win32/openssl/.svn/entries	2008-10-24 08:05:22.000000000 +0200
-@@ -0,0 +1,64 @@
-+8
-+
-+dir
-+3450
-+https://svn.openvpn.net/projects/openvpn/branches/BETA21/openvpn/install-win32/openssl
-+https://svn.openvpn.net/projects/openvpn
-+
-+
-+
-+2008-10-08T04:53:19.154737Z
-+3417
-+james
-+
-+
-+svn:special svn:externals svn:needs-lock
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+
-+e7ae566f-a301-0410-adde-c780ea21d3b5
-+
-+openssl097.patch
-+file
-+
-+
-+
-+
-+2008-09-30T02:34:06.000000Z
-+686b9f53674fe4132af89cdc7aea5344
-+2008-06-04T10:53:57.832544Z
-+2982
-+james
-+
-+openssl098.patch
-+file
-+
-+
-+
-+
-+2008-09-30T02:34:06.000000Z
-+6f2e5ab0b37296726fbbd4dbc59df49c
-+2008-07-31T22:03:38.310201Z
-+3149
-+james
-+
-+README.txt
-+file
-+
-+
-+
-+
-+2008-10-07T19:29:23.000000Z
-+a3f1d85e1bc2b2a1a21226da55ff170b
-+2008-10-08T04:53:19.154737Z
-+3417
-+james
-+
-diff -urN openvpn-2.1_rc13/install-win32/openssl/.svn/format openvpn-2.1_rc14/install-win32/openssl/.svn/format
---- openvpn-2.1_rc13/install-win32/openssl/.svn/format	1970-01-01 01:00:00.000000000 +0100
-+++ openvpn-2.1_rc14/install-win32/openssl/.svn/format	2008-09-30 04:34:06.000000000 +0200
-@@ -0,0 +1 @@
-+8
-diff -urN openvpn-2.1_rc13/install-win32/openssl/.svn/text-base/README.txt.svn-base openvpn-2.1_rc14/install-win32/openssl/.svn/text-base/README.txt.svn-base
---- openvpn-2.1_rc13/install-win32/openssl/.svn/text-base/README.txt.svn-base	1970-01-01 01:00:00.000000000 +0100
-+++ openvpn-2.1_rc14/install-win32/openssl/.svn/text-base/README.txt.svn-base	2008-10-07 21:29:23.000000000 +0200
-@@ -0,0 +1,21 @@
-+Rebuild OpenSSL tarball without symbolic links, so
-+it can be extracted on Windows (run on Unix):
-+
-+  [download tarball and .asc sig]
-+  gpg --verify openssl-0.9.8i.tar.gz.asc
-+  tar xfz openssl-0.9.8i.tar.gz
-+  tar cfzh openssl-0.9.8i-nolinks.tar.gz openssl-0.9.8i
-+
-+To apply patch (in MSYS shell):
-+
-+  cd /c/src/openssl-0.9.8i
-+  patch -p1 <../21/install-win32/openssl/openssl098.patch
-+
-+To build OpenSSL, open a command prompt window, then:
-+
-+  cd \src\openssl-0.9.8i
-+  ms\mw
-+
-+To build a new patch (optional):
-+
-+  diff -urw openssl-0.9.8i.orig openssl-0.9.8i | grep -v '^Only in' >openssl098.patch
-diff -urN openvpn-2.1_rc13/install-win32/openssl/.svn/text-base/openssl097.patch.svn-base openvpn-2.1_rc14/install-win32/openssl/.svn/text-base/openssl097.patch.svn-base
---- openvpn-2.1_rc13/install-win32/openssl/.svn/text-base/openssl097.patch.svn-base	1970-01-01 01:00:00.000000000 +0100
-+++ openvpn-2.1_rc14/install-win32/openssl/.svn/text-base/openssl097.patch.svn-base	2008-09-30 04:34:06.000000000 +0200
-@@ -0,0 +1,68 @@
-+[in msys bash window]
-+cd /c/src/openssl-0.9.7m
-+patch -p1 <../21/install-win32/openssl.patch
-+
-+[open command prompt window]
-+cd \src\openssl-0.9.7m
-+ms\mw
-+
-+diff -wur openssl-0.9.7m.orig/ms/mw.bat openssl-0.9.7m/ms/mw.bat
-+--- openssl-0.9.7m.orig/ms/mw.bat	Sat Feb 22 11:02:46 2003
-++++ openssl-0.9.7m/ms/mw.bat	Mon Jan 21 23:12:34 2008
-+@@ -1,17 +1,23 @@
-+ @rem OpenSSL with Mingw32
-+ @rem --------------------
-+ 
-++@rem Include MinGW, MSYS, and ActiveState Perl in path
-++set PATH=c:\perl\bin;c:\MinGW\bin;c:\msys\1.0\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem
-++
-+ @rem Makefile
-+ perl util\mkfiles.pl >MINFO
-+-perl util\mk1mf.pl Mingw32 >ms\mingw32.mak
-++perl util\mk1mf.pl no-idea no-mdc2 no-rc5 Mingw32 >ms\mingw32.mak
-++
-+ @rem DLL definition files
-+-perl util\mkdef.pl 32 libeay >ms\libeay32.def
-++perl util\mkdef.pl no-idea no-mdc2 no-rc5 32 libeay >ms\libeay32.def
-+ if errorlevel 1 goto end
-+-perl util\mkdef.pl 32 ssleay >ms\ssleay32.def
-++perl util\mkdef.pl no-idea no-mdc2 no-rc5 32 ssleay >ms\ssleay32.def
-+ if errorlevel 1 goto end
-+ 
-+ @rem Build the libraries
-+-make -f ms/mingw32.mak
-++
-++@rem JY added --win32 flag
-++make --win32 -f ms/mingw32.mak
-+ if errorlevel 1 goto end
-+ 
-+ @rem Generate the DLLs and input libraries
-+@@ -20,7 +26,9 @@
-+ dllwrap --dllname libssl32.dll --output-lib out/libssl32.a --def ms/ssleay32.def out/libssl.a out/libeay32.a
-+ if errorlevel 1 goto end
-+ 
-++@rem JY added openssl.exe linked to DLL
-++gcc -o openssl  tmp\verify.o tmp\asn1pars.o tmp\req.o tmp\dgst.o tmp\dh.o tmp\dhparam.o tmp\enc.o tmp\passwd.o tmp\gendh.o tmp\errstr.o tmp\ca.o tmp\pkcs7.o tmp\crl2p7.o tmp\crl.o tmp\rsa.o tmp\rsautl.o tmp\dsa.o tmp\dsaparam.o tmp\x509.o tmp\genrsa.o tmp\gendsa.o tmp\s_server.o tmp\s_client.o tmp\speed.o tmp\s_time.o tmp\apps.o tmp\s_cb.o tmp\s_socket.o tmp\app_rand.o tmp\version.o tmp\sess_id.o tmp\ciphers.o tmp\nseq.o tmp\pkcs12.o tmp\pkcs8.o tmp\spkac.o tmp\smime.o tmp\rand.o tmp\engine.o tmp\ocsp.o tmp\prime.o tmp\openssl.o -leay32 -lssl32 -L. -lwsock32 -lgdi32
-++
-+ echo Done compiling OpenSSL
-+ 
-+ :end
-+-
-+diff -wur openssl-0.9.7m.orig/util/pl/Mingw32.pl openssl-0.9.7m/util/pl/Mingw32.pl
-+--- openssl-0.9.7m.orig/util/pl/Mingw32.pl	Sun May 16 23:28:32 2004
-++++ openssl-0.9.7m/util/pl/Mingw32.pl	Mon Jan 21 17:52:36 2008
-+@@ -99,10 +99,10 @@
-+ 	$n=&bname($target);
-+ 	$ret.="$target: $files $dep_libs\n";
-+ 	$ret.="\t\$(LINK) ${efile}$target \$(LFLAGS) $files $libs\n";
-+-	if (defined $sha1file)
-+-		{
-+-		$ret.="\t$openssl sha1 -hmac etaonrishdlcupfm -binary $target > $sha1file";
-+-		}
-++#	if (defined $sha1file)
-++#		{
-++#		$ret.="\t$openssl sha1 -hmac etaonrishdlcupfm -binary $target > $sha1file";
-++#		}
-+ 	$ret.="\n";
-+ 	return($ret);
-+ 	}
-diff -urN openvpn-2.1_rc13/install-win32/openssl/.svn/text-base/openssl098.patch.svn-base openvpn-2.1_rc14/install-win32/openssl/.svn/text-base/openssl098.patch.svn-base
---- openvpn-2.1_rc13/install-win32/openssl/.svn/text-base/openssl098.patch.svn-base	1970-01-01 01:00:00.000000000 +0100
-+++ openvpn-2.1_rc14/install-win32/openssl/.svn/text-base/openssl098.patch.svn-base	2008-09-30 04:34:06.000000000 +0200
-@@ -0,0 +1,56 @@
-+diff -urw tmp/openssl-0.9.8h/crypto/pqueue/pqueue.c openssl-0.9.8h/crypto/pqueue/pqueue.c
-+--- tmp/openssl-0.9.8h/crypto/pqueue/pqueue.c	Tue Jun 28 06:53:34 2005
-++++ openssl-0.9.8h/crypto/pqueue/pqueue.c	Wed Jun  4 02:52:42 2008
-+@@ -199,10 +199,10 @@
-+ 	return found;
-+ 	}
-+ 
-+-#if PQ_64BIT_IS_INTEGER
-+ void
-+ pqueue_print(pqueue_s *pq)
-+ 	{
-++#if PQ_64BIT_IS_INTEGER
-+ 	pitem *item = pq->items;
-+ 
-+ 	while(item != NULL)
-+@@ -210,8 +210,8 @@
-+ 		printf("item\t" PQ_64BIT_PRINT "\n", item->priority);
-+ 		item = item->next;
-+ 		}
-+-	}
-+ #endif
-++	}
-+ 
-+ pitem *
-+ pqueue_iterator(pqueue_s *pq)
-+diff -urw tmp/openssl-0.9.8h/ms/mw.bat openssl-0.9.8h/ms/mw.bat
-+--- tmp/openssl-0.9.8h/ms/mw.bat	Sat Feb 22 11:00:10 2003
-++++ openssl-0.9.8h/ms/mw.bat	Wed Jun  4 02:56:54 2008
-+@@ -1,17 +1,23 @@
-+ @rem OpenSSL with Mingw32
-+ @rem --------------------
-+ 
-++@rem Include MinGW, MSYS, and ActiveState Perl in path
-++set PATH=c:\bin;C:\Perl\bin\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;c:\MinGW\bin;c:\msys\1.0\bin
-++
-+ @rem Makefile
-+ perl util\mkfiles.pl >MINFO
-+-perl util\mk1mf.pl Mingw32 >ms\mingw32.mak
-++perl util\mk1mf.pl no-idea no-mdc2 no-rc5 Mingw32 >ms\mingw32.mak
-++
-+ @rem DLL definition files
-+-perl util\mkdef.pl 32 libeay >ms\libeay32.def
-++perl util\mkdef.pl no-idea no-mdc2 no-rc5 32 libeay >ms\libeay32.def
-+ if errorlevel 1 goto end
-+-perl util\mkdef.pl 32 ssleay >ms\ssleay32.def
-++perl util\mkdef.pl no-idea no-mdc2 no-rc5 32 ssleay >ms\ssleay32.def
-+ if errorlevel 1 goto end
-+ 
-+ @rem Build the libraries
-+-make -f ms/mingw32.mak
-++
-++@rem JY added --win32
-++make --win32 -f ms/mingw32.mak
-+ if errorlevel 1 goto end
-+ 
-+ @rem Generate the DLLs and input libraries
-diff -urN openvpn-2.1_rc13/install-win32/openvpn.nsi openvpn-2.1_rc14/install-win32/openvpn.nsi
---- openvpn-2.1_rc13/install-win32/openvpn.nsi	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/install-win32/openvpn.nsi	2008-10-24 08:05:22.000000000 +0200
-@@ -7,15 +7,18 @@
- 
- ; OpenVPN install script for Windows, using NSIS
- 
--!define HOME ".."
--
--!include "${HOME}\autodefs\defs.nsi"
--!include "${HOME}\autodefs\guidefs.nsi"
--!include "${HOME}\autodefs\xguidefs.nsi"
- !include "MUI.nsh"
-+
-+!include "defs.nsi"
-+!include "guidefs.nsi"
-+!include "xguidefs.nsi"
- !include "setpath.nsi"
- !include "GetWindowsVersion.nsi"
- 
-+!define GEN ".."
-+!define BIN "${GEN}\bin"
-+!define LIB "${GEN}\lib"
-+
- ; Which GUI to use (XGUI has priority).
- ; We will define either USE_XGUI (XML-based version) or
- ; USE_GUI (Mathias Sundman version) but not both.
-@@ -27,10 +30,6 @@
- !endif
- !endif
- 
--!define GEN "${HOME}\${GENOUT}"
--!define BIN "${GEN}\bin"
--!define LIB "${GEN}\lib"
--
- !define PRODUCT_ICON "icon.ico"
- 
- !ifdef USE_XGUI
-@@ -72,7 +71,7 @@
- 
-   ;General
- 
--  OutFile "${PRODUCT_UNIX_NAME}-${VERSION}${OUTFILE_LABEL}-install.exe"
-+  OutFile "${GEN}\${PRODUCT_UNIX_NAME}-${VERSION}${OUTFILE_LABEL}-install.exe"
- 
-   SetCompressor bzip2
- 
-@@ -103,10 +102,10 @@
-   !endif
-   !define MUI_FINISHPAGE_NOAUTOCLOSE
-   !define MUI_ABORTWARNING
--  !define MUI_ICON "${HOME}\images\${PRODUCT_ICON}"
--  !define MUI_UNICON "${HOME}\images\${PRODUCT_ICON}"
-+  !define MUI_ICON "${GEN}\images\${PRODUCT_ICON}"
-+  !define MUI_UNICON "${GEN}\images\${PRODUCT_ICON}"
-   !define MUI_HEADERIMAGE
--  !define MUI_HEADERIMAGE_BITMAP "${HOME}\images\install-whirl.bmp"
-+  !define MUI_HEADERIMAGE_BITMAP "${GEN}\images\install-whirl.bmp"
-   !define MUI_UNFINISHPAGE_NOAUTOCLOSE
- 
-   !insertmacro MUI_PAGE_WELCOME
-@@ -163,7 +162,7 @@
-   ;Things that need to be extracted on first (keep these lines before any File command!)
-   ;Only useful for BZIP2 compression
-   
--  ReserveFile "${HOME}\images\install-whirl.bmp"
-+  ReserveFile "${GEN}\images\install-whirl.bmp"
- 
- ;--------------------------------
- ;Macros
-@@ -325,21 +324,21 @@
-   SetOverwrite on
-   SetOutPath "$INSTDIR\easy-rsa"
- 
--  File "${GEN}\samples\openssl.cnf.sample"
--  File "${HOME}\easy-rsa\Windows\vars.bat.sample"
-+  File "${GEN}\easy-rsa\openssl.cnf.sample"
-+  File "${GEN}\easy-rsa\vars.bat.sample"
- 
--  File "${HOME}\easy-rsa\Windows\init-config.bat"
-+  File "${GEN}\easy-rsa\init-config.bat"
- 
--  File "${HOME}\easy-rsa\Windows\README.txt"
--  File "${HOME}\easy-rsa\Windows\build-ca.bat"
--  File "${HOME}\easy-rsa\Windows\build-dh.bat"
--  File "${HOME}\easy-rsa\Windows\build-key-server.bat"
--  File "${HOME}\easy-rsa\Windows\build-key.bat"
--  File "${HOME}\easy-rsa\Windows\build-key-pkcs12.bat"
--  File "${HOME}\easy-rsa\Windows\clean-all.bat"
--  File "${HOME}\easy-rsa\Windows\index.txt.start"
--  File "${HOME}\easy-rsa\Windows\revoke-full.bat"
--  File "${HOME}\easy-rsa\Windows\serial.start"
-+  File "${GEN}\easy-rsa\README.txt"
-+  File "${GEN}\easy-rsa\build-ca.bat"
-+  File "${GEN}\easy-rsa\build-dh.bat"
-+  File "${GEN}\easy-rsa\build-key-server.bat"
-+  File "${GEN}\easy-rsa\build-key.bat"
-+  File "${GEN}\easy-rsa\build-key-pkcs12.bat"
-+  File "${GEN}\easy-rsa\clean-all.bat"
-+  File "${GEN}\easy-rsa\index.txt.start"
-+  File "${GEN}\easy-rsa\revoke-full.bat"
-+  File "${GEN}\easy-rsa\serial.start"
- 
- SectionEnd
- 
-@@ -497,20 +496,35 @@
-     File "${GEN}\text\INSTALL-win32.txt"
-   !endif
-   File "${GEN}\text\license.txt"
--  File "${HOME}\images\${PRODUCT_ICON}"
-+  File "${GEN}\images\${PRODUCT_ICON}"
- 
-   ; store sample config files
-   !ifdef SAMPCONF_DIR
-     SetOverwrite on
-     SetOutPath "$INSTDIR\config"
-   !ifdef SAMPCONF_CONF
--    File "${HOME}\..\${SAMPCONF_DIR}\${SAMPCONF_CONF}"
-+    File "${GEN}\conf\${SAMPCONF_CONF}"
-+  !endif
-+  !ifdef SAMPCONF_CONF2
-+    File "${GEN}\conf\${SAMPCONF_CONF2}"
-   !endif
-   !ifdef SAMPCONF_P12
--    File "${HOME}\..\${SAMPCONF_DIR}\${SAMPCONF_P12}"
-+    File "${GEN}\conf\${SAMPCONF_P12}"
-   !endif
-   !ifdef SAMPCONF_TA
--    File "${HOME}\..\${SAMPCONF_DIR}\${SAMPCONF_TA}"
-+    File "${GEN}\conf\${SAMPCONF_TA}"
-+  !endif
-+  !ifdef SAMPCONF_CA
-+    File "${GEN}\conf\${SAMPCONF_CA}"
-+  !endif
-+  !ifdef SAMPCONF_CRT
-+    File "${GEN}\conf\${SAMPCONF_CRT}"
-+  !endif
-+  !ifdef SAMPCONF_KEY
-+    File "${GEN}\conf\${SAMPCONF_KEY}"
-+  !endif
-+  !ifdef SAMPCONF_DH
-+    File "${GEN}\conf\${SAMPCONF_DH}"
-   !endif
-   !endif
- 
-@@ -754,12 +768,27 @@
-   !ifdef SAMPCONF_CONF
-     Delete "$INSTDIR\config\${SAMPCONF_CONF}"
-   !endif
-+  !ifdef SAMPCONF_CONF2
-+    Delete "$INSTDIR\config\${SAMPCONF_CONF2}"
-+  !endif
-   !ifdef SAMPCONF_P12
-     Delete "$INSTDIR\config\${SAMPCONF_P12}"
-   !endif
-   !ifdef SAMPCONF_TA
-     Delete "$INSTDIR\config\${SAMPCONF_TA}"
-   !endif
-+  !ifdef SAMPCONF_CA
-+    Delete "$INSTDIR\config\${SAMPCONF_CA}"
-+  !endif
-+  !ifdef SAMPCONF_CRT
-+    Delete "$INSTDIR\config\${SAMPCONF_CRT}"
-+  !endif
-+  !ifdef SAMPCONF_KEY
-+    Delete "$INSTDIR\config\${SAMPCONF_KEY}"
-+  !endif
-+  !ifdef SAMPCONF_DH
-+    Delete "$INSTDIR\config\${SAMPCONF_DH}"
-+  !endif
-   !endif
- 
-   !ifdef USE_GUI
-diff -urN openvpn-2.1_rc13/install-win32/settings.in openvpn-2.1_rc14/install-win32/settings.in
---- openvpn-2.1_rc13/install-win32/settings.in	2008-10-07 21:55:18.000000000 +0200
-+++ openvpn-2.1_rc14/install-win32/settings.in	2008-10-24 07:59:13.000000000 +0200
-@@ -83,6 +83,9 @@
- 
- # include a sample configuration file and key
- ;!define SAMPCONF_DIR   "test-key"
--!define SAMPCONF_CONF  "test.ovpn"
--!define SAMPCONF_P12   "test.p12"
--!define SAMPCONF_TA    "ta.key"
-+;!define SAMPCONF_CONF  "test.ovpn"
-+;!define SAMPCONF_P12   "test.p12"
-+;!define SAMPCONF_TA    "ta.key"
-+;!define SAMPCONF_CA    "ca.crt"
-+;!define SAMPCONF_CRT   "test.crt"
-+;!define SAMPCONF_KEY   "test.key"
-diff -urN openvpn-2.1_rc13/manage.c openvpn-2.1_rc14/manage.c
---- openvpn-2.1_rc13/manage.c	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc14/manage.c	2008-10-24 10:59:21.000000000 +0200
-@@ -367,11 +367,15 @@
- static void
- man_bytecount (struct management *man, const int update_seconds)
- {
--  man->connection.bytecount_update_seconds = update_seconds;
-+  if (update_seconds >= 0)
-+    man->connection.bytecount_update_seconds = update_seconds;
-+  else
-+    man->connection.bytecount_update_seconds = 0;
-+  msg (M_CLIENT, "SUCCESS: bytecount interval changed");
- }
- 
- void
--man_bytecount_output (struct management *man)
-+man_bytecount_output_client (struct management *man)
- {
-   char in[32];
-   char out[32];
-@@ -382,6 +386,25 @@
-   man->connection.bytecount_last_update = now;
- }
- 
-+#ifdef MANAGEMENT_DEF_AUTH
-+
-+void
-+man_bytecount_output_server (struct management *man,
-+			     const counter_type *bytes_in_total,
-+			     const counter_type *bytes_out_total,
-+			     struct man_def_auth_context *mdac)
-+{
-+  char in[32];
-+  char out[32];
-+  /* do in a roundabout way to work around possible mingw or mingw-glibc bug */
-+  openvpn_snprintf (in, sizeof (in), counter_format, *bytes_in_total);
-+  openvpn_snprintf (out, sizeof (out), counter_format, *bytes_out_total);
-+  msg (M_CLIENT, ">BYTECOUNT_CLI:%lu,%s,%s", mdac->cid, in, out);
-+  mdac->bytecount_last_update = now;
-+}
-+
-+#endif
-+
- static void
- man_kill (struct management *man, const char *victim)
- {
-diff -urN openvpn-2.1_rc13/manage.h openvpn-2.1_rc14/manage.h
---- openvpn-2.1_rc13/manage.h	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc14/manage.h	2008-10-24 10:09:12.000000000 +0200
-@@ -51,6 +51,8 @@
-   unsigned int flags;
- 
-   unsigned int mda_key_id_counter;
-+
-+  time_t bytecount_last_update;
- };
- #endif
- 
-@@ -143,6 +145,10 @@
- struct management_callback
- {
-   void *arg;
-+
-+# define MCF_SERVER (1<<0) /* is OpenVPN being run as a server? */
-+  unsigned int flags;
-+
-   void (*status) (void *arg, const int version, struct status_output *so);
-   void (*show_net) (void *arg, const int msglevel);
-   int (*kill_by_cn) (void *arg, const char *common_name);
-@@ -432,31 +438,65 @@
-  * These functions drive the bytecount in/out counters.
-  */
- 
--void man_bytecount_output (struct management *man);
-+void man_bytecount_output_client (struct management *man);
- 
- static inline void
--man_bytecount_possible_output (struct management *man)
-+man_bytecount_possible_output_client (struct management *man)
- {
-   if (man->connection.bytecount_update_seconds > 0
-       && now >= man->connection.bytecount_last_update
-       + man->connection.bytecount_update_seconds)
--    man_bytecount_output (man);
-+    man_bytecount_output_client (man);
- }
- 
- static inline void
--management_bytes_out (struct management *man, const int size)
-+management_bytes_out_client (struct management *man, const int size)
- {
-   man->persist.bytes_out += size;
--  man_bytecount_possible_output (man);
-+  man_bytecount_possible_output_client (man);
- }
- 
- static inline void
--management_bytes_in (struct management *man, const int size)
-+management_bytes_in_client (struct management *man, const int size)
- {
-   man->persist.bytes_in += size;
--  man_bytecount_possible_output (man);
-+  man_bytecount_possible_output_client (man);
- }
- 
--#endif
-+static inline void
-+management_bytes_out (struct management *man, const int size)
-+{
-+  if (!(man->persist.callback.flags & MCF_SERVER))
-+    management_bytes_out_client (man, size);
-+}
-+
-+static inline void
-+management_bytes_in (struct management *man, const int size)
-+{
-+  if (!(man->persist.callback.flags & MCF_SERVER))
-+    management_bytes_in_client (man, size);
-+}
- 
-+#ifdef MANAGEMENT_DEF_AUTH
-+
-+static inline void
-+management_bytes_server (struct management *man,
-+			 const counter_type *bytes_in_total,
-+			 const counter_type *bytes_out_total,
-+			 struct man_def_auth_context *mdac)
-+{
-+  void man_bytecount_output_server (struct management *man,
-+				    const counter_type *bytes_in_total,
-+				    const counter_type *bytes_out_total,
-+				    struct man_def_auth_context *mdac);
-+
-+  if (man->connection.bytecount_update_seconds > 0
-+      && now >= mdac->bytecount_last_update + man->connection.bytecount_update_seconds
-+      && (mdac->flags & (DAF_CONNECTION_ESTABLISHED|DAF_CONNECTION_CLOSED)) == DAF_CONNECTION_ESTABLISHED)
-+    man_bytecount_output_server (man, bytes_in_total, bytes_out_total, mdac);
-+}
-+
-+#endif /* MANAGEMENT_DEF_AUTH */
-+
-+#endif
- #endif
-diff -urN openvpn-2.1_rc13/misc.c openvpn-2.1_rc14/misc.c
---- openvpn-2.1_rc13/misc.c	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/misc.c	2008-11-17 05:01:16.000000000 +0100
-@@ -46,6 +46,9 @@
- /* contains an SSEC_x value defined in misc.h */
- int script_security = SSEC_BUILT_IN; /* GLOBAL */
- 
-+/* contains SM_x value defined in misc.h */
-+int script_method = SM_EXECVE; /* GLOBAL */
-+
- /* Redefine the top level directory of the filesystem
-    to restrict access to files for security */
- void
-@@ -507,28 +510,39 @@
- #if defined(ENABLE_EXECVE)
-       if (openvpn_execve_allowed (flags))
- 	{
--	  const char *cmd = a->argv[0];
--	  char *const *argv = a->argv;
--	  char *const *envp = (char *const *)make_env_array (es, true, &gc);
--	  pid_t pid;
-+	  if (script_method == SM_EXECVE)
-+	    {
-+	      const char *cmd = a->argv[0];
-+	      char *const *argv = a->argv;
-+	      char *const *envp = (char *const *)make_env_array (es, true, &gc);
-+	      pid_t pid;
- 
--	  pid = fork ();
--	  if (pid == (pid_t)0) /* child side */
-+	      pid = fork ();
-+	      if (pid == (pid_t)0) /* child side */
-+		{
-+		  execve (cmd, argv, envp);
-+		  exit (127);
-+		}
-+	      else if (pid < (pid_t)0) /* fork failed */
-+		;
-+	      else /* parent side */
-+		{
-+		  if (waitpid (pid, &ret, 0) != pid)
-+		    ret = -1;
-+		}
-+	    }
-+	  else if (script_method == SM_SYSTEM)
- 	    {
--	      execve (cmd, argv, envp);
--	      exit (127);
-+	      ret = openvpn_system (argv_system_str (a), es, flags);
- 	    }
--	  else if (pid < (pid_t)0) /* fork failed */
--	    ;
--	  else /* parent side */
-+	  else
- 	    {
--	      if (waitpid (pid, &ret, 0) != pid)
--		ret = -1;
-+	      ASSERT (0);
- 	    }
- 	}
-       else
- 	{
--	  msg (M_WARN, "openvpn_execve: external program may not be called due to setting of --script-security level");
-+	  msg (M_WARN, SCRIPT_SECURITY_WARNING);
- 	}
- #else
-       msg (M_WARN, "openvpn_execve: execve function not available");
-@@ -545,6 +559,52 @@
- #endif
- 
- /*
-+ * Wrapper around the system() call.
-+ */
-+int
-+openvpn_system (const char *command, const struct env_set *es, unsigned int flags)
-+{
-+#ifdef HAVE_SYSTEM
-+  int ret;
-+
-+  perf_push (PERF_SCRIPT);
-+
-+  /*
-+   * add env_set to environment.
-+   */
-+  if (flags & S_SCRIPT)
-+    env_set_add_to_environment (es);
-+
-+
-+  /* debugging */
-+  dmsg (D_SCRIPT, "SYSTEM[%u] '%s'", flags, command);
-+  if (flags & S_SCRIPT)
-+    env_set_print (D_SCRIPT, es);
-+
-+  /*
-+   * execute the command
-+   */
-+  ret = system (command);
-+
-+  /* debugging */
-+  dmsg (D_SCRIPT, "SYSTEM return=%u", ret);
-+
-+  /*
-+   * remove env_set from environment
-+   */
-+  if (flags & S_SCRIPT)
-+    env_set_remove_from_environment (es);
-+
-+  perf_pop ();
-+  return ret;
-+
-+#else
-+  msg (M_FATAL, "Sorry but I can't execute the shell command '%s' because this operating system doesn't appear to support the system() call", command);
-+  return -1; /* NOTREACHED */
-+#endif
-+}
 +
 +/*
-  * Initialize random number seed.  random() is only used
-  * when "weak" random numbers are acceptable.
-  * OpenSSL routines are always used when cryptographically
-@@ -1679,6 +1739,7 @@
-   a->capacity = 0;
-   a->argc = 0;
-   a->argv = NULL;
-+  a->system_str = NULL;
- }
- 
- struct argv
-@@ -1696,6 +1757,7 @@
-   for (i = 0; i < a->argc; ++i)
-     free (a->argv[i]);
-   free (a->argv);
-+  free (a->system_str);
-   argv_init (a);
- }
- 
-@@ -1730,6 +1792,64 @@
-   a->argv[a->argc++] = str;
- }
- 
-+static void
-+argv_system_str_append (struct argv *a, const char *str, const bool enquote)
++ *
++ * HELPER DIRECTIVE:
++ *
++ * tcp-nodelay
++ *
++ * EXPANDS TO:
++ *
++ * if mode server:
++ *   socket-flags TCP_NODELAY
++ *   push "socket-flags TCP_NODELAY"
++ */
++void
++helper_tcp_nodelay (struct options *o)
 +{
-+  if (str)
++#if P2MP_SERVER
++  if (o->server_flags & SF_TCP_NODELAY_HELPER)
 +    {
-+      char *newstr;
-+
-+      /* compute length of new system_str */
-+      size_t l = strlen (str) + 1; /* space for new string plus trailing '\0' */
-+      if (a->system_str)
-+	l += strlen (a->system_str) + 1; /* space for existing string + space (" ") separator */
-+      if (enquote)
-+	l += 2; /* space for two quotes */
-+
-+      /* build new system_str */
-+      newstr = (char *) malloc (l);
-+      newstr[0] = '\0';
-+      check_malloc_return (newstr);
-+      if (a->system_str)
++      if (o->mode == MODE_SERVER)
 +	{
-+	  strcpy (newstr, a->system_str);
-+	  strcat (newstr, " ");
++	  o->sockflags |= SF_TCP_NODELAY;	  
++	  push_option (o, print_str ("socket-flags TCP_NODELAY", &o->gc), M_USAGE);
 +	}
-+      if (enquote)
-+	strcat (newstr, "\"");
-+      strcat (newstr, str);
-+      if (enquote)
-+	strcat (newstr, "\"");
-+      free (a->system_str);
-+      a->system_str = newstr;
-+    }
-+}
-+
-+static char *
-+argv_extract_cmd_name (const char *path)
-+{
-+  if (path)
-+    {
-+      const char *bn = openvpn_basename (path);
-+      if (bn)
++      else
 +	{
-+	  char *ret = string_alloc (bn, NULL);
-+	  char *dot = strrchr (ret, '.');
-+	  if (dot)
-+	    *dot = '\0';
-+	  if (ret[0] != '\0')
-+	    return ret;
++	  ASSERT (0);
 +	}
 +    }
-+  return NULL;
++#endif
 +}
+diff -urN openvpn-2.1_rc14/helper.h openvpn-2.1_rc15/helper.h
+--- openvpn-2.1_rc14/helper.h	2008-10-06 09:22:21.000000000 +0200
++++ openvpn-2.1_rc15/helper.h	2008-11-18 05:53:58.000000000 +0100
+@@ -33,5 +33,6 @@
+ 
+ void helper_keepalive (struct options *o);
+ void helper_client_server (struct options *o);
++void helper_tcp_nodelay (struct options *o);
+ 
+ #endif
+diff -urN openvpn-2.1_rc14/init.c openvpn-2.1_rc15/init.c
+--- openvpn-2.1_rc14/init.c	2008-11-17 04:02:43.000000000 +0100
++++ openvpn-2.1_rc15/init.c	2008-11-18 01:39:39.000000000 +0100
+@@ -401,7 +401,7 @@
+   /* init PRNG used for IV generation */
+   /* When forking, copy this to more places in the code to avoid fork
+      random-state predictability */
+-  prng_init ();
++  prng_init (NULL, 0);
+ #endif
+ 
+ #ifdef PID_TEST
+@@ -473,6 +473,29 @@
+   }
+ #endif
+ 
++#ifdef PRNG_TEST
++  {
++    struct gc_arena gc = gc_new ();
++    uint8_t rndbuf[8];
++    int i;
++    prng_init ("sha1", 16);
++    //prng_init (NULL, 0);
++    const int factor = 1;
++    for (i = 0; i < factor * 8; ++i)
++      {
++#if 1
++	prng_bytes (rndbuf, sizeof (rndbuf));
++#else
++	ASSERT(RAND_bytes (rndbuf, sizeof (rndbuf)));
++#endif
++	printf ("[%d] %s\n", i, format_hex (rndbuf, sizeof (rndbuf), 0, &gc));
++      }
++    gc_free (&gc);
++    prng_uninit ();
++    return false;
++  }
++#endif
 +
-+const char *
-+argv_system_str (const struct argv *a)
-+{
-+  return a->system_str;
-+}
+   return true;
+ }
+ 
+@@ -1634,6 +1657,9 @@
+ 		     options->ciphername_defined, options->authname,
+ 		     options->authname_defined, options->keysize, true, true);
+ 
++      /* Initialize PRNG with config-specified digest */
++      prng_init (options->prng_hash, options->prng_nonce_secret_len);
 +
- struct argv
- argv_clone (const struct argv *a, const size_t headroom)
- {
-@@ -1744,6 +1864,7 @@
+       /* TLS handshake authentication (--tls-auth) */
+       if (options->tls_auth_file)
+ 	{
+diff -urN openvpn-2.1_rc14/misc.c openvpn-2.1_rc15/misc.c
+--- openvpn-2.1_rc14/misc.c	2008-11-17 05:01:16.000000000 +0100
++++ openvpn-2.1_rc15/misc.c	2008-11-19 18:59:32.000000000 +0100
+@@ -1863,8 +1863,8 @@
+     {
        for (i = 0; i < a->argc; ++i)
  	argv_append (&r, string_alloc (a->argv[i], NULL));
++      r.system_str = string_alloc (a->system_str, NULL);
      }
-+  r.system_str = string_alloc (a->system_str, NULL);
+-  r.system_str = string_alloc (a->system_str, NULL);
    return r;
  }
  
-@@ -1751,10 +1872,17 @@
- argv_insert_head (const struct argv *a, const char *head)
- {
-   struct argv r;
-+  char *s;
- 
-   r = argv_clone (a, 1);
-   r.argv[0] = string_alloc (head, NULL);
--
-+  s = r.system_str;
-+  r.system_str = string_alloc (head, NULL);
-+  if (s)
-+    {
-+      argv_system_str_append (&r, s, false);
-+      free (s);
-+    }
-   return r;
- }
- 
-@@ -1870,6 +1998,7 @@
- 	      if (!s)
- 		s = "";
- 	      argv_append (a, string_alloc (s, NULL));
-+	      argv_system_str_append (a, s, true);
- 	    }
- 	  else if (!strcmp (term, "%sc"))
- 	    {
-@@ -1880,24 +2009,36 @@
- 		  char *parms[MAX_PARMS+1];
- 		  int i;
- 
--		  nparms = parse_line (s, parms, MAX_PARMS, "SCRIPT-ARGV", 0, M_FATAL, &gc);
--		  for (i = 0; i < nparms; ++i)
--		    argv_append (a, string_alloc (parms[i], NULL));
-+		  nparms = parse_line (s, parms, MAX_PARMS, "SCRIPT-ARGV", 0, D_ARGV_PARSE_CMD, &gc);
-+		  if (nparms)
-+		    {
-+		      for (i = 0; i < nparms; ++i)
-+			argv_append (a, string_alloc (parms[i], NULL));
-+		    }
-+		  else
-+		    argv_append (a, string_alloc (s, NULL));
-+
-+		  argv_system_str_append (a, s, false);
- 		}
- 	      else
--		argv_append (a, string_alloc ("", NULL));
-+		{
-+		  argv_append (a, string_alloc ("", NULL));
-+		  argv_system_str_append (a, "echo", false);
-+		}
- 	    }
- 	  else if (!strcmp (term, "%d"))
- 	    {
- 	      char numstr[64];
- 	      openvpn_snprintf (numstr, sizeof (numstr), "%d", va_arg (arglist, int));
- 	      argv_append (a, string_alloc (numstr, NULL));
-+	      argv_system_str_append (a, numstr, false);
- 	    }
- 	  else if (!strcmp (term, "%u"))
- 	    {
- 	      char numstr[64];
- 	      openvpn_snprintf (numstr, sizeof (numstr), "%u", va_arg (arglist, unsigned int));
- 	      argv_append (a, string_alloc (numstr, NULL));
-+	      argv_system_str_append (a, numstr, false);
- 	    }
- 	  else if (!strcmp (term, "%s/%d"))
- 	    {
-@@ -1918,13 +2059,15 @@
- 		strcat (combined, "/");
- 		strcat (combined, numstr);
- 		argv_append (a, combined);
-+		argv_system_str_append (a, combined, false);
- 	      }
- 	    }
--	  else if (!strcmp (term, "%s%s"))
-+	  else if (!strcmp (term, "%s%sc"))
- 	    {
- 	      char *s1 = va_arg (arglist, char *);
- 	      char *s2 = va_arg (arglist, char *);
- 	      char *combined;
-+	      char *cmd_name;
- 
- 	      if (!s1) s1 = "";
- 	      if (!s2) s2 = "";
-@@ -1933,6 +2076,13 @@
- 	      strcpy (combined, s1);
- 	      strcat (combined, s2);
- 	      argv_append (a, combined);
-+
-+	      cmd_name = argv_extract_cmd_name (combined);
-+	      if (cmd_name)
-+		{
-+		  argv_system_str_append (a, cmd_name, false);
-+		  free (cmd_name);
-+		}
- 	    }
- 	  else
- 	    ASSERT (0);
-@@ -1941,6 +2091,7 @@
-       else
- 	{
- 	  argv_append (a, term);
-+	  argv_system_str_append (a, term, false);
- 	}
-     }
-   gc_free (&gc);
-@@ -1954,43 +2105,54 @@
-   const char *s;
- 
-   struct argv a;
-+
-   argv_init (&a);
-+  argv_printf (&a, "%sc foo bar %s", "c:\\\\src\\\\test\\\\jyargs.exe", "foo bar");
-+  argv_msg_prefix (M_INFO, &a, "ARGV");
-+  msg (M_INFO, "ARGV-S: %s", argv_system_str(&a));
-+  //openvpn_execve_check (&a, NULL, 0, "command failed");
- 
--#ifdef WIN32
--  argv_printf (&a, "%s foo bar %s", "c:\\src\\test\\jyargs.exe", "foo bar");
--  //argv_printf (&a, "%s %s %s", "c:\\src\\test files\\batargs.bat", "foo", "bar");  
--#else
--  argv_printf (&a, "./myechox foo bar");
--#endif
-+  argv_printf (&a, "%sc %s %s", "c:\\\\src\\\\test files\\\\batargs.bat", "foo", "bar");  
-+  argv_msg_prefix (M_INFO, &a, "ARGV");
-+  msg (M_INFO, "ARGV-S: %s", argv_system_str(&a));
-+  //openvpn_execve_check (&a, NULL, 0, "command failed");
- 
-+  argv_printf (&a, "%s%sc foo bar %s %s/%d %d %u", "/foo", "/bar.exe", "one two", "1.2.3.4", 24, -69, 96);
-   argv_msg_prefix (M_INFO, &a, "ARGV");
-+  msg (M_INFO, "ARGV-S: %s", argv_system_str(&a));
-   //openvpn_execve_check (&a, NULL, 0, "command failed");
- 
-   argv_printf (&a, "this is a %s test of int %d unsigned %u", "FOO", -69, 42);
-   s = argv_str (&a, &gc, PA_BRACKET);
--  printf ("%s\n", s);
-+  printf ("PF: %s\n", s);
-+  printf ("PF-S: %s\n", argv_system_str(&a));
- 
-   {
-     struct argv b = argv_insert_head (&a, "MARK");
-     s = argv_str (&b, &gc, PA_BRACKET);
-+    printf ("PF: %s\n", s);
-+    printf ("PF-S: %s\n", argv_system_str(&b));
-     argv_reset (&b);
--    printf ("%s\n", s);
-   }
- 
-   argv_printf (&a, "%sc foo bar %d", "\"multi term\" command      following \\\"spaces", 99);
-   s = argv_str (&a, &gc, PA_BRACKET);
-+  printf ("PF: %s\n", s);
-+  printf ("PF-S: %s\n", argv_system_str(&a));
-   argv_reset (&a);
--  printf ("%s\n", s);
- 
-   s = argv_str (&a, &gc, PA_BRACKET);
-+  printf ("PF: %s\n", s);
-+  printf ("PF-S: %s\n", argv_system_str(&a));
-   argv_reset (&a);
--  printf ("%s\n", s);
- 
-   argv_printf (&a, "foo bar %d", 99);
-   argv_printf_cat (&a, "bar %d foo %sc", 42, "nonesuch");
-   argv_printf_cat (&a, "cool %s %d u %s/%d end", "frood", 4, "hello", 7);
-   s = argv_str (&a, &gc, PA_BRACKET);
--  printf ("%s\n", s);
-+  printf ("PF: %s\n", s);
-+  printf ("PF-S: %s\n", argv_system_str(&a));
-+  argv_reset (&a);
- 
- #if 0
-   {
-@@ -2015,3 +2177,22 @@
-   gc_free (&gc);
- }
- #endif
-+
-+const char *
-+openvpn_basename (const char *path)
-+{
-+  const char *ret;
-+  const int dirsep = OS_SPECIFIC_DIRSEP;
-+
-+  if (path)
-+    {
-+      ret = strrchr (path, dirsep);
-+      if (ret && *ret)
-+	++ret;
-+      else
-+	ret = path;
-+      if (*ret)
-+	return ret;
-+    }
-+  return NULL;
-+}
-diff -urN openvpn-2.1_rc13/misc.h openvpn-2.1_rc14/misc.h
---- openvpn-2.1_rc13/misc.h	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc14/misc.h	2008-11-17 01:18:29.000000000 +0100
-@@ -36,6 +36,14 @@
- /* forward declarations */
- struct plugin_list;
- 
-+/* used by argv_x functions */
-+struct argv {
-+  size_t capacity;
-+  size_t argc;
-+  char **argv;
-+  char *system_str;
-+};
-+
- /*
-  * Handle environmental variable lists
-  */
-@@ -126,6 +134,7 @@
- int openvpn_execve (const struct argv *a, const struct env_set *es, const unsigned int flags);
- bool openvpn_execve_check (const struct argv *a, const struct env_set *es, const unsigned int flags, const char *error_message);
- bool openvpn_execve_allowed (const unsigned int flags);
-+int openvpn_system (const char *command, const struct env_set *es, unsigned int flags);
- 
- #ifdef HAVE_STRERROR
- /* a thread-safe version of strerror */
-@@ -297,9 +306,16 @@
- #define SSEC_PW_ENV    3 /* allow calling of built-in programs and user-defined scripts that may receive a password as an environmental variable */
- extern int script_security; /* GLOBAL */
- 
-+#define SM_EXECVE 0      /* call external programs with execve() or CreateProcess() */
-+#define SM_SYSTEM 1      /* call external programs with system() */
-+extern int script_method; /* GLOBAL */
-+
- /* return the next largest power of 2 */
- size_t adjust_power_of_2 (size_t u);
- 
-+/* return the basename of path */
-+const char *openvpn_basename (const char *path);
-+
- /*
-  * A printf-like function (that only recognizes a subset of standard printf
-  * format operators) that prints arguments to an argv list instead
-@@ -314,6 +330,7 @@
- struct argv argv_insert_head (const struct argv *a, const char *head);
- void argv_msg (const int msglev, const struct argv *a);
- void argv_msg_prefix (const int msglev, const struct argv *a, const char *prefix);
-+const char *argv_system_str (const struct argv *a);
- 
- #define APA_CAT (1<<0) /* concatentate onto existing struct argv list */
- void argv_printf_arglist (struct argv *a, const char *format, const unsigned int flags, va_list arglist);
-diff -urN openvpn-2.1_rc13/multi.c openvpn-2.1_rc14/multi.c
---- openvpn-2.1_rc13/multi.c	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/multi.c	2008-10-31 06:37:14.000000000 +0100
-@@ -437,6 +437,13 @@
- }
- 
- static void
-+setenv_stats (struct context *c)
-+{
-+  setenv_counter (c->c2.es, "bytes_received", c->c2.link_read_bytes);
-+  setenv_counter (c->c2.es, "bytes_sent", c->c2.link_write_bytes);
-+}
-+
-+static void
- multi_client_disconnect_setenv (struct multi_context *m,
- 				struct multi_instance *mi)
- {
-@@ -444,8 +451,7 @@
-   setenv_trusted (mi->context.c2.es, get_link_socket_info (&mi->context));
- 
-   /* setenv stats */
--  setenv_counter (mi->context.c2.es, "bytes_received", mi->context.c2.link_read_bytes);
--  setenv_counter (mi->context.c2.es, "bytes_sent", mi->context.c2.link_write_bytes);
-+  setenv_stats (&mi->context);
- 
-   /* setenv connection duration */
-   {
-@@ -767,14 +773,17 @@
- 
- 	  status_printf (so, "END");
- 	}
--      else if (version == 2)
-+      else if (version == 2 || version == 3)
- 	{
-+	  const char sep = (version == 3) ? '\t' : ',';
-+
- 	  /*
--	   * Status file version 2
-+	   * Status file version 2 and 3
- 	   */
--	  status_printf (so, "TITLE,%s", title_string);
--	  status_printf (so, "TIME,%s,%u", time_string (now, 0, false, &gc_top), (unsigned int)now);
--	  status_printf (so, "HEADER,CLIENT_LIST,Common Name,Real Address,Virtual Address,Bytes Received,Bytes Sent,Connected Since,Connected Since (time_t)");
-+	  status_printf (so, "TITLE%c%s", sep, title_string);
-+	  status_printf (so, "TIME%c%s%c%u", sep, time_string (now, 0, false, &gc_top), sep, (unsigned int)now);
-+	  status_printf (so, "HEADER%cCLIENT_LIST%cCommon Name%cReal Address%cVirtual Address%cBytes Received%cBytes Sent%cConnected Since%cConnected Since (time_t)",
-+			 sep, sep, sep, sep, sep, sep, sep, sep);
- 	  hash_iterator_init (m->hash, &hi, true);
- 	  while ((he = hash_iterator_next (&hi)))
- 	    {
-@@ -783,20 +792,21 @@
- 
- 	      if (!mi->halt)
- 		{
--		  status_printf (so, "CLIENT_LIST,%s,%s,%s," counter_format "," counter_format ",%s,%u",
--				 tls_common_name (mi->context.c2.tls_multi, false),
--				 mroute_addr_print (&mi->real, &gc),
--				 print_in_addr_t (mi->reporting_addr, IA_EMPTY_IF_UNDEF, &gc),
--				 mi->context.c2.link_read_bytes,
--				 mi->context.c2.link_write_bytes,
--				 time_string (mi->created, 0, false, &gc),
--				 (unsigned int)mi->created);
-+		  status_printf (so, "CLIENT_LIST%c%s%c%s%c%s%c" counter_format "%c" counter_format "%c%s%c%u",
-+				 sep, tls_common_name (mi->context.c2.tls_multi, false),
-+				 sep, mroute_addr_print (&mi->real, &gc),
-+				 sep, print_in_addr_t (mi->reporting_addr, IA_EMPTY_IF_UNDEF, &gc),
-+				 sep, mi->context.c2.link_read_bytes,
-+				 sep, mi->context.c2.link_write_bytes,
-+				 sep, time_string (mi->created, 0, false, &gc),
-+				 sep, (unsigned int)mi->created);
- 		}
- 	      gc_free (&gc);
- 	    }
- 	  hash_iterator_free (&hi);
- 
--	  status_printf (so, "HEADER,ROUTING_TABLE,Virtual Address,Common Name,Real Address,Last Ref,Last Ref (time_t)");
-+	  status_printf (so, "HEADER%cROUTING_TABLE%cVirtual Address%cCommon Name%cReal Address%cLast Ref%cLast Ref (time_t)",
-+			 sep, sep, sep, sep, sep, sep);
- 	  hash_iterator_init (m->vhash, &hi, true);
- 	  while ((he = hash_iterator_next (&hi)))
- 	    {
-@@ -811,21 +821,20 @@
- 
- 		  if (route->flags & MULTI_ROUTE_CACHE)
- 		    flags[0] = 'C';
--		  status_printf (so, "ROUTING_TABLE,%s%s,%s,%s,%s,%u",
--				 mroute_addr_print (ma, &gc),
--				 flags,
--				 tls_common_name (mi->context.c2.tls_multi, false),
--				 mroute_addr_print (&mi->real, &gc),
--				 time_string (route->last_reference, 0, false, &gc),
--				 (unsigned int)route->last_reference);
-+		  status_printf (so, "ROUTING_TABLE%c%s%s%c%s%c%s%c%s%c%u",
-+				 sep, mroute_addr_print (ma, &gc), flags,
-+				 sep, tls_common_name (mi->context.c2.tls_multi, false),
-+				 sep, mroute_addr_print (&mi->real, &gc),
-+				 sep, time_string (route->last_reference, 0, false, &gc),
-+				 sep, (unsigned int)route->last_reference);
- 		}
- 	      gc_free (&gc);
- 	    }
- 	  hash_iterator_free (&hi);
- 
- 	  if (m->mbuf)
--	    status_printf (so, "GLOBAL_STATS,Max bcast/mcast queue length,%d",
--			   mbuf_maximum_queued (m->mbuf));
-+	    status_printf (so, "GLOBAL_STATS%cMax bcast/mcast queue length%c%d",
-+			   sep, sep, mbuf_maximum_queued (m->mbuf));
- 
- 	  status_printf (so, "END");
- 	}
-@@ -2583,6 +2592,7 @@
-       struct management_callback cb;
-       CLEAR (cb);
-       cb.arg = m;
-+      cb.flags = MCF_SERVER;
-       cb.status = management_callback_status;
-       cb.show_net = management_show_net_callback;
-       cb.kill_by_cn = management_callback_kill_by_cn;
-diff -urN openvpn-2.1_rc13/openvpn.8 openvpn-2.1_rc14/openvpn.8
---- openvpn-2.1_rc13/openvpn.8	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/openvpn.8	2008-11-17 04:08:45.000000000 +0100
+diff -urN openvpn-2.1_rc14/openvpn.8 openvpn-2.1_rc15/openvpn.8
+--- openvpn-2.1_rc14/openvpn.8	2008-11-17 04:08:45.000000000 +0100
++++ openvpn-2.1_rc15/openvpn.8	2008-11-18 06:09:27.000000000 +0100
 @@ -26,7 +26,7 @@
  .\" LP paragraph
  .\" IP indented paragraph
  .\" TP hanging label
--.TH openvpn 8 "3 August 2005"
-+.TH openvpn 8 "4 November 2008"
+-.TH openvpn 8 "4 November 2008"
++.TH openvpn 8 "17 November 2008"
  .\"*********************************************************
  .SH NAME
  openvpn \- secure IP tunnel daemon.
-@@ -102,6 +102,7 @@
- [\ \fB\-\-askpass\fR\ \fI[file]\fR\ ]
- [\ \fB\-\-auth\-nocache\fR\ ]
- [\ \fB\-\-auth\-retry\fR\ \fItype\fR\ ]
-+[\ \fB\-\-auth\-user\-pass\-optional\fR\ ]
- [\ \fB\-\-auth\-user\-pass\-verify\fR\ \fIscript\fR\ ]
- [\ \fB\-\-auth\-user\-pass\fR\ \fIup\fR\ ]
- [\ \fB\-\-auth\fR\ \fIalg\fR\ ]
-@@ -202,6 +203,7 @@
- [\ \fB\-\-mute\fR\ \fIn\fR\ ]
- [\ \fB\-\-nice\fR\ \fIn\fR\ ]
- [\ \fB\-\-no\-iv\fR\ ]
-+[\ \fB\-\-no\-name\-remapping\fR\ ]
- [\ \fB\-\-no\-replay\fR\ ]
- [\ \fB\-\-bind\fR\ ]
- [\ \fB\-\-nobind\fR\ ]
-@@ -2008,6 +2010,19 @@
- to pass to script.
+@@ -36,278 +36,7 @@
+ .nh
+ .in +4
+ .ti -4
+-.B openvpn
+-[\ \fB\-\-help\fR\ ]
+-.in -4
+-.ti +4
+-.hy
+-
+-.nh
+-.in +4
+-.ti -4
+-.B openvpn
+-[\ \fB\-\-config\fR\ \fIfile\fR\ ]
+-.in -4
+-.ti +4
+-.hy
+-
+-.nh
+-.in +4
+-.ti -4
+-.B openvpn
+-[\ \fB\-\-genkey\fR\ ]
+-[\ \fB\-\-secret\fR\ \fIfile\fR\ ]
+-.in -4
+-.ti +4
+-.hy
+-
+-.nh
+-.in +4
+-.ti -4
+-.B openvpn
+-[\ \fB\-\-mktun\fR\ ]
+-[\ \fB\-\-rmtun\fR\ ]
+-[\ \fB\-\-dev\fR\ \fItunX\ |\ tapX\fR\ ]
+-[\ \fB\-\-dev\-type\fR\ \fIdevice\-type\fR\ ]
+-[\ \fB\-\-dev\-node\fR\ \fInode\fR\ ]
+-[\ \fB\-\-lladdr\fR\ \fIaddress\fR\ ]
+-[\ \fB\-\-user\fR\ \fIuser\fR\ ]
+-[\ \fB\-\-group\fR\ \fIgroup\fR\ ]
+-.in -4
+-.ti +4
+-.hy
+-
+-.nh
+-.in +4
+-.ti -4
+-.B openvpn
+-[\ \fB\-\-test\-crypto\fR\ ]
+-[\ \fB\-\-secret\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-auth\fR\ \fIalg\fR\ ]
+-[\ \fB\-\-cipher\fR\ \fIalg\fR\ ]
+-[\ \fB\-\-engine\fR\ ]
+-[\ \fB\-\-keysize\fR\ \fIn\fR\ ]
+-[\ \fB\-\-no\-replay\fR\ ]
+-[\ \fB\-\-no\-iv\fR\ ]
+-.in -4
+-.ti +4
+-.hy
+-
+-.nh
+-.in +4
+-.ti -4
+-.B openvpn
+-[\ \fB\-\-allow\-nonadmin\fR\ \fI[TAP\-adapter]\fR\ ]
+-[\ \fB\-\-allow\-pull\-fqdn\fR\ ]
+-[\ \fB\-\-askpass\fR\ \fI[file]\fR\ ]
+-[\ \fB\-\-auth\-nocache\fR\ ]
+-[\ \fB\-\-auth\-retry\fR\ \fItype\fR\ ]
+-[\ \fB\-\-auth\-user\-pass\-optional\fR\ ]
+-[\ \fB\-\-auth\-user\-pass\-verify\fR\ \fIscript\fR\ ]
+-[\ \fB\-\-auth\-user\-pass\fR\ \fIup\fR\ ]
+-[\ \fB\-\-auth\fR\ \fIalg\fR\ ]
+-[\ \fB\-\-auto\-proxy\fR\ ]
+-[\ \fB\-\-bcast\-buffers\fR\ \fIn\fR\ ]
+-[\ \fB\-\-ca\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-ccd\-exclusive\fR\ ]
+-[\ \fB\-\-cd\fR\ \fIdir\fR\ ]
+-[\ \fB\-\-cert\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-chroot\fR\ \fIdir\fR\ ]
+-[\ \fB\-\-cipher\fR\ \fIalg\fR\ ]
+-[\ \fB\-\-client\-cert\-not\-required\fR\ ]
+-[\ \fB\-\-client\-config\-dir\fR\ \fIdir\fR\ ]
+-[\ \fB\-\-client\-connect\fR\ \fIscript\fR\ ]
+-[\ \fB\-\-client\-disconnect\fR\ ]
+-[\ \fB\-\-client\-to\-client\fR\ ]
+-[\ \fB\-\-client\fR\ ]
+-[\ \fB\-\-comp\-lzo\fR\ \fI[mode]\fR\ ]
+-[\ \fB\-\-comp\-noadapt\fR\ ]
+-[\ \fB\-\-config\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-connect\-freq\fR\ \fIn\ sec\fR\ ]
+-[\ \fB\-\-connect\-retry\fR\ \fIn\fR\ ]
+-[\ \fB\-\-connect\-retry\-max\fR\ \fIn\fR\ ]
+-[\ \fB\-\-crl\-verify\fR\ \fIcrl\fR\ ]
+-[\ \fB\-\-cryptoapicert\fR\ \fIselect\-string\fR\ ]
+-[\ \fB\-\-daemon\fR\ \fI[progname]\fR\ ]
+-[\ \fB\-\-dev\-node\fR\ \fInode\fR\ ]
+-[\ \fB\-\-dev\-type\fR\ \fIdevice\-type\fR\ ]
+-[\ \fB\-\-dev\fR\ \fItunX\ |\ tapX\ |\ null\fR\ ]
+-[\ \fB\-\-dev\fR\ \fItunX\ |\ tapX\fR\ ]
+-[\ \fB\-\-dh\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-dhcp\-option\fR\ \fItype\ [parm]\fR\ ]
+-[\ \fB\-\-dhcp\-release\fR\ ]
+-[\ \fB\-\-dhcp\-renew\fR\ ]
+-[\ \fB\-\-disable\-occ\fR\ ]
+-[\ \fB\-\-disable\fR\ ]
+-[\ \fB\-\-down\-pre\fR\ ]
+-[\ \fB\-\-down\fR\ \fIcmd\fR\ ]
+-[\ \fB\-\-duplicate\-cn\fR\ ]
+-[\ \fB\-\-echo\fR\ \fI[parms...]\fR\ ]
+-[\ \fB\-\-engine\fR\ \fI[engine\-name]\fR\ ]
+-[\ \fB\-\-explicit\-exit\-notify\fR\ \fI[n]\fR\ ]
+-[\ \fB\-\-fast\-io\fR\ ]
+-[\ \fB\-\-float\fR\ ]
+-[\ \fB\-\-fragment\fR\ \fImax\fR\ ]
+-[\ \fB\-\-genkey\fR\ ]
+-[\ \fB\-\-group\fR\ \fIgroup\fR\ ]
+-[\ \fB\-\-hand\-window\fR\ \fIn\fR\ ]
+-[\ \fB\-\-hash\-size\fR\ \fIr\ v\fR\ ]
+-[\ \fB\-\-help\fR\ ]
+-[\ \fB\-\-http\-proxy\-option\fR\ \fItype\ [parm]\fR\ ]
+-[\ \fB\-\-http\-proxy\-retry\fR\ ]
+-[\ \fB\-\-http\-proxy\-timeout\fR\ \fIn\fR\ ]
+-[\ \fB\-\-http\-proxy\fR\ \fIserver\ port\ [authfile]\ [auth\-method]\fR\ ]
+-[\ \fB\-\-ifconfig\-noexec\fR\ ]
+-[\ \fB\-\-ifconfig\-nowarn\fR\ ]
+-[\ \fB\-\-ifconfig\-pool\-linear\fR\ ]
+-[\ \fB\-\-ifconfig\-pool\-persist\fR\ \fIfile\ [seconds]\fR\ ]
+-[\ \fB\-\-ifconfig\-pool\fR\ \fIstart\-IP\ end\-IP\ [netmask]\fR\ ]
+-[\ \fB\-\-ifconfig\-push\fR\ \fIlocal\ remote\-netmask\fR\ ]
+-[\ \fB\-\-ifconfig\fR\ \fIl\ rn\fR\ ]
+-[\ \fB\-\-inactive\fR\ \fIn\ [bytes]\fR\ ]
+-[\ \fB\-\-inetd\fR\ \fI[wait|nowait]\ [progname]\fR\ ]
+-[\ \fB\-\-ip\-win32\fR\ \fImethod\fR\ ]
+-[\ \fB\-\-ipchange\fR\ \fIcmd\fR\ ]
+-[\ \fB\-\-iproute\fR\ \fIcmd\fR\ ]
+-[\ \fB\-\-iroute\fR\ \fInetwork\ [netmask]\fR\ ]
+-[\ \fB\-\-keepalive\fR\ \fIn\ m\fR\ ]
+-[\ \fB\-\-key\-method\fR\ \fIm\fR\ ]
+-[\ \fB\-\-key\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-keysize\fR\ \fIn\fR\ ]
+-[\ \fB\-\-learn\-address\fR\ \fIcmd\fR\ ]
+-[\ \fB\-\-link\-mtu\fR\ \fIn\fR\ ]
+-[\ \fB\-\-local\fR\ \fIhost\fR\ ]
+-[\ \fB\-\-log\-append\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-log\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-suppress-timestamps\fR\ ]
+-[\ \fB\-\-lport\fR\ \fIport\fR\ ]
+-[\ \fB\-\-management\-client\-auth\fR\ ]
+-[\ \fB\-\-management\-client\-group\fR\ \fIg\fR\ ]
+-[\ \fB\-\-management\-client\-pf\fR\ ]
+-[\ \fB\-\-management\-client\-user\fR\ \fIu\fR\ ]
+-[\ \fB\-\-management\-forget\-disconnect\fR\ ]
+-[\ \fB\-\-management\-hold\fR\ ]
+-[\ \fB\-\-management\-log\-cache\fR\ \fIn\fR\ ]
+-[\ \fB\-\-management\-signal\fR\ ]
+-[\ \fB\-\-management\-query\-passwords\fR\ ]
+-[\ \fB\-\-management\fR\ \fIIP\ port\ [pw\-file]\fR\ ]
+-[\ \fB\-\-max\-clients\fR\ \fIn\fR\ ]
+-[\ \fB\-\-max\-routes\-per\-client\fR\ \fIn\fR\ ]
+-[\ \fB\-\-mktun\fR\ ]
+-[\ \fB\-\-mlock\fR\ ]
+-[\ \fB\-\-mode\fR\ \fIm\fR\ ]
+-[\ \fB\-\-mssfix\fR\ \fImax\fR\ ]
+-[\ \fB\-\-mtu\-disc\fR\ \fItype\fR\ ]
+-[\ \fB\-\-mtu\-test\fR\ ]
+-[\ \fB\-\-mute\-replay\-warnings\fR\ ]
+-[\ \fB\-\-mute\fR\ \fIn\fR\ ]
+-[\ \fB\-\-nice\fR\ \fIn\fR\ ]
+-[\ \fB\-\-no\-iv\fR\ ]
+-[\ \fB\-\-no\-name\-remapping\fR\ ]
+-[\ \fB\-\-no\-replay\fR\ ]
+-[\ \fB\-\-bind\fR\ ]
+-[\ \fB\-\-nobind\fR\ ]
+-[\ \fB\-\-ns\-cert\-type\fR\ \fIclient|server\fR\ ]
+-[\ \fB\-\-passtos\fR\ ]
+-[\ \fB\-\-pause\-exit\fR\ ]
+-[\ \fB\-\-persist\-key\fR\ ]
+-[\ \fB\-\-persist\-local\-ip\fR\ ]
+-[\ \fB\-\-persist\-remote\-ip\fR\ ]
+-[\ \fB\-\-persist\-tun\fR\ ]
+-[\ \fB\-\-ping\-exit\fR\ \fIn\fR\ ]
+-[\ \fB\-\-ping\-restart\fR\ \fIn\fR\ ]
+-[\ \fB\-\-ping\-timer\-rem\fR\ ]
+-[\ \fB\-\-ping\fR\ \fIn\fR\ ]
+-[\ \fB\-\-pkcs11\-cert\-private\fR\ \fI[0|1]...\fR\ ]
+-[\ \fB\-\-pkcs11\-id\fR\ \fIname\fR\ ]
+-[\ \fB\-\-pkcs11\-id\-management\fR\ ]
+-[\ \fB\-\-pkcs11\-pin\-cache\fR\ \fIseconds\fR\ ]
+-[\ \fB\-\-pkcs11\-private\-mode\fR\ \fImode...\fR\ ]
+-[\ \fB\-\-pkcs11\-protected\-authentication\fR\ \fI[0|1]...\fR\ ]
+-[\ \fB\-\-pkcs11\-providers\fR\ \fIprovider...\fR\ ]
+-[\ \fB\-\-pkcs12\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-plugin\fR\ \fImodule\-pathname\ init\-string\fR\ ]
+-[\ \fB\-\-port\fR\ \fIport\fR\ ]
+-[\ \fB\-\-port\-share\fR\ \fIhost\ port\fR\ ]
+-[\ \fB\-\-proto\fR\ \fIp\fR\ ]
+-[\ \fB\-\-pull\fR\ ]
+-[\ \fB\-\-push\-reset\fR\ ]
+-[\ \fB\-\-push\fR\ \fI"option"\fR\ ]
+-[\ \fB\-\-rcvbuf\fR\ \fIsize\fR\ ]
+-[\ \fB\-\-redirect\-gateway\fR\ \fIflags...\fR\ ]
+-[\ \fB\-\-remap\-usr1\fR\ \fIsignal\fR\ ]
+-[\ \fB\-\-remote\-random\fR\ ]
+-[\ \fB\-\-remote\fR\ \fIhost\ [port]\fR\ ]
+-[\ \fB\-\-remote\-cert\-ku\ \fIv...\fR\ ]
+-[\ \fB\-\-remote\-cert\-eku\ \fIoid\fR\ ]
+-[\ \fB\-\-remote\-cert\-tls\ \fIt\fR\ ]
+-[\ \fB\-\-reneg\-bytes\fR\ \fIn\fR\ ]
+-[\ \fB\-\-reneg\-pkts\fR\ \fIn\fR\ ]
+-[\ \fB\-\-reneg\-sec\fR\ \fIn\fR\ ]
+-[\ \fB\-\-replay\-persist\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-replay\-window\fR\ \fIn\ [t]\fR\ ]
+-[\ \fB\-\-resolv\-retry\fR\ \fIn\fR\ ]
+-[\ \fB\-\-rmtun\fR\ ]
+-[\ \fB\-\-route\-delay\fR\ \fI[n]\ [w]\fR\ ]
+-[\ \fB\-\-route\-gateway\fR\ \fIgw\fR\ ]
+-[\ \fB\-\-route\-method\fR\ \fIm\fR\ ]
+-[\ \fB\-\-route\-metric\fR\ \fIm\fR\ ]
+-[\ \fB\-\-route\-noexec\fR\ ]
+-[\ \fB\-\-route\-nopull\fR\ ]
+-[\ \fB\-\-route\-up\fR\ \fIcmd\fR\ ]
+-[\ \fB\-\-route\fR\ \fInetwork\ [netmask]\ [gateway]\ [metric]\fR\ ]
+-[\ \fB\-\-rport\fR\ \fIport\fR\ ]
+-[\ \fB\-\-script\-security\fR\ \fIlevel\fR\ ]
+-[\ \fB\-\-secret\fR\ \fIfile\ [direction]\fR\ ]
+-[\ \fB\-\-secret\fR\ \fIfile\fR\ ]
+-[\ \fB\-\-server\-bridge\fR\ \fIgateway\ netmask\ pool\-start\-IP\ pool\-end\-IP\fR\ ]
+-[\ \fB\-\-server\fR\ \fInetwork\ netmask\fR\ ]
+-[\ \fB\-\-service\fR\ \fIexit\-event\ [0|1]\fR\ ]
+-[\ \fB\-\-setenv\fR\ \fIname\ value\fR\ ]
+-[\ \fB\-\-setenv\-safe\fR\ \fIname\ value\fR\ ]
+-[\ \fB\-\-shaper\fR\ \fIn\fR\ ]
+-[\ \fB\-\-show\-adapters\fR\ ]
+-[\ \fB\-\-show\-ciphers\fR\ ]
+-[\ \fB\-\-show\-digests\fR\ ]
+-[\ \fB\-\-show\-engines\fR\ ]
+-[\ \fB\-\-show\-pkcs11\-ids\fR\ \fIprovider\ [cert_private]\fR\ ]
+-[\ \fB\-\-show\-net\-up\fR\ ]
+-[\ \fB\-\-show\-net\fR\ ]
+-[\ \fB\-\-show\-tls\fR\ ]
+-[\ \fB\-\-show\-valid\-subnets\fR\ ]
+-[\ \fB\-\-single\-session\fR\ ]
+-[\ \fB\-\-sndbuf\fR\ \fIsize\fR\ ]
+-[\ \fB\-\-socks\-proxy\-retry\fR\ ]
+-[\ \fB\-\-socks\-proxy\fR\ \fIserver\ [port]\fR\ ]
+-[\ \fB\-\-status\fR\ \fIfile\ [n]\fR\ ]
+-[\ \fB\-\-status\-version\fR\ \fIn\fR\ ]
+-[\ \fB\-\-syslog\fR\ \fI[progname]\fR\ ]
+-[\ \fB\-\-tap\-sleep\fR\ \fIn\fR\ ]
+-[\ \fB\-\-tcp\-queue\-limit\fR\ \fIn\fR\ ]
+-[\ \fB\-\-test\-crypto\fR\ ]
+-[\ \fB\-\-tls\-auth\fR\ \fIfile\ [direction]\fR\ ]
+-[\ \fB\-\-tls\-cipher\fR\ \fIl\fR\ ]
+-[\ \fB\-\-tls\-client\fR\ ]
+-[\ \fB\-\-tls\-exit\fR\ ]
+-[\ \fB\-\-tls\-remote\fR\ \fIx509name\fR\ ]
+-[\ \fB\-\-tls\-server\fR\ ]
+-[\ \fB\-\-tls\-timeout\fR\ \fIn\fR\ ]
+-[\ \fB\-\-tls\-verify\fR\ \fIcmd\fR\ ]
+-[\ \fB\-\-tmp\-dir\fR\ \fIdir\fR\ ]
+-[\ \fB\-\-topology\fR\ \fImode\fR\ ]
+-[\ \fB\-\-tran\-window\fR\ \fIn\fR\ ]
+-[\ \fB\-\-tun\-ipv6\fR\ ]
+-[\ \fB\-\-tun\-mtu\-extra\fR\ \fIn\fR\ ]
+-[\ \fB\-\-tun\-mtu\fR\ \fIn\fR\ ]
+-[\ \fB\-\-txqueuelen\fR\ \fIn\fR\ ]
+-[\ \fB\-\-up\-delay\fR\ ]
+-[\ \fB\-\-up\-restart\fR\ ]
+-[\ \fB\-\-up\fR\ \fIcmd\fR\ ]
+-[\ \fB\-\-user\fR\ \fIuser\fR\ ]
+-[\ \fB\-\-username\-as\-common\-name\fR\ ]
+-[\ \fB\-\-verb\fR\ \fIn\fR\ ]
+-[\ \fB\-\-win\-sys\fR\ \fIpath|'env'\fR\ ]
+-[\ \fB\-\-writepid\fR\ \fIfile\fR\ ]
++.B openvpn [ options ... ]
+ .in -4
+ .ti +4
+ .hy
+@@ -3137,6 +2866,31 @@
+ at this client.
  .\"*********************************************************
  .TP
-+.B --setenv FORWARD_COMPATIBLE 1
-+Relax config file syntax checking so that unknown directives
-+will trigger a warning but not a fatal error,
-+on the assumption that a given unknown directive might be valid
-+in future OpenVPN versions.
++.B --tcp-nodelay
++This macro sets the TCP_NODELAY socket flag on the server
++as well as pushes it to connecting clients.  The TCP_NODELAY
++flag disables the Nagle algorithm on TCP sockets causing
++packets to be transmitted immediately with low latency,
++rather than waiting a short period of time in order
++to aggregate several packets into a larger containing
++packet.  In VPN applications over TCP, TCP_NODELAY
++is generally a good latency optimization.
 +
-+This option should be used with caution, as there are good security
-+reasons for having OpenVPN fail if it detects problems in a
-+config file.  Having said that, there are valid reasons for wanting
-+new software features to gracefully degrade when encountered by
-+older software versions.
-+.\"*********************************************************
-+.TP
- .B --setenv-safe name value
- Set a custom environmental variable
- .B OPENVPN_name=value
-@@ -2019,9 +2034,11 @@
- from a malicious or compromised server.
- .\"*********************************************************
- .TP
--.B --script-security level
-+.B --script-security level [method]
- This directive offers policy-level control over OpenVPN's usage of external programs
--and scripts.  Lower values are more restrictive, higher values are more permissive.  Settings for
-+and scripts.  Lower
-+.B level
-+values are more restrictive, higher values are more permissive.  Settings for
- .B level:
- 
- .B 0 --
-@@ -2035,6 +2052,25 @@
- .br
- .B 3 --
- Allow passwords to be passed to scripts via environmental variables (potentially unsafe).
++The macro expands as follows:
 +
-+The
-+.B method
-+parameter indicates how OpenVPN should call external commands and scripts.
-+Settings for
-+.B method:
-+
-+.B execve --
-+(default) Use execve() function on Unix family OSes and CreateProcess() on Windows.
-+.br
-+.B system --
-+Use system() function (deprecated and less safe since the external program command
-+line is subject to shell expansion).
-+
-+The
-+.B --script-security
-+option was introduced in OpenVPN 2.1_rc9.  For configuration file compatibility
-+with previous OpenVPN versions, use:
-+.B --script-security 3 system
- .\"*********************************************************
- .TP
- .B --disable-occ
-@@ -2378,7 +2414,7 @@
- .B --status-version [n]
- Choose the status file format version number.  Currently
- .B n
--can be 1 or 2 and defaults to 1.
-+can be 1, 2, or 3 and defaults to 1.
- .\"*********************************************************
- .TP
- .B --mute n
-@@ -2627,8 +2663,9 @@
-  push "topology [topology]"
- 
-  if dev tun AND (topology == net30 OR topology == p2p):
--   ifconfig 10.8.0.1 10.8.0.2 
--   ifconfig-pool 10.8.0.4 10.8.0.251
-+   ifconfig 10.8.0.1 10.8.0.2
-+   if !nopool:
-+     ifconfig-pool 10.8.0.4 10.8.0.251
-    route 10.8.0.0 255.255.255.0
-    if client-to-client:
-      push "route 10.8.0.0 255.255.255.0"
-@@ -2637,7 +2674,8 @@
- 
-  if dev tap OR (dev tun AND topology == subnet):
-    ifconfig 10.8.0.1 255.255.255.0
--   ifconfig-pool 10.8.0.2 10.8.0.254 255.255.255.0
-+   if !nopool:
-+     ifconfig-pool 10.8.0.2 10.8.0.254 255.255.255.0
-    push "route-gateway 10.8.0.1"
- .ft
- .LP
-@@ -3250,6 +3288,24 @@
- in the OpenVPN source distribution.
- .\"*********************************************************
- .TP
-+.B --auth-user-pass-optional
-+Allow connections by clients that do not specify a username/password.
-+Normally, when
-+.B --auth-user-pass-verify
-+or
-+.B --management-client-auth
-+is specified (or an authentication plugin module), the
-+OpenVPN server daemon will require connecting clients to specify a
-+username and password.  This option makes the submission of a username/password
-+by clients optional, passing the responsibility to the user-defined authentication
-+module/script to accept or deny the client based on other factors
-+(such as the setting of X509 certificate fields).  When this option is used,
-+and a connecting client does not submit a username/password, the user-defined
-+authentication module/script will see the username and password as being set
-+to empty strings ("").  The authentication module/script MUST have logic
-+to detect this condition and respond accordingly.
-+.\"*********************************************************
-+.TP
- .B --client-cert-not-required
- Don't require client certificate, client will authenticate
- using username/password only.  Be aware that using this directive
-@@ -3278,6 +3334,27 @@
- rather than the common name from the client cert.
- .\"*********************************************************
- .TP
-+.B --no-name-remapping
-+Allow Common Name, X509 Subject, and username strings to include
-+any printable character including space, but excluding control
-+characters such as tab, newline, and carriage-return.
-+
-+By default, OpenVPN will remap
-+any character other than alphanumeric, underbar ('_'), dash
-+('-'), dot ('.'), and slash ('/') to underbar ('_').  The X509
-+Subject string as returned by the
-+.B tls_id
-+environmental variable, can additionally contain colon (':') or
-+equal ('=').
-+
-+While name remapping is performed for security reasons to reduce
-+the possibility of introducing string expansion security vulnerabilities
-+in user-defined authentication
-+scripts, this option is provided for those cases where it is desirable to
-+disable the remapping feature.  Don't use this option unless you 
-+know what you are doing!
-+.\"*********************************************************
-+.TP
- .B --port-share host port
- When run in TCP server mode, share the OpenVPN port with
- another application, such as an HTTPS server.  If OpenVPN
-@@ -5449,6 +5526,43 @@
- .B via-env
- modifier is specified.
- .\"*********************************************************
-+.TP
-+.B X509_{n}_{subject_field}
-+An X509 subject field from the remote peer certificate,
-+where
-+.B n
-+is the verification level.  Only set for TLS connections.  Set prior
-+to execution of
-+.B --tls-verify
-+script.  This variable is similar to
-+.B tls_id_{n}
-+except the component X509 subject fields are broken out, and
-+no string remapping occurs on these field values (except for remapping
-+of control characters to "_").
-+For example, the following variables would be set on the
-+OpenVPN server using the sample client certificate
-+in sample-keys (client.crt).
-+Note that the verification level is 0 for the client certificate
-+and 1 for the CA certificate.
 +.RS
 +.ft 3
 +.nf
 +.sp
-+X509_0_emailAddress=me@myhost.mydomain
-+X509_0_CN=Test-Client
-+X509_0_O=OpenVPN-TEST
-+X509_0_ST=NA
-+X509_0_C=KG
-+X509_1_emailAddress=me@myhost.mydomain
-+X509_1_O=OpenVPN-TEST
-+X509_1_L=BISHKEK
-+X509_1_ST=NA
-+X509_1_C=KG
++ if mode server:
++   socket-flags TCP_NODELAY
++   push "socket-flags TCP_NODELAY"
 +.ft
 +.LP
 +.RE
 +.fi
 +.\"*********************************************************
- .SH SIGNALS
++.TP
+ .B --max-clients n
+ Limit server to a maximum of
+ .B n
+@@ -3288,6 +3042,20 @@
+ in the OpenVPN source distribution.
+ .\"*********************************************************
  .TP
- .B SIGHUP
-diff -urN openvpn-2.1_rc13/openvpn.spec openvpn-2.1_rc14/openvpn.spec
---- openvpn-2.1_rc13/openvpn.spec	2008-10-08 07:18:35.000000000 +0200
-+++ openvpn-2.1_rc14/openvpn.spec	2008-11-17 05:39:49.000000000 +0100
++.B --opt-verify
++Clients that connect with options that are incompatible
++with those of the server will be disconnected.
++
++Options that will be compared for compatibility include
++dev-type, link-mtu, tun-mtu, proto, tun-ipv6, ifconfig,
++comp-lzo, fragment, keydir, cipher, auth, keysize, secret,
++no-replay, no-iv, tls-auth, key-method, tls-server, and tls-client.
++
++This option requires that
++.B --disable-occ
++NOT be used.
++.\"*********************************************************
++.TP
+ .B --auth-user-pass-optional
+ Allow connections by clients that do not specify a username/password.
+ Normally, when
+@@ -3616,6 +3384,21 @@
+ security, or may even reduce security.
+ .\"*********************************************************
+ .TP
++.B --prng alg [nsl]
++(Advanced) For PRNG (Pseudo-random number generator),
++use digest algorithm
++.B alg
++(default=sha1), and set
++.B nsl
++(default=16)
++to the size in bytes of the nonce secret length (between 16 and 64).
++
++Set
++.B alg=none
++to disable the PRNG and use the OpenSSL RAND_bytes function
++instead for all of OpenVPN's pseudo-random number needs.
++.\"*********************************************************
++.TP
+ .B --engine [engine-name]
+ Enable OpenSSL hardware-based crypto engine functionality.
+ 
+diff -urN openvpn-2.1_rc14/openvpn.spec openvpn-2.1_rc15/openvpn.spec
+--- openvpn-2.1_rc14/openvpn.spec	2008-11-17 05:39:49.000000000 +0100
++++ openvpn-2.1_rc15/openvpn.spec	2008-11-19 19:18:24.000000000 +0100
 @@ -16,7 +16,7 @@
  
  Summary:	OpenVPN is a robust and highly flexible VPN daemon by James Yonan.
  Name:           openvpn
--Version:        2.1_rc13
-+Version:        2.1_rc14
+-Version:        2.1_rc14
++Version:        2.1_rc15
  Release:	1
  URL:		http://openvpn.net/
  Source0:	http://prdownloads.sourceforge.net/openvpn/%{name}-%{version}.tar.gz
-diff -urN openvpn-2.1_rc13/options.c openvpn-2.1_rc14/options.c
---- openvpn-2.1_rc13/options.c	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/options.c	2008-11-17 04:23:51.000000000 +0100
-@@ -191,10 +191,13 @@
-   "                  flag to add a direct route to DHCP server, bypassing tunnel.\n"
-   "                  Add 'bypass-dns' flag to similarly bypass tunnel for DNS.\n"
-   "--setenv name value : Set a custom environmental variable to pass to script.\n"
--  "--script-security level : 0 -- strictly no calling of external programs\n"
--  "                          1 -- (default) only call built-ins such as ifconfig\n"
--  "                          2 -- allow calling of built-ins and scripts\n"
--  "                          3 -- allow password to be passed to scripts via env\n"
-+  "--setenv FORWARD_COMPATIBLE 1 : Relax config file syntax checking to allow\n"
-+  "                  directives for future OpenVPN versions to be ignored.\n"
-+  "--script-security level mode : mode='execve' (default) or 'system', level=\n"
-+  "                  0 -- strictly no calling of external programs\n"
-+  "                  1 -- (default) only call built-ins such as ifconfig\n"
-+  "                  2 -- allow calling of built-ins and scripts\n"
-+  "                  3 -- allow password to be passed to scripts via env\n"
-   "--shaper n      : Restrict output to peer to n bytes per second.\n"
-   "--keepalive n m : Helper option for setting timeouts in server mode.  Send\n"
-   "                  ping once every n seconds, restart if ping not received\n"
-@@ -294,7 +297,7 @@
-   "--mute n        : Log at most n consecutive messages in the same category.\n"
-   "--status file n : Write operational status to file every n seconds.\n"
-   "--status-version [n] : Choose the status file format version number.\n"
--  "                  Currently, n can be 1 or 2 (default=1).\n"
-+  "                  Currently, n can be 1, 2, or 3 (default=1).\n"
- #ifdef ENABLE_OCC
-   "--disable-occ   : Disable options consistency check between peers.\n"
- #endif
-@@ -381,6 +384,10 @@
+diff -urN openvpn-2.1_rc14/options.c openvpn-2.1_rc15/options.c
+--- openvpn-2.1_rc14/options.c	2008-11-17 04:23:51.000000000 +0100
++++ openvpn-2.1_rc15/options.c	2008-11-18 05:59:13.000000000 +0100
+@@ -384,6 +384,8 @@
    "                  run script cmd to verify.  If method='via-env', pass\n"
    "                  user/pass via environment, if method='via-file', pass\n"
    "                  user/pass via temporary file.\n"
-+  "--auth-user-pass-optional : Allow connections by clients that don't\n"
-+  "                  specify a username/password.\n"
-+  "--no-name-remapping : Allow Common Name and X509 Subject to include\n"
-+  "                      any printable character.\n"
-   "--client-to-client : Internally route client-to-client traffic.\n"
-   "--duplicate-cn  : Allow multiple clients with the same common name to\n"
-   "                  concurrently connect.\n"
-@@ -965,10 +972,9 @@
-   SHOW_INT (cf_per);
-   SHOW_INT (max_clients);
-   SHOW_INT (max_routes_per_client);
--  SHOW_BOOL (client_cert_not_required);
--  SHOW_BOOL (username_as_common_name)
-   SHOW_STR (auth_user_pass_verify_script);
-   SHOW_BOOL (auth_user_pass_verify_script_via_file);
-+  SHOW_INT (ssl_flags);
- #if PORT_SHARE
-   SHOW_STR (port_share_host);
-   SHOW_INT (port_share_port);
-@@ -1702,11 +1708,16 @@
- 			     || PLUGIN_OPTION_LIST (options)
- 			     || MAN_CLIENT_AUTH_ENABLED (options));
- 	  const char *postfix = "must be used with --management-client-auth, an --auth-user-pass-verify script, or plugin";
--	  if (options->client_cert_not_required && !ccnr)
-+	  if ((options->ssl_flags & SSLF_CLIENT_CERT_NOT_REQUIRED) && !ccnr)
- 	    msg (M_USAGE, "--client-cert-not-required %s", postfix);
--	  if (options->username_as_common_name && !ccnr)
-+	  if ((options->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME) && !ccnr)
- 	    msg (M_USAGE, "--username-as-common-name %s", postfix);
-+	  if ((options->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL) && !ccnr)
-+	    msg (M_USAGE, "--auth-user-pass-optional %s", postfix);
- 	}
-+
-+	if ((options->ssl_flags & SSLF_NO_NAME_REMAPPING) && script_method == SM_SYSTEM)
-+	  msg (M_USAGE, "--script-security method='system' cannot be combined with --no-name-remapping");
-     }
-   else
-     {
-@@ -1735,10 +1746,12 @@
- 	msg (M_USAGE, "--duplicate-cn requires --mode server");
-       if (options->cf_max || options->cf_per)
- 	msg (M_USAGE, "--connect-freq requires --mode server");
--      if (options->client_cert_not_required)
-+      if (options->ssl_flags & SSLF_CLIENT_CERT_NOT_REQUIRED)
- 	msg (M_USAGE, "--client-cert-not-required requires --mode server");
--      if (options->username_as_common_name)
-+      if (options->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME)
++  "--opt-verify    : Clients that connect with options that are incompatible\n"
++  "                  with those of the server will be disconnected.\n"
+   "--auth-user-pass-optional : Allow connections by clients that don't\n"
+   "                  specify a username/password.\n"
+   "--no-name-remapping : Allow Common Name and X509 Subject to include\n"
+@@ -400,6 +402,8 @@
+   "                  virtual address table to v.\n"
+   "--bcast-buffers n : Allocate n broadcast buffers.\n"
+   "--tcp-queue-limit n : Maximum number of queued TCP output packets.\n"
++  "--tcp-nodelay   : Macro that sets TCP_NODELAY socket flag on the server\n"
++  "                  as well as pushes it to connecting clients.\n"
+   "--learn-address cmd : Run script cmd to validate client virtual addresses.\n"
+   "--connect-freq n s : Allow a maximum of n new connections per s seconds.\n"
+   "--max-clients n : Allow a maximum of n simultaneously connected clients.\n"
+@@ -442,6 +446,8 @@
+   "--cipher alg    : Encrypt packets with cipher algorithm alg\n"
+   "                  (default=%s).\n"
+   "                  Set alg=none to disable encryption.\n"
++  "--prng alg [nsl] : For PRNG, use digest algorithm alg, and\n"
++  "                   nonce_secret_len=nsl.  Set alg=none to disable PRNG.\n"
+ #ifdef HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH
+   "--keysize n     : Size of cipher key in bits (optional).\n"
+   "                  If unspecified, defaults to cipher-specific default.\n"
+@@ -717,6 +723,8 @@
+   o->ciphername_defined = true;
+   o->authname = "SHA1";
+   o->authname_defined = true;
++  o->prng_hash = "SHA1";
++  o->prng_nonce_secret_len = 16;
+   o->replay = true;
+   o->replay_window = DEFAULT_SEQ_BACKTRACK;
+   o->replay_time = DEFAULT_TIME_BACKTRACK;
+@@ -1272,6 +1280,8 @@
+   SHOW_STR (ciphername);
+   SHOW_BOOL (authname_defined);
+   SHOW_STR (authname);
++  SHOW_STR (prng_hash);
++  SHOW_INT (prng_nonce_secret_len);
+   SHOW_INT (keysize);
+   SHOW_BOOL (engine);
+   SHOW_BOOL (replay);
+@@ -1752,6 +1762,12 @@
  	msg (M_USAGE, "--username-as-common-name requires --mode server");
-+      if (options->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL)
-+	msg (M_USAGE, "--auth-user-pass-optional requires --mode server");
+       if (options->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL)
+ 	msg (M_USAGE, "--auth-user-pass-optional requires --mode server");
++      if (options->ssl_flags & SSLF_NO_NAME_REMAPPING)
++	msg (M_USAGE, "--no-name-remapping requires --mode server");
++      if (options->ssl_flags & SSLF_OPT_VERIFY)
++	msg (M_USAGE, "--opt-verify requires --mode server");
++      if (options->server_flags & SF_TCP_NODELAY_HELPER)
++	msg (M_USAGE, "--tcp-nodelay requires --mode server");
        if (options->auth_user_pass_verify_script)
  	msg (M_USAGE, "--auth-user-pass-verify requires --mode server");
  #if PORT_SHARE
-@@ -2834,11 +2847,14 @@
- 	  if (backslash && out)
- 	    {
- 	      if (!(out == '\\' || out == '\"' || space (out)))
-+		{
- #ifdef ENABLE_SMALL
--		msg (msglevel, "%sOptions warning: Bad backslash ('\\') usage in %s:%d", error_prefix, file, line_num);
-+		  msg (msglevel, "%sOptions warning: Bad backslash ('\\') usage in %s:%d", error_prefix, file, line_num);
- #else
--		msg (msglevel, "%sOptions warning: Bad backslash ('\\') usage in %s:%d: remember that backslashes are treated as shell-escapes and if you need to pass backslash characters as part of a Windows filename, you should use double backslashes such as \"c:\\\\" PACKAGE "\\\\static.key\"", error_prefix, file, line_num);
-+		  msg (msglevel, "%sOptions warning: Bad backslash ('\\') usage in %s:%d: remember that backslashes are treated as shell-escapes and if you need to pass backslash characters as part of a Windows filename, you should use double backslashes such as \"c:\\\\" PACKAGE "\\\\static.key\"", error_prefix, file, line_num);
- #endif
-+		  return 0;
-+		}
- 	    }
- 	  backslash = false;
- 	}
-@@ -3260,6 +3276,12 @@
-     return true;
- }
+@@ -2053,6 +2069,7 @@
+    */
+   helper_client_server (o);
+   helper_keepalive (o);
++  helper_tcp_nodelay (o);
  
-+static inline int
-+msglevel_forward_compatible (struct options *options, const int msglevel)
-+{
-+  return options->forward_compatible ? M_WARN : msglevel;
-+}
-+
- static void
- add_option (struct options *options,
- 	    char *p[],
-@@ -3273,6 +3295,7 @@
- {
-   struct gc_arena gc = gc_new ();
-   const bool pull_mode = BOOL_CAST (permission_mask & OPT_P_PULL_MODE);
-+  int msglevel_fc = msglevel_forward_compatible (options, msglevel);
+   options_postprocess_mutate_invariant (o);
  
-   ASSERT (MAX_PARMS >= 5);
-   if (!file)
-@@ -3832,9 +3855,9 @@
- 
+@@ -4619,6 +4636,11 @@
        VERIFY_PERMISSION (OPT_P_GENERAL);
-       version = atoi (p[1]);
--      if (version < 1 || version > 2)
-+      if (version < 1 || version > 3)
- 	{
--	  msg (msglevel, "--status-version must be 1 or 2");
-+	  msg (msglevel, "--status-version must be 1 to 3");
- 	  goto err;
- 	}
-       options->status_file_version = version;
-@@ -4370,6 +4393,11 @@
-   else if (streq (p[0], "setenv") && p[1])
-     {
-       VERIFY_PERMISSION (OPT_P_GENERAL);
-+      if (streq (p[1], "FORWARD_COMPATIBLE") && p[2] && streq (p[2], "1"))
-+	{
-+	  options->forward_compatible = true;
-+	  msglevel_fc = msglevel_forward_compatible (options, msglevel);
-+	}
-       setenv_str (es, p[1], p[2] ? p[2] : "");
+       options->ssl_flags |= SSLF_NO_NAME_REMAPPING;
      }
-   else if (streq (p[0], "setenv-safe") && p[1])
-@@ -4381,7 +4409,21 @@
++  else if (streq (p[0], "opt-verify"))
++    {
++      VERIFY_PERMISSION (OPT_P_GENERAL);
++      options->ssl_flags |= SSLF_OPT_VERIFY;
++    }
+   else if (streq (p[0], "auth-user-pass-verify") && p[1])
      {
-       VERIFY_PERMISSION (OPT_P_GENERAL);
-       script_security = atoi (p[1]);
--    }  
+       VERIFY_PERMISSION (OPT_P_SCRIPT);
+@@ -4780,6 +4802,11 @@
+       VERIFY_PERMISSION (OPT_P_INSTANCE);
+       options->disable = true;
+     }
++  else if (streq (p[0], "tcp-nodelay"))
++    {
++      VERIFY_PERMISSION (OPT_P_GENERAL);
++      options->server_flags |= SF_TCP_NODELAY_HELPER;
++    }
+ #endif /* P2MP_SERVER */
+ 
+   else if (streq (p[0], "client"))
+@@ -5158,6 +5185,28 @@
+       VERIFY_PERMISSION (OPT_P_CRYPTO);
+       options->ciphername_defined = true;
+     }
++  else if (streq (p[0], "prng") && p[1])
++    {
++      VERIFY_PERMISSION (OPT_P_CRYPTO);
++      if (streq (p[1], "none"))
++	options->prng_hash = NULL;
++      else
++	options->prng_hash = p[1];
 +      if (p[2])
 +	{
-+	  if (streq (p[2], "execve"))
-+	    script_method = SM_EXECVE;
-+	  else if (streq (p[2], "system"))
-+	    script_method = SM_SYSTEM;
++	  const int sl = atoi (p[2]);
++	  if (sl >= NONCE_SECRET_LEN_MIN && sl <= NONCE_SECRET_LEN_MAX)
++	    {
++	      options->prng_nonce_secret_len = sl;
++	    }
 +	  else
 +	    {
-+	      msg (msglevel, "unknown --script-security method: %s", p[2]);
++	      msg (msglevel, "prng parameter nonce_secret_len must be between %d and %d",
++		   NONCE_SECRET_LEN_MIN, NONCE_SECRET_LEN_MAX);
 +	      goto err;
 +	    }
 +	}
-+      else
-+	script_method = SM_EXECVE;
 +    }
-   else if (streq (p[0], "mssfix"))
+   else if (streq (p[0], "no-replay"))
      {
-       VERIFY_PERMISSION (OPT_P_GENERAL);
-@@ -4492,7 +4534,8 @@
-       options->ifconfig_pool_defined = true;
-       options->ifconfig_pool_start = start;
-       options->ifconfig_pool_end = end;
--      options->ifconfig_pool_netmask = netmask;
-+      if (netmask)
-+	options->ifconfig_pool_netmask = netmask;
+       VERIFY_PERMISSION (OPT_P_CRYPTO);
+diff -urN openvpn-2.1_rc14/options.h openvpn-2.1_rc15/options.h
+--- openvpn-2.1_rc14/options.h	2008-11-04 21:08:47.000000000 +0100
++++ openvpn-2.1_rc15/options.h	2008-11-18 05:43:47.000000000 +0100
+@@ -346,6 +346,7 @@
+   in_addr_t server_netmask;
+ 
+ # define SF_NOPOOL (1<<0)
++# define SF_TCP_NODELAY_HELPER (1<<1)
+   unsigned int server_flags;
+ 
+   bool server_bridge_proxy_dhcp;
+@@ -418,6 +419,8 @@
+   bool authname_defined;
+   const char *authname;
+   int keysize;
++  const char *prng_hash;
++  int prng_nonce_secret_len;
+   const char *engine;
+   bool replay;
+   bool mute_replay_warnings;
+diff -urN openvpn-2.1_rc14/ps.c openvpn-2.1_rc15/ps.c
+--- openvpn-2.1_rc14/ps.c	2008-10-06 09:22:21.000000000 +0200
++++ openvpn-2.1_rc15/ps.c	2008-11-17 21:00:22.000000000 +0100
+@@ -793,7 +793,7 @@
+       set_nonblock (fd[1]);
+ 
+       /* initialize prng */
+-      prng_init ();
++      prng_init (NULL, 0);
+ 
+       /* execute the event loop */
+       port_share_proxy (hostaddr, port, fd[1]);
+diff -urN openvpn-2.1_rc14/ssl.c openvpn-2.1_rc15/ssl.c
+--- openvpn-2.1_rc14/ssl.c	2008-10-31 07:37:45.000000000 +0100
++++ openvpn-2.1_rc15/ssl.c	2008-11-18 03:57:27.000000000 +0100
+@@ -3465,6 +3465,11 @@
+       !options_cmp_equal (options, session->opt->remote_options))
+     {
+       options_warning (options, session->opt->remote_options);
++      if (session->opt->ssl_flags & SSLF_OPT_VERIFY)
++	{
++	  msg (D_TLS_ERRORS, "Option inconsistency warnings triggering disconnect due to --opt-verify");
++	  ks->authenticated = false;
++	}
      }
-   else if (streq (p[0], "ifconfig-pool-persist") && p[1])
-     {
-@@ -4559,12 +4602,22 @@
-   else if (streq (p[0], "client-cert-not-required"))
-     {
-       VERIFY_PERMISSION (OPT_P_GENERAL);
--      options->client_cert_not_required = true;
-+      options->ssl_flags |= SSLF_CLIENT_CERT_NOT_REQUIRED;
-     }
-   else if (streq (p[0], "username-as-common-name"))
-     {
-       VERIFY_PERMISSION (OPT_P_GENERAL);
--      options->username_as_common_name = true;
-+      options->ssl_flags |= SSLF_USERNAME_AS_COMMON_NAME;
-+    }
-+  else if (streq (p[0], "auth-user-pass-optional"))
-+    {
-+      VERIFY_PERMISSION (OPT_P_GENERAL);
-+      options->ssl_flags |= SSLF_AUTH_USER_PASS_OPTIONAL;
-+    }
-+  else if (streq (p[0], "no-name-remapping"))
-+    {
-+      VERIFY_PERMISSION (OPT_P_GENERAL);
-+      options->ssl_flags |= SSLF_NO_NAME_REMAPPING;
-     }
-   else if (streq (p[0], "auth-user-pass-verify") && p[1])
-     {
-@@ -5522,9 +5575,9 @@
-   else
-     {
-       if (file)
--	msg (msglevel, "Unrecognized option or missing parameter(s) in %s:%d: %s (%s)", file, line, p[0], PACKAGE_VERSION);
-+	msg (msglevel_fc, "Unrecognized option or missing parameter(s) in %s:%d: %s (%s)", file, line, p[0], PACKAGE_VERSION);
-       else
--	msg (msglevel, "Unrecognized option or missing parameter(s): --%s (%s)", p[0], PACKAGE_VERSION);
-+	msg (msglevel_fc, "Unrecognized option or missing parameter(s): --%s (%s)", p[0], PACKAGE_VERSION);
-     }
-  err:
-   gc_free (&gc);
-diff -urN openvpn-2.1_rc13/options.h openvpn-2.1_rc14/options.h
---- openvpn-2.1_rc13/options.h	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/options.h	2008-11-04 21:08:47.000000000 +0100
-@@ -150,6 +150,9 @@
- # define MODE_SERVER         1
-   int mode;
- 
-+  /* enable forward compatibility for post-2.1 features */
-+  bool forward_compatible;
-+
-   /* persist parms */
-   bool persist_config;
-   int persist_mode;
-@@ -385,10 +388,9 @@
-   int max_clients;
-   int max_routes_per_client;
- 
--  bool client_cert_not_required;
--  bool username_as_common_name;
-   const char *auth_user_pass_verify_script;
-   bool auth_user_pass_verify_script_via_file;
-+  unsigned int ssl_flags; /* set to SSLF_x flags from ssl.h */
- #if PORT_SHARE
-   char *port_share_host;
-   int port_share_port;
-diff -urN openvpn-2.1_rc13/route.c openvpn-2.1_rc14/route.c
---- openvpn-2.1_rc13/route.c	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/route.c	2008-11-17 01:48:04.000000000 +0100
-@@ -827,7 +827,7 @@
- 
- #elif defined (WIN32)
- 
--  argv_printf (&argv, "%s%s ADD %s MASK %s %s",
-+  argv_printf (&argv, "%s%sc ADD %s MASK %s %s",
- 	       get_win_sys_path(),
- 	       WIN_ROUTE_PATH_SUFFIX,
- 	       network,
-@@ -1007,7 +1007,7 @@
- 
- #elif defined (WIN32)
-   
--  argv_printf (&argv, "%s%s DELETE %s MASK %s %s",
-+  argv_printf (&argv, "%s%sc DELETE %s MASK %s %s",
- 	       get_win_sys_path(),
- 	       WIN_ROUTE_PATH_SUFFIX,
- 	       network,
-diff -urN openvpn-2.1_rc13/ssl.c openvpn-2.1_rc14/ssl.c
---- openvpn-2.1_rc13/ssl.c	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/ssl.c	2008-10-31 07:37:45.000000000 +0100
-@@ -392,6 +392,57 @@
-   }
- }
- 
-+/*
-+ * Save X509 fields to environment, using the naming convention:
-+ *
-+ *  X509_{cert_depth}_{name}={value}
-+ */
-+static void
-+setenv_x509 (struct env_set *es, const int error_depth, X509_NAME *x509)
-+{
-+  int i, n;
-+  int fn_nid;
-+  ASN1_OBJECT *fn;
-+  ASN1_STRING *val;
-+  X509_NAME_ENTRY *ent;
-+  const char *objbuf;
-+  unsigned char *buf;
-+  char *name_expand;
-+  size_t name_expand_size;
-+
-+  n = X509_NAME_entry_count (x509);
-+  for (i = 0; i < n; ++i)
-+    {
-+      ent = X509_NAME_get_entry (x509, i);
-+      if (!ent)
-+	continue;
-+      fn = X509_NAME_ENTRY_get_object (ent);
-+      if (!fn)
-+	continue;
-+      val = X509_NAME_ENTRY_get_data (ent);
-+      if (!val)
-+	continue;
-+      fn_nid = OBJ_obj2nid (fn);
-+      if (fn_nid == NID_undef)
-+	continue;
-+      objbuf = OBJ_nid2sn (fn_nid);
-+      if (!objbuf)
-+	continue;
-+      buf = (unsigned char *)1; /* bug in OpenSSL 0.9.6b ASN1_STRING_to_UTF8 requires this workaround */
-+      if (ASN1_STRING_to_UTF8 (&buf, val) <= 0)
-+	continue;
-+      name_expand_size = 64 + strlen (objbuf);
-+      name_expand = (char *) malloc (name_expand_size);
-+      check_malloc_return (name_expand);
-+      openvpn_snprintf (name_expand, name_expand_size, "X509_%d_%s", error_depth, objbuf);
-+      string_mod (name_expand, CC_PRINT, CC_CRLF, '_');
-+      string_mod ((char*)buf, CC_PRINT, CC_CRLF, '_');
-+      setenv_str (es, name_expand, (char*)buf);
-+      free (name_expand);
-+      OPENSSL_free (buf);
-+    }
-+}
-+
- static void
- setenv_untrusted (struct tls_session *session)
- {
-@@ -529,6 +580,15 @@
-     }
- }
- 
-+static void
-+string_mod_sslname (char *str, const unsigned int restrictive_flags, const unsigned int ssl_flags)
-+{
-+  if (ssl_flags & SSLF_NO_NAME_REMAPPING)
-+    string_mod (str, CC_PRINT, CC_CRLF, '_');
-+  else
-+    string_mod (str, restrictive_flags, 0, '_');
-+}
-+
- /*
-  * Our verify callback function -- check
-  * that an incoming peer certificate is good.
-@@ -564,8 +624,11 @@
-       goto err;
-     }
- 
-+  /* Save X509 fields in environment */
-+  setenv_x509 (opt->es, ctx->error_depth, X509_get_subject_name (ctx->current_cert));
-+
-   /* enforce character class restrictions in X509 name */
--  string_mod (subject, X509_NAME_CHAR_CLASS, 0, '_');
-+  string_mod_sslname (subject, X509_NAME_CHAR_CLASS, opt->ssl_flags);
-   string_replace_leading (subject, '-', '_');
- 
-   /* extract the common name */
-@@ -580,7 +643,7 @@
- 	}
-     }
- 
--  string_mod (common_name, COMMON_NAME_CHAR_CLASS, 0, '_');
-+  string_mod_sslname (common_name, COMMON_NAME_CHAR_CLASS, opt->ssl_flags);
- 
- #if 0 /* print some debugging info */
-   msg (D_LOW, "LOCAL OPT: %s", opt->local_options);
-@@ -1501,7 +1564,7 @@
- 
-   /* Require peer certificate verification */
- #if P2MP_SERVER
--  if (options->client_cert_not_required)
-+  if (options->ssl_flags & SSLF_CLIENT_CERT_NOT_REQUIRED)
-     {
-       msg (M_WARN, "WARNING: POTENTIALLY DANGEROUS OPTION --client-cert-not-required may accept clients which do not present a certificate");
-     }
-@@ -2904,7 +2967,7 @@
-   bool ret = false;
- 
-   /* Is username defined? */
--  if (strlen (up->username))
-+  if ((session->opt->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL) || strlen (up->username))
-     {
-       /* Set environmental variables prior to calling script */
-       setenv_str (session->opt->es, "script_type", "user-pass-verify");
-@@ -2971,7 +3034,7 @@
-   int retval = OPENVPN_PLUGIN_FUNC_ERROR;
- 
-   /* Is username defined? */
--  if (strlen (up->username))
-+  if ((session->opt->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL) || strlen (up->username))
-     {
-       /* set username/password in private env space */
-       setenv_str (session->opt->es, "username", raw_username);
-@@ -3023,7 +3086,7 @@
-   int retval = KMDA_ERROR;
- 
-   /* Is username defined? */
--  if (strlen (up->username))
-+  if ((session->opt->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL) || strlen (up->username))
-     {
-       /* set username/password in private env space */
-       setenv_str (session->opt->es, "username", raw_username);
-@@ -3282,9 +3345,12 @@
-       if (!read_string (buf, up->username, USER_PASS_LEN)
- 	  || !read_string (buf, up->password, USER_PASS_LEN))
- 	{
--	  msg (D_TLS_ERRORS, "TLS Error: Auth Username/Password was not provided by peer");
- 	  CLEAR (*up);
--	  goto error;
-+	  if (!(session->opt->ssl_flags & SSLF_AUTH_USER_PASS_OPTIONAL))
-+	    {
-+	      msg (D_TLS_ERRORS, "TLS Error: Auth Username/Password was not provided by peer");
-+	      goto error;
-+	    }
- 	}
- 
-       /* preserve raw username before string_mod remapping, for plugins */
-@@ -3293,7 +3359,7 @@
-       string_mod (raw_username, CC_PRINT, CC_CRLF, '_');
- 
-       /* enforce character class restrictions in username/password */
--      string_mod (up->username, COMMON_NAME_CHAR_CLASS, 0, '_');
-+      string_mod_sslname (up->username, COMMON_NAME_CHAR_CLASS, session->opt->ssl_flags);
-       string_mod (up->password, CC_PRINT, CC_CRLF, '_');
- 
-       /* call plugin(s) and/or script */
-@@ -3307,7 +3373,7 @@
- 	s2 = verify_user_pass_script (session, up);
- 
-       /* check sizing of username if it will become our common name */
--      if (session->opt->username_as_common_name && strlen (up->username) >= TLS_CN_LEN)
-+      if ((session->opt->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME) && strlen (up->username) >= TLS_CN_LEN)
- 	{
- 	  msg (D_TLS_ERRORS, "TLS Auth Error: --username-as-common name specified and username is longer than the maximum permitted Common Name length of %d characters", TLS_CN_LEN);
- 	  s1 = OPENVPN_PLUGIN_FUNC_ERROR;
-@@ -3330,12 +3396,16 @@
- 	    ks->auth_deferred = true;
  #endif
- 	    
--	  if (session->opt->username_as_common_name)
-+	  if ((session->opt->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME))
- 	    set_common_name (session, up->username);
- 	  msg (D_HANDSHAKE, "TLS: Username/Password authentication %s for username '%s' %s",
--	       s1 == OPENVPN_PLUGIN_FUNC_SUCCESS ? "succeeded" : "deferred",
-+#ifdef ENABLE_DEF_AUTH
-+	       ks->auth_deferred ? "deferred" : "succeeded",
-+#else
-+	       "succeeded",
-+#endif
- 	       up->username,
--	       session->opt->username_as_common_name ? "[CN SET]" : "");
-+	       (session->opt->ssl_flags & SSLF_USERNAME_AS_COMMON_NAME) ? "[CN SET]" : "");
- 	}
-       else
- 	{
-diff -urN openvpn-2.1_rc13/ssl.h openvpn-2.1_rc14/ssl.h
---- openvpn-2.1_rc13/ssl.h	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc14/ssl.h	2008-10-31 07:37:44.000000000 +0100
-@@ -456,7 +456,6 @@
-   const char *auth_user_pass_verify_script;
-   bool auth_user_pass_verify_script_via_file;
-   const char *tmp_dir;
--  bool username_as_common_name;
  
-   /* use the client-config-dir as a positive authenticator */
-   const char *client_config_dir_exclusive;
-@@ -465,6 +464,13 @@
-   struct env_set *es;
-   const struct plugin_list *plugins;
+diff -urN openvpn-2.1_rc14/ssl.h openvpn-2.1_rc15/ssl.h
+--- openvpn-2.1_rc14/ssl.h	2008-10-31 07:37:44.000000000 +0100
++++ openvpn-2.1_rc15/ssl.h	2008-11-18 03:44:06.000000000 +0100
+@@ -469,6 +469,7 @@
+ # define SSLF_USERNAME_AS_COMMON_NAME  (1<<1)
+ # define SSLF_AUTH_USER_PASS_OPTIONAL  (1<<2)
+ # define SSLF_NO_NAME_REMAPPING        (1<<3)
++# define SSLF_OPT_VERIFY               (1<<4)
+   unsigned int ssl_flags;
  
-+  /* configuration file boolean options */
-+# define SSLF_CLIENT_CERT_NOT_REQUIRED (1<<0)
-+# define SSLF_USERNAME_AS_COMMON_NAME  (1<<1)
-+# define SSLF_AUTH_USER_PASS_OPTIONAL  (1<<2)
-+# define SSLF_NO_NAME_REMAPPING        (1<<3)
-+  unsigned int ssl_flags;
-+
  #ifdef MANAGEMENT_DEF_AUTH
-   struct man_def_auth_context *mda_context;
- #endif
-diff -urN openvpn-2.1_rc13/tun.c openvpn-2.1_rc14/tun.c
---- openvpn-2.1_rc13/tun.c	2008-10-06 09:22:21.000000000 +0200
-+++ openvpn-2.1_rc14/tun.c	2008-11-17 01:48:04.000000000 +0100
-@@ -106,25 +106,6 @@
-     }
- }
- 
--const char *
--dev_component_in_dev_node (const char *dev_node)
--{
--  const char *ret;
--  const int dirsep = OS_SPECIFIC_DIRSEP;
--
--  if (dev_node)
--    {
--      ret = strrchr (dev_node, dirsep);
--      if (ret && *ret)
--	++ret;
--      else
--	ret = dev_node;
--      if (*ret)
--	return ret;
--    }
--  return NULL;
--}
--
- /*
-  * Try to predict the actual TUN/TAP device instance name,
-  * before the device is actually opened.
-@@ -3481,7 +3462,7 @@
-   /* delete existing DNS/WINS settings from TAP interface */
-   if (delete_first)
-     {
--      argv_printf (&argv, "%s%s interface ip delete %s %s all",
-+      argv_printf (&argv, "%s%sc interface ip delete %s %s all",
- 		   get_win_sys_path(),
- 		   NETSH_PATH_SUFFIX,
- 		   type,
-@@ -3498,8 +3479,8 @@
- 	if (delete_first || !test_first || !ip_addr_member_of (addr_list[i], current))
- 	  {
- 	    const char *fmt = count ?
--	        "%s%s interface ip add %s %s %s"
--	      : "%s%s interface ip set %s %s static %s";
-+	        "%s%sc interface ip add %s %s %s"
-+	      : "%s%sc interface ip set %s %s static %s";
- 
- 	    argv_printf (&argv, fmt,
- 			 get_win_sys_path(),
-@@ -3575,8 +3556,7 @@
-       else
- 	{
- 	  /* example: netsh interface ip set address my-tap static 10.3.0.1 255.255.255.0 */
--	  argv_printf (&argv,
--		       "%s%s interface ip set address %s static %s %s",
-+	  argv_printf (&argv, "%s%sc interface ip set address %s static %s %s",
- 		       get_win_sys_path(),
- 		       NETSH_PATH_SUFFIX,
- 		       flex_name,
-@@ -3624,7 +3604,7 @@
- 
-   /* example: netsh interface ip set address my-tap dhcp */
-   argv_printf (&argv,
--	      "%s%s interface ip set address %s dhcp",
-+	      "%s%sc interface ip set address %s dhcp",
- 	       get_win_sys_path(),
- 	       NETSH_PATH_SUFFIX,
- 	       actual_name);
-diff -urN openvpn-2.1_rc13/tun.h openvpn-2.1_rc14/tun.h
---- openvpn-2.1_rc13/tun.h	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/tun.h	2008-11-17 01:18:29.000000000 +0100
-@@ -231,8 +231,6 @@
- 		  int tun_mtu,
- 		  const struct env_set *es);
- 
--const char *dev_component_in_dev_node (const char *dev_node);
--
- bool is_dev_type (const char *dev, const char *dev_type, const char *match_type);
- int dev_type_enum (const char *dev, const char *dev_type);
- const char *dev_type_string (const char *dev, const char *dev_type);
-diff -urN openvpn-2.1_rc13/version.m4 openvpn-2.1_rc14/version.m4
---- openvpn-2.1_rc13/version.m4	2008-10-07 21:56:15.000000000 +0200
-+++ openvpn-2.1_rc14/version.m4	2008-11-17 05:38:35.000000000 +0100
+diff -urN openvpn-2.1_rc14/version.m4 openvpn-2.1_rc15/version.m4
+--- openvpn-2.1_rc14/version.m4	2008-11-17 05:38:35.000000000 +0100
++++ openvpn-2.1_rc15/version.m4	2008-11-19 19:08:50.000000000 +0100
 @@ -1,5 +1,5 @@
  dnl define the OpenVPN version
--define(PRODUCT_VERSION,[2.1_rc13])
-+define(PRODUCT_VERSION,[2.1_rc14])
+-define(PRODUCT_VERSION,[2.1_rc14])
++define(PRODUCT_VERSION,[2.1_rc15])
  dnl define the TAP version
  define(PRODUCT_TAP_ID,[tap0901])
  define(PRODUCT_TAP_WIN32_MIN_MAJOR,[9])
-diff -urN openvpn-2.1_rc13/win32.c openvpn-2.1_rc14/win32.c
---- openvpn-2.1_rc13/win32.c	2008-10-06 09:22:20.000000000 +0200
-+++ openvpn-2.1_rc14/win32.c	2008-11-17 05:01:14.000000000 +0100
-@@ -75,6 +75,51 @@
-  */
- static char *win_sys_path = NULL; /* GLOBAL */
- 
-+/*
-+ * Configure PATH.  On Windows, sometimes PATH is not set correctly
-+ * by default.
-+ */
-+static void
-+configure_win_path (void)
-+{
-+  static bool done = false; /* GLOBAL */
-+  if (!done)
-+    {
-+      FILE *fp;
-+      fp = fopen ("c:\\windows\\system32\\route.exe", "rb");
-+      if (fp)
-+	{
-+	  const int bufsiz = 4096;
-+	  struct gc_arena gc = gc_new ();
-+	  struct buffer oldpath = alloc_buf_gc (bufsiz, &gc);
-+	  struct buffer newpath = alloc_buf_gc (bufsiz, &gc);
-+	  const char* delim = ";";
-+	  DWORD status;
-+	  fclose (fp);
-+	  status = GetEnvironmentVariable ("PATH", BPTR(&oldpath), (DWORD)BCAP(&oldpath));
-+#if 0
-+	  status = 0;
-+#endif
-+	  if (!status)
-+	    {
-+	      *BPTR(&oldpath) = '\0';
-+	      delim = "";
-+	    }
-+	  buf_printf (&newpath, "C:\\WINDOWS\\System32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem%s%s",
-+		      delim,
-+		      BSTR(&oldpath));
-+	  SetEnvironmentVariable ("PATH", BSTR(&newpath));
-+#if 0
-+	  status = GetEnvironmentVariable ("PATH", BPTR(&oldpath), (DWORD)BCAP(&oldpath));
-+	  if (status > 0)
-+	    printf ("PATH: %s\n", BSTR(&oldpath));
-+#endif
-+	  gc_free (&gc);
-+	  done = true;
-+	}
-+    }
-+}
-+
- void
- init_win32 (void)
- {
-@@ -911,45 +956,57 @@
-     {
-       if (openvpn_execve_allowed (flags))
- 	{
--	  STARTUPINFO start_info;
--	  PROCESS_INFORMATION proc_info;
-+	  if (script_method == SM_EXECVE)
-+	    {
-+	      STARTUPINFO start_info;
-+	      PROCESS_INFORMATION proc_info;
- 
--	  char *env = env_block (es);
--	  char *cl = cmd_line (a);
--	  char *cmd = a->argv[0];
--
--	  CLEAR (start_info);
--	  CLEAR (proc_info);
--
--	  /* fill in STARTUPINFO struct */
--	  GetStartupInfo(&start_info);
--	  start_info.cb = sizeof(start_info);
--	  start_info.dwFlags = STARTF_USESTDHANDLES|STARTF_USESHOWWINDOW;
--	  start_info.wShowWindow = SW_HIDE;
--	  start_info.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
--	  start_info.hStdOutput = start_info.hStdError = GetStdHandle(STD_OUTPUT_HANDLE);
-+	      char *env = env_block (es);
-+	      char *cl = cmd_line (a);
-+	      char *cmd = a->argv[0];
-+
-+	      CLEAR (start_info);
-+	      CLEAR (proc_info);
-+
-+	      /* fill in STARTUPINFO struct */
-+	      GetStartupInfo(&start_info);
-+	      start_info.cb = sizeof(start_info);
-+	      start_info.dwFlags = STARTF_USESTDHANDLES|STARTF_USESHOWWINDOW;
-+	      start_info.wShowWindow = SW_HIDE;
-+	      start_info.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
-+	      start_info.hStdOutput = start_info.hStdError = GetStdHandle(STD_OUTPUT_HANDLE);
- 
--	  if (CreateProcess (cmd, cl, NULL, NULL, FALSE, 0, env, NULL, &start_info, &proc_info))
--	    {
--	      DWORD exit_status = 0;
--	      CloseHandle (proc_info.hThread);
--	      WaitForSingleObject (proc_info.hProcess, INFINITE);
--	      if (GetExitCodeProcess (proc_info.hProcess, &exit_status))
--		ret = (int)exit_status;
-+	      if (CreateProcess (cmd, cl, NULL, NULL, FALSE, 0, env, NULL, &start_info, &proc_info))
-+		{
-+		  DWORD exit_status = 0;
-+		  CloseHandle (proc_info.hThread);
-+		  WaitForSingleObject (proc_info.hProcess, INFINITE);
-+		  if (GetExitCodeProcess (proc_info.hProcess, &exit_status))
-+		    ret = (int)exit_status;
-+		  else
-+		    msg (M_WARN|M_ERRNO, "openvpn_execve: GetExitCodeProcess %s failed", cmd);
-+		  CloseHandle (proc_info.hProcess);
-+		}
- 	      else
--		msg (M_WARN|M_ERRNO, "openvpn_execve: GetExitCodeProcess %s failed", cmd);
--	      CloseHandle (proc_info.hProcess);
-+		{
-+		  msg (M_WARN|M_ERRNO, "openvpn_execve: CreateProcess %s failed", cmd);
-+		}
-+	      free (cl);
-+	      free (env);
-+	    }
-+	  else if (script_method == SM_SYSTEM)
-+	    {
-+	      configure_win_path ();
-+	      ret = openvpn_system (argv_system_str (a), es, flags);
- 	    }
- 	  else
- 	    {
--	      msg (M_WARN|M_ERRNO, "openvpn_execve: CreateProcess %s failed", cmd);
-+	      ASSERT (0);
- 	    }
--	  free (cl);
--	  free (env);
- 	}
-       else
- 	{
--	  msg (M_WARN, "openvpn_execve: external program may not be called due to setting of --script-security level");
-+	  msg (M_WARN, SCRIPT_SECURITY_WARNING);
- 	}
-     }
-   else
