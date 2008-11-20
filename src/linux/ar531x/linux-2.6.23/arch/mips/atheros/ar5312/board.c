@@ -300,16 +300,13 @@ int __init ar5312_init_devices(void)
 	}
 
 	if (radio) {
-//		printk("radio mask %X \n",*((u32 *) radio));
 		if (mips_machtype == MACH_ATHEROS_AR5312) {
-//		printk("init wmac 0\n");
 			if (*((u32 *) radio) & AR531X_RADIO0_MASK) {
 				ar5312_wmac[0].dev.platform_data = init_wmac(0);
 				ar5312_devs[dev++] = &ar5312_wmac[0];
 			}
 		}
 		if (*((u32 *) radio) & AR531X_RADIO1_MASK) {
-//		printk("init wmac 1\n");
 			ar5312_wmac[1].dev.platform_data = init_wmac(1);
 			ar5312_devs[dev++] = &ar5312_wmac[1];
 		}
