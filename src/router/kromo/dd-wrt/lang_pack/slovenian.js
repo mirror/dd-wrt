@@ -285,6 +285,8 @@ errmsg.err31=" vrednost je nepravilna.";
 errmsg.err32="IP naslov in prehod nista v isti podmre¾i.";
 errmsg.err33="IP naslov in prehod ne moreta biti enaka.";
 errmsg.err34=" ne sme vsebovati presledka.";
+errmsg.err110="Konèna ¹tevilka mora biti veèja kot zaèetna ¹tevilka";
+errmsg.err111="Napravilen IP naslov";
 
 //Wol.asp error messages
 errmsg.err35="Vnesti morate MAC naslov za zagon.";
