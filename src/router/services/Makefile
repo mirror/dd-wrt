@@ -394,6 +394,9 @@ endif
 ifeq ($(CONFIG_CA8PRO),y)
 CFLAGS += -DHAVE_CA8PRO
 endif
+ifeq ($(CONFIG_RCAA01),y)
+CFLAGS += -DHAVE_RCAA01
+endif
 ifeq ($(CONFIG_CA8),y)
 CFLAGS += -DHAVE_CA8
 endif
