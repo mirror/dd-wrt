@@ -1147,6 +1147,12 @@ void start_lan( void )
 	    nvram_set( "lan_ifnames", "vlan0 vlan1 ath0" );
 	    PORTSETUPWAN( "" );
 	}
+	else if( getRouterBrand(  ) == ROUTER_BOARD_RCAA01 )
+	{
+	    nvram_set( "lan_ifname", "br0" );
+	    nvram_set( "lan_ifnames", "eth0 vlan0 vlan1 ath0" );
+	    PORTSETUPWAN( "" );
+	}
 	else
 	{
 	    nvram_set( "lan_ifname", "br0" );
@@ -1161,6 +1167,11 @@ void start_lan( void )
 	    nvram_set( "lan_ifname", "br0" );
 	    nvram_set( "lan_ifnames", "vlan0 vlan1 ath0" );
 	    PORTSETUPWAN( "vlan1" );
+	}else if( getRouterBrand(  ) == ROUTER_BOARD_RCAA01 )
+	{
+	    nvram_set( "lan_ifname", "br0" );
+	    nvram_set( "lan_ifnames", "eth0 vlan0 vlan1 ath0" );
+	    PORTSETUPWAN( "eth0" );
 	}
 	else
 	{
@@ -1820,7 +1831,7 @@ void start_lan( void )
     sprintf( staticlan, "%s:0", lan_ifname );
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
     if( getRouterBrand(  ) != ROUTER_BOARD_FONERA2200
-	&& getRouterBrand(  ) != ROUTER_BOARD_CA8PRO )
+	&& getRouterBrand(  ) != ROUTER_BOARD_CA8PRO && getRouterBrand(  ) != ROUTER_BOARD_RCAA01 )
 	if( nvram_match( "ath0_mode", "sta" )
 	    || nvram_match( "ath0_mode", "wdssta" )
 	    || nvram_match( "ath0_mode", "wet" )
@@ -2558,6 +2569,10 @@ void start_wan( int status )
 					     "" ) ?
 	nvram_safe_get( "pppoe_wan_ifname" ) : "eth0";
 #elif HAVE_TW6600
+    char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
+					     "" ) ?
+	nvram_safe_get( "pppoe_wan_ifname" ) : "eth0";
+#elif HAVE_RCAA01
     char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
 					     "" ) ?
 	nvram_safe_get( "pppoe_wan_ifname" ) : "eth0";
