@@ -55,7 +55,6 @@ static unsigned int type7_clocks[10] =
     { 183, 187, 198, 200, 216, 225, 233, 237, 250, 0 };
 #endif
 
-
 #ifdef HAVE_RT2880
 #define IFMAP(a) getRADev(a)
 #else
@@ -1461,12 +1460,12 @@ show_security_prefix( webs_t wp, int argc, char_t ** argv, char *prefix,
 		   selmatch( var, "wpa2", "selected=\"selected\"" ) );
     }
 #ifdef HAVE_RT2880
-    if( !primary || nvram_match( sta, "ap" ))
+    if( !primary || nvram_match( sta, "ap" ) )
 #endif
-    websWrite( wp,
-	       "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
-	       selmatch( var, "psk psk2", "selected=\"selected\"" ) );
-	       
+	websWrite( wp,
+		   "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
+		   selmatch( var, "psk psk2", "selected=\"selected\"" ) );
+
     if( !primary || nvram_match( sta, "ap" ) || nvram_match( sta, "wdsap" ) )
     {
 	websWrite( wp,
@@ -1526,7 +1525,7 @@ ej_show_security_single( webs_t wp, int argc, char_t ** argv, char *prefix )
     // cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
     websWrite( wp,
 	       "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [",
-	       IFMAP(prefix) );
+	       IFMAP( prefix ) );
     tf_webWriteESCNV( wp, ssid );	// fix for broken html page if ssid
     // contains html tag
     websWrite( wp, "] HWAddr [%s]</legend>\n", nvram_safe_get( mac ) );
@@ -1539,7 +1538,7 @@ ej_show_security_single( webs_t wp, int argc, char_t ** argv, char *prefix )
 	// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
 	websWrite( wp,
 		   "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
-		   IFMAP(var) );
+		   IFMAP( var ) );
 	tf_webWriteESCNV( wp, ssid );	// fix for broken html page if ssid
 	// contains html tag
 	websWrite( wp, "]</legend>\n" );
@@ -2631,7 +2630,8 @@ void ej_show_bridgeifnames( webs_t wp, int argc, char_t ** argv )
     {
 	char EOP[32];
 
-	if( nvram_nmatch( "1", "oet%d_en", i ) && nvram_nmatch( "1", "oet%d_bridged", i ) )
+	if( nvram_nmatch( "1", "oet%d_en", i )
+	    && nvram_nmatch( "1", "oet%d_bridged", i ) )
 	{
 	    sprintf( EOP, "oet%d", i );
 	    sprintf( bufferif, "%s %s", bufferif, EOP );
@@ -2760,7 +2760,8 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 
 	sprintf( wl_wchannel, "%s_wchannel", prefix );
 	char wl_nbw[16];
-	nvram_default_get(wl_wchannel,"0");
+
+	nvram_default_get( wl_wchannel, "0" );
 	sprintf( wl_nbw, "%s_nbw", prefix );
 
 	websWrite( wp, "<div class=\"setting\">\n" );
@@ -2844,10 +2845,10 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 	    char *ifn = get_wl_instance_name( instance );
 	    int chancount = getchannels( chanlist, ifn );
 
-//	    websWrite( wp, "var max_channel = %d;\n", chancount );
-//	    websWrite( wp, "var wl%d_channel = '%s';\n", instance, nvram_safe_get( wl_channel ) );
-//	    websWrite( wp, "var offset = %d;\n", chanlist[0] );
-//	    websWrite( wp, "var buf = \"\";\n" );
+//          websWrite( wp, "var max_channel = %d;\n", chancount );
+//          websWrite( wp, "var wl%d_channel = '%s';\n", instance, nvram_safe_get( wl_channel ) );
+//          websWrite( wp, "var offset = %d;\n", chanlist[0] );
+//          websWrite( wp, "var buf = \"\";\n" );
 //      websWrite( wp, "var freq = new Array(\"Auto\"" );
 	    int i;
 
@@ -3222,25 +3223,29 @@ static void show_netmode( webs_t wp, char *prefix )
     websWrite( wp, "</div>\n" );
 
 #ifdef HAVE_RT2880
-if (nvram_nmatch("n-only","%s_net_mode",prefix))
-   {
-    char wl_greenfield[32];
-    sprintf(wl_greenfield,"%s_greenfield",prefix);
-    websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label7)</script></div><select name=\"%s\" >\n",
-	       wl_greenfield );
-    websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
-    websWrite( wp,
-	       "document.write(\"<option value=\\\"0\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
-	       nvram_default_match( wl_greenfield,"0","0" ) ? "selected=\\\"selected\\\"" : "");
-    websWrite( wp,
-	       "document.write(\"<option value=\\\"1\\\" %s>\" + wl_basic.greenfield + \"</option>\");\n",
-	       nvram_default_match( wl_greenfield,
-			    "1","0" ) ? "selected=\\\"selected\\\"" : "");
-    websWrite( wp, "//]]>\n</script>\n" );
-    websWrite( wp, "</select>\n" );
-    websWrite( wp, "</div>\n" );
+    if( nvram_nmatch( "n-only", "%s_net_mode", prefix ) )
+    {
+	char wl_greenfield[32];
+
+	sprintf( wl_greenfield, "%s_greenfield", prefix );
+	websWrite( wp, "<div class=\"setting\">\n" );
+	websWrite( wp,
+		   "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label7)</script></div><select name=\"%s\" >\n",
+		   wl_greenfield );
+	websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
+	websWrite( wp,
+		   "document.write(\"<option value=\\\"0\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
+		   nvram_default_match( wl_greenfield, "0",
+					"0" ) ? "selected=\\\"selected\\\"" :
+		   "" );
+	websWrite( wp,
+		   "document.write(\"<option value=\\\"1\\\" %s>\" + wl_basic.greenfield + \"</option>\");\n",
+		   nvram_default_match( wl_greenfield, "1",
+					"0" ) ? "selected=\\\"selected\\\"" :
+		   "" );
+	websWrite( wp, "//]]>\n</script>\n" );
+	websWrite( wp, "</select>\n" );
+	websWrite( wp, "</div>\n" );
     }
 #endif
 }
@@ -3289,7 +3294,7 @@ static void showrtssettings( webs_t wp, char *var )
 
 }
 #endif
-static void showbridgesettings( webs_t wp, char *var, int mcast , int dual)
+static void showbridgesettings( webs_t wp, char *var, int mcast, int dual )
 {
 
     char ssid[32];
@@ -3423,17 +3428,11 @@ static void showbridgesettings( webs_t wp, char *var, int mcast , int dual)
 
     websWrite( wp, "</div>\n" );
 
-
-
-
-
-
     websWrite( wp, "<script>\n//<![CDATA[\n " );
     websWrite( wp,
 	       "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnetvifs\", %s);\n",
 	       var, vvar, nvram_match( ssid, "0" ) ? "true" : "false" );
     websWrite( wp, "//]]>\n</script>\n" );
-
 
 }
 
@@ -3517,6 +3516,7 @@ static int show_virtualssid( webs_t wp, char *prefix )
     char ssid[80];
     char vif[16];
     char power[32];
+
 #ifdef HAVE_MADWIFI
     char wmm[32];
     char wl_protmode[32];
@@ -3541,7 +3541,7 @@ static int show_virtualssid( webs_t wp, char *prefix )
 	sprintf( ssid, "%s_ssid", var );
 	websWrite( wp,
 		   "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [",
-		   IFMAP(var) );
+		   IFMAP( var ) );
 	tf_webWriteESCNV( wp, ssid );	// fix for broken html page if ssid
 	// contains html tag
 	websWrite( wp, "]</legend>\n" );
@@ -3607,26 +3607,31 @@ static int show_virtualssid( webs_t wp, char *prefix )
 #endif
 	sprintf( ssid, "%s_ap_isolate", var );
 	showRadio( wp, "wl_adv.label11", ssid );
+#ifdef HAVE_MADWIFI
 
-if (nvram_nmatch("ap","%s_mode",prefix) || nvram_nmatch("wdsap","%s_mode",prefix) || nvram_nmatch("infra","%s_mode",prefix))
-    {
-	sprintf( power, "%s_maxassoc", prefix );
-	websWrite( wp, "<div class=\"setting\">\n" );
-	websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label10)</script></div>\n" );
-	websWrite( wp,
-	       "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_adv.label10)\" value=\"%s\" />\n",
-	       power, nvram_default_get( power, "256" ) );
+	if( nvram_nmatch( "ap", "%s_mode", prefix )
+	    || nvram_nmatch( "wdsap", "%s_mode", prefix )
+	    || nvram_nmatch( "infra", "%s_mode", prefix ) )
+	{
+	    sprintf( power, "%s_maxassoc", prefix );
+	    websWrite( wp, "<div class=\"setting\">\n" );
+	    websWrite( wp,
+		       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label10)</script></div>\n" );
+	    websWrite( wp,
+		       "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_adv.label10)\" value=\"%s\" />\n",
+		       power, nvram_default_get( power, "256" ) );
 
-	websWrite( wp,
-	       "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n" );
-	websWrite( wp, "</div>\n" );
-    }	
-	
+	    websWrite( wp,
+		       "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n" );
+	    websWrite( wp, "</div>\n" );
+	}
+	sprintf( power, "%s_mtikie", prefix );
+	showRadio( wp, "wl_basic.mtikie", power );
+#endif
 #ifdef HAVE_RT2880
-	showbridgesettings( wp, getRADev(var), 1,0 );
+	showbridgesettings( wp, getRADev( var ), 1, 0 );
 #else
-	showbridgesettings( wp, var, 1,0 );
+	showbridgesettings( wp, var, 1, 0 );
 #endif
 	websWrite( wp, "</fieldset><br />\n" );
 	count++;
@@ -3734,7 +3739,9 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s</h2>\n",
 	       prefix );
     websWrite( wp, "<fieldset>\n" );
-    websWrite( wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [", IFMAP(prefix) );
+    websWrite( wp,
+	       "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [",
+	       IFMAP( prefix ) );
     tf_webWriteESCNV( wp, wl_ssid );	// fix 
     websWrite( wp, "] HWAddr [%s]</legend>\n", nvram_safe_get( wl_macaddr ) );
     char power[16];
@@ -4178,8 +4185,10 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	    websWrite( wp, "</div>\n" );
 
 	    websWrite( wp, "<div class=\"setting\">\n" );
-	    websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n" );
-	    websWrite( wp, "<select name=\"%s_wchannel\" ></select>\n",prefix );
+	    websWrite( wp,
+		       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n" );
+	    websWrite( wp, "<select name=\"%s_wchannel\" ></select>\n",
+		       prefix );
 	    websWrite( wp, "</div>\n" );
 	    show_channel( wp, prefix, prefix, 1 );
 	}
@@ -4240,27 +4249,32 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     // end ACK timing
 #endif
 #ifdef HAVE_MADWIFI
-if (nvram_nmatch("ap","%s_mode",prefix) || nvram_nmatch("wdsap","%s_mode",prefix) || nvram_nmatch("infra","%s_mode",prefix))
+    if( nvram_nmatch( "ap", "%s_mode", prefix )
+	|| nvram_nmatch( "wdsap", "%s_mode", prefix )
+	|| nvram_nmatch( "infra", "%s_mode", prefix ) )
     {
-    sprintf( power, "%s_maxassoc", prefix );
-    websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label10)</script></div>\n" );
-    websWrite( wp,
-	       "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_basic.label6)\" value=\"%s\" />\n",
-	       power, nvram_default_get( power, "256" ) );
-    websWrite( wp,
-	       "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n" );
-    websWrite( wp, "</div>\n" );
+	sprintf( power, "%s_maxassoc", prefix );
+	websWrite( wp, "<div class=\"setting\">\n" );
+	websWrite( wp,
+		   "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label10)</script></div>\n" );
+	websWrite( wp,
+		   "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_basic.label6)\" value=\"%s\" />\n",
+		   power, nvram_default_get( power, "256" ) );
+	websWrite( wp,
+		   "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n" );
+	websWrite( wp, "</div>\n" );
     }
-    showbridgesettings( wp, prefix, 1 ,1);
+    sprintf( power, "%s_mtikie", prefix );
+    showRadio( wp, "wl_basic.mtikie", power );
+
+    showbridgesettings( wp, prefix, 1, 1 );
 #elif HAVE_RT2880
-    showbridgesettings( wp, "ra0", 1 ,1);
+    showbridgesettings( wp, "ra0", 1, 1 );
 #else
     if( !strcmp( prefix, "wl0" ) )
-	showbridgesettings( wp, get_wl_instance_name( 0 ), 1 ,1);
+	showbridgesettings( wp, get_wl_instance_name( 0 ), 1, 1 );
     if( !strcmp( prefix, "wl1" ) )
-	showbridgesettings( wp, get_wl_instance_name( 1 ), 1 ,1);
+	showbridgesettings( wp, get_wl_instance_name( 1 ), 1, 1 );
 #endif
     websWrite( wp, "</fieldset>\n" );
     websWrite( wp, "<br />\n" );
@@ -4918,7 +4932,7 @@ void ej_showbridgesettings( webs_t wp, int argc, char_t ** argv )
 	return;
     }
 #endif
-    showbridgesettings( wp, interface, mcast,0 );
+    showbridgesettings( wp, interface, mcast, 0 );
 }
 
 void ej_get_wds_ip( webs_t wp, int argc, char_t ** argv )
@@ -5243,7 +5257,6 @@ void ej_get_currate( webs_t wp, int argc, char_t ** argv )
 
 }
 
-
 void ej_show_acktiming( webs_t wp, int argc, char_t ** argv )
 {
     return;
@@ -5253,7 +5266,6 @@ void ej_update_acktiming( webs_t wp, int argc, char_t ** argv )
 {
     return;
 }
-
 
 #else
 
@@ -5281,7 +5293,6 @@ void ej_update_acktiming( webs_t wp, int argc, char_t ** argv )
     return;
 }
 
-
 #endif
 
 void ej_get_uptime( webs_t wp, int argc, char_t ** argv )
@@ -5308,7 +5319,7 @@ void ej_get_wan_uptime( webs_t wp, int argc, char_t ** argv )
 
     if( nvram_match( "wan_proto", "disabled" ) )
 	return;
-    if( nvram_match ( "wan_ipaddr", "0.0.0.0") )
+    if( nvram_match( "wan_ipaddr", "0.0.0.0" ) )
     {
 	websWrite( wp, "%s", live_translate( "status_router.notavail" ) );
 	return;
@@ -5358,18 +5369,17 @@ void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
 #elif HAVE_RT2880
 void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
 {
-    int channel = wifi_getchannel( "ra0");
+    int channel = wifi_getchannel( "ra0" );
 
     if( channel > 0 && channel < 1000 )
     {
-	websWrite( wp, "%d (%d Mhz)", channel,wifi_getfreq( "ra0" ) );
+	websWrite( wp, "%d (%d Mhz)", channel, wifi_getfreq( "ra0" ) );
     }
     else
 	// websWrite (wp, "unknown");
 	websWrite( wp, "%s", live_translate( "share.unknown" ) );
     return;
 }
-
 
 #else
 
@@ -5634,56 +5644,60 @@ static const char *ieee80211_ntoa( const uint8_t mac[6] )
 		  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
     return ( i < 17 ? NULL : a );
 }
-typedef union _MACHTTRANSMIT_SETTING {
-	struct  {
-		unsigned short  MCS:7;  // MCS
-		unsigned short  BW:1;   //channel bandwidth 20MHz or 40 MHz
-		unsigned short  ShortGI:1;
-		unsigned short  STBC:2; //SPACE
-		unsigned short  rsv:3;
-		unsigned short  MODE:2; // Use definition MODE_xxx.
-	} field;
-	unsigned short      word;
+typedef union _MACHTTRANSMIT_SETTING
+{
+    struct
+    {
+	unsigned short MCS:7;	// MCS
+	unsigned short BW:1;	//channel bandwidth 20MHz or 40 MHz
+	unsigned short ShortGI:1;
+	unsigned short STBC:2;	//SPACE
+	unsigned short rsv:3;
+	unsigned short MODE:2;	// Use definition MODE_xxx.
+    } field;
+    unsigned short word;
 } MACHTTRANSMIT_SETTING;
 
-typedef struct _RT_802_11_MAC_ENTRY {
-	unsigned char            Addr[6];
-	unsigned char            Aid;
-	unsigned char            Psm;     // 0:PWR_ACTIVE, 1:PWR_SAVE
-	unsigned char            MimoPs;  // 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
-	char                     AvgRssi0;
-	char                     AvgRssi1;
-	char                     AvgRssi2;
-	unsigned int             ConnectedTime;
-	MACHTTRANSMIT_SETTING    TxRate;
+typedef struct _RT_802_11_MAC_ENTRY
+{
+    unsigned char Addr[6];
+    unsigned char Aid;
+    unsigned char Psm;		// 0:PWR_ACTIVE, 1:PWR_SAVE
+    unsigned char MimoPs;	// 0:MMPS_STATIC, 1:MMPS_DYNAMIC, 3:MMPS_Enabled
+    char AvgRssi0;
+    char AvgRssi1;
+    char AvgRssi2;
+    unsigned int ConnectedTime;
+    MACHTTRANSMIT_SETTING TxRate;
 } RT_802_11_MAC_ENTRY;
 
-typedef struct _RT_802_11_MAC_TABLE {
-	unsigned long            Num;
-	RT_802_11_MAC_ENTRY      Entry[32]; //MAX_LEN_OF_MAC_TABLE = 32
+typedef struct _RT_802_11_MAC_TABLE
+{
+    unsigned long Num;
+    RT_802_11_MAC_ENTRY Entry[32];	//MAX_LEN_OF_MAC_TABLE = 32
 } RT_802_11_MAC_TABLE;
 
 #define RTPRIV_IOCTL_GET_MAC_TABLE		(SIOCIWFIRSTPRIV + 0x0F)
 
-typedef struct STAINFO {
-	char mac[6];
-	char rssi;
-	char noise;
-	char ifname[32];
+typedef struct STAINFO
+{
+    char mac[6];
+    char rssi;
+    char noise;
+    char ifname[32];
 } STAINFO;
-
 
 int
 ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 		       char *ifname, int cnt, int turbo, int macmask )
 {
 
-    RT_802_11_MAC_TABLE table = {0};
+    RT_802_11_MAC_TABLE table = { 0 };
 
     unsigned char *cp;
-    int s, len,i;
+    int s, len, i;
     struct iwreq iwr;
-    int ignore=0;
+    int ignore = 0;
 
     if( !ifexists( ifname ) )
     {
@@ -5704,65 +5718,74 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
     ( void )memset( &iwr, 0, sizeof( struct iwreq ) );
     ( void )strncpy( iwr.ifr_name, ifname, sizeof( iwr.ifr_name ) );
 
-    iwr.u.data.pointer = (caddr_t) &table;
+    iwr.u.data.pointer = ( caddr_t ) & table;
 //    iwr.u.data.length = 24 * 1024;
     if( ioctl( s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr ) < 0 )
     {
-	ignore=1;
+	ignore = 1;
     }
-if (!ignore)
-for (i = 0; i < table.Num; i++) {
-	if( cnt )
-	    websWrite( wp, "," );
-	cnt++;
+    if( !ignore )
+	for( i = 0; i < table.Num; i++ )
+	{
+	    if( cnt )
+		websWrite( wp, "," );
+	    cnt++;
+	    char mac[32];
+
+	    strcpy( mac, ieee80211_ntoa( table.Entry[i].Addr ) );
+	    if( nvram_match( "maskmac", "1" ) && macmask )
+	    {
+		mac[0] = 'x';
+		mac[1] = 'x';
+		mac[3] = 'x';
+		mac[4] = 'x';
+		mac[6] = 'x';
+		mac[7] = 'x';
+		mac[9] = 'x';
+		mac[10] = 'x';
+	    }
+#if 0
+	    if( si->isi_rates
+		&& ( ( si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL ) !=
+		     0 )
+		&& ( ( si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL ) !=
+		     0 ) )
+	    {
+		websWrite( wp, "'%s','%s','%3dM','%3dM','%d','%d','%d'",
+			   mac, ifname,
+			   ( ( si->
+			       isi_rates[si->
+					 isi_txrate] & IEEE80211_RATE_VAL ) /
+			     2 ) * turbo,
+			   ( ( si->
+			       isi_rates[si->
+					 isi_rxrate] & IEEE80211_RATE_VAL ) /
+			     2 ) * turbo, -95 + table.Entry[i].AvgRssi0, -95,
+			   table.Entry[i].AvgRssi0 );
+	    }
+	    else
+#endif
+	    {
+		websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac,
+			   ifname, table.Entry[i].AvgRssi0, -95,
+			   ( table.Entry[i].AvgRssi0 - ( -95 ) ) );
+	    }
+	}
+    STAINFO *sta = getRaStaInfo( "wl0" );
+
+    if( sta )
+    {
 	char mac[32];
-	strcpy( mac, ieee80211_ntoa( table.Entry[i].Addr ) );
-	if( nvram_match( "maskmac", "1" ) && macmask )
-	{
-	    mac[0] = 'x';
-	    mac[1] = 'x';
-	    mac[3] = 'x';
-	    mac[4] = 'x';
-	    mac[6] = 'x';
-	    mac[7] = 'x';
-	    mac[9] = 'x';
-	    mac[10] = 'x';
-	}
-#if 0	
-	if( si->isi_rates
-	    && ( ( si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL ) != 0 )
-	    && ( ( si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL ) !=
-		 0 ) )
-	{
-	    websWrite( wp, "'%s','%s','%3dM','%3dM','%d','%d','%d'",
-		       mac, ifname,
-		       ( ( si->
-			   isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL ) /
-			 2 ) * turbo,
-		       ( ( si->
-			   isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL ) /
-			 2 ) * turbo, -95 + table.Entry[i].AvgRssi0,
-		       -95, table.Entry[i].AvgRssi0 );
-	}
-	else
-#endif	
-	{
-	    websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac,
-		       ifname, table.Entry[i].AvgRssi0, -95,
-		        (table.Entry[i].AvgRssi0 - (-95)) );
-	}
-    }
-STAINFO *sta = getRaStaInfo("wl0");
-    if (sta)
-	{
-	char mac[32];
+
 	strcpy( mac, ieee80211_ntoa( sta->mac ) );
-	    websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac,sta->ifname, sta->rssi, sta->noise,(sta->rssi - (sta->noise)) );
-	free(sta);
-	
-	}
-    
-close(s);
+	websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac,
+		   sta->ifname, sta->rssi, sta->noise,
+		   ( sta->rssi - ( sta->noise ) ) );
+	free( sta );
+
+    }
+
+    close( s );
     return cnt;
 }
 extern char *getiflist( void );
@@ -5785,12 +5808,11 @@ void ej_active_wireless( webs_t wp, int argc, char_t ** argv )
 	return;
     }
 #endif
-	sprintf( devs, "ra0");
-	t = 1;
-	cnt = ej_active_wireless_if( wp, argc, argv, "ra0", cnt, t, macmask );
+    sprintf( devs, "ra0" );
+    t = 1;
+    cnt = ej_active_wireless_if( wp, argc, argv, "ra0", cnt, t, macmask );
 
 }
-
 
 #else
 
@@ -7354,7 +7376,7 @@ static void show_macfilter_if( webs_t wp, char *ifname )
 	strcpy( rifname, nvram_safe_get( "wl0_ifname" ) );
 #endif
     websWrite( wp, "<fieldset>\n" );
-    websWrite( wp, "<legend>%s - %s</legend>\n", IFMAP(rifname),
+    websWrite( wp, "<legend>%s - %s</legend>\n", IFMAP( rifname ),
 	       live_translate( "wl_mac.legend" ) );
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp, "<div class=\"label\">%s</div>\n",
@@ -7567,16 +7589,15 @@ void ej_show_rflowif( webs_t wp, int argc, char_t ** argv )
 
     foreach( var, lanifs, next )
     {
-	if (nvram_match("wan_ifname",var))
+	if( nvram_match( "wan_ifname", var ) )
 	    continue;
-	if (!ifexists(var))
+	if( !ifexists( var ) )
 	    continue;
 	websWrite( wp, "<option value=\"%s\" %s >%s</option>\n",
 		   var, nvram_match( "rflow_if",
-				       var ) ? "selected=\"selected\"" :
-		   "",var );
+				     var ) ? "selected=\"selected\"" :
+		   "", var );
     }
-
 
     websWrite( wp, "<option value=\"%s\" %s >WLAN</option>\n",
 	       nvram_safe_get( "wl0_ifname" ), nvram_match( "rflow_if",
