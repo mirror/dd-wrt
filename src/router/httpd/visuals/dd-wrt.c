@@ -3625,7 +3625,9 @@ static int show_virtualssid( webs_t wp, char *prefix )
 		       "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n" );
 	    websWrite( wp, "</div>\n" );
 	}
+	
 	sprintf( power, "%s_mtikie", prefix );
+	nvram_default_get(power,"0");
 	showRadio( wp, "wl_basic.mtikie", power );
 #endif
 #ifdef HAVE_RT2880
@@ -4265,6 +4267,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	websWrite( wp, "</div>\n" );
     }
     sprintf( power, "%s_mtikie", prefix );
+    nvram_default_get(power,"0");
     showRadio( wp, "wl_basic.mtikie", power );
 
     showbridgesettings( wp, prefix, 1, 1 );
