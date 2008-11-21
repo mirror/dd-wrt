@@ -886,6 +886,7 @@ static void configure_single( int count )
     int cnt = 0;
     char dev[10];
     char wif[10];
+    char mtikie[32];
     char wl[16];
     char channel[16];
     char ssid[16];
@@ -1286,7 +1287,6 @@ static void configure_single( int count )
 	sysprintf( "iwpriv %s wdssep 1", dev );
     else
 	sysprintf( "iwpriv %s wdssep 1", dev );
-    char mtikie[32];
 
     sprintf( mtikie, "%s_mtikie", dev );
     if( nvram_default_match( mtikie, "1", "0" ) )
