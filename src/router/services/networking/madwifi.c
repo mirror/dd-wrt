@@ -125,7 +125,7 @@ static void deconfigure_single( int count )
     {
 	if( ifexists( var ) )
 	{
-	    sysprintf( "ifconfig %s var", dev );
+	    sysprintf( "ifconfig %s down", dev );
 	}
     }
     sprintf( dev, "ath%d", count );
