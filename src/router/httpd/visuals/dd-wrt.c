@@ -2824,15 +2824,16 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 	    char *sel = "";
 
 	    if( nvram_nmatch( "lower", "wl%d_nctrlsb", instance ) )
-		sel = "selected";
+		sel = "selected=\\\"selected\\\"";
 
 	    websWrite( wp,
-		       " document.write(\"<option value=%d %s>%d - \"+freq[%d]+\" GHz</option>\");\n",
+		       " document.write(\"<option value=\\\"%d\\\" %s>%d - \"+freq[%d]+\" GHz</option>\");\n",
 		       ch - 2, sel, ch - 2, ch - 2 );
+		sel = "";
 	    if( nvram_nmatch( "upper", "wl%d_nctrlsb", instance ) )
-		sel = "selected";
+		sel = "selected=\\\"selected\\\"";
 	    websWrite( wp,
-		       " document.write(\"<option value=%d %s>%d - \"+freq[%d]+\" GHz</option>\");\n",
+		       " document.write(\"<option value=\\\"%d\\\" %s>%d - \"+freq[%d]+\" GHz</option>\");\n",
 		       ch + 2, sel, ch + 2, ch + 2 );
 
 	}
@@ -2938,7 +2939,7 @@ void show_rates( webs_t wp, char *prefix, int maxrate )
     sprintf( mxrate, "%s_maxrate", prefix );
     websWrite( wp,
 	       "document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n",
-	       nvram_match( srate, "0" ) ? "selected" : "" );
+	       nvram_match( srate, "0" ) ? "selected=\\\"selected\\\"" : "" );
     websWrite( wp, "//]]>\n" );
     websWrite( wp, "</script>\n" );
     char **rate;
@@ -3045,12 +3046,12 @@ void show_rates( webs_t wp, char *prefix, int maxrate )
 	    if( showrates )
 		websWrite( wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
 			   i + 1 + offset, nvram_match( mxrate,
-							comp ) ? "selected" :
+							comp ) ? "selected=\"selected\"" :
 			   "", showrates[i] );
 	    else
 		websWrite( wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
 			   i + 1 + offset, nvram_match( mxrate,
-							comp ) ? "selected" :
+							comp ) ? "selected=\"selected\"" :
 			   "", rate[i] );
 	}
 	else
@@ -3065,12 +3066,12 @@ void show_rates( webs_t wp, char *prefix, int maxrate )
 	    if( showrates )
 		websWrite( wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
 			   i + 1 + offset, nvram_match( srate,
-							comp ) ? "selected" :
+							comp ) ? "selected=\"selected\"" :
 			   "", showrates[i] );
 	    else
 		websWrite( wp, "<option value=\"%d\" %s >%s Mbps</option>\n",
 			   i + 1 + offset, nvram_match( srate,
-							comp ) ? "selected" :
+							comp ) ? "selected=\"selected\"" :
 			   "", rate[i] );
 
 	}
