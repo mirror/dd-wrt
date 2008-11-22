@@ -1,0 +1,207 @@
+* vpnc-0.5.3.tar.gz Wed Nov 19 21:29:22 CET 2008
+
+  User visible changes:
+
+     * Don't crash while rekeying, by Maurice Massar
+     * Fix lifetime handling if both options are present, by Maurice Massar
+     * Support providing the destination network's netmask
+     * Working with concentrators that require a firewall capable
+       client might work, by Nicholas Reilly
+     * Fix a case where pcf2vpnc would create an incorrect config line,
+       by Wolfram Sang
+     * Make vpnc work with newer development versions of openvpn on
+       Windows, by Paolo Zarpellon
+     * print logmessages while opening tun to syslog as well as stderr
+
+* vpnc-0.5.2.tar.gz Wed Nov 19 17:49:46 CET 2008
+
+  User visible changes:
+
+     * Install the license file with the binary
+     * Fix routing issues in vpcn-script-win.js, by Paolo Zarpellon
+     * Fix Phase 2 rekeying, by various authors
+     * Improvements to debug messages, by various authors
+     * Support for the NEXT_PIN for SecureID, by Phil Dibowitz and Rob West
+     * Print hints on how to fix some error conditions
+     * Add --target-network option, by Stelian Pop and Tom Schneider
+     * Try to work around the "payload too short" message instead
+       of aborting, by John Williams
+     * Fix some problems with keepalives during xauth on SonicWall and
+       ScreenOS >= 6, by Johan Fischer
+     * Improvements to syslog messages, by various authors
+     * On Linux calculate the MTU size instead of hardcoding it, by
+       Tomas Mraz
+     * Remove pid file also when not running daemonized, by Martin von Gagern
+     * Always send FW_TYPE xauth attribute, by Johan Dahlin
+     * Fix default route while setting DNS on Darwin, by Felix Buenemann
+
+  Under the hood:
+     * Move decryption code into its own files, by Wolfram Sang
+     * Use ony awk instead of awk+sed in vpnc-script, by Jukka Salmi
+     * Fix some alignment errors on ARM, by Karzist
+     * Memory handling fixes, by various authors
+
+* vpnc-0.5.1.tar.gz Mon Sep 10 23:16:41 CEST 2007
+
+     * link against -lcrypto instead of -lssl, fix from: Christophe Thil
+     * fixed crashes on 64bit platforms by Tomas Mraz, report by Brian Downing
+     * fixes to keepalive code from Brian Downing
+     * generate options part of the manpage automatically, by Wolfram Sang
+     * fix dead peer detection problems with Sonicwall, by Gerald Hanusch
+       and Wolfgang Astleitner
+     * fix disconnect problems with Sonicwall (please test if it fixes the known
+       problems with Cisco), by Gerald Hanusch and Wolfgang Astleitner
+     * again special thanks Joerg Mayer for handling all patches since the
+       last release (-:
+     * various other fixes contributed by Scott Rankin, Markus Meschederu
+
+* vpnc-0.5.0.tar.gz Thu Aug 30 19:17:10 CEST 2007
+
+     * Dead-Peer-Detection support by Kyle McKay
+     * Hybrid-Auth support by Andreas Hoffmann, merged by Chris Walter
+       (depends on OpenSSL, deactivatable at compile-time)
+     * granted Joerg Mayer svn commit privileges, special thanks to him
+       for doing so much work on vpnc during the last month (-:
+     * various other fixes contributed by Petr Salinger,
+       Christian Faulhammer, Kyle McKay, Paolo Zarpellon, Joerg Mayer,
+       Marcus Obst, Mika Liljeberg, Eduard Bloch, Wolfram Sang, Jukka
+       Salmi, Gustavo Sverzut Barbieri, Soren Hansen, Mike Javorski.
+     * first round of a general code cleanup (far less global variables
+       / etc)
+
+* vpnc-0.4.0.tar.gz Mon Feb 19 22:22:22 CET 2007
+
+     * DragonFly BSD support by Hans-Werner Hilse
+     * Solaris 10 fixes by Sunil
+     * support to read obfuscated passwords from .pcf files, based on
+       work from "HAL-9000@evilscientists.de"
+     * granted Dan Villiom Podlaski Christiansen svn commit privileges
+     * Darwin support by Dan Villiom Podlaski Christiansen
+     * UDP IP keepalive support from FreeBSD port
+     * Juniper/ScreenOS support from Marc Huber
+     * replace "--disable-natt --force-natt --udp" with "--natt-mode"
+     * null cipher support from Simon Lipp
+     * Windows/Cygwin and tap support from Paolo Zarpellon
+     * rekeying support
+     * various other fixes contributed by Joerg Mayer, Heiko Stamer,
+       Plamen Todorov, Asgeir, Jukka Salmi, Wolfram Sang, Laurence
+       MOINDROT, Chris Osicki, Anton Altaparmakov, Adam Simpkins, Ken
+       Bell, Hanno Boeck, Kyle McKay, Dennis Schneider
+
+* vpnc-0.3.3.tar.gz Sat May 14 12:23:27 CEST 2005
+
+     * ignore \r in config files
+     * (hopefuly) fixed 64bit bugs (Nicolas Boichat and Zach Brown)
+     * added support for "Split-Net" Routing
+     * introduced vpnc-script and removed vpnc-connect
+     * always search for configfiles in /etc/vpnc/ expect if the
+       filename contains at least one "/"
+     * only read /etc/vpnc/default.conf and /etc/vpnc.conf if no other
+       configfiles are provided
+     * various other fixes contributed by Anton Altaparmakov, Randy
+       Chou, "krabat", Andre Vanha and Nikolay Sturm
+
+* vpnc-0.3.2.tar.gz Mon Nov 22 01:14:29 CET 2004
+
+     * added support for preshared without xauth
+     * fixed NAT-T support with IOS and PIX
+     * fixed IP-Len header (Christian Lackas)
+     * fixed reconnection problems with IOS and PIX
+
+* vpnc-0.3.1.tar.gz Sat Nov 13 01:46:42 CET 2004
+
+     * fixed segfault in --print-config
+
+* vpnc-0.3.tar.gz Sat Nov 13 01:16:37 CET 2004
+
+     * included IPSec over UDP and NAT-T support, thanks to Tomas Mraz
+       and Martin von Gagern
+     * added support for interactive authentication (security tokens for
+       example)
+     * fixed IOS support
+     * updated man-page
+     * updated TODO list
+     * fixed byte-order in debug ouput
+
+* vpnc-0.2-rm+zomb.1.tar.gz Thu May 13 23:34:09 CEST 2004
+
+     * Fixed an off-by-two bug, thanks to Christian Lackas for this
+     * Fixed Solaris7 supported (Solaris9 does not work probably because
+       of built-in IPsec support)
+     * added support for (NT-) Domain xauth attribute
+     * cleaned up and reformatted --help output
+     * Fixed Application Version vpnc sends, fixes problems with some
+       vpn-concentrator default config where vpnc is incorrectly
+       detected as hardware client..
+
+* vpnc-0.2-rm+zomb-pre9.tar.gz Sun May 2 05:32:00 CEST 2004
+
+     * Fixed PIX supported (and PIXs are broken (-;)
+     * send and ignore lifetime update in isakmp-sa/ipsec-sa
+     * Fixed vpnc-connect to supporte load-balancing, see below
+     * added --script which gets all modecfg infos like dns-server. see
+       README
+     * automatically get pfs setting from server. --pfs should not be
+       needed anymore (broken PIXs excluded)
+     * single DES support can be enabled with --enable-1des
+
+* vpnc-0.2-rm+zomb-pre8.tar.gz Sun Apr 25 02:13:30 CEST 2004
+
+     * Fixed OpenBSD supported
+     * added support for "Cisco extension: Load Balancing"
+     * ignore lifetime update in phase1
+
+* vpnc-0.2-rm+zomb-pre7.tar.gz Wed Dec 17 20:58:51 CET 2003
+
+     * Fixed FreeBSD supported
+     * ignore "Cisco extension: XAUTH Vendor" XAuth-Attribute
+     * treat passcode as password
+     * filter "metric10 64" and the like from ip route get output
+     * updated to libgcrypt-1.1.90
+     * create /var/run/vpnc/ as necessary
+
+* vpnc-0.2-rm+zomb-pre6.tar.gz Sun Nov 2 02:15:56 CET 2003
+
+     * Fixed NetBSD supported (add routes like this: route add -host
+       131.246.89.7 -ifp tun0 131.246.89.7)
+     * cosmetic fixes
+
+* vpnc-0.2-rm+zomb-pre5.tar.gz Thu Oct 30 00:53:02 CET 2003
+
+     * created debug levels: 0 default/nothing, 1 basic, 2 control flow,
+       3 packet dump, 99 including username/password (hex encoded)
+     * small fixes to connect/disconnect scripts
+     * added --local-port to allow multiple instances of vpnc running
+       (use 0 to get a "random" port)
+
+* vpnc-0.2-rm+zomb-pre4.tar.gz Tue Oct 28 02:34:42 CET 2003
+
+     * fixed handling of errors at ipsec-sa-negotiation stage
+     * cleaned up option handling, help, version
+     * small fixes to connect/disconnect scripts
+
+* vpnc-0.2-rm+zomb-pre3.tar.gz Sun Oct 26 06:04:09 CET 2003
+
+     * added support for dh1 dh2 dh5 (pfs or ike-sa), sha1, aes128
+       aes192 aes256
+     * automatic negotiation of encryption/hash method (Note: dh-group /
+       pfs is not negotiable)
+     * cleaned up option handling
+     * small fixes to connect/disconnect scripts
+
+* vpnc-0.2-rm+zomb-pre2.tar.gz Fri Oct 24 20:27:56 CEST 2003
+
+     * debugging and detach configurable
+     * akward hanlding of options which don't require an argument
+
+* vpnc-0.2-rm+zomb-pre1.tar.gz Thu Oct 23 06:13:02 CEST 2003
+
+     * first version with libgcrypt instead of openssl (GPL compatible).
+     * far to much debugging enabled (-;
+     * works with a Version 4 VPN Concentrator.
+     * supports only 3des-md5-dh2 and no-pfs.
+
+* vpnc-0.1.tar.gz
+
+     * original version from Geoffrey Keating.
+     * doesn't work with a Version 4 VPN Concentrator.

@@ -18,7 +18,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: vpnc.c 245 2007-09-09 13:56:41Z Joerg Mayer $
+   $Id: vpnc.c 371 2008-11-19 20:55:28Z Joerg Mayer $
 */
 
 #define _GNU_SOURCE
@@ -97,11 +97,39 @@ const unsigned char VID_NATT_RFC[] = { /* "RFC 3947" */
 	0x4A, 0x13, 0x1C, 0x81, 0x07, 0x03, 0x58, 0x45,
 	0x5C, 0x57, 0x28, 0xF2, 0x0E, 0x95, 0x45, 0x2F
 };
+const unsigned char VID_DWR[] = { /* DWR: Delete with reason */
+	0x2D, 0x79, 0x22, 0xC6, 0xB3, 0x01, 0xD9, 0xB0,
+	0xE1, 0x34, 0x27, 0x39, 0xE9, 0xCF, 0xBB, 0xD5
+};
+/* Cisco Unknown1:
+ *const unsigned char VID_CISCO_UNKNOWN_1[] = {
+ *	1f07f70eaa6514d3b0fa96542a500407
+ *};
+ */
 
 const unsigned char VID_CISCO_FRAG[] = { /* "FRAGMENTATION" */
 	0x40, 0x48, 0xB7, 0xD5, 0x6E, 0xBC, 0xE8, 0x85,
 	0x25, 0xE7, 0xDE, 0x7F, 0x00, 0xD6, 0xC2, 0xD3,
 	0x80, 0x00, 0x00, 0x00
+};
+const unsigned char VID_NETSCREEN_15[] = { /* netscreen 15 */
+	0x16, 0x6f, 0x93, 0x2d, 0x55, 0xeb, 0x64, 0xd8,
+	0xe4, 0xdf, 0x4f, 0xd3, 0x7e, 0x23, 0x13, 0xf0,
+	0xd0, 0xfd, 0x84, 0x51, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00
+};
+const unsigned char VID_HEARTBEAT_NOTIFY[] = { /* Heartbeat Notify */
+	0x48, 0x65, 0x61, 0x72, 0x74, 0x42, 0x65, 0x61,
+	0x74, 0x5f, 0x4e, 0x6f, 0x74, 0x69, 0x66, 0x79,
+	0x38, 0x6b, 0x01, 0x00
+};
+const unsigned char VID_NORTEL_CONT[] = { /* BNES: Bay Networks Enterprise Switch + version/id of some kind */
+	0x42, 0x4e, 0x45, 0x53, 0x00, 0x00, 0x00, 0x0a
+};
+
+const unsigned char FW_UNKNOWN_TYPEINFO[] = {
+	0x80, 0x01, 0x00, 0x01, 0x80, 0x02, 0x00, 0x01,
+	0x80, 0x03, 0x00, 0x02
 };
 
 struct vid_element {
@@ -119,7 +147,11 @@ const struct vid_element vid_list[] = {
 	{ VID_NATT_02,		sizeof(VID_NATT_02),	"Nat-T 02" },	
 	{ VID_NATT_02N,		sizeof(VID_NATT_02N),	"Nat-T 02N" },	
 	{ VID_NATT_RFC,		sizeof(VID_NATT_RFC),	"Nat-T RFC" },	
+	{ VID_DWR,		sizeof(VID_DWR),	"Delete With Reason" },	
 	{ VID_CISCO_FRAG,	sizeof(VID_CISCO_FRAG),	"Cisco Fragmentation" },
+	{ VID_NETSCREEN_15,	sizeof(VID_NETSCREEN_15),	"Netscreen 15" },
+	{ VID_NORTEL_CONT,	sizeof(VID_NORTEL_CONT),	"Nortel Contivity" },
+	{ VID_HEARTBEAT_NOTIFY,	sizeof(VID_HEARTBEAT_NOTIFY),	"Heartbeat Notify" },
 
 	{ NULL, 0, NULL }
 };
@@ -133,11 +165,10 @@ void print_vid(const unsigned char *vid, uint16_t len) {
 	
 	int vid_index = 0;
 
-	if (opt_debug < 3)
+	if (opt_debug < 2)
 		return;
 
 	while (vid_list[vid_index].length) {
-		/* FIXME: Do the work here */
 		if (len == vid_list[vid_index].length &&
 			memcmp(vid_list[vid_index].valueptr, vid, len) == 0) {
 			printf("   (%s)\n", vid_list[vid_index].descr);
@@ -167,8 +198,7 @@ static void addenv(const void *name, const char *value)
 
 	setenv(name, strbuf ? strbuf : value, 1);
 
-	if (strbuf)
-		free(strbuf);
+	free(strbuf);
 }
 
 static void addenv_ipv4(const void *name, uint8_t * data)
@@ -197,7 +227,7 @@ static int make_socket(struct sa_block *s, uint16_t src_port, uint16_t dst_port)
 	name.sin_addr = s->opt_src_ip;
 	name.sin_port = htons(src_port);
 	if (bind(sock, (struct sockaddr *)&name, sizeof(name)) < 0)
-		error(1, errno, "binding to %s:%d", inet_ntoa(s->opt_src_ip), src_port);
+		error(1, errno, "Error binding to source port. Try '--local-port 0'\nFailed to bind to %s:%d", inet_ntoa(s->opt_src_ip), src_port);
 
 	/* connect the socket */
 	name.sin_family = AF_INET;
@@ -214,6 +244,57 @@ static int make_socket(struct sa_block *s, uint16_t src_port, uint16_t dst_port)
 	return sock;
 }
 
+static void cleanup(struct sa_block *s) {
+	if (s->ike_fd != 0) {
+		close(s->ike_fd);
+		s->ike_fd = 0;
+	}
+	if (s->esp_fd != 0) {
+		close(s->esp_fd);
+		s->esp_fd = 0;
+	}
+	if (s->ike.resend_hash) {
+		free(s->ike.resend_hash);
+		s->ike.resend_hash = NULL;
+	}
+	if (s->ike.skeyid_d) {
+		free(s->ike.skeyid_d);
+		s->ike.skeyid_d = NULL;
+	}
+	if (s->ike.skeyid_a) {
+		free(s->ike.skeyid_a);
+		s->ike.skeyid_a = NULL;
+	}
+	if (s->ike.initial_iv) {
+		free(s->ike.initial_iv);
+		s->ike.initial_iv = NULL;
+	}
+	if (s->ike.current_iv) {
+		free(s->ike.current_iv);
+		s->ike.current_iv = NULL;
+	}
+	if (s->ike.key) {
+		free(s->ike.key);
+		s->ike.key = NULL;
+	}
+	if (s->ipsec.rx.key) {
+		free(s->ipsec.rx.key);
+		s->ipsec.rx.key = NULL;
+	}
+	if (s->ipsec.tx.key) {
+		free(s->ipsec.tx.key);
+		s->ipsec.tx.key = NULL;
+	}
+	if (s->ipsec.rx.cry_ctx) {
+		gcry_cipher_close(s->ipsec.rx.cry_ctx);
+		s->ipsec.rx.cry_ctx = NULL;
+	}
+	if (s->ipsec.tx.cry_ctx) {
+		gcry_cipher_close(s->ipsec.tx.cry_ctx);
+		s->ipsec.tx.cry_ctx = NULL;
+	}
+}
+
 static void init_sockaddr(struct in_addr *dst, const char *hostname)
 {
 	struct hostent *hostinfo;
@@ -223,6 +304,28 @@ static void init_sockaddr(struct in_addr *dst, const char *hostname)
 		if (hostinfo == NULL)
 			error(1, 0, "unknown host `%s'\n", hostname);
 		*dst = *(struct in_addr *)hostinfo->h_addr;
+	}
+}
+
+static void init_netaddr(struct in_addr *net, const char *string)
+{
+	char *p;
+
+	if ((p = strchr(string, '/')) != NULL) {
+		char *host = xallocc(p - string + 1);
+		memcpy(host, string, p - string + 1);
+		host[p - string] = '\0';
+		init_sockaddr((struct in_addr *)net, host);
+		free(host);
+		if (strchr(p + 1, '.') != NULL)
+			init_sockaddr(net + 1, p + 1);
+		else {
+			int bits = atoi(p + 1);
+			unsigned long mask = (1 << bits) - 1;
+			memcpy((char *)(net + 1), (char *)&mask, 4);
+		}
+	} else {
+		memset((char *)net, 0, 8);
 	}
 }
 
@@ -260,10 +363,11 @@ static void config_tunnel(struct sa_block *s)
 	system(config[CONFIG_SCRIPT]);
 }
 
-static void close_tunnel()
+static void close_tunnel(struct sa_block *s)
 {
 	setenv("reason", "disconnect", 1);
 	system(config[CONFIG_SCRIPT]);
+	tun_close(s->tun_fd, s->tun_name);
 }
 
 static int recv_ignore_dup(struct sa_block *s, void *recvbuf, size_t recvbufsize)
@@ -276,11 +380,17 @@ static int recv_ignore_dup(struct sa_block *s, void *recvbuf, size_t recvbufsize
 		error(1, errno, "receiving packet");
 	if ((unsigned int)recvsize > recvbufsize)
 		error(1, errno, "received packet too large for buffer");
-	
-	/* skip NAT-T draft-0 keepalives */
-	if ((s->ipsec.natt_active_mode == NATT_ACTIVE_DRAFT_OLD) &&
-		(recvsize == 1) && (*((u_char *)(recvbuf)) == 0xff))
+
+	/* skip (not only) NAT-T draft-0 keepalives */
+	if ( /* (s->ipsec.natt_active_mode == NATT_ACTIVE_DRAFT_OLD) && */
+	    (recvsize == 1) && (*((u_char *)(recvbuf)) == 0xff))
+	{
+		if ((s->ipsec.natt_active_mode != NATT_ACTIVE_DRAFT_OLD))
+		{
+			DEBUG(2, printf("Received UDP NAT-Keepalive bug nat active mode incorrect: %d\n", s->ipsec.natt_active_mode));
+		}
 		return -1;
+	}
 	
 	hash_len = gcry_md_get_algo_dlen(GCRY_MD_SHA1);
 	resend_check_hash = malloc(hash_len);
@@ -320,7 +430,7 @@ static ssize_t sendrecv(struct sa_block *s, void *recvbuf, size_t recvbufsize, v
 	if ((s->ipsec.natt_active_mode == NATT_ACTIVE_RFC) && (tosend != NULL)) {
 		DEBUG(2, printf("NAT-T mode, adding non-esp marker\n"));
 		realtosend = xallocc(sendsize+4);
-		memcpy((char*)realtosend+4, tosend, sendsize);
+		memmove((char*)realtosend+4, tosend, sendsize);
 		sendsize += 4;
 	} else {
 		realtosend = tosend;
@@ -450,10 +560,18 @@ static uint16_t unpack_verify_phase2(struct sa_block *s, uint8_t * r_packet,
 	
 	*r_p = NULL;
 
-	if (r_length < ISAKMP_PAYLOAD_O || ((r_length - ISAKMP_PAYLOAD_O) % s->ike.ivlen != 0)) {
+	/* Some users report "payload ... not padded..." errors. It seems that they
+	 * are harmless, so ignore and fix the symptom
+	 */
+	if (r_length < ISAKMP_PAYLOAD_O ||
+	    ((r_length - ISAKMP_PAYLOAD_O) % s->ike.ivlen != 0)) {
 		DEBUG(2, printf("payload too short or not padded: len=%lld, min=%d (ivlen=%lld)\n",
 			(long long)r_length, ISAKMP_PAYLOAD_O, (long long)s->ike.ivlen));
-		return ISAKMP_N_UNEQUAL_PAYLOAD_LENGTHS;
+		hex_dump("Payload", r_packet, r_length, NULL);
+		if (r_length < ISAKMP_PAYLOAD_O ) {
+			return ISAKMP_N_UNEQUAL_PAYLOAD_LENGTHS;
+		}
+		r_length -= (r_length - ISAKMP_PAYLOAD_O) % s->ike.ivlen;
 	}
 
 	reject = isakmp_crypt(s, r_packet, r_length, 0);
@@ -464,13 +582,17 @@ static uint16_t unpack_verify_phase2(struct sa_block *s, uint8_t * r_packet,
 	
 	{
 		r = parse_isakmp_packet(r_packet, r_length, &reject);
-		if (reject != 0)
+		if (reject != 0) {
+			if (r) free_isakmp_packet(r);
 			return reject;
+		}
 	}
 
 	/* Verify the basic stuff.  */
-	if (r->flags != ISAKMP_FLAG_E)
+	if (r->flags != ISAKMP_FLAG_E) {
+		free_isakmp_packet(r);
 		return ISAKMP_N_INVALID_FLAGS;
+	}
 
 	{
 		size_t sz, spos;
@@ -478,8 +600,10 @@ static uint16_t unpack_verify_phase2(struct sa_block *s, uint8_t * r_packet,
 		unsigned char *expected_hash;
 		struct isakmp_payload *h = r->payload;
 
-		if (h == NULL || h->type != ISAKMP_PAYLOAD_HASH || h->u.hash.length != s->ike.md_len)
+		if (h == NULL || h->type != ISAKMP_PAYLOAD_HASH || h->u.hash.length != s->ike.md_len) {
+			free_isakmp_packet(r);
 			return ISAKMP_N_INVALID_HASH_INFORMATION;
+		}
 
 		spos = (ISAKMP_PAYLOAD_O + (r_packet[ISAKMP_PAYLOAD_O + 2] << 8)
 			+ r_packet[ISAKMP_PAYLOAD_O + 3]);
@@ -507,8 +631,10 @@ static uint16_t unpack_verify_phase2(struct sa_block *s, uint8_t * r_packet,
 			reject = ISAKMP_N_AUTHENTICATION_FAILED;
 		gcry_md_close(hm);
 #if 0
-		if (reject != 0)
+		if (reject != 0) {
+			free_isakmp_packet(r);
 			return reject;
+		}
 #endif
 	}
 	*r_p = r;
@@ -562,7 +688,7 @@ phase2_authpacket(struct sa_block *s, struct isakmp_payload *pl,
 		gcry_md_write(hm, nonce_r, nr_len);
 
 	if (pl != NULL) {
-		flatten_isakmp_payload(pl, &pl_flat, &pl_size);
+		flatten_isakmp_payloads(pl, &pl_flat, &pl_size);
 		gcry_md_write(hm, pl_flat, pl_size);
 		memset(pl_flat, 0, pl_size);
 		free(pl_flat);
@@ -763,6 +889,17 @@ static uint8_t *gen_keymat(struct sa_block *s,
 	return block;
 }
 
+static int mask_to_masklen(struct in_addr mask)
+{ 
+	int len;
+	uint32_t addr;
+	
+	addr = ntohl(mask.s_addr);
+	for (len = 0; addr; addr <<= 1, len++)
+		;
+	return len;
+}
+
 static int do_config_to_env(struct sa_block *s, struct isakmp_attribute *a)
 {
 	int i;
@@ -797,8 +934,14 @@ static int do_config_to_env(struct sa_block *s, struct isakmp_attribute *a)
 			}
 			if (a->af != isakmp_attr_lots || a->u.lots.length != 4)
 				reject = ISAKMP_N_ATTRIBUTES_NOT_SUPPORTED;
-			else
+			else {
+				uint32_t netaddr = ((struct in_addr *)(s->our_address))->s_addr & ((struct in_addr *)(a->u.lots.data))->s_addr;
 				addenv_ipv4("INTERNAL_IP4_NETMASK", a->u.lots.data);
+				asprintf(&strbuf, "%d", mask_to_masklen(*((struct in_addr *)a->u.lots.data)));
+				setenv("INTERNAL_IP4_NETMASKLEN", strbuf, 1);
+				free(strbuf);
+				addenv_ipv4("INTERNAL_IP4_NETADDR",  (uint8_t *)&netaddr);
+			}
 			break;
 
 		case ISAKMP_MODECFG_ATTRIB_INTERNAL_IP4_DNS:
@@ -891,20 +1034,12 @@ static int do_config_to_env(struct sa_block *s, struct isakmp_attribute *a)
 				setenv(strbuf, strbuf2, 1);
 				free(strbuf); free(strbuf2);
 				
-				{ /* this is just here because ip route does not accept netmasks */
-					int len;
-					uint32_t addr;
-					
-					for (len = 0, addr = ntohl(a->u.acl.acl_ent[i].mask.s_addr);
-						addr; addr <<= 1, len++)
-						; /* do nothing */
-					
-					asprintf(&strbuf, "CISCO_SPLIT_INC_%d_MASKLEN", i);
-					asprintf(&strbuf2, "%d", len);
-					DEBUG(2, printf("(%s), ", strbuf2));
-					setenv(strbuf, strbuf2, 1);
-					free(strbuf); free(strbuf2);
-				}
+				/* this is just here because ip route does not accept netmasks */
+				asprintf(&strbuf, "CISCO_SPLIT_INC_%d_MASKLEN", i);
+				asprintf(&strbuf2, "%d", mask_to_masklen(a->u.acl.acl_ent[i].mask));
+				DEBUG(2, printf("(%s), ", strbuf2));
+				setenv(strbuf, strbuf2, 1);
+				free(strbuf); free(strbuf2);
 				
 				asprintf(&strbuf, "CISCO_SPLIT_INC_%d_PROTOCOL", i);
 				asprintf(&strbuf2, "%hu", a->u.acl.acl_ent[i].protocol);
@@ -953,8 +1088,8 @@ static struct isakmp_attribute *make_transform_ike(int dh_group, int crypt, int 
 	a->u.lots.data = xallocc(a->u.lots.length);
 	*((uint32_t *) a->u.lots.data) = htonl(2147483);
 	a = new_isakmp_attribute_16(IKE_ATTRIB_LIFE_TYPE, IKE_LIFE_TYPE_SECONDS, a);
-	a = new_isakmp_attribute_16(IKE_ATTRIB_GROUP_DESC, dh_group, a);
 	a = new_isakmp_attribute_16(IKE_ATTRIB_AUTH_METHOD, auth, a);
+	a = new_isakmp_attribute_16(IKE_ATTRIB_GROUP_DESC, dh_group, a);
 	a = new_isakmp_attribute_16(IKE_ATTRIB_HASH, hash, a);
 	a = new_isakmp_attribute_16(IKE_ATTRIB_ENC, crypt, a);
 	if (keylen != 0)
@@ -1062,9 +1197,14 @@ static void lifetime_ipsec_process(struct sa_block *s, struct isakmp_attribute *
 		s->ipsec.life.seconds = value;
 	else
 		s->ipsec.life.kbytes = value;
+	
+	/* FIXME: for notice-payloads: write a seperate function to handle them */
+	/* bug: this may process lifetime-attributes of SAs twice but to no consequence */
+	if (a->next->next != NULL && a->next->next->type == ISAKMP_IPSEC_ATTRIB_SA_LIFE_TYPE)
+		lifetime_ipsec_process(s, a->next->next);
 }
 
-static void do_phase1(const char *key_id, const char *shared_key, struct sa_block *s)
+static void do_phase1_am(const char *key_id, const char *shared_key, struct sa_block *s)
 {
 	unsigned char i_nonce[20];
 	struct group *dh_grp;
@@ -1073,6 +1213,7 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 	unsigned char *psk_hash;
 
 	struct isakmp_packet *p1;
+	struct isakmp_packet *r;
 	int seen_natt_vid = 0, seen_natd = 0, seen_natd_them = 0, seen_natd_us = 0, natd_type = 0;
 	unsigned char *natd_us = NULL, *natd_them = NULL;
 	int natt_draft = -1;
@@ -1157,7 +1298,6 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 	DEBUGTOP(2, printf("S4.4 AM_packet2\n"));
 	/* Decode the recieved packet.  */
 	{
-		struct isakmp_packet *r;
 		int reject;
 		struct isakmp_payload *rp;
 		struct isakmp_payload *nonce = NULL;
@@ -1311,7 +1451,7 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 									SUPP_ALGO_IKE_SA, seen_hash,
 									NULL, 0)->name));
 						if (s->ike.cry_algo == GCRY_CIPHER_DES && !opt_1des) {
-							error(1, 0, "peer selected (single) DES as \"encrytion\" method.\n"
+							error(1, 0, "peer selected (single) DES as \"encryption\" method.\n"
 								"This algorithm is considered too weak today\n"
 								"If your vpn concentrator admin still insists on using DES\n"
 								"use the \"--enable-1des\" option.\n");
@@ -1393,6 +1533,14 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 					} else {
 						DEBUG(2, printf("ignoring that peer is DPD capable (RFC3706)\n"));
 					}
+				} else if (rp->u.vid.length == sizeof(VID_NETSCREEN_15)
+					&& memcmp(rp->u.vid.data, VID_NETSCREEN_15,
+						sizeof(VID_NETSCREEN_15)) == 0) {
+					DEBUG(2, printf("peer is using ScreenOS 5.3, 5.4 or 6.0\n"));
+				} else if (rp->u.vid.length == sizeof(VID_HEARTBEAT_NOTIFY)
+					&& memcmp(rp->u.vid.data, VID_HEARTBEAT_NOTIFY,
+						sizeof(VID_HEARTBEAT_NOTIFY)) == 0) {
+					DEBUG(2, printf("peer sent Heartbeat Notify payload\n"));
 				} else {
 					hex_dump("unknown ISAKMP_PAYLOAD_VID",
 						rp->u.vid.data, rp->u.vid.length, NULL);
@@ -1477,6 +1625,7 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 				DEBUG(3, printf("(not dumping psk hash)\n"));
 			else
 				hex_dump("psk_skeyid", psk_skeyid, s->ike.md_len, NULL);
+			free(psk_skeyid);
 			gcry_md_close(skeyid_ctx);
 			DEBUG(99, printf("shared-key: %s\n",shared_key));
 			
@@ -1526,9 +1675,6 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 
 			sa = p1->payload;
 			for (idi = sa; idi->type != ISAKMP_PAYLOAD_ID; idi = idi->next) ;
-			sa->next = NULL;
-			idi->next = NULL;
-			idp->next = NULL;
 			flatten_isakmp_payload(sa, &sa_f, &sa_size);
 			flatten_isakmp_payload(idi, &idi_f, &idi_size);
 			flatten_isakmp_payload(idp, &idp_f, &idp_size);
@@ -1696,8 +1842,8 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 			/* End PRESHARED_KEY_HASH */
 
 			free(sa_f);
-			free(idi);
-			free(idp);
+			free(idi_f);
+			free(idp_f);
 		}
 
 		/* Determine all the SKEYID_x keys.  */
@@ -1720,6 +1866,7 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 			gcry_md_write(hm, s->ike.r_cookie, ISAKMP_COOKIE_LENGTH);
 			gcry_md_write(hm, c012 + 0, 1);
 			gcry_md_final(hm);
+			if (s->ike.skeyid_d) free(s->ike.skeyid_d);
 			s->ike.skeyid_d = xallocc(s->ike.md_len);
 			memcpy(s->ike.skeyid_d, gcry_md_read(hm, 0), s->ike.md_len);
 			gcry_md_close(hm);
@@ -1733,6 +1880,7 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 			gcry_md_write(hm, s->ike.r_cookie, ISAKMP_COOKIE_LENGTH);
 			gcry_md_write(hm, c012 + 1, 1);
 			gcry_md_final(hm);
+			if (s->ike.skeyid_a) free(s->ike.skeyid_a);
 			s->ike.skeyid_a = xallocc(s->ike.md_len);
 			memcpy(s->ike.skeyid_a, gcry_md_read(hm, 0), s->ike.md_len);
 			gcry_md_close(hm);
@@ -1752,8 +1900,10 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 			hex_dump("skeyid_e", skeyid_e, s->ike.md_len, NULL);
 
 			memset(dh_shared_secret, 0, sizeof(dh_shared_secret));
+			free(dh_shared_secret);
 
 			/* Determine the IKE encryption key.  */
+			if (s->ike.key) free(s->ike.key);
 			s->ike.key = xallocc(s->ike.keylen);
 
 			if (s->ike.keylen > s->ike.md_len) {
@@ -1776,6 +1926,7 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 			hex_dump("enc-key", s->ike.key, s->ike.keylen, NULL);
 
 			memset(skeyid_e, 0, s->ike.md_len);
+			free(skeyid_e);
 		}
 
 		/* Determine the initial IV.  */
@@ -1787,6 +1938,7 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 			gcry_md_write(hm, dh_public, dh_getlen(dh_grp));
 			gcry_md_write(hm, ke->u.ke.data, ke->u.ke.length);
 			gcry_md_final(hm);
+			if (s->ike.current_iv) free(s->ike.current_iv);
 			s->ike.current_iv = xallocc(s->ike.ivlen);
 			memcpy(s->ike.current_iv, gcry_md_read(hm, 0), s->ike.ivlen);
 			gcry_md_close(hm);
@@ -1922,6 +2074,7 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 		free_isakmp_packet(p2);
 		isakmp_crypt(s, p2kt, p2kt_len, 1);
 
+		if (s->ike.initial_iv) free(s->ike.initial_iv);
 		s->ike.initial_iv = xallocc(s->ike.ivlen);
 		memcpy(s->ike.initial_iv, s->ike.current_iv, s->ike.ivlen);
 		hex_dump("initial_iv", s->ike.initial_iv, s->ike.ivlen, NULL);
@@ -1933,8 +2086,17 @@ static void do_phase1(const char *key_id, const char *shared_key, struct sa_bloc
 	DEBUGTOP(2, printf("S4.6 cleanup\n"));
 
 	free_isakmp_packet(p1);
+	/* This seems to cause a duplicate free of some data:
+	 * *** glibc detected *** vpnc-connect: free(): invalid pointer: 0x09d63ba5
+	 * See also: http://bugs.gentoo.org/show_bug.cgi?id=229003
+	 */
+#if 0
+	free_isakmp_packet(r);
+#endif
 	free(returned_hash);
 	free(dh_public);
+	free(dh_shared_secret);
+	free(psk_hash);
 	group_free(dh_grp);
 }
 
@@ -2011,7 +2173,7 @@ static int do_phase2_notice_check(struct sa_block *s, struct isakmp_packet **r_p
 
 static int do_phase2_xauth(struct sa_block *s)
 {
-	struct isakmp_packet *r;
+	struct isakmp_packet *r = NULL;
 	int loopcount;
 	int reject;
 	int passwd_used = 0;
@@ -2027,9 +2189,13 @@ static int do_phase2_xauth(struct sa_block *s)
 		DEBUGTOP(2, printf("S5.2 notice_check\n"));
 		
 		/* recv and check for notices */
+		if (r) free_isakmp_packet(r);
+		r = NULL;
 		reject = do_phase2_notice_check(s, &r);
-		if (reject == -1)
+		if (reject == -1) {
+			if (r) free_isakmp_packet(r);
 			return 1;
+		}
 		
 		DEBUGTOP(2, printf("S5.3 type-is-xauth check\n"));
 		/* Check the transaction type is OK.  */
@@ -2054,25 +2220,31 @@ static int do_phase2_xauth(struct sa_block *s)
 		DEBUGTOP(2, printf("S5.4 xauth type check\n"));
 		a = r->payload->next->u.modecfg.attributes;
 		/* First, print any messages, and verify that we understand the
-		 * conversation.  */
+		 * conversation. This looks for any place were input is
+		 * required - in these cases, we need to print the prompt
+		 * regardless of whether the user requested interactive mode
+		 * or not. */
 		for (ap = a; ap && seen_answer == 0; ap = ap->next)
-			if (ap->type == ISAKMP_XAUTH_ATTRIB_ANSWER)
+			if (ap->type == ISAKMP_XAUTH_06_ATTRIB_ANSWER
+			    || ap->type == ISAKMP_XAUTH_06_ATTRIB_NEXT_PIN
+			    /* || ap->type == ISAKMP_XAUTH_06_ATTRIB_PASSCODE */)
 				seen_answer = 1;
 
 		for (ap = a; ap && reject == 0; ap = ap->next)
 			switch (ap->type) {
-			case ISAKMP_XAUTH_ATTRIB_TYPE:
+			case ISAKMP_XAUTH_06_ATTRIB_TYPE:
 				if (ap->af != isakmp_attr_16 || ap->u.attr_16 != 0)
 					reject = ISAKMP_N_ATTRIBUTES_NOT_SUPPORTED;
 				break;
-			case ISAKMP_XAUTH_ATTRIB_USER_NAME:
-			case ISAKMP_XAUTH_ATTRIB_USER_PASSWORD:
-			case ISAKMP_XAUTH_ATTRIB_PASSCODE:
-			case ISAKMP_XAUTH_ATTRIB_DOMAIN:
-			case ISAKMP_XAUTH_ATTRIB_ANSWER:
+			case ISAKMP_XAUTH_06_ATTRIB_USER_NAME:
+			case ISAKMP_XAUTH_06_ATTRIB_USER_PASSWORD:
+			case ISAKMP_XAUTH_06_ATTRIB_PASSCODE:
+			case ISAKMP_XAUTH_06_ATTRIB_DOMAIN:
+			case ISAKMP_XAUTH_06_ATTRIB_ANSWER:
+			case ISAKMP_XAUTH_06_ATTRIB_NEXT_PIN:
 			case ISAKMP_XAUTH_ATTRIB_CISCOEXT_VENDOR:
 				break;
-			case ISAKMP_XAUTH_ATTRIB_MESSAGE:
+			case ISAKMP_XAUTH_06_ATTRIB_MESSAGE:
 				if (opt_debug || seen_answer || config[CONFIG_XAUTH_INTERACTIVE]) {
 					if (ap->af == isakmp_attr_16)
 						printf("%c%c\n", ap->u.attr_16 >> 8, ap->u.attr_16);
@@ -2098,7 +2270,7 @@ static int do_phase2_xauth(struct sa_block *s)
 		reply_attr = NULL;
 		for (ap = a; ap && reject == 0; ap = ap->next)
 			switch (ap->type) {
-			case ISAKMP_XAUTH_ATTRIB_DOMAIN:
+			case ISAKMP_XAUTH_06_ATTRIB_DOMAIN:
 				{
 					struct isakmp_attribute *na;
 					na = new_isakmp_attribute(ap->type, reply_attr);
@@ -2112,7 +2284,7 @@ static int do_phase2_xauth(struct sa_block *s)
 						na->u.lots.length);
 					break;
 				}
-			case ISAKMP_XAUTH_ATTRIB_USER_NAME:
+			case ISAKMP_XAUTH_06_ATTRIB_USER_NAME:
 				{
 					struct isakmp_attribute *na;
 					na = new_isakmp_attribute(ap->type, reply_attr);
@@ -2123,9 +2295,10 @@ static int do_phase2_xauth(struct sa_block *s)
 						na->u.lots.length);
 					break;
 				}
-			case ISAKMP_XAUTH_ATTRIB_ANSWER:
-			case ISAKMP_XAUTH_ATTRIB_USER_PASSWORD:
-			case ISAKMP_XAUTH_ATTRIB_PASSCODE:
+			case ISAKMP_XAUTH_06_ATTRIB_ANSWER:
+			case ISAKMP_XAUTH_06_ATTRIB_USER_PASSWORD:
+			case ISAKMP_XAUTH_06_ATTRIB_PASSCODE:
+			case ISAKMP_XAUTH_06_ATTRIB_NEXT_PIN:
 				if (passwd_used && config[CONFIG_NON_INTERACTIVE]) {
 					reject = ISAKMP_N_AUTHENTICATION_FAILED;
 					phase2_fatal(s, "noninteractive can't reuse password", reject);
@@ -2135,9 +2308,9 @@ static int do_phase2_xauth(struct sa_block *s)
 					struct isakmp_attribute *na;
 
 					asprintf(&prompt, "%s for VPN %s@%s: ",
-						(ap->type == ISAKMP_XAUTH_ATTRIB_ANSWER) ?
+						(ap->type == ISAKMP_XAUTH_06_ATTRIB_ANSWER) ?
 						"Answer" :
-						(ap->type == ISAKMP_XAUTH_ATTRIB_USER_PASSWORD) ?
+						(ap->type == ISAKMP_XAUTH_06_ATTRIB_USER_PASSWORD) ?
 						"Password" : "Passcode",
 						config[CONFIG_XAUTH_USERNAME], ntop_buf);
 					pass = getpass(prompt);
@@ -2192,8 +2365,10 @@ static int do_phase2_xauth(struct sa_block *s)
 			r->message_id, 0, 0, 0, 0, 0, 0, 0);
 		
 		reject = do_phase2_notice_check(s, &r);
-		if (reject == -1)
+		if (reject == -1) {
+			free_isakmp_packet(r);
 			return 1;
+		}
 	}
 	
 	DEBUGTOP(2, printf("S5.6 process xauth response\n"));
@@ -2203,7 +2378,7 @@ static int do_phase2_xauth(struct sa_block *s)
 		uint16_t set_result = 1;
 
 		if (a == NULL
-			|| a->type != ISAKMP_XAUTH_ATTRIB_STATUS
+			|| a->type != ISAKMP_XAUTH_06_ATTRIB_STATUS
 			|| a->af != isakmp_attr_16 || a->next != NULL) {
 			reject = ISAKMP_N_INVALID_PAYLOAD_TYPE;
 			phase2_fatal(s, "xauth SET response rejected: %s(%d)", reject);
@@ -2260,6 +2435,10 @@ static int do_phase2_config(struct sa_block *s)
 	
 	a = new_isakmp_attribute(ISAKMP_MODECFG_ATTRIB_CISCO_BANNER, a);
 	a = new_isakmp_attribute(ISAKMP_MODECFG_ATTRIB_CISCO_DO_PFS, a);
+	a = new_isakmp_attribute(ISAKMP_MODECFG_ATTRIB_CISCO_FW_TYPE, a);
+	a->u.lots.length = sizeof(FW_UNKNOWN_TYPEINFO);
+	a->u.lots.data = xallocc(a->u.lots.length);
+	memcpy(a->u.lots.data, FW_UNKNOWN_TYPEINFO, a->u.lots.length);
 	if (opt_natt_mode == NATT_CISCO_UDP)
 		a = new_isakmp_attribute(ISAKMP_MODECFG_ATTRIB_CISCO_UDP_ENCAP_PORT, a);
 	a = new_isakmp_attribute(ISAKMP_MODECFG_ATTRIB_CISCO_DEF_DOMAIN, a);
@@ -2269,12 +2448,16 @@ static int do_phase2_config(struct sa_block *s)
 	a = new_isakmp_attribute(ISAKMP_MODECFG_ATTRIB_INTERNAL_IP4_ADDRESS, a);
 
 	rp->u.modecfg.attributes = a;
+	DEBUGTOP(2, printf("S6.1 phase2_config send modecfg\n"));
 	sendrecv_phase2(s, rp, ISAKMP_EXCHANGE_MODECFG_TRANSACTION, msgid, 0, 0, 0, 0, 0, 0, 0);
 
+	DEBUGTOP(2, printf("S6.2 phase2_config receive modecfg\n"));
 	/* recv and check for notices */
 	reject = do_phase2_notice_check(s, &r);
-	if (reject == -1)
+	if (reject == -1) {
+		if (r) free_isakmp_packet(r);
 		return 1;
+	}
 		
 	/* Check the transaction type & message ID are OK.  */
 	if (reject == 0 && r->message_id != msgid)
@@ -2303,6 +2486,7 @@ static int do_phase2_config(struct sa_block *s)
 		phase2_fatal(s, "configuration response rejected: %s(%d)", reject);
 
 	DEBUG(1, printf("got address %s\n", getenv("INTERNAL_IP4_ADDRESS")));
+	free_isakmp_packet(r);
 	return 0;
 }
 
@@ -2368,7 +2552,7 @@ static struct isakmp_payload *make_our_sa_ipsec(struct sa_block *s)
 	return r;
 }
 
-static void setup_link(struct sa_block *s)
+static void do_phase2_qm(struct sa_block *s)
 {
 	struct isakmp_payload *rp, *us, *ke = NULL, *them, *nonce_r = NULL;
 	struct isakmp_packet *r;
@@ -2391,7 +2575,7 @@ static void setup_link(struct sa_block *s)
 	}
 
 	gcry_create_nonce((uint8_t *) & s->ipsec.rx.spi, sizeof(s->ipsec.rx.spi));
-	rp = make_our_sa_ipsec(s);
+	rp = make_our_sa_ipsec(s); /* FIXME: LEAK: allocated memory never freed */
 	gcry_create_nonce((uint8_t *) nonce_i, sizeof(nonce_i));
 	rp->next = new_isakmp_data_payload(ISAKMP_PAYLOAD_NONCE, nonce_i, sizeof(nonce_i));
 
@@ -2404,7 +2588,8 @@ static void setup_link(struct sa_block *s)
 	them->u.id.type = ISAKMP_IPSEC_ID_IPV4_ADDR_SUBNET;
 	them->u.id.length = 8;
 	them->u.id.data = xallocc(8);
-	memset(them->u.id.data, 0, 8);
+	init_netaddr((struct in_addr *)them->u.id.data,
+		     config[CONFIG_IPSEC_TARGET_NETWORK]);
 	us->next = them;
 	s->ipsec.life.start = time(NULL);
 
@@ -2432,12 +2617,12 @@ static void setup_link(struct sa_block *s)
 		}
 
 		DEBUGTOP(2, printf("S7.3 QM_packet2 validate type\n"));
-		reject = unpack_verify_phase2(s, r_packet, r_length, &r, nonce_i, sizeof(nonce_i));
+		reject = unpack_verify_phase2(s, r_packet, r_length, &r, nonce_i, sizeof(nonce_i)); /* FIXME: LEAK */
 
 		if (((reject == 0) || (reject == ISAKMP_N_AUTHENTICATION_FAILED))
 			&& r->exchange_type == ISAKMP_EXCHANGE_INFORMATIONAL) {
 			DEBUGTOP(2, printf("S7.4 process and skip lifetime notice\n"));
-			/* handle notifie responder-lifetime */
+			/* handle notify responder-lifetime */
 			/* (broken hash => ignore AUTHENTICATION_FAILED) */
 			if (reject == 0 && r->payload->next->type != ISAKMP_PAYLOAD_N)
 				reject = ISAKMP_N_INVALID_PAYLOAD_TYPE;
@@ -2467,10 +2652,9 @@ static void setup_link(struct sa_block *s)
 		if (reject == 0 && r->payload->next->type != ISAKMP_PAYLOAD_SA)
 			reject = ISAKMP_N_INVALID_PAYLOAD_TYPE;
 
-		if (p_flat)
-			free(p_flat);
-		if (realiv)
-			free(realiv);
+		free(p_flat);
+		free(realiv);
+
 		break;
 	}
 
@@ -2625,6 +2809,7 @@ static void setup_link(struct sa_block *s)
 			}
 			break;
 		case ISAKMP_PAYLOAD_ID:
+			/* FIXME: Parse payload ID and add route-env in case of ipv4_prefix */
 			break;
 		case ISAKMP_PAYLOAD_KE:
 			ke = rp;
@@ -2650,11 +2835,8 @@ static void setup_link(struct sa_block *s)
 		msgid, 1, 0, 0, nonce_i, sizeof(nonce_i),
 		nonce_r->u.nonce.data, nonce_r->u.nonce.length);
 
-	DEBUGTOP(2, printf("S7.7 QM_packet3 sent - run script\n"));
+	DEBUGTOP(2, printf("S7.7 QM_packet3 sent\n"));
 
-	/* Set up the interface here so it's ready when our acknowledgement
-	 * arrives.  */
-	config_tunnel(s);
 	DEBUGTOP(2, printf("S7.8 setup ipsec tunnel\n"));
 	{
 		unsigned char *dh_shared_secret = NULL;
@@ -2676,6 +2858,8 @@ static void setup_link(struct sa_block *s)
 		
 		if (dh_grp)
 			group_free(dh_grp);
+		free(dh_shared_secret);
+		free_isakmp_packet(r);
 		
 		if ((opt_natt_mode == NATT_CISCO_UDP) && s->ipsec.peer_udpencap_port) {
 			s->esp_fd = make_socket(s, opt_udpencapport, s->ipsec.peer_udpencap_port);
@@ -2690,30 +2874,31 @@ static void setup_link(struct sa_block *s)
 		
 			s->esp_fd = socket(PF_INET, SOCK_RAW, IPPROTO_ESP);
 			if (s->esp_fd == -1) {
-				close_tunnel();
-				error(1, errno, "socket(PF_INET, SOCK_RAW, IPPROTO_ESP)");
+				close_tunnel(s);
+				error(1, errno, "Couldn't open socket of ESP. Maybe something registered ESP already.\nPlease try '--natt-mode force-natt' or disable whatever is using ESP.\nsocket(PF_INET, SOCK_RAW, IPPROTO_ESP)");
 			}
 #ifdef IP_HDRINCL
 			if (setsockopt(s->esp_fd, IPPROTO_IP, IP_HDRINCL, &hincl, sizeof(hincl)) == -1) {
-				close_tunnel();
+				close_tunnel(s);
 				error(1, errno, "setsockopt(esp_fd, IPPROTO_IP, IP_HDRINCL, 1)");
 			}
 #endif
 		}
 		
 		s->ipsec.rx.seq_id = s->ipsec.tx.seq_id = 1;
-		DEBUGTOP(2, printf("S7.9 main loop (receive and transmit ipsec packets)\n"));
-		vpnc_doit(s);
 	}
-	
-	DEBUGTOP(2, printf("S7.10 send termination message\n"));
-	/* finished, send the delete message */
+	free(dh_public);
+}
+
+static void send_delete_ipsec(struct sa_block *s)
+{
+	/* 2007-08-31 JKU/ZID: Sonicwall doesn't like the chained
+	 * request but wants them split. Cisco does fine with it. */
+	DEBUGTOP(2, printf("S7.10 send ipsec termination message\n"));
 	{
-		struct isakmp_payload *d_isakmp, *d_ipsec;
+		struct isakmp_payload *d_ipsec;
 		uint8_t del_msgid;
 
-		/* 2007-08-31 JKU/ZID: Sonicwall doesn't like the chained
-		 * request but wants them split. Cisco does fine with it */
 		gcry_create_nonce((uint8_t *) & del_msgid, sizeof(del_msgid));
 		d_ipsec = new_isakmp_payload(ISAKMP_PAYLOAD_D);
 		d_ipsec->u.d.doi = ISAKMP_DOI_IPSEC;
@@ -2728,6 +2913,15 @@ static void setup_link(struct sa_block *s)
 		sendrecv_phase2(s, d_ipsec, ISAKMP_EXCHANGE_INFORMATIONAL,
 			del_msgid, 1, NULL, NULL,
 			NULL, 0, NULL, 0);
+	}
+}
+
+static void send_delete_isakmp(struct sa_block *s)
+{
+	DEBUGTOP(2, printf("S7.11 send isakmp termination message\n"));
+	{
+		struct isakmp_payload *d_isakmp;
+		uint8_t del_msgid;
 
 		gcry_create_nonce((uint8_t *) & del_msgid, sizeof(del_msgid));
 		d_isakmp = new_isakmp_payload(ISAKMP_PAYLOAD_D);
@@ -2773,7 +2967,7 @@ static int do_rekey(struct sa_block *s, struct isakmp_packet *r)
 		return ISAKMP_N_DOI_NOT_SUPPORTED;
 	if (rp->u.sa.situation != ISAKMP_IPSEC_SIT_IDENTITY_ONLY)
 		return ISAKMP_N_SITUATION_NOT_SUPPORTED;
-	if (rp->u.sa.proposals == NULL || rp->u.sa.proposals->next != NULL) /* rekeying should only have one proposal */
+	if (rp->u.sa.proposals == NULL)
 		return ISAKMP_N_BAD_PROPOSAL_SYNTAX;
 	if (rp->u.sa.proposals->u.p.prot_id != ISAKMP_IPSEC_PROTO_IPSEC_ESP)
 		return ISAKMP_N_INVALID_PROTOCOL_ID;
@@ -2835,10 +3029,14 @@ static int do_rekey(struct sa_block *s, struct isakmp_packet *r)
 	if (!seen_auth || !seen_encap || (dh_grp && !seen_group))
 		return ISAKMP_N_BAD_PROPOSAL_SYNTAX;
 	
-	if (get_algo(SUPP_ALGO_HASH, SUPP_ALGO_IPSEC_SA, seen_auth, NULL, 0) == NULL)
+	/* FIXME: Current code has a limitation that will cause problems if
+	 * different algorithms are negotiated during re-keying
+	 */
+	if ((get_algo(SUPP_ALGO_HASH, SUPP_ALGO_IPSEC_SA, seen_auth, NULL, 0) == NULL) || 
+	    (get_algo(SUPP_ALGO_CRYPT, SUPP_ALGO_IPSEC_SA, seen_enc, NULL, seen_keylen) == NULL)) {
+		printf("\nFIXME: vpnc doesn't support change of algorightms during rekeying\n");
 		return ISAKMP_N_BAD_PROPOSAL_SYNTAX;
-	if (get_algo(SUPP_ALGO_CRYPT, SUPP_ALGO_IPSEC_SA, seen_enc, NULL, seen_keylen) == NULL)
-		return ISAKMP_N_BAD_PROPOSAL_SYNTAX;
+	}
 	
 	/* we don't want to change ciphers during rekeying */
 	if (s->ipsec.cry_algo != get_algo(SUPP_ALGO_CRYPT, SUPP_ALGO_IPSEC_SA, seen_enc,  NULL, seen_keylen)->my_id)
@@ -2849,6 +3047,7 @@ static int do_rekey(struct sa_block *s, struct isakmp_packet *r)
 	for (rp = rp->next; rp; rp = rp->next)
 		switch (rp->type) {
 		case ISAKMP_PAYLOAD_ID:
+			/* FIXME: Parse payload ID and add route-env in case of ipv4_prefix */
 			break;
 		case ISAKMP_PAYLOAD_KE:
 			ke = rp;
@@ -2947,22 +3146,30 @@ void process_late_ike(struct sa_block *s, uint8_t *r_packet, ssize_t r_length)
 	reject = unpack_verify_phase2(s, r_packet, r_length, &r, NULL, 0);
 	
 	/* just ignore broken stuff for now */
-	if (reject != 0)
+	if (reject != 0) {
+		if (r) free_isakmp_packet(r);
 		return;
+	}
 	
 	/* everything must be encrypted by now */
-	if (r->payload == NULL || r->payload->type != ISAKMP_PAYLOAD_HASH)
+	if (r->payload == NULL || r->payload->type != ISAKMP_PAYLOAD_HASH) {
+		free_isakmp_packet(r);
 		return;
+	}
 	
 	/* empty packet? well, nothing to see here */
-	if (r->payload->next == NULL)
+	if (r->payload->next == NULL) {
+		free_isakmp_packet(r);
 		return;
+	}
 	
 	/* do we get an SA proposal for rekeying? */
 	if (r->exchange_type == ISAKMP_EXCHANGE_IKE_QUICK &&
 		r->payload->next->type == ISAKMP_PAYLOAD_SA) {
 		reject = do_rekey(s, r);
 		DEBUG(3, printf("do_rekey returned: %d\n", reject));
+		/* FIXME: LEAK but will create segfault for double free */
+		/* free_isakmp_packet(r); */
 		return;
 	}
 
@@ -3009,7 +3216,18 @@ void process_late_ike(struct sa_block *s, uint8_t *r_packet, ssize_t r_length)
 		/* search for delete payloads */
 		if (rp->type != ISAKMP_PAYLOAD_D)
 			continue;
-		
+		if (rp->u.d.protocol == ISAKMP_IPSEC_PROTO_IPSEC_ESP) {
+			/* RFC2408, 5.15:
+			 * Process the Delete payload and take appropriate action, according
+			 * to local security policy.  As described above, one appropriate
+			 * action SHOULD include cleaning up the local SA database.
+			 */
+			/* FIXME: any cleanup needed??? */
+
+			free_isakmp_packet(r);
+			do_phase2_qm(s);
+			return;
+		}
 		/* skip ipsec-esp delete */
 		if (rp->u.d.protocol != ISAKMP_IPSEC_PROTO_ISAKMP) {
 			DEBUG(2, printf("got non isakmp-delete, ignoring...\n"));
@@ -3025,9 +3243,11 @@ void process_late_ike(struct sa_block *s, uint8_t *r_packet, ssize_t r_length)
 		 */
 		do_kill = -1;
 		DEBUG(2, printf("got isakmp-delete, terminating...\n"));
+		free_isakmp_packet(r);
 		return;
 	}
 	
+	free_isakmp_packet(r);
 	return;
 }
 
@@ -3067,20 +3287,34 @@ int main(int argc, char **argv)
 
 	do_load_balance = 0;
 	do {
-		DEBUGTOP(2, printf("S4 do_phase1\n"));
-		do_phase1(config[CONFIG_IPSEC_ID], config[CONFIG_IPSEC_SECRET], s);
+		DEBUGTOP(2, printf("S4 do_phase1_am\n"));
+		do_phase1_am(config[CONFIG_IPSEC_ID], config[CONFIG_IPSEC_SECRET], s);
 		DEBUGTOP(2, printf("S5 do_phase2_xauth\n"));
 		/* FIXME: Create and use a generic function in supp.[hc] */
 		if (s->ike.auth_algo >= IKE_AUTH_HybridInitRSA)
 			do_load_balance = do_phase2_xauth(s);
 		DEBUGTOP(2, printf("S6 do_phase2_config\n"));
-		if ((opt_vendor != VENDOR_NETSCREEN) && (do_load_balance == 0))
+		if ((opt_vendor == VENDOR_CISCO) && (do_load_balance == 0))
 			do_load_balance = do_phase2_config(s);
 	} while (do_load_balance);
 	DEBUGTOP(2, printf("S7 setup_link (phase 2 + main_loop)\n"));
-	setup_link(s);
+	DEBUGTOP(2, printf("S7.0 run interface setup script\n"));
+	config_tunnel(s);
+	do_phase2_qm(s);
+	DEBUGTOP(2, printf("S7.9 main loop (receive and transmit ipsec packets)\n"));
+	vpnc_doit(s);
+
+	/* Tear down phase 2 and 1 tunnels */
+	send_delete_ipsec(s);
+	send_delete_isakmp(s);
+
+	/* Cleanup routing */
 	DEBUGTOP(2, printf("S8 close_tunnel\n"));
-	close_tunnel();
+	close_tunnel(s);
+
+	/* Free resources */
+	DEBUGTOP(2, printf("S9 cleanup\n"));
+	cleanup(s);
 
 	return 0;
 }

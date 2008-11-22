@@ -15,7 +15,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: config.h 226 2007-09-01 15:13:42Z Joerg Mayer $
+   $Id: config.h 312 2008-06-15 18:09:42Z Joerg Mayer $
 */
 
 #ifndef __CONFIG_H__
@@ -43,6 +43,7 @@ enum config_enum {
 	CONFIG_IKE_DH,
 	CONFIG_IPSEC_PFS,
 	CONFIG_IPSEC_GATEWAY,
+	CONFIG_IPSEC_TARGET_NETWORK,
 	CONFIG_IPSEC_ID,
 	CONFIG_IPSEC_SECRET,
 	CONFIG_IPSEC_SECRET_OBF,
@@ -101,14 +102,33 @@ extern enum natt_mode_enum opt_natt_mode;
 extern enum if_mode_enum opt_if_mode;
 extern uint16_t opt_udpencapport;
 
-#define DEBUGTOP(lvl, a)
-// do {if(opt_debug >= (lvl)){printf("\n");(a);printf("\n");}} while (0)
-#define DEBUG(lvl, a)
-// do {if (opt_debug >= (lvl)) {if(opt_debug>1)printf("   "); a;}} while (0)
+#define TIMESTAMP() ({				\
+	char st[20];				\
+	time_t t;				\
+	struct tm *tm;				\
+	t = time(NULL);				\
+	tm = localtime(&t);			\
+	strftime(st, sizeof(st), "%F %T", tm);	\
+	st;					\
+	})
+
+#define DEBUGTOP(LVL, COMMAND) do {			\
+		if (opt_debug >= (LVL)) {		\
+			printf("\n");			\
+			COMMAND;			\
+			printf(" [%s]\n", TIMESTAMP());	\
+		}					\
+	} while (0)
+
+#define DEBUG(LVL, COMMAND) do {		\
+		if (opt_debug >= (LVL)) {	\
+			if (opt_debug > 1)	\
+				printf("   ");	\
+			COMMAND;		\
+		}				\
+	} while (0)
 
 extern void hex_dump(const char *str, const void *data, ssize_t len, const struct debug_strings *decode);
 extern void do_config(int argc, char **argv);
-extern int hex2bin(const char *str, char **bin, int *len);
-extern int deobfuscate(char *ct, int len, const char **resp, char *reslenp);
 
 #endif
