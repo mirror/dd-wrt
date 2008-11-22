@@ -80,7 +80,7 @@
 
 #define SERVER_NAME "httpd"
 //#define SERVER_PORT 80
-#define PROTOCOL "HTTP/1.1"
+#define PROTOCOL "HTTP/1.0"
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
 #define TIMEOUT	15
 
