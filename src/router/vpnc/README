@@ -8,7 +8,24 @@ DH1/2/5 and IP tunneling.
 It runs entirely in userspace. Only "Universal TUN/TAP device
 driver support" is needed in kernel.
 
+Project home page: http://www.unix-ag.uni-kl.de/~massar/vpnc/
+
+
+========= Contents of this file ============================================
+
+
+- Gereral configuration of vpnc 
+- Using a modified script
+- Additional steps to configure hybrid authentication
+- Setting up vpnc on Vista 64bit
+- Known problems
+
+
+========= General configuration of vpnc ====================================
+
+
 Required Libraries: libgcrypt (version 1.1.90 for 0.2-rm+zomb-pre7 or later)
+                    libopenssl (optional, to provide hybrid support)
 
 It reads configuration data from the following places:
 
@@ -48,11 +65,17 @@ If you don't know the Group ID and Secret string, ask your
 administrator. If (s)he declines and refers to the 
 configuration files provided for the vpnclient program, tell 
 him/her that the contents of that files is (though scrambled) 
-not really protected and can be extracted using tools shipped 
-with any Linux distribution.
+not really protected. If you have a working configuration file
+(.pcf file) for the Cisco client then you can use the pcf2vpnc
+utility instead, which will extract most/all of the required
+information and convert it into a vpnc configuration file.
+
+
+========= Using a modified script ==========================================
+
 
 Please note that vpnc itself does NOT setup routing. You need to do this
-yourself, or --script resp. "Script" in the config file.
+yourself, or use --script "Script" in the config file.
 The default script is /etc/vpnc/vpnc-script which sets a default route
 to the remote network, or if the Concentrator provided split-network
 settings, these are used to setup routes.
@@ -118,7 +141,9 @@ Store this example script, for example in /etc/vpnc/custom-script,
 do a "chmod +x /etc/vpnc/custom-script" and add
 "Script /etc/vpnc/custom-script" to your configuration.
 
-===================================================================
+
+========= Additional steps to configure hybrid authentication ==============
+
 
 To use the hybrid extension add
 	Use Hybrid Auth
@@ -142,6 +167,67 @@ The default is
 
 As the trusted certificate is referenced by the hash of the subject name, 
 the directory has to contain the certificate named like this hash_value. 
-A link can also be used like in /etc/ssl/Certs.
+A link can also be used like in /etc/ssl/certs/.
 The hash value can be calculated by e.g.
 	openssl x509 -in <ca_certfile.pem> -noout -hash
+
+
+========= Setting up vpnc on Vista 64bit ===================================
+
+
+1. Install cygwin onto vista.  Details here: http://www.cygwin.com/
+2. Make sure you install the development options for cygwin to give you
+   access to make and gcc etc
+3. Make sure you install libcrypt for cygwin as it is needed in the make
+4. Modify the bash.exe to run as administrator or you will have
+   privilege issues later, this is done on the properties tab of the
+   executable in c:/cygwin/bin
+4. Download the latest vpnc tarball from here
+   http://www.unix-ag.uni-kl.de/~massar/vpnc/
+5. Unzip and explode the tarball
+6. modify tap-win32.h to change #define TAP_COMPONENT_ID "tap0801" to
+   "tap0901" (No sure if this is necesary but I did it and it is working
+   for me)
+7. make
+8. You should have a shinny new vpnc.exe
+9. Download openvpn from http://openvpn.net/download.html.  I used
+   openvpn-2.1_rc4-install.exe as all other version I tried had errors
+   during install
+10. Run the exe but only install the TAP-Win32 Adapter V9
+11. Go to control Panel | Network Connections and rename the TAP device
+    to my-tap
+12. create a /etc/vpnc/default.conf file something like this
+------------- begin -------------
+IPSec gateway YOURGATEWAY
+IPSec ID YOURID
+IPSec obfuscated secret YOURREALYLONGHEXVALUE (you can use your clear
+text password here if you remove obfuscated)
+Xauth username YOURUSERNAME
+Xauth password YOURPASSWORD
+Interface name my-tap
+Interface mode tap
+Local Port 0
+------------- end ---------------
+    See the general config section above and the manpage for details.
+
+
+========= Known problems ===================================================
+
+
+Known problems:
+
+Problem:
+In some environments it may happen that stuff works for a while and then
+stops working.
+
+Reason:
+The dhcp leases are very short intervals and on each renew the dhcp
+client overwrites things like /etc/resolv.conf and maybe the default route.
+
+Solution:
+Fix your dhcpclient. On Debian that problem can be fixed by installing
+and using resolvconf to modify that file instead of modifying it directly.
+
+
+============================================================================
+
