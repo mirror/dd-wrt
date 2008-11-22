@@ -49,9 +49,9 @@ RELEASE_VERSION := $(shell cat VERSION)
 #OPENSSL_GPL_VIOLATION = -DOPENSSL_GPL_VIOLATION
 #OPENSSLLIBS = -lcrypto
 
-CFLAGS += -W -Wall $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include
-CPPFLAGS = -DVERSION=\"$(VERSION)\"
-LDFLAGS = -L$(INSTALLDIR)/vpnc/usr/lib  
+CFLAGS += -W -Wall $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -I$(TOP)/openssl/include
+CPPFLAGS = -DVERSION=\"$(VERSION)\" $(OPENSSL_GPL_VIOLATION)
+LDFLAGS = -L$(INSTALLDIR)/vpnc/usr/lib
 CFLAGS +=  -L$(INSTALLDIR)/vpnc/usr/lib
 
 ifeq ($(shell uname -s), SunOS)
@@ -73,7 +73,7 @@ gnupg :
 
 
 vpnc : $(OBJS) vpnc.o
-	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a
+	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a -L$(TOP)/openssl -lcrypto
 
 vpnc.8 : vpnc.8.template makeman.pl vpnc
 	./makeman.pl
