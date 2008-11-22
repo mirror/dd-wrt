@@ -146,7 +146,14 @@ const char *inet_ntop(int af, const void *src, char *dst, size_t cnt);
 #define HAVE_UNSETENV  1
 #define HAVE_SETENV    1
 
+#ifndef IPPROTO_ESP
 #define IPPROTO_ESP 50
+#endif
+
+#ifndef IPPROTO_ENCAP
+#define IPPROTO_ENCAP 4
+#endif
+
 #ifdef IFNAMSIZ
 #undef IFNAMSIZ
 #endif

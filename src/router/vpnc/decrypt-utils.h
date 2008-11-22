@@ -1,5 +1,6 @@
 /* IPSec VPN client compatible with Cisco equipment.
-   Copyright (C) 2002, 2003, 2004  Geoffrey Keating and Maurice Massar
+   Copyright (C) 2004-2007 Maurice Massar
+   A bit reorganized in 2007 by Wolfram Sang
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,17 +16,13 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: vpnc.h 312 2008-06-15 18:09:42Z Joerg Mayer $
+   $Id: decrypt-utils.h 312 2008-06-15 18:09:42Z Joerg Mayer $
 */
 
-#ifndef __VPNC_H__
-#define __VPNC_H__
+#ifndef __DECRYPT_UTILS_H__
+#define __DECRYPT_UTILS_H__
 
-#include "tunip.h"
-
-void process_late_ike(struct sa_block *s, uint8_t *r_packet, ssize_t r_length);
-void keepalive_ike(struct sa_block *s);
-void dpd_ike(struct sa_block *s);
-void print_vid(const unsigned char *vid, uint16_t len);
+extern int hex2bin(const char *str, char **bin, int *len);
+extern int deobfuscate(char *ct, int len, const char **resp, char *reslenp);
 
 #endif

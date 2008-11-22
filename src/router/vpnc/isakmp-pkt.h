@@ -16,7 +16,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: isakmp-pkt.h 109 2007-02-05 23:55:15Z Maurice Massar $
+   $Id: isakmp-pkt.h 312 2008-06-15 18:09:42Z Joerg Mayer $
 */
 
 #ifndef __ISAKMP_PKT_H__
@@ -135,6 +135,7 @@ extern struct isakmp_attribute *new_isakmp_attribute(uint16_t, struct isakmp_att
 extern struct isakmp_attribute *new_isakmp_attribute_16(uint16_t type, uint16_t data,
 	struct isakmp_attribute *next);
 extern void free_isakmp_packet(struct isakmp_packet *p);
+extern void flatten_isakmp_payloads(struct isakmp_payload *p, uint8_t ** result, size_t * size);
 extern void flatten_isakmp_payload(struct isakmp_payload *p, uint8_t ** result, size_t * size);
 extern void flatten_isakmp_packet(struct isakmp_packet *p,
 	uint8_t ** result, size_t * size, size_t blksz);
