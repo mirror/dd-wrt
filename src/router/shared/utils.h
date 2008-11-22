@@ -608,7 +608,7 @@ void set_gpio( int gpio, int value );
 
 int get_gpio( int gpio );
 
-#ifdef HAVE_X86
+#if 0
 void lcdmessage( char *message );
 void initlcd( void );
 void lcdmessaged( char *dual, char *message );

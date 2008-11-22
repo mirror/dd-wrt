@@ -152,17 +152,16 @@ void start_sysinit( void )
 	mount( dev, "/usr/local", "ext2", MS_MGC_VAL, NULL );
 	eval( "/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/" );
     }
-    eval( "mkdir", "-p", "/usr/local/nvram" );
+    eval("mkdir","-p","/usr/local/nvram");
 
-    eval ("mkdir", "/tmp/nvram");
-    eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
-    eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
-
-    FILE *in = fopen( "/tmp/nvram/nvram.db", "rb" );
+    FILE *in = fopen( "/usr/local/nvram/nvram.db", "rb" );
 
     if( in != NULL )
     {
 	fclose( in );
+	eval ("mkdir", "/tmp/nvram");
+	eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
+	eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 	eval( "/usr/sbin/convertnvram" );
 	nvram_commit(  );
 	eval("rm","-f","/etc/nvram/nvram.db");
