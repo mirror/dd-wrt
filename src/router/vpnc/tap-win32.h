@@ -77,9 +77,9 @@
 #define TAPSUFFIX         ".tap"
 
 /* =========================================================
-    TAP_COMPONENT_ID -- This string defines the TAP driver
-    type -- different component IDs can reside in the system
+    TAP_COMPONENT_ID -- These strings defines the TAP driver
+    types -- different component IDs can reside in the system
     simultaneously.
    ========================================================= */
 
-#define TAP_COMPONENT_ID "tap0801"
+static const char* TAP_COMPONENT_ID[] = { "tap0901", "tap0801", NULL };

@@ -402,7 +402,15 @@ int tun_open (char *dev, enum if_mode_enum mode)
 			RegCloseKey(unit_key);
 			continue;
 		}
-		if (strcmp(comp_id, TAP_COMPONENT_ID) != 0) {
+
+		int j = 0;
+		while (TAP_COMPONENT_ID[j]) {
+			if (!strcmp(comp_id, TAP_COMPONENT_ID[j])) {
+				break;
+			}
+			j++;
+		}
+		if (!TAP_COMPONENT_ID[j]) {
 			RegCloseKey(unit_key);
 			continue;
 		}
@@ -495,6 +503,7 @@ int tun_close(int fd, char *dev)
 	}
 
 	close(ip_fd);
+	ip_fd = -1;
 	close(fd);
 	return 0;
 }

@@ -11,6 +11,7 @@ extern const struct debug_strings isakmp_payload_enum_array[];
 extern const struct debug_strings isakmp_exchange_enum_array[];
 extern const struct debug_strings isakmp_doi_enum_array[];
 extern const struct debug_strings isakmp_notify_enum_array[];
+extern const struct debug_strings dwr_ike_delete_array[];
 extern const struct debug_strings isakmp_certificate_enum_array[];
 extern const struct debug_strings ike_attr_enum_array[];
 extern const struct debug_strings ike_enc_enum_array[];

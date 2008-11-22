@@ -1,5 +1,20 @@
 TODO list
 
+* On opensolaris we need to add -interface in case the route points
+  to an interface instead of a next hop, see
+  http://www.cwinters.com/blog/2008/02/02/getting_vpnc_to_work_on_opensolaris.html
+
+* Add native ESP support
+
+* Allow PSK without xauth.
+
+* further research into the "packet too short" messages.
+  - see http://lists.unix-ag.uni-kl.de/pipermail/vpnc-devel/2005-February/000553.html
+    for more information
+
+* pass IPSEC target network to script
+  - use it to initialize the tunnel interface and routes 
+
 * clean up scripts
   - config-support for vpnc-script
   - customizable handling of routing

@@ -1,0 +1,13 @@
+sysdep.o: sysdep.c sysdep.h config.h vpnc-debug.h
+vpnc-debug.o: vpnc-debug.c vpnc-debug.h isakmp.h
+isakmp-pkt.o: isakmp-pkt.c sysdep.h config.h vpnc-debug.h isakmp-pkt.h \
+  isakmp.h math_group.h vpnc.h tunip.h
+tunip.o: tunip.c sysdep.h config.h vpnc-debug.h vpnc.h tunip.h isakmp.h
+config.o: config.c sysdep.h config.h vpnc-debug.h vpnc.h tunip.h isakmp.h \
+  supp.h decrypt-utils.h
+dh.o: dh.c math_group.h dh.h
+math_group.o: math_group.c math_group.h
+supp.o: supp.c supp.h math_group.h config.h vpnc-debug.h isakmp.h
+vpnc.o: vpnc.c sysdep.h config.h vpnc-debug.h isakmp-pkt.h isakmp.h \
+  math_group.h dh.h vpnc.h tunip.h supp.h
+cisco-decrypt.o: cisco-decrypt.c decrypt-utils.h

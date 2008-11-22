@@ -102,7 +102,7 @@ static const struct modp_dscr oakley_modp[] = {
 /* XXX I want to get rid of the casting here.  */
 static struct group groups[] = {
 	{
-		MODP, OAKLEY_GRP_1, 0, 0, &oakley_modp[0], 0, 0, 0, 0, 0,
+		MODP, OAKLEY_GRP_1, 0, NULL, &oakley_modp[0], NULL, NULL, NULL, NULL, NULL,
 		(int (*)(struct group *))modp_getlen,
 		(void (*)(struct group *, void *, unsigned char *))modp_getraw,
 		(int (*)(struct group *, void *, unsigned char *, int))modp_setraw,
@@ -110,7 +110,7 @@ static struct group groups[] = {
 		(int (*)(struct group *, void *, void *, void *))modp_operation
 	},
 	{
-		MODP, OAKLEY_GRP_2, 0, 0, &oakley_modp[1], 0, 0, 0, 0, 0,
+		MODP, OAKLEY_GRP_2, 0, NULL, &oakley_modp[1], NULL, NULL, NULL, NULL, NULL,
 		(int (*)(struct group *))modp_getlen,
 		(void (*)(struct group *, void *, unsigned char *))modp_getraw,
 		(int (*)(struct group *, void *, unsigned char *, int))modp_setraw,
@@ -118,7 +118,7 @@ static struct group groups[] = {
 		(int (*)(struct group *, void *, void *, void *))modp_operation
 	},
 	{
-		MODP, OAKLEY_GRP_5, 0, 0, &oakley_modp[2], 0, 0, 0, 0, 0,
+		MODP, OAKLEY_GRP_5, 0, NULL, &oakley_modp[2], NULL, NULL, NULL, NULL, NULL,
 		(int (*)(struct group *))modp_getlen,
 		(void (*)(struct group *, void *, unsigned char *))modp_getraw,
 		(int (*)(struct group *, void *, unsigned char *, int))modp_setraw,
@@ -166,7 +166,7 @@ void group_free(struct group *grp)
 	free(grp);
 }
 
-struct group *modp_clone(struct group *new, struct group *clone)
+static struct group *modp_clone(struct group *new, struct group *clone)
 {
 	struct modp_group *new_grp, *clone_grp = clone->group;
 
@@ -260,7 +260,7 @@ static int modp_setraw(struct group *grp, gcry_mpi_t d, unsigned char *s, int l)
 {
 	int i;
 
-	grp = 0; /* unused */
+	grp = NULL; /* unused */
 
 	gcry_mpi_set_ui(d, 0);
 	for (i = 0; i < l; i++) {

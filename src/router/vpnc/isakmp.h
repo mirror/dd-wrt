@@ -15,7 +15,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: isakmp.h 245 2007-09-09 13:56:41Z Joerg Mayer $
+   $Id: isakmp.h 324 2008-06-19 23:09:09Z Joerg Mayer $
 */
 
 #ifndef __ISAKMP_H__
@@ -29,27 +29,27 @@
 /* Payload types */
 enum isakmp_payload_enum {
 	ISAKMP_PAYLOAD_NONE = 0,	/* RFC 2408 */
-	ISAKMP_PAYLOAD_SA,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_P,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_T,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_KE,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_ID,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_CERT,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_CR,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_HASH,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_SIG,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_NONCE,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_N,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_D,		/* RFC 2408 */
-	ISAKMP_PAYLOAD_VID,		/* RFC 2408 */
+	ISAKMP_PAYLOAD_SA,		/* RFC 2408, Security Association	*/
+	ISAKMP_PAYLOAD_P,		/* RFC 2408, Proposal			*/
+	ISAKMP_PAYLOAD_T,		/* RFC 2408, Transform			*/
+	ISAKMP_PAYLOAD_KE,		/* RFC 2408, Key Exchange		*/
+	ISAKMP_PAYLOAD_ID,		/* RFC 2408, Identification		*/
+	ISAKMP_PAYLOAD_CERT,		/* RFC 2408, Certificate		*/
+	ISAKMP_PAYLOAD_CR,		/* RFC 2408, Certificate Request	*/
+	ISAKMP_PAYLOAD_HASH,		/* RFC 2408, Hash			*/
+	ISAKMP_PAYLOAD_SIG,		/* RFC 2408, Signature			*/
+	ISAKMP_PAYLOAD_NONCE,		/* RFC 2408, Nonce			*/
+	ISAKMP_PAYLOAD_N,		/* RFC 2408, Notification		*/
+	ISAKMP_PAYLOAD_D,		/* RFC 2408, Delete			*/
+	ISAKMP_PAYLOAD_VID,		/* RFC 2408, Vendor ID			*/
 	ISAKMP_PAYLOAD_MODECFG_ATTR,
-	ISAKMP_PAYLOAD_SAK,		/* RFC 3547 */
-	ISAKMP_PAYLOAD_SAT,		/* RFC 3547 */
-	ISAKMP_PAYLOAD_KD,		/* RFC 3547 */
-	ISAKMP_PAYLOAD_SEQNO,		/* RFC 3547 */
-	ISAKMP_PAYLOAD_POP,		/* RFC 3547 */
-	ISAKMP_PAYLOAD_NAT_D,		/* RFC 3947 */
-	ISAKMP_PAYLOAD_NAT_OA,		/* RFC 3947 */
+	ISAKMP_PAYLOAD_SAK,		/* RFC 3547, SA KEK			*/
+	ISAKMP_PAYLOAD_SAT,		/* RFC 3547, SA TEK			*/
+	ISAKMP_PAYLOAD_KD,		/* RFC 3547, Key Download		*/
+	ISAKMP_PAYLOAD_SEQNO,		/* RFC 3547, Sequence number		*/
+	ISAKMP_PAYLOAD_POP,		/* RFC 3547, Proof of Possession	*/
+	ISAKMP_PAYLOAD_NAT_D,		/* RFC 3947, NAT Discovery		*/
+	ISAKMP_PAYLOAD_NAT_OA,		/* RFC 3947, NAT Original Address	*/
 	ISAKMP_PAYLOAD_NAT_D_OLD = 0x82,
 	ISAKMP_PAYLOAD_FRAG = 0x84
 };
@@ -120,6 +120,23 @@ enum isakmp_notify_enum {
 	ISAKMP_N_CISCO_PRESHARED_KEY_HASH = 40503
 };
 
+/* Delete with reason values */
+/* Note: The values are random, i.e. we don't know them yet */
+enum dwr_ike_delete {
+	IKE_DELETE_SERVER_SHUTDOWN = 0, /* Peer has been shut down */
+	IKE_DELETE_SERVER_REBOOT, /* Peer has been rebooted. */
+	IKE_DELETE_MAX_CONNECT_TIME, /* Maximum configured connection time exceeded. */
+	IKE_DELETE_BY_USER_COMMAND, /* Manually disconnected by administrator. */
+	IKE_DELETE_BY_ERROR, /* Connectivity to Client lost. */
+	IKE_DELETE_NO_ERROR, /* Unknown error. */
+	IKE_DELETE_IDLE_TIMEOUT, /* Maximum idle time for session exceeded. */
+	IKE_DELETE_P2_PROPOSAL_MISMATCH, /* Policy negotiation failed */
+	IKE_DELETE_FIREWALL_MISMATCH, /* Firewall policy mismatch. */
+	IKE_DELETE_CERT_EXPIRED, /* Certificates used with this connection entry have expired. */
+	IKE_DELETE_BY_EXPIRED_LIFETIME, /* Maximum configured lifetime exceeded. */
+	DEL_REASON_RESET_SADB /* (found in vpnclient log file) */
+};
+
 /* Certificate types.  */
 enum isakmp_certificate_enum {
 	ISAKMP_CERT_NONE = 0,
@@ -153,7 +170,8 @@ enum ike_attr_enum {
 	IKE_ATTRIB_KEY_LENGTH,
 	IKE_ATTRIB_FIELD_SIZE,
 	IKE_ATTRIB_GROUP_ORDER,
-	IKE_ATTRIB_BLOCK_SIZE
+	IKE_ATTRIB_BLOCK_SIZE,
+	IKE_ATTRIB_NORTEL_UNKNOWN = 32767
 };
 
 /* IKE encryption algorithm IDs.  */
@@ -400,16 +418,16 @@ enum isakmp_modecfg_attrib_enum {
 	ISAKMP_MODECFG_ATTRIB_INTERNAL_IP4_SUBNET,
 	ISAKMP_MODECFG_ATTRIB_SUPPORTED_ATTRIBUTES,
 	ISAKMP_MODECFG_ATTRIB_INTERNAL_IP6_SUBNET,
-	ISAKMP_XAUTH_ATTRIB_TYPE = 0x4088,
-	ISAKMP_XAUTH_ATTRIB_USER_NAME,
-	ISAKMP_XAUTH_ATTRIB_USER_PASSWORD,
-	ISAKMP_XAUTH_ATTRIB_PASSCODE,
-	ISAKMP_XAUTH_ATTRIB_MESSAGE,
-	ISAKMP_XAUTH_ATTRIB_CHALLENGE,
-	ISAKMP_XAUTH_ATTRIB_DOMAIN,
-	ISAKMP_XAUTH_ATTRIB_STATUS,
-	ISAKMP_XAUTH_ATTRIB_NEXT_PIN,
-	ISAKMP_XAUTH_ATTRIB_ANSWER, /* TYPE .. ANSWER is excluded from dump */
+	ISAKMP_XAUTH_06_ATTRIB_TYPE = 0x4088,
+	ISAKMP_XAUTH_06_ATTRIB_USER_NAME,
+	ISAKMP_XAUTH_06_ATTRIB_USER_PASSWORD,
+	ISAKMP_XAUTH_06_ATTRIB_PASSCODE,
+	ISAKMP_XAUTH_06_ATTRIB_MESSAGE,
+	ISAKMP_XAUTH_06_ATTRIB_CHALLENGE,
+	ISAKMP_XAUTH_06_ATTRIB_DOMAIN,
+	ISAKMP_XAUTH_06_ATTRIB_STATUS,
+	ISAKMP_XAUTH_06_ATTRIB_NEXT_PIN,
+	ISAKMP_XAUTH_06_ATTRIB_ANSWER, /* TYPE .. ANSWER is excluded from dump */
 	ISAKMP_MODECFG_ATTRIB_CISCO_BANNER = 0x7000,
 	ISAKMP_MODECFG_ATTRIB_CISCO_SAVE_PW,
 	ISAKMP_MODECFG_ATTRIB_CISCO_DEF_DOMAIN,

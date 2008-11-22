@@ -21,7 +21,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-   $Id: tunip.c 231 2007-09-03 16:40:59Z Joerg Mayer $
+   $Id: tunip.c 371 2008-11-19 20:55:28Z Joerg Mayer $
 */
 
 /* borrowed from pipsecd (-; */
@@ -127,9 +127,7 @@ static uint8_t global_buffer_tx[MAX_HEADER + MAX_PACKET + ETH_HLEN];
  * in_cksum --
  *	Checksum routine for Internet Protocol family headers (C Version)
  */
-static u_short in_cksum(addr, len)
-	u_short *addr;
-	int len;
+static u_short in_cksum(u_short *addr, int len)
 {
 	register int nleft = len;
 	register u_short *w = addr;
@@ -179,7 +177,7 @@ static int encap_rawip_recv(struct sa_block *s, unsigned char *buf, unsigned int
 		return -1;
 	}
 	if (r < (p->ip_hl << 2) + s->ipsec.em->fixed_header_size) {
-		syslog(LOG_ALERT, "packet too short");
+		syslog(LOG_ALERT, "packet too short. got %d, expected %d", r, (p->ip_hl << 2) + s->ipsec.em->fixed_header_size);
 		return -1;
 	}
 
@@ -212,9 +210,14 @@ static int encap_udp_recv(struct sa_block *s, unsigned char *buf, unsigned int b
 		r -= 8;
 		memmove(buf, buf + 8, r);
 	}
+	if( r == 1 && *buf == 0xff )
+	{
+		DEBUGTOP(1, printf("UDP NAT keepalive packet received\n"));
+		return -1;
+	}
 	if (r < s->ipsec.em->fixed_header_size) {
-		syslog(LOG_ALERT, "packet too short from %s",
-			inet_ntoa(s->dst));
+		syslog(LOG_ALERT, "packet too short from %s. got %d, expected %d",
+			inet_ntoa(s->dst), r, s->ipsec.em->fixed_header_size);
 		return -1;
 	}
 
@@ -290,7 +293,7 @@ static int hmac_compute(int md_algo,
 
 	/* See RFC 2104 */
 	gcry_md_open(&md_ctx, md_algo, GCRY_MD_FLAG_HMAC);
-	assert(md_ctx != 0);
+	assert(md_ctx != NULL);
 	ret = gcry_md_setkey(md_ctx, secret, secret_size);
 	assert(ret == 0);
 	gcry_md_write(md_ctx, data, data_size);
@@ -384,7 +387,7 @@ static void encap_esp_encapsulate(struct sa_block *s)
 static void encap_esp_send_peer(struct sa_block *s, unsigned char *buf, unsigned int bufsize)
 {
 	ssize_t sent;
-	struct ip *tip, *ip;
+	struct ip *tip, ip;
 	struct sockaddr_in dstaddr;
 
 	buf += MAX_HEADER;
@@ -403,40 +406,41 @@ static void encap_esp_send_peer(struct sa_block *s, unsigned char *buf, unsigned
 
 	s->ipsec.tx.bufpayload = sizeof(struct ip);
 
-	ip = (struct ip *)(s->ipsec.tx.buf);
 	/* Fill non-mutable fields */
-	ip->ip_v = IPVERSION;
-	ip->ip_hl = 5;
+	ip.ip_v = IPVERSION;
+	ip.ip_hl = 5;
 	/*gcry_md_get_algo_dlen(md_algo); see RFC .. only use 96 bit */
-	ip->ip_id = htons(s->ipsec.ip_id++);
-	ip->ip_p = IPPROTO_ESP;
-	ip->ip_src = s->src;
-	ip->ip_dst = s->dst;
+	ip.ip_id = htons(s->ipsec.ip_id++);
+	ip.ip_p = IPPROTO_ESP;
+	ip.ip_src = s->src;
+	ip.ip_dst = s->dst;
 
 	/* Fill mutable fields */
-	ip->ip_tos = (bufsize < sizeof(struct ip)) ? 0 : tip->ip_tos;
-	ip->ip_off = 0;
-	ip->ip_ttl = IPDEFTTL;
-	ip->ip_sum = 0;
+	ip.ip_tos = (bufsize < sizeof(struct ip)) ? 0 : tip->ip_tos;
+	ip.ip_off = 0;
+	ip.ip_ttl = IPDEFTTL;
+	ip.ip_sum = 0;
 
 	encap_esp_encapsulate(s);
 
-	ip->ip_len = s->ipsec.tx.buflen;
+	ip.ip_len = s->ipsec.tx.buflen;
 #ifdef NEED_IPLEN_FIX
-	ip->ip_len = htons(ip->ip_len);
+	ip.ip_len = htons(ip.ip_len);
 #endif
-	ip->ip_sum = in_cksum((u_short *) s->ipsec.tx.buf, sizeof(struct ip));
+	ip.ip_sum = in_cksum((u_short *) s->ipsec.tx.buf, sizeof(struct ip));
+
+	memcpy(s->ipsec.tx.buf, &ip, sizeof ip);
 
 	dstaddr.sin_family = AF_INET;
 	dstaddr.sin_addr = s->dst;
 	dstaddr.sin_port = 0;
 	sent = sendto(s->esp_fd, s->ipsec.tx.buf, s->ipsec.tx.buflen, 0, (struct sockaddr *)&dstaddr, sizeof(struct sockaddr_in));
 	if (sent == -1) {
-		syslog(LOG_ERR, "sendto: %m");
+		syslog(LOG_ERR, "esp sendto: %m");
 		return;
 	}
 	if (sent != s->ipsec.tx.buflen)
-		syslog(LOG_ALERT, "truncated out (%lld out of %d)", (long long)sent, s->ipsec.tx.buflen);
+		syslog(LOG_ALERT, "esp truncated out (%lld out of %d)", (long long)sent, s->ipsec.tx.buflen);
 }
 
 /*
@@ -471,11 +475,11 @@ static void encap_udp_send_peer(struct sa_block *s, unsigned char *buf, unsigned
 	
 	sent = send(s->esp_fd, s->ipsec.tx.buf, s->ipsec.tx.buflen, 0);
 	if (sent == -1) {
-		syslog(LOG_ERR, "sendto: %m");
+		syslog(LOG_ERR, "udp sendto: %m");
 		return;
 	}
 	if (sent != s->ipsec.tx.buflen)
-		syslog(LOG_ALERT, "truncated out (%lld out of %d)",
+		syslog(LOG_ALERT, "udp truncated out (%lld out of %d)",
 			(long long)sent, s->ipsec.tx.buflen);
 }
 
@@ -651,7 +655,7 @@ static int process_non_ip(struct sa_block *s, uint8_t *frame)
 {
 	struct ether_header *eth = (struct ether_header *) frame;
 	
-	s = 0; /* unused */
+	s = NULL; /* unused */
 	
 	if (ntohs(eth->ether_type) != ETHERTYPE_IP) {
 		/* drop non-ip traffic */
@@ -858,7 +862,7 @@ static void vpnc_main_loop(struct sa_block *s)
 					}
 					/* send nat keepalive packet */
 					if (send(s->esp_fd, keepalive, keepalive_size, 0) == -1) {
-						syslog(LOG_ERR, "sendto: %m");
+						syslog(LOG_ERR, "keepalive sendto: %m");
 					}
 				}
 				if (s->ike.do_dpd) {
@@ -942,7 +946,6 @@ static void vpnc_main_loop(struct sa_block *s)
 
 	}
 	
-	tun_close(s->tun_fd, s->tun_name);
 	switch (do_kill) {
 		case -2:
 			syslog(LOG_NOTICE, "connection terminated by dead peer detection");
@@ -1055,11 +1058,11 @@ void vpnc_doit(struct sa_block *s)
 	} else {
 		printf("VPNC started in foreground...\n");
 	}
-	openlog("vpnc", LOG_PID, LOG_DAEMON);
+	openlog("vpnc", LOG_PID | LOG_PERROR, LOG_DAEMON);
 	write_pidfile(pidfile);
 	
 	vpnc_main_loop(s);
 	
-	if (!opt_nd)
+	if (pidfile)
 		unlink(pidfile); /* ignore errors */
 }

@@ -26,7 +26,7 @@ BINDIR=$(PREFIX)/bin
 SBINDIR=$(PREFIX)/sbin
 MANDIR=$(PREFIX)/share/man
 
-SRCS = sysdep.c vpnc-debug.c isakmp-pkt.c tunip.c config.c dh.c math_group.c supp.c
+SRCS = sysdep.c vpnc-debug.c isakmp-pkt.c tunip.c config.c dh.c math_group.c supp.c decrypt-utils.c
 BINS = vpnc cisco-decrypt
 OBJS = $(addsuffix .o,$(basename $(SRCS)))
 BINOBJS = $(addsuffix .o,$(BINS))
@@ -78,7 +78,7 @@ vpnc : $(OBJS) vpnc.o
 vpnc.8 : vpnc.8.template makeman.pl vpnc
 	./makeman.pl
 
-cisco-decrypt : cisco-decrypt.o config.o supp.o sysdep.o vpnc-debug.o
+cisco-decrypt : cisco-decrypt.o  decrypt-utils.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(INSTALLDIR)/vpnc/usr/lib/libgcrypt.a  $(INSTALLDIR)/vpnc/usr/lib/libgpg-error.a
 
 .depend: $(SRCS) $(BINSRCS)
