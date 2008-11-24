@@ -41,12 +41,14 @@
 extern int sessinitdone; /* Is set to 0 somewhere */
 extern int exitflag;
 
-void common_session_init(int sock, char* remotehost);
+void common_session_init(int sock_in, int sock_out, char* remotehost);
 void session_loop(void(*loophandler)());
 void common_session_cleanup();
 void session_identification();
 void send_msg_ignore();
 
+const char* get_user_shell();
+void fill_passwd(const char* username);
 
 /* Server */
 void svr_session(int sock, int childpipe, char *remotehost, char *addrstring);
@@ -54,7 +56,7 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param);
 void svr_dropbear_log(int priority, const char* format, va_list param);
 
 /* Client */
-void cli_session(int sock, char *remotehost);
+void cli_session(int sock_in, int sock_out, char *remotehost);
 void cli_session_cleanup();
 void cleantext(unsigned char* dirtytext);
 
@@ -62,6 +64,8 @@ struct key_context {
 
 	const struct dropbear_cipher *recv_algo_crypt; /* NULL for none */
 	const struct dropbear_cipher *trans_algo_crypt; /* NULL for none */
+	const struct dropbear_cipher_mode *recv_crypt_mode;
+	const struct dropbear_cipher_mode *trans_crypt_mode;
 	const struct dropbear_hash *recv_algo_mac; /* NULL for none */
 	const struct dropbear_hash *trans_algo_mac; /* NULL for none */
 	char algo_kex;
@@ -69,14 +73,26 @@ struct key_context {
 
 	char recv_algo_comp; /* compression */
 	char trans_algo_comp;
+	int allow_compress; /* whether compression has started (useful in 
+							zlib@openssh.com delayed compression case) */
 #ifndef DISABLE_ZLIB
 	z_streamp recv_zstream;
 	z_streamp trans_zstream;
 #endif
 
 	/* actual keys */
-	symmetric_CBC recv_symmetric_struct;
-	symmetric_CBC trans_symmetric_struct;
+	union {
+		symmetric_CBC cbc;
+#ifdef DROPBEAR_ENABLE_CTR_MODE
+		symmetric_CTR ctr;
+#endif
+	} recv_cipher_state;
+	union {
+		symmetric_CBC cbc;
+#ifdef DROPBEAR_ENABLE_CTR_MODE
+		symmetric_CTR ctr;
+#endif
+	} trans_cipher_state;
 	unsigned char recvmackey[MAX_MAC_KEY];
 	unsigned char transmackey[MAX_MAC_KEY];
 
@@ -97,7 +113,8 @@ struct sshsession {
 							(cleared after auth once we're not
 							respecting AUTH_TIMEOUT any more) */
 
-	int sock;
+	int sock_in;
+	int sock_out;
 
 	unsigned char *remotehost; /* the peer hostname */
 
@@ -131,11 +148,15 @@ struct sshsession {
 
 	unsigned char lastpacket; /* What the last received packet type was */
 	
-    int signal_pipe[2]; /* stores endpoints of a self-pipe used for
+	int signal_pipe[2]; /* stores endpoints of a self-pipe used for
 						   race-free signal handling */
 						
-	time_t last_packet_time; /* time of the last packet transmission, for
+	time_t last_trx_packet_time; /* time of the last packet transmission, for
 							keepalive purposes */
+
+	time_t last_packet_time; /* time of the last packet transmission or receive, for
+								idle timeout purposes */
+
 
 	/* KEX/encryption related */
 	struct KEXState kexstate;
