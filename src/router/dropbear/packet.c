@@ -61,7 +61,7 @@ void write_packet() {
 	len = writebuf->len - writebuf->pos;
 	dropbear_assert(len > 0);
 	/* Try to write as much as possible */
-	written = write(ses.sock, buf_getptr(writebuf, len), len);
+	written = write(ses.sock_out, buf_getptr(writebuf, len), len);
 
 	if (written < 0) {
 		if (errno == EINTR) {
@@ -72,6 +72,7 @@ void write_packet() {
 		}
 	} 
 	
+	ses.last_trx_packet_time = time(NULL);
 	ses.last_packet_time = time(NULL);
 
 	if (written == 0) {
@@ -122,7 +123,7 @@ void read_packet() {
 	 * mightn't be any available (EAGAIN) */
 	dropbear_assert(ses.readbuf != NULL);
 	maxlen = ses.readbuf->len - ses.readbuf->pos;
-	len = read(ses.sock, buf_getptr(ses.readbuf, maxlen), maxlen);
+	len = read(ses.sock_in, buf_getptr(ses.readbuf, maxlen), maxlen);
 
 	if (len == 0) {
 		ses.remoteclosed();
@@ -171,7 +172,7 @@ static void read_packet_init() {
 	maxlen = blocksize - ses.readbuf->pos;
 			
 	/* read the rest of the packet if possible */
-	len = read(ses.sock, buf_getwriteptr(ses.readbuf, maxlen),
+	len = read(ses.sock_in, buf_getwriteptr(ses.readbuf, maxlen),
 			maxlen);
 	if (len == 0) {
 		ses.remoteclosed();
@@ -194,19 +195,11 @@ static void read_packet_init() {
 	/* now we have the first block, need to get packet length, so we decrypt
 	 * the first block (only need first 4 bytes) */
 	buf_setpos(ses.readbuf, 0);
-	if (ses.keys->recv_algo_crypt->cipherdesc == NULL) {
-		/* copy it */
-		memcpy(buf_getwriteptr(ses.decryptreadbuf, blocksize),
-				buf_getptr(ses.readbuf, blocksize),
-				blocksize);
-	} else {
-		/* decrypt it */
-		if (cbc_decrypt(buf_getptr(ses.readbuf, blocksize), 
-					buf_getwriteptr(ses.decryptreadbuf,blocksize),
-					blocksize,
-					&ses.keys->recv_symmetric_struct) != CRYPT_OK) {
-			dropbear_exit("error decrypting");
-		}
+	if (ses.keys->recv_crypt_mode->decrypt(buf_getptr(ses.readbuf, blocksize), 
+				buf_getwriteptr(ses.decryptreadbuf,blocksize),
+				blocksize,
+				&ses.keys->recv_cipher_state) != CRYPT_OK) {
+		dropbear_exit("error decrypting");
 	}
 	buf_setlen(ses.decryptreadbuf, blocksize);
 	len = buf_getint(ses.decryptreadbuf) + 4 + macsize;
@@ -246,24 +239,17 @@ void decrypt_packet() {
 	buf_setlen(ses.decryptreadbuf, ses.decryptreadbuf->size);
 	buf_setpos(ses.decryptreadbuf, blocksize);
 
-	/* decrypt if encryption is set, memcpy otherwise */
-	if (ses.keys->recv_algo_crypt->cipherdesc == NULL) {
-		/* copy it */
-		len = ses.readbuf->len - macsize - blocksize;
-		memcpy(buf_getwriteptr(ses.decryptreadbuf, len),
-				buf_getptr(ses.readbuf, len), len);
-	} else {
-		/* decrypt */
-		while (ses.readbuf->pos < ses.readbuf->len - macsize) {
-			if (cbc_decrypt(buf_getptr(ses.readbuf, blocksize), 
-						buf_getwriteptr(ses.decryptreadbuf, blocksize),
-						blocksize,
-						&ses.keys->recv_symmetric_struct) != CRYPT_OK) {
-				dropbear_exit("error decrypting");
-			}
-			buf_incrpos(ses.readbuf, blocksize);
-			buf_incrwritepos(ses.decryptreadbuf, blocksize);
+	/* decrypt it */
+	while (ses.readbuf->pos < ses.readbuf->len - macsize) {
+		if (ses.keys->recv_crypt_mode->decrypt(
+					buf_getptr(ses.readbuf, blocksize), 
+					buf_getwriteptr(ses.decryptreadbuf, blocksize),
+					blocksize,
+					&ses.keys->recv_cipher_state) != CRYPT_OK) {
+			dropbear_exit("error decrypting");
 		}
+		buf_incrpos(ses.readbuf, blocksize);
+		buf_incrwritepos(ses.decryptreadbuf, blocksize);
 	}
 
 	/* check the hmac */
@@ -290,10 +276,9 @@ void decrypt_packet() {
 	buf_setpos(ses.decryptreadbuf, PACKET_PAYLOAD_OFF);
 
 #ifndef DISABLE_ZLIB
-	if (ses.keys->recv_algo_comp == DROPBEAR_COMP_ZLIB) {
+	if (is_compress_recv()) {
 		/* decompress */
 		ses.payload = buf_decompress(ses.decryptreadbuf, len);
-
 	} else 
 #endif
 	{
@@ -469,6 +454,7 @@ void encrypt_packet() {
 	buffer * writebuf; /* the packet which will go on the wire */
 	buffer * clearwritebuf; /* unencrypted, possibly compressed */
 	unsigned char type;
+	unsigned int clear_len;
 	
 	type = ses.writepayload->data[0];
 	TRACE(("enter encrypt_packet()"))
@@ -488,11 +474,12 @@ void encrypt_packet() {
 	/* Encrypted packet len is payload+5, then worst case is if we are 3 away
 	 * from a blocksize multiple. In which case we need to pad to the
 	 * multiple, then add another blocksize (or MIN_PACKET_LEN) */
-	clearwritebuf = buf_new((ses.writepayload->len+4+1) + MIN_PACKET_LEN + 3
+	clear_len = (ses.writepayload->len+4+1) + MIN_PACKET_LEN + 3;
+
 #ifndef DISABLE_ZLIB
-			+ ZLIB_COMPRESS_INCR /* bit of a kludge, but we can't know len*/
+	clear_len += ZLIB_COMPRESS_INCR; /* bit of a kludge, but we can't know len*/
 #endif
-			);
+	clearwritebuf = buf_new(clear_len);
 	buf_setlen(clearwritebuf, PACKET_PAYLOAD_OFF);
 	buf_setpos(clearwritebuf, PACKET_PAYLOAD_OFF);
 
@@ -500,7 +487,7 @@ void encrypt_packet() {
 
 #ifndef DISABLE_ZLIB
 	/* compression */
-	if (ses.keys->trans_algo_comp == DROPBEAR_COMP_ZLIB) {
+	if (is_compress_trans()) {
 		buf_compress(clearwritebuf, ses.writepayload, ses.writepayload->len);
 	} else
 #endif
@@ -543,24 +530,17 @@ void encrypt_packet() {
 	 * wire by writepacket() */
 	writebuf = buf_new(clearwritebuf->len + macsize);
 
-	if (ses.keys->trans_algo_crypt->cipherdesc == NULL) {
-		/* copy it */
-		memcpy(buf_getwriteptr(writebuf, clearwritebuf->len),
-				buf_getptr(clearwritebuf, clearwritebuf->len),
-				clearwritebuf->len);
-		buf_incrwritepos(writebuf, clearwritebuf->len);
-	} else {
-		/* encrypt it */
-		while (clearwritebuf->pos < clearwritebuf->len) {
-			if (cbc_encrypt(buf_getptr(clearwritebuf, blocksize),
-						buf_getwriteptr(writebuf, blocksize),
-						blocksize,
-						&ses.keys->trans_symmetric_struct) != CRYPT_OK) {
-				dropbear_exit("error encrypting");
-			}
-			buf_incrpos(clearwritebuf, blocksize);
-			buf_incrwritepos(writebuf, blocksize);
+	/* encrypt it */
+	while (clearwritebuf->pos < clearwritebuf->len) {
+		if (ses.keys->trans_crypt_mode->encrypt(
+					buf_getptr(clearwritebuf, blocksize),
+					buf_getwriteptr(writebuf, blocksize),
+					blocksize,
+					&ses.keys->trans_cipher_state) != CRYPT_OK) {
+			dropbear_exit("error encrypting");
 		}
+		buf_incrpos(clearwritebuf, blocksize);
+		buf_incrwritepos(writebuf, blocksize);
 	}
 
 	/* now add a hmac and we're done */
