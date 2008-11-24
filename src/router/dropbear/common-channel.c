@@ -276,10 +276,10 @@ static void check_close(struct Channel *channel) {
 		channel->flushing = 1;
 	}
 	
-	// if a type-specific check_close is defined we will only exit
-	// once that has been triggered. this is only used for a server "session"
-	// channel, to ensure that the shell has exited (and the exit status 
-	// retrieved) before we close things up.	
+	/* if a type-specific check_close is defined we will only exit
+	   once that has been triggered. this is only used for a server "session"
+	   channel, to ensure that the shell has exited (and the exit status 
+	   retrieved) before we close things up. */
 	if (!channel->type->check_close	
 			|| channel->type->check_close(channel)) {
 		close_allowed = 1;
@@ -572,6 +572,11 @@ void recv_msg_channel_request() {
 	
 	channel = getchannel();
 
+	if (channel->sent_close) {
+		TRACE(("leave recv_msg_channel_request: already closed channel"))
+		return;
+	}
+
 	if (channel->type->reqhandler) {
 		channel->type->reqhandler(channel);
 	} else {
@@ -686,7 +691,7 @@ void common_recv_msg_channel_data(struct Channel *channel, int fd,
 		dropbear_exit("received data after eof");
 	}
 
- 	if (fd < 0) {
+	if (fd < 0) {
 		/* If we have encountered failed write, the far side might still
 		 * be sending data without having yet received our close notification.
 		 * We just drop the data. */

@@ -80,7 +80,7 @@ void svr_session(int sock, int childpipe,
     reseedrandom();
 
 	crypto_init();
-	common_session_init(sock, remotehost);
+	common_session_init(sock, sock, remotehost);
 
 	/* Initialise server specific parts of the session */
 	svr_ses.childpipe = childpipe;
@@ -144,6 +144,9 @@ void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 
 	_dropbear_log(LOG_INFO, fmtbuf, param);
 
+	/* free potential public key options */
+	svr_pubkey_options_cleanup();
+
 	/* must be after we've done with username etc */
 	common_session_cleanup();
 
@@ -183,7 +186,7 @@ void svr_dropbear_log(int priority, const char* format, va_list param) {
 						localtime(&timesec)) == 0)
 		{
 			/* upon failure, just print the epoch-seconds time. */
-			snprintf(datestr, sizeof(datestr), "%d", timesec);
+			snprintf(datestr, sizeof(datestr), "%d", (int)timesec);
 		}
 		fprintf(stderr, "[%d] %s %s\n", getpid(), datestr, printbuf);
 	}
@@ -192,8 +195,10 @@ void svr_dropbear_log(int priority, const char* format, va_list param) {
 /* called when the remote side closes the connection */
 static void svr_remoteclosed() {
 
-	close(ses.sock);
-	ses.sock = -1;
+	m_close(ses.sock_in);
+	m_close(ses.sock_out);
+	ses.sock_in = -1;
+	ses.sock_out = -1;
 	dropbear_close("Exited normally");
 
 }
