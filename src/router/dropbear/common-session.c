@@ -52,16 +52,18 @@ int exitflag = 0; /* GLOBAL */
 
 
 /* called only at the start of a session, set up initial state */
-void common_session_init(int sock, char* remotehost) {
+void common_session_init(int sock_in, int sock_out, char* remotehost) {
 
 	TRACE(("enter session_init"))
 
 	ses.remotehost = remotehost;
 
-	ses.sock = sock;
-	ses.maxfd = sock;
+	ses.sock_in = sock_in;
+	ses.sock_out = sock_out;
+	ses.maxfd = MAX(sock_in, sock_out);
 
 	ses.connect_time = 0;
+	ses.last_trx_packet_time = 0;
 	ses.last_packet_time = 0;
 	
 	if (pipe(ses.signal_pipe) < 0) {
@@ -95,6 +97,8 @@ void common_session_init(int sock, char* remotehost) {
 	ses.newkeys = NULL;
 	ses.keys->recv_algo_crypt = &dropbear_nocipher;
 	ses.keys->trans_algo_crypt = &dropbear_nocipher;
+	ses.keys->recv_crypt_mode = &dropbear_mode_none;
+	ses.keys->trans_crypt_mode = &dropbear_mode_none;
 	
 	ses.keys->recv_algo_mac = &dropbear_nohash;
 	ses.keys->trans_algo_mac = &dropbear_nohash;
@@ -137,11 +141,11 @@ void session_loop(void(*loophandler)()) {
 		FD_ZERO(&writefd);
 		FD_ZERO(&readfd);
 		dropbear_assert(ses.payload == NULL);
-		if (ses.sock != -1) {
-			FD_SET(ses.sock, &readfd);
-			if (!isempty(&ses.writequeue)) {
-				FD_SET(ses.sock, &writefd);
-			}
+		if (ses.sock_in != -1) {
+			FD_SET(ses.sock_in, &readfd);
+		}
+		if (ses.sock_out != -1 && !isempty(&ses.writequeue)) {
+			FD_SET(ses.sock_out, &writefd);
 		}
 		
 		/* We get woken up when signal handlers write to this pipe.
@@ -183,12 +187,14 @@ void session_loop(void(*loophandler)()) {
 		checktimeouts();
 
 		/* process session socket's incoming/outgoing data */
-		if (ses.sock != -1) {
-			if (FD_ISSET(ses.sock, &writefd) && !isempty(&ses.writequeue)) {
+		if (ses.sock_out != -1) {
+			if (FD_ISSET(ses.sock_out, &writefd) && !isempty(&ses.writequeue)) {
 				write_packet();
 			}
+		}
 
-			if (FD_ISSET(ses.sock, &readfd)) {
+		if (ses.sock_in != -1) {
+			if (FD_ISSET(ses.sock_in, &readfd)) {
 				read_packet();
 			}
 			
@@ -248,14 +254,14 @@ void session_identification() {
 	int i;
 
 	/* write our version string, this blocks */
-	if (atomicio(write, ses.sock, LOCAL_IDENT "\r\n",
+	if (atomicio(write, ses.sock_out, LOCAL_IDENT "\r\n",
 				strlen(LOCAL_IDENT "\r\n")) == DROPBEAR_FAILURE) {
 		ses.remoteclosed();
 	}
 
-    /* If they send more than 50 lines, something is wrong */
+	/* If they send more than 50 lines, something is wrong */
 	for (i = 0; i < 50; i++) {
-		len = ident_readln(ses.sock, linebuf, sizeof(linebuf));
+		len = ident_readln(ses.sock_in, linebuf, sizeof(linebuf));
 
 		if (len < 0 && errno != EINTR) {
 			/* It failed */
@@ -278,11 +284,11 @@ void session_identification() {
 		memcpy(ses.remoteident, linebuf, len);
 	}
 
-    /* Shall assume that 2.x will be backwards compatible. */
-    if (strncmp(ses.remoteident, "SSH-2.", 6) != 0
-            && strncmp(ses.remoteident, "SSH-1.99-", 9) != 0) {
-        dropbear_exit("Incompatible remote version '%s'", ses.remoteident);
-    }
+	/* Shall assume that 2.x will be backwards compatible. */
+	if (strncmp(ses.remoteident, "SSH-2.", 6) != 0
+			&& strncmp(ses.remoteident, "SSH-1.99-", 9) != 0) {
+		dropbear_exit("Incompatible remote version '%s'", ses.remoteident);
+	}
 
 	TRACE(("remoteident: %s", ses.remoteident))
 
@@ -394,8 +400,13 @@ static void checktimeouts() {
 	}
 	
 	if (opts.keepalive_secs > 0 
-		&& now - ses.last_packet_time >= opts.keepalive_secs) {
+			&& now - ses.last_trx_packet_time >= opts.keepalive_secs) {
 		send_msg_ignore();
+	}
+
+	if (opts.idle_timeout_secs > 0 && ses.last_packet_time > 0
+			&& now - ses.last_packet_time >= opts.idle_timeout_secs) {
+		dropbear_close("Idle timeout");
 	}
 }
 
@@ -409,5 +420,39 @@ static long select_timeout() {
 		ret = MIN(AUTH_TIMEOUT, ret);
 	if (opts.keepalive_secs > 0)
 		ret = MIN(opts.keepalive_secs, ret);
+    if (opts.idle_timeout_secs > 0)
+        ret = MIN(opts.idle_timeout_secs, ret);
 	return ret;
 }
+
+const char* get_user_shell() {
+	/* an empty shell should be interpreted as "/bin/sh" */
+	if (ses.authstate.pw_shell[0] == '\0') {
+		return "/bin/sh";
+	} else {
+		return ses.authstate.pw_shell;
+	}
+}
+void fill_passwd(const char* username) {
+	struct passwd *pw = NULL;
+	if (ses.authstate.pw_name)
+		m_free(ses.authstate.pw_name);
+	if (ses.authstate.pw_dir)
+		m_free(ses.authstate.pw_dir);
+	if (ses.authstate.pw_shell)
+		m_free(ses.authstate.pw_shell);
+	if (ses.authstate.pw_passwd)
+		m_free(ses.authstate.pw_passwd);
+
+	pw = getpwnam(username);
+	if (!pw) {
+		return;
+	}
+	ses.authstate.pw_uid = pw->pw_uid;
+	ses.authstate.pw_gid = pw->pw_gid;
+	ses.authstate.pw_name = m_strdup(pw->pw_name);
+	ses.authstate.pw_dir = m_strdup(pw->pw_dir);
+	ses.authstate.pw_shell = m_strdup(pw->pw_shell);
+	ses.authstate.pw_passwd = m_strdup(pw->pw_passwd);
+}
+
