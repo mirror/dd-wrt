@@ -1022,7 +1022,7 @@ void start_sysinit( void )
 		nvram_set( "vlan1ports", "0 5" );
 		if( !nvram_get ( "Fix_WL520GUGC_clock" ) )
 		{
-		nvram_set( "Fix_WL520GUGC_clock", "1" )
+		nvram_set( "Fix_WL520GUGC_clock", "1" );
 		need_reboot = 1;
 		}
 	    break;
