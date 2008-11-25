@@ -62,7 +62,7 @@ bcm947xx_time_init(void)
 	       (hz + 500000) / 1000000);
 
 	/* Set MIPS counter frequency for fixed_rate_gettimeoffset() */
-	if (sb_chip(sbh) == BCM5354_CHIP_ID && nvram_match ("Fix_WL520GUGC_clock", "1")
+	if (sb_chip(sbh) == BCM5354_CHIP_ID && nvram_match ("Fix_WL520GUGC_clock", "1") )
 		mips_hpt_frequency = 100000000;
 	else
 		mips_hpt_frequency = hz / 2;
