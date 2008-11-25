@@ -117,6 +117,9 @@ endif
 ifeq ($(CONFIG_KAID),y)
 CFLAGS += -DHAVE_KAID
 endif
+ifeq ($(CONFIG_OLED),y)
+CFLAGS += -DHAVE_OLED
+endif
 ifeq ($(CONFIG_TONZE),y)
 CFLAGS += -DHAVE_TONZE
 endif

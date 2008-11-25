@@ -960,6 +960,11 @@ int start_single_service_main( int argc, char **argv )
 
     foreach( service, services, next )
     {
+#ifdef HAVE_OLED
+	char message[32];
+	sprintf(message,"restart: %s",service);
+	lcdmessage(message);
+#endif
 	cprintf( "Restart service=[%s]\n", service );
 	int servicecount = 0;
 
@@ -970,6 +975,7 @@ int start_single_service_main( int argc, char **argv )
 	    servicecount++;
 	}
     }
+lcdmessage("");
 
     nvram_unset( "action_service" );
     nvram_unset( "action_service_arg1" );
