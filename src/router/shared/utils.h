@@ -608,7 +608,7 @@ void set_gpio( int gpio, int value );
 
 int get_gpio( int gpio );
 
-#if 0
+#ifdef HAVE_OLED
 void lcdmessage( char *message );
 void initlcd( void );
 void lcdmessaged( char *dual, char *message );

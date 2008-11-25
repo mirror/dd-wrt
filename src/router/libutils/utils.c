@@ -2913,6 +2913,26 @@ void rmmod( char *module )
     eval( "rmmod", module );
 }
 
+#ifdef HAVE_OLED
+#include "revision.h"
+void initlcd(  )
+{
+
+}
+
+void lcdmessage( char *message )
+{
+eval("oled-print","DD-WRT v24 sp2","build:" SVN_REVISION,"3G/UMTS Router",message);
+}
+void lcdmessaged( char *dual, char *message )
+{
+
+}
+
+
+
+#endif
+
 #ifdef HAVE_X86
 
 static int fd;
