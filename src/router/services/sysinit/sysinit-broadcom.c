@@ -1020,6 +1020,11 @@ void start_sysinit( void )
 	case ROUTER_ASUS_WL520GUGC:
 	    if( nvram_match( "vlan1ports", "0 5u" ) )
 		nvram_set( "vlan1ports", "0 5" );
+		if( !nvram_get ( "Fix_WL520GUGC_clock" ) )
+		{
+		nvram_set( "Fix_WL520GUGC_clock", "1" )
+		need_reboot = 1;
+		}
 	    break;
 
 	case ROUTER_NETGEAR_WGR614L:
