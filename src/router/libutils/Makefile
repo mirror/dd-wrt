@@ -27,6 +27,10 @@ else
 CFLAGS	= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
 
+REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
+REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
+REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
+
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -fpic 
 LDFLAGS += -L.
@@ -104,6 +108,9 @@ ifeq ($(CONFIG_GATEWORX),y)
 endif
 ifeq ($(CONFIG_NOP8670),y)
   CFLAGS += -DHAVE_NOP8670
+endif
+ifeq ($(CONFIG_OLED),y)
+CFLAGS += -DHAVE_OLED
 endif
 ifeq ($(CONFIG_RT2880),y)
   CFLAGS += -DHAVE_RT2880 -I../wireless-tools -DHEADERS_KERNEL
