@@ -1,0 +1,91 @@
+config MV_USE_XOR_ENGINE
+        bool "Use the XOR engines to offload CPU tasks"   
+        depends on (MV_INCLUDE_XOR) && EXPERIMENTAL
+        default n
+        help
+            Say Y of you want to use the XOR engine to offload some of the 
+            CPU tasks.
+
+config MV_RAID5_XOR_OFFLOAD
+        bool "Use the XOR engine to perfom the xor calculation"
+        depends on MV_USE_XOR_ENGINE
+        default n
+        help
+          Say Y here if you want to use the XOR engine to perform
+          the RAID4/5 xor calculation.
+
+config MV_XORMEMCOPY
+        bool "Use the XOR engine to accelerate memcpy and memmove"
+        depends on MV_USE_XOR_ENGINE
+        default n
+        help
+          Say Y here if you want to use the XOR engine to perform
+          the memcpy and memmove.
+
+config MV_XOR_MEMCOPY_THRESHOLD
+        int "Minimum number of bytes to use XOR acceleration for memcpy()"
+        depends on MV_XORMEMCOPY
+        default "128"
+        help
+          This is the minimum buffer size needed in order to operate the XOR engine
+          for accelerating the memcpy() and memmove() operations
+
+config MV_XORMEMZERO
+        bool "Use the XOR engine to accelerate memzero"
+        depends on MV_USE_XOR_ENGINE
+        default n
+        help
+          Say Y here if you want to use the XOR engine to perform
+          the memzero.
+
+config MV_XOR_MEMZERO_THRESHOLD
+        int "Minimum number of bytes to use XOR acceleration for memzero()"
+        depends on MV_XORMEMZERO
+        default "192"
+        help
+          This is the minimum buffer size needed in order to operate the XOR engine
+          for accelerating the memzero operation
+
+config MV_USE_XOR_FOR_COPY_USER_BUFFERS
+        bool "Use the XOR engine to accelerate copy_to_user and copy_from_user functions"
+        depends on MV_USE_XOR_ENGINE
+        default n
+        help
+          Say Y here if you want to accelerate the copy_to_user and copy_from_user functions
+          using the XOR engine instead of the IDMA.
+
+config MV_XOR_COPYUSER_THRESHOLD
+        int "Minimum number of bytes to use XOR acceleration for copy_to_user() and copy_from_user()"
+        depends on MV_USE_XOR_FOR_COPY_USER_BUFFERS
+        default "1260"
+        help
+          This is the minimum buffer size needed in order to operate the XOR engine
+          for accelerating the copy_to_user() and copy_from_user() operations
+# support for interrupts mode disbaled
+config ENABLE_XOR_INTERRUPTS
+        bool "Activate the XOR in offloading mode (Enable XOR interrupts)."
+        depends on MV_USE_XOR_ENGINE && NOT_SUPPRTED_FEATURE
+        default n
+        help
+          Say Y here if you want to use the activate the XOR engine in interrupts
+          mode (offloading).
+# menu "Xor channels"
+choice
+	prompt "Number of XOR channels"
+	default USE_TWO_ENGINES
+	depends on MV_USE_XOR_ENGINE
+	help
+	  Select the number of XOR channels to be uses for kernel functions
+	  accelerations.
+	  
+	config USE_TWO_ENGINES
+	      bool "Two channels"
+
+	config USE_FOUR_ENGINES
+	       depends on ARCH_FEROCEON_KW
+	      bool "Four channels"
+endchoice
+
+
+#endmenu
+

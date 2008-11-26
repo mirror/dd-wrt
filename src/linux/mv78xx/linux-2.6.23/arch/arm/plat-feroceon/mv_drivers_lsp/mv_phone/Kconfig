@@ -1,0 +1,27 @@
+menu "Telephony options"
+	depends on MV_INCLUDE_TDM
+
+config  MV_PHONE
+	tristate "Support for Marvell telephony support (VoIP)"
+	depends on MV_INCLUDE_TDM && PHONE
+	default y
+	---help---
+	  Choosing this option enables the Marvell telephony underlying 
+	  support for various VoIP applications. 
+	  Note, kernel Telephony subsystem must be chosen too.
+
+choice 
+	prompt "Sampling mode"
+	depends on MV_PHONE
+
+config MV_TDM_LINEAR_MODE
+	bool "Linear (16-bit)"
+
+config MV_TDM_ULAW_MODE
+	bool "U-Law (8-bit)"
+
+endchoice
+
+endmenu
+
+

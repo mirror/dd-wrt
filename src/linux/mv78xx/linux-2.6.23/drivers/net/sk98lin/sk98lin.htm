@@ -1,0 +1,806 @@
+<HTML>
+<HEAD>
+<TITLE>sk98lin.htm</TITLE>
+<meta http-equiv="content-type" content="text-html; charset=ISO-8859-1">
+</HEAD>
+<BODY BGCOLOR=#FFFFFF TEXT=#000000 LINK=#0000FF VLINK=#003366 ALINK=#FF0000
+>
+<PRE>
+&copy;Copyright 1999-2007 Marvell&reg;.
+All rights reserved.
+</PRE>
+<HR WIDTH="100%">
+<PRE>sk98lin.htm created 15-Oct-2007
+
+Readme File for sk98lin v10.22.3.1 (alpha)
+Marvell Yukon/SysKonnect SK-98xx Gigabit Ethernet Adapter driver for LINUX
+
+</PRE>
+<H1>
+	<FONT FACE="Arial, Helevetica" SIZE=+2>
+		<B>This file contains</B>
+	</FONT>
+</H1>
+<UL>
+	<FONT FACE="Arial, Helvetica" SIZE=+1>
+		<B><A HREF="#Section1">1&nbsp;&nbsp;Overview</A></B>
+	</FONT>
+	<BR>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A HREF="#Section2">2&nbsp;&nbsp;Supported Functions</A></B>
+</FONT>
+<BR>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A HREF="#Section3">3&nbsp;&nbsp;Required Files</A></B>
+</FONT>
+<BR>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A HREF="#Section4">4&nbsp;&nbsp;Installation</A></B>
+</FONT>
+<BR>
+<UL>
+	<FONT FACE="Arial, Helvetica">
+		<B><A HREF="#Section4.1">4.1&nbsp;&nbsp;Driver Installation</A></B>
+	</FONT>
+	<BR>
+
+<FONT FACE="Arial, Helvetica">
+	<B><A HREF="#Section4.2">4.2&nbsp;&nbsp;Inclusion of adapter at system start</A></B>
+</FONT>
+<BR>
+</UL>
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A HREF="#Section5">5&nbsp;&nbsp;Driver Parameters</A></B>
+</FONT>
+<BR>
+<UL>
+	<FONT FACE="Arial, Helvetica">
+		<B><A HREF="#Section5.1">5.1&nbsp;&nbsp;Per-Port Parameters</A></B>
+	</FONT>
+	<BR>
+
+<FONT FACE="Arial, Helvetica">
+	<B><A HREF="#Section5.2">5.2&nbsp;&nbsp;Adapter Parameters</A></B>
+</FONT>
+<BR>
+</UL>
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A HREF="#Section6">6&nbsp;&nbsp;Ethtool Support</A></B>
+</FONT>
+<BR>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A HREF="#Section7">7&nbsp;&nbsp;Large Frame Support</A></B>
+</FONT>
+<BR>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A HREF="#Section8">8&nbsp;&nbsp;VLAN and Link Aggregation Support (IEEE 802.1, 802.1q, 802.3ad)</A></B>
+</FONT>
+<BR>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A HREF="#Section9">9&nbsp;&nbsp;Wake on Lan support</A></B>
+</FONT>
+<BR>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A HREF="#Section10">10&nbsp;&nbsp;Troubleshooting</A></B>
+</FONT>
+<BR>
+</UL><PRE>
+</PRE>
+<HR WIDTH="100%">
+<PRE>
+</PRE>
+<H2>
+	<FONT FACE="Arial, Helvetica" SIZE=+2>
+		<B><A NAME="Section1">1&nbsp;&nbsp;Overview</A></B>
+	</FONT>
+</H2>
+<PRE>The sk98lin driver supports the Marvell Yukon, Yukon EC/FE, Yukon 2
+and SysKonnect SK-98xx/SK-95xx compliant Gigabit Ethernet Adapter on Linux.
+It has been tested with Linux on Intel/x86, x86_64 and IA64 machines.
+</PRE>
+<H2>
+	<FONT FACE="Arial, Helvetica" SIZE=+2>
+		<B><A NAME="Section2">2&nbsp;&nbsp;Supported Functions</A></B>
+	</FONT>
+</H2>
+<PRE>The following functions are supported by the driver:
+
+   NOTE 1: The hardware support depends on the used card
+ 
+   - RX/TX HW Checksum
+   - Hardware interrupt moderation (static/dynamic)
+   - Transmit poll
+   - Zerocopy/Scatter-Gather
+   - Ethtool support
+   - Wake on Lan (Magic Packet only)
+   - DualNet
+ 
+
+</PRE>
+<H2>
+	<FONT FACE="Arial, Helvetica" SIZE=+2>
+		<B><A NAME="Section3">3&nbsp;&nbsp;Required Files</A></B>
+	</FONT>
+</H2>
+<PRE>The linux kernel source.
+No additional files required.
+</PRE>
+<H2>
+	<FONT FACE="Arial, Helvetica" SIZE=+2>
+		<B><A NAME="Section4">4&nbsp;&nbsp;Installation</A></B>
+	</FONT>
+</H2>
+<PRE>It is recommended to download the latest version of the driver from the 
+SysKonnect web site www.syskonnect.com. For details on Installation 
+Instructions for sk98lin Driver, please refer to the README.txt file.
+
+</PRE>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A NAME="Section4.1">4.1&nbsp;&nbsp;Driver Installation</A></B>
+</FONT>
+<BR>
+<PRE>The following steps describe the actions that are required to install
+the driver and to start it manually. These steps should be carried
+out for the initial driver setup. Once confirmed to be ok, they can
+be included in the system start.
+
+NOTE 1: To perform the following tasks you need 'root' access.
+
+NOTE 2: In case of problems, please read the section &quot;Troubleshooting&quot; 
+        below.
+
+The driver can either be integrated into the kernel or it can be compiled 
+as a module. Select the appropriate option during the kernel 
+configuration.
+
+Compile/use the driver as a module
+----------------------------------
+To compile the driver, go to the directory /usr/src/linux and
+execute the command &quot;make menuconfig&quot; or &quot;make xconfig&quot; and proceed as 
+follows:
+
+To integrate the driver permanently into the kernel, proceed as follows:
+
+1. Select the menu &quot;Network device support&quot; and then &quot;Ethernet(1000Mbit)&quot;
+2. Mark &quot;Marvell Yukon Chipset / SysKonnect SK-98xx family support&quot; 
+   with (*) 
+3. Build a new kernel when the configuration of the above options is 
+   finished.
+4. Install the new kernel.
+5. Reboot your system.
+
+To use the driver as a module, proceed as follows:
+
+1. Enable 'loadable module support' in the kernel.
+2. For automatic driver start, enable the 'Kernel module loader'.
+3. Select the menu &quot;Network device support&quot; and then &quot;Ethernet(1000Mbit)&quot;
+4. Mark &quot;Marvell Yukon Chipset / SysKonnect SK-98xx family support&quot; 
+   with (M)
+5. Execute the command &quot;make modules&quot;.
+6. Execute the command &quot;make modules_install&quot;.
+   The appropiate modules will be installed.
+7. Reboot your system.
+
+
+Load the module manually
+------------------------
+To load the module manually, proceed as follows:
+
+1. Enter &quot;modprobe sk98lin&quot;.
+2. If a Marvell Yukon or SysKonnect SK-98xx adapter is installed in 
+   your computer and you have a /proc file system, execute the command:
+   &quot;ls /proc/net/sk98lin/&quot; 
+   This should produce an output containing a line with the following 
+   format:
+   eth0   eth1  ...
+   which indicates that your adapter has been found and initialized.
+   
+   NOTE 1: If you have more than one Marvell Yukon or SysKonnect SK-98xx 
+           adapter installed, the adapters will be listed as 'eth0', 
+           'eth1', 'eth2', etc.
+           For each adapter, repeat steps 3 and 4 below.
+
+   NOTE 2: If you have other Ethernet adapters installed, your Marvell
+           Yukon or SysKonnect SK-98xx adapter will be mapped to the 
+           next available number, e.g. 'eth1'. The mapping is executed 
+           automatically.
+           The module installation message (displayed either in a system
+           log file or on the console) prints a line for each adapter 
+           found containing the corresponding 'ethX'.
+
+3. Select an IP address and assign it to the respective adapter by 
+   entering:
+   ifconfig eth0 &lt;ip-address&gt;
+   With this command, the adapter is connected to the Ethernet. 
+   
+   SK-98xx Gigabit Ethernet Server Adapters: The yellow LED on the adapter 
+   is now active, the link status LED of the primary port is active and 
+   the link status LED of the secondary port (on dual port adapters) is 
+   blinking (if the ports are connected to a switch or hub).
+   SK-98xx V2.0 Gigabit Ethernet Adapters: The link status LED is active.
+   In addition, you will receive a status message on the console stating
+   &quot;ethX: network connection up using port Y&quot; and showing the selected 
+   connection parameters (x stands for the ethernet device number 
+   (0,1,2, etc), y stands for the port name (A or B)).
+
+   NOTE: If you are in doubt about IP addresses, ask your network
+         administrator for assistance.
+  
+4. Your adapter should now be fully operational.
+   Use 'ping &lt;otherstation&gt;' to verify the connection to other computers 
+   on your network.
+5. To check the adapter configuration view /proc/net/sk98lin/[devicename].
+   For example by executing:    
+   &quot;cat /proc/net/sk98lin/eth0&quot; 
+
+Unload the module
+-----------------
+To stop and unload the driver modules, proceed as follows:
+
+1. Execute the command &quot;ifconfig eth0 down&quot;.
+2. Execute the command &quot;rmmod sk98lin&quot;.
+
+</PRE>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A NAME="Section4.2">4.2&nbsp;&nbsp;Inclusion of adapter at system start</A></B>
+</FONT>
+<BR>
+<PRE>Since a large number of different Linux distributions are 
+available, we are unable to describe a general installation procedure
+for the driver module.
+Because the driver is now integrated in the kernel, installation should
+be easy, using the standard mechanism of your distribution.
+Refer to the distribution's manual for installation of ethernet adapters.
+
+</PRE>
+<H2>
+	<FONT FACE="Arial, Helvetica" SIZE=+2>
+		<B><A NAME="Section5">5&nbsp;&nbsp;Driver Parameters</A></B>
+	</FONT>
+</H2>
+<PRE>Parameters can be set at the command line after the module has been 
+loaded with the command 'modprobe'.
+In some distributions, the configuration tools are able to pass parameters
+to the driver module.
+
+If you use the kernel module loader, you can set driver parameters
+in the file /etc/modules.conf (or old name: /etc/conf.modules).
+To set the driver parameters in this file, proceed as follows:
+
+1. Insert a line of the form :
+   options sk98lin ...
+   For &quot;...&quot;, the same syntax is required as described for the command
+   line paramaters of modprobe below.
+2. To activate the new parameters, either reboot your computer
+   or 
+   unload and reload the driver.
+   The syntax of the driver parameters is:
+
+        modprobe sk98lin parameter=value1[,value2[,value3...]]
+
+   where value1 refers to the first adapter, value2 to the second etc.
+
+NOTE: All parameters are case sensitive. Write them exactly as shown 
+      below.
+
+Example:
+Suppose you have two adapters. You want to set auto-negotiation
+on the first adapter to ON and on the second adapter to OFF.
+You also want to set DuplexCapabilities on the first adapter
+to FULL, and on the second adapter to HALF.
+Then, you must enter:
+
+        modprobe sk98lin AutoNeg_A=On,Off DupCap_A=Full,Half
+
+NOTE: The number of adapters that can be configured this way is
+      limited in the driver (file skge.c, constant SK_MAX_CARD_PARAM).
+      The current limit is 16. If you happen to install
+      more adapters, adjust this and recompile.
+
+
+</PRE>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A NAME="Section5.1">5.1&nbsp;&nbsp;Per-Port Parameters</A></B>
+</FONT>
+<BR>
+<PRE>These settings are available for each port on the adapter.
+In the following description, '?' stands for the port for
+which you set the parameter (A or B).
+
+Speed
+-----
+Parameter:    Speed_?
+Values:       10, 100, 1000, Auto
+Default:      Auto
+
+This parameter is used to set the speed capabilities. It is only valid 
+for the SK-98xx V2.0 copper adapters.
+Usually, the speed is negotiated between the two ports during link 
+establishment. If this fails, a port can be forced to a specific setting
+with this parameter.
+
+Auto-Negotiation
+----------------
+Parameter:    AutoNeg_?
+Values:       On, Off, Sense
+Default:      On
+  
+The &quot;Sense&quot;-mode automatically detects whether the link partner supports
+auto-negotiation or not.
+
+Duplex Capabilities
+-------------------
+Parameter:    DupCap_?
+Values:       Half, Full, Both
+Default:      Both
+
+This parameters is only relevant if auto-negotiation for this port is 
+not set to &quot;Sense&quot;. If auto-negotiation is set to &quot;On&quot;, all three values
+are possible. If it is set to &quot;Off&quot;, only &quot;Full&quot; and &quot;Half&quot; are allowed.
+This parameter is usefull if your link partner does not support all
+possible combinations.
+
+Flow Control
+------------
+Parameter:    FlowCtrl_?
+Values:       Sym, SymOrRem, LocSend, None
+Default:      SymOrRem
+
+This parameter can be used to set the flow control capabilities the 
+port reports during auto-negotiation. It can be set for each port 
+individually.
+Possible modes:
+   -- Sym      = Symmetric: both link partners are allowed to send 
+                  PAUSE frames
+   -- SymOrRem = SymmetricOrRemote: both or only remote partner 
+                  are allowed to send PAUSE frames
+   -- LocSend  = LocalSend: only local link partner is allowed 
+                  to send PAUSE frames
+   -- None     = no link partner is allowed to send PAUSE frames
+  
+NOTE: This parameter is ignored if auto-negotiation is set to &quot;Off&quot;.
+
+Broadcast Priority
+-------------------
+Parameter:    BroadcastPrio
+Values:       On, Off
+Default:      Off
+
+This parameter specifies whether received broadcast packets have the
+highest priority for the port switch decision (&quot;Off&quot;) or not (&quot;On&quot;).
+
+NOTE: This parameter is only valid for dual port adapters.
+
+
+Role in Master-Slave-Negotiation (1000Base-T only)
+--------------------------------------------------
+Parameter:    Role_?
+Values:       Auto, Master, Slave
+Default:      Auto
+
+This parameter is only valid for the SK-9821 and SK-9822 adapters.
+For two 1000Base-T ports to communicate, one must take the role of the
+master (providing timing information), while the other must be the 
+slave. Usually, this is negotiated between the two ports during link 
+establishment. If this fails, a port can be forced to a specific setting
+with this parameter.
+
+
+</PRE>
+
+<FONT FACE="Arial, Helvetica" SIZE=+1>
+	<B><A NAME="Section5.2">5.2&nbsp;&nbsp;Adapter Parameters</A></B>
+</FONT>
+<BR>
+<PRE>Connection Type (for copper adapters only)
+---------------
+Parameter:    ConType
+Values:       Auto, 1000FD, 100FD, 100HD, 10FD, 10HD
+Default:      Auto
+
+The parameter 'ConType' is a combination of all five per-port parameters
+within one single parameter. This simplifies the configuration of both ports
+of an adapter card! The different values of this variable reflect the most 
+meaningful combinations of port parameters.
+
+The following table shows the values of 'ConType' and the corresponding
+combinations of the per-port parameters:
+
+    ConType   |  DupCap   AutoNeg   FlowCtrl   Role             Speed
+    ----------+------------------------------------------------------
+    Auto      |  Both     On        SymOrRem   Auto             Auto
+    1000FD    |  Full     Off       None       Auto (ignored)   1000
+    100FD     |  Full     Off       None       Auto (ignored)   100
+    100HD     |  Half     Off       None       Auto (ignored)   100
+    10FD      |  Full     Off       None       Auto (ignored)   10
+    10HD      |  Half     Off       None       Auto (ignored)   10
+
+Stating any other port parameter together with this 'ConType' variable
+will result in a merged configuration of those settings. This due to 
+the fact, that the per-port parameters (e.g. Speed_? ) have a higher
+priority than the combined variable 'ConType'.
+
+NOTE: This parameter is always used on both ports of the adapter card.
+
+Transmit Moderation
+--------------------
+Parameter:    TxModeration
+Values:       1...4095
+Default:      10
+
+Interrupt moderation is employed to limit the maximum number of transmit
+complete interrupts the driver has to serve. That is, one or more interrupts
+(which indicate any transmit packet to be processed) are queued until the
+driver processes them. The value &quot;1&quot; means, that all interrupts will be 
+generated immediately. 10 means, that the card will generate one interrupt
+after 10 served packets.
+
+Interrupt Moderation
+--------------------
+Parameter:    Moderation
+Values:       None, Static, Dynamic
+Default:      None
+
+Interrupt moderation is employed to limit the maxmimum number of interrupts
+the driver has to serve. That is, one or more interrupts (which indicate any
+transmit or receive packet to be processed) are queued until the driver 
+processes them. When queued interrupts are to be served, is determined by the
+'IntsPerSec' parameter, which is explained later below.
+
+Possible modes:
+
+   -- None - No interrupt moderation is applied on the adapter card. 
+      Therefore, each transmit or receive interrupt is served immediately
+      as soon as it appears on the interrupt line of the adapter card.
+
+   -- Static - Interrupt moderation is applied on the adapter card. 
+      All transmit and receive interrupts are queued until a complete
+      moderation interval ends. If such a moderation interval ends, all
+      queued interrupts are processed in one big bunch without any delay.
+      The term 'static' reflects the fact, that interrupt moderation is
+      always enabled, regardless how much network load is currently 
+      passing via a particular interface. In addition, the duration of
+      the moderation interval has a fixed length that never changes while
+      the driver is operational.
+
+   -- Dynamic - Interrupt moderation might be applied on the adapter card,
+      depending on the load of the system. If the driver detects that the
+      system load is too high, the driver tries to shield the system against 
+      too much network load by enabling interrupt moderation. If - at a later
+      time - the CPU utilizaton decreases again (or if the network load is 
+      negligible) the interrupt moderation will automatically be disabled.
+
+Interrupt moderation should be used when the driver has to handle one or more
+interfaces with a high network load, which - as a consequence - leads also to a
+high CPU utilization. When moderation is applied in such high network load 
+situations, CPU load might be reduced by 20-30%.
+
+NOTE: The drawback of using interrupt moderation is an increase of the round-
+trip-time (RTT), due to the queueing and serving of interrupts at dedicated
+moderation times.
+
+Interrupts per second
+---------------------
+Parameter:    IntsPerSec
+Values:       30...40000 (interrupts per second)
+Default:      2000
+
+This parameter is only used, if either static or dynamic interrupt moderation
+is used on a network adapter card. Using this paramter if no moderation is
+applied, will lead to no action performed.
+
+This parameter determines the length of any interrupt moderation interval. 
+Assuming that static interrupt moderation is to be used, an 'IntsPerSec' 
+parameter value of 2000 will lead to an interrupt moderation interval of
+500 microseconds. 
+
+NOTE: The duration of the moderation interval is to be chosen with care.
+At first glance, selecting a very long duration (e.g. only 100 interrupts per 
+second) seems to be meaningful, but the increase of packet-processing delay 
+is tremendous. On the other hand, selecting a very short moderation time might
+compensate the use of any moderation being applied.
+
+Preferred Port
+--------------
+Parameter:    PrefPort
+Values:       A, B
+Default:      A
+
+This is used to force the preferred port to A or B (on dual-port network 
+adapters). The preferred port is the one that is used if both are detected
+as fully functional.
+
+RLMT Mode (Redundant Link Management Technology)
+------------------------------------------------
+Parameter:    RlmtMode
+Values:       CheckLinkState,CheckLocalPort, CheckSeg, DualNet
+Default:      CheckLinkState (DualNet on dual port adapters)
+
+RLMT monitors the status of the port. If the link of the active port 
+fails, RLMT switches immediately to the standby link. The virtual link is 
+maintained as long as at least one 'physical' link is up. 
+
+Possible modes:
+
+   -- CheckLinkState - Check link state only: RLMT uses the link state
+      reported by the adapter hardware for each individual port to 
+      determine whether a port can be used for all network traffic or 
+      not.
+
+   -- CheckLocalPort - In this mode, RLMT monitors the network path 
+      between the two ports of an adapter by regularly exchanging packets
+      between them. This mode requires a network configuration in which 
+      the two ports are able to &quot;see&quot; each other (i.e. there must not be 
+      any router between the ports).
+
+   -- CheckSeg - Check local port and segmentation: This mode supports the
+      same functions as the CheckLocalPort mode and additionally checks 
+      network segmentation between the ports. Therefore, this mode is only
+      to be used if Gigabit Ethernet switches are installed on the network
+      that have been configured to use the Spanning Tree protocol. 
+
+   -- DualNet - In this mode, ports A and B are used as separate devices. 
+      If you have a dual port adapter, port A will be configured as eth0 
+      and port B as eth1. Both ports can be used independently with 
+      distinct IP addresses. The preferred port setting is not used. 
+      RLMT is turned off.
+   
+NOTE: RLMT modes CLP and CLPSS are designed to operate in configurations 
+      where a network path between the ports on one adapter exists. 
+      Moreover, they are not designed to work where adapters are connected
+      back-to-back.
+
+LowLatency 
+----------
+Parameter:    LowLatency
+Values:       On, Off
+Default:      Off
+
+This is used to reduce the packet latency time of the adapter. Setting the 
+LowLatency parameter to 'On' forces the adapter to pass any received packet
+immediately to upper network layers and to send out any transmit packet as
+fast as possible.
+
+NOTE 1: The system load increases if LowLatency is set to 'On' and a lot
+        of data packets are transmitted and received.
+
+NOTE 2: This parameter is only used on adapters which are based on 
+        PCI Express compatible chipsets.
+</PRE>
+<H2>
+	<FONT FACE="Arial, Helvetica" SIZE=+2>
+		<B><A NAME="Section6">6&nbsp;&nbsp;Ethtool Support</A></B>
+	</FONT>
+</H2>
+<PRE>The sk98lin driver provides built-in ethtool support. The ethtool 
+can be used to display or modify interface specific configurations.
+
+Ethtool commands are invoked using a single parameter which reflects
+the requested ethtool command plus an optional number of parameters 
+which belong to the desired command.
+
+It is not the intention of this section to explain the ethtool command
+line tool and all its options. For further information refer to the 
+manpage of the ethtool.  This sections describes only the sk98lin 
+driver supported ethtool commands.
+
+Pause Parameters
+----------------
+Query command:  -a
+Set command:    -A [autoneg on|off] [rx on|off] [tx on|off]
+Sample:         ethtool -A eth0 rx off tx off
+
+Coalescing Parameters
+---------------------
+Query command:  -c
+Set command:    -C [sample-interval I]
+                   [rx-usecs N] [tx-usecs N]
+                   [rx-usecs-low N] [tx-usecs-low N]
+                   [rx-usecs-high N] [tx-usecs-high N]
+Parameter:      I = Length of sample interval, in seconds
+                    (supported values range from 1...10)
+                N = Length of coalescing interval, in microseconds
+                    (supported values range from 25...33,333)
+Sample:         ethtool -C eth2 rx-usecs 500 tx-usecs 500
+
+NOTE: The sk98lin driver does not support different settings
+      for the rx and tx interrupt coalescing parameters.
+
+Driver Information
+------------------
+Query command:  -i
+Sample:         ethtool -i eth1
+
+Checksumming Parameters
+-----------------------
+Query command:  -k
+Set command:    -K [rx on|off] [tx on|off] [sg on|off] [tso on|off]
+Sample:         ethtool -K eth0 sg off
+
+Locate NIC Command
+------------------
+Query command:  -p [N]
+Parameter:      N = Amount of time to perform locate NIC command, in seconds
+Sample:         ethtool -p 10 eth1
+
+Driver-specific Statistics
+--------------------------
+Query command:  -S
+Sample:         ethtool -S eth0
+
+Setting Parameters
+------------------
+Set command:    -s [speed 10|100|1000] [duplex half|full] 
+                   [autoneg on|off] [wol gd]
+Sample:         ethtool -s eth2 wol d
+
+NOTE: If cable is disconnected, please set the speed and duplex mode
+      if you disable/enable autonegotiation
+ 
+NOTE: To set back to the default values use the &quot;autoneg on&quot; command.
+      Sample:    ethtool -s eth2 autoneg on
+</PRE>
+<H2>
+	<FONT FACE="Arial, Helvetica" SIZE=+2>
+		<B><A NAME="Section7">7&nbsp;&nbsp;Large Frame Support</A></B>
+	</FONT>
+</H2>
+<PRE>The driver supports large frames (also called jumbo frames). Using large 
+frames can result in an improved throughput if transferring large amounts 
+of data.
+To enable large frames, set the MTU (maximum transfer unit) of the 
+interface to the desired value (up to 9000), execute the following 
+command:
+      ifconfig eth0 mtu 9000
+This will only work if you have two adapters connected back-to-back
+or if you use a switch that supports large frames. When using a switch, 
+it should be configured to allow large frames. The setting must be 
+configured on all adapters that can be reached by the large frames. 
+If one adapter is not set to receive large frames, it will simply drop 
+them.
+
+You can switch back to the standard ethernet frame size by executing the 
+following command:
+      ifconfig eth0 mtu 1500
+
+To permanently configure this setting, add a script with the 'ifconfig' 
+line to the system startup sequence (named something like &quot;S99sk98lin&quot; 
+in /etc/rc.d/rc2.d).
+</PRE>
+<H2>
+	<FONT FACE="Arial, Helvetica" SIZE=+2>
+		<B><A NAME="Section8">8&nbsp;&nbsp;VLAN and Link Aggregation Support (IEEE 802.1, 802.1q, 802.3ad)</A></B>
+	</FONT>
+</H2>
+<PRE>The Marvell Yukon/SysKonnect Linux drivers are able to support VLAN and 
+Link Aggregation according to IEEE standards 802.1, 802.1q, and 802.3ad. 
+These features are only available after installation of open source 
+modules available on the Internet:
+For VLAN go to: http://www.candelatech.com/~greear/vlan.html
+For Link Aggregation go to: http://www.st.rim.or.jp/~yumo
+
+NOTE: SysKonnect GmbH does not offer any support for these open source 
+      modules and does not take the responsibility for any kind of 
+      failures or problems arising in connection with these modules.
+
+NOTE: Configuring Link Aggregation on a SysKonnect dual link adapter may 
+      cause problems when unloading the driver.
+
+
+</PRE>
+<H2>
+	<FONT FACE="Arial, Helvetica" SIZE=+2>
+		<B><A NAME="Section9">9&nbsp;&nbsp;Wake on Lan support</A></B>
+	</FONT>
+</H2>
+<PRE>The sk98lin driver supports wake up from suspend mode with MagicPacket
+on APM systems. Wake on Lan support is enabled by default. To disable it 
+please use the ethtool.
+
+NOTE 1: APM support has to be enabled in BIOS and in the kernel.
+
+NOTE 2: Refer to the kernel documentation for additional requirements 
+        regarding APM support.
+
+
+</PRE>
+<H2>
+	<FONT FACE="Arial, Helvetica" SIZE=+2>
+		<B><A NAME="Section10">10&nbsp;&nbsp;Troubleshooting</A></B>
+	</FONT>
+</H2>
+<PRE>If any problems occur during the installation process, check the 
+following list:
+
+
+Problem:  The SK-98xx adapter can not be found by the driver.
+Solution: In /proc/pci search for the following entry:
+             'Ethernet controller: SysKonnect SK-98xx ...'
+          If this entry exists, the SK-98xx or SK-98xx V2.0 adapter has 
+          been found by the system and should be operational.
+          If this entry does not exist or if the file '/proc/pci' is not 
+          found, there may be a hardware problem or the PCI support may 
+          not be enabled in your kernel.
+          The adapter can be checked using the diagnostics program which 
+          is available on the SysKonnect web site:
+          www.syskonnect.com
+          
+          Some COMPAQ machines have problems dealing with PCI under Linux.
+          Linux. This problem is described in the 'PCI howto' document
+          (included in some distributions or available from the
+          web, e.g. at 'www.linux.org'). 
+
+
+Problem:  Programs such as 'ifconfig' or 'route' can not be found or the 
+          error message 'Operation not permitted' is displayed.
+Reason:   You are not logged in as user 'root'.
+Solution: Logout and login as 'root' or change to 'root' via 'su'.
+
+
+Problem:  Upon use of the command 'ping &lt;address&gt;' the message
+          &quot;ping: sendto: Network is unreachable&quot; is displayed.
+Reason:   Your route is not set correctly.
+Solution: If you are using RedHat, you probably forgot to set up the 
+          route in the 'network configuration'.
+          Check the existing routes with the 'route' command and check 
+          if an entry for 'eth0' exists, and if so, if it is set correctly.
+
+
+Problem:  The driver can be started, the adapter is connected to the 
+          network, but you cannot receive or transmit any packets; 
+          e.g. 'ping' does not work.
+Reason:   There is an incorrect route in your routing table.
+Solution: Check the routing table with the command 'route' and read the 
+          manual help pages dealing with routes (enter 'man route').
+
+NOTE: Although the 2.2.x kernel versions generate the routing entry 
+      automatically, problems of this kind may occur here as well. We've 
+      come across a situation in which the driver started correctly at 
+      system start, but after the driver has been removed and reloaded,
+      the route of the adapter's network pointed to the 'dummy0'device 
+      and had to be corrected manually.
+
+
+Problem:  Your computer should act as a router between multiple 
+          IP subnetworks (using multiple adapters), but computers in 
+          other subnetworks cannot be reached.
+Reason:   Either the router's kernel is not configured for IP forwarding 
+          or the routing table and gateway configuration of at least one 
+          computer is not working.
+
+Problem:  Upon driver start, the following error message is displayed:
+          &quot;eth0: -- ERROR --
+          Class: internal Software error
+          Nr:    0xcc
+          Msg:   SkGeInitPort() cannot init running ports&quot;
+Reason:   You are using a driver compiled for single processor machines 
+          on a multiprocessor machine with SMP (Symmetric MultiProcessor) 
+          kernel.
+Solution: Configure your kernel appropriately and recompile the kernel or
+          the modules.
+
+
+
+If your problem is not listed here, please contact SysKonnect's technical
+support for help (linux@syskonnect.de).
+When contacting our technical support, please ensure that the following 
+information is available:
+- System Manufacturer and HW Informations (CPU, Memory... )
+- PCI-Boards in your system
+- Distribution
+- Kernel version
+- Driver version
+***End of Readme File***
+</PRE>
+</BODY>
+</HTML>
