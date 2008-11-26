@@ -2933,7 +2933,7 @@ void lcdmessaged( char *dual, char *message )
 
 #endif
 
-#ifdef HAVE_X86
+#if 0
 
 static int fd;
 
