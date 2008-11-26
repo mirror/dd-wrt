@@ -734,6 +734,9 @@ return 0;
 #elif HAVE_USR5453
     setRouter( "US Robotics USR5453" );
     return ROUTER_BOARD_CA8;
+#elif HAVE_RDAT81
+    setRouter( "Wistron RDAT-81" );
+    return ROUTER_BOARD_RDAT81;
 #elif HAVE_RCAA01
     setRouter( "Airlive WLA-9000AP" );
     return ROUTER_BOARD_RCAA01;
