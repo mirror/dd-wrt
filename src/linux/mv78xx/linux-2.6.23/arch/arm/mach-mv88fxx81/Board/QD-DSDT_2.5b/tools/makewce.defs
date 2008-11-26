@@ -1,0 +1,94 @@
+# makewce.defs - common variable definitions for wce
+#
+# modification history
+# --------------------
+# 04-24-02,mj	created
+#
+#######################################################################
+
+ifeq ($(TARGET),)
+TARGET	= $(notdir $(subst \,/,$(shell cd)))
+endif
+default : $(TARGET).lib
+
+SW_ROOT = $(subst \,/,$(USER_BASE))
+SRC_BASE_PATH = $(SW_ROOT)/src
+#INCLUDE_PATH = $(subst ;, -I,$(INCLUDE))
+
+LIB_DIR = $(SW_ROOT)/library
+OBJDIR = obj
+
+QD_INCLUDE_PATH = -I$(USER_BASE)\Include\h\driver \
+                  -I$(USER_BASE)\Include\h\msApi \
+                  -I$(USER_BASE)\Include\h\platform \
+                  -I$(USER_BASE)\Include
+
+MAKE    =make
+CD		=cd
+RM      =del
+ECHO	=echo
+LD      =lib
+
+ifeq ($(TARGETCPU),MIPSIV)
+CC      =clmips
+
+TGTCPUFAMILY=MIPS
+TGTCPUDEFINES=-D$(TGTCPUFAMILY) -D_MIPS_ -DR4000
+
+ifeq ($(RELEASE),NO)
+CDEBUG_DEFINES=-DDEBUG=1 -DDEBUG_QD
+CDEBUG_FLAGS=-Od
+else
+CDEBUG_DEFINES=
+CDEBUG_FLAGS=
+endif
+
+
+CDEFINES1=-DUNDER_CE -D_WIN32_WCE=400
+CDEFINES=-DWIN32 -DSTRICT $(TGTCPUDEFINES) $(CDEBUG_DEFINES) $(CDEFINES1)
+
+#CINCLUDES=-I. -I$(INCLUDE_PATH) -I$(QD_INCLUDE_PATH)
+CINCLUDES=-I. $(QD_INCLUDE_PATH)
+
+CFLAGS1= -W3 -c -QMFPE -nologo -QMmips2 -Gy
+#CFLAGS1= -W3 -Og -Oi -Os -Ob1 -YX -Gs8192 -c
+#CFLAGS2= -FAsc -Fa$(@R).cod -WX
+
+CFLAGS= $(CFLAGS1) $(CINCLUDES) $(CDEBUG_FLAGS) $(CDEFINES)
+
+LINKER_SUBSYSTEM=-subsystem:windowsce,4.00
+MACHINEOPTION=-machine:MIPS
+
+LDFLAGS = -nologo -nodefaultlib $(LINKER_SUBSYSTEM) $(TARGETOBJFILES) $(SOURCELIBS) $(MACHINEOPTION)
+
+else
+CC      =cl
+
+TGTCPUFAMILY=x86
+TGTCPUDEFINES=-D$(TGTCPUFAMILY) -D_X86_
+
+ifeq ($(RELEASE),NO)
+CDEBUG_DEFINES=-DDEBUG=1 -DDEBUG_QD
+CDEBUG_FLAGS=-Od
+else
+CDEBUG_DEFINES=
+CDEBUG_FLAGS=-Og
+endif
+
+CDEFINES1=-DUNDER_CE -D_WIN32_WCE=400
+CDEFINES=-DWIN32 -DSTRICT $(TGTCPUDEFINES) $(CDEBUG_DEFINES) $(CDEFINES1)
+
+#CINCLUDES=-I. -I$(INCLUDE_PATH) -I$(QD_INCLUDE_PATH)
+CINCLUDES=-I. $(QD_INCLUDE_PATH)
+
+CFLAGS1= -W3 -Oi -Os -Ob1 -YX -Gs8192 -c
+#CFLAGS2= -FAsc -Fa$(@R).cod -WX
+
+CFLAGS= $(CFLAGS1) $(CINCLUDES) $(CDEBUG_FLAGS) $(CDEFINES)
+
+LINKER_SUBSYSTEM=-subsystem:windowsce,4.00
+MACHINEOPTION=-machine:IX86
+
+LDFLAGS = -nologo -nodefaultlib $(LINKER_SUBSYSTEM) $(TARGETOBJFILES) $(SOURCELIBS) $(MACHINEOPTION)
+
+endif

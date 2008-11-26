@@ -1,0 +1,62 @@
+if ARCH_FEROCEON_ORION
+
+choice
+	prompt "Feroceon-Orion SoC type"
+	default MV88F5182
+
+config MV88F1181
+	bool "88F1181 SoC"
+	---help---
+	Choosing this option will generate a linux kernel for the 88F1181 SoC
+
+config MV88F1281
+	bool "88F1281 SoC"
+	---help---
+	Choosing this option will generate a linux kernel for the 88F1281 SoC
+
+config MV88F5181
+	bool "88F5181 SoC"
+	---help---
+	Choosing this option will generate a linux kernel for the 88F5181 SoC
+
+config MV88F5181L
+	bool "88F5181L SoC"
+	---help---
+	Choosing this option will generate a linux kernel for the 88F5181L SoC
+
+config  MV88F5182
+	bool "88F5182 SoC"
+	---help---
+	Choosing this option will generate a linux kernel for the 88F5182 SoC
+
+config  MV88F5082
+	bool "88F5082 SoC"
+	---help---
+	Choosing this option will generate a linux kernel for the 88F5082 SoC
+
+config  MV88F5180N
+	bool "88F5180N SoC"
+	---help---	
+	Choosing this option will generate a linux kernel for the 88F5180N SoC
+
+config  MV88F6082
+	bool "88F6082 SoC"
+	---help---	
+	Choosing this option will generate a linux kernel for the 88F6082 SoC
+
+	
+config  MV88W8660
+	bool "88W8660 SoC"
+	---help---	
+	Choosing this option will generate a linux kernel for the 88W8660 SoC
+
+config  MV88F6183
+	bool "88F6183 SoC"
+	---help---	
+	Choosing this option will generate a linux kernel for the 88F6183 SoC
+
+
+endchoice
+
+endif
+

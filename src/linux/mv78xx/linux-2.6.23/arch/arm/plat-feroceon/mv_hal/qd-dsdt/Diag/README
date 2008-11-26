@@ -1,0 +1,28 @@
+This directory includes a test program that runs on Marvell platform, such as
+DB-88E6218, RD-88E6218, DB-88E6318, and RD-88E6318 with VxWorks.
+It is not part of the DSDT Driver Suite, rather, 
+it runs through each and every API of the Driver Suite to test it out. 
+
+Please notes that it is provided for "Reference Only" and some of the system 
+specific files cannot be compiled unless related BSP is provided.
+
+The test program covers :
+
+1) How to initialize single or multiple Marvell SOHO Switchs.
+	msApiInit.c : Single Address Mode Device
+	msApiMultiInit.c : Multiple Address Mode Device
+
+	Refer to Device DataSheet for detailed information of each Address Mode.
+	
+2) How to utilize each APIs. (testApi.c)
+
+3) How to provide two platform specific MII access routines. 
+	(qdFFMii.c for 88E6218 board, ev96122mii.c for EV-96122 board)
+
+4) How to enable SOHO Switch Interrupt, if applicable. (qdInt.c)
+
+5) How to run VCT(Virtual Cable Tester) test. (vctTest.c)
+
+6) How to provide Semaphore routines if required. (osSem.c)
+
+       

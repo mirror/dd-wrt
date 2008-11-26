@@ -1,0 +1,29 @@
+menu "cesa options"
+	depends on MV_INCLUDE_CESA
+
+config  MV_CESA
+	bool "Support for Marvell Cryptographic Engine and Security Acceleration"
+	default y
+
+config	MV_CESA_OCF
+	bool "Support for Marvell CESA OCF driver"
+	depends on MV_CESA && OCF_OCF
+	---help---
+	  Choosing this option will enable you to use the Marvell Cryptographic Engine and
+	  Security Accelerator, under the OCF package.
+
+config  MV_CESA_TOOL
+	tristate "Support for Marvell CESA Tool"
+	depends on MV_CESA
+	---help---
+
+config  MV_CESA_TEST
+	bool "Support for Marvell CESA test driver"
+	depends on MV_CESA_TOOL && !MV_CESA_OCF
+	---help---
+	  Choosing this option will enable you to use the Marvell Cryptographic Engine and
+	  Security Accelerator, with the mv_cesa_tool in test mode.
+
+endmenu
+
+

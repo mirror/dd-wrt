@@ -1,0 +1,55 @@
+config MV_USE_IDMA_ENGINE
+        bool "Use the IDMA engine to offload CPU tasks"   
+        depends on (MV_INCLUDE_IDMA && !MV_USE_XOR_ENGINE) && EXPERIMENTAL
+        default n
+        help
+            Say Y of you want to use the IDMA engine to offload some of the 
+            CPU tasks.
+
+config MV_IDMA_COPYUSER
+        bool "Use the IDMA enignes to accelerate the copy_to_user() and copy_from_user functions"
+        depends on (MV_USE_IDMA_ENGINE) && (!MV_USE_XOR_FOR_COPY_USER_BUFFERS)
+        default n
+        help
+          Say Y here if you want to use the IDMA engine to perform
+          copy_to_user() and copy_from_user() functionality.
+
+config MV_IDMA_COPYUSER_THRESHOLD
+        int "Minimum number of bytes to use IDMA acceleration for copy_to_user() and copy_from_user()"
+        depends on MV_IDMA_COPYUSER
+        default "1260"
+        help
+          This is the minimum buffer size needed in order to operate the IDMA engine
+          for accelerating the copy_to_user() and copy_from_user() operations
+
+config MV_IDMA_MEMZERO
+        bool "Use the IDMA to accelerate memzero"
+        depends on (MV_USE_IDMA_ENGINE) && (!MV_XORMEMZERO)
+        default n
+        help
+          Say Y here if you want to use the IDMA engine to perform the memzero.
+
+config MV_IDMA_MEMZERO_THRESHOLD
+        int "Minimum number of bytes to use IDMA acceleration for memzero()"
+        depends on MV_IDMA_MEMZERO
+        default "192"
+        help
+          This is the minimum buffer size needed in order to operate the IDMA engine
+          for accelerating the memzero operation
+
+config MV_IDMA_MEMCOPY
+        bool "Use the IDMA to accelerate memcpy and memmove"
+        depends on (MV_USE_IDMA_ENGINE) && (!MV_XORMEMCOPY)
+        default n
+        help
+          Say Y here if you want to use the IDMA engine to perform the memcpy 
+          and memmove.
+
+config MV_IDMA_MEMCOPY_THRESHOLD
+        int "Minimum number of bytes to use IDMA acceleration for memcpy()"
+        depends on MV_IDMA_MEMCOPY
+        default "128"
+        help
+          This is the minimum buffer size needed in order to operate the IDMA engine
+          for accelerating the memcpy() and memmove() operations
+

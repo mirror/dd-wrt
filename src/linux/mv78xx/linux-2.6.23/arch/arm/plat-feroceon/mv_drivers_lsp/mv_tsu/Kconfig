@@ -1,0 +1,63 @@
+menu "TSU options"
+	depends on MV_INCLUDE_TS
+
+config  MV_TSU
+	bool "Support for Marvell Transport Stream Interface"
+#	depends on MV_INCLUDE_TS
+	default n
+choice
+	prompt "TSU interface type"
+	depends on MV_TSU
+	default TSU_SERIAL_IF
+
+config TSU_SERIAL_IF
+	bool "Serial Interface"
+	---help---
+	The TSU will work in serial mode (2 ports).
+	
+config TSU_PARALLEL_IF
+	bool "Parallel Interface"
+	---help---
+	The TSU will work in parallel mode (1 port).
+endchoice
+
+
+choice
+	prompt "TSU Core-Clock"
+	depends on MV_TSU
+	default TSU_CORE_CLK_83MHZ
+
+config TSU_CORE_CLK_71MHZ
+	bool "71 MHz TSU Core Clock"
+
+config TSU_CORE_CLK_83MHZ
+	bool "83 MHz TSU Core Clock"
+
+config TSU_CORE_CLK_91MHZ
+	bool "91 MHz TSU Core Clock"
+config TSU_CORE_CLK_100MHZ
+	bool "100 MHz TSU Core Clock"
+
+endchoice
+
+config  MV_TSU_PKT_SIZE
+        int "TSU packet size"
+        depends on MV_TSU
+	default 188
+	range 188, 256
+        ---help---
+          Define the TS packet size to be used (Same for both ports)
+	  Must be >= 188 and <= 256.
+
+config  MV_TSU_PROC
+	bool "Support for TSU proc interface"
+	depends on MV_TSU
+	default y
+        ---help---
+          Support Proc-fs interface to configuring the TS control driver.
+
+endmenu
+
+	  
+
+
