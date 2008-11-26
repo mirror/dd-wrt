@@ -170,6 +170,9 @@ endif
 ifeq ($(CONFIG_LS2),y)
   CFLAGS += -DHAVE_LS2
 endif
+ifeq ($(CONFIG_WHA5500CPE),y)
+  CFLAGS += -DHAVE_WHA5500CPE
+endif
 ifeq ($(CONFIG_EAP3660),y)
   CFLAGS += -DHAVE_EAP3660
 endif
@@ -220,6 +223,9 @@ ifeq ($(CONFIG_CA8),y)
 endif
 ifeq ($(CONFIG_CA8PRO),y)
   CFLAGS += -DHAVE_CA8PRO
+endif
+ifeq ($(CONFIG_RCAA01),y)
+  CFLAGS += -DHAVE_RCAA01
 endif
 
 ifeq ($(CONFIG_USR5453),y)
