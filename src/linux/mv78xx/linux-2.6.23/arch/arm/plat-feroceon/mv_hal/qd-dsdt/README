@@ -1,0 +1,978 @@
+
+                    DSDT Release version 2.7
+                   ===========================
+
+Table of Content:
+-----------------
+1) Release History 
+2) Source Code Orgnization
+3) General Introduction
+4) HOW TO - Build qdDrv.o for vxWorks
+5) HOW TO - Build qdDrv.lib for WinCE
+6) HOW TO - Build qdDrv.o for Linux
+7) Changes
+8) New APIs
+
+
+1) Release History 
+------------------
+DSDT2.7.zip - May. 2007. added support for 88E6165 family (88E6123,88E6125,88E6140,88E6161)
+		  1. New APIs are added to support new devices.
+		  2. Bug fix
+			GT_PIRL2_DATA structure inclues GT_PIRL_COUNT_MODE enum type, 
+			which should be GT_PIRL2_COUNT_MODE.
+			88E6083 support Static Management frame.
+			gprtSetForwardUnknown deals with wrong bit.
+		  3. Removed Diag program that make user confused with missing files.
+
+DSDT2.6b.zip - Jan. 2007.
+		  1. Bug Fixes
+		  2. PIRL Rate Limiting Parameter update
+
+DSDT2.6a.zip - Nov. 2006. added support for 88E6045.
+
+DSDT2.6.zip - Jul. 2006. added support for 88E6097, 88E6096, 88E6046, 88E6047, and 88E6085.
+		  1. New APIs are added to support new devices.
+		  2. Bug fixes those were in 2.6 preliminary release.
+
+DSDT2.6pre.zip - Apr. 2006. added preliminary support for 88E6097.
+		  1. New features are added.
+		  2. Some parameters in the existing APIs are modified to support extended feature.
+
+DSDT2.5b.zip - Jan. 2006.
+		  1. added gtDelay function after disabling PPU
+		  	Since delay function is system/OS dependent, it is required that DSDT user
+		  	fill up the gtDelay function based its platform parameters.
+		  	gtDelay function is located in src\msApi\gtUtils.c
+		  2. Unused GT_STATUS definitions are removed.
+
+DSDT2.5a.zip - Jan. 2006, added support for 88E6122 and 88E6121 and new feature that bypasses
+		  initial device setup, and bug fixes in the previous release.
+		  1. Bypass initial configuration when loading driver.
+		  2. Bug fixes: 
+		  	1) synchronization issues.
+		  	2) port vector of 0xFF was treated as an invalid vector.
+
+DSDT2.5.zip - Nov. 2005, added support for 88E6065, 88E6035, 88E6055, 88E6061, and 88E6031,
+		  and bug fixes in the previous release.
+		  1. New APIs are added to support new devices.
+		  2. Bug fixes: 
+		  	1) gfdbGetAtuEntryNext API returns GT_NO_SUCH when Entry's MAC is Broadcast address.
+		  	2) entryState in GT_ATU_ENTRY follows the definition.
+		  	3) gsysSetTrunkMaskTable API does not overwrite HashTrunk value anymore.
+		  	4) 10/100 FastEthernet Phy Reset occurs along with Speed, Duplex modification.
+
+
+DSDT2.4a.zip - Oct. 2005, added support for 88E6131 and a bug fix.
+		  1. gprtPortPowerDown(gtPhyCtrl.c) didn't work due to reset - reset is not called after PowerDown bit change.
+
+DSDT2.4.zip - Aug. 2005, bug fixes and modifications
+		  1. gprtSetPktGenEnable(gtPhyCtrl.c) didn't work with Serdes Device - resolved.
+		  2. gprtSetPortAutoMode(gtPhyCtrl.c) dropped 1000Mbps Half duplex mode - resolved.
+		  3. gprtGetPhyLinkStatus(gtPhyCtrl.c) returned LinkOn when there is no phy connected - resolved.
+		  4. gprtSetPortDuplexMode(gtPhyCtrl.c) reset 1000M Speed - resolved.
+		  5. gfdbSetAtuSize(gtBrgFdb.c), now, returns GT_NOT_SUPPORT if ATU size of the device 
+		     is not configurable.
+		  6. gprtSetPortLoopback(gtPhyCtrl.c) treats Fast Ethernet Phy and Gigabit Ethernet Phy
+		  	 differently.
+		  7. GT_GET_SERDES_PORT, now, does the error checking.
+		  8. IS_CONFIGURABLE_PHY reads PHY ID and returns the ID
+
+DSDT2.4pre.zip - July. 2005, added support for 88E6108
+		  1. New features are added.
+		  2. Arguments in gprtSetPause and gprtSetPortSpeed are modified to support
+			 1000M Phys.
+		  3. Driver functions are added to support Marvell Alask Phys and to be
+		     expanded easily for the future Phys.
+
+DSDT2.3c.zip - May. 2005,
+		  1. New features in Rev1 or Rev2 of 88E6095 are added
+		  2. gfdbGetAgingTimeout, and gfdbGetLearnEnable are added
+		  3. Bug fixes in grcSetEgressRate and grcSetPri0Rate
+		  4. Resetting TrunkID, when gprtSetTrunkPort is called to disable Trunk, is applied
+		     only to Rev0 of 88E6095 and 88E6185
+
+DSDT2.3b.zip - Mar. 2005, 
+		  1. gstpSetMode function does not modify Port State any more, since STP module
+		     sets the port state. gstpSetMode sets the switch so that it can receive 
+			  BPDU packets.
+		  2. gtLoadDriver clears Rsvd2Cpu and Rsvd2CpuEn bits.
+		  3. TrunkID will be reset when gprtSetTrunkPort is called to disable Trunk.
+		  4. "Check PPU Status in order to verify PPU disabled" is applied to gtVct.c
+
+DSDT2.3a.zip - Jan. 2005, added support for 88E6152, 88E6155, 88E6182, and 88E6092 
+		  devices, removed non-existing devices, and bug fix in 2.3 release.
+		  Fix :
+		  Check PPU Status in order to verify PPU disabled.
+
+DSDT2.3.zip - Nov. 2004, support for 88E6185 and bug fixes in 2.3 preliminary release.
+		  Fixes :
+		  1) Provide some delay after disabling PPU.
+		  2) VCT runs after disabling PPU.
+
+DSDT2.3pre.zip - Nov. 2004, added preliminary support for 88E6185.
+
+DSDT2.2a.zip - Nov. 2004, added semaphore support for MII Access with multi address mode.
+
+DSDT2.2.zip - Oct. 2004, support for 88E6095 and bug fixes in 2.2 preliminary release.
+
+DSDT2.2pre.zip - Sep. 2004, added preliminary support for 88E6095 and work-around for VCT
+		  based on VCT Application Note.
+
+DSDT2.1a.zip - Apr. 2004, support 88E6093 and bug fixes.
+		  Device Driver Package name has been changed from QDDriver to DSDT(Datacom
+		  Same Driver Technology).
+		  Bug Fixes : 
+		  1) DBNum was not correctly handled while getting entry from VTU Table.
+		  2) Member Tag in VTU entry was not defined correctly for 88E6183 family.
+		  3) Correction of 88E6183 RMON Counter Structure and Enum.
+		  4) ATU Interrupt Handling routine
+
+qdDriver2.1-pre.zip - Apr. 2004, added preliminary support for 88E6093 and bug fixes.
+		  Bug Fixes : 
+		  1) DBNum was not incorrectly handled while getting entry from 
+		  VTU Table.
+		  2) Member Tag in VTU entry was not defined correctly for 88E6183 family.
+		
+qdDriver2.0a.zip - Dec. 2003, privides functions which can read/write  
+		  Switch Port Registers and Switch Global Registers:
+		  gprtGetSwitchReg,
+		  gprtSetSwitchReg,
+		  gprtGetGlobalReg, and
+		  gprtSetGlobalReg
+
+qdDriver2.0.zip - July. 2003, supports Multi Address Mode for upcomming device.
+		  AUTO_SCAN_MODE, MANUAL_MODE, and MULTI_ADDR_MODE are added
+		  to find a QD Family device.
+		  Supports Sapphire (10 port Gigabit switch).
+
+qdDriver1.4a.zip - Apr. 2003, bug fixes.
+		  Bug fixes on portVec in GT_ATU_ENTRY structure which supported only 
+		  total of 8 ports (defined as GT_U8). It's now defined as GT_U32.
+		  utils.c and testApi.c in Diag directory also modified to support 
+		  the switch with more than 8 ports.
+
+qdDriver1.4.zip - Apr. 2003, added support for Ocatne (6083).
+		  Removed NO-OPs which created when DBG_PRINT is undefined. 
+		  Bug fixes on gprtSetIGMPSnoop and gprtGetIGMPSnoop functions,
+		  and GT_PRI0_RATE enum type.
+
+qdDriver1.3h.zip - Feb. 2003, added support for Extended Cable Status, 
+		  such as Impediance mismatch,Pair Skew,Pair Swap and Pair Polarity.
+		  Bug fixes on FFox-EG and FFox-XP device ID.
+
+qdDriver1.3g.zip - Dec. 2002, added preliminary support for Octane (6083)
+
+qdDriver1.3.zip - Oct. 2002, added support for ClipperShip (6063)
+		  This driver works with all released devices, including
+		  6051, 6052, 6021, and 6063
+
+qdDriver1.2.zip - Aug. 2002, added support for FullSail (6021)
+				
+qdDriver1.1.zip - June, 2002 OS independent QuarterDeck Driver Release 
+		  Based on 1.0 release, but removed OS dependecy. The driver
+		  is designed to work with any OS without code changes.
+
+qdDriver1.0.zip - Feb. 2002, Initial QuaterDeck Driver Release
+		  Based on vxWorks OS, support 6051/6052
+
+
+2) Source Code Orgnization
+--------------------------
+	2.1) src
+		DSDT Driver Suite Source Code.
+
+	2.2) Include directory
+		DSDT Driver Suite Header files and Prototype files
+
+	2.3) Library
+		Object files for DSDT driver Suite
+
+	2.4) Sample
+		Sample Code that shows how to use MSAPIs, e.g., init DSDT, setup VLAN for Home Gateway, etc.
+
+	* The DSDT Driver Suite Source Code are OS independent, and fully supported by Marvell.
+	* The Sample Codes are tested under vxworks, and is provided for reference only.
+
+
+3) General Introduction
+-----------------------
+
+The DSDT driver suite is standalone program which is independent of both OS and Platform. 
+As such, applications of MSAPIs need to register plateform specific functions. 
+This is done by calling qdLoadDriver function. This function returns a pointer (*dev), 
+which contains the device and platform information. It will then be used for each MSAPI call. 
+
+msApiInit.c file in Diag directory and Sample\Initialization directory demonstrate 
+how you can register those functions.
+
+msApiInit.c
+	qdStart is the main function to initialize DSDT Driver and does the 
+	followings:
+	a) register the platform specific functions. 
+	   1.1 and 1.2 below are required. 1.3 to 1.6 are optional.
+		1.1) readMii - BSP specific MII read function 
+		1.2) writeMii - BSP specific MII write function 
+		1.3) semCreate - OS specific semaphore create function.
+		1.4) semDelete - OS specific semaphore delete function.
+		1.5) semTake - OS specific semaphore take function.
+		1.6) semGive - OS specific semaphore give function.
+
+		Notes) The given example will use DB-88E6218 BSP as an example.
+
+	b) Initialize BSP provided routine (if required).
+
+	c) Calls qdLoadDriver routine.
+		1.1) Input (GT_SYS_CONFIG) - CPU Port Number (Board Specific) and Port Mode 
+		(either 1 for Forwarding mode or 0 for Hardware default mode)
+		1.2) Output (GT_QD_DEV) - Contains all device (QD) and platform specific info.
+		     It will be used for all API calls.
+
+	d) Calls sysEnable (for future use.)
+
+
+4) HOW TO - Build qdDrv.o for vxWorks
+-------------------------------------
+
+1. Extract the given ZIP file into c:\DSDT_2.x directory
+   You may change the directory name to your choice, and change the enviroment variable below accordingly.
+2. Edit setenv.bat file in c:\DSDT_2.x\tools
+3. Modify the folloing variables according to your setup.
+set USER_BASE=C:\DSDT_2.x
+set PROJ_NAME=qdDrv
+set WIND_BASE=C:\Tornado
+set TARGETCPU=MIPS		;ARM for ARM Cpu
+set WIND_HOST_TYPE=x86-win32
+4. run "setenv"
+5. Change directory to c:\DSDT_2.x\src
+6. run "make"
+7. qdDrv.o and qdDrv.map will be created in c:\DSDT_2.x\Library.
+
+
+5) HOW TO - Build qdDrv.lib for WinCE
+-------------------------------------
+
+1. Extract the given ZIP file into c:\DSDT_2.x directory(directory can be changed)
+2. Edit setenv.bat file in c:\DSDT_2.x\tools
+3. Modify the following variables according to your setup.
+set USER_BASE=C:\DSDT_2.x
+set PROJ_NAME=qdDrv
+set TARGETCPU=x86		;MIPSIV for MIPS IV
+set WCEROOT=C:\WINCE400
+
+4. run "setenv WINCE"
+5. Change directory to c:\DSDT_2.x\src
+6. run "make"
+7. qdDrv.lib will be created in c:\DSDT_2.x\Library.
+
+
+6) HOW TO - Build qdDrv.o for Linux
+-----------------------------------
+
+1. Extract the given ZIP file into $HOME/DSDT_2.x directory(directory can be changed)
+	in Linux system (verified with RedHat 7.3)
+2. Edit setenv file in $HOME/DSDT_2.x/tools
+3. Modify the folloing variables according to your setup.
+	declare -x USER_BASE=$HOME/DSDT_2.x
+	declare -x PROJ_NAME=qdDrv
+4. run "source setenv"
+5. Change directory to $HOME/DSDT_2.x/src
+6. run "make"
+7. qdDrv.o and qdDrv.map will be created in $HOME/DSDT_2.x/Library.
+
+
+7) Changes
+-----------
+1. Bug Fix
+	a) GT_PIRL2_DATA structure inclues GT_PIRL_COUNT_MODE enum type, 
+		which should be GT_PIRL2_COUNT_MODE.
+	b) Removed bktTypeMask restriction from GT_PIRL2_DATA.
+		It was supporting only Type 0 (unknown unicast) ~ Type 7 (arp),
+		when device has 2 PLIR resources.
+	c) 88E6083 support Static Management frame.
+	d) gprtSetForwardUnknown deals with wrong bit for 88E6065 and 88E6097 device family.
+	e) gprtSetDefaultForward deals with wrong bit for 88E6065 and 88E6097 device family.
+
+
+2. Coding Change
+	a) vtuOperationPerform function has been modified to handle 
+		the case, (entry == NULL), more generally.
+
+3. The file, gtPTP.c, is created for PTP related APIs.
+
+4. Sample for PTP (Pecise Time Protocol logic) is added.
+
+5. New APIs are added.
+
+
+
+8) New APIs
+------------
+1. gtPortCtrl.c
+
+	1.1) gsysSetJumboMode
+
+	DESCRIPTION
+		This routine Set the max frame size allowed to be received and transmitted
+		from or to a given port.
+
+	SYNOPSIS
+		GT_STATUS gsysSetJumboMode
+		(
+			IN  GT_QD_DEV	*dev,
+			IN  GT_LPORT	port,
+			IN  GT_JUMBO_MODE   mode
+		)
+
+	ARGUMENTS
+		INPUTS:
+			port - the logical port number
+			mode - GT_JUMBO_MODE (1522, 2048, or 10240)
+
+		OUTPUTS:
+			None.
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+
+	1.2) gsysGetJumboMode
+
+	DESCRIPTION
+		This routine gets the max frame size allowed to be received and transmitted
+		from or to a given port.
+
+	SYNOPSIS
+		GT_STATUS gsysGetJumboMode
+		(
+			IN  GT_QD_DEV	*dev,
+			IN  GT_LPORT	port,
+			OUT GT_JUMBO_MODE   *mode
+		)
+
+	ARGUMENTS
+		INPUTS
+			port - the logical port number
+
+		OUTPUTS
+			mode - GT_JUMBO_MODE (1522, 2048, or 10240)
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+2. gtPhyCtrl.c
+
+	2.1) gprtSetEnergyDetect
+
+	DESCRIPTION
+		Energy Detect power down mode enables or disables the PHY to wake up on
+		its own by detecting activity on the CAT 5 cable. 
+
+	SYNOPSIS
+		GT_STATUS gprtSetEnergyDetect
+		(
+			IN  GT_QD_DEV *dev,
+			IN  GT_LPORT  port,
+			IN  GT_EDETECT_MODE   mode
+		)
+
+	ARGUMENTS
+		INPUTS
+			port - the logical port number
+			mode - GT_EDETECT_MODE type
+
+		OUTPUTS
+			None.
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+	2.2) gprtGetEnergyDetect
+
+	DESCRIPTION
+		Energy Detect power down mode enables or disables the PHY to wake up on
+		its own by detecting activity on the CAT 5 cable. 
+
+	SYNOPSIS
+		GT_STATUS gprtGetEnergyDetect
+		(
+			IN  GT_QD_DEV *dev,
+			IN  GT_LPORT  port,
+			OUT GT_EDETECT_MODE   *mode
+		)
+
+	ARGUMENTS
+		INPUTS
+			port - the logical port number
+
+		OUTPUTS
+			mode - GT_EDETECT_MODE type
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+3. gtSysCtrl.c
+
+	3.1) gsysSetRMUMode
+
+	DESCRIPTION
+		Set Rmote Management Unit Mode: disable, enable on port 4 or 5, or enable
+		on port 9 or 10. Devices, such as 88E6097, support RMU on port 9 and 10, 
+		while other devices, such as 88E6165, support RMU on port 4 and 5. So,
+		please refer to the device datasheet for detail.
+		When RMU is enabled and this device receives a Remote Management Request
+		frame directed to this device, the frame will be processed and a Remote 
+		Management Response frame will be generated and sent out.
+
+		Note: enabling RMU has no effect if the Remote Management port is in half
+		duplex mode. The port's FrameMode must be DSA or EtherType DSA as well.
+
+	SYNOPSIS
+		GT_STATUS gsysSetRMUMode
+		(
+			IN GT_QD_DEV	*dev,
+			IN GT_RMU		*rmu
+		)
+
+	ARGUMENTS
+		INPUTS
+			rmu - GT_RMU structure
+
+		OUTPUTS
+			None.
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_BAD_PARAM     - on bad parameter
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+
+	3.2) gsysGetRMUMode
+
+	DESCRIPTION
+		Get Rmote Management Unit Mode: disable, enable on port 4 or 5, or enable
+		on port 9 or 10. Devices, such as 88E6097, support RMU on port 9 and 10, 
+		while other devices, such as 88E6165, support RMU on port 4 and 5. So,
+		please refer to the device datasheet for detail.
+		When RMU is enabled and this device receives a Remote Management Request
+		frame directed to this device, the frame will be processed and a Remote 
+		Management Response frame will be generated and sent out.
+
+		Note: enabling RMU has no effect if the Remote Management port is in half
+		duplex mode. The port's FrameMode must be DSA or EtherType DSA as well.
+
+	SYNOPSIS
+		GT_STATUS gsysGetRMUMode
+		(
+			IN  GT_QD_DEV	*dev,
+			OUT GT_RMU		*rmu
+		)
+
+	ARGUMENTS
+		INPUTS
+			None.
+
+		OUTPUTS
+			rmu - GT_RMU structure
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+
+	3.3) gsysPort2Lport
+
+	DESCRIPTION
+		This routine converts physical port number to logical port number.
+
+	SYNOPSIS
+		GT_STATUS gsysPort2Lport
+		(
+			IN  GT_QD_DEV	*dev,
+			IN  GT_U32 		port,
+			OUT GT_LPORT	*lport
+		)
+
+	ARGUMENTS
+		INPUTS
+			port - physical port number
+
+		OUTPUTS
+			lport - logical port number
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+
+
+
+	3.4) gsysLport2Port
+
+	DESCRIPTION
+		This routine converts logical port number to physical port number.
+
+	SYNOPSIS
+		GT_STATUS gsysLport2Port
+		(
+			IN  GT_QD_DEV	*dev,
+			IN  GT_LPORT	lport,
+			OUT GT_U32 		*port
+		)
+
+	ARGUMENTS
+		INPUTS
+			lport - logical port number
+
+		OUTPUTS
+			port - physical port number
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+
+
+
+	3.5) gsysPortvec2Lportvec
+
+	DESCRIPTION
+		This routine converts physical port vector to logical port vector.
+
+	SYNOPSIS
+		GT_STATUS gsysPortvec2Lportvec
+		(
+			IN  GT_QD_DEV	*dev,
+			IN  GT_U32		portvec,
+			OUT GT_U32 		*lportvec
+		)
+
+	ARGUMENTS
+		INPUTS
+			portvec - physical port vector
+
+		OUTPUTS
+			lportvec - logical port vector
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+
+
+
+	3.6) gsysLportvec2Portvec
+
+	DESCRIPTION
+		This routine converts logical port vector to physical port vector.
+
+	SYNOPSIS
+		GT_STATUS gsysLportvec2Portvec
+		(
+			IN  GT_QD_DEV	*dev,
+			IN  GT_U32		lportvec,
+			OUT GT_U32 		*portvec
+		)
+
+	ARGUMENTS
+		INPUTS
+			lportvec - logical port vector
+
+		OUTPUTS
+			portvec - physical port vector
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+
+
+4. gtPIRL.c
+
+	4.1) gpirlSetCurTimeUpInt
+
+	DESCRIPTION
+		This function sets the current time update interval.
+		Please contact FAE for detailed information.
+
+	SYNOPSIS
+		GT_STATUS gpirlSetCurTimeUpInt
+		(
+		    IN  GT_QD_DEV  			*dev,
+			IN	GT_U32				upInt
+		)
+
+	ARGUMENTS
+		INPUTS
+			upInt - updata interval (0 ~ 7)
+
+		OUTPUTS
+			None.
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_BAD_PARAM     - on bad parameter
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+
+5. gtPIRL2.c
+
+	5.1) gpirl2SetCurTimeUpInt
+
+
+	DESCRIPTION
+		This function sets the current time update interval.
+		Please contact FAE for detailed information.
+
+	SYNOPSIS
+		GT_STATUS gpirl2SetCurTimeUpInt
+		(
+		    IN  GT_QD_DEV  			*dev,
+			IN	GT_U32				upInt
+		)
+
+	ARGUMENTS
+		INPUTS
+			upInt - updata interval (0 ~ 7)
+
+		OUTPUTS
+			None.
+
+	RETURNS
+
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_BAD_PARAM     - on bad parameter
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+6. gtPTP.c
+
+	6.1) gptpSetConfig
+
+	DESCRIPTION
+		This routine writes PTP configuration parameters.
+
+	SYNOPSIS
+		GT_STATUS gptpSetConfig
+		(
+			IN  GT_QD_DEV 	*dev,
+			IN  GT_PTP_CONFIG	*ptpData
+		)
+
+	ARGUMENTS
+		INPUTS
+			ptpData  - PTP configuration parameters.
+
+		OUTPUTS
+			None.
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_BAD_PARAM     - on bad parameter
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+	6.2) gptpGetConfig
+
+	DESCRIPTION
+		This routine reads PTP configuration parameters.
+
+	SYNOPSIS
+		GT_STATUS gptpGetConfig
+		(
+			IN  GT_QD_DEV 	*dev,
+			OUT GT_PTP_CONFIG	*ptpData
+		)
+
+	ARGUMENTS
+		INPUTS
+			None.
+
+		OUTPUTS
+			ptpData  - PTP configuration parameters.
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+
+	6.3) gptpSetPTPEn
+
+	DESCRIPTION
+		This routine enables or disables PTP.
+
+	SYNOPSIS
+		GT_STATUS gptpSetPTPEn
+		(
+			IN  GT_QD_DEV 	*dev,
+			IN  GT_BOOL		en
+		)
+
+	ARGUMENTS
+		INPUTS
+			en - GT_TRUE to enable PTP, GT_FALSE to disable PTP
+
+		OUTPUTS
+			None.
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+	6.4) gptpGetPTPEn
+
+	DESCRIPTION
+		This routine checks if PTP is enabled.
+
+	SYNOPSIS
+		GT_STATUS gptpGetPTPEn
+		(
+			IN  GT_QD_DEV 	*dev,
+			OUT GT_BOOL		*en
+		)
+
+	ARGUMENTS
+		INPUTS
+			None.
+
+		OUTPUTS
+			en - GT_TRUE if enabled, GT_FALSE otherwise
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+	6.5) gptpGetPTPInt
+
+	DESCRIPTION
+		This routine gets PTP interrupt status for each port.
+		The PTP Interrupt bit gets set for a given port when an incoming PTP 
+		frame is time stamped and PTPArrIntEn for that port is set to 0x1.
+		Similary PTP Interrupt bit gets set for a given port when an outgoing
+		PTP frame is time stamped and PTPDepIntEn for that port is set to 0x1.
+		This bit gets cleared upon software reading and clearing the corresponding
+		time counter valid bits that are valid for that port.
+
+	SYNOPSIS
+		GT_STATUS gptpGetPTPInt
+		(
+			IN  GT_QD_DEV 	*dev,
+			OUT GT_U32		*ptpInt
+		)
+
+	ARGUMENTS
+		INPUTS
+			None.
+
+		OUTPUTS
+			ptpInt 	- interrupt status for each port (bit 0 for port 0, bit 1 for port 1, etc.)
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+	6.6) gptpGetPTPGlobalTime
+
+	DESCRIPTION
+		This routine gets the global timer value that is running off of the free
+		running switch core clock.
+
+	SYNOPSIS
+		GT_STATUS gptpGetPTPGlobalTime
+		(
+			IN  GT_QD_DEV 	*dev,
+			OUT GT_U32		*ptpTime
+		)
+
+	ARGUMENTS
+		INPUTS
+			None.
+
+		OUTPUTS
+			ptpTime	- PTP global time
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+	6.7) gptpGetTimeStamped
+
+	DESCRIPTION
+		This routine retrieves the PTP port status that includes time stamp value 
+		and sequce Id that are captured by PTP logic for a PTP frame that needs 
+		to be time stamped.
+
+	SYNOPSIS
+		GT_STATUS gptpGetTimeStamped
+		(
+			IN  GT_QD_DEV 	*dev,
+			IN  GT_LPORT	port,
+			IN	GT_PTP_TIME	timeToRead,
+			OUT GT_PTP_TS_STATUS	*ptpStatus
+		)
+
+	ARGUMENTS
+		INPUTS
+			port 		- logical port number.
+			timeToRead	- Arr0, Arr1, or Dep time (GT_PTP_TIME enum type)
+
+		OUTPUTS
+			ptpStatus	- PTP port status
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_BAD_PARAM     - on bad parameter
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+	6.8) gptpResetTimeStamp
+
+	DESCRIPTION
+		This routine resets PTP Time valid bit so that PTP logic can time stamp
+		a next PTP frame that needs to be time stamped.
+
+	SYNOPSIS
+		GT_STATUS gptpResetTimeStamp
+		(
+			IN  GT_QD_DEV 	*dev,
+			IN  GT_LPORT	port,
+			IN	GT_PTP_TIME	timeToReset
+		)
+
+	ARGUMENTS
+		INPUTS
+			port 		- logical port number.
+			timeToReset	- Arr0, Arr1, or Dep time (GT_PTP_TIME enum type)
+
+		OUTPUTS
+			None.
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_BAD_PARAM     - on bad parameter
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+	6.9) gptpGetReg
+
+	DESCRIPTION
+		This routine reads PTP register.
+
+	SYNOPSIS
+		GT_STATUS gptpGetReg
+		(
+			IN  GT_QD_DEV 	*dev,
+			IN  GT_LPORT	port,
+			IN  GT_U32		regOffset,
+			OUT GT_U32		*data
+		)
+
+	ARGUMENTS
+		INPUTS
+			port 		- logical port number.
+			regOffset	- register to read
+
+		OUTPUTS
+			data		- register data
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+
+	6.10) gptpSetReg
+
+	DESCRIPTION
+		This routine writes data to PTP register.
+
+	SYNOPSIS
+		GT_STATUS gptpSetReg
+		(
+			IN  GT_QD_DEV 	*dev,
+			IN  GT_LPORT	port,
+			IN  GT_U32		regOffset,
+			IN  GT_U32		data
+		)
+
+	ARGUMENTS
+		INPUTS
+			port 		- logical port number.
+			regOffset	- register to be written
+			data		- data to be written
+
+		OUTPUTS
+			None.
+
+	RETURNS
+		GT_OK   - on success
+		GT_FAIL - on error
+		GT_NOT_SUPPORTED - if current device does not support this feature.
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
+	
+	
+	
+    
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

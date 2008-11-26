@@ -1,0 +1,498 @@
+.\" (C)Copyright 1999-2007 Marvell(R). -- linux@syskonnect.de
+.\" sk98lin.4 1.1 %_%LINDATE%_%
+.\" This manpage can be viewed using `groff -Tascii -man sk98lin.4 | less`
+.\"
+.TH SK98LIN 4 "%_%LINDATE%_%" "sk98lin 10.22.3.1 (alpha)"
+.SH NAME
+sk98lin \- Marvell/SysKonnect Gigabit Ethernet driver v10.22.3.1 (alpha)
+.SH SYNOPSIS
+.B insmod sk98lin.o
+.RB [ Speed_A=\c
+.IR i,j,... ]
+.RB [ Speed_B=\c
+.IR i,j,... ]
+.RB [ AutoNeg_A=\c
+.IR i,j,... ]
+.RB [ AutoNeg_B=\c
+.IR i,j,... ]
+.RB [ DupCap_A=\c
+.IR i,j,... ]
+.RB [ DupCap_B=\c
+.IR i,j,... ]
+.RB [ FlowCtrl_A=\c
+.IR i,j,... ]
+.RB [ FlowCtrl_B=\c
+.IR i,j,... ]
+.RB [ Role_A=\c
+.IR i,j,... ]
+.RB [ Role_B=\c
+.IR i,j,... ]
+.RB [ ConType=\c
+.IR i,j,... ]
+.RB [ TxModeration=\c
+.IR i,j,... ]
+.RB [ Moderation=\c
+.IR i,j,... ]
+.RB [ IntsPerSec=\c
+.IR i,j,... ]
+.RB [ PrefPort=\c
+.IR i,j,... ]
+.RB [ RlmtMode=\c
+.IR i,j,... ]
+.RB [ LowLatency=\c
+.IR i,j,... ]
+.RB [ BroadcastPrio=\c
+.IR i,j,... ]
+.SH DESCRIPTION
+.B sk98lin
+is the Gigabit Ethernet driver for Marvell and SysKonnect network adapter cards.
+It supports SysKonnect SK-98xx/SK-95xx compliant Gigabit Ethernet Adapter and any Yukon compliant chipset.
+
+When loading the driver using 
+.BR insmod (8)
+, parameters for the network adapter cards might be stated as a sequence of comma separated commands. If for instance two network adapters are installed and AutoNegotiation on Port A of the first adapter should be ON, but on the Port A of the second adapter switched OFF, one must enter:
+
+   insmod sk98lin.o AutoNeg_A=On,Off
+
+After 
+.B sk98lin 
+is bound to one or more adapter cards and the 
+.IR /proc 
+filesystem is mounted on your system, a dedicated statistics file will be created in folder 
+.IR /proc/net/sk98lin 
+for all ports of the installed network adapter cards. Those files are named 
+.IR eth[x]
+whereby 
+.IR x 
+is the number of the interface that has been assigned to a dedicated port by the system.
+
+If loading is finished, any desired IP address can be assigned to the respective 
+.IR eth[x]
+interface using the 
+.BR ifconfig (8)
+command. This causes the adapter to connect to the Ethernet and to display a status message on the console saying "ethx: network connection up using port y" followed by the configured or detected connection parameters.
+
+The 
+.B sk98lin 
+also supports large frames (also called jumbo frames). Using jumbo frames can improve throughput tremendously when transferring large amounts of data. To enable large frames, the MTU (maximum transfer unit) size for an interface is to be set to a high value. The default MTU size is 1500 and can be changed up to 9000 (bytes). Setting the MTU size can be done when assigning the IP address to the interface or later by using the
+.BR ifconfig (8)
+command with the mtu parameter. If for instance eth0 needs an IP address and a large frame MTU size, the following two commands might be used:
+
+    ifconfig eth0 10.1.1.1
+    ifconfig eth0 mtu 9000
+
+Those two commands might even be combined into one:
+
+    ifconfig eth0 10.1.1.1 mtu 9000
+
+Note that large frames can only be used if your network infrastructure allows to do so. This means, that any switch being used in your Ethernet must also support large frames. Quite some switches support large frames, but need to be configured to do so. Most of the times, their default setting is to support only standard frames with an MTU size of 1500 (bytes). In addition to the switches inside the network, all network adapters that are to be used must also be enabled regarding jumbo frames. If an adapter is not set to receive large frames it will simply drop them. 
+
+Switching back to the standard Ethernet frame size can be done by using the
+.BR ifconfig (8)
+command again:
+
+    ifconfig eth0 mtu 1500
+
+The Marvell/SysKonnect Gigabit Ethernet driver for Linux is able to support VLAN and Link Aggregation according to IEEE standards 802.1, 802.1q, and 802.3ad. Those features are only available after installation of open source modules which can be found on the Internet:
+
+.IR VLAN \c
+: http://www.candelatech.com/~greear/vlan.html
+.br
+.IR Link 
+.IR Aggregation \c
+: http://www.st.rim.or.jp/~yumo
+
+.br
+Note that Marvell/SysKonnect does not offer any support for these open source modules and does not take the responsibility for any kind of failures or problems arising when using these modules.
+.SH PARAMETERS
+.TP
+.BI Speed_A= i,j,...
+This parameter is used to set the speed capabilities of port A of an adapter card. It is only valid for Yukon copper adapters. Possible values are:
+.IR 10
+,
+.IR 100
+,
+.IR 1000
+or
+.IR Auto 
+whereby
+.IR Auto 
+is the default. Usually, the speed is negotiated between the two ports during link establishment. If this fails, a port can be forced to a specific setting with this parameter.
+.TP
+.BI Speed_B= i,j,...
+This parameter is used to set the speed capabilities of port B of an adapter card. It is only valid for Yukon copper adapters. Possible values are:
+.IR 10
+,
+.IR 100
+,
+.IR 1000
+or
+.IR Auto 
+whereby
+.IR Auto 
+is the default. Usually, the speed is negotiated between the two ports during link establishment. If this fails, a port can be forced to a specific setting with this parameter.
+.TP
+.BI AutoNeg_A= i,j,...
+Enables or disables the use of autonegotiation of port A of an adapter card. Possible values are:
+.IR On
+,
+.IR Off
+or
+.IR Sense
+whereby
+.IR On
+is the default. The 
+.IR Sense 
+mode automatically detects whether the link partner supports auto-negotiation or not.
+.TP
+.BI AutoNeg_B= i,j,...
+Enables or disables the use of autonegotiation of port B of an adapter card. Possible values are:
+.IR On
+,
+.IR Off
+or
+.IR Sense
+whereby
+.IR On
+is the default. The 
+.IR Sense 
+mode automatically detects whether the link partner supports auto-negotiation or not.
+.TP
+.BI DupCap_A= i,j,...
+This parameter indicates the duplex mode to be used for port A of an adapter card. Possible values are:
+.IR Half
+,
+.IR Full
+or
+.IR Both
+whereby
+.IR Both
+is the default. This parameter is only relevant if AutoNeg_A of port A is not set to 
+.IR Sense.
+If AutoNeg_A is set to 
+.IR On
+, all three values of DupCap_A (
+.IR Half
+, 
+.IR Full
+or 
+.IR Both
+) might be stated. If AutoNeg_A is set to 
+.IR Off
+, only DupCap_A values  
+.IR Full
+and 
+.IR Half
+are allowed. This DupCap_A parameter is useful if your link partner does not support all possible duplex combinations.
+.TP
+.BI DupCap_B= i,j,...
+This parameter indicates the duplex mode to be used for port B of an adapter card. Possible values are:
+.IR Half
+,
+.IR Full
+or
+.IR Both
+whereby
+.IR Both
+is the default. This parameter is only relevant if AutoNeg_B of port B is not set to
+.IR Sense.
+If AutoNeg_B is set to
+.IR On
+, all three values of DupCap_B (
+.IR Half
+,
+.IR Full
+or
+.IR Both
+) might be stated. If AutoNeg_B is set to
+.IR Off
+, only DupCap_B values
+.IR Full
+and
+.IR Half
+are allowed. This DupCap_B parameter is useful if your link partner does not support all possible duplex combinations.
+.TP
+.BI FlowCtrl_A= i,j,...
+This parameter can be used to set the flow control capabilities the port reports during auto-negotiation. Possible values are:
+.IR Sym
+,
+.IR SymOrRem
+,
+.IR LocSend
+or
+.IR None
+whereby
+.IR SymOrRem
+is the default.  The different modes have the following meaning: 
+
+.br
+.IR Sym
+= Symmetric 
+ both link partners are allowed to send PAUSE frames
+.br
+.IR SymOrRem
+= SymmetricOrRemote 
+ both or only remote partner are allowed to send PAUSE frames
+.br
+.IR LocSend
+= LocalSend
+ only local link partner is allowed to send PAUSE frames
+.br
+.IR None
+= None
+ no link partner is allowed to send PAUSE frames
+
+Note that this parameter is ignored if AutoNeg_A is set to
+.IR Off .
+.TP
+.BI FlowCtrl_B= i,j,...
+This parameter can be used to set the flow control capabilities the port reports during auto-negotiation. Possible values are:
+.IR Sym
+,
+.IR SymOrRem
+,
+.IR LocSend
+or
+.IR None
+whereby
+.IR SymOrRem
+is the default.  The different modes have the following meaning:
+
+.IR Sym
+= Symmetric
+ both link partners are allowed to send PAUSE frames
+.br
+.IR SymOrRem
+= SymmetricOrRemote
+ both or only remote partner are allowed to send PAUSE frames
+.br
+.IR LocSend
+= LocalSend
+ only local link partner is allowed to send PAUSE frames
+.br
+.IR None
+= None
+ no link partner is allowed to send PAUSE frames
+.br
+
+Note that this parameter is ignored if AutoNeg_B is set to
+.IR Off .
+.TP
+.BI Role_A= i,j,...
+This parameter is only valid for 1000Base-T adapter cards. For two 1000Base-T ports to communicate, one must take the role of the master (providing timing information), while the other must be the slave. Possible values are:
+.IR Auto
+,
+.IR Master
+or
+.IR Slave
+whereby
+.IR Auto
+is the default. Usually, the role of a port is negotiated between two ports during link establishment, but if that fails the port A of an adapter card can be forced to a specific setting with this parameter. 
+.TP
+.BI Role_B= i,j,...
+This parameter is only valid for 1000Base-T adapter cards. For two 1000Base-T ports to communicate, one must take the role of the master (providing timing information), while the other must be the slave. Possible values are:
+.IR Auto
+,
+.IR Master
+or
+.IR Slave
+whereby
+.IR Auto
+is the default. Usually, the role of a port is negotiated between two ports during link establishment, but if that fails the port B of an adapter card can be forced to a specific setting with this parameter. 
+.TP
+.BI ConType= i,j,...
+This parameter (for copper adapters only) is a combination of all five per-port parameters within one single parameter. This simplifies the configuration of both ports of an adapter card. The different values of this variable reflect the most meaningful combinations of port parameters. Possible values and their corresponding combination of per-port parameters:
+
+.br
+.ad l
+ConType | DupCap   AutoNeg   FlowCtrl   Role   Speed
+--------+-------------------------------------------
+.br
+.IR Auto \c
+    |  Both      On      SymOrRem   Auto   Auto
+.br
+.IR 1000FD \c
+  |  Full      Off       None     Auto   1000
+.br
+.IR 100FD \c
+   |  Full      Off       None     Auto   100
+.br
+.IR 100HD \c
+   |  Half      Off       None     Auto   100
+.br
+.IR 10FD \c
+    |  Full      Off       None     Auto   10
+.br
+.IR 10HD \c
+    |  Half      Off       None     Auto   10
+
+.ad b 
+Stating any other port parameter together with this 
+.IR ConType
+parameter will result in a merged configuration of those settings. This is due to
+the fact, that the per-port parameters (e.g. 
+.IR Speed_A
+) have a higher priority than the combined variable 
+.IR ConType
+.
+.TP
+.BI TxModeration= i,j,...
+Interrupt moderation is employed to limit the maximum number of transmit
+complete interrupts the driver has to serve. That is, one or more interrupts
+(which indicate any transmit packet to be processed) are queued until the
+driver processes them. The value "1" means, that all interrupts will be 
+generated immediately. 10 means, that the card will generate one interrupt
+after 10 served packets.
+.
+.TP
+.BI Moderation= i,j,...
+Interrupt moderation is employed to limit the maximum number of interrupts the driver has to serve. That is, one or more interrupts (which indicate any transmit or receive packet to be processed) are queued until the driver processes them. When queued interrupts are to be served, is determined by the 
+.IR IntsPerSec
+parameter, which is explained later below. Possible moderation modes are:
+.IR None
+,
+.IR Static
+or
+.IR Dynamic
+whereby
+.IR None
+is the default. The different modes have the following meaning:
+
+.IR None
+No interrupt moderation is applied on the adapter card. Therefore, each transmit or receive interrupt is served immediately as soon as it appears on the interrupt line of the adapter card.
+
+.br
+.IR Static
+Interrupt moderation is applied on the adapter card. All transmit and receive interrupts are queued until a complete moderation interval ends. If such a moderation interval ends, all queued interrupts are processed in one big bunch without any delay. The term 
+.IR Static
+reflects the fact, that interrupt moderation is always enabled, regardless how much network load is currently passing via a particular interface. In addition, the duration of the moderation interval has a fixed length that never changes while the driver is operational.
+
+.br
+.IR Dynamic
+Interrupt moderation might be applied on the adapter card, depending on the load of the system. If the driver detects that the system load is too high, the driver tries to shield the system against too much network load by enabling interrupt moderation. If - at a later time - the CPU utilization decreases again (or if the network load is negligible) the interrupt moderation will automatically be disabled.
+
+Interrupt moderation should be used when the driver has to handle one or more interfaces with a high network load, which - as a consequence - leads also to a high CPU utilization. When moderation is applied in such high network load situations, CPU load might be reduced by 20-30% on slow computers.
+
+Note that the drawback of using interrupt moderation is an increase of the round-trip-time (RTT), due to the queuing and serving of interrupts at dedicated
+moderation times.
+.TP
+.BI IntsPerSec= i,j,...
+This parameter determines the length of any interrupt moderation interval.
+Assuming that static interrupt moderation is to be used, an 
+.IR IntsPerSec
+parameter value of 2000 will lead to an interrupt moderation interval of
+500 microseconds. Possible values for this parameter are in the range of 30...40000 (interrupts per second). The default value is 2000.
+
+This parameter is only used, if either static or dynamic interrupt moderation
+is enabled on a network adapter card. This parameter is ignored if no moderation is
+applied.
+
+Note that the duration of the moderation interval is to be chosen with care.
+At first glance, selecting a very long duration (e.g. only 100 interrupts per
+second) seems to be meaningful, but the increase of packet-processing delay
+is tremendous. On the other hand, selecting a very short moderation time might
+compensate the use of any moderation being applied.
+.TP
+.BI PrefPort= i,j,...
+This parameter is used to force the preferred port to A or B (on dual-port network adapters). The preferred port is the one that is used if both ports A and B are detected as fully functional.  Possible values are:
+.IR A
+or
+.IR B
+whereby
+.IR A
+is the default.
+.TP
+.BI RlmtMode= i,j,...
+RLMT monitors the status of the port. If the link of the active port fails, RLMT switches immediately to the standby link. The virtual link is maintained as long as at least one 'physical' link is up.  This parameters states how RLMT should monitor both ports. Possible values are:
+.IR CheckLinkState
+,
+.IR CheckLocalPort
+,
+.IR CheckSeg
+or
+.IR DualNet
+whereby
+.IR CheckLinkState
+is the default. The different modes have the following meaning:
+
+.IR CheckLinkState
+Check link state only: RLMT uses the link state reported by the adapter hardware for each individual port to determine whether a port can be used for all network traffic or not.
+
+.br
+.IR CheckLocalPort
+In this mode, RLMT monitors the network path between the two ports of an adapter by regularly exchanging packets between them. This mode requires a network configuration in which the two ports are able to "see" each other (i.e. there must not be any router between the ports).
+
+.br
+.IR CheckSeg
+Check local port and segmentation: This mode supports the same functions as the CheckLocalPort mode and additionally checks network segmentation between the ports. Therefore, this mode is only to be used if Gigabit Ethernet switches are installed on the network that have been configured to use the Spanning Tree protocol.  
+
+.br
+.IR DualNet
+In this mode, ports A and B are used as separate devices. If you have a dual port adapter, port A will be configured as 
+.IR eth[x] 
+and port B as 
+.IR eth[x+1]
+Both ports can be used independently with distinct IP addresses. The preferred port setting is not used. RLMT is turned off.
+
+Note that RLMT modes 
+.IR CheckLocalPort 
+and 
+.IR CheckLinkState 
+are designed to operate in configurations where a network path between the ports on one adapter exists. Moreover, they are not designed to work where adapters are connected back-to-back.
+.TP
+.BI LowLatency= i,j,...
+This parameter is used to reduce the packet latency time of the adapter. Setting 
+.IR LowLatency
+to 
+.IR On 
+forces the adapter to pass any received packet immediately to upper network layers and to send out any transmit packet as fast as possible. Possible values are 
+.IR On
+or
+.IR Off
+whereby
+.IR Off
+is the default.
+
+Be aware of the fact that the system load increases if
+.IR LowLatency
+is set to 
+.IR On
+and a lot of data packets are transmitted and received.
+
+Note that this parameter is only used on adapters which are based on PCI Express compatible chipsets.
+.TP
+.BI BroadcastPrio= i,j,...
+This parameter specifies whether received broadcast packets have the
+highest priority for the port switch decision ("Off") or not ("On").
+Possible values are
+.IR On
+or
+.IR Off
+whereby
+.IR Off
+is the default.
+NOTE: This parameter is only valid for dual port adapters.
+.SH FILES
+.TP
+.B /proc/net/sk98lin/eth[x]
+.br 
+The statistics file of a particular interface of an adapter card. It contains generic information about the adapter card plus a detailed summary of all transmit and receive counters.
+.TP
+.B /usr/src/linux/Documentation/networking/sk98lin.txt
+.br 
+This is the 
+.IR README
+file of the 
+.IR sk98lin
+driver. It contains a detailed installation HOWTO and describes all parameters of the driver. It denotes also common problems and provides the solution to them.
+.SH BUGS
+Report any bugs to linux@syskonnect.de
+.SH AUTHOR
+(C)Copyright 1999-2007 Marvell(R).
+.br
+
+Ralph Roesler \- rroesler@syskonnect.de
+.br
+Mirko Lindner \- mlindner@syskonnect.de
+.SH "SEE ALSO"
+modprobe(8), insmod(8), ifconfig(8).

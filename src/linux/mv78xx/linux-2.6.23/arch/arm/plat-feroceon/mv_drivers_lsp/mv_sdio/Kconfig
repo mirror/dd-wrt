@@ -1,0 +1,14 @@
+menu "Marvell SDIO\MMC driver"
+	depends on MV_INCLUDE_SDIO
+
+
+config MMC_MVSDMMC
+	tristate "Marvell SDIO host driver"
+	depends on MMC && MV_INCLUDE_SDIO
+	---help---
+	  This selects the Marvell SDIO host driver
+	  say Y or M here.
+	  If unsure, say N.
+
+endmenu
+

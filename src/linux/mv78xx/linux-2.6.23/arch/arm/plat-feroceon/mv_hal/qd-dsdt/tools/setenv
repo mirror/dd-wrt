@@ -1,0 +1,5 @@
+declare -x USER_BASE=$HOME/DSDT_2.6b
+declare -x PROJ_NAME=qdDrv
+declare -x TOOL_DIR=$USER_BASE/tools
+declare -x RELEASE=YES
+declare -x OS_RUN=LINUX

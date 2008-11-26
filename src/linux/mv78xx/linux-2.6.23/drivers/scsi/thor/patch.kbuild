@@ -1,0 +1,11 @@
+diff -uprN scsi/Makefile scsi.new/Makefile
+--- scsi/Makefile	2006-11-20 11:17:17.000000000 +0800
++++ scsi.new/Makefile	2006-11-20 11:33:53.000000000 +0800
+@@ -42,6 +42,7 @@ obj-$(CONFIG_A2091_SCSI)	+= a2091.o	wd33
+ obj-$(CONFIG_GVP11_SCSI)	+= gvp11.o	wd33c93.o
+ obj-$(CONFIG_MVME147_SCSI)	+= mvme147.o	wd33c93.o
+ obj-$(CONFIG_SGIWD93_SCSI)	+= sgiwd93.o	wd33c93.o
++obj-$(CONFIG_SCSI_MV_THOR)      += mv/
+ obj-$(CONFIG_CYBERSTORM_SCSI)	+= NCR53C9x.o	cyberstorm.o
+ obj-$(CONFIG_CYBERSTORMII_SCSI)	+= NCR53C9x.o	cyberstormII.o
+ obj-$(CONFIG_BLZ2060_SCSI)	+= NCR53C9x.o	blz2060.o
