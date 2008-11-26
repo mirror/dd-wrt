@@ -734,11 +734,18 @@ return 0;
 #elif HAVE_USR5453
     setRouter( "US Robotics USR5453" );
     return ROUTER_BOARD_CA8;
+#elif HAVE_RCAA01
+    setRouter( "Airlive WLA-9000AP" );
+    return ROUTER_BOARD_RCAA01;
 #elif HAVE_CA8PRO
     setRouter( "Wistron CA8-4 PRO" );
     return ROUTER_BOARD_CA8PRO;
 #elif HAVE_CA8
-    setRouter( "Wistron CA8-4" );
+#ifdef HAVE_WHA5500CPE
+    setRouter( "Airlive WHA-5500CPE" );
+#else
+    setRouter( "Airlive WLA-5000AP" );
+#endif
     return ROUTER_BOARD_CA8;
 #else
 
