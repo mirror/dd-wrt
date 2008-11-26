@@ -1,6 +1,12 @@
-
 /*
- * Prom setup file for ar7100
+ *  AR71xx SoC routines
+ *
+ *  Copyright (C) 2007 Atheros 
+ *  Copyright (C) 2007 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
+ *
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
  */
 
 #include <linux/init.h>

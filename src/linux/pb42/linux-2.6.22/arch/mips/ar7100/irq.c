@@ -1,5 +1,11 @@
 /*
- * General Interrupt handling for AR7100 soc
+ *  AR71xx SoC routines
+ *
+ *  Copyright (C) 2007 Atheros 
+ *
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
  */
 #include <linux/init.h>
 #include <linux/kernel_stat.h>
