@@ -1,3 +1,16 @@
+/*
+ *  AR71xx SoC routines
+ *
+ *  Copyright (C) 2007 Atheros 
+ *  Copyright (C) 2007 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
+ *  some portions:
+ *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
+ *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ *
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
+ */
 #include <linux/init.h>
 #include <linux/tty.h>
 #include <linux/ioport.h>
