@@ -862,7 +862,7 @@ int wifi_gettxpoweroffset( char *ifname )
 
     strcpy( readid, ifname );
     sscanf( readid, "ath%d", &devcount );
-    sprintf( readid, "/proc/sys/dev/wifi%d/vendor", devcount );
+    sprintf( readid, "/proc/sys/dev/wifi%d/poweroffset", devcount );
     FILE *in = fopen( readid, "rb" );
 
     vendor = 0;
