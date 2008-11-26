@@ -1,8 +1,14 @@
-//proc_gpio: AR5315 GPIO pins in /proc/gpio/
-// by olg 
-// modification for AR7100 support by Sebastian Gottschall <s.gottschall@newmedia-net.de>
-// GPL'ed
-// some code stolen from Yoshinori Sato <ysato@users.sourceforge.jp>
+/*
+ * proc_gpio: AR5315 GPIO pins in /proc/gpio/
+ * by olg 
+ * modification for AR7100 support by Sebastian Gottschall <s.gottschall@newmedia-net.de>
+ * GPL'ed
+ * some code stolen from Yoshinori Sato <ysato@users.sourceforge.jp>
+ *
+ *  This program is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License version 2 as published
+ *  by the Free Software Foundation.
+ */
 
 #include <linux/autoconf.h>
 #include <linux/init.h>
