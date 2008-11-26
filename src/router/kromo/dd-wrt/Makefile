@@ -373,6 +373,15 @@ ifeq ($(CONFIG_XIRIAN),y)
 	cp -a xirian $(INSTALLDIR)/www/style
 endif
 
+ifeq ($(CONFIG_ALFA_BRANDING1),y)
+	cp -f alfa/logo11.png $(INSTALLDIR)/www/style/xirian/logo.png
+endif
+
+ifeq ($(CONFIG_ALFA_BRANDING2),y)
+	cp -f alfa/logo22.png $(INSTALLDIR)/www/style/xirian/logo.png
+endif
+
+
 ifneq ($(AOL_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/aol.asp
 	rm -f $(INSTALLDIR)/www/aol_error.asp
