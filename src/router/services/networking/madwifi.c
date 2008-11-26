@@ -1094,6 +1094,8 @@ static void configure_single( int count )
     setsysctrl( wif, "ofdm_weak_det",
 		atoi( nvram_default_get( wl_ofdm_weak_det, "1" ) ) );
 
+int *enable="enable";
+int *disable="disable";
 #ifdef HAVE_NS5
     char *gpio = "1";
 #endif
@@ -1101,7 +1103,13 @@ static void configure_single( int count )
     char *gpio = "7";
 #endif
 
-#if defined(HAVE_NS2) || defined(HAVE_NS5)
+#ifdef HAVE_LOCO2
+enable="disable";  // swap it
+disable="enable";
+    char *gpio = "2";
+#endif
+
+#if defined(HAVE_NS2)  || defined(HAVE_NS5) || defined(HAVE_LOCO2)
     int tx = atoi( nvram_default_get( txantenna, "0" ) );
 
     setsysctrl( wif, "diversity", 0 );
@@ -1110,23 +1118,23 @@ static void configure_single( int count )
 	case 0:		// vertical
 	    setsysctrl( wif, "rxantenna", 2 );
 	    setsysctrl( wif, "txantenna", 2 );
-	    eval( "gpio", "enable", gpio );
+	    eval( "gpio", enable, gpio );
 	    break;
 	case 1:		// horizontal
 	    setsysctrl( wif, "rxantenna", 1 );
 	    setsysctrl( wif, "txantenna", 1 );
-	    eval( "gpio", "enable", gpio );
+	    eval( "gpio", enable, gpio );
 	    break;
 	case 2:		// external
 	    setsysctrl( wif, "rxantenna", 1 );
 	    setsysctrl( wif, "txantenna", 1 );
-	    eval( "gpio", "disable", gpio );
+	    eval( "gpio", disable, gpio );
 	    break;
 	case 3:		// adaptive
 	    setsysctrl( wif, "diversity", 1 );
 	    setsysctrl( wif, "rxantenna", 0 );
 	    setsysctrl( wif, "txantenna", 0 );
-	    eval( "gpio", "enable", gpio );
+	    eval( "gpio", enable, gpio );
 	    break;
     }
 #else
