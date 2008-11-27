@@ -79,6 +79,7 @@ enum {
 	MV_PORTCTRL_BLOCK   =  (1 << 0),
 	MV_PORTCTRL_LEARN   =  (2 << 0),
 	MV_PORTCTRL_ENABLED =  (3 << 0),
+	MV_PORTCTRL_EGRESSALL =  (12 << 0),     /* Egress all (E6061 only) */
 	MV_PORTCTRL_VLANTUN =  (1 << 7),	/* Enforce VLANs on packets */
 	MV_PORTCTRL_RXTR    =  (1 << 8),	/* Enable Marvell packet trailer for ingress */
 	MV_PORTCTRL_HEADER	= (1 << 11),	/* Enable Marvell packet header mode for port */
@@ -145,5 +146,6 @@ enum {
 
 #define MV_IDENT_MASK		0xfff0
 #define MV_IDENT_VALUE		0x0600
+#define MV_IDENT_VALUE2		0x0610
 
 #endif
