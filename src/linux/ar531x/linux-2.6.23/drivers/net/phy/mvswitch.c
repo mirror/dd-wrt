@@ -252,7 +252,7 @@ mvswitch_config_init(struct phy_device *pdev)
 	if (reg == MV_IDENT_VALUE2)
 	    {
 	    printk("%s: Marvell 88E6061 workaround enabled\n",dev->name);
-	    emask = MV_PORTCTRL_ENABLED;
+	    emask = MV_PORTCTRL_ENABLED | MV_PORTCTRL_EGRESSALL;
 	    }
 	/* initialize default vlans */
 	for (i = 0; i < MV_PORTS; i++)
