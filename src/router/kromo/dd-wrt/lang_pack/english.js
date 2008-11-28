@@ -1846,6 +1846,7 @@ wl_basic.noise_immunity="Noise Immunity Level";
 wl_basic.ofdm_weak_det="OFDM Weak Detection";
 wl_basic.radar="Radar Detection";
 wl_basic.mtikie="MT Compatibility";
+wl_basic.csma="Carrier Sense";
 //help container
 var hwl_basic = new Object();
 hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.<br/><b>Note :</b> when changing wireless mode, some advanced parameters are succeptible to be modified (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
