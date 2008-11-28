@@ -929,7 +929,7 @@ static void configure_single( int count )
     int vif = 0;
 
     char *vifs = nvram_safe_get( wifivifs );
-
+    char primary[32]={0};
     if( vifs != NULL )
 	foreach( var, vifs, next )
     {
@@ -938,7 +938,30 @@ static void configure_single( int count )
 	// create device
 	if( strlen( mode ) > 0 )
 	{
+	    if( !strcmp( m, "wet" ) || !strcmp( m, "sta" )
+		|| !strcmp( m, "wdssta" ) )
+		sysprintf
+		    ( "wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
+		      var, wif );
+	    else if( !strcmp( m, "ap" ) || !strcmp( m, "wdsap" ) )
+		sysprintf( "wlanconfig %s create wlandev %s wlanmode ap", var,
+			   wif );
+	    else
+		sysprintf( "wlanconfig %s create wlandev %s wlanmode adhoc",
+			   var, wif );
 	    vif = 1;
+	    if (strlen(primary)==0)
+		strcpy(primary,var);
+	    strcat( iflist, " " );
+	    strcat( iflist, var );
+	    char vathmac[16];
+
+	    sprintf( vathmac, "%s_hwaddr", var );
+	    char vmacaddr[32];
+
+	    getMacAddr( var, vmacaddr );
+	    nvram_set( vathmac, vmacaddr );
+
 	}
     }
 
@@ -961,6 +984,9 @@ static void configure_single( int count )
     else
 	sysprintf( "wlanconfig %s create wlandev %s wlanmode adhoc", dev,
 		   wif );
+    
+    if (strlen(primary)==0)
+	strcpy(primary,dev);
 
     for( s = 1; s <= 10; s++ )
     {
@@ -981,46 +1007,9 @@ static void configure_single( int count )
 	hwaddr = nvram_get( wdsmacname );
 	if( hwaddr != NULL )
 	{
-	    sysprintf( "iwpriv %s wds_add %s", dev, hwaddr );
+	    sysprintf( "iwpriv %s wds_add %s", primary, hwaddr );
 	}
     }
-
-
-    vifs = nvram_safe_get( wifivifs );
-
-    if( vifs != NULL )
-	foreach( var, vifs, next )
-    {
-	sprintf( mode, "%s_mode", var );
-	m = nvram_default_get( mode, "ap" );
-	// create device
-	if( strlen( mode ) > 0 )
-	{
-	    if( !strcmp( m, "wet" ) || !strcmp( m, "sta" )
-		|| !strcmp( m, "wdssta" ) )
-		sysprintf
-		    ( "wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
-		      var, wif );
-	    else if( !strcmp( m, "ap" ) || !strcmp( m, "wdsap" ) )
-		sysprintf( "wlanconfig %s create wlandev %s wlanmode ap", var,
-			   wif );
-	    else
-		sysprintf( "wlanconfig %s create wlandev %s wlanmode adhoc",
-			   var, wif );
-	    strcat( iflist, " " );
-	    strcat( iflist, var );
-	    char vathmac[16];
-
-	    sprintf( vathmac, "%s_hwaddr", var );
-	    char vmacaddr[32];
-
-	    getMacAddr( var, vmacaddr );
-	    nvram_set( vathmac, vmacaddr );
-
-	}
-    }
-
-
 
     cprintf( "detect maxpower\n" );
     m = nvram_default_get( wl, "ap" );
