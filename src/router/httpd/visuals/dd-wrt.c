@@ -5147,7 +5147,7 @@ int get_acktiming( void )
 	fscanf( in, "%d", &tim );
 	fclose( in );
     }
-    ack-=tim;
+    ack-=tim*2;
 
     return ack;
 }
