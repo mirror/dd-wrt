@@ -5140,7 +5140,7 @@ int get_acktiming( void )
     }
 
     sprintf( path, "/proc/sys/dev/wifi%d/timingoffset", ifcount );
-    FILE *in = fopen( path, "rb" );
+    in = fopen( path, "rb" );
 
     if( in != NULL )
     {
