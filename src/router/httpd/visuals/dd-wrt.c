@@ -3936,7 +3936,9 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     char wl_ofdm_weak_det[32];
     char wl_protmode[32];
     char wl_doth[32];
+    char wl_csma[32];
 
+    sprintf( wl_csma, "%s_csma", prefix );
     sprintf( wl_doth, "%s_doth", prefix );
     sprintf( wl_protmode, "%s_protmode", prefix );
     sprintf( wl_outdoor, "%s_outdoor", prefix );
@@ -4005,6 +4007,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     showRadio( wp, "wl_basic.extrange", wl_xr );
 //    showRadio( wp, "wl_basic.supergcomp", wl_comp );
     showRadio( wp, "wl_basic.supergff", wl_ff );
+    showRadio( wp, "wl_basic.csma", wl_csma );
 
     // showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
