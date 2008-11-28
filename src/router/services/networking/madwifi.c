@@ -1074,7 +1074,7 @@ static void configure_single( int count )
     cprintf( "adjust sensitivity\n" );
 
     int distance = atoi( nvram_default_get( sens, "2000" ) );	// to meter
-
+    
     if( distance > 0 )
     {
 	setsysctrl( wif, "dynack_count", 0 );
@@ -1085,14 +1085,18 @@ static void configure_single( int count )
     }
     else
 	setsysctrl( wif, "dynack_count", 20 );
-
+    
     char wl_intmit[32];
     char wl_noise_immunity[32];
     char wl_ofdm_weak_det[32];
+    char wl_csma[32];
 
     sprintf( wl_intmit, "%s_intmit", dev );
     sprintf( wl_noise_immunity, "%s_noise_immunity", dev );
     sprintf( wl_ofdm_weak_det, "%s_ofdm_weak_det", dev );
+    sprintf( wl_csma, "%s_csma", dev );
+
+    setsysctrl( wif, "csma", atoi( nvram_default_get( wl_csma, "1" ) ) );
     setsysctrl( wif, "intmit", atoi( nvram_default_get( wl_intmit, "-1" ) ) );
     setsysctrl( wif, "noise_immunity",
 		atoi( nvram_default_get( wl_noise_immunity, "-1" ) ) );
