@@ -5126,7 +5126,7 @@ void ej_get_br1_netmask( webs_t wp, int argc, char_t ** argv )
 int get_acktiming( void )
 {
     char path[64];
-    int ifcount, ack = 0;
+    int ifcount, ack = 0, tim = 0;
 
     strcpy( path, nvram_safe_get( "wifi_display" ) );
     sscanf( path, "ath%d", &ifcount );
@@ -5138,6 +5138,17 @@ int get_acktiming( void )
 	fscanf( in, "%d", &ack );
 	fclose( in );
     }
+
+    sprintf( path, "/proc/sys/dev/wifi%d/timingoffset", ifcount );
+    FILE *in = fopen( path, "rb" );
+
+    if( in != NULL )
+    {
+	fscanf( in, "%d", &tim );
+	fclose( in );
+    }
+    ack-=tim;
+
     return ack;
 }
 
