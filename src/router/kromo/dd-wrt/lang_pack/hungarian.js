@@ -1066,7 +1066,7 @@ service.vpn_clicert="Publikus kliens azonosító";
 service.vpn_clikey="Privát kliens kulcs";
 
 //radiooff.webservices
-service.radiooff_legend="SES Gomb";
+service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Gomb";
 service.radiooff_srv="SES gomb használata a wifi ki-be kapcsolásához";
 service.radiooff_bootoff="Rádió indításkori alapértelmezett kikapcsolása";
 
