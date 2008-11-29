@@ -810,9 +810,20 @@ return 0;
 
     if( boardnum == 45 && nvram_match( "boardtype", "0x467" ) )
     {
+	char *hwver0 = nvram_safe_get( "hardware_version" );
+
+	if (startswith( hwver, "WL320G" ))
+	{
+	cprintf( "router is Asus WL-320gP\n" );
+	setRouter( "Asus WL-320gP" );
+	return ROUTER_ASUS_WL550GE;
+	}
+	else
+	{
 	cprintf( "router is Asus WL-550gE\n" );
 	setRouter( "Asus WL-550gE" );
 	return ROUTER_ASUS_WL550GE;
+	}
     }
 #endif
     if( nvram_match( "boardnum", "00" ) &&
