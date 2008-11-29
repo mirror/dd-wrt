@@ -1134,7 +1134,7 @@ service.vpn_clicert="Öffentliches Client-Zertifikat";
 service.vpn_clikey="Privater Client-Schlüssel";
 
 //radiooff.webservices
-service.radiooff_legend="SES Button";
+service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Druckknopf";
 service.radiooff_srv="Nutze SES um Wireless abzuschalten";
 service.radiooff_bootoff="Schalte Wireless Initial aus";
 

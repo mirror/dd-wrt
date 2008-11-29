@@ -1145,12 +1145,12 @@ service.ssh_key="Behörighetsnyckel";
 service.ssh_forwarding="SSH TCP Forwarding";
 
 //radiooff.webservices
-service.radiooff_legend="SES / AOSS / EZ-SETUP Knapp";
+service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Knapp";
 service.radiooff_srv="Använd denna knapp för att stoppa wifi";
 service.radiooff_bootoff="Stäng wifi vid uppstart";
 
 //ses.webservices ====> might replace the above radiooff_button
-service.ses_legend="SES / AOSS / EZ-SETUP Knapp";
+service.ses_legend="SES / AOSS / EZ-SETUP /WPS Knapp";
 service.ses_srv="Knappfunktion";
 service.ses_toggleradio="Växla Trådlöst";
 service.ses_script="Eget Script";

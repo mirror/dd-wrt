@@ -1210,12 +1210,12 @@ service.ssh_key="授權金鑰";
 service.ssh_forwarding="SSH TCP Forwarding";
 
 //radiooff.webservices
-service.radiooff_legend="SES / AOSS / EZ-SETUP Button";
+service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Button";
 service.radiooff_srv="用此按鈕關閉無線網路";
 service.radiooff_bootoff="Turn radio off at boot";
 
 //ses.webservices ====> might replace the above radiooff_button
-service.ses_legend="SES / AOSS / EZ-SETUP 按鈕";
+service.ses_legend="SES / AOSS / EZ-SETUP / WPS 按鈕";
 service.ses_srv="SES / AOSS / EZ-SETUP 按鈕啟用";
 service.ses_toggleradio="無線開關（Toggle Wireless）";
 service.ses_script="自訂Script";

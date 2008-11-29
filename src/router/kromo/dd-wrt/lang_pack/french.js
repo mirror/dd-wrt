@@ -1120,7 +1120,7 @@ service.ssh_key="Clé autorisée";
 service.ssh_forwarding="Transmission SSH TCP";
 
 //radiooff.webservices
-service.radiooff_legend="Fonction du Bouton SES / AOSS / EZ-SETUP";
+service.radiooff_legend="Fonction du Bouton SES / AOSS / EZ-SETUP / WPS";
 service.radiooff_srv="Gérer l'émission radio";
 service.radiooff_bootoff="Désactiver le Wifi au démarrage";
 
