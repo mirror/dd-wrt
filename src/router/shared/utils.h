@@ -249,6 +249,7 @@
 #define ROUTER_ASUS_WL500W 0x3b06
 
 // Asus WL550gE (BCM5352E cpu, fccid: Asus MSQWL550GE)
+// Asus WL320gP/gE (BCM5352E cpu, 1 LAN only, fccid: Asus MSQWL320GP / MSQWL320GE)
 #define ROUTER_ASUS_WL550GE 0x3c01
 
 // Sitecom WL-111 (BCM4702 cpu, fccid: ?)
