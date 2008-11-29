@@ -739,7 +739,7 @@ service.ssh_legend="Bezpieczna powloka";
 service.ssh_srv="SSHd";
 service.ssh_password="Haslo login";
 service.ssh_key="Autoryzacja kluczy";
-service.radiooff_legend="Przycisk SES";
+service.radiooff_legend="Przycisk SES / AOSS / EZ-SETUP / WPS";
 service.radiooff_srv="Uzyj przycisku SES do wylaczenia WIFI";
 service.radiooff_bootoff="Turn radio off at boot";
 

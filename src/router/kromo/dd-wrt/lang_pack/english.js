@@ -1222,7 +1222,7 @@ service.radiooff_srv="Use this button for turning off radio";
 service.radiooff_bootoff="Turn radio off at boot";
 
 //ses.webservices ====> might replace the above radiooff_button
-service.ses_legend="SES / AOSS / EZ-SETUP Button";
+service.ses_legend="SES / AOSS / EZ-SETUP / WPS Button";
 service.ses_srv="Button action";
 service.ses_toggleradio="Toggle Wireless";
 service.ses_script="Custom Script";

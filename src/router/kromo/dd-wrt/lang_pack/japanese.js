@@ -1134,7 +1134,7 @@ service.ssh_password="Login時にパスワードを使用する";
 service.ssh_key="Authorized Keys";
 
 //radiooff.webservices
-service.radiooff_legend="SES / AOSS / EZ-SETUP ボタン";
+service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS ボタン";
 service.radiooff_srv="このボタンで無線機能の有効/無効を制御する";
 service.radiooff_bootoff="起動時に無線機能を無効にする";
 
