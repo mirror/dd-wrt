@@ -488,9 +488,9 @@ ddns.forceupd="Force Update Interval";
 var ddnsm = new Object();
 ddnsm.all_closed="DDNS server is currently closed";
 ddnsm.all_resolving="Resolving domain name";
-ddnsm.all_errresolv="Domain name resolv fail";
+ddnsm.all_errresolv="Domain name resolv failed";
 ddnsm.all_connecting="Connecting to server";
-ddnsm.all_connectfail="Connect to server fail";
+ddnsm.all_connectfail="Connect to server failed";
 ddnsm.all_disabled="DDNS function is disabled";
 ddnsm.all_noip="No WAN connection";
 
@@ -1217,7 +1217,7 @@ service.ssh_key="Authorized Keys";
 service.ssh_forwarding="SSH TCP Forwarding";
 
 //radiooff.webservices
-service.radiooff_legend="SES / AOSS / EZ-SETUP Button";
+service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Button";
 service.radiooff_srv="Use this button for turning off radio";
 service.radiooff_bootoff="Turn radio off at boot";
 

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 15.Jun.2008, svn 9716	//
+//				Slovenian translation DD-WRT by Eko, last revision: 30.Nov.2008, svn 11018	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -190,7 +190,6 @@ share.acktiming="ACK uèasenje";
 share.broadcast="Broadcast podpora";
 
 
-
 sbutton.save="Shrani nastavitve";
 sbutton.savetitle="Samo shrani nastavitve, vendar jih ne uporabi";
 sbutton.apply="Uporabi";
@@ -367,7 +366,7 @@ bmenu.networking="Omre¾enje";
 bmenu.wireless="Brez¾ièno";
 bmenu.wirelessBasic="Osnovne nastavitve";
 bmenu.wirelessRadius="Radius";
-bmenu.wirelessSuperchannel="SuperChannel";
+bmenu.wirelessSuperchannel="SuperKanal";
 bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Brez¾ièna za¹èita";
 bmenu.wirelessMac="Filter MAC";
@@ -722,6 +721,7 @@ hotspot.wifidog_authsrvssl="AuthServer SSL na voljo";
 hotspot.wifidog_authsrvsslport="AuthServer SSL vrata";
 hotspot.wifidog_authsrvhttpport="AuthServer HTTP vrata";
 hotspot.wifidog_authsrvpath="AuthServer pot";
+hotspot.wifidog_config="Pravila po¾arnega zidu";
 
 var anchorfree = new Object();
 anchorfree.anchorfree="AnchorFree";
@@ -1144,6 +1144,10 @@ service.syslog_ip="Oddaljeni stre¾nik";
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
+//ftp.webservices
+service.proftpd_legend="ProFTPD";
+service.proftpd_srv="ProFTPD";
+
 //pptpd_client.webservices
 service.pptpd_legend="PPTP odjemalec";
 service.pptpd_option="PPTP mo¾nosti odjemalca";
@@ -1213,7 +1217,7 @@ service.ssh_key="Poobla¹èeni kljuèi";
 service.ssh_forwarding="SSH TCP posredovanje";
 
 //radiooff.webservices
-service.radiooff_legend="SES / AOSS / EZ-SETUP gumb";
+service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS gumb";
 service.radiooff_srv="Uporabi ta gumb za izkljuèitev radia";
 service.radiooff_bootoff="Ob zagonu izkljuèi radio";
 
@@ -1736,11 +1740,24 @@ wl_adv.label23="Najmanj¹a hitrost oddajanja";
 wl_adv.label22="Naèin koeksistenca z Bluetoothom";
 wl_adv.label24="Orientacija antene";
 wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
+
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmaks";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
+
+wl_adv.table3="WMM \"Tx retry\" meje, \"fallback\" meje in \"max rate\" parametri.";
+wl_adv.txpcol1="S. Retry";
+wl_adv.txpcol2="S. Fallbk";
+wl_adv.txpcol3="L. Retry";
+wl_adv.txpcol4="L. Fallbk";
+wl_adv.txpcol5="Maks hitrost";
+wl_adv.txprow1="AC BE TX Parameteri";
+wl_adv.txprow2="AC BK TX Parameteri";
+wl_adv.txprow3="AC VI TX Parameteri";
+wl_adv.txprow4="AC VO TX Parameteri";
+
 wl_adv.col6="Upravni¹ko prisiljen";
 wl_adv.row1="Ozadje";
 wl_adv.row2="Najbolj¹i trud";
@@ -1786,6 +1803,9 @@ wl_basic.na="Samo NA";
 wl_basic.g="Samo G";
 wl_basic.bg="BG me¹ano";
 wl_basic.n="Samo N";
+wl_basic.rts="RTS prag";
+wl_basic.rtsvalue="Prag";
+wl_basic.protmode="Za¹èitni naèin";
 wl_basic.legend2="Omejitev radijskega signala";
 wl_basic.radio="Radio";
 wl_basic.radiotimer="Radijska èasovnica";
@@ -1815,6 +1835,7 @@ wl_basic.outband="Zunanji pas";
 wl_basic.channel_width="©irina kanalov";
 wl_basic.channel_wide="©iroki kanali";
 wl_basic.regulatory="SuperKanal";
+wl_basic.chanshift="Premikanje kanala";
 wl_basic.specialmode="2.3 Ghz naèin";
 wl_basic.wifi_bonding="Wifi vezanje";
 wl_basic.sifstime="OFDM SIFS èas";
@@ -1824,6 +1845,8 @@ wl_basic.intmit="Odpornost na ¹um";
 wl_basic.noise_immunity="Nivo odpornosti na ¹um";
 wl_basic.ofdm_weak_det="©ibko zaznavanje OFDM";
 wl_basic.radar="Zaznavanje radarja";
+wl_basic.mtikie="Zdru¾ljivojst z MT";
+wl_basic.csma="Carrier Sense";
 //help container
 
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
