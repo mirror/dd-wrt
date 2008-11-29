@@ -814,8 +814,8 @@ return 0;
 
 	if (startswith( hwver, "WL320G" ))
 	{
-	cprintf( "router is Asus WL-320gP\n" );
-	setRouter( "Asus WL-320gP" );
+	cprintf( "router is Asus WL-320gE/gP\n" );
+	setRouter( "Asus WL-320gE/gP" );
 	return ROUTER_ASUS_WL550GE;
 	}
 	else
