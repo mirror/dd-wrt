@@ -1151,7 +1151,7 @@ service.ssh_key="Chiavi autorizzate";
 service.ssh_forwarding="SSH TCP Forwarding";
 
 //radiooff.webservices
-service.radiooff_legend="SES / AOSS / EZ-SETUP Button";
+service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Button";
 service.radiooff_srv="Use this button for turning off radio";
 service.radiooff_bootoff="Turn radio off at boot";
 

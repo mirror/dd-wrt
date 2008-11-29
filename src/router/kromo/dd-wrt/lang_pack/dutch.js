@@ -1192,12 +1192,12 @@ service.ssh_password="Wachtwoord Login";
 service.ssh_key="Toegestane Sleutels";
 
 //radiooff.webservices
-service.radiooff_legend="SES / AOSS / EZ-SETUP Knop";
+service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS Knop";
 service.radiooff_srv="Gebruik deze knop om de radio uit te zetten";
 service.radiooff_bootoff="Zet radio uit bij opstarten";
 
 //ses.webservices ====> might replace the above radiooff_button
-service.ses_legend="SES / AOSS Knop";
+service.ses_legend="SES / AOSS / EZ-SETUP / WPS Knop";
 service.ses_srv="SES / AOSS knop actie";
 service.ses_toggleradio="Schakel Draadloos";
 service.ses_script="Custom Script";

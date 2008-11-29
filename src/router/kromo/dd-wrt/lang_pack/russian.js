@@ -1155,7 +1155,7 @@ service.ssh_key="Авторизованные ключи";
 service.ssh_forwarding="Перенаправление TCP SSH";
 
 //radiooff.webservices
-service.radiooff_legend="Кнопка SES / AOSS / EZ-SETUP";
+service.radiooff_legend="Кнопка SES / AOSS / EZ-SETUP / WPS";
 service.radiooff_srv="Эта кнопка отключает радио";
 service.radiooff_bootoff="Отключить радио при загрузке";
 
