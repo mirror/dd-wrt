@@ -422,8 +422,10 @@ int mtd_write( const char *path, const char *mtd )
 	    goto fail;
 	}
     }
-    
-	if ( getRouterBrand(  ) == ROUTER_NETGEAR_WGR614L )  //Write len and checksum at the end of mtd1
+	/* 
+	 * Netgear WGR614v8_L: Write len and checksum at the end of mtd1 
+	 */    
+	if ( getRouterBrand(  ) == ROUTER_NETGEAR_WGR614L )
 	{
 	cal_chksum = calculate_checksum ( 2, NULL, 0 );
 	
@@ -459,7 +461,7 @@ int mtd_write( const char *path, const char *mtd )
 		goto fail;
 	}
 
-	if( lseek(mtd_fd, sector_start, SEEK_SET) <= 0)
+	if( lseek( mtd_fd, sector_start, SEEK_SET) <= 0)
 	{
 		//fprintf( stderr, "Error seeking the file descriptor\n" );
 		goto fail;
