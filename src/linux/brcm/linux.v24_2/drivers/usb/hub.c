@@ -608,6 +608,10 @@ static int usb_hub_port_reset(struct usb_device *hub, int port,
 
 		/* return on disconnect or reset */
 		status = usb_hub_port_wait_reset(hub, port, dev, delay);
+		if (status == 0) {
+			/* TRSTRCY = 10 ms; plus some extra */
+			wait_ms(10 + 40);
+		}
 		if (status != -1) {
 			usb_clear_port_feature(hub, port + 1, USB_PORT_FEAT_C_RESET);
 			return status;
