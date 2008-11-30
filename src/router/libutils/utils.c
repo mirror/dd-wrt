@@ -812,7 +812,7 @@ return 0;
     {
 	char *hwver0 = nvram_safe_get( "hardware_version" );
 
-	if (startswith( hwver, "WL320G" ))
+	if (startswith( hwver0, "WL320G" ))
 	{
 	cprintf( "router is Asus WL-320gE/gP\n" );
 	setRouter( "Asus WL-320gE/gP" );
