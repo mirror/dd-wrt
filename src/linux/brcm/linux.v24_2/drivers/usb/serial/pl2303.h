@@ -54,6 +54,61 @@
 #define ALCATEL_PRODUCT_ID	0x02df
 
 /* Samsung I330 phone cradle */
-#define SAMSUNG_VENDOR_ID       0x04e8
-#define SAMSUNG_PRODUCT_ID      0x8001
+#define SAMSUNG_VENDOR_ID	0x04e8
+#define SAMSUNG_PRODUCT_ID	0x8001
 
+#define SIEMENS_VENDOR_ID	0x11f5
+#define SIEMENS_PRODUCT_ID_SX1	0x0001
+#define SIEMENS_PRODUCT_ID_X65	0x0003
+#define SIEMENS_PRODUCT_ID_X75	0x0004
+#define SIEMENS_PRODUCT_ID_EF81	0x0005
+
+#define SYNTECH_VENDOR_ID	0x0745
+#define SYNTECH_PRODUCT_ID	0x0001
+
+/* Nokia CA-42 Cable */
+#define NOKIA_CA42_VENDOR_ID	0x078b
+#define NOKIA_CA42_PRODUCT_ID	0x1234
+
+/* CA-42 CLONE Cable www.ca-42.com chipset: Prolific Technology Inc */
+#define CA_42_CA42_VENDOR_ID	0x10b5
+#define CA_42_CA42_PRODUCT_ID	0xac70
+
+#define SAGEM_VENDOR_ID		0x079b
+#define SAGEM_PRODUCT_ID	0x0027
+
+/* Leadtek GPS 9531 (ID 0413:2101) */
+#define LEADTEK_VENDOR_ID	0x0413
+#define LEADTEK_9531_PRODUCT_ID	0x2101
+
+/* USB GSM cable from Speed Dragon Multimedia, Ltd */
+#define SPEEDDRAGON_VENDOR_ID	0x0e55
+#define SPEEDDRAGON_PRODUCT_ID	0x110b
+
+/* DATAPILOT Universal-2 Phone Cable */
+#define DATAPILOT_U2_VENDOR_ID	0x0731
+#define DATAPILOT_U2_PRODUCT_ID	0x2003
+
+/* Belkin "F5U257" Serial Adapter */
+#define BELKIN_VENDOR_ID	0x050d
+#define BELKIN_PRODUCT_ID	0x0257
+
+/* Alcor Micro Corp. USB 2.0 TO RS-232 */
+#define ALCOR_VENDOR_ID		0x058F
+#define ALCOR_PRODUCT_ID	0x9720
+
+/* Willcom WS002IN Data Driver (by NetIndex Inc.) */
+#define WS002IN_VENDOR_ID	0x11f6
+#define WS002IN_PRODUCT_ID	0x2001
+
+/* Corega CG-USBRS232R Serial Adapter */
+#define COREGA_VENDOR_ID	0x07aa
+#define COREGA_PRODUCT_ID	0x002a
+
+/* HL HL-340 (ID: 4348:5523) */
+#define HL340_VENDOR_ID		0x4348
+#define HL340_PRODUCT_ID	0x5523
+
+/* Y.C. Cable U.S.A., Inc - USB to RS-232 */
+#define YCCABLE_VENDOR_ID	0x05ad
+#define YCCABLE_PRODUCT_ID	0x0fba
