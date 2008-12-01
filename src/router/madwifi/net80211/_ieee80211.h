@@ -123,7 +123,7 @@ struct ieee80211_channel {
 	int8_t ic_minpower;	/* minimum tx power in dBm */
 };
 
-#define	IEEE80211_CHAN_MAX	255
+#define	IEEE80211_CHAN_MAX	1024
 #define	IEEE80211_CHAN_BYTES	32	/* howmany(IEEE80211_CHAN_MAX, NBBY) */
 #define	IEEE80211_CHAN_ANY	0xffff	/* token for ``any channel'' */
 #define	IEEE80211_CHAN_ANYC 	((struct ieee80211_channel *) IEEE80211_CHAN_ANY)
