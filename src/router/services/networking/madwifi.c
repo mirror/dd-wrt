@@ -1085,7 +1085,7 @@ static void configure_single( int count )
     }
     else
     {
-	setsysctrl( device, "acktimeout", "350" );
+	setsysctrl( wif, "acktimeout", "350" );
 	setsysctrl( wif, "dynack_count", 20 );
     }
     char wl_intmit[32];
