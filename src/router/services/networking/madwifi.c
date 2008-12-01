@@ -1084,8 +1084,10 @@ static void configure_single( int count )
 	// sensitivity
     }
     else
+    {
+	setdistance( wif, distance, "350" );	// sets the receiver
 	setsysctrl( wif, "dynack_count", 20 );
-    
+    }
     char wl_intmit[32];
     char wl_noise_immunity[32];
     char wl_ofdm_weak_det[32];
