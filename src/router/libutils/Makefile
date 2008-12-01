@@ -434,7 +434,7 @@ clean:
 	rm -f *.c~
 
 libutils.so: $(OBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram -lm
 
 libutils.a: $(OBJS)
 	$(AR) arc -o  $@ $^
