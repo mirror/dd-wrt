@@ -2073,7 +2073,7 @@ static void do_language( struct mime_handler *handler, char *path, webs_t stream
 extern int issuperchannel( void );
 
 static char no_cache[] =
-    "Cache-Control: no-cache, no-store, must-revalidate, post-check=0, pre-check=0\r\n" "Pragma: no-cache\r\n" "Expires: Thu, 3 Oct 1968 12:00:00 GMT\r\n";
+    "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 
 struct mime_handler mime_handlers[] = {
     // { "ezconfig.asp", "text/html", ezc_version, do_apply_ezconfig_post,
