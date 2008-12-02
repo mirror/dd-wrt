@@ -1449,17 +1449,10 @@ void start_lan( void )
     if( strncmp( lan_ifname, "br0", 3 ) == 0 )
     {
 	br_add_bridge( lan_ifname );
-	if( check_hw_type(  ) != BCM4702_CHIP )
-	{
+	if( nvram_match( "lan_stp", "0" ) )
 	    br_set_stp_state( lan_ifname, 0 );
-	}
 	else
-	{
-	    if( nvram_match( "lan_stp", "0" ) )
-		br_set_stp_state( lan_ifname, 0 );
-	    else
-		br_set_stp_state( lan_ifname, 1 );
-	}
+	    br_set_stp_state( lan_ifname, 1 );
 #ifdef HAVE_MICRO
 	br_set_bridge_forward_delay( lan_ifname, 15 );
 #else
@@ -3429,16 +3422,6 @@ void start_wan_done( char *wan_ifname )
 	}
     }
     cprintf( "std on\n" );
-    if( check_hw_type(  ) == BCM4702_CHIP )
-    {
-#ifdef HAVE_MICRO
-	br_init(  );
-#endif
-
-	br_set_stp_state( nvram_safe_get( "lan_ifname" ), 0 );
-    }
-    else
-    {
 #ifdef HAVE_MICRO
 	br_init(  );
 #endif
@@ -3447,8 +3430,10 @@ void start_wan_done( char *wan_ifname )
 	    br_set_stp_state( nvram_safe_get( "lan_ifname" ), 0 );
 	else
 	    br_set_stp_state( nvram_safe_get( "lan_ifname" ), 1 );
+#ifdef HAVE_MICRO
+	br_shutdown(  );
+#endif
 
-    }
     cprintf( "check wan link\n" );
     if( check_wan_link( 0 ) )
 	SET_LED( GOT_IP );
