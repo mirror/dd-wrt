@@ -1450,9 +1450,9 @@ void start_lan( void )
     {
 	br_add_bridge( lan_ifname );
 #ifdef HAVE_MICRO
-	br_set_bridge_forward_delay( lan_ifname, 1 );
+	br_set_bridge_forward_delay( lan_ifname, 15 );
 #else
-	br_set_bridge_forward_delay( lan_ifname, 1 );
+	br_set_bridge_forward_delay( lan_ifname, 15 );
 #endif
 	if( check_hw_type(  ) != BCM4702_CHIP )
 	{
@@ -2136,7 +2136,7 @@ void start_lan( void )
 	    br_del_bridge( "br1" );
 	    br_add_bridge( "br1" );
 
-	    br_set_bridge_forward_delay( lan_ifname, 1 );
+	    br_set_bridge_forward_delay( lan_ifname, 15 );
 
 	    if( nvram_match( "lan_stp", "0" ) )
 		br_set_stp_state( "br1", 0 );	// eval ("brctl", "stp",
