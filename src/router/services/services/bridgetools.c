@@ -67,7 +67,7 @@ int brctl_main( int argc, char **argv )
 }
 #else
 
-#if 0
+#if HAVE_RSTP
 
 int br_set_stp_state( const char *br, int stp_state )
 {

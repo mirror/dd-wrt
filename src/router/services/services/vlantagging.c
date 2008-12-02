@@ -201,6 +201,9 @@ void start_bridging( void )
 	    br_set_stp_state( bridge, 1 );
 	else
 	    br_set_stp_state( bridge, 0 );
+	    
+	br_set_bridge_forward_delay( bridge, 15 );
+	
 	if( prio )
 	    br_set_bridge_prio( bridge, prio );
 
