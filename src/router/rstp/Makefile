@@ -9,7 +9,7 @@ CTLSOURCES = ctl_main.c ctl_cli_wrap.c ctl_socket_client.c
 CTLOBJECTS = $(CTLSOURCES:.c=.o)
 
 #CC=gcc
-CFLAGS = -Wall -Werror -DNEED_PRINTF $(COPTS) -D_REENTRANT -D__LINUX__ -DVERSION=$(version) -DBUILD=$(build) -I. -I./include -I./rstplib
+CFLAGS = -Wall -Werror -DNEED_PRINTF $(COPTS) -D_REENTRANT -D__LINUX__ -DVERSION=$(version) -DBUILD=$(build) -I. -I$(LINUXDIR)/include -I./include -I./rstplib
 
 all: rstpd rstpctl
 
