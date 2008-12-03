@@ -24,6 +24,7 @@
 #include <asm/atomic.h>
 #include <asm/unaligned.h>
 #include "br_private.h"
+#include "br_rstp.h"
 
 static struct kmem_cache *br_fdb_cache __read_mostly;
 static int fdb_insert(struct net_bridge *br, struct net_bridge_port *source,
@@ -77,6 +78,7 @@ static inline void fdb_delete(struct net_bridge_fdb_entry *f)
 	hlist_del_rcu(&f->hlist);
 	br_fdb_put(f);
 }
+
 
 void br_fdb_changeaddr(struct net_bridge_port *p, const unsigned char *newaddr)
 {
@@ -286,6 +288,7 @@ int br_fdb_fillbuf(struct net_bridge *br, void *buf,
 			/* convert from internal format to API */
 			memcpy(fe->mac_addr, f->addr.addr, ETH_ALEN);
 			fe->port_no = f->dst->port_no;
+			fe->port_hi = f->dst->port_no >> 8;
 			fe->is_local = f->is_local;
 			if (!f->is_static)
 				fe->ageing_timer_value = jiffies_to_clock_t(jiffies - f->ageing_timer);

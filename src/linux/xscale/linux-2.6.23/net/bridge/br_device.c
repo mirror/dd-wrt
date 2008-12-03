@@ -20,6 +20,7 @@
 
 #include <asm/uaccess.h>
 #include "br_private.h"
+#include "br_rstp.h"
 
 static struct net_device_stats *br_dev_get_stats(struct net_device *dev)
 {
