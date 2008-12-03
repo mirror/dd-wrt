@@ -148,6 +148,56 @@ static struct platform_device cambria_leds_mem = {
   //.resource = avila_led_resources,
 };
 
+static struct resource cambria_usb0_resources[] = {
+	{
+		.start	= 0xCD000000,
+		.end	= 0xCD000300,
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.start	= 32,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct resource cambria_usb1_resources[] = {
+	{
+		.start	= 0xCE000000,
+		.end	= 0xCE000300,
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.start	= 33,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static u64 ehci_dma_mask = ~(u32)0;
+
+static struct platform_device cambria_usb0_device =  {
+	.name		= "ixp4xx-ehci",
+	.id		= 0,
+	.resource	= cambria_usb0_resources,
+	.num_resources	= ARRAY_SIZE(cambria_usb0_resources),
+	.dev = {
+		.dma_mask		= &ehci_dma_mask,
+		.coherent_dma_mask	= 0xffffffff,
+	},
+};
+
+static struct platform_device cambria_usb1_device = {
+	.name		= "ixp4xx-ehci",
+	.id		= 1,
+	.resource	= cambria_usb1_resources,
+	.num_resources	= ARRAY_SIZE(cambria_usb1_resources),
+	.dev = {
+		.dma_mask		= &ehci_dma_mask,
+		.coherent_dma_mask	= 0xffffffff,
+	},
+};
+
+
+
 
 static struct platform_device *cambria_devices[] __initdata = {
 	&cambria_i2c_controller,
@@ -181,6 +231,8 @@ static void __init cambria_init(void)
   cambria_pata_data.cs0_cfg = IXP4XX_EXP_CS3;
   cambria_pata_data.cs1_cfg = IXP4XX_EXP_CS3;
 
+  platform_device_register(&cambria_usb0_device);
+  platform_device_register(&cambria_usb1_device);
   platform_device_register(&cambria_pata);
 }
 
