@@ -1133,6 +1133,7 @@ static struct platform_device ixdp4xx_ehci_controller[] =  {
 #endif
 };
 
+#include <asm/mach-types.h>
 
 static int __init ixp4xx_ehci_init(void) 
 {
@@ -1145,6 +1146,8 @@ static int __init ixp4xx_ehci_init(void)
 		sizeof (struct ehci_itd), sizeof (struct ehci_sitd));
 
 	/* Register device for usb host0 controller */
+if (!machine_is_cambria())
+    {
 	device = &ixdp4xx_ehci_controller[0];
 	ret = platform_device_register(device);
 	if ( ret )
@@ -1156,7 +1159,7 @@ static int __init ixp4xx_ehci_init(void)
 		if ( ret )
 			goto error_on_dev_register;
 	}
-
+    }
 	return driver_register(&ixp4xx_ehci_driver);
 
 error_on_dev_register:
