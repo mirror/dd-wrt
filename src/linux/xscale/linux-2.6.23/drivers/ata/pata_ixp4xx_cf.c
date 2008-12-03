@@ -1,14 +1,13 @@
 /*
  * ixp4xx PATA/Compact Flash driver
- * Copyright (C) 2006-07 Tower Technologies
+ * Copyright (c) 2006 Tower Technologies
  * Author: Alessandro Zummo <a.zummo@towertech.it>
  *
  * An ATA driver to handle a Compact Flash connected
  * to the ixp4xx expansion bus in TrueIDE mode. The CF
  * must have it chip selects connected to two CS lines
- * on the ixp4xx. In the irq is not available, you might
- * want to modify both this driver and libata to run in
- * polling mode.
+ * on the ixp4xx. The interrupt line is optional, if not
+ * specified the driver will run in polling mode.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -24,23 +23,72 @@
 #include <scsi/scsi_host.h>
 
 #define DRV_NAME	"pata_ixp4xx_cf"
-#define DRV_VERSION	"0.2"
+#define DRV_VERSION	"0.1.3"
 
 static int ixp4xx_set_mode(struct ata_port *ap, struct ata_device **error)
 {
 	int i;
+  unsigned int pio_mask;
+  struct ixp4xx_pata_data *data = ap->host->dev->platform_data;
 
 	for (i = 0; i < ATA_MAX_DEVICES; i++) {
 		struct ata_device *dev = &ap->device[i];
+    if (dev->id[ATA_ID_FIELD_VALID] & (1 << 1)){
+      pio_mask = dev->id[ATA_ID_PIO_MODES] & 0x03;
+      if (pio_mask & (1 << 1)){
+        pio_mask = 4;
+      }else{
+        pio_mask = 3;
+      }
+    }else{
+      pio_mask = (dev->id[ATA_ID_OLD_PIO_MODES] >> 8);
+    }
+    switch (pio_mask){
+      case 0:
+        ata_dev_printk(dev, KERN_INFO, "configured for PIO0\n");
+        dev->pio_mode = XFER_PIO_0;
+        dev->xfer_mode = XFER_PIO_0;
+        *data->cs0_cfg = 0x8a473c03;
+      break;
+      case 1:
+        ata_dev_printk(dev, KERN_INFO, "configured for PIO1\n");
+        dev->pio_mode = XFER_PIO_1;
+        dev->xfer_mode = XFER_PIO_1;
+        *data->cs0_cfg = 0x86433c03;
+      break;
+      case 2:
+        ata_dev_printk(dev, KERN_INFO, "configured for PIO2\n");
+        dev->pio_mode = XFER_PIO_2;
+        dev->xfer_mode = XFER_PIO_2;
+        *data->cs0_cfg = 0x82413c03;
+      break;
+      case 3:
+        ata_dev_printk(dev, KERN_INFO, "configured for PIO3\n");
+        dev->pio_mode = XFER_PIO_3;
+        dev->xfer_mode = XFER_PIO_3;
+        *data->cs0_cfg = 0x80823c03;
+      break;
+      case 4:
+        ata_dev_printk(dev, KERN_INFO, "configured for PIO4\n");
+        dev->pio_mode = XFER_PIO_4;
+        dev->xfer_mode = XFER_PIO_4;
+        *data->cs0_cfg = 0x80403c03;
+      break;
+
+    }
 		if (ata_dev_enabled(dev)) {
-			ata_dev_printk(dev, KERN_INFO, "configured for PIO0\n");
-			dev->pio_mode = XFER_PIO_0;
-			dev->xfer_mode = XFER_PIO_0;
 			dev->xfer_shift = ATA_SHIFT_PIO;
 			dev->flags |= ATA_DFLAG_PIO;
 		}
 	}
 	return 0;
+}
+
+static void ixp4xx_phy_reset(struct ata_port *ap)
+{
+	ap->cbl = ATA_CBL_PATA40;
+	ata_port_probe(ap);
+	ata_bus_reset(ap);
 }
 
 static void ixp4xx_mmio_data_xfer(struct ata_device *adev, unsigned char *buf,
@@ -49,15 +97,47 @@ static void ixp4xx_mmio_data_xfer(struct ata_device *adev, unsigned char *buf,
 	unsigned int i;
 	unsigned int words = buflen >> 1;
 	u16 *buf16 = (u16 *) buf;
+ 	unsigned int pio_mask;
+	unsigned long flags;
 	struct ata_port *ap = adev->ap;
-	void __iomem *mmio = ap->ioaddr.data_addr;
+	void __iomem *mmio = (void __iomem *)ap->ioaddr.data_addr;
 	struct ixp4xx_pata_data *data = ap->host->dev->platform_data;
+	struct ata_device *dev = &ap->device[0];
 
-	/* set the expansion bus in 16bit mode and restore
-	 * 8 bit mode after the transaction.
-	 */
-	*data->cs0_cfg &= ~(0x01);
-	udelay(100);
+	spin_lock_irqsave(ap->lock, flags);
+
+  /* set the expansion bus in 16bit mode and restore
+   * 8 bit mode after the transaction.
+   */
+  if (dev->id[ATA_ID_FIELD_VALID] & (1 << 1)){
+    pio_mask = dev->id[ATA_ID_PIO_MODES] & 0x03;
+    if (pio_mask & (1 << 1)){
+      pio_mask = 4;
+    }else{
+      pio_mask = 3;
+    }
+  }else{
+    pio_mask = (dev->id[ATA_ID_OLD_PIO_MODES] >> 8);
+  }
+  switch (pio_mask){
+    case 0:
+      *data->cs0_cfg = 0xa9643c42;
+    break;
+    case 1:
+      *data->cs0_cfg = 0x85033c42;
+    break;
+    case 2:
+      *data->cs0_cfg = 0x80b23c42;
+    break;
+    case 3:
+      *data->cs0_cfg = 0x80823c42;
+    break;
+    case 4:
+      *data->cs0_cfg = 0x80403c42;
+    break;
+
+  }
+  udelay(5);
 
 	/* Transfer multiple of 2 bytes */
 	if (write_data) {
@@ -82,8 +162,29 @@ static void ixp4xx_mmio_data_xfer(struct ata_device *adev, unsigned char *buf,
 		}
 	}
 
-	udelay(100);
-	*data->cs0_cfg |= 0x01;
+  udelay(5);
+  switch (pio_mask){
+    case 0:
+      *data->cs0_cfg = 0x8a473c03;
+    break;
+    case 1:
+      *data->cs0_cfg = 0x86433c03;
+    break;
+    case 2:
+      *data->cs0_cfg = 0x82413c03;
+    break;
+    case 3:
+      *data->cs0_cfg = 0x80823c03;
+    break;
+    case 4:
+      *data->cs0_cfg = 0x80403c03;
+    break;
+  }
+	*data->cs0_cfg = 0xbfff3c03;
+	spin_unlock_irqrestore(ap->lock, flags);
+}
+static void ixp4xx_irq_clear(struct ata_port *ap)
+{
 }
 
 static struct scsi_host_template ixp4xx_sht = {
@@ -105,32 +206,29 @@ static struct scsi_host_template ixp4xx_sht = {
 };
 
 static struct ata_port_operations ixp4xx_port_ops = {
-	.set_mode		= ixp4xx_set_mode,
-	.mode_filter		= ata_pci_default_filter,
+	.set_mode	= ixp4xx_set_mode,
+	.mode_filter	= ata_pci_default_filter,
 
-	.port_disable		= ata_port_disable,
-	.tf_load		= ata_tf_load,
-	.tf_read		= ata_tf_read,
-	.exec_command		= ata_exec_command,
-	.check_status 		= ata_check_status,
-	.dev_select 		= ata_std_dev_select,
+	.port_disable	= ata_port_disable,
+	.tf_load	= ata_tf_load,
+	.tf_read	= ata_tf_read,
+	.check_status 	= ata_check_status,
+	.exec_command	= ata_exec_command,
+	.dev_select 	= ata_std_dev_select,
 
-	.freeze			= ata_bmdma_freeze,
-	.thaw			= ata_bmdma_thaw,
-	.error_handler		= ata_bmdma_error_handler,
-	.post_internal_cmd	= ata_bmdma_post_internal_cmd,
+	.qc_prep 	= ata_qc_prep,
+	.qc_issue	= ata_qc_issue_prot,
+	.eng_timeout	= ata_eng_timeout,
+	.data_xfer	= ixp4xx_mmio_data_xfer,
+	.cable_detect	= ata_cable_40wire,
 
-	.qc_prep 		= ata_qc_prep,
-	.qc_issue		= ata_qc_issue_prot,
-	.data_xfer		= ixp4xx_mmio_data_xfer,
-	.cable_detect		= ata_cable_40wire,
+	.irq_clear	= ixp4xx_irq_clear,
+	.irq_on		= ata_irq_on,
+	.irq_ack	= ata_irq_ack,
 
-	.irq_handler		= ata_interrupt,
-	.irq_clear		= ata_bmdma_irq_clear,
-	.irq_on			= ata_irq_on,
-	.irq_ack		= ata_dummy_irq_ack,
+	.port_start	= ata_port_start,
 
-	.port_start		= ata_port_start,
+	.phy_reset	= ixp4xx_phy_reset,
 };
 
 static void ixp4xx_setup_port(struct ata_ioports *ioaddr,
@@ -171,6 +269,7 @@ static __devinit int ixp4xx_pata_probe(struct platform_device *pdev)
 	struct ata_host *host;
 	struct ata_port *ap;
 	struct ixp4xx_pata_data *data = pdev->dev.platform_data;
+	int rc;
 
 	cs0 = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	cs1 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
@@ -189,9 +288,6 @@ static __devinit int ixp4xx_pata_probe(struct platform_device *pdev)
 	data->cs0 = devm_ioremap(&pdev->dev, cs0->start, 0x1000);
 	data->cs1 = devm_ioremap(&pdev->dev, cs1->start, 0x1000);
 
-	if (!data->cs0 || !data->cs1)
-		return -ENOMEM;
-
 	irq = platform_get_irq(pdev, 0);
 	if (irq)
 		set_irq_type(irq, IRQT_RISING);
@@ -205,6 +301,10 @@ static __devinit int ixp4xx_pata_probe(struct platform_device *pdev)
 	ap->ops	= &ixp4xx_port_ops;
 	ap->pio_mask = 0x1f; /* PIO4 */
 	ap->flags |= ATA_FLAG_MMIO | ATA_FLAG_NO_LEGACY | ATA_FLAG_NO_ATAPI;
+
+	/* run in polling mode if no irq has been assigned */
+	if (!irq)
+		ap->flags |= ATA_FLAG_PIO_POLLING;
 
 	ixp4xx_setup_port(&ap->ioaddr, data);
 
