@@ -374,7 +374,7 @@ bmenu.wirelessWdswl1="WL1-WDS";
 
 bmenu.security="Безопасность";
 bmenu.firwall="Брандмауэр";
-bmenu.vpn="VPN";
+bmenu.vpn="Транзит VPN";
 
 bmenu.accrestriction="Ограничения доступа";
 bmenu.webaccess="Доступ в Интернет";
@@ -1458,7 +1458,7 @@ hupnp.right4="Позволяет приложениям автоматическ
 
 
 // ** VPN.asp **//
-vpn.titl="VPN";
+vpn.titl="Транзит VPN";
 vpn.h2="Виртуальная частная сеть (VPN)";
 vpn.legend="Транзит VPN";
 vpn.ipsec="Транзит IPSec";

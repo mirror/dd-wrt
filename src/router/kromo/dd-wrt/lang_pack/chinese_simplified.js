@@ -301,7 +301,7 @@ bmenu.wirelessWds="WDS";
 
 bmenu.security="安全";
 bmenu.firwall="防火墙";
-bmenu.vpn="VPN";
+bmenu.vpn="VPN穿透";
 
 bmenu.accrestriction="访问限制";
 bmenu.webaccess="Internet访问";
@@ -1242,7 +1242,7 @@ hupnp.right4="允许应用程序自动地设置端口转发（映射）";
 
 // ******************************************* VPN.asp *******************************************//
 
-vpn.titl="VPN";
+vpn.titl="VPN穿透";
 vpn.h2="虚拟专用网络（VPN）";
 vpn.legend="VPN穿透";
 vpn.ipsec="IPSec穿透";

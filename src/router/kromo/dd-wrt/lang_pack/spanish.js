@@ -306,7 +306,7 @@ bmenu.wirelessWds="WDS";
 
 bmenu.security="Seguridad";
 bmenu.firwall="Firewall";
-bmenu.vpn="VPN";
+bmenu.vpn="Passthrough VPN (paso a través)";
 
 bmenu.accrestriction="Restricciones de Acceso";
 bmenu.webaccess="Acceso a Internet";
@@ -1238,7 +1238,7 @@ hupnp.right4="Permite a las aplicaciones configurar automáticamente los puertos 
 
 // ******************************************* VPN.asp *******************************************//
 
-vpn.titl="VPN";
+vpn.titl="Passthrough VPN (paso a través)";
 vpn.h2="Red Privada Virtual (VPN)";
 vpn.legend="Passthrough VPN (paso a través)";
 vpn.ipsec="IPSec Passthrough";

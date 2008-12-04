@@ -374,7 +374,7 @@ bmenu.wirelessWdswl1="WL1-WDS";
 
 bmenu.security="Sicurezza";
 bmenu.firwall="Firewall";
-bmenu.vpn="VPN";
+bmenu.vpn="VPN Passthrough";
 
 bmenu.accrestriction="Restizioni d'accesso";
 bmenu.webaccess="Accesso Internet";
@@ -1452,7 +1452,7 @@ hupnp.right4="Permette alle applicazioni di abilitare automaticamente il forward
 
 
 // ** VPN.asp **//
-vpn.titl="VPN";
+vpn.titl="VPN Passthrough";
 vpn.h2="Virtual Private Network (VPN)";
 vpn.legend="VPN Passthrough";
 vpn.ipsec="IPSec Passthrough";
