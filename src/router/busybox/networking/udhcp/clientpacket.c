@@ -25,7 +25,7 @@
 
 
 /* Create a random xid */
-uint32_t random_xid(void)
+uint32_t FAST_FUNC random_xid(void)
 {
 	static smallint initialized;
 
@@ -78,10 +78,36 @@ static void add_param_req_option(struct dhcpMessage *packet)
 	}
 }
 
+/* RFC 2131
+ * 4.4.4 Use of broadcast and unicast
+ *
+ * The DHCP client broadcasts DHCPDISCOVER, DHCPREQUEST and DHCPINFORM
+ * messages, unless the client knows the address of a DHCP server.
+ * The client unicasts DHCPRELEASE messages to the server. Because
+ * the client is declining the use of the IP address supplied by the server,
+ * the client broadcasts DHCPDECLINE messages.
+ *
+ * When the DHCP client knows the address of a DHCP server, in either
+ * INIT or REBOOTING state, the client may use that address
+ * in the DHCPDISCOVER or DHCPREQUEST rather than the IP broadcast address.
+ * The client may also use unicast to send DHCPINFORM messages
+ * to a known DHCP server. If the client receives no response to DHCP
+ * messages sent to the IP address of a known DHCP server, the DHCP
+ * client reverts to using the IP broadcast address.
+ */
+
+static int raw_bcast_from_client_config_ifindex(struct dhcpMessage *packet)
+{
+	return udhcp_send_raw_packet(packet,
+		/*src*/ INADDR_ANY, CLIENT_PORT,
+		/*dst*/ INADDR_BROADCAST, SERVER_PORT, MAC_BCAST_ADDR,
+		client_config.ifindex);
+}
+
 
 #if ENABLE_FEATURE_UDHCPC_ARPING
-/* Unicast a DHCP decline message */
-int send_decline(uint32_t xid, uint32_t server, uint32_t requested)
+/* Broadcast a DHCP decline message */
+int FAST_FUNC send_decline(uint32_t xid, uint32_t server, uint32_t requested)
 {
 	struct dhcpMessage packet;
 
@@ -92,13 +118,12 @@ int send_decline(uint32_t xid, uint32_t server, uint32_t requested)
 
 	bb_info_msg("Sending decline...");
 
-	return udhcp_send_raw_packet(&packet, INADDR_ANY, CLIENT_PORT, INADDR_BROADCAST,
-		SERVER_PORT, MAC_BCAST_ADDR, client_config.ifindex);
+	return raw_bcast_from_client_config_ifindex(&packet);
 }
 #endif
 
 /* Broadcast a DHCP discover packet to the network, with an optionally requested IP */
-int send_discover(uint32_t xid, uint32_t requested)
+int FAST_FUNC send_discover(uint32_t xid, uint32_t requested)
 {
 	struct dhcpMessage packet;
 
@@ -114,13 +139,15 @@ int send_discover(uint32_t xid, uint32_t requested)
 	add_param_req_option(&packet);
 
 	bb_info_msg("Sending discover...");
-	return udhcp_send_raw_packet(&packet, INADDR_ANY, CLIENT_PORT, INADDR_BROADCAST,
-			SERVER_PORT, MAC_BCAST_ADDR, client_config.ifindex);
+	return raw_bcast_from_client_config_ifindex(&packet);
 }
 
 
 /* Broadcasts a DHCP request message */
-int send_selecting(uint32_t xid, uint32_t server, uint32_t requested)
+/* RFC 2131 3.1 paragraph 3:
+ * "The client _broadcasts_ a DHCPREQUEST message..."
+ */
+int FAST_FUNC send_select(uint32_t xid, uint32_t server, uint32_t requested)
 {
 	struct dhcpMessage packet;
 	struct in_addr addr;
@@ -134,13 +161,12 @@ int send_selecting(uint32_t xid, uint32_t server, uint32_t requested)
 
 	addr.s_addr = requested;
 	bb_info_msg("Sending select for %s...", inet_ntoa(addr));
-	return udhcp_send_raw_packet(&packet, INADDR_ANY, CLIENT_PORT, INADDR_BROADCAST,
-				SERVER_PORT, MAC_BCAST_ADDR, client_config.ifindex);
+	return raw_bcast_from_client_config_ifindex(&packet);
 }
 
 
 /* Unicasts or broadcasts a DHCP renew message */
-int send_renew(uint32_t xid, uint32_t server, uint32_t ciaddr)
+int FAST_FUNC send_renew(uint32_t xid, uint32_t server, uint32_t ciaddr)
 {
 	struct dhcpMessage packet;
 
@@ -151,15 +177,16 @@ int send_renew(uint32_t xid, uint32_t server, uint32_t ciaddr)
 	add_param_req_option(&packet);
 	bb_info_msg("Sending renew...");
 	if (server)
-		return udhcp_send_kernel_packet(&packet, ciaddr, CLIENT_PORT, server, SERVER_PORT);
+		return udhcp_send_kernel_packet(&packet,
+			ciaddr, CLIENT_PORT,
+			server, SERVER_PORT);
 
-	return udhcp_send_raw_packet(&packet, INADDR_ANY, CLIENT_PORT, INADDR_BROADCAST,
-				SERVER_PORT, MAC_BCAST_ADDR, client_config.ifindex);
+	return raw_bcast_from_client_config_ifindex(&packet);
 }
 
 
 /* Unicasts a DHCP release message */
-int send_release(uint32_t server, uint32_t ciaddr)
+int FAST_FUNC send_release(uint32_t server, uint32_t ciaddr)
 {
 	struct dhcpMessage packet;
 
@@ -175,7 +202,7 @@ int send_release(uint32_t server, uint32_t ciaddr)
 
 
 /* Returns -1 on errors that are fatal for the socket, -2 for those that aren't */
-int udhcp_recv_raw_packet(struct dhcpMessage *payload, int fd)
+int FAST_FUNC udhcp_recv_raw_packet(struct dhcpMessage *payload, int fd)
 {
 	int bytes;
 	struct udp_dhcp_packet packet;
