@@ -470,9 +470,6 @@ endif
 #	install event $(INSTALLDIR)/sbin	
 	install radio_timer $(INSTALLDIR)/sbin	
 	install listen $(INSTALLDIR)/sbin
-ifeq ($(CONFIG_USB),y)
-	install usb_hotplug $(INSTALLDIR)/sbin
-endif	
 	$(STRIP) $(INSTALLDIR)/sbin/rc
 #	cd $(INSTALLDIR)/sbin && ln -sf rc init
 ifneq ($(CONFIG_TW6600),y)
@@ -594,8 +591,5 @@ rc: $(OBJS)
 #	$(CC) $(CFLAGS) -o event event.c
 	$(CC) $(CFLAGS) -o radio_timer radio_timer.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o listen listen.c $(LDFLAGS)
-ifeq ($(CONFIG_USB),y)
-	$(CC) $(CFLAGS) -o usb_hotplug usb_hotplug.c $(LDFLAGS)	
-endif
 
 $(OBJS): $(CY_DEPS)
