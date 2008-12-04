@@ -147,6 +147,7 @@ endif
 
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
+OBJS += usb_hotplug.o
 endif
 ifeq ($(CONFIG_ALFA_BRANDING1),y)
 CFLAGS += -DHAVE_ALFA_BRANDING

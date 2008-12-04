@@ -1624,26 +1624,3 @@ void start_hwmon( void )
 
 #endif
 
-#ifdef HAVE_USBHOTPLUG
-void start_hotplug_usb( void )
-{
-    // char *lan_ifname = nvram_safe_get("lan_ifname");
-    char *interface = getenv( "INTERFACE" );
-    char *action = getenv( "ACTION" );
-    char *product = getenv( "PRODUCT" );
-    char *devpath = getenv( "DEVPATH" );
-    char *type = getenv( "TYPE" );
-    char *devfs = getenv( "DEVFS" );
-    char *device = getenv( "DEVICE" );
-
-    fprintf( stderr, "interface %s\n", interface != NULL ? interface : "" );
-    fprintf( stderr, "action %s\n", action != NULL ? action : "" );
-    fprintf( stderr, "product %s\n", product != NULL ? product : "" );
-    fprintf( stderr, "devpath %s\n", devpath != NULL ? devpath : "" );
-    fprintf( stderr, "type %s\n", type != NULL ? type : "" );
-    fprintf( stderr, "devfs %s\n", devfs != NULL ? devfs : "" );
-    fprintf( stderr, "device %s\n", device != NULL ? device : "" );
-
-    return;
-}
-#endif
