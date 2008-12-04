@@ -331,7 +331,7 @@ bmenu.wirelessWds="WDS";
 
 bmenu.security="Sicherheit";
 bmenu.firwall="Firewall";
-bmenu.vpn="VPN";
+bmenu.vpn="VPN-Durchleitung";
 
 bmenu.accrestriction="Zugriffsbeschränkung";
 bmenu.webaccess="Internet-Zugriff";
@@ -1430,7 +1430,7 @@ hupnp.right4="Erlaubt Anwendungen, eine automatische Port-Weiterleitung auf dem 
 
 // ******************************************* VPN.asp *******************************************//
 
-vpn.titl="VPN";
+vpn.titl="VPN-Durchleitung";
 vpn.h2="Virtual Private Network (VPN)";
 vpn.legend="VPN-Durchleitung";
 vpn.ipsec="IPSec-Durchleitung";

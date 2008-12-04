@@ -352,7 +352,7 @@ bmenu.wirelessWds3="Ath3-WDS";
 
 bmenu.security="Beveiliging";
 bmenu.firwall="Firewall";
-bmenu.vpn="VPN";
+bmenu.vpn="VPN Passthrough";
 
 bmenu.accrestriction="Toegang Beperking";
 bmenu.webaccess="Internet Toegang";
@@ -1442,7 +1442,7 @@ hupnp.right4="Staat applicaties toe automatisch poort forwards in te stellen.";
 
 // ******************************************* VPN.asp *******************************************//
 
-vpn.titl="VPN";
+vpn.titl="VPN Passthrough";
 vpn.h2="Virtueel Prive Netwerk (VPN)";
 vpn.legend="VPN Passthrough";
 vpn.ipsec="IPSec Passthrough";
