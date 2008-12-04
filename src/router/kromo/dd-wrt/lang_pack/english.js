@@ -1204,6 +1204,7 @@ service.vpn_mru="TUN MTU Extra";
 service.vpn_mss="TCP MSS";
 service.vpn_compress="Use LZO Compression";
 service.vpn_tunnel="Tunnel Protocol";
+service.vpn_tuntap="Tunnel Device";
 service.vpn_srvcert="Public Server Cert";
 service.vpn_clicert="Public Client Cert";
 service.vpn_certtype="nsCertType";

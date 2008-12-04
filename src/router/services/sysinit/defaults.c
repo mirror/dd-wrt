@@ -2176,6 +2176,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"openvpncl_extramtu", "32", 0},
     {"openvpncl_mssfix", "1450", 0},
     {"openvpncl_certtype", "0", 0},
+    {"openvpncl_tuntap", "tun", 0},
 
     {"openvpn_enable", "0", 0},
     {"openvpn_remoteip", "0.0.0.0", 0},

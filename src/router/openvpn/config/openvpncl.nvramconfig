@@ -7,6 +7,7 @@
  "openvpncl_key"  "Client Private Key"  "NULL"   "FALSE" "0"
  "openvpncl_proto" "Tunnel Protocol" "CHOICE" "2" "udp" "tcp" "FALSE" "0"
  "openvpncl_mtu" "TUN MTU" "NULL" "FALSE" "0"
+ "openvpncl_tuntap" "TUN DEV" "NULL" "FALSE" "0"
  "openvpncl_extramtu" "TUN EXTRA" "NULL" "FALSE" "0"
  "openvpncl_mssfix" "TCP MSS" "NULL" "FALSE" "0"
  "openvpncl_certtype"  "nsCertType server" "CHOICE" "2" "0" "1" "TRUE" "0"

@@ -116,7 +116,10 @@ void start_openvpn( void )
     if( fp == NULL )
 	return;
     fprintf( fp, "client\n" );
-    fprintf( fp, "dev tun\n" );
+    if( nvram_match( "openvpncl_tuntap", "tap" ) )
+	fprintf( fp, "dev tap\n" );
+    else
+	fprintf( fp, "dev tun\n" );
     fprintf( fp, "proto %s\n", nvram_safe_get( "openvpncl_proto" ) );
     fprintf( fp, "remote %s %s\n", nvram_safe_get( "openvpncl_remoteip" ),
 	     nvram_safe_get( "openvpncl_remoteport" ) );
