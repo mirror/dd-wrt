@@ -369,7 +369,7 @@ bmenu.wirelessWdswl1="WL1-WDS";
 
 bmenu.security="Sécurité";
 bmenu.firwall="Pare-feu";
-bmenu.vpn="VPN";
+bmenu.vpn="Intercommunication VPN";
 
 bmenu.accrestriction="Restrictions d'accès";
 bmenu.webaccess="Accès Internet";
@@ -1408,7 +1408,7 @@ hupnp.right2="Cliquer sur le bouton de suppression pour effacer une règle de red
 hupnp.right4="Permet aux applications de créer automatiquement des redirections de ports.";
 
 // ** VPN.asp **//
-vpn.titl="VPN";
+vpn.titl="Intercommunication VPN";
 vpn.h2="Réseau Privé Virtuel (VPN)";
 vpn.legend="Intercommunication VPN";
 vpn.ipsec="Interconnexion IPSec";

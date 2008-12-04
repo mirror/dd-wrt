@@ -374,7 +374,7 @@ bmenu.wirelessWdswl1="WL1-WDS";
 
 bmenu.security="Säkerhet";
 bmenu.firwall="Brandvägg";
-bmenu.vpn="VPN";
+bmenu.vpn="VPN Släpp Igenom";
 
 bmenu.accrestriction="WAN Begränsning";
 bmenu.webaccess="Internetbegränsningar";
@@ -1446,7 +1446,7 @@ hupnp.right4="Tillåter applikationerna att automatiskt ställa in port forwards."
 
 
 // ** VPN.asp **//
-vpn.titl="VPN";
+vpn.titl="VPN Släpp Igenom";
 vpn.h2="Virtuellt Privat Nätverk (VPN)";
 vpn.legend="VPN Släpp Igenom";
 vpn.ipsec="Släpp Igenom IPSec";
