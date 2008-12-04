@@ -1,0 +1,84 @@
+.\" -*- nroff -*-
+.Dd Feb 21, 2005
+.Dt DISKTYPE 1
+.\"
+.Sh NAME
+.Nm disktype
+.Nd disk format detector
+.\"
+.Sh SYNOPSIS
+.Nm
+.\" .Op Ar options
+.Ar file...
+.\"
+.Sh DESCRIPTION
+The purpose of
+.Nm
+is to detect the content format of a disk or
+disk image. It knows about common file systems, partition tables, and
+boot codes.
+.\"
+.Sh USAGE
+.Nm
+can be run with any number of regular files or
+device special files as arguments. They will be analyzed in the order
+given, and the results printed to standard output. There are no
+switches in this version. Note that running disktype on device files
+like your hard disk will likely require root rights.
+.Pp
+See the online documentation at <http://disktype.sourceforge.net/doc/>
+for some example command lines.
+.\"
+.Sh RECOGNIZED FORMATS
+The following formats are recognized by this version of
+.Nm Ns
+.No .
+.Bl -tag -width flag
+.It File systems:
+FAT12/FAT16/FAT32, NTFS, HPFS, MFS, HFS, HFS Plus,
+ISO9660, ext2/ext3, Minix, ReiserFS, Reiser4, Linux romfs, Linux
+cramfs, Linux squashfs, UFS (some variations), SysV FS (some
+variations), JFS, XFS, Amiga FS/FFS, BeOS BFS, QNX4 FS, UDF, 3DO
+CD-ROM file system, Veritas VxFS, Xbox DVD file system.
+.It Partitioning:
+DOS/PC style, Apple, Amiga "Rigid Disk", ATARI ST (AHDI3),
+BSD disklabel, Linux RAID physical disks, Linux LVM1 physical volumes,
+Linux LVM2 physical volumes, Solaris x86 disklabel (vtoc),
+Solaris SPARC disklabel.
+.It Other structures:
+Debian split floppy header, Linux swap.
+.It Disk images:
+Raw CD image (.bin), Virtual PC hard disk image,
+Apple UDIF disk image (limited).
+.It Boot codes:
+LILO, GRUB, SYSLINUX, ISOLINUX, Linux kernel, FreeBSD loader,
+Sega Dreamcast (?).
+.It Compression formats:
+gzip, compress, bzip2.
+.It Archive formats:
+tar, cpio, bar, dump/restore.
+.El
+.Pp
+Compressed files (gzip, compress, bzip2 formats) will also have their
+contents analyzed using transparent decompression. The appropriate
+compression program must be installed on the system, i.e.
+.Xr gzip 1
+for the gzip and compress formats,
+.Xr bzip2 1
+for the bzip2 format.
+.Pp
+Disk images in general will also have their contents analyzed using
+the proper mapping, with the exception of the Apple UDIF format.
+.Pp
+See the online documentation at <http://disktype.sourceforge.net/doc/>
+for more details on the supported formats and their quirks.
+.\"
+.Sh HOMEPAGE
+http://disktype.sourceforge.net/
+.\"
+.Sh AUTHOR
+Christoph Pfisterer <chrisp@users.sourceforge.net>
+.\"
+.Sh "SEE ALSO"
+.Xr file 1 ,
+.Xr gpart 8

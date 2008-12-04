@@ -1,0 +1,107 @@
+$Id: HISTORY,v 1.32 2006/06/05 07:57:51 chrisp Exp $   -*- text -*-
+
+ disktype History
+==================
+
+Version 1 was released on Feb 11, 2003. It supported the following
+formats:
+
+File systems: FAT12/FAT16/FAT32, ext2/ext3, Minix, MFS, HFS, HFS Plus,
+  ISO9660.
+Partition maps: DOS/PC style, Apple.
+Boot codes: LILO, GRUB, SYSLINUX, ISOLINUX, Linux kernel.
+Other structures: Debian split floppy header, gzip header, Linux swap.
+
+
+Version 2 was released on Feb 18, 2003. It brought improvements to the
+infrastructure, making it possible to analyze the .bin file of a
+.bin/.cue pair in place. In other news:
+
+Added file systems: ReiserFS, NTFS, HPFS, Linux romfs, Linux cramfs.
+Added other structures: Linux RAID physical disks, Linux LVM physical
+  volumes.
+Improved file systems: ISO9660, Minix.
+Improved other structures: Linux swap.
+
+
+Version 3 was released on Mar 15, 2003. It features an extensive
+re-write of the buffering layer, in conjunction with transparent
+decompression of data compressed with gzip, compress, or bzip2. Raw CD
+image detection now works by actually looking at the data. In other
+news:
+
+Added file systems: UFS (some variations), JFS.
+Added other structures: tar archives, cpio archives, bar archives,
+  dump/restore data.
+Improved file systems: ext2/ext3, ReiserFS.
+Improved other structures: Linux swap.
+
+UFS and the archive formats are based Doug Merritt's 'tapetype'
+program. He posted it to Usenet back in 1992 and asked me to include
+it in disktype so that the code would not be lost.
+
+
+Version 4 was released on Apr 15, 2003. It features the following
+improvements:
+
+Added file systems: Linux squashfs, XFS, Amiga FS/FFS.
+Added other structures: Amiga "Rigid Disk" partition map, ATARI ST
+  (AHDI3) partition map.
+Improved file systems: FAT12/FAT16 (a.k.a. ATARI GEMDOS).
+Improved other structures: -
+
+
+Version 5 was released on May 3, 2003. It includes a range of
+portability fixes. Most importantly, character devices are no longer
+blocked out; some systems use them for disks. There is also a range of
+internal improvements. In other news:
+
+Added file systems: BeFS, QNX4, SysV (some variants).
+Added other structures: BSD disklabel, FreeBSD i386 boot code, Virtual
+  PC hard disk image, Apple UDIF disk image (limited).
+Improved file systems: UFS, ext2/ext3.
+Improved other structures: DOS partition map, GRUB boot code.
+
+
+Version 6 was released on June 15, 2003. It now detects blank
+disks. Size printouts use the prefixes for binary multiples as defined
+by IEC. On Linux, the TOC of a CD can be read using ioctl's. In other
+news:
+
+Added file systems: UDF.
+Added other structures: Solaris x86 disklabel (vtoc), Solaris SPARC
+  disklabel.
+Improved file systems: ISO9660.
+Improved other structures: -
+
+
+Version 7 was released on Apr 5, 2004. It features the following
+improvements:
+
+Added file systems: 3DO CD-ROM file system, Veritas VxFS.
+Added other structures: Sega Dreamcast signature.
+Improved file systems: HFS Plus.
+Improved other structures: -
+
+
+Version 8 was released on Feb 21, 2005. It features the following
+improvements:
+
+Added file systems: Reiser4, Xbox DVD file system.
+Added other structures: Linux LVM2 physical volumes.
+Improved file systems: -
+Improved other structures: Linux LVM1 physical volumes.
+
+
+Version 9 was released on Jun 5, 2006. It features the following
+improvements:
+
+Added file systems: Amiga SFS.
+Added other structures: Linux cloop (detection only), EFI GPT,
+  Windows/MS-DOS boot loader, BeOS boot loader.
+Improved file systems: Amiga FS/FFS, Amiga PFS, Linux squashfs.
+Improved other structures: Amiga "Rigid Disk" partitioning, LILO,
+  ISO9660 El Torito.
+
+
+EOF
