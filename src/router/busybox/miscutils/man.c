@@ -168,10 +168,12 @@ int man_main(int argc UNUSED_PARAM, char **argv)
 
 	sec_list = xstrdup("1:2:3:4:5:6:7:8:9");
 	/* Last valid man_path_list[] is [0x10] */
-	man_path_list = xzalloc(0x11 * sizeof(man_path_list[0]));
 	count_mp = 0;
-	man_path_list[0] = xstrdup(getenv("MANPATH"));
-	if (man_path_list[0])
+	man_path_list = xzalloc(0x11 * sizeof(man_path_list[0]));
+	man_path_list[0] = getenv("MANPATH");
+	if (!man_path_list[0]) /* default, may be overridden by /etc/man.conf */
+		man_path_list[0] = (char*)"/usr/man";
+	else
 		count_mp++;
 	pager = getenv("MANPAGER");
 	if (!pager) {
@@ -181,11 +183,18 @@ int man_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	/* Parse man.conf */
-	parser = config_open("/etc/man.conf");
+	parser = config_open2("/etc/man.conf", fopen_for_read);
 	while (config_read(parser, token, 2, 0, "# \t", PARSE_NORMAL)) {
 		if (!token[1])
 			continue;
 		if (strcmp("MANPATH", token[0]) == 0) {
+			/* Do we already have it? */
+			char **path_element = man_path_list;
+			while (*path_element) {
+				if (strcmp(*path_element, token[1]) == 0)
+					goto skip;
+				path_element++;
+			}
 			man_path_list = xrealloc_vector(man_path_list, 4, count_mp);
 			man_path_list[count_mp] = xstrdup(token[1]);
 			count_mp++;
@@ -196,6 +205,7 @@ int man_main(int argc UNUSED_PARAM, char **argv)
 			free(sec_list);
 			sec_list = xstrdup(token[1]);
 		}
+ skip: ;
 	}
 	config_close(parser);
 

@@ -1,6 +1,6 @@
 VERSION = 1
-PATCHLEVEL = 12
-SUBLEVEL = 2
+PATCHLEVEL = 13
+SUBLEVEL = 1
 EXTRAVERSION =
 NAME = Unnamed
 
@@ -460,6 +460,7 @@ libs-y		:= \
 		libbb/ \
 		libpwdgrp/ \
 		loginutils/ \
+		mailutils/ \
 		miscutils/ \
 		modutils/ \
 		networking/ \
@@ -509,7 +510,7 @@ endif
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults busybox but it is usually overridden in the arch makefile
-all: busybox
+all: busybox doc
 
 -include $(srctree)/arch/$(ARCH)/Makefile
 
@@ -969,6 +970,12 @@ clean: archclean $(clean-dirs)
 		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
 		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \) \
 		-type f -print | xargs rm -f
+
+PHONY += doc-clean
+doc-clean: rm-files := docs/busybox.pod \
+		  docs/BusyBox.html docs/BusyBox.1 docs/BusyBox.txt
+doc-clean:
+	$(call cmd,rmfiles)
 
 # mrproper - Delete all generated files, including .config
 #

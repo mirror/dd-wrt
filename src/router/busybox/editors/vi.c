@@ -57,30 +57,6 @@ enum {
 	MAX_SCR_ROWS = CONFIG_FEATURE_VI_MAX_LEN,
 };
 
-// Misc. non-Ascii keys that report an escape sequence
-#define VI_K_UP			(char)128	// cursor key Up
-#define VI_K_DOWN		(char)129	// cursor key Down
-#define VI_K_RIGHT		(char)130	// Cursor Key Right
-#define VI_K_LEFT		(char)131	// cursor key Left
-#define VI_K_HOME		(char)132	// Cursor Key Home
-#define VI_K_END		(char)133	// Cursor Key End
-#define VI_K_INSERT		(char)134	// Cursor Key Insert
-#define VI_K_DELETE		(char)135	// Cursor Key Insert
-#define VI_K_PAGEUP		(char)136	// Cursor Key Page Up
-#define VI_K_PAGEDOWN		(char)137	// Cursor Key Page Down
-#define VI_K_FUN1		(char)138	// Function Key F1
-#define VI_K_FUN2		(char)139	// Function Key F2
-#define VI_K_FUN3		(char)140	// Function Key F3
-#define VI_K_FUN4		(char)141	// Function Key F4
-#define VI_K_FUN5		(char)142	// Function Key F5
-#define VI_K_FUN6		(char)143	// Function Key F6
-#define VI_K_FUN7		(char)144	// Function Key F7
-#define VI_K_FUN8		(char)145	// Function Key F8
-#define VI_K_FUN9		(char)146	// Function Key F9
-#define VI_K_FUN10		(char)147	// Function Key F10
-#define VI_K_FUN11		(char)148	// Function Key F11
-#define VI_K_FUN12		(char)149	// Function Key F12
-
 /* vt102 typical ESC sequence */
 /* terminal standout start/normal ESC sequence */
 static const char SOs[] ALIGN1 = "\033[7m";
@@ -96,6 +72,12 @@ static const char CMrc[] ALIGN1 = "\033[%d;%dH";
 static const char CMup[] ALIGN1 = "\033[A";
 static const char CMdown[] ALIGN1 = "\n";
 
+#if ENABLE_FEATURE_VI_DOT_CMD || ENABLE_FEATURE_VI_YANKMARK
+// cmds modifying text[]
+// vda: removed "aAiIs" as they switch us into insert mode
+// and remembering input for replay after them makes no sense
+static const char modifying_cmds[] = "cCdDJoOpPrRxX<>~";
+#endif
 
 enum {
 	YANKONLY = FALSE,
@@ -165,10 +147,11 @@ struct globals {
 	char *screen;            // pointer to the virtual screen buffer
 	int screensize;          //            and its size
 	int tabstop;
+	int last_forward_char;   // last char searched for with 'f' (int because of Unicode)
 	char erase_char;         // the users erase character
 	char last_input_char;    // last char read from user
-	char last_forward_char;  // last char searched for with 'f'
 
+	smalluint chars_to_parse;
 #if ENABLE_FEATURE_VI_DOT_CMD
 	smallint adding2q;	 // are we currently adding user input to q
 	int lmc_len;             // length of last_modifying_cmd
@@ -180,13 +163,10 @@ struct globals {
 #if ENABLE_FEATURE_VI_USE_SIGNALS || ENABLE_FEATURE_VI_CRASHME
 	int my_pid;
 #endif
-#if ENABLE_FEATURE_VI_DOT_CMD || ENABLE_FEATURE_VI_YANKMARK
-	char *modifying_cmds;    // cmds that modify text[]
-#endif
 #if ENABLE_FEATURE_VI_SEARCH
 	char *last_search_pattern; // last pattern from a '/' or '?' search
 #endif
-	int chars_to_parse;
+
 	/* former statics */
 #if ENABLE_FEATURE_VI_YANKMARK
 	char *edit_file__cur_line;
@@ -209,11 +189,11 @@ struct globals {
 	char *initial_cmds[3];  // currently 2 entries, NULL terminated
 #endif
 	// Should be just enough to hold a key sequence,
-	// but CRASME mode uses it as generated command buffer too
+	// but CRASHME mode uses it as generated command buffer too
 #if ENABLE_FEATURE_VI_CRASHME
 	char readbuffer[128];
 #else
-	char readbuffer[32];
+	char readbuffer[KEYCODE_BUFFER_SIZE];
 #endif
 #define STATUS_BUFFER_LEN  200
 	char status_buffer[STATUS_BUFFER_LEN]; // messages to the user
@@ -252,9 +232,10 @@ struct globals {
 #define screensize              (G.screensize         )
 #define screenbegin             (G.screenbegin        )
 #define tabstop                 (G.tabstop            )
+#define last_forward_char       (G.last_forward_char  )
 #define erase_char              (G.erase_char         )
 #define last_input_char         (G.last_input_char    )
-#define last_forward_char       (G.last_forward_char  )
+#define chars_to_parse          (G.chars_to_parse     )
 #if ENABLE_FEATURE_VI_READONLY
 #define readonly_mode           (G.readonly_mode      )
 #else
@@ -266,9 +247,7 @@ struct globals {
 #define ioq_start               (G.ioq_start          )
 #define last_row                (G.last_row           )
 #define my_pid                  (G.my_pid             )
-#define modifying_cmds          (G.modifying_cmds     )
 #define last_search_pattern     (G.last_search_pattern)
-#define chars_to_parse          (G.chars_to_parse     )
 
 #define edit_file__cur_line     (G.edit_file__cur_line)
 #define refresh__old_offset     (G.refresh__old_offset)
@@ -291,13 +270,14 @@ struct globals {
 #define INIT_G() do { \
 	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 	last_file_modified = -1; \
-	last_search_pattern = xzalloc(2); /* "" but has space for 2 chars */ \
+	/* "" but has space for 2 chars: */ \
+	USE_FEATURE_VI_SEARCH(last_search_pattern = xzalloc(2);) \
 } while (0)
 
 
 static int init_text_buffer(char *); // init from file or create new
 static void edit_file(char *);	// edit one file
-static void do_cmd(char);	// execute a command
+static void do_cmd(int);	// execute a command
 static int next_tabstop(int);
 static void sync_cursor(char *, int *, int *);	// synchronize the screen cursor to dot
 static char *begin_line(char *);	// return pointer to cur line B-o-l
@@ -333,8 +313,8 @@ static void rawmode(void);	// set "raw" mode on tty
 static void cookmode(void);	// return to "cooked" mode on tty
 // sleep for 'h' 1/100 seconds, return 1/0 if stdin is (ready for read)/(not ready)
 static int mysleep(int);
-static char readit(void);	// read (maybe cursor) key from stdin
-static char get_one_char(void);	// read 1 char from stdin
+static int readit(void);	// read (maybe cursor) key from stdin
+static int get_one_char(void);	// read 1 char from stdin
 static int file_size(const char *);   // what is the byte size of "fn"
 #if ENABLE_FEATURE_VI_READONLY
 static int file_insert(const char *, char *, int);
@@ -349,6 +329,7 @@ static void place_cursor(int, int, int);
 static void screen_erase(void);
 static void clear_to_eol(void);
 static void clear_to_eos(void);
+static void go_bottom_and_clear_to_eol(void);
 static void standout_start(void);	// send "start reverse video" sequence
 static void standout_end(void);	// send "end reverse video" sequence
 static void flash(int);		// flash the terminal screen
@@ -429,10 +410,6 @@ int vi_main(int argc, char **argv)
 #endif
 
 	vi_setops = VI_AUTOINDENT | VI_SHOWMATCH | VI_IGNORECASE;
-#if ENABLE_FEATURE_VI_DOT_CMD || ENABLE_FEATURE_VI_YANKMARK
-	modifying_cmds = (char *) "aAcCdDiIJoOpPrRsxX<>~";	// cmds modifying text[]
-#endif
-
 	//  1-  process $HOME/.exrc file (not inplemented yet)
 	//  2-  process EXINIT variable from environment
 	//  3-  process command line args
@@ -526,7 +503,7 @@ static void edit_file(char *fn)
 #if ENABLE_FEATURE_VI_YANKMARK
 #define cur_line edit_file__cur_line
 #endif
-	char c;
+	int c;
 	int size;
 #if ENABLE_FEATURE_VI_USE_SIGNALS
 	int sig;
@@ -624,18 +601,21 @@ static void edit_file(char *fn)
 		// These are commands that change text[].
 		// Remember the input for the "." command
 		if (!adding2q && ioq_start == NULL
-		 && c != '\0' && strchr(modifying_cmds, c)
+		 && cmd_mode == 0 // command mode
+		 && c > '\0' // exclude NUL and non-ASCII chars
+		 && c < 0x7f // (Unicode and such)
+		 && strchr(modifying_cmds, c)
 		) {
 			start_new_cmd_q(c);
 		}
 #endif
 		do_cmd(c);		// execute the user command
-		//
+
 		// poll to see if there is input already waiting. if we are
 		// not able to display output fast enough to keep up, skip
 		// the display update until we catch up with input.
-		if (mysleep(0) == 0) {
-			// no input pending- so update output
+		if (!chars_to_parse && mysleep(0) == 0) {
+			// no input pending - so update output
 			refresh(FALSE);
 			show_status_line();
 		}
@@ -646,8 +626,7 @@ static void edit_file(char *fn)
 	}
 	//-------------------------------------------------------------------
 
-	place_cursor(rows - 1, 0, FALSE); // go to bottom of screen
-	clear_to_eol(); // erase to end of line
+	go_bottom_and_clear_to_eol();
 	cookmode();
 #undef cur_line
 }
@@ -843,8 +822,7 @@ static void colon(char *buf)
 	else if (strncmp(cmd, "!", 1) == 0) {	// run a cmd
 		int retcode;
 		// :!ls   run the <cmd>
-		place_cursor(rows - 1, 0, FALSE);	// go to Status line
-		clear_to_eol();			// clear the line
+		go_bottom_and_clear_to_eol();
 		cookmode();
 		retcode = system(orig_buf + 1);	// run the cmd
 		if (retcode)
@@ -921,8 +899,7 @@ static void colon(char *buf)
 		}
 	} else if (strncasecmp(cmd, "features", i) == 0) {	// what features are available
 		// print out values of all features
-		place_cursor(rows - 1, 0, FALSE);	// go to Status line, bottom of screen
-		clear_to_eol();	// clear the line
+		go_bottom_and_clear_to_eol();
 		cookmode();
 		show_help();
 		rawmode();
@@ -932,8 +909,7 @@ static void colon(char *buf)
 			q = begin_line(dot);	// assume .,. for the range
 			r = end_line(dot);
 		}
-		place_cursor(rows - 1, 0, FALSE);	// go to Status line, bottom of screen
-		clear_to_eol();	// clear the line
+		go_bottom_and_clear_to_eol();
 		puts("\r");
 		for (; q <= r; q++) {
 			int c_is_no_print;
@@ -1033,8 +1009,7 @@ static void colon(char *buf)
 		// only blank is regarded as args delmiter. What about tab '\t' ?
 		if (!args[0] || strcasecmp(args, "all") == 0) {
 			// print out values of all options
-			place_cursor(rows - 1, 0, FALSE);	// go to Status line, bottom of screen
-			clear_to_eol();	// clear the line
+			go_bottom_and_clear_to_eol();
 			printf("----------------------------------------\r\n");
 #if ENABLE_FEATURE_VI_SETOPTS
 			if (!autoindent)
@@ -1204,7 +1179,7 @@ static void colon(char *buf)
 
 static void Hit_Return(void)
 {
-	char c;
+	int c;
 
 	standout_start();
 	write1("[Hit return to continue]");
@@ -2131,13 +2106,13 @@ static void rawmode(void)
 	term_vi.c_cc[VMIN] = 1;
 	term_vi.c_cc[VTIME] = 0;
 	erase_char = term_vi.c_cc[VERASE];
-	tcsetattr(0, TCSANOW, &term_vi);
+	tcsetattr_stdin_TCSANOW(&term_vi);
 }
 
 static void cookmode(void)
 {
 	fflush(stdout);
-	tcsetattr(0, TCSANOW, &term_orig);
+	tcsetattr_stdin_TCSANOW(&term_orig);
 }
 
 //----- Come here when we get a window resize signal ---------
@@ -2170,8 +2145,7 @@ static void cont_sig(int sig UNUSED_PARAM)
 //----- Come here when we get a Suspend signal -------------------
 static void suspend_sig(int sig UNUSED_PARAM)
 {
-	place_cursor(rows - 1, 0, FALSE); // go to bottom of screen
-	clear_to_eol(); // erase to end of line
+	go_bottom_and_clear_to_eol();
 	cookmode(); // terminal to "cooked"
 
 	signal(SIGCONT, cont_sig);
@@ -2198,120 +2172,24 @@ static int mysleep(int hund)	// sleep for 'h' 1/100 seconds
 }
 
 //----- IO Routines --------------------------------------------
-static char readit(void)	// read (maybe cursor) key from stdin
+static int readit(void) // read (maybe cursor) key from stdin
 {
-	char c;
-	int n;
-	struct esc_cmds {
-		const char seq[4];
-		char val;
-	};
-
-	static const struct esc_cmds esccmds[] = {
-		{"OA"  , VI_K_UP      },   // cursor key Up
-		{"OB"  , VI_K_DOWN    },   // cursor key Down
-		{"OC"  , VI_K_RIGHT   },   // Cursor Key Right
-		{"OD"  , VI_K_LEFT    },   // cursor key Left
-		{"OH"  , VI_K_HOME    },   // Cursor Key Home
-		{"OF"  , VI_K_END     },   // Cursor Key End
-		{"[A"  , VI_K_UP      },   // cursor key Up
-		{"[B"  , VI_K_DOWN    },   // cursor key Down
-		{"[C"  , VI_K_RIGHT   },   // Cursor Key Right
-		{"[D"  , VI_K_LEFT    },   // cursor key Left
-		{"[H"  , VI_K_HOME    },   // Cursor Key Home
-		{"[F"  , VI_K_END     },   // Cursor Key End
-		{"[1~" , VI_K_HOME    },   // Cursor Key Home
-		{"[2~" , VI_K_INSERT  },   // Cursor Key Insert
-		{"[3~" , VI_K_DELETE  },   // Cursor Key Delete
-		{"[4~" , VI_K_END     },   // Cursor Key End
-		{"[5~" , VI_K_PAGEUP  },   // Cursor Key Page Up
-		{"[6~" , VI_K_PAGEDOWN},   // Cursor Key Page Down
-		{"OP"  , VI_K_FUN1    },   // Function Key F1
-		{"OQ"  , VI_K_FUN2    },   // Function Key F2
-		{"OR"  , VI_K_FUN3    },   // Function Key F3
-		{"OS"  , VI_K_FUN4    },   // Function Key F4
-		// careful: these have no terminating NUL!
-		{"[11~", VI_K_FUN1    },   // Function Key F1
-		{"[12~", VI_K_FUN2    },   // Function Key F2
-		{"[13~", VI_K_FUN3    },   // Function Key F3
-		{"[14~", VI_K_FUN4    },   // Function Key F4
-		{"[15~", VI_K_FUN5    },   // Function Key F5
-		{"[17~", VI_K_FUN6    },   // Function Key F6
-		{"[18~", VI_K_FUN7    },   // Function Key F7
-		{"[19~", VI_K_FUN8    },   // Function Key F8
-		{"[20~", VI_K_FUN9    },   // Function Key F9
-		{"[21~", VI_K_FUN10   },   // Function Key F10
-		{"[23~", VI_K_FUN11   },   // Function Key F11
-		{"[24~", VI_K_FUN12   },   // Function Key F12
-	};
-	enum { ESCCMDS_COUNT = ARRAY_SIZE(esccmds) };
+	int c;
 
 	fflush(stdout);
-	n = chars_to_parse;
-	// get input from User - are there already input chars in Q?
-	if (n <= 0) {
-		// the Q is empty, wait for a typed char
- again:
-		n = safe_read(STDIN_FILENO, readbuffer, sizeof(readbuffer));
-		if (n <= 0) {
-			place_cursor(rows - 1, 0, FALSE); // go to bottom of screen
-			clear_to_eol(); // erase to end of line
-			cookmode(); // terminal to "cooked"
-			bb_error_msg_and_die("can't read user input");
-		}
-		/* elsewhere we can get very confused by NULs */
-		if (readbuffer[0] == '\0')
-			goto again;
-		if (readbuffer[0] == 27) {
-			// This is an ESC char. Is this Esc sequence?
-			// Could be bare Esc key. See if there are any
-			// more chars to read after the ESC. This would
-			// be a Function or Cursor Key sequence.
-			struct pollfd pfd[1];
-			pfd[0].fd = 0;
-			pfd[0].events = POLLIN;
-			// keep reading while there are input chars, and room in buffer
-			// for a complete ESC sequence (assuming 8 chars is enough)
-			while ((safe_poll(pfd, 1, 0) > 0)
-			 && ((size_t)n <= (sizeof(readbuffer) - 8))
-			) {
-				// read the rest of the ESC string
-				int r = safe_read(STDIN_FILENO, readbuffer + n, sizeof(readbuffer) - n);
-				if (r > 0)
-					n += r;
-			}
-		}
-		chars_to_parse = n;
+	c = read_key(STDIN_FILENO, &chars_to_parse, readbuffer);
+	if (c == -1) { // EOF/error
+		go_bottom_and_clear_to_eol();
+		cookmode(); // terminal to "cooked"
+		bb_error_msg_and_die("can't read user input");
 	}
-	c = readbuffer[0];
-	if (c == 27 && n > 1) {
-		// Maybe cursor or function key?
-		const struct esc_cmds *eindex;
-
-		for (eindex = esccmds; eindex < &esccmds[ESCCMDS_COUNT]; eindex++) {
-			int cnt = strnlen(eindex->seq, 4);
-			if (n <= cnt)
-				continue;
-			if (strncmp(eindex->seq, readbuffer + 1, cnt) != 0)
-				continue;
-			c = eindex->val; // magic char value
-			n = cnt + 1; // squeeze out the ESC sequence
-			goto found;
-		}
-		// defined ESC sequence not found
-	}
-	n = 1;
- found:
-	// remove key sequence from Q
-	chars_to_parse -= n;
-	memmove(readbuffer, readbuffer + n, sizeof(readbuffer) - n);
 	return c;
 }
 
 //----- IO Routines --------------------------------------------
-static char get_one_char(void)
+static int get_one_char(void)
 {
-	char c;
+	int c;
 
 #if ENABLE_FEATURE_VI_DOT_CMD
 	if (!adding2q) {
@@ -2322,7 +2200,8 @@ static char get_one_char(void)
 			c = readit();	// get the users input
 		} else {
 			// there is a queue to get chars from first
-			c = *ioq++;
+			// careful with correct sign expansion!
+			c = (unsigned char)*ioq++;
 			if (c == '\0') {
 				// the end of the q, read from STDIN
 				free(ioq_start);
@@ -2352,13 +2231,12 @@ static char *get_input_line(const char *prompt)
 	// char [MAX_INPUT_LEN]
 #define buf get_input_line__buf
 
-	char c;
+	int c;
 	int i;
 
 	strcpy(buf, prompt);
 	last_status_cksum = 0;	// force status update
-	place_cursor(rows - 1, 0, FALSE);	// go to Status line, bottom of screen
-	clear_to_eol();		// clear the line
+	go_bottom_and_clear_to_eol();
 	write1(prompt);      // write out the :, /, or ? prompt
 
 	i = strlen(buf);
@@ -2372,7 +2250,8 @@ static char *get_input_line(const char *prompt)
 			write1("\b \b"); // erase char on screen
 			if (i <= 0) // user backs up before b-o-l, exit
 				break;
-		} else {
+		} else if (c > 0 && c < 256) { // exclude Unicode
+			// (TODO: need to handle Unicode)
 			buf[i] = c;
 			buf[++i] = '\0';
 			bb_putchar(c);
@@ -2562,6 +2441,12 @@ static void clear_to_eol(void)
 	write1(Ceol);   // Erase from cursor to end of line
 }
 
+static void go_bottom_and_clear_to_eol(void)
+{
+	place_cursor(rows - 1, 0, FALSE); // go to bottom of screen
+	clear_to_eol(); // erase to end of line
+}
+
 //----- Erase from cursor to end of screen -----------------------
 static void clear_to_eos(void)
 {
@@ -2633,9 +2518,8 @@ static void show_status_line(void)
 	}
 	if (have_status_msg || ((cnt > 0 && last_status_cksum != cksum))) {
 		last_status_cksum = cksum;		// remember if we have seen this line
-		place_cursor(rows - 1, 0, FALSE);	// put cursor on status line
+		go_bottom_and_clear_to_eol();
 		write1(status_buffer);
-		clear_to_eol();
 		if (have_status_msg) {
 			if (((int)strlen(status_buffer) - (have_status_msg - 1)) >
 					(columns - 1) ) {
@@ -2970,13 +2854,14 @@ static void refresh(int full_screen)
 //---------------------------------------------------------------------
 
 //----- Execute a Vi Command -----------------------------------
-static void do_cmd(char c)
+static void do_cmd(int c)
 {
 	const char *msg = msg; // for compiler
-	char c1, *p, *q, *save_dot;
+	char *p, *q, *save_dot;
 	char buf[12];
 	int dir;
 	int cnt, i, j;
+	int c1;
 
 //	c1 = c; // quiet the compiler
 //	cnt = yf = 0; // quiet the compiler
@@ -2987,20 +2872,21 @@ static void do_cmd(char c)
 
 	/* if this is a cursor key, skip these checks */
 	switch (c) {
-		case VI_K_UP:
-		case VI_K_DOWN:
-		case VI_K_LEFT:
-		case VI_K_RIGHT:
-		case VI_K_HOME:
-		case VI_K_END:
-		case VI_K_PAGEUP:
-		case VI_K_PAGEDOWN:
+		case KEYCODE_UP:
+		case KEYCODE_DOWN:
+		case KEYCODE_LEFT:
+		case KEYCODE_RIGHT:
+		case KEYCODE_HOME:
+		case KEYCODE_END:
+		case KEYCODE_PAGEUP:
+		case KEYCODE_PAGEDOWN:
+		case KEYCODE_DELETE:
 			goto key_cmd_mode;
 	}
 
 	if (cmd_mode == 2) {
 		//  flip-flop Insert/Replace mode
-		if (c == VI_K_INSERT)
+		if (c == KEYCODE_INSERT)
 			goto dc_i;
 		// we are 'R'eplacing the current *dot with new char
 		if (*dot == '\n') {
@@ -3017,7 +2903,7 @@ static void do_cmd(char c)
 	}
 	if (cmd_mode == 1) {
 		//  hitting "Insert" twice means "R" replace mode
-		if (c == VI_K_INSERT) goto dc5;
+		if (c == KEYCODE_INSERT) goto dc5;
 		// insert the char c at "dot"
 		if (1 <= c || Isprint(c)) {
 			dot = char_insert(dot, c);
@@ -3081,7 +2967,7 @@ static void do_cmd(char c)
 	case 0x00:			// nul- ignore
 		break;
 	case 2:			// ctrl-B  scroll up   full screen
-	case VI_K_PAGEUP:	// Cursor Key Page Up
+	case KEYCODE_PAGEUP:	// Cursor Key Page Up
 		dot_scroll(rows - 2, -1);
 		break;
 	case 4:			// ctrl-D  scroll down half screen
@@ -3091,14 +2977,14 @@ static void do_cmd(char c)
 		dot_scroll(1, 1);
 		break;
 	case 6:			// ctrl-F  scroll down full screen
-	case VI_K_PAGEDOWN:	// Cursor Key Page Down
+	case KEYCODE_PAGEDOWN:	// Cursor Key Page Down
 		dot_scroll(rows - 2, 1);
 		break;
 	case 7:			// ctrl-G  show current status
 		last_status_cksum = 0;	// force status update
 		break;
 	case 'h':			// h- move left
-	case VI_K_LEFT:	// cursor key Left
+	case KEYCODE_LEFT:	// cursor key Left
 	case 8:		// ctrl-H- move left    (This may be ERASE char)
 	case 0x7f:	// DEL- move left   (This may be ERASE char)
 		if (cmdcnt-- > 1) {
@@ -3108,7 +2994,7 @@ static void do_cmd(char c)
 		break;
 	case 10:			// Newline ^J
 	case 'j':			// j- goto next line, same col
-	case VI_K_DOWN:	// cursor key Down
+	case KEYCODE_DOWN:	// cursor key Down
 		if (cmdcnt-- > 1) {
 			do_cmd(c);
 		}				// repeat cnt
@@ -3147,7 +3033,7 @@ static void do_cmd(char c)
 		break;
 	case ' ':			// move right
 	case 'l':			// move right
-	case VI_K_RIGHT:	// Cursor Key Right
+	case KEYCODE_RIGHT:	// Cursor Key Right
 		if (cmdcnt-- > 1) {
 			do_cmd(c);
 		}				// repeat cnt
@@ -3155,21 +3041,18 @@ static void do_cmd(char c)
 		break;
 #if ENABLE_FEATURE_VI_YANKMARK
 	case '"':			// "- name a register to use for Delete/Yank
-		c1 = get_one_char();
-		c1 = tolower(c1);
-		if (islower(c1)) {
-			YDreg = c1 - 'a';
+		c1 = (get_one_char() | 0x20) - 'a'; // | 0x20 is tolower()
+		if ((unsigned)c1 <= 25) { // a-z?
+			YDreg = c1;
 		} else {
 			indicate_error(c);
 		}
 		break;
 	case '\'':			// '- goto a specific mark
-		c1 = get_one_char();
-		c1 = tolower(c1);
-		if (islower(c1)) {
-			c1 = c1 - 'a';
+		c1 = (get_one_char() | 0x20) - 'a';
+		if ((unsigned)c1 <= 25) { // a-z?
 			// get the b-o-l
-			q = mark[(unsigned char) c1];
+			q = mark[c1];
 			if (text <= q && q < end) {
 				dot = q;
 				dot_begin();	// go to B-o-l
@@ -3188,12 +3071,10 @@ static void do_cmd(char c)
 		// between text[0] and dot then this mark will not point to the
 		// correct location! It could be off by many lines!
 		// Well..., at least its quick and dirty.
-		c1 = get_one_char();
-		c1 = tolower(c1);
-		if (islower(c1)) {
-			c1 = c1 - 'a';
+		c1 = (get_one_char() | 0x20) - 'a';
+		if ((unsigned)c1 <= 25) { // a-z?
 			// remember the line
-			mark[(int) c1] = dot;
+			mark[c1] = dot;
 		} else {
 			indicate_error(c);
 		}
@@ -3237,7 +3118,7 @@ static void do_cmd(char c)
 		break;
 #endif /* FEATURE_VI_YANKMARK */
 	case '$':			// $- goto end of line
-	case VI_K_END:		// Cursor Key End
+	case KEYCODE_END:		// Cursor Key End
 		if (cmdcnt-- > 1) {
 			do_cmd(c);
 		}				// repeat cnt
@@ -3522,12 +3403,11 @@ static void do_cmd(char c)
 			end_cmd_q();	// stop adding to q
 #endif
 		break;
-	case 'g':                       // 'gg' goto a line number (from vim)
-					// (default to first line in file)
+	case 'g': // 'gg' goto a line number (vim) (default: very first line)
 		c1 = get_one_char();
 		if (c1 != 'g') {
 			buf[0] = 'g';
-			buf[1] = c1;
+			buf[1] = c1; // TODO: if Unicode?
 			buf[2] = '\0';
 			not_implemented(buf);
 			break;
@@ -3557,7 +3437,7 @@ static void do_cmd(char c)
 		dot_skip_over_ws();
 		//**** fall through to ... 'i'
 	case 'i':			// i- insert before current char
-	case VI_K_INSERT:	// Cursor Key Insert
+	case KEYCODE_INSERT:	// Cursor Key Insert
  dc_i:
 		cmd_mode = 1;	// start insrting
 		break;
@@ -3610,7 +3490,7 @@ static void do_cmd(char c)
  dc5:
 		cmd_mode = 2;
 		break;
-	case VI_K_DELETE:
+	case KEYCODE_DELETE:
 		c = 'x';
 		// fall through
 	case 'X':			// X- delete char before dot
@@ -3684,7 +3564,7 @@ static void do_cmd(char c)
 	case 'y':			// y- yank   something
 	case 'Y':			// Y- Yank a line
 #endif
-		{
+	{
 		int yf, ml, whole = 0;
 		yf = YANKDEL;	// assume either "c" or "d"
 #if ENABLE_FEATURE_VI_YANKMARK
@@ -3757,10 +3637,10 @@ static void do_cmd(char c)
 #endif
 			end_cmd_q();	// stop adding to q
 		}
-		}
 		break;
+	}
 	case 'k':			// k- goto prev line, same col
-	case VI_K_UP:		// cursor key Up
+	case KEYCODE_UP:		// cursor key Up
 		if (cmdcnt-- > 1) {
 			do_cmd(c);
 		}				// repeat cnt
@@ -3780,7 +3660,7 @@ static void do_cmd(char c)
 		do_cmd(';');
 		if (*dot == last_forward_char)
 			dot_left();
-		last_forward_char= 0;
+		last_forward_char = 0;
 		break;
 	case 'w':			// w- forward a word
 		if (cmdcnt-- > 1) {
@@ -3825,23 +3705,25 @@ static void do_cmd(char c)
 		end_cmd_q();	// stop adding to q
 		break;
 		//----- The Cursor and Function Keys -----------------------------
-	case VI_K_HOME:	// Cursor Key Home
+	case KEYCODE_HOME:	// Cursor Key Home
 		dot_begin();
 		break;
 		// The Fn keys could point to do_macro which could translate them
-	case VI_K_FUN1:	// Function Key F1
-	case VI_K_FUN2:	// Function Key F2
-	case VI_K_FUN3:	// Function Key F3
-	case VI_K_FUN4:	// Function Key F4
-	case VI_K_FUN5:	// Function Key F5
-	case VI_K_FUN6:	// Function Key F6
-	case VI_K_FUN7:	// Function Key F7
-	case VI_K_FUN8:	// Function Key F8
-	case VI_K_FUN9:	// Function Key F9
-	case VI_K_FUN10:	// Function Key F10
-	case VI_K_FUN11:	// Function Key F11
-	case VI_K_FUN12:	// Function Key F12
+#if 0
+	case KEYCODE_FUN1:	// Function Key F1
+	case KEYCODE_FUN2:	// Function Key F2
+	case KEYCODE_FUN3:	// Function Key F3
+	case KEYCODE_FUN4:	// Function Key F4
+	case KEYCODE_FUN5:	// Function Key F5
+	case KEYCODE_FUN6:	// Function Key F6
+	case KEYCODE_FUN7:	// Function Key F7
+	case KEYCODE_FUN8:	// Function Key F8
+	case KEYCODE_FUN9:	// Function Key F9
+	case KEYCODE_FUN10:	// Function Key F10
+	case KEYCODE_FUN11:	// Function Key F11
+	case KEYCODE_FUN12:	// Function Key F12
 		break;
+#endif
 	}
 
  dc1:

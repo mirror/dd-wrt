@@ -80,9 +80,9 @@ enum {
 	OPT_b = (1 << 3),
 	OPT_S = (1 << 4),
 	OPT_c = (1 << 5),
-	OPT_d = (1 << 6) * ENABLE_DEBUG_CROND_OPTION,
+	OPT_d = (1 << 6) * ENABLE_FEATURE_CROND_D,
 };
-#if ENABLE_DEBUG_CROND_OPTION
+#if ENABLE_FEATURE_CROND_D
 #define DebugOpt (option_mask32 & OPT_d)
 #else
 #define DebugOpt 0
@@ -166,11 +166,11 @@ int crond_main(int argc UNUSED_PARAM, char **argv)
 	INIT_G();
 
 	/* "-b after -f is ignored", and so on for every pair a-b */
-	opt_complementary = "f-b:b-f:S-L:L-S" USE_DEBUG_CROND_OPTION(":d-l")
+	opt_complementary = "f-b:b-f:S-L:L-S" USE_FEATURE_CROND_D(":d-l")
 			":l+:d+"; /* -l and -d have numeric param */
-	opt = getopt32(argv, "l:L:fbSc:" USE_DEBUG_CROND_OPTION("d:"),
+	opt = getopt32(argv, "l:L:fbSc:" USE_FEATURE_CROND_D("d:"),
 			&LogLevel, &LogFile, &CDir
-			USE_DEBUG_CROND_OPTION(,&LogLevel));
+			USE_FEATURE_CROND_D(,&LogLevel));
 	/* both -d N and -l N set the same variable: LogLevel */
 
 	if (!(opt & OPT_f)) {
@@ -187,7 +187,7 @@ int crond_main(int argc UNUSED_PARAM, char **argv)
 
 	xchdir(CDir);
 	//signal(SIGHUP, SIG_IGN); /* ? original crond dies on HUP... */
-	setenv("SHELL", DEFAULT_SHELL, 1); /* once, for all future children */
+	xsetenv("SHELL", DEFAULT_SHELL); /* once, for all future children */
 	crondlog(LVL9 "crond (busybox "BB_VER") started, log level %d", LogLevel);
 	SynchronizeDir();
 
@@ -275,8 +275,8 @@ static void SetEnv(struct passwd *pas)
 	/* if we want to set user's shell instead: */
 	/*safe_setenv(env_var_user, "SHELL", pas->pw_shell, 5);*/
 #else
-	setenv("USER", pas->pw_name, 1);
-	setenv("HOME", pas->pw_dir, 1);
+	xsetenv("USER", pas->pw_name);
+	xsetenv("HOME", pas->pw_dir);
 #endif
 	/* currently, we use constant one: */
 	/*setenv("SHELL", DEFAULT_SHELL, 1); - done earlier */

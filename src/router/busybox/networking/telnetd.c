@@ -96,44 +96,55 @@ remove_iacs(struct tsession *ts, int *pnum_totty)
 
 			*totty++ = c;
 			ptr++;
-			/* We now map \r\n ==> \r for pragmatic reasons.
+			/* We map \r\n ==> \r for pragmatic reasons.
 			 * Many client implementations send \r\n when
 			 * the user hits the CarriageReturn key.
 			 */
 			if (c == '\r' && ptr < end && (*ptr == '\n' || *ptr == '\0'))
 				ptr++;
-		} else {
-			/*
-			 * TELOPT_NAWS support!
-			 */
-			if ((ptr+2) >= end) {
-				/* only the beginning of the IAC is in the
-				buffer we were asked to process, we can't
-				process this char. */
-				break;
-			}
-
-			/*
-			 * IAC -> SB -> TELOPT_NAWS -> 4-byte -> IAC -> SE
-			 */
-			else if (ptr[1] == SB && ptr[2] == TELOPT_NAWS) {
-				struct winsize ws;
-
-				if ((ptr+8) >= end)
-					break;	/* incomplete, can't process */
-				ws.ws_col = (ptr[3] << 8) | ptr[4];
-				ws.ws_row = (ptr[5] << 8) | ptr[6];
-				ioctl(ts->ptyfd, TIOCSWINSZ, (char *)&ws);
-				ptr += 9;
-			} else {
-				/* skip 3-byte IAC non-SB cmd */
-#if DEBUG
-				fprintf(stderr, "Ignoring IAC %s,%s\n",
-					TELCMD(ptr[1]), TELOPT(ptr[2]));
-#endif
-				ptr += 3;
-			}
+			continue;
 		}
+
+		if ((ptr+1) >= end)
+			break;
+		if (ptr[1] == NOP) { /* Ignore? (putty keepalive, etc.) */
+			ptr += 2;
+			continue;
+		}
+		if (ptr[1] == IAC) { /* Literal IAC? (emacs M-DEL) */
+			*totty++ = ptr[1];
+			ptr += 2;
+			continue;
+		}
+
+		/*
+		 * TELOPT_NAWS support!
+		 */
+		if ((ptr+2) >= end) {
+			/* only the beginning of the IAC is in the
+			buffer we were asked to process, we can't
+			process this char. */
+			break;
+		}
+		/*
+		 * IAC -> SB -> TELOPT_NAWS -> 4-byte -> IAC -> SE
+		 */
+		if (ptr[1] == SB && ptr[2] == TELOPT_NAWS) {
+			struct winsize ws;
+			if ((ptr+8) >= end)
+				break;	/* incomplete, can't process */
+			ws.ws_col = (ptr[3] << 8) | ptr[4];
+			ws.ws_row = (ptr[5] << 8) | ptr[6];
+			ioctl(ts->ptyfd, TIOCSWINSZ, (char *)&ws);
+			ptr += 9;
+			continue;
+		}
+		/* skip 3-byte IAC non-SB cmd */
+#if DEBUG
+		fprintf(stderr, "Ignoring IAC %s,%s\n",
+				TELCMD(ptr[1]), TELOPT(ptr[2]));
+#endif
+		ptr += 3;
 	}
 
 	num_totty = totty - ptr0;
@@ -171,6 +182,8 @@ make_new_session(
 	ndelay_on(fd);
 #if ENABLE_FEATURE_TELNETD_STANDALONE
 	ts->sockfd_read = sock;
+	/* SO_KEEPALIVE by popular demand */
+	setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &const_int_1, sizeof(const_int_1));
 	ndelay_on(sock);
 	if (!sock) { /* We are called with fd 0 - we are in inetd mode */
 		sock++; /* so use fd 1 for output */
@@ -180,6 +193,8 @@ make_new_session(
 	if (sock > maxfd)
 		maxfd = sock;
 #else
+	/* SO_KEEPALIVE by popular demand */
+	setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &const_int_1, sizeof(const_int_1));
 	/* ts->sockfd_read = 0; - done by xzalloc */
 	ts->sockfd_write = 1;
 	ndelay_on(0);
@@ -243,7 +258,7 @@ make_new_session(
 	termbuf.c_iflag |= ICRNL;
 	termbuf.c_iflag &= ~IXOFF;
 	/*termbuf.c_lflag &= ~ICANON;*/
-	tcsetattr(0, TCSANOW, &termbuf);
+	tcsetattr_stdin_TCSANOW(&termbuf);
 
 	/* Uses FILE-based I/O to stdout, but does fflush(stdout),
 	 * so should be safe with vfork.
