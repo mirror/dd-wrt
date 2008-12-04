@@ -8,12 +8,18 @@ function to_submit(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
+	if (F._openvpn_certtype) {
+		(F._openvpn_certtype.checked == true) ?	F.openvpn_certtype.value = 1 : F.openvpn_certtype.value = 0;
+	}
 	apply(F);
 }
 function to_apply(F) {
 	F.change_action.value = "";
 	F.submit_type.value = "";
 	F.save_button.value = sbutton.saving;
+	if (F._openvpn_certtype) {
+		(F._openvpn_certtype.checked == true) ?	F.openvpn_certtype.value = 1 : F.openvpn_certtype.value = 0;
+	}
 	applytake(F);
 }
 
@@ -24,6 +30,8 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvram_else_match("pptpd_radius", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvram_else_match("openvpncl_enable", "1", "1", "0"); %> == 1);
 		
 		update = new StatusbarUpdate();
 		update.start();
@@ -191,6 +199,7 @@ addEvent(window, "unload", function() {
 		</div>
 	</div>
 </fieldset><br />
+							<% show_modules(".webvpn"); %>
 							
 							
 							<div class="submitFooter">
