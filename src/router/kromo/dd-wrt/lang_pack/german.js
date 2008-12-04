@@ -1129,6 +1129,7 @@ service.vpn_mru="TUN-MTU-Extra";
 service.vpn_mss="TCP-MSS";
 service.vpn_compress="Nutze LZO-Compression";
 service.vpn_tunnel="Tunnel-Protokoll";
+service.vpn_tuntap="Tunnel-Device";
 service.vpn_srvcert="Öffentliches Server-Zertifikat";
 service.vpn_clicert="Öffentliches Client-Zertifikat";
 service.vpn_clikey="Privater Client-Schlüssel";
