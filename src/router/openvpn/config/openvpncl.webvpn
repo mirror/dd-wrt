@@ -1,4 +1,4 @@
-
+<h2><% tran("service.vpn_legend"); %></h2>
 <fieldset>
 	<legend><% tran("service.vpn_legend"); %></legend>
 	<div class="setting">
