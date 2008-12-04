@@ -1,0 +1,15 @@
+# Seedfile for disktype
+
+package disktype 8;
+
+binary disktype {
+  source main.c lib.c
+         buffer.c file.c cdaccess.c cdimage.c vpc.c compressed.c
+         detect.c apple.c amiga.c atari.c dos.c cdrom.c
+         linux.c unix.c beos.c archives.c
+         udf.c blank.c cloop.c;
+
+  cflags "-D_LARGEFILE_SOURCE" "-D_FILE_OFFSET_BITS=64";
+}
+
+manpage disktype.1;
