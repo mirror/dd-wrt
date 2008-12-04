@@ -40,6 +40,13 @@
 			</select>
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.vpn_tuntap"); %></div>
+			<select name="openvpncl_tuntap">
+			    <option value="tun" <% nvram_selected("openvpncl_proto","tun"); %>>TUN</option>
+			    <option value="tap" <% nvram_selected("openvpncl_proto","tap"); %>>TAP</option>
+			</select>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.vpn_certtype"); %></div>
 			<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_certtype" <% nvram_checked("openvpncl_certtype","1"); %> />
 		</div>
