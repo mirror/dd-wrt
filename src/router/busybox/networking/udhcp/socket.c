@@ -37,7 +37,7 @@
 #include "common.h"
 
 
-int read_interface(const char *interface, int *ifindex, uint32_t *addr, uint8_t *arp)
+int FAST_FUNC udhcp_read_interface(const char *interface, int *ifindex, uint32_t *addr, uint8_t *arp)
 {
 	int fd;
 	struct ifreq ifr;
@@ -85,10 +85,9 @@ int read_interface(const char *interface, int *ifindex, uint32_t *addr, uint8_t 
 
 /* 1. None of the callers expects it to ever fail */
 /* 2. ip was always INADDR_ANY */
-int listen_socket(/*uint32_t ip,*/ int port, const char *inf)
+int FAST_FUNC udhcp_listen_socket(/*uint32_t ip,*/ int port, const char *inf)
 {
 	int fd;
-	struct ifreq interface;
 	struct sockaddr_in addr;
 
 	DEBUG("Opening listen socket on *:%d %s", port, inf);
@@ -98,8 +97,8 @@ int listen_socket(/*uint32_t ip,*/ int port, const char *inf)
 	if (setsockopt_broadcast(fd) == -1)
 		bb_perror_msg_and_die("SO_BROADCAST");
 
-	strncpy(interface.ifr_name, inf, IFNAMSIZ);
-	if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &interface, sizeof(interface)) == -1)
+	/* NB: bug 1032 says this doesn't work on ethernet aliases (ethN:M) */
+	if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, &inf, strlen(inf) + 1) == -1)
 		bb_perror_msg_and_die("SO_BINDTODEVICE");
 
 	memset(&addr, 0, sizeof(addr));

@@ -227,11 +227,12 @@ static void processorstart(struct logdir *ld)
 		int fd;
 
 		/* child */
-		bb_signals(0
+		/* Non-ignored signals revert to SIG_DFL on exec anyway */
+		/*bb_signals(0
 			+ (1 << SIGTERM)
 			+ (1 << SIGALRM)
 			+ (1 << SIGHUP)
-			, SIG_DFL);
+			, SIG_DFL);*/
 		sig_unblock(SIGTERM);
 		sig_unblock(SIGALRM);
 		sig_unblock(SIGHUP);
@@ -797,7 +798,8 @@ static void sig_term_handler(int sig_no UNUSED_PARAM)
 
 static void sig_child_handler(int sig_no UNUSED_PARAM)
 {
-	int pid, l;
+	pid_t pid;
+	int l;
 
 	if (verbose)
 		bb_error_msg(INFO"sig%s received", "child");

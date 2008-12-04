@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+# vi: set sw=4 ts=4:
 
 use strict;
 use Getopt::Long;
@@ -36,6 +37,7 @@ sub beautify {
 			s/"\s*$//;
 			s/%/%%/g;
 			s/\$/\\\$/g;
+			s/\@/\\\@/g;
 			eval qq[ sprintf(qq{$_}) ]
 		} @line
 	);
@@ -48,11 +50,13 @@ sub pod_for_usage {
 	my $usage = shift;
 
 	# Sigh.  Fixup the known odd-name applets.
+# Perhaps we can use some of APPLET_ODDNAME from include/applets.h ?
 	$name =~ s/dpkg_deb/dpkg-deb/g;
 	$name =~ s/fsck_minix/fsck.minix/g;
 	$name =~ s/mkfs_minix/mkfs.minix/g;
 	$name =~ s/run_parts/run-parts/g;
 	$name =~ s/start_stop_daemon/start-stop-daemon/g;
+	$name =~ s/ether_wake/ether-wake/g;
 
 	# make options bold
 	my $trivial = $usage->{trivial};

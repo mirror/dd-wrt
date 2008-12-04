@@ -3,7 +3,7 @@
  * simplified modprobe
  *
  * Copyright (c) 2008 Vladimir Dronnikov
- * Copyright (c) 2008 Bernhard Fischer (initial depmod code)
+ * Copyright (c) 2008 Bernhard Reutner-Fischer (initial depmod code)
  *
  * Licensed under GPLv2, see file LICENSE in this tarball for details.
  */
@@ -599,19 +599,23 @@ static void process_module(char *name, const char *cmdline_options)
 	}
 	free(deps);
 
-	/* insmod -> load it */
+	/* modprobe -> load it */
 	if (!is_rmmod) {
-		errno = 0;
-		if (load_module(info->pathname, options) != 0) {
-			if (EEXIST != errno) {
-				bb_error_msg("'%s': %s",
+		if (!options || strstr(options, "blacklist") == NULL) {
+			errno = 0;
+			if (load_module(info->pathname, options) != 0) {
+				if (EEXIST != errno) {
+					bb_error_msg("'%s': %s",
 						info->pathname,
 						moderror(errno));
-			} else {
-				dbg1_error_msg("'%s': %s",
+				} else {
+					dbg1_error_msg("'%s': %s",
 						info->pathname,
 						moderror(errno));
+				}
 			}
+		} else {
+			dbg1_error_msg("'%s': blacklisted", info->pathname);
 		}
 	}
  ret:
@@ -688,8 +692,10 @@ int modprobe_main(int argc UNUSED_PARAM, char **argv)
 	/* Prevent ugly corner cases with no modules at all */
 	modinfo = xzalloc(sizeof(modinfo[0]));
 
-	/* Goto modules directory */
-	xchdir(CONFIG_DEFAULT_MODULES_DIR);
+	if ('i' != applet0) { /* not insmod */
+		/* Goto modules directory */
+		xchdir(CONFIG_DEFAULT_MODULES_DIR);
+	}
 	uname(&uts); /* never fails */
 
 	/* depmod? */
@@ -736,8 +742,10 @@ int modprobe_main(int argc UNUSED_PARAM, char **argv)
 		option_mask32 |= OPT_r;
 	}
 
-	/* Goto $VERSION directory */
-	xchdir(uts.release);
+	if ('i' != applet0) { /* not insmod */
+		/* Goto $VERSION directory */
+		xchdir(uts.release);
+	}
 
 #if ENABLE_FEATURE_MODPROBE_SMALL_OPTIONS_ON_CMDLINE
 	/* If not rmmod, parse possible module options given on command line.
@@ -758,11 +766,26 @@ int modprobe_main(int argc UNUSED_PARAM, char **argv)
 		argv[1] = NULL;
 #endif
 
+	if ('i' == applet0) { /* insmod */
+		size_t len;
+		void *map;
+
+		len = MAXINT(ssize_t);
+		map = xmalloc_xopen_read_close(*argv, &len);
+		if (init_module(map, len,
+			USE_FEATURE_MODPROBE_SMALL_OPTIONS_ON_CMDLINE(options ? options : "")
+			SKIP_FEATURE_MODPROBE_SMALL_OPTIONS_ON_CMDLINE("")
+				) != 0)
+			bb_error_msg_and_die("cannot insert '%s': %s",
+					*argv, moderror(errno));
+		return 0;
+	}
+
 	/* Try to load modprobe.dep.bb */
 	load_dep_bb();
 
 	/* Load/remove modules.
-	 * Only rmmod loops here, insmod/modprobe has only argv[0] */
+	 * Only rmmod loops here, modprobe has only argv[0] */
 	do {
 		process_module(*argv++, options);
 	} while (*argv);

@@ -50,7 +50,7 @@ static int send_packet_to_client(struct dhcpMessage *payload, int force_broadcas
 		DEBUG("unicasting packet to client ciaddr");
 		ciaddr = payload->ciaddr;
 		chaddr = payload->chaddr;
-	} else if (ntohs(payload->flags) & BROADCAST_FLAG) {
+	} else if (payload->flags & htons(BROADCAST_FLAG)) {
 		DEBUG("broadcasting packet to client (requested)");
 		ciaddr = INADDR_BROADCAST;
 		chaddr = MAC_BCAST_ADDR;
@@ -59,8 +59,10 @@ static int send_packet_to_client(struct dhcpMessage *payload, int force_broadcas
 		ciaddr = payload->yiaddr;
 		chaddr = payload->chaddr;
 	}
-	return udhcp_send_raw_packet(payload, server_config.server, SERVER_PORT,
-			ciaddr, CLIENT_PORT, chaddr, server_config.ifindex);
+	return udhcp_send_raw_packet(payload,
+		/*src*/ server_config.server, SERVER_PORT,
+		/*dst*/ ciaddr, CLIENT_PORT, chaddr,
+		server_config.ifindex);
 }
 
 
@@ -97,7 +99,7 @@ static void add_bootp_options(struct dhcpMessage *packet)
 
 
 /* send a DHCP OFFER to a DHCP DISCOVER */
-int send_offer(struct dhcpMessage *oldpacket)
+int FAST_FUNC send_offer(struct dhcpMessage *oldpacket)
 {
 	struct dhcpMessage packet;
 	struct dhcpOfferedAddr *lease = NULL;
@@ -185,7 +187,7 @@ int send_offer(struct dhcpMessage *oldpacket)
 }
 
 
-int send_NAK(struct dhcpMessage *oldpacket)
+int FAST_FUNC send_NAK(struct dhcpMessage *oldpacket)
 {
 	struct dhcpMessage packet;
 
@@ -196,7 +198,7 @@ int send_NAK(struct dhcpMessage *oldpacket)
 }
 
 
-int send_ACK(struct dhcpMessage *oldpacket, uint32_t yiaddr)
+int FAST_FUNC send_ACK(struct dhcpMessage *oldpacket, uint32_t yiaddr)
 {
 	struct dhcpMessage packet;
 	struct option_set *curr;
@@ -244,7 +246,7 @@ int send_ACK(struct dhcpMessage *oldpacket, uint32_t yiaddr)
 }
 
 
-int send_inform(struct dhcpMessage *oldpacket)
+int FAST_FUNC send_inform(struct dhcpMessage *oldpacket)
 {
 	struct dhcpMessage packet;
 	struct option_set *curr;

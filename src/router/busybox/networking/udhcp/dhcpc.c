@@ -267,7 +267,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		client_config.opt_mask[n >> 3] |= 1 << (n & 7);
 	}
 
-	if (read_interface(client_config.interface, &client_config.ifindex,
+	if (udhcp_read_interface(client_config.interface, &client_config.ifindex,
 			   NULL, client_config.arp))
 		return 1;
 #if !BB_MMU
@@ -322,9 +322,9 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 
 		if (listen_mode != LISTEN_NONE && sockfd < 0) {
 			if (listen_mode == LISTEN_KERNEL)
-				sockfd = listen_socket(/*INADDR_ANY,*/ CLIENT_PORT, client_config.interface);
+				sockfd = udhcp_listen_socket(/*INADDR_ANY,*/ CLIENT_PORT, client_config.interface);
 			else
-				sockfd = raw_socket(client_config.ifindex);
+				sockfd = udhcp_raw_socket(client_config.ifindex);
 		}
 		max_fd = udhcp_sp_fd_set(&rfds, sockfd);
 
@@ -348,7 +348,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		 * resend discover/renew/whatever
 		 */
 		if (retval == 0) {
-			/* We will restart wait afresh in any case */
+			/* We will restart the wait in any case */
 			already_waited_sec = 0;
 
 			switch (state) {
@@ -363,6 +363,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					packet_num++;
 					continue;
 				}
+ leasefail:
 				udhcp_run_script(NULL, "leasefail");
 #if BB_MMU /* -b is not supported on NOMMU */
 				if (opt & OPT_b) { /* background if no lease */
@@ -388,7 +389,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					if (state == RENEW_REQUESTED) /* unicast */
 						send_renew(xid, server_addr, requested_ip);
 					else /* broadcast */
-						send_selecting(xid, server_addr, requested_ip);
+						send_select(xid, server_addr, requested_ip);
 
 					timeout = discover_timeout;
 					packet_num++;
@@ -398,6 +399,13 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				if (state == RENEW_REQUESTED)
 					udhcp_run_script(NULL, "deconfig");
 				change_listen_mode(LISTEN_RAW);
+				/* "discover...select...discover..." loops
+				 * were seen in the wild. Treat them similarly
+				 * to "no response to discover" case */
+				if (state == REQUESTING) {
+					state = INIT_SELECTING;
+					goto leasefail;
+				}
 				state = INIT_SELECTING;
 				timeout = 0;
 				packet_num = 0;
@@ -424,7 +432,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				 * try to find DHCP server using broadcast */
 				if (timeout > 0) {
 					/* send a request packet */
-					send_renew(xid, 0, requested_ip); /* broadcast */
+					send_renew(xid, 0 /* INADDR_ANY*/, requested_ip); /* broadcast */
 					timeout >>= 1;
 					continue;
 				}
@@ -444,7 +452,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		}
 
 		/* select() didn't timeout, something did happen. */
-		/* Is is a packet? */
+		/* Is it a packet? */
 		if (listen_mode != LISTEN_NONE && FD_ISSET(sockfd, &rfds)) {
 			int len;
 			/* A packet is ready, read it */
@@ -466,7 +474,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				continue;
 
 			if (packet.xid != xid) {
-				DEBUG("Ignoring XID %x (our xid is %x)",
+				DEBUG("Ignoring xid %x (our xid is %x)",
 					(unsigned)packet.xid, (unsigned)xid);
 				continue;
 			}
@@ -516,8 +524,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 						bb_error_msg("no lease time with ACK, using 1 hour lease");
 						lease_seconds = 60 * 60;
 					} else {
-						/* can be misaligned, thus memcpy */
-						memcpy(&lease_seconds, temp, 4);
+						/* it IS unaligned sometimes, don't "optimize" */
+						lease_seconds = get_unaligned_u32p((uint32_t*)temp);
 						lease_seconds = ntohl(lease_seconds);
 						lease_seconds &= 0x0fffffff; /* paranoia: must not be prone to overflows */
 						if (lease_seconds < 10) /* and not too small */
@@ -525,6 +533,15 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					}
 #if ENABLE_FEATURE_UDHCPC_ARPING
 					if (opt & OPT_a) {
+/* RFC 2131 3.1 paragraph 5:
+ * "The client receives the DHCPACK message with configuration
+ * parameters. The client SHOULD perform a final check on the
+ * parameters (e.g., ARP for allocated network address), and notes
+ * the duration of the lease specified in the DHCPACK message. At this
+ * point, the client is configured. If the client detects that the
+ * address is already in use (e.g., through the use of ARP),
+ * the client MUST send a DHCPDECLINE message to the server and restarts
+ * the configuration process..." */
 						if (!arpping(packet.yiaddr,
 							    (uint32_t) 0,
 							    client_config.arp,
@@ -556,7 +573,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					}
 					requested_ip = packet.yiaddr;
 					udhcp_run_script(&packet,
-						   ((state == RENEWING || state == REBINDING) ? "renew" : "bound"));
+							((state == RENEWING || state == REBINDING) ? "renew" : "bound"));
 
 					state = BOUND;
 					change_listen_mode(LISTEN_NONE);

@@ -535,13 +535,13 @@
      "\n	F	Input from file" \
 
 #define crond_trivial_usage \
-       "-fbS -l N " USE_DEBUG_CROND_OPTION("-d N ") "-L LOGFILE -c DIR"
+       "-fbS -l N " USE_FEATURE_CROND_D("-d N ") "-L LOGFILE -c DIR"
 #define crond_full_usage "\n\n" \
        "	-f	Foreground" \
      "\n	-b	Background (default)" \
      "\n	-S	Log to syslog (default)" \
      "\n	-l	Set log level. 0 is the most verbose, default 8" \
-	USE_DEBUG_CROND_OPTION( \
+	USE_FEATURE_CROND_D( \
      "\n	-d	Set log level, log to stderr" \
 	) \
      "\n	-L	Log to file" \
@@ -690,6 +690,15 @@
 #define depmod_trivial_usage NOUSAGE_STR
 #define depmod_full_usage ""
 
+#define devmem_trivial_usage \
+	"ADDRESS [WIDTH [VALUE]]"
+
+#define devmem_full_usage "\n\n" \
+       "Read/write from physical address\n" \
+     "\n	ADDRESS	Address to act upon" \
+     "\n	WIDTH	Width (8/16/...)" \
+     "\n	VALUE	Data to be written" \
+
 #define devfsd_trivial_usage \
        "mntpnt [-v]" USE_DEVFSD_FG_NP("[-fg][-np]")
 #define devfsd_full_usage "\n\n" \
@@ -705,36 +714,40 @@
      "\n		do not poll for events" \
 	)
 
-/* -k is accepted but ignored for !HUMAN_READABLE,
- * but we won't mention this (unimportant) */
-#if ENABLE_FEATURE_HUMAN_READABLE || ENABLE_FEATURE_DF_INODE
-#define DF_HAS_OPTIONS(x) x
-#else
-#define DF_HAS_OPTIONS(x)
-#endif
 #define df_trivial_usage \
-	DF_HAS_OPTIONS("[-") \
-	USE_FEATURE_HUMAN_READABLE("hmk") USE_FEATURE_DF_INODE("i") \
-	DF_HAS_OPTIONS("] ") "[FILESYSTEM...]"
+	"[-Pk" \
+	USE_FEATURE_HUMAN_READABLE("mh") \
+	USE_FEATURE_DF_FANCY("ai] [-B SIZE") \
+	"] [FILESYSTEM...]"
 #define df_full_usage "\n\n" \
        "Print filesystem usage statistics\n" \
-	DF_HAS_OPTIONS("\nOptions:") \
+     "\nOptions:" \
+     "\n	-P	POSIX output format" \
+     "\n	-k	1024-byte blocks (default)" \
 	USE_FEATURE_HUMAN_READABLE( \
+     "\n	-m	1M-byte blocks" \
      "\n	-h	Human readable (e.g. 1K 243M 2G)" \
-     "\n	-m	1024*1024 blocks" \
-     "\n	-k	1024 blocks" \
 	) \
-	USE_FEATURE_DF_INODE( \
+	USE_FEATURE_DF_FANCY( \
+     "\n	-a	Show all filesystems" \
      "\n	-i	Inodes" \
-	)
+     "\n	-B SIZE	Blocksize" \
+	) \
+
 #define df_example_usage \
        "$ df\n" \
-       "Filesystem           1k-blocks      Used Available Use% Mounted on\n" \
+       "Filesystem           1K-blocks      Used Available Use% Mounted on\n" \
        "/dev/sda3              8690864   8553540    137324  98% /\n" \
        "/dev/sda1                64216     36364     27852  57% /boot\n" \
        "$ df /dev/sda3\n" \
-       "Filesystem           1k-blocks      Used Available Use% Mounted on\n" \
-       "/dev/sda3              8690864   8553540    137324  98% /\n"
+       "Filesystem           1K-blocks      Used Available Use% Mounted on\n" \
+       "/dev/sda3              8690864   8553540    137324  98% /\n" \
+       "$ POSIXLY_CORRECT=sure df /dev/sda3\n" \
+       "Filesystem         512B-blocks      Used Available Use% Mounted on\n" \
+       "/dev/sda3             17381728  17107080    274648  98% /\n" \
+       "$ POSIXLY_CORRECT=yep df -P /dev/sda3\n" \
+       "Filesystem          512-blocks      Used Available Capacity Mounted on\n" \
+       "/dev/sda3             17381728  17107080    274648      98% /\n"
 
 #define dhcprelay_trivial_usage \
        "[client1,client2,...] [server_device]"
@@ -1082,17 +1095,10 @@
      "\n	-H HEADS\n" \
      "\n	-S SECTORS" \
 
-#define fetchmail_trivial_usage \
-       "[-w timeout] [-H [user:pass@]server[:port]] [-S] [-t] [-z] maildir [prog]"
-#define fetchmail_full_usage "\n\n" \
-       "Fetch content of remote mailbox to local maildir\n" \
-     "\nOptions:" \
-     "\n	-w timeout	Network timeout" \
-     "\n	-H [user:pass@]server[:port] Server" \
-     "\n	-S		Use openssl connection helper for secure servers" \
-     "\n	-t		Get only headers" \
-     "\n	-z		Delete messages on server" \
-     "\n	prog		Run 'prog <message_file>' on message delivery" \
+#define blkid_trivial_usage \
+       ""
+#define blkid_full_usage "\n\n" \
+       "Print UUIDs of all filesystems."
 
 #define findfs_trivial_usage \
        "LABEL=label or UUID=uuid"
@@ -1223,14 +1229,14 @@
 #define ftpget_full_usage "\n\n" \
        "Retrieve a remote file via FTP\n" \
      "\nOptions:" \
-	USE_GETOPT_LONG( \
+	USE_FEATURE_FTPGETPUT_LONG_OPTIONS( \
      "\n	-c,--continue	Continue previous transfer" \
      "\n	-v,--verbose	Verbose" \
      "\n	-u,--username	Username" \
      "\n	-p,--password	Password" \
      "\n	-P,--port	Port number" \
 	) \
-	SKIP_GETOPT_LONG( \
+	SKIP_FEATURE_FTPGETPUT_LONG_OPTIONS( \
      "\n	-c	Continue previous transfer" \
      "\n	-v	Verbose" \
      "\n	-u	Username" \
@@ -1243,13 +1249,13 @@
 #define ftpput_full_usage "\n\n" \
        "Store a local file on a remote machine via FTP\n" \
      "\nOptions:" \
-	USE_GETOPT_LONG( \
+	USE_FEATURE_FTPGETPUT_LONG_OPTIONS( \
      "\n	-v,--verbose	Verbose" \
      "\n	-u,--username	Username" \
      "\n	-p,--password	Password" \
      "\n	-P,--port	Port number" \
 	) \
-	SKIP_GETOPT_LONG( \
+	SKIP_FEATURE_FTPGETPUT_LONG_OPTIONS( \
      "\n	-v	Verbose" \
      "\n	-u	Username" \
      "\n	-p	Password" \
@@ -1420,7 +1426,7 @@
        "-rw-rw-r--    1 andersen andersen   554058 Apr 14 17:49 /tmp/busybox.tar.gz\n"
 
 #define halt_trivial_usage \
-       "[-d delay] [-n] [-f]"
+       "[-d delay] [-n] [-f]" USE_FEATURE_WTMP(" [-w]")
 #define halt_full_usage "\n\n" \
        "Halt the system\n" \
      "\nOptions:" \
@@ -1572,12 +1578,12 @@
      "\n	-d STRING	URL decode STRING" \
 
 #define hwclock_trivial_usage \
-	USE_GETOPT_LONG( \
+	USE_FEATURE_HWCLOCK_LONG_OPTIONS( \
        "[-r|--show] [-s|--hctosys] [-w|--systohc]" \
        " [-l|--localtime] [-u|--utc]" \
        " [-f FILE]" \
 	) \
-	SKIP_GETOPT_LONG( \
+	SKIP_FEATURE_HWCLOCK_LONG_OPTIONS( \
        "[-r] [-s] [-w] [-l] [-u] [-f FILE]" \
 	)
 #define hwclock_full_usage "\n\n" \
@@ -1598,8 +1604,9 @@
 	USE_SELINUX( \
      "\n	-Z	Print the security context" \
 	) \
-     "\n	-g	Print group ID" \
      "\n	-u	Print user ID" \
+     "\n	-g	Print group ID" \
+     "\n	-G	Print supplementary group IDs" \
      "\n	-n	Print name instead of a number" \
      "\n	-r	Print real user ID instead of effective ID" \
 
@@ -1868,20 +1875,22 @@
      "\n	-x	Do not export externs" \
 	)
 
+/* -v, -b, -c are ignored */
 #define install_trivial_usage \
-       "[-cgmops] [sources] dest|directory"
+       "[-cdDsp] [-o USER] [-g GRP] [-m MODE] [source] dest|directory"
 #define install_full_usage "\n\n" \
        "Copy files and set attributes\n" \
      "\nOptions:" \
-     "\n	-c	Copy the file, default" \
+     "\n	-c	Just copy (default)" \
      "\n	-d	Create directories" \
-     "\n	-g	Set group ownership" \
-     "\n	-m	Set permissions" \
-     "\n	-o	Set ownership" \
+     "\n	-D	Create leading target directories" \
+     "\n	-s	Strip symbol table" \
      "\n	-p	Preserve date" \
-     "\n	-s	Strip symbol tables" \
+     "\n	-o USER	Set ownership" \
+     "\n	-g GRP	Set group ownership" \
+     "\n	-m MODE	Set permissions" \
 	USE_SELINUX( \
-     "\n	-Z	Set security context of copy" \
+     "\n	-Z	Set security context" \
 	)
 
 /* would need to make the " | " optional depending on more than one selected: */
@@ -1985,7 +1994,8 @@
        "			[oif STRING]  [tos TOS]\n" \
        "iproute { add | del | change | append | replace | monitor } ROUTE\n" \
        "			SELECTOR := [root PREFIX] [match PREFIX] [proto RTPROTO]\n" \
-       "			ROUTE := [TYPE] PREFIX [tos TOS] [proto RTPROTO]" \
+       "			ROUTE := [TYPE] PREFIX [tos TOS] [proto RTPROTO]\n" \
+       "				[metric METRIC]" \
 
 #define iprule_trivial_usage \
        "{[list | add | del] RULE}"
@@ -2009,7 +2019,7 @@
        "	[ttl TTL] [tos TOS] [[no]pmtudisc] [dev PHYS_DEV]" \
 
 #define kbd_mode_trivial_usage \
-       "[-a|k|s|u]"
+       "[-a|k|s|u] [-C TTY]"
 #define kbd_mode_full_usage "\n\n" \
        "Report or set the keyboard mode\n" \
      "\nOptions set mode:" \
@@ -2017,13 +2027,15 @@
      "\n	-k	Medium-raw (keyboard)" \
      "\n	-s	Raw (scancode)" \
      "\n	-u	Unicode (utf-8)" \
+     "\n	-C TTY	Affect TTY instead of /dev/tty" \
 
 #define kill_trivial_usage \
-       "[-l] [-signal] process-id..."
+       "[-l] [-SIG] PID..."
 #define kill_full_usage "\n\n" \
-       "Send a signal (default is TERM) to the specified process(es)\n" \
+       "Send a signal (default is TERM) to given PIDs\n" \
      "\nOptions:" \
      "\n	-l	List all signal names and numbers" \
+/*   "\n	-s SIG	Yet another way of specifying SIG" */ \
 
 #define kill_example_usage \
        "$ ps | grep apache\n" \
@@ -2036,22 +2048,24 @@
        "$ kill 252\n"
 
 #define killall_trivial_usage \
-       "[-l] [-q] [-signal] process-name..."
+       "[-l] [-q] [-SIG] process-name..."
 #define killall_full_usage "\n\n" \
-       "Send a signal (default is TERM) to the specified process(es)\n" \
+       "Send a signal (default is TERM) to given processes\n" \
      "\nOptions:" \
      "\n	-l	List all signal names and numbers" \
+/*   "\n	-s SIG	Yet another way of specifying SIG" */ \
      "\n	-q	Do not complain if no processes were killed" \
 
 #define killall_example_usage \
        "$ killall apache\n"
 
 #define killall5_trivial_usage \
-       "[-l] [-signal]"
+       "[-l] [-SIG]"
 #define killall5_full_usage "\n\n" \
        "Send a signal (default is TERM) to all processes outside current session\n" \
      "\nOptions:" \
      "\n	-l	List all signal names and numbers" \
+/*   "\n	-s SIG	Yet another way of specifying SIG" */ \
 
 #define klogd_trivial_usage \
        "[-c N] [-n]"
@@ -2071,7 +2085,7 @@
        "5\n"
 
 #define less_trivial_usage \
-       "[-EMNmh~?] [FILE...]"
+       "[-EMNmh~I?] [FILE...]"
 #define less_full_usage "\n\n" \
        "View a file or list of files. The position within files can be\n" \
        "changed, and files can be manipulated in various ways.\n" \
@@ -2080,6 +2094,7 @@
      "\n	-M,-m	Display a status line containing the line numbers" \
      "\n		and percentage through the file" \
      "\n	-N	Prefix line numbers to each line" \
+     "\n	-I	Ignore case in all searches" \
      "\n	-~	Suppress ~s displayed past the end of the file" \
 
 #define linux32_trivial_usage NOUSAGE_STR
@@ -2115,20 +2130,23 @@
        "lrwxrwxrwx    1 root     root            7 Apr 12 18:39 ls -> BusyBox*\n"
 
 #define load_policy_trivial_usage NOUSAGE_STR
-
 #define load_policy_full_usage ""
 
 #define loadfont_trivial_usage \
        "< font"
 #define loadfont_full_usage "\n\n" \
-       "Load a console font from standard input"
+       "Load a console font from standard input" \
+/*   "\n	-C TTY	Affect TTY instead of /dev/tty" */ \
+
 #define loadfont_example_usage \
        "$ loadfont < /etc/i18n/fontname\n"
 
 #define loadkmap_trivial_usage \
        "< keymap"
 #define loadkmap_full_usage "\n\n" \
-       "Load a binary keyboard translation table from standard input"
+       "Load a binary keyboard translation table from standard input\n" \
+/*   "\n	-C TTY	Affect TTY instead of /dev/tty" */ \
+
 #define loadkmap_example_usage \
        "$ loadkmap < /etc/i18n/lang-keymap\n"
 
@@ -2229,21 +2247,21 @@
 #define ls_full_usage "\n\n" \
        "List directory contents\n" \
      "\nOptions:" \
-     "\n	-1	List files in a single column" \
-     "\n	-A	Do not list implied . and .." \
-     "\n	-a	Do not hide entries starting with ." \
-     "\n	-C	List entries by columns" \
+     "\n	-1	List in a single column" \
+     "\n	-A	Don't list . and .." \
+     "\n	-a	Don't hide entries starting with ." \
+     "\n	-C	List by columns" \
 	USE_FEATURE_LS_TIMESTAMPS( \
-     "\n	-c	With -l: show ctime") \
+     "\n	-c	With -l: sort by ctime") \
 	USE_FEATURE_LS_COLOR( \
      "\n	--color[={always,never,auto}]	Control coloring") \
      "\n	-d	List directory entries instead of contents" \
 	USE_FEATURE_LS_TIMESTAMPS( \
-     "\n	-e	List both full date and full time") \
+     "\n	-e	List full date and time") \
 	USE_FEATURE_LS_FILETYPES( \
      "\n	-F	Append indicator (one of */=@|) to entries") \
-     "\n	-i	List the i-node for each file" \
-     "\n	-l	Use a long listing format" \
+     "\n	-i	List inode numbers" \
+     "\n	-l	Long listing format" \
      "\n	-n	List numeric UIDs and GIDs instead of names" \
 	USE_FEATURE_LS_FILETYPES( \
      "\n	-p	Append indicator (one of /=@|) to entries") \
@@ -2252,31 +2270,31 @@
 	USE_FEATURE_LS_RECURSIVE( \
      "\n	-R	List subdirectories recursively") \
 	USE_FEATURE_LS_SORTFILES( \
-     "\n	-r	Sort the listing in reverse order") \
+     "\n	-r	Sort in reverse order") \
 	USE_FEATURE_LS_SORTFILES( \
-     "\n	-S	Sort the listing by file size") \
+     "\n	-S	Sort by file size") \
      "\n	-s	List the size of each file, in blocks" \
 	USE_FEATURE_AUTOWIDTH( \
-     "\n	-T NUM	Assume Tabstop every NUM columns") \
+     "\n	-T NUM	Assume tabstop every NUM columns") \
 	USE_FEATURE_LS_TIMESTAMPS( \
-     "\n	-t	With -l: show modification time") \
+     "\n	-t	With -l: sort by modification time") \
 	USE_FEATURE_LS_TIMESTAMPS( \
-     "\n	-u	With -l: show access time") \
+     "\n	-u	With -l: sort by access time") \
 	USE_FEATURE_LS_SORTFILES( \
-     "\n	-v	Sort the listing by version") \
+     "\n	-v	Sort by version") \
 	USE_FEATURE_AUTOWIDTH( \
      "\n	-w NUM	Assume the terminal is NUM columns wide") \
-     "\n	-x	List entries by lines instead of by columns" \
+     "\n	-x	List by lines" \
 	USE_FEATURE_LS_SORTFILES( \
-     "\n	-X	Sort the listing by extension") \
+     "\n	-X	Sort by extension") \
 	USE_FEATURE_HUMAN_READABLE( \
-     "\n	-h	Print sizes in human readable format (e.g., 1K 243M 2G)") \
+     "\n	-h	List sizes in human readable format (1K 243M 2G)") \
 	USE_SELINUX( \
-     "\n	-k	Print security context") \
+     "\n	-k	List security context") \
 	USE_SELINUX( \
-     "\n	-K	Print security context in long format") \
+     "\n	-K	List security context in long format") \
 	USE_SELINUX( \
-     "\n	-Z	Print security context and permission") \
+     "\n	-Z	List security context and permission") \
 
 #define lsattr_trivial_usage \
        "[-Radlv] [files...]"
@@ -2286,7 +2304,7 @@
      "\n	-R	Recursively list subdirectories" \
      "\n	-a	Do not hide entries starting with ." \
      "\n	-d	List directory entries instead of contents" \
-     "\n	-l	Print long flag names" \
+     "\n	-l	List long flag names" \
      "\n	-v	List the file's version/generation number" \
 
 #define lsmod_trivial_usage \
@@ -2351,6 +2369,16 @@
        "/dev/hda\n" \
        "/dev/hda[0-15]\n"
 #endif
+
+#define makemime_trivial_usage \
+       "[OPTION]... [FILE]..."
+#define makemime_full_usage "\n\n" \
+       "Create MIME-encoded message\n" \
+     "\nOptions:" \
+     "\n	-C      Charset" \
+     "\n	-e	Tranfer encoding. Ignored. base64 is assumed" \
+     "\n" \
+     "\nOther options are silently ignored." \
 
 #define man_trivial_usage \
        "[OPTION]... [MANPAGE]..."
@@ -2571,12 +2599,17 @@
        "[-knqrsv] MODULE [symbol=value...]"
 #define modprobe_full_usage "\n\n" \
        "Options:" \
+	USE_FEATURE_2_4_MODULES( \
      "\n	-k	Make module autoclean-able" \
+	) \
      "\n	-n	Dry run" \
      "\n	-q	Quiet" \
      "\n	-r	Remove module (stacks) or do autoclean" \
      "\n	-s	Report via syslog instead of stderr" \
      "\n	-v	Verbose" \
+	USE_FEATURE_MODPROBE_BLACKLIST( \
+     "\n	-b	Apply blacklist to module names too" \
+        )
 
 #define modprobe_notes_usage \
 "modprobe can (un)load a stack of modules, passing each module options (when\n" \
@@ -3073,6 +3106,33 @@
      "\n	-v	Negate the matching" \
      "\n	-x	Match whole name (not substring)" \
 
+#define popmaildir_trivial_usage \
+       "[OPTIONS] Maildir [connection-helper ...]"
+#define popmaildir_full_usage "\n\n" \
+       "Fetch content of remote mailbox to local maildir\n" \
+     "\nOptions:" \
+     "\n	-b		Binary mode. Ignored" \
+     "\n	-d		Debug. Ignored" \
+     "\n	-m		Show used memory. Ignored" \
+     "\n	-V		Show version. Ignored" \
+     "\n	-c		Use tcpclient. Ignored" \
+     "\n	-a		Use APOP protocol. Implied. If server supports APOP -> use it" \
+     "\n	-s		Skip authorization" \
+     "\n	-T		Get messages with TOP instead with RETR" \
+     "\n	-k		Keep retrieved messages on the server" \
+     "\n	-t timeout	Set network timeout" \
+     USE_FEATURE_POPMAILDIR_DELIVERY( \
+     "\n	-F \"program arg1 arg2 ...\"	Filter by program. May be multiple" \
+     "\n	-M \"program arg1 arg2 ...\"	Deliver by program" \
+     ) \
+     "\n	-R size		Remove old messages on the server >= size (in bytes). Ignored" \
+     "\n	-Z N1-N2	Remove messages from N1 to N2 (dangerous). Ignored" \
+     "\n	-L size		Do not retrieve new messages >= size (in bytes). Ignored" \
+     "\n	-H lines	Type specified number of lines of a message. Ignored"
+#define popmaildir_example_usage \
+       "$ popmaildir -k ~/Maildir -- nc pop.drvv.ru 110 [<password_file]\n" \
+       "$ popmaildir ~/Maildir -- openssl s_client -quiet -connect pop.gmail.com:995 [<password_file]\n"
+
 #define poweroff_trivial_usage \
        "[-d delay] [-n] [-f]"
 #define poweroff_full_usage "\n\n" \
@@ -3228,6 +3288,17 @@
      "\n	-n	No call to sync()" \
      "\n	-f	Force reboot (don't go through init)" \
 
+#define reformime_trivial_usage \
+       "[OPTION]... [FILE]..."
+#define reformime_full_usage "\n\n" \
+       "Parse MIME-encoded message\n" \
+     "\nOptions:" \
+     "\n	-x prefix	Extract content of MIME sections to files" \
+     "\n	-X prog [args]	Filter content of MIME sections through prog." \
+     "\n			Must be the last option" \
+     "\n" \
+     "\nOther options are silently ignored." \
+
 #define renice_trivial_usage \
        "{{-n INCREMENT} | PRIORITY} [[-p | -g | -u] ID...]"
 #define renice_full_usage "\n\n" \
@@ -3280,7 +3351,16 @@
 #define rmdir_trivial_usage \
        "[OPTION]... DIRECTORY..."
 #define rmdir_full_usage "\n\n" \
-       "Remove the DIRECTORY, if it is empty"
+       "Remove the DIRECTORY, if it is empty.\n" \
+     "\nOptions:" \
+     USE_FEATURE_RMDIR_LONG_OPTIONS( \
+     "\n	-p|--parents	Include parents" \
+     "\n	-ignore-fail-on-non-empty" \
+     ) \
+     SKIP_FEATURE_RMDIR_LONG_OPTIONS( \
+     "\n	-p	Include parents" \
+     )
+
 #define rmdir_example_usage \
        "# rmdir /tmp/foo\n"
 
@@ -3289,6 +3369,8 @@
 #define rmmod_full_usage "\n\n" \
        "Unload the specified kernel modules from the kernel\n" \
      "\nOptions:" \
+     "\n	-w	Wait until the module is no longer used" \
+     "\n	-f	Force unloading" \
      "\n	-a	Remove all unused modules (recursively)" \
 
 #define rmmod_example_usage \
@@ -3297,7 +3379,7 @@
 #define route_trivial_usage \
        "[{add|del|delete}]"
 #define route_full_usage "\n\n" \
-       "Edit the kernel's routing tables\n" \
+       "Edit kernel routing tables\n" \
      "\nOptions:" \
      "\n	-n	Don't resolve names" \
      "\n	-e	Display other/more information" \
@@ -3350,14 +3432,14 @@
 #define runcon_full_usage "\n\n" \
        "Run a program in a different security context\n" \
      "\n	CONTEXT		Complete security context\n" \
-	USE_GETOPT_LONG( \
+	USE_FEATURE_RUNCON_LONG_OPTIONS( \
      "\n	-c,--compute	Compute process transition context before modifying" \
      "\n	-t,--type=TYPE	Type (for same role as parent)" \
      "\n	-u,--user=USER	User identity" \
      "\n	-r,--role=ROLE	Role" \
      "\n	-l,--range=RNG	Levelrange" \
 	) \
-	SKIP_GETOPT_LONG( \
+	SKIP_FEATURE_RUNCON_LONG_OPTIONS( \
      "\n	-c	Compute process transition context before modifying" \
      "\n	-t TYPE	Type (for same role as parent)" \
      "\n	-u USER	User identity" \
@@ -3407,9 +3489,11 @@
        "Start and monitor a service and optionally an appendant log service"
 
 #define runsvdir_trivial_usage \
-       "[-P] dir"
+       "[-P] [-s SCRIPT] dir"
 #define runsvdir_full_usage "\n\n" \
-       "Start a runsv process for each subdirectory"
+       "Start a runsv process for each subdirectory. If it exits, restart it.\n" \
+     "\n	-P		Put each runsv in a new session" \
+     "\n	-s SCRIPT	Run SCRIPT <signo> after signal is processed" \
 
 #define rx_trivial_usage \
        "FILE"
@@ -3451,21 +3535,30 @@
 #define selinuxenabled_full_usage ""
 
 #define sendmail_trivial_usage \
-       "[-w timeout] [-H [user:pass@]server[:port]] [-S]\n" \
-       "[-c charset] [-N type] [-i] [-s subject] [-a attach]... [-t] [-f sender] [rcpt]..."
+       "[OPTIONS] [rcpt]..."
 #define sendmail_full_usage "\n\n" \
        "Send an email\n" \
      "\nOptions:" \
      "\n	-w timeout	Network timeout" \
      "\n	-H [user:pass@]server[:port] Server" \
      "\n	-S		Use openssl connection helper for secure servers" \
-     "\n	-c charset	Assume charset for body and subject (utf-8)" \
      "\n	-N type		Request delivery notification. Type is ignored" \
-     "\n	-i		Ignore single dots in mail body. Implied" \
-     "\n	-s subject	Subject" \
-     "\n	-a file		File to attach. May be multiple" \
-     "\n	-t		Read recipients and subject from body" \
      "\n	-f sender	Sender" \
+     "\n	-F fullname	Sender full name. Overrides $NAME" \
+	USE_FEATURE_SENDMAIL_MAILX( \
+     "\n	-s subject	Subject" \
+     "\n	-j charset	Assume charset for body and subject (" CONFIG_FEATURE_MIME_CHARSET ")" \
+     "\n	-a file		File to attach. May be multiple" \
+     "\n	-H \"prog args...\" Use external connection helper. E.g. openssl for secure servers" \
+     "\n	-S server[:port] Server" \
+     	) \
+	USE_FEATURE_SENDMAIL_MAILXX( \
+     "\n	-c rcpt		Cc: recipient. May be multiple" \
+     "\n	-e rcpt		Errors-To: recipient" \
+       	)
+     "\n	-t		Read recipients and subject from body" \
+     "\n" \
+     "\nOther options are silently ignored; -oi is implied" \
 
 #define seq_trivial_usage \
        "[first [increment]] last"
@@ -3519,11 +3612,13 @@
      "\n	-W	Display warnings about entries that had no matching files" \
 
 #define setfont_trivial_usage \
-       "[-m mapfile] font"
+       "FONT [-m MAPFILE] [-C TTY]"
 #define setfont_full_usage "\n\n" \
        "Load a console font\n" \
      "\nOptions:" \
-     "\n	-m mapfile	Load console screen map from mapfile"
+     "\n	-m MAPFILE	Load console screen map" \
+     "\n	-C TTY		Affect TTY instead of /dev/tty" \
+
 #define setfont_example_usage \
        "$ setfont -m koi8-r /etc/i18n/fontname\n"
 
@@ -3688,7 +3783,7 @@
        "Search for matching processes, and then\n" \
        "-K: stop all matching processes.\n" \
        "-S: start a process unless a matching process is found.\n" \
-	USE_GETOPT_LONG( \
+	USE_FEATURE_START_STOP_DAEMON_LONG_OPTIONS( \
      "\nProcess matching:" \
      "\n	-u,--user USERNAME|UID	Match only this user's processes" \
      "\n	-n,--name NAME		Match processes with NAME" \
@@ -3712,11 +3807,11 @@
      "\nOther:" \
 	USE_FEATURE_START_STOP_DAEMON_FANCY( \
      "\n	-o,--oknodo		Exit with status 0 if nothing is done" \
-     "\n	-q,--quiet		Quiet" \
-	) \
      "\n	-v,--verbose		Verbose" \
 	) \
-	SKIP_GETOPT_LONG( \
+     "\n	-q,--quiet		Quiet" \
+	) \
+	SKIP_FEATURE_START_STOP_DAEMON_LONG_OPTIONS( \
      "\nProcess matching:" \
      "\n	-u USERNAME|UID	Match only this user's processes" \
      "\n	-n NAME		Match processes with NAME" \
@@ -3740,9 +3835,9 @@
      "\nOther:" \
 	USE_FEATURE_START_STOP_DAEMON_FANCY( \
      "\n	-o		Exit with status 0 if nothing is done" \
-     "\n	-q		Quiet" \
-	) \
      "\n	-v		Verbose" \
+	) \
+     "\n	-q		Quiet" \
 	) \
 
 #define stat_trivial_usage \
@@ -4103,6 +4198,26 @@
        "$ echo $?\n" \
        "1\n"
 
+#define tc_trivial_usage \
+	/*"[OPTIONS] "*/"OBJECT CMD [dev STRING]"
+#define tc_full_usage "\n\n" \
+	"OBJECT: {qdisc|class|filter}\n" \
+	"CMD: {add|del|change|replace|show}\n" \
+	"\n" \
+	"qdisc [ handle QHANDLE ] [ root |"USE_FEATURE_TC_INGRESS(" ingress |")" parent CLASSID ]\n" \
+	/* "\t[ estimator INTERVAL TIME_CONSTANT ]\n" */ \
+	"\t[ [ QDISC_KIND ] [ help | OPTIONS ] ]\n" \
+	"\tQDISC_KIND := { [p|b]fifo | tbf | prio | cbq | red | etc. }\n" \
+	"qdisc show [ dev STRING ]"USE_FEATURE_TC_INGRESS(" [ingress]")"\n" \
+	"class [ classid CLASSID ] [ root | parent CLASSID ]\n" \
+	"\t[ [ QDISC_KIND ] [ help | OPTIONS ] ]\n" \
+	"class show [ dev STRING ] [ root | parent CLASSID ]\n" \
+	"filter [ pref PRIO ] [ protocol PROTO ]\n" \
+	/* "\t[ estimator INTERVAL TIME_CONSTANT ]\n" */ \
+	"\t[ root | classid CLASSID ] [ handle FILTERID ]\n" \
+	"\t[ [ FILTER_TYPE ] [ help | OPTIONS ] ]\n" \
+	"filter show [ dev STRING ] [ root | parent CLASSID ]"
+
 #define tcpsvd_trivial_usage \
        "[-hEv] [-c n] [-C n:msg] [-b n] [-u user] [-l name] ip port prog..."
 /* with not-implemented options: */
@@ -4161,6 +4276,12 @@
        "[-cr] [-u USER] [DIR]"
 #define tftpd_full_usage "\n\n" \
        "Transfer a file on tftp client's request.\n" \
+       "\n" \
+       "tftpd should be used as an inetd service.\n" \
+       "tftpd's line for inetd.conf:\n" \
+       "	69 dgram udp nowait root tftpd tftpd /files/to/serve\n" \
+       "It also can be ran from udpsvd:\n" \
+       "	udpsvd -vE 0.0.0.0 69 tftpd /files/to/serve\n" \
      "\nOptions:" \
      "\n	-r	Prohibit upload" \
      "\n	-c	Allow file creation via upload" \
@@ -4175,7 +4296,7 @@
      "\n	-v	Verbose" \
 
 #define top_trivial_usage \
-       "[-b] [-n COUNT] [-d SECONDS]"
+       "[-b] [-nCOUNT] [-dSECONDS]"
 #define top_full_usage "\n\n" \
        "Provide a view of process activity in real time.\n" \
        "Read the status of all processes from /proc each SECONDS\n" \
@@ -4281,7 +4402,7 @@
      "\n	-C,--clientid-none	Suppress default client identifier" \
      "\n	-p,--pidfile=file	Create pidfile" \
      "\n	-r,--request=IP		IP address to request" \
-     "\n	-s,--script=file	Run file at DHCP events (default "CONFIG_DHCPC_DEFAULT_SCRIPT")" \
+     "\n	-s,--script=file	Run file at DHCP events (default "CONFIG_UDHCPC_DEFAULT_SCRIPT")" \
      "\n	-t,--retries=N		Send up to N request packets" \
      "\n	-T,--timeout=N		Try to get a lease for N seconds (default 3)" \
      "\n	-A,--tryagain=N		Wait N seconds (default 20) after failure" \
@@ -4310,7 +4431,7 @@
      "\n	-C		Suppress default client identifier" \
      "\n	-p file		Create pidfile" \
      "\n	-r IP		IP address to request" \
-     "\n	-s file		Run file at DHCP events (default "CONFIG_DHCPC_DEFAULT_SCRIPT")" \
+     "\n	-s file		Run file at DHCP events (default "CONFIG_UDHCPC_DEFAULT_SCRIPT")" \
      "\n	-t N		Send up to N request packets" \
      "\n	-T N		Try to get a lease for N seconds (default 3)" \
      "\n	-A N		Wait N seconds (default 20) after failure" \
@@ -4533,14 +4654,15 @@
        "Mon Dec 17 10:31:44 GMT 2000"
 
 #define watchdog_trivial_usage \
-       "[-t N[ms]] [-F] DEV"
+       "[-t N[ms]] [-T N[ms]] [-F] DEV"
 #define watchdog_full_usage "\n\n" \
        "Periodically write to watchdog device DEV\n" \
      "\nOptions:" \
-     "\n	-t N	Timer period (default 30)" \
+     "\n	-T N	Reboot after N seconds if not reset (default 60)" \
+     "\n	-t N	Reset every N seconds (default 30)" \
      "\n	-F	Run in foreground" \
      "\n" \
-     "\nUse -t 500ms to specify period in milliseconds" \
+     "\nUse 500ms to specify period in milliseconds" \
 
 #define wc_trivial_usage \
        "[OPTION]... [FILE]..."
@@ -4558,12 +4680,12 @@
        "     31      46    1365 /etc/passwd\n"
 
 #define wget_trivial_usage \
-	USE_GETOPT_LONG( \
+	USE_FEATURE_WGET_LONG_OPTIONS( \
        "[-c|--continue] [-s|--spider] [-q|--quiet] [-O|--output-document file]\n" \
        "	[--header 'header: value'] [-Y|--proxy on/off] [-P DIR]\n" \
        "	[-U|--user-agent agent] url" \
 	) \
-	SKIP_GETOPT_LONG( \
+	SKIP_FEATURE_WGET_LONG_OPTIONS( \
        "[-csq] [-O file] [-Y on/off] [-P DIR] [-U agent] url" \
 	)
 #define wget_full_usage "\n\n" \
@@ -4608,7 +4730,7 @@
 	USE_FEATURE_XARGS_SUPPORT_ZERO_TERM( \
      "\n	-0	Input is separated by NUL characters") \
      "\n	-t	Print the command on stderr before execution" \
-     "\n	-e[STR]	STR stops input processing (default _)" \
+     "\n	-e[STR]	STR stops input processing" \
      "\n	-n N	Pass no more than N args to COMMAND" \
      "\n	-s N	Pass command line of no more than N bytes" \
 	USE_FEATURE_XARGS_SUPPORT_TERMOPT( \
@@ -4634,8 +4756,11 @@
        "Manage a ZeroConf IPv4 link-local address\n" \
      "\nOptions:" \
      "\n	-f		Run in foreground" \
-     "\n	-q		Quit after address (no daemon)" \
+     "\n	-q		Quit after obtaining address" \
      "\n	-r 169.254.x.x	Request this address first" \
      "\n	-v		Verbose" \
+     "\n" \
+     "\nWith no -q, runs continuously monitoring for ARP conflicts," \
+     "\nexits only on I/O errors (link down etc)" \
 
 #endif /* __BB_USAGE_H__ */
