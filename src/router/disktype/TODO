@@ -1,0 +1,20 @@
+$Id: TODO,v 1.12 2006/06/03 16:16:36 chrisp Exp $   -*- text -*-
+
+ disktype ToDo
+===============
+
+Check NTFS, HPFS, FAT stuff
+Check EVMS
+Nero CD images (.nrg)
+Other disklabels: SGI, OSF, Ultrix, Acorn, MS LDM, IBM, Minix,
+  Unixware
+Other FS: SGI EFS, SCO BFS, Acorn ADFS, JFFS1/2, IBM CMS FS
+
+Reverse-engineer the format of Apple disk images (esp. .dmg's)
+
+Port CD TOC access (ioctl's) to non-Linux systems
+
+Use C99 fixed-size integer types (see "c99-branch" in CVS)
+
+Make disktype a reusable library
+Record detection results in a data structure
