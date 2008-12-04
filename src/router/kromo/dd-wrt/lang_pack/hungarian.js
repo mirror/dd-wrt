@@ -310,7 +310,7 @@ bmenu.wirelessWds="WDS";
 
 bmenu.security="Biztonság";
 bmenu.firwall="Tûzfal";
-bmenu.vpn="VPN";
+bmenu.vpn="VPN Passthrough";
 
 bmenu.accrestriction="Hozzáférés-korlátozás";
 bmenu.webaccess="WAN hozzáférés";
@@ -1316,7 +1316,7 @@ hupnp.right4="Engedélyezi, hogy az alkalmazások automatikusan beállítsák a port 
 
 // ******************************************* VPN.asp *******************************************//
 
-vpn.titl="VPN";
+vpn.titl="VPN Passthrough";
 vpn.h2="Virtuális Privát Hálózat (VPN)";
 vpn.legend="VPN Passthrough";
 vpn.ipsec="IPSec Passthrough";

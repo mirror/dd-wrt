@@ -381,7 +381,7 @@ bmenu.wirelessWdswl1="WL1-WDS";
 
 bmenu.security="Security";
 bmenu.firwall="Firewall";
-bmenu.vpn="VPN";
+bmenu.vpn="VPN Passthrough";
 
 bmenu.accrestriction="Access Restrictions";
 bmenu.webaccess="WAN Access";
@@ -1545,7 +1545,7 @@ hupnp.right4="Allows applications to automatically setup port forwardings.";
 
 // ** VPN.asp **//
 var vpn = new Object();
-vpn.titl="VPN";
+vpn.titl="VPN Passthrough";
 vpn.h2="Virtual Private Network (VPN)";
 vpn.legend="VPN Passthrough";
 vpn.ipsec="IPSec Passthrough";

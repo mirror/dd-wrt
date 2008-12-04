@@ -381,7 +381,7 @@ bmenu.wirelessWdswl1="WL1-WDS";
 
 bmenu.security="Za¹èita";
 bmenu.firwall="Po¾arni zid";
-bmenu.vpn="VPN";
+bmenu.vpn="VPN prehajanje";
 
 bmenu.accrestriction="Omejitve dostopa";
 bmenu.webaccess="WAN dostop";
@@ -1204,6 +1204,7 @@ service.vpn_mru="TUN MTU dodatno";
 service.vpn_mss="TCP MSS";
 service.vpn_compress="Uporabi LZO stiskanje";
 service.vpn_tunnel="Tunelski protokol";
+service.vpn_tuntap="Tunelska naprava";
 service.vpn_srvcert="Javno stre¾ni¹ko potrdilo";
 service.vpn_clicert="Javno odjemalèevo potrdilo";
 service.vpn_certtype="nsCertType";
@@ -1544,7 +1545,7 @@ hupnp.right4="Dovoli aplikacijam, da samostojno nastavijo posredovanja.";
 
 // ** VPN.asp **//
 
-vpn.titl="VPN";
+vpn.titl="VPN prehajanje";
 vpn.h2="Navidezno zasebno omre¾je (VPN)";
 vpn.legend="VPN prehajanje";
 vpn.ipsec="IPSec prehajanje";

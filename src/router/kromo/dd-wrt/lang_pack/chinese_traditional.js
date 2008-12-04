@@ -378,7 +378,7 @@ bmenu.wirelessWdswl1="WL1-WDS";
 
 bmenu.security="系統安全";
 bmenu.firwall="防火牆";
-bmenu.vpn="VPN";
+bmenu.vpn="VPN Passthrough";
 
 bmenu.accrestriction="連線限制";
 bmenu.webaccess="WAN 連線";
@@ -1537,7 +1537,7 @@ hupnp.right4="允許應用程式自動地設定通訊埠轉發（映射）";
 
 // ** VPN.asp **//
 //
-vpn.titl="VPN";
+vpn.titl="VPN Passthrough";
 vpn.h2="虛擬專用網路（VPN）";
 vpn.legend="VPN Passthrough";
 vpn.ipsec="IPSec Passthrough";

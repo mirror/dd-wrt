@@ -308,7 +308,7 @@ bmenu.wirelessWds="WDS";
 
 bmenu.security="Segurança";
 bmenu.firwall="Firewall";
-bmenu.vpn="VPN";
+bmenu.vpn="Protocolos de VPN";
 
 bmenu.accrestriction="Restrições de Acesso";
 bmenu.webaccess="Acesso à Internet";
@@ -1134,7 +1134,7 @@ hupnp.right4="Permite às aplicações configurarem encaminhamentos de porta automa
 
 // ******************************************* VPN.asp *******************************************//
 
-vpn.titl="VPN";
+vpn.titl="Protocolos de VPN";
 vpn.h2="Rede Virtual Privada (VPN)";
 vpn.legend="Protocolos de VPN";
 vpn.ipsec="Permitir passagem de IPSec";

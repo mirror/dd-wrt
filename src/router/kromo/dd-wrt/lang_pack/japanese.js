@@ -355,7 +355,7 @@ bmenu.wirelessWds3="Ath3-WDS";
 
 bmenu.security="セキュリティ";
 bmenu.firwall="Firewall";
-bmenu.vpn="VPN";
+bmenu.vpn="VPN パススルー";
 
 bmenu.accrestriction="アクセス制限・タイマ";
 bmenu.webaccess="インターネットアクセス";
@@ -1426,7 +1426,7 @@ hupnp.right4="クライアントのアプリケーションが、UPnPプロト�
 
 // ** VPN.asp **//
 
-vpn.titl="VPN";
+vpn.titl="VPN パススルー";
 vpn.h2="VPN設定";
 vpn.legend="VPN パススルー";
 vpn.ipsec="IPSec パススルー";
