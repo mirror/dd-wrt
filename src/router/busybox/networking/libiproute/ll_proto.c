@@ -20,7 +20,9 @@
 #include <linux/if_ether.h>
 #endif
 
-#ifdef UNUSED
+#if !ENABLE_WERROR
+#warning de-bloat
+#endif
 /* Before re-enabling this, please (1) conditionalize exotic protocols
  * on CONFIG_something, and (2) decouple strings and numbers
  * (use llproto_ids[] = n,n,n..; and llproto_names[] = "loop\0" "pup\0" ...;)
@@ -123,4 +125,3 @@ int ll_proto_a2n(unsigned short *id, char *buf)
 	return 0;
 }
 
-#endif /* UNUSED */

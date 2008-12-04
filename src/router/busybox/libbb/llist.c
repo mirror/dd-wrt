@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2003 Glenn McGrath
  * Copyright (C) 2005 Vladimir Oleynik
- * Copyright (C) 2005 Bernhard Fischer
+ * Copyright (C) 2005 Bernhard Reutner-Fischer
  * Copyright (C) 2006 Rob Landley <rob@landley.net>
  *
  * Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
@@ -90,7 +90,6 @@ void FAST_FUNC llist_free(llist_t *elm, void (*freeit) (void *data))
 	}
 }
 
-#ifdef UNUSED
 /* Reverse list order. */
 llist_t* FAST_FUNC llist_rev(llist_t *list)
 {
@@ -105,4 +104,3 @@ llist_t* FAST_FUNC llist_rev(llist_t *list)
 	}
 	return rev;
 }
-#endif

@@ -18,7 +18,7 @@
 # pragma GCC visibility push(hidden)
 #endif
 
-#define DEFAULT_SCRIPT   CONFIG_DHCPC_DEFAULT_SCRIPT
+#define DEFAULT_SCRIPT   CONFIG_UDHCPC_DEFAULT_SCRIPT
 
 extern const uint8_t MAC_BCAST_ADDR[6]; /* six all-ones */
 
@@ -27,21 +27,23 @@ extern const uint8_t MAC_BCAST_ADDR[6]; /* six all-ones */
 #define DHCP_OPTIONS_BUFSIZE  308
 
 struct dhcpMessage {
-	uint8_t op;
-	uint8_t htype;
-	uint8_t hlen;
-	uint8_t hops;
-	uint32_t xid;
-	uint16_t secs;
-	uint16_t flags;
-	uint32_t ciaddr;
-	uint32_t yiaddr;
-	uint32_t siaddr;
-	uint32_t giaddr;
-	uint8_t chaddr[16];
-	uint8_t sname[64];
-	uint8_t file[128];
-	uint32_t cookie;
+	uint8_t op;      /* 1 = BOOTREQUEST, 2 = BOOTREPLY */
+	uint8_t htype;   /* hardware address type. 1 = 10mb ethernet */
+	uint8_t hlen;    /* hardware address length */
+	uint8_t hops;    /* used by relay agents only */
+	uint32_t xid;    /* unique id */
+	uint16_t secs;   /* elapsed since client began acquisition/renewal */
+	uint16_t flags;  /* only one flag so far: */
+#define BROADCAST_FLAG 0x8000 /* "I need broadcast replies" */
+	uint32_t ciaddr; /* client IP (if client is in BOUND, RENEW or REBINDING state) */
+	uint32_t yiaddr; /* 'your' (client) IP address */
+	uint32_t siaddr; /* IP address of next server to use in bootstrap,
+	                  * returned in DHCPOFFER, DHCPACK by server */
+	uint32_t giaddr; /* relay agent IP address */
+	uint8_t chaddr[16];/* link-layer client hardware address (MAC) */
+	uint8_t sname[64]; /* server host name (ASCIZ) */
+	uint8_t file[128]; /* boot file name (ASCIZ) */
+	uint32_t cookie;   /* fixed first four option bytes (99,130,83,99 dec) */
 	uint8_t options[DHCP_OPTIONS_BUFSIZE + CONFIG_UDHCPC_SLACK_FOR_BUGGY_SERVERS];
 } PACKED;
 
@@ -57,25 +59,26 @@ struct BUG_bad_sizeof_struct_udp_dhcp_packet {
 		[(sizeof(struct udp_dhcp_packet) != 576 + CONFIG_UDHCPC_SLACK_FOR_BUGGY_SERVERS) ? -1 : 1];
 };
 
-uint16_t udhcp_checksum(void *addr, int count);
+uint16_t udhcp_checksum(void *addr, int count) FAST_FUNC;
 
-void udhcp_init_header(struct dhcpMessage *packet, char type);
+void udhcp_init_header(struct dhcpMessage *packet, char type) FAST_FUNC;
 
 /*int udhcp_recv_raw_packet(struct dhcpMessage *payload, int fd); - in dhcpc.h */
-int udhcp_recv_kernel_packet(struct dhcpMessage *packet, int fd);
+int udhcp_recv_kernel_packet(struct dhcpMessage *packet, int fd) FAST_FUNC;
 
 int udhcp_send_raw_packet(struct dhcpMessage *payload,
 		uint32_t source_ip, int source_port,
-		uint32_t dest_ip, int dest_port,
-		const uint8_t *dest_arp, int ifindex);
+		uint32_t dest_ip, int dest_port, const uint8_t *dest_arp,
+		int ifindex) FAST_FUNC;
+
 int udhcp_send_kernel_packet(struct dhcpMessage *payload,
 		uint32_t source_ip, int source_port,
-		uint32_t dest_ip, int dest_port);
+		uint32_t dest_ip, int dest_port) FAST_FUNC;
 
 
 /**/
 
-void udhcp_run_script(struct dhcpMessage *packet, const char *name);
+void udhcp_run_script(struct dhcpMessage *packet, const char *name) FAST_FUNC;
 
 // Still need to clean these up...
 
@@ -84,20 +87,17 @@ void udhcp_run_script(struct dhcpMessage *packet, const char *name);
 #define end_option		udhcp_end_option
 #define add_option_string	udhcp_add_option_string
 #define add_simple_option	udhcp_add_simple_option
-/* from socket.h */
-#define listen_socket		udhcp_listen_socket
-#define read_interface		udhcp_read_interface
 
-void udhcp_sp_setup(void);
-int udhcp_sp_fd_set(fd_set *rfds, int extra_fd);
-int udhcp_sp_read(const fd_set *rfds);
-int raw_socket(int ifindex);
-int read_interface(const char *interface, int *ifindex, uint32_t *addr, uint8_t *arp);
-int listen_socket(/*uint32_t ip,*/ int port, const char *inf);
+void udhcp_sp_setup(void) FAST_FUNC;
+int udhcp_sp_fd_set(fd_set *rfds, int extra_fd) FAST_FUNC;
+int udhcp_sp_read(const fd_set *rfds) FAST_FUNC;
+int udhcp_read_interface(const char *interface, int *ifindex, uint32_t *addr, uint8_t *arp) FAST_FUNC;
+int udhcp_raw_socket(int ifindex) FAST_FUNC;
+int udhcp_listen_socket(/*uint32_t ip,*/ int port, const char *inf) FAST_FUNC;
 /* Returns 1 if no reply received */
-int arpping(uint32_t test_ip, uint32_t from_ip, uint8_t *from_mac, const char *interface);
+int arpping(uint32_t test_ip, uint32_t from_ip, uint8_t *from_mac, const char *interface) FAST_FUNC;
 
-#if ENABLE_FEATURE_UDHCP_DEBUG
+#if ENABLE_UDHCP_DEBUG
 # define DEBUG(str, args...) bb_info_msg("### " str, ## args)
 #else
 # define DEBUG(str, args...) do {;} while (0)

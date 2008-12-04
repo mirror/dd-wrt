@@ -349,11 +349,11 @@ int start_stop_daemon_main(int argc UNUSED_PARAM, char **argv)
 	opt_complementary = "K:S:K--S:S--K:m?p:K?xpun:S?xa"
 		USE_FEATURE_START_STOP_DAEMON_FANCY("q-v");
 	opt = getopt32(argv, "KSbqtma:n:s:u:c:x:p:"
-		USE_FEATURE_START_STOP_DAEMON_FANCY("ovN:"),
-//		USE_FEATURE_START_STOP_DAEMON_FANCY("ovN:R:"),
+		USE_FEATURE_START_STOP_DAEMON_FANCY("ovN:R:"),
 		&startas, &cmdname, &signame, &userspec, &chuid, &execname, &pidfile
 		USE_FEATURE_START_STOP_DAEMON_FANCY(,&opt_N)
-//		USE_FEATURE_START_STOP_DAEMON_FANCY(,&retry_arg)
+		/* We accept and ignore -R <param> / --retry <param> */
+		USE_FEATURE_START_STOP_DAEMON_FANCY(,NULL)
 	);
 
 	if (opt & OPT_s) {
@@ -428,7 +428,7 @@ int start_stop_daemon_main(int argc UNUSED_PARAM, char **argv)
 		write_pidfile(pidfile);
 	}
 	if (opt & OPT_c) {
-		struct bb_uidgid_t ugid;
+		struct bb_uidgid_t ugid = { -1, -1 };
 		parse_chown_usergroup_or_die(&ugid, chuid);
 		if (ugid.gid != (gid_t) -1) xsetgid(ugid.gid);
 		if (ugid.uid != (uid_t) -1) xsetuid(ugid.uid);

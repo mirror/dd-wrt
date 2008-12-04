@@ -681,24 +681,22 @@ config ROUTE
 	help
 	  Route displays or manipulates the kernel's IP routing tables.
 
-config SENDMAIL
-	bool "sendmail"
-	default n
-	help
-	  Barebones sendmail.
-
-config FETCHMAIL
-	bool "fetchmail"
-	default n
-	help
-	  Barebones fetchmail.
-
 config SLATTACH
 	bool "slattach"
 	default n
 	help
 	  slattach is a small utility to attach network interfaces to serial
 	  lines.
+
+#config TC
+#	bool "tc"
+#	default n
+#	help
+#	  show / manipulate traffic control settings
+#
+#config FEATURE_TC_INGRESS
+#	def_bool n
+#	depends on TC
 
 config TELNET
 	bool "telnet"
@@ -820,7 +818,7 @@ config FEATURE_TFTP_BLOCKSIZE
 	  Allow tftp to specify block size, and tftpd to understand
 	  "blksize" option.
 
-config DEBUG_TFTP
+config TFTP_DEBUG
 	bool "Enable debug"
 	default n
 	depends on TFTP

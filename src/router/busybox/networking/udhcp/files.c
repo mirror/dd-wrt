@@ -69,7 +69,7 @@ static int read_yn(const char *line, void *arg)
 
 
 /* find option 'code' in opt_list */
-struct option_set *find_option(struct option_set *opt_list, uint8_t code)
+struct option_set* FAST_FUNC find_option(struct option_set *opt_list, uint8_t code)
 {
 	while (opt_list && opt_list->data[OPT_CODE] < code)
 		opt_list = opt_list->next;
@@ -90,7 +90,7 @@ static void attach_option(struct option_set **opt_list,
 	if (!existing) {
 		DEBUG("Attaching option %02x to list", option->code);
 
-#if ENABLE_FEATURE_RFC3397
+#if ENABLE_FEATURE_UDHCP_RFC3397
 		if ((option->flags & TYPE_MASK) == OPTION_STR1035)
 			/* reuse buffer and length for RFC1035-formatted string */
 			buffer = (char *)dname_enc(NULL, 0, buffer, &length);
@@ -109,7 +109,7 @@ static void attach_option(struct option_set **opt_list,
 
 		new->next = *curr;
 		*curr = new;
-#if ENABLE_FEATURE_RFC3397
+#if ENABLE_FEATURE_UDHCP_RFC3397
 		if ((option->flags & TYPE_MASK) == OPTION_STR1035 && buffer != NULL)
 			free(buffer);
 #endif
@@ -119,7 +119,7 @@ static void attach_option(struct option_set **opt_list,
 	/* add it to an existing option */
 	DEBUG("Attaching option %02x to existing member of list", option->code);
 	if (option->flags & OPTION_LIST) {
-#if ENABLE_FEATURE_RFC3397
+#if ENABLE_FEATURE_UDHCP_RFC3397
 		if ((option->flags & TYPE_MASK) == OPTION_STR1035)
 			/* reuse buffer and length for RFC1035-formatted string */
 			buffer = (char *)dname_enc(existing->data + 2,
@@ -139,7 +139,7 @@ static void attach_option(struct option_set **opt_list,
 			memcpy(existing->data + existing->data[OPT_LEN] + 2, buffer, length);
 			existing->data[OPT_LEN] += length;
 		} /* else, ignore the data, we could put this in a second option in the future */
-#if ENABLE_FEATURE_RFC3397
+#if ENABLE_FEATURE_UDHCP_RFC3397
 		if ((option->flags & TYPE_MASK) == OPTION_STR1035 && buffer != NULL)
 			free(buffer);
 #endif
@@ -190,7 +190,7 @@ static int read_opt(const char *const_line, void *arg)
 				retval = read_ip(val, buffer + 4);
 			break;
 		case OPTION_STRING:
-#if ENABLE_FEATURE_RFC3397
+#if ENABLE_FEATURE_UDHCP_RFC3397
 		case OPTION_STR1035:
 #endif
 			length = strlen(val);
@@ -266,7 +266,7 @@ static int read_staticlease(const char *const_line, void *arg)
 
 	addStaticLease(arg, mac_bytes, ip);
 
-	if (ENABLE_FEATURE_UDHCP_DEBUG) printStaticLeases(arg);
+	if (ENABLE_UDHCP_DEBUG) printStaticLeases(arg);
 
 	return 1;
 }
@@ -307,7 +307,7 @@ static const struct config_keyword keywords[] = {
 };
 enum { KWS_WITH_DEFAULTS = ARRAY_SIZE(keywords) - 6 };
 
-void read_config(const char *file)
+void FAST_FUNC read_config(const char *file)
 {
 	parser_t *parser;
 	const struct config_keyword *k;
@@ -338,7 +338,7 @@ void read_config(const char *file)
 }
 
 
-void write_leases(void)
+void FAST_FUNC write_leases(void)
 {
 	int fp;
 	unsigned i;
@@ -380,7 +380,7 @@ void write_leases(void)
 }
 
 
-void read_leases(const char *file)
+void FAST_FUNC read_leases(const char *file)
 {
 	int fp;
 	unsigned i;

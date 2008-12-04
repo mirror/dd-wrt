@@ -69,21 +69,15 @@
 #include <dmalloc.h>
 #endif
 
-#if !ENABLE_USE_BB_PWD_GRP
-# include <pwd.h>
-# include <grp.h>
-#endif
+#include <pwd.h>
+#include <grp.h>
 #if ENABLE_FEATURE_SHADOWPASSWDS
-# if !ENABLE_USE_BB_SHADOW
-#  include <shadow.h>
-# endif
+# include <shadow.h>
 #endif
 
 /* Some libc's forget to declare these, do it ourself */
-extern char **environ;
 
-/* Set the group set for the current user to GROUPS (N of them).  */
-int setgroups(size_t n, const gid_t *groups);
+extern char **environ;
 #if defined(__GLIBC__) && __GLIBC__ < 2
 int vdprintf(int d, const char *format, va_list ap);
 #endif
@@ -109,7 +103,7 @@ struct sysinfo {
 	unsigned long totalhigh;	/* Total high memory size */
 	unsigned long freehigh;		/* Available high memory size */
 	unsigned int mem_unit;		/* Memory unit size in bytes */
-	char _f[20 - 2*sizeof(long) - sizeof(int)]; /* Padding: libc5 uses this.. */
+	char _f[20 - 2 * sizeof(long) - sizeof(int)]; /* Padding: libc5 uses this.. */
 };
 int sysinfo(struct sysinfo* info);
 
@@ -373,6 +367,9 @@ void sig_unblock(int sig) FAST_FUNC;
 int sigaction_set(int sig, const struct sigaction *act) FAST_FUNC;
 /* SIG_BLOCK/SIG_UNBLOCK all signals: */
 int sigprocmask_allsigs(int how) FAST_FUNC;
+/* Standard handler which just records signo */
+extern smallint bb_got_signal;
+void record_signo(int signo); /* not FAST_FUNC! */
 
 
 void xsetgid(gid_t gid) FAST_FUNC;
@@ -746,7 +743,7 @@ int bb_execvp(const char *file, char *const argv[]) FAST_FUNC;
 pid_t spawn(char **argv) FAST_FUNC;
 pid_t xspawn(char **argv) FAST_FUNC;
 
-int safe_waitpid(int pid, int *wstat, int options) FAST_FUNC;
+pid_t safe_waitpid(pid_t pid, int *wstat, int options) FAST_FUNC;
 /* Unlike waitpid, waits ONLY for one process.
  * It's safe to pass negative 'pids' from failed [v]fork -
  * wait4pid will return -1 (and will not clobber [v]fork's errno).
@@ -754,14 +751,14 @@ int safe_waitpid(int pid, int *wstat, int options) FAST_FUNC;
  *      if (rc < 0) bb_perror_msg("%s", argv[0]);
  *      if (rc > 0) bb_error_msg("exit code: %d", rc);
  */
-int wait4pid(int pid) FAST_FUNC;
-int wait_any_nohang(int *wstat) FAST_FUNC;
+int wait4pid(pid_t pid) FAST_FUNC;
+pid_t wait_any_nohang(int *wstat) FAST_FUNC;
 #define wait_crashed(w) ((w) & 127)
 #define wait_exitcode(w) ((w) >> 8)
 #define wait_stopsig(w) ((w) >> 8)
 #define wait_stopped(w) (((w) & 127) == 127)
 /* wait4pid(spawn(argv)) + NOFORK/NOEXEC (if configured) */
-int spawn_and_wait(char **argv) FAST_FUNC;
+pid_t spawn_and_wait(char **argv) FAST_FUNC;
 struct nofork_save_area {
 	jmp_buf die_jmp;
 	const char *applet_name;
@@ -792,7 +789,7 @@ int run_nofork_applet_prime(struct nofork_save_area *old, int applet_no, char **
  *
  * forkexit_or_rexec(argv) = bare-bones "fork + parent exits" on MMU,
  *      "vfork + re-exec ourself" on NOMMU. No fd redirection, no setsid().
- *      Currently used for openvt and setsid. On MMU ignores argv.
+ *      Currently used for setsid only. On MMU ignores argv.
  *
  * Helper for network daemons in foreground mode:
  *
@@ -933,13 +930,45 @@ int chown_main(int argc, char **argv) USE_CHOWN(MAIN_EXTERNALLY_VISIBLE);
 /* Don't need USE_xxx() guard for these */
 int gunzip_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int bunzip2_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int bbunpack(char **argv,
-	char* (*make_new_name)(char *filename),
-	USE_DESKTOP(long long) int (*unpacker)(void)
-) FAST_FUNC;
+
 #if ENABLE_ROUTE
 void bb_displayroutes(int noresolve, int netstatfmt) FAST_FUNC;
 #endif
+
+
+/* "Keycodes" that report an escape sequence.
+ * We use something which fits into signed char,
+ * yet doesn't represent any valid Unicode characher.
+ * Also, -1 is reserved for error indication and we don't use it. */
+enum {
+	KEYCODE_UP       =  -2, 
+	KEYCODE_DOWN     =  -3,
+	KEYCODE_RIGHT    =  -4,
+	KEYCODE_LEFT     =  -5,
+	KEYCODE_HOME     =  -6,
+	KEYCODE_END      =  -7,
+	KEYCODE_INSERT   =  -8,
+	KEYCODE_DELETE   =  -9,
+	KEYCODE_PAGEUP   = -10,
+	KEYCODE_PAGEDOWN = -11,
+#if 0
+	KEYCODE_FUN1     = -12,
+	KEYCODE_FUN2     = -13,
+	KEYCODE_FUN3     = -14,
+	KEYCODE_FUN4     = -15,
+	KEYCODE_FUN5     = -16,
+	KEYCODE_FUN6     = -17,
+	KEYCODE_FUN7     = -18,
+	KEYCODE_FUN8     = -19,
+	KEYCODE_FUN9     = -20,
+	KEYCODE_FUN10    = -21,
+	KEYCODE_FUN11    = -22,
+	KEYCODE_FUN12    = -23,
+#endif
+	/* How long the longest ESC sequence we know? */
+	KEYCODE_BUFFER_SIZE = 4
+};
+int read_key(int fd, smalluint *nbuffered, char *buffer) FAST_FUNC;
 
 
 /* Networking */
@@ -1026,7 +1055,7 @@ enum {
 	PARSE_GREEDY    = 0x00040000, // last token takes entire remainder of the line
 	PARSE_MIN_DIE   = 0x00100000, // die if < min tokens found
 	// keep a copy of current line
-	PARSE_KEEP_COPY = 0x00200000 * ENABLE_DEBUG_CROND_OPTION,
+	PARSE_KEEP_COPY = 0x00200000 * ENABLE_FEATURE_CROND_D,
 //	PARSE_ESCAPE    = 0x00400000, // process escape sequences in tokens
 	// NORMAL is:
 	// * remove leading and trailing delimiters and collapse
@@ -1130,6 +1159,8 @@ extern void print_login_prompt(void) FAST_FUNC;
 
 /* NB: typically you want to pass fd 0, not 1. Think 'applet | grep something' */
 int get_terminal_width_height(int fd, unsigned *width, unsigned *height) FAST_FUNC;
+
+int tcsetattr_stdin_TCSANOW(const struct termios *tp) FAST_FUNC;
 
 /* NB: "unsigned request" is crucial! "int request" will break some arches! */
 int ioctl_or_perror(int fd, unsigned request, void *argp, const char *fmt,...) __attribute__ ((format (printf, 4, 5))) FAST_FUNC;
@@ -1240,6 +1271,9 @@ typedef struct procps_status_t {
 	 * by link target or interpreter name) */
 	char comm[COMM_LEN];
 	/* user/group? - use passwd/group parsing functions */
+#if ENABLE_FEATURE_TOP_SMP_PROCESS
+	int last_seen_on_cpu;
+#endif
 } procps_status_t;
 enum {
 	PSSCAN_PID      = 1 << 0,
@@ -1261,12 +1295,16 @@ enum {
 	PSSCAN_ARGVN    = (1 << 16) * (ENABLE_PGREP || ENABLE_PKILL || ENABLE_PIDOF),
 	USE_SELINUX(PSSCAN_CONTEXT = 1 << 17,)
 	PSSCAN_START_TIME = 1 << 18,
+	PSSCAN_CPU      = 1 << 19,
 	/* These are all retrieved from proc/NN/stat in one go: */
 	PSSCAN_STAT     = PSSCAN_PPID | PSSCAN_PGID | PSSCAN_SID
-	                | PSSCAN_COMM | PSSCAN_STATE
-	                | PSSCAN_VSZ | PSSCAN_RSS
-			| PSSCAN_STIME | PSSCAN_UTIME | PSSCAN_START_TIME
-			| PSSCAN_TTY,
+	/**/            | PSSCAN_COMM | PSSCAN_STATE
+	/**/            | PSSCAN_VSZ | PSSCAN_RSS
+	/**/            | PSSCAN_STIME | PSSCAN_UTIME | PSSCAN_START_TIME
+	/**/            | PSSCAN_TTY
+#if ENABLE_FEATURE_TOP_SMP_PROCESS
+	/**/            | PSSCAN_CPU
+#endif
 };
 //procps_status_t* alloc_procps_scan(void) FAST_FUNC;
 void free_procps_scan(procps_status_t* sp) FAST_FUNC;

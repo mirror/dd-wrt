@@ -247,7 +247,7 @@ static void update_status(struct svdir *s)
 
 static unsigned custom(struct svdir *s, char c)
 {
-	int pid;
+	pid_t pid;
 	int w;
 	char a[10];
 	struct stat st;
@@ -336,10 +336,11 @@ static void startservice(struct svdir *s)
 				xdup2(logpipe.wr, 1);
 			}
 		}
-		bb_signals(0
+		/* Non-ignored signals revert to SIG_DFL on exec anyway */
+		/*bb_signals(0
 			+ (1 << SIGCHLD)
 			+ (1 << SIGTERM)
-			, SIG_DFL);
+			, SIG_DFL);*/
 		sig_unblock(SIGCHLD);
 		sig_unblock(SIGTERM);
 		execvp(*run, run);
@@ -584,7 +585,7 @@ int runsv_main(int argc UNUSED_PARAM, char **argv)
 			continue;
 
 		for (;;) {
-			int child;
+			pid_t child;
 			int wstat;
 
 			child = wait_any_nohang(&wstat);
