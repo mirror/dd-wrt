@@ -37,6 +37,11 @@
 					<input class="spaceradio" type="radio" value="1" name="usb_fs_fat" <% nvram_checked("usb_fs_fat","1"); %> /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" value="0" name="usb_fs_fat" <% nvram_checked("usb_fs_fat","0"); %> /><% tran("share.disable"); %>
 				</div>
+				<div class="setting">					
+					<div class="label"><% tran("service.usb_automnt"); %></div>
+					<input class="spaceradio" type="radio" value="1" name="usb_automnt" <% nvram_checked("usb_automnt","1"); %> /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" value="0" name="usb_automnt" <% nvram_checked("usb_automnt","0"); %> /><% tran("share.disable"); %>
+				</div>
 			</div>
 		<div class="setting">
 			<div class="label"><% tran("service.usb_printer"); %></div>
