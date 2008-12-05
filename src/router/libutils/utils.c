@@ -2941,8 +2941,15 @@ void rmmod( char *module )
     eval( "rmmod", module );
 }
 
-#ifdef HAVE_OLED
 #include "revision.h"
+
+
+char *getSoftwareRevision(void)
+{
+return "" SVN_REVISION "";
+}
+
+#ifdef HAVE_OLED
 void initlcd(  )
 {
 
