@@ -54,6 +54,7 @@
 
 #include "IxEthAcc.h"
 #include "IxEthMii_p.h"
+#include "../ethAcc/include/IxEthAccMii_p.h"
 
 #ifdef __wince
 #include "IxOsPrintf.h"
@@ -387,6 +388,11 @@ ixEthMiiPhyReset(UINT32 phyAddr)
     return IX_FAIL;
 }
 
+
+#define IX_ETH_ACC_MII_TEST_REG 25
+#define IX_ETH_ACC_MII_AN_PRTN_10_DUP 0x0040
+#define IX_ETH_ACC_MII_AN_PRTN_100_DUP 0x0100
+
 /*****************************************************************
  *
  *  Link state query functions
@@ -420,7 +426,6 @@ ixEthMiiLinkStatus(UINT32 phyAddr,
     {
 	if ((ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT971_PHY_ID)	||
 	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT972_PHY_ID)	||
-            (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_RTL8021_PHY_ID)	||      
 	    (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_LXT9785_PHY_ID)       ||
 		(ixEthMiiPhyId[phyAddr] == IX_ETH_MII_MARVELL_PHY_ID)
 		)
@@ -439,7 +444,55 @@ ixEthMiiLinkStatus(UINT32 phyAddr,
 	    *fullDuplex = ((regval & IX_ETH_MII_SR2_FD) != 0);
 	    *autoneg = ((regval & IX_ETH_MII_SR2_AUTO) != 0);
 	    return IX_SUCCESS;
-	} /* end of if(ixEthMiiPhyId) */
+	}
+	else if (ixEthMiiPhyId[phyAddr] == IX_ETH_MII_RTL8021_PHY_ID)
+	    {
+	    if (ixEthAccMiiReadRtn(phyAddr,  
+				   IX_ETH_MII_CTRL_REG, 
+				   &ctrlRegval) != IX_ETH_ACC_SUCCESS)
+	    {
+		return IX_FAIL;
+	    }
+	    ixEthAccMiiReadRtn(phyAddr,  IX_ETH_MII_STAT_REG, &statRegval);
+	    *linkUp = ((regval & IX_ETH_MII_SR_LINK_STATUS) != 0);
+	    if (*linkUp)
+		{
+		*autoneg = TRUE;
+		ixEthAccMiiReadRtn(phyAddr,  IX_ETH_ACC_MII_TEST_REG, &statRegval);
+		    if ((statRegval & 0x01)!=0)
+		    {
+			*speed100 = TRUE;
+		    }else if ((statRegval & 0x02)!=0)
+		    {
+			*speed100 = FALSE;
+		    }else
+		    {
+		    *autoneg = FALSE;
+		    }
+		ixEthAccMiiReadRtn(phyAddr,  IX_ETH_MII_AN_PRTN_REG, &statRegval);
+		if (TRUE == *speed100)
+		{
+		    if ((statRegval & IX_ETH_ACC_MII_AN_PRTN_100_DUP) != 0)
+		    {
+			*fullDuplex = TRUE;
+		    }else
+		    {
+			*fullDuplex = FALSE;
+		    }
+		}else
+		{
+		    if ((statRegval & IX_ETH_ACC_MII_AN_PRTN_10_DUP) != 0)
+		    {
+			*fullDuplex = TRUE;
+		    }else
+		    {
+			*fullDuplex = FALSE;
+		    }
+		}
+		}    
+	    
+	    }    
+ /* end of if(ixEthMiiPhyId) */
 	else
 	{    
 	    /* ----------------------------------------------------*/

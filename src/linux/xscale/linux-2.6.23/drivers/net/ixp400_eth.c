@@ -2179,6 +2179,7 @@ static void rx_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf, IxEthAccPortId portId)
   
 	len = IX_OSAL_MBUF_MLEN(mbuf);
 	mcastFlags = IX_ETHACC_NE_FLAGS(mbuf);
+	
 
 	/* allocate new skb and "swap" it with the skb that is tied to the
 	 * mbuf. then return the mbuf + new skb to the NPEs.
@@ -3153,7 +3154,7 @@ static int phy_init(void)
     }
 
     /* Module parameter */
-    if (no_phy_scan) 
+    if (no_phy_scan || machine_is_compex()) 
     { 
 	/* Use hardcoded phy addresses */
 	num_phys_to_set = (sizeof(default_phy_cfg) / sizeof(phy_cfg_t));
@@ -4420,7 +4421,14 @@ static int __init ixp400_eth_init(void)
 
 
     TRACE;
-
+//compex patch
+    if (machine_is_compex())
+	{
+	phyAddresses[0]=0x10;
+	phyAddresses[1]=0x3;
+	default_phy_cfg[0].linkMonitor=FALSE;
+	default_phy_cfg[1].linkMonitor=TRUE;
+	}
     P_INFO("Initializing IXP400 NPE Ethernet driver software v. " MOD_VERSION " \n");
 
     TRACE;
