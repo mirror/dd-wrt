@@ -13,11 +13,12 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/stat.h>
-
 #include <typedefs.h>
 #include <shutils.h>
+#include <bcmnvram.h>
+
 static bool usb_ufd_connected( char *str );
-static int usb_process_path( char *path );
+static int usb_process_path( char *path, char *fs );
 static int usb_add_ufd( void );
 
 void start_hotplug_usb( void )
@@ -25,6 +26,9 @@ void start_hotplug_usb( void )
     char *device, *interface;
     char *action;
     int class, subclass, protocol;
+    
+    if( !(nvram_match ("usb_automnt", "1") )
+    return;
 
     if( !( action = getenv( "ACTION" ) ) || !( device = getenv( "TYPE" ) ) )
 	return EINVAL;
@@ -69,19 +73,13 @@ static bool usb_ufd_connected( char *str )
      *   Mount the path and look for the WCN configuration file.  If it
      * exists launch wcnparse to process the configuration.  
      */
-static int usb_process_path( char *path )
+static int usb_process_path( char *path, char *fs)
 {
     int ret = ENOENT;
     struct stat tmp_stat;
 
-    eval( "/bin/mount", "-t", "vfat", path, "/mnt" );
+    eval( "/bin/mount", "-t", fs, path, "/mnt" );
 
-    /* 
-     * if (stat("/mnt/SMRTNTKY/WSETTING.WFC", &tmp_stat) == 0) {
-     * eval("/usr/sbin/wcnparse", "-C", "/mnt",
-     * "SMRTNTKY/WSETTING.WFC");  ret = 0;  }  eval("/bin/umount",
-     * "/mnt");  
-     */
     return ret;
 }
 
@@ -93,6 +91,8 @@ static int usb_add_ufd(  )
     DIR *dir;
     struct dirent *entry;
     char path[128];
+    char fs[16];
+    int fs_found = 0;
 
     if( ( dir = opendir( "/dev/discs" ) ) == NULL )
 	return EINVAL;
@@ -117,17 +117,29 @@ static int usb_add_ufd(  )
 	eval( "/usr/sbin/disktype", path, ">/tmp/disktype.dump" );
 
 	/* 
-	 * Check if it has FAT file system 
+	 * Check if it has file system 
 	 */
 	if( eval( "/bin/grep", "-q", "FAT", "/tmp/disktype.dump" ) == 0 )
+	{	
+		fs = "FAT";
+		fs_found = 1;
+	}
+	else if( eval( "/bin/grep", "-q", "ext2", "/tmp/disktype.dump" ) == 0 )
 	{
-
+		fs = "ext2";
+		fs_found = 1;
+	}
+	else if( eval( "/bin/grep", "-q", "ext3", "/tmp/disktype.dump" ) == 0 )
+	{
+		fs = "ext3";
+		fs_found = 1;
+	}
+	if( fs_found )
+	{
 	    /* 
 	     * If it is partioned, mount first partition else raw disk 
 	     */
-	    if( eval
-		( "/bin/grep", "-q", "Partition",
-		  "/tmp/disktype.dump" ) == 0 )
+	    if( eval( "/bin/grep", "-q", "Partition", "/tmp/disktype.dump" ) == 0 )
 
 	    {
 		char part[10], *partitions, *next;
@@ -139,14 +151,14 @@ static int usb_add_ufd(  )
 		    sprintf( path, "/dev/discs/%s/%s", entry->d_name, part );
 		    if( stat( path, &tmp_stat ) )
 			continue;
-		    if( usb_process_path( path ) == 0 )
+		    if( usb_process_path( path, fs ) == 0 )
 			return 0;
 		}
 	    }
 
 	    else
 	    {
-		if( usb_process_path( path ) == 0 )
+		if( usb_process_path( path, fs ) == 0 )
 		    return 0;
 	    }
 	}
