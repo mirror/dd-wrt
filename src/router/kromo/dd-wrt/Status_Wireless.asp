@@ -192,8 +192,9 @@ addEvent(window, "unload", function() {
 								<legend><% getwirelessstatus(); %></legend>
 								<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
 									<tr>
-										<th width="28%"><% tran("share.mac"); %></th>
+										<th width="20%"><% tran("share.mac"); %></th>
 										<th width="12%"><% tran("share.intrface"); %></th>
+										<th width="10%"><% tran("share.ccq"); %></th>
 										<th width="10%"><% tran("share.txrate"); %></th>
 										<th width="11%"><% tran("share.rxrate"); %></th>
 										<th width="8%"><% tran("share.signal"); %></th>
