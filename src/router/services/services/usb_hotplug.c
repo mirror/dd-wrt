@@ -27,16 +27,16 @@ void start_hotplug_usb( void )
     char *action;
     int class, subclass, protocol;
     
-    if( !(nvram_match ("usb_automnt", "1") )
+    if( !(nvram_match ("usb_automnt", "1") ) )
     return;
 
     if( !( action = getenv( "ACTION" ) ) || !( device = getenv( "TYPE" ) ) )
-	return EINVAL;
+	return;
     sscanf( device, "%d/%d/%d", &class, &subclass, &protocol );
     if( class == 0 )
     {
 	if( !( interface = getenv( "INTERFACE" ) ) )
-	    return EINVAL;
+	    return;
 	sscanf( interface, "%d/%d/%d", &class, &subclass, &protocol );
     }
 
@@ -44,8 +44,8 @@ void start_hotplug_usb( void )
      * If a new USB device is added and it is of storage class 
      */
     if( class == 8 && subclass == 6 && !strcmp( action, "add" ) )
-	return ( usb_add_ufd(  ) );
-    return 0;
+	usb_add_ufd(  );
+    return;
 }
 
     /* 
@@ -91,7 +91,7 @@ static int usb_add_ufd(  )
     DIR *dir;
     struct dirent *entry;
     char path[128];
-    char fs[16];
+    char *fs = NULL;
     int fs_found = 0;
 
     if( ( dir = opendir( "/dev/discs" ) ) == NULL )
@@ -122,19 +122,16 @@ static int usb_add_ufd(  )
 	if( eval( "/bin/grep", "-q", "FAT", "/tmp/disktype.dump" ) == 0 )
 	{	
 		fs = "FAT";
-		fs_found = 1;
 	}
 	else if( eval( "/bin/grep", "-q", "ext2", "/tmp/disktype.dump" ) == 0 )
 	{
 		fs = "ext2";
-		fs_found = 1;
 	}
 	else if( eval( "/bin/grep", "-q", "ext3", "/tmp/disktype.dump" ) == 0 )
 	{
 		fs = "ext3";
-		fs_found = 1;
 	}
-	if( fs_found )
+	if( fs )
 	{
 	    /* 
 	     * If it is partioned, mount first partition else raw disk 
