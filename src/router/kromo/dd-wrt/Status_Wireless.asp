@@ -194,7 +194,6 @@ addEvent(window, "unload", function() {
 									<tr>
 										<th width="20%"><% tran("share.mac"); %></th>
 										<th width="12%"><% tran("share.intrface"); %></th>
-										<th width="10%"><% tran("share.ccq"); %></th>
 										<th width="10%"><% tran("share.txrate"); %></th>
 										<th width="11%"><% tran("share.rxrate"); %></th>
 										<th width="8%"><% tran("share.signal"); %></th>
