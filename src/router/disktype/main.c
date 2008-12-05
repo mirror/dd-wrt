@@ -48,7 +48,7 @@ static void show_macos_type(const char *filename);
 
 int main(int argc, char *argv[])
 {
-  int i;
+  int i = 1;
 
   /* argument check */
   if (argc < 2) {
@@ -58,10 +58,10 @@ int main(int argc, char *argv[])
 
   /* loop over filenames */
   print_line(0, "");
-  for (i = 1; i < argc; i++) {
+//  for (i = 1; i < argc; i++) {
     analyze_file(argv[i]);
     print_line(0, "");
-  }
+//  }
 
   return 0;
 }
