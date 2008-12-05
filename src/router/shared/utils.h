@@ -214,12 +214,10 @@
 // MXF-EB921201G)
 #define ROUTER_USR_5430 0x3310
 
-// U.S.Robotics USR5432 bridge (BCM5350 cpu, 1 port, fccid: Universal
-// Scientific Industrial Co. IXM-APGBR02)
-// U.S.Robotics USR5451 AP (BCM5350 cpu, 1 port, fccid: Universal Scientific
-// Industrial Co. IXM-APGBR02)
-// U.S.Robotics USR5461 router (BCM5350 cpu, fccid: Universal Scientific
-// Industrial Co. IXM-RTGBR02)
+// U.S.Robotics USR5432 bridge (BCM5350 cpu, 1 port, fccid: Universal Scientific Industrial Co. IXM-APGBR02)
+// U.S.Robotics USR5441 range-ext. (BCM5350 cpu, 1 port, fccid: Universal Scientific Industrial Co. IXM-APGBR02)
+// U.S.Robotics USR5451 AP (BCM5350 cpu, 1 port, fccid: Universal Scientific Industrial Co. IXM-APGBR02)
+// U.S.Robotics USR5461 router (BCM5350 cpu, fccid: Universal Scientific Industrial Co. IXM-RTGBR02)
 #define ROUTER_USR_5461 0x340f
 
 // Meraki Mini (Atheros SoC, no switch, fccid: Meraki UDX-MERAKI-MINI)
