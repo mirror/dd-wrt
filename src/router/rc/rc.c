@@ -366,7 +366,7 @@ int main( int argc, char **argv )
 		start_service( "hotplug_net" );
 		return;
 		}
-#ifdef HAVE_USBHOTPLUG
+#ifdef HAVE_USB
 	    if( !strcmp( argv[1], "usb" ) )
 		{
 		start_service( "hotplug_usb" );
