@@ -173,7 +173,11 @@ struct MAIN
     char *execname;
     int ( *exec ) ( int argc, char **argv );
 };
-
+int softwarerevision_main( int argc, char **argv )
+{
+fprintf(stdout,"revision is :%s\n",getSoftwareRevision());
+return 0;
+}
 static struct MAIN maincalls[] = {
     // {"init", NULL, &main_loop},
     {"ip-up", "ipup", NULL},
@@ -220,6 +224,7 @@ static struct MAIN maincalls[] = {
     {"startservices", NULL, start_services_main},
     {"start_single_service", NULL, start_single_service_main},
     {"startstop", NULL, startstop_main},
+    {"softwarerevision", NULL, softwarerevision_main},
 #if !defined(HAVE_MICRO) || defined(HAVE_ADM5120)
     {"watchdog", NULL, &watchdog_main},
 #endif
