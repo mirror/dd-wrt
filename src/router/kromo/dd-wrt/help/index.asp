@@ -36,6 +36,7 @@
 						<li><a href="HPPPoE_Server.asp"><% tran("bmenu.servicesPppoesrv"); %></a></li>
 						<% ifndef("PPPOESERVER", "-->"); %>
 						<li><a href="HPPTP.asp"><% tran("bmenu.servicesPptp"); %></a></li>
+						<li><a href="HNAS.asp"><% tran("bmenu.servicesNAS"); %></a></li>
 						<li><a href="HHotspot.asp"><% tran("bmenu.servicesHotspot"); %></a></li>
 						<% ifndef("MILKFISH", "<!--"); %>
 						<li><a href="HMilkfish.asp"><% tran("bmenu.servicesMilkfish"); %></a></li>
