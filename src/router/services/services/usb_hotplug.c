@@ -144,9 +144,9 @@ static int usb_add_ufd(  )
 	{
 	if (strstr( line, "FAT" ) )
 	fs = "vfat";
-	else if( strstr( line, "ext2" ) )
+	else if( strstr( line, "Ext2" ) )
 	fs = "ext2";
-	else if( strstr( line, "ext3" ) )
+	else if( strstr( line, "Ext3" ) )
 #ifdef HAVE_USB_ADVANCED
 	fs = "ext3";
 #else
