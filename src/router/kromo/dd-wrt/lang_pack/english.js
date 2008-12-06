@@ -654,6 +654,11 @@ pforward.to="Port to";
 var hpforward = new Object();
 hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>Enable</em> checkbox after you are finished.";
 
+// ** NAS.asp **//
+var nas = new Object();
+nas.titl="NAS";
+nas.ftpsrv="FTP Server";
+nas.sambasrv="Samba Server";
 
 // ** Hotspot.asp **//
 var hotspot = new Object();
@@ -1160,10 +1165,6 @@ service.pptpd_encry="MPPE Encryption";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
 service.pptpd_nat="NAT";
-
-//NAS_server.webservices
-service.nas_ftpsrv="FTP Server";
-service.nas_sambasrv="Samba Server";
 
 //rflow.webservices
 service.rflow_legend="RFlow / MACupd";
