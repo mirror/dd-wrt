@@ -409,21 +409,12 @@ int main( int argc, char **argv )
     sigset_t sigset;
     pid_t shell_pid = 0;
     uint boardflags;
-
-    // setenv("PATH",
-    // "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 
-    // 1);
-    // system("/etc/nvram/nvram");
     /* 
      * Basic initialization 
      */
+#ifdef HAVE_LSX
+    sysprintf("echo \"trigger console\" > /dev/console");    
+#endif
     cprintf( "console init\n" );
     if( console_init(  ) )
 	noconsole = 1;
