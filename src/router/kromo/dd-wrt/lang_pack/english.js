@@ -657,8 +657,9 @@ hpforward.right2="Certain applications may require to open specific ports in ord
 // ** NAS.asp **//
 var nas = new Object();
 nas.titl="NAS";
-nas.ftpsrv="FTP Server";
-nas.sambasrv="Samba Server";
+nas.proftpd_legend="FTP Server";
+nas.proftpd_srv="ProFTPD";
+nas.sambasrv_legend="Samba Server";
 
 // ** Hotspot.asp **//
 var hotspot = new Object();
@@ -1150,10 +1151,6 @@ service.syslog_ip="Remote Server";
 //telnet.webservices
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
-
-//ftp.webservices
-service.proftpd_legend="ProFTPD";
-service.proftpd_srv="ProFTPD";
 
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Client";
