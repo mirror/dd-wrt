@@ -1256,6 +1256,8 @@ service.usb_storage="USB podpora za shranjevanje datotek";
 service.usb_extfs="ext2 / ext3 datoteèni sistem";
 service.usb_fatfs="FAT datoteèni sistem";
 service.usb_printer="USB printer";
+service.usb_automnt="Avtomatièni priklop diska";
+service.usb_mntpoint="Priklopna toèka";
 
 //ttraff.webservices
 service.ttraff_legend="©tevec WAN prometa";
