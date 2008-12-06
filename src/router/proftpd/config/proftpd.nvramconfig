@@ -1,1 +1,4 @@
  "proftpd_enable" "ProFtpd support" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "proftpd_port" "ProFtpd port" "RANGE"  "1"  "65535"  "FALSE" "0"
+ "proftpd_dir"  "Files dir" "CHOICE" "3" "mnt" "mmc" "jffs" "FALSE" "0"
+ "proftpd_passw" "ProFtpd passw file"  "NULL"  "TRUE"  "0"
