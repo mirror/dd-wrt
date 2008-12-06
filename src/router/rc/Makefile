@@ -323,6 +323,12 @@ endif
 ifeq ($(CONFIG_PPTP),y)
 CFLAGS += -DHAVE_PPTP
 endif
+ifeq ($(CONFIG_FTP),y)
+CFLAGS += -DHAVE_NAS_SERVER
+endif
+ifeq ($(CONFIG_SAMBASRV),y)
+CFLAGS += -DHAVE_NAS_SERVER
+endif
 
 ifeq ($(CONFIG_L2TP),y)
 CFLAGS += -DHAVE_L2TP

@@ -400,6 +400,10 @@ static void handle_services( void )
 {
     void *handle = NULL;
 
+#ifdef HAVE_NAS_SERVER
+    handle = startstop_nofree( "ftpsrv", handle );
+    handle = startstop_nofree( "sambasrv", handle );
+#endif
 #ifdef HAVE_PPPOERELAY
     handle = startstop_nofree( "pppoerelay", handle );
 #endif
