@@ -1,4 +1,4 @@
-<h2><% tran("service.proftpd_legend"); %></h2>
+<h2><% tran("nas.proftpd_legend"); %></h2>
 		<fieldset>
 			<legend><% tran("nas.proftpd_srv"); %></legend>
 				<div class="setting">
