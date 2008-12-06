@@ -1,0 +1,12 @@
+<h2><% tran("service.proftpd_legend"); %></h2>
+		<fieldset>
+			<legend><% tran("nas.proftpd_srv"); %></legend>
+				<div class="setting">
+				<div class="label"><% tran("nas.proftpd_srv"); %></div>
+					<input class="spaceradio" type="radio" name="proftpd_enable" value="1" <% nvram_checked("proftpd_enable", "1"); %> onclick="show_layer_ext(this, 'ftpen', true)" /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" name="proftpd_enable" value="0" <% nvram_checked("proftpd_enable", "0"); %> onclick="show_layer_ext(this, 'ftpen', false)" /><% tran("share.disable"); %>
+				</div>
+				<div id="ftpen">
+				proftp settings here
+			</div>
+		</fieldset><br />
