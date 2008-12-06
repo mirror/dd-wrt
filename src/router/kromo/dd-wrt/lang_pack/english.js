@@ -416,6 +416,7 @@ bmenu.services="Services";
 bmenu.servicesServices="Services";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
+bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Router";
 bmenu.servicesAnchorFree="My Ad Network";
@@ -1159,6 +1160,10 @@ service.pptpd_encry="MPPE Encryption";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
 service.pptpd_nat="NAT";
+
+//NAS_server.webservices
+service.nas_ftpsrv="FTP Server";
+service.nas_sambasrv="Samba Server";
 
 //rflow.webservices
 service.rflow_legend="RFlow / MACupd";
