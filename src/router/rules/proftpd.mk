@@ -1,5 +1,5 @@
 proftpd-configure:
-	cd proftpd && ./configure --host=mipsel-linux --prefix=/tmp/proftpd 
+	cd proftpd && ./configure --host=$(ARCH)-linux --prefix=/tmp/proftpd 
 	
 proftpd:
 	$(MAKE) -C proftpd
