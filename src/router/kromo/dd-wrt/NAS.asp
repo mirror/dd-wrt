@@ -53,9 +53,9 @@ addEvent(window, "unload", function() {
 						<h2><% tran("nas.sambasrv"); %></h2>
 						
 						<fieldset>
-							<legend><% tran("nas.sambasrv"); %></legend>
+							<legend><% tran("nas.sambasrv_legend"); %></legend>
 							<div class="setting">
-								<div class="label"><% tran("nas.sambasrv"); %></div>
+								<div class="label"><% tran("nas.sambasrv_legend"); %></div>
 								<input class="spaceradio" type="radio" name="sambasrv_enable" value="1" <% nvram_checked("sambasrv_enable", "1"); %> onclick="show_layer_ext(this, 'sambaen', true)" /><% tran("share.enable"); %>&nbsp;
 								<input class="spaceradio" type="radio" name="sambasrv_enable" value="0" <% nvram_checked("sambasrv_enable", "0"); %> onclick="show_layer_ext(this, 'sambaen', false)" /><% tran("share.disable"); %>
 							</div>
