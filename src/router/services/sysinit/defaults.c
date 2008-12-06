@@ -2569,10 +2569,10 @@ struct nvram_tuple srouter_defaults[] = {
     {"ofdm_duplex", "TDD", 0},
 #endif
 #ifdef HAVE_FTP
-    {"protpd_enable", "0", 0},
-    {"protpd_port", "21", 0},
-    {"protpd_dir", "mnt", 0},
-    {"protpd_passw", "", 0},
+    {"proftpd_enable", "0", 0},
+    {"proftpd_port", "21", 0},
+    {"proftpd_dir", "mnt", 0},
+    {"proftpd_passw", "", 0},
 #endif
 #ifdef HAVE_SAMBA_SRV
     {"sambasrv_enable", "0", 0},
