@@ -315,6 +315,13 @@ ifeq ($(CONFIG_TFTP),y)
 CFLAGS += -DHAVE_TFTP
 endif
 
+ifeq ($(CONFIG_FTP),y)
+CFLAGS += -DHAVE_FTP
+endif
+ifeq ($(CONFIG_SAMBA_SRV),y)
+CFLAGS += -DHAVE_SAMBA_SRV
+endif
+
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
 endif
