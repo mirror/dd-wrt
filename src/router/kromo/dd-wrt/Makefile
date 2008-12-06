@@ -382,6 +382,13 @@ ifeq ($(CONFIG_ALFA_BRANDING2),y)
 endif
 
 
+ifneq ($(CONFIG_FTP),y)
+ifneq ($(CONFIG_SAMBASRV),y)
+	rm -f $(INSTALLDIR)/www/NAS.asp
+	rm -f $(INSTALLDIR)/www/help/HNAS.asp.asp
+endif
+endif
+
 ifneq ($(AOL_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/aol.asp
 	rm -f $(INSTALLDIR)/www/aol_error.asp
