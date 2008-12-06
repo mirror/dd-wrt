@@ -21,6 +21,8 @@ static bool usb_ufd_connected( char *str );
 static int usb_process_path( char *path, char *fs );
 static int usb_add_ufd( void );
 
+#define DUMPFILE	"/tmp/disktype.dump"
+
 void start_hotplug_usb( void )
 {
     char *device, *interface;
@@ -49,7 +51,7 @@ void start_hotplug_usb( void )
 }
 
     /* 
-     *   Check if the UFD is still connected because the links  created in
+     *   Check if the UFD is still connected because the links created in
      * /dev/discs are not removed when the UFD is  unplugged.  
      */
 static bool usb_ufd_connected( char *str )
@@ -77,8 +79,11 @@ static int usb_process_path( char *path, char *fs)
 {
     int ret = ENOENT;
     struct stat tmp_stat;
+    char mount_point[32];
+    
+    sprintf( mount_point, "/%s", nvram_default_get( "usb_mntpoint", "mnt" ) ); 
 
-    eval( "/bin/mount", "-t", fs, path, "/mnt" );
+    eval( "/bin/mount", "-t", fs, path, mount_point );
 
     return ret;
 }
@@ -89,10 +94,12 @@ static int usb_process_path( char *path, char *fs)
 static int usb_add_ufd(  )
 {
     DIR *dir;
+    FILE *fp;
+    char line[256];
     struct dirent *entry;
     char path[128];
     char *fs = NULL;
-    int fs_found = 0;
+    int is_part = 0;
 
     if( ( dir = opendir( "/dev/discs" ) ) == NULL )
 	return EINVAL;
@@ -113,31 +120,38 @@ static int usb_add_ufd(  )
 	if( usb_ufd_connected( entry->d_name + 4 ) == FALSE )
 	    continue;
 	sprintf( path, "/dev/discs/%s/disc", entry->d_name );
-	eval( "/usr/sbin/disktype", path, ">/tmp/disktype.dump" );
-	eval( "/usr/sbin/disktype", path, ">/tmp/disktype.dump" );
+	sysprintf ("/usr/sbin/disktype %s > %s", path, DUMPFILE);
 
 	/* 
 	 * Check if it has file system 
 	 */
-	if( eval( "/bin/grep", "-q", "FAT", "/tmp/disktype.dump" ) == 0 )
-	{	
-		fs = "FAT";
-	}
-	else if( eval( "/bin/grep", "-q", "ext2", "/tmp/disktype.dump" ) == 0 )
+	if( ( fp = fopen( DUMPFILE, "r" ) ) )
 	{
-		fs = "ext2";
-	}
-	else if( eval( "/bin/grep", "-q", "ext3", "/tmp/disktype.dump" ) == 0 )
+	while( fgets( line, sizeof( line ), fp ) != NULL )
 	{
-		fs = "ext3";
+	if (strstr( line, "FAT" ) )
+	fs = "vfat";
+	else if( strstr( line, "ext2" ) )
+	fs = "ext2";
+	else if( strstr( line, "ext3" ) )
+#ifdef HAVE_USB_ADVANCED
+	fs = "ext3";
+#else
+	fs = "ext2";
+#endif
+	
+	if( strstr( line, "Partition" ) )
+	is_part = 1;
 	}
+	fclose( fp );
+	}
+	 
 	if( fs )
 	{
 	    /* 
 	     * If it is partioned, mount first partition else raw disk 
 	     */
-	    if( eval( "/bin/grep", "-q", "Partition", "/tmp/disktype.dump" ) == 0 )
-
+	    if( is_part )
 	    {
 		char part[10], *partitions, *next;
 		struct stat tmp_stat;
