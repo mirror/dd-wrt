@@ -50,7 +50,7 @@ addEvent(window, "unload", function() {
 							
 						<% show_modules(".webftp"); %>
 						
-						<h2><% tran("nas.sambasrv"); %></h2>
+						<h2><% tran("nas.sambasrv_legend"); %></h2>
 						
 						<fieldset>
 							<legend><% tran("nas.sambasrv_legend"); %></legend>
