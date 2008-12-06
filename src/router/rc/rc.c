@@ -175,7 +175,7 @@ struct MAIN
 };
 int softwarerevision_main( int argc, char **argv )
 {
-fprintf(stdout,"revision is :%s\n",getSoftwareRevision());
+fprintf(stdout,"%s\n",getSoftwareRevision());
 return 0;
 }
 static struct MAIN maincalls[] = {
