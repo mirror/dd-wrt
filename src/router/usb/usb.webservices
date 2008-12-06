@@ -22,6 +22,11 @@
 			<input class="spaceradio" type="radio" value="0" name="usb_usb2" <% nvram_checked("usb_usb2","0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.usb_printer"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="usb_printer" <% nvram_checked("usb_printer","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="usb_printer" <% nvram_checked("usb_printer","0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.usb_storage"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="usb_storage" <% nvram_checked("usb_storage","1"); %> onclick="show_layer_ext(this, 'idusbstor', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="usb_storage" <% nvram_checked("usb_storage","0"); %> onclick="show_layer_ext(this, 'idusbstor', false)" /><% tran("share.disable"); %>
@@ -42,11 +47,14 @@
 					<input class="spaceradio" type="radio" value="1" name="usb_automnt" <% nvram_checked("usb_automnt","1"); %> /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" value="0" name="usb_automnt" <% nvram_checked("usb_automnt","0"); %> /><% tran("share.disable"); %>
 				</div>
+				<div class="setting">
+				<div class="label"><% tran("service.usb_mntpoint"); %></div>
+					<select name="usb_mntpoint">
+					<option value="mnt" <% nvram_selected("usb_mntpoint", "mnt"); %> >/mnt</option>
+					<option value="opt" <% nvram_selected("usb_mntpoint", "opt"); %> >/opt</option>
+					<option value="jffs" <% nvram_selected("usb_mntpoint", "jffs"); %> >/jffs</option>
+					</select>
+				</div>
 			</div>
-		<div class="setting">
-			<div class="label"><% tran("service.usb_printer"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="usb_printer" <% nvram_checked("usb_printer","1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="usb_printer" <% nvram_checked("usb_printer","0"); %> /><% tran("share.disable"); %>
-		</div>
 	</div>
 </fieldset><br/>
