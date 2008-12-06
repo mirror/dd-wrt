@@ -15,6 +15,7 @@
 						<li>Possibility to serve files on local network</li>
 					</ul>
 				</dd>
+				<dt><% tran("nas.sambasrv_legend"); %></dt>
 				<dd>SAMBA Server enables you to acces files : <br/>
 					<ul>
 						<li>Possibility to access files on router from local network</li>
