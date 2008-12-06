@@ -1305,7 +1305,7 @@ disable="enable";
     if( !strcmp( m, "wdsap" ) )
 	sysprintf( "iwpriv %s wdssep 1", dev );
     else
-	sysprintf( "iwpriv %s wdssep 1", dev );
+	sysprintf( "iwpriv %s wdssep 0", dev );
 
     sprintf( mtikie, "%s_mtikie", dev );
     if( nvram_default_match( mtikie, "1", "0" ) )
