@@ -6,7 +6,33 @@
 					<input class="spaceradio" type="radio" name="proftpd_enable" value="1" <% nvram_checked("proftpd_enable", "1"); %> onclick="show_layer_ext(this, 'ftpen', true)" /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" name="proftpd_enable" value="0" <% nvram_checked("proftpd_enable", "0"); %> onclick="show_layer_ext(this, 'ftpen', false)" /><% tran("share.disable"); %>
 				</div>
-				<div id="ftpen">
-				proftp settings here
+			<div id="ftpen">
+				<div class="setting">
+					<div class="label"><% tran("nas.proftpd_port"); %></div>
+					<input size="5" maxlength="5" class="num" name="proftpd_port" value="<% nvram_get("proftpd_port"); %>" />
+					<span class="default"><script type="text/javascript">
+					//<![CDATA[
+					document.write("(" + share.deflt + ": 21)");
+					//]]>
+					</script>
+				</div>
+				<div class="setting">
+				<div class="label"><% tran("nas.proftpd_dir"); %></div>
+					<select name="proftpd_dir">
+					<option value="mnt" <% nvram_selected("proftpd_dir", "mnt"); %> >/mnt</option>
+					<option value="opt" <% nvram_selected("proftpd_dir", "mmc"); %> >/opt</option>
+					<option value="jffs" <% nvram_selected("proftpd_dir", "jffs"); %> >/jffs</option>
+					</select>
+				</div>
+				<div class="setting">
+					<div class="label"><% tran("nas.proftpd_passw"); %></div>
+					<textarea id="proftpd_passw" name="proftpd_passw" cols="60" rows="4"></textarea>
+					<script type="text/javascript">
+					//<![CDATA[
+					var proftpd_passw = fix_cr( '<% nvram_get("proftpd_passw"); %>' );
+					document.getElementById("proftpd_passw").value = var_proftpd_passw;
+					//]]>
+					</script>
+				</div>
 			</div>
 		</fieldset><br />
