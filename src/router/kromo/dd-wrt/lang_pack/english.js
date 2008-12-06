@@ -659,6 +659,9 @@ var nas = new Object();
 nas.titl="NAS";
 nas.proftpd_legend="FTP Server";
 nas.proftpd_srv="ProFTPD";
+nas.proftpd_port="Server Port";
+nas.proftpd_dir="Files Dir";
+nas.proftpd_passw="User/Password List";
 nas.sambasrv_legend="Samba Server";
 
 // ** Hotspot.asp **//
