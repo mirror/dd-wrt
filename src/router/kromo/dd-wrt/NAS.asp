@@ -48,12 +48,12 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							
-						<h2><% tran("service.nas_ftpsrv"); %></h2>
+						<h2><% tran("nas.ftpsrv"); %></h2>
 						
 						<fieldset>
-							<legend><% tran("service.nas_ftpsrv"); %></legend>
+							<legend><% tran("nas.ftpsrv"); %></legend>
 							<div class="setting">
-								<div class="label"><% tran("service.nas_ftpsrv"); %></div>
+								<div class="label"><% tran("nas.nas_ftpsrv"); %></div>
 								<input class="spaceradio" type="radio" name="ftpsrv_enable" value="1" <% nvram_checked("ftpsrv_enable", "1"); %> onclick="show_layer_ext(this, 'ftpen', true)" /><% tran("share.enable"); %>&nbsp;
 								<input class="spaceradio" type="radio" name="ftpsrv_enable" value="0" <% nvram_checked("ftpsrv_enable", "0"); %> onclick="show_layer_ext(this, 'ftpen', false)" /><% tran("share.disable"); %>
 							</div>
@@ -62,10 +62,10 @@ addEvent(window, "unload", function() {
 							</div>
 						</fieldset><br />
 						
-						<h2><% tran("service.nas_sambasrv"); %></h2>
+						<h2><% tran("nas.nas_sambasrv"); %></h2>
 						
 						<fieldset>
-							<legend><% tran("service.nas_sambasrv"); %></legend>
+							<legend><% tran("nas.sambasrv"); %></legend>
 							<div class="setting">
 								<div class="label"><% tran("service.nas_sambasrv"); %></div>
 								<input class="spaceradio" type="radio" name="sambasrv_enable" value="1" <% nvram_checked("sambasrv_enable", "1"); %> onclick="show_layer_ext(this, 'sambaen', true)" /><% tran("share.enable"); %>&nbsp;
