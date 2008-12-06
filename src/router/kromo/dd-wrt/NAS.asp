@@ -15,7 +15,7 @@ var update;
 
 addEvent(window, "load", function() {
 	
-	show_layer_ext(document.setup.ftpsrv_enable, 'ftpen', <% nvram_else_match("ftpsrv_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.ftpsrv_enable, 'ftpen', <% nvram_else_match("proftpd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.sambasrv_enable, 'sambaen', <% nvram_else_match("sambasrv_enable", "1", "1", "0"); %> == 1);
 	
 	update = new StatusbarUpdate();
@@ -48,19 +48,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							
-						<h2><% tran("nas.ftpsrv"); %></h2>
-						
-						<fieldset>
-							<legend><% tran("nas.ftpsrv"); %></legend>
-							<div class="setting">
-								<div class="label"><% tran("nas.ftpsrv"); %></div>
-								<input class="spaceradio" type="radio" name="ftpsrv_enable" value="1" <% nvram_checked("ftpsrv_enable", "1"); %> onclick="show_layer_ext(this, 'ftpen', true)" /><% tran("share.enable"); %>&nbsp;
-								<input class="spaceradio" type="radio" name="ftpsrv_enable" value="0" <% nvram_checked("ftpsrv_enable", "0"); %> onclick="show_layer_ext(this, 'ftpen', false)" /><% tran("share.disable"); %>
-							</div>
-							<div id="ftpen">
-							<% show_modules(".webftp"); %>
-							</div>
-						</fieldset><br />
+						<% show_modules(".webftp"); %>
 						
 						<h2><% tran("nas.sambasrv"); %></h2>
 						
