@@ -1256,8 +1256,9 @@ service.usb_ehci="USB 2.0 Support";
 service.usb_storage="USB Storage Support";
 service.usb_extfs="ext2 / ext3 File System Support";
 service.usb_fatfs="FAT File System Support";
-service.usb_automnt="Automatic Drive Mount";
 service.usb_printer="USB Printer Support";
+service.usb_automnt="Automatic Drive Mount";
+service.usb_mntpoint="Disk Mount Point";
 
 //ttraff.webservices
 service.ttraff_legend="WAN Traffic Counter";
