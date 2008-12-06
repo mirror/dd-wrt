@@ -111,25 +111,25 @@ DETECTOR detectors[] = {
   /* 1: disk image formats */
   detect_vhd,               /* may stop */
   detect_cdimage,           /* may stop */
-  detect_cloop,
-  detect_udif,
+//  detect_cloop,
+//  detect_udif,
   /* 2: boot code */
   detect_linux_loader,
   detect_bsd_loader,
   detect_dos_loader,
-  detect_beos_loader,
+//  detect_beos_loader,
   /* 3: partition tables */
   detect_bsd_disklabel,     /* may stop, recurses with FLAG_IN_DISKLABEL */
   detect_solaris_disklabel, /* may stop, recurses with FLAG_IN_DISKLABEL */
   detect_solaris_vtoc,
-  detect_amiga_partmap,
-  detect_apple_partmap,
-  detect_atari_partmap,
+//  detect_amiga_partmap,
+//  detect_apple_partmap,
+//  detect_atari_partmap,
   detect_dos_partmap,
   detect_gpt_partmap,
   /* 4: file systems */
-  detect_amiga_fs,
-  detect_apple_volume,
+//  detect_amiga_fs,
+//  detect_apple_volume,
   detect_fat,
   detect_ntfs,
   detect_hpfs,
@@ -150,9 +150,9 @@ DETECTOR detectors[] = {
   detect_sysv,
   detect_qnx,
   detect_vxfs,
-  detect_bfs,
+//  detect_bfs,
   /* 5: file formats */
-  detect_archive,
+//  detect_archive,
   detect_compressed,  /* this is here because of boot disks */
   /* 6: blank formatted disk */
   detect_blank,
