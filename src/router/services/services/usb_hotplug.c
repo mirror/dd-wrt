@@ -58,17 +58,30 @@ static bool usb_ufd_connected( char *str )
 {
     uint host_no;
     char proc_file[128];
+    FILE *fp;
+    char line[256];
+    
 
     /* 
      * Host no. assigned by scsi driver for this UFD 
      */
     host_no = atoi( str );
     sprintf( proc_file, "/proc/scsi/usb-storage-%d/%d", host_no, host_no );
-    if( eval( "/bin/grep", "-q", "Attached: Yes", proc_file ) == 0 )
+ 
+	if( ( fp = fopen( proc_file, "r" ) ) )
+	{
+	while( fgets( line, sizeof( line ), fp ) != NULL )
+	{
+	if (strstr( line, "Attached: Yes" ) )
+	{
+	fclose( fp );
 	return TRUE;
-
-    else
+	}
+	}
+	}
+	fclose( fp );
 	return FALSE;
+    
 }
 
     /* 
