@@ -8,7 +8,7 @@
 			<h2><% tran("nas.titl"); %></h2>
 			<dl>
 				
-				<dt><% tran("service.nas_ftpsrv"); %></dt>
+				<dt><% tran("nas.proftpd_srv"); %></dt>
 				<dd>FTP Server enables you to serve files : <br/>
 					<ul>
 						<li>Possibility to serve files over the Internet</li>
