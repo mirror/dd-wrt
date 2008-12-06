@@ -20,7 +20,7 @@
 				<div class="label"><% tran("nas.proftpd_dir"); %></div>
 					<select name="proftpd_dir">
 					<option value="mnt" <% nvram_selected("proftpd_dir", "mnt"); %> >/mnt</option>
-					<option value="opt" <% nvram_selected("proftpd_dir", "mmc"); %> >/opt</option>
+					<option value="mmc" <% nvram_selected("proftpd_dir", "mmc"); %> >/mmc</option>
 					<option value="jffs" <% nvram_selected("proftpd_dir", "jffs"); %> >/jffs</option>
 					</select>
 				</div>
