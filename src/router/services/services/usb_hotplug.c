@@ -96,7 +96,7 @@ static int usb_process_path( char *path, char *fs)
     
     sprintf( mount_point, "/%s", nvram_default_get( "usb_mntpoint", "mnt" ) ); 
 
-    eval( "/bin/mount", "-t", fs, path, mount_point );
+    ret = eval( "/bin/mount", "-t", fs, path, mount_point );
 
     return ret;
 }
