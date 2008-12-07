@@ -317,6 +317,7 @@ endif
 
 ifeq ($(CONFIG_FTP),y)
 CFLAGS += -DHAVE_FTP
+OBJS += proftp.o
 endif
 ifeq ($(CONFIG_SAMBA_SRV),y)
 CFLAGS += -DHAVE_SAMBA_SRV
