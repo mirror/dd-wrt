@@ -1137,10 +1137,6 @@ service.syslog_ip="遠端伺服器";
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
-//ftp.webservices
-service.proftpd_legend="ProFTPD";
-service.proftpd_srv="ProFTPD";
-
 //pptpd_client.webservices
 service.pptpd_legend="PPTP 用戶端";
 service.pptpd_option="PPTP 用戶端選項";
