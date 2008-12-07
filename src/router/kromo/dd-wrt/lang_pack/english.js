@@ -1265,6 +1265,7 @@ service.usb_fatfs="FAT File System Support";
 service.usb_printer="USB Printer Support";
 service.usb_automnt="Automatic Drive Mount";
 service.usb_mntpoint="Disk Mount Point";
+service.usb_diskinfo="Disk Info";
 
 //ttraff.webservices
 service.ttraff_legend="WAN Traffic Counter";
