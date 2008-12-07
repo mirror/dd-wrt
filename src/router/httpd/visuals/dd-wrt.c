@@ -1949,6 +1949,7 @@ void ej_show_usb_diskinfo( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp, "</span>&nbsp;\n"
 				"</div>\n"
 				"</fieldset><br />\n" );
+	}
 
 	return;
 }
