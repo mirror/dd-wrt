@@ -2436,6 +2436,7 @@ struct ej_handler ej_handlers[] = {
      * for ddns 
      */
     {"show_ddns_status", ej_show_ddns_status},
+    {"show_usb_diskinfo", ej_show_usb_diskinfo},
     // {"show_ddns_ip", ej_show_ddns_ip},
     /*
      * for wireless 
