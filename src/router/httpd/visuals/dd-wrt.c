@@ -1923,6 +1923,37 @@ show_custominputlabel( webs_t wp, char *labelname, char *propertyname,
     websWrite( wp, "</div>\n" );
 }
 
+#ifdef HAVE_USB
+void ej_show_usb_diskinfo( webs_t wp, int argc, char_t ** argv )
+{
+    char buff[512];
+    FILE *fp;
+
+    if( !nvram_get( "usb_automnt", "1" )
+    return;
+    
+    if( ( fp = fopen( "/tmp/disktype.dump", "r" ) ) )
+    {
+
+	websWrite( wp, "<fieldset>\n"
+				"<legend><script type=\"text/javascript\">Capture(service.usb_diskinfo)</script></legend>\n"
+				"<div class=\"setting\">\n"
+				"<span id=\"disk_info\">\n" );
+				
+	while( fgets( buff, sizeof( buff ), fp ) )
+	{
+	    websWrite( wp, "%s <br />", buff );
+	}
+	fclose( fp )
+				
+	websWrite( wp, "</span>&nbsp;\n"
+				"</div>\n"
+				"</fieldset><br />\n" );
+
+	return;
+}
+#endif
+
 void show_legend( webs_t wp, char *labelname, int translate )
 {
     /*
