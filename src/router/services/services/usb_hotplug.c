@@ -60,8 +60,6 @@ static bool usb_ufd_connected( char *str )
     char proc_file[128];
     FILE *fp;
     char line[256];
-    
-
     /* 
      * Host no. assigned by scsi driver for this UFD 
      */
@@ -80,6 +78,12 @@ static bool usb_ufd_connected( char *str )
 	}
 	}
 	fclose( fp );
+	//in 2.6 kernels its a little bit different
+	sprintf( proc_file, "/proc/scsi/usb-storage/%d",host_no );
+	if( ( fp = fopen( proc_file, "r" ) ) )
+	    {
+	    return TRUE;
+	    }
 	return FALSE;
     
 }
