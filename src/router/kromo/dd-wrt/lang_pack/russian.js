@@ -1082,10 +1082,6 @@ service.syslog_ip="Удаленный сервер";
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
-//ftp.webservices
-service.proftpd_legend="ProFTPD";
-service.proftpd_srv="ProFTPD";
-
 //pptpd_client.webservices
 service.pptpd_legend="Клиент PPTP";
 service.pptpd_option="Опции клиента PPTP";

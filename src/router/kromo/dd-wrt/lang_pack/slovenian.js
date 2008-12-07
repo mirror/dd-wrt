@@ -1144,10 +1144,6 @@ service.syslog_ip="Oddaljeni stre¾nik";
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
-//ftp.webservices
-service.proftpd_legend="ProFTPD";
-service.proftpd_srv="ProFTPD";
-
 //pptpd_client.webservices
 service.pptpd_legend="PPTP odjemalec";
 service.pptpd_option="PPTP mo¾nosti odjemalca";
