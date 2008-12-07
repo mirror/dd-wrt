@@ -1942,6 +1942,7 @@ void ej_show_usb_diskinfo( webs_t wp, int argc, char_t ** argv )
 				
 	while( fgets( buff, sizeof( buff ), fp ) )
 	{
+		if( strcmp( buff, "\n" ) )
 	    websWrite( wp, "%s <br />", buff );
 	}
 	fclose( fp );
