@@ -2,3 +2,4 @@
  "proftpd_port" "ProFtpd port" "RANGE"  "1"  "65535"  "FALSE" "0"
  "proftpd_dir"  "Files dir" "CHOICE" "3" "mnt" "mmc" "jffs" "FALSE" "0"
  "proftpd_passw" "ProFtpd passw file"  "NULL"  "TRUE"  "0"
+ "proftpd_writeen" "ProFtpd write enable" "CHOICE" "2" "on" "off"  "FALSE" "0"
