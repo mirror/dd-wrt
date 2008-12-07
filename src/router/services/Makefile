@@ -321,6 +321,7 @@ OBJS += proftp.o
 endif
 ifeq ($(CONFIG_SAMBA_SRV),y)
 CFLAGS += -DHAVE_SAMBA_SRV
+OBJS += sambasrv.o
 endif
 
 ifeq ($(CONFIG_RB500),y)
