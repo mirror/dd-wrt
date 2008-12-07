@@ -311,6 +311,9 @@ endif
 ifeq ($(CONFIG_FTP),y)
 CFLAGS += -DHAVE_FTP
 endif
+ifeq ($(CONFIG_SAMBA_SRV),y)
+CFLAGS += -DHAVE_SAMBA_SRV
+endif
 
 ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
@@ -322,12 +325,6 @@ OBJS += pptpd.o
 endif
 ifeq ($(CONFIG_PPTP),y)
 CFLAGS += -DHAVE_PPTP
-endif
-ifeq ($(CONFIG_FTP),y)
-CFLAGS += -DHAVE_NAS_SERVER
-endif
-ifeq ($(CONFIG_SAMBASRV),y)
-CFLAGS += -DHAVE_NAS_SERVER
 endif
 
 ifeq ($(CONFIG_L2TP),y)

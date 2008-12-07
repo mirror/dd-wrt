@@ -94,6 +94,9 @@ int start_services_main( int argc, char **argv )
 #ifdef HAVE_FTP
     handle = start_service_nofree( "ftpsrv", handle );
 #endif
+#ifdef HAVE_SAMBA_SRV
+    handle = start_service_nofree( "sambasrv", handle );
+#endif
 #ifdef HAVE_SYSLOG
     handle = start_service_nofree( "syslog", handle );
 #endif
@@ -216,6 +219,9 @@ int stop_services_main( int argc, char **argv )
 #endif
 #ifdef HAVE_FTP
     handle = stop_service_nofree( "ftpsrv", handle );
+#endif
+#ifdef HAVE_SAMBA_SRV
+    handle = stop_service_nofree( "sambasrv", handle );
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
@@ -470,10 +476,10 @@ static void handle_nassrv( void )
 {
     void *handle = NULL;
 
-#ifdef HAVE_NAS_SERVER
 #ifdef HAVE_FTP
     handle = startstop_nofree( "ftpsrv", handle );
 #endif
+#ifdef HAVE_SAMBA_SRV
     handle = startstop_nofree( "sambasrv", handle );
 #endif
     if( handle )
@@ -922,7 +928,7 @@ static struct SERVICES services_def[] = {
     {"hotspot", handle_hotspot},
     {"anchorfree", handle_anchorfree},
     {"services", handle_services},
-#ifdef HAVE_NAS_SERVER
+#if defined(HAVE_FTP) || defined(HAVE_SAMBA_SRV)
     {"nassrv", handle_nassrv},
 #endif   
     {"management", handle_management},
