@@ -62,10 +62,12 @@ void start_ftpsrv( void )
 		 "IdentLookups    off\n"
 		 "RootLogin       on\n"
 		 "AllowOverwrite  off\n"
+		 "<Directory      /%s/*>\n"
 		 "<Limit SITE_CHMOD>\n"
 		 "  DenyAll\n"
 		 "</Limit>\n"
-		 "DelayEngine off",
+		 "DelayEngine     off",
+		 nvram_safe_get( "proftpd_dir" ),
 		 nvram_safe_get( "lan_ipaddr" ),
 		 nvram_safe_get( "proftpd_port" ) );
 
