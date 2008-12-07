@@ -30,7 +30,7 @@
 					<script type="text/javascript">
 					//<![CDATA[
 					var proftpd_passw = fix_cr( '<% nvram_get("proftpd_passw"); %>' );
-					document.getElementById("proftpd_passw").value = var_proftpd_passw;
+					document.getElementById("proftpd_passw").value = proftpd_passw;
 					//]]>
 					</script>
 				</div>
