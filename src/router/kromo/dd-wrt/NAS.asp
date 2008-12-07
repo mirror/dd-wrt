@@ -48,21 +48,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1"/>
 							
-						<% show_modules(".webftp"); %>
-						
-						<h2><% tran("nas.sambasrv_legend"); %></h2>
-						
-						<fieldset>
-							<legend><% tran("nas.sambasrv_legend"); %></legend>
-							<div class="setting">
-								<div class="label"><% tran("nas.sambasrv_legend"); %></div>
-								<input class="spaceradio" type="radio" name="sambasrv_enable" value="1" <% nvram_checked("sambasrv_enable", "1"); %> onclick="show_layer_ext(this, 'sambaen', true)" /><% tran("share.enable"); %>&nbsp;
-								<input class="spaceradio" type="radio" name="sambasrv_enable" value="0" <% nvram_checked("sambasrv_enable", "0"); %> onclick="show_layer_ext(this, 'sambaen', false)" /><% tran("share.disable"); %>
-							</div>
-							<div id="sambaen">
-							<% show_modules(".websamba"); %>
-							</div>								
-						</fieldset><br />
+						<% show_modules(".webnas"); %>
 
 							<div class="submitFooter">
 								<script type="text/javascript">
