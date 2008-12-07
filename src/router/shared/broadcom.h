@@ -408,6 +408,11 @@ extern void validate_wl_wep_key( webs_t wp, char *value, struct variable *v );
 extern void ej_wl_packet_get( webs_t wp, int argc, char_t ** argv );
 
 /*
+ * for usb
+ */
+extern void ej_show_usb_diskinfo( webs_t wp, int argc, char_t ** argv ); 
+
+/*
  * Ping and Traceroute 
  */
 extern void ej_dump_ping_log( webs_t wp, int argc, char_t ** argv );
