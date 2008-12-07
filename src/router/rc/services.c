@@ -92,7 +92,7 @@ int start_services_main( int argc, char **argv )
     handle = start_service_nofree( "telnetd", handle );
 #endif
 #ifdef HAVE_FTP
-    eval( "/etc/config/proftpd.startup" );
+    handle = start_service_nofree( "ftpsrv", handle );
 #endif
 #ifdef HAVE_SYSLOG
     handle = start_service_nofree( "syslog", handle );
@@ -215,7 +215,7 @@ int stop_services_main( int argc, char **argv )
     handle = stop_service_nofree( "telnetd", handle );
 #endif
 #ifdef HAVE_FTP
-    eval( "/etc/config/proftpd.startup" );
+    handle = stop_service_nofree( "ftpsrv", handle );
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
@@ -400,10 +400,6 @@ static void handle_services( void )
 {
     void *handle = NULL;
 
-#ifdef HAVE_NAS_SERVER
-    handle = startstop_nofree( "ftpsrv", handle );
-    handle = startstop_nofree( "sambasrv", handle );
-#endif
 #ifdef HAVE_PPPOERELAY
     handle = startstop_nofree( "pppoerelay", handle );
 #endif
@@ -431,9 +427,6 @@ static void handle_services( void )
 #endif
 #ifdef HAVE_TELNET
     handle = startstop_nofree( "telnetd", handle );
-#endif
-#ifdef HAVE_FTP
-    eval( "/etc/config/proftpd.startup" );
 #endif
 #ifdef HAVE_SNMP
     handle = startstop_nofree( "snmp", handle );
@@ -468,6 +461,21 @@ static void handle_services( void )
     handle = startstop_nofree( "openvpnserversys", handle );
 #endif
     handle = start_service_nofree( "anchorfreednat", handle );
+    if( handle )
+	dlclose( handle );
+
+}
+
+static void handle_nassrv( void )
+{
+    void *handle = NULL;
+
+#ifdef HAVE_NAS_SERVER
+#ifdef HAVE_FTP
+    handle = startstop_nofree( "ftpsrv", handle );
+#endif
+    handle = startstop_nofree( "sambasrv", handle );
+#endif
     if( handle )
 	dlclose( handle );
 
@@ -914,6 +922,9 @@ static struct SERVICES services_def[] = {
     {"hotspot", handle_hotspot},
     {"anchorfree", handle_anchorfree},
     {"services", handle_services},
+#ifdef HAVE_NAS_SERVER
+    {"nassrv", handle_nassrv},
+#endif   
     {"management", handle_management},
     {"start_pppoe", handle_pppoe},
     {"start_pptp", handle_pppoe},
