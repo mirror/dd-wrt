@@ -26,8 +26,8 @@
 				</div>
 				<div class="setting">
 				<div class="label"><% tran("nas.proftpd_writeen"); %></div>
-					<input class="spaceradio" type="radio" name="proftpd_writeen" value="on" <% nvram_checked("proftpd_enable", "on"); %> /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" name="proftpd_writeen" value="off" <% nvram_checked("proftpd_enable", "off"); %> /><% tran("share.disable"); %>
+					<input class="spaceradio" type="radio" name="proftpd_writeen" value="on" <% nvram_checked("proftpd_writeen", "on"); %> /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" name="proftpd_writeen" value="off" <% nvram_checked("proftpd_writeen", "off"); %> /><% tran("share.disable"); %>
 					<span class="default"><script type="text/javascript">
 					//<![CDATA[
 					document.write("(" + share.deflt + ": " + share.disable + ")");
