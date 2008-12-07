@@ -55,6 +55,7 @@
 					<option value="jffs" <% nvram_selected("usb_mntpoint", "jffs"); %> >/jffs</option>
 					</select>
 				</div>
+				<% show_usb_diskinfo(); %>
 			</div>
 	</div>
 </fieldset><br/>
