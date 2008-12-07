@@ -14,7 +14,6 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	
 	show_layer_ext(document.setup.proftpd_enable, 'ftpen', <% nvram_else_match("proftpd_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.sambasrv_enable, 'sambaen', <% nvram_else_match("sambasrv_enable", "1", "1", "0"); %> == 1);
 	
@@ -47,6 +46,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="commit" value="1"/>
 							
 						<% show_modules(".webftp"); %>
 						

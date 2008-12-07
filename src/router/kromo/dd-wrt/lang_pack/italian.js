@@ -1078,10 +1078,6 @@ service.syslog_ip="Server Remoto";
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
-//ftp.webservices 
-service.proftpd_legend="ProFTPD"; 
-service.proftpd_srv="Server ProFTPD"; 
-
 //pptpd_client.webservices
 service.pptpd_legend="Client PPTP";
 service.pptpd_option="Opzioni Del Client PPTP";

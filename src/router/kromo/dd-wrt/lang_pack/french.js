@@ -1047,10 +1047,6 @@ service.syslog_ip="Serveur distant";
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
-//ftp.webservices
-service.proftpd_legend="ProFTPD";
-service.proftpd_srv="Serveur ProFTPD";
-
 //pptpd_client.webservices
 service.pptpd_legend="Client PPTP";
 service.pptpd_option="Options du Client PPTP";
