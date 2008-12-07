@@ -1929,7 +1929,7 @@ void ej_show_usb_diskinfo( webs_t wp, int argc, char_t ** argv )
     char buff[512];
     FILE *fp;
 
-    if( !nvram_get( "usb_automnt", "1" )
+    if( !nvram_get( "usb_automnt", "1" ) )
     return;
     
     if( ( fp = fopen( "/tmp/disktype.dump", "r" ) ) )
