@@ -1944,7 +1944,7 @@ void ej_show_usb_diskinfo( webs_t wp, int argc, char_t ** argv )
 	{
 	    websWrite( wp, "%s <br />", buff );
 	}
-	fclose( fp )
+	fclose( fp );
 				
 	websWrite( wp, "</span>&nbsp;\n"
 				"</div>\n"
