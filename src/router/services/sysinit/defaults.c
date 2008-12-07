@@ -2573,6 +2573,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"proftpd_port", "21", 0},
     {"proftpd_dir", "mnt", 0},
     {"proftpd_passw", "", 0},
+	{"proftpd_writeen", "off", 0},
 #endif
 #ifdef HAVE_SAMBA_SRV
     {"sambasrv_enable", "0", 0},
