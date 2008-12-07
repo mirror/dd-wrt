@@ -82,6 +82,7 @@ static bool usb_ufd_connected( char *str )
 	sprintf( proc_file, "/proc/scsi/usb-storage/%d",host_no );
 	if( ( fp = fopen( proc_file, "r" ) ) )
 	    {
+	    fclose(fp);
 	    return TRUE;
 	    }
 	return FALSE;
