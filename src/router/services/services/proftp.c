@@ -66,21 +66,23 @@ void start_ftpsrv( void )
 		 "UseReverseDNS   off\n"
 		 "IdentLookups    off\n"
 		 "RootLogin       on\n"
-		 "AllowOverwrite  off\n"
 		 "<Limit SITE_CHMOD>\n"
 		 "  DenyAll\n"
 		 "</Limit>\n"
 		 "DelayEngine     off\n"
-		 "DefaultChdir    /%s\n"
+		 "DefaultRoot    /%s\n"
 		 "<Directory      /%s/*>\n"
-		 "AllowOverwrite  %s\n"
+		 "  AllowOverwrite  on\n"
+		 "   <Limit WRITE>\n"
+      	 "     %s"
+     	 "   </Limit>\n"
 		 "</Directory>\n",
 		 nvram_safe_get( "lan_ipaddr" ),
 		 nvram_invmatch( "proftpd_passw", "" ) ? "/tmp/proftpd/etc/passwd" : "/tmp/etc/passwd",
 		 nvram_safe_get( "proftpd_port" ),
 		 nvram_safe_get( "proftpd_dir" ),
 		 nvram_safe_get( "proftpd_dir" ),
-		 nvram_safe_get( "proftpd_writeen" ) );
+		 nvram_match( "proftpd_writeen", "on" ) ? "" : "DenyAll\n" );
 
 		 
 	fclose( fp );
