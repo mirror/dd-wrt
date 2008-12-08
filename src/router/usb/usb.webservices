@@ -48,6 +48,10 @@
 					<input class="spaceradio" type="radio" value="0" name="usb_automnt" <% nvram_checked("usb_automnt","0"); %> /><% tran("share.disable"); %>
 				</div>
 				<div class="setting">
+					<div class="label"><% tran("service.usb_runonmount"); %></div>
+					<input maxlength="79" size="35" name="usb_runonmount" value="<% nvram_get("usb_runonmount"); %>" />
+				</div>
+				<div class="setting">
 				<div class="label"><% tran("service.usb_mntpoint"); %></div>
 					<select name="usb_mntpoint">
 					<option value="mnt" <% nvram_selected("usb_mntpoint", "mnt"); %> >/mnt</option>
