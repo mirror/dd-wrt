@@ -39,19 +39,24 @@ void start_ftpsrv( void )
     if( !nvram_match( "proftpd_enable", "1" ) )
 	return;
 
-
     FILE *fp;
 
 	mkdir( "/tmp/proftpd", 0700 );
 	mkdir( "/tmp/proftpd/etc", 0700 );
 	mkdir( "/tmp/proftpd/var", 0700 );	
+	
+	if( nvram_invmatch( "proftpd_passw", "" ) )
+		{
+		nvram2file( "proftpd_passw", "/tmp/proftpd/etc/passwd" );
+  		}	
+	
 	fp = fopen( "/tmp/proftpd/etc/proftpd.conf", "wb" );
 	fprintf( fp, 
 		 "ServerName      DD-WRT\n"
 		 "DefaultAddress  %s\n"
 		 "ServerType      standalone\n"
 		 "DefaultServer   on\n"
-		 "AuthUserFile    /tmp/etc/passwd\n"
+		 "AuthUserFile    %s\n"
 		 "ScoreboardFile  /tmp/proftpd/etc/proftpd.scoreboard\n"
 		 "Port            %s\n"
 		 "Umask           022\n"
@@ -71,6 +76,7 @@ void start_ftpsrv( void )
 		 "AllowOverwrite  %s\n"
 		 "</Directory>\n",
 		 nvram_safe_get( "lan_ipaddr" ),
+		 nvram_invmatch( "proftpd_passw", "" ) ? "/tmp/proftpd/etc/passwd" : "/tmp/etc/passwd",
 		 nvram_safe_get( "proftpd_port" ),
 		 nvram_safe_get( "proftpd_dir" ),
 		 nvram_safe_get( "proftpd_dir" ),
