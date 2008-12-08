@@ -206,7 +206,7 @@ if (enable)
     {
     sysprintf("switch reg w 14 405555");
     sysprintf("switch reg w 50 7001");
-    sysprintf("switch reg w 98 7f3f");
+    sysprintf("switch reg w 98 7f2f");
     sysprintf("switch reg w e4 3f");
     sysprintf("switch reg w 40 1001");
     sysprintf("switch reg w 44 1001");
