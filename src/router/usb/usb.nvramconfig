@@ -8,3 +8,4 @@
 "usb_fs_fat"  "FAT File System Support" "CHOICE" "2" "0" "1" "FALSE" "0"
 "usb_automnt"  "Auto Mount" "CHOICE" "2" "0" "1" "FALSE" "0"
 "usb_mntpoint"  "Mount Point" "CHOICE" "3" "mnt" "opt" "jffs" "FALSE" "0"
+"usb_runonmount"  "Script name" "NULL" "TRUE" "0"
