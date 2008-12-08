@@ -1,3 +1,25 @@
+/*
+ *  Common functions for all aircrack-ng tools
+ *
+ *  Copyright (C) 2006,2007 Thomas d'Otreppe
+ *
+ *  WEP decryption attack (chopchop) developped by KoreK
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,13 +30,14 @@
 #include <unistd.h>
 #include <ctype.h>
 
+#if defined(linux)
 //Check if the driver is ndiswrapper */
 int is_ndiswrapper(const char * iface, const char * path)
 {
-	int n,pid;
+	int n, pid, unused;
 	if ((pid=fork())==0)
 	{
-		close( 0 ); close( 1 ); close( 2 ); chdir( "/" );
+		close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
 		execl(path, "iwpriv",iface, "ndis_reset", NULL);
 		exit( 1 );
 	}
@@ -22,21 +45,22 @@ int is_ndiswrapper(const char * iface, const char * path)
 	waitpid( pid, &n, 0 );
 	return ( ( WIFEXITED(n) && WEXITSTATUS(n) == 0 ));
 }
+#endif /* linux */
 
 /* Return the version number */
-char * getVersion(char * progname, int maj, int min, int submin, int betavers)
+char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
 {
 	char * temp;
-	temp = (char *) calloc(1,strlen(progname)+50);
 	char * provis = calloc(1,20);
+	temp = (char *) calloc(1,strlen(progname)+50);
 	sprintf(temp, "%s %d.%d", progname, maj, min);
-	if (submin>0) {
+	if (submin > 0) {
 		sprintf(provis,".%d",submin);
 		strcat(temp,provis);
 		memset(provis,0,20);
 	}
-	if (betavers>0) {
-		sprintf(provis," beta%d",betavers);
+	if (svnrev > 0) {
+		sprintf(provis," r%d",svnrev);
 		strcat(temp,provis);
 	}
 	free(provis);
@@ -67,6 +91,7 @@ char * searchInside(const char * dir, const char * filename)
 		memset(curfile, 0, lentot);
 		sprintf(curfile, "%s/%s", dir, ep->d_name);
 
+		//Checking if it's the good file
 		if ((int)strlen( ep->d_name) == len && !strcmp(ep->d_name, filename))
 		{
 			(void)closedir(dp);
@@ -94,6 +119,7 @@ char * searchInside(const char * dir, const char * filename)
 	return NULL;
 }
 
+#if defined(linux)
 /* Search a wireless tool and return its path */
 char * wiToolsPath(const char * tool)
 {
@@ -120,6 +146,7 @@ char * wiToolsPath(const char * tool)
 
 	return NULL;
 }
+#endif
 
 //Return the mac address bytes (or null if it's not a mac address)
 int getmac(char * macAddress, int strict, unsigned char * mac)

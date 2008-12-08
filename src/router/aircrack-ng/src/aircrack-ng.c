@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2006 Thomas d'Otreppe
+ *  Copyright (C) 2006,2007,2008 Thomas d'Otreppe
  *  Copyright (C) 2004,2005 Christophe Devine
  *
  *  Advanced WEP attacks developed by KoreK
@@ -29,6 +29,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <netinet/in.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
@@ -38,143 +39,26 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
+#include <getopt.h>
+#include <ctype.h>
+#include <err.h>
 
 #include "version.h"
 #include "crypto.h"
+#ifdef WIN32
+#include <Windows.h>
+#include <airpcap.h>
+#endif
 #include "pcap.h"
 #include "uniqueiv.c"
-
-#define SUCCESS  0
-#define FAILURE  1
-#define RESTART  2
-
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
-
-#define ASCII_LOW_T 0x21
-#define ASCII_HIGH_T 0x7E
-#define ASCII_VOTE_STRENGTH_T 150
-#define ASCII_DISREGARD_STRENGTH 1
-
-#define SWAP(x,y) { uchar tmp = x; x = y; y = tmp; }
-
-#ifdef __i386__
-
-extern int shammx_init( uchar ctx[40] )
-__attribute__((regparm(1)));
-
-extern int shammx_ends( uchar ctx[40], uchar digests[40] )
-__attribute__((regparm(2)));
-
-extern int shammx_data( uchar ctx[40], uchar data[128], uchar buf[640] )
-__attribute__((regparm(3)));
-#endif
-
-extern char * getVersion(char * progname, int maj, int min, int submin, int betavers);
-extern int getmac(char * macAddress, int strict, unsigned char * mac);
-
-
-#define BROADCAST "\xFF\xFF\xFF\xFF\xFF\xFF"
+#include "aircrack-ptw-lib.h"
+#include "aircrack-ng.h"
 
 static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00";
-
-struct options
-{
-	int amode;					 /* attack mode          */
-	int essid_set;				 /* essid set flag       */
-	int bssid_set;				 /* bssid set flag       */
-	char essid[33];				 /* target ESSID         */
-	uchar bssid[6];				 /* target BSSID         */
-	int nbcpu;					 /* # of cracker threads
-									(= # of CPU)         */
-	int is_quiet;				 /* quiet mode flag      */
-
-	uchar debug[64];			 /* user-defined WEP key */
-	int debug_row[64] ;          /* user-defined Row WEP key */
-	uchar maddr[6];				 /* MAC address filter   */
-	int keylen;					 /* WEP key length       */
-	int index;					 /* WEP key index        */
-	float ffact;				 /* bruteforce factor    */
-	int korek;					 /* attack strategy      */
-
-	int is_fritz;				 /* use numeric keyspace */
-	int is_alnum;				 /* alphanum keyspace    */
-	int is_bcdonly;				 /* binary coded decimal */
-
-	int do_brute;				 /* bruteforce last 2 KB */
-	int do_mt_brute;			 /* bruteforce last 2 KB
-									multithreaded for SMP*/
-	int do_testy;				 /* experimental attack  */
-
-	FILE *dict;					 /* dictionary file      */
-	int no_stdin;				 /* if dict == stdin     */
-
-	int showASCII;				 /* Show ASCII version of*/
-								 /* the wepkey           */
-
-	int l33t;					 /* no comment           */
-}
-
-opt;
-
-typedef struct { int idx, val; }
-vote;
-
-struct WEP_data
-{
-	uchar key[64];				 /* the current chosen WEP key   */
-	uchar *ivbuf;				 /* buffer holding all the IVs   */
-	int nb_aps;					 /* number of targeted APs       */
-	long nb_ivs;				 /* # of unique IVs in buffer    */
-	long nb_ivs_now;			 /* # of unique IVs available    */
-	int fudge[64];				 /* bruteforce level (1 to 256)  */
-	int depth[64];				 /* how deep we are in the fudge */
-	vote poll[64][256];			 /* KoreK cryptanalysis results  */
-}
-
-wep;
-
-struct WPA_hdsk
-{
-	uchar stmac[6];				 /* supplicant MAC               */
-	uchar snonce[32];			 /* supplicant nonce             */
-	uchar anonce[32];			 /* authenticator nonce          */
-	uchar keymic[16];			 /* eapol frame MIC              */
-	uchar eapol[256];			 /* eapol frame contents         */
-	int eapol_size;				 /* eapol frame size             */
-	int keyver;					 /* key version (TKIP / AES)     */
-	int state;					 /* handshake completion         */
-};
-
-struct AP_info
-{
-	struct AP_info *next;		 /* next AP in linked list       */
-	uchar bssid[6];				 /* access point MAC address     */
-	char essid[33];				 /* access point identifier      */
-	uchar lanip[4];				 /* IP address if unencrypted    */
-	uchar *ivbuf;				 /* table holding WEP IV data    */
-	uchar **uiv_root;			 /* IV uniqueness root struct    */
-	long ivbuf_size;			 /* IV buffer allocated size     */
-	long nb_ivs;				 /* total number of unique IVs   */
-	int crypt;					 /* encryption algorithm         */
-	int eapol;					 /* set if EAPOL is present      */
-	int target;					 /* flag set if AP is a target   */
-	struct ST_info *st_1st;		 /* linked list of stations      */
-	struct WPA_hdsk wpa;		 /* valid WPA handshake data     */
-};
-
-struct ST_info
-{
-	struct AP_info *ap;			 /* parent AP                    */
-	struct ST_info *next;		 /* next supplicant              */
-	struct WPA_hdsk wpa;		 /* WPA handshake data           */
-	unsigned char stmac[6];		 /* client MAC address           */
-};
 
 /* stats global data */
 
@@ -187,6 +71,7 @@ long long int nb_tried;			 /* total # of keys tried        */
 /* IPC global data */
 
 struct AP_info *ap_1st;			 /* first item in linked list    */
+pthread_mutex_t mx_ivb;			 /* lock access to ivbuf array   */
 pthread_mutex_t mx_apl;			 /* lock write access to ap LL   */
 pthread_mutex_t mx_eof;			 /* lock write access to nb_eof  */
 pthread_cond_t  cv_eof;			 /* read EOF condition variable  */
@@ -198,29 +83,6 @@ int bf_pipe[256][2];			 /* bruteforcer 'queue' pipe	*/
 int bf_nkeys[256];
 uchar bf_wepkey[64];
 int wepkey_crack_success = 0;
-
-#define N_ATTACKS 17
-
-enum KoreK_attacks
-{
-	A_u15,						 /* semi-stable  15%             */
-	A_s13,						 /* stable       13%             */
-	A_u13_1,					 /* unstable     13%             */
-	A_u13_2,					 /* unstable ?   13%             */
-	A_u13_3,					 /* unstable ?   13%             */
-	A_s5_1,						 /* standard      5% (~FMS)      */
-	A_s5_2,						 /* other stable  5%             */
-	A_s5_3,						 /* other stable  5%             */
-	A_u5_1,						 /* unstable      5% no good ?   */
-	A_u5_2,						 /* unstable      5%             */
-	A_u5_3,						 /* unstable      5% no good     */
-	A_u5_4,						 /* unstable      5%             */
-	A_s3,						 /* stable        3%             */
-	A_4_s13,					 /* stable       13% on q = 4    */
-	A_4_u5_1,					 /* unstable      5% on q = 4    */
-	A_4_u5_2,					 /* unstable      5% on q = 4    */
-	A_neg						 /* helps reject false positives */
-};
 
 typedef struct
 {
@@ -258,7 +120,7 @@ const uchar R[256] =
 
 char usage[] =
 "\n"
-"  %s - (C) 2006 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007,2008 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -277,7 +139,7 @@ char usage[] =
 "      -c         : search alpha-numeric characters only\n"
 "      -t         : search binary coded decimal chr only\n"
 "      -h         : search the numeric key for Fritz!BOX\n"
-"      -d <mask>  : debug - specify mask of the key (A1:XX:CF)\n"
+"      -d <mask>  : debug - specify mask of the key (A1:XX:CF:YY)\n"
 "      -m <maddr> : MAC address to filter usable packets\n"
 "      -n <nbits> : WEP key length :  64/128/152/256/512\n"
 "      -i <index> : WEP key index (1 to 4), default: any\n"
@@ -285,15 +147,20 @@ char usage[] =
 "      -k <korek> : disable one attack method  (1 to 17)\n"
 "      -x or -x0  : disable last keybytes bruteforce\n"
 "      -x1        : enable last keybyte bruteforcing (default)\n"
-"      -x2        : enable last two keybytes bruteforcing\n"
-"      -X         : disable bruteforce multithreading (SMP only)\n"
+"      -x2        : enable last two keybytes bruteforcing"
+"%s"
 "      -y         : experimental single bruteforce mode\n"
+"      -z         : PTW attack\n"
 "      -s         : show ASCII version of the key\n"
 "\n"
-"  WPA-PSK cracking options:\n"
+"  WEP and WPA-PSK cracking options:\n"
 "\n"
-"      -w <words> : path to a dictionary file\n"
+"      -w <words> : path to a dictionary file (multiple\n"
+"                    dictionnaries can be specified.\n"
+"                    See manpage for more information)\n"
 /*"      -r <table> : path to a WPA PMK table\n" */
+"\n"
+"      --help     : Displays this usage screen\n"
 "\n";
 
 char * progname;
@@ -367,6 +234,109 @@ int atomic_read( read_buf *rb, int fd, int len, void *buf )
 	}
 
 	return( 0 );
+}
+
+static int is_arp(void *wh, int len)
+{
+        int arpsize = 8 + 8 + 10*2;
+
+	/* XXX check if broadcast to increase probability of correctness in some
+	 * cases?
+	 */
+	if (wh) {}
+
+        if (len == arpsize || len == 54)
+                return 1;
+
+        return 0;
+}
+
+static void *get_da(unsigned char *wh)
+{
+        if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
+                return wh + 4;
+        else
+                return wh + 4 + 6*2;
+}
+
+static void *get_sa(unsigned char *wh)
+{
+        if (wh[1] & IEEE80211_FC1_DIR_FROMDS)
+                return wh + 4 + 6*2;
+        else
+                return wh + 4 + 6;
+}
+
+static int known_clear(void *clear, unsigned char *wh, int len)
+{
+        unsigned char *ptr = clear;
+
+        /* IP */
+        if (!is_arp(wh, len)) {
+                unsigned short iplen = htons(len - 8);
+
+//                printf("Assuming IP %d\n", len);
+
+                len = sizeof(S_LLC_SNAP_IP) - 1;
+                memcpy(ptr, S_LLC_SNAP_IP, len);
+                ptr += len;
+#if 1
+                //version=4; header_length=20; services=0
+                len = 2;
+                memcpy(ptr, "\x45\x00", len);
+                ptr += len;
+
+                //ip total length
+                memcpy(ptr, &iplen, len);
+                ptr += len;
+
+#if 0
+		/* XXX IP ID is not always 0.  Can't use IP packets for PTW,
+		 * unless they are our own.  Can we use them for 40-bit keys
+		 * though [only 3+5 bytes of keystream needed]?  Or for
+		 * calculating only the first 9 bytes of the key?  -sorbo.
+		 */
+                //ID=0
+                len=2;
+                memcpy(ptr, "\x00\x00", len);
+                ptr += len;
+
+                //ip flags=don't fragment
+                len=2;
+                memcpy(ptr, "\x40\x00", len);
+                ptr += len;
+#endif
+#endif
+                len = ptr - ((unsigned char*)clear);
+                return len;
+        }
+//        printf("Assuming ARP %d\n", len);
+
+        /* arp */
+        len = sizeof(S_LLC_SNAP_ARP) - 1;
+        memcpy(ptr, S_LLC_SNAP_ARP, len);
+        ptr += len;
+
+        /* arp hdr */
+        len = 6;
+        memcpy(ptr, "\x00\x01\x08\x00\x06\x04", len);
+        ptr += len;
+
+        /* type of arp */
+        len = 2;
+        if (memcmp(get_da(wh), "\xff\xff\xff\xff\xff\xff", 6) == 0)
+                memcpy(ptr, "\x00\x01", len);
+        else
+                memcpy(ptr, "\x00\x02", len);
+        ptr += len;
+
+        /* src mac */
+        len = 6;
+        memcpy(ptr, get_sa(wh), len);
+        ptr += len;
+
+        len = ptr - ((unsigned char*)clear);
+        return len;
 }
 
 void read_thread( void *arg )
@@ -453,7 +423,8 @@ void read_thread( void *arg )
 				"802.11 (wireless) capture.\n" );
 			goto read_fail;
 		}
-	}
+	} else if (opt.do_ptw)
+		errx(1, "Can't do PTW with IV files for now\n"); /* XXX */
 
 	/* avoid blocking on reading the file */
 
@@ -618,6 +589,17 @@ void read_thread( void *arg )
 			memcpy( ap_cur->bssid, bssid, 6 );
 
 			ap_cur->crypt = -1;
+
+			if (opt.do_ptw == 1)
+			{
+				ap_cur->ptw = PTW_newattackstate();
+				if (!ap_cur->ptw) {
+					perror("PTW_newattackstate()");
+					free(ap_cur);
+					ap_cur = NULL;
+					break;
+				}
+			}
 		}
 
 		if( fmt == FORMAT_IVS )
@@ -782,6 +764,8 @@ void read_thread( void *arg )
 		/* check minimum size */
 
 		z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+		if ( ( h80211[0] & 0x80 ) == 0x80 )
+			z+=2; /* 802.11e QoS */
 
 		if( z + 16 > (int) pkh.caplen )
 			goto unlock_mx_apl;
@@ -804,10 +788,43 @@ void read_thread( void *arg )
 				( h80211[z + 3] >> 6 ) != opt.index - 1 )
 				goto unlock_mx_apl;
 
+			if (opt.do_ptw) {
+				unsigned char *body = h80211 + 24;
+				int dlen = pkh.caplen - (body-h80211) - 4 -4;
+				unsigned char clear[2048];
+				int clearsize, i;
+
+                                if((h80211[1] & 0x03) == 0x03) //30byte header
+                                {
+                                    body += 6;
+                                    dlen -=6;
+                                }
+
+				/* calculate keystream */
+				clearsize = known_clear(clear, h80211, dlen);
+				if (clearsize < 16)
+					goto unlock_mx_apl;
+				for (i = 0; i < 16; i++)
+					clear[i] ^= body[4+i];
+
+				if (PTW_addsession(ap_cur->ptw, body, clear))
+					ap_cur->nb_ivs++;
+
+				goto unlock_mx_apl;
+			}
+
 			/* save the IV & first two output bytes */
 
 			memcpy( buffer    , h80211 + z    , 3 );
 			memcpy( buffer + 3, h80211 + z + 4, 2 );
+
+            /* Special handling for spanning-tree packets */
+            if ( memcmp( h80211 +  4, SPANTREE, 6 ) == 0 ||
+                memcmp( h80211 + 16, SPANTREE, 6 ) == 0 )
+            {
+                buffer[3] = (buffer[3] ^ 0x42) ^ 0xAA;
+                buffer[4] = (buffer[4] ^ 0x42) ^ 0xAA;
+            }
 
 			goto add_wep_iv;
 		}
@@ -848,7 +865,10 @@ void read_thread( void *arg )
 		ap_cur->crypt = 3;		 /* set WPA */
 
 		if( st_cur == NULL )
+		{
+			pthread_mutex_unlock( &mx_apl );
 			continue;
+		}
 
 		/* frame 1: Pairwise == 1, Install == 0, Ack == 1, MIC == 0 */
 
@@ -859,7 +879,7 @@ void read_thread( void *arg )
 		{
 			memcpy( st_cur->wpa.anonce, &h80211[z + 17], 32 );
 
-								 /* authenticator nonce set */
+			/* authenticator nonce set */
 			st_cur->wpa.state = 1;
 		}
 
@@ -1031,6 +1051,8 @@ int crack_wep_thread( void *arg )
 
 		for( xv = min; xv < max; xv += 5 )
 		{
+			pthread_mutex_lock( &mx_ivb );
+
 			memcpy( K, &wep.ivbuf[xv], 3 );
 			memcpy( S,  R, 256 );
 			memcpy( Si, R, 256 );
@@ -1046,6 +1068,10 @@ int crack_wep_thread( void *arg )
 
 			o1 = wep.ivbuf[xv + 3] ^ 0xAA; io1 = Si[o1]; S1 = S[1];
 			o2 = wep.ivbuf[xv + 4] ^ 0xAA; io2 = Si[o2]; S2 = S[2];
+
+			pthread_mutex_unlock( &mx_ivb );
+
+
 			Sq = S[q]; dq = Sq + jj[q - 1];
 
 			if( S2 == 0 )
@@ -1211,7 +1237,7 @@ int crack_wep_thread( void *arg )
 
 /* display the current votes */
 
-void show_wep_stats( int B, int force )
+void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit )
 {
 	float delta;
 	struct winsize ws;
@@ -1254,8 +1280,12 @@ void show_wep_stats( int B, int force )
 	if( opt.l33t )
 		printf( "\33[33;1m" );
 
-	printf( "\33[5;%dH[%02d:%02d:%02d] Tested %lld keys (got %ld IVs)\33[K",
-		(ws.ws_col - 44) / 2, et_h, et_m, et_s, nb_tried, wep.nb_ivs_now );
+	if(table)
+		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %d/%d keys (got %ld IVs)\33[K",
+			(ws.ws_col - 44) / 2, et_h, et_m, et_s, prod, keylimit, opt.ap->nb_ivs );
+	else
+		printf( "\33[5;%dH[%02d:%02d:%02d] Tested %lld keys (got %ld IVs)\33[K",
+			(ws.ws_col - 44) / 2, et_h, et_m, et_s, nb_tried, wep.nb_ivs_now );
 
 	if( opt.l33t )
 		printf( "\33[32;22m" );
@@ -1266,37 +1296,61 @@ void show_wep_stats( int B, int force )
 	{
 		int j, k = ( ws.ws_col - 20 ) / 9;
 
-		if( opt.l33t )
-			printf( "   %2d  \33[1m%3d\33[22m/%3d   ",
-				i, wep.depth[i], wep.fudge[i] );
+		if(!table)
+		{
+			if( opt.l33t )
+				printf( "   %2d  \33[1m%3d\33[22m/%3d   ",
+					i, wep.depth[i], wep.fudge[i] );
+			else
+				printf( "   %2d  %3d/%3d   ",
+					i, wep.depth[i], wep.fudge[i] );
+		}
 		else
 			printf( "   %2d  %3d/%3d   ",
-				i, wep.depth[i], wep.fudge[i] );
+				i, depth[i], choices[i] );
 
-		for( j = wep.depth[i]; j < k + wep.depth[i]; j++ )
+		if(table)
 		{
-			if( j >= 256 ) break;
+			for( j = depth[i]; j < k + depth[i]; j++ )
+			{
+				if( j >= 256 ) break;
 
-			if( wep.poll[i][j].val == 32767 )
-			{
-				if( opt.l33t )
-					printf( "\33[1m%02X\33[22m(+inf) ",
-						wep.poll[i][j].idx );
-				else
-					printf( "%02X(+inf) ", wep.poll[i][j].idx );
-			}
-			else
-			{
 				if( opt.l33t )
 					printf( "\33[1m%02X\33[22m(%4d) ",
-						wep.poll[i][j].idx,
-						wep.poll[i][j].val );
+						table[i][j].b,
+						table[i][j].votes );
 				else
-					printf( "%02X(%4d) ",  wep.poll[i][j].idx,
-						wep.poll[i][j].val );
+					printf( "%02X(%4d) ",  table[i][j].b,
+						table[i][j].votes );
 			}
 		}
-		if (opt.showASCII)
+		else
+		{
+			for( j = wep.depth[i]; j < k + wep.depth[i]; j++ )
+			{
+				if( j >= 256 ) break;
+
+				if( wep.poll[i][j].val == 32767 )
+				{
+					if( opt.l33t )
+						printf( "\33[1m%02X\33[22m(+inf) ",
+							wep.poll[i][j].idx );
+					else
+						printf( "%02X(+inf) ", wep.poll[i][j].idx );
+				}
+				else
+				{
+					if( opt.l33t )
+						printf( "\33[1m%02X\33[22m(%4d) ",
+							wep.poll[i][j].idx,
+							wep.poll[i][j].val );
+					else
+						printf( "%02X(%4d) ",  wep.poll[i][j].idx,
+							wep.poll[i][j].val );
+				}
+			}
+		}
+		if (opt.showASCII && !table)
 			if(wep.poll[i][wep.depth[i]].idx>=ASCII_LOW_T && wep.poll[i][wep.depth[i]].idx<=ASCII_HIGH_T)
 				if(wep.poll[i][wep.depth[i]].val>=ASCII_VOTE_STRENGTH_T || ASCII_DISREGARD_STRENGTH )
 					printf( "  %c",wep.poll[i][wep.depth[i]].idx );
@@ -1310,56 +1364,10 @@ void show_wep_stats( int B, int force )
 	printf( "\n" );
 }
 
-/* test if the current WEP key is valid */
-
-int check_wep_key( uchar *wepkey, int B, int keylen )
+static void key_found(unsigned char *wepkey, int keylen, int B)
 {
-	uchar x1, x2;
-	unsigned long xv;
-	int i, j, n, bad;
-	int nb_ascii;
-
-	uchar K[64];
-	uchar S[256];
-
-	if (keylen<=0)
-		keylen = opt.keylen;
-
-	nb_tried++;
-	bad = 0;
-
-	memcpy( K + 3, wepkey, keylen );
-
-	for( n = 0; n < 32; n++ )
-	{
-		/* xv = 5 * ( rand() % wep.nb_ivs ); */
-		xv = 5 * n;
-
-		memcpy( K, &wep.ivbuf[xv], 3 );
-		memcpy( S, R, 256 );
-
-		for( i = j = 0; i < 256; i++ )
-		{
-			j = ( j + S[i] + K[i % (3 + keylen)]) & 0xFF;
-			SWAP( S[i], S[j] );
-		}
-
-		i = 1; j = ( 0 + S[i] ) & 0xFF; SWAP(S[i], S[j]);
-		x1 = wep.ivbuf[xv + 3] ^ S[(S[i] + S[j]) & 0xFF];
-
-		i = 2; j = ( j + S[i] ) & 0xFF; SWAP(S[i], S[j]);
-		x2 = wep.ivbuf[xv + 4] ^ S[(S[i] + S[j]) & 0xFF];
-
-		if( ( x1 != 0xAA || x2 != 0xAA ) &&
-			( x1 != 0xE0 || x2 != 0xE0 ) &&
-			( x1 != 0x42 || x2 != 0x42 ) )
-			bad++;
-
-		if( bad > 2 )
-			return( FAILURE );
-	}
-
-	nb_ascii = 0;
+	int nb_ascii = 0;
+	int i, n;
 
 	for( i = 0; i < keylen; i++ )
 		if( wepkey[i] == 0 ||
@@ -1373,7 +1381,8 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 		printf( "KEY FOUND! [ " );
 	else
 	{
-		show_wep_stats( B - 1, 1 );
+		if (B != -1)
+			show_wep_stats( B - 1, 1, NULL, NULL, NULL, 0, 0 );
 
 		if( opt.l33t )
 			printf( "\33[31;1m" );
@@ -1392,11 +1401,11 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 		printf( "%02X:", wepkey[i] );
 	printf( "%02X ] ",   wepkey[i] );
 
-	if( 100 * nb_ascii > 75 * opt.keylen )
+	if( 100 * nb_ascii > 75 * keylen )
 	{
 		printf( "(ASCII: " );
 
-		for( i = 0; i < opt.keylen; i++ )
+		for( i = 0; i < keylen; i++ )
 			printf( "%c", ( ( wepkey[i] >  31 && wepkey[i] < 127 ) ||
 				wepkey[i] > 160 ) ? wepkey[i] : '.' );
 
@@ -1406,7 +1415,78 @@ int check_wep_key( uchar *wepkey, int B, int keylen )
 	if( opt.l33t )
 		printf( "\33[32;22m" );
 
+	printf( "\n\tDecrypted correctly: %d%%\n", opt.probability );
 	printf( "\n" );
+}
+
+/* test if the current WEP key is valid */
+
+int check_wep_key( uchar *wepkey, int B, int keylen )
+{
+	uchar x1, x2;
+	unsigned long xv;
+	int i, j, n, bad, tests;
+
+	uchar K[64];
+	uchar S[256];
+
+	if (keylen<=0)
+		keylen = opt.keylen;
+
+	nb_tried++;
+	bad = 0;
+
+	memcpy( K + 3, wepkey, keylen );
+
+	tests = 32;
+
+//	printf("keylen: %d\n", keylen);
+//	printf("%02X:%02X:%02X:%02X:%02X\n", wepkey[0],wepkey[1],wepkey[2],wepkey[3],wepkey[4]);
+
+	if(opt.dict) tests = wep.nb_ivs;
+
+	if(tests < TEST_MIN_IVS) tests=TEST_MIN_IVS;
+	if(tests > TEST_MAX_IVS) tests=TEST_MAX_IVS;
+
+	for( n = 0; n < tests; n++ )
+	{
+		/* xv = 5 * ( rand() % wep.nb_ivs ); */
+		xv = 5 * n;
+
+		pthread_mutex_lock( &mx_ivb );
+
+		memcpy( K, &wep.ivbuf[xv], 3 );
+		memcpy( S, R, 256 );
+
+		for( i = j = 0; i < 256; i++ )
+		{
+			j = ( j + S[i] + K[i % (3 + keylen)]) & 0xFF;
+			SWAP( S[i], S[j] );
+		}
+
+		i = 1; j = ( 0 + S[i] ) & 0xFF; SWAP(S[i], S[j]);
+		x1 = wep.ivbuf[xv + 3] ^ S[(S[i] + S[j]) & 0xFF];
+
+		i = 2; j = ( j + S[i] ) & 0xFF; SWAP(S[i], S[j]);
+		x2 = wep.ivbuf[xv + 4] ^ S[(S[i] + S[j]) & 0xFF];
+
+		pthread_mutex_unlock( &mx_ivb );
+
+//		printf("xv: %li x1: %02X  x2: %02X\n", (xv/5), x1, x2);
+
+		if( ( x1 != 0xAA || x2 != 0xAA ) &&
+			( x1 != 0xE0 || x2 != 0xE0 ) &&
+			( x1 != 0x42 || x2 != 0x42 ) &&
+			( x1 != 0x02 || x2 != 0xAA ) )					//llc sub layer management
+			bad++;
+
+		if( bad > ((tests*opt.probability)/100) )
+			return( FAILURE );
+	}
+
+	opt.probability = (((tests-bad)*100)/tests);
+
+	key_found(wepkey, keylen, B);
 
 	return( SUCCESS );
 }
@@ -1430,6 +1510,8 @@ int calc_poll( int B )
 {
 	int i, n, cid, *vi;
 	int votes[N_ATTACKS][256];
+
+	memset(&opt.votes, '\0', sizeof(opt.votes));
 
 	/* send the current keybyte # to each thread */
 
@@ -1466,7 +1548,10 @@ int calc_poll( int B )
 
 		for( n = 0, vi = (int *) votes; n < N_ATTACKS; n++ )
 			for( i = 0; i < 256; i++, vi++ )
+			{
 				wep.poll[B][i].val += *vi * K_COEFF[n];
+				if(K_COEFF[n]) opt.votes[n] += *vi;
+			}
 	}
 
 	/* set votes to the max if the keybyte is user-defined */
@@ -1538,6 +1623,8 @@ int update_ivbuf( void )
 		( opt.keylen ==  5 && wep.nb_ivs_now - wep.nb_ivs > 20000 ) ||
 		( opt.keylen >= 13 && wep.nb_ivs_now - wep.nb_ivs > 40000 ) )
 	{
+		pthread_mutex_lock( &mx_ivb );
+
 		/* one buffer to rule them all */
 
 		if( wep.ivbuf != NULL )
@@ -1559,6 +1646,7 @@ int update_ivbuf( void )
 				if( ( wep.ivbuf = realloc( wep.ivbuf,
 					( wep.nb_ivs + n ) * 5 ) ) == NULL )
 				{
+					pthread_mutex_unlock( &mx_ivb );
 					perror( "realloc failed" );
 					kill( 0, SIGTERM );
 					_exit( FAILURE );
@@ -1571,6 +1659,8 @@ int update_ivbuf( void )
 
 			ap_cur = ap_cur->next;
 		}
+
+		pthread_mutex_unlock( &mx_ivb );
 
 		return( RESTART );
 	}
@@ -1585,7 +1675,7 @@ int update_ivbuf( void )
 
 int do_wep_crack1( int B )
 {
-	int i, j, tsel;
+	int i, j, l, m, tsel;
 	static int k = 0;
 
 	get_ivs:
@@ -1624,7 +1714,7 @@ int do_wep_crack1( int B )
 	if( B == opt.keylen )
 	{
 		if( ! opt.is_quiet )
-			show_wep_stats( B - 1, 0 );
+			show_wep_stats( B - 1, 0, NULL, NULL, NULL, 0, 0 );
 
 		return( check_wep_key( wep.key, B, 0 ) );
 	}
@@ -1655,7 +1745,7 @@ int do_wep_crack1( int B )
 		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
 
 		if( ! opt.is_quiet )
-			show_wep_stats( B, 0 );
+			show_wep_stats( B, 0, NULL, NULL, NULL, 0, 0 );
 
 		if( B == 4 && opt.keylen == 13 )
 		{
@@ -1673,6 +1763,8 @@ int do_wep_crack1( int B )
 			/* opt.keylen = 13; */
 		}
 
+
+
 		if( B + opt.do_brute + 1 == opt.keylen && opt.do_brute )
 		{
 			/* as noted by Simon Marechal, it's more efficient
@@ -1680,15 +1772,61 @@ int do_wep_crack1( int B )
 
 			if (opt.nbcpu==1 || opt.do_mt_brute==0)
 			{
-				if (opt.do_brute==2)
+
+				if (opt.do_brute==4)
+				{
+					for( l = 0; l < 256; l++)
+					{
+						wep.key[opt.brutebytes[0]] = l;
+
+						for( m = 0; m < 256; m++ )
+						{
+							wep.key[opt.brutebytes[1]] = m;
+
+							for( i = 0; i < 256; i++ )
+							{
+								wep.key[opt.brutebytes[2]] = i;
+
+								for( j = 0; j < 256; j++ )
+								{
+									wep.key[opt.brutebytes[3]] = j;
+
+									if (check_wep_key( wep.key, B + 1, 0 ) == SUCCESS)
+										return SUCCESS;
+								}
+							}
+						}
+					}
+				}
+				else if (opt.do_brute==3)
+				{
+					for( m = 0; m < 256; m++ )
+					{
+						wep.key[opt.brutebytes[0]] = m;
+
+						for( i = 0; i < 256; i++ )
+						{
+							wep.key[opt.brutebytes[1]] = i;
+
+							for( j = 0; j < 256; j++ )
+							{
+								wep.key[opt.brutebytes[2]] = j;
+
+								if (check_wep_key( wep.key, B + 1, 0 ) == SUCCESS)
+									return SUCCESS;
+							}
+						}
+					}
+				}
+				else if (opt.do_brute==2)
 				{
 					for( i = 0; i < 256; i++ )
 					{
-						wep.key[B + 1] = i;
+						wep.key[opt.brutebytes[0]] = i;
 
 						for( j = 0; j < 256; j++ )
 						{
-							wep.key[B + 2] = j;
+							wep.key[opt.brutebytes[1]] = j;
 
 							if (check_wep_key( wep.key, B + 1, 0 ) == SUCCESS)
 								return SUCCESS;
@@ -1699,7 +1837,7 @@ int do_wep_crack1( int B )
 				{
 					for( i = 0; i < 256; i++ )
 					{
-						wep.key[B + 1] = i;
+						wep.key[opt.brutebytes[0]] = i;
 
 						if (check_wep_key( wep.key, B + 1, 0 ) == SUCCESS)
 							return SUCCESS;
@@ -1790,7 +1928,7 @@ int do_wep_crack2( int B )
 		wep.depth[i] = 0;
 
 		if( ! opt.is_quiet )
-			show_wep_stats( i, 0 );
+			show_wep_stats( i, 0, NULL, NULL, NULL, 0, 0 );
 	}
 
 	for( wep.fudge[B] = 1; wep.fudge[B] < 256; wep.fudge[B]++ )
@@ -1810,7 +1948,7 @@ int do_wep_crack2( int B )
 		wep.key[B] = wep.poll[B][wep.depth[B]].idx;
 
 		if( ! opt.is_quiet )
-			show_wep_stats( B, 0 );
+			show_wep_stats( B, 0, NULL, NULL, NULL, 0, 0 );
 
 		for( i = B + 1; i < opt.keylen - 2; i++ )
 		{
@@ -1823,7 +1961,7 @@ int do_wep_crack2( int B )
 			wep.depth[i] = 0;
 
 			if( ! opt.is_quiet )
-				show_wep_stats( i, 0 );
+				show_wep_stats( i, 0, NULL, NULL, NULL, 0, 0 );
 		}
 
 		for( i = 0; i < 256; i++ )
@@ -1845,7 +1983,7 @@ int do_wep_crack2( int B )
 
 int inner_bruteforcer_thread(void *arg)
 {
-	int i, j;
+	int i, j, k, l;
 	size_t nthread = (size_t)arg;
 	uchar wepkey[64];
 
@@ -1865,15 +2003,60 @@ int inner_bruteforcer_thread(void *arg)
 		bf_nkeys[nthread]--;
 
 	/* now we test the 256*256 keys... if we succeed we'll save it and exit the thread */
-	if (opt.do_brute==2)
+	if (opt.do_brute==4)
+	{
+		for( l = 0; l < 256; l++ )
+		{
+			wepkey[opt.brutebytes[0]] = l;
+
+			for( k = 0; k < 256; k++ )
+			{
+				wepkey[opt.brutebytes[1]] = k;
+
+				for( i = 0; i < 256; i++ )
+				{
+					wepkey[opt.brutebytes[2]] = i;
+
+					for( j = 0; j < 256; j++ )
+					{
+						wepkey[opt.brutebytes[3]] = j;
+
+						if( check_wep_key( wepkey, opt.keylen - 2, 0 ) == SUCCESS )
+							return(SUCCESS);
+					}
+				}
+			}
+		}
+	}
+	else if (opt.do_brute==3)
+	{
+		for( k = 0; k < 256; k++ )
+		{
+			wepkey[opt.brutebytes[0]] = k;
+
+			for( i = 0; i < 256; i++ )
+			{
+				wepkey[opt.brutebytes[1]] = i;
+
+				for( j = 0; j < 256; j++ )
+				{
+					wepkey[opt.brutebytes[2]] = j;
+
+					if( check_wep_key( wepkey, opt.keylen - 2, 0 ) == SUCCESS )
+						return(SUCCESS);
+				}
+			}
+		}
+	}
+	else if (opt.do_brute==2)
 	{
 		for( i = 0; i < 256; i++ )
 		{
-			wepkey[opt.keylen - 2] = i;
+			wepkey[opt.brutebytes[0]] = i;
 
 			for( j = 0; j < 256; j++ )
 			{
-				wepkey[opt.keylen - 1] = j;
+				wepkey[opt.brutebytes[1]] = j;
 
 				if( check_wep_key( wepkey, opt.keylen - 2, 0 ) == SUCCESS )
 					return(SUCCESS);
@@ -1884,7 +2067,7 @@ int inner_bruteforcer_thread(void *arg)
 	{
 		for( j = 0; j < 256; j++ )
 		{
-			wepkey[opt.keylen - 1] = j;
+			wepkey[opt.brutebytes[0]] = j;
 
 			if( check_wep_key( wepkey, opt.keylen - 2, 0 ) == SUCCESS )
 				return(SUCCESS);
@@ -1895,16 +2078,20 @@ int inner_bruteforcer_thread(void *arg)
 
 }
 
+#ifndef __i386__
 /* derive the PMK from the passphrase and the essid */
 
-void calc_pmk( char *key, char *essid, uchar pmk[40] )
+void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 {
 	int i, j, slen;
 	uchar buffer[65];
+	char essid[33+4];
 	sha1_context ctx_ipad;
 	sha1_context ctx_opad;
 	sha1_context sha1_ctx;
 
+	memset(essid, 0, sizeof(essid));
+	memcpy(essid, essid_pre, strlen(essid_pre));
 	slen = strlen( essid ) + 4;
 
 	/* setup the inner and outer contexts */
@@ -1964,7 +2151,7 @@ void calc_pmk( char *key, char *essid, uchar pmk[40] )
 			pmk[j + 20] ^= buffer[j];
 	}
 }
-
+#endif
 /* each thread computes two pairwise master keys at a time */
 
 int crack_wpa_thread( void *arg )
@@ -1972,6 +2159,7 @@ int crack_wpa_thread( void *arg )
 	char  essid[36];
 	char  key1[128], key2[128];
 	uchar pmk1[128], pmk2[128];
+        int len1, len2;
 
 	#ifdef __i386__
 
@@ -2015,6 +2203,13 @@ int crack_wpa_thread( void *arg )
 		key1[127] = '\0';
 		key2[127] = '\0';
 
+                len1 = strlen( key1 );
+                len2 = strlen( key1 );
+                if(len1 > 64 ) len1 = 64;
+                if(len2 > 64 ) len2 = 64;
+
+                if(len1 < 8) len1 = 8;
+                if(len2 < 8) len2 = 8;
 		#ifdef __i386__
 
 		/* MMX available, so compute two PMKs in a single row */
@@ -2022,11 +2217,11 @@ int crack_wpa_thread( void *arg )
 		memset( k_ipad, 0, sizeof( k_ipad ) );
 		memset( k_opad, 0, sizeof( k_opad ) );
 
-		memcpy( k_ipad, key1, strlen( key1 ) );
-		memcpy( k_opad, key1, strlen( key1 ) );
+		memcpy( k_ipad, key1, len1 );
+		memcpy( k_opad, key1, len1 );
 
-		memcpy( k_ipad + 64, key2, strlen( key2 ) );
-		memcpy( k_opad + 64, key2, strlen( key2 ) );
+		memcpy( k_ipad + 64, key2, len2 );
+		memcpy( k_opad + 64, key2, len2 );
 
 		u = (uint *) ( k_ipad      );
 		v = (uint *) ( k_ipad + 64 );
@@ -2066,10 +2261,10 @@ int crack_wpa_thread( void *arg )
 
 		essid[slen - 1] = '\1';
 
-		hmac_sha1( (uchar *) key1, strlen( key1 ),
+		hmac_sha1( (uchar *) key1, len1,
 			(uchar *) essid, slen,  pmk1 );
 
-		hmac_sha1( (uchar *) key2, strlen( key2 ),
+		hmac_sha1( (uchar *) key2, len2,
 			(uchar *) essid, slen,  pmk2 );
 
 		u = (uint *) pmk1;
@@ -2107,10 +2302,10 @@ int crack_wpa_thread( void *arg )
 
 		essid[slen - 1] = '\2';
 
-		hmac_sha1( (uchar *) key1, strlen( key1 ),
+		hmac_sha1( (uchar *) key1, len1,
 			(uchar *) essid, slen,  pmk1 + 20 );
 
-		hmac_sha1( (uchar *) key2, strlen( key2 ),
+		hmac_sha1( (uchar *) key2, len2,
 			(uchar *) essid, slen,  pmk2 + 20 );
 
 		u = (uint *) ( pmk1 + 20 );
@@ -2166,7 +2361,7 @@ int crack_wpa_thread( void *arg )
 
 /* display the current wpa key info, matrix-like */
 
-void show_wpa_stats( char *key, uchar pmk[32], uchar ptk[64],
+void show_wpa_stats( char *key, int keylen, uchar pmk[32], uchar ptk[64],
 uchar mic[16], int force )
 {
 	float delta;
@@ -2200,8 +2395,7 @@ uchar mic[16], int force )
 		nb_tried, (float) nb_kprev / delta );
 
 	memset( tmpbuf, ' ', sizeof( tmpbuf ) );
-	memcpy( tmpbuf, key, strlen( key ) > 27 ? 27 :
-	strlen( key ) );
+	memcpy( tmpbuf, key, keylen > 27 ? 27 : keylen );
 	tmpbuf[27] = '\0';
 
 	if( opt.l33t ) printf( "\33[37;1m" );
@@ -2237,9 +2431,67 @@ uchar mic[16], int force )
 	printf( "\n" );
 }
 
+int next_dict(int nb)
+{
+	if(opt.dict != NULL)
+	{
+		if(!opt.stdin_dict) fclose(opt.dict);
+		opt.dict = NULL;
+	}
+	opt.nbdict = nb;
+	if(opt.dicts[opt.nbdict] == NULL)
+		return( FAILURE );
+
+	while(opt.nbdict < MAX_DICTS && opt.dicts[opt.nbdict] != NULL)
+	{
+		if( strcmp( opt.dicts[opt.nbdict], "-" ) == 0 )
+		{
+			opt.stdin_dict = 1;
+
+			if( ( opt.dict = fdopen( fileno(stdin) , "r" ) ) == NULL )
+			{
+				perror( "fopen(dictionary) failed" );
+				opt.nbdict++;
+				continue;
+			}
+
+			opt.no_stdin = 1;
+		}
+		else
+		{
+			opt.stdin_dict = 0;
+			if( ( opt.dict = fopen( opt.dicts[opt.nbdict], "r" ) ) == NULL )
+			{
+				perror( "fopen(dictionary) failed" );
+				opt.nbdict++;
+				continue;
+			}
+
+			fseek(opt.dict, 0L, SEEK_END);
+
+			if ( ftell( opt.dict ) <= 0L )
+			{
+				fclose( opt.dict );
+				opt.dict = NULL;
+				printf( "Empty dictionnary\n" );
+				opt.nbdict++;
+				continue;
+			}
+
+			rewind( opt.dict );
+		}
+		break;
+	}
+
+	if(opt.nbdict >= MAX_DICTS || opt.dicts[opt.nbdict] == NULL)
+	    return( FAILURE );
+
+	return( 0 );
+}
+
 int do_wpa_crack( struct AP_info *ap )
 {
-	int i, cid;
+	int i, j, cid, len1, len2, num_cpus;
 	char key1[128], key2[128];
 
 	uchar pke[100];
@@ -2247,9 +2499,13 @@ int do_wpa_crack( struct AP_info *ap )
 	uchar pmk2[40], ptk2[80];
 	uchar mic1[20], mic2[20];
 
+        i=0;
+
+	num_cpus = opt.nbcpu;
+
 	/* send the ESSID to each thread */
 
-	for( cid = 0; cid < opt.nbcpu; cid++ )
+	for( cid = 0; cid < num_cpus; cid++ )
 	{
 		if( safe_write( mc_pipe[cid][1], (void *) ap->essid, 32 ) != 32 )
 		{
@@ -2301,11 +2557,17 @@ int do_wpa_crack( struct AP_info *ap )
 		printf("\33[2;34H%s",progname);
 	}
 
-	while( 1 )
+	while( num_cpus > 0 )
 	{
-		for( cid = 0; cid < opt.nbcpu; cid++ )
+		for( cid = 0; cid < num_cpus; cid++ )
 		{
 			/* read a couple of keys (skip those < 8 chars) */
+
+			if(opt.dict == NULL)
+			{
+				printf( "\nPassphrase not in dictionnary \n" );
+				return( FAILURE );
+			}
 
 			do
 			{
@@ -2314,29 +2576,60 @@ int do_wpa_crack( struct AP_info *ap )
 					if( opt.l33t )
 						printf( "\33[32;22m" );
 
-					printf( "\nPassphrase not in dictionnary\n" );
-
-					return( FAILURE );
+					/* printf( "\nPassphrase not in dictionnary %s \n", opt.dicts[opt.nbdict] );*/
+					if(next_dict(opt.nbdict+1) != 0)
+					{
+						/* no more words, but we still have to collect results from words sent to previous cpus */
+						num_cpus = cid;
+						goto collect_and_test;
+						/* return( FAILURE ); */
+					}
+					else
+					{
+						continue;
+					}
 				}
 
 				i = strlen( key1 );
+                                if( i < 8 ) continue;
+                                if( i > 64 ) i = 64;
 
 				if( key1[i - 1] == '\n' ) key1[--i] = '\0';
 				if( key1[i - 1] == '\r' ) key1[--i] = '\0';
+				if( key1[i - 1] == '\n' ) key1[--i] = '\0';
+				if( key1[i - 1] == '\r' ) key1[--i] = '\0';
 
+                                for(j=0; j<i; j++)
+                                    if(!isascii(key1[j]) || key1[j] < 32) i=0;
 			}
 			while( i < 8 );
 
 			do
 			{
 				if( fgets( key2, sizeof( key2 ), opt.dict ) == NULL )
-					break;
+				{
+					if(next_dict(opt.nbdict+1) != 0)
+					{
+						break;
+					}
+					else
+					{
+						continue;
+					}
+				}
 
 				i = strlen( key2 );
 
+                                if( i < 8 ) continue;
+                                if( i > 64 ) i = 64;
+
+				if( key2[i - 1] == '\n' ) key2[--i] = '\0';
+				if( key2[i - 1] == '\r' ) key2[--i] = '\0';
 				if( key2[i - 1] == '\n' ) key2[--i] = '\0';
 				if( key2[i - 1] == '\r' ) key2[--i] = '\0';
 
+                                for(j=0; j<i; j++)
+                                    if(!isascii(key2[j]) || key2[j] < 32 ) i=0;
 			}
 			while( i < 8 );
 
@@ -2350,7 +2643,9 @@ int do_wpa_crack( struct AP_info *ap )
 			}
 		}
 
-		for( cid = 0; cid < opt.nbcpu; cid++ )
+collect_and_test:
+
+		for( cid = 0; cid < num_cpus; cid++ )
 		{
 			/* collect and test the master keys */
 
@@ -2362,6 +2657,15 @@ int do_wpa_crack( struct AP_info *ap )
 				perror( "read pmk failed" );
 				return( FAILURE );
 			}
+
+			len1 = strlen( key1 );
+			len2 = strlen( key2 );
+
+                        if( len1 < 8 ) len1=8;
+                        if( len1 > 64 ) len1 = 64;
+
+                        if( len2 < 8 ) len2=8;
+                        if( len2 > 64 ) len2 = 64;
 
 			/* compute the pairwise transient key and the frame MIC */
 
@@ -2399,13 +2703,13 @@ int do_wpa_crack( struct AP_info *ap )
 					return( SUCCESS );
 				}
 
-				show_wpa_stats( key2, pmk2, ptk2, mic2, 1 );
+				show_wpa_stats( key2, len1, pmk2, ptk2, mic2, 1 );
 
 				if( opt.l33t )
 					printf( "\33[31;1m" );
 
 				printf( "\33[8;%dH\33[2KKEY FOUND! [ %s ]\33[11B\n",
-					( 80 - 15 - (int) strlen( key2 ) ) / 2, key2 );
+					( 80 - 15 - (int) len1 ) / 2, key2 );
 
 				if( opt.l33t )
 					printf( "\33[32;22m" );
@@ -2417,10 +2721,11 @@ int do_wpa_crack( struct AP_info *ap )
 			nb_kprev += 2;
 
 			if( ! opt.is_quiet )
-				show_wpa_stats( key1, pmk1, ptk1, mic1, 0 );
+				show_wpa_stats( key1, len1, pmk1, ptk1, mic1, 0 );
 		}
 	}
 
+	printf( "\nPassphrase not in dictionnary \n" );
 	return( FAILURE );
 }
 
@@ -2450,58 +2755,315 @@ void sighandler( int signum )
 		printf( "\33[2J\n" );
 }
 
+int next_key( char **key, int keysize )
+{
+	char *tmp, *tmp2;
+	int i, rtn;
+	unsigned int dec;
+	char *hex;
+
+	tmp2 = tmp = (char*) malloc(1024);
+
+	while(1)
+	{
+		rtn = 0;
+		tmp = tmp2;
+		if(opt.dict == NULL)
+		{
+			printf( "\nPassphrase not in dictionnary \n" );
+			free(tmp);
+			return( FAILURE );
+		}
+
+		if( opt.hexdict[opt.nbdict] )
+		{
+			if( fgets( tmp, ((keysize*2)+(keysize-1)), opt.dict ) == NULL )
+			{
+				if( opt.l33t )
+					printf( "\33[32;22m" );
+
+//				printf( "\nPassphrase not in dictionnary \"%s\" \n", opt.dicts[opt.nbdict] );
+				if(next_dict(opt.nbdict+1) != 0)
+				{
+					free(tmp);
+					return( FAILURE );
+				}
+				else
+				{
+					continue;
+				}
+			}
+
+			i=strlen(tmp);
+
+			if( i <= 2 ) continue;
+
+			if( tmp[i - 1] == '\n' ) tmp[--i] = '\0';
+			if( tmp[i - 1] == '\r' ) tmp[--i] = '\0';
+			if( i <= 0 ) continue;
+
+			i=0;
+
+			hex = strsep(&tmp, ":");
+
+			while( i<keysize && hex != NULL )
+			{
+				if(strlen(hex) > 2 || strlen(hex) == 0)
+				{
+					rtn = 1;
+					break;
+				}
+				if(sscanf(hex, "%x", &dec) == 0 )
+				{
+					rtn = 1;
+					break;
+				}
+
+				(*key)[i] = dec;
+				hex = strsep(&tmp, ":");
+				i++;
+			}
+			if(rtn)
+			{
+				continue;
+			}
+		}
+		else
+		{
+			if( fgets( *key, keysize, opt.dict ) == NULL )
+			{
+				if( opt.l33t )
+					printf( "\33[32;22m" );
+
+//				printf( "\nPassphrase not in dictionnary \"%s\" \n", opt.dicts[opt.nbdict] );
+				if(next_dict(opt.nbdict+1) != 0)
+				{
+					free(tmp);
+					return( FAILURE );
+				}
+				else
+				{
+					continue;
+				}
+			}
+
+			i=strlen(*key);
+
+			if( i <= 2 ) continue;
+
+			if( (*key)[i - 1] == '\n' ) (*key)[--i] = '\0';
+			if( (*key)[i - 1] == '\r' ) (*key)[--i] = '\0';
+
+			if( i <= 0 ) continue;
+		}
+
+		break;
+	}
+
+	free(tmp);
+
+	return( SUCCESS );
+}
+
+int set_dicts(char* optargs)
+{
+	int len;
+	char *optarg;
+
+	opt.nbdict = 0;
+	optarg = strsep(&optargs, ",");
+
+	for(len=0; len<MAX_DICTS; len++)
+	{
+		opt.dicts[len] = NULL;
+	}
+
+	while(optarg != NULL && opt.nbdict<MAX_DICTS)
+	{
+		len = strlen(optarg)+1;
+		opt.dicts[opt.nbdict] = (char*)malloc(len * sizeof(char));
+		if(opt.dicts[opt.nbdict] == NULL)
+		{
+			perror("allocation failed!");
+			return( FAILURE );
+		}
+		if(strncasecmp(optarg, "h:", 2) == 0)
+		{
+			strncpy(opt.dicts[opt.nbdict], optarg+2, len-2);
+			opt.hexdict[opt.nbdict] = 1;
+		}
+		else
+		{
+			strncpy(opt.dicts[opt.nbdict], optarg, len);
+			opt.hexdict[opt.nbdict] = 0;
+		}
+		optarg = strsep(&optargs, ",");
+		opt.nbdict++;
+	}
+
+	next_dict(0);
+
+	while(next_dict(opt.nbdict+1) == 0) {}
+
+	next_dict(0);
+
+	return 0;
+}
+
+int crack_wep_dict()
+{
+	struct timeval t_last;
+	struct timeval t_now;
+	int i, origlen, keysize;
+	char *key;
+
+	key = (char*) malloc(sizeof(char) * (opt.keylen + 1));
+	keysize = opt.keylen+1;
+
+	update_ivbuf();
+
+	if(wep.nb_ivs < TEST_MIN_IVS)
+	{
+		printf( "\nYou need to capture at least %d IVs!\n", TEST_MIN_IVS );
+		return( FAILURE );
+	}
+
+	gettimeofday( &t_last, NULL );
+	t_last.tv_sec--;
+
+	while(1)
+	{
+		if( next_key( &key, keysize ) != SUCCESS) return( FAILURE );
+
+		i = strlen( key );
+
+		origlen = i;
+
+		while(i<opt.keylen)
+		{
+			key[i] = key[i - origlen];
+			i++;
+		}
+
+		key[i] = '\0';
+
+		if( ! opt.is_quiet )
+		{
+			gettimeofday( &t_now, NULL );
+			if( (t_now.tv_sec - t_last.tv_sec) > 0)
+			{
+				show_wep_stats(opt.keylen - 1, 1, NULL, NULL, NULL, 0, 0);
+				gettimeofday( &t_last, NULL);
+			}
+		}
+
+		for(i=0; i<=opt.keylen; i++)
+		{
+			wep.key[i] = (uchar)key[i];
+		}
+
+		if(check_wep_key(wep.key, opt.keylen, 0) == SUCCESS)
+			return( SUCCESS );
+	}
+}
+
+static int crack_wep_ptw(struct AP_info *ap_cur)
+{
+	int len = 0;
+
+	opt.ap = ap_cur;
+
+	if(PTW_computeKey(ap_cur->ptw, wep.key, 13, (KEYLIMIT*opt.ffact)) == 1)
+		len = 13;
+	else if(PTW_computeKey(ap_cur->ptw, wep.key, 5, (KEYLIMIT*opt.ffact)/10) == 1)
+		len = 5;
+
+	if (!len)
+		return FAILURE;
+
+	opt.probability = 100;
+	key_found(wep.key, len, -1);
+
+	return SUCCESS;
+}
+
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option;
+	int i, n, ret, max_cpu, option, j, ret1, cpudetectfailed, unused, showhelp;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 
 	ret = FAILURE;
+	cpudetectfailed = 0;
+	showhelp = 0;
 
-	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _BETA);
+	progname = getVersion("Aircrack-ng", _MAJ, _MIN, _SUB_MIN, _REVISION);
 
 	memset( &opt, 0, sizeof( opt ) );
+
+	srand( time( NULL ) );
 
 	#ifdef _SC_NPROCESSORS_ONLN
 
 	max_cpu   = sysconf(_SC_NPROCESSORS_ONLN);
+	/* Fails on some archs */
+	cpudetectfailed = ( max_cpu < 1 );
+	if (cpudetectfailed)
+		max_cpu = 1;
 	opt.nbcpu = max_cpu;
 
 	#else
 
+	cpudetectfailed = 1;
 	max_cpu   = 255;
 	opt.nbcpu =   1;
 	#endif
-
+	j=0;
 	/* check the arguments */
-
-	if( argc < 2 )
-	{
-		usage:
-		printf (usage, progname,
-			( max_cpu == 1 ) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n" );
-		return( ret );
-	}
 
 	opt.do_brute    = 1;
 	opt.do_mt_brute = 1;
 	opt.showASCII   = 0;
+	opt.probability = 51;
+        opt.next_ptw_try= 0;
 
 	while( 1 )
 	{
 
+        int option_index = 0;
+
+        static struct option long_options[] = {
+            {"bssid",   1, 0, 'b'},
+            {"debug",   1, 0, 'd'},
+            {"help",    0, 0, 'H'},
+            {0,         0, 0,  0 }
+        };
+
 		if ( max_cpu == 1 )
-			option = getopt( argc, argv, "a:e:b:qcthd:m:n:i:f:k:x::ysw:0" );
+			option = getopt_long( argc, argv, "a:e:b:qcthd:m:n:i:f:k:x::ysw:0Hz",
+                        long_options, &option_index );
 		else
-			option = getopt( argc, argv, "a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0" );
+			option = getopt_long( argc, argv, "a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0Hz",
+                        long_options, &option_index );
 
 		if( option < 0 ) break;
 
 		switch( option )
 		{
+
+			case ':' :
+
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+				return( 1 );
+
+			case '?' :
+
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+				return( 1 );
+
 			case 'a' :
 
-				sscanf( optarg, "%d", &opt.amode );
+				ret1 = sscanf( optarg, "%d", &opt.amode );
 
 				if ( strcasecmp( optarg, "wep" ) == 0 )
 					opt.amode = 1;
@@ -2511,7 +3073,8 @@ int main( int argc, char *argv[] )
 
 				if( opt.amode != 1 && opt.amode != 2 )
 				{
-					printf( "Invalid attack mode.\n" );
+					printf( "Invalid attack mode. [1,2] or [wep,wpa]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -2529,6 +3092,7 @@ int main( int argc, char *argv[] )
 				if (getmac(optarg, 1, opt.bssid) != 0)
 				{
 						printf( "Invalid BSSID (not a MAC).\n" );
+			    		printf("\"%s --help\" for help.\n", argv[0]);
 						return( FAILURE );
 				}
 
@@ -2539,7 +3103,8 @@ int main( int argc, char *argv[] )
 				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 ||
 					opt.nbcpu < 1 || opt.nbcpu > max_cpu )
 				{
-					printf( "Invalid number of processes.\n" );
+					printf( "Invalid number of processes. [1-%d]\n", max_cpu );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -2575,6 +3140,8 @@ int main( int argc, char *argv[] )
 				{
 					if (s[i] == 'x')
 						s[i] = 'X';
+					if (s[i] == 'y')
+						s[i] = 'Y';
 					if ( s[i] == '-' ||  s[i] == ':' || s[i] == ' ')
 						i++;
 					else
@@ -2585,14 +3152,18 @@ int main( int argc, char *argv[] )
 				buf[1] = s[1];
 				buf[2] = '\0';
 				i = 0;
-				while( ( sscanf( buf, "%x", &n ) == 1 ) || ( buf[0] == 'X' && buf[1] == 'X' ) )
+				j = 0;
+				while( ( sscanf( buf, "%x", &n ) == 1 ) || ( buf[0] == 'X' && buf[1] == 'X' ) || ( buf[0] == 'Y' && buf[1] == 'Y' ))
 				{
 					if ( buf[0] == 'X' && buf[1] == 'X' ) {
 						opt.debug_row[i++] = 0 ;
+					} else if ( buf[0] == 'Y' && buf[1] == 'Y' ) {
+						opt.brutebytes[j++] = i++;
 					} else {
 						if ( n < 0 || n > 255 )
 						{
 							printf( "Invalid debug key.\n" );
+				    		printf("\"%s --help\" for help.\n", argv[0]);
 							return( FAILURE );
 						}
 						opt.debug[i] = n ;
@@ -2611,6 +3182,7 @@ int main( int argc, char *argv[] )
 				if ( getmac(optarg, 1, opt.maddr) != 0)
 				{
 					printf( "Invalid MAC address filter.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -2623,7 +3195,8 @@ int main( int argc, char *argv[] )
 					opt.keylen != 152 && opt.keylen != 256 &&
 					opt.keylen != 512 ) )
 				{
-					printf( "Invalid WEP key length.\n" );
+					printf( "Invalid WEP key length. [64,128,152,256,512]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -2636,7 +3209,8 @@ int main( int argc, char *argv[] )
 				if( sscanf( optarg, "%d", &opt.index ) != 1 ||
 					opt.index < 1 || opt.index > 4 )
 				{
-					printf( "Invalid WEP key index.\n" );
+					printf( "Invalid WEP key index. [1-4]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -2647,7 +3221,8 @@ int main( int argc, char *argv[] )
 				if( sscanf( optarg, "%f", &opt.ffact ) != 1 ||
 					opt.ffact < 1 || opt.ffact > 32 )
 				{
-					printf( "Invalid fudge factor.\n" );
+					printf( "Invalid fudge factor. [1-32]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -2658,7 +3233,8 @@ int main( int argc, char *argv[] )
 				if( sscanf( optarg, "%d", &opt.korek ) != 1 ||
 					opt.korek < 1 || opt.korek > N_ATTACKS )
 				{
-					printf( "Invalid KoreK attack strategy.\n" );
+					printf( "Invalid KoreK attack strategy. [1-%d]\n", N_ATTACKS );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
 
@@ -2673,9 +3249,10 @@ int main( int argc, char *argv[] )
 				if (optarg)
 				{
 					if (sscanf(optarg, "%d", &opt.do_brute)!=1
-						|| opt.do_brute<0 || opt.do_brute>2)
+						|| opt.do_brute<0 || opt.do_brute>4)
 					{
-						printf("Invalid option -x%s\n", optarg);
+						printf("Invalid option -x%s. [0-4]\n", optarg);
+			    		printf("\"%s --help\" for help.\n", argv[0]);
 						return FAILURE;
 					}
 				}
@@ -2692,39 +3269,19 @@ int main( int argc, char *argv[] )
 				opt.do_testy = 1;
 				break;
 
+			case 'z' :
+				opt.do_ptw = 1;
+				break;
+
 			case 's' :
 				opt.showASCII = 1;
 				break;
 
 			case 'w' :
-				if( strcmp( optarg, "-" ) == 0 )
+				if(set_dicts(optarg) != 0)
 				{
-					if( ( opt.dict = fdopen( 0, "r" ) ) == NULL )
-					{
-						perror( "fopen(dictionary) failed" );
-						return( FAILURE );
-					}
-
-					opt.no_stdin = 1;
-				}
-				else
-				{
-					if( ( opt.dict = fopen( optarg, "r" ) ) == NULL )
-					{
-						perror( "fopen(dictionary) failed" );
-						return( FAILURE );
-					}
-
-					fseek(opt.dict, 0L, SEEK_END);
-
-					if ( ftell( opt.dict ) <= 0L )
-					{
-						fclose( opt.dict );
-						printf( "Empty dictionnary\n" );
-						return( FAILURE );
-					}
-
-					rewind( opt.dict );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
+				    return FAILURE;
 				}
 				break;
 
@@ -2733,12 +3290,39 @@ int main( int argc, char *argv[] )
 				opt.l33t = 1;
 				break;
 
+			case 'H' :
+
+				showhelp = 1;
+				goto usage;
+				break;
+
 			default : goto usage;
 		}
 	}
 
-	if( ! ( argc - optind ) )
-		goto usage;
+	if( argc - optind < 1 )
+	{
+		if(argc == 1)
+		{
+usage:
+			printf (usage, progname,
+				( max_cpu == 1 && cpudetectfailed == 0) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n",
+				( max_cpu == 1 && cpudetectfailed == 0) ? "\n" : "\n      -X         : disable bruteforce multithreading (SMP only)\n");
+
+			/* The user only asked for help */
+			if (showhelp == 1)
+				exit(0);
+		}
+		if( argc - optind == 0)
+	    {
+	    	printf("No file to crack specified.\n");
+	    }
+	    if(argc > 1)
+	    {
+    		printf("\"%s --help\" for help.\n", argv[0]);
+	    }
+		return( ret );
+	}
 
 	if( opt.amode == 2 && opt.dict == NULL )
 	{
@@ -2762,6 +3346,7 @@ int main( int argc, char *argv[] )
 
 	pthread_mutex_init( &mx_apl, NULL );
 	pthread_mutex_init( &mx_eof, NULL );
+	pthread_mutex_init( &mx_ivb, NULL );
 	pthread_cond_init(  &cv_eof, NULL );
 
 	ap_1st = NULL;
@@ -2868,7 +3453,8 @@ int main( int argc, char *argv[] )
 			{
 				printf( "Index number of target network ? " );
 				fflush( stdout );
-				scanf( "%127s", buf );
+				ret1 = 0;
+				while(!ret1) ret1 = scanf( "%127s", buf );
 
 				if( ( n = atoi( buf ) ) < 1 )
 					continue;
@@ -2944,12 +3530,12 @@ int main( int argc, char *argv[] )
 
 	for( i = 0; i < opt.nbcpu; i++ )
 	{
-		pipe( mc_pipe[i] );
-		pipe( cm_pipe[i] );
+		unused = pipe( mc_pipe[i] );
+		unused = pipe( cm_pipe[i] );
 
 		if (opt.amode<=1 && opt.nbcpu>1 && opt.do_brute && opt.do_mt_brute)
 		{
-			pipe(bf_pipe[i]);
+			unused = pipe(bf_pipe[i]);
 			bf_nkeys[i] = 0;
 		}
 	}
@@ -2978,89 +3564,135 @@ int main( int argc, char *argv[] )
 		if( opt.keylen == 0 )
 			opt.keylen = 13;
 
+		if(j + opt.do_brute > 4)
+		{
+			printf( "Specified more then 4 bytes to bruteforce!" );
+			goto exit_main;
+		}
+
+		for( i=0; i<opt.do_brute; i++)
+		{
+			opt.brutebytes[j+i] = opt.keylen -1 -i;
+		}
+
+		opt.do_brute += j;
+
 		if( opt.ffact == 0 )
 		{
-			if( ! opt.do_testy )
-			{
-				if( opt.keylen == 5 )
-					opt.ffact = 5;
-				else
-					opt.ffact = 2;
-			}
-			else
-				opt.ffact = 30;
-		}
+                        if( opt.do_ptw ) opt.ffact = 2;
+                        else
+                        {
+                            if( ! opt.do_testy )
+                            {
+                                if( opt.keylen == 5 )
+                                    opt.ffact = 5;
+                                else
+                                    opt.ffact = 2;
+                            }
+                            else
+                                opt.ffact = 30;
+                        }
+                }
 
 		memset( &wep, 0, sizeof( wep ) );
 
-		for( i = 0; i < opt.nbcpu; i++ )
+		if (opt.do_ptw)
 		{
-			/* start one thread per cpu */
-
-			pthread_t tid;
-
-			if (opt.amode<=1 && opt.nbcpu>1 && opt.do_brute && opt.do_mt_brute)
+			if(!opt.is_quiet)
+				printf("Attack will be restarted every %d captured ivs.\n", PTW_TRY_STEP);
+			opt.next_ptw_try = ap_cur->nb_ivs - (ap_cur->nb_ivs % PTW_TRY_STEP);
+			do
 			{
-				if (pthread_create( &tid, NULL, (void *) inner_bruteforcer_thread,
-					(void *) (long) i ) != 0)
+				if(ap_cur->nb_ivs >= opt.next_ptw_try)
+				{
+					if(!opt.is_quiet)
+						printf("Starting PTW attack with %ld ivs.\n", ap_cur->nb_ivs);
+					ret = crack_wep_ptw(ap_cur);
+					if(ret)
+					{
+						opt.next_ptw_try += PTW_TRY_STEP;
+						printf("Failed. Next try with %d IVs.\n", opt.next_ptw_try);
+					}
+				}
+				if(ret)
+					usleep(10000);
+			}while(ret != 0);
+		}
+		else if(opt.dict != NULL)
+		{
+			ret = crack_wep_dict();
+		}
+		else
+		{
+			for( i = 0; i < opt.nbcpu; i++ )
+			{
+				/* start one thread per cpu */
+
+				pthread_t tid;
+
+				if (opt.amode<=1 && opt.nbcpu>1 && opt.do_brute && opt.do_mt_brute)
+				{
+					if (pthread_create( &tid, NULL, (void *) inner_bruteforcer_thread,
+						(void *) (long) i ) != 0)
+					{
+						perror( "pthread_create failed" );
+						goto exit_main;
+					}
+				}
+
+				if( pthread_create( &tid, NULL, (void *) crack_wep_thread,
+					(void *) (long) i ) != 0 )
 				{
 					perror( "pthread_create failed" );
 					goto exit_main;
 				}
 			}
 
-			if( pthread_create( &tid, NULL, (void *) crack_wep_thread,
-				(void *) (long) i ) != 0 )
+			if( ! opt.do_testy )
 			{
-				perror( "pthread_create failed" );
-				goto exit_main;
-			}
-		}
-
-		if( ! opt.do_testy )
-		{
-			do   { ret = do_wep_crack1( 0 ); }
-			while( ret == RESTART );
-
-			if( ret == FAILURE )
-			{
-				printf( "   Attack failed. Possible reasons:\n\n"
-					"     * Out of luck: you must capture more IVs. Usually, 104-bit WEP\n"
-					"       can be cracked with about one million IVs, sometimes more.\n\n"
-					"     * If all votes seem equal, or if there are many negative votes,\n"
-					"       then the capture file is corrupted, or the key is not static.\n\n"
-					"     * A false positive prevented the key from being found.  Try to\n"
-					"       disable each korek attack (-k 1 .. 17), raise the fudge factor\n"
-					"       (-f)" );
-				if (opt.do_testy)
-					printf( "and try the experimental bruteforce attacks (-y)." );
-				printf( "\n" );
-			}
-		}
-		else
-		{
-			for( i = opt.keylen - 3; i < opt.keylen - 2; i++ )
-			{
-				do   { ret = do_wep_crack2( i ); }
+				do   { ret = do_wep_crack1( 0 ); }
 				while( ret == RESTART );
 
-				if( ret == SUCCESS )
-					break;
+				if( ret == FAILURE )
+				{
+					printf( "   Attack failed. Possible reasons:\n\n"
+						"     * Out of luck: you must capture more IVs. Usually, 104-bit WEP\n"
+						"       can be cracked with about one million IVs, sometimes more.\n\n"
+						"     * If all votes seem equal, or if there are many negative votes,\n"
+						"       then the capture file is corrupted, or the key is not static.\n\n"
+						"     * A false positive prevented the key from being found.  Try to\n"
+						"       disable each korek attack (-k 1 .. 17), raise the fudge factor\n"
+						"       (-f)" );
+					if (opt.do_testy)
+						printf( "and try the experimental bruteforce attacks (-y)." );
+					printf( "\n" );
+				}
 			}
-
-			if( ret == FAILURE )
+			else
 			{
-				printf( "   Attack failed. Possible reasons:\n\n"
-					"     * Out of luck: you must capture more IVs. Usually, 104-bit WEP\n"
-					"       can be cracked with about one million IVs, sometimes more.\n\n"
-					"     * If all votes seem equal, or if there are many negative votes,\n"
-					"       then the capture file is corrupted, or the key is not static.\n\n"
-					"     * A false positive prevented the key from being found.  Try to\n"
-					"       disable each korek attack (-k 1 .. 17), raise the fudge factor\n"
-					"       (-f)" );
-				if (opt.do_testy)
-					printf( "or try the standard attack mode instead (no -y option)." );
-				printf( "\n" );
+				for( i = opt.keylen - 3; i < opt.keylen - 2; i++ )
+				{
+					do   { ret = do_wep_crack2( i ); }
+					while( ret == RESTART );
+
+					if( ret == SUCCESS )
+						break;
+				}
+
+				if( ret == FAILURE )
+				{
+					printf( "   Attack failed. Possible reasons:\n\n"
+						"     * Out of luck: you must capture more IVs. Usually, 104-bit WEP\n"
+						"       can be cracked with about one million IVs, sometimes more.\n\n"
+						"     * If all votes seem equal, or if there are many negative votes,\n"
+						"       then the capture file is corrupted, or the key is not static.\n\n"
+						"     * A false positive prevented the key from being found.  Try to\n"
+						"       disable each korek attack (-k 1 .. 17), raise the fudge factor\n"
+						"       (-f)" );
+					if (opt.do_testy)
+						printf( "or try the standard attack mode instead (no -y option)." );
+					printf( "\n" );
+				}
 			}
 		}
 	}
