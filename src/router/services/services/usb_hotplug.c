@@ -102,6 +102,9 @@ static int usb_process_path( char *path, char *fs)
     sprintf( mount_point, "/%s", nvram_default_get( "usb_mntpoint", "mnt" ) ); 
 
     ret = eval( "/bin/mount", "-t", fs, path, mount_point );
+    
+    if( ret != 0 ) //give it another try
+        ret = eval( "/bin/mount", path, mount_point );  //guess fs
 
     return ret;
 }
@@ -153,6 +156,8 @@ static int usb_add_ufd(  )
 	if( strstr( line, "Partition" ) )
 	is_part = 1;
 	
+	if (strstr( line, "file system" ) )
+	{
 	if (strstr( line, "FAT" ) )
 	{
 		fs = "vfat";
@@ -171,6 +176,7 @@ static int usb_add_ufd(  )
 		fs = "ext2";
 #endif
 		break;
+	}
 	}
 	
 	}
