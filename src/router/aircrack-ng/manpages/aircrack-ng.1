@@ -1,8 +1,7 @@
-.TH AIRCRACK-NG 1 "September 2006" "Version 0.6.2"
+.TH AIRCRACK-NG 1 "February 2008" "Version 0.9.3"
 
 .SH NAME
-.B aircrack-ng
-is a 802.11 WEP / WPA-PSK key cracker.
+aircrack-ng - a 802.11 WEP / WPA-PSK key cracker
 .SH SYNOPSIS
 .B aircrack-ng
 [options] <.cap / .ivs file(s)>
@@ -10,6 +9,9 @@ is a 802.11 WEP / WPA-PSK key cracker.
 .BI aircrack-ng
 is a 802.11 WEP / WPA-PSK key cracker. It implements the so-called Fluhrer - Mantin - Shamir (FMS) attack, along with some new attacks by a talented hacker named KoreK. When enough encrypted packets have been gathered, aircrack-ng can almost instantly recover the WEP key.
 .SH OPTIONS
+.TP
+.I -H, --help
+Shows the help screen.
 .PP
 .TP
 .B Common options:
@@ -21,7 +23,7 @@ Force the attack mode, 1 or wep for WEP and 2 or wpa for WPA-PSK.
 Select the target network based on the ESSID. This option is also required for WPA cracking if the SSID is cloacked.
 .TP
 .I -b <bssid>
-Select the target network based on the access point's MAC address.
+Select the target network based on the access point MAC address.
 .TP
 .I -p <nbcpu>
 Set this option to the number of CPUs to use (only available on SMP systems). By default, it uses all available CPUs
@@ -76,6 +78,9 @@ Shows ASCII version of the key at the right of the screen
 .TP
 .I -y  
 This is an experimental single brute-force attack which should only be used when the standard attack mode fails with more than one million IVs.
+.TP
+.I -z  
+Uses PTW (Andrei Pyshkin, Erik Tews and Ralf-Philipp Weinmann) attack.
 .PP
 .TP
 .B WPA-PSK cracking options:
@@ -96,8 +101,12 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .br
 .B airodump-ng(1)
 .br
+.B airtun-ng(1)
+.br
 .B packetforge-ng(1)
 .br
 .B ivstools(1)
 .br
 .B kstats(1)
+.br
+.B makeivs(1)

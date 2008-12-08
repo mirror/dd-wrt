@@ -1,8 +1,7 @@
-.TH packetforge-ng 1 "September 2006" "Version 0.6.2"
+.TH packetforge-ng 1 "February 2008" "Version 0.9.3"
 
 .SH NAME
-.B packetforge-ng
-forges packets: ARP, UDP, ICMP or custom.
+packetforge-ng - forge packets: ARP, UDP, ICMP or custom
 .SH SYNOPSIS
 .B packetforge-ng
 <mode> <options>
@@ -11,6 +10,9 @@ forges packets: ARP, UDP, ICMP or custom.
 is a tool designed to forge ARP-request, UDP, ICMP or custom packets.
 .SH OPTIONS
 .PP
+.TP
+.I -H, --help
+Shows the help screen.
 .TP
 .I -p <fctrl>
 Set frame control word (hex)
@@ -39,29 +41,38 @@ Set source IP (and port)
 .I -l <ip:[port]>
 Set destination IP (and port)
 .TP
-.I -w <file
+.I -w <file>
 Write packet to this pcap file
 .TP
 .I -r <file>
-Read packet from this raw file
+Read packet from this pcap file
 .TP
 .I -y <file>
 Read PRGA from this file
 .TP
-.I --arp
+.I -t <ttl>
+Set Time To Live in IP-Header
+.TP
+.I -s <size>
+Set size of the generated null packet.
+.TP
+.I -0, --arp
 Forge an ARP packet
 .TP
-.I --udp
+.I -1, --udp
 Forge an UDP packet
 .TP
-.I --icmp
+.I -2, --icmp
 Forge an ICMP packet
 .TP
-.I --custom
-Build a custom packet
+.I -3, --null
+Forge a llc null packet
+.TP
+.I -9, --custom
+Build a custom packet, requires \-r to read an unencrypted frame out of a pcap file.
 .SH EXAMPLE
 .B packetforge-ng
--y test.xor -a 00:09:5b:12:40:cc -h 00:10:2a:cb:30:14 -k 192.168.1.100 -l 192.168.1.1 -w arp-request.cap
+\-y test.xor \-a 00:09:5b:12:40:cc \-h 00:10:2a:cb:30:14 \-k 192.168.1.100 \-l 192.168.1.1 \-w arp-request.cap
 .SH AUTHOR
 This manual page was written by Thomas d'Otreppe.
 Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
@@ -80,4 +91,8 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .br
 .B airodump-ng(1)
 .br
+.B airtun-ng(1)
+.br
 .B kstats(1)
+.br
+.B makeivs(1)

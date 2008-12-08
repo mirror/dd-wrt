@@ -1,3 +1,116 @@
+Version 0.9.3 (changes from aircrack-ng 0.9.2) - Released 24 February 2008:
+* Fix endianness issues in airodump-ng, aireplay-ng.
+* Several small bug fixes.
+* Updated rtl8187 patch.
+
+Version 0.9.2 (changes from aircrack-ng 0.9.1) - Released 05 February 2008:
+* aireplay-ng: Now works with rtc_cmos
+* aireplay-ng: Fixed compilation on Fedora Rawhide
+* airodump-ng: Fixed: Wrong information printed in CSV file (PSK for WEP with Shared key instead of SKA).
+* airodump-ng (airpcap): added support for 5Ghz channels.
+* airdecap-ng: Fixed bug in calc_pmk() function causes wrong PMK to be computed
+* airmon-ng: Fixed detection of N770 wireless interface
+* airmon-ng: Fixed Ralink rt73 detection
+* airmon-ng: Added driver detection through sysfs
+* airmon-ng: Added mac80211 support
+* airmon-ng: Added networkmanager detection - airmon-ng check
+* airmon-ng: Added detection of ipwraw-ng driver
+* GUI (win): Fixed file dialog for airdecap-ng
+* manpages: updated airodump-ng manpage
+* manpages: Fixes for whatis
+* Makefiles: Fixed OpenBSD makefile.
+
+Version 0.9.1 (changes from aircrack-ng 0.9) - Released 25 June 2007:
+* airodump-ng: wlan-ng driver now works again.
+* airodump-ng: Fixed IP address when writing to CSV file
+* airodump-ng: Fixed debian bug #417388: it doesn't restore terminal after error
+* aircrack-ng: Fixed WPA cracking on SMP computers
+* aircrack-ng: Fixed bug in calc_pmk() function causes wrong PMK to be computed
+* airmon-ng: Fixed madwifi-ng wifiX detection (due to translation in ifconfig)
+* patches: Added ACX injection patch
+* patches: Updated rtl8187 patch for 2.6.21
+* GUI (win): Added PTW option to aircrack-ng tab.
+* GUI (win): Fixed a bug when cracking with a wordlist.
+
+Version 0.9 (changes from aircrack-ng 0.8) - Released 13 May 2007:
+* aireplay-ng: Added new 'attack': injection test (--test)
+* aireplay-ng: disallow injection with wlanng & kernel > 2.6.11
+* airtun-ng: Fixed: an option wasn't shown in usage screen.
+* airodump-ng (win): Fixed version numbering.
+* airodump-ng (win): Changed first time messagebox
+* aircrack-ng: Fixed: --help make aircrack-ng crash
+* aircrack-ng: Added PTW attack (option: -z). It require full capture.
+* airdecap-ng: now decrypt IEEE802.11 header with 802.11e header
+* airmon-ng: Fixed orinoco card detection
+* patches: updated zd1211rw patch for kernel 2.6.21
+* patches: Added bcm43xx injection patch for kernel 2.6.20
+* patches: updated rtl8187 patch (for new driver version).
+* wzcook (win): now can work in silent mode (option: --silent)
+* Makefile: added make zip (cygwin only)
+* Makefile: fixed direct call to 'make install' or 'make strip' instead of 'make'
+* GUI (win): Updated aircrack-ng tab and added an about tab.
+
+Version 0.8 (changes from aircrack-ng 0.7) - Released 25 April 2007:
+* aireplay-ng: Works on FreeBSD-CURRENT
+* aircrack-ng: Fixed stdin dictionary usage
+* aircrack-ng: Hardcode CPUs number to 1 in case detection fails
+* aircrack-ng: Fixed too low trashvalue
+* aireplay-ng: Fixed 384 bytes keystream output
+* aireplay-ng: Fixed IV index bug
+* aireplay-ng: Better error messages for -0 and -1
+* airtun-ng: Works on FreeBSD
+* airtun-ng: Fix compilation under FC6 (missing "linux/if.h" include).
+* airodump-ng: Works on FreeBSD.
+* airodump-ng: Added encryption filtering
+* airodump-ng: Fixed a SIGSEGV
+* airodump-ng: Added WPA handshake detection
+* airodump-ng: Added non associated stations filter
+* airodump-ng: Added support for zd1211rw
+* airodump-ng: Fixed 100% cpu utilisation
+* airmon-ng: Added support for zd1211rw driver
+* airmon-ng: Added support for at76c503a, rt61 and rt73
+* airmon-ng: Updated some device detection
+* airmon-ng: Added Nokia 770 and PrismGT softmac
+* airmon-ng: Fixed ACX driver monitor mode startup
+* airmon-ng: Fixed syntax error
+* airtun-ng: Works on FreeBSD
+* airtun-ng: Added pcap support to replay saved wlan sessions
+* airtun-ng: Added repeater mode, bssid and netmask filter
+* packetforge-ng: Added null packet support
+* packetforge-ng: Added packet selection for -9
+* Patches: Added hostap kernel 2.6.18 patch
+* Patches: Updated rtl8187 patch.
+* Patches: Updated madwifi-ng patch.
+* Patches: Added injection patch for zd1211 (does not work for all devices).
+* Added airoscript (from daouid)
+* Makefiles: Fixed: make uninstall did not remove all files
+* Updated spec file by David Bolt to be able to build RPM packages on FC, Mandriva and Suse distro
+* Added WEP authentication example capture
+* Fixed gcc 2.95 compilation
+* Fixed compilation on MacIntel
+
+Version 0.7 (changes from aircrack-ng 0.6.2) - Released 20 January 2007:
+* Makefiles: Improved + added makefiles for other OS
+* Makefiles: Fixed make install on Windows and MacOS
+* airtun-ng: Creates a tuntap interface, through which ordinary IP frames can be injected
+* aireplay-ng: Added fragmentation attack
+* aireplay-ng: Added shared key authentication
+* airmon-ng: Now detect the shell when installing
+* airmon-ng: Added support for rtl8187
+* aircrack-ng: Added WEP dictionnary attack
+* aircrack-ng: Works with 802.11e QoS packets
+* airodump-ng: Added MAC filtering
+* airodump-ng: Now use the flaw in shared-key authentication 
+	       to generate a xor file containing the prga recovered from a shared-key authentication
+* airodump-ng: More information about encryption on the AP
+* airodump-ng: Receive quality indicator
+* airodump-ng: The way ESSID is given in the CSV file is more clear
+* packetforge-ng: Set the TTL value in the ip header
+* packetforge-ng: Close open file handles
+* Special handling of spanning tree packets
+* Added rtl8187 patch for injection
+* Other bug fixes
+
 Version 0.6.2 (changes from aircrack-ng 0.6.1) - Released 1 October 2006:
 * aireplay-ng: Applied patch to inject packets with an ipw2200
 * aircrack-ng: Fixed: show_wpa_stats() 1 byte array overflow
