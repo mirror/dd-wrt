@@ -122,7 +122,7 @@ static int usb_add_ufd(  )
 	char part[10], *partitions, *next;
 	struct stat tmp_stat;
 
-    if( ( dir = opendir( "/dev/discs" ) ) == NULL )
+	if( ( dir = opendir( "/dev/discs" ) ) == NULL )
 	return EINVAL;
 
     /* 
@@ -150,19 +150,29 @@ static int usb_add_ufd(  )
 	{
 	while( fgets( line, sizeof( line ), fp ) != NULL )
 	{
-	if (strstr( line, "FAT" ) )
-	fs = "vfat";
-	else if( strstr( line, "Ext2" ) )
-	fs = "ext2";
-	else if( strstr( line, "Ext3" ) )
-#ifdef HAVE_USB_ADVANCED
-	fs = "ext3";
-#else
-	fs = "ext2";
-#endif
-	
 	if( strstr( line, "Partition" ) )
 	is_part = 1;
+	
+	if (strstr( line, "FAT" ) )
+	{
+		fs = "vfat";
+		break;
+	}
+	else if( strstr( line, "Ext2" ) )
+	{
+		fs = "ext2";
+		break;
+	}
+	else if( strstr( line, "Ext3" ) )
+	{
+#ifdef HAVE_USB_ADVANCED
+		fs = "ext3";
+#else
+		fs = "ext2";
+#endif
+		break;
+	}
+	
 	}
 	fclose( fp );
 	}
@@ -174,7 +184,7 @@ static int usb_add_ufd(  )
 	     */
 	    if( is_part )
 	    {
-		partitions = "part1 part2 part3 part4";
+		partitions = "part1 part2 part3 part4 part5 part6";
 		foreach( part, partitions, next )
 		{
 		    sprintf( path, "/dev/discs/%s/%s", entry->d_name, part );
@@ -213,6 +223,9 @@ static int usb_add_ufd(  )
 	    	fprintf( fp, "Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n" );	    
 	    fclose( fp );
 	}
-    }
-    return 0;
+
+	if( is_mounted ) //temp. fix: only mount 1st mountable part, then exit
+		return 0;
+	}
+	return 0;
 }
