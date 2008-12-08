@@ -1,12 +1,48 @@
+/*
+ *  Copyright (c) 2007, 2008, Erik Tews, Andrei Pychkine and Ralf-Philipp Weinmann.
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ *  In addition, as a special exception, the copyright holders give
+ *  permission to link the code of portions of this program with the
+ *  OpenSSL library under certain conditions as described in each
+ *  individual source file, and distribute linked combinations
+ *  including the two.
+ *  You must obey the GNU General Public License in all respects
+ *  for all of the code used other than OpenSSL. *  If you modify
+ *  file(s) with this exception, you may extend this exception to your
+ *  version of the file(s), but you are not obligated to do so. *  If you
+ *  do not wish to do so, delete this exception statement from your
+ *  version. *  If you delete this exception statement from all source
+ *  files in the program, then also delete it here.
+ */
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef WIN32
+#include <Windows.h>
+#include <airpcap.h>
+#endif
+#include "pcap.h"
 #include "aircrack-ptw-lib.h"
-
+#include "aircrack-ng.h"
 
 #define n PTW_n
 #define CONTROLSESSIONS PTW_CONTROLSESSIONS
-#define KEYHSBYTES PTW_KEYHSBYTES
 #define KSBYTES PTW_KSBYTES
 #define IVBYTES PTW_IVBYTES
 #define TESTBYTES 6
@@ -251,12 +287,20 @@ static void getdrv(PTW_tableentry orgtable[][n], int keylen, double * normal, do
         }
 }
 
+int tried, max_tries;
+int depth[KEYHSBYTES];
+PTW_tableentry keytable[KEYHSBYTES][n];
 /*
  * Guess a single keybyte
  */
 static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint8_t fixvalue, int * searchborders, uint8_t * key, int keylen, PTW_attackstate * state, uint8_t sum, int * strongbytes) {
 	int i;
 	uint8_t tmp;
+
+	if(!opt.is_quiet)
+		show_wep_stats( keylen -1, 0, keytable, searchborders, depth, tried, max_tries );
+
+	tried++;
 	if (keybyte == keylen) {
 		return correct(state, key, keylen);
 	} else if (strongbytes[keybyte] == 1) {
@@ -276,7 +320,9 @@ static int doRound(PTW_tableentry sortedtable[][n], int keybyte, int fixat, uint
 		return doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, fixvalue, strongbytes);
 	} else {
 		for (i = 0; i < searchborders[keybyte]; i++) {
+			depth[keybyte] = i;
 			key[keybyte] = sortedtable[keybyte][i].b - sum;
+			keytable[keybyte][i].b = key[keybyte];
 			if (doRound(sortedtable, keybyte+1, fixat, fixvalue, searchborders, key, keylen, state, sortedtable[keybyte][i].b, strongbytes) == 1) {
 				return 1;
 			}
@@ -295,6 +341,8 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	int fixat;
 	int fixvalue;
 
+	memcpy(keytable, table, sizeof(PTW_tableentry) * n * keylen);
+
 	for (i = 0; i < keylen; i++) {
 		if (strongbytes[i] == 1) {
 			choices[i] = i;
@@ -306,10 +354,13 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 	prod = 0;
 	fixat = -1;
 	fixvalue = 0;
+	max_tries = keylimit;
 
 	while(prod < keylimit) {
 		if (doRound(table, 0, fixat, fixvalue, choices, key, keylen, state, 0, strongbytes) == 1) {
 			// printf("hit with %d choices\n", prod);
+			if(!opt.is_quiet)
+				show_wep_stats( keylen -1, 1, keytable, choices, depth, prod, keylimit );
 			return 1;
 		}
 		choices[sh2[i].keybyte]++;
@@ -320,14 +371,19 @@ static int doComputation(PTW_attackstate * state, uint8_t * key, int keylen, PTW
 		for (j = 0; j < keylen; j++) {
 			prod *= choices[j];
 		}
+		tried = prod;
 		do {
 			i++;
 		} while (strongbytes[sh2[i].keybyte] == 1);
 
+		if(!opt.is_quiet)
+			show_wep_stats( keylen -1, 0, keytable, choices, depth, prod, keylimit );
+
 	}
+	if(!opt.is_quiet)
+		show_wep_stats( keylen -1, 1, keytable, choices, depth, prod, keylimit );
 	return 0;
 }
-		
 
 /*
  * Guess which key bytes could be strong and start actual computation of the key
@@ -340,16 +396,18 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 	int simple, onestrong, twostrong;
 	int i,j;
 
-	onestrong = (testlimit/10)*2;
-	twostrong = (testlimit/10)*1;
-	simple = testlimit - onestrong - twostrong;
-
+	sorthelper (* sh)[n-1] = NULL;
 	PTW_tableentry (*table)[n] = alloca(sizeof(PTW_tableentry) * n * keylen);
+
 	if (table == NULL) {
 		printf("could not allocate memory\n");
 		exit(-1);
 	}
 	memcpy(table, state->table, sizeof(PTW_tableentry) * n * keylen);
+
+	onestrong = (testlimit/10)*2;
+	twostrong = (testlimit/10)*1;
+	simple = testlimit - onestrong - twostrong;
 
 	// now, sort the table
 	for (i = 0; i < keylen; i++) {
@@ -357,13 +415,13 @@ int PTW_computeKey(PTW_attackstate * state, uint8_t * keybuf, int keylen, int te
 		strongbytes[i] = 0;
         }
 
-	sorthelper (* sh)[n-1] = alloca(sizeof(sorthelper) * (n-1) * keylen);
+	sh = alloca(sizeof(sorthelper) * (n-1) * keylen);
 	if (sh == NULL) {
 		printf("could not allocate memory\n");
 		exit(-1);
 	}
 
-	
+
 	for (i = 0; i < keylen; i++) {
 		for (j = 1; j < n; j++) {
 			sh[i][j-1].distance = table[i][0].votes - table[i][j].votes;

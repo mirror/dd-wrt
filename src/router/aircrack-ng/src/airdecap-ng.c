@@ -1,7 +1,7 @@
 /*
  *  802.11 to Ethernet pcap translator
  *
- *  Copyright (C) 2006 Thomas d'Otreppe
+ *  Copyright (C) 2006,2007,2008 Thomas d'Otreppe
  *  Copyright (C) 2004,2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -24,16 +24,33 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <getopt.h>
 
 #include "version.h"
 #include "crypto.h"
+#ifdef WIN32
+#include <Windows.h>
+#include <airpcap.h>
+#endif
 #include "pcap.h"
 
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
 #define CRYPT_WPA  2
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int betavers);
+
+#define	IEEE80211_FC0_SUBTYPE_MASK              0xf0
+#define	IEEE80211_FC0_SUBTYPE_SHIFT             4
+
+/* for TYPE_DATA (bit combination) */
+#define	IEEE80211_FC0_SUBTYPE_QOS               0x80
+#define	IEEE80211_FC0_SUBTYPE_QOS_NULL          0xc0
+
+#define GET_SUBTYPE(fc) \
+    ( ( (fc) & IEEE80211_FC0_SUBTYPE_MASK ) >> IEEE80211_FC0_SUBTYPE_SHIFT ) \
+        << IEEE80211_FC0_SUBTYPE_SHIFT
+
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern int calc_crc_buf( unsigned char *buf, int len );
 
@@ -112,32 +129,42 @@ const short Sbox[2][256]=
 char usage[] =
 
 "\n"
-"  %s - (C) 2006 Thomas d\'Otreppe\n"
+"  %s - (C) 2006,2007,2008 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  usage: airdecap-ng [options] <pcap file>\n"
 "\n"
+"  Common options:\n"
 "      -l         : don't remove the 802.11 header\n"
 "      -b <bssid> : access point MAC address filter\n"
-"      -k <pmk>   : WPA Pairwise Master Key in hex\n"
 "      -e <essid> : target network SSID\n"
-"      -p <pass>  : target network WPA passphrase\n"
+"\n"
+"  WEP specific option:\n"
 "      -w <key>   : target network WEP key in hex\n"
+"\n"
+"  WPA specific options:\n"
+"      -p <pass>  : target network WPA passphrase\n"
+"      -k <pmk>   : WPA Pairwise Master Key in hex\n"
+"\n"
+"      --help     : Displays this usage screen\n"
 "\n";
 
 
 /* derive the PMK from the passphrase and the essid */
 
-void calc_pmk( char *key, char *essid, uchar pmk[40] )
+void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 {
     int i, j, slen;
     uchar buffer[65];
+    uchar essid[33+4];
     sha1_context ctx_ipad;
     sha1_context ctx_opad;
     sha1_context sha1_ctx;
 
-    slen = strlen( essid ) + 4;
+    memset(essid,0,sizeof(essid));
+    memcpy(essid,essid_pre,strlen(essid_pre));
+    slen = (int)strlen((char*)essid)+4;
 
     /* setup the inner and outer contexts */
 
@@ -294,6 +321,9 @@ int decrypt_tkip( uchar *h80211, int caplen, uchar TK1[16] )
     uchar K[16];
 
     z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS ) {
+        z += 2;
+    }
 
     IV16 = MK16( h80211[z], h80211[z + 2] );
 
@@ -362,7 +392,7 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
     uchar PN[6], AAD[32];
     aes_context aes_ctx;
 
-    is_a4 = ( h80211[0] & 3 ) == 3;
+    is_a4 = ( h80211[1] & 3 ) == 3;
 
     z = 24 + 6 * is_a4;
 
@@ -457,6 +487,7 @@ int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, uchar *h80211 )
 {
     int n;
     uchar arphdr[12];
+    int qosh_offset = 0;
 
     if( opt.no_convert )
     {
@@ -494,21 +525,26 @@ int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, uchar *h80211 )
                 break;
         }
 
+        /* check QoS header */
+        if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS ) {
+            qosh_offset += 2;
+        }
+
         /* remove the 802.11 + LLC header */
 
         if( ( h80211[1] & 3 ) != 3 )
         {
-            pkh->len    -= 24 + 6;
-            pkh->caplen -= 24 + 6;
+            pkh->len    -= 24 + qosh_offset + 6;
+            pkh->caplen -= 24 + qosh_offset + 6;
 
-            memcpy( buffer + 12, h80211 + 30, pkh->caplen );
+            memcpy( buffer + 12, h80211 + 30 + qosh_offset, pkh->caplen );
         }
         else
         {
-            pkh->len    -= 30 + 6;
-            pkh->caplen -= 30 + 6;
+            pkh->len    -= 30 + qosh_offset + 6;
+            pkh->caplen -= 30 + qosh_offset + 6;
 
-            memcpy( buffer + 12, h80211 + 36, pkh->caplen );
+            memcpy( buffer + 12, h80211 + 36 + qosh_offset, pkh->caplen );
         }
 
         memcpy( buffer, arphdr, 12 );
@@ -560,12 +596,32 @@ int main( int argc, char *argv[] )
 
     while( 1 )
     {
-        int option = getopt( argc, argv, "lb:k:e:p:w:" );
+        int option_index = 0;
+
+        static struct option long_options[] = {
+            {"bssid",   1, 0, 'b'},
+            {"debug",   1, 0, 'd'},
+            {"help",    0, 0, 'H'},
+            {0,         0, 0,  0 }
+        };
+
+        int option = getopt_long( argc, argv, "lb:k:e:p:w:H",
+                        long_options, &option_index );
 
         if( option < 0 ) break;
 
         switch( option )
         {
+        	case ':' :
+
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+        		return( 1 );
+
+        	case '?' :
+
+	    		printf("\"%s --help\" for help.\n", argv[0]);
+        		return( 1 );
+
             case 'l' :
 
                 opt.no_convert = 1;
@@ -581,6 +637,7 @@ int main( int argc, char *argv[] )
                     if( n < 0 || n > 255 )
                     {
                         printf( "Invalid BSSID (not a MAC).\n" );
+			    		printf("\"%s --help\" for help.\n", argv[0]);
                         return( 1 );
                     }
 
@@ -597,6 +654,7 @@ int main( int argc, char *argv[] )
                 if( i != 6 )
                 {
                     printf( "Invalid BSSID (not a MAC).\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -607,6 +665,7 @@ int main( int argc, char *argv[] )
                 if( opt.crypt != CRYPT_NONE )
                 {
                     printf( "Encryption key already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -624,6 +683,7 @@ int main( int argc, char *argv[] )
                     if( n < 0 || n > 255 )
                     {
                         printf( "Invalid WPA PMK.\n" );
+			    		printf("\"%s --help\" for help.\n", argv[0]);
                         return( 1 );
                     }
 
@@ -646,6 +706,7 @@ int main( int argc, char *argv[] )
                 if( i != 32 )
                 {
                     printf( "Invalid WPA PMK.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -656,6 +717,7 @@ int main( int argc, char *argv[] )
 				if ( opt.essid[0])
 				{
 					printf( "ESSID already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
 				}
 
@@ -668,6 +730,7 @@ int main( int argc, char *argv[] )
                 if( opt.crypt != CRYPT_NONE )
                 {
                     printf( "Encryption key already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -682,6 +745,7 @@ int main( int argc, char *argv[] )
                 if( opt.crypt != CRYPT_NONE )
                 {
                     printf( "Encryption key already specified.\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -699,6 +763,7 @@ int main( int argc, char *argv[] )
                     if( n < 0 || n > 255 )
                     {
                         printf( "Invalid WEP key.\n" );
+			    		printf("\"%s --help\" for help.\n", argv[0]);
                         return( 1 );
                     }
 
@@ -720,7 +785,8 @@ int main( int argc, char *argv[] )
 
                 if( i != 5 && i != 13 && i != 16 && i != 29 && i != 61 )
                 {
-                    printf( "Invalid WEP key length.\n" );
+                    printf( "Invalid WEP key length. [5,13,16,29,61]\n" );
+		    		printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -728,14 +794,30 @@ int main( int argc, char *argv[] )
 
                 break;
 
+            case 'H' :
+
+            	printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+            	return( 1 );
+
             default : goto usage;
         }
     }
 
     if( argc - optind != 1 )
     {
-    usage:
-        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _BETA)  );
+    	if(argc == 1)
+    	{
+usage:
+	        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+	    }
+		if( argc - optind == 0)
+	    {
+	    	printf("No file to decrypt specified.\n");
+	    }
+	    if(argc > 1)
+	    {
+    		printf("\"%s --help\" for help.\n", argv[0]);
+	    }
         return( 1 );
     }
 
@@ -748,6 +830,7 @@ int main( int argc, char *argv[] )
             if( opt.essid[0] == '\0' )
             {
                 printf( "You must also specify the ESSID (-e).\n" );
+	    		printf("\"%s --help\" for help.\n", argv[0]);
                 return( 1 );
             }
 
@@ -939,9 +1022,13 @@ int main( int argc, char *argv[] )
         if( z + 16 > (int) pkh.caplen )
             continue;
 
+        /* check QoS header */
+        if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS ) {
+            z += 2;
+        }
         /* check the BSSID */
 
-        switch( h80211[0] & 3 )
+        switch( h80211[1] & 3 )
         {
             case  0: memcpy( bssid, h80211 + 16, 6 ); break;
             case  1: memcpy( bssid, h80211 +  4, 6 ); break;
