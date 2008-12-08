@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2007, Erik Tews, Andrei Pychkine and Ralf-Philipp Weinmann.
+ *
+ */
+
+#ifndef _AIRCRACK_PTW_H_
+#define _AIRCRACK_PTW_H_
+
 #include <stdint.h>
 
 // Number of bytes we use for our table of seen IVs, this is (2^24)/8
@@ -54,3 +62,5 @@ PTW_attackstate * PTW_newattackstate();
 void PTW_freeattackstate(PTW_attackstate *);
 int PTW_addsession(PTW_attackstate *, uint8_t *, uint8_t *);
 int PTW_computeKey(PTW_attackstate *, uint8_t *, int, int);
+
+#endif
