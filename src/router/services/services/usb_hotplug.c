@@ -118,6 +118,9 @@ static int usb_add_ufd(  )
     char path[128];
     char *fs = NULL;
     int is_part = 0;
+    int is_mounted = 0;
+	char part[10], *partitions, *next;
+	struct stat tmp_stat;
 
     if( ( dir = opendir( "/dev/discs" ) ) == NULL )
 	return EINVAL;
@@ -171,9 +174,6 @@ static int usb_add_ufd(  )
 	     */
 	    if( is_part )
 	    {
-		char part[10], *partitions, *next;
-		struct stat tmp_stat;
-
 		partitions = "part1 part2 part3 part4";
 		foreach( part, partitions, next )
 		{
@@ -181,15 +181,37 @@ static int usb_add_ufd(  )
 		    if( stat( path, &tmp_stat ) )
 			continue;
 		    if( usb_process_path( path, fs ) == 0 )
-			return 0;
+		    	{
+				is_mounted = 1;
+				break;
+				}
 		}
 	    }
-
 	    else
 	    {
 		if( usb_process_path( path, fs ) == 0 )
-		    return 0;
+			is_mounted = 1;
 	    }
+	    
+		if( is_mounted && !nvram_match( "usb_runonmount", "" ) )
+		{
+		sprintf( path, "/%s/%s", nvram_safe_get( "usb_mntpoint" ), nvram_safe_get( "usb_runonmount" ) );
+		if( stat( path, &tmp_stat ) == 0 ) //file exists
+			{
+			system( path );
+			}
+		}
+	}
+	
+	if( ( fp = fopen( DUMPFILE, "a" ) ) )
+	{
+	    if( fs && is_mounted )
+	    	fprintf( fp, "Status: <b>Mounted on /%s</b>\n", nvram_safe_get ("usb_mntpoint" ) );
+	    else if ( fs )
+	    	fprintf( fp, "Status: <b>Not mounted</b>\n" );
+	    else 
+	    	fprintf( fp, "Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n" );	    
+	    fclose( fp );
 	}
     }
     return 0;
