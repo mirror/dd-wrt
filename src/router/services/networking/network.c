@@ -944,6 +944,21 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_RT2880
+    if( getRouterBrand(  ) == ROUTER_BOARD_ECB9750 )	// lets load
+    {
+    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    {
+	nvram_set( "lan_ifname", "br0" );
+	nvram_set( "lan_ifnames", "eth2 ra0" );
+	PORTSETUPWAN( "" );
+    }
+    else
+    {
+	nvram_set( "lan_ifname", "br0" );
+	nvram_set( "lan_ifnames", "eth2 ra0" );
+	PORTSETUPWAN( "eth2" );
+    }
+    }else{
     if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -955,6 +970,7 @@ void start_lan( void )
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "vlan1 vlan2 ra0" );
 	PORTSETUPWAN( "vlan2" );
+    }
     }
     strncpy( ifr.ifr_name, "eth2", IFNAMSIZ );
     ioctl( s, SIOCGIFHWADDR, &ifr );
@@ -2505,6 +2521,10 @@ void start_wan( int status )
     char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
 					     "" ) ?
 	nvram_safe_get( "pppoe_wan_ifname" ) : "vlan2";
+#elif HAVE_ECB9750
+    char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
+					     "" ) ?
+	nvram_safe_get( "pppoe_wan_ifname" ) : "eth2";
 #elif HAVE_RT2880
     char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
 					     "" ) ?
