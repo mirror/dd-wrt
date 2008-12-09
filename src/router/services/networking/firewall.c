@@ -2314,8 +2314,7 @@ static void filter_table( void )
     /*
      * Does it disable the filter? 
      */
-    if( nvram_match( "filter", "off" ) || nvram_match( "wk_mode", "router" )
-	|| nvram_match( "wk_mode", "static" ) )
+    if( nvram_match( "filter", "off" ) || !nvram_match( "wk_mode", "gateway" ))
     {
 
 	/*
