@@ -224,7 +224,7 @@ static int usb_add_ufd(  )
 	
 	if( is_mounted && !nvram_match( "usb_runonmount", "" ) )
 	{
-	sprintf( path, "%s", nvram_safe_get( "usb_mntpoint" ), nvram_safe_get( "usb_runonmount" ) );
+	sprintf( path, "%s", nvram_safe_get( "usb_runonmount" ) );
 	if( stat( path, &tmp_stat ) == 0 ) //file exists
 		{
 		system( path );
