@@ -2488,7 +2488,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"usb_fs_fat", "0", 0},
     {"usb_automnt", "0", 0},
     {"usb_mntpoint", "mnt", 0},
-    {"usb_runonmount", "runonmount.sh", 0},   
+    {"usb_runonmount", "", 0},   
 #endif
     {"ttraff_enable", "1", 0},
 #ifdef HAVE_PPPOESERVER
