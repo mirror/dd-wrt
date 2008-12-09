@@ -96,21 +96,11 @@ int getbuttonstate(  )
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
 int getbuttonstate(  )
 {
-    FILE *in;
-    int ret;
 #if defined(HAVE_EAP3660) || defined(HAVE_EOC2610)
-    in = fopen( "/proc/gpio/5_in", "rb" );
-    if( in == NULL )
-	return 0;
-    fscanf( in, "%d", &ret );
-    fclose( in );
+    int ret = get_gpio( 5 );
     return 1-ret;
 #else
-    in = fopen( "/proc/gpio/6_in", "rb" );
-    if( in == NULL )
-	return 0;
-    fscanf( in, "%d", &ret );
-    fclose( in );
+    int ret = get_gpio( 6 );
     return ret;
 #endif
 }
