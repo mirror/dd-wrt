@@ -271,6 +271,9 @@ ifeq ($(CONFIG_HEARTBEAT),y)
 CFLAGS += -DHAVE_HEARTBEAT
 OBJS += heartbeat.o
 endif
+ifeq ($(CONFIG_ECB9750),y)
+  CFLAGS += -DHAVE_ECB9750
+endif
 
 ifeq ($(CONFIG_RT2880),y)
 OBJS += rt2880.o

@@ -136,14 +136,16 @@ void start_sysinit( void )
     stime( &tm );
     nvram_set( "wl0_ifname", "ra0" );
 
-    eval( "ifconfig","eth2","up");
-    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
-    eval( "vconfig", "add", "eth2", "1" ); //LAN 
-    eval( "vconfig", "add", "eth2", "2" ); //WAN
 
     insmod("rt2860v2_ap");
     
     /* switch config */
+    if( getRouterBrand(  ) != ROUTER_BOARD_ECB9750 )	// lets load
+    {
+    eval( "ifconfig","eth2","up");
+    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
+    eval( "vconfig", "add", "eth2", "1" ); //LAN 
+    eval( "vconfig", "add", "eth2", "2" ); //WAN
     sysprintf("switch reg w 14 405555");
     sysprintf("switch reg w 50 2001");
     sysprintf("switch reg w 98 7f3f");
@@ -152,7 +154,7 @@ void start_sysinit( void )
     sysprintf("switch reg w 44 1001");
     sysprintf("switch reg w 48 1002");
     sysprintf("switch reg w 70 ffff506f");
-
+    }
     
 
 /*
@@ -207,7 +209,7 @@ if (enable)
     sysprintf("switch reg w 14 405555");
     sysprintf("switch reg w 50 7001");
     sysprintf("switch reg w 98 7f2f");
-    sysprintf("switch reg w e4 3f");
+    sysprintf("switch reg w e4 2f");
     sysprintf("switch reg w 40 1001");
     sysprintf("switch reg w 44 1001");
     sysprintf("switch reg w 48 1007");
