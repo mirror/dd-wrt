@@ -96,7 +96,6 @@ static bool usb_ufd_connected( char *str )
 static int usb_process_path( char *path, char *fs)
 {
     int ret = ENOENT;
-    struct stat tmp_stat;
     char mount_point[32];
     
     sprintf( mount_point, "/%s", nvram_default_get( "usb_mntpoint", "mnt" ) ); 
@@ -209,14 +208,7 @@ static int usb_add_ufd(  )
 			is_mounted = 1;
 	    }
 	    
-		if( is_mounted && !nvram_match( "usb_runonmount", "" ) )
-		{
-		sprintf( path, "/%s/%s", nvram_safe_get( "usb_mntpoint" ), nvram_safe_get( "usb_runonmount" ) );
-		if( stat( path, &tmp_stat ) == 0 ) //file exists
-			{
-			system( path );
-			}
-		}
+
 	}
 	
 	if( ( fp = fopen( DUMPFILE, "a" ) ) )
@@ -229,6 +221,15 @@ static int usb_add_ufd(  )
 	    	fprintf( fp, "Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n" );	    
 	    fclose( fp );
 	}
+	
+	if( is_mounted && !nvram_match( "usb_runonmount", "" ) )
+	{
+	sprintf( path, "%s", nvram_safe_get( "usb_mntpoint" ), nvram_safe_get( "usb_runonmount" ) );
+	if( stat( path, &tmp_stat ) == 0 ) //file exists
+		{
+		system( path );
+		}
+	}	
 
 	if( is_mounted ) //temp. fix: only mount 1st mountable part, then exit
 		return 0;
