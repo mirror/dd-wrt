@@ -1773,7 +1773,12 @@ static void add_bridges( char *chain, int forward )
 		save2file( "-A FORWARD -i %s -o %s -j ACCEPT\n", tag,
 			   get_wan_face(  ) );
 	    else
-		save2file( "-A %s -i %s -j ACCEPT\n", chain, tag );
+		{
+		if (!strcmp(chain,"OUTPUT"))
+		    save2file( "-A %s -o %s -j ACCEPT\n", chain, tag );
+		else
+		    save2file( "-A %s -i %s -j ACCEPT\n", chain, tag );
+		}
 	}
     }
 
