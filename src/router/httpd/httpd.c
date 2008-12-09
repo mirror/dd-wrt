@@ -178,7 +178,7 @@ static int auth_check( char *dirname, char *authorization );
 static void send_error( int status, char *title, char *extra_header,
 			char *text );
 static void send_headers( int status, char *title, char *extra_header,
-			  char *mime_type, long length ,char *attach_file);
+			  char *mime_type, long length, char *attach_file );
 static int b64_decode( const char *str, unsigned char *space, int size );
 static int match( const char *pattern, const char *string );
 static int match_one( const char *pattern, int patternlen,
@@ -246,7 +246,7 @@ static int auth_check( char *dirname, char *authorization )
     l = b64_decode( &( authorization[6] ), authinfo, sizeof( authinfo ) );
     authinfo[l] = '\0';
     /* Split into user and password. */
-    authpass = strchr( (char *)authinfo, ':' );
+    authpass = strchr( ( char * )authinfo, ':' );
     if( authpass == ( char * )0 )
     {
 	/* No colon?  Bogus auth info. */
@@ -312,7 +312,7 @@ send_error( int status, char *title, char *extra_header, char *text )
 {
 
     // jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
-    send_headers( status, title, extra_header, "text/html", 0 ,NULL);
+    send_headers( status, title, extra_header, "text/html", 0, NULL );
     ( void )wfprintf( conn_fp,
 		      "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n",
 		      status, title, status, title );
@@ -323,25 +323,27 @@ send_error( int status, char *title, char *extra_header, char *text )
 
 static void
 send_headers( int status, char *title, char *extra_header, char *mime_type,
-	      long length , char *attach_file)
+	      long length, char *attach_file )
 {
     time_t now;
     char timebuf[100];
+
     wfprintf( conn_fp, "%s %d %s\r\n", PROTOCOL, status, title );
     if( mime_type != ( char * )0 )
 	wfprintf( conn_fp, "Content-Type: %s\r\n", mime_type );
-
 
     wfprintf( conn_fp, "Server: %s\r\n", SERVER_NAME );
     now = time( ( time_t * ) 0 );
     strftime( timebuf, sizeof( timebuf ), RFC1123FMT, gmtime( &now ) );
     wfprintf( conn_fp, "Date: %s\r\n", timebuf );
     wfprintf( conn_fp, "Connection: close\r\n" );
-    wfprintf( conn_fp, "Cache-Control: no-store, no-cache, must-revalidate\r\n" );
+    wfprintf( conn_fp,
+	      "Cache-Control: no-store, no-cache, must-revalidate\r\n" );
     wfprintf( conn_fp, "Cache-Control: post-check=0, pre-check=0\r\n" );
     wfprintf( conn_fp, "Pragma: no-cache\r\n" );
-    if (attach_file)
-	wfprintf( conn_fp, "Content-Disposition: attachment; filename=%s\r\n", attach_file );
+    if( attach_file )
+	wfprintf( conn_fp, "Content-Disposition: attachment; filename=%s\r\n",
+		  attach_file );
     if( extra_header != ( char * )0 && *extra_header )
 	wfprintf( conn_fp, "%s\r\n", extra_header );
     if( length != 0 )
@@ -485,7 +487,7 @@ match_one( const char *pattern, int patternlen, const char *string )
 
 static void
 //do_file(char *path, FILE *stream)
-do_file_2( struct mime_handler *handler, char *path, webs_t stream, char *query,char *attach )	//jimmy, https, 8/4/2003
+do_file_2( struct mime_handler *handler, char *path, webs_t stream, char *query, char *attach )	//jimmy, https, 8/4/2003
 {
 
 #ifdef HAVE_VFS
@@ -525,7 +527,7 @@ do_file_2( struct mime_handler *handler, char *path, webs_t stream, char *query,
 	fseek( fp, 0, SEEK_END );
 	if( !handler->send_headers )
 	    send_headers( 200, "Ok", handler->extra_header,
-			  handler->mime_type, ftell( fp ) ,attach);
+			  handler->mime_type, ftell( fp ), attach );
 	fseek( fp, 0, SEEK_SET );
 	while( ( c = getc( fp ) ) != EOF )
 	    wfputc( c, stream );	// jimmy, https, 8/4/2003
@@ -537,7 +539,7 @@ do_file_2( struct mime_handler *handler, char *path, webs_t stream, char *query,
 
 	if( !handler->send_headers )
 	    send_headers( 200, "Ok", handler->extra_header,
-			  handler->mime_type, len ,attach);
+			  handler->mime_type, len, attach );
 	int a;
 	char buf[128];
 	int tot = 0;
@@ -555,20 +557,20 @@ do_file_2( struct mime_handler *handler, char *path, webs_t stream, char *query,
 #endif
 }
 
-
 void
 //do_file(char *path, FILE *stream)
 do_file( struct mime_handler *handler, char *path, webs_t stream, char *query )	//jimmy, https, 8/4/2003
 {
 
-do_file_2(handler,path,stream,query,NULL);
+    do_file_2( handler, path, stream, query, NULL );
 }
+
 void
 //do_file(char *path, FILE *stream)
-do_file_attach( struct mime_handler *handler, char *path, webs_t stream, char *query,char *attachment )	//jimmy, https, 8/4/2003
+do_file_attach( struct mime_handler *handler, char *path, webs_t stream, char *query, char *attachment )	//jimmy, https, 8/4/2003
 {
 
-do_file_2(handler,path,stream,query,attachment);
+    do_file_2( handler, path, stream, query, attachment );
 }
 
 #ifdef HSIAB_SUPPORT
@@ -598,7 +600,8 @@ get_client_ip( int conn_fp )
 
     getpeername( conn_fp, ( struct sockaddr * )&sa, &len );
     char client[32];
-    char *peer = inet_ntop(AF_INET, &sa.sin_addr,client,16);
+    char *peer = inet_ntop( AF_INET, &sa.sin_addr, client, 16 );
+
     strcpy( ip, peer );
     return ( ip );
 }
@@ -678,7 +681,8 @@ static void handle_request( void )
 {
     char *query;
     char *cur;
-    char *method, *path, *protocol, *authorization, *boundary;
+    char *method, *path, *protocol, *authorization, *boundary, *referer,
+	*host;
     char *cp;
     char *file;
     FILE *exec;
@@ -689,7 +693,7 @@ static void handle_request( void )
 
     //   line =(char*)malloc(LINE_LEN);
     /* Initialize the request variables. */
-    authorization = boundary = NULL;
+    authorization = referer = boundary = host = NULL;
     bzero( line, sizeof line );
 
     memset( line, 0, LINE_LEN );
@@ -708,7 +712,6 @@ static void handle_request( void )
 //      free(line);
 	return;
     }
-
     method = path = line;
     strsep( &path, " " );
     if( !path )
@@ -732,7 +735,6 @@ static void handle_request( void )
     cp = protocol;
     strsep( &cp, " " );
     cur = protocol + strlen( protocol ) + 1;
-
     /* Parse the rest of the request headers. */
     //while ( fgets( cur, line + sizeof(line) - cur, conn_fp ) != (char*) 0 )
     //exec=fopen("/tmp/logweb.tmp","wb");
@@ -740,7 +742,7 @@ static void handle_request( void )
     while( wfgets( cur, line + LINE_LEN - cur, conn_fp ) != 0 )	//jimmy,https,8/4/2003
     {
 	//    fwrite(cur,1,line + LINE_LEN - cur,exec);
-
+//      fprintf(stderr,"%s\n",cur);
 	if( strcmp( cur, "\n" ) == 0 || strcmp( cur, "\r\n" ) == 0 )
 	{
 	    break;
@@ -752,17 +754,25 @@ static void handle_request( void )
 	    authorization = cp;
 	    cur = cp + strlen( cp ) + 1;
 	}
+	else if( strncasecmp( cur, "Referer:", 8 ) == 0 )
+	{
+	    cp = &cur[8];
+	    cp += strspn( cp, " \t" );
+	    referer = cp;
+	    cur = cp + strlen( cp ) + 1;
+	}
+	else if( strncasecmp( cur, "Host:", 5 ) == 0 )
+	{
+	    cp = &cur[5];
+	    cp += strspn( cp, " \t" );
+	    host = cp;
+	    cur = cp + strlen( cp ) + 1;
+	}
 	else if( strncasecmp( cur, "Content-Length:", 15 ) == 0 )
 	{
 	    cp = &cur[15];
 	    cp += strspn( cp, " \t" );
 	    cl = strtoul( cp, NULL, 0 );
-	    /*      if (cl<0 || cl>1024*1024*10)
-	       {
-	       send_error( 400, "Bad Request", (char*) 0, "bad try!!!" );
-	       free(line);
-	       return;
-	       } */
 
 	}
 	else if( ( cp = strstr( cur, "boundary=" ) ) )
@@ -801,6 +811,63 @@ static void handle_request( void )
 //      free(line);
 	return;
     }
+    if( referer && host )
+    {
+	int i;
+	int hlen = strlen( host );
+	int rlen = strlen( referer );
+	int slashs = 0;
+
+	for( i = 0; i < rlen; i++ )
+	{
+	    if( referer[i] == '/' )
+		slashs++;
+	    if( slashs == 2 )
+	    {
+		i++;
+		break;
+	    }
+	}
+	if( slashs == 2 )
+	{
+	    int a;
+	    int c = 0;
+
+	    for( a = 0; a < hlen; a++ )
+		if( host[a] == ' ' || host[a] == '\r' || host[a] == '\n'
+		    || host[a] == '\t' )
+		    host[a] = 0;
+	    hlen = strlen( host );
+	    for( a = i; a < rlen; a++ )
+	    {
+		if( referer[a] == '/' )
+		{
+		    send_error( 400, "Bad Request", ( char * )0,
+				"Cross Site Action detected!" );
+		    return;
+		}
+		if( host[c++] != referer[a] )
+		{
+		    send_error( 400, "Bad Request", ( char * )0,
+				"Cross Site Action detected!" );
+		    return;
+		}
+		if( c == hlen )
+		{
+		    a++;
+		    break;
+		}
+	    }
+	    if( c != hlen || referer[a] != '/' )
+	    {
+		send_error( 400, "Bad Request", ( char * )0,
+			    "Cross Site Action detected!" );
+		return;
+	    }
+	}
+
+    }
+
     // seg change for status site
 #ifdef HAVE_REGISTER
     if( registered_real == -1 )
@@ -990,9 +1057,9 @@ static void handle_request( void )
 #endif
 		    if( !changepassword && handler->auth )
 		    {
-			int result =
-			    handler->auth( auth_userid, auth_passwd,
-					   auth_realm );
+			int result = handler->auth( auth_userid, auth_passwd,
+						    auth_realm );
+
 			if( result == 0 )
 			{
 			    auth_fail = 0;
@@ -1062,7 +1129,7 @@ static void handle_request( void )
 		{
 		    if( handler->send_headers )
 			send_headers( 200, "Ok", handler->extra_header,
-				      handler->mime_type, 0,NULL );
+				      handler->mime_type, 0, NULL );
 		}
 		if( handler->output )
 		{
@@ -1089,8 +1156,9 @@ get_client_ip_mac( int conn_fp )
 
     getpeername( conn_fp, ( struct sockaddr * )&sa, &len );
     char client[32];
-    char *peer = inet_ntop(AF_INET, &sa.sin_addr,client,16);
-    nvram_set( "http_client_ip", peer);
+    char *peer = inet_ntop( AF_INET, &sa.sin_addr, client, 16 );
+
+    nvram_set( "http_client_ip", peer );
     m = get_mac_from_ip( peer );
     nvram_set( "http_client_mac", m );
 }
@@ -1468,7 +1536,7 @@ int main( int argc, char **argv )
 #ifdef HAVE_XYSSL
 	    ssl_free( &ssl );
 	    havege_init( &hs );
-	    if( (ret = ssl_init( &ssl, 0 )) != 0 )
+	    if( ( ret = ssl_init( &ssl, 0 ) ) != 0 )
 	    {
 		printf( "ssl_init failed\n" );
 		close( conn_fd );
@@ -1543,7 +1611,8 @@ char *wfgets( char *buf, int len, FILE * fp )
     else
 #elif defined(HAVE_XYSSL)
     if( do_ssl )
-	return ( char * )ssl_read_line( ( ssl_context * ) fp, (unsigned char *)buf, &len );
+	return ( char * )ssl_read_line( ( ssl_context * ) fp,
+					( unsigned char * )buf, &len );
     else
 #endif
 #endif
@@ -1563,7 +1632,7 @@ int wfputc( char c, FILE * fp )
     else
 #elif defined(HAVE_XYSSL)
     if( do_ssl )
-	return ssl_write( ( ssl_context * ) fp, (unsigned char*)&c, 1 );
+	return ssl_write( ( ssl_context * ) fp, ( unsigned char * )&c, 1 );
     else
 #endif
 #endif
@@ -1583,7 +1652,8 @@ int wfputs( char *buf, FILE * fp )
     else
 #elif defined(HAVE_XYSSL)
     if( do_ssl )
-	return ssl_write( ( ssl_context * ) fp, (unsigned char*)buf, strlen( buf ) );
+	return ssl_write( ( ssl_context * ) fp, ( unsigned char * )buf,
+			  strlen( buf ) );
     else
 #endif
 #endif
@@ -1662,11 +1732,12 @@ size_t wfwrite( char *buf, int size, int n, FILE * fp )
     else
 #elif defined(HAVE_MATRIXSSL)
     if( do_ssl )
-	return matrixssl_write( fp, (unsigned char*)buf, n * size );
+	return matrixssl_write( fp, ( unsigned char * )buf, n * size );
     else
 #elif defined(HAVE_XYSSL)
     if( do_ssl )
-	return ssl_write( ( ssl_context * ) fp, (unsigned char*)buf, n * size );
+	return ssl_write( ( ssl_context * ) fp, ( unsigned char * )buf,
+			  n * size );
     else
 #endif
 #endif
@@ -1703,7 +1774,7 @@ size_t wfread( char *buf, int size, int n, FILE * fp )
     {
 	int len = n * size;
 
-	return ssl_read( ( ssl_context * ) fp, (unsigned char*)buf, &len );
+	return ssl_read( ( ssl_context * ) fp, ( unsigned char * )buf, &len );
     }
     else
 #endif
