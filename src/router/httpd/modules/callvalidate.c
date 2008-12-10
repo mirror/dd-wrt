@@ -60,7 +60,7 @@
 #include <stdio.h>
 // #include <shutils.h>
 
-#ifdef HAVE_ADM5120
+#if defined(HAVE_ADM5120) && !defined(HAVE_WP54G)
 #define SERVICE_MODULE "/lib/validate.so"
 #define VISSERVICE_MODULE "/lib/visuals.so"
 #else
