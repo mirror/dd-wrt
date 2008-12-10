@@ -318,6 +318,10 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    fprintf( fp, "\tprivate_key_passwd=\"%s\"\n",
 		     nvram_prefix_get( "tls8021xpasswd", prefix ) );
 	    fprintf( fp, "\teapol_flags=3\n" );
+	    if( strlen( nvram_nget( "%s_tls8021xphase2", prefix ) ) > 0 )
+	    {
+	    fprintf( fp, "\tphase2=\"%s\"\n", nvram_nget("%s_tls8021xphase2", prefix) );
+	    }
 	}
 	if( nvram_prefix_match( "8021xtype", prefix, "peap" ) )
 	{
@@ -336,6 +340,10 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    sprintf( ath, "%s_peap8021xca", prefix );
 	    write_nvram( psk, ath );
 	    fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
+	    if( strlen( nvram_nget( "%s_peap8021xphase2", prefix ) ) > 0 )
+	    {
+	    fprintf( fp, "\tphase2=\"%s\"\n", nvram_nget("%s_peap8021xphase2", prefix) );
+	    }
 	}
 	if( nvram_prefix_match( "8021xtype", prefix, "ttls" ) )
 	{
@@ -356,6 +364,10 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 		write_nvram( psk, ath );
 		fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
 	    }
+	    if( strlen( nvram_nget( "%s_ttls8021xphase2", prefix ) ) > 0 )
+	    {
+	    fprintf( fp, "\tphase2=\"%s\"\n", nvram_nget("%s_ttls8021xphase2", prefix) );
+	    }
 	}
 	if( nvram_prefix_match( "8021xtype", prefix, "leap" ) )
 	{
@@ -375,6 +387,10 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    // sprintf (ath, "%s_peap8021xca", prefix);
 	    // write_nvram (psk, ath);
 	    // fprintf (fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
+	    if( strlen( nvram_nget( "%s_leap8021xphase2", prefix ) ) > 0 )
+	    {
+	    fprintf( fp, "\tphase2=\"%s\"\n", nvram_nget("%s_leap8021xphase2", prefix) );
+	    }
 	}
 	fprintf( fp, "}\n" );
 	fclose( fp );
