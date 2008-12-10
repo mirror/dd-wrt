@@ -692,6 +692,7 @@ void stop_wshaper( void )
     ret = eval( script_name, "stop", "XX", "ath0" );
 #elif HAVE_ADM5120
     ret = eval( script_name, "stop", "XX", "eth0" );
+    ret = eval( script_name, "stop", "XX", "eth1" );
     ret = eval( script_name, "stop", "XX", "ath0" );
 #elif HAVE_TW6600
     ret = eval( script_name, "stop", "XX", "eth0" );
