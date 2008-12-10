@@ -377,7 +377,8 @@
 // Senao ECB9750
 #define ROUTER_BOARD_ECB9750 0x6906
 
-
+// Compex WP54G (and compatible)
+#define ROUTER_BOARD_WP54G 0x7004
 
 #define NVROUTER "DD_BOARD"
 

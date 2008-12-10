@@ -996,6 +996,24 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_ADM5120
+
+if (getRouterBrand() == ROUTER_BOARD_WP54G)
+{
+    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    {
+	nvram_set( "lan_ifname", "br0" );
+	nvram_set( "lan_ifnames", "eth0 eth1 ath0" );
+	PORTSETUPWAN( "" );
+    }
+    else
+    {
+	nvram_set( "lan_ifname", "br0" );
+	nvram_set( "lan_ifnames", "eth0 eth1 ath0" );
+	PORTSETUPWAN( "eth0" );
+    }
+}else
+{
+
     if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
     {
 	nvram_set( "lan_ifname", "br0" );
@@ -1008,6 +1026,8 @@ void start_lan( void )
 	nvram_set( "lan_ifnames", "eth0 ath0" );
 	PORTSETUPWAN( "eth0" );
     }
+}
+
     strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
     ioctl( s, SIOCGIFHWADDR, &ifr );
     nvram_set( "et0macaddr", ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
@@ -2836,7 +2856,7 @@ void start_wan( int status )
 	// Lets open option file and enter all the parameters.
 	fp = fopen( "/tmp/ppp/options.pppoe", "w" );
 	// rp-pppoe kernelmode plugin
-#ifdef HAVE_ADM5120
+#if defined(HAVE_ADM5120) && !defined(HAVE_WP54G)
 	fprintf( fp, "plugin /lib/rp-pppoe.so" );
 #else
 	fprintf( fp, "plugin /usr/lib/rp-pppoe.so" );
