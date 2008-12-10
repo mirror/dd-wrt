@@ -66,6 +66,18 @@ if (value>('a'-1) && value<('f'+1))return value-'a'+10;
 if (value>('A'-1) && value<('F'+1))return value-'A'+10;
 return value;
 }
+struct mylo_eth_addr {
+	uint8_t	mac[6];
+	uint8_t	csum[2];
+};
+
+struct mylo_board_params {
+	uint32_t	magic;	/* must be MYLO_MAGIC_BOARD_PARAMS */
+	uint32_t	res0;
+	uint32_t	res1;
+	uint32_t	res2;
+	struct mylo_eth_addr addr[8];
+};
 
 void start_change_mac(void)
 {
@@ -173,7 +185,7 @@ void start_sysinit( void )
     /*
      * load some netfilter stuff 
      */
-
+#ifndef HAVE_WP54G
     insmod( "nf_conntrack_ftp" );
     insmod( "nf_conntrack_irc" );
     insmod( "nf_conntrack_netbios_ns" );
@@ -221,9 +233,13 @@ void start_sysinit( void )
     insmod( "ppp_mppe_mppc ");
     insmod( "pppox" );
     insmod( "pppoe" );
-
+#endif
     insmod( "adm5120_wdt" );
     insmod( "adm5120sw" );
+
+if (getRouterBrand() != ROUTER_BOARD_WP54G)
+{
+
     unsigned char mac[6];
     char eabuf[32];
     char mtdpath[32];
@@ -323,6 +339,56 @@ void start_sysinit( void )
 	}
 	fclose( fp );
     }
+}else
+{
+struct mylo_board_params params;
+    char mtdpath[32];
+    FILE *fp;
+    int mtd = getMTD( "boot" );
+    int foundmac = 0;
+    struct ifreq ifr;
+    int s;
+    char eabuf[32];
+
+    sprintf( mtdpath, "/dev/mtdblock/%d", mtd );
+    fp = fopen( mtdpath, "rb" );
+    if( fp != NULL )
+	{
+	fseek(fp,0xf800,SEEK_SET);
+	fread(&params,sizeof(params),1,fp);
+	fclose(fp);
+	if (params.magic == 0x20021103)
+	    {
+	    fprintf(stderr,"Found compex board magic!\n");
+	    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+	    {
+		strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+		ioctl( s, SIOCGIFHWADDR, &ifr );
+		memcpy( ( unsigned char * )ifr.ifr_hwaddr.sa_data, params.addr[0].mac, 6 );
+		ioctl( s, SIOCSIFHWADDR, &ifr );
+		close( s );
+	    }
+	    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+	    {
+		strncpy( ifr.ifr_name, "eth1", IFNAMSIZ );
+		ioctl( s, SIOCGIFHWADDR, &ifr );
+		memcpy( ( unsigned char * )ifr.ifr_hwaddr.sa_data, params.addr[1].mac, 6 );
+		ioctl( s, SIOCSIFHWADDR, &ifr );
+		close( s );
+	    }
+	    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+	    {
+		strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+		ioctl( s, SIOCGIFHWADDR, &ifr );
+		nvram_set( "et0macaddr_safe",
+			   ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.
+				       sa_data, eabuf ) );
+		close( s );
+	    }
+	    
+	    }
+	}
+}
     /*
      * network drivers 
      */
@@ -354,7 +420,8 @@ int check_pmon_nv( void )
 void start_overclocking( void )
 {
 }
-void enable_dtag_vlan( int enable )
-{
 
+char *enable_dtag_vlan( int enable )
+{
+    return "eth2";
 }

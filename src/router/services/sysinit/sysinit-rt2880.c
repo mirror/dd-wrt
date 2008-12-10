@@ -1,5 +1,5 @@
 /*
- * sysinit-adm5120.c
+ * sysinit-rt2880.c
  *
  * Copyright (C) 2008 Sebastian Gottschall <gottschall@dd-wrt.com>
  *

@@ -494,6 +494,9 @@ endif
 ifeq ($(CONFIG_STORM),y)
 CFLAGS += -DHAVE_STORM
 endif
+ifeq ($(CONFIG_WP54G),y)
+CFLAGS += -DHAVE_WP54G
+endif
 ifeq ($(CONFIG_ADM5120),y)
 CFLAGS += -DHAVE_ADM5120
 endif
