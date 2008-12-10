@@ -1178,7 +1178,7 @@ void start_lan( void )
 	{
 	    nvram_set( "lan_ifname", "br0" );
 	    nvram_set( "lan_ifnames", "vlan0 vlan1 ath0 ath1" );
-	    PORTSETUPWAN( "eth0" );
+	    PORTSETUPWAN( "vlan1" );
 	}
 	else if( getRouterBrand(  ) == ROUTER_BOARD_RDAT81 )
 	{
