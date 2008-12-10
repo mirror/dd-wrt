@@ -1646,6 +1646,7 @@ var sec80211x = new Object();
 sec80211x.xsuptype="XSupplicant Type";
 sec80211x.servercertif="Public Server Certificate";
 sec80211x.clientcertif="Client Certificate";
+sec80211x.phase2="Phase2 Authentication";
 
 //help container
 var hwpa = new Object();

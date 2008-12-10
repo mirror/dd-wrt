@@ -4645,6 +4645,15 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<input name=\"%s_ttls8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 	       prefix, nvram_prefix_get( "ttls8021xpasswd", prefix ) );
+
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.phase2)</script></div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_ttls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	       prefix, nvram_prefix_get( "ttls8021xphase2", prefix ) );
+
+
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.servercertif)</script></div>\n" );
@@ -4674,6 +4683,17 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<input name=\"%s_peap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 	       prefix, nvram_prefix_get( "peap8021xpasswd", prefix ) );
+
+
+
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.phase2)</script></div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_peap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	       prefix, nvram_prefix_get( "peap8021xphase2", prefix ) );
+
+
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.servercertif)</script></div>\n" );
@@ -4702,6 +4722,16 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<input name=\"%s_leap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 	       prefix, nvram_prefix_get( "leap8021xpasswd", prefix ) );
+
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.phase2)</script></div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_leap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	       prefix, nvram_prefix_get( "leap8021xphase2", prefix ) );
+
+
+
     websWrite( wp, "</div>\n" );
 
     // tls authentication
@@ -4718,6 +4748,16 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<input name=\"%s_tls8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 	       prefix, nvram_prefix_get( "tls8021xpasswd", prefix ) );
+
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.phase2)</script></div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_tls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	       prefix, nvram_prefix_get( "tls8021xphase2", prefix ) );
+
+
+
 
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
