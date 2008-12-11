@@ -393,7 +393,17 @@ struct mylo_board_params params;
      * network drivers 
      */
     insmod( "ath_hal" );
-    insmod( "ath_pci" );
+    if( nvram_get( "rate_control" ) != NULL )
+    {
+	char rate[64];
+
+	sprintf( rate, "ratectl=%s", nvram_safe_get( "rate_control" ) );
+	eval( "insmod", "ath_pci", rate );
+    }
+    else
+    {
+	insmod( "ath_pci" );
+    }
 
     eval( "watchdog" );
     /*

@@ -128,7 +128,17 @@ void start_sysinit( void )
     eval( "vconfig", "add", "ixp0", "2" );
 
     insmod( "ath_hal" );
-    insmod( "ath_pci" );
+    if( nvram_get( "rate_control" ) != NULL )
+    {
+	char rate[64];
+
+	sprintf( rate, "ratectl=%s", nvram_safe_get( "rate_control" ) );
+	eval( "insmod", "ath_pci", rate );
+    }
+    else
+    {
+	insmod( "ath_pci" );
+    }
 
     // insmod("wlan_scan_ap");
     // insmod("wlan_scan_sta");
