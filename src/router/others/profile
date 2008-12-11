@@ -1,3 +1,13 @@
 export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin
 export LD_LIBRARY_PATH=/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/jffs/usr/local/lib
-export PS1='\u@\h:\w\$ ' 
+export PS1='\u@\h:\w\$ '
+
+reboot() {
+  echo "$(nvram get rc_shutdown)" > /tmp/.rc_shutdown  
+  if [ -f /tmp/.rc_shutdown ]; then
+    chmod +x /tmp/.rc_shutdown
+    /tmp/.rc_shutdown
+  fi
+  /sbin/reboot
+  }
+ 
