@@ -4639,6 +4639,16 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<input name=\"%s_ttls8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 	       prefix, nvram_prefix_get( "ttls8021xuser", prefix ) );
+
+
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.anon)</script></div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_ttls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	       prefix, nvram_prefix_get( "ttls8021xanon", prefix ) );
+
+
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n" );
@@ -4677,6 +4687,16 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<input name=\"%s_peap8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 	       prefix, nvram_prefix_get( "peap8021xuser", prefix ) );
+
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.anon)</script></div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_peap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	       prefix, nvram_prefix_get( "peap8021xanon", prefix ) );
+
+
+
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n" );
@@ -4716,6 +4736,16 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<input name=\"%s_leap8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 	       prefix, nvram_prefix_get( "leap8021xuser", prefix ) );
+
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.anon)</script></div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_leap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	       prefix, nvram_prefix_get( "leap8021xanon", prefix ) );
+
+
+
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n" );
@@ -4742,6 +4772,15 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<input name=\"%s_tls8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 	       prefix, nvram_prefix_get( "tls8021xuser", prefix ) );
+
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(sec80211x.anon)</script></div>\n" );
+    websWrite( wp,
+	       "<input name=\"%s_tls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
+	       prefix, nvram_prefix_get( "tls8021xanon", prefix ) );
+
+
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.passwd)</script></div>\n" );
