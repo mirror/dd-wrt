@@ -1693,7 +1693,7 @@ int wfprintf( FILE * fp, char *fmt, ... )
 int websWrite( webs_t wp, char *fmt, ... )
 {
     va_list args;
-    char buf[1024];
+    char buf[2048];
     int ret;
     FILE *fp = wp;
 
