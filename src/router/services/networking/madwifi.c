@@ -430,7 +430,33 @@ void supplicant_main( int argc, char *argv[] )
 {
     setupSupplicant( argv[1], argv[2] );
 }
+static void do_hostapd(char *fstr,char *prefix)
+{
+	char fname[32];
+	FILE *fp;
+	int pid;
+	sprintf(fname,"/var/run/%s_hostapd.pid",prefix);
 
+    	fp = fopen(fname,"rb");
+	if (fp)
+	    {
+	    fread(&pid,4,1,fp);
+	    fclose(fp);
+	    if (pid>0)
+		kill(pid,SIGTERM);
+	    }
+	
+	char *argv[] = { "hostapd","-B",fstr, NULL };
+	_evalpid( argv, NULL, 0, &pid );
+//	eval( "hostapd", "-B", fstr );
+    	fp = fopen(fname,"wb");
+    	if (fp)
+    	    {
+    	    fwrite(&pid,4,1,fp);
+	    fclose(fp);
+	    }
+
+}
 void setupHostAP( char *prefix, int iswan )
 {
 #ifdef HAVE_REGISTER
@@ -456,6 +482,7 @@ void setupHostAP( char *prefix, int iswan )
 	if( iswan == 1 )
 	    return;
     }
+    
     // wep key support
     if( nvram_match( akm, "wep" ) )
     {
@@ -560,7 +587,9 @@ void setupHostAP( char *prefix, int iswan )
 	}
 	// fprintf (fp, "jumpstart_p1=1\n");
 	fclose( fp );
-	eval( "hostapd", "-B", fstr );
+	do_hostapd(fstr,prefix);
+
+	
     }
     else if( nvram_match( akm, "radius" ) )
     {
