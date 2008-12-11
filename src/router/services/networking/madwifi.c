@@ -606,7 +606,8 @@ void start_hostapdwan( void )
     for( i = 0; i < c; i++ )
     {
 	sprintf( ath, "ath%d", i );
-	setupHostAP( ath, 1 );
+	if (nvram_nmatch("ap","%s_mode",ath) || nvram_nmatch("wdsap","%s_mode",ath))
+	    setupHostAP( ath, 1 );
 	char *vifs = nvram_nget( "ath%d_vifs", i );
 
 	if( vifs != NULL )
