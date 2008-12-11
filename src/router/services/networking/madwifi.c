@@ -441,6 +441,8 @@ void setupHostAP( char *prefix, int iswan )
     char akm[16];
 
     sprintf( akm, "%s_akm", prefix );
+    if( nvram_match( akm, "8021X" ))
+	return;
     if( nvram_match( akm, "wpa" ) || nvram_match( akm, "wpa2" )
 	|| nvram_match( akm, "wpa wpa2" ) || nvram_match( akm, "radius" ) )
     {
@@ -597,9 +599,6 @@ void start_hostapdwan( void )
     char ath[32];
     char *next;
     char var[80];
-    killall( "hostapd", SIGTERM );
-    sleep(1);
-    killall( "hostapd", SIGKILL );
     int c = getdevicecount(  );
     int i;
 
