@@ -4585,7 +4585,8 @@ void ej_init_80211x_layers( webs_t wp, int argc, char_t ** argv )
 	char buf[16];
 
 	sprintf( buf, "ath%d", i );
-	init_80211x_layers( wp, buf );
+	if (nvram_nmatch("8021X","%s_security_mode",buf))
+	    init_80211x_layers( wp, buf );
     }
     return;
 #endif
@@ -4670,8 +4671,9 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_ttls8021xca\" name=\"%s_ttls8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
-    websWrite( wp, "var %s_ttls8021xca = fix_cr( '%s' );\n", prefix,
-	       nvram_prefix_get( "ttls8021xca", prefix ) );
+    websWrite( wp, "var %s_ttls8021xca = fix_cr( '",prefix);
+    tf_webWriteESCNV( wp, "ttls8021xca");
+    websWrite( wp, "%s' );\n", prefix);
     websWrite( wp,
 	       "document.getElementById(\"%s_ttls8021xca\").value = %s_ttls8021xca;\n",
 	       prefix, prefix );
@@ -4720,8 +4722,12 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_peap8021xca\" name=\"%s_peap8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
-    websWrite( wp, "var %s_peap8021xca = fix_cr( '%s' );\n", prefix,
-	       nvram_prefix_get( "peap8021xca", prefix ) );
+
+
+    websWrite( wp, "var %s_peap8021xca = fix_cr( '",prefix);
+    tf_webWriteESCNV( wp, "peap8021xca");
+    websWrite( wp, "%s' );\n", prefix);
+
     websWrite( wp,
 	       "document.getElementById(\"%s_peap8021xca\").value = %s_peap8021xca;\n",
 	       prefix, prefix );
@@ -4804,8 +4810,10 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xca\" name=\"%s_tls8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
-    websWrite( wp, "var %s_tls8021xca = fix_cr( '%s' );\n", prefix,
-	       nvram_prefix_get( "tls8021xca", prefix ) );
+    websWrite( wp, "var %s_tls8021xca = fix_cr( '",prefix);
+    tf_webWriteESCNV( wp, "tls8021xca");
+    websWrite( wp, "%s' );\n", prefix);
+
     websWrite( wp,
 	       "document.getElementById(\"%s_tls8021xca\").value = %s_tls8021xca;\n",
 	       prefix, prefix );
@@ -4818,8 +4826,12 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xpem\" name=\"%s_tls8021xpem\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
-    websWrite( wp, "var %s_tls8021xpem = fix_cr( '%s' );\n", prefix,
-	       nvram_prefix_get( "tls8021xpem", prefix ) );
+
+    websWrite( wp, "var %s_tls8021xpem = fix_cr( '",prefix);
+    tf_webWriteESCNV( wp, "tls8021xpem");
+    websWrite( wp, "%s' );\n", prefix);
+
+
     websWrite( wp,
 	       "document.getElementById(\"%s_tls8021xpem\").value = %s_tls8021xpem;\n",
 	       prefix, prefix );
@@ -4832,8 +4844,11 @@ void show_80211X( webs_t wp, char *prefix )
     websWrite( wp,
 	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xprv\" name=\"%s_tls8021xprv\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
-    websWrite( wp, "var %s_tls8021xprv = fix_cr( '%s' );\n", prefix,
-	       nvram_prefix_get( "tls8021xprv", prefix ) );
+
+    websWrite( wp, "var %s_tls8021xprv = fix_cr( '",prefix);
+    tf_webWriteESCNV( wp, "tls8021xprv");
+    websWrite( wp, "%s' );\n", prefix);
+
     websWrite( wp,
 	       "document.getElementById(\"%s_tls8021xprv\").value = %s_tls8021xprv;\n",
 	       prefix, prefix );
