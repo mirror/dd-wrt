@@ -197,7 +197,7 @@ int write_nvram( char *name, char *nv )
 	if (fp)
 	    {
 	    fwritenvram( nv, fp );
-	    fprintf(fp,"\n",fp);
+	    fprintf(fp,"\n");
 	    fclose(fp);
 	    }
     }
