@@ -4672,8 +4672,10 @@ void show_80211X( webs_t wp, char *prefix )
 	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_ttls8021xca\" name=\"%s_ttls8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
     websWrite( wp, "var %s_ttls8021xca = fix_cr( '",prefix);
-    tf_webWriteESCNV( wp, "ttls8021xca");
-    websWrite( wp, "%s' );\n", prefix);
+    char namebuf[64];
+    sprintf(namebuf,"%s_ttls8021xca",prefix);
+    tf_webWriteESCNV( wp, namebuf);
+    websWrite( wp, "' );\n");
     websWrite( wp,
 	       "document.getElementById(\"%s_ttls8021xca\").value = %s_ttls8021xca;\n",
 	       prefix, prefix );
@@ -4725,8 +4727,9 @@ void show_80211X( webs_t wp, char *prefix )
 
 
     websWrite( wp, "var %s_peap8021xca = fix_cr( '",prefix);
-    tf_webWriteESCNV( wp, "peap8021xca");
-    websWrite( wp, "%s' );\n", prefix);
+    sprintf(namebuf,"%s_peap8021xca",prefix);
+    tf_webWriteESCNV( wp, namebuf);
+    websWrite( wp, "' );\n");
 
     websWrite( wp,
 	       "document.getElementById(\"%s_peap8021xca\").value = %s_peap8021xca;\n",
@@ -4811,8 +4814,9 @@ void show_80211X( webs_t wp, char *prefix )
 	       "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xca\" name=\"%s_tls8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ",
 	       prefix, prefix );
     websWrite( wp, "var %s_tls8021xca = fix_cr( '",prefix);
-    tf_webWriteESCNV( wp, "tls8021xca");
-    websWrite( wp, "%s' );\n", prefix);
+    sprintf(namebuf,"%s_tls8021xca",prefix);
+    tf_webWriteESCNV( wp, namebuf);
+    websWrite( wp, "' );\n");
 
     websWrite( wp,
 	       "document.getElementById(\"%s_tls8021xca\").value = %s_tls8021xca;\n",
@@ -4828,8 +4832,9 @@ void show_80211X( webs_t wp, char *prefix )
 	       prefix, prefix );
 
     websWrite( wp, "var %s_tls8021xpem = fix_cr( '",prefix);
-    tf_webWriteESCNV( wp, "tls8021xpem");
-    websWrite( wp, "%s' );\n", prefix);
+    sprintf(namebuf,"%s_tls8021xpem",prefix);
+    tf_webWriteESCNV( wp, namebuf);
+    websWrite( wp, "' );\n");
 
 
     websWrite( wp,
@@ -4846,8 +4851,9 @@ void show_80211X( webs_t wp, char *prefix )
 	       prefix, prefix );
 
     websWrite( wp, "var %s_tls8021xprv = fix_cr( '",prefix);
-    tf_webWriteESCNV( wp, "tls8021xprv");
-    websWrite( wp, "%s' );\n", prefix);
+    sprintf(namebuf,"%s_tls8021xprv",prefix);
+    tf_webWriteESCNV( wp, namebuf);
+    websWrite( wp, "' );\n");
 
     websWrite( wp,
 	       "document.getElementById(\"%s_tls8021xprv\").value = %s_tls8021xprv;\n",
