@@ -597,6 +597,9 @@ void start_hostapdwan( void )
     char ath[32];
     char *next;
     char var[80];
+    killall( "hostapd", SIGTERM );
+    sleep(1);
+    killall( "hostapd", SIGKILL );
     int c = getdevicecount(  );
     int i;
 
