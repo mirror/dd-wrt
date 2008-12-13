@@ -13,8 +13,8 @@ SHLIB_MAJOR=0
 SHLIB_MINOR=9.8
 SHLIB_EXT=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
 PLATFORM=linux-openwrt
-OPTIONS=enable-shared no-aes192 no-dso no-ec no-ecdh no-ecdsa no-engines no-err no-fips no-gmp no-hw no-idea no-krb5 no-md2 no-mdc2 no-rc5 no-rmd160 no-sha0 no-threads no-zlib no-zlib-dynamic
-CONFIGURE_ARGS=linux-openwrt no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192 shared no-ec no-err no-fips no-hw no-krb5 no-threads no-engines no-dso
+OPTIONS=enable-shared no-aes192 no-dso no-ec no-ecdh no-ecdsa no-engines no-err no-fips no-gmp no-hw no-idea no-krb5 no-md2 no-mdc2 no-rc5 no-rmd160 no-sha0 no-zlib no-zlib-dynamic
+CONFIGURE_ARGS=linux-openwrt no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192 shared no-ec no-err no-fips no-hw no-krb5 no-engines no-dso
 SHLIB_TARGET=linux-shared
 
 # HERE indicates where this Makefile lives.  This can be used to indicate
@@ -60,7 +60,7 @@ OPENSSLDIR=/usr/local/ssl
 # PKCS1_CHECK - pkcs1 tests.
 
 
-CFLAG= -fPIC -DOPENSSL_PIC -DOPENSSL_NO_ERR -DTERMIO $(COPTS) -fomit-frame-pointer -Wall
+CFLAG= -fPIC -DOPENSSL_PIC -DOPENSSL_NO_ERR -DOPENSSL_THREADS -DTERMIO $(COPTS) -fomit-frame-pointer -Wall
 DEPFLAG= -DOPENSSL_NO_AES192 -DOPENSSL_NO_EC -DOPENSSL_NO_ECDH -DOPENSSL_NO_ECDSA -DOPENSSL_NO_ENGINES -DOPENSSL_NO_FIPS -DOPENSSL_NO_GMP -DOPENSSL_NO_IDEA -DOPENSSL_NO_MD2 -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -DOPENSSL_NO_RMD160 -DOPENSSL_NO_SHA0 
 PEX_LIBS= 
 EX_LIBS= -ldl

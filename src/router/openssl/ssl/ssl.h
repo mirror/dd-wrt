@@ -295,6 +295,7 @@ extern "C" {
 #define SSL_TXT_ALL		"ALL"
 #define SSL_TXT_ECC		"ECCdraft" /* ECC ciphersuites are not yet official */
 
+#define OPENSSL_THREADS
 /*
  * COMPLEMENTOF* definitions. These identifiers are used to (de-select)
  * ciphers normally not being used.
