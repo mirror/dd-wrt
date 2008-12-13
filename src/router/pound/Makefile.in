@@ -59,11 +59,8 @@ $(OBJS):	pound.h
 
 install:	all
 		@INSTALL@ -d ${DESTDIR}@sbindir@
-		@INSTALL@ -o @I_OWNER@ -g @I_GRP@ -m 555 pound ${DESTDIR}@sbindir@/pound
-		@INSTALL@ -o @I_OWNER@ -g @I_GRP@ -m 555 poundctl ${DESTDIR}@sbindir@/poundctl
-		@INSTALL@ -d ${DESTDIR}@mandir@/man8
-		@INSTALL@ -o @I_OWNER@ -g @I_GRP@ -m 644 pound.8 ${DESTDIR}@mandir@/man8/pound.8
-		@INSTALL@ -o @I_OWNER@ -g @I_GRP@ -m 644 poundctl.8 ${DESTDIR}@mandir@/man8/poundctl.8
+		@INSTALL@ pound ${DESTDIR}@sbindir@/pound
+		@INSTALL@ poundctl ${DESTDIR}@sbindir@/poundctl
 
 clean:
 		rm -f pound $(OBJS) poundctl poundctl.o
