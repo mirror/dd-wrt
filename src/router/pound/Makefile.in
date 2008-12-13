@@ -1,0 +1,75 @@
+# Pound - the reverse-proxy load-balancer
+# Copyright (C) 2002-2007 Apsis GmbH
+#
+# This file is part of Pound.
+#
+# Pound is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# Foobar is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact information:
+# Apsis GmbH
+# P.O.Box
+# 8707 Uetikon am See
+# Switzerland
+# Tel: +41-44-920 4904
+# EMail: roseg@apsis.ch
+
+CC="@PTHREAD_CC@"
+VERSION="@PACKAGE_VERSION@"
+C_SSL="@C_SSL@"
+C_T_RSA="@C_T_RSA@"
+C_MAXBUF="@C_MAXBUF@"
+C_OWNER="@C_OWNER@"
+C_GROUP="@C_GROUP@"
+C_SUPER="@C_SUPER@"
+C_CERT1L="@C_CERT1L@"
+
+CFLAGS=-DF_CONF=\"$(F_CONF)\" -DVERSION=\"${VERSION}\" -DC_SSL=\"${C_SSL}\" -DC_T_RSA=\"${C_T_RSA}\" \
+	-DC_MAXBUF=\"${C_MAXBUF}\" -DC_OWNER=\"${C_OWNER}\" -DC_GROUP=\"${C_GROUP}\" -DC_SUPER=\"${C_SUPER}\" \
+	-DC_CERT1L=\"${C_CERT1L}\" @CFLAGS@ @PTHREAD_CFLAGS@ @CPPFLAGS@
+LIBS=@LIBS@ @PTHREAD_LIBS@
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+# Configuration file default; if none, look at config.c for default!
+F_CONF=@sysconfdir@/pound.cfg
+
+OBJS=pound.o http.o config.o svc.o
+
+all:	pound poundctl pound.8
+
+pound:	$(OBJS)
+		${CC} @LDFLAGS@ -o pound $(OBJS) $(LIBS)
+
+poundctl:	poundctl.o
+		${CC} @LDFLAGS@ -o poundctl poundctl.o $(LIBS)
+
+$(OBJS):	pound.h
+
+install:	all
+		@INSTALL@ -d ${DESTDIR}@sbindir@
+		@INSTALL@ -o @I_OWNER@ -g @I_GRP@ -m 555 pound ${DESTDIR}@sbindir@/pound
+		@INSTALL@ -o @I_OWNER@ -g @I_GRP@ -m 555 poundctl ${DESTDIR}@sbindir@/poundctl
+		@INSTALL@ -d ${DESTDIR}@mandir@/man8
+		@INSTALL@ -o @I_OWNER@ -g @I_GRP@ -m 644 pound.8 ${DESTDIR}@mandir@/man8/pound.8
+		@INSTALL@ -o @I_OWNER@ -g @I_GRP@ -m 644 poundctl.8 ${DESTDIR}@mandir@/man8/poundctl.8
+
+clean:
+		rm -f pound $(OBJS) poundctl poundctl.o
+
+distclean:	clean
+		-rm -f config.h config.log config.status Makefile
+
+uninstall:
+		-rm -f @sbindir@/pound @sbindir@/poundctl @mandir@/man8/pound.8 @mandir@/cat8/pound.8 @mandir@/man8/poundctl.8 @mandir@/cat8/poundctl.8

@@ -181,6 +181,7 @@ include rules/services.mk
 include rules/utils.mk
 include rules/libutils.mk
 include rules/zlib.mk
+include rules/pound.mk
 
 # Generic rules
 #

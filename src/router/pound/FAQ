@@ -1,0 +1,398 @@
+FREQUENTLY ASKED QUESTIONS
+
+1. General
+==========
+
+1.1 Will Pound run my Web application?
+
+    No. Pound is a proxy, not a Web server - it does not deliver content by
+    itself. It is just the middle-man between a client and a server.
+
+1.2 Will Pound make my server go faster?
+
+    No. Pound is just a proxy - no caching of any kind takes place. Pound
+    IS able to distribute requests between several back-end servers, thus
+    allowing for faster overall response times, but it won't speed-up a
+    single Web sever.
+
+1.3 Will Pound make my server more secure?
+
+    Probably yes. Pound has its own checks on the validity of HTTP requests
+    and often catches malicious requests that are used to attack Web servers.
+
+1.4 Can I use Pound to change/rewrite/redirect requests?
+
+    No. Pound tries to be as transparent as possible - ideally a client
+    should not be aware that there is anything between itself and the actual
+    Web server. A limited form of redirects are available - see the man page.
+
+1.5 Can I use Pound to deny certain requests?
+
+    Yes. Pound has quite a good mechanism for classifying requests and it
+    can deny/reject certain requests based on URL and/or header content.
+
+
+2. Configuration, Compilation and Installation
+==============================================
+
+2.1 I try to compile and it fails on "needs OpenSSL with thread support"
+
+    Pound is a multi-threaded program and it needs an OpenSSL library
+    compiled with thread support (optional in the OpenSSL configuration and
+    absent in some default installations, such as *BSD). If your default
+    library does not support threads you must install a thread-enabled
+    version.
+
+2.2 Pound compiles correctly but crashes on *BSD
+
+    On some of the newer versions of *BSD (FreeBSD 5.x, OpenBSD 3.x) the
+    Pound autoconf may not correctly recognize the threading library. Add
+    manually to the generated Makefile the option -DNEED_STACK in the
+    CFLAGS.
+
+2.3 I want to run Pound with daemon-tools but it goes to background
+
+    You need to configure Pound for non-daemon operations: add "Daemon 0"
+    to the config file.
+
+2.4 Pound runs OK but some normal requests are rejected with "bad URL"
+
+    Pound checks the requested URLs quite thoroughly and rejects malformed
+    or illegal URLs - or at least illegal according to the RFCs. See the
+    man page for details.
+
+2.5 Pound runs OK but I get a "pthread_create" error message
+
+    You may be hitting the system limit on the number of processes. On
+    systems that implement threads as processes (as Linux does) you should
+    make sure that the Pound process has permission to start a sufficient
+    number of processes.
+
+    In some rare cases you may be running into the system limit on the
+    number of threads. Check your system details for the value of
+    PTHREAD_THREADS_MAX. If needed you must recompile the threads library
+    with a higher value.
+
+2.6 What resources does Pound need/use?
+
+    That depends very much on your system. On some systems, such as Linux
+    and System V (AIX, HP-UX, etc), threads are implemented as processes,
+    which means you must allow enough processes to run. On other systems,
+    such as *BSD, where threads are implemented in user space (in-process),
+    you should make sure that Pound can use sufficient memory for all the
+    threads and that the process is allowed to use enough file descriptors
+    (2 per active connection). Finally, on systems that implement threads
+    natively, such as Solaris, you need to make sure that enough threads
+    and open file descriptors are allowed.
+
+2.7 Is NPTL supported?
+
+    Theoretically Pound will work with any POSIX-compliant threads package.
+    In practice some of the newer NPTL implementations still have some
+    bugs. At least on Linux running Pound with LD_ASSUME_KERNEL=2.4.19
+    may be helpful.
+
+
+3. Virtual Hosts
+================
+
+3.1 How do I redirect specific virtual hosts to specific back-ends?
+
+    Make the virtual host mandatory in the UrlGroup. For example, to have
+    all requests to www.a.com go to 192.168.0.10 and all requests for
+    www.b.com go to 192.168.0.20, define
+
+        Service
+            HeadRequire "Host:.*www.a.com.*"
+            BackEnd
+                Address 192.168.0.10
+                Port    80
+            End
+        End
+
+        Service
+            HeadRequire "Host:.*www.b.com.*"
+            BackEnd
+                Address 192.168.0.20
+                Port    80
+            End
+        End
+
+    in your config file.
+
+3.2 How do I redirect requests to specific back-ends based on the client
+    address?
+
+    You can do it easier via the packet filter you use. If you insist on
+    having Pound do it use a combination of port redirection and separate
+    instances of Pound for each port. For example, assume you want intranet
+    clients (on 192.168.100.0/24) to use the server at 192.168.1.10 and
+    external clients go to 192.168.1.20. Do the following:
+
+        - redirect requests from 192.168.100.0/24 to port 8080
+
+            pf: rdr on rl0 from 192.168.100.0/24 to 192.168.100.1 port 80 \
+                -> localhost port 8080
+
+            netfilter: iptables -t nat -A PREROUTING -p tcp \
+                -s 192.168.100.0/24 --dport 80 -i eth0 -j DNAT \
+                --to localhost:8080
+
+        - redirect requests from anywhere else to port 8081
+
+            pf: rdr on rl0 from any to 192.168.100.1 port 80 \
+                -> localhost port 8081
+
+            netfilter: iptables -t nat -A PREROUTING -p tcp \
+                --dport 80 -i eth0 -j DNAT --to localhost:8081
+
+        - have a Pound listener on port 8080 and sending the
+          requests to 192.168.1.10
+
+        - have a Pound listener on port 8081 and sending the
+          requests to 192.168.1.20
+
+3.3 What happens when my server replies with a redirect?
+
+    Depending on configuration, Pound can watch for redirect replies from back-ends
+    and change them to the correct address. In order for this to happen the
+    following conditions must be met:
+
+    - Pound has "Check30x 1"
+    - the back-end replies with a redirect. The address of that URL resolves to
+      the same address as the one Pound is listening on or the address of the
+      back-end itself.
+
+    This feature is commonly used when Pound serves as a HTTPS wrapper,
+    as the backend redirect to "Location: http://x.y.com" is rewritten as
+    "Location: https://x.y.com".
+
+
+4. HTTPS
+========
+
+4.1 Can I have Pound force HTTPS connections to certain URLs/back-ends?
+
+    Yes - define a Service with a Redirect back-end.
+
+4.2 How can I do virtual hosting with HTTPS?
+
+    The simple answer is that neither you, nor anybody else can, due to a
+    limitation of the HTTPS protocol. In its simplest form an HTTPS (SSL)
+    connection goes through the following stages:
+
+    - negotiation: the client contacts the server, receives a certificate
+      from it, and negotiates the protocol details (cipher parameters, etc).
+
+    - authentication: the client checks that the certificate received matches
+      the server it wanted and validates that the certificate is correct as
+      attested by some certificate authority.
+
+    - request/response: normal HTTP, encrypted in transit.
+
+    As you can see the certificate is sent before any request was received.
+    Unfortunately, the first request specifies the virtual host that the
+    client would like to talk to - and it may not match the server name in
+    the certificate.
+
+4.3 Pound does not start with message "can't read private key"
+
+    The file you specify in the ListenHTTPS directive must contain both the
+    server certificate and the private key to it in PEM format. See the man
+    page for SSL_CTX_use_PrivateKey_file(3) for details.
+
+4.4 How can a back-end know that the connection is via HTTPS?
+
+    Pound can add a header for incoming requests indicating that they were
+    received via HTTPS. See the details on AddHeader in the man page.
+
+4.5 HTTPS connections fail when Pound runs chrooted
+
+    The OpenSSL library requires access to /dev/urandom for its random seed.
+    The normal device is not accessible in a jail root. You should add a
+    link to the device to make it accessible. On Linux this would be:
+
+        mknod /var/pound/dev/urandom c 1 9
+
+    assuming that /var/pound is the root jail.
+
+4.6 How can I force a back-end to generate the correct URL with HTTPS
+
+    There is no simple answer to this question - each server and application
+    have their own way of doing things. If your server does not use absolute
+    paths then all is well - things will run out of the box. However if some
+    frames, images, links or a base tag are generated with an absolute path
+    you must find a way to force the generation with https://.
+
+4.7 How can I find out about the client certificate in my application?
+
+    For requests via HTTPS connections Pound can add the details of the
+    client certificate as headers to each and every request it passes to
+    the back-end. See the details on HTTPSHeaders in the man page.
+
+4.8 Can Pound use my crypto accelerator hardware?
+
+    Pound supports the OpenSSL engine architecture. If your crypto card is
+    supported by OpenSSL then it is supported by Pound. See the SSLEngine
+    directive in the man page.
+
+4.9 Can Pound use HTTPS back-end servers?
+
+    No, that is not supported: such a connection would break a lot of things,
+    either security (Pound would effectively act as a man-in-the-middle,
+    breaking the end-to-end integrity of SSL) or functionality (if Pound
+    would just pass encrypted data back and forth things like session
+    tracking and validity checking would be impossible). This means that
+    such support is unlikely to ever be part of Pound.
+
+
+5. Session tracking
+===================
+
+5.1 Can I have session tracking based on URL and/or Cookie?
+
+    Pound can track sessions based on client IP address, a cookie, an URL
+    parameter or BasicAuthentication. These options are mutually exclusive -
+    only one of them can be used per UrlGroup.
+
+5.2 When does a session expire?
+
+    A session is kept for the specified number of seconds. If during this
+    time no new request was received the session is discarded.
+
+5.3 Does Pound create/track its own sessions?
+
+    No. Pound does not add anything to the requests or the responses - it
+    uses the tokens generated by the back-end servers exclusively.
+
+
+6. Logging
+==========
+
+6.1 Can I use Webalizer on Pound log files?
+
+    Yes. If you use LogLevel 3 or 4 Pound uses one of the standard log
+    formats that are recognized by applications such as Webalizer. You will
+    have to remove the time-stamp generated by the syslog - see cut(1) for
+    details.
+
+6.2 How do I log the original client address in the back-end log?
+
+    Pound adds the X-Forwarded-for header with the original client address
+    to every request. Use it for your logs on the back-end servers.
+
+6.3 How can I separate the Pound log from other syslog messages?
+
+    If you use the syslog facility you can configure it to send the pound
+    messages to a separate file. You may want to separate by severity as
+    well - normal log messages use LOG_INFO, everything else is not request
+    information. See syslogd(8) for details on how to configure it.
+
+6.4 How can I separate error messages from normal log messages?
+
+    If you use syslog: normal requests are logged at LOG_INFO, everything
+    else is higher.
+
+    If you run without syslog: normal request logging to stdout, everything
+    else to stderr.
+
+6.5 Why does Pound not log anything when chrooted?
+
+    On some systems you need access to /dev/log in order to use the syslog(8)
+    facility. Create the device as needed in the root jail you use.
+
+6.6 Why can't Pound log directly to a file?
+
+    This is a security requirement. As things stand, Pound does not write at
+    all to the disk. The existing tools - such as syslog - allow all the
+    flexibility one could wish for.
+
+    If you absolutely must you can try the patches from Shinji Tanaka (see
+    http://www.hatena-inc.co.jp/~stanaka/pound/ for details).
+
+
+7. WebDAV
+=========
+
+7.1 I compiled Pound with DAV support but it still rejects the requests
+
+    You also need to define "WebDAV 1" in your config file, and (depending on
+    your server or application) "xHTTP 1" as well.
+
+7.3 Can I use Pound as a front-end for Subversion?
+
+    Yes. You may have some problems with using it via HTTPS, but HTTP should
+    work.
+
+
+8. Zope
+=======
+
+8.1 What configurations is Pound most helpful for?
+
+    If you have several servers running on top of a ZEO server, Pound will
+    allow you to load-balance between them (BTW, this was the original
+    motivation for developing Pound). Pound also makes for a very good,
+    light-weight front-end for a single Zope - exposing the Zope Web-server
+    directly on the big, bad Internet is not a very good idea.
+
+8.2 Can I have virtual hosts in Zope without Apache?
+
+    Yes. Despite persistent rumors, the Virtual Host Monster works perfectly
+    well on its own (dark incantations at midnight under the shade of the
+    cross-shaped oak branch are NOT required). All you need to do is to
+    add a VHM in the Zope root, click on the Mappings tab and add whatever
+    hosts you need.
+
+8.3 Can I have HTTPS for Zope?
+
+    Yes. Pound will happily pass SSL requests to Zope. You have three possible
+    methods to force Zope to generate responses with the https:// prefix:
+
+    - if all you need is a specific area to be accessible only through HTTPS
+      you can add a SiteRoot with the correct name.
+
+    - alternately the Pound distribution includes patches for z2.py that
+      include a new -y flag for a "https://" port.
+
+    - finally, for version 2.7 or later you can set it in zope.conf.
+
+8.4 Can I force HTTPS for certain areas in Zope?
+
+    Yes. Add a check for the SSL-specific headers in the dtml_header or
+    whatever equivalent you use. See the details on HTTPSHeaders in the man
+    page.
+
+
+9. Miscellaneous/MS
+===================
+
+9.1 IE fails to connect to Pound via HTTPS
+
+    Define the ciphers to be
+    
+        "ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv2:+EXP:+eNULL"
+
+    in the config file. We have had reports of IE problems with other
+    ciphers.
+
+9.2 IE has big delays in getting replies from Pound
+
+    Try a shorter Client timeout. IE uses exactly 4 sockets, and as long as
+    they stay open it won't do anything else. A short Client value will
+    force the socket(s) to be closed earlier, thus avoiding annoying waits.
+
+9.3 I try to run MS OWA and Pound rejects the requests
+
+    Make sure you configured Pound with --enable-msdav. Make sure you
+    included "WebDAV 1" in the config file. Pray that MS would adhere to
+    some known standard. Repeat as necessary.
+
+9.4 How can I force OWA to accept HTTPS requests?
+
+    Make sure to define
+
+        AddHeader   "Front-End-Https: on"
+
+    in the config file. This will force OWA to generate the responses with
+    the correct protocol.
