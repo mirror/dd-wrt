@@ -1,0 +1,612 @@
+------------------------------------------------------------------------
+r59 | roseg | 2008-05-31 12:25:41 +0200 (Sat, 31 May 2008) | 11 lines
+
+Release 2.4.3
+
+Stable release 2.4.3
+
+Enhancements:
+
+Bug fixes:
+  - fixed problem in session access time updating (thanks to Piotr Jakubowski)
+  - fixed problem in session removal (thanks to Doriam Mori)
+  - fixed problem in Redirect logging (thanks to Albert)
+
+------------------------------------------------------------------------
+r58 | roseg | 2008-04-24 16:31:28 +0200 (Thu, 24 Apr 2008) | 13 lines
+
+Release 2.4.2
+
+Stable release 2.4.2
+
+Enhancements:
+
+Bug fixes:
+  - fixed problem with session TTL -1 (thanks to Scott Royston for pointing it out)
+  - fixed problem with back-end killing on failed connect
+  - fixed a small problem in the poundctl XML output (thanks to johnlr for the fix)
+  - added hints in call to getaddrinfo() (for Solaris 10 support)
+  - fixed redirection problem (missing slash in Location/Content-location)
+
+------------------------------------------------------------------------
+r57 | roseg | 2008-04-05 11:45:41 +0200 (Sat, 05 Apr 2008) | 12 lines
+
+Release 2.4.1
+
+Stable release 2.4.1
+
+Enhancements:
+  - added cache control for errors (thanks to Pavel Merdin for the suggestion)
+
+Bug fixes:
+  - fixed problem with double slash in header rewriting (thanks to Cédric P.)
+  - remove sched_policy to avoid problems on systems with poor support for it
+  - fixed memory corruption problem with HAport
+
+------------------------------------------------------------------------
+r56 | roseg | 2008-02-11 12:53:51 +0100 (Mon, 11 Feb 2008) | 4 lines
+
+Release 2.4
+
+Stable release 2.4
+
+------------------------------------------------------------------------
+r55 | roseg | 2007-12-27 12:54:32 +0100 (Thu, 27 Dec 2007) | 7 lines
+
+Release 2.4f
+
+Enhancements:
+
+Bug fixes:
+  - fixed back-end enable/disable (priority computing)
+
+------------------------------------------------------------------------
+r54 | roseg | 2007-11-29 18:16:36 +0100 (Thu, 29 Nov 2007) | 12 lines
+
+Enhancements:
+  - added PARM session type. Old PARM is now URL
+  - allow AddHeader for HTTP listeners as well
+  - allow -1 for session (all types) TTL. Will hash the key to a fixed value
+  - Redirect takes an optional code parameter (301, 302/default or 307)
+  - new config param to allow printing the SSL certificate in a single line
+  - new config param to control the maximal size of the input line
+  - added better error messages for SSL loading problems
+
+Bug fixes:
+  - if the same cookie is defined more than once use LAST definition
+
+------------------------------------------------------------------------
+r53 | roseg | 2007-08-15 18:26:58 +0200 (Wed, 15 Aug 2007) | 10 lines
+
+Release 2.4d
+
+Enhancements:
+  - moved to GPLv3
+  - now using lh_hash for the session tables
+
+Bug fixes:
+  - allow case-sensitive matching for URLs
+  - fixed memory leak in DNS searches
+
+------------------------------------------------------------------------
+r52 | roseg | 2007-07-04 15:29:27 +0200 (Wed, 04 Jul 2007) | 10 lines
+
+Release 2.4c
+
+Enhancements:
+  - added XML output for poundctl
+  - added more detailed error messages
+
+Bug fixes:
+  - fixed problems with extra-long lines
+  - fixed problems with chunked encoding
+
+------------------------------------------------------------------------
+r51 | roseg | 2007-05-18 10:35:02 +0200 (Fri, 18 May 2007) | 11 lines
+
+Release 2.4b
+
+Enhancements:
+  - cleaned resurrection code
+  - added RR threads scheduling
+
+Bug fixes:
+  - fixed problem long lines (thanks to Rune Saetre)
+  - fixed pcreposix autoconf for systems that also require pcre
+  - fixed problem with IP session handling
+
+------------------------------------------------------------------------
+r49 | roseg | 2007-04-30 15:01:17 +0200 (Mon, 30 Apr 2007) | 11 lines
+
+Release 2.4a
+
+Enhancements:
+  - added display of configuration switches
+  - added grace period for shutdown (based on an idea from Rune Saetre)
+  - added support for IPv6 (but host caching was removed)
+
+Bug fixes:
+  - fixed test for owner/group (BSD portability)
+  - fixed problem with premature opening of control socket
+
+------------------------------------------------------------------------
+r46 | roseg | 2007-04-11 15:00:11 +0200 (Wed, 11 Apr 2007) | 8 lines
+
+Release 2.3
+
+Enhancements:
+  - added display of configuration switches
+  - added grace period for shutdown (based on an idea from Rune Saetre)
+
+Bug fixes:
+
+------------------------------------------------------------------------
+r45 | roseg | 2007-04-04 18:15:53 +0200 (Wed, 04 Apr 2007) | 8 lines
+
+Release 2.2.8
+
+Enhancements:
+  - more tweaking of the dynamic rescaling code
+  - more information in poundctl printout
+
+Bug fixes:
+
+------------------------------------------------------------------------
+r44 | roseg | 2007-03-12 18:12:14 +0100 (Mon, 12 Mar 2007) | 8 lines
+
+Release 2.2.7
+
+Enhancements:
+  - dynamic scaling is now a configuration directive (DynScale)
+  - added vhost to LogLevel 5
+
+Bug fixes:
+
+------------------------------------------------------------------------
+r43 | roseg | 2007-03-02 10:30:01 +0100 (Fri, 02 Mar 2007) | 11 lines
+
+Release 2.2.6
+
+Enhancements:
+  - added transaction time to LogLevel 5
+  - added priority display for poundctl
+
+Bug fixes:
+  - fixed problem when adding session via poundctl
+  - fixed problem in session dump to poundctl
+  - fixed problem in kill_be call to t_clean
+
+------------------------------------------------------------------------
+r42 | roseg | 2007-02-19 18:19:22 +0100 (Mon, 19 Feb 2007) | 7 lines
+
+Release 2.2.5
+
+Enhancements:
+
+Bug fixes:
+  - fixed problem with sessions (BACKEND copying)
+
+------------------------------------------------------------------------
+r41 | roseg | 2007-02-10 15:26:42 +0100 (Sat, 10 Feb 2007) | 14 lines
+
+Release 2.2.4
+
+Enhancements:
+  - modular tree library
+  - consolidated all timed functions into a single thread
+  - added gethostbyname cache
+  - added LogLevel 5 - same as 4 but with service name and back-end information (thanks to Joe Gooch for the suggestion)
+  - added session creation and removal to poundctl
+
+Bug fixes:
+  - added LOG_NDELAY to openlog()
+  - accept and immediately close connections to disabled listeners (thanks to Joe Gooch for the suggestion)
+  - fixed problem with -1 values in poundctl
+
+------------------------------------------------------------------------
+r40 | roseg | 2007-01-19 21:29:07 +0100 (Fri, 19 Jan 2007) | 5 lines
+
+Release 2.2.3
+
+Bug fixes:
+  - fixed problems in bad 2.2 release
+
+------------------------------------------------------------------------
+r39 | roseg | 2007-01-15 18:17:48 +0100 (Mon, 15 Jan 2007) | 13 lines
+
+Release 2.2.2
+
+Enhancements:
+  - changes in the dynamic rescaling
+  - doubled the session key size (for those people with insanely long cookies)
+  - added LogFacility - for logging to stdout/stderr
+  - added optional Service names
+
+Bug fixes:
+  - fixed bug in multiple HeadRemove matching
+  - fixed problem with extra large session keys
+  - fixed problem for OpenBSD accept (blocks all threads)
+
+------------------------------------------------------------------------
+r38 | roseg | 2007-01-03 18:25:30 +0100 (Wed, 03 Jan 2007) | 13 lines
+
+Release 2.2.1
+
+Enhancements:
+  - allow specific Listeners to override the gloabl LogLevel value
+  - allow a default Client value to be defined at the global level
+  - allow a default TimeOut value to be defined at the global level
+  - added compile-time flags for file owner and group
+
+Bug fixes:
+  - fixed some problems in the installation procedure
+  - fixed problem in SSL session string
+  - added protocol check in need_rewrite
+
+------------------------------------------------------------------------
+r37 | roseg | 2006-12-16 10:18:38 +0100 (Sat, 16 Dec 2006) | 45 lines
+
+Release 2.2
+
+Enhancements:
+  - added the host to LogLevel 2 (if available)
+  - added support for tcmalloc (from the Google perftools package)
+
+Bug fixes:
+  - fixed problem with the initialisation of host_mut
+
+*****************************
+Cumulative changes since 2.1:
+*****************************
+
+Enhancements:
+  - added dynamic rescaling of back-end priorities, compile-time flag to enable/disable it
+  - added support for emergency back-ends
+  - the program poundctl(8) is now available, added the Control configuration directive
+  - SESS_IP now behaves like other session types (no longer sticky)
+  - added RewriteLocation 2: rewrite location if it points to same address, but ignore port
+  - Redirect uses the original request path
+  - added RewriteDestination configuration flag to enable rewriting the Destination header
+  - removed msdav compile-time configuration flag and MSDAV configuration flag, extended xHTTP to allow for
+    WebDAV, MS-DAV and MS-RPC
+  - added CRLlist directive, split CRL from CA
+  - Error replies are sent as pure HTML
+  - split error messages into:
+    - LOG_ERR: errors (mostly fatal)
+    - LOG_WARNING: errors (non-fatal)
+    - LOG_NOTICE: problems
+    - LOG_INFO: extra information
+  - time to serve the requests is logged in LogLevel 2
+  - added the (virtual) host to LogLevel 2 (if available)
+  - added line numbers to config error messages
+  - added TCP_NODELAY for faster response times
+  - added support for tcmalloc (from the Google perftools package)
+
+Bug fixes:
+  - fixed problem in str_be (evident mostly in LogLevel 2)
+  - added 'const' wherever necessary
+  - check for errors in mutex handling
+  - fixed the verb pattern in HTTPS listeners
+  - content is now ignored only on HEAD requests
+  - fixed problems with autoconf on some systems
+  - fixed problem with the initialisation of host_mut
+
+------------------------------------------------------------------------
+r36 | roseg | 2006-12-09 09:39:23 +0100 (Sat, 09 Dec 2006) | 6 lines
+
+Release 2.1.8
+
+Bug fixes:
+  - fixed another small problem with autoconf on some systems
+  - added support for systems that don't define SOL_TCP
+
+------------------------------------------------------------------------
+r35 | roseg | 2006-12-06 18:32:16 +0100 (Wed, 06 Dec 2006) | 10 lines
+
+Release 2.1.7
+
+Enhancements:
+  - added TCP_NODELAY for faster response times
+  - added compile-time flag to enable/disable dynamic priorities rescaling
+
+Bug fixes:
+  - fixed problems with autoconf on some systems
+  - fixed error in control function (be instead of svc)
+
+------------------------------------------------------------------------
+r34 | roseg | 2006-11-04 11:28:53 +0100 (Sat, 04 Nov 2006) | 9 lines
+
+Release 2.1.6
+
+Enhancements:
+  - Redirect uses the original request path
+
+Bug fixes:
+  - improved dynamic priorities calculation
+  - fixed problem with Emergency back-ends
+
+------------------------------------------------------------------------
+r33 | roseg | 2006-10-23 09:24:28 +0200 (Mon, 23 Oct 2006) | 12 lines
+
+Release 2.1.5
+
+Enhancements:
+  - added line numbers to config error messages
+  - added dynamic rescaling of back-end priorities
+  - added support for emergency back-ends
+  - the program poundctl(8) is now available
+  - added the Control configuration directive
+
+Bug fixes:
+  - improved owner/group detection for install
+
+------------------------------------------------------------------------
+r32 | roseg | 2006-10-14 16:39:29 +0200 (Sat, 14 Oct 2006) | 6 lines
+
+Release 2.1.4
+
+Bug fixes:
+  - content is now ignored only on HEAD requests
+  - added CRLlist directive, split CRL from CA
+
+------------------------------------------------------------------------
+r31 | roseg | 2006-09-21 18:41:15 +0200 (Thu, 21 Sep 2006) | 6 lines
+
+Release 2.1.3
+
+Bug fixes:
+  - fixed the verb pattern in HTTPS listeners
+  - removed the spurious printf in cur_time
+
+------------------------------------------------------------------------
+r30 | roseg | 2006-09-18 18:12:16 +0200 (Mon, 18 Sep 2006) | 18 lines
+
+Release 2.1.2
+
+Enhancements:
+  - Error replies are sent as pure HTML
+  - split error messages into:
+    - LOG_ERR: errors (mostly fatal)
+    - LOG_WARNING: errors (non-fatal)
+    - LOG_NOTICE: problems
+    - LOG_INFO: extra information
+  - removed msdav compile-time configuration flag
+  - removed MSDAV configuration flag
+  - extended xHTTP to allow for WebDAV, MS-DAV and MS-RPC
+  - added RewriteDestination configuration flag to enable rewriting the Destination header
+  - time to serve the requests is logged in LogLevel 2
+
+Bug fixes:
+  - fixed (again) the RewriteRedirect 2 mode
+
+------------------------------------------------------------------------
+r29 | roseg | 2006-09-11 18:35:22 +0200 (Mon, 11 Sep 2006) | 11 lines
+
+Release 2.1.1
+
+Enhancements:
+  - SESS_IP now behaves like other session types (no longer sticky)
+  - added RewriteLocation 2: rewrite location if it points to same address, but ignore port
+
+Bug fixes:
+  - fixed problem in str_be (evident mostly in LogLevel 2)
+  - added 'const' wherever necessary
+  - check for errors in mutex handling
+
+------------------------------------------------------------------------
+r27 | roseg | 2006-08-05 11:35:52 +0200 (Sat, 05 Aug 2006) | 24 lines
+
+Release 2.1
+
+Enhancements:
+  - support for pcre library (if available) for much better performance
+  - support for hoard library (if available) for much better performance
+  - rewrite Location and Content-location headers for all responses
+  - improved detection of when is a rewrite necessary
+  - renamed Change30x to RewriteLocation. Default: on
+
+Bug fixes:
+  - fixed small problem in the upd_session() code
+  - declared init_RSAgen() as void everywhere
+  - moved to SESS_xxx tokens to avoid Solaris name conflict
+  - added #ifdef's for LOG_FTP and LOG_AUTHPRIV
+  - fixed problem in URL checking
+  - fixed problem in session tracking-code and session updating
+  - fixed LogLevel 3 to show that the v_host is unknown
+  - fixed headers checking in match_service
+  - fixed problem in ClientCert directive handling
+  - fixed potential memory leak in AUTH decoding
+  - allow OPTIONS WebDAV request to have content
+  - replaced inet_ntoa with inet_ntop where available
+  - removed all static buffers
+
+------------------------------------------------------------------------
+r25 | roseg | 2006-02-01 10:00:42 +0100 (Wed, 01 Feb 2006) | 14 lines
+
+Release 2.0
+
+Enhancements:
+    - new configuration file syntax, offering significant improvements.
+    - the ability to define listener-specific back-ends. In most cases
+      this should eliminate the need for multiple Pound instances.
+    - a new type of back-end: the redirector allows you to respond with
+      a redirect without involving any back-end server.
+    - most "secondary" properties (such as error messages, client
+      time-out, etc.) are now private to listeners.
+    - HAport has an optional address, different from the main back-end
+    - added a -V flag for version
+    - session keeping on a specific Header
+
+------------------------------------------------------------------------
+r21 | roseg | 2006-02-01 14:27:19 +0100 (Wed, 01 Feb 2006) | 15 lines
+
+Release 1.10
+
+Enhancements:
+    added NoDaemon configuration directive (replaces compile-time switch)
+    added LogFacility configuration directive (replaces compile-time switch)
+    added user name logging
+
+Bug fixes:
+    fixed problem with the poll() code
+    fixed problem with empty list in gethostbyname()
+    added call to setsid() if daemon
+    conflicting headers are removed (Content-length - Transfer-encoding)
+
+Last release in the 1.x series.
+
+------------------------------------------------------------------------
+r19 | roseg | 2005-06-01 15:27:19 +0200 (Wed, 01 Jun 2005) | 18 lines
+
+Release 1.9
+
+Enhancements:
+- Added the VerifyList configuration flag (CA root certs + CRL)
+- CRL checking code
+- RewriteRedirect 2 - ignores port value for host matching
+- Added -c flag (check-only mode)
+- Added -v flag (verbose mode)
+- Added -p flag for pid file name
+
+Bug fixes:
+- fixed a potential buffer overflow problem (in checking the Host header)
+- added call to SSL_library_init
+- added a check for MSIE before forcing SSL shutdown
+- X-SSL-Cipher header is added only if HTTPSHeaders is non-zero
+- added code for shorter linger on badly closed connections (IE work-around)
+- fixed the locking for session checking (mutex_lock/unlock)
+
+------------------------------------------------------------------------
+r17 | roseg | 2004-11-04 14:27:19 +0100 (Thu, 04 Nov 2004) | 23 lines
+
+Release 1.8
+
+Changes:
+- added support for non-blocking connect(2)
+- added support for 414 - Request URI too long
+- added RedirectRewrite directive - to prevent redirect changes
+- added support for NoHTTPS11 value 2 (for MSIE clients only)
+- added support for HTTPSHeaders 3 (no verify)
+
+Problems fixed:
+- fixed bug if multiple listening ports/addresses
+- fixed memory leak in SSL
+- flush stdout (if used) after each log message
+- assumes only 304, 305 and 306 codes to have no content
+- fixed problem with delays in 302 without content
+- fixed problem with time-outs in HTTPS
+
+Enhancements:
+- improved threads detection code in autoconf
+- added supervisor process disable configuration flag
+- tweak for the Location rewriting code (only look at current GROUP)
+- improved print-out for client certificate information
+
+------------------------------------------------------------------------
+r15 | roseg | 2004-03-24 14:27:19 +0100 (Wed, 24 Mar 2004) | 12 lines
+
+Release 1.7
+
+Fixed bug in X-SSL-CIPHER description
+Changed README to stx format for consistency
+Addedd X-SSL-certificate with full client certificate
+Improved the response times on HTTP/0.9 (content without Content-length)
+Improved response granularity on above - using unbuffered BIO now
+Fixed problem with IE/SSL (SSL_set_shutdown)
+Avoid error messages on premature EOF from client
+Fixed HeadRemove code so all headers are checked without exception
+Improved autoconf detection
+
+------------------------------------------------------------------------
+r13 | roseg | 2003-11-30 14:27:19 +0100 (Sun, 30 Nov 2003) | 15 lines
+
+Release 1.6
+
+Callback for RSA ephemeral keys:
+    - generated in a separate thread
+    - used if required (IE 5.0?)
+New X-SSL-cipher header encryption level/method
+Added CheckURL parameter in config file
+    - perform syntax check only if value 1 (default 0)
+Allow for empty query/param strings in URL syntax
+Additional SSL engine loading code
+Added parameter for CA certificates
+    - CA list is sent to client
+Verify client certificates up to given depth
+Fixed vulnerability in syslog handling
+
+------------------------------------------------------------------------
+r11 | roseg | 2003-10-14 15:27:19 +0200 (Tue, 14 Oct 2003) | 19 lines
+
+Release 1.5
+
+Session by Basic Authentication:
+    Session BASIC parameter added
+Syntax checking of request.
+User-defined request character set(s):
+    Parameters CSsegment, CSparameter, CSqid, CSqval
+Request size limit:
+    Parameter MaxRequest
+Single log function rather than #ifdefs.
+Added LogLevel 4 (same as 3 but without the virtual host info).
+Added HeadRemove directive (allows to delete a header from requests).
+Location rewriting on redirect:
+    if  the request contains a Header directive
+        and the response is codes 301, 302, 303, 307
+        and the Location in the response is to a known host
+    then the Location header in the response will be rewritten to point
+        to the Pound protocol/port itself
+
+------------------------------------------------------------------------
+r9 | roseg | 2003-04-24 15:27:19 +0200 (Thu, 24 Apr 2003) | 12 lines
+
+Release 1.4
+
+Added 'Server' configuration directive
+Fixed problem with HTTPSHeaders 0 "..." - the desired header is written even if HTTPSHeaders is 0
+Added the ability of loading a certificate chain.
+Added compatability with OpenSSL 0.9.7
+Added user-definable error pages.
+Added compile-time flags to run in foreground and to log to stderr.
+Opens separate pid files per-process.
+Improved autoconf.
+Some SSL speed optimisations.
+
+------------------------------------------------------------------------
+r7 | roseg | 2003-02-19 14:27:19 +0100 (Wed, 19 Feb 2003) | 10 lines
+
+Release 1.3
+
+Added support for OpenSSL Engine (crypto hardware)
+Added support for Subversion WebDAV
+Added support for mandatory client certificates
+Added X-SSL-serial header for SSL connections
+Fixed problem with BIO_pending in is_readable
+Fixed problem with multi-threading in OpenSSL
+Improved autoconf
+
+------------------------------------------------------------------------
+r5 | roseg | 2003-01-20 14:27:19 +0100 (Mon, 20 Jan 2003) | 5 lines
+
+Release 1.2
+
+Better handling of "100 Continue" responses
+Fixed problem with allowed character set for requests
+
+------------------------------------------------------------------------
+r3 | roseg | 2003-01-09 14:27:19 +0100 (Thu, 09 Jan 2003) | 9 lines
+
+Better auto-conf detection
+LogLevel 3 for Apache-like log (Combined Log Format)
+Don't ask client for certificate if no SSL headers required
+Added handling for 'Connection: closed' header
+Added monitor process to restart worker process if crashed
+Added possibility to listen on all interfaces
+Fixed HeadDeny code
+Fixed problem with threads on *BSD
+
+------------------------------------------------------------------------
+r1 | roseg | 2002-10-31 14:27:19 +0100 (Thu, 31 Oct 2002) | 1 line
+
+Initial import
+------------------------------------------------------------------------

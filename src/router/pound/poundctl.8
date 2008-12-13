@@ -1,0 +1,65 @@
+.TH POUNDCTL "8" "October 2006" "poundctl" "System Manager's Manual"
+.SH NAME
+poundctl \- control the pound(8) daemon
+.SH SYNOPSIS
+.TP
+.B poundctl \fI-c /path/to/socket\fR [\fI-L/-l\fR] [\fI-S/-s\fR] [\fI-B/-b\fR] [\fI-N/-n\fR]
+.SH DESCRIPTION
+.PP
+.B Poundctl
+controls various aspects of the operation of the
+.I pound(8)
+program.
+.SH OPTIONS
+Options available:
+.TP
+\fB\-c /path/to/socket\fR
+The path to the (Unix-domain) socket
+.B Pound
+was configured to listen on for control. Your
+.B Pound
+configuration file must contain the directive
+.I Control "/path/to/socket"
+for
+.B poundctl
+to work.
+.TP
+\fB\-L/-l n\fR
+Enable/disable a listener. A disabled listener will stop accepting connection
+requests.
+.TP
+\fB\-S/-s n m\fR
+Enable/disable a service. A disabled service will not be used by
+.B Pound
+to answer requests.
+.TP
+\fB\-B/-b n m r\fR
+Enable/disable a back-end. A disabled back-end will not be passed requests to
+answer. Note however that existing sessions may still cause requests to be
+sent their way.
+.TP
+\fB\-N n m k r\fR
+Add a session to service m in listener n. The session key is k and it points to
+back-end r.
+.TP
+\fB\-n n m k\fR
+Remove a session from service m in listener n. The session key is k.
+.PP
+The parameters n, m and r refer to the number assigned to a particular listener,
+service and back-end in the listings. A listener number of -1 refers by convention
+to the global context.
+.PP
+When called without flags
+.B poundctl
+will print out a listing of the
+.B Pound
+internal state.
+.SH AUTHOR
+Written by Robert Segall, Apsis GmbH.
+.SH "REPORTING BUGS"
+Report bugs to <roseg@apsis.ch>.
+.SH COPYRIGHT
+Copyright \(co 2002-2006 Apsis GmbH.
+.br
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
