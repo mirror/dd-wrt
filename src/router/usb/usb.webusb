@@ -44,9 +44,10 @@
 				</div>
 				<div class="setting">					
 					<div class="label"><% tran("usb.usb_automnt"); %></div>
-					<input class="spaceradio" type="radio" value="1" name="usb_automnt" <% nvram_checked("usb_automnt","1"); %> /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" value="0" name="usb_automnt" <% nvram_checked("usb_automnt","0"); %> /><% tran("share.disable"); %>
+					<input class="spaceradio" type="radio" value="1" name="usb_automnt" <% nvram_checked("usb_automnt","1"); %> onclick="show_layer_ext(this, 'idusbmnt', true)" /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" value="0" name="usb_automnt" <% nvram_checked("usb_automnt","0"); %> onclick="show_layer_ext(this, 'idusbmnt', false)" /><% tran("share.disable"); %>
 				</div>
+			<div id="idusbmnt">
 				<div class="setting">
 					<div class="label"><% tran("usb.usb_runonmount"); %></div>
 					<input maxlength="79" size="35" name="usb_runonmount" value="<% nvram_get("usb_runonmount"); %>" />
@@ -65,6 +66,7 @@
 					<span id="disk_status"><% show_usb_diskinfo(); %></span>&nbsp;
 					</div>
 				</fieldset><br />
+			</div>	
 			</div>
 	</div>
 </fieldset><br/>
