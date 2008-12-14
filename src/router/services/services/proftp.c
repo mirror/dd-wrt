@@ -83,7 +83,24 @@ void start_ftpsrv( void )
 		 nvram_safe_get( "proftpd_dir" ),
 		 nvram_safe_get( "proftpd_dir" ),
 		 nvram_match( "proftpd_writeen", "on" ) ? "" : "    DenyAll\n" );
-
+		 
+// Anonymous ftp - read only
+	if( nvram_match( "proftpd_anon", "1" )
+	{
+	fprintf( fp, 
+		 "<Anonymous	/%s%s>\n"
+		 "User			ftp\n"
+		 "Group			ftp\n"
+		 "UserAlias		anonymous ftp\n"
+		 "<Directory *>\n"
+		 "  <Limit WRITE>\n"
+		 "    DenyAll\n"
+		 "  </Limit>\n"
+		 "</Directory>\n"
+		 "</Anonymous>\n",
+		 nvram_safe_get( "proftpd_dir" ),
+		 nvram_safe_get( "proftpd_anon_subdir" );
+	 }
 		 
 	fclose( fp );
 		
