@@ -1504,8 +1504,8 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
      "Wireless_radauth.asp", "WL_WPATable.asp",
      "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
      ""},
-    {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "NAS.asp", "Hotspot.asp",
-     "Milkfish.asp", "eop-tunnel.asp", "AnchorFree.asp", "", "", ""},
+    {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp",
+     "Milkfish.asp", "eop-tunnel.asp", "AnchorFree.asp", "", ""},
     {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
     {"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
     {"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp",
@@ -1529,9 +1529,9 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
     {"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax",
      "wirelessRadius", "wirelessSecurity",
      "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},
-    {"services", "servicesServices", "servicesPppoesrv", "servicesPptp", "servicesNAS", 
+    {"services", "servicesServices", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", 
      "servicesHotspot", "servicesMilkfish", "setupeop", "servicesAnchorFree",
-     "", "", ""},
+     "", ""},
     {"security", "firwall", "vpn", "", "", "", "", "", "", "", "", ""},
     {"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", ""},
     {"applications", "applicationspforwarding", "applicationsprforwarding",
@@ -1676,6 +1676,10 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
 #ifdef HAVE_MICRO
 		if( !strcmp( menu[i][j], "PPTP.asp" ) )	// jump over PPTP in
 							// micro build
+		    j++;
+#endif
+#ifndef HAVE_USB
+		if( !strcmp( menu[i][j], "USB.asp" ) )	// jump over USB
 		    j++;
 #endif
 #ifndef HAVE_NAS_SERVER
