@@ -8,7 +8,7 @@
 			<h2><% tran("usb.titl"); %></h2>
 			<dl>
 				
-				<dt><% tran("usb.core"); %></dt>
+				<dt><% tran("usb.usb_core"); %></dt>
 				<dd>USB core support : <br/>
 					<ul>
 						<li>You can use USB port on your router to connect USB devices</li>
