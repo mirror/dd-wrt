@@ -1,65 +1,70 @@
 <fieldset>
-	<legend><% tran("service.usb_legend"); %></legend>
+	<legend><% tran("usb.usb_legend"); %></legend>
 	<div class="setting">
-		<div class="label"><% tran("service.usb_core"); %></div>
+		<div class="label"><% tran("usb.usb_core"); %></div>
 		<input class="spaceradio" type="radio" value="1" name="usb_enable" <% nvram_checked("usb_enable","1"); %> onclick="show_layer_ext(this, 'idusb', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="usb_enable" <% nvram_checked("usb_enable","0"); %> onclick="show_layer_ext(this, 'idusb', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idusb">
 		<div class="setting">
-			<div class="label"><% tran("service.usb_uhci"); %></div>
+			<div class="label"><% tran("usb.usb_uhci"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="usb_uhci" <% nvram_checked("usb_uhci","1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="usb_uhci" <% nvram_checked("usb_uhci","0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.usb_ohci"); %></div>
+			<div class="label"><% tran("usb.usb_ohci"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="usb_ohci" <% nvram_checked("usb_ohci","1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="usb_ohci" <% nvram_checked("usb_ohci","0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.usb_ehci"); %></div>
+			<div class="label"><% tran("usb.usb_ehci"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="usb_usb2" <% nvram_checked("usb_usb2","1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="usb_usb2" <% nvram_checked("usb_usb2","0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.usb_printer"); %></div>
+			<div class="label"><% tran("usb.usb_printer"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="usb_printer" <% nvram_checked("usb_printer","1"); %> /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="usb_printer" <% nvram_checked("usb_printer","0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.usb_storage"); %></div>
+			<div class="label"><% tran("usb.usb_storage"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="usb_storage" <% nvram_checked("usb_storage","1"); %> onclick="show_layer_ext(this, 'idusbstor', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="usb_storage" <% nvram_checked("usb_storage","0"); %> onclick="show_layer_ext(this, 'idusbstor', false)" /><% tran("share.disable"); %>
 		</div>
 			<div id="idusbstor">
 				<div class="setting">
-					<div class="label"><% tran("service.usb_extfs"); %></div>
+					<div class="label"><% tran("usb.usb_extfs"); %></div>
 					<input class="spaceradio" type="radio" value="1" name="usb_fs_ext3" <% nvram_checked("usb_fs_ext3","1"); %> /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" value="0" name="usb_fs_ext3" <% nvram_checked("usb_fs_ext3","0"); %> /><% tran("share.disable"); %>
 				</div>
 				<div class="setting">					
-					<div class="label"><% tran("service.usb_fatfs"); %></div>
+					<div class="label"><% tran("usb.usb_fatfs"); %></div>
 					<input class="spaceradio" type="radio" value="1" name="usb_fs_fat" <% nvram_checked("usb_fs_fat","1"); %> /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" value="0" name="usb_fs_fat" <% nvram_checked("usb_fs_fat","0"); %> /><% tran("share.disable"); %>
 				</div>
 				<div class="setting">					
-					<div class="label"><% tran("service.usb_automnt"); %></div>
+					<div class="label"><% tran("usb.usb_automnt"); %></div>
 					<input class="spaceradio" type="radio" value="1" name="usb_automnt" <% nvram_checked("usb_automnt","1"); %> /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" value="0" name="usb_automnt" <% nvram_checked("usb_automnt","0"); %> /><% tran("share.disable"); %>
 				</div>
 				<div class="setting">
-					<div class="label"><% tran("service.usb_runonmount"); %></div>
+					<div class="label"><% tran("usb.usb_runonmount"); %></div>
 					<input maxlength="79" size="35" name="usb_runonmount" value="<% nvram_get("usb_runonmount"); %>" />
 				</div>
 				<div class="setting">
-				<div class="label"><% tran("service.usb_mntpoint"); %></div>
+				<div class="label"><% tran("usb.usb_mntpoint"); %></div>
 					<select name="usb_mntpoint">
 					<option value="mnt" <% nvram_selected("usb_mntpoint", "mnt"); %> >/mnt</option>
 					<option value="opt" <% nvram_selected("usb_mntpoint", "opt"); %> >/opt</option>
 					<option value="jffs" <% nvram_selected("usb_mntpoint", "jffs"); %> >/jffs</option>
 					</select>
 				</div>
-				<% show_usb_diskinfo(); %>
+				<fieldset>
+				<legend><% tran("usb.usb_diskinfo"); %></legend>
+					<div class="setting">
+					<span id="disk_status"><% show_usb_diskinfo(); %></span>&nbsp;
+					</div>
+				</fieldset><br />
 			</div>
 	</div>
 </fieldset><br/>
