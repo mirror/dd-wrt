@@ -679,9 +679,11 @@ nas.titl="NAS";
 nas.proftpd_legend="FTP Server";
 nas.proftpd_srv="ProFTPD";
 nas.proftpd_port="Server Port";
-nas.proftpd_dir="Files Dir";
+nas.proftpd_dir="Files Directory";
 nas.proftpd_passw="User/Password List";
 nas.proftpd_writeen="Allow Write";
+nas.proftpd_anon="Anonymous Login (Read-only)";
+nas.proftpd_anon_dir="Anonimous Home Sub-directory";
 nas.sambasrv_legend="Samba Server";
 
 // ** Hotspot.asp **//
