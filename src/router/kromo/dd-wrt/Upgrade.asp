@@ -28,7 +28,7 @@ function upgrade(F,id) {
 	bar1.togglePause();
 	change_style(id,'textblink');
 	F.Upgrade_b.value = sbutton.upgrading;
-	applyupdate(F, errmsg.err102, <% nvram_get("upgrade_delay"); %>);
+	applyupdate(F, errmsg.err102,share.secondcharacter, <% nvram_get("upgrade_delay"); %>);
 	return true;
 }
 
