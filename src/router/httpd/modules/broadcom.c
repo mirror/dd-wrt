@@ -1123,6 +1123,8 @@ struct apply_action apply_actions[] = {
      */
     {"PPPoE_Server", "services", 0, SERVICE_RESTART, NULL},
     {"PPTP", "services", 0, SERVICE_RESTART, NULL},
+    {"USB", "", 0, SYS_RESTART, NULL},     
+    {"NAS", "nassrv", 0, SERVICE_RESTART, NULL},  
     {"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
     {"AnchorFree", "anchorfree", 0, SERVICE_RESTART, NULL},
 
@@ -1143,7 +1145,6 @@ struct apply_action apply_actions[] = {
      */
     {"Firewall", "filters", 0, SERVICE_RESTART, NULL},
     {"VPN", "filters", 0, SERVICE_RESTART, NULL},
-    {"NAS", "nassrv", 0, SERVICE_RESTART, NULL},   
 #ifdef HAVE_MILKFISH
     {"Milkfish", "milkfish", 0, SERVICE_RESTART, NULL},
 #endif
