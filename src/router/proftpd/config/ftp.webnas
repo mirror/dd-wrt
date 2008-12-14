@@ -44,5 +44,14 @@
 					//]]>
 					</script>
 				</div>
+				<div class="setting">					
+					<div class="label"><% tran("nas.proftpd_anon"); %></div>
+					<input class="spaceradio" type="radio" value="1" name="proftpd_anon" <% nvram_checked("proftpd_anon","1"); %> /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" value="0" name="proftpd_anon" <% nvram_checked("proftpd_anon","0"); %> /><% tran("share.disable"); %>
+				</div>
+				<div class="setting">
+					<div class="label"><% tran("nas.proftpd_anon_subdir"); %></div>
+					<input maxlength="79" size="35" name="proftpd_anon_subdir" value="<% nvram_get("proftpd_anon_subdir"); %>" />
+				</div>
 			</div>
 		</fieldset><br />
