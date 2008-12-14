@@ -683,7 +683,7 @@ nas.proftpd_dir="Files Directory";
 nas.proftpd_passw="User/Password List";
 nas.proftpd_writeen="Allow Write";
 nas.proftpd_anon="Anonymous Login (Read-only)";
-nas.proftpd_anon_dir="Anonymous Home Sub-directory";
+nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
 nas.sambasrv_legend="Samba Server";
 
 // ** Hotspot.asp **//
