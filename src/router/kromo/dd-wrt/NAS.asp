@@ -15,6 +15,7 @@ var update;
 
 addEvent(window, "load", function() {
 	show_layer_ext(document.setup.proftpd_enable, 'ftpen', <% nvram_else_match("proftpd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.proftpd_anon, 'ftpanon', <% nvram_else_match("proftpd_anon", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.sambasrv_enable, 'sambaen', <% nvram_else_match("sambasrv_enable", "1", "1", "0"); %> == 1);
 	
 	update = new StatusbarUpdate();
