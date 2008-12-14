@@ -408,6 +408,8 @@ bmenu.services="Службы";
 bmenu.servicesServices="Службы";
 bmenu.servicesPppoesrv="Сервер PPPoE";
 bmenu.servicesPptp="PPTP";
+bmenu.servicesUSB="USB";
+bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Хот-спот";
 bmenu.servicesMilkfish="Маршрутизатор Milkfish SIP";
 bmenu.servicesAnchorFree="Моя рекламная сеть";
@@ -619,6 +621,17 @@ pforward.to="Порт-приемник";
 //help container
 hpforward.right2="Некоторые приложения для своей корректной работы требуют открыть определенные порты. К таким приложениям относятся, например, серверы и определенные онлайн-игры. Когда из Интернета на определенный порт придет запрос, маршрутизатор перенаправит его на указанный вами компьютер. По соображениям безопасности вы можете ограничить перенаправление портов только теми портами, которые действительно используются, и снять отметку с клетки <em>" + share.enable +"</em> для не используемых в данное время портов.";
 
+// ** USB.asp **//
+usb.titl="USB";
+usb.usb_legend="Поддержка USB";
+usb.usb_core="Базовая поддержка USB";
+usb.usb_uhci="Поддержка USB 1.1 (UHCI)";
+usb.usb_ohci="Поддержка USB 1.1 (OHCI)";
+usb.usb_ehci="Поддержка USB 2.0";
+usb.usb_storage="Поддержка USB-дисков";
+usb.usb_extfs="Поддержка файл.системы ext2/ext3";
+usb.usb_fatfs="Поддержка файловой системы FAT";
+usb.usb_printer="Поддержка USB-принтера";
 
 // ** Hotspot.asp **//
 hotspot.titl="Хот-спот";
@@ -1178,17 +1191,6 @@ service.nstx_legend="Туннель IP через DNS";
 service.nstx_srv="Демон nstx";
 service.nstx_ipenable="Связать только с данным IP";
 service.nstx_log="Включить отладочные сообщения";
-
-//usb.webservices
-service.usb_legend="Поддержка USB";
-service.usb_core="Базовая поддержка USB";
-service.usb_uhci="Поддержка USB 1.1 (UHCI)";
-service.usb_ohci="Поддержка USB 1.1 (OHCI)";
-service.usb_ehci="Поддержка USB 2.0";
-service.usb_storage="Поддержка USB-дисков";
-service.usb_extfs="Поддержка файл.системы ext2/ext3";
-service.usb_fatfs="Поддержка файловой системы FAT";
-service.usb_printer="Поддержка USB-принтера";
 
 //ttraff.webservices
 service.ttraff_legend="Счетчик трафика WAN";

@@ -408,6 +408,8 @@ bmenu.services="Services";
 bmenu.servicesServices="Services";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
+bmenu.servicesUSB="USB";
+bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Router";
 bmenu.servicesAnchorFree="My Ad Network";
@@ -620,6 +622,21 @@ pforward.to="Alla Porta";
 //help container
 hpforward.right2="Alcune applicazioni possono richiedere l'apertura di specifiche porte per il loro corretto funzionamento. Esempi di queste applicazioni includono i server e certi giochi online. Quando una richiesta di una certa porta viene da internet, il router inoltrerà i dati al computer specificato. Per cio che riguarda la sicurezza, è desiderabile limitare il forwarding solo alle porte in uso, e deselezionare la casella <em>Abilita</em> appena finito.";
 
+// ** USB.asp **//
+usb.titl="USB";
+usb.usb_legend="USB Support";
+usb.usb_core="Core USB Support";
+usb.usb_uhci="USB 1.1 Support (UHCI)";
+usb.usb_ohci="USB 1.1 Support (OHCI)";
+usb.usb_ehci="USB 2.0 Support";
+usb.usb_storage="USB Storage Support";
+usb.usb_extfs="ext2 / ext3 File System Support";
+usb.usb_fatfs="FAT File System Support";
+usb.usb_printer="USB Printer Support";
+usb.usb_automnt="Automatic Drive Mount";
+usb.usb_mntpoint="Disk Mount Point";
+usb.usb_runonmount="Run-on-mount Script Name";
+usb.usb_diskinfo="Disk Info";
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
@@ -1174,17 +1191,6 @@ service.nstx_legend="IP over DNS Tunneling";
 service.nstx_srv="nstx Daemon";
 service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="Switch on debug messages";
-
-//usb.webservices
-service.usb_legend="USB Support";
-service.usb_core="Core USB Support";
-service.usb_uhci="USB 1.1 Support (UHCI)";
-service.usb_ohci="USB 1.1 Support (OHCI)";
-service.usb_ehci="USB 2.0 Support";
-service.usb_storage="USB Storage Support";
-service.usb_extfs="ext2 / ext3 File System Support";
-service.usb_fatfs="FAT File System Support";
-service.usb_printer="USB Printer Support";
 
 //ttraff.webservices
 service.ttraff_legend="WAN Traffic Counter";

@@ -402,6 +402,8 @@ bmenu.services="Services";
 bmenu.servicesServices="Services";
 bmenu.servicesPppoesrv="Serveur PPPoE";
 bmenu.servicesPptp="VPN";
+bmenu.servicesUSB="USB";
+bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Routeur SIP Milkfish";
 bmenu.servicesAnchorFree="Mon réseau publicitaire";
@@ -600,6 +602,18 @@ pforward.to="vers le Port";
 
 //help container
 hpforward.right2="Certaines applications nécessitent d'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s'agir de certains jeux en ligne, les serveurs type FTP, messagerie, Web, etc... Certaines applications Internet peuvent n'exiger aucun transfert. Quand une demande sur un port bien précis venant d'Internet se présente au niveau du routeur, celui-ci transfert les données vers l'ordinateur adéquat. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
+
+// ** USB.asp **//
+usb.titl="USB";
+usb.usb_legend="Support USB";
+usb.usb_core="Core USB Support";
+usb.usb_uhci="Support USB 1.1 (UHCI)";
+usb.usb_ohci="Support USB 1.1 (OHCI)";
+usb.usb_ehci="Support USB 2.0";
+usb.usb_storage="Support Stockage USB";
+usb.usb_extfs="Support système de fichier ext2 / ext3";
+usb.usb_fatfs="Support système de fichier FAT";
+usb.usb_printer="Support imprimante USB";
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
@@ -1143,17 +1157,6 @@ service.nstx_legend="Tunnel DNS";
 service.nstx_srv="Démon nstx";
 service.nstx_ipenable="Limiter à une seule IP";
 service.nstx_log="Activer Debug";
-
-//usb.webservices
-service.usb_legend="Support USB";
-service.usb_core="Core USB Support";
-service.usb_uhci="Support USB 1.1 (UHCI)";
-service.usb_ohci="Support USB 1.1 (OHCI)";
-service.usb_ehci="Support USB 2.0";
-service.usb_storage="Support Stockage USB";
-service.usb_extfs="Support système de fichier ext2 / ext3";
-service.usb_fatfs="Support système de fichier FAT";
-service.usb_printer="Support imprimante USB";
 
 //ttraff.webservices
 service.ttraff_legend="Suivi du trafic WAN";

@@ -188,6 +188,7 @@ share.gbytes="GB";
 share.preempt="Predkup";
 share.acktiming="ACK uèasenje";
 share.broadcast="Broadcast podpora";
+share.secondcharacter="s";
 
 
 sbutton.save="Shrani nastavitve";
@@ -415,6 +416,8 @@ bmenu.services="Storitve";
 bmenu.servicesServices="Storitve";
 bmenu.servicesPppoesrv="PPPoE stre¾nik";
 bmenu.servicesPptp="VPN";
+bmenu.servicesUSB="USB";
+bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Usmerjalnik";
 bmenu.servicesAnchorFree="Moja Ad mre¾a";
@@ -652,6 +655,20 @@ pforward.to="Do vrat";
 
 hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z WAN pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
 
+// ** USB.asp **//
+
+usb.titl="USB";
+usb.usb_legend="USB podpora";
+usb.usb_core="Osnovna USB podpora";
+usb.usb_uhci="USB 1.1 podpora (UHCI)";
+usb.usb_ohci="USB 1.1 podpora (OHCI)";
+usb.usb_ehci="USB 2.0 podpora";
+usb.usb_storage="USB podpora za shranjevanje datotek";
+usb.usb_extfs="ext2 / ext3 datoteèni sistem";
+usb.usb_fatfs="FAT datoteèni sistem";
+usb.usb_printer="USB printer";
+usb.usb_automnt="Avtomatièni priklop diska";
+usb.usb_mntpoint="Priklopna toèka";
 
 // ** Hotspot.asp **//
 
@@ -1241,19 +1258,6 @@ service.nstx_legend="IP preko DNS tuneliranje";
 service.nstx_srv="nstx demon";
 service.nstx_ipenable="Ve¾i samo na ta IP";
 service.nstx_log="Sporoèila za razhro¹èevanje";
-
-//usb.webservices
-service.usb_legend="USB podpora";
-service.usb_core="Osnovna USB podpora";
-service.usb_uhci="USB 1.1 podpora (UHCI)";
-service.usb_ohci="USB 1.1 podpora (OHCI)";
-service.usb_ehci="USB 2.0 podpora";
-service.usb_storage="USB podpora za shranjevanje datotek";
-service.usb_extfs="ext2 / ext3 datoteèni sistem";
-service.usb_fatfs="FAT datoteèni sistem";
-service.usb_printer="USB printer";
-service.usb_automnt="Avtomatièni priklop diska";
-service.usb_mntpoint="Priklopna toèka";
 
 //ttraff.webservices
 service.ttraff_legend="©tevec WAN prometa";
