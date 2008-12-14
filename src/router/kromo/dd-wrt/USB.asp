@@ -16,6 +16,7 @@ var update;
 addEvent(window, "load", function() {
 	show_layer_ext(document.setup.usb_enable, 'idusb', <% nvram_else_match("usb_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.usb_storage, 'idusbstor', <% nvram_else_match("usb_storage", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.usb_mnt, 'idusbmnt', <% nvram_else_match("usb_automnt", "1", "1", "0"); %> == 1);
 	
 	update = new StatusUpdate("USB.live.asp", <% nvram_get("refresh_time"); %>);
 	update.start();
