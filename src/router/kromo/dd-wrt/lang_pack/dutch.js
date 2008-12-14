@@ -386,6 +386,8 @@ bmenu.services="Services";
 bmenu.servicesServices="Services";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="PPTP";
+bmenu.servicesUSB="USB";
+bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Router";
 

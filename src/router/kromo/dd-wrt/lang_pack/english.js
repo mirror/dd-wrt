@@ -417,6 +417,7 @@ bmenu.services="Services";
 bmenu.servicesServices="Services";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
+bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Router";
@@ -654,6 +655,23 @@ pforward.to="Port to";
 //help container
 var hpforward = new Object();
 hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>Enable</em> checkbox after you are finished.";
+
+// ** USB.asp **//
+var usb = new Object();
+usb.titl="USB";
+usb.usb_legend="USB Support";
+usb.usb_core="Core USB Support";
+usb.usb_uhci="USB 1.1 Support (UHCI)";
+usb.usb_ohci="USB 1.1 Support (OHCI)";
+usb.usb_ehci="USB 2.0 Support";
+usb.usb_storage="USB Storage Support";
+usb.usb_extfs="ext2 / ext3 File System Support";
+usb.usb_fatfs="FAT File System Support";
+usb.usb_printer="USB Printer Support";
+usb.usb_automnt="Automatic Drive Mount";
+usb.usb_mntpoint="Disk Mount Point";
+usb.usb_runonmount="Run-on-mount Script Name";
+usb.usb_diskinfo="Disk Info";
 
 // ** NAS.asp **//
 var nas = new Object();
@@ -1254,21 +1272,6 @@ service.nstx_legend="IP over DNS Tunneling";
 service.nstx_srv="nstx Daemon";
 service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="Switch on debug messages";
-
-//usb.webservices
-service.usb_legend="USB Support";
-service.usb_core="Core USB Support";
-service.usb_uhci="USB 1.1 Support (UHCI)";
-service.usb_ohci="USB 1.1 Support (OHCI)";
-service.usb_ehci="USB 2.0 Support";
-service.usb_storage="USB Storage Support";
-service.usb_extfs="ext2 / ext3 File System Support";
-service.usb_fatfs="FAT File System Support";
-service.usb_printer="USB Printer Support";
-service.usb_automnt="Automatic Drive Mount";
-service.usb_mntpoint="Disk Mount Point";
-service.usb_runonmount="Run-on-mount Script Name";
-service.usb_diskinfo="Disk Info";
 
 //ttraff.webservices
 service.ttraff_legend="WAN Traffic Counter";

@@ -408,6 +408,8 @@ bmenu.services="Tjänster";
 bmenu.servicesServices="Tjänster";
 bmenu.servicesPppoesrv="PPPoE Server";
 bmenu.servicesPptp="VPN";
+bmenu.servicesUSB="USB";
+bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesMilkfish="Milkfish SIP Router";
 bmenu.servicesAnchorFree="Mitt Ad Nätverk";
@@ -616,6 +618,18 @@ pforward.to="Port till";
 
 //help container
 hpforward.right2="Vissa applikationer kräver att man öppnar en viss port. Exempel på dessa är servrar o online spel. När ett förfrågan kommer från internet, routern kommer då släppa in den trafiken till sen dator du anger . beroende på säkerhetsaspekter, du skall bara forwarda portar du verkligen behöver, och avmarkera <em>" + share.enable +"</em> kryssrutan efter du är klar med onlinespelet osv...";
+
+// ** USB.asp **//
+usb.titl="USB";
+usb.usb_legend="USB Stöd";
+usb.usb_core="Core USB Stöd";
+usb.usb_uhci="USB 1.1 Stöd (UHCI)";
+usb.usb_ohci="USB 1.1 Stöd (OHCI)";
+usb.usb_ehci="USB 2.0 Stöd";
+usb.usb_storage="USB Minnes Stöd";
+usb.usb_extfs="ext2 / ext3 Fil System Stöd";
+usb.usb_fatfs="FAT File-Systems Stöd";
+usb.usb_printer="USB Printer Stöd";
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
