@@ -384,7 +384,7 @@ endif
 ifneq ($(CONFIG_USB),y)
 	rm -f $(INSTALLDIR)/www/USB.asp
 	rm -f $(INSTALLDIR)/www/USB.live.asp	
-	rm -f $(INSTALLDIR)/www/help/HUSB.asp.asp
+	rm -f $(INSTALLDIR)/www/help/HUSB.asp
 endif
 
 ifneq ($(CONFIG_FTP),y)
