@@ -99,7 +99,7 @@ void start_ftpsrv( void )
 		 "</Directory>\n"
 		 "</Anonymous>\n",
 		 nvram_safe_get( "proftpd_dir" ),
-		 nvram_safe_get( "proftpd_anon_subdir" );
+		 nvram_safe_get( "proftpd_anon_subdir" ) );
 	 }
 		 
 	fclose( fp );
