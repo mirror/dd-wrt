@@ -70,6 +70,7 @@ void start_ftpsrv( void )
 		 "  DenyAll\n"
 		 "</Limit>\n"
 		 "DelayEngine     off\n"
+		 "WtmpLog         off\n"
 		 "DefaultRoot     /%s\n"
 		 "<Directory      /%s/*>\n"
 		 "  AllowOverwrite  on\n"
@@ -90,7 +91,7 @@ void start_ftpsrv( void )
 	fprintf( fp, 
 		 "<Anonymous      /%s%s>\n"
 		 "User           ftp\n"
-		 "Group          ftp\n"
+		 "Group          root\n"
 		 "UserAlias      anonymous ftp\n"
 		 "<Directory *>\n"
 		 "  <Limit WRITE>\n"
@@ -103,6 +104,18 @@ void start_ftpsrv( void )
 	 }
 
 	fclose( fp );
+	
+// add ftp user (for anonymous access)	
+	if( nvram_match( "proftpd_anon", "1" ) )
+	{
+	if( eval( "/bin/grep", "-q", "ftp:x:0:0:Ftp", "/tmp/etc/passwd" ) != 0 )
+	{
+	fp = fopen( "/tmp/etc/passwd", "ab" );
+	fprintf( fp,
+	"ftp:x:0:0:Ftp Anon,,,:/tmp/root:/bin/sh\n" );
+	fclose( fp );
+	}
+}
 		
 	eval( "proftpd");
 	syslog( LOG_INFO,
