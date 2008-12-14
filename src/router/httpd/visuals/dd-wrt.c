@@ -1934,23 +1934,15 @@ void ej_show_usb_diskinfo( webs_t wp, int argc, char_t ** argv )
     
     if( ( fp = fopen( "/tmp/disktype.dump", "r" ) ) )
     {
-
-	websWrite( wp, "<fieldset>\n"
-				"<legend><script type=\"text/javascript\">Capture(service.usb_diskinfo)</script></legend>\n"
-				"<div class=\"setting\">\n"
-				"<span id=\"disk_info\">\n" );
-				
 	while( fgets( buff, sizeof( buff ), fp ) )
 	{
 		if( strcmp( buff, "\n" ) )
-	    websWrite( wp, "%s <br />", buff );
+	    websWrite( wp, "%s<br />", buff );
 	}
 	fclose( fp );
-				
-	websWrite( wp, "</span>&nbsp;\n"
-				"</div>\n"
-				"</fieldset><br />\n" );
 	}
+	else
+		websWrite( wp, "<script type=\"text/javascript\">Capture(status_router.notavail)</script>" );	
 
 	return;
 }
