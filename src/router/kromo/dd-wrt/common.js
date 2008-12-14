@@ -903,7 +903,7 @@ function apply(form, text, delay) {
 	}
 	if (form.contents) document.getElementById("contents").style.color = '#999999';
 }
-function applytake(form, text, delay) {
+function applytake(form, text,seconds, delay) {
     form.action.value = "ApplyTake";
     if(!text)
     	text=errmsg.err100;
@@ -912,11 +912,11 @@ function applytake(form, text, delay) {
     setTimeout(function(){form.submit();}, 2000);
 
     if(delay) {
-    	setTimeout(function(){infoTimeout(text, delay);}, 1000);
+    	setTimeout(function(){infoTimeout(text,seconds, delay);}, 1000);
     }
 }
 
-function applyupdate(form, text, delay) {
+function applyupdate(form, text,seconds, delay) {
     if(!text)
     	text=errmsg.err100;
 
@@ -924,15 +924,15 @@ function applyupdate(form, text, delay) {
     setTimeout(function(){form.submit();}, 2000);
 
     if(delay) {
-    	setTimeout(function(){infoTimeout(text, delay);}, 1000);
+    	setTimeout(function(){infoTimeout(text,seconds, delay);}, 1000);
     }
 }
 
-function infoTimeout(text, delay) {
+function infoTimeout(text,seconds, delay) {
 	delay--;
 	if (delay > 0) {
-		Dialog.setInfoMessage(text+" "+delay+"s ...");
-		setTimeout(function(){infoTimeout(text, delay);}, 1000);
+		Dialog.setInfoMessage(text+" "+delay+seconds+" ...");
+		setTimeout(function(){infoTimeout(text,seconds, delay);}, 1000);
 	}
 	else {
 		Dialog.setInfoMessage(text);
