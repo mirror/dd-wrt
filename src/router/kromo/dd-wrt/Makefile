@@ -381,6 +381,11 @@ ifeq ($(CONFIG_ALFA_BRANDING2),y)
 	cp -f alfa/logo22.png $(INSTALLDIR)/www/style/xirian/logo.png
 endif
 
+ifneq ($(CONFIG_USB),y)
+	rm -f $(INSTALLDIR)/www/USB.asp
+	rm -f $(INSTALLDIR)/www/USB.live.asp	
+	rm -f $(INSTALLDIR)/www/help/HUSB.asp.asp
+endif
 
 ifneq ($(CONFIG_FTP),y)
 ifneq ($(CONFIG_SAMBASRV),y)
