@@ -1123,7 +1123,7 @@ struct apply_action apply_actions[] = {
      */
     {"PPPoE_Server", "services", 0, SERVICE_RESTART, NULL},
     {"PPTP", "services", 0, SERVICE_RESTART, NULL},
-    {"USB", "", 0, SYS_RESTART, NULL},     
+    {"USB", "", 0, REBOOT, NULL},     
     {"NAS", "nassrv", 0, SERVICE_RESTART, NULL},  
     {"Hotspot", "hotspot", 0, SERVICE_RESTART, NULL},
     {"AnchorFree", "anchorfree", 0, SERVICE_RESTART, NULL},
