@@ -412,6 +412,8 @@ bmenu.services="伺服器";
 bmenu.servicesServices="伺服器";
 bmenu.servicesPppoesrv="PPPoE 伺服器";
 bmenu.servicesPptp="VPN";
+bmenu.servicesUSB="USB";
+bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="熱點";
 bmenu.servicesMilkfish="Milkfish SIP Router";
 bmenu.servicesAnchorFree="My Ad Network";
@@ -648,6 +650,18 @@ pforward.to="目的地埠";
 //
 hpforward.right2="某些應用程式可能需要打開特定埠才能正常工作. 舉例來說,這些應用程式包括伺服器軟體和一些線上遊戲.當從Internet接收到一個針對特定埠的請求時,路由器將會把這些資料路由到您指定的電腦.基於安全的考慮,您可能想只對您需要使用的埠設定通訊埠轉發（映射）,同時,在您完成之後,取消對 <em>" + share.enable +"</em> 核取方塊的選擇.";
 
+// ** USB.asp **//
+//
+usb.titl="USB";
+usb.usb_legend="USB 驅動";
+usb.usb_core="USB 驅動核心";
+usb.usb_uhci="USB 1.1 驅動 (UHCI)";
+usb.usb_ohci="USB 1.1 驅動 (OHCI)";
+usb.usb_ehci="USB 2.0 驅動";
+usb.usb_storage="USB 儲存裝置驅動";
+usb.usb_extfs="ext2 / ext3 檔案系統驅動";
+usb.usb_fatfs="FAT 檔案系統驅動";
+usb.usb_printer="USB 印表機驅動";
 
 // ** Hotspot.asp **//
 //
@@ -1233,17 +1247,6 @@ service.nstx_legend="IP over DNS 通道";
 service.nstx_srv="IP over DNS";
 service.nstx_ipenable="Bind to this IP only";
 service.nstx_log="打開除錯訊息";
-
-//usb.webservices
-service.usb_legend="USB 驅動";
-service.usb_core="USB 驅動核心";
-service.usb_uhci="USB 1.1 驅動 (UHCI)";
-service.usb_ohci="USB 1.1 驅動 (OHCI)";
-service.usb_ehci="USB 2.0 驅動";
-service.usb_storage="USB 儲存裝置驅動";
-service.usb_extfs="ext2 / ext3 檔案系統驅動";
-service.usb_fatfs="FAT 檔案系統驅動";
-service.usb_printer="USB 印表機驅動";
 
 //ttraff.webservices
 service.ttraff_legend="WAN 傳輸流量";
