@@ -1942,7 +1942,7 @@ void ej_show_usb_diskinfo( webs_t wp, int argc, char_t ** argv )
 	fclose( fp );
 	}
 	else
-		websWrite( wp, "<script type=\"text/javascript\">Capture(status_router.notavail)</script>" );	
+		websWrite( wp, "%s", live_translate( "status_router.notavail" ) );	
 
 	return;
 }
