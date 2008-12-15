@@ -210,10 +210,14 @@ ifeq ($(CONFIG_34TELECOM),y)
 else
 
 ifeq ($(CONFIG_PWC),y)
-	cp ../windows_js/javascripts/prototype.js $(INSTALLDIR)/www/js
-	cp ../windows_js/javascripts/effects.js $(INSTALLDIR)/www/js
-	cp ../windows_js/javascripts/window.js $(INSTALLDIR)/www/js
-	cp ../windows_js/javascripts/window_effects.js $(INSTALLDIR)/www/js
+#	cp ../windows_js/javascripts/prototype.js $(INSTALLDIR)/www/js
+#	cp ../windows_js/javascripts/effects.js $(INSTALLDIR)/www/js
+#	cp ../windows_js/javascripts/window.js $(INSTALLDIR)/www/js
+#	cp ../windows_js/javascripts/window_effects.js $(INSTALLDIR)/www/js
+	cp ../windows_js/javascripts/prototype.compressed.js $(INSTALLDIR)/www/js/prototype.js
+	cp ../windows_js/javascripts/effects.compressed.js $(INSTALLDIR)/www/js/effects.js
+	cp ../windows_js/javascripts/window.compressed.js $(INSTALLDIR)/www/js/window.js
+	cp ../windows_js/javascripts/window_effects.compressed.js $(INSTALLDIR)/www/js/window_effects.js
 	mkdir -p $(INSTALLDIR)/www/style/pwc
 	mkdir -p $(INSTALLDIR)/www/style/pwc/default
 	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc/default
