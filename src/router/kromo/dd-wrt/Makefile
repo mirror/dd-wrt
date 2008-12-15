@@ -219,8 +219,8 @@ ifeq ($(CONFIG_PWC),y)
 	cp ../windows_js/javascripts/window.compressed.js $(INSTALLDIR)/www/js/window.js
 	cp ../windows_js/javascripts/window_effects.compressed.js $(INSTALLDIR)/www/js/window_effects.js
 	mkdir -p $(INSTALLDIR)/www/style/pwc
-	mkdir -p $(INSTALLDIR)/www/style/pwc/default
-	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc/default
+#	mkdir -p $(INSTALLDIR)/www/style/pwc/default
+#	cp ../windows_js/themes/default/* $(INSTALLDIR)/www/style/pwc/default
 	cp ../windows_js/themes/default.css $(INSTALLDIR)/www/style/pwc
 	cp -r common_style/pwc $(INSTALLDIR)/www/style
 	cp common_style/common.css $(INSTALLDIR)/www/style
