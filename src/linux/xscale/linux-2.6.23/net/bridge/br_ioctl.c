@@ -112,7 +112,6 @@ static int old_dev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 {
 	struct net_bridge *br = netdev_priv(dev);
 	unsigned long args[4];
-	unsigned long t;
 
 	if (copy_from_user(args, rq->ifr_data, sizeof(args)))
 		return -EFAULT;
@@ -190,15 +189,11 @@ static int old_dev_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 		return 0;
 
 	case BRCTL_SET_BRIDGE_HELLO_TIME:
-		t = clock_t_to_jiffies(args[1]);
 		if (!capable(CAP_NET_ADMIN))
 			return -EPERM;
 
-		if (t < HZ)
-			return -EINVAL;
-
 		spin_lock_bh(&br->lock);
-		br->bridge_hello_time = t;
+		br->bridge_hello_time = clock_t_to_jiffies(args[1]);
 		if (br_is_root_bridge(br))
 			br->hello_time = br->bridge_hello_time;
 		spin_unlock_bh(&br->lock);
