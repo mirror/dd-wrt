@@ -129,8 +129,6 @@ struct ieee802_11_elems {
 	u8 mdie_len;
 	u8 *ftie;
 	u8 ftie_len;
-	u8 *assoc_comeback;
-	u8 assoc_comeback_len;
 };
 
 typedef enum { ParseOK = 0, ParseUnknown = 1, ParseFailed = -1 } ParseRes;
@@ -232,10 +230,6 @@ static ParseRes ieee802_11_parse_elems(u8 *start, size_t len,
 		case WLAN_EID_FAST_BSS_TRANSITION:
 			elems->ftie = pos;
 			elems->ftie_len = elen;
-			break;
-		case WLAN_EID_ASSOC_COMEBACK_TIME:
-			elems->assoc_comeback = pos;
-			elems->assoc_comeback_len = elen;
 			break;
 		default:
 #if 0
@@ -1237,32 +1231,16 @@ static void ieee80211_rx_mgmt_assoc_resp(struct wpa_supplicant *wpa_s,
 		   reassoc ? "Rea" : "A", MAC2STR(mgmt->sa),
 		   capab_info, status_code, aid);
 
+	if (status_code != WLAN_STATUS_SUCCESS) {
+		wpa_printf(MSG_DEBUG, "MLME: AP denied association (code=%d)",
+			   status_code);
+		return;
+	}
+
 	pos = mgmt->u.assoc_resp.variable;
 	if (ieee802_11_parse_elems(pos, len - (pos - (u8 *) mgmt), &elems)
 	    == ParseFailed) {
 		wpa_printf(MSG_DEBUG, "MLME: failed to parse AssocResp");
-		return;
-	}
-
-	if (status_code != WLAN_STATUS_SUCCESS) {
-		wpa_printf(MSG_DEBUG, "MLME: AP denied association (code=%d)",
-			   status_code);
-#ifdef CONFIG_IEEE80211W
-		if (status_code == WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY &&
-		    elems.assoc_comeback && elems.assoc_comeback_len == 4) {
-			u32 tu, ms;
-			tu = WPA_GET_LE32(elems.assoc_comeback);
-			ms = tu * 1024 / 1000;
-			wpa_printf(MSG_DEBUG, "MLME: AP rejected association "
-				   "temporarily; comeback duration %u TU "
-				   "(%u ms)", tu, ms);
-			if (ms > IEEE80211_ASSOC_TIMEOUT) {
-				wpa_printf(MSG_DEBUG, "MLME: Update timer "
-					   "based on comeback duration");
-				ieee80211_reschedule_timer(wpa_s, ms);
-			}
-		}
-#endif /* CONFIG_IEEE80211W */
 		return;
 	}
 
@@ -1836,7 +1814,6 @@ static void ieee80211_rx_mgmt_probe_req(struct wpa_supplicant *wpa_s,
 }
 
 
-#ifdef CONFIG_IEEE80211R
 static void ieee80211_rx_mgmt_ft_action(struct wpa_supplicant *wpa_s,
 					struct ieee80211_mgmt *mgmt,
 					size_t len,
@@ -1896,78 +1873,6 @@ static void ieee80211_rx_mgmt_ft_action(struct wpa_supplicant *wpa_s,
 	os_memcpy(wpa_s->bssid, target_ap_addr, ETH_ALEN);
 	ieee80211_associate(wpa_s);
 }
-#endif /* CONFIG_IEEE80211R */
-
-
-#ifdef CONFIG_IEEE80211W
-
-/* MLME-PING.response */
-static int ieee80211_sta_send_ping_resp(struct wpa_supplicant *wpa_s,
-					const u8 *addr, const u8 *trans_id)
-{
-	struct ieee80211_mgmt *mgmt;
-	int res;
-	size_t len;
-
-	mgmt = os_zalloc(sizeof(*mgmt));
-	if (mgmt == NULL) {
-		wpa_printf(MSG_DEBUG, "MLME: Failed to allocate buffer for "
-			   "ping action frame");
-		return -1;
-	}
-
-	len = 24;
-	os_memcpy(mgmt->da, addr, ETH_ALEN);
-	os_memcpy(mgmt->sa, wpa_s->own_addr, ETH_ALEN);
-	os_memcpy(mgmt->bssid, wpa_s->bssid, ETH_ALEN);
-	mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
-					   WLAN_FC_STYPE_ACTION);
-	mgmt->u.action.category = WLAN_ACTION_PING;
-	mgmt->u.action.u.ping_resp.action = WLAN_PING_RESPONSE;
-	os_memcpy(mgmt->u.action.u.ping_resp.trans_id, trans_id,
-		  WLAN_PING_TRANS_ID_LEN);
-	len += 1 + sizeof(mgmt->u.action.u.ping_resp);
-
-	res = ieee80211_sta_tx(wpa_s, (u8 *) mgmt, len);
-	os_free(mgmt);
-
-	return res;
-}
-
-
-static void ieee80211_rx_mgmt_ping_action(
-	struct wpa_supplicant *wpa_s, struct ieee80211_mgmt *mgmt, size_t len,
-	struct ieee80211_rx_status *rx_status)
-{
-	if (len < 24 + 1 + sizeof(mgmt->u.action.u.ping_req)) {
-		wpa_printf(MSG_DEBUG, "MLME: Too short Ping Action frame");
-		return;
-	}
-
-	if (mgmt->u.action.u.ping_req.action != WLAN_PING_REQUEST) {
-		wpa_printf(MSG_DEBUG, "MLME: Unexpected Ping Action %d",
-			   mgmt->u.action.u.ping_req.action);
-		return;
-	}
-
-	if (os_memcmp(mgmt->sa, wpa_s->bssid, ETH_ALEN) != 0) {
-		wpa_printf(MSG_DEBUG, "MLME: Ignore ping from unknown source "
-			   MACSTR, MAC2STR(mgmt->sa));
-		return;
-	}
-
-	if (wpa_s->mlme.state == IEEE80211_ASSOCIATE) {
-		wpa_printf(MSG_DEBUG, "MLME: Ignore ping request during "
-			   "association process");
-		return;
-	}
-
-	wpa_printf(MSG_DEBUG, "MLME: Replying to ping request");
-	ieee80211_sta_send_ping_resp(wpa_s, mgmt->sa,
-				     mgmt->u.action.u.ping_req.trans_id);
-}
-
-#endif /* CONFIG_IEEE80211W */
 
 
 static void ieee80211_rx_mgmt_action(struct wpa_supplicant *wpa_s,
@@ -1980,22 +1885,11 @@ static void ieee80211_rx_mgmt_action(struct wpa_supplicant *wpa_s,
 	if (len < 25)
 		return;
 
-	switch (mgmt->u.action.category) {
-#ifdef CONFIG_IEEE80211R
-	case WLAN_ACTION_FT:
+	if (mgmt->u.action.category == WLAN_ACTION_FT)
 		ieee80211_rx_mgmt_ft_action(wpa_s, mgmt, len, rx_status);
-		break;
-#endif /* CONFIG_IEEE80211R */
-#ifdef CONFIG_IEEE80211W
-	case WLAN_ACTION_PING:
-		ieee80211_rx_mgmt_ping_action(wpa_s, mgmt, len, rx_status);
-		break;
-#endif /* CONFIG_IEEE80211W */
-	default:
+	else
 		wpa_printf(MSG_DEBUG, "MLME: unknown Action Category %d",
 			   mgmt->u.action.category);
-		break;
-	}
 }
 
 
@@ -3123,8 +3017,8 @@ int ieee80211_sta_send_ft_action(struct wpa_supplicant *wpa_s, u8 action,
 	len += 1 + sizeof(mgmt->u.action.u.ft_action_req) + ies_len;
 
 	wpa_printf(MSG_DEBUG, "MLME: Send FT Action Frame: Action=%d "
-		   "Target AP=" MACSTR " body_len=%lu",
-		   action, MAC2STR(target_ap), (unsigned long) ies_len);
+		   "Target AP=" MACSTR " body_len=%d",
+		   action, MAC2STR(target_ap), ies_len);
 
 	res = ieee80211_sta_tx(wpa_s, buf, len);
 	os_free(buf);

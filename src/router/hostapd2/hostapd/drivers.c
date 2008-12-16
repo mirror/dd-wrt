@@ -36,9 +36,6 @@ extern struct wpa_driver_ops wpa_driver_wired_ops; /* driver_wired.c */
 #ifdef CONFIG_DRIVER_TEST
 extern struct wpa_driver_ops wpa_driver_test_ops; /* driver_test.c */
 #endif /* CONFIG_DRIVER_TEST */
-#ifdef CONFIG_DRIVER_NONE
-extern struct wpa_driver_ops wpa_driver_none_ops; /* driver_none.c */
-#endif /* CONFIG_DRIVER_NONE */
 
 
 struct wpa_driver_ops *hostapd_drivers[] =
@@ -64,8 +61,5 @@ struct wpa_driver_ops *hostapd_drivers[] =
 #ifdef CONFIG_DRIVER_TEST
 	&wpa_driver_test_ops,
 #endif /* CONFIG_DRIVER_TEST */
-#ifdef CONFIG_DRIVER_NONE
-	&wpa_driver_none_ops,
-#endif /* CONFIG_DRIVER_NONE */
 	NULL
 };

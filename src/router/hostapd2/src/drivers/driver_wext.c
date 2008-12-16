@@ -652,20 +652,12 @@ static void wpa_driver_wext_event_wireless(struct wpa_driver_wext_data *drv,
 			}
 			break;
 		case IWEVMICHAELMICFAILURE:
-			if (custom + iwe->u.data.length > end) {
-				wpa_printf(MSG_DEBUG, "WEXT: Invalid "
-					   "IWEVMICHAELMICFAILURE length");
-				return;
-			}
 			wpa_driver_wext_event_wireless_michaelmicfailure(
 				ctx, custom, iwe->u.data.length);
 			break;
 		case IWEVCUSTOM:
-			if (custom + iwe->u.data.length > end) {
-				wpa_printf(MSG_DEBUG, "WEXT: Invalid "
-					   "IWEVCUSTOM length");
+			if (custom + iwe->u.data.length > end)
 				return;
-			}
 			buf = os_malloc(iwe->u.data.length + 1);
 			if (buf == NULL)
 				return;
@@ -681,29 +673,14 @@ static void wpa_driver_wext_event_wireless(struct wpa_driver_wext_data *drv,
 			wpa_supplicant_event(ctx, EVENT_SCAN_RESULTS, NULL);
 			break;
 		case IWEVASSOCREQIE:
-			if (custom + iwe->u.data.length > end) {
-				wpa_printf(MSG_DEBUG, "WEXT: Invalid "
-					   "IWEVASSOCREQIE length");
-				return;
-			}
 			wpa_driver_wext_event_wireless_assocreqie(
 				drv, custom, iwe->u.data.length);
 			break;
 		case IWEVASSOCRESPIE:
-			if (custom + iwe->u.data.length > end) {
-				wpa_printf(MSG_DEBUG, "WEXT: Invalid "
-					   "IWEVASSOCRESPIE length");
-				return;
-			}
 			wpa_driver_wext_event_wireless_assocrespie(
 				drv, custom, iwe->u.data.length);
 			break;
 		case IWEVPMKIDCAND:
-			if (custom + iwe->u.data.length > end) {
-				wpa_printf(MSG_DEBUG, "WEXT: Invalid "
-					   "IWEVPMKIDCAND length");
-				return;
-			}
 			wpa_driver_wext_event_wireless_pmkidcand(
 				drv, custom, iwe->u.data.length);
 			break;
@@ -2206,6 +2183,8 @@ int wpa_driver_wext_associate(void *priv,
 	    wpa_driver_wext_set_bssid(drv, NULL) < 0)
 		ret = -1;
 
+	if (wpa_driver_wext_set_mode(drv, params->mode) < 0)
+		ret = -1;
 	/* TODO: should consider getting wpa version and cipher/key_mgmt suites
 	 * from configuration, not from here, where only the selected suite is
 	 * available */
@@ -2780,7 +2759,6 @@ const struct wpa_driver_ops wpa_driver_wext_ops = {
 	.get_scan_results2 = wpa_driver_wext_get_scan_results,
 	.deauthenticate = wpa_driver_wext_deauthenticate,
 	.disassociate = wpa_driver_wext_disassociate,
-	.set_mode = wpa_driver_wext_set_mode,
 	.associate = wpa_driver_wext_associate,
 	.set_auth_alg = wpa_driver_wext_set_auth_alg,
 	.init = wpa_driver_wext_init,

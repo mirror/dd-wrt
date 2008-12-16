@@ -506,8 +506,6 @@ static struct wpabuf * eap_fast_tlv_result(int status, int intermediate)
 	buf = wpabuf_alloc(sizeof(*result));
 	if (buf == NULL)
 		return NULL;
-	wpa_printf(MSG_DEBUG, "EAP-FAST: Add %sResult TLV(status=%d)",
-		   intermediate ? "Intermediate " : "", status);
 	result = wpabuf_put(buf, sizeof(*result));
 	result->tlv_type = host_to_be16(EAP_TLV_TYPE_MANDATORY |
 					(intermediate ?
@@ -529,7 +527,12 @@ static struct wpabuf * eap_fast_tlv_pac_ack(void)
 	if (buf == NULL)
 		return NULL;
 
-	wpa_printf(MSG_DEBUG, "EAP-FAST: Add PAC TLV (ack)");
+	res = wpabuf_put(buf, sizeof(*res));
+	res->tlv_type = host_to_be16(EAP_TLV_RESULT_TLV |
+				     EAP_TLV_TYPE_MANDATORY);
+	res->length = host_to_be16(sizeof(*res) - sizeof(struct eap_tlv_hdr));
+	res->status = host_to_be16(EAP_TLV_RESULT_SUCCESS);
+
 	ack = wpabuf_put(buf, sizeof(*ack));
 	ack->tlv_type = host_to_be16(EAP_TLV_PAC_TLV |
 				     EAP_TLV_TYPE_MANDATORY);
@@ -1194,7 +1197,7 @@ static int eap_fast_process_decrypted(struct eap_sm *sm,
 	}
 
 	if (data->current_pac == NULL && data->provisioning &&
-	    !data->anon_provisioning && !tlv.pac) {
+	    !data->anon_provisioning) {
 		/*
 		 * Need to request Tunnel PAC when using authenticated
 		 * provisioning.

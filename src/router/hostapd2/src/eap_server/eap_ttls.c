@@ -991,13 +991,7 @@ static void eap_ttls_process_phase2_eap_response(struct eap_sm *sm,
 				sm->user_eap_method_index++].method;
 			wpa_printf(MSG_DEBUG, "EAP-TTLS: try EAP type %d",
 				   next_type);
-			if (eap_ttls_phase2_eap_init(sm, data, next_type)) {
-				wpa_printf(MSG_DEBUG, "EAP-TTLS: Failed to "
-					   "initialize EAP type %d",
-					   next_type);
-				eap_ttls_state(data, FAILURE);
-				return;
-			}
+			eap_ttls_phase2_eap_init(sm, data, next_type);
 		} else {
 			eap_ttls_state(data, FAILURE);
 		}
@@ -1067,11 +1061,7 @@ static void eap_ttls_process_phase2_eap_response(struct eap_sm *sm,
 		break;
 	}
 
-	if (eap_ttls_phase2_eap_init(sm, data, next_type)) {
-		wpa_printf(MSG_DEBUG, "EAP-TTLS: Failed to initialize EAP "
-			   "type %d", next_type);
-		eap_ttls_state(data, FAILURE);
-	}
+	eap_ttls_phase2_eap_init(sm, data, next_type);
 }
 
 

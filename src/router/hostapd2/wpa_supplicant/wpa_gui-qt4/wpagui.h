@@ -15,7 +15,6 @@
 #ifndef WPAGUI_H
 #define WPAGUI_H
 
-#include <QSystemTrayIcon>
 #include <QObject>
 #include "ui_wpagui.h"
 
@@ -68,13 +67,9 @@ public slots:
 	virtual void updateNetworkDisabledStatus();
 	virtual void enableListedNetwork(bool);
 	virtual void disableListedNetwork(bool);
-	virtual void showTrayMessage(QSystemTrayIcon::MessageIcon type,
-				     int sec, const QString &msg);
-	virtual void showTrayStatus();
 
 protected slots:
 	virtual void languageChange();
-	virtual void trayActivated(QSystemTrayIcon::ActivationReason how);
 	virtual void closeEvent(QCloseEvent *event);
 
 private:
@@ -90,19 +85,6 @@ private:
 	char *ctrl_iface_dir;
 	struct wpa_ctrl *monitor_conn;
 	UserDataRequest *udr;
-	QAction *disconnectAction;
-	QAction *reconnectAction;
-	QAction *eventAction;
-	QAction *scanAction;
-	QAction *statAction;
-	QAction *showAction;
-	QAction *hideAction;
-	QAction *quitAction;
-	QMenu *tray_menu;
-	QSystemTrayIcon *tray_icon;
-	void createTrayIcon(bool);
-	bool ackTrayIcon;
-	bool startInTray;
 
 	int openCtrlConnection(const char *ifname);
 };
