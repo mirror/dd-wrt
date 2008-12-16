@@ -39,7 +39,10 @@ void start_ftpsrv( void )
     if( !nvram_match( "proftpd_enable", "1" ) )
 	return;
 
-    FILE *fp;
+    FILE *fp, *tmp;
+    char buf[256];
+    char user[256];
+    char pass[128];
 
 	mkdir( "/tmp/proftpd", 0700 );
 	mkdir( "/tmp/proftpd/etc", 0700 );
@@ -47,8 +50,37 @@ void start_ftpsrv( void )
 	
 	if( nvram_invmatch( "proftpd_passw", "" ) )
 		{
-		nvram2file( "proftpd_passw", "/tmp/proftpd/etc/passwd" );
-  		}	
+		nvram2file( "proftpd_passw", "/tmp/proftpd/etc/passwd.tmp" );
+		tmp = fopen( "/tmp/proftpd/etc/passwd.tmp", "rb" );
+		fp = fopen( "/tmp/proftpd/etc/passwd", "wb" );
+		
+        while (fgets (buf, sizeof( buf ), tmp) != NULL)
+            {
+            if (sscanf (buf, "%s %s", user, pass) == 2)
+                {
+	            if( strlen( pass ) == 34 ) //we assume pass is alredy encrypted
+	                fprintf( fp, "%s:%s:0:0:Ftp User,,,:/tmp/root:/bin/sh\n", user, pass );
+	            else
+                    fprintf( fp, "%s:%s:0:0:Ftp User,,,:/tmp/root:/bin/sh\n", user, zencrypt( pass ) );
+                }
+            }
+		fclose( fp );
+		fclose( tmp );
+		unlink( "/tmp/proftpd/etc/passwd.tmp" );		
+  		}
+  	else
+  		eval( "cp", "/tmp/etc/passwd", "/tmp/proftpd/etc/passwd" );
+  		
+ // add ftp user (for anonymous access)	
+	if( nvram_match( "proftpd_anon", "1" ) )
+		{
+		fp = fopen( "/tmp/proftpd/etc/passwd", "ab" );
+		fprintf( fp,
+		"ftp:x:0:0:Ftp Anon,,,:/tmp/root:/bin/sh\n" );
+		fclose( fp );
+		}
+
+  		
 	
 	fp = fopen( "/tmp/proftpd/etc/proftpd.conf", "wb" );
 	fprintf( fp, 
@@ -56,7 +88,7 @@ void start_ftpsrv( void )
 		 "DefaultAddress  %s\n"
 		 "ServerType      standalone\n"
 		 "DefaultServer   on\n"
-		 "AuthUserFile    %s\n"
+		 "AuthUserFile    /tmp/proftpd/etc/passwd\n"
 		 "ScoreboardFile  /tmp/proftpd/etc/proftpd.scoreboard\n"
 		 "Port            %s\n"
 		 "Umask           022\n"
@@ -79,7 +111,6 @@ void start_ftpsrv( void )
 		 "   </Limit>\n"
 		 "</Directory>\n",
 		 nvram_safe_get( "lan_ipaddr" ),
-		 nvram_invmatch( "proftpd_passw", "" ) ? "/tmp/proftpd/etc/passwd" : "/tmp/etc/passwd",
 		 nvram_safe_get( "proftpd_port" ),
 		 nvram_safe_get( "proftpd_dir" ),
 		 nvram_safe_get( "proftpd_dir" ),
@@ -105,17 +136,6 @@ void start_ftpsrv( void )
 
 	fclose( fp );
 	
-// add ftp user (for anonymous access)	
-	if( nvram_match( "proftpd_anon", "1" ) )
-	{
-	if( eval( "/bin/grep", "-q", "ftp:x:0:0:Ftp", "/tmp/etc/passwd" ) != 0 )
-	{
-	fp = fopen( "/tmp/etc/passwd", "ab" );
-	fprintf( fp,
-	"ftp:x:0:0:Ftp Anon,,,:/tmp/root:/bin/sh\n" );
-	fclose( fp );
-	}
-}
 		
 	eval( "proftpd");
 	syslog( LOG_INFO,
@@ -127,6 +147,10 @@ void start_ftpsrv( void )
 void stop_ftpsrv( void )
 {
 
+	unlink( "/tmp/proftpd/etc/passwd" );
+	unlink( "/tmp/proftpd/etc/proftpd.conf" );
+	unlink( "/tmp/proftpd/etc/proftpd.scoreboard" );
+	
     if( pidof( "proftpd" ) > 0 )
     {
 	syslog( LOG_INFO,
