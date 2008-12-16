@@ -680,11 +680,14 @@ nas.proftpd_legend="FTP Server";
 nas.proftpd_srv="ProFTPD";
 nas.proftpd_port="Server Port";
 nas.proftpd_dir="Files Directory";
-nas.proftpd_passw="User/Password List";
+nas.proftpd_passw="User Password List";
 nas.proftpd_writeen="Allow Write";
 nas.proftpd_anon="Anonymous Login (Read-only)";
 nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
 nas.sambasrv_legend="Samba Server";
+
+var hnas = new Object();
+hnas.right2="User Pasword List: Enter one User Password per line. Password can be plain text or MD5 hash.";
 
 // ** Hotspot.asp **//
 var hotspot = new Object();
