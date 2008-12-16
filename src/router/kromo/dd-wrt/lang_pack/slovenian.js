@@ -677,11 +677,14 @@ nas.proftpd_legend="FTP stre¾nik";
 nas.proftpd_srv="ProFTPD";
 nas.proftpd_port="Vrata stre¾nika";
 nas.proftpd_dir="Mapa za datoteke";
-nas.proftpd_passw="Lista Uporabnik/Geslo";
+nas.proftpd_passw="Lista Uporabnik Geslo";
 nas.proftpd_writeen="Dovoli pisanje";
 nas.proftpd_anon="Anonimna prijava (samo za branje)";
 nas.proftpd_anon_dir="Podmapa za anonimno prijavo";
 nas.sambasrv_legend="Samba stre¾nik";
+
+
+hnas.right2="Lista Uporabnik Geslo: V vsako linijo vnesite enega Uporabnika Geslo. Geslo je lahko v navadni obliki ali v MD5.";
 
 // ** Hotspot.asp **//
 
