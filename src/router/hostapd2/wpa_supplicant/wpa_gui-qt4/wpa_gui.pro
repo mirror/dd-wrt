@@ -36,8 +36,6 @@ SOURCES	+= main.cpp \
 	networkconfig.cpp \
 	../../src/common/wpa_ctrl.c
 
-RESOURCES += icons.qrc
-
 FORMS	= wpagui.ui \
 	eventhistory.ui \
 	scanresults.ui \

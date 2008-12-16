@@ -52,7 +52,7 @@
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11" />
- <pixmapfunction></pixmapfunction>
+ <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
  <includes>
   <include location="local" >wpamsg.h</include>
  </includes>
