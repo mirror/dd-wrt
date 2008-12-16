@@ -171,14 +171,7 @@ struct eap_sm {
 	u8 *peer_challenge;
 
 	u8 *pac_opaque_encr_key;
-	u8 *eap_fast_a_id;
-	size_t eap_fast_a_id_len;
-	char *eap_fast_a_id_info;
-	enum {
-		NO_PROV, ANON_PROV, AUTH_PROV, BOTH_PROV
-	} eap_fast_prov;
-	int pac_key_lifetime;
-	int pac_key_refresh_time;
+	char *eap_fast_a_id;
 	int eap_sim_aka_result_ind;
 	int tnc;
 };
