@@ -12,6 +12,7 @@
  * See README and COPYING for more details.
  */
 
+#include <syslog.h>
 #include "includes.h"
 
 #include "common.h"
@@ -41,7 +42,7 @@ void wpa_debug_print_timestamp(void)
 			(unsigned int) tv.usec);
 	} else
 #endif /* CONFIG_DEBUG_FILE */
-	printf("%ld.%06u: ", (long) tv.sec, (unsigned int) tv.usec);
+	syslog(LOG_INFO, "%ld.%06u: ", (long) tv.sec, (unsigned int) tv.usec);
 }
 
 
@@ -59,7 +60,7 @@ void wpa_debug_print_timestamp(void)
 void wpa_printf(int level, char *fmt, ...)
 {
 	va_list ap;
-
+	char logbuf[256];
 	va_start(ap, fmt);
 	if (level >= wpa_debug_level) {
 		wpa_debug_print_timestamp();
@@ -69,8 +70,9 @@ void wpa_printf(int level, char *fmt, ...)
 			fprintf(out_file, "\n");
 		} else {
 #endif /* CONFIG_DEBUG_FILE */
-		vprintf(fmt, ap);
-		printf("\n");
+		vsnprintf(logbuf,sizeof(logbuf),fmt, ap);
+		syslog(LOG_INFO, logbuf);
+		syslog(LOG_INFO, "\n");
 #ifdef CONFIG_DEBUG_FILE
 		}
 #endif /* CONFIG_DEBUG_FILE */
@@ -101,16 +103,16 @@ static void _wpa_hexdump(int level, const char *title, const u8 *buf,
 		fprintf(out_file, "\n");
 	} else {
 #endif /* CONFIG_DEBUG_FILE */
-	printf("%s - hexdump(len=%lu):", title, (unsigned long) len);
+	syslog(LOG_INFO, "%s - hexdump(len=%lu):", title, (unsigned long) len);
 	if (buf == NULL) {
-		printf(" [NULL]");
+		syslog(LOG_INFO," [NULL]");
 	} else if (show) {
 		for (i = 0; i < len; i++)
-			printf(" %02x", buf[i]);
+			syslog(LOG_INFO," %02x", buf[i]);
 	} else {
-		printf(" [REMOVED]");
+		syslog(LOG_INFO," [REMOVED]");
 	}
-	printf("\n");
+	syslog(LOG_INFO,"\n");
 #ifdef CONFIG_DEBUG_FILE
 	}
 #endif /* CONFIG_DEBUG_FILE */
@@ -177,33 +179,33 @@ static void _wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
 	} else {
 #endif /* CONFIG_DEBUG_FILE */
 	if (!show) {
-		printf("%s - hexdump_ascii(len=%lu): [REMOVED]\n",
+		syslog(LOG_INFO,"%s - hexdump_ascii(len=%lu): [REMOVED]\n",
 		       title, (unsigned long) len);
 		return;
 	}
 	if (buf == NULL) {
-		printf("%s - hexdump_ascii(len=%lu): [NULL]\n",
+		syslog(LOG_INFO,"%s - hexdump_ascii(len=%lu): [NULL]\n",
 		       title, (unsigned long) len);
 		return;
 	}
-	printf("%s - hexdump_ascii(len=%lu):\n", title, (unsigned long) len);
+	syslog(LOG_INFO,"%s - hexdump_ascii(len=%lu):\n", title, (unsigned long) len);
 	while (len) {
 		llen = len > line_len ? line_len : len;
-		printf("    ");
+		syslog(LOG_INFO,"    ");
 		for (i = 0; i < llen; i++)
-			printf(" %02x", pos[i]);
+			syslog(LOG_INFO," %02x", pos[i]);
 		for (i = llen; i < line_len; i++)
-			printf("   ");
-		printf("   ");
+			syslog(LOG_INFO,"   ");
+		syslog(LOG_INFO,"   ");
 		for (i = 0; i < llen; i++) {
 			if (isprint(pos[i]))
-				printf("%c", pos[i]);
+				syslog(LOG_INFO,"%c", pos[i]);
 			else
-				printf("_");
+				syslog(LOG_INFO,"_");
 		}
 		for (i = llen; i < line_len; i++)
-			printf(" ");
-		printf("\n");
+			syslog(LOG_INFO," ");
+		syslog(LOG_INFO,"\n");
 		pos += llen;
 		len -= llen;
 	}
