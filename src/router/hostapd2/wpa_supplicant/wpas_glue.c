@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant - Glue code to setup EAPOL and RSN modules
- * Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -36,13 +36,6 @@ static void wpa_supplicant_set_config_blob(void *ctx,
 {
 	struct wpa_supplicant *wpa_s = ctx;
 	wpa_config_set_blob(wpa_s->conf, blob);
-	if (wpa_s->conf->update_config) {
-		int ret = wpa_config_write(wpa_s->confname, wpa_s->conf);
-		if (ret) {
-			wpa_printf(MSG_DEBUG, "Failed to update config after "
-				   "blob set");
-		}
-	}
 }
 
 
@@ -129,7 +122,8 @@ static int wpa_supplicant_eapol_send(void *ctx, int type, const u8 *buf,
 	/* TODO: could add l2_packet_sendmsg that allows fragments to avoid
 	 * extra copy here */
 
-	if (wpa_key_mgmt_wpa_psk(wpa_s->key_mgmt) ||
+	if (wpa_s->key_mgmt == WPA_KEY_MGMT_PSK ||
+	    wpa_s->key_mgmt == WPA_KEY_MGMT_FT_PSK ||
 	    wpa_s->key_mgmt == WPA_KEY_MGMT_NONE) {
 		/* Current SSID is not using IEEE 802.1X/EAP, so drop possible
 		 * EAPOL frames (mainly, EAPOL-Start) from EAPOL state
@@ -228,19 +222,11 @@ static void wpa_supplicant_eapol_cb(struct eapol_sm *eapol, int success,
 	wpa_printf(MSG_DEBUG, "EAPOL authentication completed %ssuccessfully",
 		   success ? "" : "un");
 
-	if (!success) {
-		/*
-		 * Make sure we do not get stuck here waiting for long EAPOL
-		 * timeout if the AP does not disconnect in case of
-		 * authentication failure.
-		 */
-		wpa_supplicant_req_auth_timeout(wpa_s, 2, 0);
-	}
-
 	if (!success || !wpa_s->driver_4way_handshake)
 		return;
 
-	if (!wpa_key_mgmt_wpa_ieee8021x(wpa_s->key_mgmt))
+	if (wpa_s->key_mgmt != WPA_KEY_MGMT_IEEE8021X &&
+	    wpa_s->key_mgmt != WPA_KEY_MGMT_FT_IEEE8021X)
 		return;
 
 	wpa_printf(MSG_DEBUG, "Configure PMK for driver-based RSN 4-way "
@@ -279,7 +265,8 @@ static void wpa_supplicant_notify_eapol_done(void *ctx)
 {
 	struct wpa_supplicant *wpa_s = ctx;
 	wpa_msg(wpa_s, MSG_DEBUG, "WPA: EAPOL processing complete");
-	if (wpa_key_mgmt_wpa_ieee8021x(wpa_s->key_mgmt)) {
+	if (wpa_s->key_mgmt == WPA_KEY_MGMT_IEEE8021X ||
+	    wpa_s->key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X) {
 		wpa_supplicant_set_state(wpa_s, WPA_4WAY_HANDSHAKE);
 	} else {
 		wpa_supplicant_cancel_auth_timeout(wpa_s);

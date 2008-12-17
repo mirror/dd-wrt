@@ -41,8 +41,6 @@ NetworkConfig::NetworkConfig(QWidget *parent, const char *, bool, Qt::WFlags)
 	connect(encrSelect, SIGNAL(activated(const QString &)), this,
 		SLOT(encrChanged(const QString &)));
 	connect(removeButton, SIGNAL(clicked()), this, SLOT(removeNetwork()));
-	connect(eapSelect, SIGNAL(activated(int)), this,
-		SLOT(eapChanged(int)));
 
 	wpagui = NULL;
 	new_network = false;
@@ -109,9 +107,6 @@ void NetworkConfig::authChanged(int sel)
 	identityEdit->setEnabled(eap);
 	passwordEdit->setEnabled(eap);
 	cacertEdit->setEnabled(eap);
-	phase2Select->setEnabled(eap);
-	if (eap)
-		eapChanged(eapSelect->currentIndex());
 
 	while (encrSelect->count())
 		encrSelect->removeItem(0);
@@ -128,48 +123,6 @@ void NetworkConfig::authChanged(int sel)
 	}
 
 	wepEnabled(sel == AUTH_IEEE8021X);
-}
-
-
-void NetworkConfig::eapChanged(int sel)
-{
-	QString prev_val = phase2Select->currentText();
-	while (phase2Select->count())
-		phase2Select->removeItem(0);
-
-	QStringList inner;
-	inner << "PEAP" << "TTLS" << "FAST";
-	if (!inner.contains(eapSelect->itemText(sel)))
-		return;
-
-	phase2Select->addItem("[ any ]");
-
-	/* Add special cases based on outer method */
-	if (eapSelect->currentText().compare("TTLS") == 0) {
-		phase2Select->addItem("PAP");
-		phase2Select->addItem("CHAP");
-		phase2Select->addItem("MSCHAP");
-		phase2Select->addItem("MSCHAPv2");
-	} else if (eapSelect->currentText().compare("FAST") == 0)
-		phase2Select->addItem("GTC(auth) + MSCHAPv2(prov)");
-
-	/* Add all enabled EAP methods that can be used in the tunnel */
-	int i;
-	QStringList allowed;
-	allowed << "MSCHAPV2" << "MD5" << "GTC" << "TLS" << "OTP" << "SIM"
-		<< "AKA";
-	for (i = 0; i < eapSelect->count(); i++) {
-		if (allowed.contains(eapSelect->itemText(i))) {
-			phase2Select->addItem("EAP-" + eapSelect->itemText(i));
-		}
-	}
-
-	for (i = 0; i < phase2Select->count(); i++) {
-		if (phase2Select->itemText(i).compare(prev_val) == 0) {
-			phase2Select->setCurrentIndex(i);
-			break;
-		}
-	}
 }
 
 
@@ -277,82 +230,24 @@ void NetworkConfig::addNetwork()
 		setNetworkParam(id, "psk",
 				pskEdit->text().toAscii().constData(),
 				psklen != 64);
-	if (eapSelect->isEnabled()) {
-		const char *eap =
-			eapSelect->currentText().toAscii().constData();
-		setNetworkParam(id, "eap", eap, false);
-		if (strcmp(eap, "SIM") == 0 || strcmp(eap, "AKA") == 0)
-			setNetworkParam(id, "pcsc", "", true);
-		else
-			setNetworkParam(id, "pcsc", "NULL", false);
-	}
-	if (phase2Select->isEnabled()) {
-		QString eap = eapSelect->currentText();
-		QString inner = phase2Select->currentText();
-		char phase2[32];
-		phase2[0] = '\0';
-		if (eap.compare("PEAP") == 0) {
-			if (inner.startsWith("EAP-"))
-				snprintf(phase2, sizeof(phase2), "auth=%s",
-					 inner.right(inner.size() - 4).
-					 toAscii().constData());
-		} else if (eap.compare("TTLS") == 0) {
-			if (inner.startsWith("EAP-"))
-				snprintf(phase2, sizeof(phase2), "autheap=%s",
-					 inner.right(inner.size() - 4).
-					 toAscii().constData());
-			else
-				snprintf(phase2, sizeof(phase2), "auth=%s",
-					 inner.toAscii().constData());
-		} else if (eap.compare("FAST") == 0) {
-			const char *provisioning = NULL;
-			if (inner.startsWith("EAP-")) {
-				snprintf(phase2, sizeof(phase2), "auth=%s",
-					 inner.right(inner.size() - 4).
-					 toAscii().constData());
-				provisioning = "fast_provisioning=2";
-			} else if (inner.compare("GTC(auth) + MSCHAPv2(prov)")
-				   == 0) {
-				snprintf(phase2, sizeof(phase2),
-					 "auth=GTC auth=MSCHAPV2");
-				provisioning = "fast_provisioning=1";
-			} else
-				provisioning = "fast_provisioning=3";
-			if (provisioning) {
-				char blob[32];
-				setNetworkParam(id, "phase1", provisioning,
-						true);
-				snprintf(blob, sizeof(blob),
-					 "blob://fast-pac-%d", id);
-				setNetworkParam(id, "pac_file", blob, true);
-			}
-		}
-		if (phase2[0])
-			setNetworkParam(id, "phase2", phase2, true);
-		else
-			setNetworkParam(id, "phase2", "NULL", false);
-	} else
-		setNetworkParam(id, "phase2", "NULL", false);
-	if (identityEdit->isEnabled() && identityEdit->text().length() > 0)
+	if (eapSelect->isEnabled())
+		setNetworkParam(id, "eap",
+				eapSelect->currentText().toAscii().constData(),
+				false);
+	if (identityEdit->isEnabled())
 		setNetworkParam(id, "identity",
 				identityEdit->text().toAscii().constData(),
 				true);
-	else
-		setNetworkParam(id, "identity", "NULL", false);
-	if (passwordEdit->isEnabled() && passwordEdit->text().length() > 0 &&
+	if (passwordEdit->isEnabled() &&
 	    strcmp(passwordEdit->text().toAscii().constData(),
 		   WPA_GUI_KEY_DATA) != 0)
 		setNetworkParam(id, "password",
 				passwordEdit->text().toAscii().constData(),
 				true);
-	else if (passwordEdit->text().length() == 0)
-		setNetworkParam(id, "password", "NULL", false);
-	if (cacertEdit->isEnabled() && cacertEdit->text().length() > 0)
+	if (cacertEdit->isEnabled())
 		setNetworkParam(id, "ca_cert",
 				cacertEdit->text().toAscii().constData(),
 				true);
-	else
-		setNetworkParam(id, "ca_cert", "NULL", false);
 	writeWepKey(id, wep0Edit, 0);
 	writeWepKey(id, wep1Edit, 1);
 	writeWepKey(id, wep2Edit, 2);
@@ -367,12 +262,10 @@ void NetworkConfig::addNetwork()
 	else if (wep3Radio->isEnabled() && wep3Radio->isChecked())
 		setNetworkParam(id, "wep_tx_keyidx", "3", false);
 
-	if (idstrEdit->isEnabled() && idstrEdit->text().length() > 0)
+	if (idstrEdit->isEnabled())
 		setNetworkParam(id, "id_str",
 				idstrEdit->text().toAscii().constData(),
 				true);
-	else
-		setNetworkParam(id, "id_str", "NULL", false);
 
 	if (prioritySpinBox->isEnabled()) {
 		QString prio;
@@ -588,7 +481,6 @@ void NetworkConfig::paramsFromConfig(int network_id)
 		cacertEdit->setText(reply + 1);
 	}
 
-	enum { NO_INNER, PEAP_INNER, TTLS_INNER, FAST_INNER } eap = NO_INNER;
 	snprintf(cmd, sizeof(cmd), "GET_NETWORK %d eap", network_id);
 	reply_len = sizeof(reply) - 1;
 	if (wpagui->ctrlRequest(cmd, reply, &reply_len) >= 0 &&
@@ -597,68 +489,8 @@ void NetworkConfig::paramsFromConfig(int network_id)
 		for (i = 0; i < eapSelect->count(); i++) {
 			if (eapSelect->itemText(i).compare(reply) == 0) {
 				eapSelect->setCurrentIndex(i);
-				if (strcmp(reply, "PEAP") == 0)
-					eap = PEAP_INNER;
-				else if (strcmp(reply, "TTLS") == 0)
-					eap = TTLS_INNER;
-				else if (strcmp(reply, "FAST") == 0)
-					eap = FAST_INNER;
 				break;
 			}
-		}
-	}
-
-	if (eap != NO_INNER) {
-		snprintf(cmd, sizeof(cmd), "GET_NETWORK %d phase2",
-			 network_id);
-		reply_len = sizeof(reply) - 1;
-		if (wpagui->ctrlRequest(cmd, reply, &reply_len) >= 0 &&
-		    reply_len >= 1) {
-			reply[reply_len] = '\0';
-			eapChanged(eapSelect->currentIndex());
-		} else
-			eap = NO_INNER;
-	}
-
-	char *val;
-	val = reply + 1;
-	while (*(val + 1))
-		val++;
-	if (*val == '"')
-		*val = '\0';
-
-	switch (eap) {
-	case PEAP_INNER:
-		if (strncmp(reply, "\"auth=", 6))
-			break;
-		val = reply + 2;
-		memcpy(val, "EAP-", 4);
-		break;
-	case TTLS_INNER:
-		if (strncmp(reply, "\"autheap=", 9) == 0) {
-			val = reply + 5;
-			memcpy(val, "EAP-", 4);
-		} else if (strncmp(reply, "\"auth=", 6) == 0)
-			val = reply + 6;
-		break;
-	case FAST_INNER:
-		if (strncmp(reply, "\"auth=", 6))
-			break;
-		if (strcmp(reply + 6, "GTC auth=MSCHAPV2") == 0) {
-			val = "GTC(auth) + MSCHAPv2(prov)";
-			break;
-		}
-		val = reply + 2;
-		memcpy(val, "EAP-", 4);
-		break;
-	case NO_INNER:
-		break;
-	}
-
-	for (i = 0; i < phase2Select->count(); i++) {
-		if (phase2Select->itemText(i).compare(val) == 0) {
-			phase2Select->setCurrentIndex(i);
-			break;
 		}
 	}
 

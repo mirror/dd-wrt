@@ -135,60 +135,15 @@ static int have_ifidx(struct i802_driver_data *drv, int ifidx)
 }
 
 
-/* nl80211 code */
-static int ack_handler(struct nl_msg *msg, void *arg)
+/* helper for netlink get routines */
+static int ack_wait_handler(struct nl_msg *msg, void *arg)
 {
-	int *err = arg;
-	*err = 0;
+	int *finished = arg;
+
+	*finished = 1;
 	return NL_STOP;
 }
 
-static int finish_handler(struct nl_msg *msg, void *arg)
-{
-	return NL_SKIP;
-}
-
-static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
-			 void *arg)
-{
-	int *ret = arg;
-	*ret = err->error;
-	return NL_SKIP;
-}
-
-static int send_and_recv_msgs(struct i802_driver_data *drv,
-			      struct nl_msg *msg,
-			      int (*valid_handler)(struct nl_msg *, void *),
-			      void *valid_data)
-{
-	struct nl_cb *cb;
-	int err = -ENOMEM;
-
-	cb = nl_cb_clone(drv->nl_cb);
-	if (!cb)
-		goto out;
-
-	err = nl_send_auto_complete(drv->nl_handle, msg);
-	if (err < 0)
-		goto out;
-
-	err = 1;
-
-	nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &err);
-	nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, NULL);
-	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &err);
-
-	if (valid_handler)
-		nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM,
-			  valid_handler, valid_data);
-
-	while (err > 0)
-		nl_recvmsgs(drv->nl_handle, cb);
- out:
-	nl_cb_put(cb);
-	nlmsg_free(msg);
-	return err;
-}
 
 static int hostapd_set_iface_flags(struct i802_driver_data *drv,
 				   const char *ifname, int dev_up)
@@ -227,11 +182,12 @@ static int nl_set_encr(int ifindex, struct i802_driver_data *drv,
 		       size_t key_len, int txkey)
 {
 	struct nl_msg *msg;
-	int ret;
+	int ret = -1;
+	int err = 0;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	if (strcmp(alg, "none") == 0) {
 		genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
@@ -256,8 +212,7 @@ static int nl_set_encr(int ifindex, struct i802_driver_data *drv,
 		else {
 			wpa_printf(MSG_ERROR, "%s: Unsupported encryption "
 				   "algorithm '%s'", __func__, alg);
-			nlmsg_free(msg);
-			return -1;
+			goto out;
 		}
 	}
 
@@ -266,20 +221,28 @@ static int nl_set_encr(int ifindex, struct i802_driver_data *drv,
 	NLA_PUT_U8(msg, NL80211_ATTR_KEY_IDX, idx);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, ifindex);
 
-	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
-	if (ret == -ENOENT)
-		ret = 0;
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    (err = nl_wait_for_ack(drv->nl_handle)) < 0) {
+		if (err != -ENOENT) {
+			ret = 0;
+			goto out;
+		}
+	}
 
 	/*
-	 * If we failed or don't need to set the default TX key (below),
-	 * we're done here.
+	 * If we need to set the default TX key we do that below,
+	 * otherwise we're done here.
 	 */
-	if (ret || !txkey || addr)
-		return ret;
+	if (!txkey || addr) {
+		ret = 0;
+		goto out;
+	}
+
+	nlmsg_free(msg);
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_SET_KEY, 0);
@@ -294,12 +257,20 @@ static int nl_set_encr(int ifindex, struct i802_driver_data *drv,
 	NLA_PUT_FLAG(msg, NL80211_ATTR_KEY_DEFAULT);
 #endif /* NL80211_MFP_PENDING */
 
-	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
-	if (ret == -ENOENT)
-		ret = 0;
-	return ret;
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    (err = nl_wait_for_ack(drv->nl_handle)) < 0) {
+		if (err != -ENOENT) {
+			ret = 0;
+			goto out;
+		}
+	}
+
+	ret = 0;
+
+ out:
  nla_put_failure:
-	return -ENOBUFS;
+	nlmsg_free(msg);
+	return ret;
 }
 
 
@@ -358,10 +329,14 @@ static int i802_get_seqnum(const char *iface, void *priv, const u8 *addr,
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
+	struct nl_cb *cb = NULL;
+	int ret = -1;
+	int err = 0;
+	int finished = 0;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_GET_KEY, 0);
@@ -371,11 +346,33 @@ static int i802_get_seqnum(const char *iface, void *priv, const u8 *addr,
 	NLA_PUT_U8(msg, NL80211_ATTR_KEY_IDX, idx);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(iface));
 
+	cb = nl_cb_clone(drv->nl_cb);
+	if (!cb)
+		goto out;
+
 	memset(seq, 0, 6);
 
-	return send_and_recv_msgs(drv, msg, get_key_handler, seq);
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0)
+		goto out;
+
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, get_key_handler, seq);
+	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_wait_handler, &finished);
+
+	err = nl_recvmsgs(drv->nl_handle, cb);
+
+	if (!finished)
+		err = nl_wait_for_ack(drv->nl_handle);
+
+	if (err < 0)
+		goto out;
+
+	ret = 0;
+
+ out:
+	nl_cb_put(cb);
  nla_put_failure:
-	return -ENOBUFS;
+	nlmsg_free(msg);
+	return ret;
 }
 
 
@@ -408,14 +405,15 @@ static int i802_set_ssid(const char *ifname, void *priv, const u8 *buf,
 }
 
 
-static int i802_send_frame(void *priv, const void *data, size_t len,
-			   int encrypt, int flags)
+static int i802_send_mgmt_frame(void *priv, const void *data, size_t len,
+				int flags)
 {
+	struct ieee80211_hdr *hdr = (void*) data;
 	__u8 rtap_hdr[] = {
 		0x00, 0x00, /* radiotap version */
 		0x0e, 0x00, /* radiotap length */
 		0x02, 0xc0, 0x00, 0x00, /* bmap: flags, tx and rx flags */
-		IEEE80211_RADIOTAP_F_FRAG, /* F_FRAG (fragment if required) */
+		0x0c,       /* F_WEP | F_FRAG (encrypt/fragment if required) */
 		0x00,       /* padding */
 		0x00, 0x00, /* RX and TX flags to indicate that */
 		0x00, 0x00, /* this is the injected frame directly */
@@ -441,17 +439,14 @@ static int i802_send_frame(void *priv, const void *data, size_t len,
 		.msg_flags = 0,
 	};
 
-	if (encrypt)
-		rtap_hdr[8] |= IEEE80211_RADIOTAP_F_WEP;
-
+	/*
+	 * ugh, guess what, the generic code sets one of the version
+	 * bits to request tx callback
+	 */
+	hdr->frame_control &= ~host_to_le16(BIT(1));
 	return sendmsg(drv->monitor_sock, &msg, flags);
 }
 
-static int i802_send_mgmt_frame(void *priv, const void *data, size_t len,
-				int flags)
-{
-	return i802_send_frame(priv, data, len, 1, flags);
-}
 
 /* Set kernel driver on given frequency (MHz) */
 static int i802_set_freq(void *priv, int mode, int freq)
@@ -605,10 +600,11 @@ static int i802_flush(void *priv)
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
+	int ret = -1;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -1;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_DEL_STATION, 0);
@@ -619,9 +615,18 @@ static int i802_flush(void *priv)
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX,
 		    if_nametoindex(drv->iface));
 
-	return send_and_recv_msgs(drv, msg, NULL, NULL);
+	ret = 0;
+
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0) {
+		ret = -1;
+	}
+
  nla_put_failure:
-	return -ENOBUFS;
+	nlmsg_free(msg);
+
+ out:
+	return ret;
 }
 
 
@@ -673,10 +678,14 @@ static int i802_read_sta_data(void *priv, struct hostap_sta_driver_data *data,
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
+	struct nl_cb *cb = NULL;
+	int ret = -1;
+	int err = 0;
+	int finished = 0;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_GET_STATION, 0);
@@ -684,9 +693,32 @@ static int i802_read_sta_data(void *priv, struct hostap_sta_driver_data *data,
 	NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, addr);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(drv->iface));
 
-	return send_and_recv_msgs(drv, msg, get_sta_handler, data);
+	cb = nl_cb_clone(drv->nl_cb);
+	if (!cb)
+		goto out;
+
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0)
+		goto out;
+
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, get_sta_handler, data);
+	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_wait_handler, &finished);
+
+	err = nl_recvmsgs(drv->nl_handle, cb);
+
+	if (!finished)
+		err = nl_wait_for_ack(drv->nl_handle);
+
+	if (err < 0)
+		goto out;
+
+	ret = 0;
+
+ out:
+	nl_cb_put(cb);
  nla_put_failure:
-	return -ENOBUFS;
+	nlmsg_free(msg);
+	return ret;
+
 }
 
 
@@ -745,7 +777,7 @@ static int i802_send_eapol(void *priv, const u8 *addr, const u8 *data,
 	pos += 2;
 	memcpy(pos, data, data_len);
 
-	res = i802_send_frame(drv, (u8 *) hdr, len, encrypt, 0);
+	res = i802_send_mgmt_frame(drv, (u8 *) hdr, len, 0);
 	free(hdr);
 
 	if (res < 0) {
@@ -763,11 +795,11 @@ static int i802_sta_add2(const char *ifname, void *priv,
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
-	int ret = -ENOBUFS;
+	int ret = -1;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_NEW_STATION, 0);
@@ -791,10 +823,19 @@ static int i802_sta_add2(const char *ifname, void *priv,
 #endif /* NL80211_ATTR_HT_CAPABILITY */
 #endif /* CONFIG_IEEE80211N */
 
-	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
-	if (ret == -EEXIST)
+	ret = nl_send_auto_complete(drv->nl_handle, msg);
+	if (ret < 0)
+		goto nla_put_failure;
+
+	ret = nl_wait_for_ack(drv->nl_handle);
+	/* ignore EEXIST, this happens if a STA associates while associated */
+	if (ret == -EEXIST || ret >= 0)
 		ret = 0;
+
  nla_put_failure:
+	nlmsg_free(msg);
+
+ out:
 	return ret;
 }
 
@@ -803,11 +844,11 @@ static int i802_sta_remove(void *priv, const u8 *addr)
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
-	int ret;
+	int ret = -1;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_DEL_STATION, 0);
@@ -816,12 +857,18 @@ static int i802_sta_remove(void *priv, const u8 *addr)
 		    if_nametoindex(drv->iface));
 	NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, addr);
 
-	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
-	if (ret == -ENOENT)
-		return 0;
-	return ret;
+	ret = 0;
+
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0) {
+		ret = -1;
+	}
+
  nla_put_failure:
-	return -ENOBUFS;
+	nlmsg_free(msg);
+
+ out:
+	return ret;
 }
 
 
@@ -830,16 +877,15 @@ static int i802_sta_set_flags(void *priv, const u8 *addr,
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg, *flags = NULL;
+	int ret = -1;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	flags = nlmsg_alloc();
-	if (!flags) {
-		nlmsg_free(msg);
-		return -ENOMEM;
-	}
+	if (!flags)
+		goto free_msg;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_SET_STATION, 0);
@@ -865,12 +911,21 @@ static int i802_sta_set_flags(void *priv, const u8 *addr,
 	if (nla_put_nested(msg, NL80211_ATTR_STA_FLAGS, flags))
 		goto nla_put_failure;
 
+	ret = 0;
+
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0) {
+		ret = -1;
+	}
+
+ nla_put_failure:
 	nlmsg_free(flags);
 
-	return send_and_recv_msgs(drv, msg, NULL, NULL);
- nla_put_failure:
- 	nlmsg_free(flags);
-	return -ENOBUFS;
+ free_msg:
+	nlmsg_free(msg);
+
+ out:
+	return ret;
 }
 
 
@@ -909,11 +964,11 @@ static void nl80211_remove_iface(struct i802_driver_data *drv, int ifidx)
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_DEL_INTERFACE, 0);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, ifidx);
-
-	if (send_and_recv_msgs(drv, msg, NULL, NULL) == 0)
-		return;
- nla_put_failure:
-	printf("Failed to remove interface.\n");
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0)
+	nla_put_failure:
+		printf("Failed to remove interface.\n");
+	nlmsg_free(msg);
 }
 
 
@@ -926,7 +981,6 @@ static int nl80211_create_iface(struct i802_driver_data *drv,
 	int ifidx;
 	struct ifreq ifreq;
 	struct iwreq iwr;
-	int ret = -ENOBUFS;
 
 	msg = nlmsg_alloc();
 	if (!msg)
@@ -956,12 +1010,15 @@ static int nl80211_create_iface(struct i802_driver_data *drv,
 			goto nla_put_failure;
 	}
 
-	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
-	if (ret) {
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0) {
  nla_put_failure:
 		printf("Failed to create interface %s.\n", ifname);
-		return ret;
+		nlmsg_free(msg);
+		return -1;
 	}
+
+	nlmsg_free(msg);
 
 	ifidx = if_nametoindex(ifname);
 
@@ -1037,11 +1094,11 @@ static int i802_set_beacon(const char *iface, void *priv,
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
 	u8 cmd = NL80211_CMD_NEW_BEACON;
-	int ret;
+	int ret = -1;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	if (drv->beacon_set)
 		cmd = NL80211_CMD_SET_BEACON;
@@ -1057,30 +1114,44 @@ static int i802_set_beacon(const char *iface, void *priv,
 		drv->dtim_period = 2;
 	NLA_PUT_U32(msg, NL80211_ATTR_DTIM_PERIOD, drv->dtim_period);
 
-	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
-	if (!ret)
-		drv->beacon_set = 1;
-	return ret;
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0)
+		goto out;
+
+	ret = 0;
+
+	drv->beacon_set = 1;
+
+ out:
  nla_put_failure:
-	return -ENOBUFS;
+	nlmsg_free(msg);
+	return ret;
 }
 
 
 static int i802_del_beacon(struct i802_driver_data *drv)
 {
 	struct nl_msg *msg;
+	int ret = -1;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_DEL_BEACON, 0);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(drv->iface));
 
-	return send_and_recv_msgs(drv, msg, NULL, NULL);
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0)
+		goto out;
+
+	ret = 0;
+
+ out:
  nla_put_failure:
-	return -ENOBUFS;
+	nlmsg_free(msg);
+	return ret;
 }
 
 
@@ -1124,6 +1195,7 @@ static int i802_set_beacon_int(void *priv, int value)
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
+	int ret = -1;
 
 	drv->beacon_int = value;
 
@@ -1132,7 +1204,7 @@ static int i802_set_beacon_int(void *priv, int value)
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_SET_BEACON, 0);
@@ -1140,9 +1212,16 @@ static int i802_set_beacon_int(void *priv, int value)
 
 	NLA_PUT_U32(msg, NL80211_ATTR_BEACON_INTERVAL, value);
 
-	return send_and_recv_msgs(drv, msg, NULL, NULL);
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0)
+		goto out;
+
+	ret = 0;
+
+ out:
  nla_put_failure:
-	return -ENOBUFS;
+	nlmsg_free(msg);
+	return ret;
 }
 
 
@@ -1150,10 +1229,11 @@ static int i802_set_dtim_period(const char *iface, void *priv, int value)
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
+	int ret = -1;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_SET_BEACON, 0);
@@ -1162,9 +1242,16 @@ static int i802_set_dtim_period(const char *iface, void *priv, int value)
 	drv->dtim_period = value;
 	NLA_PUT_U32(msg, NL80211_ATTR_DTIM_PERIOD, drv->dtim_period);
 
-	return send_and_recv_msgs(drv, msg, NULL, NULL);
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0)
+		goto out;
+
+	ret = 0;
+
+ out:
  nla_put_failure:
-	return -ENOBUFS;
+	nlmsg_free(msg);
+	return ret;
 }
 
 
@@ -1173,10 +1260,11 @@ static int i802_set_bss(void *priv, int cts, int preamble, int slot)
 #ifdef NL80211_CMD_SET_BSS
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
+	int ret = -1;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0, 0,
 		    NL80211_CMD_SET_BSS, 0);
@@ -1188,12 +1276,21 @@ static int i802_set_bss(void *priv, int cts, int preamble, int slot)
 	if (slot >= 0)
 		NLA_PUT_U8(msg, NL80211_ATTR_BSS_SHORT_SLOT_TIME, slot);
 
+	ret = 0;
+
 	/* TODO: multi-BSS support */
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(drv->iface));
 
-	return send_and_recv_msgs(drv, msg, NULL, NULL);
- nla_put_failure:
-	return -ENOBUFS;
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0) {
+		ret = -1;
+	}
+
+nla_put_failure:
+	nlmsg_free(msg);
+
+out:
+	return ret;
 #else /* NL80211_CMD_SET_BSS */
 	return -1;
 #endif /* NL80211_CMD_SET_BSS */
@@ -1259,6 +1356,7 @@ static int i802_if_remove(void *priv, enum hostapd_driver_if_type type,
 struct phy_info_arg {
 	u16 *num_modes;
 	struct hostapd_hw_modes *modes;
+	int error;
 };
 
 static int phy_info_handler(struct nl_msg *msg, void *arg)
@@ -1397,6 +1495,8 @@ static int phy_info_handler(struct nl_msg *msg, void *arg)
 		}
 	}
 
+	phy_info->error = 0;
+
 	return NL_SKIP;
 }
 
@@ -1406,9 +1506,13 @@ static struct hostapd_hw_modes *i802_get_hw_feature_data(void *priv,
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
+	int err = -1;
+	struct nl_cb *cb = NULL;
+	int finished = 0;
 	struct phy_info_arg result = {
 		.num_modes = num_modes,
 		.modes = NULL,
+		.error = 1,
 	};
 
 	*num_modes = 0;
@@ -1423,10 +1527,33 @@ static struct hostapd_hw_modes *i802_get_hw_feature_data(void *priv,
 
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(drv->iface));
 
-	if (send_and_recv_msgs(drv, msg, phy_info_handler, &result) == 0)
-		return result.modes;
+	cb = nl_cb_clone(drv->nl_cb);
+	if (!cb)
+		goto out;
+
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0)
+		goto out;
+
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, phy_info_handler, &result);
+	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_wait_handler, &finished);
+
+	err = nl_recvmsgs(drv->nl_handle, cb);
+
+	if (!finished)
+		err = nl_wait_for_ack(drv->nl_handle);
+
+	if (err < 0 || result.error) {
+		hostapd_free_hw_features(result.modes, *num_modes);
+		result.modes = NULL;
+	}
+
+ out:
+	nl_cb_put(cb);
  nla_put_failure:
-	return NULL;
+	if (err)
+		fprintf(stderr, "failed to get information: %d\n", err);
+	nlmsg_free(msg);
+	return result.modes;
 }
 
 
@@ -1435,10 +1562,11 @@ static int i802_set_sta_vlan(void *priv, const u8 *addr,
 {
 	struct i802_driver_data *drv = priv;
 	struct nl_msg *msg;
+	int ret = -1;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		goto out;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_SET_STATION, 0);
@@ -1449,9 +1577,18 @@ static int i802_set_sta_vlan(void *priv, const u8 *addr,
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX,
 		    if_nametoindex(ifname));
 
-	return send_and_recv_msgs(drv, msg, NULL, NULL);
+	ret = 0;
+
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    (errno = nl_wait_for_ack(drv->nl_handle) < 0)) {
+		ret = -1;
+	}
+
  nla_put_failure:
-	return -ENOBUFS;
+	nlmsg_free(msg);
+
+ out:
+	return ret;
 }
 
 
@@ -1792,11 +1929,10 @@ static int nl80211_set_master_mode(struct i802_driver_data *drv,
 				   const char *ifname)
 {
 	struct nl_msg *msg;
-	int ret = -ENOBUFS;
 
 	msg = nlmsg_alloc();
 	if (!msg)
-		return -ENOMEM;
+		return -1;
 
 	genlmsg_put(msg, 0, 0, genl_family_get_id(drv->nl80211), 0,
 		    0, NL80211_CMD_SET_INTERFACE, 0);
@@ -1804,13 +1940,18 @@ static int nl80211_set_master_mode(struct i802_driver_data *drv,
 		    if_nametoindex(ifname));
 	NLA_PUT_U32(msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_AP);
 
-	ret = send_and_recv_msgs(drv, msg, NULL, NULL);
-	if (!ret)
-		return 0;
+	if (nl_send_auto_complete(drv->nl_handle, msg) < 0 ||
+	    nl_wait_for_ack(drv->nl_handle) < 0) {
  nla_put_failure:
-	wpa_printf(MSG_ERROR, "Failed to set interface %s to master "
-		   "mode.", ifname);
-	return ret;
+		wpa_printf(MSG_ERROR, "Failed to set interface %s to master "
+			   "mode.", ifname);
+		nlmsg_free(msg);
+		return -1;
+	}
+
+	nlmsg_free(msg);
+
+	return 0;
 }
 
 
