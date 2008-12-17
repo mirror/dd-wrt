@@ -599,6 +599,9 @@ hpforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt f
 	Aus Sicherheitsgründen sollten Sie die Weiterleitung auf diejenigen Ports beschränken, die Sie benötigen.";
 
 
+var hnas = new Object();
+hnas.right2="Nutzer Kennwort Liste: Geben Sie ein Nutzer Kennwort pro Zeile ein. Das Passwort kann hierbei reiner Text oder MD5 Crypt sein.";
+
 
 // **************************************************************** Hotspot.asp **********************************************************************//
 
