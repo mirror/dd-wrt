@@ -482,6 +482,9 @@ return 0;
 #elif HAVE_WRT300NV2
     setRouter( "Linksys WRT300N v2" );
     return ROUTER_BOARD_GATEWORX;
+#elif HAVE_WG302
+    setRouter( "Netgear WG302v2" );
+    return ROUTER_BOARD_GATEWORX;
 #elif HAVE_GATEWORX
     char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 
 												 */
@@ -518,7 +521,11 @@ return 0;
 	}
 	if( !strcmp( gwid, "GW2348" ) )
 	{
+#if HAVE_ALFA_BRANDING
+	setRouter( "WLAN base-station" );
+#else
 	    setRouter( "Avila GW2348-4/2" );
+#endif
 	    return ROUTER_BOARD_GATEWORX;
 	}
 	if( !strcmp( gwid, "GW2358" ) )
@@ -574,7 +581,11 @@ return 0;
     }
     else if( reg1 == 0x13 && reg2 == 0x7a11 )
     {
+#if HAVE_ALFA_BRANDING
+	setRouter( "WLAN base-station" );
+#else
 	setRouter( "Avila GW2348-4/2" );
+#endif
 	return ROUTER_BOARD_GATEWORX;
     }
     else if( reg1 == 0x143 && reg2 == 0xbc31 )	// broadcom phy

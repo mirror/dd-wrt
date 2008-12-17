@@ -1484,6 +1484,7 @@ disable="enable";
 		       nvram_nget( "%s_ipaddr", dev ),
 		       nvram_nget( "%s_netmask", dev ) );
 	}
+	
     }
     if( strcmp( m, "sta" ) && strcmp( m, "wdssta" ) && strcmp( m, "wet" ) )
 	setupHostAP( dev, 0 );
