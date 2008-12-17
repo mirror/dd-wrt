@@ -708,6 +708,7 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
 				       union wpa_event_data *data)
 {
 	u8 bssid[ETH_ALEN];
+	usleep(400); //WDS STA dirty workaround suggested by Felix Fietkau
 	int ft_completed = wpa_ft_is_completed(wpa_s->wpa);
 
 	if (data)
