@@ -684,7 +684,7 @@ nas.proftpd_anon_dir="Podmapa za anonimno prijavo";
 nas.sambasrv_legend="Samba stre¾nik";
 
 
-hnas.right2="Lista Uporabnik Geslo: V vsako linijo vnesite enega Uporabnika Geslo. Geslo je lahko v navadni obliki ali v MD5.";
+hnas.right2="Lista Uporabnik Geslo: V vsako linijo vnesite enega Uporabnika Geslo. Geslo je lahko v navadni obliki ali v MD5 crypt.";
 
 // ** Hotspot.asp **//
 
