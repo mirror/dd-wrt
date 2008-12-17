@@ -203,7 +203,8 @@ void start_overclocking( void )
 }
 char *enable_dtag_vlan( int enable )
 {
-
+if (getRouterBrand()!=ROUTER_BOARD_ECB9750)
+{
 if (enable)
     {
     sysprintf("switch reg w 14 405555");
@@ -230,4 +231,7 @@ if (enable)
     eval( "vconfig", "add", "eth2", "2" ); //WAN
     return "eth2";
     }
+}else{
+    return "eth2";
+}
 }
