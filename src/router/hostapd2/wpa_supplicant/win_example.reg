@@ -3,14 +3,12 @@ REGEDIT4
 [HKEY_LOCAL_MACHINE\SOFTWARE\wpa_supplicant]
 "debug_level"=dword:00000000
 "debug_show_keys"=dword:00000001
-"debug_timestamp"=dword:00000000
 "debug_use_file"=dword:00000000
 
 [HKEY_LOCAL_MACHINE\SOFTWARE\wpa_supplicant\configs]
 
 [HKEY_LOCAL_MACHINE\SOFTWARE\wpa_supplicant\configs\test]
 "ap_scan"=dword:00000002
-"update_config"=dword:00000001
 
 [HKEY_LOCAL_MACHINE\SOFTWARE\wpa_supplicant\configs\test\blobs]
 "testblob"=hex:01,02,03,04,05

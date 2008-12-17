@@ -12,10 +12,6 @@
   <property name="windowTitle" >
    <string>wpa_gui</string>
   </property>
-  <property name="windowIcon" >
-   <iconset resource="icons.qrc" >
-    <normaloff>:/icons/wpa_gui.svg</normaloff>:/icons/wpa_gui.svg</iconset>
-  </property>
   <widget class="QWidget" name="widget" >
    <layout class="QGridLayout" >
     <item row="0" column="0" >
@@ -410,7 +406,7 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11" />
- <pixmapfunction></pixmapfunction>
+ <pixmapfunction>qPixmapFromMimeSource</pixmapfunction>
  <includes>
   <include location="global" >qtimer.h</include>
   <include location="global" >qsocketnotifier.h</include>
@@ -418,8 +414,6 @@
   <include location="local" >eventhistory.h</include>
   <include location="local" >scanresults.h</include>
  </includes>
- <resources>
-  <include location="icons.qrc" />
- </resources>
+ <resources/>
  <connections/>
 </ui>

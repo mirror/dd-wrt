@@ -371,25 +371,6 @@ static int ieee802_11_parse_vendor_specific(struct hostapd_data *hapd,
 }
 
 
-#ifdef CONFIG_IEEE80211W
-static u8 * hostapd_eid_assoc_comeback_time(struct hostapd_data *hapd,
-					    struct sta_info *sta, u8 *eid)
-{
-	u8 *pos = eid;
-	u32 timeout;
-
-	*pos++ = WLAN_EID_ASSOC_COMEBACK_TIME;
-	*pos++ = 4;
-	timeout = (hapd->conf->assoc_ping_attempts - sta->ping_count + 1) *
-		hapd->conf->assoc_ping_timeout;
-	WPA_PUT_LE32(pos, timeout);
-	pos += 4;
-
-	return pos;
-}
-#endif /* CONFIG_IEEE80211W */
-
-
 ParseRes ieee802_11_parse_elems(struct hostapd_data *hapd, u8 *start,
 				size_t len,
 				struct ieee802_11_elems *elems,
@@ -533,10 +514,12 @@ void ieee802_11_print_ssid(char *buf, const u8 *ssid, u8 len)
 void ieee802_11_send_deauth(struct hostapd_data *hapd, u8 *addr, u16 reason)
 {
 	struct ieee80211_mgmt mgmt;
+	char buf[30];
 
 	hostapd_logger(hapd, addr, HOSTAPD_MODULE_IEEE80211,
 		       HOSTAPD_LEVEL_DEBUG,
 		       "deauthenticate - reason %d", reason);
+	os_snprintf(buf, sizeof(buf), "SEND-DEAUTHENTICATE %d", reason);
 	os_memset(&mgmt, 0, sizeof(mgmt));
 	mgmt.frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					  WLAN_FC_STYPE_DEAUTH);
@@ -569,6 +552,8 @@ static void ieee802_11_sta_authenticate(void *eloop_ctx, void *timeout_ctx)
 	os_memset(&mgmt, 0, sizeof(mgmt));
 	mgmt.frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					  WLAN_FC_STYPE_AUTH);
+	/* Request TX callback */
+	mgmt.frame_control |= host_to_le16(BIT(1));
 	os_memcpy(mgmt.da, hapd->conf->assoc_ap_addr, ETH_ALEN);
 	os_memcpy(mgmt.sa, hapd->own_addr, ETH_ALEN);
 	os_memcpy(mgmt.bssid, hapd->conf->assoc_ap_addr, ETH_ALEN);
@@ -605,6 +590,8 @@ static void ieee802_11_sta_associate(void *eloop_ctx, void *timeout_ctx)
 	os_memset(mgmt, 0, sizeof(*mgmt));
 	mgmt->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					  WLAN_FC_STYPE_ASSOC_REQ);
+	/* Request TX callback */
+	mgmt->frame_control |= host_to_le16(BIT(1));
 	os_memcpy(mgmt->da, hapd->conf->assoc_ap_addr, ETH_ALEN);
 	os_memcpy(mgmt->sa, hapd->own_addr, ETH_ALEN);
 	os_memcpy(mgmt->bssid, hapd->conf->assoc_ap_addr, ETH_ALEN);
@@ -703,6 +690,8 @@ static void send_auth_reply(struct hostapd_data *hapd,
 	reply = (struct ieee80211_mgmt *) buf;
 	reply->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					    WLAN_FC_STYPE_AUTH);
+	/* Request TX callback */
+	reply->frame_control |= host_to_le16(BIT(1));
 	os_memcpy(reply->da, dst, ETH_ALEN);
 	os_memcpy(reply->sa, hapd->own_addr, ETH_ALEN);
 	os_memcpy(reply->bssid, bssid, ETH_ALEN);
@@ -1024,6 +1013,11 @@ static void handle_assoc(struct hostapd_data *hapd,
 		goto fail;
 	}
 
+	if (reassoc) {
+		os_memcpy(sta->previous_ap, mgmt->u.reassoc_req.current_ap,
+			  ETH_ALEN);
+	}
+
 	sta->capability = capab_info;
 
 	/* followed by SSID and Supported rates; and HT capabilities if 802.11n
@@ -1171,21 +1165,6 @@ static void handle_assoc(struct hostapd_data *hapd,
 		if (resp != WLAN_STATUS_SUCCESS)
 			goto fail;
 #ifdef CONFIG_IEEE80211W
-		if ((sta->flags & WLAN_STA_MFP) && !sta->ping_timed_out) {
-			/*
-			 * STA has already been associated with MFP and ping
-			 * timeout has not been reached. Reject the
-			 * association attempt temporarily and start ping, if
-			 * one is not pending.
-			 */
-
-			if (sta->ping_count == 0)
-				ap_sta_start_ping(hapd, sta);
-
-			resp = WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY;
-			goto fail;
-		}
-
 		if (wpa_auth_uses_mfp(sta->wpa_sm))
 			sta->flags |= WLAN_STA_MFP;
 		else
@@ -1319,11 +1298,6 @@ static void handle_assoc(struct hostapd_data *hapd,
 	/* Station will be marked associated, after it acknowledges AssocResp
 	 */
 
-	if (reassoc) {
-		os_memcpy(sta->previous_ap, mgmt->u.reassoc_req.current_ap,
-			  ETH_ALEN);
-	}
-
 	if (sta->last_assoc_req)
 		os_free(sta->last_assoc_req);
 	sta->last_assoc_req = os_malloc(len);
@@ -1378,12 +1352,10 @@ static void handle_assoc(struct hostapd_data *hapd,
 		}
 #endif /* CONFIG_IEEE80211R */
 
-#ifdef CONFIG_IEEE80211W
-		if (resp == WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY)
-			p = hostapd_eid_assoc_comeback_time(hapd, sta, p);
-#endif /* CONFIG_IEEE80211W */
-
 		send_len += p - reply->u.assoc_resp.variable;
+
+		/* Request TX callback */
+		reply->frame_control |= host_to_le16(BIT(1));
 	}
 
 	if (hostapd_send_mgmt_frame(hapd, reply, send_len, 0) < 0)
@@ -1581,56 +1553,6 @@ static void handle_beacon(struct hostapd_data *hapd,
 }
 
 
-#ifdef CONFIG_IEEE80211W
-static void hostapd_ping_action(struct hostapd_data *hapd,
-				struct ieee80211_mgmt *mgmt, size_t len)
-{
-	struct sta_info *sta;
-	u8 *end;
-	int i;
-
-	end = mgmt->u.action.u.ping_resp.trans_id + WLAN_PING_TRANS_ID_LEN;
-	if (((u8 *) mgmt) + len < end) {
-		wpa_printf(MSG_DEBUG, "IEEE 802.11: Too short Ping Action "
-			   "frame (len=%lu)", (unsigned long) len);
-		return;
-	}
-
-	if (mgmt->u.action.u.ping_resp.action != WLAN_PING_RESPONSE) {
-		wpa_printf(MSG_DEBUG, "IEEE 802.11: Unexpected Ping Action %d",
-			   mgmt->u.action.u.ping_resp.action);
-		return;
-	}
-
-	/* MLME-PING.confirm */
-
-	sta = ap_get_sta(hapd, mgmt->sa);
-	if (sta == NULL || sta->ping_trans_id == NULL) {
-		wpa_printf(MSG_DEBUG, "IEEE 802.11: No matching STA with "
-			   "pending ping request found");
-		return;
-	}
-
-	for (i = 0; i < sta->ping_count; i++) {
-		if (os_memcmp(sta->ping_trans_id + i * WLAN_PING_TRANS_ID_LEN,
-			      mgmt->u.action.u.ping_resp.trans_id,
-			      WLAN_PING_TRANS_ID_LEN) == 0)
-			break;
-	}
-
-	if (i >= sta->ping_count) {
-		wpa_printf(MSG_DEBUG, "IEEE 802.11: No matching ping "
-			   "transaction identifier found");
-		return;
-	}
-
-	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
-		       HOSTAPD_LEVEL_DEBUG, "Reply to pending ping received");
-	ap_sta_stop_ping(hapd, sta);
-}
-#endif /* CONFIG_IEEE80211W */
-
-
 static void handle_action(struct hostapd_data *hapd,
 			  struct ieee80211_mgmt *mgmt, size_t len)
 {
@@ -1663,14 +1585,9 @@ static void handle_action(struct hostapd_data *hapd,
 		return;
 	}
 #endif /* CONFIG_IEEE80211R */
-	case WLAN_ACTION_WMM:
+	case WME_ACTION_CATEGORY:
 		hostapd_wme_action(hapd, mgmt, len);
 		return;
-#ifdef CONFIG_IEEE80211W
-	case WLAN_ACTION_PING:
-		hostapd_ping_action(hapd, mgmt, len);
-		return;
-#endif /* CONFIG_IEEE80211W */
 	}
 
 	hostapd_logger(hapd, mgmt->sa, HOSTAPD_MODULE_IEEE80211,
@@ -1894,10 +1811,6 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 		ht_cap = &sta->ht_capabilities;
 #endif /* CONFIG_IEEE80211N */
 
-#ifdef CONFIG_IEEE80211W
-	sta->ping_timed_out = 0;
-#endif /* CONFIG_IEEE80211W */
-
 	if (hostapd_sta_add(hapd->conf->iface, hapd, sta->addr, sta->aid,
 			    sta->capability, sta->supported_rates,
 			    sta->supported_rates_len, 0, sta->listen_interval,
@@ -1967,9 +1880,6 @@ void ieee802_11_mgmt_cb(struct hostapd_data *hapd, u8 *buf, size_t len,
 		break;
 	case WLAN_FC_STYPE_DEAUTH:
 		/* ignore */
-		break;
-	case WLAN_FC_STYPE_ACTION:
-		wpa_printf(MSG_DEBUG, "mgmt::action cb");
 		break;
 	default:
 		printf("unknown mgmt cb frame subtype %d\n", stype);

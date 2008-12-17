@@ -1,6 +1,6 @@
 /*
  * hostapd / Configuration file
- * Copyright (c) 2003-2008, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2003-2007, Jouni Malinen <j@w1.fi>
  * Copyright (c) 2007-2008, Intel Corporation
  *
  * This program is free software; you can redistribute it and/or modify
@@ -181,17 +181,6 @@ static void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 	bss->eapol_version = EAPOL_VERSION;
 
 	bss->max_listen_interval = 65535;
-
-#ifdef CONFIG_IEEE80211W
-	bss->assoc_ping_timeout = 1000;
-	bss->assoc_ping_attempts = 3;
-#endif /* CONFIG_IEEE80211W */
-#ifdef EAP_FAST
-	 /* both anonymous and authenticated provisioning */
-	bss->eap_fast_prov = 3;
-	bss->pac_key_lifetime = 7 * 24 * 60 * 60;
-	bss->pac_key_refresh_time = 1 * 24 * 60 * 60;
-#endif /* EAP_FAST */
 }
 
 
@@ -281,23 +270,14 @@ int hostapd_mac_comp_empty(const void *a)
 }
 
 
-static int hostapd_acl_comp(const void *a, const void *b)
-{
-	const struct mac_acl_entry *aa = a;
-	const struct mac_acl_entry *bb = b;
-	return os_memcmp(aa->addr, bb->addr, sizeof(macaddr));
-}
-
-
-static int hostapd_config_read_maclist(const char *fname,
-				       struct mac_acl_entry **acl, int *num)
+static int hostapd_config_read_maclist(const char *fname, macaddr **acl,
+				       int *num)
 {
 	FILE *f;
 	char buf[128], *pos;
 	int line = 0;
 	u8 addr[ETH_ALEN];
-	struct mac_acl_entry *newacl;
-	int vlan_id;
+	macaddr *newacl;
 
 	if (!fname)
 		return 0;
@@ -331,16 +311,7 @@ static int hostapd_config_read_maclist(const char *fname,
 			return -1;
 		}
 
-		vlan_id = 0;
-		pos = buf;
-		while (*pos != '\0' && *pos != ' ' && *pos != '\t')
-			pos++;
-		while (*pos == ' ' || *pos == '\t')
-			pos++;
-		if (*pos != '\0')
-			vlan_id = atoi(pos);
-
-		newacl = os_realloc(*acl, (*num + 1) * sizeof(**acl));
+		newacl = os_realloc(*acl, (*num + 1) * ETH_ALEN);
 		if (newacl == NULL) {
 			printf("MAC list reallocation failed\n");
 			fclose(f);
@@ -348,14 +319,13 @@ static int hostapd_config_read_maclist(const char *fname,
 		}
 
 		*acl = newacl;
-		os_memcpy((*acl)[*num].addr, addr, ETH_ALEN);
-		(*acl)[*num].vlan_id = vlan_id;
+		os_memcpy((*acl)[*num], addr, ETH_ALEN);
 		(*num)++;
 	}
 
 	fclose(f);
 
-	qsort(*acl, *num, sizeof(**acl), hostapd_acl_comp);
+	qsort(*acl, *num, sizeof(macaddr), hostapd_mac_comp);
 
 	return 0;
 }
@@ -823,12 +793,6 @@ static int hostapd_config_parse_key_mgmt(int line, const char *value)
 		else if (os_strcmp(start, "FT-EAP") == 0)
 			val |= WPA_KEY_MGMT_FT_IEEE8021X;
 #endif /* CONFIG_IEEE80211R */
-#ifdef CONFIG_IEEE80211W
-		else if (os_strcmp(start, "WPA-PSK-SHA256") == 0)
-			val |= WPA_KEY_MGMT_PSK_SHA256;
-		else if (os_strcmp(start, "WPA-EAP-SHA256") == 0)
-			val |= WPA_KEY_MGMT_IEEE8021X_SHA256;
-#endif /* CONFIG_IEEE80211W */
 		else {
 			printf("Line %d: invalid key_mgmt '%s'\n",
 			       line, start);
@@ -1509,32 +1473,8 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 				errors++;
 			}
 		} else if (os_strcmp(buf, "eap_fast_a_id") == 0) {
-			size_t idlen = os_strlen(pos);
-			if (idlen & 1) {
-				printf("Line %d: Invalid eap_fast_a_id\n",
-				       line);
-				errors++;
-			} else {
-				os_free(bss->eap_fast_a_id);
-				bss->eap_fast_a_id = os_malloc(idlen / 2);
-				if (bss->eap_fast_a_id == NULL ||
-				    hexstr2bin(pos, bss->eap_fast_a_id,
-					       idlen / 2)) {
-					printf("Line %d: Failed to parse "
-					       "eap_fast_a_id\n", line);
-					errors++;
-				} else
-					bss->eap_fast_a_id_len = idlen / 2;
-			}
-		} else if (os_strcmp(buf, "eap_fast_a_id_info") == 0) {
-			os_free(bss->eap_fast_a_id_info);
-			bss->eap_fast_a_id_info = os_strdup(pos);
-		} else if (os_strcmp(buf, "eap_fast_prov") == 0) {
-			bss->eap_fast_prov = atoi(pos);
-		} else if (os_strcmp(buf, "pac_key_lifetime") == 0) {
-			bss->pac_key_lifetime = atoi(pos);
-		} else if (os_strcmp(buf, "pac_key_refresh_time") == 0) {
-			bss->pac_key_refresh_time = atoi(pos);
+			os_free(bss->eap_fast_a_id);
+			bss->eap_fast_a_id = os_strdup(pos);
 #endif /* EAP_FAST */
 #ifdef EAP_SIM
 		} else if (os_strcmp(buf, "eap_sim_db") == 0) {
@@ -2006,21 +1946,6 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 #ifdef CONFIG_IEEE80211W
 		} else if (os_strcmp(buf, "ieee80211w") == 0) {
 			bss->ieee80211w = atoi(pos);
-		} else if (os_strcmp(buf, "assoc_ping_timeout") == 0) {
-			bss->assoc_ping_timeout = atoi(pos);
-			if (bss->assoc_ping_timeout == 0) {
-				printf("Line %d: invalid assoc_ping_timeout\n",
-					line);
-				errors++;
-			}
-		} else if (os_strcmp(buf, "assoc_ping_attempts") == 0) {
-			bss->assoc_ping_timeout = atoi(pos);
-			if (bss->assoc_ping_timeout == 0) {
-				printf("Line %d: invalid assoc_ping_attempts "
-				       "(valid range: 1..255)\n",
-				       line);
-				errors++;
-			}
 #endif /* CONFIG_IEEE80211W */
 #ifdef CONFIG_IEEE80211N
 		} else if (os_strcmp(buf, "ieee80211n") == 0) {
@@ -2182,7 +2107,6 @@ static void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 	os_free(conf->dh_file);
 	os_free(conf->pac_opaque_encr_key);
 	os_free(conf->eap_fast_a_id);
-	os_free(conf->eap_fast_a_id_info);
 	os_free(conf->eap_sim_db);
 	os_free(conf->radius_server_clients);
 	os_free(conf->test_socket);
@@ -2243,8 +2167,7 @@ void hostapd_config_free(struct hostapd_config *conf)
 
 /* Perform a binary search for given MAC address from a pre-sorted list.
  * Returns 1 if address is in the list or 0 if not. */
-int hostapd_maclist_found(struct mac_acl_entry *list, int num_entries,
-			  const u8 *addr, int *vlan_id)
+int hostapd_maclist_found(macaddr *list, int num_entries, const u8 *addr)
 {
 	int start, end, middle, res;
 
@@ -2253,12 +2176,9 @@ int hostapd_maclist_found(struct mac_acl_entry *list, int num_entries,
 
 	while (start <= end) {
 		middle = (start + end) / 2;
-		res = os_memcmp(list[middle].addr, addr, ETH_ALEN);
-		if (res == 0) {
-			if (vlan_id)
-				*vlan_id = list[middle].vlan_id;
+		res = os_memcmp(list[middle], addr, ETH_ALEN);
+		if (res == 0)
 			return 1;
-		}
 		if (res < 0)
 			start = middle + 1;
 		else
