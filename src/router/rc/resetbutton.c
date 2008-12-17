@@ -359,9 +359,13 @@ void period_check( int sig )
 #endif
 
 #else
-if (brand==ROUTER_BOARD_WHRG300N || brand==ROUTER_BOARD_ECB9750)
+if (brand==ROUTER_BOARD_WHRG300N)
     {
     val = get_gpio(10)<<10;
+    }
+    else if (brand==ROUTER_BOARD_ECB9750)
+    {
+    val = get_gpio(11)<<10;
     }else
     {
 
