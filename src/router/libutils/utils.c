@@ -598,7 +598,7 @@ return 0;
 	return ROUTER_BOARD_GATEWORX;
     }
 #elif HAVE_RT2880
-#ifdef CONFIG_ECB9750
+#ifdef HAVE_ECB9750
     setRouter( "Senao ECB-9750" );
     return ROUTER_BOARD_ECB9750;
 #elif HAVE_WHRG300N
