@@ -1,6 +1,6 @@
 /*
  * hostapd - WPA/RSN IE and KDE definitions
- * Copyright (c) 2004-2008, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -189,18 +189,6 @@ int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
 		num_suites++;
 	}
 #endif /* CONFIG_IEEE80211R */
-#ifdef CONFIG_IEEE80211W
-	if (conf->wpa_key_mgmt & WPA_KEY_MGMT_IEEE8021X_SHA256) {
-		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_802_1X_SHA256);
-		pos += RSN_SELECTOR_LEN;
-		num_suites++;
-	}
-	if (conf->wpa_key_mgmt & WPA_KEY_MGMT_PSK_SHA256) {
-		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_PSK_SHA256);
-		pos += RSN_SELECTOR_LEN;
-		num_suites++;
-	}
-#endif /* CONFIG_IEEE80211W */
 
 	if (num_suites == 0) {
 		wpa_printf(MSG_DEBUG, "Invalid key management type (%d).",
@@ -220,11 +208,8 @@ int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
 		capab |= (RSN_NUM_REPLAY_COUNTERS_16 << 2);
 	}
 #ifdef CONFIG_IEEE80211W
-	if (conf->ieee80211w != WPA_NO_IEEE80211W) {
-		capab |= WPA_CAPABILITY_MFPC;
-		if (conf->ieee80211w == IEEE80211W_REQUIRED)
-			capab |= WPA_CAPABILITY_MFPR;
-	}
+	if (conf->ieee80211w != WPA_NO_IEEE80211W)
+		capab |= WPA_CAPABILITY_MGMT_FRAME_PROTECTION;
 #endif /* CONFIG_IEEE80211W */
 	WPA_PUT_LE16(pos, capab);
 	pos += 2;
@@ -470,12 +455,6 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 	else
 		version = WPA_PROTO_WPA;
 
-	if (!(wpa_auth->conf.wpa & version)) {
-		wpa_printf(MSG_DEBUG, "Invalid WPA proto (%d) from " MACSTR,
-			   version, MAC2STR(sm->addr));
-		return WPA_INVALID_PROTO;
-	}
-
 	if (version == WPA_PROTO_RSN) {
 		res = wpa_parse_wpa_ie_rsn(wpa_ie, wpa_ie_len, &data);
 
@@ -488,12 +467,6 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 		else if (data.key_mgmt & WPA_KEY_MGMT_FT_PSK)
 			selector = RSN_AUTH_KEY_MGMT_FT_PSK;
 #endif /* CONFIG_IEEE80211R */
-#ifdef CONFIG_IEEE80211W
-		else if (data.key_mgmt & WPA_KEY_MGMT_IEEE8021X_SHA256)
-			selector = RSN_AUTH_KEY_MGMT_802_1X_SHA256;
-		else if (data.key_mgmt & WPA_KEY_MGMT_PSK_SHA256)
-			selector = RSN_AUTH_KEY_MGMT_PSK_SHA256;
-#endif /* CONFIG_IEEE80211W */
 		else if (data.key_mgmt & WPA_KEY_MGMT_IEEE8021X)
 			selector = RSN_AUTH_KEY_MGMT_UNSPEC_802_1X;
 		else if (data.key_mgmt & WPA_KEY_MGMT_PSK)
@@ -588,12 +561,6 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 	else if (key_mgmt & WPA_KEY_MGMT_FT_PSK)
 		sm->wpa_key_mgmt = WPA_KEY_MGMT_FT_PSK;
 #endif /* CONFIG_IEEE80211R */
-#ifdef CONFIG_IEEE80211W
-	else if (key_mgmt & WPA_KEY_MGMT_IEEE8021X_SHA256)
-		sm->wpa_key_mgmt = WPA_KEY_MGMT_IEEE8021X_SHA256;
-	else if (key_mgmt & WPA_KEY_MGMT_PSK_SHA256)
-		sm->wpa_key_mgmt = WPA_KEY_MGMT_PSK_SHA256;
-#endif /* CONFIG_IEEE80211W */
 	else if (key_mgmt & WPA_KEY_MGMT_IEEE8021X)
 		sm->wpa_key_mgmt = WPA_KEY_MGMT_IEEE8021X;
 	else
@@ -613,7 +580,8 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 
 #ifdef CONFIG_IEEE80211W
 	if (wpa_auth->conf.ieee80211w == WPA_IEEE80211W_REQUIRED) {
-		if (!(data.capabilities & WPA_CAPABILITY_MFPC)) {
+		if (!(data.capabilities &
+		      WPA_CAPABILITY_MGMT_FRAME_PROTECTION)) {
 			wpa_printf(MSG_DEBUG, "Management frame protection "
 				   "required, but client did not enable it");
 			return WPA_MGMT_FRAME_PROTECTION_VIOLATION;
@@ -633,14 +601,15 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 	}
 
 	if (wpa_auth->conf.ieee80211w == WPA_NO_IEEE80211W ||
-	    !(data.capabilities & WPA_CAPABILITY_MFPC))
+	    !(data.capabilities & WPA_CAPABILITY_MGMT_FRAME_PROTECTION))
 		sm->mgmt_frame_prot = 0;
 	else
 		sm->mgmt_frame_prot = 1;
 #endif /* CONFIG_IEEE80211W */
 
 #ifdef CONFIG_IEEE80211R
-	if (wpa_key_mgmt_ft(sm->wpa_key_mgmt)) {
+	if (sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X ||
+	    sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_PSK) {
 		if (mdie == NULL || mdie_len < MOBILITY_DOMAIN_ID_LEN + 1) {
 			wpa_printf(MSG_DEBUG, "RSN: Trying to use FT, but "
 				   "MDIE not included");
