@@ -687,7 +687,7 @@ nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
 nas.sambasrv_legend="Samba Server";
 
 var hnas = new Object();
-hnas.right2="User Pasword List: Enter one User Password per line. Password can be plain text or MD5 crypt.";
+hnas.right2="User Password List: Enter one User Password per line. Password can be plain text or MD5 crypt.";
 
 // ** Hotspot.asp **//
 var hotspot = new Object();
