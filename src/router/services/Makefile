@@ -279,6 +279,10 @@ ifeq ($(CONFIG_RT2880),y)
 OBJS += rt2880.o
 endif
 
+ifeq ($(CONFIG_WG302),y)
+  CFLAGS += -DHAVE_WG302
+endif
+
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 
