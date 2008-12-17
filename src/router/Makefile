@@ -137,6 +137,11 @@ else
 endif
 endif
 endif
+ifeq ($(CONFIG_EOP_TUNNEL),y)
+	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_NET_ETHERIP" is not set >> $(LINUXDIR)/.config
+endif
 #ifeq ($(CONFIG_REGISTER),y)
 #	cp $(LINUXDIR)/.config_register $(LINUXDIR)/.config
 #endif
@@ -269,7 +274,7 @@ endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre3
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/$(LINUXVER)
+	if test -d "$(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2"; then mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/$(LINUXVER); fi
 ifeq ($(CONFIG_SAMBA),y)
 	mv -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs/* $(TARGETDIR)/lib/modules/$(LINUXVER)
 endif
