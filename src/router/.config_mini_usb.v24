@@ -5,6 +5,8 @@
 #
 # Base Features
 #
+CONFIG_EOP_TUNNEL=y
+
 CONFIG_USB=y
 CONFIG_USB_ADVANCED=y
 #CONFIG_VFS=y
