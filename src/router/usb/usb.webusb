@@ -1,3 +1,4 @@
+<h2><% tran("usb.usb_legend"); %></h2>
 <fieldset>
 	<legend><% tran("usb.usb_legend"); %></legend>
 	<div class="setting">
