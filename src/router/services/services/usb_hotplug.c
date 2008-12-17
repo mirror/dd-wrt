@@ -28,25 +28,30 @@ void start_hotplug_usb( void )
     char *device, *interface;
     char *action;
     int class, subclass, protocol;
-    
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
     if( !(nvram_match ("usb_automnt", "1") ) )
     return;
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 
     if( !( action = getenv( "ACTION" ) ) || !( device = getenv( "TYPE" ) ) )
 	return;
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
     sscanf( device, "%d/%d/%d", &class, &subclass, &protocol );
+    fprintf(stderr,"%s:%d %s\n",__FILE__,__LINE__,device);
     if( class == 0 )
     {
 	if( !( interface = getenv( "INTERFACE" ) ) )
 	    return;
 	sscanf( interface, "%d/%d/%d", &class, &subclass, &protocol );
     }
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 
     /* 
      * If a new USB device is added and it is of storage class 
      */
     if( class == 8 && subclass == 6 && !strcmp( action, "add" ) )
 	usb_add_ufd(  );
+    fprintf(stderr,"%s:%d %s\n",__FILE__,__LINE__,device);
     return;
 }
 
@@ -72,19 +77,22 @@ static bool usb_ufd_connected( char *str )
 	{
 	if (strstr( line, "Attached: Yes" ) )
 	{
+	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 	fclose( fp );
 	return TRUE;
 	}
 	}
-	}
 	fclose( fp );
+	}
 	//in 2.6 kernels its a little bit different
 	sprintf( proc_file, "/proc/scsi/usb-storage/%d",host_no );
 	if( ( fp = fopen( proc_file, "r" ) ) )
 	    {
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 	    fclose(fp);
 	    return TRUE;
 	    }
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 	return FALSE;
     
 }
@@ -97,6 +105,7 @@ static int usb_process_path( char *path, char *fs)
 {
     int ret = ENOENT;
     char mount_point[32];
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
     
     sprintf( mount_point, "/%s", nvram_default_get( "usb_mntpoint", "mnt" ) ); 
 
@@ -130,6 +139,7 @@ static int usb_add_ufd(  )
     /* 
      * Scan through entries in the directories 
      */
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
     while( ( entry = readdir( dir ) ) != NULL )
     {
 	if( ( strncmp( entry->d_name, "disc", 4 ) ) )
@@ -140,9 +150,12 @@ static int usb_add_ufd(  )
 	 * it is removed. Verify the device  is still inserted.  Strip
 	 * the "disc" and pass the rest of the string.  
 	 */
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 	if( usb_ufd_connected( entry->d_name + 4 ) == FALSE )
 	    continue;
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 	sprintf( path, "/dev/discs/%s/disc", entry->d_name );
+    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 	sysprintf ("/usr/sbin/disktype %s > %s", path, DUMPFILE);
 
 	/* 
