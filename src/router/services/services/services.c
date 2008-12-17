@@ -193,12 +193,12 @@ int write_nvram( char *name, char *nv )
 {
     if( nvram_invmatch( nv, "" ) )
     {
-	FILE *fp = fopen(nv,"wb");
-	if (fp)
+	FILE *fp = fopen( name, "wb" );
+	if( fp )
 	    {
 	    fwritenvram( nv, fp );
-	    fprintf(fp,"\n");
-	    fclose(fp);
+	    fprintf( fp, "\n" );
+	    fclose( fp );
 	    }
     }
     else
