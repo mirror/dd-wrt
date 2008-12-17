@@ -106,6 +106,16 @@ endif
 ifeq ($(CONFIG_GATEWORX),y)
   CFLAGS += -DHAVE_GATEWORX
 endif
+ifeq ($(CONFIG_WG302),y)
+  CFLAGS += -DHAVE_WG302
+endif
+ifeq ($(CONFIG_ALFA_BRANDING2),y)
+  CFLAGS += -DHAVE_ALFA_BRANDING
+endif
+ifeq ($(CONFIG_ALFA_BRANDING1),y)
+  CFLAGS += -DHAVE_ALFA_BRANDING
+endif
+
 ifeq ($(CONFIG_NOP8670),y)
   CFLAGS += -DHAVE_NOP8670
 endif
