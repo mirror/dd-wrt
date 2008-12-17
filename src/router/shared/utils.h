@@ -375,7 +375,7 @@
 #define ROUTER_BOARD_RDAT81 0x6806
 
 // Senao ECB9750
-#define ROUTER_BOARD_ECB9750 0x690b
+#define ROUTER_BOARD_ECB9750 0x691b
 
 // Compex WP54G (and compatible)
 #define ROUTER_BOARD_WP54G 0x7004
