@@ -365,7 +365,7 @@ if (brand==ROUTER_BOARD_WHRG300N)
     }
     else if (brand==ROUTER_BOARD_ECB9750)
     {
-    val = get_gpio(11)<<10;
+    val = get_gpio(11)<<11;
     }else
     {
 
