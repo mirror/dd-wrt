@@ -1,6 +1,6 @@
 /*
  * WPA definitions shared between hostapd and wpa_supplicant
- * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2002-2008, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -54,6 +54,9 @@
 #define RSN_AUTH_KEY_MGMT_FT_802_1X RSN_SELECTOR(0x00, 0x0f, 0xac, 3)
 #define RSN_AUTH_KEY_MGMT_FT_PSK RSN_SELECTOR(0x00, 0x0f, 0xac, 4)
 #endif /* CONFIG_IEEE80211R */
+#define RSN_AUTH_KEY_MGMT_802_1X_SHA256 RSN_SELECTOR(0x00, 0x0f, 0xac, 5)
+#define RSN_AUTH_KEY_MGMT_PSK_SHA256 RSN_SELECTOR(0x00, 0x0f, 0xac, 6)
+
 #define RSN_CIPHER_SUITE_NONE RSN_SELECTOR(0x00, 0x0f, 0xac, 0)
 #define RSN_CIPHER_SUITE_WEP40 RSN_SELECTOR(0x00, 0x0f, 0xac, 1)
 #define RSN_CIPHER_SUITE_TKIP RSN_SELECTOR(0x00, 0x0f, 0xac, 2)
@@ -107,7 +110,11 @@
 
 /* IEEE 802.11, 7.3.2.25.3 RSN Capabilities */
 #define WPA_CAPABILITY_PREAUTH BIT(0)
-#define WPA_CAPABILITY_MGMT_FRAME_PROTECTION BIT(7)
+#define WPA_CAPABILITY_NO_PAIRWISE BIT(1)
+/* B2-B3: PTKSA Replay Counter */
+/* B4-B5: GTKSA Replay Counter */
+#define WPA_CAPABILITY_MFPR BIT(6)
+#define WPA_CAPABILITY_MFPC BIT(7)
 #define WPA_CAPABILITY_PEERKEY_ENABLED BIT(9)
 
 
@@ -273,6 +280,7 @@ struct rsn_ftie {
 #define FTIE_SUBELEM_R1KH_ID 1
 #define FTIE_SUBELEM_GTK 2
 #define FTIE_SUBELEM_R0KH_ID 3
+#define FTIE_SUBELEM_IGTK 4
 
 #endif /* CONFIG_IEEE80211R */
 
@@ -286,7 +294,7 @@ int wpa_eapol_key_mic(const u8 *key, int ver, const u8 *buf, size_t len,
 void wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 		    const u8 *addr1, const u8 *addr2,
 		    const u8 *nonce1, const u8 *nonce2,
-		    u8 *ptk, size_t ptk_len);
+		    u8 *ptk, size_t ptk_len, int use_sha256);
 
 #ifdef CONFIG_IEEE80211R
 int wpa_ft_mic(const u8 *kck, const u8 *sta_addr, const u8 *ap_addr,

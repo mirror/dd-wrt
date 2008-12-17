@@ -21,6 +21,7 @@
 #include "eapol_sm.h"
 #include "wpa.h"
 #include "sha1.h"
+#include "sha256.h"
 #include "rc4.h"
 #include "aes_wrap.h"
 #include "crypto.h"
@@ -207,12 +208,16 @@ static void wpa_sta_disconnect(struct wpa_authenticator *wpa_auth,
 
 static int wpa_use_aes_cmac(struct wpa_state_machine *sm)
 {
+	int ret = 0;
 #ifdef CONFIG_IEEE80211R
-	return sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X ||
-		sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_PSK;
-#else /* CONFIG_IEEE80211R */
-	return 0;
+	if (wpa_key_mgmt_ft(sm->wpa_key_mgmt))
+		ret = 1;
 #endif /* CONFIG_IEEE80211R */
+#ifdef CONFIG_IEEE80211W
+	if (wpa_key_mgmt_sha256(sm->wpa_key_mgmt))
+		ret = 1;
+#endif /* CONFIG_IEEE80211W */
+	return ret;
 }
 
 
@@ -847,8 +852,13 @@ static void wpa_gmk_to_gtk(const u8 *gmk, const u8 *addr, const u8 *gnonce,
 	os_memcpy(data, addr, ETH_ALEN);
 	os_memcpy(data + ETH_ALEN, gnonce, WPA_NONCE_LEN);
 
+#ifdef CONFIG_IEEE80211W
+	sha256_prf(gmk, WPA_GMK_LEN, "Group key expansion",
+		   data, sizeof(data), gtk, gtk_len);
+#else /* CONFIG_IEEE80211W */
 	sha1_prf(gmk, WPA_GMK_LEN, "Group key expansion",
 		 data, sizeof(data), gtk, gtk_len);
+#endif /* CONFIG_IEEE80211W */
 
 	wpa_hexdump_key(MSG_DEBUG, "GMK", gmk, WPA_GMK_LEN);
 	wpa_hexdump_key(MSG_DEBUG, "GTK", gtk, gtk_len);
@@ -1081,6 +1091,8 @@ void wpa_remove_ptk(struct wpa_state_machine *sm)
 
 void wpa_auth_sm_event(struct wpa_state_machine *sm, wpa_event event)
 {
+	int remove_ptk = 1;
+
 	if (sm == NULL)
 		return;
 
@@ -1097,6 +1109,15 @@ void wpa_auth_sm_event(struct wpa_state_machine *sm, wpa_event event)
 		break;
 	case WPA_REAUTH:
 	case WPA_REAUTH_EAPOL:
+		if (sm->GUpdateStationKeys) {
+			/*
+			 * Reauthentication cancels the pending group key
+			 * update for this STA.
+			 */
+			sm->group->GKeyDoneStations--;
+			sm->GUpdateStationKeys = FALSE;
+			sm->PtkGroupInit = TRUE;
+		}
 		sm->ReAuthenticationRequest = TRUE;
 		break;
 	case WPA_ASSOC_FT:
@@ -1113,11 +1134,18 @@ void wpa_auth_sm_event(struct wpa_state_machine *sm, wpa_event event)
 	sm->ft_completed = 0;
 #endif /* CONFIG_IEEE80211R */
 
-	sm->PTK_valid = FALSE;
-	os_memset(&sm->PTK, 0, sizeof(sm->PTK));
+#ifdef CONFIG_IEEE80211W
+	if (sm->mgmt_frame_prot && event == WPA_AUTH)
+		remove_ptk = 0;
+#endif /* CONFIG_IEEE80211W */
 
-	if (event != WPA_REAUTH_EAPOL)
-		wpa_remove_ptk(sm);
+	if (remove_ptk) {
+		sm->PTK_valid = FALSE;
+		os_memset(&sm->PTK, 0, sizeof(sm->PTK));
+
+		if (event != WPA_REAUTH_EAPOL)
+			wpa_remove_ptk(sm);
+	}
 
 	wpa_sm_step(sm);
 }
@@ -1162,8 +1190,7 @@ SM_STATE(WPA_PTK, INITIALIZE)
 	wpa_remove_ptk(sm);
 	wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_portValid, 0);
 	sm->TimeoutCtr = 0;
-	if (sm->wpa_key_mgmt == WPA_KEY_MGMT_PSK ||
-	    sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+	if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)) {
 		wpa_auth_set_eapol(sm->wpa_auth, sm->addr,
 				   WPA_EAPOL_authorized, 0);
 	}
@@ -1281,7 +1308,7 @@ SM_STATE(WPA_PTK, PTKSTART)
 	 * one possible PSK for this STA.
 	 */
 	if (sm->wpa == WPA_VERSION_WPA2 &&
-	    sm->wpa_key_mgmt != WPA_KEY_MGMT_PSK) {
+	    wpa_key_mgmt_wpa_ieee8021x(sm->wpa_key_mgmt)) {
 		pmkid = buf;
 		pmkid_len = 2 + RSN_SELECTOR_LEN + PMKID_LEN;
 		pmkid[0] = WLAN_EID_VENDOR_SPECIFIC;
@@ -1296,7 +1323,8 @@ SM_STATE(WPA_PTK, PTKSTART)
 			 * available with pre-calculated PMKID.
 			 */
 			rsn_pmkid(sm->PMK, PMK_LEN, sm->wpa_auth->addr,
-				  sm->addr, &pmkid[2 + RSN_SELECTOR_LEN]);
+				  sm->addr, &pmkid[2 + RSN_SELECTOR_LEN],
+				  wpa_key_mgmt_sha256(sm->wpa_key_mgmt));
 		}
 	}
 	wpa_send_eapol(sm->wpa_auth, sm,
@@ -1310,14 +1338,14 @@ static int wpa_derive_ptk(struct wpa_state_machine *sm, const u8 *pmk,
 			  struct wpa_ptk *ptk)
 {
 #ifdef CONFIG_IEEE80211R
-	if (sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X ||
-	    sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_PSK)
+	if (wpa_key_mgmt_ft(sm->wpa_key_mgmt))
 		return wpa_auth_derive_ptk_ft(sm, pmk, ptk);
 #endif /* CONFIG_IEEE80211R */
 
 	wpa_pmk_to_ptk(pmk, PMK_LEN, "Pairwise key expansion",
 		       sm->wpa_auth->addr, sm->addr, sm->ANonce, sm->SNonce,
-		       (u8 *) ptk, sizeof(*ptk));
+		       (u8 *) ptk, sizeof(*ptk),
+		       wpa_key_mgmt_sha256(sm->wpa_key_mgmt));
 
 	return 0;
 }
@@ -1336,8 +1364,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 	 * WPA-PSK: iterate through possible PSKs and select the one matching
 	 * the packet */
 	for (;;) {
-		if (sm->wpa_key_mgmt == WPA_KEY_MGMT_PSK ||
-		    sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+		if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)) {
 			pmk = wpa_auth_get_psk(sm->wpa_auth, sm->addr, pmk);
 			if (pmk == NULL)
 				break;
@@ -1352,8 +1379,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 			break;
 		}
 
-		if (sm->wpa_key_mgmt != WPA_KEY_MGMT_PSK &&
-		    sm->wpa_key_mgmt != WPA_KEY_MGMT_FT_PSK)
+		if (!wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt))
 			break;
 	}
 
@@ -1365,8 +1391,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 
 	eloop_cancel_timeout(wpa_send_eapol_timeout, sm->wpa_auth, sm);
 
-	if (sm->wpa_key_mgmt == WPA_KEY_MGMT_PSK ||
-	    sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+	if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)) {
 		/* PSK may have changed from the previous choice, so update
 		 * state machine data based on whatever PSK was selected here.
 		 */
@@ -1528,8 +1553,7 @@ SM_STATE(WPA_PTK, PTKINITDONE)
 		/* FIX: MLME-SetProtection.Request(TA, Tx_Rx) */
 		sm->pairwise_set = TRUE;
 
-		if (sm->wpa_key_mgmt == WPA_KEY_MGMT_PSK ||
-		    sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+		if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)) {
 			wpa_auth_set_eapol(sm->wpa_auth, sm->addr,
 					   WPA_EAPOL_authorized, 1);
 		}
@@ -1591,13 +1615,11 @@ SM_STEP(WPA_PTK)
 		SM_ENTER(WPA_PTK, AUTHENTICATION2);
 		break;
 	case WPA_PTK_AUTHENTICATION2:
-		if ((sm->wpa_key_mgmt == WPA_KEY_MGMT_IEEE8021X ||
-		     sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X) &&
+		if (wpa_key_mgmt_wpa_ieee8021x(sm->wpa_key_mgmt) &&
 		    wpa_auth_get_eapol(sm->wpa_auth, sm->addr,
 				       WPA_EAPOL_keyRun) > 0)
 			SM_ENTER(WPA_PTK, INITPMK);
-		else if ((sm->wpa_key_mgmt == WPA_KEY_MGMT_PSK ||
-			  sm->wpa_key_mgmt == WPA_KEY_MGMT_FT_PSK)
+		else if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)
 			 /* FIX: && 802.1X::keyRun */)
 			SM_ENTER(WPA_PTK, INITPSK);
 		break;
@@ -1747,9 +1769,10 @@ SM_STATE(WPA_PTK_GROUP, KEYERROR)
 
 SM_STEP(WPA_PTK_GROUP)
 {
-	if (sm->Init)
+	if (sm->Init || sm->PtkGroupInit) {
 		SM_ENTER(WPA_PTK_GROUP, IDLE);
-	else switch (sm->wpa_ptk_group_state) {
+		sm->PtkGroupInit = FALSE;
+	} else switch (sm->wpa_ptk_group_state) {
 	case WPA_PTK_GROUP_IDLE:
 		if (sm->GUpdateStationKeys ||
 		    (sm->wpa == WPA_VERSION_WPA && sm->PInitAKeys))
@@ -1831,8 +1854,18 @@ static int wpa_group_update_sta(struct wpa_state_machine *sm, void *ctx)
 				"Not in PTKINITDONE; skip Group Key update");
 		return 0;
 	}
-	sm->group->GKeyDoneStations++;
-	sm->GUpdateStationKeys = TRUE;
+	if (sm->GUpdateStationKeys) {
+		/*
+		 * This should not really happen, but just in case, make sure
+		 * we do not count the same STA twice in GKeyDoneStations.
+		 */
+		wpa_auth_logger(sm->wpa_auth, sm->addr, LOGGER_DEBUG,
+				"GUpdateStationKeys already set - do not "
+				"increment GKeyDoneStations");
+	} else {
+		sm->group->GKeyDoneStations++;
+		sm->GUpdateStationKeys = TRUE;
+	}
 	wpa_sm_step(sm);
 	return 0;
 }
@@ -2243,7 +2276,7 @@ int wpa_auth_pmksa_add(struct wpa_state_machine *sm, const u8 *pmk,
 
 	if (pmksa_cache_add(sm->wpa_auth->pmksa, pmk, PMK_LEN,
 			    sm->wpa_auth->addr, sm->addr, session_timeout,
-			    eapol))
+			    eapol, sm->wpa_key_mgmt))
 		return 0;
 
 	return -1;
@@ -2259,7 +2292,8 @@ int wpa_auth_pmksa_add_preauth(struct wpa_authenticator *wpa_auth,
 		return -1;
 
 	if (pmksa_cache_add(wpa_auth->pmksa, pmk, len, wpa_auth->addr,
-			    sta_addr, session_timeout, eapol))
+			    sta_addr, session_timeout, eapol,
+			    WPA_KEY_MGMT_IEEE8021X))
 		return 0;
 
 	return -1;
