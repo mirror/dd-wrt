@@ -25,8 +25,10 @@
 #ifndef CTL_SOCKET_CLIENT_H
 #define CTL_SOCKET_CLIENT_H
 
-int send_ctl_message(int cmd, void *inbuf, int lin, void *outbuf, int *lout,
-		     int *res);
+#include "ctl_socket.h"
+
+int send_ctl_message(int cmd, void *inbuf, int lin, void *outbuf, int lout,
+		     LogString *log, int *res);
 
 int ctl_client_init(void);
 

@@ -96,14 +96,6 @@ static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
         if (tb[IFLA_MASTER] && af_family != AF_BRIDGE)
           return 0;
 
-        /* Check for BPDU */
-        if (tb[IFLA_PRIORITY] && af_family == AF_BRIDGE) {
-          bridge_bpdu_rcv(ifi->ifi_index,
-                   RTA_DATA(tb[IFLA_PRIORITY]),
-                   RTA_PAYLOAD(tb[IFLA_PRIORITY]));
-          return 0;
-        }
-
 	if (tb[IFLA_IFNAME] == NULL) {
 		fprintf(stderr, "BUG: nil ifname\n");
 		return -1;
@@ -161,7 +153,7 @@ static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
           int newlink = (n->nlmsg_type == RTM_NEWLINK);
           int up = 0;
           if (newlink && tb[IFLA_OPERSTATE]) {
-            int state = *(int*)RTA_DATA(tb[IFLA_OPERSTATE]);
+            int state = *(uint8_t*)RTA_DATA(tb[IFLA_OPERSTATE]);
             up = (state == IF_OPER_UP) || (state == IF_OPER_UNKNOWN);
           }
 

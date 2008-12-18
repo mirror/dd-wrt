@@ -27,31 +27,13 @@
 #include "ctl_socket_client.h"
 #include "log.h"
 
-    CLIENT_SIDE_FUNCTION(enable_bridge_rstp)
-    CLIENT_SIDE_FUNCTION(get_bridge_state)
-    CLIENT_SIDE_FUNCTION(set_bridge_config)
-    CLIENT_SIDE_FUNCTION(get_port_state)
-    CLIENT_SIDE_FUNCTION(set_port_config)
-    CLIENT_SIDE_FUNCTION(set_debug_level)
-#include <base.h>
-const char *CTL_error_explanation(int err_no)
-{
-#define CHOOSE(a) #a
-	static const char *rstp_error_names[] = RSTP_ERRORS;
-	static const char *ctl_error_names[] = { CTL_ERRORS };
-
-#undef CHOOSE
-	if (err_no < 0)
-		return "Error doing ctl command";
-	else if (err_no >= STP_OK && err_no < STP_LAST_DUMMY)
-		return rstp_error_names[err_no];
-	else if (err_no > Err_Dummy_Start && err_no < Err_Dummy_End)
-		return ctl_error_names[err_no - Err_Dummy_Start - 1];
-
-	static char buf[32];
-	sprintf(buf, "Unknown error code %d", err_no);
-	return buf;
-}
+CLIENT_SIDE_FUNCTION(enable_bridge_rstp)
+CLIENT_SIDE_FUNCTION(get_bridge_status)
+CLIENT_SIDE_FUNCTION(set_bridge_config)
+CLIENT_SIDE_FUNCTION(get_port_status)
+CLIENT_SIDE_FUNCTION(set_port_config)
+CLIENT_SIDE_FUNCTION(port_mcheck)
+CLIENT_SIDE_FUNCTION(set_debug_level)
 
 void Dprintf(int level, const char *fmt, ...)
 {

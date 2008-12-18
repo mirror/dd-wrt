@@ -31,6 +31,8 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <stdarg.h>
+#include <string.h>
 
 #include "epoll_loop.h"
 #include "log.h"
@@ -41,11 +43,13 @@ int server_socket(void)
 	int s;
 
 	TST(strlen(RSTP_SERVER_SOCK_NAME) < sizeof(sa.sun_path), -1);
+
 	s = socket(PF_UNIX, SOCK_DGRAM, 0);
 	if (s < 0) {
 		ERROR("Couldn't open unix socket: %m");
 		return -1;
 	}
+
 	set_socket_address(&sa, RSTP_SERVER_SOCK_NAME);
 
 	if (bind(s, (struct sockaddr *)&sa, sizeof(sa)) != 0) {
@@ -57,14 +61,15 @@ int server_socket(void)
 	return s;
 }
 
-int handle_message(int cmd, void *inbuf, int lin, void *outbuf, int *lout)
+int handle_message(int cmd, void *inbuf, int lin, void *outbuf, int lout)
 {
 	switch (cmd) {
 		SERVER_MESSAGE_CASE(enable_bridge_rstp);
-		SERVER_MESSAGE_CASE(get_bridge_state);
+		SERVER_MESSAGE_CASE(get_bridge_status);
 		SERVER_MESSAGE_CASE(set_bridge_config);
-		SERVER_MESSAGE_CASE(get_port_state);
+		SERVER_MESSAGE_CASE(get_port_status);
 		SERVER_MESSAGE_CASE(set_port_config);
+		SERVER_MESSAGE_CASE(port_mcheck);
 		SERVER_MESSAGE_CASE(set_debug_level);
 
 	default:
@@ -73,27 +78,52 @@ int handle_message(int cmd, void *inbuf, int lin, void *outbuf, int *lout)
 	}
 }
 
+int ctl_in_handler = 0;
+static unsigned char msg_logbuf[1024];
+static unsigned int msg_log_offset;
+void _ctl_err_log(char *fmt, ...)
+{
+	if (msg_log_offset >= sizeof(msg_logbuf) - 1)
+		return;
+	int r;
+	va_list ap;
+	va_start(ap, fmt);
+	r = vsnprintf((char *)msg_logbuf + msg_log_offset,
+		      sizeof(msg_logbuf) - msg_log_offset,
+		      fmt, ap);
+	va_end(ap);
+	msg_log_offset += r;
+	if (msg_log_offset == sizeof(msg_logbuf)) {
+		msg_log_offset = sizeof(msg_logbuf) - 1;
+		msg_logbuf[sizeof(msg_logbuf) - 1] = 0;
+	}
+}
+
+
 #define msg_buf_len 1024
-unsigned char msg_inbuf[1024];
-unsigned char msg_outbuf[1024];
+static unsigned char msg_inbuf[1024];
+static unsigned char msg_outbuf[1024];
 
 void ctl_rcv_handler(uint32_t events, struct epoll_event_handler *p)
 {
 	struct ctl_msg_hdr mhdr;
 	struct msghdr msg;
 	struct sockaddr_un sa;
-	struct iovec iov[2];
+	struct iovec iov[3];
 	int l;
+
 	msg.msg_name = &sa;
 	msg.msg_namelen = sizeof(sa);
 	msg.msg_iov = iov;
-	msg.msg_iovlen = 2;
+	msg.msg_iovlen = 3;
 	msg.msg_control = NULL;
 	msg.msg_controllen = 0;
 	iov[0].iov_base = &mhdr;
 	iov[0].iov_len = sizeof(mhdr);
 	iov[1].iov_base = msg_inbuf;
 	iov[1].iov_len = msg_buf_len;
+	iov[2].iov_base = NULL;
+	iov[2].iov_len = 0;
 	l = recvmsg(p->fd, &msg, MSG_NOSIGNAL | MSG_DONTWAIT);
 	TST(l > 0,);
 	if (msg.msg_flags != 0 || l < sizeof(mhdr) ||
@@ -103,17 +133,22 @@ void ctl_rcv_handler(uint32_t events, struct epoll_event_handler *p)
 		return;
 	}
 
-	if (mhdr.lout)
-		mhdr.res = handle_message(mhdr.cmd, msg_inbuf, mhdr.lin,
-					  msg_outbuf, &mhdr.lout);
-	else
-		mhdr.res = handle_message(mhdr.cmd, msg_inbuf, mhdr.lin,
-					  NULL, NULL);
+	msg_log_offset = 0;
+	ctl_in_handler = 1;
 
+	mhdr.res = handle_message(mhdr.cmd, msg_inbuf, mhdr.lin,
+				  msg_outbuf, mhdr.lout);
+
+	ctl_in_handler = 0;
 	if (mhdr.res < 0)
-		mhdr.lout = 0;
+		memset(msg_outbuf, 0, mhdr.lout);
+	if (msg_log_offset < mhdr.llog)
+		mhdr.llog = msg_log_offset;
+	
 	iov[1].iov_base = msg_outbuf;
 	iov[1].iov_len = mhdr.lout;
+	iov[2].iov_base = msg_logbuf;
+	iov[2].iov_len = mhdr.llog;
 	l = sendmsg(p->fd, &msg, MSG_NOSIGNAL);
 	if (l < 0)
 		ERROR("CTL: Couldn't send response: %m");
@@ -143,5 +178,4 @@ void ctl_socket_cleanup(void)
 {
 	remove_epoll(&ctl_handler);
 	close(ctl_handler.fd);
-	unlink(RSTP_SERVER_SOCK_NAME);
 }

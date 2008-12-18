@@ -508,6 +508,24 @@ int addattr32(struct nlmsghdr *n, int maxlen, int type, __u32 data)
 	return 0;
 }
 
+int addattr8(struct nlmsghdr *n, int maxlen, int type, __u8 data)
+{
+	int len = RTA_LENGTH(1);
+	struct rtattr *rta;
+	if (NLMSG_ALIGN(n->nlmsg_len) + len > maxlen) {
+		fprintf(stderr,
+			"addattr32: Error! max allowed bound %d exceeded\n",
+			maxlen);
+		return -1;
+	}
+	rta = NLMSG_TAIL(n);
+	rta->rta_type = type;
+	rta->rta_len = len;
+	memcpy(RTA_DATA(rta), &data, 1);
+	n->nlmsg_len = NLMSG_ALIGN(n->nlmsg_len) + len;
+	return 0;
+}
+
 int addattr_l(struct nlmsghdr *n, int maxlen, int type, const void *data,
 	      int alen)
 {

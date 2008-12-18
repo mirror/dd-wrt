@@ -66,7 +66,7 @@ static void dump_packet(const unsigned char *buf, int cc)
  * To send/receive Spanning Tree packets we use PF_PACKET because
  * it allows the filtering we want but gives raw data
  */
-void packet_send(int ifindex, const unsigned char *data, int len)
+void packet_send(int ifindex, const struct iovec *iov, int iov_count, int len)
 {
 	int l;
 	struct sockaddr_ll sl = {
@@ -76,19 +76,33 @@ void packet_send(int ifindex, const unsigned char *data, int len)
 		.sll_halen = ETH_ALEN,
 	};
 
-	memcpy(&sl.sll_addr, data, ETH_ALEN);
+	if (iov_count > 0 && iov[0].iov_len > ETH_ALEN)
+		memcpy(&sl.sll_addr, iov[0].iov_base, ETH_ALEN);
+
+	struct msghdr msg = {
+		.msg_name = &sl,
+		.msg_namelen = sizeof(sl),
+		.msg_iov = (struct iovec *)iov,
+		.msg_iovlen = iov_count,
+		.msg_control = NULL,
+		.msg_controllen = 0,
+		.msg_flags = 0,
+	};
 
 #ifdef PACKET_DEBUG
 	printf("Transmit Dst index %d %02x:%02x:%02x:%02x:%02x:%02x\n",
 	       sl.sll_ifindex, 
 	       sl.sll_addr[0], sl.sll_addr[1], sl.sll_addr[2],
 	       sl.sll_addr[3], sl.sll_addr[4], sl.sll_addr[5]);
-
-	dump_packet(data, len);
+	
+	{
+		int i;
+		for (i = 0; i < iov_count; i++)
+			dump_packet(iov[i].iov_base, iov[i].iov_len);
+	}
 #endif
 
-	l = sendto(packet_event.fd, data, len, 0, 
-		   (struct sockaddr *) &sl, sizeof(sl));
+	l = sendmsg(packet_event.fd, &msg, 0);
 
 	if (l < 0) {
 		if (errno != EWOULDBLOCK)
