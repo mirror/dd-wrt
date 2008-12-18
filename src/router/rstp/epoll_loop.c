@@ -33,17 +33,13 @@
 
 #include "bridge_ctl.h"
 
-extern int epoll_create_new(int size);
-extern int epoll_ctl_new(int epfd, int op, int fd, struct epoll_event *event);
-extern int epoll_wait_new(int epfd, struct epoll_event *events, int maxevents, int timeout);
-
 // globals
 int epoll_fd = -1;
 struct timeval nexttimeout;
 
 int init_epoll(void)
 {
-	int r = epoll_create_new(128);
+	int r = epoll_create(128);
 	if (r < 0) {
 		fprintf(stderr, "epoll_create failed: %m\n");
 		return -1;
@@ -59,7 +55,7 @@ int add_epoll(struct epoll_event_handler *h)
 		.data.ptr = h,
 	};
 	h->ref_ev = NULL;
-	int r = epoll_ctl_new(epoll_fd, EPOLL_CTL_ADD, h->fd, &ev);
+	int r = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, h->fd, &ev);
 	if (r < 0) {
 		fprintf(stderr, "epoll_ctl_add: %m\n");
 		return -1;
@@ -69,7 +65,7 @@ int add_epoll(struct epoll_event_handler *h)
 
 int remove_epoll(struct epoll_event_handler *h)
 {
-	int r = epoll_ctl_new(epoll_fd, EPOLL_CTL_DEL, h->fd, NULL);
+	int r = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, h->fd, NULL);
 	if (r < 0) {
 		fprintf(stderr, "epoll_ctl_del: %m\n");
 		return -1;
@@ -118,7 +114,7 @@ int epoll_main_loop(void)
 			timeout = 0;
 		}
 
-		r = epoll_wait_new(epoll_fd, ev, EV_SIZE, timeout);
+		r = epoll_wait(epoll_fd, ev, EV_SIZE, timeout);
 		if (r < 0 && errno != EINTR) {
 			fprintf(stderr, "epoll_wait: %m\n");
 			return -1;

@@ -37,6 +37,7 @@ extern int addattr32(struct nlmsghdr *n, int maxlen, int type, __u32 data);
 extern int addattr_l(struct nlmsghdr *n, int maxlen, int type, const void *data, int alen);
 extern int addraw_l(struct nlmsghdr *n, int maxlen, const void *data, int len);
 extern int rta_addattr32(struct rtattr *rta, int maxlen, int type, __u32 data);
+extern int addattr8(struct nlmsghdr *n, int maxlen, int type, __u8 data);
 extern int rta_addattr_l(struct rtattr *rta, int maxlen, int type, const void *data, int alen);
 
 extern int parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len);

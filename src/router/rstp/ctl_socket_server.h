@@ -28,4 +28,9 @@
 int ctl_socket_init(void);
 void ctl_socket_cleanup(void);
 
+extern int ctl_in_handler;
+void _ctl_err_log(char *fmt, ...);
+
+#define ctl_err_log(_fmt...) ({ if (ctl_in_handler) _ctl_err_log(_fmt); })
+
 #endif

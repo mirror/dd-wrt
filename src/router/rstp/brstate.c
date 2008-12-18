@@ -42,7 +42,7 @@ static int br_set_state(struct rtnl_handle *rth, unsigned ifindex, __u8 state)
 	req.ifi.ifi_family = AF_BRIDGE;
 	req.ifi.ifi_index = ifindex;
 
-	addattr32(&req.n, sizeof(req.buf), IFLA_PROTINFO, state);
+	addattr8(&req.n, sizeof(req.buf), IFLA_PROTINFO, state);
 
 	return rtnl_talk(rth, &req.n, 0, 0, NULL, NULL, NULL);
 }
