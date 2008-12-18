@@ -2573,7 +2573,12 @@ int led_control( int type, int act )
 	    connected_gpio = 0x17;
 	    break;
 	case ROUTER_BOARD_GATEWORX:
+#ifdef HAVE_WG302
+	    diag_gpio = 0x12;
+	    wlan_gpio = 0x14;
+#else
 	    connected_gpio = 0x3;
+#endif
 	    break;
 	case ROUTER_BOARD_GATEWORX_SWAP:
 	    connected_gpio = 0x4;
