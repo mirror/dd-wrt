@@ -1,4 +1,3 @@
-obj-$(CONFIG_POUND) += pound
 
 
 pound-configure:

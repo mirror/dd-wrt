@@ -163,6 +163,8 @@ obj-$(CONFIG_USB) += usb disktype
 obj-$(CONFIG_ASTERISK) += asterisk
 obj-$(CONFIG_ZAPTEL) += zaptel
 obj-$(CONFIG_WAVESAT) += wavesat
+obj-$(CONFIG_POUND) += pound
+
 obj-y+=anchorfree
 obj-y+=ttraff
 
