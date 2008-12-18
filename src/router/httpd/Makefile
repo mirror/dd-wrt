@@ -253,8 +253,10 @@ endif
 ifeq ($(CONFIG_GATEWORX),y)
 CFLAGS += -DHAVE_GATEWORX
 ifneq ($(CONFIG_WRT300NV2),y)
+ifneq ($(CONFIG_WG302),y)
 CFLAGS += -DHAVE_CPUTEMP
 CFLAGS += -DHAVE_VOLT
+endif
 endif
 endif
 endif
