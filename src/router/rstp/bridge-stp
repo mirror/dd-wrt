@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Script to start/stop spanning tree called from kernel
 # Make sure umask is sane
@@ -8,13 +8,16 @@ umask 022
 PATH="/sbin:/usr/sbin:/bin:/usr/bin"
 export PATH
 
-if [ "$#" -ne 2 ]; then
+if [ $# -ne 2 ]; then
    echo "Usage: bridge-stp <bridge> {start|stop}"
    exit 1
 fi
 bridge=$1
 service=rstpd
-pid_file=/var/run/${servicename}.pid
+pid_file=/var/run/${service}.pid
+
+# Set this to the list of bridges for which RSTP should be used
+RSTP_BRIDGES="br0 br1 br2"
 
 # Set $pid to pids from /var/run* for {program}.  $pid should be declared
 # local in the caller.
@@ -25,9 +28,8 @@ checkpid() {
 	        local line p
 		read line < "$pid_file"
 		for p in $line ; do
-			[ -d "/proc/$p" ] && pid="$pid $p"
+			[ -z "${p//[0-9]/}" -a -d "/proc/$p" ] && pid="$pid $p"
 		done
-		
 	        if [ -n "$pid" ]; then
 	                return 0
 	        fi
@@ -36,27 +38,21 @@ checkpid() {
 	return 3 # "Program is not running"
 }
 
-daemon() {
-    local pid
-    checkpid $pid_file
-    echo $pid
-    [ -n "$pid" ] && return
-    # start it
-    /sbin/rstpd
-    RETVAL=$?
-    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/$service
-}
-
 start() {
     daemon
 }
 
 case $2 in
      start) 
-	daemon
-	exec /sbin/rstpctl rstp $bridge on ;;
+	checkpid $pid_file || exit 1
+	for b in $RSTP_BRIDGES; do
+		if [ "$bridge" == "$b" ]; then
+			exit 0;
+		fi
+	done
+	exit 1 ;;
      stop)  
-	exec /sbin/rstpctl rstp $bridge off ;;
+	exit 0 ;;
      *)
      	echo "Unknown action:" $2
 	echo "Usage: bridge-stp <bridge> {start|stop}"

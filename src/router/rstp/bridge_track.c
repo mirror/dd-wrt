@@ -30,20 +30,16 @@
 #include <net/if.h>
 #include <stdlib.h>
 #include <linux/if_bridge.h>
+#include <linux/if_ether.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
-
-#include <bitmap.h>
-#include <uid_stp.h>
-#include <stp_bpdu.h>
-#include <stp_in.h>
-#include <stp_to.h>
 
 #include <stdio.h>
 #include <string.h>
 
 #include "log.h"
 
+#include "rstp.h"
 /*------------------------------------------------------------*/
 
 struct ifdata {
@@ -51,6 +47,7 @@ struct ifdata {
 	struct ifdata *next;
 	int up;
 	char name[IFNAMSIZ];
+	unsigned char macaddr[ETH_ALEN];
 
 	int is_bridge;
 	/* If bridge */
@@ -58,16 +55,8 @@ struct ifdata {
 	struct ifdata *port_list;
 	int do_stp;
 	int stp_up;
-	struct stp_instance *stp;
-	UID_BRIDGE_ID_T bridge_id;
-	/* Bridge config */
-	UID_STP_MODE_T stp_enabled;
-	int bridge_priority;
-	int max_age;
-	int hello_time;
-	int forward_delay;
-	int force_version;
-	int hold_time;
+	STP_Bridge *stp_bridge;
+
 
 	/* If port */
 	int speed;
@@ -76,34 +65,13 @@ struct ifdata {
 	struct ifdata *port_next;
 	/* STP port index */
 	int port_index;
-	/* STP port config */
-	int port_priority;
-	int admin_port_path_cost;
-	ADMIN_P2P_T admin_point2point;
-	unsigned char admin_edge;
-	unsigned char admin_non_stp;	/* 1- doesn't participate in STP, 1 - regular */
+	STP_Port *stp_port;
 
 	struct epoll_event_handler event;
 };
 
 /* Instances */
 struct ifdata *current_br = NULL;
-
-void instance_begin(struct ifdata *br)
-{
-	if (current_br) {
-		ERROR("BUG: Trying to set instance over existing instance.");
-		ERROR("%d", *(int *)0);	/* ABORT */
-	}
-	current_br = br;
-	STP_IN_instance_begin(br->stp);
-}
-
-void instance_end(void)
-{
-	STP_IN_instance_end(current_br->stp);
-	current_br = NULL;
-}
 
 struct ifdata *find_port(int port_index)
 {
@@ -113,170 +81,6 @@ struct ifdata *find_port(int port_index)
 	return ifc;
 }
 
-/*************************************************************/
-/* Bridge and port defaults */
-
-UID_STP_CFG_T default_bridge_stp_cfg = {
-	.field_mask = BR_CFG_ALL,
-	.bridge_priority = DEF_BR_PRIO,
-	.max_age = DEF_BR_MAXAGE,
-	.hello_time = DEF_BR_HELLOT,
-	.forward_delay = DEF_BR_FWDELAY,
-	.force_version = DEF_FORCE_VERS,	/*NORMAL_RSTP */
-};
-
-void update_bridge_stp_config(struct ifdata *br, UID_STP_CFG_T * cfg)
-{
-	if (cfg->field_mask & BR_CFG_PRIO)
-		br->bridge_priority = cfg->bridge_priority;
-	if (cfg->field_mask & BR_CFG_AGE)
-		br->max_age = cfg->max_age;
-	if (cfg->field_mask & BR_CFG_HELLO)
-		br->hello_time = cfg->hello_time;
-	if (cfg->field_mask & BR_CFG_DELAY)
-		br->forward_delay = cfg->forward_delay;
-	if (cfg->field_mask & BR_CFG_FORCE_VER)
-		br->force_version = cfg->force_version;
-}
-
-UID_STP_PORT_CFG_T default_port_stp_cfg = {
-	.field_mask = PT_CFG_ALL,
-	.port_priority = DEF_PORT_PRIO,
-	.admin_non_stp = DEF_ADMIN_NON_STP,
-	.admin_edge = False,	// DEF_ADMIN_EDGE,
-	.admin_port_path_cost = ADMIN_PORT_PATH_COST_AUTO,
-	.admin_point2point = DEF_P2P,
-};
-
-void update_port_stp_config(struct ifdata *ifc, UID_STP_PORT_CFG_T * cfg)
-{
-	if (cfg->field_mask & PT_CFG_PRIO)
-		ifc->port_priority = cfg->port_priority;
-	if (cfg->field_mask & PT_CFG_NON_STP)
-		ifc->admin_non_stp = cfg->admin_non_stp;
-	if (cfg->field_mask & PT_CFG_EDGE)
-		ifc->admin_edge = cfg->admin_edge;
-	if (cfg->field_mask & PT_CFG_COST)
-		ifc->admin_port_path_cost = cfg->admin_port_path_cost;
-	if (cfg->field_mask & PT_CFG_P2P)
-		ifc->admin_point2point = cfg->admin_point2point;
-}
-
-/**************************************************************/
-
-int add_port_stp(struct ifdata *ifc)
-{				/* Bridge is ifc->master */
-	TST((ifc->port_index = get_bridge_portno(ifc->name)) >= 0, -1);
-
-	/* Add port to STP */
-	instance_begin(ifc->master);
-	int r = STP_IN_port_create(0, ifc->port_index);
-	if (r == 0) {		/* Update bridge ID */
-		UID_STP_STATE_T state;
-		STP_IN_stpm_get_state(0, &state);
-		ifc->master->bridge_id = state.bridge_id;
-	}
-	instance_end();
-	if (r /* check for failure */ ) {
-		ERROR("Couldn't add port for ifindex %d to STP", ifc->if_index);
-		return -1;
-	}
-	return 0;
-}
-
-void remove_port_stp(struct ifdata *ifc)
-{
-	/* Remove port from STP */
-	instance_begin(ifc->master);
-	int r = STP_IN_port_delete(0, ifc->port_index);
-	instance_end();
-	ifc->port_index = -1;
-	if (r != 0) {
-		ERROR("removing port %s failed for bridge %s: %s",
-		      ifc->name, ifc->master->name,
-		      STP_IN_get_error_explanation(r));
-	}
-}
-
-int init_rstplib_instance(struct ifdata *br)
-{
-	br->stp = STP_IN_instance_create();
-	if (br->stp == NULL) {
-		ERROR("Couldn't create STP instance for bridge %s", br->name);
-		return -1;
-	}
-
-	BITMAP_T ports;
-	BitmapClear(&ports);
-	instance_begin(br);
-	int r = STP_IN_stpm_create(0, br->name, &ports);
-	instance_end();
-	if (r != 0) {
-		ERROR("stpm create failed for bridge %s: %s",
-		      br->name, STP_IN_get_error_explanation(r));
-		return -1;
-	}
-
-	return 0;
-}
-
-void clear_rstplib_instance(struct ifdata *br)
-{
-	instance_begin(br);
-	int r = STP_IN_delete_all();
-	instance_end();
-	if (r != 0) {
-		ERROR("stpm delete failed for bridge %s: %s",
-		      br->name, STP_IN_get_error_explanation(r));
-	}
-
-	STP_IN_instance_delete(br->stp);
-	br->stp = NULL;
-}
-
-int init_bridge_stp(struct ifdata *br)
-{
-	if (br->stp_up) {
-		ERROR("STP already started");
-		return 0;
-	}
-
-	/* Init STP state */
-	TST(init_rstplib_instance(br) == 0, -1);
-
-	struct ifdata *p = br->port_list;
-	while (p) {
-		if (add_port_stp(p) != 0)
-			break;
-		p = p->port_next;
-	}
-	if (p) {
-		struct ifdata *q = br->port_list;
-		while (q != p) {
-			remove_port_stp(q);
-			q = q->port_next;
-		}
-		/* Clear bridge STP state */
-		clear_rstplib_instance(br);
-		return -1;
-	}
-	br->stp_up = 1;
-	return 0;
-}
-
-void clear_bridge_stp(struct ifdata *br)
-{
-	if (!br->stp_up)
-		return;
-	br->stp_up = 0;
-	struct ifdata *p = br->port_list;
-	while (p) {
-		remove_port_stp(p);
-		p = p->port_next;
-	}
-	/* Clear bridge STP state */
-	clear_rstplib_instance(br);
-}
 
 struct ifdata *if_head = NULL;
 struct ifdata *br_head = NULL;
@@ -321,18 +125,30 @@ struct ifdata *create_if(int if_index, struct ifdata *br)
 
 	/* TODO: purge use of name, due to issue with renameing */
 	if_indextoname(if_index, p->name);
+	get_hwaddr(p->name, p->macaddr);
 
 	if (p->is_bridge) {
 		INFO("Add bridge %s", p->name);
+		p->stp_bridge = STP_IN_bridge_create(p);
+		if (!p->stp_bridge) {
+			ERROR("Couldn't create STP Bridge");
+			free(p);
+			return NULL;
+		}
+		STP_IN_set_bridge_address(p->stp_bridge,
+					  (STP_MacAddress *)p->macaddr);
+		INFO("Set bridge address %s to %02x:%02x:%02x:%02x:%02x:%02x",
+                     p->name,
+                     p->macaddr[0], p->macaddr[1], p->macaddr[2],
+                     p->macaddr[1], p->macaddr[4], p->macaddr[5]
+                     );
 		/* Init slave list */
 		p->port_list = NULL;
 
 		p->do_stp = 0;
 		p->up = 0;
 		p->stp_up = 0;
-		p->stp = NULL;
-		update_bridge_stp_config(p, &default_bridge_stp_cfg);
-		ADD_TO_LIST(br_head, bridge_next, p);	/* Add to bridge list */
+		ADD_TO_LIST(br_head, bridge_next, p);  /* Add to bridge list */
 	} else {
 		INFO("Add iface %s to bridge %s", p->name, br->name);
 		p->up = 0;
@@ -340,12 +156,22 @@ struct ifdata *create_if(int if_index, struct ifdata *br)
 		p->duplex = 0;
 		p->master = br;
 
-		update_port_stp_config(p, &default_port_stp_cfg);
+		p->port_index = get_bridge_portno(p->name);
+		if (p->port_index < 0) {
+			ERROR("Couldn't get port number for %s", p->name);
+			free(p);
+			return NULL;
+		}
+		p->stp_port = STP_IN_port_create(p->master->stp_bridge,
+						 p->port_index, p);
+		if (!p->stp_port) {
+			ERROR("Couldn't create STP Port");
+			free(p);
+			return NULL;
+		}
+
 		ADD_TO_LIST(br->port_list, port_next, p);	/* Add to bridge port list */
 
-		if (br->stp_up) {
-			add_port_stp(p);
-		}
 	}
 
 	/* Add to interface list */
@@ -358,8 +184,7 @@ void delete_if(struct ifdata *ifc)
 {
 	INFO("Delete iface %s", ifc->name);
 	if (ifc->is_bridge) {	/* Bridge: */
-		/* Stop STP */
-		clear_bridge_stp(ifc);
+		STP_IN_set_bridge_enable(ifc->stp_bridge, 0);
 		/* Delete ports */
 		while (ifc->port_list)
 			delete_if(ifc->port_list);
@@ -367,13 +192,13 @@ void delete_if(struct ifdata *ifc)
 		REMOVE_FROM_LIST(br_head, bridge_next, ifc,
 				 "Can't find interface ifindex %d bridge list",
 				 ifc->if_index);
+		STP_IN_bridge_delete(ifc->stp_bridge);
 	} else {		/* Port */
-		if (ifc->master->stp_up)
-			remove_port_stp(ifc);
 		/* Remove from bridge port list */
 		REMOVE_FROM_LIST(ifc->master->port_list, port_next, ifc,
 				 "Can't find interface ifindex %d on br %d's port list",
 				 ifc->if_index, ifc->master->if_index);
+		STP_IN_port_delete(ifc->stp_port);
 	}
 
 	/* Remove from bridge interface list */
@@ -382,6 +207,25 @@ void delete_if(struct ifdata *ifc)
 			 ifc->if_index);
 	free(ifc);
 }
+
+/* New MAC address is stored in addr, which also holds the old value on entry.
+   Return nonzero if the address changed */
+static int check_mac_address(char *name, unsigned char *addr)
+{
+	unsigned char temp_addr[6];
+	if (get_hwaddr(name, temp_addr)) {
+		LOG("Error getting hw address: %s", name);
+		/* Error. Ignore the new value */
+		return 0;
+	}
+	if (memcmp(addr, temp_addr, sizeof(temp_addr)) == 0)
+		return 0;
+	else {
+		memcpy(addr, temp_addr, sizeof(temp_addr));
+		return 1;
+	}
+}
+
 
 static int stp_enabled(struct ifdata *br)
 {
@@ -403,19 +247,32 @@ static int stp_enabled(struct ifdata *br)
 void set_br_up(struct ifdata *br, int up)
 {
 	int stp_up = stp_enabled(br);
-	INFO("%s was %s stp was %s", br->name,up ? "up" : "down", br->stp_up ? "up" : "down");
+	INFO("%s was %s stp was %s", br->name, br->up ? "up" : "down", br->stp_up ? "up" : "down");
 	INFO("Set bridge %s %s stp %s" , br->name,
 	     up ? "up" : "down", stp_up ? "up" : "down");
 
-	if (up != br->up)
+	int changed = 0;
+
+	if (up != br->up) {
 		br->up = up;
+		changed = 1;
+	}
 	
 	if (br->stp_up != stp_up) {
-		if (stp_up)
-			init_bridge_stp(br);
-		else 
-			clear_bridge_stp(br);
+		br->stp_up = stp_up;
+		changed = 1;
 	}
+
+	if (check_mac_address(br->name, br->macaddr)) {
+		/* MAC address changed */
+		/* Notify bridge address change */
+		STP_IN_set_bridge_address(
+			br->stp_bridge, (STP_MacAddress *)br->macaddr);
+	}
+
+	if (changed)
+		STP_IN_set_bridge_enable(br->stp_bridge,
+					 (br->up && br->stp_up)?1:0);
 }
 
 void set_if_up(struct ifdata *ifc, int up)
@@ -423,12 +280,23 @@ void set_if_up(struct ifdata *ifc, int up)
 	INFO("Port %s : %s", ifc->name, (up ? "up" : "down"));
 	int speed = -1;
 	int duplex = -1;
-	int notify_flags = 0;
-	const int NOTIFY_UP = 1, NOTIFY_SPEED = 2, NOTIFY_DUPLEX = 4;
+	int changed = 0;
+
+	if (check_mac_address(ifc->name, ifc->macaddr)) {
+		/* MAC address changed */
+		if (check_mac_address(ifc->master->name, ifc->master->macaddr)
+			) {
+			/* Notify bridge address change */
+			STP_IN_set_bridge_address(
+				ifc->master->stp_bridge,
+				(STP_MacAddress *)ifc->master->macaddr);
+		}
+	}
+
 	if (!up) {		/* Down */
 		if (ifc->up) {
 			ifc->up = up;
-			notify_flags |= NOTIFY_UP;
+			changed = 1;
 		}
 	} else {		/* Up */
 		int r = ethtool_get_speed_duplex(ifc->name, &speed, &duplex);
@@ -441,29 +309,20 @@ void set_if_up(struct ifdata *ifc, int up)
 
 		if (speed != ifc->speed) {
 			ifc->speed = speed;
-			notify_flags |= NOTIFY_SPEED;
+			changed = 1;
 		}
 		if (duplex != ifc->duplex) {
 			ifc->duplex = duplex;
-			notify_flags |= NOTIFY_DUPLEX;
+			changed = 1;
 		}
 		if (!ifc->up) {
 			ifc->up = 1;
-			notify_flags |= NOTIFY_UP;
+			changed = 1;
 		}
 	}
-	if (notify_flags && ifc->master->stp_up) {
-		instance_begin(ifc->master);
-
-		if (notify_flags & NOTIFY_SPEED)
-			STP_IN_changed_port_speed(ifc->port_index, speed);
-		if (notify_flags & NOTIFY_DUPLEX)
-			STP_IN_changed_port_duplex(ifc->port_index);
-		if (notify_flags & NOTIFY_UP)
-			STP_IN_enable_port(ifc->port_index, ifc->up);
-
-		instance_end();
-	}
+	if (changed)
+		STP_IN_set_port_enable(ifc->stp_port,
+				       ifc->up, ifc->speed, ifc->duplex);
 }
 
 /*------------------------------------------------------------*/
@@ -472,7 +331,8 @@ int bridge_notify(int br_index, int if_index, int newlink, int up)
 {
 	if (up)
 		up = 1;
-	LOG("br_index %d, if_index %d, up %d", br_index, if_index, up);
+	LOG("br_index %d, if_index %d, newlink %d, up %d",
+		br_index, if_index, newlink, up);
 
 	struct ifdata *br = NULL;
 	if (br_index >= 0) {
@@ -491,8 +351,7 @@ int bridge_notify(int br_index, int if_index, int newlink, int up)
 			return -1;
 		}
 		/* Bridge must be up if we get such notifications */
-		if (!br->up)
-			set_br_up(br, 1);
+		// Not true anymore - set_br_up(br, 1);
 	}
 
 	struct ifdata *ifc = find_if(if_index);
@@ -513,23 +372,25 @@ int bridge_notify(int br_index, int if_index, int newlink, int up)
 				ifc = NULL;
 			}
 		}
-		if (!ifc)
+		if (!ifc) {
+			if (!newlink) {
+				INFO("Got DELLINK for unknown port %d on "
+				     "bridge %d", if_index, br_index);
+				return -1;
+			}
 			ifc = create_if(if_index, br);
+		}
 		if (!ifc) {
 			ERROR
 			    ("Couldn't create data for interface %d (master %d)",
 			     if_index, br_index);
 			return -1;
 		}
-		if (!newlink && !is_bridge_slave(br->name, ifc->name)) {
-			/* brctl delif generates a DELLINK, but so does ifconfig <slave> down.
-			   So check and delete if it has been removed.
-			 */
+		if (!newlink) {
 			delete_if(ifc);
 			return 0;
 		}
-		if (ifc->up != up)
-			set_if_up(ifc, up);	/* And speed and duplex */
+		set_if_up(ifc, up);	/* And speed and duplex */
 	} else {		/* No br_index */
 		if (!newlink) {
 			/* DELLINK not from bridge means interface unregistered. */
@@ -551,13 +412,7 @@ int bridge_notify(int br_index, int if_index, int newlink, int up)
 					}
 				}
 			}
-			if (ifc && !ifc->is_bridge &&
-			    !is_bridge_slave(ifc->master->name, ifc->name)) {
-				/* Interface might have left bridge and we might have missed deletion */
-				delete_if(ifc);
-				return 0;
-			}
-			if (ifc && ifc->up != up) {
+			if (ifc) {
 				if (ifc->is_bridge)
 					set_br_up(ifc, up);
 				else
@@ -568,49 +423,58 @@ int bridge_notify(int br_index, int if_index, int newlink, int up)
 	return 0;
 }
 
+struct llc_header
+{
+	uint8_t dest_addr[ETH_ALEN];
+	uint8_t src_addr[ETH_ALEN];
+	uint16_t len8023;
+	uint8_t d_sap;  /* 0x42 */
+	uint8_t s_sap;  /* 0x42 */
+	uint8_t llc_ui; /* 0x03 */
+} __attribute__((packed));
+
+const unsigned char bridge_group_address[ETH_ALEN] = {
+	0x01, 0x80, 0xc2, 0x00, 0x00, 0x00
+};
+
+const unsigned char STP_SAP = 0x42;
+
 void bridge_bpdu_rcv(int if_index, const unsigned char *data, int len)
 {
 	struct ifdata *ifc = find_if(if_index);
-	BPDU_T *bpdu = (BPDU_T *) (data + sizeof(MAC_HEADER_T));
 
 	LOG("ifindex %d, len %d", if_index, len);
 	if (!ifc)
 		return;
 
 	TST(ifc->up,);
-	TST(ifc->master->stp_up,);
-	TST(len > sizeof(MAC_HEADER_T) + sizeof(ETH_HEADER_T) + sizeof(BPDU_HEADER_T),);
 
-	/* Do some validation */
-	if (bpdu->hdr.protocol[0] || bpdu->hdr.protocol[1])
+	if (!ifc->master) 
 		return;
 
-	switch (bpdu->hdr.bpdu_type) {
-	case BPDU_RSTP:
-		TST(len >= 36,);
-	case BPDU_CONFIG_TYPE:
-		TST(len >= 35,);
-		/* 802.1w doesn't ask for this */
-		//    TST(ntohs(*(uint16_t*)bpdu.body.message_age)
-		//        < ntohs(*(uint16_t*)bpdu.body.max_age), );
-		TST(memcmp(bpdu->body.bridge_id, &ifc->master->bridge_id, 8) != 0
-		    || (ntohs(*(uint16_t *) bpdu->body.port_id) & 0xfff) !=
-		    ifc->port_index,);
-		break;
-	case BPDU_TOPO_CHANGE_TYPE:
-		break;
-	default:
-		LOG("Receive unknown bpdu type %x", bpdu->hdr.bpdu_type);
+	if (!ifc->master->stp_up)
 		return;
+
+	/* Validate Ethernet and LLC header */
+	{
+		struct llc_header *h;
+		unsigned int l;
+		TST(len > sizeof(struct llc_header),);
+		h = (struct llc_header *)data;
+		TST(memcmp(h->dest_addr, bridge_group_address, ETH_ALEN) == 0,
+                    INFO("ifindex %d, len %d, %02x:%02x:%02x:%02x:%02x:%02x",
+                         if_index, len,
+                         h->dest_addr[0],h->dest_addr[1],h->dest_addr[2],
+                         h->dest_addr[3],h->dest_addr[4],h->dest_addr[5]));
+		l = ntohs(h->len8023);
+		TST(l <= ETH_DATA_LEN && l <= len - ETH_HLEN && l >= 3,);
+		TST(h->d_sap == STP_SAP && h->s_sap == STP_SAP
+		    && (h->llc_ui & 0x3) == 0x3 /* LLC UI */,);
+
+		STP_IN_rx_bpdu(ifc->stp_port,
+			       /* Don't include LLC header */
+			       data + sizeof(*h), l - 3);
 	}
-
-	// dump_hex(data, len);
-	instance_begin(ifc->master);
-	int r = STP_IN_rx_bpdu(0, ifc->port_index, bpdu, len);
-	if (r)
-		ERROR("STP_IN_rx_bpdu on port %s returned %s", ifc->name,
-		      STP_IN_get_error_explanation(r));
-	instance_end();
 }
 
 void bridge_one_second(void)
@@ -618,20 +482,8 @@ void bridge_one_second(void)
 	//  LOG("");
 	struct ifdata *br;
 	for (br = br_head; br; br = br->bridge_next) {
-		if (br->stp_up) {
-			instance_begin(br);
-			STP_IN_one_second();
-			instance_end();
-		}
+		STP_IN_one_second(br->stp_bridge);
 	}
-
-	/* To get information about port changes when bridge is down */
-	/* But won't work so well since we will not sense deletions */
-	static int count = 0;
-	count++;
-	if (count % 60 == 0)
-		bridge_get_configuration();
-
 }
 
 /* Implementing STP_OUT functions */
@@ -646,191 +498,121 @@ int flush_port(char *sys_name)
 	return 0;
 }
 
-int
-STP_OUT_flush_lt(IN int port_index, IN int vlan_id,
-		 IN LT_FLASH_TYPE_T type, IN char *reason)
+void STP_OUT_port_fdb_flush(void *user_ref)
 {
-	LOG("port index %d, flash type %d, reason %s", port_index, type,
-	    reason);
-	TST(vlan_id == 0, 0);
-
+	struct ifdata *port = user_ref;
 	char fname[128];
-	if (port_index == 0) {	/* i.e. passed port_index was 0 */
-		sprintf(fname, "/sys/class/net/%s/bridge/flush",
-			current_br->name);
-		flush_port(fname);
-	} else if (type == LT_FLASH_ONLY_THE_PORT) {
-		struct ifdata *port = find_port(port_index);
-		TST(port != NULL, 0);
-		sprintf(fname, "/sys/class/net/%s/brif/%s/flush",
-			current_br->name, port->name);
-		flush_port(fname);
-	} else if (type == LT_FLASH_ALL_PORTS_EXCLUDE_THIS) {
-		struct ifdata *port;
-		for (port = current_br->port_list; port; port = port->port_next) {
-			if (port->port_index != port_index) {
-				sprintf(fname,
-					"/sys/class/net/%s/brif/%s/flush",
-					current_br->name, port->name);
-				flush_port(fname);
-			}
-		}
-	} else
-		TST(0, 0);
-
-	return 0;
+	snprintf(fname, sizeof(fname),
+		 "/sys/class/net/%s/brport/flush", port->name);
+	fname[sizeof(fname) - 1] = 0;
+	TST(flush_port(fname) == 0,);
 }
 
-void /* for bridge id calculation */ STP_OUT_get_port_mac(IN int port_index,
-							  OUT unsigned char
-							  *mac)
+void STP_OUT_port_set_state(void *user_ref, unsigned int flags)
 {
-	LOG("port index %d", port_index);
-	struct ifdata *port = find_port(port_index);
-	TST(port != NULL,);
-	get_hwaddr(port->name, mac);
-}
-
-unsigned long STP_OUT_get_port_oper_speed(IN unsigned int port_index)
-{
-	LOG("port index %d", port_index);
-	struct ifdata *port = find_port(port_index);
-	TST(port != NULL, 0);
-	LOG("Speed: %d", port->speed);
-	return port->speed;
-}
-
-int /* 1- Up, 0- Down */ STP_OUT_get_port_link_status(IN int port_index)
-{
-	LOG("port index %d", port_index);
-	struct ifdata *port = find_port(port_index);
-	TST(port != NULL, 0);
-	LOG("Link status: %d", port->up);
-	return port->up;
-}
-
-int /* 1- Full, 0- Half */ STP_OUT_get_duplex(IN int port_index)
-{
-	LOG("port index %d", port_index);
-	struct ifdata *port = find_port(port_index);
-	TST(port != NULL, 0);
-	LOG("Duplex: %d", port->duplex);
-	return port->duplex;
-}
-
-int
-STP_OUT_set_port_state(IN int port_index, IN int vlan_id,
-		       IN RSTP_PORT_STATE state)
-{
-	LOG("port index %d, state %d", port_index, state);
-	struct ifdata *port = find_port(port_index);
-	TST(port != NULL, 0);
-	TST(vlan_id == 0, 0);
-
+	struct ifdata *port = user_ref;
 	int br_state;
-	switch (state) {
-	case UID_PORT_DISCARDING:
-		br_state = BR_STATE_BLOCKING;
-		break;
-	case UID_PORT_LEARNING:
-		br_state = BR_STATE_LEARNING;
-		break;
-	case UID_PORT_FORWARDING:
+	
+	LOG("port index %d, flags %d", port->if_index, flags);
+	
+	if (flags & STP_PORT_STATE_FLAG_FORWARDING)
 		br_state = BR_STATE_FORWARDING;
-		break;
-	default:
-		fprintf(stderr, "set_port_state: Unexpected state %d\n", state);
-		return -1;
-	}
+	else if (flags & STP_PORT_STATE_FLAG_LEARNING)
+		br_state = BR_STATE_LEARNING;
+	else
+		br_state = BR_STATE_BLOCKING;
+	
 	if (port->up)
 		bridge_set_state(port->if_index, br_state);
-	return 0;
 }
 
-int STP_OUT_set_hardware_mode(int vlan_id, UID_STP_MODE_T mode)
+
+void STP_OUT_tx_bpdu(void *port_user_ref, void *base, unsigned int len)
 {
-	LOG("vlan id %d, mode %d", vlan_id, mode);
-	return 0;
+	struct ifdata *port = port_user_ref;
+
+	LOG("port index %d, len %d", port->if_index, len);
+
+	struct llc_header h;
+	memcpy(h.dest_addr, bridge_group_address, ETH_ALEN);
+	memcpy(h.src_addr, port->macaddr, ETH_ALEN);
+	/* bpdu_len excludes MAC and LLC headers */
+	h.len8023 = htons(len + 3);
+	h.d_sap = h.s_sap = STP_SAP;
+	h.llc_ui = 0x03; /* LLC UI packet */
+
+	struct iovec iov[2] = {
+		{ .iov_base = &h, .iov_len = sizeof(h) },
+		{ .iov_base = base, .iov_len = len }
+	};
+
+	packet_send(port->if_index, iov, 2, sizeof(h) + len);
 }
 
-int
-STP_OUT_tx_bpdu(IN int port_index, IN int vlan_id,
-		IN unsigned char *bpdu, IN size_t bpdu_len)
+
+void STP_OUT_logmsg(void *br_user_ref, void *port_user_ref,
+		    int level, char *fmt, ...)
 {
-	LOG("port index %d, len %zd", port_index, bpdu_len);
-	struct ifdata *port = find_port(port_index);
-	TST(port != NULL, 0);
-	TST(vlan_id == 0, 0);
+	struct ifdata *bridge = br_user_ref;
+	struct ifdata *port = port_user_ref;
+	char buf[256];
+	int r;
+	int ll = (level < STP_LOG_LEVEL_DEBUG) ?
+		LOG_LEVEL_INFO : LOG_LEVEL_DEBUG;
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+	r = snprintf(buf, sizeof(buf), "LOG Level %d:%s:%s: %02d.%03d: ",
+                     level,
+		     (bridge?bridge->name:""), (port?port->name:""),
+                     (int)tv.tv_sec % 60, (int)tv.tv_usec / 1000);
+	if (r >= sizeof(buf)) {
+		buf[sizeof(buf) - 1] = 0;
+		Dprintf(ll, "%s", buf);
+		r = 0;
+	}
 
-	packet_send(port->if_index, bpdu,
-		    bpdu_len + sizeof(MAC_HEADER_T) + sizeof(ETH_HEADER_T));
-	return 0;
-}
-
-const char *STP_OUT_get_port_name(IN int port_index)
-{
-	LOG("port index %d", port_index);
-	struct ifdata *port = find_port(port_index);
-	TST(port != NULL, 0);
-	return port->name;
-}
-
-int STP_OUT_get_init_stpm_cfg(IN int vlan_id, INOUT UID_STP_CFG_T * cfg)
-{
-	LOG("");
-	TST(vlan_id == 0, 0);
-
-	cfg->bridge_priority = current_br->bridge_priority;
-	cfg->max_age = current_br->max_age;
-	cfg->hello_time = current_br->hello_time;
-	cfg->forward_delay = current_br->forward_delay;
-	cfg->force_version = current_br->force_version;
-
-	return 0;
-}
-
-int
-STP_OUT_get_init_port_cfg(IN int vlan_id,
-			  IN int port_index, INOUT UID_STP_PORT_CFG_T * cfg)
-{
-	LOG("port index %d", port_index);
-	struct ifdata *port = find_port(port_index);
-	TST(port != NULL, 0);
-	TST(vlan_id == 0, 0);
-
-	cfg->port_priority = port->port_priority;
-	cfg->admin_non_stp = port->admin_non_stp;
-	cfg->admin_edge = port->admin_edge;
-	cfg->admin_port_path_cost = port->admin_port_path_cost;
-	cfg->admin_point2point = port->admin_point2point;
-
-	return 0;
-}
-
-extern void stp_trace(const char *fmt, ...)
-{
 	va_list ap;
 	va_start(ap, fmt);
-	vDprintf(LOG_LEVEL_RSTPLIB, fmt, ap);
+	vsnprintf(buf + r, sizeof(buf) - r, fmt, ap);
+	buf[sizeof(buf) - 1] = 0;
+	Dprintf(ll, "%s", buf);
 	va_end(ap);
+	if (level == STP_LOG_LEVEL_ERROR)
+		ctl_err_log("%s", buf + r);
 }
+
+void *STP_OUT_mem_zalloc(unsigned int size)
+{
+	return calloc(1, size);
+}
+
+
+void STP_OUT_mem_free(void *p)
+{
+	free(p);
+}
+
 
 /* Commands and status */
 #include "ctl_functions.h"
 
 #define CTL_CHECK_BRIDGE \
-  struct ifdata *br = find_if(br_index); \
-  if (br == NULL || !br->is_bridge) return Err_Interface_not_a_bridge; \
-  if (!br->do_stp) return Err_Bridge_RSTP_not_enabled; \
-  if (!br->stp_up) return Err_Bridge_is_down; \
-  do { } while (0)
+	struct ifdata *br = find_if(br_index);				\
+	if (br == NULL || !br->is_bridge) {				\
+		ERROR("Couldn't find bridge with index %d", br_index);	\
+		return -1;						\
+	}								\
+	do { } while (0)
 
 #define CTL_CHECK_BRIDGE_PORT \
-  CTL_CHECK_BRIDGE; \
-  struct ifdata *port = find_if(port_index); \
-  if (port == NULL || port->is_bridge || port->master != br) \
-    return Err_Port_does_not_belong_to_bridge; \
-  do { } while (0)
+	CTL_CHECK_BRIDGE;		     \
+	struct ifdata *port = find_if(port_index);			\
+	if (port == NULL || port->is_bridge || port->master != br) {	\
+		ERROR("Interface with index %d not a port of bridge "	\
+		      "with index %d", port_index, br_index);		\
+		return -1;						\
+	}								\
+	do { } while (0)
 
 int CTL_enable_bridge_rstp(int br_index, int enable)
 {
@@ -844,110 +626,77 @@ int CTL_enable_bridge_rstp(int br_index, int enable)
 		if (if_indextoname(br_index, ifname) && is_bridge(ifname))
 			br = create_if(br_index, NULL);
 	}
-	if (br == NULL || !br->is_bridge)
-		return Err_Interface_not_a_bridge;
-	if (br->do_stp != enable) {
-		br->do_stp = enable;
-		if (br->up)
-			r = enable ? init_bridge_stp(br)
-			    : (clear_bridge_stp(br), 0);
+	if (br == NULL || !br->is_bridge) {
+		ERROR("Couldn't find bridge with index %d", br_index);
+		return -1;
 	}
+	if (br->up)
+		set_br_up(br, 1);
 	return r;
 }
 
-int CTL_get_bridge_state(int br_index,
-			 UID_STP_CFG_T * cfg, UID_STP_STATE_T * state)
+int CTL_get_bridge_status(int br_index, STP_BridgeStatus *status)
 {
 	LOG("bridge %d", br_index);
 	CTL_CHECK_BRIDGE;
-	int r;
-	instance_begin(br);
-	r = STP_IN_stpm_get_state(0, state);
-	if (r) {
-		ERROR("Error getting bridge state for %d: %s", br_index,
-		      STP_IN_get_error_explanation(r));
-		instance_end();
-		return r;
-	}
-	r = STP_IN_stpm_get_cfg(0, cfg);
-	if (r) {
-		ERROR("Error getting bridge config for %d: %s", br_index,
-		      STP_IN_get_error_explanation(r));
-		instance_end();
-		return r;
-	}
-	instance_end();
+
+	STP_IN_get_bridge_status(br->stp_bridge, status);
 	return 0;
 }
 
-int CTL_set_bridge_config(int br_index, UID_STP_CFG_T * cfg)
+int CTL_set_bridge_config(int br_index,  STP_BridgeConfig *cfg)
 {
-	INFO("bridge %d, flags %#lx", br_index, cfg->field_mask);
+	INFO("bridge %d", br_index);
 	CTL_CHECK_BRIDGE;
-	int r;
-	instance_begin(br);
-	r = STP_IN_stpm_set_cfg(0, NULL, cfg);
+
+	if (cfg->set_bridge_address) {
+		ERROR("Setting bridge address not permitted: %s", br->name);
+		return -1;
+	}
+	
+	int r = STP_IN_set_bridge_config(br->stp_bridge, cfg);
+
 	if (r) {
-		ERROR("Error setting bridge config for %d: %s", br_index,
-		      STP_IN_get_error_explanation(r));
-		instance_end();
+		ERROR("Error setting bridge config for %s", br->name);
 		return r;
 	}
-	instance_end();
-	/* Change init config in ifdata so it will be applied if we 
-	   disable and enable rstp */
-	update_bridge_stp_config(br, cfg);
 	return 0;
 }
 
-int CTL_get_port_state(int br_index, int port_index,
-		       UID_STP_PORT_CFG_T * cfg, UID_STP_PORT_STATE_T * state)
+int CTL_get_port_status(int br_index, int port_index, STP_PortStatus *status)
 {
 	LOG("bridge %d port %d", br_index, port_index);
 	CTL_CHECK_BRIDGE_PORT;
-	int r;
-	instance_begin(br);
-	state->port_no = port->port_index;
-	r = STP_IN_port_get_state(0, state);
-	if (r) {
-		ERROR("Error getting port state for port %d, bridge %d: %s",
-		      port->port_index, br_index,
-		      STP_IN_get_error_explanation(r));
-		instance_end();
-		return r;
-	}
-	r = STP_IN_port_get_cfg(0, port->port_index, cfg);
-	if (r) {
-		ERROR("Error getting port config for port %d, bridge %d: %s",
-		      port->port_index, br_index,
-		      STP_IN_get_error_explanation(r));
-		instance_end();
-		return r;
-	}
-	instance_end();
-	return 0;
 
+	STP_IN_get_port_status(port->stp_port, status);
+	return 0;
 }
 
-int CTL_set_port_config(int br_index, int port_index, UID_STP_PORT_CFG_T * cfg)
+int CTL_set_port_config(int br_index, int port_index, STP_PortConfig *cfg)
 {
-	INFO("bridge %d, port %d, flags %#lx", br_index, port_index,
-	     cfg->field_mask);
+	INFO("bridge %d, port %d", br_index, port_index);
 	CTL_CHECK_BRIDGE_PORT;
-	int r;
-	instance_begin(br);
-	r = STP_IN_set_port_cfg(0, port->port_index, cfg);
+
+	int r = STP_IN_set_port_config(port->stp_port, cfg);
 	if (r) {
-		ERROR("Error setting port config for port %d, bridge %d: %s",
-		      port->port_index, br_index,
-		      STP_IN_get_error_explanation(r));
-		instance_end();
+		ERROR("Error setting port config for %s", port->name);
 		return r;
 	}
-	instance_end();
-	/* Change init config in ifdata so it will be applied if we 
-	   disable and enable rstp */
-	update_port_stp_config(port, cfg);
+	
+	return 0;
+}
+
+int CTL_port_mcheck(int br_index, int port_index)
+{
+	INFO("bridge %d, port %d", br_index, port_index);
+	CTL_CHECK_BRIDGE_PORT;
+
+	int r = STP_IN_port_mcheck(port->stp_port);
+	if (r) {
+		ERROR("Error doing port mcheck for %s", port->name);
+		return r;
+	}
+	
 	return 0;
 }
 
