@@ -52,7 +52,7 @@ typedef struct _log_string
   strcpy((sa)->sun_path + 1, (string)); \
  } while (0)
 
-#define RSTP_SERVER_SOCK_NAME ".rstp_server"
+#define RSTP_SERVER_SOCK_NAME "/tmp/.rstp_server"
 
 /* COMMANDS */
 
