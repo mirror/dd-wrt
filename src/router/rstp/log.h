@@ -27,12 +27,12 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include "ctl_socket_server.h"
 
 #define LOG_LEVEL_NONE 0
 #define LOG_LEVEL_ERROR 1
 #define LOG_LEVEL_INFO  2
 #define LOG_LEVEL_DEBUG 3
-#define LOG_LEVEL_RSTPLIB 4
 #define LOG_LEVEL_MAX 100
 
 #define LOG_LEVEL_DEFAULT LOG_LEVEL_INFO
@@ -60,9 +60,18 @@ extern int log_level;
 #define INFO(_fmt, _args...) \
 	PRINT(LOG_LEVEL_INFO, "%s: " _fmt, __PRETTY_FUNCTION__, ##_args)
 
-#define ERROR(_fmt, _args...) \
-	PRINT(LOG_LEVEL_ERROR, "error, %s: " _fmt, __PRETTY_FUNCTION__, ##_args)
+#ifdef NO_DAEMON
 
+#define ERROR(_fmt, _args...) \
+	PRINT(LOG_LEVEL_ERROR, "%s: " _fmt, __PRETTY_FUNCTION__, ##_args)
+
+#else
+#define ERROR(_fmt, _args...) \
+	({								\
+		PRINT(LOG_LEVEL_ERROR, "error, %s: " _fmt, __PRETTY_FUNCTION__, ##_args); \
+		ctl_err_log(_fmt "\n", ##_args);			\
+	})
+#endif
 static inline void dump_hex(void *b, int l)
 {
 	unsigned char *buf = b;

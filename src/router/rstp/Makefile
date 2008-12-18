@@ -1,5 +1,5 @@
 
-DSOURCES =  brstate.c libnetlink.c epoll.o epoll_loop.c bridge_track.c \
+DSOURCES =  brstate.c libnetlink.c epoll_loop.c bridge_track.c rstp.c \
 	   packet.c ctl_socket.c netif_utils.c main.c brmon.c
 
 DOBJECTS = $(DSOURCES:.c=.o)
@@ -9,34 +9,30 @@ CTLSOURCES = ctl_main.c ctl_cli_wrap.c ctl_socket_client.c
 CTLOBJECTS = $(CTLSOURCES:.c=.o)
 
 #CC=gcc
-CFLAGS = -Wall -Werror -DNEED_PRINTF $(COPTS) -D_REENTRANT -D__LINUX__ -DVERSION=$(version) -DBUILD=$(build) -I. -I$(LINUXDIR)/include -I./include -I./rstplib
+CFLAGS = -Wall -Werror $(COPTS) -D_REENTRANT -D__LINUX__ -DVERSION=$(version) -DBUILD=$(build) -I. -I./include
 
 all: rstpd rstpctl
 
-rstplib:
-	make -C rstplib librstp.a
-
-.PHONY: rstplib
-
-rstpd: $(DOBJECTS) rstplib
-	$(CC) -o $@ $(DOBJECTS) -L ./rstplib -lrstp
+rstpd: $(DOBJECTS)
+	$(CC) -o $@ $(DOBJECTS)
 
 rstpctl: $(CTLOBJECTS)
 	$(CC) -o $@ $(CTLOBJECTS)
 
 clean:
 	rm -f *.o rstpd rstpctl
-	make -C rstplib clean
 	rm -fr $(TOPDIR) $(BUILDDIR)
 
 install: all
 	install -m 755 -d $(INSTALLDIR)/sbin
 	install -m 755 rstpd $(INSTALLDIR)/sbin
-	install -m 755 bridge-stp $(INSTALLDIR)/sbin/bridge-stp2
 	install -m 755 rstpctl $(INSTALLDIR)/sbin
+#	install -m 755 -d $(INSTALLPREFIX)/usr/share/man/man8
+#	install -m 644 rstpd.8 $(INSTALLPREFIX)/usr/share/man/man8
+#	install -m 644 rstpctl.8 $(INSTALLPREFIX)/usr/share/man/man8
 
 # RPM Building, as non root
-version := 0.16
+version := 0.21
 build := 1
 
 BUILDROOT := $(CURDIR)/rpm_buildroot

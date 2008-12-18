@@ -34,17 +34,25 @@ struct ctl_msg_hdr {
 	int cmd;
 	int lin;
 	int lout;
+	int llog;
 	int res;
 };
+
+#define LOG_STRING_LEN 256
+
+typedef struct _log_string 
+{
+	char buf[LOG_STRING_LEN];
+} LogString;
 
 #define set_socket_address(sa, string) \
  do {\
   (sa)->sun_family = AF_UNIX; \
   memset((sa)->sun_path, 0, sizeof((sa)->sun_path)); \
-  strcpy((sa)->sun_path, (string)); \
+  strcpy((sa)->sun_path + 1, (string)); \
  } while (0)
 
-#define RSTP_SERVER_SOCK_NAME "/tmp/.rstp_server"
+#define RSTP_SERVER_SOCK_NAME ".rstp_server"
 
 /* COMMANDS */
 
@@ -65,31 +73,29 @@ struct enable_bridge_rstp_OUT {
 #define enable_bridge_rstp_CALL (in->br_index, in->enable)
 
 #if 0
-int CTL_get_bridge_state(int br_index,
-			 UID_STP_CFG_T * cfg, UID_STP_STATE_T * state);
+int CTL_get_bridge_status(int br_index, STP_BridgeStatus *status);
 #endif
-#define CMD_CODE_get_bridge_state  102
-#define get_bridge_state_ARGS (int br_index, UID_STP_CFG_T *cfg, UID_STP_STATE_T *state)
-struct get_bridge_state_IN {
+#define CMD_CODE_get_bridge_status  102
+#define get_bridge_status_ARGS (int br_index, STP_BridgeStatus *status)
+struct get_bridge_status_IN {
 	int br_index;
 };
-struct get_bridge_state_OUT {
-	UID_STP_CFG_T cfg;
-	UID_STP_STATE_T state;
+struct get_bridge_status_OUT {
+	STP_BridgeStatus status;
 };
-#define get_bridge_state_COPY_IN \
+#define get_bridge_status_COPY_IN \
   ({ in->br_index = br_index; })
-#define get_bridge_state_COPY_OUT ({ *cfg = out->cfg; *state = out->state; })
-#define get_bridge_state_CALL (in->br_index, &out->cfg, &out->state)
+#define get_bridge_status_COPY_OUT ({ *status = out->status; })
+#define get_bridge_status_CALL (in->br_index, &out->status)
 
 #if 0
-int CTL_set_bridge_config(int br_index, UID_STP_CFG_T * cfg);
+int CTL_set_bridge_config(int br_index,  STP_BridgeConfig *cfg);
 #endif
 #define CMD_CODE_set_bridge_config  103
-#define set_bridge_config_ARGS (int br_index, UID_STP_CFG_T *cfg)
+#define set_bridge_config_ARGS (int br_index, STP_BridgeConfig *cfg)
 struct set_bridge_config_IN {
 	int br_index;
-	UID_STP_CFG_T cfg;
+	STP_BridgeConfig cfg;
 };
 struct set_bridge_config_OUT {
 };
@@ -99,33 +105,31 @@ struct set_bridge_config_OUT {
 #define set_bridge_config_CALL (in->br_index, &in->cfg)
 
 #if 0
-int CTL_get_port_state(int br_index, int port_index,
-		       UID_STP_PORT_CFG_T * cfg, UID_STP_PORT_STATE_T * state);
+int CTL_get_port_status(int br_index, int port_index, STP_PortStatus *status);
 #endif
-#define CMD_CODE_get_port_state  104
-#define get_port_state_ARGS (int br_index, int port_index, UID_STP_PORT_CFG_T *cfg, UID_STP_PORT_STATE_T *state)
-struct get_port_state_IN {
+#define CMD_CODE_get_port_status  104
+#define get_port_status_ARGS (int br_index, int port_index, STP_PortStatus *status)
+struct get_port_status_IN {
 	int br_index;
 	int port_index;
 };
-struct get_port_state_OUT {
-	UID_STP_PORT_CFG_T cfg;
-	UID_STP_PORT_STATE_T state;
+struct get_port_status_OUT {
+	STP_PortStatus status;
 };
-#define get_port_state_COPY_IN \
+#define get_port_status_COPY_IN \
   ({ in->br_index = br_index; in->port_index = port_index; })
-#define get_port_state_COPY_OUT ({ *cfg = out->cfg; *state = out->state; })
-#define get_port_state_CALL (in->br_index, in->port_index, &out->cfg, &out->state)
+#define get_port_status_COPY_OUT ({ *status = out->status; })
+#define get_port_status_CALL (in->br_index, in->port_index, &out->status)
 
 #if 0
-int CTL_set_port_config(int br_index, int port_index, UID_STP_PORT_CFG_T * cfg);
+int CTL_set_port_config(int br_index, int port_index, STP_PortConfig *cfg);
 #endif
 #define CMD_CODE_set_port_config  105
-#define set_port_config_ARGS (int br_index, int port_index, UID_STP_PORT_CFG_T *cfg)
+#define set_port_config_ARGS (int br_index, int port_index, STP_PortConfig *cfg)
 struct set_port_config_IN {
 	int br_index;
 	int port_index;
-	UID_STP_PORT_CFG_T cfg;
+	STP_PortConfig cfg;
 };
 struct set_port_config_OUT {
 };
@@ -135,9 +139,25 @@ struct set_port_config_OUT {
 #define set_port_config_CALL (in->br_index, in->port_index, &in->cfg)
 
 #if 0
+int CTL_port_mcheck(int br_index, int port_index);
+#endif
+#define CMD_CODE_port_mcheck  106
+#define port_mcheck_ARGS (int br_index, int port_index)
+struct port_mcheck_IN {
+	int br_index;
+	int port_index;
+};
+struct port_mcheck_OUT {
+};
+#define port_mcheck_COPY_IN \
+  ({ in->br_index = br_index; in->port_index = port_index; })
+#define port_mcheck_COPY_OUT ({ (void)0; })
+#define port_mcheck_CALL (in->br_index, in->port_index)
+
+#if 0
 int CTL_set_debug_level(int level);
 #endif
-#define CMD_CODE_set_debug_level 106
+#define CMD_CODE_set_debug_level 107
 #define set_debug_level_ARGS (int level)
 struct set_debug_level_IN {
 	int level;
@@ -155,15 +175,15 @@ case CMD_CODE_ ## name : do { \
   if (0) LOG("CTL command " #name); \
   struct name ## _IN in0, *in = &in0; \
   struct name ## _OUT out0, *out = &out0; \
-  if (sizeof(*in) != lin || sizeof(*out) != (outbuf?*lout:0)) { \
+  if (sizeof(*in) != lin || sizeof(*out) != lout) { \
   LOG("Bad sizes lin %d != %zd or lout %d != %zd", \
-       lin, sizeof(*in), lout?*lout:0, sizeof(*out)); \
+       lin, sizeof(*in), lout, sizeof(*out)); \
     return -1; \
   } \
   memcpy(in, inbuf, lin); \
   int r = CTL_ ## name name ## _CALL; \
   if (r) return r; \
-  if (outbuf) memcpy(outbuf, out, *lout); \
+  if (outbuf) memcpy(outbuf, out, lout); \
   return r; \
 } while (0)
 
@@ -173,16 +193,16 @@ int CTL_ ## name name ## _ARGS \
 { \
   struct name ## _IN in0, *in=&in0; \
   struct name ## _OUT out0, *out = &out0; \
-  int l = sizeof(*out); \
   name ## _COPY_IN; \
   int res = 0; \
-  int r = send_ctl_message(CMD_CODE_ ## name, in, sizeof(*in), out, &l, \
-                           &res); \
-  if (r || res) LOG("Got return code %d, %d", r, res); \
+  LogString log = { .buf = "" };					\
+  int r = send_ctl_message(CMD_CODE_ ## name, in, sizeof(*in),		\
+			   out, sizeof(*out), &log, &res);		\
+  if (r || res) LOG("Got return code %d, %d\n%s", r, res, log.buf);	\
   if (r) return r; \
   if (res) return res; \
   name ## _COPY_OUT; \
-  return r; \
+  return 0; \
 }
 
 #endif
