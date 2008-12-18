@@ -45,6 +45,7 @@ typedef struct _log_string
 	char buf[LOG_STRING_LEN];
 } LogString;
 
+
 #define set_socket_address(sa, string) \
  do {\
   (sa)->sun_family = AF_UNIX; \
@@ -52,7 +53,7 @@ typedef struct _log_string
   strcpy((sa)->sun_path + 1, (string)); \
  } while (0)
 
-#define RSTP_SERVER_SOCK_NAME "/tmp/.rstp_server"
+#define RSTP_SERVER_SOCK_NAME ".rstp_server"
 
 /* COMMANDS */
 
