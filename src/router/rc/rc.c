@@ -365,7 +365,7 @@ int main( int argc, char **argv )
     {
 	if( argc >= 2 )
 	{
-	    // fprintf (stderr, "hotplug %s\n", argv[1]);
+	    fprintf (stderr, "hotplug %s\n", argv[1]);
 	    if( !strcmp( argv[1], "net" ) )
 		{
 		start_service( "hotplug_net" );
