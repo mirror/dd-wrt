@@ -4028,8 +4028,9 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     showRadio( wp, "wl_basic.extrange", wl_xr );
 //    showRadio( wp, "wl_basic.supergcomp", wl_comp );
     showRadio( wp, "wl_basic.supergff", wl_ff );
+#if 0
     showRadio( wp, "wl_basic.csma", wl_csma );
-
+#endif
     // showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
     if( nvram_match( "ath_regulatory", "1" ) || !issuperchannel(  ) )
