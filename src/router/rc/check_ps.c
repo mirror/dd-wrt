@@ -28,6 +28,8 @@ struct mon
     int type;			// LAN or WAN
     // int (*stop) (void); // stop function
     // int (*start) (void); // start function
+    char *nvvalue;
+    char *nvmatch;
 };
 
 enum
@@ -35,29 +37,29 @@ enum
 
 struct mon mons[] = {
     // {"tftpd", 1, M_LAN, stop_tftpd, start_tftpd},
-    {"upnp", 1, M_LAN},
+    {"upnp", 1, M_LAN, "upnp_enable", "1"},
     {"process_monitor", 1, M_LAN},
     {"httpd", 2, M_LAN},
     {"udhcpd", 1, M_LAN},
-    {"dnsmasq", 1, M_LAN},
-    {"dhcpfwd", 1, M_LAN},
+    {"dnsmasq", 1, M_LAN, "dnsmasq_enable", "1"},
+    {"dhcpfwd", 1, M_LAN, "dhcpfwd_enable", "1"},
 #ifndef HAVE_MSSID
     {"nas", 1, M_LAN},
 #endif
 #ifdef HAVE_NOCAT
-    {"splashd", 1, M_LAN},
+    {"splashd", 1, M_LAN, "NC_enable", "1"},
 #endif
 #ifdef HAVE_CHILLI
-    {"chilli", 1, M_WAN},
+    {"chilli", 1, M_LAN, "chilli_enable", "1"},
 #endif
 #ifdef HAVE_WIFIDOG
-    {"wifidog", 1, M_WAN},
+    {"wifidog", 1, M_WAN, "wd_enable", "1"},
 #endif
 #ifdef HAVE_OLSRD
-    {"olsrd", 1, M_LAN},
+    {"olsrd", 1, M_LAN, "wk_mode", "olsrd"},
 #endif
 #ifdef HAVE_SPUTNIK_APD
-    {"sputnik", 1, M_WAN},
+    {"sputnik", 1, M_WAN, "apd_enable", "1"},
 #endif
     {NULL, 0, 0}
 };
@@ -205,7 +207,13 @@ int do_mon( void )
     {
 	if( v->name == NULL )
 	    break;
+	if( v->nvvalue && v->nvmatch )
+	{
+	    if( !nvram_match( v->nvvalue, v->nvmatch ) )
+		continue;	// service not enabled. no need to check
+	}
 	printf( "checking %s\n", v->name );
+
 	if( v->type == M_WAN )
 	    if( !check_wan_link( 0 ) )
 	    {
