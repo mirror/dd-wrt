@@ -27,7 +27,7 @@ ead: ead.o $(obj) tinysrp/libtinysrp.a
 	$(CC) -o $@ $< $(obj) $(LDFLAGS) $(LIBS_EAD)
 
 ead-client: ead-client.o $(obj)
-	$(CC) -o $@ $< $(obj) $(LDFLAGS) $(LIBS)
+	$(CC) -o $@ $< $(obj) $(LDFLAGS) $(LIBS) -L$(TOP)/libutils -L$(TOP)/nvram  -lutils -lnvram
 
 clean:
 	rm -f *.o ead ead-client
