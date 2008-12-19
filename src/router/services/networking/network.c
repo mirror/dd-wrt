@@ -1765,7 +1765,7 @@ memset(eadline,0,64);
     free( wan_ifname );
     free( lan_ifnames );
 #ifdef HAVE_EAD
-    sysprintf("ead %d -B",eadline);
+    sysprintf("ead %s -B",eadline);
 #endif
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 #ifndef HAVE_NOWIFI
