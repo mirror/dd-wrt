@@ -1482,13 +1482,13 @@ if (getRouterBrand() == ROUTER_BOARD_WP54G)
 #endif
 	foreach( name, lan_ifnames, next )
 	{
-#ifdef HAVE_EAD
-	    eval("ead","-d",name,"-B");
-#endif
 	    if( nvram_match( "wan_ifname", name ) )
 		continue;
 	    if( !ifexists( name ) )
 		continue;
+#ifdef HAVE_EAD
+	    eval("ead","-d",name,"-B");
+#endif
 #if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880)
 	    if( !strcmp( name, "eth2" ) )
 	    {
