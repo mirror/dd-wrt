@@ -115,7 +115,7 @@ static void __init compex_init(void)
  
  	/* WP188 support,
  	   WP188 has a RTL8201 (phy addr = 1) in place of the Marvell switch */
- 	data = (1<<31) | (1<<21) | (3<<16);
+/* 	data = (1<<31) | (1<<21) | (3<<16);
  	for(i=0; i<4; i++) {
  		*(u32 *) (IXP4XX_EthB_BASE_VIRT + 0x80 + i*4) = data & 0xff;
  		data >>=8;
@@ -129,18 +129,18 @@ static void __init compex_init(void)
  		data |= (*(u32 *) (IXP4XX_EthB_BASE_VIRT + 0x90 + i*4) & 0xff) << (i*8);
  	}
  	data &= 0xffff;
-     
+*/     
 
 	ixp4xx_sys_init();
 
 	compex_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
 	compex_flash_resource.end =
-		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size - 1;
+		IXP4XX_EXP_BUS_BASE(0) + SZ_32M - 1;
 
- 	if ( data == 0x8201 ) {
- 		compex_flash_resource.end =
- 			IXP4XX_EXP_BUS_BASE(0) + 2*ixp4xx_exp_bus_size - 1;
- 	}
+// 	if ( data == 0x8201 ) {
+ //		compex_flash_resource.end =
+ //			IXP4XX_EXP_BUS_BASE(0) + 2*ixp4xx_exp_bus_size - 1;
+ //	}
  		
 
 	platform_add_devices(compex_devices, ARRAY_SIZE(compex_devices));
