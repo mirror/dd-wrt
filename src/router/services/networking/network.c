@@ -1480,6 +1480,9 @@ if (getRouterBrand() == ROUTER_BOARD_WP54G)
 #else
 	br_set_bridge_forward_delay( lan_ifname, 1);
 #endif
+#ifdef HAVE_EAD
+	eval("killall","-9","ead");
+#endif
 	foreach( name, lan_ifnames, next )
 	{
 	    if( nvram_match( "wan_ifname", name ) )
