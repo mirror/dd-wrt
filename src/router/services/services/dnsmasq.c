@@ -95,12 +95,12 @@ int hasdhcp( void )
 {
     int count = 0;
     int ret = landhcp(  );
-//    return ret;
+    return ret;
      // for now, keep it disabled
-    if( nvram_get( "mdhcpd_count" ) != NULL )
+/*    if( nvram_get( "mdhcpd_count" ) != NULL )
 	count = atoi( nvram_safe_get( "mdhcpd_count" ) );
     ret |= count;
-    return ret > 0 ? 1 : 0;
+    return ret > 0 ? 1 : 0;*/
 }
 
 int canlan(void)
@@ -153,7 +153,7 @@ void start_dnsmasq( void )
 	perror( "/tmp/dnsmasq.conf" );
 	return;
     }
-    fprintf(fp, "bind-interfaces\n");
+//    fprintf(fp, "bind-interfaces\n");
     if( nvram_match( "fon_enable", "1" )
 	|| ( nvram_match( "chilli_nowifibridge", "1" )
 	     && nvram_match( "chilli_enable", "1" ) ) )
