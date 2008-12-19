@@ -176,7 +176,7 @@ static int npe_error_handler = 0; /* default : no npe error handler */
  */
 #ifdef CONFIG_IXP400_ETH_NPEC_ONLY
 static int dev_max_count = 1; /* only NPEC is used */
-#elif defined (CONFIG_IXP400_ETH_NPEB_ONLY)
+#elif defined (CONFIG_IXP400_ETH_NPEB_ONLY) || defined (CONFIG_MACH_WG302V2)
 static int dev_max_count = 1; /* only NPEB is used */
 #elif defined (CONFIG_ARCH_IXDP425) || defined(CONFIG_ARCH_IXDPG425)\
       || defined (CONFIG_ARCH_ADI_COYOTE) || defined (CONFIG_MACH_AVILA) || defined (CONFIG_MACH_CAMBRIA) || defined (CONFIG_TONZE) || defined (CONFIG_MACH_KIXRP435) \
