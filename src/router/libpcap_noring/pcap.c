@@ -453,6 +453,52 @@ static const u_char charmap[] = {
 	(u_char)'\374', (u_char)'\375', (u_char)'\376', (u_char)'\377',
 };
 
+/*
+ * Clean up a "struct bpf_program" by freeing all the memory allocated
+ * in it.
+ */
+void
+pcap_freecode(struct bpf_program *program)
+{
+	program->bf_len = 0;
+	if (program->bf_insns != NULL) {
+		free((char *)program->bf_insns);
+		program->bf_insns = NULL;
+	}
+}
+
+
+/*
+ * Make a copy of a BPF program and put it in the "fcode" member of
+ * a "pcap_t".
+ *
+ * If we fail to allocate memory for the copy, fill in the "errbuf"
+ * member of the "pcap_t" with an error message, and return -1;
+ * otherwise, return 0.
+ */
+int
+install_bpf_program(pcap_t *p, struct bpf_program *fp)
+{
+	size_t prog_size;
+
+	/*
+	 * Free up any already installed program.
+	 */
+	pcap_freecode(&p->fcode);
+
+	prog_size = sizeof(*fp->bf_insns) * fp->bf_len;
+	p->fcode.bf_len = fp->bf_len;
+	p->fcode.bf_insns = (struct bpf_insn *)malloc(prog_size);
+	if (p->fcode.bf_insns == NULL) {
+		snprintf(p->errbuf, sizeof(p->errbuf),
+			 "malloc: %s", pcap_strerror(errno));
+		return (-1);
+	}
+	memcpy(p->fcode.bf_insns, fp->bf_insns, prog_size);
+	return (0);
+}
+
+
 int
 pcap_strcasecmp(const char *s1, const char *s2)
 {

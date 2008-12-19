@@ -2249,36 +2249,6 @@ icode_to_fcode(root, lenp)
 	return fp;
 }
 
-/*
- * Make a copy of a BPF program and put it in the "fcode" member of
- * a "pcap_t".
- *
- * If we fail to allocate memory for the copy, fill in the "errbuf"
- * member of the "pcap_t" with an error message, and return -1;
- * otherwise, return 0.
- */
-int
-install_bpf_program(pcap_t *p, struct bpf_program *fp)
-{
-	size_t prog_size;
-
-	/*
-	 * Free up any already installed program.
-	 */
-	pcap_freecode(&p->fcode);
-
-	prog_size = sizeof(*fp->bf_insns) * fp->bf_len;
-	p->fcode.bf_len = fp->bf_len;
-	p->fcode.bf_insns = (struct bpf_insn *)malloc(prog_size);
-	if (p->fcode.bf_insns == NULL) {
-		snprintf(p->errbuf, sizeof(p->errbuf),
-			 "malloc: %s", pcap_strerror(errno));
-		return (-1);
-	}
-	memcpy(p->fcode.bf_insns, fp->bf_insns, prog_size);
-	return (0);
-}
-
 #ifdef BDEBUG
 static void
 opt_dump(root)
