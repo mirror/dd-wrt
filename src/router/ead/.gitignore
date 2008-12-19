@@ -1,0 +1,17 @@
+pfc
+*.o
+tinysrp/Makefile
+clitest
+config.cache
+config.h
+config.log
+config.status
+libtinysrp.a
+srvtest
+stamp-h
+tconf
+tphrase
+ead
+ead-client
+autom4te.cache
+.*.swp
