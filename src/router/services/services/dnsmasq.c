@@ -153,7 +153,7 @@ void start_dnsmasq( void )
 	perror( "/tmp/dnsmasq.conf" );
 	return;
     }
-
+    fprintf(fp, "bind-interfaces\n");
     if( nvram_match( "fon_enable", "1" )
 	|| ( nvram_match( "chilli_nowifibridge", "1" )
 	     && nvram_match( "chilli_enable", "1" ) ) )
