@@ -37,3 +37,4 @@ clean:
 install: 
 	install -d $(INSTALLDIR)/usr/sbin
 	install ead $(INSTALLDIR)/usr/sbin
+	install ead-client $(INSTALLDIR)/usr/sbin
