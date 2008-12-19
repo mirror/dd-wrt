@@ -90,7 +90,7 @@ void start_dhcpfwd( void )
 	{
 	}
 #endif
-	if( getWET(  ) )
+	else if( getWET(  ) )
 	{
 	    // nothing
 	}
