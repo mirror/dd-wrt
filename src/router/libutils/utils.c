@@ -495,7 +495,7 @@ return 0;
 	fseek( file, 32, SEEK_SET );
 	char gwid[7];
 
-	gwid[6] = 0;
+ 	gwid[6] = 0;
 	int ret = fread( gwid, 6, 1, file );
 
 	if( ret < 1 )
@@ -504,22 +504,22 @@ return 0;
 	    goto old_way;
 	}
 	fclose( file );
-	if( !strcmp( gwid, "GW2347" ) )
+	if( !strncmp( gwid, "GW2347",6 ) )
 	{
 	    setRouter( "Avila GW2347" );
 	    return ROUTER_BOARD_GATEWORX_SWAP;
 	}
-	if( !strcmp( gwid, "GW2357" ) )
+	if( !strncmp( gwid, "GW2357",6 ) )
 	{
 	    setRouter( "Avila GW2357" );
 	    return ROUTER_BOARD_GATEWORX_SWAP;
 	}
-	if( !strcmp( gwid, "GW2353" ) )
+	if( !strncmp( gwid, "GW2353",6 ) )
 	{
 	    setRouter( "Avila GW2343" );
 	    return ROUTER_BOARD_GATEWORX;
 	}
-	if( !strcmp( gwid, "GW2348" ) )
+	if( !strncmp( gwid, "GW2348",6 ) )
 	{
 #if HAVE_ALFA_BRANDING
 	setRouter( "WLAN base-station" );
@@ -528,17 +528,17 @@ return 0;
 #endif
 	    return ROUTER_BOARD_GATEWORX;
 	}
-	if( !strcmp( gwid, "GW2358" ) )
+	if( !strncmp( gwid, "GW2358",6 ) )
 	{
 	    setRouter( "Cambria GW2358-4" );
 	    return ROUTER_BOARD_GATEWORX;
 	}
-	if( !strcmp( gwid, "GW2355" ) )
+	if( !strncmp( gwid, "GW2355",6 ) )
 	{
 	    setRouter( "Avila GW2355" );
 	    return ROUTER_BOARD_GATEWORX_GW2345;
 	}
-	if( !strcmp( gwid, "GW2345" ) )
+	if( !strncmp( gwid, "GW2345",6 ) )
 	{
 	    setRouter( "Avila GW2345" );
 	    return ROUTER_BOARD_GATEWORX_GW2345;
