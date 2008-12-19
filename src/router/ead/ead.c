@@ -15,10 +15,13 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/select.h>
+#include <sys/wait.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <fcntl.h>
@@ -35,12 +38,13 @@
 #include "ead.h"
 #include "ead-pcap.h"
 #include "ead-crypt.h"
-
 #include "filter.c"
 
 #ifdef linux
 #include "libbridge_init.c"
 #endif
+
+extern char *nvram_safe_get(const char *name);
 
 #define PASSWD_FILE	"/etc/passwd"
 
@@ -83,7 +87,6 @@ static unsigned char pwbuf[MAXPARAMLEN];
 static unsigned char saltbuf[MAXSALTLEN];
 static unsigned char pw_saltbuf[MAXSALTLEN];
 static struct list_head instances;
-static const char *dev_name = DEFAULT_DEVNAME;
 static bool nonfork = false;
 
 #ifdef linux
@@ -324,7 +327,9 @@ handle_ping(struct ead_packet *pkt, int len, int *nstate)
 	struct ead_msg_pong *pong = EAD_DATA(msg, pong);
 
 	msg->len = htonl(sizeof(struct ead_msg_pong));
-	strcpy(pong->name, dev_name);
+	memset(pong->name,0,32);
+	snprintf(pong->name,31,"%s - %s",nvram_safe_get("lan_ipaddr"), nvram_safe_get("router_name"));
+	
 	pong->auth_type = htons(EAD_AUTH_MD5);
 
 	return true;
@@ -768,7 +773,7 @@ static int
 check_bridge_port(const char *br, const char *port, void *arg)
 {
 	struct ead_instance *in;
-	struct list_head *p, *tmp;
+	struct list_head *p;
 
 	list_for_each(p, &instances) {
 		in = list_entry(p, struct ead_instance, list);
@@ -800,7 +805,7 @@ check_all_interfaces(void)
 {
 #ifdef linux
 	struct ead_instance *in;
-	struct list_head *p, *tmp;
+	struct list_head *p;
 
 	br_foreach_bridge(check_bridge, NULL);
 
@@ -832,7 +837,7 @@ int main(int argc, char **argv)
 		return usage(argv[0]);
 
 	INIT_LIST_HEAD(&instances);
-	while ((ch = getopt(argc, argv, "Bd:D:fhp:P:")) != -1) {
+	while ((ch = getopt(argc, argv, "Bd:fhp:P:")) != -1) {
 		switch(ch) {
 		case 'B':
 			background = true;
@@ -848,9 +853,6 @@ int main(int argc, char **argv)
 			INIT_LIST_HEAD(&in->list);
 			strncpy(in->name, optarg, sizeof(in->name) - 1);
 			list_add(&in->list, &instances);
-			break;
-		case 'D':
-			dev_name = optarg;
 			break;
 		case 'p':
 			passwd_file = optarg;
