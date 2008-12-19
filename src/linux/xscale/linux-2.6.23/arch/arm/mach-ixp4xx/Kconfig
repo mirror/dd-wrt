@@ -231,6 +231,15 @@ config MACH_GTWX5715
 		"High Speed" UART is n/c (as far as I can tell)
 		20 Pin ARM/Xscale JTAG interface on J2
 
+config MACH_MI424WR
+	bool "Actiontec MI424WR"
+	depends on ARCH_IXP4XX
+	select PCI
+	help
+		Add support for the Actiontec MI424-WR.
+
+
+
 comment "IXP4xx Options"
 
 config DMABOUNCE
