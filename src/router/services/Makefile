@@ -72,6 +72,9 @@ endif
 ifeq ($(CONFIG_TRIMAX),y)
 CFLAGS += -DHAVE_TRIMAX
 endif
+ifeq ($(CONFIG_EAD),y)
+CFLAGS += -DHAVE_EAD
+endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
 endif
