@@ -1,3 +1,17 @@
+2008 12 18
+Improved/fixed rtp.
+
+2008 11 23
+Updated xunlei.  Added pplive, guildwars.
+
+2008 11 08
+Updates to xunlei, kugoo, bittorrent.  Added copyright lines to all 
+pattern files.
+
+2008 10 04
+Fixed minor bug in chikka. Added possible new pattern for xunlei in 
+comments.
+
 2008 04 23
 Testing for random matches with test_match.sh and the kernel library was 
 completely broken.  It now actually works.  Added includes to testing 

@@ -113,6 +113,8 @@
     {
     "gopher", "l7"},		// Gopher - A precursor to HTTP - RFC 1436
     {
+    "guildwars", "l7"},		// Guild Wars - online game - http://guildwars.com
+    {
     "h323", "l7"},		// H.323 - Voice over IP.
     {
     "halflife2-deathmatch", "l7"},	// Half-Life 2 Deathmatch - popular
@@ -233,21 +235,20 @@
     "poco", "p2p"},		// POCO and PP365 - Chinese P2P filesharing - 
 				// http://pp365.com http://poco.cn
     {
-    "qq", "l7"},		// Tencent QQ Protocol - Chinese instant
-				// messenger protocol - http://www.qq.com
-    {
     "png", "l7"},		// PNG - Portable Network Graphics, a popular 
 				// image format
     {
     "pop3", "l7"},		// POP3 - Post Office Protocol version 3
 				// (popular e-mail protocol) - RFC 1939
     {
-    "qq", "l7"},		// Tencent QQ Protocol - Chinese instant
-				// messenger protocol - http://www.qq.com
-    {
     "postscript", "l7"},	// Postscript - Printing Language
     {
+    "pplive", "l7"},		// PPLive - Chinese P2P streaming video - http://pplive.com
+    {
     "pressplay", "l7"},		// pressplay - A legal music distribution
+    {
+    "qq", "l7"},		// Tencent QQ Protocol - Chinese instant
+				// messenger protocol - http://www.qq.com
 				// site - http://pressplay.com
     {
     "quake-halflife", "l7"},	// Half Life 1 engine games (HL 1, Quake
