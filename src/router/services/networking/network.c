@@ -1468,6 +1468,11 @@ if (getRouterBrand() == ROUTER_BOARD_WP54G)
     /*
      * Bring up bridged interface 
      */
+#ifdef HAVE_EAD
+char eadline[64];
+memset(eadline,0,64);
+#endif
+
     if( strncmp( lan_ifname, "br0", 3 ) == 0 )
     {
 	br_add_bridge( lan_ifname );
@@ -1490,7 +1495,7 @@ if (getRouterBrand() == ROUTER_BOARD_WP54G)
 	    if( !ifexists( name ) )
 		continue;
 #ifdef HAVE_EAD
-	    eval("ead","-d",name,"-B");
+	    sprintf(eadline,"%s%s %s ",eadline,"-d",name);
 #endif
 #if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880)
 	    if( !strcmp( name, "eth2" ) )
@@ -1759,6 +1764,9 @@ if (getRouterBrand() == ROUTER_BOARD_WP54G)
     free( lan_ifname );
     free( wan_ifname );
     free( lan_ifnames );
+#ifdef HAVE_EAD
+    sysprintf("ead %d -B",eadline);
+#endif
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 #ifndef HAVE_NOWIFI
     if( nvram_match( "mac_clone_enable", "1" ) &&
