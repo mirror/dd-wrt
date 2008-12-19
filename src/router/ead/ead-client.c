@@ -146,7 +146,7 @@ handle_pong(void)
 
 	auth_type = ntohs(pong->auth_type);
 	if (nid == 0xffff)
-		printf("%04x: %s\n", ntohs(msg->nid), pong->name);
+		fprintf(stdout,"%04x: %s\n", ntohs(msg->nid), pong->name);
 	return true;
 }
 
