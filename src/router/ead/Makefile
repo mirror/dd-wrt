@@ -1,9 +1,10 @@
 #CC       = gcc
 CPPFLAGS = -I. -Itinysrp
-CFLAGS   = $(COPTS) -Wall -I$(TOP)/libpcap_noring  -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS   = $(COPTS) -Wall -I$(SRCBASE)/include.v24 -I$(TOP)/libpcap_noring  -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS	 =
+
 LIBS	 = tinysrp/libtinysrp.a
-LIBS_EAD = $(LIBS) -L$(TOP)/libpcap_noring $(TOP)/libpcap_noring/libpcap.a
+LIBS_EAD = $(LIBS) -L$(TOP)/libpcap_noring $(TOP)/libpcap_noring/libpcap.a -L$(TOP)/nvram -lnvram
 CONFIGURE_ARGS = --host=$(ARCH)-linux --target=$(ARCH)-linux 
 
 all: ead ead-client

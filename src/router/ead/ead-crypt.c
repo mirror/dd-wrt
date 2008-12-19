@@ -11,6 +11,7 @@
  * GNU General Public License for more details.
  */
 
+#include <netinet/in.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
