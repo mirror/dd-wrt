@@ -1482,6 +1482,9 @@ if (getRouterBrand() == ROUTER_BOARD_WP54G)
 #endif
 	foreach( name, lan_ifnames, next )
 	{
+#ifdef HAVE_EAD
+	    eval("ead","-d",name,"-B");
+#endif
 	    if( nvram_match( "wan_ifname", name ) )
 		continue;
 	    if( !ifexists( name ) )
