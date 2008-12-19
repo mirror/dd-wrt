@@ -95,12 +95,12 @@ int hasdhcp( void )
 {
     int count = 0;
     int ret = landhcp(  );
-    return ret;
-    /* // for now, keep it disabled
+//    return ret;
+     // for now, keep it disabled
     if( nvram_get( "mdhcpd_count" ) != NULL )
 	count = atoi( nvram_safe_get( "mdhcpd_count" ) );
     ret |= count;
-    return ret > 0 ? 1 : 0;*/
+    return ret > 0 ? 1 : 0;
 }
 
 int canlan(void)
