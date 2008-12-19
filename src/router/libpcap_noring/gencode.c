@@ -417,20 +417,6 @@ pcap_compile_nopcap(int snaplen_arg, int linktype_arg,
 }
 
 /*
- * Clean up a "struct bpf_program" by freeing all the memory allocated
- * in it.
- */
-void
-pcap_freecode(struct bpf_program *program)
-{
-	program->bf_len = 0;
-	if (program->bf_insns != NULL) {
-		free((char *)program->bf_insns);
-		program->bf_insns = NULL;
-	}
-}
-
-/*
  * Backpatch the blocks in 'list' to 'target'.  The 'sense' field indicates
  * which of the jt and jf fields has been resolved and which is a pointer
  * back to another unresolved block (or nil).  At least one of the fields
