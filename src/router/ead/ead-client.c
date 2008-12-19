@@ -32,7 +32,8 @@
 #include "ead.h"
 #include "ead-crypt.h"
 
-#include "pw_encrypt_md5.c"
+#define MD5_OUT_BUFSIZE 36
+char *md5_crypt( char *passwd, unsigned char *pw, unsigned char *salt );
 
 #define EAD_TIMEOUT	400
 #define EAD_TIMEOUT_LONG 2000
