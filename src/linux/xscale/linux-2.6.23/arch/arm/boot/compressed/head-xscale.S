@@ -34,9 +34,12 @@ __XScale_start:
 		mcr	p15, 0, r0, c1, c0, 0
 
 #ifdef CONFIG_NOP8670
-		mov r7, #MACH_TYPE_IXDP425
+		mov 	r7, #MACH_TYPE_IXDP425
 #endif
-
+#ifdef CONFIG_MACH_WG302V2
+               mov     r7, #(MACH_TYPE_WG302V2 & 0xff)
+               orr     r7, r7, #(MACH_TYPE_WG302V2 & 0xff00)
+#endif
 #ifdef CONFIG_ARCH_LUBBOCK
 		mov	r7, #MACH_TYPE_LUBBOCK
 #endif
