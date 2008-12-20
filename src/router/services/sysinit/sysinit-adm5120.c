@@ -186,6 +186,7 @@ void start_sysinit( void )
      * load some netfilter stuff 
      */
 #ifndef HAVE_WP54G
+#ifndef HAVE_NP28G
     insmod( "nf_conntrack_ftp" );
     insmod( "nf_conntrack_irc" );
     insmod( "nf_conntrack_netbios_ns" );
@@ -234,10 +235,11 @@ void start_sysinit( void )
     insmod( "pppox" );
     insmod( "pppoe" );
 #endif
+#endif
     insmod( "adm5120_wdt" );
     insmod( "adm5120sw" );
 
-if (getRouterBrand() != ROUTER_BOARD_WP54G)
+if (getRouterBrand() != ROUTER_BOARD_WP54G && getRouterBrand() != ROUTER_BOARD_NP28G) 
 {
 
     unsigned char mac[6];

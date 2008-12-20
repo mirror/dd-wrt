@@ -380,6 +380,9 @@
 // Compex WP54G (and compatible)
 #define ROUTER_BOARD_WP54G 0x7004
 
+// Compex NP28G (and compatible)
+#define ROUTER_BOARD_NP28G 0x700f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith( char *source, char *cmp )
