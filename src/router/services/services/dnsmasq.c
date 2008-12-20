@@ -95,18 +95,19 @@ int hasdhcp( void )
 {
     int count = 0;
     int ret = landhcp(  );
+
     return ret;
-     // for now, keep it disabled
+    // for now, keep it disabled
 /*    if( nvram_get( "mdhcpd_count" ) != NULL )
 	count = atoi( nvram_safe_get( "mdhcpd_count" ) );
     ret |= count;
     return ret > 0 ? 1 : 0;*/
 }
 
-int canlan(void)
+int canlan( void )
 {
-    if (nvram_match( "dhcpfwd_enable", "0" ) )
-	    return 1;
+    if( nvram_match( "dhcpfwd_enable", "0" ) )
+	return 1;
     return 0;
 }
 void start_dnsmasq( void )
@@ -158,33 +159,36 @@ void start_dnsmasq( void )
 	|| ( nvram_match( "chilli_nowifibridge", "1" )
 	     && nvram_match( "chilli_enable", "1" ) ) )
     {
-	if (canlan())
-	fprintf( fp, "interface=%s,br0", nvram_safe_get( "wl0_ifname" ) );
+	if( canlan(  ) )
+	    fprintf( fp, "interface=%s,br0", nvram_safe_get( "wl0_ifname" ) );
 	else
-	fprintf( fp, "interface=%s", nvram_safe_get( "wl0_ifname" ) );
+	    fprintf( fp, "interface=%s", nvram_safe_get( "wl0_ifname" ) );
     }
     else
     {
 	if( nvram_match( "chilli_enable", "1" ) )
 	{
-	    if (canlan())
-	    fprintf( fp, "interface=%s", nvram_safe_get( "wl0_ifname" ) );
+	    if( canlan(  ) )
+		fprintf( fp, "interface=%s", nvram_safe_get( "wl0_ifname" ) );
 	    else
-	    fprintf( fp, "interface=%s,", nvram_safe_get( "wl0_ifname" ) );
+		fprintf( fp, "interface=%s,",
+			 nvram_safe_get( "wl0_ifname" ) );
 	}
 	else if( nvram_match( "pptpd_enable", "1" ) )
-	    {
-	    if (canlan())
-	    fprintf( fp, "listen-address=%s,%s", "127.0.0.1",nvram_safe_get( "lan_ipaddr" ) );
+	{
+	    if( canlan(  ) )
+		fprintf( fp, "listen-address=%s,%s", "127.0.0.1",
+			 nvram_safe_get( "lan_ipaddr" ) );
 	    else
-	    fprintf( fp, "listen-address=%s", "127.0.0.1");
-	    }
-	else{
-	    if (canlan())
-	    fprintf( fp, "interface=%s", nvram_safe_get( "lan_ifname" ) );
+		fprintf( fp, "listen-address=%s", "127.0.0.1" );
+	}
+	else
+	{
+	    if( canlan(  ) )
+		fprintf( fp, "interface=%s", nvram_safe_get( "lan_ifname" ) );
 	    else
-	    fprintf( fp, "interface=");
-	    }
+		fprintf( fp, "interface=" );
+	}
     }
     int mdhcpcount = 0;
 
@@ -197,21 +201,23 @@ void start_dnsmasq( void )
 		|| strlen( nvram_nget( "%s_netmask", getmdhcp( 0, i ) ) )
 		== 0 )
 		continue;
-		if (canlan() || i>0)
-		{
+	    if( canlan(  ) || i > 0 )
+	    {
 		if( nvram_match( "pptpd_enable", "1" ) )
 		    fprintf( fp, ",%s",
 			     nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) );
 		else
 		    fprintf( fp, ",%s", getmdhcp( 0, i ) );
-		}else{
+	    }
+	    else
+	    {
 		if( nvram_match( "pptpd_enable", "1" ) )
 		    fprintf( fp, "%s",
 			     nvram_nget( "%s_ipaddr", getmdhcp( 0, i ) ) );
 		else
 		    fprintf( fp, "%s", getmdhcp( 0, i ) );
-		
-		}
+
+	    }
 	}
     }
     fprintf( fp, "\n" );

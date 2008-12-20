@@ -127,9 +127,9 @@ void start_sysinit( void )
     insmod( "ath_hal" );
     insmod( "ath_ahb" );
     // eval ("ifconfig", "wifi0", "up");
-    if( getRouterBrand(  ) == ROUTER_BOARD_RCAA01)
+    if( getRouterBrand(  ) == ROUTER_BOARD_RCAA01 )
     {
-	insmod( "mvswitch");
+	insmod( "mvswitch" );
 	eval( "ifconfig", "eth0", "up" );	// required for vlan config
 	eval( "/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
 	eval( "/sbin/vconfig", "add", "eth0", "0" );
@@ -160,7 +160,6 @@ void start_sysinit( void )
 	system2( "echo 5 >/proc/sys/dev/wifi1/ledpin" );
 	system2( "echo 1 >/proc/sys/dev/wifi1/softled" );
     }
-
 
     insmod( "ipv6" );
 

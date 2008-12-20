@@ -604,35 +604,40 @@ static void parse_spec_forward( char *wordlist )
 
 static void nat_prerouting( void )
 {
-	char var[256], *wordlist, *next;
-	char from[100], to[100];
-	char *remote_ip_any = nvram_default_get("remote_ip_any", "1");
-	char *remote_ip = nvram_default_get("remote_ip", "0.0.0.0 0");
-	int remote_any = 0;
-	
-	if (!strcmp(remote_ip_any, "1") || !strncmp(remote_ip, "0.0.0.0", 7))
-		remote_any = 1;
+    char var[256], *wordlist, *next;
+    char from[100], to[100];
+    char *remote_ip_any = nvram_default_get( "remote_ip_any", "1" );
+    char *remote_ip = nvram_default_get( "remote_ip", "0.0.0.0 0" );
+    int remote_any = 0;
+
+    if( !strcmp( remote_ip_any, "1" ) || !strncmp( remote_ip, "0.0.0.0", 7 ) )
+	remote_any = 1;
     /*
      * Enable remote Web GUI management 
      */
-    if( remotemanage ) {
-	if( remote_any ) {
-		save2file("-A PREROUTING -p tcp -m tcp -d %s --dport %s "
-			"-j DNAT --to-destination %s:%d\n",
-			wanaddr, nvram_safe_get("http_wanport"),
-			nvram_safe_get("lan_ipaddr"), web_lanport);
+    if( remotemanage )
+    {
+	if( remote_any )
+	{
+	    save2file( "-A PREROUTING -p tcp -m tcp -d %s --dport %s "
+		       "-j DNAT --to-destination %s:%d\n",
+		       wanaddr, nvram_safe_get( "http_wanport" ),
+		       nvram_safe_get( "lan_ipaddr" ), web_lanport );
 	}
-	else {
-		sscanf(remote_ip, "%s %s", from, to);
+	else
+	{
+	    sscanf( remote_ip, "%s %s", from, to );
 
-		wordlist = range(from, get_complete_ip(from,to));
+	    wordlist = range( from, get_complete_ip( from, to ) );
 
-		foreach(var, wordlist, next) {
-			save2file("-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
-			  "-j DNAT --to-destination %s:%d\n",
-			  var, wanaddr, nvram_safe_get("http_wanport"),
-			  nvram_safe_get("lan_ipaddr"), web_lanport);
-		}
+	    foreach( var, wordlist, next )
+	    {
+		save2file
+		    ( "-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
+		      "-j DNAT --to-destination %s:%d\n", var, wanaddr,
+		      nvram_safe_get( "http_wanport" ),
+		      nvram_safe_get( "lan_ipaddr" ), web_lanport );
+	    }
 	}
     }
 
@@ -640,51 +645,62 @@ static void nat_prerouting( void )
     /*
      * Enable remote ssh management : Botho 03-05-2006 
      */
-    if( remotessh ) {
-	if( remote_any ) {
-	save2file( "-A PREROUTING -p tcp -m tcp -d %s --dport %s "
-		   "-j DNAT --to-destination %s:%s\n", wanaddr,
-		   nvram_safe_get( "sshd_wanport" ),
-		   nvram_safe_get( "lan_ipaddr" ),
-		   nvram_safe_get( "sshd_port" ) );
+    if( remotessh )
+    {
+	if( remote_any )
+	{
+	    save2file( "-A PREROUTING -p tcp -m tcp -d %s --dport %s "
+		       "-j DNAT --to-destination %s:%s\n", wanaddr,
+		       nvram_safe_get( "sshd_wanport" ),
+		       nvram_safe_get( "lan_ipaddr" ),
+		       nvram_safe_get( "sshd_port" ) );
 	}
-	else {
-		sscanf(remote_ip, "%s %s", from, to);
+	else
+	{
+	    sscanf( remote_ip, "%s %s", from, to );
 
-		wordlist = range(from, get_complete_ip(from,to));
+	    wordlist = range( from, get_complete_ip( from, to ) );
 
-		foreach(var, wordlist, next) {
-			save2file("-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
-			  "-j DNAT --to-destination %s:%s\n",
-			  var, wanaddr, nvram_safe_get("sshd_wanport"),
-			  nvram_safe_get("lan_ipaddr"), nvram_safe_get( "sshd_port" ));
-		}
+	    foreach( var, wordlist, next )
+	    {
+		save2file
+		    ( "-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
+		      "-j DNAT --to-destination %s:%s\n", var, wanaddr,
+		      nvram_safe_get( "sshd_wanport" ),
+		      nvram_safe_get( "lan_ipaddr" ),
+		      nvram_safe_get( "sshd_port" ) );
+	    }
 	}
     }
 #else
     /*
      * Enable remote telnet management 
      */
-    if( remotetelnet ) {
-	if( remote_any ) {	    
-	save2file( "-A PREROUTING -p tcp -m tcp -d %s --dport %s "
-		   "-j DNAT --to-destination %s:23\n", wanaddr,
-		   nvram_safe_get( "telnet_wanport" ),
-		   nvram_safe_get( "lan_ipaddr" ) );
+    if( remotetelnet )
+    {
+	if( remote_any )
+	{
+	    save2file( "-A PREROUTING -p tcp -m tcp -d %s --dport %s "
+		       "-j DNAT --to-destination %s:23\n", wanaddr,
+		       nvram_safe_get( "telnet_wanport" ),
+		       nvram_safe_get( "lan_ipaddr" ) );
 	}
-	else {
-		sscanf(remote_ip, "%s %s", from, to);
+	else
+	{
+	    sscanf( remote_ip, "%s %s", from, to );
 
-		wordlist = range(from, get_complete_ip(from,to));
+	    wordlist = range( from, get_complete_ip( from, to ) );
 
-		foreach(var, wordlist, next) {
-			save2file("-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
-			  "-j DNAT --to-destination %s:23\n",
-			  var, wanaddr, nvram_safe_get("sshd_wanport"),
-			  nvram_safe_get("lan_ipaddr") );
-		}
+	    foreach( var, wordlist, next )
+	    {
+		save2file
+		    ( "-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
+		      "-j DNAT --to-destination %s:23\n", var, wanaddr,
+		      nvram_safe_get( "sshd_wanport" ),
+		      nvram_safe_get( "lan_ipaddr" ) );
+	    }
 	}
-    }	
+    }
 #endif
 
     /*
@@ -738,23 +754,22 @@ static void nat_prerouting( void )
 
 }
 
-
 static void nat_postrouting( void )
 {
     if( ( nvram_match( "chilli_enable", "1" ) )
 	&& ( nvram_match( "wan_proto", "disabled" ) ) )
     {
-	if (nvram_match("wk_mode","gateway"))
+	if( nvram_match( "wk_mode", "gateway" ) )
 	{
-	if( strlen( nvram_safe_get( "chilli_net" ) ) > 0 )
-	    save2file
-		( "-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
-		  nvram_safe_get( "chilli_net" ),
-		  nvram_safe_get( "lan_ipaddr" ) );
-	else
-	    save2file
-		( "-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
-		  nvram_safe_get( "lan_ipaddr" ) );
+	    if( strlen( nvram_safe_get( "chilli_net" ) ) > 0 )
+		save2file
+		    ( "-I POSTROUTING -s %s -j SNAT --to-source=%s\n",
+		      nvram_safe_get( "chilli_net" ),
+		      nvram_safe_get( "lan_ipaddr" ) );
+	    else
+		save2file
+		    ( "-I POSTROUTING -s 192.168.182.0/24 -j SNAT --to-source=%s\n",
+		      nvram_safe_get( "lan_ipaddr" ) );
 	}
     }
 #ifdef HAVE_PPPOESERVER
@@ -1773,12 +1788,12 @@ static void add_bridges( char *chain, int forward )
 		save2file( "-A FORWARD -i %s -o %s -j ACCEPT\n", tag,
 			   get_wan_face(  ) );
 	    else
-		{
-		if (!strcmp(chain,"OUTPUT"))
+	    {
+		if( !strcmp( chain, "OUTPUT" ) )
 		    save2file( "-A %s -o %s -j ACCEPT\n", chain, tag );
 		else
 		    save2file( "-A %s -i %s -j ACCEPT\n", chain, tag );
-		}
+	    }
 	}
     }
 
@@ -2300,21 +2315,24 @@ static void filter_table( void )
     }
     if( nvram_match( "chilli_enable", "1" ) )
     {
-	if (nvram_match("wk_mode","gateway"))
+	if( nvram_match( "wk_mode", "gateway" ) )
 	{
-	save2file( "-I INPUT -m state --state NEW -i tun0 -j ACCEPT\n" );
-	save2file( "-I FORWARD -m state --state NEW -i tun0 -j ACCEPT\n" );
-	}else
+	    save2file( "-I INPUT -m state --state NEW -i tun0 -j ACCEPT\n" );
+	    save2file
+		( "-I FORWARD -m state --state NEW -i tun0 -j ACCEPT\n" );
+	}
+	else
 	{
-	save2file( "-I INPUT -i tun0 -j ACCEPT\n" );
-	save2file( "-I FORWARD -i tun0 -j ACCEPT\n" );	
+	    save2file( "-I INPUT -i tun0 -j ACCEPT\n" );
+	    save2file( "-I FORWARD -i tun0 -j ACCEPT\n" );
 	}
     }
 
     /*
      * Does it disable the filter? 
      */
-    if( nvram_match( "filter", "off" ) || !nvram_match( "wk_mode", "gateway" ))
+    if( nvram_match( "filter", "off" )
+	|| !nvram_match( "wk_mode", "gateway" ) )
     {
 
 	/*
@@ -2773,7 +2791,6 @@ void app_udp_settable( void )
 }
 
 int isregistered_real( void );
-
 
 #ifdef DEVELOPE_ENV
 int main( void )

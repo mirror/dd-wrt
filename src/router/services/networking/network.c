@@ -946,31 +946,35 @@ void start_lan( void )
 #ifdef HAVE_RT2880
     if( getRouterBrand(  ) == ROUTER_BOARD_ECB9750 )	// lets load
     {
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
-    {
-	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "eth2 ra0" );
-	PORTSETUPWAN( "" );
+	if( getSTA(  ) || getWET(  )
+	    || nvram_match( "wan_proto", "disabled" ) )
+	{
+	    nvram_set( "lan_ifname", "br0" );
+	    nvram_set( "lan_ifnames", "eth2 ra0" );
+	    PORTSETUPWAN( "" );
+	}
+	else
+	{
+	    nvram_set( "lan_ifname", "br0" );
+	    nvram_set( "lan_ifnames", "eth2 ra0" );
+	    PORTSETUPWAN( "eth2" );
+	}
     }
     else
     {
-	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "eth2 ra0" );
-	PORTSETUPWAN( "eth2" );
-    }
-    }else{
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
-    {
-	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "vlan1 vlan2 ra0" );
-	PORTSETUPWAN( "" );
-    }
-    else
-    {
-	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "vlan1 vlan2 ra0" );
-	PORTSETUPWAN( "vlan2" );
-    }
+	if( getSTA(  ) || getWET(  )
+	    || nvram_match( "wan_proto", "disabled" ) )
+	{
+	    nvram_set( "lan_ifname", "br0" );
+	    nvram_set( "lan_ifnames", "vlan1 vlan2 ra0" );
+	    PORTSETUPWAN( "" );
+	}
+	else
+	{
+	    nvram_set( "lan_ifname", "br0" );
+	    nvram_set( "lan_ifnames", "vlan1 vlan2 ra0" );
+	    PORTSETUPWAN( "vlan2" );
+	}
     }
     strncpy( ifr.ifr_name, "eth2", IFNAMSIZ );
     ioctl( s, SIOCGIFHWADDR, &ifr );
@@ -997,36 +1001,40 @@ void start_lan( void )
 #endif
 #ifdef HAVE_ADM5120
 
-if (getRouterBrand() == ROUTER_BOARD_WP54G || getRouterBrand() == ROUTER_BOARD_NP28G)
-{
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getRouterBrand(  ) == ROUTER_BOARD_WP54G
+	|| getRouterBrand(  ) == ROUTER_BOARD_NP28G )
     {
-	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "eth0 eth1 ath0" );
-	PORTSETUPWAN( "" );
+	if( getSTA(  ) || getWET(  )
+	    || nvram_match( "wan_proto", "disabled" ) )
+	{
+	    nvram_set( "lan_ifname", "br0" );
+	    nvram_set( "lan_ifnames", "eth0 eth1 ath0" );
+	    PORTSETUPWAN( "" );
+	}
+	else
+	{
+	    nvram_set( "lan_ifname", "br0" );
+	    nvram_set( "lan_ifnames", "eth0 eth1 ath0" );
+	    PORTSETUPWAN( "eth1" );
+	}
     }
     else
     {
-	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "eth0 eth1 ath0" );
-	PORTSETUPWAN( "eth1" );
-    }
-}else
-{
 
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
-    {
-	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "eth0 ath0" );
-	PORTSETUPWAN( "" );
+	if( getSTA(  ) || getWET(  )
+	    || nvram_match( "wan_proto", "disabled" ) )
+	{
+	    nvram_set( "lan_ifname", "br0" );
+	    nvram_set( "lan_ifnames", "eth0 ath0" );
+	    PORTSETUPWAN( "" );
+	}
+	else
+	{
+	    nvram_set( "lan_ifname", "br0" );
+	    nvram_set( "lan_ifnames", "eth0 ath0" );
+	    PORTSETUPWAN( "eth0" );
+	}
     }
-    else
-    {
-	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "eth0 ath0" );
-	PORTSETUPWAN( "eth0" );
-    }
-}
 
     strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
     ioctl( s, SIOCGIFHWADDR, &ifr );
@@ -1469,8 +1477,9 @@ if (getRouterBrand() == ROUTER_BOARD_WP54G || getRouterBrand() == ROUTER_BOARD_N
      * Bring up bridged interface 
      */
 #ifdef HAVE_EAD
-char eadline[64];
-memset(eadline,0,64);
+    char eadline[64];
+
+    memset( eadline, 0, 64 );
 #endif
 
     if( strncmp( lan_ifname, "br0", 3 ) == 0 )
@@ -1481,12 +1490,12 @@ memset(eadline,0,64);
 	else
 	    br_set_stp_state( lan_ifname, 1 );
 #ifdef HAVE_MICRO
-	br_set_bridge_forward_delay( lan_ifname, 1);
+	br_set_bridge_forward_delay( lan_ifname, 1 );
 #else
-	br_set_bridge_forward_delay( lan_ifname, 1);
+	br_set_bridge_forward_delay( lan_ifname, 1 );
 #endif
 #ifdef HAVE_EAD
-	eval("killall","-9","ead");
+	eval( "killall", "-9", "ead" );
 #endif
 	foreach( name, lan_ifnames, next )
 	{
@@ -1495,7 +1504,7 @@ memset(eadline,0,64);
 	    if( !ifexists( name ) )
 		continue;
 #ifdef HAVE_EAD
-	    sprintf(eadline,"%s%s %s ",eadline,"-d",name);
+	    sprintf( eadline, "%s%s %s ", eadline, "-d", name );
 #endif
 #if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880)
 	    if( !strcmp( name, "eth2" ) )
@@ -1765,7 +1774,7 @@ memset(eadline,0,64);
     free( wan_ifname );
     free( lan_ifnames );
 #ifdef HAVE_EAD
-    sysprintf("ead %s -B",eadline);
+    sysprintf( "ead %s -B", eadline );
 #endif
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 #ifndef HAVE_NOWIFI

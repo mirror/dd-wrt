@@ -320,11 +320,13 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    fprintf( fp, "\teapol_flags=3\n" );
 	    if( strlen( nvram_nget( "%s_tls8021xphase2", prefix ) ) > 0 )
 	    {
-	    fprintf( fp, "\tphase2=\"%s\"\n", nvram_nget("%s_tls8021xphase2", prefix) );
+		fprintf( fp, "\tphase2=\"%s\"\n",
+			 nvram_nget( "%s_tls8021xphase2", prefix ) );
 	    }
 	    if( strlen( nvram_nget( "%s_tls8021xanon", prefix ) ) > 0 )
 	    {
-	    fprintf( fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_tls8021xanon", prefix) );
+		fprintf( fp, "\tanonymous_identity=\"%s\"\n",
+			 nvram_nget( "%s_tls8021xanon", prefix ) );
 	    }
 	}
 	if( nvram_prefix_match( "8021xtype", prefix, "peap" ) )
@@ -346,11 +348,13 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
 	    if( strlen( nvram_nget( "%s_peap8021xphase2", prefix ) ) > 0 )
 	    {
-	    fprintf( fp, "\tphase2=\"%s\"\n", nvram_nget("%s_peap8021xphase2", prefix) );
+		fprintf( fp, "\tphase2=\"%s\"\n",
+			 nvram_nget( "%s_peap8021xphase2", prefix ) );
 	    }
 	    if( strlen( nvram_nget( "%s_peap8021xanon", prefix ) ) > 0 )
 	    {
-	    fprintf( fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_peap8021xanon", prefix) );
+		fprintf( fp, "\tanonymous_identity=\"%s\"\n",
+			 nvram_nget( "%s_peap8021xanon", prefix ) );
 	    }
 	}
 	if( nvram_prefix_match( "8021xtype", prefix, "ttls" ) )
@@ -374,11 +378,13 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    }
 	    if( strlen( nvram_nget( "%s_ttls8021xphase2", prefix ) ) > 0 )
 	    {
-	    fprintf( fp, "\tphase2=\"%s\"\n", nvram_nget("%s_ttls8021xphase2", prefix) );
+		fprintf( fp, "\tphase2=\"%s\"\n",
+			 nvram_nget( "%s_ttls8021xphase2", prefix ) );
 	    }
 	    if( strlen( nvram_nget( "%s_ttls8021xanon", prefix ) ) > 0 )
 	    {
-	    fprintf( fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_ttls8021xanon", prefix) );
+		fprintf( fp, "\tanonymous_identity=\"%s\"\n",
+			 nvram_nget( "%s_ttls8021xanon", prefix ) );
 	    }
 	}
 	if( nvram_prefix_match( "8021xtype", prefix, "leap" ) )
@@ -401,11 +407,13 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    // fprintf (fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 	    if( strlen( nvram_nget( "%s_leap8021xphase2", prefix ) ) > 0 )
 	    {
-	    fprintf( fp, "\tphase2=\"%s\"\n", nvram_nget("%s_leap8021xphase2", prefix) );
+		fprintf( fp, "\tphase2=\"%s\"\n",
+			 nvram_nget( "%s_leap8021xphase2", prefix ) );
 	    }
 	    if( strlen( nvram_nget( "%s_leap8021xanon", prefix ) ) > 0 )
 	    {
-	    fprintf( fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_leap8021xanon", prefix) );
+		fprintf( fp, "\tanonymous_identity=\"%s\"\n",
+			 nvram_nget( "%s_leap8021xanon", prefix ) );
 	    }
 	}
 	fprintf( fp, "}\n" );
@@ -430,31 +438,32 @@ void supplicant_main( int argc, char *argv[] )
 {
     setupSupplicant( argv[1], argv[2] );
 }
-static void do_hostapd(char *fstr,char *prefix)
+static void do_hostapd( char *fstr, char *prefix )
 {
-	char fname[32];
-	FILE *fp;
-	int pid;
-	sprintf(fname,"/var/run/%s_hostapd.pid",prefix);
+    char fname[32];
+    FILE *fp;
+    int pid;
 
-    	fp = fopen(fname,"rb");
-	if (fp)
-	    {
-	    fread(&pid,4,1,fp);
-	    fclose(fp);
-	    if (pid>0)
-		kill(pid,SIGTERM);
-	    }
-	
-	char *argv[] = { "hostapd","-B",fstr, NULL };
-	_evalpid( argv, NULL, 0, &pid );
-//	eval( "hostapd", "-B", fstr );
-    	fp = fopen(fname,"wb");
-    	if (fp)
-    	    {
-    	    fwrite(&pid,4,1,fp);
-	    fclose(fp);
-	    }
+    sprintf( fname, "/var/run/%s_hostapd.pid", prefix );
+
+    fp = fopen( fname, "rb" );
+    if( fp )
+    {
+	fread( &pid, 4, 1, fp );
+	fclose( fp );
+	if( pid > 0 )
+	    kill( pid, SIGTERM );
+    }
+
+    char *argv[] = { "hostapd", "-B", fstr, NULL };
+    _evalpid( argv, NULL, 0, &pid );
+//      eval( "hostapd", "-B", fstr );
+    fp = fopen( fname, "wb" );
+    if( fp )
+    {
+	fwrite( &pid, 4, 1, fp );
+	fclose( fp );
+    }
 
 }
 void setupHostAP( char *prefix, int iswan )
@@ -467,7 +476,7 @@ void setupHostAP( char *prefix, int iswan )
     char akm[16];
 
     sprintf( akm, "%s_akm", prefix );
-    if( nvram_match( akm, "8021X" ))
+    if( nvram_match( akm, "8021X" ) )
 	return;
     if( nvram_match( akm, "wpa" ) || nvram_match( akm, "wpa2" )
 	|| nvram_match( akm, "wpa wpa2" ) || nvram_match( akm, "radius" ) )
@@ -482,7 +491,7 @@ void setupHostAP( char *prefix, int iswan )
 	if( iswan == 1 )
 	    return;
     }
-    
+
     // wep key support
     if( nvram_match( akm, "wep" ) )
     {
@@ -587,9 +596,8 @@ void setupHostAP( char *prefix, int iswan )
 	}
 	// fprintf (fp, "jumpstart_p1=1\n");
 	fclose( fp );
-	do_hostapd(fstr,prefix);
+	do_hostapd( fstr, prefix );
 
-	
     }
     else if( nvram_match( akm, "radius" ) )
     {
@@ -634,7 +642,8 @@ void start_hostapdwan( void )
     for( i = 0; i < c; i++ )
     {
 	sprintf( ath, "ath%d", i );
-	if (nvram_nmatch("ap","%s_mode",ath) || nvram_nmatch("wdsap","%s_mode",ath))
+	if( nvram_nmatch( "ap", "%s_mode", ath )
+	    || nvram_nmatch( "wdsap", "%s_mode", ath ) )
 	    setupHostAP( ath, 1 );
 	char *vifs = nvram_nget( "ath%d_vifs", i );
 
@@ -993,7 +1002,7 @@ static void configure_single( int count )
     int vif = 0;
 
     char *vifs = nvram_safe_get( wifivifs );
-    char primary[32]={0};
+    char primary[32] = { 0 };
     if( vifs != NULL )
 	foreach( var, vifs, next )
     {
@@ -1014,8 +1023,8 @@ static void configure_single( int count )
 		sysprintf( "wlanconfig %s create wlandev %s wlanmode adhoc",
 			   var, wif );
 	    vif = 1;
-	    if (strlen(primary)==0)
-		strcpy(primary,var);
+	    if( strlen( primary ) == 0 )
+		strcpy( primary, var );
 	    strcat( iflist, " " );
 	    strcat( iflist, var );
 	    char vathmac[16];
@@ -1048,9 +1057,9 @@ static void configure_single( int count )
     else
 	sysprintf( "wlanconfig %s create wlandev %s wlanmode adhoc", dev,
 		   wif );
-    
-    if (strlen(primary)==0)
-	strcpy(primary,dev);
+
+    if( strlen( primary ) == 0 )
+	strcpy( primary, dev );
 
     for( s = 1; s <= 10; s++ )
     {
@@ -1138,7 +1147,7 @@ static void configure_single( int count )
     cprintf( "adjust sensitivity\n" );
 
     int distance = atoi( nvram_default_get( sens, "2000" ) );	// to meter
-    
+
     if( distance > 0 )
     {
 	setsysctrl( wif, "dynack_count", 0 );
@@ -1169,8 +1178,9 @@ static void configure_single( int count )
     setsysctrl( wif, "ofdm_weak_det",
 		atoi( nvram_default_get( wl_ofdm_weak_det, "1" ) ) );
 
-int *enable="enable";
-int *disable="disable";
+    int *enable = "enable";
+    int *disable = "disable";
+
 #ifdef HAVE_NS5
     char *gpio = "1";
 #endif
@@ -1179,8 +1189,8 @@ int *disable="disable";
 #endif
 
 #ifdef HAVE_LOCO2
-enable="disable";  // swap it
-disable="enable";
+    enable = "disable";		// swap it
+    disable = "enable";
     char *gpio = "2";
 #endif
 
@@ -1484,7 +1494,7 @@ disable="enable";
 		       nvram_nget( "%s_ipaddr", dev ),
 		       nvram_nget( "%s_netmask", dev ) );
 	}
-	
+
     }
     if( strcmp( m, "sta" ) && strcmp( m, "wdssta" ) && strcmp( m, "wet" ) )
 	setupHostAP( dev, 0 );

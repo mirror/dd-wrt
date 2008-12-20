@@ -28,9 +28,10 @@ void start_hotplug_usb( void )
     char *device, *interface;
     char *action;
     int class, subclass, protocol;
-    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
-    if( !(nvram_match ("usb_automnt", "1") ) )
-    return;
+
+    fprintf( stderr, "%s:%d\n", __FILE__, __LINE__ );
+    if( !( nvram_match( "usb_automnt", "1" ) ) )
+	return;
 //    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 
     if( !( action = getenv( "ACTION" ) ) || !( device = getenv( "TYPE" ) ) )
@@ -65,54 +66,56 @@ static bool usb_ufd_connected( char *str )
     char proc_file[128];
     FILE *fp;
     char line[256];
+
     /* 
      * Host no. assigned by scsi driver for this UFD 
      */
     host_no = atoi( str );
     sprintf( proc_file, "/proc/scsi/usb-storage-%d/%d", host_no, host_no );
- 
-	if( ( fp = fopen( proc_file, "r" ) ) )
-	{
+
+    if( ( fp = fopen( proc_file, "r" ) ) )
+    {
 	while( fgets( line, sizeof( line ), fp ) != NULL )
 	{
-	if (strstr( line, "Attached: Yes" ) )
-	{
-//	fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
+	    if( strstr( line, "Attached: Yes" ) )
+	    {
+//      fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
+		fclose( fp );
+		return TRUE;
+	    }
+	}
+	fclose( fp );
+    }
+    //in 2.6 kernels its a little bit different
+    sprintf( proc_file, "/proc/scsi/usb-storage/%d", host_no );
+    if( ( fp = fopen( proc_file, "r" ) ) )
+    {
+//    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 	fclose( fp );
 	return TRUE;
-	}
-	}
-	fclose( fp );
-	}
-	//in 2.6 kernels its a little bit different
-	sprintf( proc_file, "/proc/scsi/usb-storage/%d",host_no );
-	if( ( fp = fopen( proc_file, "r" ) ) )
-	    {
+    }
 //    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
-	    fclose(fp);
-	    return TRUE;
-	    }
-//    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
-	return FALSE;
-    
+    return FALSE;
+
 }
 
     /* 
      *   Mount the path and look for the WCN configuration file.  If it
      * exists launch wcnparse to process the configuration.  
      */
-static int usb_process_path( char *path, char *fs)
+static int usb_process_path( char *path, char *fs )
 {
     int ret = ENOENT;
     char mount_point[32];
+
 //    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
-    
-    sprintf( mount_point, "/%s", nvram_default_get( "usb_mntpoint", "mnt" ) ); 
+
+    sprintf( mount_point, "/%s", nvram_default_get( "usb_mntpoint", "mnt" ) );
 
     ret = eval( "/bin/mount", "-t", fs, path, mount_point );
-    
-    if( ret != 0 ) //give it another try
-        ret = eval( "/bin/mount", path, mount_point );  //guess fs
+
+    if( ret != 0 )		//give it another try
+	ret = eval( "/bin/mount", path, mount_point );	//guess fs
 
     return ret;
 }
@@ -130,10 +133,10 @@ static int usb_add_ufd(  )
     char *fs = NULL;
     int is_part = 0;
     int is_mounted = 0;
-	char part[10], *partitions, *next;
-	struct stat tmp_stat;
+    char part[10], *partitions, *next;
+    struct stat tmp_stat;
 
-	if( ( dir = opendir( "/dev/discs" ) ) == NULL )
+    if( ( dir = opendir( "/dev/discs" ) ) == NULL )
 	return EINVAL;
 
     /* 
@@ -156,45 +159,45 @@ static int usb_add_ufd(  )
 //    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
 	sprintf( path, "/dev/discs/%s/disc", entry->d_name );
 //    fprintf(stderr,"%s:%d\n",__FILE__,__LINE__);
-	sysprintf ("/usr/sbin/disktype %s > %s", path, DUMPFILE);
+	sysprintf( "/usr/sbin/disktype %s > %s", path, DUMPFILE );
 
 	/* 
 	 * Check if it has file system 
 	 */
 	if( ( fp = fopen( DUMPFILE, "r" ) ) )
 	{
-	while( fgets( line, sizeof( line ), fp ) != NULL )
-	{
-	if( strstr( line, "Partition" ) )
-	is_part = 1;
-	
-	if (strstr( line, "file system" ) )
-	{
-	if (strstr( line, "FAT" ) )
-	{
-		fs = "vfat";
-		break;
-	}
-	else if( strstr( line, "Ext2" ) )
-	{
-		fs = "ext2";
-		break;
-	}
-	else if( strstr( line, "Ext3" ) )
-	{
+	    while( fgets( line, sizeof( line ), fp ) != NULL )
+	    {
+		if( strstr( line, "Partition" ) )
+		    is_part = 1;
+
+		if( strstr( line, "file system" ) )
+		{
+		    if( strstr( line, "FAT" ) )
+		    {
+			fs = "vfat";
+			break;
+		    }
+		    else if( strstr( line, "Ext2" ) )
+		    {
+			fs = "ext2";
+			break;
+		    }
+		    else if( strstr( line, "Ext3" ) )
+		    {
 #ifdef HAVE_USB_ADVANCED
-		fs = "ext3";
+			fs = "ext3";
 #else
-		fs = "ext2";
+			fs = "ext2";
 #endif
-		break;
+			break;
+		    }
+		}
+
+	    }
+	    fclose( fp );
 	}
-	}
-	
-	}
-	fclose( fp );
-	}
-	 
+
 	if( fs )
 	{
 	    /* 
@@ -209,43 +212,44 @@ static int usb_add_ufd(  )
 		    if( stat( path, &tmp_stat ) )
 			continue;
 		    if( usb_process_path( path, fs ) == 0 )
-		    	{
-				is_mounted = 1;
-				break;
-				}
+		    {
+			is_mounted = 1;
+			break;
+		    }
 		}
 	    }
 	    else
 	    {
 		if( usb_process_path( path, fs ) == 0 )
-			is_mounted = 1;
+		    is_mounted = 1;
 	    }
-	    
 
 	}
-	
+
 	if( ( fp = fopen( DUMPFILE, "a" ) ) )
 	{
 	    if( fs && is_mounted )
-	    	fprintf( fp, "Status: <b>Mounted on /%s</b>\n", nvram_safe_get ("usb_mntpoint" ) );
-	    else if ( fs )
-	    	fprintf( fp, "Status: <b>Not mounted</b>\n" );
-	    else 
-	    	fprintf( fp, "Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n" );	    
+		fprintf( fp, "Status: <b>Mounted on /%s</b>\n",
+			 nvram_safe_get( "usb_mntpoint" ) );
+	    else if( fs )
+		fprintf( fp, "Status: <b>Not mounted</b>\n" );
+	    else
+		fprintf( fp,
+			 "Status: <b>Not mounted - Unsupported file system or disk not formated</b>\n" );
 	    fclose( fp );
 	}
-	
+
 	if( is_mounted && !nvram_match( "usb_runonmount", "" ) )
 	{
-	sprintf( path, "%s", nvram_safe_get( "usb_runonmount" ) );
-	if( stat( path, &tmp_stat ) == 0 ) //file exists
-		{
+	    sprintf( path, "%s", nvram_safe_get( "usb_runonmount" ) );
+	    if( stat( path, &tmp_stat ) == 0 )	//file exists
+	    {
 		system( path );
-		}
-	}	
-
-	if( is_mounted ) //temp. fix: only mount 1st mountable part, then exit
-		return 0;
+	    }
 	}
-	return 0;
+
+	if( is_mounted )	//temp. fix: only mount 1st mountable part, then exit
+	    return 0;
+    }
+    return 0;
 }

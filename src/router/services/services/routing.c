@@ -32,7 +32,6 @@
 
 #ifdef HAVE_QUAGGA
 
-
 int zebra_ospf_init( void );
 int zebra_bgp_init( void );
 int zebra_ripd_init( void );
