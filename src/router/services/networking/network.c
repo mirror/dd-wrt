@@ -1009,7 +1009,7 @@ if (getRouterBrand() == ROUTER_BOARD_WP54G || getRouterBrand() == ROUTER_BOARD_N
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 eth1 ath0" );
-	PORTSETUPWAN( "eth0" );
+	PORTSETUPWAN( "eth1" );
     }
 }else
 {
