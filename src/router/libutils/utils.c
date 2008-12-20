@@ -461,7 +461,10 @@ int internal_getRouterBrand(  )
 eval( "event", "3", "1", "15" );
 return 0;
 #else
-#ifdef HAVE_WP54G
+#ifdef HAVE_NP28G
+    setRouter( "Compex NP28G" );
+    return ROUTER_BOARD_NP28G;
+#elif HAVE_WP54G
     setRouter( "Compex WP54G" );
     return ROUTER_BOARD_WP54G;
 #elif HAVE_ADM5120
@@ -2571,6 +2574,10 @@ int led_control( int type, int act )
 	case ROUTER_BOARD_WP54G:
 	    diag_gpio = 0x12;
 	    connected_gpio = 0x17;
+	    break;
+	case ROUTER_BOARD_NP28G:
+	    diag_gpio = 0x12;
+	    connected_gpio = 0x16;
 	    break;
 	case ROUTER_BOARD_GATEWORX:
 #ifdef HAVE_WG302

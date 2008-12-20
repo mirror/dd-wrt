@@ -997,7 +997,7 @@ void start_lan( void )
 #endif
 #ifdef HAVE_ADM5120
 
-if (getRouterBrand() == ROUTER_BOARD_WP54G)
+if (getRouterBrand() == ROUTER_BOARD_WP54G || getRouterBrand() == ROUTER_BOARD_NP28G)
 {
     if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
     {
@@ -2870,7 +2870,7 @@ void start_wan( int status )
 	// Lets open option file and enter all the parameters.
 	fp = fopen( "/tmp/ppp/options.pppoe", "w" );
 	// rp-pppoe kernelmode plugin
-#if defined(HAVE_ADM5120) && !defined(HAVE_WP54G)
+#if defined(HAVE_ADM5120) && !defined(HAVE_WP54G) && !defined(HAVE_NP28G)
 	fprintf( fp, "plugin /lib/rp-pppoe.so" );
 #else
 	fprintf( fp, "plugin /usr/lib/rp-pppoe.so" );
