@@ -39,15 +39,12 @@ void start_sambasrv( void )
     if( !nvram_match( "sambasrv_enable", "1" ) )
 	return;
 
-
     FILE *fp;
 
-	// here comes the startup code
+    // here comes the startup code
 
-		
-	eval( "samba");
-	syslog( LOG_INFO,
-		"Samba : Samba server successfully started\n" );
+    eval( "samba" );
+    syslog( LOG_INFO, "Samba : Samba server successfully started\n" );
 
     return;
 }
@@ -57,9 +54,8 @@ void stop_sambasrv( void )
 
     if( pidof( "samba" ) > 0 )
     {
-	syslog( LOG_INFO,
-		"Samba : samba server successfully stopped\n" );
+	syslog( LOG_INFO, "Samba : samba server successfully stopped\n" );
 	killall( "proftpd", SIGTERM );
-	}
+    }
 }
 #endif

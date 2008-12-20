@@ -183,7 +183,7 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	case ROUTER_WRT610N:
 	case ROUTER_WRT350N:
 	case ROUTER_WRT310N:
-	case ROUTER_WRT300NV11:	
+	case ROUTER_WRT300NV11:
 	case ROUTER_USR_5461:
 	    nvram_set( "wl0gpio0", "8" );
 	    break;
@@ -707,11 +707,11 @@ void start_sysinit( void )
 	    nvram_set( "wan_ifname", "eth1" );
 	    nvram_set( "wl0_ifname", "eth2" );
 	    nvram_set( "wl1_ifname", "eth3" );
-	    eval ("gpio", "disable", "7");
+	    eval( "gpio", "disable", "7" );
 
 	    if( nvram_get( "pci/1/1/macaddr" ) == NULL
 		|| nvram_get( "pci/1/3/macaddr" ) == NULL )
-		{
+	    {
 		unsigned char mac[20];
 
 		strcpy( mac, nvram_safe_get( "et0macaddr" ) );
@@ -1030,11 +1030,11 @@ void start_sysinit( void )
 	case ROUTER_ASUS_WL520GUGC:
 	    if( nvram_match( "vlan1ports", "0 5u" ) )
 		nvram_set( "vlan1ports", "0 5" );
-		if( !nvram_get ( "Fix_WL520GUGC_clock" ) )
-		{
+	    if( !nvram_get( "Fix_WL520GUGC_clock" ) )
+	    {
 		nvram_set( "Fix_WL520GUGC_clock", "1" );
 		need_reboot = 1;
-		}
+	    }
 	    break;
 
 	case ROUTER_NETGEAR_WGR614L:
@@ -1192,7 +1192,7 @@ void start_sysinit( void )
 		need_reboot = 1;
 	    }
 	    break;
-	    
+
 	case ROUTER_WRT160N:
 	    if( nvram_match( "force_vlan_supp", "enabled" )
 		&& nvram_match( "boardflags", "0x0010" ) )
@@ -1222,13 +1222,13 @@ void start_sysinit( void )
 		need_reboot = 1;
 	    }
 	    break;
-	    
+
 	case ROUTER_NETGEAR_WG602_V4:
 	    if( nvram_match( "boardflags", "0x650" ) )
-		{
+	    {
 		nvram_set( "boardflags", "0x0458" );
-		need_reboot = 1;		
-		}
+		need_reboot = 1;
+	    }
 	    break;
     }
 

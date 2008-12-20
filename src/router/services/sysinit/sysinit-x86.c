@@ -152,20 +152,20 @@ void start_sysinit( void )
 	mount( dev, "/usr/local", "ext2", MS_MGC_VAL, NULL );
 	eval( "/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/" );
     }
-    eval("mkdir","-p","/usr/local/nvram");
+    eval( "mkdir", "-p", "/usr/local/nvram" );
 
     FILE *in = fopen( "/usr/local/nvram/nvram.db", "rb" );
 
     if( in != NULL )
     {
 	fclose( in );
-	eval ("mkdir", "/tmp/nvram");
-	eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
-	eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+	eval( "mkdir", "/tmp/nvram" );
+	eval( "cp", "/etc/nvram/nvram.db", "/tmp/nvram" );
+	eval( "cp", "/etc/nvram/offsets.db", "/tmp/nvram" );
 	eval( "/usr/sbin/convertnvram" );
 	nvram_commit(  );
-	eval("rm","-f","/etc/nvram/nvram.db");
-	eval("rm","-f","/etc/nvram/offsets.db");
+	eval( "rm", "-f", "/etc/nvram/nvram.db" );
+	eval( "rm", "-f", "/etc/nvram/offsets.db" );
     }
     eval( "mkdir", "/tmp/www" );
 
@@ -211,13 +211,11 @@ void start_sysinit( void )
 	insmod( "via-rhine" );
     if( detect( "VT6120" ) )	// VIA Rhine-I, Rhine-II, Rhine-III
 	insmod( "via-velocity" );
-    else
-    if( detect( "VT6121" ) )	// VIA Rhine-I, Rhine-II, Rhine-III
+    else if( detect( "VT6121" ) )	// VIA Rhine-I, Rhine-II, Rhine-III
 	insmod( "via-velocity" );
-    else
-    if( detect( "VT6122" ) )	// VIA Rhine-I, Rhine-II, Rhine-III
+    else if( detect( "VT6122" ) )	// VIA Rhine-I, Rhine-II, Rhine-III
 	insmod( "via-velocity" );
-    
+
     if( detect( "DP8381" ) )
 	insmod( "natsemi" );
     if( detect( "PCnet32" ) )	// vmware?

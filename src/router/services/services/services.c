@@ -194,12 +194,13 @@ int write_nvram( char *name, char *nv )
     if( nvram_invmatch( nv, "" ) )
     {
 	FILE *fp = fopen( name, "wb" );
+
 	if( fp )
-	    {
+	{
 	    fwritenvram( nv, fp );
 	    fprintf( fp, "\n" );
 	    fclose( fp );
-	    }
+	}
     }
     else
 	return -1;
@@ -484,7 +485,7 @@ void start_redial( void )
     };
     if( pidof( "redial" ) > 0 )
     {
-	return;		// not required, already running
+	return;			// not required, already running
     }
 
     symlink( "/sbin/rc", "/tmp/ppp/redial" );
@@ -1592,7 +1593,7 @@ void start_force_to_dial( void )
     if( nvram_match( "wan_proto", "heartbeat" ) )
     {
 	start_heartbeat_boot(  );
-	return ;
+	return;
     }
 #endif
     _evalpid( ping_argv, NULL, 3, NULL );
@@ -1629,4 +1630,3 @@ void start_hwmon( void )
 }
 
 #endif
-

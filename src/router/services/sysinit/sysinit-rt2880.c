@@ -53,7 +53,6 @@
 #include <utils.h>
 #include <cymac.h>
 
-
 #define sys_reboot() eval("sync"); eval("event","3","1","15")
 
 void start_sysinit( void )
@@ -127,7 +126,6 @@ void start_sysinit( void )
      * load some netfilter stuff 
      */
 
-
 //    eval( "watchdog" );
     /*
      * Set a sane date 
@@ -136,26 +134,24 @@ void start_sysinit( void )
     stime( &tm );
     nvram_set( "wl0_ifname", "ra0" );
 
+    insmod( "rt2860v2_ap" );
 
-    insmod("rt2860v2_ap");
-    
     /* switch config */
     if( getRouterBrand(  ) != ROUTER_BOARD_ECB9750 )	// lets load
     {
-    eval( "ifconfig","eth2","up");
-    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
-    eval( "vconfig", "add", "eth2", "1" ); //LAN 
-    eval( "vconfig", "add", "eth2", "2" ); //WAN
-    sysprintf("switch reg w 14 405555");
-    sysprintf("switch reg w 50 2001");
-    sysprintf("switch reg w 98 7f3f");
-    sysprintf("switch reg w e4 3f");
-    sysprintf("switch reg w 40 1001");
-    sysprintf("switch reg w 44 1001");
-    sysprintf("switch reg w 48 1002");
-    sysprintf("switch reg w 70 ffff506f");
+	eval( "ifconfig", "eth2", "up" );
+	eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
+	eval( "vconfig", "add", "eth2", "1" );	//LAN 
+	eval( "vconfig", "add", "eth2", "2" );	//WAN
+	sysprintf( "switch reg w 14 405555" );
+	sysprintf( "switch reg w 50 2001" );
+	sysprintf( "switch reg w 98 7f3f" );
+	sysprintf( "switch reg w e4 3f" );
+	sysprintf( "switch reg w 40 1001" );
+	sysprintf( "switch reg w 44 1001" );
+	sysprintf( "switch reg w 48 1002" );
+	sysprintf( "switch reg w 70 ffff506f" );
     }
-    
 
 /*
 
@@ -203,35 +199,38 @@ void start_overclocking( void )
 }
 char *enable_dtag_vlan( int enable )
 {
-if (getRouterBrand()!=ROUTER_BOARD_ECB9750)
-{
-if (enable)
+    if( getRouterBrand(  ) != ROUTER_BOARD_ECB9750 )
     {
-    sysprintf("switch reg w 14 405555");
-    sysprintf("switch reg w 50 7001");
-    sysprintf("switch reg w 98 7f2f");
-    sysprintf("switch reg w e4 2f");
-    sysprintf("switch reg w 40 1001");
-    sysprintf("switch reg w 44 1001");
-    sysprintf("switch reg w 48 1007");
-    sysprintf("switch reg w 70 ffff506f");
-    // now we got vlan7, how do we trunk now. lets find out
-    return "eth2";
-    }else
-    {
-    sysprintf("switch reg w 14 405555");
-    sysprintf("switch reg w 50 2001");
-    sysprintf("switch reg w 98 7f3f");
-    sysprintf("switch reg w e4 3f");
-    sysprintf("switch reg w 40 1001");
-    sysprintf("switch reg w 44 1001");
-    sysprintf("switch reg w 48 1002");
-    sysprintf("switch reg w 70 ffff506f");
-    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
-    eval( "vconfig", "add", "eth2", "2" ); //WAN
-    return "eth2";
+	if( enable )
+	{
+	    sysprintf( "switch reg w 14 405555" );
+	    sysprintf( "switch reg w 50 7001" );
+	    sysprintf( "switch reg w 98 7f2f" );
+	    sysprintf( "switch reg w e4 2f" );
+	    sysprintf( "switch reg w 40 1001" );
+	    sysprintf( "switch reg w 44 1001" );
+	    sysprintf( "switch reg w 48 1007" );
+	    sysprintf( "switch reg w 70 ffff506f" );
+	    // now we got vlan7, how do we trunk now. lets find out
+	    return "eth2";
+	}
+	else
+	{
+	    sysprintf( "switch reg w 14 405555" );
+	    sysprintf( "switch reg w 50 2001" );
+	    sysprintf( "switch reg w 98 7f3f" );
+	    sysprintf( "switch reg w e4 3f" );
+	    sysprintf( "switch reg w 40 1001" );
+	    sysprintf( "switch reg w 44 1001" );
+	    sysprintf( "switch reg w 48 1002" );
+	    sysprintf( "switch reg w 70 ffff506f" );
+	    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
+	    eval( "vconfig", "add", "eth2", "2" );	//WAN
+	    return "eth2";
+	}
     }
-}else{
-    return "eth2";
-}
+    else
+    {
+	return "eth2";
+    }
 }
