@@ -180,5 +180,5 @@ void start_overclocking( void )
 }
 char *enable_dtag_vlan( int enable )
 {
-return "eth0";
+    return "eth0";
 }

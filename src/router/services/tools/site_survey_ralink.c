@@ -35,7 +35,6 @@
 #include <err.h>
 #include <shutils.h>
 
-
 static int
 copy_essid( char buf[], size_t bufsize, const u_int8_t * essid,
 	    size_t essid_len )
@@ -106,73 +105,75 @@ static struct site_survey_list
     unsigned char dtim_period;	/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
 
-
 int site_survey_main( int argc, char *argv[] )
 {
 #define DOT11_CAP_ESS				0x0001
 #define DOT11_CAP_IBSS				0x0002
 #define DOT11_CAP_PRIVACY			0x0010	/* d11 cap. privacy */
 
-    unsigned char b1[32],b2[64],b3[32],b4[32],b5[32],b6[32],b7[32],b8[32];
+    unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32],
+	b8[32];
     int i = 0;
 
     unlink( SITE_SURVEY_DB );
     int ap = 0, oldap = 0;
     int len;
-    
+
     memset( site_survey_lists, sizeof( site_survey_lists ), 0 );
-    if (nvram_match("wl0_mode","ap") || nvram_match("wl0_mode","apsta"))
+    if( nvram_match( "wl0_mode", "ap" )
+	|| nvram_match( "wl0_mode", "apsta" ) )
     {
-    eval( "iwpriv", "ra0","set","SiteSurvey=1" ); // only in ap mode
-    sleep(4); //wait 4 seconds per spec
+	eval( "iwpriv", "ra0", "set", "SiteSurvey=1" );	// only in ap mode
+	sleep( 4 );		//wait 4 seconds per spec
     }
-    
-    FILE *scan = popen("iwpriv ra0 get_site_survey","rb");
-    fscanf(scan,"%s %s",b1,b2); // skip first line
-    fscanf(scan,"%s %s %s %s %s %s %s",b1,b2,b3,b4,b5,b6,b7); //skip second line
-    i=0;
+
+    FILE *scan = popen( "iwpriv ra0 get_site_survey", "rb" );
+
+    fscanf( scan, "%s %s", b1, b2 );	// skip first line
+    fscanf( scan, "%s %s %s %s %s %s %s", b1, b2, b3, b4, b5, b6, b7 );	//skip second line
+    i = 0;
     do
     {
-	if (feof(scan))
+	if( feof( scan ) )
 	    break;
-	fread(b1,4,1,scan);
-	b1[4]=0;
-	b1[strlen(b1)]=0;
-	fread(b2,33,1,scan);
-	b2[32]=0;
-	b2[strlen(b2)]=0;
-	int ret = fscanf(scan,"%s %s %s %s %s %s",b3,b4,b5,b6,b7,b8); //skip second line
-	if (ret<6)
+	fread( b1, 4, 1, scan );
+	b1[4] = 0;
+	b1[strlen( b1 )] = 0;
+	fread( b2, 33, 1, scan );
+	b2[32] = 0;
+	b2[strlen( b2 )] = 0;
+	int ret = fscanf( scan, "%s %s %s %s %s %s", b3, b4, b5, b6, b7, b8 );	//skip second line
+
+	if( ret < 6 )
 	    break;
-	site_survey_lists[i].channel = atoi(b1); // channel
-	strcpy(site_survey_lists[i].SSID,b2);//SSID
-	strcpy(site_survey_lists[i].BSSID,b3);//BSSID
-	site_survey_lists[i].phy_noise = -95; // no way
-	strcpy(site_survey_lists[i].ENCINFO,b5);
-	strcat(site_survey_lists[i].ENCINFO,b4);
-	site_survey_lists[i].RSSI = -atoi(b6);
+	site_survey_lists[i].channel = atoi( b1 );	// channel
+	strcpy( site_survey_lists[i].SSID, b2 );	//SSID
+	strcpy( site_survey_lists[i].BSSID, b3 );	//BSSID
+	site_survey_lists[i].phy_noise = -95;	// no way
+	strcpy( site_survey_lists[i].ENCINFO, b5 );
+	strcat( site_survey_lists[i].ENCINFO, b4 );
+	site_survey_lists[i].RSSI = -atoi( b6 );
 
+	if( !strcmp( b7, "11b/g" ) )
+	    site_survey_lists[i].rate_count = 12;
+	if( !strcmp( b7, "11b" ) )
+	    site_survey_lists[i].rate_count = 4;
+	if( !strcmp( b7, "11b/g/n" ) )
+	    site_survey_lists[i].rate_count = 300;
 
-	if (!strcmp(b7,"11b/g"))
-	    site_survey_lists[i].rate_count=12;
-	if (!strcmp(b7,"11b"))
-	    site_survey_lists[i].rate_count=4;
-	if (!strcmp(b7,"11b/g/n"))
-	    site_survey_lists[i].rate_count=300;
+	if( !strcmp( b8, "In" ) )
+	    site_survey_lists[i].capability = DOT11_CAP_ESS;
 
-	if (!strcmp(b8,"In"))
-	    site_survey_lists[i].capability=DOT11_CAP_ESS;
+	if( !strcmp( b8, "Ad" ) )
+	    site_survey_lists[i].capability = DOT11_CAP_IBSS;
 
-	if (!strcmp(b8,"Ad"))
-	    site_survey_lists[i].capability=DOT11_CAP_IBSS;	
+	if( strcmp( b5, "OPEN" ) )
+	    site_survey_lists[i].capability |= DOT11_CAP_PRIVACY;
 
-	if (strcmp(b5,"OPEN"))
-	    site_survey_lists[i].capability|=DOT11_CAP_PRIVACY;	
-	    
 	i++;
     }
-    while(1);
-    fclose(scan);
+    while( 1 );
+    fclose( scan );
     write_site_survey(  );
     open_site_survey(  );
     for( i = 0;

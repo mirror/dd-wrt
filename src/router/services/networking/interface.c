@@ -266,7 +266,7 @@ void start_setup_vlans( void )
      */
 
     if( !nvram_get( "port5vlans" ) || nvram_match( "vlans", "0" ) )
-	return;		// for some reason VLANs are not set up, and
+	return;			// for some reason VLANs are not set up, and
     // we don't want to disable everything!
 
     if( nvram_match( "wan_vdsl", "1" ) && !nvram_match( "fromvdsl", "1" ) )

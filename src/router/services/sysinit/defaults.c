@@ -487,7 +487,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 
     {"remote_ip_any", "1", 0},	/* allowed remote ip */
-    {"remote_ip", "0.0.0.0 0", 0},		/* allowed remote ip range */
+    {"remote_ip", "0.0.0.0 0", 0},	/* allowed remote ip range */
     {"http_wanport", "8080", 0},	/* WAN port to listen on */
     {"http_lanport", "80", 0},	/* LAN port to listen on */
     {"http_enable", "1", 0},	/* HTTP server enable/disable */
@@ -2133,7 +2133,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"pptp_server_name", "proxy2.wlan.ggew-net.de", 0},
 #else
     {"pptp_use_dhcp", "0", 0},	/* pptp will use dhcp to obtain ip address, netmask and gateway */
-    {"pptp_server_name", "", 0},	
+    {"pptp_server_name", "", 0},
 #endif
 
     {"forward_entries", "0", 0},
@@ -2494,7 +2494,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"usb_fs_fat", "0", 0},
     {"usb_automnt", "0", 0},
     {"usb_mntpoint", "mnt", 0},
-    {"usb_runonmount", "", 0},   
+    {"usb_runonmount", "", 0},
 #endif
     {"ttraff_enable", "1", 0},
 #ifdef HAVE_PPPOESERVER
@@ -2580,9 +2580,9 @@ struct nvram_tuple srouter_defaults[] = {
     {"proftpd_port", "21", 0},
     {"proftpd_dir", "mnt", 0},
     {"proftpd_passw", "", 0},
-	{"proftpd_writeen", "off", 0},
+    {"proftpd_writeen", "off", 0},
     {"proftpd_anon", "0", 0},
-    {"proftpd_anon_subdir", "", 0},	
+    {"proftpd_anon_subdir", "", 0},
 #endif
 #ifdef HAVE_SAMBA_SRV
     {"sambasrv_enable", "0", 0},

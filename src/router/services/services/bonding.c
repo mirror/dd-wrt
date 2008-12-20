@@ -50,13 +50,15 @@ void start_bonding( void )
 {
     char mode[64];
     char count[64];
-    stop_bonding();
+
+    stop_bonding(  );
 
     sprintf( mode, "mode=%s",
 	     nvram_default_get( "bonding_type", "balance-rr" ) );
     sprintf( count, "max_bonds=%s",
 	     nvram_default_get( "bonding_number", "1" ) );
-    eval( "insmod", "bonding", "miimon=100","downdelay=200","updelay=200", mode, count );
+    eval( "insmod", "bonding", "miimon=100", "downdelay=200", "updelay=200",
+	  mode, count );
 
     static char word[256];
     char *next, *wordlist;
@@ -71,12 +73,13 @@ void start_bonding( void )
 	{
 	    break;
 	}
-	if (!strncmp(port,"ath",3) && nvram_nmatch("wdsap","%s_mode",port))
-	    {
-	    sysprintf("ifconfig %s down",port);
-	    sysprintf("iwpriv %s wdssep 0",port);
-	    sysprintf("ifconfig %s up",port);
-	    }
+	if( !strncmp( port, "ath", 3 )
+	    && nvram_nmatch( "wdsap", "%s_mode", port ) )
+	{
+	    sysprintf( "ifconfig %s down", port );
+	    sysprintf( "iwpriv %s wdssep 0", port );
+	    sysprintf( "ifconfig %s up", port );
+	}
 	eval( "ifconfig", tag, "0.0.0.0", "up" );
 	eval( "ifenslave", tag, port );
     }
@@ -94,7 +97,7 @@ void start_bonding( void )
     }
 }
 
-int isBond(char *ifname)
+int isBond( char *ifname )
 {
     static char word[256];
     char *next, *wordlist;
@@ -109,7 +112,7 @@ int isBond(char *ifname)
 	{
 	    break;
 	}
-	if (!strcmp(port,ifname))
+	if( !strcmp( port, ifname ) )
 	    return 1;
     }
     return 0;
