@@ -123,7 +123,6 @@ void start_sysinit( void )
     insmod( "ath_hal" );
     insmod( "ath_ahb" );
 
-
     insmod( "ipv6" );
 
     /*
