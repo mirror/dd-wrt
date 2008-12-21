@@ -123,7 +123,11 @@ ifeq ($(ARCHITECTURE),wrt300nv2)
 	cp busybox/.config_fonera busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 else
+ifneq ($(CONFIG_WP18),y)
 	cp busybox/.config_xscale busybox/.config
+else
+	cp busybox/.config_xscale_wp18 busybox/.config
+endif
 endif
 endif
 ifeq ($(ARCH),powerpc)
