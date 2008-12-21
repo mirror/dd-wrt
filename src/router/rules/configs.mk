@@ -135,7 +135,7 @@ obj-$(CONFIG_NTPD) += ntpd
 obj-$(CONFIG_GPSD) += gpsd
 obj-$(CONFIG_PHP5) += php5
 obj-$(CONFIG_FREERADIUS) += freeradius
-obj-$(CONFIG_EAD) += ead
+#obj-$(CONFIG_EAD) += ead
 
 obj-$(CONFIG_SCDP) += scdp
 obj-$(CONFIG_SES) += ses
@@ -168,6 +168,7 @@ obj-$(CONFIG_POUND) += pound
 
 obj-y+=anchorfree
 obj-y+=ttraff
+obj-y+=speedtest
 
 
 obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
