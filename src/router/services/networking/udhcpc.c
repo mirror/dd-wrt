@@ -73,7 +73,7 @@ static int deconfig( void )
 {
     char *wan_ifname = safe_getenv( "interface" );
 
-    ifconfig( wan_ifname, IFUP, "0.0.0.0", NULL );
+    eval("ifconfig",wan_ifname, "0.0.0.0", "up" );
     expires( 0 );
 
     nvram_set( "wan_ipaddr", "0.0.0.0" );
@@ -255,10 +255,9 @@ static int bound( void )
 
     if( nvram_match( "wan_proto", "pptp" )
 	&& nvram_match( "pptp_use_dhcp", "1" ) )
-	ifconfig( wan_ifname, IFUP, temp_wan_ipaddr, temp_wan_netmask );
+	eval("ifconfig",wan_ifname,temp_wan_ipaddr,"netmask",temp_wan_netmask,"up");
     else
-	ifconfig( wan_ifname, IFUP, nvram_safe_get( "wan_ipaddr" ),
-		  nvram_safe_get( "wan_netmask" ) );
+	eval("ifconfig",wan_ifname, nvram_safe_get( "wan_ipaddr" ),"netmask",nvram_safe_get( "wan_netmask" ) ,"up");
 
     /*
      * We only want to exec bellow functions after dhcp get ip if the
