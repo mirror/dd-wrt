@@ -77,7 +77,7 @@ void configure_wimax( void )
 	sprintf( bridged, "%s_bridged", dev );
 	if( nvram_default_match( bridged, "1", "1" ) )
 	{
-	    ifconfig( dev, IFUP, NULL, NULL );
+	    eval( "ifconfig", dev, "0.0.0.0", "up" );
 	    br_add_interface( getBridge( dev ), dev );
 	    eval( "ifconfig", dev, "0.0.0.0", "up" );
 	}

@@ -1470,7 +1470,7 @@ static void configure_single( int count )
 	sprintf( bridged, "%s_bridged", dev );
 	if( nvram_default_match( bridged, "1", "1" ) )
 	{
-	    ifconfig( dev, IFUP, NULL, NULL );
+	    sysprintf( "ifconfig %s 0.0.0.0 up", dev );
 	    br_add_interface( getBridge( dev ), dev );
 	    sysprintf( "ifconfig %s 0.0.0.0 up", dev );
 	}
@@ -1537,7 +1537,7 @@ static void configure_single( int count )
 		sprintf( bridged, "%s_bridged", var );
 		if( nvram_default_match( bridged, "1", "1" ) )
 		{
-		    ifconfig( var, IFUP, NULL, NULL );
+		    sysprintf( "ifconfig %s 0.0.0.0 up", var );
 		    br_add_interface( getBridge( var ), var );
 		    if( !strcmp( m, "sta" ) || !strcmp( m, "wdssta" )
 			|| !strcmp( m, "wet" ) )
@@ -1557,8 +1557,7 @@ static void configure_single( int count )
 		    sprintf( ip, "%s_ipaddr", var );
 		    sprintf( mask, "%s_netmask", var );
 		    sysprintf( "ifconfig %s mtu 1500", var );
-		    ifconfig( var, IFUP, nvram_safe_get( ip ),
-			      nvram_safe_get( mask ) );
+		    sysprintf( "ifconfig %s %s netmask %s up", var, nvram_safe_get( ip ),nvram_safe_get( mask ) );
 		    if( !strcmp( m, "sta" ) || !strcmp( m, "wdssta" )
 			|| !strcmp( m, "wet" ) )
 			sysprintf( "ifconfig %s down", var );
@@ -1660,7 +1659,7 @@ void start_vifs( void )
 		    sprintf( bridged, "%s_bridged", var );
 		    if( nvram_default_match( bridged, "1", "1" ) )
 		    {
-			ifconfig( var, IFUP, NULL, NULL );
+			eval( "ifconfig", var, "0.0.0.0", "up" );
 			br_add_interface( getBridge( var ), var );
 			eval( "ifconfig", var, "0.0.0.0", "up" );
 		    }
@@ -1672,8 +1671,7 @@ void start_vifs( void )
 			sprintf( ip, "%s_ipaddr", var );
 			sprintf( mask, "%s_netmask", var );
 			eval( "ifconfig", var, "mtu", "1500" );
-			ifconfig( var, IFUP, nvram_safe_get( ip ),
-				  nvram_safe_get( mask ) );
+			sysprintf("ifconfig %s %s netmask %s up",var, nvram_safe_get( ip ),nvram_safe_get( mask ) );
 		    }
 		}
 	    }
