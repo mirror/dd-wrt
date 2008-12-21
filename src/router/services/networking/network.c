@@ -2544,7 +2544,6 @@ void start_wan( int status )
     int s;
     struct ifreq ifr;
 
-    eval( "ifconfig", nvram_safe_get( "wan_ifname" ), "allmulti", "promisc" );
 
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
@@ -2698,6 +2697,7 @@ void start_wan( int status )
     memset( ifr.ifr_hwaddr.sa_data, 0, ETHER_ADDR_LEN );
 
     ifconfig( wan_ifname, 0, NULL, NULL );
+    eval( "ifconfig", wan_ifname, "allmulti", "promisc" );
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
     if( getRouterBrand(  ) != ROUTER_BOARD_FONERA2200
 	&& getRouterBrand(  ) != ROUTER_BOARD_CA8PRO )
@@ -2815,14 +2815,15 @@ void start_wan( int status )
      * pppoe_wan interface must be up in order to use any pppoe client 
      */
     if( strcmp( wan_proto, "pppoe" ) == 0 )
-	ifconfig( pppoe_wan_ifname, IFUP, NULL, NULL );
-    else
     {
-	ifconfig( wan_ifname, IFUP, NULL, NULL );
+    eval( "ifconfig", pppoe_wan_ifname, "0.0.0.0","up","allmulti", "promisc" );
+    }else
+    {
+    eval( "ifconfig", wan_ifname, "0.0.0.0","up","allmulti", "promisc" );
     }
 #else
 
-    ifconfig( wan_ifname, IFUP, NULL, NULL );
+    eval( "ifconfig", wan_ifname, "0.0.0.0","up","allmulti", "promisc" );
     if( nvram_match( "wl0_mode", "infra" ) )
     {
 	eval( "wl", "infra", "0" );
@@ -3156,9 +3157,7 @@ void start_wan( int status )
 #endif
     else
     {
-	ifconfig( wan_ifname, IFUP,
-		  nvram_safe_get( "wan_ipaddr" ),
-		  nvram_safe_get( "wan_netmask" ) );
+	eval("ifconfig",wan_ifname,nvram_safe_get( "wan_ipaddr" ),"netmask",nvram_safe_get( "wan_netmask" ),"allmulti","promisc");
 	start_wan_done( wan_ifname );
     }
     cprintf( "dhcp client ready\n" );
