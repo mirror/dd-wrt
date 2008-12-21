@@ -106,6 +106,7 @@ include rules/radauth.mk
 include rules/samba.mk
 include rules/mmc.mk
 include rules/mmc-fonera.mk
+include rules/mmc-ixp4xx.mk
 include rules/openser.mk				
 include rules/nocat.mk
 include rules/http-redirect.mk
