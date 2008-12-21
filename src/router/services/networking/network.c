@@ -1499,13 +1499,13 @@ void start_lan( void )
 #endif
 	foreach( name, lan_ifnames, next )
 	{
-	    if( nvram_match( "wan_ifname", name ) )
-		continue;
 	    if( !ifexists( name ) )
 		continue;
 #ifdef HAVE_EAD
 	    sprintf( eadline, "%s%s %s ", eadline, "-d", name );
 #endif
+	    if( nvram_match( "wan_ifname", name ) )
+		continue;
 #if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880)
 	    if( !strcmp( name, "eth2" ) )
 	    {
@@ -1774,7 +1774,8 @@ void start_lan( void )
     free( wan_ifname );
     free( lan_ifnames );
 #ifdef HAVE_EAD
-    sysprintf( "ead %s -B", eadline );
+    if (strlen(eadline)>0)
+	sysprintf( "ead %s -B", eadline );
 #endif
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 #ifndef HAVE_NOWIFI
