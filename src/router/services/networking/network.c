@@ -703,8 +703,7 @@ static void do_portsetup( char *lan, char *ifname )
     }
     else
     {
-	ifconfig( ifname, IFUP, nvram_nget( "%s_ipaddr", IFMAP( ifname ) ),
-		  nvram_nget( "%s_netmask", ifname ) );
+	sysprintf("ifconfig %s %s netmask %s up", ifname, nvram_nget( "%s_ipaddr", IFMAP( ifname ) ),nvram_nget( "%s_netmask", ifname ) );
     }
 
 }
@@ -1399,7 +1398,7 @@ void start_lan( void )
 	// #ifdef HAVE_SKYTRON
 	// ifconfig(wan_ifname,IFUP,"172.16.1.1","255.255.255.0");
 	// #else
-	ifconfig( wan_ifname, IFUP, "0.0.0.0", NULL );
+	eval("ifconfig","wan_ifname","0.0.0.0","up");
 	// #endif
 
     }
@@ -2696,8 +2695,7 @@ void start_wan( int status )
      */
     memset( ifr.ifr_hwaddr.sa_data, 0, ETHER_ADDR_LEN );
 
-    ifconfig( wan_ifname, 0, NULL, NULL );
-    eval( "ifconfig", wan_ifname, "allmulti", "promisc" );
+    eval( "ifconfig", wan_ifname, "0.0.0.0","down","allmulti", "promisc" );
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
     if( getRouterBrand(  ) != ROUTER_BOARD_FONERA2200
 	&& getRouterBrand(  ) != ROUTER_BOARD_CA8PRO )
