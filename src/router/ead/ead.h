@@ -65,8 +65,8 @@ enum ead_cmd_type {
 };
 
 struct ead_msg_pong {
-	char name[32];
 	uint16_t auth_type;
+	char name[];
 } __attribute__((packed));
 
 struct ead_msg_number {
