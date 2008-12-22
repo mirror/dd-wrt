@@ -2670,6 +2670,7 @@ void ej_show_bridgeifnames( webs_t wp, int argc, char_t ** argv )
 	if( !contains( word, '.' ) )
 	    sprintf( finalbuffer, "%s %s", finalbuffer, word );
     }
+    sprintf(finalbuffer,"none %s",finalbuffer);
 
     int realcount = atoi( nvram_default_get( "bridgesif_count", "0" ) );
 
