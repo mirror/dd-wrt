@@ -197,6 +197,8 @@ int br_add_interface( const char *br, const char *dev )
     }
     else
 	eval( "ifconfig", dev, "mtu", getBridgeMTU( br ) );
+    eval( "ifconfig", dev, "down");  //fixup for some ethernet drivers
+    eval( "ifconfig", dev, "up");
 
     dd_syslog( LOG_INFO, "interface added successfully\n" );
     return eval( "brctl", "addif", br, dev );
