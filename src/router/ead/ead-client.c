@@ -144,7 +144,9 @@ static bool
 handle_pong(void)
 {
 	struct ead_msg_pong *pong = EAD_DATA(msg, pong);
+	int len = msg->len - sizeof(struct ead_msg_pong);
 
+	pong->name[len] = 0;
 	auth_type = ntohs(pong->auth_type);
 	if (nid == 0xffff)
 		fprintf(stdout,"%04x: %s\n", ntohs(msg->nid), pong->name);
