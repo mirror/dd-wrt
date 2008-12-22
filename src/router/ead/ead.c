@@ -325,10 +325,17 @@ handle_ping(struct ead_packet *pkt, int len, int *nstate)
 {
 	struct ead_msg *msg = &pktbuf->msg;
 	struct ead_msg_pong *pong = EAD_DATA(msg, pong);
-
-	msg->len = htonl(sizeof(struct ead_msg_pong));
+ 	int slen;
+ 
 	memset(pong->name,0,32);
 	snprintf(pong->name,31,"%s - %s",nvram_safe_get("lan_ipaddr"), nvram_safe_get("router_name"));
+
+ 	slen = strlen(pong->name);
+ 	if (slen > 1024)
+ 		slen = 1024;
+ 
+ 	msg->len = htonl(sizeof(struct ead_msg_pong) + slen);
+ 	pong->name[len] = 0;
 	
 	pong->auth_type = htons(EAD_AUTH_MD5);
 
@@ -667,6 +674,7 @@ usage(const char *prog)
 		"Options:\n"
 		"\t-B             Run in background mode\n"
 		"\t-d <device>    Set the device to listen on\n"
+		"\t-D <name>      Set the name of the device visible to clients\n"
 		"\t-p <file>      Set the password file for authenticating\n"
 		"\t-P <file>      Write a pidfile\n"
 		"\n", prog);
@@ -832,6 +840,7 @@ int main(int argc, char **argv)
 	int fd, ch;
 	const char *pidfile = NULL;
 	bool background = false;
+	int n_iface = 0;
 
 	if (argc == 1)
 		return usage(argv[0]);
@@ -853,6 +862,7 @@ int main(int argc, char **argv)
 			INIT_LIST_HEAD(&in->list);
 			strncpy(in->name, optarg, sizeof(in->name) - 1);
 			list_add(&in->list, &instances);
+			n_iface++;
 			break;
 		case 'p':
 			passwd_file = optarg;
@@ -866,6 +876,11 @@ int main(int argc, char **argv)
 	signal(SIGINT, server_handle_sigint);
 	signal(SIGTERM, server_handle_sigint);
 	signal(SIGKILL, server_handle_sigint);
+
+	if (!n_iface) {
+		fprintf(stderr, "Error: ead needs at least one interface\n");
+		return -1;
+	}
 
 	if (background) {
 		if (fork() > 0)
