@@ -58,7 +58,6 @@ void start_vlantagging( void )
     char *next, *wordlist;
 
     wordlist = nvram_safe_get( "vlan_tags" );
-    eval( "vconfig", "set_name_type", "DEV_PLUS_VID_NO_PAD" );
     foreach( word, wordlist, next )
     {
 	char *port = word;
@@ -68,6 +67,7 @@ void start_vlantagging( void )
 	{
 	    break;
 	}
+	eval( "vconfig", "set_name_type", "DEV_PLUS_VID_NO_PAD" );
 	eval( "vconfig", "add", tag, port );
 	char vlan_name[32];
 
