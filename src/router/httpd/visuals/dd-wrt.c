@@ -2672,7 +2672,7 @@ void ej_show_bridgeifnames( webs_t wp, int argc, char_t ** argv )
     }
     char *checkbuffer = malloc(strlen(finalbuffer)+6);
     memset(checkbuffer,0,strlen(finalbuffer)+6);
-    stcpy(checkbuffer,"none ");
+    strcpy(checkbuffer,"none ");
     strcat(checkbuffer,finalbuffer);
     strcpy(finalbuffer,checkbuffer);
     free(checkbuffer);
