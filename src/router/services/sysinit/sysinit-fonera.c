@@ -127,7 +127,17 @@ void start_sysinit( void )
      */
     insmod( "ar2313" );
     insmod( "ath_hal" );
-    insmod( "ath_ahb" );
+    if( nvram_get( "rate_control" ) != NULL )
+    {
+	char rate[64];
+
+	sprintf( rate, "ratectl=%s", nvram_safe_get( "rate_control" ) );
+	eval( "insmod", "ath_ahb", rate );
+    }
+    else
+    {
+	insmod( "ath_ahb" );
+    }
 
 #if defined(HAVE_EAP3660) || defined(HAVE_EOC2610)
     system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
