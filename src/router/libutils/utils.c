@@ -2448,7 +2448,7 @@ int getIfList( char *buffer, const char *ifprefix )
 		    skip = 1;
 		if( !strncmp( ifname, "imq", 3 ) )
 		    skip = 1;
-		if( !strncmp( ifname, "etherip", 3 ) )
+		if( !strncmp( ifname, "etherip", 7 ) )
 		    skip = 1;
 		if( !strncmp( ifname, "lo", 2 ) )
 		    skip = 1;
