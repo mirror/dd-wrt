@@ -315,6 +315,7 @@ void start_overclock( void )	// hidden feature. must be called with
 		    fseek(in, 0xce,SEEK_SET);
 		    putc(0x12,in);
 		    putc(0x45,in);
+		    vipermul=0x9;
 		    } else exit(1);
 		}else exit(1);
 	    }
