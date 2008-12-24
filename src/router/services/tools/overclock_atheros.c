@@ -106,14 +106,10 @@ void start_overclock( void )	// hidden feature. must be called with
     long len;
     long i;
 
-#ifdef HAVE_CA8
+#ifdef HAVE_ALPHA
+    FILE *in = fopen( "/dev/mtdblock/0", "rb" );
+#elif HAVE_CA8
     FILE *in = fopen( "/dev/mtdblock/2", "rb" );	// zLoader Board Data 
-
-    // access. the board
-    // data section
-    // contains also the
-    // cpu programming
-    // code
 #else
     FILE *in = fopen( "/dev/mtdblock/0", "rb" );
 #endif
