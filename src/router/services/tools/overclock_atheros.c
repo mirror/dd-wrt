@@ -298,8 +298,26 @@ void start_overclock( void )	// hidden feature. must be called with
 	eval( "mtd", "-f", "write", "/tmp/boot", "RedBoot" );
     }
     else if( vipermul == 0x9 || vipermul == 0xa || vipermul == 0xb
-	     || vipermul == 0xc )
+	     || vipermul == 0xc || vipermul == 0x17)
     {
+    
+	if (vipermul==0x17)
+	    {
+	    fprintf( stderr, "weired alfa clocksetting found\n" );
+	    fseek(in, 0xce,SEEK_SET);
+	    if (getc(in)==0x32)
+		{
+		if (getc(in)==0x45)
+		    {
+		    fprintf(stderr,"correct clock setting\n");
+		    fseek(in, 0xcb,SEEK_SET);
+		    putc(0x9,in);
+		    fseek(in, 0xce,SEEK_SET);
+		    putc(0x12,in);
+		    putc(0x45,in);
+		    } else exit(1);
+		}else exit(1);
+	    }
 	fprintf( stderr, "viper (ar2313) found\n" );
 	if( clk == 180 && vipermul == 0x9 )
 	{
@@ -412,6 +430,7 @@ void start_overclock( void )	// hidden feature. must be called with
     {
 	fprintf( stderr, "unknown board or no redboot found\n" );
 	fclose( in );
+	exit(1);
     }
     fprintf( stderr, "board is now clocked at %d mhz, please reboot\n", clk );
 }
