@@ -70,8 +70,8 @@ int br_add_interface( const char *bridge, const char *dev )
 {
 
     eval( "ifconfig", dev, "mtu", getBridgeMTU( bridge ) );
-    eval( "ifconfig", brname, "down");
-    eval( "ifconfig", brname, "up");
+    eval( "ifconfig", dev, "down");
+    eval( "ifconfig", dev, "up");
 
     struct ifreq ifr;
     int err;
