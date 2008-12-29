@@ -165,7 +165,11 @@ int
 ospf_sock_init (void)
 {
   int ospf_sock;
-  int ret, hincl = 1;
+  /*
+   * XXX warning: unused variable `tos'
+   * tos should be ifdefed similarly to usage
+   */
+  int ret, tos, hincl = 1;
 
   if ( ospfd_privs.change (ZPRIVS_RAISE) )
     zlog_err ("ospf_sock_init: could not raise privs, %s",
@@ -197,7 +201,10 @@ ospf_sock_init (void)
 #elif defined (IPTOS_PREC_INTERNETCONTROL)
 #warning "IP_HDRINCL not available on this system"
 #warning "using IPTOS_PREC_INTERNETCONTROL"
-  ret = setsockopt_ipv4_tos(ospf_sock, IPTOS_PREC_INTERNETCONTROL);
+  /* Set precedence field. */
+  tos = IPTOS_PREC_INTERNETCONTROL;
+  ret = setsockopt (ospf_sock, IPPROTO_IP, IP_TOS,
+		    (char *) &tos, sizeof (int));
   if (ret < 0)
     {
       int save_errno = errno;

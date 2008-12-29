@@ -27,12 +27,10 @@
 #ifdef HAVE_SNMP
 #ifdef HAVE_NETSNMP
 #include <net-snmp/net-snmp-config.h>
-#include <net-snmp/net-snmp-includes.h>
-#else
+#endif
 #include <asn1.h>
 #include <snmp.h>
 #include <snmp_impl.h>
-#endif
 
 #include "if.h"
 #include "log.h"

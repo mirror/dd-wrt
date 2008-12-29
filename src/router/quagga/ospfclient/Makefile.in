@@ -38,7 +38,7 @@ target_triplet = @target@
 sbin_PROGRAMS = ospfclient$(EXEEXT)
 subdir = ospfclient
 DIST_COMMON = README $(ospfapiheader_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in AUTHORS COPYING INSTALL NEWS
+	$(srcdir)/Makefile.in AUTHORS COPYING ChangeLog INSTALL NEWS
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -64,13 +64,10 @@ libospfapiclient_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(libospfapiclient_la_LDFLAGS) $(LDFLAGS) -o $@
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
-am_ospfclient_OBJECTS = ospfclient-ospfclient.$(OBJEXT)
+am_ospfclient_OBJECTS = ospfclient.$(OBJEXT)
 ospfclient_OBJECTS = $(am_ospfclient_OBJECTS)
 ospfclient_DEPENDENCIES = libospfapiclient.la ../ospfd/libospf.la \
 	../lib/libzebra.la
-ospfclient_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(ospfclient_CFLAGS) \
-	$(CFLAGS) $(ospfclient_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -167,8 +164,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
-PICFLAGS = @PICFLAGS@
-PILDFLAGS = @PILDFLAGS@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@
@@ -261,8 +256,6 @@ ospfclient_SOURCES = \
 ospfclient_LDADD = libospfapiclient.la \
 	../ospfd/libospf.la ../lib/libzebra.la @LIBCAP@
 
-ospfclient_CFLAGS = $(AM_CFLAGS) $(PICFLAGS)
-ospfclient_LDFLAGS = $(AM_LDFLAGS) $(PILDFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -355,7 +348,7 @@ clean-sbinPROGRAMS:
 	done
 ospfclient$(EXEEXT): $(ospfclient_OBJECTS) $(ospfclient_DEPENDENCIES) 
 	@rm -f ospfclient$(EXEEXT)
-	$(ospfclient_LINK) $(ospfclient_OBJECTS) $(ospfclient_LDADD) $(LIBS)
+	$(LINK) $(ospfclient_OBJECTS) $(ospfclient_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -364,7 +357,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ospf_apiclient.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ospfclient-ospfclient.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ospfclient.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -386,20 +379,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-ospfclient-ospfclient.o: ospfclient.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ospfclient_CFLAGS) $(CFLAGS) -MT ospfclient-ospfclient.o -MD -MP -MF $(DEPDIR)/ospfclient-ospfclient.Tpo -c -o ospfclient-ospfclient.o `test -f 'ospfclient.c' || echo '$(srcdir)/'`ospfclient.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ospfclient-ospfclient.Tpo $(DEPDIR)/ospfclient-ospfclient.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ospfclient.c' object='ospfclient-ospfclient.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ospfclient_CFLAGS) $(CFLAGS) -c -o ospfclient-ospfclient.o `test -f 'ospfclient.c' || echo '$(srcdir)/'`ospfclient.c
-
-ospfclient-ospfclient.obj: ospfclient.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ospfclient_CFLAGS) $(CFLAGS) -MT ospfclient-ospfclient.obj -MD -MP -MF $(DEPDIR)/ospfclient-ospfclient.Tpo -c -o ospfclient-ospfclient.obj `if test -f 'ospfclient.c'; then $(CYGPATH_W) 'ospfclient.c'; else $(CYGPATH_W) '$(srcdir)/ospfclient.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ospfclient-ospfclient.Tpo $(DEPDIR)/ospfclient-ospfclient.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ospfclient.c' object='ospfclient-ospfclient.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ospfclient_CFLAGS) $(CFLAGS) -c -o ospfclient-ospfclient.obj `if test -f 'ospfclient.c'; then $(CYGPATH_W) 'ospfclient.c'; else $(CYGPATH_W) '$(srcdir)/ospfclient.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

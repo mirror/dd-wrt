@@ -28,8 +28,8 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_table.h"
 
-static void bgp_node_delete (struct bgp_node *);
-static void bgp_table_free (struct bgp_table *);
+void bgp_node_delete (struct bgp_node *);
+void bgp_table_free (struct bgp_table *);
 
 struct bgp_table *
 bgp_table_init (afi_t afi, safi_t safi)
@@ -47,10 +47,9 @@ bgp_table_init (afi_t afi, safi_t safi)
 }
 
 void
-bgp_table_finish (struct bgp_table **rt)
+bgp_table_finish (struct bgp_table *rt)
 {
-  bgp_table_free (*rt);
-  *rt = NULL;
+  bgp_table_free (rt);
 }
 
 static struct bgp_node *
@@ -85,7 +84,7 @@ bgp_node_free (struct bgp_node *node)
 }
 
 /* Free route table. */
-static void
+void
 bgp_table_free (struct bgp_table *rt)
 {
   struct bgp_node *tmp_node;
@@ -230,7 +229,7 @@ bgp_unlock_node (struct bgp_node *node)
 
 /* Find matched prefix. */
 struct bgp_node *
-bgp_node_match (const struct bgp_table *table, struct prefix *p)
+bgp_node_match (struct bgp_table *table, struct prefix *p)
 {
   struct bgp_node *node;
   struct bgp_node *matched;
@@ -256,7 +255,7 @@ bgp_node_match (const struct bgp_table *table, struct prefix *p)
 }
 
 struct bgp_node *
-bgp_node_match_ipv4 (const struct bgp_table *table, struct in_addr *addr)
+bgp_node_match_ipv4 (struct bgp_table *table, struct in_addr *addr)
 {
   struct prefix_ipv4 p;
 
@@ -270,7 +269,7 @@ bgp_node_match_ipv4 (const struct bgp_table *table, struct in_addr *addr)
 
 #ifdef HAVE_IPV6
 struct bgp_node *
-bgp_node_match_ipv6 (const struct bgp_table *table, struct in6_addr *addr)
+bgp_node_match_ipv6 (struct bgp_table *table, struct in6_addr *addr)
 {
   struct prefix_ipv6 p;
 
@@ -285,7 +284,7 @@ bgp_node_match_ipv6 (const struct bgp_table *table, struct in6_addr *addr)
 
 /* Lookup same prefix node.  Return NULL when we can't find route. */
 struct bgp_node *
-bgp_node_lookup (const struct bgp_table *table, struct prefix *p)
+bgp_node_lookup (struct bgp_table *table, struct prefix *p)
 {
   struct bgp_node *node;
 
@@ -305,7 +304,7 @@ bgp_node_lookup (const struct bgp_table *table, struct prefix *p)
 
 /* Add node to routing table. */
 struct bgp_node *
-bgp_node_get (struct bgp_table *const table, struct prefix *p)
+bgp_node_get (struct bgp_table *table, struct prefix *p)
 {
   struct bgp_node *new;
   struct bgp_node *node;
@@ -361,7 +360,7 @@ bgp_node_get (struct bgp_table *const table, struct prefix *p)
 }
 
 /* Delete node from the routing table. */
-static void
+void
 bgp_node_delete (struct bgp_node *node)
 {
   struct bgp_node *child;
@@ -405,7 +404,7 @@ bgp_node_delete (struct bgp_node *node)
 /* Get fist node and lock it.  This function is useful when one want
    to lookup all the node exist in the routing table. */
 struct bgp_node *
-bgp_table_top (const struct bgp_table *const table)
+bgp_table_top (struct bgp_table *table)
 {
   /* If there is no node in the routing table return NULL. */
   if (table->top == NULL)
@@ -499,7 +498,7 @@ bgp_route_next_until (struct bgp_node *node, struct bgp_node *limit)
 }
 
 unsigned long
-bgp_table_count (const struct bgp_table *table)
+bgp_table_count (struct bgp_table *table)
 {
   return table->count;
 }

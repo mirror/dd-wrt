@@ -33,7 +33,7 @@ static void alloc_inc (int);
 static void alloc_dec (int);
 static void log_memstats(int log_priority);
 
-static const struct message mstr [] =
+static struct message mstr [] =
 {
   { MTYPE_THREAD, "thread" },
   { MTYPE_THREAD_MASTER, "thread_master" },
@@ -444,16 +444,6 @@ DEFUN (show_memory_isis,
 void
 memory_init (void)
 {
-  install_element (RESTRICTED_NODE, &show_memory_cmd);
-  install_element (RESTRICTED_NODE, &show_memory_all_cmd);
-  install_element (RESTRICTED_NODE, &show_memory_lib_cmd);
-  install_element (RESTRICTED_NODE, &show_memory_rip_cmd);
-  install_element (RESTRICTED_NODE, &show_memory_ripng_cmd);
-  install_element (RESTRICTED_NODE, &show_memory_bgp_cmd);
-  install_element (RESTRICTED_NODE, &show_memory_ospf_cmd);
-  install_element (RESTRICTED_NODE, &show_memory_ospf6_cmd);
-  install_element (RESTRICTED_NODE, &show_memory_isis_cmd);
-
   install_element (VIEW_NODE, &show_memory_cmd);
   install_element (VIEW_NODE, &show_memory_all_cmd);
   install_element (VIEW_NODE, &show_memory_lib_cmd);
