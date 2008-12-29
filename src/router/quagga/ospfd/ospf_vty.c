@@ -50,7 +50,7 @@
 #include "ospfd/ospf_dump.h"
 
 
-static const char *ospf_network_type_str[] =
+const static char *ospf_network_type_str[] =
 {
   "Null",
   "POINTOPOINT",
@@ -3093,7 +3093,7 @@ DEFUN (show_ip_ospf_neighbor_all,
        "Neighbor list\n"
        "include down status neighbor\n")
 {
-  struct ospf *ospf = ospf_lookup ();
+  struct ospf *ospf = vty->index;
   struct listnode *node;
   struct ospf_interface *oi;
 

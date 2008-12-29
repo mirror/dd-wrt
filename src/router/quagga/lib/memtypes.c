@@ -6,7 +6,7 @@
  * The script is sensitive to the format (though not whitespace), see
  * the top of memtypes.awk for more details.
  *
- * $Id$
+ * $Id: memtypes.c,v 1.12 2007/05/04 20:15:47 paul Exp $
  */
 
 #include "zebra.h"
@@ -95,7 +95,6 @@ struct memory_list memory_list_bgp[] =
   { MTYPE_BGP_PEER_HOST,	"BGP peer hostname"		},
   { MTYPE_PEER_GROUP,		"Peer group"			},
   { MTYPE_PEER_DESC,		"Peer description"		},
-  { MTYPE_PEER_PASSWORD,	"Peer password string"		},
   { MTYPE_ATTR,			"BGP attribute"			},
   { MTYPE_ATTR_EXTRA,		"BGP extra attributes"		},
   { MTYPE_AS_PATH,		"BGP aspath"			},

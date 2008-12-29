@@ -31,7 +31,7 @@
 #include "ripngd/ripngd.h"
 #include "ripngd/ripng_route.h"
 
-static struct ripng_aggregate *
+struct ripng_aggregate *
 ripng_aggregate_new ()
 {
   struct ripng_aggregate *new;
@@ -40,7 +40,7 @@ ripng_aggregate_new ()
   return new;
 }
 
-static void
+void
 ripng_aggregate_free (struct ripng_aggregate *aggregate)
 {
   XFREE (MTYPE_RIPNG_AGGREGATE, aggregate);

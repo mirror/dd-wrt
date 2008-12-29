@@ -39,7 +39,7 @@ target_triplet = @target@
 sbin_PROGRAMS = ripd$(EXEEXT)
 subdir = ripd
 DIST_COMMON = $(dist_examples_DATA) $(noinst_HEADERS) \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in ChangeLog
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -167,8 +167,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
-PICFLAGS = @PICFLAGS@
-PILDFLAGS = @PILDFLAGS@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@
@@ -247,8 +245,6 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 INSTALL_SDATA = @INSTALL@ -m 600
-AM_CFLAGS = $(PICFLAGS)
-AM_LDFLAGS = $(PILDFLAGS)
 noinst_LIBRARIES = librip.a
 librip_a_SOURCES = \
 	ripd.c rip_zebra.c rip_interface.c rip_debug.c rip_snmp.c \

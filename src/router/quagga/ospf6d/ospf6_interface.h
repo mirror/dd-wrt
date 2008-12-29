@@ -124,28 +124,29 @@ extern const char *ospf6_interface_state_str[];
 
 /* Function Prototypes */
 
-extern struct ospf6_interface *ospf6_interface_lookup_by_ifindex (int);
-extern struct ospf6_interface *ospf6_interface_create (struct interface *);
-extern void ospf6_interface_delete (struct ospf6_interface *);
+struct ospf6_interface *ospf6_interface_lookup_by_ifindex (int);
+struct ospf6_interface *ospf6_interface_create (struct interface *);
+void ospf6_interface_delete (struct ospf6_interface *);
 
-extern void ospf6_interface_enable (struct ospf6_interface *);
-extern void ospf6_interface_disable (struct ospf6_interface *);
+void ospf6_interface_enable (struct ospf6_interface *);
+void ospf6_interface_disable (struct ospf6_interface *);
 
-extern void ospf6_interface_if_add (struct interface *);
-extern void ospf6_interface_if_del (struct interface *);
-extern void ospf6_interface_state_update (struct interface *);
-extern void ospf6_interface_connected_route_update (struct interface *);
+void ospf6_interface_if_add (struct interface *);
+void ospf6_interface_if_del (struct interface *);
+void ospf6_interface_state_update (struct interface *);
+void ospf6_interface_connected_route_update (struct interface *);
 
 /* interface event */
-extern int interface_up (struct thread *);
-extern int interface_down (struct thread *);
-extern int wait_timer (struct thread *);
-extern int backup_seen (struct thread *);
-extern int neighbor_change (struct thread *);
+int interface_up (struct thread *);
+int interface_down (struct thread *);
+int wait_timer (struct thread *);
+int backup_seen (struct thread *);
+int neighbor_change (struct thread *);
 
-extern void ospf6_interface_init (void);
+void ospf6_interface_init ();
 
-extern int config_write_ospf6_debug_interface (struct vty *vty);
-extern void install_element_ospf6_debug_interface (void);
+int config_write_ospf6_debug_interface (struct vty *vty);
+void install_element_ospf6_debug_interface ();
 
 #endif /* OSPF6_INTERFACE_H */
+

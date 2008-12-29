@@ -211,7 +211,7 @@ struct cmd_node debug_node =
   1 /* VTYSH */
 };
 
-static int
+int
 config_write_debug (struct vty *vty)
 {
   int write = 0;

@@ -18,20 +18,18 @@
 	Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 	02111-1307, USA.
 
-	Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
+	Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
 	Use is subject to license terms.
 
 	ident	"@(#)quagga.xml	1.0	05/03/15 SMI"
 -->
 
-<service_bundle type='manifest' name='SUNWquagga-daemons:quagga'>
-
+<service_bundle type='manifest' name='QUAGGAdaemons:quagga'>
 <service
 	name='network/routing/zebra'
 	type='service'
 	version='1'>
-	
-	<single_instance />
+
 	<instance name='quagga' enabled='false'>
 	
 	<dependency name='fs'
@@ -48,24 +46,24 @@
 		type='service'>
 		<service_fmri value='svc:/network/initial' />
 	</dependency>
-	
-	<!-- do not not run unless routing-setup has run -->
-	<dependency
-		name='network_routing_setup'
-		grouping='require_all'
-		restart_on='refresh'
-		type='service'>
-		<service_fmri value='svc:/network/routing-setup' />
-	</dependency>
 
+	<dependency name='config_data'
+		grouping='require_all'
+		restart_on='restart'
+		type='path'>
+		<service_fmri
+			value='file://localhost/@sysconfdir@/zebra.conf' />
+	</dependency>
+	
 	<exec_method
 		type='method'
 		name='start'
-		exec='/lib/svc/method/quagga zebra'
+		exec='/lib/svc/method/quagga zebra %{routing/daemon-args}'
 		timeout_seconds='60'>
 		<method_context>
 		  <method_credential
-		   user='root' group='root'/>
+		   user='root' group='root'
+		   privileges='basic,net_icmpaccess,net_rawaccess,sys_admin,sys_net_config'/>
  		</method_context>
 	</exec_method>
 
@@ -86,54 +84,16 @@
 		<propval name='ignore_error'
 		    type='astring' value='core,signal' />
 	</property_group>
-	
-	<!-- Properties in this group are used by routeadm (1M) -->
-	<property_group name='routeadm' type='application'>
-		<stability value='Unstable' />
-		<!-- Identifies service as a routing service -->
-		<propval name='daemon' type='astring'
-			value='@sbindir@/zebra' />
-		<propval name='value_authorization' type='astring'
-			value='solaris.smf.value.routing' />
-		<!-- zebra should not contribute to ipv4/ipv6 routing state -->
-		<propval name='protocol' type='astring' value='zebra' />
-	</property_group>
-	
-	<!-- Properties in this group are modifiable via routeadm (1M) -->
+
 	<property_group name='routing' type='application'>
-		<stability value='Evolving' />
 		<propval name='value_authorization' type='astring' 
-		         value='solaris.smf.value.routing' />
-		
-		<!-- Options common to Quagga daemons
-		     Property names are equivalent to the long
-		     option name, consult Quagga documentation -->
-		<!-- The config file to use, if not the default -->
-		<propval name='config_file' type='astring' value=''/>
-		<!-- The vty_port to listen on if not the default.
-		     0 to disable --> 
-		<propval name='vty_port' type='integer' value='0' />
-		<!-- The address to bind the VTY interface to, if not any. -->
-		<propval name='vty_address' type='astring' value='' />
-		<!-- The user to switch to after startup, if not the default -->
-		<propval name='user' type='astring' value='' />
-		<!-- The group to switch to, if not the default.
-		     If user is specified, this defaults to a group with
-		     same name as user -->
-		<propval name='group' type='astring' value='' />
-		<!-- The pidfile to use, if not the default of
-		     @quagga_statedir@ -->
-		<propval name='pid_file' type='astring' value='' />
-		
-		<!-- Options specific to zebra -->
-		<propval name='batch' type='boolean' value='false' />
+		         value='solaris.smf.modify.routing' />
+		<propval name='daemon-args' type='astring' value='-P 0'/>
 	</property_group>
 	
 	<property_group name='general' type='framework'>
 		<!-- to start stop routing services -->
 		<propval name='action_authorization' type='astring'
-			 value='solaris.smf.manage.routing' />
-		<propval name='value_authorization' type='astring'
 			 value='solaris.smf.manage.routing' />
 	</property_group>
 
@@ -151,7 +111,7 @@
 		</documentation>
 	</template>
 	</instance>
-	<stability value='Unstable' />
+	<stability value='Evolving' />
 </service>
 
 <service
@@ -169,40 +129,39 @@
 			value='svc:/system/filesystem/usr:default' />
 	</dependency>
 
-	<dependency
-		name='ipv4-forwarding'
-		grouping='optional_all'
-		restart_on='refresh'
-		type='service'>
-		<service_fmri value='svc:/network/ipv4-forwarding' />
-	</dependency>
-	
-	<!-- do not not run unless routing-setup has run -->
-	<dependency
-		name='network_routing_setup'
+	<!-- Depends on Work-In-Progress, not yet in SNV
+	<dependency name='net'
 		grouping='require_all'
-		restart_on='refresh'
+		restart_on='none'
 		type='service'>
-		<service_fmri value='svc:/network/routing-setup' />
+		<service_fmri value='svc:/network/routing/ipv4-routing' />
 	</dependency>
+	-->
 	
-	<!-- ensure that restart of zebra is propogated to daemon -->
-	<dependency
-		name='zebra'
-		grouping='optional_all'
-		restart_on='restart'
-		type='service'>
-		<service_fmri value='svc:/network/routing/zebra:quagga' />
+	<dependency name='zebra'
+			grouping='require_all'
+			restart_on='restart'
+			type='service'>
+			<service_fmri value='svc:/network/routing/zebra:quagga' />
 	</dependency>
 
+	<dependency name='config_data'
+		grouping='require_all'
+		restart_on='restart'
+		type='path'>
+		<service_fmri
+			value='file://localhost/@sysconfdir@/ripd.conf' />
+	</dependency>
+	
 	<exec_method
 		type='method'
 		name='start'
-		exec='/lib/svc/method/quagga ripd'
+		exec='/lib/svc/method/quagga ripd %{routing/daemon-args}'
 		timeout_seconds='60'>
 		<method_context>
 		  <method_credential
-		   user='root' group='root'/>
+		   user='root' group='root'
+		   privileges='basic,net_icmpaccess,net_privaddr,net_rawaccess'/>
  		</method_context>
 	</exec_method>
 
@@ -220,51 +179,15 @@
 		    type='astring' value='core,signal' />
 	</property_group>
 
-	<!-- Properties in this group are used by routeadm (1M) -->
-	<property_group name='routeadm' type='application'>
-		<stability value='Unstable' />
-		<!-- Identifies service as a routing service -->
-		<propval name='daemon' type='astring'
-			value='@sbindir@/ripd' />
-		<propval name='legacy-daemon' type='astring'
-			value='/usr/sfw/sbin/ripdstart' />
-		<propval name='value_authorization' type='astring'
-			value='solaris.smf.value.routing' />
-		<propval name='protocol' type='astring' value='ipv4' />
-	</property_group>
-	
-	<!-- Properties in this group are modifiable via routeadm (1M) -->
 	<property_group name='routing' type='application'>
 		<propval name='value_authorization' type='astring' 
-		         value='solaris.smf.value.routing' />
-
-		<!-- Options common to Quagga daemons -->
-		<!-- The config file to use, if not the default -->
-		<propval name='config_file' type='astring' value=''/>
-		<!-- The vty_port to listen on if not the default.
-		     0 to disable --> 
-		<propval name='vty_port' type='integer' value='0' />
-		<!-- The address to bind the VTY interface to, if not any. -->
-		<propval name='vty_address' type='astring' value='' />
-		<!-- The user to switch to after startup, if not the default -->
-		<propval name='user' type='astring' value='' />
-		<!-- The group to switch to, if not the default.
-		     If user is specified, this defaults to a group with
-		     same name as user -->
-		<propval name='group' type='astring' value='' />
-		<!-- The pidfile to use, if not the default of
-		     @quagga_statedir@ -->
-		<propval name='pid_file' type='astring' value='' />
-		
-		<!-- Options specific to ripd -->
-		<propval name='retain' type='boolean' value='false' />
+		         value='solaris.smf.modify.routing' />
+		<propval name='daemon-args' type='astring' value='-P 0'/>
 	</property_group>
 
 	<property_group name='general' type='framework'>
 		<!-- to start stop routing services -->
 		<propval name='action_authorization' type='astring'
-			 value='solaris.smf.manage.routing' />
-		<propval name='value_authorization' type='astring'
 			 value='solaris.smf.manage.routing' />
 	</property_group>
 
@@ -282,7 +205,7 @@
 		</documentation>
 	</template>
 	</instance>
-	<stability value='Unstable' />
+	<stability value='Evolving' />
 </service>
 
 <service
@@ -300,40 +223,39 @@
 			value='svc:/system/filesystem/usr:default' />
 	</dependency>
 	
-	<dependency
-		name='ipv6-forwarding'
-		grouping='optional_all'
-		restart_on='refresh'
-		type='service'>
-		<service_fmri value='svc:/network/ipv6-forwarding' />
-	</dependency>
-
-	<!-- do not not run unless routing-setup has run -->
-	<dependency
-		name='network_routing_setup'
+	<!-- Depends on WIP, not yet in SNV
+	<dependency name='net'
 		grouping='require_all'
-		restart_on='refresh'
+		restart_on='none'
 		type='service'>
-		<service_fmri value='svc:/network/routing-setup' />
+		<service_fmri value='svc:/network/routing/ipv6-routing' />
+	</dependency>
+	-->
+
+	<dependency name='zebra'
+			grouping='require_all'
+			restart_on='restart'
+			type='service'>
+			<service_fmri value='svc:/network/routing/zebra:quagga' />
 	</dependency>
 
-	<!-- ensure that restart of zebra is propogated to daemon -->
-	<dependency
-		name='zebra'
-		grouping='optional_all'
+	<dependency name='config_data'
+		grouping='require_all'
 		restart_on='restart'
-		type='service'>
-		<service_fmri value='svc:/network/routing/zebra:quagga' />
+		type='path'>
+		<service_fmri
+			value='file://localhost/@sysconfdir@/ripngd.conf' />
 	</dependency>
-
+	
 	<exec_method
 		type='method'
 		name='start'
-		exec='/lib/svc/method/quagga ripngd'
+		exec='/lib/svc/method/quagga ripngd %{routing/daemon-args}'
 		timeout_seconds='60'>
 		<method_context>
 		  <method_credential
-		   user='root' group='root'/>
+		   user='root' group='root'
+		   privileges='basic,net_icmpaccess,net_privaddr,net_rawaccess'/>
  		</method_context>
 	</exec_method>
 
@@ -351,49 +273,15 @@
 		    type='astring' value='core,signal' />
 	</property_group>
 
-	<!-- Properties in this group are used by routeadm (1M) -->
-	<property_group name='routeadm' type='application'>
-		<stability value='Unstable' />
-		<!-- Identifies service as a routing service -->
-		<propval name='daemon' type='astring'
-			value='@sbindir@/ripngd' />
-		<propval name='value_authorization' type='astring'
-			value='solaris.smf.value.routing' />
-		<propval name='protocol' type='astring' value='ipv6'/>
-	</property_group>
-	
-	<!-- Properties in this group are modifiable via routeadm (1M) -->
 	<property_group name='routing' type='application'>
 		<propval name='value_authorization' type='astring' 
-		         value='solaris.smf.value.routing' />
-
-		<!-- Options common to Quagga daemons -->
-		<!-- The config file to use, if not the default -->
-		<propval name='config_file' type='astring' value=''/>
-		<!-- The vty_port to listen on if not the default.
-		     0 to disable --> 
-		<propval name='vty_port' type='integer' value='0' />
-		<!-- The address to bind the VTY interface to, if not any. -->
-		<propval name='vty_address' type='astring' value='' />
-		<!-- The user to switch to after startup, if not the default -->
-		<propval name='user' type='astring' value='' />
-		<!-- The group to switch to, if not the default.
-		     If user is specified, this defaults to a group with
-		     same name as user -->
-		<propval name='group' type='astring' value='' />
-		<!-- The pidfile to use, if not the default of
-		     @quagga_statedir@ -->
-		<propval name='pid_file' type='astring' value='' />
-
-		<!-- Options specific to ripngd -->
-		<propval name='retain' type='boolean' value='false' />
+		         value='solaris.smf.modify.routing' />
+		<propval name='daemon-args' type='astring' value='-P 0'/>
 	</property_group>
 
 	<property_group name='general' type='framework'>
 		<!-- to start stop routing services -->
 		<propval name='action_authorization' type='astring'
-			 value='solaris.smf.manage.routing' />
-		<propval name='value_authorization' type='astring'
 			 value='solaris.smf.manage.routing' />
 	</property_group>
 
@@ -411,7 +299,7 @@
 		</documentation>
 	</template>
 	</instance>
-	<stability value='Unstable' />
+	<stability value='Evolving' />
 </service>
 
 <service
@@ -429,51 +317,47 @@
 			value='svc:/system/filesystem/usr:default' />
 	</dependency>
 	
-	<dependency
-		name='ipv4-forwarding'
-		grouping='optional_all'
-		restart_on='refresh'
-		type='service'>
-		<service_fmri value='svc:/network/ipv4-forwarding' />
-	</dependency>
-
-	<!-- do not not run unless routing-setup has run -->
-	<dependency
-		name='network_routing_setup'
+	<!-- Depends on WIP, not yet in SNV
+	<dependency name='net'
 		grouping='require_all'
-		restart_on='refresh'
+		restart_on='none'
 		type='service'>
-		<service_fmri value='svc:/network/routing-setup' />
+		<service_fmri value='svc:/network/routing/ipv4-routing' />
+	</dependency>
+	-->
+
+	<dependency name='zebra'
+			grouping='require_all'
+			restart_on='restart'
+			type='service'>
+			<service_fmri value='svc:/network/routing/zebra:quagga' />
 	</dependency>
 
-	<!-- ensure that restart of zebra is propogated to daemon -->
-	<dependency
-		name='zebra'
-		grouping='optional_all'
+	<dependency name='config_data'
+		grouping='require_all'
 		restart_on='restart'
-		type='service'>
-		<service_fmri value='svc:/network/routing/zebra:quagga' />
+		type='path'>
+		<service_fmri
+			value='file://localhost/@sysconfdir@/ospfd.conf' />
 	</dependency>
-
+	
 	<exec_method
 		type='method'
 		name='start'
-		exec='/lib/svc/method/quagga ospfd'
+		exec='/lib/svc/method/quagga ospfd %{routing/daemon-args}'
 		timeout_seconds='60'>
 		<method_context>
 		  <method_credential
-		   user='root' group='root'/>
+		   user='root' group='root'
+		   privileges='basic,net_icmpaccess,net_privaddr,net_rawaccess,sys_net_config'/>
  		</method_context>
 	</exec_method>
 
-	<!-- ospfd can take a long time to shutdown, due to graceful 
-	     shutdown 
-	 -->
 	<exec_method
 		type='method'
 		name='stop'
 		exec=':kill'
-		timeout_seconds='600'>
+		timeout_seconds='60'>
 	</exec_method>
 
 	<property_group name='startd'
@@ -483,48 +367,15 @@
 		    type='astring' value='core,signal' />
 	</property_group>
 
-	<!-- Properties in this group are used by routeadm (1M) -->
-	<property_group name='routeadm' type='application'>
-		<stability value='Unstable' />
-		<!-- Identifies service as a routing service -->
-		<propval name='daemon' type='astring'
-			value='@sbindir@/ospfd' />
-		<propval name='legacy-daemon' type='astring'
-			value='/usr/sfw/sbin/ospfdstart' />
-		<propval name='value_authorization' type='astring'
-			value='solaris.smf.value.routing' />
-		<propval name='protocol' type='astring' value='ipv4'/>
-	</property_group>
-	
-	<!-- Properties in this group are modifiable via routeadm (1M) -->
 	<property_group name='routing' type='application'>
 		<propval name='value_authorization' type='astring' 
-		         value='solaris.smf.value.routing' />
-
-		<!-- Options common to Quagga daemons -->
-		<!-- The config file to use, if not the default -->
-		<propval name='config_file' type='astring' value=''/>
-		<!-- The vty_port to listen on if not the default.
-		     0 to disable --> 
-		<propval name='vty_port' type='integer' value='0' />
-		<!-- The address to bind the VTY interface to, if not any. -->
-		<propval name='vty_address' type='astring' value='' />
-		<!-- The user to switch to after startup, if not the default -->
-		<propval name='user' type='astring' value='' />
-		<!-- The group to switch to, if not the default.
-		     If user is specified, this defaults to a group with
-		     same name as user -->
-		<propval name='group' type='astring' value='' />
-		<!-- The pidfile to use, if not the default of
-		     @quagga_statedir@ -->
-		<propval name='pid_file' type='astring' value='' />
+		         value='solaris.smf.modify.routing' />
+		<propval name='daemon-args' type='astring' value='-P 0'/>
 	</property_group>
 
 	<property_group name='general' type='framework'>
 		<!-- to start stop routing services -->
 		<propval name='action_authorization' type='astring'
-			 value='solaris.smf.manage.routing' />
-		<propval name='value_authorization' type='astring'
 			 value='solaris.smf.manage.routing' />
 	</property_group>
 
@@ -542,7 +393,7 @@
 		</documentation>
 	</template>
 	</instance>
-	<stability value='Unstable' />
+	<stability value='Evolving' />
 </service>
 
 <service
@@ -560,40 +411,39 @@
 			value='svc:/system/filesystem/usr:default' />
 	</dependency>
 	
-	<dependency
-		name='ipv6-forwarding'
-		grouping='optional_all'
-		restart_on='refresh'
-		type='service'>
-		<service_fmri value='svc:/network/ipv6-forwarding' />
-	</dependency>
-
-	<!-- do not not run unless routing-setup has run -->
-	<dependency
-		name='network_routing_setup'
+	<!-- Depends on WIP, not yet in SNV
+	<dependency name='net'
 		grouping='require_all'
-		restart_on='refresh'
+		restart_on='none'
 		type='service'>
-		<service_fmri value='svc:/network/routing-setup' />
+		<service_fmri value='svc:/network/routing/ipv6-routing' />
+	</dependency>
+	-->
+
+	<dependency name='zebra'
+			grouping='require_all'
+			restart_on='restart'
+			type='service'>
+			<service_fmri value='svc:/network/routing/zebra:quagga' />
 	</dependency>
 
-	<!-- ensure that restart of zebra is propogated to daemon -->
-	<dependency
-		name='zebra'
-		grouping='optional_all'
+	<dependency name='config_data'
+		grouping='require_all'
 		restart_on='restart'
-		type='service'>
-		<service_fmri value='svc:/network/routing/zebra:quagga' />
+		type='path'>
+		<service_fmri
+			value='file://localhost/@sysconfdir@/ospf6d.conf' />
 	</dependency>
-
+	
 	<exec_method
 		type='method'
 		name='start'
-		exec='/lib/svc/method/quagga ospf6d'
+		exec='/lib/svc/method/quagga ospf6d %{routing/daemon-args}'
 		timeout_seconds='60'>
 		<method_context>
 		  <method_credential
-		   user='root' group='root'/>
+		   user='root' group='root'
+		   privileges='basic,net_icmpaccess,net_privaddr,net_rawaccess'/>
  		</method_context>
 	</exec_method>
 
@@ -611,53 +461,22 @@
 		    type='astring' value='core,signal' />
 	</property_group>
 
-	<!-- Properties in this group are used by routeadm (1M) -->
-	<property_group name='routeadm' type='application'>
-		<stability value='Unstable' />
-		<!-- Identifies service as a routing service -->
-		<propval name='daemon' type='astring'
-			value='@sbindir@/ospf6d' />
-		<propval name='value_authorization' type='astring'
-			value='solaris.smf.value.routing' />
-		<propval name='protocol' type='astring' value='ipv6'/>
-	</property_group>
-	
-	<!-- Properties in this group are modifiable via routeadm (1M) -->
 	<property_group name='routing' type='application'>
 		<propval name='value_authorization' type='astring' 
-		         value='solaris.smf.value.routing' />
-
-		<!-- Options common to Quagga daemons -->
-		<!-- The config file to use, if not the default -->
-		<propval name='config_file' type='astring' value=''/>
-		<!-- The vty_port to listen on if not the default.
-		     0 to disable --> 
-		<propval name='vty_port' type='integer' value='0' />
-		<!-- The address to bind the VTY interface to, if not any. -->
-		<propval name='vty_address' type='astring' value='' />
-		<!-- The user to switch to after startup, if not the default -->
-		<propval name='user' type='astring' value='' />
-		<!-- The group to switch to, if not the default.
-		     If user is specified, this defaults to a group with
-		     same name as user -->
-		<propval name='group' type='astring' value='' />
-		<!-- The pidfile to use, if not the default of
-		     @quagga_statedir@ -->
-		<propval name='pid_file' type='astring' value='' />
+		         value='solaris.smf.modify.routing' />
+		<propval name='daemon-args' type='astring' value='-P 0'/>
 	</property_group>
 
 	<property_group name='general' type='framework'>
 		<!-- to start stop routing services -->
 		<propval name='action_authorization' type='astring'
 			 value='solaris.smf.manage.routing' />
-		<propval name='value_authorization' type='astring'
-			 value='solaris.smf.manage.routing' />
 	</property_group>
 
 	<template>
 		<common_name>
 			<loctext xml:lang='C'>
- 			Quagga: ospf6d, OSPFv3 IPv6 routing protocol daemon.
+			Quagga: ospf6d, OSPFv3 IPv6 routing protocol daemon.
 			</loctext>
 		</common_name>
 		<documentation>
@@ -668,7 +487,7 @@
 		</documentation>
 	</template>
 	</instance>
-	<stability value='Unstable' />
+	<stability value='Evolving' />
 </service>
 
 
@@ -687,48 +506,40 @@
 			value='svc:/system/filesystem/usr:default' />
 	</dependency>
 	
-	<dependency
-		name='ipv6-forwarding'
-		grouping='optional_all'
-		restart_on='refresh'
+	<!-- Depends on WIP, not yet in SNV
+	<dependency name='net'
+		grouping='require_any'
+		restart_on='none'
 		type='service'>
-		<service_fmri value='svc:/network/ipv6-forwarding' />
+		<service_fmri value='svc:/network/routing/ipv6-routing' />
+		<service_fmri value='svc:/network/routing/ipv4-routing' />
+	</dependency>
+	-->
+	
+	<dependency name='zebra'
+			grouping='optional_all'
+			restart_on='restart'
+			type='service'>
+			<service_fmri value='svc:/network/routing/zebra:quagga' />
 	</dependency>
 
-	<dependency
-		name='ipv4-forwarding'
-		grouping='optional_all'
-		restart_on='refresh'
-		type='service'>
-		<service_fmri value='svc:/network/ipv4-forwarding' />
+	<dependency name='config_data'
+		grouping='require_all'
+		restart_on='restart'
+		type='path'>
+		<service_fmri
+			value='file://localhost/@sysconfdir@/bgpd.conf' />
 	</dependency>
 	
-	<!-- do not not run unless routing-setup has run -->
-	<dependency
-		name='network_routing_setup'
-		grouping='require_all'
-		restart_on='refresh'
-		type='service'>
-		<service_fmri value='svc:/network/routing-setup' />
-	</dependency>
-
-	<!-- ensure that restart of zebra is propogated to daemon -->
-	<dependency
-		name='zebra'
-		grouping='optional_all'
-		restart_on='restart'
-		type='service'>
-		<service_fmri value='svc:/network/routing/zebra:quagga' />
-	</dependency>
-
 	<exec_method
 		type='method'
 		name='start'
-		exec='/lib/svc/method/quagga bgpd'
+		exec='/lib/svc/method/quagga bgpd %{routing/daemon-args}'
 		timeout_seconds='60'>
 		<method_context>
 		  <method_credential
-		   user='root' group='root'/>
+		   user='root' group='root'
+		   privileges='basic,net_icmpaccess,net_privaddr,net_rawaccess'/>
  		</method_context>
 	</exec_method>
 
@@ -746,64 +557,15 @@
 		    type='astring' value='core,signal' />
 	</property_group>
 
-	<!-- Properties in this group are used by routeadm (1M) -->
-	<property_group name='routeadm' type='application'>
-		<stability value='Unstable' />
-		<!-- Identifies service as a routing service -->
-		<propval name='daemon' type='astring'
-			value='@sbindir@/bgpd' />
-		<propval name='legacy-daemon' type='astring'
-			value='/usr/sfw/sbin/bgpdstart' />
-		<propval name='value_authorization' type='astring'
-			value='solaris.smf.value.routing' />
-		<property name='protocol' type='astring'>
-			<astring_list>
-				<value_node value='ipv4'/>
-				<value_node value='ipv6'/>
-			</astring_list>
-		</property>
-	</property_group>
-	
-	<!-- Properties in this group are modifiable via routeadm (1M) -->
 	<property_group name='routing' type='application'>
 		<propval name='value_authorization' type='astring' 
-		         value='solaris.smf.value.routing' />
-
-		<!-- Options common to Quagga daemons. -->
-		<!-- The config file to use, if not the default -->
-		<propval name='config_file' type='astring' value=''/>
-		<!-- The vty_port to listen on if not the default.
-		     0 to disable --> 
-		<propval name='vty_port' type='integer' value='0' />
-		<!-- The address to bind the VTY interface to, if not any. -->
-		<propval name='vty_address' type='astring' value='' />
-		<!-- The user to switch to after startup, if not the default -->
-		<propval name='user' type='astring' value='' />
-		<!-- The group to switch to, if not the default.
-		     If user is specified, this defaults to a group with
-		     same name as user -->
-		<propval name='group' type='astring' value='' />
-		<!-- The pidfile to use, if not the default of
-		     @quagga_statedir@ -->
-		<propval name='pid_file' type='astring' value='' />
-
-		<!-- Options specific to bgpd -->
-		<propval name='retain' type='boolean' value='false' />
-		<propval name='no_kernel' type='boolean' value='false' />
-		<propval name='bgp_port' type='astring' value='' />
-		
-		<!--
-			If enable_zebra is false, it will not be switched
-			on by the start method.
-		-->
-		<propval name='enable_zebra' type='boolean' value='true' />
+		         value='solaris.smf.modify.routing' />
+		<propval name='daemon-args' type='astring' value='-P 0'/>
 	</property_group>
 
 	<property_group name='general' type='framework'>
 		<!-- to start stop routing services -->
 		<propval name='action_authorization' type='astring'
-			 value='solaris.smf.manage.routing' />
-		<propval name='value_authorization' type='astring'
 			 value='solaris.smf.manage.routing' />
 	</property_group>
 
@@ -821,6 +583,6 @@
 		</documentation>
 	</template>
 	</instance>
-	<stability value='Unstable' />
+	<stability value='Evolving' />
 </service>
 </service_bundle>
