@@ -120,12 +120,13 @@ if_rmap_hash_make (void *data)
 }
 
 static int
-if_rmap_hash_cmp (const void *arg1, const void* arg2)
+if_rmap_hash_cmp (void *arg1, void* arg2)
 {
-  const struct if_rmap *if_rmap1 = arg1;
-  const struct if_rmap *if_rmap2 = arg2;
-
-  return strcmp (if_rmap1->ifname, if_rmap2->ifname) == 0;
+  struct if_rmap *if_rmap1 = arg1;
+  struct if_rmap *if_rmap2 = arg2;
+  if (strcmp (if_rmap1->ifname, if_rmap2->ifname) == 0)
+    return 1;
+  return 0;
 }
 
 static struct if_rmap *

@@ -36,7 +36,7 @@ host_triplet = @host@
 target_triplet = @target@
 subdir = lib
 DIST_COMMON = $(pkginclude_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/version.h.in
+	$(srcdir)/Makefile.in $(srcdir)/version.h.in ChangeLog
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -160,8 +160,6 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
-PICFLAGS = @PICFLAGS@
-PILDFLAGS = @PILDFLAGS@
 RANLIB = @RANLIB@
 RIPD = @RIPD@
 RIPNGD = @RIPNGD@

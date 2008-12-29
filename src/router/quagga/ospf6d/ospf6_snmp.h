@@ -22,7 +22,7 @@
 #ifndef OSPF6_SNMP_H
 #define OSPF6_SNMP_H
 
-extern void ospf6_snmp_init (struct thread_master *);
+void ospf6_snmp_init (struct thread_master *);
 
 #endif /*OSPF6_SNMP_H*/
 

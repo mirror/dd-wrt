@@ -50,6 +50,11 @@
 
 char ospf6_daemon_version[] = OSPF6_DAEMON_VERSION;
 
+void
+ospf6_debug ()
+{
+}
+
 struct route_node *
 route_prev (struct route_node *node)
 {
@@ -99,7 +104,7 @@ struct cmd_node debug_node =
   1 /* VTYSH */
 };
 
-static int
+int
 config_write_ospf6_debug (struct vty *vty)
 {
   config_write_ospf6_debug_message (vty);
@@ -216,7 +221,7 @@ ALIAS (show_ipv6_ospf6_database,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_type,
        show_ipv6_ospf6_database_type_cmd,
@@ -310,7 +315,7 @@ ALIAS (show_ipv6_ospf6_database_type,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_id,
        show_ipv6_ospf6_database_id_cmd,
@@ -379,7 +384,7 @@ ALIAS (show_ipv6_ospf6_database_id,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 ALIAS (show_ipv6_ospf6_database_id,
        show_ipv6_ospf6_database_linkstate_id_cmd,
@@ -390,7 +395,7 @@ ALIAS (show_ipv6_ospf6_database_id,
        "Display Link state database\n"
        "Search by Link state ID\n"
        "Specify Link state ID as IPv4 address notation\n"
-      )
+      );
 
 ALIAS (show_ipv6_ospf6_database_id,
        show_ipv6_ospf6_database_linkstate_id_detail_cmd,
@@ -405,7 +410,7 @@ ALIAS (show_ipv6_ospf6_database_id,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_router,
        show_ipv6_ospf6_database_router_cmd,
@@ -476,7 +481,7 @@ ALIAS (show_ipv6_ospf6_database_router,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 ALIAS (show_ipv6_ospf6_database_router,
        show_ipv6_ospf6_database_adv_router_cmd,
@@ -487,7 +492,7 @@ ALIAS (show_ipv6_ospf6_database_router,
        "Display Link state database\n"
        "Search by Advertising Router\n"
        "Specify Advertising Router as IPv4 address notation\n"
-      )
+      );
 
 ALIAS (show_ipv6_ospf6_database_router,
        show_ipv6_ospf6_database_adv_router_detail_cmd,
@@ -502,7 +507,7 @@ ALIAS (show_ipv6_ospf6_database_router,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_type_id,
        show_ipv6_ospf6_database_type_id_cmd,
@@ -609,7 +614,7 @@ ALIAS (show_ipv6_ospf6_database_type_id,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 ALIAS (show_ipv6_ospf6_database_type_id,
        show_ipv6_ospf6_database_type_linkstate_id_cmd,
@@ -631,7 +636,7 @@ ALIAS (show_ipv6_ospf6_database_type_id,
        "Display Intra-Area-Prefix LSAs\n"
        "Search by Link state ID\n"
        "Specify Link state ID as IPv4 address notation\n"
-      )
+      );
 
 ALIAS (show_ipv6_ospf6_database_type_id,
        show_ipv6_ospf6_database_type_linkstate_id_detail_cmd,
@@ -657,7 +662,7 @@ ALIAS (show_ipv6_ospf6_database_type_id,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_type_router,
        show_ipv6_ospf6_database_type_router_cmd,
@@ -766,7 +771,7 @@ ALIAS (show_ipv6_ospf6_database_type_router,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 ALIAS (show_ipv6_ospf6_database_type_router,
        show_ipv6_ospf6_database_type_adv_router_cmd,
@@ -788,7 +793,7 @@ ALIAS (show_ipv6_ospf6_database_type_router,
        "Display Intra-Area-Prefix LSAs\n"
        "Search by Advertising Router\n"
        "Specify Advertising Router as IPv4 address notation\n"
-      )
+      );
 
 ALIAS (show_ipv6_ospf6_database_type_router,
        show_ipv6_ospf6_database_type_adv_router_detail_cmd,
@@ -814,7 +819,7 @@ ALIAS (show_ipv6_ospf6_database_type_router,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_id_router,
        show_ipv6_ospf6_database_id_router_cmd,
@@ -896,7 +901,7 @@ ALIAS (show_ipv6_ospf6_database_id_router,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_adv_router_linkstate_id,
        show_ipv6_ospf6_database_adv_router_linkstate_id_cmd,
@@ -980,7 +985,7 @@ ALIAS (show_ipv6_ospf6_database_adv_router_linkstate_id,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_type_id_router,
        show_ipv6_ospf6_database_type_id_router_cmd,
@@ -1099,7 +1104,7 @@ ALIAS (show_ipv6_ospf6_database_type_id_router,
        "Specify Advertising Router as IPv4 address notation\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_type_adv_router_linkstate_id,
        show_ipv6_ospf6_database_type_adv_router_linkstate_id_cmd,
@@ -1224,7 +1229,7 @@ ALIAS (show_ipv6_ospf6_database_type_adv_router_linkstate_id,
        "Specify Link state ID as IPv4 address notation\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_self_originated,
        show_ipv6_ospf6_database_self_originated_cmd,
@@ -1381,7 +1386,7 @@ ALIAS (show_ipv6_ospf6_database_type_self_originated,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_type_self_originated_linkstate_id,
        show_ipv6_ospf6_database_type_self_originated_linkstate_id_cmd,
@@ -1496,7 +1501,7 @@ ALIAS (show_ipv6_ospf6_database_type_self_originated_linkstate_id,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_database_type_id_self_originated,
        show_ipv6_ospf6_database_type_id_self_originated_cmd,
@@ -1609,7 +1614,7 @@ ALIAS (show_ipv6_ospf6_database_type_id_self_originated,
        "Display details of LSAs\n"
        "Dump LSAs\n"
        "Display LSA's internal information\n"
-      )
+      );
 
 
 DEFUN (show_ipv6_ospf6_border_routers,
@@ -1670,7 +1675,7 @@ ALIAS (show_ipv6_ospf6_border_routers,
        "Display routing table for ABR and ASBR\n"
        "Specify Router-ID\n"
        "Display Detail\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_linkstate,
        show_ipv6_ospf6_linkstate_cmd,
@@ -1704,7 +1709,7 @@ ALIAS (show_ipv6_ospf6_linkstate,
        "Display linkstate routing table\n"
        "Display Router Entry\n"
        "Specify Router ID as IPv4 address notation\n"
-      )
+      );
 
 ALIAS (show_ipv6_ospf6_linkstate,
        show_ipv6_ospf6_linkstate_network_cmd,
@@ -1716,7 +1721,7 @@ ALIAS (show_ipv6_ospf6_linkstate,
        "Display Network Entry\n"
        "Specify Router ID as IPv4 address notation\n"
        "Specify Link state ID as IPv4 address notation\n"
-      )
+      );
 
 DEFUN (show_ipv6_ospf6_linkstate_detail,
        show_ipv6_ospf6_linkstate_detail_cmd,
@@ -1752,7 +1757,7 @@ DEFUN (show_ipv6_ospf6_linkstate_detail,
 
 /* Install ospf related commands. */
 void
-ospf6_init (void)
+ospf6_init ()
 {
   ospf6_top_init ();
   ospf6_area_init ();

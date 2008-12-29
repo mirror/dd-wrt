@@ -131,13 +131,15 @@ cluster_hash_key_make (void *p)
 }
 
 static int
-cluster_hash_cmp (const void *p1, const void *p2)
+cluster_hash_cmp (void *p1, void *p2)
 {
-  const struct cluster_list * cluster1 = p1;
-  const struct cluster_list * cluster2 = p2;
+  struct cluster_list * cluster1 = (struct cluster_list *) p1;
+  struct cluster_list * cluster2 = (struct cluster_list *) p2;
 
-  return (cluster1->length == cluster2->length &&
-	  memcmp (cluster1->list, cluster2->list, cluster1->length) == 0);
+  if (cluster1->length == cluster2->length &&
+      memcmp (cluster1->list, cluster2->list, cluster1->length) == 0)
+    return 1;
+  return 0;
 }
 
 static void
@@ -265,13 +267,15 @@ transit_hash_key_make (void *p)
 }
 
 static int
-transit_hash_cmp (const void *p1, const void *p2)
+transit_hash_cmp (void *p1, void *p2)
 {
-  const struct transit * transit1 = p1;
-  const struct transit * transit2 = p2;
+  struct transit * transit1 = (struct transit *) p1;
+  struct transit * transit2 = (struct transit *) p2;
 
-  return (transit1->length == transit2->length &&
-	  memcmp (transit1->val, transit2->val, transit1->length) == 0);
+  if (transit1->length == transit2->length &&
+      memcmp (transit1->val, transit2->val, transit1->length) == 0)
+    return 1;
+  return 0;
 }
 
 static void
@@ -389,10 +393,10 @@ attrhash_key_make (void *p)
 }
 
 int
-attrhash_cmp (const void *p1, const void *p2)
+attrhash_cmp (void *p1, void *p2)
 {
-  const struct attr * attr1 = p1;
-  const struct attr * attr2 = p2;
+  struct attr * attr1 = (struct attr *) p1;
+  struct attr * attr2 = (struct attr *) p2;
 
   if (attr1->flag == attr2->flag
       && attr1->origin == attr2->origin
@@ -404,8 +408,8 @@ attrhash_cmp (const void *p1, const void *p2)
       && attr1->pathlimit.ttl == attr2->pathlimit.ttl
       && attr1->pathlimit.as == attr2->pathlimit.as)
     {
-      const struct attr_extra *ae1 = attr1->extra;
-      const struct attr_extra *ae2 = attr2->extra;
+      struct attr_extra *ae1 = attr1->extra;
+      struct attr_extra *ae2 = attr2->extra;
       
       if (ae1 && ae2
           && ae1->aggregator_as == ae2->aggregator_as
@@ -431,7 +435,7 @@ attrhash_cmp (const void *p1, const void *p2)
 }
 
 static void
-attrhash_init (void)
+attrhash_init ()
 {
   attrhash = hash_create (attrhash_key_make, attrhash_cmp);
 }
@@ -1567,7 +1571,7 @@ bgp_attr_parse (struct peer *peer, struct attr *attr, bgp_size_t size,
           && ((endp - startp) < (BGP_ATTR_MIN_LEN + 1)))
 	{
 	  zlog (peer->log, LOG_WARNING, 
-		"%s Extended length set, but just %lu bytes of attr header",
+		"%s Extended length set, but just %u bytes of attr header",
 		peer->host,
 		(unsigned long) (endp - STREAM_PNT (BGP_INPUT (peer))));
 
@@ -2298,6 +2302,8 @@ bgp_packet_withdraw (struct peer *peer, struct stream *s, struct prefix *p,
 void
 bgp_attr_init (void)
 {
+  void attrhash_init ();
+
   aspath_init ();
   attrhash_init ();
   community_init ();

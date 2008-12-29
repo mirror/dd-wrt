@@ -2,7 +2,7 @@
 !
 ! RIPngd sample configuration file
 !
-! $Id: ripngd.conf.sample,v 1.1 2002/12/13 20:15:30 paul Exp $
+! $Id: ripngd.conf.sample,v 1.1.1.1 2002/12/13 20:15:30 paul Exp $
 !
 hostname ripngd
 password zebra

@@ -129,7 +129,7 @@ Report bugs to %s\n", progname, ZEBRA_BUG_ADDRESS);
 }
 
 /* SIGHUP handler. */
-static void 
+void 
 sighup (void)
 {
   zlog_info ("SIGHUP received");
@@ -145,7 +145,7 @@ sighup (void)
 }
 
 /* SIGINT handler. */
-static void
+void
 sigint (void)
 {
   zlog_notice ("Terminating on signal");
@@ -157,7 +157,7 @@ sigint (void)
 }
 
 /* SIGUSR1 handler. */
-static void
+void
 sigusr1 (void)
 {
   zlog_rotate (NULL);

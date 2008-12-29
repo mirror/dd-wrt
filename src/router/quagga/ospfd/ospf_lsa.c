@@ -32,7 +32,6 @@
 #include "thread.h"
 #include "hash.h"
 #include "sockunion.h"		/* for inet_aton() */
-#include "checksum.h"
 
 #include "ospfd/ospfd.h"
 #include "ospfd/ospf_interface.h"
@@ -173,23 +172,46 @@ get_age (struct ospf_lsa *lsa)
 
 
 /* Fletcher Checksum -- Refer to RFC1008. */
+#define MODX                 4102
+#define LSA_CHECKSUM_OFFSET    15
 
-/* All the offsets are zero-based. The offsets in the RFC1008 are 
-   one-based. */
 u_int16_t
 ospf_lsa_checksum (struct lsa_header *lsa)
 {
-  u_char *buffer = (u_char *) &lsa->options;
-  int options_offset = buffer - (u_char *) &lsa->ls_age; /* should be 2 */
+  u_char *sp, *ep, *p, *q;
+  int c0 = 0, c1 = 0;
+  int x, y;
+  u_int16_t length;
 
-  /* Skip the AGE field */
-  u_int16_t len = ntohs(lsa->length) - options_offset; 
+  lsa->checksum = 0;
+  length = ntohs (lsa->length) - 2;
+  sp = (u_char *) &lsa->options;
 
-  /* Checksum offset starts from "options" field, not the beginning of the
-     lsa_header struct. The offset is 14, rather than 16. */
-  int checksum_offset = (u_char *) &lsa->checksum - buffer;
+  for (ep = sp + length; sp < ep; sp = q)
+    {
+      q = sp + MODX;
+      if (q > ep)
+        q = ep;
+      for (p = sp; p < q; p++)
+        {
+          c0 += *p;
+          c1 += c0;
+        }
+      c0 %= 255;
+      c1 %= 255;
+    }
 
-  return fletcher_checksum(buffer, len, checksum_offset);
+  x = (((int)length - LSA_CHECKSUM_OFFSET) * c0 - c1) % 255;
+  if (x <= 0)
+    x += 255;
+  y = 510 - c0 - x;
+  if (y > 255)
+    y -= 255;
+
+  /* take care endian issue. */
+  lsa->checksum = htons ((x << 8) + y);
+
+  return (lsa->checksum);
 }
 
 

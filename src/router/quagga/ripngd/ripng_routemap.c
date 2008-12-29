@@ -43,7 +43,7 @@ struct rip_metric_modifier
 };
 
 
-static int
+int
 ripng_route_match_add (struct vty *vty, struct route_map_index *index,
 		       const char *command, const char *arg)
 {
@@ -65,7 +65,7 @@ ripng_route_match_add (struct vty *vty, struct route_map_index *index,
   return CMD_SUCCESS;
 }
 
-static int
+int
 ripng_route_match_delete (struct vty *vty, struct route_map_index *index,
 			  const char *command, const char *arg)
 {
@@ -87,7 +87,7 @@ ripng_route_match_delete (struct vty *vty, struct route_map_index *index,
   return CMD_SUCCESS;
 }
 
-static int
+int
 ripng_route_set_add (struct vty *vty, struct route_map_index *index,
 		     const char *command, const char *arg)
 {
@@ -109,7 +109,7 @@ ripng_route_set_add (struct vty *vty, struct route_map_index *index,
   return CMD_SUCCESS;
 }
 
-static int
+int
 ripng_route_set_delete (struct vty *vty, struct route_map_index *index,
 			const char *command, const char *arg)
 {
@@ -133,7 +133,7 @@ ripng_route_set_delete (struct vty *vty, struct route_map_index *index,
 
 /* `match metric METRIC' */
 /* Match function return 1 if match is success else return zero. */
-static route_map_result_t
+route_map_result_t
 route_match_metric (void *rule, struct prefix *prefix, 
 		    route_map_object_t type, void *object)
 {
@@ -154,7 +154,7 @@ route_match_metric (void *rule, struct prefix *prefix,
 }
 
 /* Route map `match metric' match statement. `arg' is METRIC value */
-static void *
+void *
 route_match_metric_compile (const char *arg)
 {
   u_int32_t *metric;
@@ -170,14 +170,14 @@ route_match_metric_compile (const char *arg)
 }
 
 /* Free route map's compiled `match metric' value. */
-static void
+void
 route_match_metric_free (void *rule)
 {
   XFREE (MTYPE_ROUTE_MAP_COMPILED, rule);
 }
 
 /* Route map commands for metric matching. */
-static struct route_map_rule_cmd route_match_metric_cmd =
+struct route_map_rule_cmd route_match_metric_cmd =
 {
   "metric",
   route_match_metric,
@@ -187,7 +187,7 @@ static struct route_map_rule_cmd route_match_metric_cmd =
 
 /* `match interface IFNAME' */
 /* Match function return 1 if match is success else return zero. */
-static route_map_result_t
+route_map_result_t
 route_match_interface (void *rule, struct prefix *prefix,
 		       route_map_object_t type, void *object)
 {
@@ -214,19 +214,19 @@ route_match_interface (void *rule, struct prefix *prefix,
 }
 
 /* Route map `match interface' match statement. `arg' is IFNAME value */
-static void *
+void *
 route_match_interface_compile (const char *arg)
 {
   return XSTRDUP (MTYPE_ROUTE_MAP_COMPILED, arg);
 }
 
-static void
+void
 route_match_interface_free (void *rule)
 {
   XFREE (MTYPE_ROUTE_MAP_COMPILED, rule);
 }
 
-static struct route_map_rule_cmd route_match_interface_cmd =
+struct route_map_rule_cmd route_match_interface_cmd =
 {
   "interface",
   route_match_interface,
@@ -236,7 +236,7 @@ static struct route_map_rule_cmd route_match_interface_cmd =
 
 /* `match tag TAG' */
 /* Match function return 1 if match is success else return zero. */
-static route_map_result_t
+route_map_result_t
 route_match_tag (void *rule, struct prefix *prefix, 
 		    route_map_object_t type, void *object)
 {
@@ -258,7 +258,7 @@ route_match_tag (void *rule, struct prefix *prefix,
 }
 
 /* Route map `match tag' match statement. `arg' is TAG value */
-static void *
+void *
 route_match_tag_compile (const char *arg)
 {
   u_short *tag;
@@ -270,14 +270,14 @@ route_match_tag_compile (const char *arg)
 }
 
 /* Free route map's compiled `match tag' value. */
-static void
+void
 route_match_tag_free (void *rule)
 {
   XFREE (MTYPE_ROUTE_MAP_COMPILED, rule);
 }
 
 /* Route map commands for tag matching. */
-static struct route_map_rule_cmd route_match_tag_cmd =
+struct route_map_rule_cmd route_match_tag_cmd =
 {
   "tag",
   route_match_tag,
@@ -288,7 +288,7 @@ static struct route_map_rule_cmd route_match_tag_cmd =
 /* `set metric METRIC' */
 
 /* Set metric to attribute. */
-static route_map_result_t
+route_map_result_t
 route_set_metric (void *rule, struct prefix *prefix, 
 		  route_map_object_t type, void *object)
 {
@@ -318,7 +318,7 @@ route_set_metric (void *rule, struct prefix *prefix,
 }
 
 /* set metric compilation. */
-static void *
+void *
 route_set_metric_compile (const char *arg)
 {
   int len;
@@ -371,13 +371,13 @@ route_set_metric_compile (const char *arg)
 }
 
 /* Free route map's compiled `set metric' value. */
-static void
+void
 route_set_metric_free (void *rule)
 {
   XFREE (MTYPE_ROUTE_MAP_COMPILED, rule);
 }
 
-static struct route_map_rule_cmd route_set_metric_cmd = 
+struct route_map_rule_cmd route_set_metric_cmd = 
 {
   "metric",
   route_set_metric,
@@ -388,7 +388,7 @@ static struct route_map_rule_cmd route_set_metric_cmd =
 /* `set ipv6 next-hop local IP_ADDRESS' */
 
 /* Set nexthop to object.  ojbect must be pointer to struct attr. */
-static route_map_result_t
+route_map_result_t
 route_set_ipv6_nexthop_local (void *rule, struct prefix *prefix, 
 		      route_map_object_t type, void *object)
 {
@@ -410,7 +410,7 @@ route_set_ipv6_nexthop_local (void *rule, struct prefix *prefix,
 
 /* Route map `ipv6 nexthop local' compile function.  Given string is converted
    to struct in6_addr structure. */
-static void *
+void *
 route_set_ipv6_nexthop_local_compile (const char *arg)
 {
   int ret;
@@ -430,14 +430,14 @@ route_set_ipv6_nexthop_local_compile (const char *arg)
 }
 
 /* Free route map's compiled `ipv6 nexthop local' value. */
-static void
+void
 route_set_ipv6_nexthop_local_free (void *rule)
 {
   XFREE (MTYPE_ROUTE_MAP_COMPILED, rule);
 }
 
 /* Route map commands for ipv6 nexthop local set. */
-static struct route_map_rule_cmd route_set_ipv6_nexthop_local_cmd =
+struct route_map_rule_cmd route_set_ipv6_nexthop_local_cmd =
 {
   "ipv6 next-hop local",
   route_set_ipv6_nexthop_local,
@@ -448,7 +448,7 @@ static struct route_map_rule_cmd route_set_ipv6_nexthop_local_cmd =
 /* `set tag TAG' */
 
 /* Set tag to object.  ojbect must be pointer to struct attr. */
-static route_map_result_t
+route_map_result_t
 route_set_tag (void *rule, struct prefix *prefix, 
 		      route_map_object_t type, void *object)
 {
@@ -470,7 +470,7 @@ route_set_tag (void *rule, struct prefix *prefix,
 
 /* Route map `tag' compile function.  Given string is converted
    to u_short. */
-static void *
+void *
 route_set_tag_compile (const char *arg)
 {
   u_short *tag;
@@ -482,14 +482,14 @@ route_set_tag_compile (const char *arg)
 }
 
 /* Free route map's compiled `ip nexthop' value. */
-static void
+void
 route_set_tag_free (void *rule)
 {
   XFREE (MTYPE_ROUTE_MAP_COMPILED, rule);
 }
 
 /* Route map commands for tag set. */
-static struct route_map_rule_cmd route_set_tag_cmd =
+struct route_map_rule_cmd route_set_tag_cmd =
 {
   "tag",
   route_set_tag,

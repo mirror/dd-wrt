@@ -72,10 +72,10 @@ baa_hash_key (void *p)
 }
 
 static int
-baa_hash_cmp (const void *p1, const void *p2)
+baa_hash_cmp (void *p1, void *p2)
 {
-  const struct bgp_advertise_attr * baa1 = p1;
-  const struct bgp_advertise_attr * baa2 = p2;
+  struct bgp_advertise_attr * baa1 = (struct bgp_advertise_attr *) p1;
+  struct bgp_advertise_attr * baa2 = (struct bgp_advertise_attr *) p2;
 
   return attrhash_cmp (baa1->attr, baa2->attr);
 }
@@ -220,8 +220,9 @@ bgp_adj_out_set (struct bgp_node *rn, struct peer *peer, struct prefix *p,
   struct bgp_adj_out *adj = NULL;
   struct bgp_advertise *adv;
 
-  if (DISABLE_BGP_ANNOUNCE)
-    return;
+#ifdef DISABLE_BGP_ANNOUNCE
+  return;
+#endif /* DISABLE_BGP_ANNOUNCE */
 
   /* Look for adjacency information. */
   if (rn)
@@ -273,8 +274,9 @@ bgp_adj_out_unset (struct bgp_node *rn, struct peer *peer, struct prefix *p,
   struct bgp_adj_out *adj;
   struct bgp_advertise *adv;
 
-  if (DISABLE_BGP_ANNOUNCE)
-    return;
+#ifdef DISABLE_BGP_ANNOUNCE
+  return;
+#endif /* DISABLE_BGP_ANNOUNCE */
 
   /* Lookup existing adjacency, if it is not there return immediately.  */
   for (adj = rn->adj_out; adj; adj = adj->next)

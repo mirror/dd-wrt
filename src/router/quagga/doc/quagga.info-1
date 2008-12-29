@@ -25,8 +25,8 @@ END-INFO-DIR-ENTRY
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 0.99.11, last updated 14 August 2008 of `The Quagga
-Manual', for Quagga Version 0.99.11.
+   This is Edition 0.99.10, last updated 28 July 2006 of `The Quagga
+Manual', for Quagga Version 0.99.10.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -51,7 +51,7 @@ Quagga
 ******
 
 Quagga is an advanced routing software package that provides a suite of
-TCP/IP based routing protocols.  This is the Manual for Quagga 0.99.11.
+TCP/IP based routing protocols.  This is the Manual for Quagga 0.99.10.
 Quagga is a fork of GNU Zebra.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
@@ -1025,7 +1025,7 @@ all.
      Connected to localhost.
      Escape character is '^]'.
 
-     Hello, this is Quagga (version 0.99.11)
+     Hello, this is Quagga (version 0.99.10)
      Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
      User Access Verification

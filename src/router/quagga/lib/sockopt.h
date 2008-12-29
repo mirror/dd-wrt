@@ -22,8 +22,6 @@
 #ifndef _ZEBRA_SOCKOPT_H
 #define _ZEBRA_SOCKOPT_H
 
-#include "sockunion.h"
-
 extern int setsockopt_so_recvbuf (int sock, int size);
 extern int setsockopt_so_sendbuf (const int sock, int size);
 extern int getsockopt_so_sendbuf (const int sock);
@@ -89,7 +87,6 @@ extern int setsockopt_multicast_ipv4(int sock, int optname,
 			             unsigned int ifindex
 					 /* optional: if non-zero, may be used
 					 	instead of if_addr */);
-extern int setsockopt_ipv4_tos(int sock, int tos);
 
 /* Ask for, and get, ifindex, by whatever method is supported. */
 extern int setsockopt_ifindex (int, int, int);
@@ -101,6 +98,4 @@ extern int getsockopt_ifindex (int, struct msghdr *);
 extern void sockopt_iphdrincl_swab_htosys (struct ip *iph);
 extern void sockopt_iphdrincl_swab_systoh (struct ip *iph);
 
-extern int sockopt_tcp_signature(int sock, union sockunion *su,
-                                 const char *password);
 #endif /*_ZEBRA_SOCKOPT_H */

@@ -742,8 +742,9 @@ bgp_announce_check (struct bgp_info *ri, struct peer *peer, struct prefix *p,
   filter = &peer->filter[afi][safi];
   bgp = peer->bgp;
   
-  if (DISABLE_BGP_ANNOUNCE)
-    return 0;
+#ifdef DISABLE_BGP_ANNOUNCE
+  return 0;
+#endif
 
   /* Do not send announces to RS-clients from the 'normal' bgp_table. */
   if (CHECK_FLAG(peer->af_flags[afi][safi], PEER_FLAG_RSERVER_CLIENT))
@@ -1094,8 +1095,9 @@ bgp_announce_check_rsclient (struct bgp_info *ri, struct peer *rsclient,
   filter = &rsclient->filter[afi][safi];
   bgp = rsclient->bgp;
 
-  if (DISABLE_BGP_ANNOUNCE)
-    return 0;
+#ifdef DISABLE_BGP_ANNOUNCE
+  return 0;
+#endif
 
   /* Do not send back route to sender. */
   if (from == rsclient)
@@ -9176,7 +9178,7 @@ bgp_table_stats (struct vty *vty, struct bgp *bgp, afi_t afi, safi_t safi)
             vty_out (vty, "%12llu%s", ts.counts[i], VTY_NEWLINE);
             if (ts.counts[BGP_STATS_MAXBITLEN] < 9)
               break;
-            vty_out (vty, "%30s: ", "%% announced ");
+            vty_out (vty, "%30s: ", "\% announced ");
             vty_out (vty, "%12.2f%s", 
                      100 * (float)ts.counts[BGP_STATS_SPACE] / 
                        (float)((uint64_t)1UL << ts.counts[BGP_STATS_MAXBITLEN]),
@@ -10291,7 +10293,7 @@ ALIAS (show_ip_bgp_view_rsclient,
 
 DEFUN (show_ip_bgp_view_rsclient_route,
        show_ip_bgp_view_rsclient_route_cmd,
-       "show ip bgp view WORD rsclient (A.B.C.D|X:X::X:X) A.B.C.D",
+       "show bgp view WORD rsclient (A.B.C.D|X:X::X:X) A.B.C.D",
        SHOW_STR
        IP_STR
        BGP_STR
@@ -11787,37 +11789,6 @@ bgp_route_init ()
   install_element (VIEW_NODE, &show_ip_bgp_view_rsclient_cmd);
   install_element (VIEW_NODE, &show_ip_bgp_view_rsclient_route_cmd);
   install_element (VIEW_NODE, &show_ip_bgp_view_rsclient_prefix_cmd);
-  
-  /* Restricted node: VIEW_NODE - (set of dangerous commands) */
-  install_element (RESTRICTED_NODE, &show_ip_bgp_route_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_route_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_vpnv4_rd_route_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_vpnv4_all_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_vpnv4_rd_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_view_route_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_view_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_community_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_community2_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_community3_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_community4_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community2_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community3_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community4_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_community_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_community2_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_community3_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_community4_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community2_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community3_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community4_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_rsclient_route_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_rsclient_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_view_rsclient_route_cmd);
-  install_element (RESTRICTED_NODE, &show_ip_bgp_view_rsclient_prefix_cmd);
 
   install_element (ENABLE_NODE, &show_ip_bgp_cmd);
   install_element (ENABLE_NODE, &show_ip_bgp_ipv4_cmd);
@@ -12002,40 +11973,6 @@ bgp_route_init ()
   install_element (VIEW_NODE, &show_bgp_view_rsclient_cmd);
   install_element (VIEW_NODE, &show_bgp_view_rsclient_route_cmd);
   install_element (VIEW_NODE, &show_bgp_view_rsclient_prefix_cmd);
-  
-  /* Restricted:
-   * VIEW_NODE - (set of dangerous commands) - (commands dependent on prev) 
-   */
-  install_element (RESTRICTED_NODE, &show_bgp_route_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_ipv6_route_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_ipv6_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_community_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_ipv6_community_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_community2_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_ipv6_community2_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_community3_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_ipv6_community3_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_community4_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_ipv6_community4_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_community_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_ipv6_community_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_community2_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_ipv6_community2_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_community3_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_ipv6_community3_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_community4_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_ipv6_community4_exact_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_rsclient_route_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_rsclient_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_view_route_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_view_ipv6_route_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_view_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_view_ipv6_prefix_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_view_neighbor_received_prefix_filter_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_view_ipv6_neighbor_received_prefix_filter_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_view_rsclient_route_cmd);
-  install_element (RESTRICTED_NODE, &show_bgp_view_rsclient_prefix_cmd);
 
   install_element (ENABLE_NODE, &show_bgp_cmd);
   install_element (ENABLE_NODE, &show_bgp_ipv6_cmd);
