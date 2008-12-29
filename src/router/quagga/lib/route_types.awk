@@ -1,4 +1,4 @@
-# $Id$
+# $Id: route_types.awk,v 1.3 2006/06/27 10:42:18 paul Exp $
 #
 # Scan a file of route-type definitions (see eg route_types.txt) and
 # generate a corresponding header file with:

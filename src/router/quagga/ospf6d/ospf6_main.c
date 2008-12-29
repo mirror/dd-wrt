@@ -125,14 +125,14 @@ Report bugs to zebra@zebra.org\n", progname);
 }
 
 /* SIGHUP handler. */
-static void 
+void 
 sighup (void)
 {
   zlog_info ("SIGHUP received");
 }
 
 /* SIGINT handler. */
-static void
+void
 sigint (void)
 {
   zlog_notice ("Terminating on signal SIGINT");
@@ -140,7 +140,7 @@ sigint (void)
 }
 
 /* SIGTERM handler. */
-static void
+void
 sigterm (void)
 {
   zlog_notice ("Terminating on signal SIGTERM");
@@ -148,7 +148,7 @@ sigterm (void)
 }
 
 /* SIGUSR1 handler. */
-static void
+void
 sigusr1 (void)
 {
   zlog_info ("SIGUSR1 received");

@@ -5,9 +5,6 @@ DEFS = @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)/\"
 
 LIBS = @LIBS@ @CURSES@ @LIBPAM@
 
-AM_CFLAGS = $(PICFLAGS)
-AM_LDFLAGS = $(PILDFLAGS)
-
 bin_PROGRAMS = vtysh
 
 vtysh_SOURCES = vtysh_main.c vtysh.c vtysh_user.c vtysh_config.c

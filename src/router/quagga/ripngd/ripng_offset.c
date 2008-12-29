@@ -32,8 +32,6 @@
 #include "linklist.h"
 #include "memory.h"
 
-#include "ripngd/ripngd.h"
-
 #define RIPNG_OFFSET_LIST_IN  0
 #define RIPNG_OFFSET_LIST_OUT 1
 #define RIPNG_OFFSET_LIST_MAX 2
@@ -52,7 +50,7 @@ struct ripng_offset_list
 
 static struct list *ripng_offset_list_master;
 
-static int
+int
 strcmp_safe (const char *s1, const char *s2)
 {
   if (s1 == NULL && s2 == NULL)
@@ -64,7 +62,7 @@ strcmp_safe (const char *s1, const char *s2)
   return strcmp (s1, s2);
 }
 
-static struct ripng_offset_list *
+struct ripng_offset_list *
 ripng_offset_list_new ()
 {
   struct ripng_offset_list *new;
@@ -73,13 +71,13 @@ ripng_offset_list_new ()
   return new;
 }
 
-static void
+void
 ripng_offset_list_free (struct ripng_offset_list *offset)
 {
   XFREE (MTYPE_RIPNG_OFFSET_LIST, offset);
 }
 
-static struct ripng_offset_list *
+struct ripng_offset_list *
 ripng_offset_list_lookup (const char *ifname)
 {
   struct ripng_offset_list *offset;
@@ -93,7 +91,7 @@ ripng_offset_list_lookup (const char *ifname)
   return NULL;
 }
 
-static struct ripng_offset_list *
+struct ripng_offset_list *
 ripng_offset_list_get (const char *ifname)
 {
   struct ripng_offset_list *offset;
@@ -110,7 +108,7 @@ ripng_offset_list_get (const char *ifname)
   return offset;
 }
 
-static int
+int
 ripng_offset_list_set (struct vty *vty, const char *alist,
 		       const char *direct_str, const char *metric_str,
 		       const char *ifname)
@@ -149,7 +147,7 @@ ripng_offset_list_set (struct vty *vty, const char *alist,
   return CMD_SUCCESS;
 }
 
-static int
+int
 ripng_offset_list_unset (struct vty *vty, const char *alist,
 			 const char *direct_str, const char *metric_str,
 			 const char *ifname)
@@ -340,13 +338,13 @@ DEFUN (no_ripng_offset_list_ifname,
   return ripng_offset_list_unset (vty, argv[0], argv[1], argv[2], argv[3]);
 }
 
-static int
+int
 offset_list_cmp (struct ripng_offset_list *o1, struct ripng_offset_list *o2)
 {
   return strcmp_safe (o1->ifname, o2->ifname);
 }
 
-static void
+void
 offset_list_del (struct ripng_offset_list *offset)
 {
   if (OFFSET_LIST_IN_NAME (offset))
@@ -359,7 +357,7 @@ offset_list_del (struct ripng_offset_list *offset)
 }
 
 void
-ripng_offset_init (void)
+ripng_offset_init ()
 {
   ripng_offset_list_master = list_new ();
   ripng_offset_list_master->cmp = (int (*)(void *, void *)) offset_list_cmp;
@@ -372,7 +370,7 @@ ripng_offset_init (void)
 }
 
 void
-ripng_offset_clean (void)
+ripng_offset_clean ()
 {
   list_delete (ripng_offset_list_master);
 

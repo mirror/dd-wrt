@@ -581,8 +581,8 @@ community_str2com (const char *str)
 {
   struct community *com = NULL;
   struct community *com_sort = NULL;
-  u_int32_t val = 0;
-  enum community_token token = community_token_unknown;
+  u_int32_t val;
+  enum community_token token;
 
   do 
     {
@@ -633,6 +633,5 @@ community_hash (void)
 void
 community_init (void)
 {
-  comhash = hash_create ((unsigned int (*) (void *))community_hash_make,
-			 (int (*) (const void *, const void *))community_cmp);
+  comhash = hash_create (community_hash_make, community_cmp);
 }
