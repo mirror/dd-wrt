@@ -2762,7 +2762,7 @@ void start_wan( int status )
 	if( !wlifname )
 	{
 	    ioctl( s, SIOCSIFHWADDR, &ifr );
-	    eval("ifconfig",wan_ifname,"promisc"); // set wan to promisc, since we now have usually different mac addresses on vlans
+//	    eval("ifconfig",wan_ifname,"promisc"); // set wan to promisc, since we now have usually different mac addresses on vlans
 	}
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)

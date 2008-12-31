@@ -151,7 +151,7 @@ void start_sysinit( void )
 #endif
     if( getRouterBrand(  ) == ROUTER_BOARD_FONERA2200 )
     {
-	eval( "ifconfig", "eth0", "up" );	// required for vlan config
+	eval( "ifconfig", "eth0", "up","promisc" );	// required for vlan config
 	eval( "/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
 	eval( "/sbin/vconfig", "add", "eth0", "0" );
 	eval( "/sbin/vconfig", "add", "eth0", "1" );
