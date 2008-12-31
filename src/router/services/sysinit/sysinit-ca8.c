@@ -126,7 +126,7 @@ void start_sysinit( void )
     insmod( "ar2313" );
     if( getRouterBrand(  ) == ROUTER_BOARD_CA8PRO )
     {
-	eval( "ifconfig", "eth0", "up" );	// required for vlan config
+	eval( "ifconfig", "eth0", "up","promisc" );	// required for vlan config
 	eval( "/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
 	eval( "/sbin/vconfig", "add", "eth0", "0" );
 	eval( "/sbin/vconfig", "add", "eth0", "1" );
