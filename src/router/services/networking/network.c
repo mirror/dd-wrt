@@ -703,7 +703,8 @@ static void do_portsetup( char *lan, char *ifname )
     }
     else
     {
-	sysprintf("ifconfig %s %s netmask %s up", ifname, nvram_nget( "%s_ipaddr", IFMAP( ifname ) ),nvram_nget( "%s_netmask", ifname ) );
+	ifconfig( ifname, IFUP, nvram_nget( "%s_ipaddr", IFMAP( ifname ) ),
+		  nvram_nget( "%s_netmask", ifname ) );
     }
 
 }
@@ -1398,7 +1399,7 @@ void start_lan( void )
 	// #ifdef HAVE_SKYTRON
 	// ifconfig(wan_ifname,IFUP,"172.16.1.1","255.255.255.0");
 	// #else
-	eval("ifconfig","wan_ifname","0.0.0.0","up");
+	ifconfig( wan_ifname, IFUP, "0.0.0.0", NULL );
 	// #endif
 
     }
@@ -2543,6 +2544,7 @@ void start_wan( int status )
     int s;
     struct ifreq ifr;
 
+    eval( "ifconfig", nvram_safe_get( "wan_ifname" ), "allmulti", "promisc" );
 
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
@@ -2695,7 +2697,7 @@ void start_wan( int status )
      */
     memset( ifr.ifr_hwaddr.sa_data, 0, ETHER_ADDR_LEN );
 
-    eval( "ifconfig", wan_ifname, "0.0.0.0","down","allmulti", "promisc" );
+    ifconfig( wan_ifname, 0, NULL, NULL );
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
     if( getRouterBrand(  ) != ROUTER_BOARD_FONERA2200
 	&& getRouterBrand(  ) != ROUTER_BOARD_CA8PRO )
@@ -2813,15 +2815,14 @@ void start_wan( int status )
      * pppoe_wan interface must be up in order to use any pppoe client 
      */
     if( strcmp( wan_proto, "pppoe" ) == 0 )
+	ifconfig( pppoe_wan_ifname, IFUP, NULL, NULL );
+    else
     {
-    eval( "ifconfig", pppoe_wan_ifname, "0.0.0.0","up","allmulti", "promisc" );
-    }else
-    {
-    eval( "ifconfig", wan_ifname, "0.0.0.0","up","allmulti", "promisc" );
+	ifconfig( wan_ifname, IFUP, NULL, NULL );
     }
 #else
 
-    eval( "ifconfig", wan_ifname, "0.0.0.0","up","allmulti", "promisc" );
+    ifconfig( wan_ifname, IFUP, NULL, NULL );
     if( nvram_match( "wl0_mode", "infra" ) )
     {
 	eval( "wl", "infra", "0" );
@@ -3155,7 +3156,9 @@ void start_wan( int status )
 #endif
     else
     {
-	eval("ifconfig",wan_ifname,nvram_safe_get( "wan_ipaddr" ),"netmask",nvram_safe_get( "wan_netmask" ),"allmulti","promisc");
+	ifconfig( wan_ifname, IFUP,
+		  nvram_safe_get( "wan_ipaddr" ),
+		  nvram_safe_get( "wan_netmask" ) );
 	start_wan_done( wan_ifname );
     }
     cprintf( "dhcp client ready\n" );
