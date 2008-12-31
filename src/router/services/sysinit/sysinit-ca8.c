@@ -145,7 +145,7 @@ void start_sysinit( void )
 		    ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.sa_data,
 				eabuf ) );
 	    nvram_set( "et0macaddr", macaddr );
-	    MAC_ADD( macaddr );
+//	    MAC_ADD( macaddr );
 	    ether_atoe( macaddr, ( unsigned char * )ifr.ifr_hwaddr.sa_data );
 	    strncpy( ifr.ifr_name, "vlan1", IFNAMSIZ );
 	    ioctl( s, SIOCSIFHWADDR, &ifr );
