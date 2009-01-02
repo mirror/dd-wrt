@@ -138,12 +138,40 @@ void start_overclock( void )	// hidden feature. must be called with
     fseek( in, 0x1ef, SEEK_SET );
     int mul = getc( in );
 
+    fseek( in, 0x17, SEEK_SET );
+    int dir300div = getc( in );
+
+    fseek( in, 0x23, SEEK_SET );
+    int dir300mul = getc( in );
+
+    int dir300 = 0;
+
+    if( dir300div == 0x3 && dir300mul == 0x5c )
+    {
+	dir300 = 1;
+	div = dir300div;
+	mul = dir300mul;
+    }
+    if( dir300div == 0x1
+	&& ( dir300mul == 0x28 || dir300mul == 0x2c || dir300mul == 0x30 ) )
+    {
+	dir300 = 1;
+	div = dir300div;
+	mul = dir300mul;
+    }
+
     if( div == 0x3 && mul == 0x5c )
     {
 	fprintf( stderr, "ap51/ap61 (ar2315 or ar2317) found\n" );
-	fseek( in, 0x1e3, SEEK_SET );
+	if( dir300 )
+	    fseek( in, 0x17, SEEK_SET );
+	else
+	    fseek( in, 0x1e3, SEEK_SET );
 	putc( 0x1, in );
-	fseek( in, 0x1ef, SEEK_SET );
+	if( dir300 )
+	    fseek( in, 0x23, SEEK_SET );
+	else
+	    fseek( in, 0x1ef, SEEK_SET );
 	if( clk == 200 )
 	{
 	    if( mul == 0x2c )
@@ -220,13 +248,19 @@ void start_overclock( void )	// hidden feature. must be called with
 	    fclose( in );
 	    return;
 	}
-	fseek( in, 0x1e3, SEEK_SET );
+	if( dir300 )
+	    fseek( in, 0x17, SEEK_SET );
+	else
+	    fseek( in, 0x1e3, SEEK_SET );
 	if( clk == 184 )
 	    putc( 0x3, in );	// set divisor 5 = 40/5 = 8 mhz base which
 	// allows 184 clock setting
 	else
 	    putc( 0x1, in );
-	fseek( in, 0x1ef, SEEK_SET );
+	if( dir300 )
+	    fseek( in, 0x23, SEEK_SET );
+	else
+	    fseek( in, 0x1ef, SEEK_SET );
 	if( clk == 184 )
 	{
 	    if( mul == 0x28 )
@@ -298,27 +332,31 @@ void start_overclock( void )	// hidden feature. must be called with
 	eval( "mtd", "-f", "write", "/tmp/boot", "RedBoot" );
     }
     else if( vipermul == 0x9 || vipermul == 0xa || vipermul == 0xb
-	     || vipermul == 0xc || vipermul == 0x17)
+	     || vipermul == 0xc || vipermul == 0x17 )
     {
-    
-	if (vipermul==0x17)
-	    {
+
+	if( vipermul == 0x17 )
+	{
 	    fprintf( stderr, "weired alfa clocksetting found\n" );
-	    fseek(in, 0xce,SEEK_SET);
-	    if (getc(in)==0x32)
+	    fseek( in, 0xce, SEEK_SET );
+	    if( getc( in ) == 0x32 )
+	    {
+		if( getc( in ) == 0x45 )
 		{
-		if (getc(in)==0x45)
-		    {
-		    fprintf(stderr,"correct clock setting\n");
-		    fseek(in, 0xcb,SEEK_SET);
-		    putc(0x9,in);
-		    fseek(in, 0xce,SEEK_SET);
-		    putc(0x12,in);
-		    putc(0x45,in);
-		    vipermul=0x9;
-		    } else exit(1);
-		}else exit(1);
+		    fprintf( stderr, "correct clock setting\n" );
+		    fseek( in, 0xcb, SEEK_SET );
+		    putc( 0x9, in );
+		    fseek( in, 0xce, SEEK_SET );
+		    putc( 0x12, in );
+		    putc( 0x45, in );
+		    vipermul = 0x9;
+		}
+		else
+		    exit( 1 );
 	    }
+	    else
+		exit( 1 );
+	}
 	fprintf( stderr, "viper (ar2313) found\n" );
 	if( clk == 180 && vipermul == 0x9 )
 	{
@@ -431,7 +469,7 @@ void start_overclock( void )	// hidden feature. must be called with
     {
 	fprintf( stderr, "unknown board or no redboot found\n" );
 	fclose( in );
-	exit(1);
+	exit( 1 );
     }
     fprintf( stderr, "board is now clocked at %d mhz, please reboot\n", clk );
 }
