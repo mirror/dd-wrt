@@ -143,16 +143,6 @@
 					</script>
 		</div>
 	</fieldset><br />
-	
-	<fieldset>
-		<legend><% tran("management.loop_legend"); %></legend>
-		<div class="setting">
-			<div class="label"><% tran("management.loop_srv"); %></div>
-			<input class="spaceradio" type="radio" name="loopback_enable" value="1" <% nvram_checked("loopback_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="loopback_enable" value="0" <% nvram_checked("loopback_enable", "0"); %> /><% tran("share.disable"); %>
-		</div>
-	</fieldset><br />
-	
 	<fieldset>
 		<legend><% tran("management.wifi_legend"); %></legend>
 		<div class="setting">
