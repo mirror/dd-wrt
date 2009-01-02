@@ -793,7 +793,10 @@ static void nat_postrouting( void )
 	    save2file( "-A POSTROUTING -o %s -j MASQUERADE\n",
 		       nvram_safe_get( "pptp_ifname" ) );
 	}
-	if( nvram_match( "loopback_enable", "1" ) )
+	char *method = "MASQUERADE";
+
+	if( nvram_match( "block_loopback", "1" ) )
+	    method = "DROP";
 	{
 	    // added for logic test
 	    int loopmask = 0;
@@ -804,12 +807,14 @@ static void nat_postrouting( void )
 
 	    loopmask = getmask( nmask );
 
+	    if( nvram_match( "block_loopback", "0" ) )
+		save2file
+		    ( "-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
+		      lanface );
 	    save2file
-		( "-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
-		  lanface );
-	    save2file
-		( "-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j MASQUERADE\n",
-		  lanface, lan_cclass, loopmask, lan_cclass, loopmask );
+		( "-A POSTROUTING -o %s -s %s0/%d -d %s0/%d -j %s\n",
+		  lanface, lan_cclass, loopmask, lan_cclass, loopmask,
+		  method );
 	    char *next;
 	    char dev[16];
 	    char var[80];
@@ -826,15 +831,17 @@ static void nat_postrouting( void )
 		{
 		    if( nvram_nmatch( "0", "%s_bridged", var ) )
 		    {
+			if( nvram_match( "block_loopback", "0" ) )
+			    save2file
+				( "-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
+				  var );
 			save2file
-			    ( "-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
-			      var );
-			save2file
-			    ( "-A POSTROUTING -o %s -s %s/%d -d %s/%d -j MASQUERADE\n",
+			    ( "-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
 			      var, nvram_nget( "%s_ipaddr", var ),
 			      getmask( nvram_nget( "%s_netmask", var ) ),
 			      nvram_nget( "%s_ipaddr", var ),
-			      getmask( nvram_nget( "%s_netmask", var ) ) );
+			      getmask( nvram_nget( "%s_netmask", var ) ),
+			      method );
 		    }
 		}
 	    }
@@ -855,7 +862,8 @@ static void nat_postrouting( void )
 #ifndef HAVE_CA8
 #ifndef HAVE_RB500
 #ifndef HAVE_TW6600
-	    system2( "echo 1 > /proc/sys/net/ipv4/conf/br0/loop" );
+	    if( nvram_match( "block_loopback", "0" ) )
+		system2( "echo 1 > /proc/sys/net/ipv4/conf/br0/loop" );
 #endif
 #endif
 #endif
@@ -3196,7 +3204,6 @@ void start_firewall( void )
     cprintf( "ready" );
 
     cprintf( "done\n" );
-    return 0;
 }
 
 void stop_firewall( void )

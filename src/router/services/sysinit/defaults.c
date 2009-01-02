@@ -1417,11 +1417,6 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
     {"dnsmasq_options", "", 0},
 #ifdef HAVE_POWERNOC_WOAP54G
-    {"loopback_enable", "0", 0},
-#else
-    {"loopback_enable", "1", 0},
-#endif
-#ifdef HAVE_POWERNOC_WOAP54G
     {"nas_enable", "0", 0},
 #else
     {"nas_enable", "1", 0},

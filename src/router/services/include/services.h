@@ -149,3 +149,7 @@ void start_anchorfree(void);
 void start_anchorfreednat(void);
 void start_openvpnserverwan(void);
 void stop_openvpnserverwan(void);
+
+void start_wanup( void );
+
+void stop_anchorfree(void);
