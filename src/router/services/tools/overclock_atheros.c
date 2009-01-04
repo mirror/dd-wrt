@@ -143,7 +143,13 @@ void start_overclock( void )	// hidden feature. must be called with
 
     fseek( in, 0x23, SEEK_SET );
     int dir300mul = getc( in );
-
+    
+    fseek( in, 0xdb, SEEK_SET );
+    int isalfa1=getc(in);
+    int isalfa=0;
+    if (isalfa1==0x6c)
+	isalfa=1;
+	
     int dir300 = 0;
 
     if( dir300div == 0x3 && dir300mul == 0x5c )
@@ -349,6 +355,9 @@ void start_overclock( void )	// hidden feature. must be called with
 		    fseek( in, 0xce, SEEK_SET );
 		    putc( 0x12, in );
 		    putc( 0x45, in );
+//		    fseek( in, 0xe4, SEEK_SET ); 
+//		    putc( 0x0, in ); // nop out scratch register
+//		    putc( 0x0, in );
 		    vipermul = 0x9;
 		}
 		else
@@ -398,6 +407,17 @@ void start_overclock( void )	// hidden feature. must be called with
 	    nvram_commit(  );
 	    putc( 0xb, in );	// 0x2c for 220 mhz 0x30 for 240 mhz
 	}
+	if (isalfa)
+	    {
+	    fprintf(stderr,"correct scratch register for alfa ap48\n");
+	    int realclock=clk*1000000;
+	    fseek(in,0xde,SEEK_SET);
+	    putc((realclock>>24)&0xff,in);
+	    putc((realclock>>16)&0xff,in);
+	    fseek(in,0xe2,SEEK_SET);
+	    putc((realclock>>8)&0xff,in);
+	    putc(realclock&0xff,in);
+	    }
 	fclose( in );
 	eval( "mtd", "-f", "write", "/tmp/boot", "RedBoot" );
     }
@@ -474,6 +494,6 @@ void start_overclock( void )	// hidden feature. must be called with
     fprintf( stderr, "board is now clocked at %d mhz, please reboot\n", clk );
 }
 
-/*
- * int main (int argc, char *argv[]) { start_overclock (); } 
- */
+
+ int main (int argc, char *argv[]) { start_overclock (); } 
+
