@@ -1,8 +1,6 @@
-
 #include <linux/autoconf.h>
 #include <linux/module.h>
 #include <linux/version.h>
-
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/types.h>
@@ -112,21 +110,12 @@ void ra2880MacAddressSet(MAC_INFO *MACInfo, unsigned char p[6])
 {
         unsigned long regValue;
 
-	regValue = (p[0] << 8) + (p[1]);
+	regValue = (p[0] << 8) | (p[1]);
         sysRegWrite(GDMA1_MAC_ADRH, regValue);
 
-        regValue = (p[2] << 8) + (p[3]);
-        regValue = (regValue << 16);
-        regValue |= (p[4] << 8) + (p[5]);
+        regValue = (p[2] << 24) | (p[3] <<16) | (p[4] << 8) | p[5];
         sysRegWrite(GDMA1_MAC_ADRL, regValue);
 
-    RAETH_PRINT("  sb = %2.2X %2.2X %2.2X %2.2X %2.2X %2.2X\n",
-            (unsigned char)(0xff&macAddr[0]), 
-	    (unsigned char)(0xff&macAddr[1]),
-	    (unsigned char)(0xff&macAddr[2]), 
-	    (unsigned char)(0xff&macAddr[3]), 
-	    (unsigned char)(0xff&macAddr[4]),
-	    (unsigned char)(0xff&macAddr[5]) );
 	printk("GDMA1_MAC_ADRH -- : 0x%08x\n", sysRegRead(GDMA1_MAC_ADRH));
 	printk("GDMA1_MAC_ADRL -- : 0x%08x\n", sysRegRead(GDMA1_MAC_ADRL));	    
         return;
@@ -136,21 +125,12 @@ void ra2880Mac2AddressSet(MAC_INFO *MACInfo, unsigned char p[6])
 {
         unsigned long regValue;
 
-	regValue = (p[0] << 8) + (p[1]);
+	regValue = (p[0] << 8) | (p[1]);
         sysRegWrite(GDMA2_MAC_ADRH, regValue);
 
-        regValue = (p[2] << 8) + (p[3]);
-        regValue = (regValue << 16);
-        regValue |= (p[4] << 8) + (p[5]);
+        regValue = (p[2] << 24) | (p[3] <<16) | (p[4] << 8) | p[5];
         sysRegWrite(GDMA2_MAC_ADRL, regValue);
 
-	RAETH_PRINT("  sb = %2.2X %2.2X %2.2X %2.2X %2.2X %2.2X\n",
-            (unsigned char)(0xff&macAddr[0]), 
-	    (unsigned char)(0xff&macAddr[1]),
-	    (unsigned char)(0xff&macAddr[2]), 
-	    (unsigned char)(0xff&macAddr[3]), 
-	    (unsigned char)(0xff&macAddr[4]),
-	    (unsigned char)(0xff&macAddr[5]) );
 	printk("GDMA2_MAC_ADRH -- : 0x%08x\n", sysRegRead(GDMA2_MAC_ADRH));
 	printk("GDMA2_MAC_ADRL -- : 0x%08x\n", sysRegRead(GDMA2_MAC_ADRL));	    
         return;
@@ -419,7 +399,7 @@ void dump_reg()
 
 #if defined (CONFIG_ETHTOOL) && ( defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_RT_3052_ESW) )
 	// just for debug
-//	printk("The current PHY address selected by ethtool is %d\n", get_current_phy_address());
+	printk("The current PHY address selected by ethtool is %d\n", get_current_phy_address());
 #endif
 }
 
@@ -488,16 +468,17 @@ int RaQOSRegRead(void)
 /*
  * proc write procedure
  */
-#if 0
 static int change_phyid(struct file *file, const char *buffer, unsigned long count, void *data)
 {
 	char buf[32];
 	struct net_device *cur_dev_p;
 	END_DEVICE *ei_local;
+	cur_dev_p = net_device_entry(&dev_base_head);
 
-	for(cur_dev_p=dev_base; cur_dev_p!=NULL; cur_dev_p=cur_dev_p->next){
-		if (strncmp(cur_dev_p->name, DEV_NAME /* "eth2" usually */, 4) == 0)
-			break;
+	for_each_netdev_continue(cur_dev_p)
+	{
+	    if (strncmp(cur_dev_p->name, DEV_NAME /* "eth2" usually */, 4) == 0)
+		break;	
 	}
 	if (cur_dev_p == NULL)
 		return -EFAULT;
@@ -512,16 +493,17 @@ static int change_phyid(struct file *file, const char *buffer, unsigned long cou
 	return count;
 }
 #endif
-#endif
 
 int debug_proc_init(void)
 {
     procRegDir = proc_mkdir(PROCREG_DIR, NULL);
 	
-//    if ((procGmac = create_proc_entry(PROCREG_GMAC, 0, procRegDir))){
-//	 procGmac->read_proc = (read_proc_t*)&RegReadMain;
-//	 procGmac->write_proc = (write_proc_t*)&change_phyid;
-//	}
+    if ((procGmac = create_proc_entry(PROCREG_GMAC, 0, procRegDir))){
+	 procGmac->read_proc = (read_proc_t*)&RegReadMain;
+#if defined (CONFIG_ETHTOOL) && ( defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_RT_3052_ESW) )
+	 procGmac->write_proc = (write_proc_t*)&change_phyid;
+#endif
+	}
 
     if ((procSysCP0 = create_proc_entry(PROCREG_CP0, 0, procRegDir)))
 	 procSysCP0->read_proc = (read_proc_t*)&CP0RegRead;
@@ -534,6 +516,7 @@ int debug_proc_init(void)
     printk(KERN_ALERT "PROC INIT OK!\n");
     return 0;
 }
+
 void debug_proc_exit(void)
 {
 

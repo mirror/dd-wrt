@@ -27,13 +27,15 @@ static struct {
     { "statistic3" },
     { "statistic4" },
 };
-/*
+
 unsigned char get_current_phy_address(void)
 {
 	struct net_device *cur_dev_p;
 	END_DEVICE *ei_local;
-	for(cur_dev_p=dev_base; cur_dev_p!=NULL; cur_dev_p=cur_dev_p->next){
-		if (strncmp(cur_dev_p->name, DEV_NAME , 4) == 0)
+	cur_dev_p = net_device_entry(&dev_base_head);
+	for_each_netdev_continue(cur_dev_p)
+	{
+		if (strncmp(cur_dev_p->name, DEV_NAME /* "eth2" usually */, 4) == 0)
 			break;
 	}
 	if(!cur_dev_p)
@@ -41,7 +43,7 @@ unsigned char get_current_phy_address(void)
 	ei_local = cur_dev_p->priv;
 	return ei_local->mii_info.phy_id;
 }
-*/
+
 static u32 et_get_tx_csum(struct net_device *dev)
 {
 	return (sysRegRead(GDMA1_FWD_CFG) & RT2880_GDM1_DISCRC) ? 0 : 1;	// a pitfall here, "0" means to enable.
