@@ -832,7 +832,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
 #endif
 #endif
-    {"wl_maclist", "", 0},	/* xx:xx:xx:xx:xx:xx ... */
     {"wl_macmode", "disabled", 0},	/* "allow" only, "deny" only, or
 					 * "disabled" (allow all) */
     {"wl_macmode1", "disabled", 0},	/* "disabled" or "other" for WEBB *//* Add */
