@@ -1645,7 +1645,6 @@ void validate_wl_hwaddrs( webs_t wp, char *value, struct variable *v )
 
     if( !error_value )
     {
-	nvram_set( v->name, buf );
 	nvram_set( mlist, buf );
 	nvram_set( "wl_active_mac", "" );
 	nvram_set( "wl0_active_mac", "" );
