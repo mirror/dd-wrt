@@ -495,5 +495,5 @@ void start_overclock( void )	// hidden feature. must be called with
 }
 
 
- int main (int argc, char *argv[]) { start_overclock (); } 
+// int main (int argc, char *argv[]) { start_overclock (); } 
 
