@@ -415,8 +415,11 @@ void ej_wireless_active_table( webs_t wp, int argc, char_t ** argv )
 	}
 
 	nv_count = 0;		// init mac list
-	char *maclist = nvram_safe_get( "wl_mac_list" );
-
+#ifdef HAVE_MADWIFI
+	char *maclist = nvram_safe_get( "ath0_maclist" );
+#else
+	char *maclist = nvram_safe_get( "wl0_maclist" );
+#endif
 	foreach( word, maclist, next )
 	{
 	    snprintf( wl_client_macs[nv_count].hwaddr,
