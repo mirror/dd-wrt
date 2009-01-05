@@ -28,7 +28,6 @@ struct nvram_convert nvram_converts[] = {
   {WL ("key2"), WL0 ("key2")},
   {WL ("key3"), WL0 ("key3")},
   {WL ("key4"), WL0 ("key4")},
-  {WL ("maclist"), WL0 ("maclist")},
   {WL ("channel"), WL0 ("channel")},
   {WL ("rateset"), WL0 ("rateset")},
   {WL ("rts"), WL0 ("rts")},
