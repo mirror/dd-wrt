@@ -47,6 +47,9 @@ endif
 ifeq ($(CONFIG_RT3052),y)
 CFLAGS += -DHAVE_RT3052
 endif
+ifeq ($(CONFIG_STORM),y)
+CFLAGS += -DHAVE_STORM
+endif
 ifeq ($(CONFIG_WHRAG108),y)
 CFLAGS += -DHAVE_WHRAG108
 endif
