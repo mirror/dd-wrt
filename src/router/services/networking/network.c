@@ -1502,7 +1502,8 @@ void start_lan( void )
 	    if( !ifexists( name ) )
 		continue;
 #ifdef HAVE_EAD
-	    sprintf( eadline, "%s%s %s ", eadline, "-d", name );
+	    if (strncmp(name,"ath",3) && strncmp(name,"ra",2))
+		sprintf( eadline, "%s%s %s ", eadline, "-d", name );
 #endif
 	    if( nvram_match( "wan_ifname", name ) )
 		continue;
