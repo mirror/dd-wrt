@@ -112,12 +112,36 @@ static int rx_wants_alloc_idx0;   /* Point to the next RXD CPU wants to allocate
 static struct PDMA_rxdesc *rx_ring;
 static unsigned int phy_rx_ring;
 
+#if defined (CONFIG_ETHTOOL) && ( defined (CONFIG_RAETH_ROUTER) || defined (CONFIG_RT_3052_ESW) )
 extern struct ethtool_ops ra_ethtool_ops;
+#endif
+
 #ifdef CONFIG_RALINK_VISTA_BASIC
 int is_switch_175c = 1;
 #endif
 END_DEVICE *ra_ei_local;
 //bruce debug
+#if 0
+void skb_dump(struct sk_buff* sk) {
+        unsigned int i;
+
+        printk("skb_dump: from %s with len %d (%d) headroom=%d tailroom=%d\n",
+                sk->dev?sk->dev->name:"ip stack",sk->len,sk->truesize,
+                skb_headroom(sk),skb_tailroom(sk));
+
+        for(i=(unsigned int)sk->head;i<=(unsigned int)sk->tail;i++) {
+                if((i % 20) == 0)
+                        printk("\n");
+                if(i==(unsigned int)sk->data) printk("{");
+                if(i==(unsigned int)sk->h.raw) printk("#");
+                if(i==(unsigned int)sk->nh.raw) printk("|");
+                if(i==(unsigned int)sk->mac.raw) printk("*");
+                printk("%02x",*((unsigned char*)i));
+                if(i==(unsigned int)sk->tail) printk("}");
+        }
+        printk("\n");
+}
+#endif
 
 #if defined (CONFIG_GIGAPHY) || defined (CONFIG_P5_MAC_TO_PHY_MODE)
 int isMarvellGigaPHY(void)
@@ -139,6 +163,27 @@ int isMarvellGigaPHY(void)
 
         return 0;
 }
+
+int isMarvellGigaPHY2(void)
+{
+        u32 phy_id0,phy_id1;
+
+        if( ! mii_mgr_read(0x14, 2,&phy_id0)){
+                printk("\n Read PhyID 0 is Fail!!\n");
+                phy_id0 =0;
+        }
+
+        if( ! mii_mgr_read(0x14, 3,&phy_id1)){
+                printk("\n Read PhyID 1 is Fail!!\n");
+                phy_id1 = 0;
+        }
+        
+        if((phy_id0 == EV_MARVELL_PHY_ID0) && (phy_id1 == EV_MARVELL_PHY_SENAO_ID1))
+                return 1;
+
+        return 0;
+}
+
 #endif	
 
 /*
@@ -155,7 +200,7 @@ static int ei_set_mac_addr(struct net_device *dev, void *p)
 	if(netif_running(dev))
 		return -EBUSY;
 
-        ra2880MacAddressSet(macinfo, p);
+        ra2880MacAddressSet(macinfo, addr->sa_data);
 	return 0;
 }
 
@@ -203,6 +248,18 @@ int forward_config(struct net_device *dev)
 	//set unicast/multicast/broadcast frame to cpu
 	regVal &= ~0xFFFF; 
 
+#if 0 //def CONFIG_RAETH_CHECKSUM_OFFLOAD
+	//disable ipv4 header checksum check
+	regVal |= RT2880_GDM1_ICS_EN;
+	
+	//disable tcp checksum check
+	regVal |= RT2880_GDM1_TCS_EN;
+	
+	//disable udp checksum check
+	regVal |= RT2880_GDM1_UCS_EN;
+
+	dev->features |= NETIF_F_IP_CSUM;
+#else
 	//disable ipv4 header checksum check
 	regVal &= ~RT2880_GDM1_ICS_EN;
 	
@@ -211,6 +268,7 @@ int forward_config(struct net_device *dev)
 	
 	//disable udp checksum check
 	regVal &= ~RT2880_GDM1_UCS_EN;
+#endif
 
 #ifdef CONFIG_RAETH_JUMBOFRAME
 	// enable jumbo frame
@@ -288,7 +346,6 @@ static int rt2880_eth_setup(struct net_device *dev)
 		}
 		break;
 	}
-
 
 #if defined (CONFIG_RAETH_QOS)
 	int j=0;
@@ -395,13 +452,19 @@ static int rt2880_eth_setup(struct net_device *dev)
         sysRegWrite(TX_BASE_PTR0, phys_to_bus((u32) ei_local->phy_tx_ring0));
 	sysRegWrite(TX_MAX_CNT0, cpu_to_le32((u32) NUM_TX_DESC));
 	sysRegWrite(TX_CTX_IDX0, 0);
-	sysRegWrite(TX_DTX_IDX0, 0);
+	/* TX_TDX_IDX should be a RO register, use PDMA_RST_CFG instead */
+	//sysRegWrite(TX_DTX_IDX0, 0); 	
+	sysRegWrite(PDMA_RST_CFG, RT2880_PST_DTX_IDX0);
+	/* Reset ring2 IDX if we use it */
+	//sysRegWrite(PDMA_RST_CFG, RT2880_PST_DTX_IDX1); 
 #endif
 
 	sysRegWrite(RX_BASE_PTR0, phys_to_bus((u32) phy_rx_ring));
 	sysRegWrite(RX_MAX_CNT0,  cpu_to_le32((u32) NUM_RX_DESC));
 	sysRegWrite(RX_CALC_IDX0, cpu_to_le32((u32) (NUM_RX_DESC - 1)));
-	sysRegWrite(RX_DRX_IDX0,  cpu_to_le32((u32) 0));
+	/* RX_DRX_IDX should be RO registers, use PDMA_RST_CFG instead */
+	//sysRegWrite(RX_DRX_IDX0,  cpu_to_le32((u32) 0));
+	sysRegWrite(PDMA_RST_CFG, RT2880_PST_DRX_IDX0);
 
 #if defined (CONFIG_RAETH_QOS)
 	set_scheduler_weight();
@@ -430,6 +493,12 @@ static inline int rt2880_eth_send(struct net_device* dev, struct sk_buff *skb, i
 	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.PN = gmac_no; 
 	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.QN = 3; 
 	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info2.DDONE_bit = 0;
+
+#if 0 //def CONFIG_RAETH_CHECKSUM_OFFLOAD
+	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.TCO = 1; 
+	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.UCO = 1; 
+	ei_local->tx_ring0[tx_cpu_owner_idx0].txd_info4.ICO = 1; 
+#endif
 
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE) 
 	if(FOE_MAGIC_TAG(skb) == FOE_MAGIC_PPE) {
@@ -517,7 +586,11 @@ static int rt2880_eth_recv(struct net_device* dev)
 		rx_skb->protocol  = eth_type_trans(rx_skb,dev);
 #endif
 
+#ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
+		rx_skb->ip_summed = CHECKSUM_UNNECESSARY; 
+#else
 		rx_skb->ip_summed = CHECKSUM_NONE; 
+#endif
 
 #ifdef CONFIG_RT2880_BRIDGING_ONLY
 		rx_skb->cb[22]=0xa8;
@@ -800,6 +873,39 @@ static irqreturn_t ei_interrupt(int irq, void *dev_id, struct pt_regs * regs)
 	
 	return IRQ_HANDLED;
 }
+
+#if defined (CONFIG_RALINK_RT3052)
+
+#define PORT0_QUEUE_FULL		(1<<14) //port0 queue full
+#define PORT1_QUEUE_FULL		(1<<15) //port1 queue full
+#define PORT2_QUEUE_FULL		(1<<16) //port2 queue full
+#define PORT3_QUEUE_FULL		(1<<17) //port3 queue full
+#define PORT4_QUEUE_FULL		(1<<18) //port4 queue full
+#define PORT5_QUEUE_FULL		(1<<19) //port5 queue full
+#define PORT6_QUEUE_FULL		(1<<20) //port6 queue full
+#define QUEUE_EXHAUSTED			(1<<24) //global queue is used up and all packets are dropped
+#define BC_STROM			(1<<25) //the device is undergoing broadcast storm
+#define PORT_ST_CHG			(1<<26) //Port status change
+static irqreturn_t esw_interrupt(int irq, void *dev_id)
+{
+	unsigned long flags; 
+	unsigned long reg_int_val;
+	struct net_device *dev = (struct net_device *) dev_id;
+	END_DEVICE *ei_local = netdev_priv(dev);
+
+	spin_lock_irqsave(&(ei_local->page_lock), flags);
+	reg_int_val = (*((volatile u32 *)(RALINK_ETH_SW_BASE))); //Interrupt Status Register
+
+	if (reg_int_val & PORT_ST_CHG) {
+	    printk("RT305x_ESW: Link Status Changed\n");
+	}
+
+	*((volatile u32 *)(RALINK_ETH_SW_BASE))=0xFFFFFFFF; //write one clear
+
+	spin_unlock_irqrestore(&(ei_local->page_lock), flags);
+	return IRQ_HANDLED;
+}
+#endif
 
 static int ei_start_xmit(struct sk_buff* skb, struct net_device *dev, int gmac_no)
 {
@@ -1428,6 +1534,13 @@ int ei_open(struct net_device *dev)
 	request_irq( dev->irq, ei_interrupt, SA_INTERRUPT, dev->name, dev);	// try to fix irq in open
 	rt2880_eth_setup(dev);
 
+#if defined (CONFIG_RALINK_RT3052)
+	*((volatile u32 *)(RALINK_INTCL_BASE + 0x34)) = (1<<17); //INTENA: Interrupt enabled for ESW
+	*((volatile u32 *)(RALINK_ETH_SW_BASE + 0x04)) &= ~(PORT_ST_CHG); //IMR: Port status change
+	request_irq(SURFBOARDINT_ESW, esw_interrupt, SA_INTERRUPT, "Ralink_ESW", NULL);	
+#endif
+
+
 #ifdef DELAY_INT
 #ifdef CONFIG_RAETH_NAPI 
 	sysRegWrite(DLY_INT_CFG, DELAY_INT_INIT_NAPI);
@@ -1521,7 +1634,7 @@ int ei_close(struct net_device *dev)
 	printk("Free TX/RX Ring Memory!\n");
 #endif
 	free_irq(dev->irq, dev);
-	rt2880_gmac_hard_reset();
+	//rt2880_gmac_hard_reset();
 
 #ifdef CONFIG_RAETH_NAPI
 	atomic_inc(&ei_local->irq_sem);
@@ -1544,20 +1657,27 @@ void rt305x_esw_init(void)
 
         *(unsigned long *)(0xb01100E4) = 0x00000000;
         *(unsigned long *)(0xb0110014) = 0x00405555;
-        *(unsigned long *)(0xb0110050) = 0x00002001; //membership for vlan 0 -1
-        *(unsigned long *)(0xb0110090) = 0x00007f7f; 
-        *(unsigned long *)(0xb0110098) = 0x00007f3f; //disable VLAN  (0 - 7 remove vlan tag)
+        *(unsigned long *)(0xb0110050) = 0x00002001;
+        *(unsigned long *)(0xb0110090) = 0x00007f7f;
+        *(unsigned long *)(0xb0110098) = 0x00007f3f; //disable VLAN
         *(unsigned long *)(0xb01100CC) = 0x00d6500c;
         *(unsigned long *)(0xb011009C) = 0x0008a301; //hashing algorithm=XOR48, aging interval=300sec
         *(unsigned long *)(0xb011008C) = 0x02404040;
 #if defined (CONFIG_RT3052_ASIC)
-        *(unsigned long *)(0xb01100C8) = 0x3f502b28; //Change polling Ext PHY Addr=0x0
+        *(unsigned long *)(0xb01100C8) = 0x3f502b28; //Change polling Ext PHY Addr=0x1F
         *(unsigned long *)(0xb0110084) = 0x00000000;
 #elif defined (CONFIG_RT3052_FPGA)
-        *(unsigned long *)(0xb01100C8) = 0x3ff02b28; //Change polling Ext PHY Addr=0x0
+        *(unsigned long *)(0xb01100C8) = 0x20f02b28; //Change polling Ext PHY Addr=0x0
         *(unsigned long *)(0xb0110084) = 0xffdf1f00;
+
+	/* In order to use 10M/Full on FPGA board. We configure phy capable to
+	 * 10M Full/Half duplex, so we can use auto-negotiation on PC side */
+        for(i=0;i<4;i++){
+	    mii_mgr_write(i, 4, 0x0461);   //Capable of 10M Full/Half Duplex, flow control on/off
+	    mii_mgr_write(i, 0, 0xB100);   //reset all digital logic, except phy_reg
+	}
 #endif // RT3052_ASIC_BOARD
-  /* to lower down PHY 10Mbps mode power */
+
         mii_mgr_write(0, 31, 0x8000);   //---> select local register
         for(i=0;i<5;i++){
                 mii_mgr_write(i, 26, 0x1601);   //TX10 waveform coefficient
@@ -1640,6 +1760,13 @@ int __init ra2882eth_init(void)
 // RT2880 + GigaPhy
 #if defined (CONFIG_GIGAPHY) 
         unsigned int regValue = 0;
+
+        if (isMarvellGigaPHY2()) {
+        mii_mgr_read(0x14,0, &regValue);
+        regValue &= ~(1<<11); //power up
+        mii_mgr_write(0x14,0, regValue);
+	}
+
         enable_auto_negotiate();
         if (isMarvellGigaPHY()) {
                 printk("\n Reset MARVELL phy\n");

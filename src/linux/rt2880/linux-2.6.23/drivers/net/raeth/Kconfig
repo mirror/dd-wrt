@@ -12,6 +12,11 @@ config RAETH_JUMBOFRAME
         bool "Jumbo Frame up to 4K bytes"
         depends on RAETH && !RALINK_RT3052
 
+config RAETH_CHECKSUM_OFFLOAD
+        bool "TCP/UDP/IP checksum offload"
+	default y
+        depends on RAETH && !RALINK_RT2880
+
 config RAETH_QOS
         bool "QoS Feature"
         depends on RAETH && !RALINK_RT2880
@@ -20,6 +25,10 @@ config RAETH_GMAC2
         bool "GMAC2 Support"
         depends on RAETH && RALINK_RT2883
 
+choice
+        prompt "GMAC is connected to"
+        depends on RAETH
+        default IC+
 
 config  RAETH_ROUTER
         bool "IC+"
@@ -42,6 +51,7 @@ config  GIGAPHY
         bool "MARVELL"
         depends on !RALINK_RT3052
 
+endchoice
 
 
 config LAN_WAN_SUPPORT
@@ -84,5 +94,6 @@ endchoice
 
 config  MAC_TO_GIGAPHY_MODE_ADDR
         hex "Phy Address"
-	default 0x1F
+	default 0x0 if RT3052_FPGA
+	default 0x1F if !RT3052_FPGA
         depends on GIGAPHY || P5_MAC_TO_PHY_MODE

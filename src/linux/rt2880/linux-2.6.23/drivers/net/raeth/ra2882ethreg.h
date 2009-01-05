@@ -23,6 +23,7 @@
 
 #define EV_MARVELL_PHY_ID0 0x0141  
 #define EV_MARVELL_PHY_ID1 0x0CC2  
+#define EV_MARVELL_PHY_SENAO_ID1 0x0E11  
 
 /*
      FE_INT_STATUS
@@ -490,9 +491,9 @@ struct _PDMA_TXD_INFO4_
     unsigned int    UN_USE2             : 5;
     unsigned int    PN                  : 3;
     unsigned int    UN_USE1             : 2;
-    unsigned int    TC0                 : 1;
-    unsigned int    UC0_bit             : 1;
-    unsigned int    IC0_bit             : 1;
+    unsigned int    TCO                 : 1;
+    unsigned int    UCO			: 1;
+    unsigned int    ICO		        : 1;
 };
 
 
