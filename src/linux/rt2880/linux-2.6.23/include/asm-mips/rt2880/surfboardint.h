@@ -38,6 +38,7 @@
 #define SURFBOARDINT_NAND	 8	/* NAND */
 #define SURFBOARDINT_PC	 	 9	/* Performance counter */
 #define SURFBOARDINT_I2S 	 10	/* I2S */
+#define SURFBOARDINT_ESW 	 11	/* ESW */
 #define SURFBOARDINT_UART1	 12 	/* UART Lite */
 #define SURFBOARDINT_SYSCTL 	 32	/* SYSCTL */
 #define SURFBOARDINT_TIMER0	 33	/* timer0 */
