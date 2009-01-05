@@ -1502,7 +1502,11 @@ void start_lan( void )
 	    if( !ifexists( name ) )
 		continue;
 #ifdef HAVE_EAD
+#if defined(HAVE_RT2880) || defined(HAVE_MADWIFI)
 	    if (strncmp(name,"ath",3) && strncmp(name,"ra",2))
+#else
+	    if( wl_probe( name ) )
+#endif
 		sprintf( eadline, "%s%s %s ", eadline, "-d", name );
 #endif
 	    if( nvram_match( "wan_ifname", name ) )
