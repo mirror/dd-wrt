@@ -162,9 +162,7 @@ extern void writenvram(char *var,char *file);
 #define NVRAM_MAGIC		0x48534C46	/* 'FLSH' */
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
-#if defined(HAVE_XSCALE) 
-#define NVRAM_SPACE		0x10000
-#elif defined(HAVE_X86) || defined(HAVE_WHRAG108) || defined(HAVE_FONERA)
+#if defined(HAVE_X86) || defined(HAVE_WHRAG108) || defined(HAVE_FONERA) || defined(HAVE_RT2880) || defined(HAVE_RT3052) || defined(HAVE_XSCALE) || defined(HAVE_STORM)
 #define NVRAM_SPACE		0x10000
 #else
 #define NVRAM_SPACE		0x8000
