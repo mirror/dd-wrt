@@ -69,7 +69,7 @@ char *GOZILA_GET( webs_t wp, char *name );
  * for wireless 
  */
 #define WL_FILTER_MAC_PAGE 2
-#define WL_FILTER_MAC_NUM 64
+#define WL_FILTER_MAC_NUM 128
 // #define WL_FILTER_MAC_COUNT 32
 
 #define MAC_LEN 17
