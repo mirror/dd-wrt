@@ -78,12 +78,7 @@ config  RALINK_RAM_SIZE
 	default 64 if RT2880_DRAM_64M
 
 config MTD_PHYSMAP_START
-       hex 
-       default 0xBFC00000 if RT2880_FLASH_2M
-       default 0xBFC00000 if RT2880_FLASH_4M
-       default 0xBF400000 if RT2880_FLASH_8M
-       default 0xBEC00000 if RT2880_FLASH_16M
-       default 0xBF000000 if RT2880_FLASH_32M
+       hex 'Physmap start'
        default 0xBF000000 if !FLASH_REMAP_NEED && RALINK_RT3052
 
 config MTD_PHYSMAP_LEN

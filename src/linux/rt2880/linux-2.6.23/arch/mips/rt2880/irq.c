@@ -267,6 +267,11 @@ void surfboard_hw0_irqdispatch(void)
 		irq = SURFBOARDINT_UART;
 	}
 
+	/* ESW */ 
+	if (irq == 17) {
+		irq = SURFBOARDINT_ESW;
+	}
+
 	action = irq_desc[irq].action;
 	do_IRQ(irq);
 	return;
