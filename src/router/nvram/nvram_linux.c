@@ -183,7 +183,7 @@ _nvram_set (const char *name, const char *value)
 
   /* Unset if value is NULL */
   if (value)
-    count += strlen (value) + 1;
+    count += strlen (value) + 2; 
 
   if (count > sizeof (tmp))
     {
