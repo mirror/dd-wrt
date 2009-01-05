@@ -583,6 +583,8 @@ char *get_wep_value(char *temp, char *type, char *_bit, char *prefix )
 
     if( !strcmp( type, "passphrase" ) )
     {
+	if (wordlist[0]==':')
+	    return "";
 	substring( 0, pos_nthoccurence( wordlist, ':', cnt - 4 ), wordlist,
 		   temp );
 	return temp;
