@@ -43,7 +43,7 @@
 
 #if defined (CONFIG_RT2880_ROOTFS_IN_FLASH)
 #ifdef CONFIG_SYSFS
-char rt2880_cmdline[]="console=ttyS1,57600n8 root=/dev/mtdblock4";
+char rt2880_cmdline[]=CONFIG_CMDLINE;
 #else
 char rt2880_cmdline[]="console=ttyS1,57600n8 root=1f04";
 #endif
