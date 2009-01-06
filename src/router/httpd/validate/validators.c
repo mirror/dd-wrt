@@ -1592,7 +1592,10 @@ void validate_wl_hwaddrs( webs_t wp, char *value, struct variable *v )
     char *ifname = websGetVar( wp, "ifname", NULL );	// 64 or 128
     memset(buf,0, 19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE);
     if( ifname == NULL )
+	{
+	free(buf);
 	return;
+	}
 
     for( i = 0; i < WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE; i++ )
     {
