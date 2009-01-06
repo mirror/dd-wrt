@@ -27,7 +27,7 @@ PPTP_BIN = pptp
 PPTP_OBJS = pptp.o pptp_gre.o ppp_fcs.o \
             pptp_ctrl.o dirutil.o vector.o \
             inststr.o util.o version.o test.o routing.o \
-	    pptp_quirks.o orckit_quirks.o pqueue.o pptp_callmgr.o
+	    pptp_quirks.o orckit_quirks.o pqueue.o pptp_callmgr.o pptp_compat.o
 
 PPTP_DEPS = pptp_callmgr.h pptp_gre.h ppp_fcs.h util.h test.h \
 	    pptp_quirks.h orckit_quirks.h config.h pqueue.h routing.h
