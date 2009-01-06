@@ -25,21 +25,21 @@ However, \fBpptp\fR can also be run as a connection manager within
 \fBpppd\fR.
 .SH OPTIONS
 .LP
-The first non-option argument on the \fBpptp\fR command line must be the host
+The first non\-option argument on the \fBpptp\fR command line must be the host
 name or IP address of the PPTP server.
 .LP
-All long options (starting with "--")
+All long options (starting with "\-\-")
 are interpreted as pptp options, and a fatal error occurs if an 
 unrecognised option is used.
 .LP
-All command-line arguments which do not start
-with "-" are interpreted as ppp options, and passed as is to \fBpppd\fR unless
-\fB--nolaunchpppd\fR is given.
+All command\-line arguments which do not start
+with "\-" are interpreted as ppp options, and passed as is to \fBpppd\fR unless
+\fB\-\-nolaunchpppd\fR is given.
 .TP
-.B \--phone <number>
+.B \-\-phone <number>
 Pass <number> to remote host as phone number
 .TP
-.B \--nolaunchpppd
+.B \-\-nolaunchpppd
 Do not launch
 .B pppd
 but use stdin as the network connection.  Use this flag when including
@@ -50,40 +50,60 @@ connection process using the
 .B pty
 option.  See EXAMPLES.
 .TP
-.B \--quirks <quirk>
+.B \-\-quirks <quirk>
 Work around a buggy PPTP implementation, adopts special case handling for
 particular PPTP servers and ADSL modems.
 Currently recognised values are BEZEQ_ISRAEL only
 .TP
-.B \--debug
+.B \-\-debug
 Run in foreground (for debugging with gdb)
 .TP
-.B \--sync
+.B \-\-sync
 Enable Synchronous HDLC (pppd must use it too)
 .TP
-.B \--timeout <secs>
+.B \-\-timeout <secs>
 Time to wait for reordered packets (0.01 to 10 secs)
 .TP
-.B \--nobuffer
+.B \-\-nobuffer
 Completely disables buffering and reordering of packets.
-Any --timeout specified will be ignored.
+Any \-\-timeout specified will be ignored.
 .TP
-.B \--idle-wait <secs>
+.B \-\-idle-wait <secs>
 Time to wait before sending a control connection echo request.
 The RFC2637 default is 60 seconds.
 .TP
-.B \--max-echo-wait <secs>
+.B \-\-max-echo-wait <secs>
 Time to wait for an echo reply before closing the control connection.
 The RFC2637 default is 60 seconds.
 .TP
-.B \--logstring <name>
+.B \-\-logstring <name>
 Use <name> instead of 'anon' in syslog messages
 .TP
-.B \--localbind <addr>
+.B \-\-localbind <addr>
 Bind to specified IP address instead of wildcard
 .TP
-.B \--loglevel <level>
+.B \-\-loglevel <level>
 Sets the debugging level (0=low, 1=default, 2=high)
+
+.TP
+.B \-\-test-type <n>
+Enable packet reordering tests that damage the integrity of the packet
+stream to the server.  Use this only when testing servers.  Zero is
+the default, and means that packets are sent in the correct order.  A
+value of one (1) causes a single swap between two packets, such that
+the sequence numbers might be 1 2 3 4 6 5 7 8 9.  A value of two (2)
+causes ten packets to be buffered, then sent out of order but
+ascending, such that the sequence numbers might be 1 2 3 4 16 6 7 8 9
+10 11 12 13 14 15 17 18 19 20.  A value of three (3) causes ten
+packets to be buffered, then sent in the reverse order, like this; 1 2
+3 4 16 15 14 13 12 11 10 9 8 7 6 5 17 18 19 20.
+
+.TP
+.B \-\-test-rate <n>
+Sets the number of packets to pass before causing a reordering test.
+Default is 100.  Has no effect if test-type is zero.  The result of
+test types 2 and 3 are undefined if this value is less than ten.
+
 
 .SH "QUIRKS"
 
@@ -97,12 +117,9 @@ network in Israel.
 .B Connection to a Microsoft Windows VPN Server
 
 .BR
-pppd noauth nobsdcomp nodeflate mppe-40 mppe-128
-mppe-stateless name domain\\\\\\\\username remotename PPTP
-require-chapms-v2
-pty "pptp 10.0.0.5 --nolaunchpppd"
+pppd noauth nobsdcomp nodeflate require\-mppe\-128 name domain\\\\\\\\username remotename PPTP pty "pptp 10.0.0.5 \-\-nolaunchpppd"
 .PP
-Note that the \fBchap-secrets\fR file used by \fBpppd\fR must include an entry for domain\\\\username
+Note that the \fBchap\-secrets\fR file used by \fBpppd\fR must include an entry for domain\\\\username
 
 .SH "STATISTICS"
 The pptp process collects statistics when sending and receiving
@@ -182,4 +199,5 @@ This manual page was written by James Cameron
 <james.cameron@hp.com> from text contributed by Thomas Quinot
 <thomas@debian.org>, for the Debian GNU/Linux system.
 The description of the available statistics was written by Chris Wilson
-<chris@netservers.co.uk>.
+<chris@netservers.co.uk>. Updates for the Debian distribution by
+Ola Lundqvist <opal@debian.org>.

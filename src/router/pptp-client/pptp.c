@@ -1,9 +1,24 @@
-/* pptp.c ... client shell to launch call managers, data handlers, and
- *            the pppd from the command line.
- *            C. Scott Ananian <cananian@alumni.princeton.edu>
- *
- * $Id: pptp.c,v 1.42 2004/11/09 21:56:46 quozl Exp $
- */
+/*
+	an implementation of the PPTP protocol
+	Copyright (C) 2000  Free Software Foundation
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+	pptp.c ... client shell to launch call managers, data handlers, and
+	the pppd from the command line.
+*/
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -13,6 +28,7 @@
 #include <util.h>
 #elif defined(__APPLE__)
 #include <util.h>
+#elif defined (__SVR4) && defined (__sun)
 #else
 #include <pty.h>
 #endif
@@ -43,11 +59,16 @@
 #include "pptp_callmgr.h"
 #include "pptp_gre.h"
 #include "version.h"
+#if defined(__linux__)
+#include <sys/prctl.h>
+#else
 #include "inststr.h"
+#endif
 #include "util.h"
 #include "pptp_quirks.h"
 #include "pqueue.h"
 #include "pptp_options.h"
+#include "pptp_compat.h"
 
 #ifndef PPPD_BINARY
 #define PPPD_BINARY "pppd"
@@ -56,6 +77,8 @@
 int syncppp = 0;
 int log_level = 1;
 int disable_buffer = 0;
+int test_type = 0;
+int test_rate = 100;
 
 struct in_addr get_ip_address(char *name);
 int open_callmgr(struct in_addr inetaddr, char *phonenr, int argc,char **argv,char **envp, int pty_fd, int gre_fd);
@@ -69,6 +92,13 @@ void usage(char *progname)
 {
     printf(
             "%s\n"
+
+"Copyright (C) 2000  Free Software Foundation\n\n"
+
+"This program comes with ABSOLUTELY NO WARRANTY; for details see source.\n"
+"This is free software, and you are welcome to redistribute it under certain\n"
+"conditions; see source for details.\n\n"
+
             "Usage:\n"
             "  %s <hostname> [<pptp options>] [[--] <pppd options>]\n"
             "\n"
@@ -76,6 +106,7 @@ void usage(char *progname)
             "  pppd pty \"%s <hostname> --nolaunchpppd <pptp options>\"\n"
             "\n"
             "Available pptp options:\n"
+            "  --version        Display version number and exit\n"
             "  --phone <number>	Pass <number> to remote host as phone number\n"
             "  --nolaunchpppd	Do not launch pppd, for use as a pppd pty\n"
             "  --quirks <quirk>	Work around a buggy PPTP implementation\n"
@@ -88,14 +119,20 @@ void usage(char *progname)
             "  --max-echo-wait		Time to wait before giving up on lack of reply\n"
             "  --logstring <name>	Use <name> instead of 'anon' in syslog messages\n"
             "  --localbind <addr>	Bind to specified IP address instead of wildcard\n"
-            "  --loglevel <level>	Sets the debugging level (0=low, 1=default, 2=high)\n",
+            "  --loglevel <level>	Sets the debugging level (0=low, 1=default, 2=high)\n"
+            "  --test-type <type>	Damage the packet stream by reordering\n"
+            "  --test-rate <n>		Do the test every n packets\n",
 
             version, progname, progname);
     log("%s called with wrong arguments, program not started.", progname);
     exit(1);
 }
 
+#if defined (__SVR4) && defined (__sun)
+struct in_addr localbind = { INADDR_ANY };
+#else
 struct in_addr localbind = { INADDR_NONE };
+#endif
 static int signaled = 0;
 
 /*** do nothing signal handler ************************************************/
@@ -172,6 +209,9 @@ int main(int argc, char **argv, char **envp)
 	    {"nobuffer", 0, 0, 0},
 	    {"idle-wait", 1, 0, 0},
 	    {"max-echo-wait", 1, 0, 0},
+	    {"version", 0, 0, 0},
+	    {"test-type", 1, 0, 0},
+	    {"test-rate", 1, 0, 0},
             {0, 0, 0, 0}
         };
         int option_index = 0;
@@ -243,6 +283,13 @@ int main(int argc, char **argv, char **envp)
                         max_echo_wait = x;
                     }
 		    printf( "--max-echo-wait ignored, not yet implemented\n");
+                 } else if (option_index == 12) { /* --version */
+ 		    printf( "%s\n", version);
+ 		    exit(0);
+ 		} else if (option_index == 13) { /* --test-type */
+ 		    test_type = atoi(optarg);
+ 		} else if (option_index == 14) { /* --test-rate */
+ 		    test_rate = atoi(optarg);
                 }
                 break;
             case '?': /* unrecognised option */
@@ -344,9 +391,15 @@ int main(int argc, char **argv, char **envp)
         file2fd("/dev/null", "wb", STDERR_FILENO);
     }
 
-    snprintf(buf, sizeof(buf), "pptp: GRE-to-PPP gateway on %s", 
-            ttyname(tty_fd));
+    char *tty_name = ttyname(tty_fd);
+    snprintf(buf, sizeof(buf), "pptp: GRE-to-PPP gateway on %s",
+              tty_name ? tty_name : "(null)");
+#ifdef PR_SET_NAME
+    rc = prctl(PR_SET_NAME, "pptpgw", 0, 0, 0);
+    if (rc != 0) perror("prctl");
+#else
     inststr(argc, argv, envp, buf);
+#endif
     if (sigsetjmp(env, 1)!= 0) goto shutdown;
 
     signal(SIGINT,  sighandler);
@@ -442,7 +495,13 @@ void launch_callmgr(struct in_addr inetaddr, char *phonenr, int argc,
       char *my_argv[3] = { argv[0], inet_ntoa(inetaddr), phonenr };
       char buf[128];
       snprintf(buf, sizeof(buf), "pptp: call manager for %s", my_argv[1]);
+#ifdef PR_SET_NAME
+      int rc;
+      rc = prctl(PR_SET_NAME, "pptpcm", 0, 0, 0);
+      if (rc != 0) perror("prctl");
+#else
       inststr(argc, argv, envp, buf);
+#endif
       exit(callmgr_main(3, my_argv, envp));
 }
 
@@ -506,4 +565,3 @@ void launch_pppd(char *ttydev, int argc, char **argv)
     new_argv[i] = NULL;
     execvp(new_argv[0], new_argv);
 }
-
