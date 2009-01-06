@@ -63,6 +63,7 @@ static struct t_num *A, B;
 static struct t_preconf *tcp;
 static int auth_type = EAD_AUTH_DEFAULT;
 static int timeout = EAD_TIMEOUT;
+static uint16_t sid = 0;
 
 static void
 set_nonblock(int enable)
@@ -158,6 +159,7 @@ handle_pong(void)
 	auth_type = ntohs(pong->auth_type);
 	if (nid == 0xffff)
 		fprintf(stdout,"%04x: %s\n", ntohs(msg->nid), pong->name);
+ 	sid = msg->sid;
 	return true;
 }
 
@@ -321,7 +323,7 @@ int main(int argc, char **argv)
 	int ch;
 
 	msg->magic = htonl(EAD_MAGIC);
-	msg->tid = 0;
+	msg->sid = 0;
 
 	memset(&local, 0, sizeof(local));
 	memset(&remote, 0, sizeof(remote));
@@ -407,12 +409,11 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Device did not accept user name\n");
 		return 1;
 	}
+	timeout = EAD_TIMEOUT_LONG;
 	if (!get_prime()) {
 		fprintf(stderr, "Failed to get user password info\n");
 		return 1;
 	}
-
-	timeout = EAD_TIMEOUT_LONG;
 	if (!send_a()) {
 		fprintf(stderr, "Failed to send local authentication data\n");
 		return 1;
