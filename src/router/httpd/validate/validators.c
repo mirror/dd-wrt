@@ -1584,7 +1584,7 @@ void validate_wl_hwaddrs( webs_t wp, char *value, struct variable *v )
 {
     int i;
     int error_value = 0;
-    char *buf = malloc( 19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE);
+    char *buf = malloc( (19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) + 1);
     if (buf==NULL)
 	return; //out of memory
     char *cur = buf;
