@@ -72,7 +72,6 @@ char *wl_filter_mac_get( char *ifname, char *type, int which )
 
     if( !strcmp( nvram_safe_get( "wl_active_add_mac" ), "1" ) )
     {
-	// cprintf("%s(): wl_active_add_mac = 1\n",__FUNCTION__);
 	char var[32];
 
 	sprintf( var, "%s_active_mac", ifname );
@@ -80,15 +79,11 @@ char *wl_filter_mac_get( char *ifname, char *type, int which )
     }
     else
     {
-	// cprintf("%s(): wl_active_add_mac = 0\n",__FUNCTION__);
 	char var[32];
 
 	sprintf( var, "%s_maclist", ifname );
 	wordlist = nvram_safe_get( var );
     }
-
-    if( !wordlist )
-	return "";
 
     temp = which;
 

@@ -1584,18 +1584,14 @@ void validate_wl_hwaddrs( webs_t wp, char *value, struct variable *v )
 {
     int i;
     int error_value = 0;
-    char buf[19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE] = "", *cur = buf;
-    char *wordlist;
+    char *buf = malloc( 19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE);
+    if (buf==NULL)
+	return; //out of memory
+    char *cur = buf;
     unsigned int m[6];
     char *ifname = websGetVar( wp, "ifname", NULL );	// 64 or 128
-
+    memset(buf,0, 19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE);
     if( ifname == NULL )
-	return;
-    char mlist[32];
-
-    sprintf( mlist, "%s_maclist", ifname );
-    wordlist = nvram_safe_get( mlist );
-    if( !wordlist )
 	return;
 
     for( i = 0; i < WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE; i++ )
@@ -1638,17 +1634,20 @@ void validate_wl_hwaddrs( webs_t wp, char *value, struct variable *v )
 	    error_value = 1;
 	    continue;
 	}
-	cur += snprintf( cur, buf + sizeof( buf ) - cur, "%s%s",
+	cur += snprintf( cur, buf + (19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE) - cur, "%s%s",
 			 cur == buf ? "" : " ", mac1 );
 
     }
 
     if( !error_value )
     {
+	char mlist[32];
+	sprintf( mlist, "%s_maclist", ifname );
 	nvram_set( mlist, buf );
 	nvram_set( "wl_active_mac", "" );
 	nvram_set( "wl0_active_mac", "" );
     }
+    free(buf);
 }
 
 /*
