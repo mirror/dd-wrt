@@ -120,8 +120,8 @@ int callmgr_main(int argc, char **argv, char **envp)
     phonenr = argc == 3 ? argv[2] : NULL;
     if (inet_aton(argv[1], &inetaddr) == 0)
         fatal("Invalid IP address: %s", argv[1]);
-    routing_init(inet_ntoa(inetaddr));
-    routing_start();
+//    routing_init(inet_ntoa(inetaddr));
+//    routing_start();
     /* Step 1: Open sockets. */
     if ((inet_sock = open_inetsock(inetaddr)) < 0)
         fatal("Could not open control connection to %s", argv[1]);
