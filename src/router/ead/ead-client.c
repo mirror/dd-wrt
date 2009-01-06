@@ -36,8 +36,8 @@
 #define MD5_OUT_BUFSIZE 36
 char *md5_crypt( char *passwd, unsigned char *pw, unsigned char *salt );
 
-#define EAD_TIMEOUT	400
-#define EAD_TIMEOUT_LONG 2000
+#define EAD_TIMEOUT	4000
+#define EAD_TIMEOUT_LONG 20000
 
 static char msgbuf[1500];
 static struct ead_msg *msg = (struct ead_msg *) msgbuf;
