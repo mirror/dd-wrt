@@ -1,7 +1,7 @@
 /* pptp_ctrl.c ... handle PPTP control connection.
  *                 C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: pptp_ctrl.c,v 1.31 2005/03/31 07:42:39 quozl Exp $
+ * $Id: pptp_ctrl.c,v 1.33 2007/11/21 03:36:47 quozl Exp $
  */
 
 #include <errno.h>
@@ -360,7 +360,7 @@ PPTP_CALL * pptp_call_open(PPTP_CONN * conn, pptp_call_cb callback,
     }
     /* fill in the phone number if it was specified */
     if (phonenr) {
-        strncpy(packet.phone_num, phonenr, sizeof(packet.phone_num));
+        strncpy((char *)packet.phone_num, phonenr, sizeof(packet.phone_num));
         packet.phone_len = strlen(phonenr);
         if( packet.phone_len > sizeof(packet.phone_num))
             packet.phone_len = sizeof(packet.phone_num);
@@ -457,6 +457,7 @@ void pptp_conn_destroy(PPTP_CONN * conn)
 void pptp_fd_set(PPTP_CONN * conn, fd_set * read_set, fd_set * write_set,
                  int * max_fd)
 {
+    int sig_fd;
     assert(conn && conn->call);
     /* Add fd to write_set if there are outstanding writes. */
     if (conn->write_size > 0)
@@ -465,7 +466,7 @@ void pptp_fd_set(PPTP_CONN * conn, fd_set * read_set, fd_set * write_set,
     FD_SET(conn->inet_sock, read_set);
     if (*max_fd < conn->inet_sock) *max_fd = conn->inet_sock;
     /* Add signal pipe file descriptor to set */
-    int sig_fd = sigpipe_fd();
+    sig_fd = sigpipe_fd();
     FD_SET(sig_fd, read_set);
     if (*max_fd < sig_fd) *max_fd = sig_fd;
 }

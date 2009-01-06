@@ -1,12 +1,13 @@
 /* pptp_ctrl.h ... handle PPTP control connection.
  *                 C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: pptp_ctrl.h,v 1.5 2004/11/09 01:42:32 quozl Exp $
+ * $Id: pptp_ctrl.h,v 1.6 2008/02/19 05:05:03 quozl Exp $
  */
 
 #ifndef INC_PPTP_CTRL_H
 #define INC_PPTP_CTRL_H
 #include <sys/types.h>
+#include "pptp_compat.h"
 
 typedef struct PPTP_CONN PPTP_CONN;
 typedef struct PPTP_CALL PPTP_CALL;
