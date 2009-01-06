@@ -1465,18 +1465,22 @@ char ezc_version[128];
 
 // #endif
 
-char post_buf[10000] = { 0 };
 extern int post;
 
+static char *post_buf = NULL;
 static void			// support GET and POST 2003-08-22
 do_apply_post( char *url, webs_t stream, int len, char *boundary )
 {
     unsigned char buf[1024];
     int count;
-
     if( post == 1 )
     {
-	if( len > sizeof( post_buf ) - 1 )
+	if (post_buf)
+	    post_buf=(char *)realloc(post_buf,len+1);
+	else
+	    post_buf = (char *)malloc(len+1);
+	
+	if( !post_buf )
 	{
 	    cprintf( "The POST data exceed length limit!\n" );
 	    return;
