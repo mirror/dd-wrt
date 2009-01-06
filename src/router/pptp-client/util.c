@@ -1,7 +1,7 @@
 /* util.c ....... error message utilities.
  *                C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: util.c,v 1.10 2005/03/10 01:18:20 quozl Exp $
+ * $Id: util.c,v 1.11 2005/08/22 00:49:48 quozl Exp $
  */
 
 #include <stdio.h>
@@ -125,12 +125,8 @@ void sigpipe_handler(int signum)
 /* assign a signal number to the pipe */
 void sigpipe_assign(int signum)
 {
-  sigset_t sigset;
   struct sigaction sa;
 
-  sigemptyset(&sigset);
-  sigaddset(&sigset, signum);
-  
   memset(&sa, 0, sizeof(sa));
   sa.sa_handler = sigpipe_handler;
   sigaction(signum, &sa, NULL);

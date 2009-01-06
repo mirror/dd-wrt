@@ -1,5 +1,5 @@
-# $Id: Makefile,v 1.38 2005/03/10 01:18:20 quozl Exp $
-VERSION=1.7.0
+# $Id: Makefile,v 1.47 2008/05/14 06:32:52 quozl Exp $
+VERSION=1.7.2
 RELEASE=
 
 #################################################################
@@ -26,11 +26,11 @@ PPTP_BIN = pptp
 
 PPTP_OBJS = pptp.o pptp_gre.o ppp_fcs.o \
             pptp_ctrl.o dirutil.o vector.o \
-            inststr.o util.o version.o \
+            inststr.o util.o version.o test.o routing.o \
 	    pptp_quirks.o orckit_quirks.o pqueue.o pptp_callmgr.o
 
-PPTP_DEPS = pptp_callmgr.h pptp_gre.h ppp_fcs.h util.h \
-	    pptp_quirks.h orckit_quirks.h config.h pqueue.h
+PPTP_DEPS = pptp_callmgr.h pptp_gre.h ppp_fcs.h util.h test.h \
+	    pptp_quirks.h orckit_quirks.h config.h pqueue.h routing.h
 
 all: config.h $(PPTP_BIN)
 
@@ -58,8 +58,10 @@ test: vector_test
 install:
 	mkdir -p $(BINDIR)
 	install -o root -m 555 pptp $(BINDIR)
+	install -o root -m 555 pptpsetup $(BINDIR)
 	mkdir -p $(MANDIR)
 	install -m 644 pptp.8 $(MANDIR)
+	install -m 644 pptpsetup.8 $(MANDIR)
 	mkdir -p $(PPPDIR)
 	install -m 644 options.pptp $(PPPDIR)
 
@@ -71,8 +73,8 @@ dist: clobber
 	$(RM) -r pptp-$(VERSION)
 	mkdir pptp-$(VERSION)
 	cp --recursive ChangeLog Makefile *.c *.h options.pptp pptp.8 \
-		Documentation Reference AUTHORS COPYING INSTALL NEWS \
-		README DEVELOPERS TODO USING \
+		pptpsetup Documentation AUTHORS COPYING INSTALL NEWS \
+		README DEVELOPERS TODO USING PROTOCOL-SECURITY \
 		pptp-$(VERSION)/
 	$(RM) -r pptp-$(VERSION)/CVS pptp-$(VERSION)/*/CVS
 	tar czf pptp-$(VERSION)$(RELEASE).tar.gz pptp-$(VERSION)

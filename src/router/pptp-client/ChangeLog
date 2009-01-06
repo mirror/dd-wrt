@@ -1,3 +1,113 @@
+Wed May 14 15:59:17 2008  James Cameron  <quozl@us.netrek.org>
+
+	* pptp-1.7.2 released.
+
+Fri Jan 11 13:20:18 2008  Ilya Voronin  <ivoronin@gmail.com>
+
+	* ppp_fcs.h, pptp.c, pptp_ctrl.h, pptp_gre.h, pptp_msg.h: port to
+	Solaris 10/11.
+
+Wed Nov 21 14:29:46 2007  Leo Savernik  <l.savernik@aon.at>
+
+	* pptp_ctrl.c (pptp_fd_set): fix compile with an ANSI
+	C89-compliant compiler.
+
+Tue Aug 28 10:17:36 2007  James Cameron  <quozl@us.netrek.org>
+
+	* README, pptp.c: assign copyright to Free Software Foundation,
+	and make license explicit.
+
+	Signed-off-by: "C. Scott Ananian" <cscott@cscott.net>
+
+Wed Apr  4 16:30:24 2007  James Cameron  <quozl@us.netrek.org>
+
+	* pptp.8, pptp.c: add --test-type and --test-rate options.
+
+	* pptp_gre.c: use alternate write(2) function for sending GRE
+	packets.
+
+	* test.c: implement reordering tests to assist with pptpd testing.
+	These tests reorder the stream to simulate real-world examples.
+
+Fri Dec 15 02:02:08 2006  Michael Adda  <michael@hackers.co.il>
+
+	* pptp_gre.c: when we fail to write due to a transient error
+	simply ignore it (treat it as a drop).
+
+Thu Oct 12 13:52:46 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptp_gre.c (pptp_gre_copy): select(2) may return error, and the
+	code was checking the read file descriptors without checking if
+	they are valid.
+
+Thu Aug 17 14:36:18 2006  James Cameron  <quozl@us.netrek.org>
+
+	* Makefile: add pptpsetup man page using pod2man.
+
+Wed Aug  2 16:21:08 2006  James Cameron  <quozl@us.netrek.org>
+
+	* routing.c, routing.h, pptp_callmgr.c (callmgr_main): add route
+	to PPTP server.  Experimental feature.  Note that this has a
+	side-effect of leaving a route to the server in place after the
+	tunnel has terminated.
+
+Wed Aug  2 16:19:06 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptp.c: fix a few compilation warnings.
+
+Wed Aug  2 16:02:23 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptpsetup: merge updates from Nelson Ferraz as of 24th April.
+	* Makefile (dist): include pptpsetup in kit.
+
+Thu Apr 20 08:52:45 2006  James Cameron  <quozl@us.netrek.org>
+
+	* Makefile (dist): remove Reference documentation as the license
+	is non-free.  The documentation is available from other sources.
+
+Thu Apr 20 08:49:01 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptp.8: merge Debian contribution in 1.7.0-2 by Ola Lundqvist.
+
+Mon Apr  3 15:28:37 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptpsetup: add script contributed by Nelson Ferraz.
+
+Mon Mar 27 10:09:20 2006  James Cameron  <quozl@us.netrek.org>
+
+	* options.pptp: add refuse-pap to default options, along with a
+	comment that a server may need to use PAP or CHAP if it is not
+	using MPPE.
+
+Mon Feb 13 14:01:34 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptp-1.7.1 released.
+
+Fri Feb 10 10:59:31 2006  James Cameron  <quozl@us.netrek.org>
+
+	* pptp.c: use prctl(2) to set process name for gateway process so
+	that killall(1) of pptp will affect control connection call
+	manager only.
+
+Mon Aug 29 15:42:03 2005  James Cameron  <quozl@us.netrek.org>
+
+	* pptp.c: add --version feature.
+
+Mon Aug 22 10:46:38 2005  James Cameron  <quozl@us.netrek.org>
+
+	* util.c (sigpipe_assign): remove superfluous sigset variable
+	and calls; they served no purpose.  Reported by: Pavol Gono.
+
+Sat Aug 20 23:14:25 2005  James Cameron  <quozl@us.netrek.org>
+
+	* options.pptp: default to not require MPPE, per Red Hat Bugzilla
+	#166394.
+
+Thu Aug 11 10:46:32 2005  James Cameron  <quozl@us.netrek.org>
+
+	* PROTOCOL-SECURITY: add write-up regarding protocol security risks.
+	* Makefile (dist): add PROTOCOL-SECURITY write-up.
+
 Wed Jul 27 20:49:30 2005  James Cameron  <quozl@us.netrek.org>
 
 	* pptp-1.7.0 released.

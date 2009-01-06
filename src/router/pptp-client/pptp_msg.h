@@ -1,7 +1,7 @@
 /*  pptp.h:  packet structures and magic constants for the PPTP protocol 
  *           C. Scott Ananian <cananian@alumni.princeton.edu>            
  *
- * $Id: pptp_msg.h,v 1.3 2003/02/15 10:37:21 quozl Exp $
+ * $Id: pptp_msg.h,v 1.4 2008/02/19 05:05:03 quozl Exp $
  */
 
 #ifndef INC_PPTP_H
@@ -9,6 +9,7 @@
 
 /* Grab definitions of int16, int32, etc. */
 #include <sys/types.h>
+#include "pptp_compat.h"
 /* define "portable" htons, etc. */
 #define hton8(x)  (x)
 #define ntoh8(x)  (x)
