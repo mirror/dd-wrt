@@ -21,7 +21,10 @@ Ed Meaney <epm@cisco.com>
 Yury Tarasievich <grog@grsu.by>
 Paul Howarth <paul@city-fan.org>
 Peter Surda <shurdeek@routehat.org>
+Nelson Ferraz <nferraz@gmail.com>
+Michael Adda <michael@hackers.co.il>
+Ilya Voronin <ivoronin@gmail.com>
 
 Package renamed from pptp-linux to pptp after version 1.5.0.
 
-$Id: AUTHORS,v 1.14 2004/07/21 09:05:06 quozl Exp $
+$Id: AUTHORS,v 1.17 2008/02/19 05:05:03 quozl Exp $

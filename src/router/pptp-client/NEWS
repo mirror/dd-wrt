@@ -1,3 +1,24 @@
+Release 1.7.2: (14th May 2008)
+
+- port for Solaris 10/11 [Voronin]
+- make copyright and license clearer [Cameron/Ananian]
+- add packet reordering test code for pptpd testing [Cameron]
+- ignore transient send errors [Adda]
+- fix flaw in return status check of select in GRE pipe (possibly
+  fixes Debian Bug #427586) [Cameron]
+- add route to PPTP server [Cameron]
+- remove non-free reference documentation [Cameron]
+- fix quoting and pppd options [Lundqvist]
+- pptpsetup script with man page (Debian Bug #167216) [Ferraz]
+
+Release 1.7.1: (13th February 2006)
+
+- use prctl(2) to set process name [Cameron]
+- add --version option [Cameron]
+- remove superfluous sigset [Cameron/Gono]
+- default options file to not require MPPE (#166394) [Howarth]
+- add PROTOCOL-SECURITY discussion [Cameron/Mueller]
+
 Release 1.7.0: (27th July 2005)
 
 - silently discard packets not for the call [Cameron/Jenkins]
@@ -108,4 +129,4 @@ Release 1.0.0:
 
 - This is the first public release of the pptp-linux package.
 
-$Id: NEWS,v 1.44 2005/07/27 10:51:44 quozl Exp $	
+$Id: NEWS,v 1.59 2008/05/14 06:32:52 quozl Exp $	

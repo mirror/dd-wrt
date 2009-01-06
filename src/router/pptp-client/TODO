@@ -1,3 +1,22 @@
+18th September 2006
+
+https://sourceforge.net/tracker/?func=detail&atid=407155&aid=1560433&group_id=33063
+
+Feature request, add code to attempt multiple IPs in a round-robin DNS
+rotation.
+
+12th September 2006
+
+https://sourceforge.net/tracker/?func=detail&atid=407152&aid=1556506&group_id=33063
+
+Add call-id as quirk or command-line option.
+
+13th February 2006
+
+pty write may block, which prevents read, according to patch #502930 on
+SourceForge.  Generally a lack of flow control.  We don't implement flow
+control well.
+
 8th April 2005
 
 On Thu, Apr 07, 2005 at 07:36:41AM -0700, Roark Hennessy wrote:
@@ -37,9 +56,7 @@ popen() to execute the /usr/sbin/ip program.
 I would also prefer that there be a command line option for disabling
 the feature.
 
-
 --
-
 
 10th March 2005
 
@@ -59,52 +76,9 @@ server.
 
 - ship .spec with tarball.
 
-5th June 2004
-
-- command line as shown by ps is corrupted.  Reported by Andre Ruiz
-  <andre@ruiz.net>
-
-5th June 2004
-
-- on Fedora Core 2, after the tunnel is stopped by the GUI, the pptp
-process spins with a select() on FD's 0 and 1 (the control connection
-and the UNIX domain socket respectively) and read()'s on FD 0 which
-return 0.  Eventually the process stops because of control connection
-ping failure.  Before that happens, any attempt to start another
-connection appears to hang; probably because the process already has a
-raw socket open to receive GRE packets from the server.
-
-pptp should handle a read() returning zero on the control connection
-as a termination.
-
-# lsof
-COMMAND  PID USER   FD   TYPE     DEVICE    SIZE   NODE NAME
-pptp    4082 root    0u  IPv4      12307            TCP lenny.lan:ms-sql-s->quozl.lan:1723 (CLOSE_WAIT)
-pptp    4082 root    1u  unix 0x04698380          12308 /var/run/pptp/255.255.255.255
-pptp    4082 root    2w   CHR        1,3          67097 /dev/null
-pptp    4082 root    3u  unix 0x04698500          12304 socket
-pptp    4082 root    4u   CHR      136,5              7 /dev/pts/5
-pptp    4082 root    5u   CHR      136,5              7 /dev/pts/5
-pptp    4082 root    6u   CHR      136,5              7 /dev/pts/5
-pptp    4082 root    7r  FIFO        0,7          12241 pipe
-pptp    4082 root    8w  FIFO        0,7          12241 pipe
-pptp    4082 root    9u   raw                     12305 0800000A:002F->0500000A:0000 st=01
-pptp    4082 root   10u  unix 0x04698b00          12310 /var/run/pptp/255.255.255.255
-
-# strace
-read(0, "", 512)                        = 0
-select(2, [0 1], [], NULL, NULL)        = 1 (in [0])
-read(0, "", 512)                        = 0
-select(2, [0 1], [], NULL, NULL)        = 1 (in [0])
-
-
 13th February 2004
 
 - timeout connect earlier, with option to extend timeout.
-
-11th June 2003
-
-- support --version  [JJ]
 
 20th May 2003
 
@@ -138,4 +112,4 @@ Things to do:
    already-existing gre-copy process in the same way it uses an
    already-existing call manager.
 
-$Id: TODO,v 1.23 2005/04/07 23:35:11 quozl Exp $	
+$Id: TODO,v 1.29 2006/09/18 01:50:05 quozl Exp $	

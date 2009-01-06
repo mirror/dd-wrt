@@ -2,7 +2,7 @@
  *                Handle the IP Protocol 47 portion of PPTP.
  *                C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: pptp_gre.c,v 1.39 2005/07/11 03:23:48 quozl Exp $
+ * $Id: pptp_gre.c,v 1.43 2007/04/04 06:43:15 quozl Exp $
  */
 
 #include <sys/types.h>
@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -20,6 +21,7 @@
 #include "pptp_gre.h"
 #include "util.h"
 #include "pqueue.h"
+#include "test.h"
 
 #define PACKET_MAX 8196
 /* test for a 32 bit counter overflow */
@@ -41,6 +43,9 @@ int encaps_hdlc(int fd, void *pack, unsigned int len);
 int decaps_gre (int fd, callback_t callback, int cl);
 int encaps_gre (int fd, void *pack, unsigned int len);
 int dequeue_gre(callback_t callback, int cl);
+
+/* test redirection function pointers */
+struct test_redirections *my;
 
 #if 1
 #include <stdio.h>
@@ -94,6 +99,8 @@ int pptp_gre_bind(struct in_addr inetaddr)
     if (connect(s, (struct sockaddr *) &src_addr, sizeof(src_addr)) < 0) {
         warn("connect: %s", strerror(errno)); close(s); return -1;
     }
+    my = test_redirections();
+
     return s;
 }
 
@@ -155,7 +162,7 @@ void pptp_gre_copy(u_int16_t call_id, u_int16_t peer_call_id,
             tv.tv_usec %= 1000000;
         }
         retval = select(max_fd + 1, &rfds, NULL, NULL, tvp);
-        if (FD_ISSET(pty_fd, &rfds)) {
+        if (retval > 0 && FD_ISSET(pty_fd, &rfds)) {
             if (decaps_hdlc(pty_fd, encaps_gre,  gre_fd) < 0)
                 break;
         } else if (retval == 0 && ack_sent != seq_recv) {
@@ -163,7 +170,7 @@ void pptp_gre_copy(u_int16_t call_id, u_int16_t peer_call_id,
             /* send ack with no payload */
             encaps_gre(gre_fd, NULL, 0);         
         }
-        if (FD_ISSET(gre_fd, &rfds)) {
+        if (retval > 0 && FD_ISSET(gre_fd, &rfds)) {
             if (decaps_gre (gre_fd, encaps_hdlc, pty_fd) < 0)
                 break;
         }
@@ -197,7 +204,7 @@ int decaps_hdlc(int fd, int (*cb)(int cl, void *pack, unsigned int len), int cl)
         warn("short read (%d): %s", end, strerror(saved_errno));
 	switch (saved_errno) {
 	  case EMSGSIZE: {
-	    int optval, optlen = sizeof(optval);
+	    socklen_t optval, optlen = sizeof(optval);
 	    warn("transmitted GRE packet triggered an ICMP destination unreachable, fragmentation needed, or exceeds the MTU of the network interface");
 #define IP_MTU 14
 	    if(getsockopt(fd, IPPROTO_IP, IP_MTU, &optval, &optlen) < 0)
@@ -477,8 +484,11 @@ int encaps_gre (int fd, void *pack, unsigned int len)
             /* ack is in odd place because S == 0 */
             u.header.seq = hton32(seq_recv);
             ack_sent = seq_recv;
-            rc = write(fd, &u.header, sizeof(u.header) - sizeof(u.header.seq));
+            rc = (*my->write)(fd, &u.header,
+                                 sizeof(u.header) - sizeof(u.header.seq));
             if (rc < 0) {
+                if (errno == ENOBUFS)
+                    rc = 0;         /* Simply ignore it */
                 stats.tx_failed++;
             } else if (rc < sizeof(u.header) - sizeof(u.header.seq)) {
                 stats.tx_short++;
@@ -509,8 +519,10 @@ int encaps_gre (int fd, void *pack, unsigned int len)
     seq_sent = seq; seq++;
     /* write this baby out to the net */
     /* print_packet(2, u.buffer, header_len + len); */
-    rc = write(fd, u.buffer, header_len + len);
+    rc = (*my->write)(fd, u.buffer, header_len + len);
     if (rc < 0) {
+        if (errno == ENOBUFS)
+            rc = 0;         /* Simply ignore it */
         stats.tx_failed++;
     } else if (rc < header_len + len) {
         stats.tx_short++;
