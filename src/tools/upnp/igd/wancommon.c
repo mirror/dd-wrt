@@ -126,9 +126,7 @@ ServiceTemplate Template_WANCommonInterfaceConfig = {
     ARRAYSIZE(StateVariables)-1, StateVariables,
     Actions,
     0,
-    "urn:upnp-org:serviceId:WANCommonIFC",
-//    "urn:upnp-org:serviceId:WANCommonInterfaceConfig",	// alt test - tofu
-	NULL
+    "urn:upnp-org:serviceId:WANCommonIFC"
 };
 
 /*	not used - tofu
@@ -196,34 +194,28 @@ static int WANCommonInterfaceConfig_GetVar(struct Service *psvc, int varindex)
     PWANDevicePrivateData pdevdata = (PWANDevicePrivateData) psvc->device->opaque;
     PWANCommonPrivateData pdata = (PWANCommonPrivateData) psvc->opaque;
     struct StateVar *var;
-    static time_t then;
-    time_t now;
     var = &(psvc->vars[varindex]);
 
-    time(&now);
-    if (now != then) {
-	osl_ifstats(pdevdata->ifname, &pdata->stats);
-	then = now;
-    }
+    osl_ifstats(pdevdata->ifname, &pdata->stats);
 
     switch (varindex) {
     case VAR_TotalBytesSent:
-	sprintf(var->value, "%ld", pdata->stats.tx_bytes);
+	sprintf(var->value, "%lu", pdata->stats.tx_bytes);
 	break;
     case VAR_TotalBytesReceived:
-	sprintf(var->value, "%ld", pdata->stats.rx_bytes);
+	sprintf(var->value, "%lu", pdata->stats.rx_bytes);
 	break;
     case VAR_TotalPacketsReceived:
-	sprintf(var->value, "%ld", pdata->stats.rx_packets);
+	sprintf(var->value, "%lu", pdata->stats.rx_packets);
 	break;
     case VAR_TotalPacketsSent:
-	sprintf(var->value, "%ld", pdata->stats.tx_packets);
+	sprintf(var->value, "%lu", pdata->stats.tx_packets);
 	break;
     case VAR_Layer1UpstreamMaxBitRate:
-	sprintf(var->value, "%ld", pdata->tx_bitrate);
+	sprintf(var->value, "%lu", pdata->tx_bitrate);
 	break;
     case VAR_Layer1DownstreamMaxBitRate:
-	sprintf(var->value, "%ld", pdata->rx_bitrate);
+	sprintf(var->value, "%lu", pdata->rx_bitrate);
 	break;
     case VAR_PhysicalLinkStatus:
 	sprintf(var->value, "%s", (pdata->if_up ? "Up" : "Down"));

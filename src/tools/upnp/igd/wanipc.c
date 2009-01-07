@@ -64,7 +64,7 @@ static char *LastConnectionError_allowedValueList[] = { "ERROR_NONE", "ERROR_UNK
 static char *PortMappingProtocol_allowedValueList[] = { "TCP", "UDP", NULL };
 
 static VarTemplate StateVariables[] = {
-    { "ConnectionType", "IP_Routed", VAR_STRING },
+    { "ConnectionType", "IP_Routed", VAR_STRING|VAR_LIST,  (allowedValue) { PossibleConnectionTypes_allowedValueList }  },
     { "PossibleConnectionTypes", "", VAR_EVENTED|VAR_STRING|VAR_LIST,  (allowedValue) { PossibleConnectionTypes_allowedValueList } },
     { "ConnectionStatus", "", VAR_EVENTED|VAR_STRING|VAR_LIST,  (allowedValue) { ConnectionStatus_allowedValueList } },
     { "Uptime", "", VAR_ULONG },
@@ -223,9 +223,7 @@ ServiceTemplate Template_WANIPConnection = {
     NULL,			/* xml generator */
     ARRAYSIZE(StateVariables)-1, StateVariables,
     Actions, 0,
-    "urn:upnp-org:serviceId:WANIPConn",
-//	"urn:upnp-org:serviceId:WANIPConnection",		// alt test - tofu
-	NULL
+    "urn:upnp-org:serviceId:WANIPConn"
 };
 
 extern void enable_wan();
@@ -329,7 +327,7 @@ static bool update_connection_status(PService psvc)
     case IP_CONNECTING: 
 	{
 	    if (wan_connected) {
-		pdata->connection_status = IP_CONNECTED;
+		pdata->connection_status = IP_CONNECTED;	// for cdrouter_upnp_203/204/220
 		//pdata->connected_time = time(NULL);
 		sysinfo(&info);
 		pdata->connected_time = (time_t)info.uptime;	// by honor, use uptime rather than system time 
@@ -359,7 +357,7 @@ static bool update_connection_status(PService psvc)
     case IP_DISCONNECTED: 
 	{
 	    if (wan_connected) {
-		pdata->connection_status = IP_CONNECTING;
+		pdata->connection_status = IP_CONNECTED;	// for cdrouter_upnp_203/204/220
 	    }
 	}
 	break;
@@ -381,6 +379,7 @@ static bool update_external_address(PService psvc)
     struct in_addr ipaddr = {0} ;
 
     if (osl_wan_isup(pdevdata->ifname)) {
+        strcpy(pdevdata->ifname, nvram_safe_get("wan_iface"));//add for cdrouter v3.3 upnp module bugs in pptp and pppoe mode 
 	osl_ifaddr(pdevdata->ifname, &ipaddr);
     }
     if (pdata->external_ipaddr.s_addr != ipaddr.s_addr) {
@@ -419,7 +418,7 @@ static int WANIPConnection_GetVar(struct Service *psvc, int varindex)
 {
     PWANIPConnectionData data = psvc->opaque;
     struct StateVar *var;
-//    time_t now;
+    time_t now;
     char **p, *cur;
     int len;
     struct sysinfo info;
@@ -471,8 +470,13 @@ static int ForceTermination(UFILE *uclient, PService psvc, PAction ac, pvar_entr
 {
     uint success = TRUE; /* assume no error will occur */
     PWANIPConnectionData pdata = (PWANIPConnectionData) psvc->opaque;
-//    PWANDevicePrivateData pdevdata = (PWANDevicePrivateData) psvc->device->parent->opaque;
+    PWANDevicePrivateData pdevdata = (PWANDevicePrivateData) psvc->device->parent->opaque;
     char wanproto[100];
+
+    if(nvram_invmatch("upnp_internet_dis","1")) {
+	cprintf("Cann't disable internet from UPnP. (upnp_disable_dis=1)\n");
+	return FALSE;
+    }
 
     /* Our ConnectionType is always IP_Routed, so I don't need to check that here. */
     if (pdata->connection_status == IP_DISCONNECTED) {
@@ -491,6 +495,7 @@ static int ForceTermination(UFILE *uclient, PService psvc, PAction ac, pvar_entr
 	//nvram_set(wanproto, "disabled");
 	//nvram_commit();
 	igd_restart(1);
+
     }
     
     return success;
@@ -507,6 +512,8 @@ static int RequestConnection(UFILE *uclient, PService psvc, PAction ac, pvar_ent
 	success = FALSE;
     } else if (pdata->connection_status == IP_DISCONNECTED) {
 	igd_pri_wan_var(wanproto, sizeof(wanproto), "proto");
+
+
 	/* Save the wan_proto into NVRAM to restore when the igd is enabled */
 	if ((str = nvram_get("upnp_wan_proto")) == NULL)
 	    nvram_set(wanproto, "dhcp");	/* pick dhcp as defualt */
@@ -560,7 +567,7 @@ bool IsContiguousSubnet(const struct in_addr mask)
     // Find out where the first '1' is in binary going right to left
     dwContiguousMask = 0;
     for (i = 0; i < sizeof(mask.s_addr)*8; i++) {
-        dwContiguousMask |= ntohl(1<<i);
+        dwContiguousMask |= (1<<i);
 
         if (dwContiguousMask & hmask) {
             break;
@@ -594,6 +601,11 @@ bool IsValidIPConfig(const struct in_addr address,
 	// reserved addresses.
 	if (!IsValidIPAddress(address) || !IsValidIPAddress(gateway)) {
 	    UPNP_TRACE(("Is valid IP config, address, or gateway was invalid (reserved) IP\n"));
+	    break;
+	}
+
+	if (address.s_addr == gateway.s_addr) {
+	    UPNP_TRACE(("Is valid IP config, mapping IP cannot be the same as gateway IP\n"));
 	    break;
 	}
 

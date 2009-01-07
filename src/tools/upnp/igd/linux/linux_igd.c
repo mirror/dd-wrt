@@ -384,7 +384,6 @@ bool osl_wan_isup(char *devname)
 {
     struct in_addr inaddr = {0};
     bool status = FALSE;
-//	char tmp[100];
 
     if (strcasecmp(nvram_safe_get("wan_proto"), "disabled") != 0) {
 	if (osl_ifaddr(nvram_safe_get("wan_iface"), &inaddr)) {

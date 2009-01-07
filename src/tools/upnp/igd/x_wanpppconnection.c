@@ -70,7 +70,7 @@ static char *PortMappingProtocol_allowedValueList[] = { "TCP", "UDP", NULL };
 
 
 static VarTemplate StateVariables[] = {
-    { "ConnectionType", "IP_Routed", VAR_STRING },
+    { "ConnectionType", "IP_Routed", VAR_STRING|VAR_LIST,  (allowedValue) { WANPPPConnection_PossibleConnectionTypes_allowedValueList }  },
     { "PossibleConnectionTypes", "", VAR_EVENTED|VAR_STRING|VAR_LIST,  (allowedValue) { WANPPPConnection_PossibleConnectionTypes_allowedValueList } },
     { "ConnectionStatus", "Unconfigured", VAR_EVENTED|VAR_STRING|VAR_LIST,  (allowedValue) { ConnectionStatus_allowedValueList } },
     { "Uptime", "", VAR_ULONG },

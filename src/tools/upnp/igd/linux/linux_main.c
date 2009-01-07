@@ -1,5 +1,5 @@
 /*
- * Copyright 2004, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -7,7 +7,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: linux_main.c,v 1.3 2005/05/25 02:13:10 honor Exp $
+ * $Id: linux_main.c,v 1.8 2007/06/01 10:35:48 michael Exp $
  */
 
 #include <errno.h>	    // for errno, of course.
@@ -52,6 +52,9 @@ static void
 reap(int sig)
 {
 	pid_t pid;
+	
+	if (sig == SIGPIPE)	
+		return;
 
 	while ((pid = waitpid(-1, NULL, WNOHANG)) > 0)
 		UPNP_TRACE(("Reaped %d\n", pid));
@@ -61,7 +64,6 @@ reap(int sig)
 int main(int argc, char *argv[])
 {
     extern char g_wandevs[];
-//    extern char g_landevs[];
     extern DeviceTemplate IGDeviceTemplate;
     char **argp = &argv[1];
     char *wanif = NULL;
@@ -92,6 +94,12 @@ int main(int argc, char *argv[])
 	else if (strcasecmp(*argp, "-A") == 0) {
 	    max_age = atoi(*++argp);
 	}
+#ifdef BCMDBG
+	else if (strcasecmp(*argp, "-M") == 0) {
+	    upnp_msg_level = strtoul(*++argp, NULL, 0);
+	    printf("upnp_msg_level = 0x%x (%d)\n", upnp_msg_level, upnp_msg_level);
+	
+#endif
 	argp++;
     }
 
@@ -116,7 +124,8 @@ int main(int argc, char *argv[])
 	   That happens when we send signals to the dhcp process to
 	   release an renew a lease on the external interface. */
 	signal(SIGCHLD, reap);
-
+	/* Handle the TCP -EPIPE error */
+	signal(SIGPIPE, reap);
 	/* For some reason that I do not understand, this process gets
 	   a SIGTERM after sending SIGUSR1 to the dhcp process (to
 	   renew a lease).  Ignore SIGTERM to avoid being killed when
@@ -124,12 +133,12 @@ int main(int argc, char *argv[])
 	//	signal(SIGTERM, SIG_IGN);
 	signal(SIGUSR1, SIG_IGN);
 
-	UPNP_TRACE(("calling upnp_main\n"));
+	fprintf(stderr, "calling upnp_main\n");
 
 	if(sleep_time) {
-		UPNP_TRACE(("SES2 first reboot, waiting for %d seconds to start UPNP\n", sleep_time));
+		fprintf(stderr, "SES2 first reboot, waiting for %d seconds to start UPNP\n", sleep_time);
 		sleep(sleep_time);
-		UPNP_TRACE(("Restart UPNP daemon.\n"));
+		fprintf(stderr, "Restart UPNP daemon.\n", sleep_time);
 	}
 
 	upnp_main(&IGDeviceTemplate, lanif);

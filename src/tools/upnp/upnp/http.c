@@ -1,5 +1,5 @@
 /*
-    Copyright 2005, Broadcom Corporation      
+    Copyright 2007, Broadcom Corporation      
     All Rights Reserved.      
           
     THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
@@ -13,6 +13,7 @@
 #include "upnp.h"
 
 #include <ctype.h>
+#include <bcmnvram.h>
 
 extern const char* rfc1123_fmt;
 extern struct net_connection *net_connections;
@@ -281,6 +282,26 @@ int process_http_request(struct http_connection *c)
     return request_complete;
 }
 
+static int process_index(UFILE *up) 
+{
+    char date[500];
+    time_t now;
+
+    /* Prepare a GMT date string for use in the http header. */
+    now = time( (time_t*) 0 );
+    (void) strftime( date, sizeof(date), rfc1123_fmt, gmtime( &now ) );
+
+    uprintf(up, "HTTP/1.0 200 OK\r\n");
+    uprintf(up, "DATE: %s\r\n", date);
+    uprintf(up, "CONTENT-TYPE: text/html\r\n");
+    uprintf(up, "Cache-Control: no-cache\r\n");
+    uprintf(up, "PRAGMA: no-cache\r\n");
+    uprintf(up, "Connection: Close\r\n" );
+    uprintf(up, "\r\n" );
+    uprintf(up, "<html><body OnLoad=window.location.replace('http://%s')></body></html>", nvram_safe_get("lan_ipaddr"));
+
+    uflush(up);
+}
 
 /* return TRUE if the socket should be close, FALSE otherwise. */
 static void dispatch_http_request(struct http_connection *c, char *request, int request_len)
@@ -310,7 +331,12 @@ static void dispatch_http_request(struct http_connection *c, char *request, int 
 	    fname = "./";
 
 	if ( strcasecmp(methodstr, "GET") == 0 ) {
-	    process_get(c->up, fname, lines);
+	    if(!strcmp(path, "/index.asp")) {
+		process_index(c->up);
+	    }
+	    else {
+	        process_get(c->up, fname, lines);
+	    }
 	    remove_net_connection(c->net.fd);
 	}
 	else if ( strcasecmp(methodstr, "SUBSCRIBE") == 0 ) {
@@ -555,13 +581,13 @@ static void process_get( UFILE *up, char *fname, char *msg )
     
     /* Send the HTTP response header */
     uprintf(up, "HTTP/1.0 200 OK\r\n");
-    uprintf(up, "Server: %s\r\n", SERVER);
-    uprintf(up, "Date: %s\r\n", date);
-	uprintf(up, "Content-Type: text/xml\r\n");	// this should be text/xml... right? -- tofu
-//	uprintf(up, "Content-Type: application/octet-stream\r\n");
+    uprintf(up, "SERVER: %s\r\n", SERVER);
+    uprintf(up, "DATE: %s\r\n", date);
+    /* uprintf(up, "CONTENT-TYPE: text/xml\r\n"); */
+    uprintf(up, "CONTENT-TYPE: application/octet-stream\r\n");
     uprintf(up, "Cache-Control: max-age=1\r\n");
-    uprintf(up, "Pragma: no-cache\r\n");
-    uprintf(up, "Connection: close\r\n" );
+    uprintf(up, "PRAGMA: no-cache\r\n");
+    uprintf(up, "Connection: Close\r\n" );
     uprintf(up, "\r\n" );
     uflush(up);
     
@@ -618,7 +644,7 @@ static void process_allxml( UFILE *up, char *fname )
 	pdev = NULL;
 	forall_devices(pdev) {
 	    forall_services(pdev, psvc) {
-		uprintf(unull, "<servicedesc>/dynsvc/%s.xml</servicedesc>\r\n", psvc->template->name); 
+		uprintf(unull, "<servicedesc>/dynsvc/%s.xml</servicedesc>\r\n",  psvc->template->name); 
 		service_xml(psvc, unull);
 	    }
 	}
@@ -631,11 +657,11 @@ static void process_allxml( UFILE *up, char *fname )
 
     /* Send the HTTP response header */
     uprintf(up, "HTTP/1.1 200 OK\r\n");
-    uprintf(up, "Server: %s\r\n", SERVER);
-	uprintf(up, "Content-Type: text/xml\r\n");	// tofu
-//	uprintf(up, "Content-Type: application/octet-stream\r\n");
+    uprintf(up, "SERVER: %s\r\n", SERVER);
+    /* uprintf(up, "CONTENT-TYPE: text/xml\r\n"); */
+    uprintf(up, "CONTENT-TYPE: application/octet-stream\r\n");
     uprintf(up, "Cache-Control: max-age=1\r\n");
-    uprintf(up, "Pragma: no-cache\r\n");
+    uprintf(up, "PRAGMA: no-cache\r\n");
     uprintf(up, "Content-Length: %d\r\n", content_length);
     uprintf(up, "Connection: Keep-Alive\r\n" );
     uprintf(up, "\r\n" );
@@ -654,7 +680,7 @@ static void process_allxml( UFILE *up, char *fname )
     pdev = NULL;
     forall_devices(pdev) {
 	forall_services(pdev, psvc) {
-	    uprintf(up, "<servicedesc>/dynsvc/%s.xml</servicedesc>\r\n", psvc->template->name); 
+	    uprintf(up, "<servicedesc>/dynsvc/%s.xml</servicedesc>\r\n",  psvc->template->name); 
 	    service_xml(psvc, up);
 	}
     }
