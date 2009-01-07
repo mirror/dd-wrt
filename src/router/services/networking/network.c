@@ -3442,6 +3442,9 @@ void start_wan_done( char *wan_ifname )
 	start_wan_service(  );
     }
 
+#ifdef HAVE_UPNP
+    stop_upnp();
+#endif
 #ifdef HAVE_BIRD
     stop_zebra(  );
 #endif
@@ -3453,7 +3456,7 @@ void start_wan_done( char *wan_ifname )
 #endif
     cprintf( "start upnp\n" );
 #ifdef HAVE_UPNP
-    reinit_upnp();
+    start_upnp();
 #endif
     // cprintf ("start cron\n");
     // start_OAcron ();
