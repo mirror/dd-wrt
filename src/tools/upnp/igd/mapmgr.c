@@ -288,12 +288,29 @@ add_nat_entry(netconf_nat_t *entry)
     }
 
     /* We want to match destination ip address */
-    inet_aton(nvram_safe_get("wan_ipaddr"), &nat.match.dst.ipaddr);     // by honor
+    /******** 2006.12.19 modify for cdrouter v3.3 upnp module bugs in pptp mode ********/
+    //inet_aton(nvram_safe_get("wan_ipaddr"), &nat.match.dst.ipaddr);     // by honor
+    if(nvram_match("wan_proto","pptp"))
+    {
+        inet_aton(nvram_safe_get("pptp_get_ip"), &nat.match.dst.ipaddr);
+    }
+//modified by zhaoguang for derouter v4.0 upnp module bugs in l2tp mode at 20080417
+    else if(nvram_match("wan_proto","l2tp"))
+    {
+       inet_aton(nvram_safe_get("l2tp_get_ip"), &nat.match.dst.ipaddr);
+    }
+//end by michael
+    else
+    {
+        inet_aton(nvram_safe_get("wan_ipaddr"), &nat.match.dst.ipaddr);
+    }
+    /******** 2006.12.19 end for cdrouter v3.3 upnp module bugs in pptp mode ********/
     nat.match.dst.netmask.s_addr = htonl(0xffffffff);
 
     /* Set up LAN side match */
     memset(&filter, 0, sizeof(filter));
     filter.match.ipproto = nat.match.ipproto;
+    filter.match.src.ipaddr.s_addr = nat.match.src.ipaddr.s_addr;
     filter.match.src.ports[1] = nat.match.src.ports[1];
     filter.match.dst.ipaddr.s_addr = nat.ipaddr.s_addr;
     filter.match.dst.netmask.s_addr = netmask.s_addr;

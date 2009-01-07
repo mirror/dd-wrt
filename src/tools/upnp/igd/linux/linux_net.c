@@ -1,5 +1,5 @@
 /*
- * Copyright 2005, Broadcom Corporation
+ * Copyright 2007, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -7,7 +7,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: linux_net.c,v 1.1.1.7 2005/03/07 07:31:12 kanki Exp $
+ * $Id: linux_net.c,v 1.1.1.12 2007/05/31 08:00:41 michael Exp $
  */
 
 #include <sys/ioctl.h>
@@ -51,7 +51,7 @@ int get_dev_fields(char *bp, int versioninfo, if_stats_t *pstats )
     switch (versioninfo) {
     case 3:
 	sscanf(bp,
-	"%ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld",
+	"%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
 	       &pstats->rx_bytes,
 	       &pstats->rx_packets,
 	       &pstats->rx_errors,
@@ -71,7 +71,7 @@ int get_dev_fields(char *bp, int versioninfo, if_stats_t *pstats )
 	       &pstats->tx_compressed);
 	break;
     case 2:
-	sscanf(bp, "%ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld",
+	sscanf(bp, "%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
 	       &pstats->rx_bytes,
 	       &pstats->rx_packets,
 	       &pstats->rx_errors,
@@ -89,7 +89,7 @@ int get_dev_fields(char *bp, int versioninfo, if_stats_t *pstats )
 	pstats->rx_multicast = 0;
 	break;
     case 1:
-	sscanf(bp, "%ld %ld %ld %ld %ld %ld %ld %ld %ld %ld %ld",
+	sscanf(bp, "%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
 	       &pstats->rx_packets,
 	       &pstats->rx_errors,
 	       &pstats->rx_dropped,

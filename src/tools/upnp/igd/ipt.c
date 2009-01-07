@@ -1,5 +1,4 @@
-/*
- * Copyright 2006, Broadcom Corporation
+/* Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -113,6 +112,14 @@ static bool OverlappingRange(netconf_nat_t *e1, netconf_nat_t *e2)
     return overlap;
 }
 
+static void DelPortMapping_Alerm(timer_t t, int i)
+{
+    cprintf("Delete port_forward%d due to expire (%d seconds)\n", i);
+
+    mapmgr_delete_port_map(i);
+    timer_delete(t);
+}
+
 int AddPortMapping( UFILE *uclient, PService psvc, PAction ac, pvar_entry_t args, int nargs)
 /* {"NewRemoteHost", VAR_RemoteHost, VAR_IN},				*/
 /* {"NewExternalPort", VAR_ExternalPort, VAR_IN},			*/
@@ -128,15 +135,28 @@ int AddPortMapping( UFILE *uclient, PService psvc, PAction ac, pvar_entry_t args
     char *Description = ac->params[6].value;
     bool bEnabled = (bool) atoi(ac->params[5].value);
     bool found_match;
+    struct  itimerspec  timer;
     netconf_nat_t e;
     mapping_t mapping;
+    struct in_addr lanipaddr, lanmask;
+    inet_aton(nvram_safe_get("lan_netmask"),(void *)&lanmask); 
+    inet_aton(nvram_safe_get("lan_ipaddr"),(void *)&lanipaddr); 
+
+    memset(&e, 0 , sizeof(netconf_nat_t));
+    memset(&mapping, 0 , sizeof(mapping_t));
+
+    if(nvram_invmatch("upnp_config","1")) {
+	cprintf("Cann't add rule from upnp\n");
+	return SOAP_ACTION_FAILED;
+    }
 
     do {
+#if 0
 	if (atoi(LeaseDuration) != 0) {
 	    status = SOAP_ONLYPERMANENTLEASESSUPPORTED;
 	    continue;
 	} 
-
+#endif
 	parse_status = (int) parse_dnat(&e, 
 					ac->params[2].value, /* NewProtocol */
 					ac->params[0].value, /* NewRemoteHost */
@@ -149,6 +169,11 @@ int AddPortMapping( UFILE *uclient, PService psvc, PAction ac, pvar_entry_t args
 	    continue;
 	}
 
+	/* check the IP Address of this mapping */
+	if (!IsValidIPConfig(e.ipaddr, lanmask, lanipaddr)) {
+		printf("This is \"not\" a valid mapping IP address\n");
+		continue;
+	}
 	
 	found_match = FALSE;
 	for (i = 0; mapmgr_get_port_map(i, &mapping); i++) {
@@ -178,6 +203,18 @@ int AddPortMapping( UFILE *uclient, PService psvc, PAction ac, pvar_entry_t args
 	strncpy(e.desc, Description, sizeof(e.desc));
 		
 	mapmgr_add_port_map(&e);
+	//if (!mapmgr_add_port_map(&e)) {
+	//	printf("here return soap failed\n");
+	//	return SOAP_ACTION_FAILED;
+	//}
+
+	// For cdrouter_upnp_50
+	if (atoi(LeaseDuration) != 0) {
+	    memset(&timer, 0, sizeof(timer));
+	    timer.it_interval.tv_sec = atoi(LeaseDuration);
+	    timer.it_value.tv_sec = atoi(LeaseDuration);
+	    enqueue_event(&timer, (event_callback_t)DelPortMapping_Alerm, (void *) i);
+	}
 
     } while(0);
 
@@ -428,11 +465,13 @@ netconf_nat_t *parse_dnat(netconf_nat_t *entry, const char *Protocol,
         inet_aton(InternalClient,(void *)&internel_ip); 
         inet_aton(nvram_safe_get("lan_ipaddr"),(void *)&lan_ip); 
         inet_aton(nvram_safe_get("lan_netmask"),(void *)&lan_mask); 
+#if 0
         ret = compare_subnet(internel_ip,lan_ip,lan_mask); 
         if (ret == 0) 
         { 
               return NULL; 
         } 
+#endif
 	/*@.@ end*/
 	// parse the internal port number
 	if (!InternalEndPort) 

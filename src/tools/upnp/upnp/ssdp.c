@@ -1,5 +1,5 @@
 /*
-    Copyright 2005, Broadcom Corporation      
+    Copyright 2007, Broadcom Corporation      
     All Rights Reserved.      
           
     THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
@@ -16,6 +16,8 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <netinet/in.h>
+
+#include <bcmnvram.h>
 
 extern struct iface *global_lans;
 extern struct net_connection *net_connections;
@@ -97,8 +99,42 @@ void ssdp_receive(caction_t flag, struct net_connection *nc, struct iface *pif)
 	// memset(buf, 0, sizeof(buf));
 	nbytes = recvfrom(nc->fd, buf, sizeof(buf), 0, (struct sockaddr*)&srcaddr, &addrlen);
 	buf[nbytes] = '\0';
+#if 1
+    /* zhijian 2006-12-18 don't support SSDP mesage from wan side.*/
+    {
+      struct in_addr lanaddr;
+      struct in_addr lanmask;
+                                                                                                                             
+      if(inet_aton(nvram_safe_get("lan_ipaddr"), &lanaddr))
+      {
+        if(inet_aton(nvram_safe_get("lan_netmask"), &lanmask))
+        {
+          if((srcaddr.sin_addr.s_addr & lanmask.s_addr) != (lanaddr.s_addr & lanmask.s_addr))
+          {
+            printf("ssdp_receive Warning: Unknown Ip address %s.\n",inet_ntoa(srcaddr.sin_addr));
+            return;
+          }
+        }
+      }
+    }
+#endif
 
 	if (MATCH_PREFIX(buf, "M-SEARCH * HTTP/1.1")) {
+#if 0
+	    unsigned int lan_ip = 0, lan_mask = 0, src_ip = 0;
+	
+	    // for cdrouter_ssdp_2
+	    inet_aton(inet_ntoa(srcaddr.sin_addr),(void *)&src_ip);
+	    inet_aton(nvram_safe_get("lan_ipaddr"),(void *)&lan_ip);
+	    inet_aton(nvram_safe_get("lan_netmask"),(void *)&lan_mask);
+
+	    if((src_ip & lan_mask) != (lan_ip & lan_mask)) {
+	    	UPNP_ERROR(("Can't respond to SSDP discovery requests on WAN side\n"));
+		close(nc->fd);
+		free(nc);
+		return;
+	    }
+#endif
 	    process_msearch(buf, pif, (struct sockaddr *)&srcaddr, addrlen);
 	} 
 	else if (MATCH_PREFIX(buf, "NOTIFY ")) 
@@ -413,45 +449,44 @@ static void ssdp_packet(
     time_t now;
     char date[100];
 
-    UPNP_TRACE(("%s ptype=%s\n", __FUNCTION__, (ptype==SSDP_REPLY)?"REPLY":(ptype==SSDP_ALIVE)?"ALIVE":(ptype==SSDP_BYEBYE)?"BYEBYE":"?"));
-
+    UPNP_TRACE(("%s\n", __FUNCTION__));
     switch (ptype) {
     case SSDP_REPLY:
-		uprintf(up, "HTTP/1.1 200 OK\r\n");
-		uprintf(up, "ST: %s\r\n", ntst);
-		uprintf(up, "USN: %s\r\n",Usn);
-		uprintf(up, "Location: %s\r\n", location);
-		uprintf(up, "Server: Custom/1.0 UPnP/1.0 Proc/Ver\r\n");
-		uprintf(up, "EXT:\r\n");
-		uprintf(up, "Cache-Control: max-age=%d\r\n", Duration);
-		now = time( (time_t*) 0 );
-		(void) strftime( date, sizeof(date), rfc1123_fmt, gmtime( &now ) );
-		uprintf(up, "Date: %s\r\n", date);
-		break;
+	uprintf(up, "HTTP/1.1 200 OK\r\n");
+	uprintf(up, "ST:%s\r\n", ntst);
+	uprintf(up, "USN:%s\r\n",Usn);
+	uprintf(up, "Location: %s\r\n", location);
+	uprintf(up, "Server: Custom/1.0 UPnP/1.0 Proc/Ver\r\n");
+	uprintf(up, "EXT:\r\n");
+	uprintf(up, "Cache-Control:max-age=%d\r\n", Duration);
+	now = time( (time_t*) 0 );
+	(void) strftime( date, sizeof(date), rfc1123_fmt, gmtime( &now ) );
+	uprintf(up, "DATE: %s\r\n", date);
+	break;
     case SSDP_ALIVE:
-		uprintf(up, "NOTIFY * HTTP/1.1 \r\n");
-		uprintf(up, "Host: %s:%d\r\n", SSDP_IP, SSDP_PORT);
-		uprintf(up, "Cache-Control: max-age=%d\r\n", Duration);
-		uprintf(up, "Location: %s\r\n", location);
-		uprintf(up, "NT: %s\r\n", ntst);
-		uprintf(up, "NTS: ssdp:alive\r\n");
-		uprintf(up, "SERVER: %s\r\n", SERVER);
-	    uprintf(up, "USN: %s\r\n",Usn);
-		break;
+	uprintf(up, "NOTIFY * HTTP/1.1 \r\n");
+	uprintf(up, "HOST: %s:%d\r\n", SSDP_IP, SSDP_PORT);
+	uprintf(up, "CACHE-CONTROL: max-age=%d\r\n", Duration);
+	uprintf(up, "Location: %s\r\n", location);
+	uprintf(up, "NT: %s\r\n", ntst);
+	uprintf(up, "NTS: ssdp:alive\r\n");
+	uprintf(up, "SERVER:%s\r\n", SERVER);
+    uprintf(up, "USN: %s\r\n",Usn);
+	break;
     case SSDP_BYEBYE:
-		uprintf(up, "NOTIFY * HTTP/1.1 \r\n");
-		uprintf(up, "Host: %s:%d\r\n", SSDP_IP, SSDP_PORT);
-	
-		// Following two header is added to interop with Windows Millenium but this is not
-		// a part of UPNP spec 1.0 
-		uprintf(up, "Cache-Control: max-age=%d\r\n",Duration);
-		uprintf(up, "Location: %s\r\n", location);
-		uprintf(up, "NT: %s\r\n", ntst);
-		uprintf(up, "NTS: ssdp:byebye\r\n");  
-	    uprintf(up, "USN: %s\r\n",Usn);
-		break;
+	uprintf(up, "NOTIFY * HTTP/1.1 \r\n");
+	uprintf(up, "HOST: %s:%d\r\n", SSDP_IP, SSDP_PORT);
+
+	// Following two header is added to interop with Windows Millenium but this is not
+	// a part of UPNP spec 1.0 
+	uprintf(up, "CACHE-CONTROL: max-age=%d\r\n",Duration);
+	uprintf(up, "Location: %s\r\n", location);
+	uprintf(up, "NT: %s\r\n", ntst);
+	uprintf(up, "NTS: ssdp:byebye\r\n");  
+    uprintf(up, "USN: %s\r\n",Usn);
+	break;
     default:
-		UPNP_ERROR(("Bad SSDP packet type supplied - %d\r\n", ptype));
+	UPNP_ERROR(("Bad SSDP packet type supplied - %d\r\n", ptype));
     }
 
     /*     uprintf(up, "USN: %s\r\n",Usn); */

@@ -26,8 +26,8 @@
 // number of seconds to wait before refershing device advertisements.
 #define SSDP_REFRESH   1800
 #define UPNP_REFRESH   ((SSDP_REFRESH * 2)/3)
-#define NOTIFY_RECEIPT_TIMEOUT 30
-#define HTTP_REQUEST_TIMEOUT   15
+#define NOTIFY_RECEIPT_TIMEOUT 1
+#define HTTP_REQUEST_TIMEOUT   1
 
 #if !defined(FALSE) || !defined(TRUE)
 #define TRUE 1
