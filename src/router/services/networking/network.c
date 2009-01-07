@@ -3445,9 +3445,6 @@ void start_wan_done( char *wan_ifname )
 #ifdef HAVE_BIRD
     stop_zebra(  );
 #endif
-#ifdef HAVE_UPNP
-    stop_upnp(  );
-#endif
     // stop_cron ();
     stop_wshaper(  );
     cprintf( "start zebra\n" );
@@ -3456,10 +3453,10 @@ void start_wan_done( char *wan_ifname )
 #endif
     cprintf( "start upnp\n" );
 #ifdef HAVE_UPNP
-    start_upnp(  );
+    reinit_upnp();
 #endif
     // cprintf ("start cron\n");
-    // start_cron ();
+    // start_OAcron ();
     cprintf( "start wshaper\n" );
     stop_wland(  );
     start_wshaper(  );
