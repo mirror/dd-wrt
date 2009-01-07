@@ -39,7 +39,7 @@ vpath %.h $(VPATH.h)
 ifeq ($(DEBUG),1)
 CFLAGS += -g -DDEBUG -UNDEBUG -DBCMDBG
 else
-CFLAGS += $(COPTS)
+CFLAGS += -O2
 endif
 CFLAGS += -I$(subst :, -I,$(VPATH.h))
 CFLAGS += -Wall -Wunused 
