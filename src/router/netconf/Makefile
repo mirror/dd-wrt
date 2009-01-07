@@ -14,12 +14,12 @@
 include $(TOP)/.config
 
 ifeq ($(CONFIG_MSSID),y)
-CFLAGS	+= -I. -I$(TOP)/shared -I$(TOP)/iptables.linksys/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
+CFLAGS	= -I. -I$(TOP)/shared -I$(TOP)/iptables.linksys/include -I$(SRCBASE)/include.v24 -I$(LINUXDIR)/include -Wall
 else
-CFLAGS	+= -I. -I$(TOP)/shared -I$(TOP)/iptables.linksys/include -I$(SRCBASE)/include.v23 -I$(LINUXDIR)/include -Wall
+CFLAGS	= -I. -I$(TOP)/shared -I$(TOP)/iptables.linksys/include -I$(SRCBASE)/include.v23 -I$(LINUXDIR)/include -Wall
 endif
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= $(COPTS) -fpic
+CFLAGS	+= -s -O2
 LDFLAGS = -L. -L$(TOP)/iptables.linksys/libiptc/
 
 ifeq ($(CONFIG_MAGICBOX),y)

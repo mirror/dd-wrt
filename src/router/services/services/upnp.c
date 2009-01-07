@@ -48,6 +48,7 @@ void start_upnp( void )
 	ret = eval( "upnp", "-D",
 		    "-L", nvram_safe_get( "lan_ifname" ),
 		    "-W", wan_ifname,
+		    "-S", "0",
 		    "-I", nvram_safe_get( "upnp_ssdp_interval" ),
 		    "-A", nvram_safe_get( "upnp_max_age" ) );
 	dd_syslog( LOG_INFO, "upnp : upnp daemon successfully started\n" );
@@ -68,4 +69,13 @@ void stop_upnp( void )
     }
     return;
 }
+
+int
+reinit_upnp(void)
+{
+	int ret = eval("killall", "-USR1", "upnp");
+
+	return ret;
+}
+
 #endif
