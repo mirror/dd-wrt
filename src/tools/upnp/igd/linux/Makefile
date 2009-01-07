@@ -46,7 +46,7 @@ vpath %.h $(VPATH.h)
 ifeq ($(DEBUG),1)
 CFLAGS += -g -DDEBUG -UNDEBUG -DBCMDBG
 else
-CFLAGS += $(COPTS) -DNDEBUG
+CFLAGS += -O2 -DNDEBUG
 endif
 CFLAGS += -I$(subst :, -I,$(VPATH.h))
 CFLAGS += -Wall -Wunused -ffunction-sections -fdata-sections
