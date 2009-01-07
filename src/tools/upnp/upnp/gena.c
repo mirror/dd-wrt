@@ -1,5 +1,5 @@
 /*
-    Copyright 2005, Broadcom Corporation      
+    Copyright 2007, Broadcom Corporation      
     All Rights Reserved.      
           
     THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
@@ -11,6 +11,8 @@
 #include "upnp_osl.h"
 #include "upnp_dbg.h"
 #include "upnp.h"
+#include <osl.h>
+#include <sbutils.h>
 #include "bcmnvram.h"
 
 struct gena_connection {
@@ -59,8 +61,8 @@ PService find_svc_by_url(char *fname)
     char *svcname = rindex(fname, '/');
 
     if (svcname) {
-	*svcname++ = '\0';
-
+	if (strcmp(fname, "./") != 0)
+		*svcname++ = '\0';
 	if ((pdev = find_dev_by_udn(udn)) != NULL) {
 	    forall_services(pdev, psvc) {
 		if (strcmp(svcname, psvc->template->name) == 0) 
@@ -150,6 +152,7 @@ void uuidstr_create(char *str, int len)
 {
     static int uuid_count = 0;
     u_int d[16];
+    char wsc_uuid[128] = "";
 
     sscanf(nvram_safe_get("lan_hwaddr"), "%x:%x:%x:%x:%x:%x",
 	       &d[0], &d[1], &d[2], &d[3], &d[4], &d[5]);
@@ -158,9 +161,14 @@ void uuidstr_create(char *str, int len)
     *((int *)&d[12]) = uuid_count++;
 
     /* Japan VoIP adapter cann't accept too long Location argument : by honor 2004/3/15 */
-    snprintf(str, len, "%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-		(u_int8)d[6], (u_int8)d[7], 
-		(u_int8)d[8], (u_int8)d[9], (u_int8)d[10], (u_int8)d[11], (u_int8)d[12], (u_int8)d[13], (u_int8)d[14], (u_int8)d[15]);
+    //snprintf(str, len, "%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+//		(u_int8)d[6], (u_int8)d[7], 
+//		(u_int8)d[8], (u_int8)d[9], (u_int8)d[10], (u_int8)d[11], (u_int8)d[12], (u_int8)d[13], (u_int8)d[14], (u_int8)d[15]);
+    snprintf(str, len, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", (u_int8)d[0], (u_int8)d[1], (u_int8)d[2], (u_int8)d[3], (u_int8)d[4], (u_int8)d[5], (u_int8)d[6], (u_int8)d[7], (u_int8)d[8], (u_int8)d[9], (u_int8)d[10], (u_int8)d[11], (u_int8)d[12], (u_int8)d[13], (u_int8)d[14], (u_int8)d[15]);
+    *((int *)&d[12]) = uuid_count + 1;
+    sprintf(wsc_uuid, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", (u_int8)d[0], (u_int8)d[1], (u_int8)d[2], (u_int8)d[3], (u_int8)d[4], (u_int8)d[5], (u_int8)d[6], (u_int8)d[7], (u_int8)d[8], (u_int8)d[9], (u_int8)d[10], (u_int8)d[11], (u_int8)d[12], (u_int8)d[13], (u_int8)d[14], (u_int8)d[15]);
+
+    nvram_set("wsc_uuid", wsc_uuid);
 
 }
 
@@ -411,6 +419,7 @@ static struct net_connection *make_gena_connection(PService psvc, PSubscription 
 {
     struct gena_connection *c = NULL;
     int fd;
+    struct linger optval;
     extern int mbufShow ();
 
     /* create our GENA socket. */
@@ -422,12 +431,9 @@ static struct net_connection *make_gena_connection(PService psvc, PSubscription 
 	goto error;
     }
 
-/*  
-    struct linger optval;
     optval.l_onoff = 1;
     optval.l_linger = 0;
-    setsockopt(fd, SOL_SOCKET, SO_LINGER, &optval, sizeof (optval));	// sr>fd -- tofu
-*/	// removed - tofu
+    setsockopt(fd, SOL_SOCKET, SO_LINGER, &optval, sizeof (optval));
 
     // if we have not yet resolved the address of this host, do so now.
     // cache the result in the subscription.
@@ -494,7 +500,7 @@ static void gena_connection_handler(caction_t flag, struct gena_connection *gc, 
 	//
 	lines = buf;
 	line = strsep(&lines, "\r\n");
-	if (line == NULL || !IMATCH_PREFIX(line, "HTTP/1.1 200 OK")) {
+	if (line == NULL || !(IMATCH_PREFIX(line, "HTTP/1.1 200 OK") || IMATCH_PREFIX(line, "HTTP/1.0 200 OK"))) {	// for cdrouter_upnp_200/201/202
 	    // we expected "HTTP/1.1 200 OK"
 	    // for any error, we terminate the subscription.
 	    
@@ -625,12 +631,17 @@ void update_all_subscriptions(PService psvc)
 {
     PSubscription psub, nextsub;
     UFILE *ubody;
-
+    time_t now;  //2006.12.19 add cdrouter v3.3 item 214(cdrouter_upnp_210) bug
     // clear the service-wide VAR_CHANGED flag.
     // build_notify_body() will take care of clearing this 
     // flag on a per-state variable basis, if necessary.
     //
     psvc->flags &= ~VAR_CHANGED;
+
+    /******** 2006.12.19 add for cdrouter v3.3 item 214(cdrouter_upnp_210) bug ********/
+    now = time(NULL);
+    reap_service_subscriptions(psvc, now);
+    /******** 2006.12.19 end for cdrouter v3.3 item 214(cdrouter_upnp_210) bug ********/
 
     if (psvc->subscriptions) {
 	// build the body of the notification.

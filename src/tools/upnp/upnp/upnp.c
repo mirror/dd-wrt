@@ -158,9 +158,7 @@ int upnp_main(PDeviceTemplate pdevtmpl, char *ifname)
 
 void interrupt_handler(int i)
 {
-    //    signal(SIGINT, SIG_DFL);
-    if (nvram_match("upnp_enable", "0"))	// we're usually just restarting, so don't send a byebye unless this is to turn UPnP off -- tofu
-		send_advertisements(SSDP_BYEBYE);
+    send_advertisements(SSDP_BYEBYE);
     global_exit_now = TRUE;
 }
 

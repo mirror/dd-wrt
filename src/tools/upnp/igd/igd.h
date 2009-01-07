@@ -13,6 +13,9 @@
 #ifndef _igd_h_
 #define _igd_h_
 
+#include <sys/types.h>
+#include <signal.h>
+
 typedef struct _if_stats {
     unsigned long rx_packets;	/* total packets received       */
     unsigned long tx_packets;	/* total packets transmitted    */
@@ -84,9 +87,20 @@ extern void bump_generation();
 
 #if defined(linux)
 
-//extern int kill_after(pid_t pid, int sig, unsigned int after);
-//#define sys_restart() kill_after(1, SIGHUP, 3)
-//#define sys_reboot() kill_after(1, SIGTERM, 3)
+/* Allow some time for the page to reload before killing ourselves */
+static int
+kill_after(pid_t pid, int sig, unsigned int after)
+{
+	if (fork() == 0) {
+		sleep(after);
+		return kill(pid, sig);
+	}
+	return 0;
+}
+#define sys_restart() kill_after(1, SIGHUP, 3)
+#define sys_reboot() kill_after(1, SIGTERM, 3)
+
+extern void bump_generation(void);
 
 #endif /* linux */
 

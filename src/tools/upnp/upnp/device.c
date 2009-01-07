@@ -1,5 +1,5 @@
 /*
-    Copyright 2005, Broadcom Corporation      
+    Copyright 2007, Broadcom Corporation      
     All Rights Reserved.      
           
     THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
@@ -13,17 +13,19 @@
 #include "upnp_osl.h"
 #include "upnp_dbg.h"
 #include "upnp.h"
+#include <osl.h>
+#include <sbutils.h>
 #include <bcmnvram.h>
 #include <wlioctl.h>
 #include <wlutils.h>
 #include <cyutils.h>
 /*
-#define DEV_MFR					"Broadcom"
-#define DEV_MFR_URL     		"http://www.broadcom.com/"
-#define DEV_MODEL_DESCRIPTION	"Residential Gateway Device"
-#define DEV_MODEL				"Wireless Base Station"
-#define DEV_MODEL_NO			"MN-500"
-#define DEV_MODEL_URL			"http://www.broadcom.com/"
+#define DEV_MFR   	"Broadcom"
+#define DEV_MFR_URL     "http://www.broadcom.com/"
+#define DEV_MODEL_DESCRIPTION  "Residential Gateway Device"
+#define DEV_MODEL  "Wireless Base Station"
+#define DEV_MODEL_NO  "MN-500"
+#define DEV_MODEL_URL     "http://www.broadcom.com/"
 */
 
 extern PService init_service(PServiceTemplate svctmpl, PDevice pdev);
@@ -120,7 +122,7 @@ void destroy_device(PDevice pdev)
 
     // call this device's destroy function, if defined.
     if ((func = pdev->template->devinit) != NULL) {
-	(*func)(pdev, DEVICE_DESTROY, NULL );
+	(*func)(pdev, DEVICE_DESTROY, (va_list) NULL );
     }
 
     // remove the device from the root device list
@@ -147,63 +149,61 @@ void device_xml(PDevice pdev, UFILE *up)
 {
     PFDEVXML func;
     char *friendlyname;
-	char *myip;
-	char *devicename;
-	int winmnp;
+    char *model_no = NULL;
 
     // call the device's xml function, if defined.
     if ((func = pdev->template->devxml) != NULL) {
-		(*func)(pdev, up);
-		return;
+	(*func)(pdev, up);
+	return;
     }
-
-	myip = nvram_safe_get("lan_ipaddr");
-	devicename = nvram_safe_get("DD_BOARD");
-	winmnp = (!nvram_match("upnpmnp", "0"));
 
     if (ISROOT(pdev)) {
-		uprintf(up, 
-			"<?xml version=\"1.0\"?>\r\n"
-			"<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\r\n"
-			" <specVersion>\r\n"
-			"  <major>1</major>\r\n"
-			"  <minor>0</minor>\r\n"
-			" </specVersion>\r\n"
-			);
-
-		if (winmnp) uprintf(up, " <URLBase>http%s://%s:%d</URLBase>\r\n",
-			nvram_match("https_enable", "1") ? "s" : "", myip, HTTP_PORT); //Botho : add https support
+	uprintf(up, 
+		"<?xml version=\"1.0\"?>\r\n"
+		"<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\r\n"
+		"<specVersion>\r\n"
+		"<major>1</major>\r\n"
+		"<minor>0</minor>\r\n"
+		"</specVersion>\r\n"
+		);
+        uprintf(up, "<URLBase>http://%s:%d</URLBase>\r\n", nvram_safe_get("lan_ipaddr"), HTTP_PORT);
     }
 
-    if (pdev->friendlyname) friendlyname = pdev->friendlyname;
-        else friendlyname = pdev->template->type;
+    if (pdev->friendlyname)
+	friendlyname = pdev->friendlyname;
+    else {
+	friendlyname = pdev->template->type;
+    }
 
-    uprintf(up, " <device>\r\n");
-    uprintf(up, "  <deviceType>%s</deviceType>\r\n", pdev->template->type);
-    uprintf(up, "  <friendlyName>%s</friendlyName>\r\n", friendlyname);
-    uprintf(up, "  <manufacturer>" DEV_MFR "</manufacturer>\r\n"
-				"  <manufacturerURL>" DEV_MFR_URL "</manufacturerURL>\r\n"
-				"  <modelDescription>" DEV_MODEL_DESCRIPTION "</modelDescription>\r\n");
-	uprintf(up, "  <modelName>%s</modelName>\r\n", devicename);
-	uprintf(up, "  <modelNumber>" DEV_MODEL_NO "</modelNumber>\r\n"
-				"  <modelURL>" DEV_MODEL_URL "</modelURL>\r\n"
-				"  <serialNumber>Not Available</serialNumber>\r\n");
-	uprintf(up, "  <UDN>%s</UDN>\r\n", pdev->udn);
+    model_no = nvram_get("DD_BOARD");
+    if (!model_no || strlen(model_no) == 0) {
+	model_no = DEV_MODEL_NO;
+    }
+
+    uprintf(up, "<device>\r\n");
+    uprintf(up, "<deviceType>%s</deviceType>\r\n", pdev->template->type);
+    if (ISROOT(pdev)) {
+        uprintf(up, "<presentationURL>/index.asp</presentationURL>\r\n");
+    }
+    uprintf(up, "<friendlyName>%s</friendlyName>\r\n", friendlyname);
+    uprintf(up, "<manufacturer>%s</manufacturer>\r\n", DEV_MFR);
+    uprintf(up, "<manufacturerURL>%s</manufacturerURL>\r\n", DEV_MFR_URL);
+    uprintf(up, "<modelDescription>%s</modelDescription>\r\n", DEV_MODEL_DESCRIPTION);
+    uprintf(up, "<modelName>%s</modelName>\r\n", DEV_MODEL);
+    uprintf(up, "<modelNumber>%s</modelNumber>\r\n", model_no);
+    uprintf(up, "<modelURL>%s</modelURL>\r\n", DEV_MODEL_URL);
+    uprintf(up, "<UDN>%s</UDN>\r\n", pdev->udn);
 
     // generate XML for any services in this device.
     device_servicelist(pdev, up);
 
     // generate XML for any subdevices in this device.
     device_devicelist(pdev, up);
-    
-	if ((winmnp) && (ISROOT(pdev))) {
-		uprintf(up, "<presentationURL>http%s://%s/UPnP.asp</presentationURL>\r\n",
-			nvram_match("https_enable", "1") ? "s" : "", myip); //Botho : add https support
-	}
+	
     uprintf(up, "</device>\r\n");
 
     if (ISROOT(pdev)) {
-		uprintf(up, "</root>\r\n");
+	uprintf(up, "</root>\r\n");
     }
 }
     
@@ -214,10 +214,10 @@ void device_devicelist(PDevice pdev, UFILE *up)
 
     // generate XML for any subdevices in this device.
     if (pdev->subdevs) {
-	uprintf(up, "  <deviceList>\r\n");
+	uprintf(up, "<deviceList>\r\n");
 	for (psubdev = pdev->subdevs; psubdev; psubdev = psubdev->next) 
 	    device_xml(psubdev, up);
-	uprintf(up, "  </deviceList>\r\n");
+	uprintf(up, "</deviceList>\r\n");
     }
 }
 
@@ -229,34 +229,26 @@ void device_servicelist(PDevice pdev, UFILE *up)
 
     // generate XML for any services in this device.
     if (pdev->services) {
-	uprintf(up, "  <serviceList>\r\n");
+	uprintf(up, "<serviceList>\r\n");
 	forall_services(pdev, psvc) {
 	    snprintf(svcurl, sizeof(svcurl), "/%s/%s", pdev->udn, psvc->template->name);
 
-	    uprintf(up, "  <service>\r\n");
-	    uprintf(up, "   <serviceType>urn:%s:service:%s</serviceType>\r\n", 
+	    uprintf(up, "<service>\r\n");
+	    uprintf(up, "<serviceType>urn:%s:service:%s</serviceType>\r\n", 
 		    psvc->template->schema, psvc->template->name);
 	    if (psvc->template->serviceid) {
-#if 0	// test alt serviceid - tofu
-			if ((strcmp(psvc->template->serviceid, "urn:upnp-org:serviceId:WANCommonInterfaceConfig") == 0) ||
-				(strcmp(psvc->template->serviceid, "urn:upnp-org:serviceId:WANIPConnection") == 0) ||
-				(strcmp(psvc->template->serviceid, "urn:upnp-org:serviceId:WANPPPConnection") == 0)) {
-				uprintf(up, "   <serviceId>%s</serviceId>\r\n", psvc->template->serviceid);
-			}
-			else
-#endif
-			uprintf(up, "   <serviceId>%s%d</serviceId>\r\n", 
-					psvc->template->serviceid, psvc->instance);
+		uprintf(up, "<serviceId>%s%d</serviceId>\r\n", 
+			psvc->template->serviceid, psvc->instance);
 	    } else {
-		uprintf(up, "   <serviceId>urn:upnp-org:serviceId:%s%d</serviceId>\r\n", 
+		uprintf(up, "<serviceId>urn:upnp-org:serviceId:%s%d</serviceId>\r\n", 
 			psvc->template->name, psvc->instance);
 	    }
-	    uprintf(up, "   <SCPDURL>/dynsvc/%s.xml</SCPDURL>\r\n", psvc->template->name);
-	    uprintf(up, "   <controlURL>/%s/%s</controlURL>\r\n", pdev->udn, psvc->template->name);
-	    uprintf(up, "   <eventSubURL>/%s/%s</eventSubURL>\r\n", pdev->udn, psvc->template->name);
-	    uprintf(up, "   </service>\r\n");
+	    uprintf(up, "<controlURL>/%s/%s</controlURL>\r\n", pdev->udn, psvc->template->name);
+	    uprintf(up, "<eventSubURL>/%s/%s</eventSubURL>\r\n", pdev->udn, psvc->template->name);
+	    uprintf(up, "<SCPDURL>/dynsvc/%s.xml</SCPDURL>\r\n", psvc->template->name);
+	    uprintf(up, "</service>\r\n");
 	}
-	uprintf(up, "  </serviceList>\r\n");
+	uprintf(up, "</serviceList>\r\n");
     }
 }
 
@@ -299,3 +291,6 @@ PDevice device_iterator(PDevice pdev)
 
     return nextdev;
 }
+
+
+
