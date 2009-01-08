@@ -614,6 +614,47 @@ aspath_private_as_check (struct aspath *aspath)
   return 1;
 }
 
+/* AS path confed check.  If aspath contains confed set or sequence then return 1. */
+int
+aspath_confed_check (struct aspath *aspath)
+{
+  caddr_t pnt;
+  caddr_t end;
+  struct assegment *assegment;
+
+  if (aspath == NULL)
+    return 0;
+
+  pnt = aspath->data;
+  end = aspath->data + aspath->length;
+
+  while (pnt < end)
+    {
+      assegment = (struct assegment *) pnt;
+      if (assegment->type == AS_CONFED_SET || assegment->type == AS_CONFED_SEQUENCE)
+	  return 1;
+      pnt += (assegment->length * AS_VALUE_SIZE) + AS_HEADER_SIZE;
+    }
+  return 0;
+}
+
+/* Leftmost AS path segment confed check.  If leftmost AS segment is of type
+  AS_CONFED_SEQUENCE or AS_CONFED_SET then return 1.  */
+int
+aspath_left_confed_check (struct aspath *aspath)
+{
+  struct assegment *assegment;
+
+  if (aspath == NULL)
+    return 0;
+
+  assegment = (struct assegment *) aspath->data;
+  if (assegment->type == AS_CONFED_SEQUENCE || assegment->type == AS_CONFED_SET)
+    return 1;
+
+  return 0;
+}
+
 /* Merge as1 to as2.  as2 should be uninterned aspath. */
 struct aspath *
 aspath_merge (struct aspath *as1, struct aspath *as2)
@@ -670,6 +711,10 @@ aspath_prepend (struct aspath *as1, struct aspath *as2)
   /* In case of as1 is empty AS. */
   if (seg1 == NULL)
     return as2;
+
+  /* Delete any AS_CONFED_SEQUENCE segment from as2. */
+  if (seg1->type == AS_SEQUENCE && seg2->type == AS_CONFED_SEQUENCE)
+    as2 = aspath_delete_confed_seq (as2);
 
   /* Compare last segment type of as1 and first segment type of as2. */
   if (seg1->type != seg2->type)
