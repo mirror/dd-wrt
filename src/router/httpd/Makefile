@@ -282,6 +282,9 @@ endif
 ifeq ($(CONFIG_CORENET),y)
 CFLAGS += -DHAVE_CORENET
 endif
+ifeq ($(CONFIG_XIOCOM),y)
+CFLAGS += -DHAVE_XIOCOM
+endif
 
 ifeq ($(CONFIG_GGEW),y)
 CFLAGS += -DHAVE_GGEW
