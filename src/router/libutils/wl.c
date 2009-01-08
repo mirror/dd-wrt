@@ -413,7 +413,7 @@ int getassoclist( char *ifname, unsigned char *list )
 	count[0]++;
 	free( sta );
     }
-    if( !ignore )
+    if( !ignore && table.Num<128)
 	for( i = 0; i < table.Num; i++ )
 	{
 	    memcpy( l, &table.Entry[i].Addr, 6 );
@@ -479,7 +479,7 @@ int getRssi( char *ifname, unsigned char *mac )
 	}
 	free( sta );
     }
-    if( !ignore )
+    if( !ignore && table.Num<128)
 	for( i = 0; i < table.Num; i++ )
 	{
 	    if( !memcmp( mac, &table.Entry[i].Addr, 6 ) )

@@ -5802,6 +5802,7 @@ typedef union _MACHTTRANSMIT_SETTING
     unsigned short word;
 } MACHTTRANSMIT_SETTING;
 
+
 typedef struct _RT_802_11_MAC_ENTRY
 {
     unsigned char Addr[6];
@@ -5868,14 +5869,14 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
     {
 	ignore = 1;
     }
-    if( !ignore )
+
+    if( !ignore && table.Num<128)
 	for( i = 0; i < table.Num; i++ )
 	{
 	    if( cnt )
 		websWrite( wp, "," );
 	    cnt++;
 	    char mac[32];
-
 	    strcpy( mac, ieee80211_ntoa( table.Entry[i].Addr ) );
 	    if( nvram_match( "maskmac", "1" ) && macmask )
 	    {
