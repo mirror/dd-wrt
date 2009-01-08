@@ -1056,6 +1056,10 @@ void ej_show_paypal( webs_t wp, int argc, char_t ** argv )
     websWrite( wp,
 	       "<a href=\"mailto:support@mcdd.de\">support@mcdd.de</a><br />" );
 #endif
+#ifdef HAVE_CORENET
+    websWrite( wp,
+	       "<a href=\"http://www.corenetsolutions.com\">http://www.corenetsolutions.com</a><br />" );
+#endif
 
 #ifndef CONFIG_BRANDING
     websWrite( wp, "<a href=\"http://www.dd-wrt.com/\">DD-WRT</a><br />" );

@@ -274,8 +274,13 @@ endif
 #ifeq ($(CONFIG_MDHCP),y)
 CFLAGS += -DHAVE_MDHCP
 #endif
+
 ifeq ($(CONFIG_DDLAN),y)
 CFLAGS += -DHAVE_DDLAN
+endif
+
+ifeq ($(CONFIG_CORENET),y)
+CFLAGS += -DHAVE_CORENET
 endif
 
 ifeq ($(CONFIG_GGEW),y)
