@@ -105,6 +105,11 @@ ifeq ($(CONFIG_CORENET),y)
 	cp corenet/style.css $(INSTALLDIR)/www/style/corenet
 	cp corenet/images/* $(INSTALLDIR)/www/images
 endif
+ifeq ($(CONFIG_XIOCOM),y)
+	mkdir $(INSTALLDIR)/www/style/xiocom
+	cp xiocom/style.css $(INSTALLDIR)/www/style/xiocom
+	cp xiocom/images/* $(INSTALLDIR)/www/images
+endif
 
 ifeq ($(CONFIG_RED),y)
 	mkdir $(INSTALLDIR)/www/style/red
