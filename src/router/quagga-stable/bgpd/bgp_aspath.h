@@ -76,4 +76,6 @@ unsigned int aspath_key_make (struct aspath *);
 int aspath_loop_check (struct aspath *, as_t);
 int aspath_private_as_check (struct aspath *);
 int aspath_firstas_check (struct aspath *, as_t);
+int aspath_confed_check (struct aspath *);
+int aspath_left_confed_check (struct aspath *);
 unsigned long aspath_count ();
