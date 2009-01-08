@@ -66,6 +66,9 @@ endif
 ifeq ($(CONFIG_ECB9750),y)
   CFLAGS += -DHAVE_ECB9750
 endif
+ifeq ($(CONFIG_CORENET),y)
+  CFLAGS += -DHAVE_CORENET
+endif
 ifeq ($(CONFIG_WHRG300N),y)
   CFLAGS += -DHAVE_WHRG300N
 endif
