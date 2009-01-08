@@ -5818,7 +5818,7 @@ typedef struct _RT_802_11_MAC_ENTRY
 typedef struct _RT_802_11_MAC_TABLE
 {
     unsigned long Num;
-    RT_802_11_MAC_ENTRY Entry[32];	//MAX_LEN_OF_MAC_TABLE = 32
+    RT_802_11_MAC_ENTRY Entry[128];	//MAX_LEN_OF_MAC_TABLE = 32
 } RT_802_11_MAC_TABLE;
 
 #define RTPRIV_IOCTL_GET_MAC_TABLE		(SIOCIWFIRSTPRIV + 0x0F)
