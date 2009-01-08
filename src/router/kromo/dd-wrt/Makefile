@@ -96,16 +96,14 @@ endif
 ifeq ($(CONFIG_BUFFALO),y)
 	mkdir $(INSTALLDIR)/www/style/buffalo
 	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
-#	cp buffalo/style_.css $(INSTALLDIR)/www/style/buffalo
-#	cp elegant/style_ie.css $(INSTALLDIR)/www/style/buffalo
-#	cp buffalo/common.css $(INSTALLDIR)/www/style
 	cp buffalo/images/* $(INSTALLDIR)/www/images
-	cp buffalo/help/* $(INSTALLDIR)/www/help
 
-#	mkdir $(INSTALLDIR)/www/style/buffalo
-#	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
-#	cp buffalo/common_buffalo.css $(INSTALLDIR)/www/style
-#	cp buffalo/images/* $(INSTALLDIR)/www/images
+endif
+
+ifeq ($(CONFIG_CORENET),y)
+	mkdir $(INSTALLDIR)/www/style/corenet
+	cp corenet/style.css $(INSTALLDIR)/www/style/corenet
+	cp corenet/images/* $(INSTALLDIR)/www/images
 endif
 
 ifeq ($(CONFIG_RED),y)

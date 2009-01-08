@@ -52,6 +52,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"router_style", "fon", 0},
 #elif HAVE_GGEW
     {"router_style", "blue", 0},
+#elif HAVE_CORENET
+    {"router_style", "corenet", 0},
 #elif HAVE_DDLAN
     {"router_style", "blue", 0},
 #elif HAVE_CESAR

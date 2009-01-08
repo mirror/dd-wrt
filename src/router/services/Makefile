@@ -161,6 +161,9 @@ endif
 ifeq ($(CONFIG_ALPHA),y)
 CFLAGS += -DHAVE_ALPHA
 endif
+ifeq ($(CONFIG_CORENET),y)
+CFLAGS += -DHAVE_CORENET
+endif
 
 ifeq ($(CONFIG_USB_ADVANCED),y)
 CFLAGS += -DHAVE_USB_ADVANCED
