@@ -1,6 +1,39 @@
 /*
- *  IV uniqueness detection method, as designed by Stanislaw Pusep:
+ *  IV uniqueness detection method.
  *
+ *  Copyright (C) 2004-2008 Stanislaw Pusep:
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ *  In addition, as a special exception, the copyright holders give
+ *  permission to link the code of portions of this program with the
+ *  OpenSSL library under certain conditions as described in each
+ *  individual source file, and distribute linked combinations
+ *  including the two.
+ *  You must obey the GNU General Public License in all respects
+ *  for all of the code used other than OpenSSL. *  If you modify
+ *  file(s) with this exception, you may extend this exception to your
+ *  version of the file(s), but you are not obligated to do so. *  If you
+ *  do not wish to do so, delete this exception statement from your
+ *  version. *  If you delete this exception statement from all source
+ *  files in the program, then also delete it here.
+ */
+
+
+/*
  *  Each IV byte is stored in corresponding "level". We have 3 levels with
  *  IV[2] as root index (level 0), IV[1] and IV[2] as level 2 and level 1
  *  indices respectively. Space required to allocate all data is at maximum
@@ -8,17 +41,7 @@
  */
 
 #include <stdlib.h>
-
-#define IV_NOTHERE  0
-#define IV_PRESENT  1
-
-/* select byte within which desired bit is located */
-
-#define BITWISE_OFFT(x)         (x >> 3)
-
-/* mask to extract desired bit */
-
-#define BITWISE_MASK(x)         (1 << (x & 7))
+#include "uniqueiv.h"
 
 /* allocate root structure */
 
@@ -27,10 +50,10 @@ unsigned char **uniqueiv_init( void )
     int i;
 
     /* allocate root bucket (level 0) as vector of pointers */
-    
+
     unsigned char **uiv_root = (unsigned char **)
         malloc( 256 * sizeof( unsigned char * ) );
-    
+
     if( uiv_root == NULL )
         return( NULL );
 
@@ -106,7 +129,7 @@ int uniqueiv_mark( unsigned char **uiv_root, unsigned char IV[3] )
     /* place single bit into level 2 bucket */
 
     uiv_lvl2[BITWISE_OFFT( IV[0] )] |= BITWISE_MASK( IV[0] );
-        
+
     return( 0 );
 }
 
@@ -116,7 +139,7 @@ int uniqueiv_check( unsigned char **uiv_root, unsigned char IV[3] )
 {
     unsigned char **uiv_lvl1;
     unsigned char  *uiv_lvl2;
-        
+
     if( uiv_root == NULL )
         return( IV_NOTHERE );
 
@@ -154,7 +177,7 @@ void uniqueiv_wipe( unsigned char **uiv_root )
     int i, j;
     unsigned char **uiv_lvl1;
     unsigned char  *uiv_lvl2;
-        
+
     if( uiv_root == NULL )
         return;
 
@@ -181,4 +204,65 @@ void uniqueiv_wipe( unsigned char **uiv_root )
     free( uiv_root );
 
     return;
+}
+
+
+unsigned char *data_init( void )
+{
+	// It could eat up to (256*256*256) * 3 bytes = 48Mb :/
+	unsigned char * IVs = (unsigned char *) calloc(256*256*256 * 3, sizeof(unsigned char));
+	return IVs;
+}
+
+/* Checking WEP packet:
+ * The 2 first bytes of 2 different data packets having the same IV (for the same AP)
+ * should be exactly the same due to the fact that unencrypted, they are always the same:
+ * AA AA
+ */
+
+int data_check(unsigned char *data_root, unsigned char IV[3], unsigned char data[2])
+{
+	int IV_position, cloaking;
+
+	// Init vars
+	cloaking = NO_CLOAKING;
+
+	// Make sure it is allocated
+	if (data_root != NULL)
+	{
+		// Try to find IV
+		IV_position = (((IV[0] * 256) + IV[1]) * 256) + IV[2];
+		IV_position *= 3;
+
+		// Check if existing
+		if ( *(data_root + IV_position) == 0)
+		{
+			// Not existing
+			*(data_root + IV_position) = 1;
+
+			// Add it
+			*(data_root + IV_position + 1) = data[0];
+			*(data_root + IV_position + 2) = data[1];
+
+		}
+		else
+		{
+			// Good, we found it, so check it now
+			if ( *(data_root + IV_position + 1) != data[0] ||
+				*(data_root + IV_position + 2) != data[1])
+			{
+				cloaking = CLOAKING;
+			}
+		}
+
+	}
+	// else, cannot detect since it is not started
+
+	return cloaking;
+}
+
+void data_wipe(unsigned char * data)
+{
+	if (data)
+		free(data);
 }

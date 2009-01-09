@@ -1,8 +1,8 @@
 /*
  *  802.11 to Ethernet pcap translator
  *
- *  Copyright (C) 2006,2007,2008 Thomas d'Otreppe
- *  Copyright (C) 2004,2005  Christophe Devine
+ *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2004, 2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,6 +17,20 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ *  In addition, as a special exception, the copyright holders give
+ *  permission to link the code of portions of this program with the
+ *  OpenSSL library under certain conditions as described in each
+ *  individual source file, and distribute linked combinations
+ *  including the two.
+ *  You must obey the GNU General Public License in all respects
+ *  for all of the code used other than OpenSSL. *  If you modify
+ *  file(s) with this exception, you may extend this exception to your
+ *  version of the file(s), but you are not obligated to do so. *  If you
+ *  do not wish to do so, delete this exception statement from your
+ *  version. *  If you delete this exception statement from all source
+ *  files in the program, then also delete it here.
  */
 
 #include <unistd.h>
@@ -28,16 +42,11 @@
 
 #include "version.h"
 #include "crypto.h"
-#ifdef WIN32
-#include <Windows.h>
-#include <airpcap.h>
-#endif
 #include "pcap.h"
 
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
 #define CRYPT_WPA  2
-
 
 #define	IEEE80211_FC0_SUBTYPE_MASK              0xf0
 #define	IEEE80211_FC0_SUBTYPE_SHIFT             4
@@ -50,7 +59,7 @@
     ( ( (fc) & IEEE80211_FC0_SUBTYPE_MASK ) >> IEEE80211_FC0_SUBTYPE_SHIFT ) \
         << IEEE80211_FC0_SUBTYPE_SHIFT
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern int calc_crc_buf( unsigned char *buf, int len );
 
@@ -151,79 +160,6 @@ char usage[] =
 "\n";
 
 
-/* derive the PMK from the passphrase and the essid */
-
-void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
-{
-    int i, j, slen;
-    uchar buffer[65];
-    uchar essid[33+4];
-    sha1_context ctx_ipad;
-    sha1_context ctx_opad;
-    sha1_context sha1_ctx;
-
-    memset(essid,0,sizeof(essid));
-    memcpy(essid,essid_pre,strlen(essid_pre));
-    slen = (int)strlen((char*)essid)+4;
-
-    /* setup the inner and outer contexts */
-
-    memset( buffer, 0, sizeof( buffer ) );
-    strncpy( (char *) buffer, key, sizeof( buffer ) - 1 );
-
-    for( i = 0; i < 64; i++ )
-        buffer[i] ^= 0x36;
-
-    sha1_starts( &ctx_ipad );
-    sha1_update( &ctx_ipad, buffer, 64 );
-
-    for( i = 0; i < 64; i++ )
-        buffer[i] ^= 0x6A;
-
-    sha1_starts( &ctx_opad );
-    sha1_update( &ctx_opad, buffer, 64 );
-
-    /* iterate HMAC-SHA1 over itself 8192 times */
-
-    essid[slen - 1] = '\1';
-    hmac_sha1( (uchar *) key, strlen( key ),
-               (uchar *) essid, slen, pmk );
-    memcpy( buffer, pmk, 20 );
-
-    for( i = 1; i < 4096; i++ )
-    {
-        memcpy( &sha1_ctx, &ctx_ipad, sizeof( sha1_ctx ) );
-        sha1_update( &sha1_ctx, buffer, 20 );
-        sha1_finish( &sha1_ctx, buffer );
-
-        memcpy( &sha1_ctx, &ctx_opad, sizeof( sha1_ctx ) );
-        sha1_update( &sha1_ctx, buffer, 20 );
-        sha1_finish( &sha1_ctx, buffer );
-
-        for( j = 0; j < 20; j++ )
-            pmk[j] ^= buffer[j];
-    }
-
-    essid[slen - 1] = '\2';
-    hmac_sha1( (uchar *) key, strlen( key ),
-               (uchar *) essid, slen, pmk + 20 );
-    memcpy( buffer, pmk + 20, 20 );
-
-    for( i = 1; i < 4096; i++ )
-    {
-        memcpy( &sha1_ctx, &ctx_ipad, sizeof( sha1_ctx ) );
-        sha1_update( &sha1_ctx, buffer, 20 );
-        sha1_finish( &sha1_ctx, buffer );
-
-        memcpy( &sha1_ctx, &ctx_opad, sizeof( sha1_ctx ) );
-        sha1_update( &sha1_ctx, buffer, 20 );
-        sha1_finish( &sha1_ctx, buffer );
-
-        for( j = 0; j < 20; j++ )
-            pmk[j + 20] ^= buffer[j];
-    }
-}
-
 struct ST_info
 {
     struct ST_info *next;       /* next supplicant              */
@@ -275,30 +211,17 @@ int calc_ptk( struct ST_info *wpa, uchar pmk[32] )
     for( i = 0; i < 4; i++ )
     {
         pke[99] = i;
-        hmac_sha1( pmk, 32, pke, 100, wpa->ptk + i * 20 );
+        HMAC(EVP_sha1(), pmk, 32, pke, 100, wpa->ptk + i * 20, NULL );
     }
 
     /* check the EAPOL frame MIC */
 
     if( ( wpa->keyver & 0x07 ) == 1 )
-        hmac_md5(  wpa->ptk, 16, wpa->eapol, wpa->eapol_size, mic );
+        HMAC(EVP_md5(), wpa->ptk, 16, wpa->eapol, wpa->eapol_size, mic, NULL );
     else
-        hmac_sha1( wpa->ptk, 16, wpa->eapol, wpa->eapol_size, mic );
+        HMAC(EVP_sha1(), wpa->ptk, 16, wpa->eapol, wpa->eapol_size, mic, NULL );
 
     return( memcmp( mic, wpa->keymic, 16 ) == 0 );
-}
-
-
-/* WEP (barebone RC4) decryption routine */
-
-int decrypt_wep( uchar *data, int len, uchar *key, int keylen )
-{
-    struct rc4_state S;
-
-    rc4_setup( &S, key, keylen );
-    rc4_crypt( &S, data, len );
-
-    return( check_crc_buf( data, len - 4 ) );
 }
 
 /* TKIP (RC4 + key mixing) decryption routine */
@@ -324,7 +247,6 @@ int decrypt_tkip( uchar *h80211, int caplen, uchar TK1[16] )
     if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS ) {
         z += 2;
     }
-
     IV16 = MK16( h80211[z], h80211[z + 2] );
 
     IV32 = ( h80211[z + 4]       ) | ( h80211[z + 5] <<  8 ) |
@@ -390,7 +312,7 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
     int data_len, last, offset;
     uchar B0[16], B[16], MIC[16];
     uchar PN[6], AAD[32];
-    aes_context aes_ctx;
+    AES_KEY aes_ctx;
 
     is_a4 = ( h80211[1] & 3 ) == 3;
 
@@ -422,16 +344,16 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
     if( is_a4 )
         memcpy( AAD + 24, h80211 + 24, 6 );
 
-    aes_set_key( &aes_ctx, TK1, 128 );
-    aes_encrypt( &aes_ctx, B0, MIC );
+    AES_set_encrypt_key( TK1, 128, &aes_ctx );
+    AES_encrypt( B0, MIC, &aes_ctx );
     XOR( MIC, AAD, 16 );
-    aes_encrypt( &aes_ctx, MIC, MIC );
+    AES_encrypt( MIC, MIC, &aes_ctx );
     XOR( MIC, AAD + 16, 16 );
-    aes_encrypt( &aes_ctx, MIC, MIC );
+    AES_encrypt( MIC, MIC, &aes_ctx );
 
     B0[0] &= 0x07;
     B0[14] = B0[15] = 0;
-    aes_encrypt( &aes_ctx, B0, B );
+    AES_encrypt( B0, B, &aes_ctx );
     XOR( h80211 + caplen - 8, B, 8 );
 
     blocks = ( data_len + 16 - 1 ) / 16;
@@ -445,10 +367,10 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
         B0[14] = ( i >> 8 ) & 0xFF;
         B0[15] =   i & 0xFF;
 
-        aes_encrypt( &aes_ctx, B0, B );
+        AES_encrypt( B0, B, &aes_ctx );
         XOR( h80211 + offset, B, n );
         XOR( MIC, h80211 + offset, n );
-        aes_encrypt( &aes_ctx, MIC, MIC );
+        AES_encrypt( MIC, MIC, &aes_ctx );
 
         offset += n;
     }
@@ -460,6 +382,7 @@ struct decap_stats
 {
     unsigned long nb_read;      /* # of packets read       */
     unsigned long nb_wep;       /* # of WEP data packets   */
+    unsigned long nb_bad;       /* # of bad data packets   */
     unsigned long nb_wpa;       /* # of WPA data packets   */
     unsigned long nb_plain;     /* # of plaintext packets  */
     unsigned long nb_unwep;     /* # of decrypted WEP pkt  */
@@ -476,10 +399,12 @@ struct options
     uchar pmk[40];
     uchar wepkey[64];
     int weplen, crypt;
+    int store_bad;
 }
 opt;
 
 uchar buffer[65536];
+uchar buffer2[65536];
 
 /* this routine handles to 802.11 to Ethernet translation */
 
@@ -537,14 +462,14 @@ int write_packet( FILE *f_out, struct pcap_pkthdr *pkh, uchar *h80211 )
             pkh->len    -= 24 + qosh_offset + 6;
             pkh->caplen -= 24 + qosh_offset + 6;
 
-            memcpy( buffer + 12, h80211 + 30 + qosh_offset, pkh->caplen );
+            memcpy( buffer + 12, h80211 + 30, pkh->caplen );
         }
         else
         {
             pkh->len    -= 30 + qosh_offset + 6;
             pkh->caplen -= 30 + qosh_offset + 6;
 
-            memcpy( buffer + 12, h80211 + 36 + qosh_offset, pkh->caplen );
+            memcpy( buffer + 12, h80211 + 36, pkh->caplen );
         }
 
         memcpy( buffer, arphdr, 12 );
@@ -577,7 +502,7 @@ int main( int argc, char *argv[] )
     time_t tt;
     uint magic;
     char *s, buf[128];
-    FILE *f_in, *f_out;
+    FILE *f_in, *f_out, *f_bad=NULL;
     unsigned long crc;
     int i = 0, n, z, linktype;
     uchar ZERO[32], *h80211;
@@ -643,7 +568,7 @@ int main( int argc, char *argv[] )
 
                     opt.bssid[i] = n;
 
-                    if( ++i > 6 ) break;
+                    if( ++i >= 6 ) break;
 
                     if( ! ( s = strchr( s, ':' ) ) )
                         break;
@@ -665,7 +590,7 @@ int main( int argc, char *argv[] )
                 if( opt.crypt != CRYPT_NONE )
                 {
                     printf( "Encryption key already specified.\n" );
-		    		printf("\"%s --help\" for help.\n", argv[0]);
+                    printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }
 
@@ -683,12 +608,11 @@ int main( int argc, char *argv[] )
                     if( n < 0 || n > 255 )
                     {
                         printf( "Invalid WPA PMK.\n" );
-			    		printf("\"%s --help\" for help.\n", argv[0]);
+                        printf("\"%s --help\" for help.\n", argv[0]);
                         return( 1 );
                     }
 
                     opt.pmk[i++] = n;
-
                     if( i >= 32 ) break;
 
                     s += 2;
@@ -796,7 +720,7 @@ int main( int argc, char *argv[] )
 
             case 'H' :
 
-            	printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+            	printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
             	return( 1 );
 
             default : goto usage;
@@ -808,7 +732,7 @@ int main( int argc, char *argv[] )
     	if(argc == 1)
     	{
 usage:
-	        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+	        printf( usage, getVersion("Airdecap-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
 	    }
 		if( argc - optind == 0)
 	    {
@@ -882,25 +806,39 @@ usage:
     if( n > 4 && ( n + 5 < (int) sizeof( buffer ) ) &&
         argv[optind][n - 4] == '.' )
     {
-        memcpy( buffer, argv[optind], n - 4 );
-        memcpy( buffer + n - 4, "-dec", 4 );
-        memcpy( buffer + n, argv[optind] + n - 4, 5 );
+        memcpy( buffer , argv[optind], n - 4 );
+        memcpy( buffer2, argv[optind], n - 4 );
+        memcpy( buffer  + n - 4, "-dec", 4 );
+        memcpy( buffer2 + n - 4, "-bad", 4 );
+        memcpy( buffer  + n, argv[optind] + n - 4, 5 );
+        memcpy( buffer2 + n, argv[optind] + n - 4, 5 );
     }
     else
     {
         if( n > 5 && ( n + 6 < (int) sizeof( buffer ) ) &&
             argv[optind][n - 5] == '.' )
         {
-            memcpy( buffer, argv[optind], n - 5 );
-            memcpy( buffer + n - 5, "-dec", 4 );
-            memcpy( buffer + n - 1, argv[optind] + n - 5, 6 );
+            memcpy( buffer , argv[optind], n - 5 );
+            memcpy( buffer2, argv[optind], n - 5 );
+            memcpy( buffer  + n - 5, "-dec", 4 );
+            memcpy( buffer2 + n - 5, "-bad", 4 );
+            memcpy( buffer  + n - 1, argv[optind] + n - 5, 6 );
+            memcpy( buffer2 + n - 1, argv[optind] + n - 5, 6 );
         }
         else
         {
-            memset( buffer, 0, sizeof( buffer ) );
-            snprintf( (char *) buffer, sizeof( buffer ) - 1,
+            memset( buffer , 0, sizeof( buffer ) );
+            memset( buffer2, 0, sizeof( buffer ) );
+            snprintf( (char *) buffer , sizeof( buffer ) - 1,
                       "%s-dec", argv[optind] );
+            snprintf( (char *) buffer2, sizeof( buffer ) - 1,
+                      "%s-bad", argv[optind] );
         }
+    }
+
+    if( opt.crypt == CRYPT_WEP && opt.no_convert == 1 )
+    {
+        opt.store_bad=1;
     }
 
     if( ( f_out = fopen( (char *) buffer, "wb+" ) ) == NULL )
@@ -908,6 +846,16 @@ usage:
         perror( "fopen failed" );
         printf( "Could not create \"%s\".\n", buffer );
         return( 1 );
+    }
+
+    if(opt.store_bad)
+    {
+        if( ( f_bad = fopen( (char *) buffer2, "wb+" ) ) == NULL )
+        {
+            perror( "fopen failed" );
+            printf( "Could not create \"%s\".\n", buffer2 );
+            return( 1 );
+        }
     }
 
     pfh.magic           = TCPDUMP_MAGIC;
@@ -926,6 +874,15 @@ usage:
     {
         perror( "fwrite(pcap file header) failed" );
         return( 1 );
+    }
+
+    if(opt.store_bad)
+    {
+        if( fwrite( &pfh, 1, n, f_bad ) != (size_t) n )
+        {
+            perror( "fwrite(pcap file header) failed" );
+            return( 1 );
+        }
     }
 
     /* loop reading and deciphering the packets */
@@ -1026,14 +983,15 @@ usage:
         if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS ) {
             z += 2;
         }
+
         /* check the BSSID */
 
         switch( h80211[1] & 3 )
         {
-            case  0: memcpy( bssid, h80211 + 16, 6 ); break;
-            case  1: memcpy( bssid, h80211 +  4, 6 ); break;
-            case  2: memcpy( bssid, h80211 + 10, 6 ); break;
-            default: memcpy( bssid, h80211 +  4, 6 ); break;
+            case  0: memcpy( bssid, h80211 + 16, 6 ); break;  //Adhoc
+            case  1: memcpy( bssid, h80211 +  4, 6 ); break;  //ToDS
+            case  2: memcpy( bssid, h80211 + 10, 6 ); break;  //FromDS
+            case  3: memcpy( bssid, h80211 + 10, 6 ); break;  //WDS -> Transmitter taken as BSSID
         }
 
         if( memcmp( opt.bssid, ZERO, 6 ) != 0 )
@@ -1122,9 +1080,21 @@ usage:
                 memcpy( K, h80211 + z, 3 );
                 memcpy( K + 3, opt.wepkey, opt.weplen );
 
+                if(opt.store_bad)
+                    memcpy(buffer2, h80211, pkh.caplen);
+
                 if( decrypt_wep( h80211 + z + 4, pkh.caplen - z - 4,
                                  K, 3 + opt.weplen ) == 0 )
+                {
+                    if(opt.store_bad)
+                    {
+                        stats.nb_bad++;
+                        memcpy(h80211, buffer2, pkh.caplen);
+                        if( write_packet( f_bad, &pkh, h80211 ) != 0 )
+                            break;
+                    }
                     continue;
+                }
 
                 /* WEP data packet was successfully decrypted, *
                  * remove the WEP IV & ICV and write the data  */
@@ -1235,6 +1205,19 @@ usage:
 
                     memcpy( st_cur->snonce, &h80211[z + 17], 32 );
                 }
+
+                /* copy the MIC & eapol frame */
+
+                st_cur->eapol_size = ( h80211[z + 2] << 8 )
+                                   +   h80211[z + 3] + 4;
+
+                memcpy( st_cur->keymic, &h80211[z + 81], 16 );
+                memcpy( st_cur->eapol, &h80211[z], st_cur->eapol_size );
+                memset( st_cur->eapol + 81, 0, 16 );
+
+                /* copy the key descriptor version */
+
+                st_cur->keyver = h80211[z + 6] & 7;
             }
 
             /* frame 3: Pairwise == 1, Install == 1, Ack == 1, MIC == 1 */
@@ -1271,6 +1254,8 @@ usage:
 
     fclose( f_in  );
     fclose( f_out );
+    if(opt.store_bad)
+        fclose( f_bad );
 
     /* write some statistics */
 
@@ -1279,9 +1264,10 @@ usage:
                  "Total number of WPA data packets  % 8ld\n"
                  "Number of plaintext data packets  % 8ld\n"
                  "Number of decrypted WEP  packets  % 8ld\n"
+                 "Number of corrupted WEP  packets  % 8ld\n"
                  "Number of decrypted WPA  packets  % 8ld\n",
             stats.nb_read, stats.nb_wep, stats.nb_wpa,
-            stats.nb_plain, stats.nb_unwep, stats.nb_unwpa );
+            stats.nb_plain, stats.nb_unwep, stats.nb_bad, stats.nb_unwpa );
 
     return( 0 );
 }
