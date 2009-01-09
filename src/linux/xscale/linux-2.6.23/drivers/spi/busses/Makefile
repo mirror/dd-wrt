@@ -8,3 +8,4 @@ endif
 
 obj-$(CONFIG_SPI_IXP4XX)	+= spi-ixp4xx.o
 
+obj-$(CONFIG_SPI_IXP4XX)	+= spi-ixp4xx-gw2355.o
