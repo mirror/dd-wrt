@@ -76,6 +76,15 @@ config MACH_GATEWAY7001
 	  7001 Access Point. For more information on this platform,
 	  see http://openwrt.org
 
+config MACH_WG302V1
+	bool "Netgear WG302 v1 / WAG302 v1"
+	select PCI
+	help
+	  Say 'Y' here if you want your kernel to support Netgear's
+	  WG302 v1 or WAG302 v1 Access Points. For more information
+	  on this platform, see http://openwrt.org
+
+
 config MACH_WG302V2
 	bool "Netgear WG302 v2 / WAG302 v2"
 	select PCI

@@ -463,6 +463,19 @@ mode
 		swapped with the new curr_active_slave that was
 		chosen.
 
+	weighted-rr or 7
+
+		Weighted round-robin bonding. In this mode bonding
+		interface will use weights assigned to it's slaves.
+
+		Each slave can have weight assigned via ioctl (ifenslave).
+		These values will be used at the start of each "cycle".
+		Each slave will have token counter restored to it's weight.
+		Then using round-robin mechanism those tokens are "used"
+		to pay for emitted frames. When all token counters are
+		zeroed - new "cycle" begins.
+		
+
 primary
 
 	A string (eth0, eth2, etc) specifying which slave is the
