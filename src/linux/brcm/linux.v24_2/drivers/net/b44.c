@@ -104,7 +104,8 @@ static int instance = 0;
 	  (BP)->tx_cons - (BP)->tx_prod - TX_RING_GAP(BP))
 #define NEXT_TX(N)		(((N) + 1) & (B44_TX_RING_SIZE - 1))
 
-#define RX_PKT_BUF_SZ		(1536 + bp->rx_offset + 64)
+#define RX_HEADER_OFS		(RX_HEADER_LEN + 2)
+#define RX_PKT_BUF_SZ		(1536 + RX_HEADER_OFS)
 
 /* minimum number of free TX descriptors required to wake up TX process */
 #define B44_TX_WAKEUP_THRESH		(B44_TX_RING_SIZE / 4)
@@ -720,10 +721,9 @@ static int b44_alloc_rx_skb(struct b44 *bp, int src_idx, u32 dest_idx_unmasked)
 	mapping = pci_map_single(bp->pdev, skb->data,
 				 RX_PKT_BUF_SZ,
 				 PCI_DMA_FROMDEVICE);
-	skb_reserve(skb, bp->rx_offset);
 
 	rh = (struct rx_header *)
-		(skb->data - bp->rx_offset);
+		(skb->data - RX_HEADER_OFS);
 	rh->len = 0;
 	rh->flags = 0;
 
@@ -733,13 +733,13 @@ static int b44_alloc_rx_skb(struct b44 *bp, int src_idx, u32 dest_idx_unmasked)
 	if (src_map != NULL)
 		src_map->skb = NULL;
 
-	ctrl  = (DESC_CTRL_LEN & (RX_PKT_BUF_SZ - bp->rx_offset));
+	ctrl  = (DESC_CTRL_LEN & RX_PKT_BUF_SZ);
 	if (dest_idx == (B44_RX_RING_SIZE - 1))
 		ctrl |= DESC_CTRL_EOT;
 
 	dp = &bp->rx_ring[dest_idx];
 	dp->ctrl = cpu_to_le32(ctrl);
-	dp->addr = cpu_to_le32((u32) mapping + bp->rx_offset + bp->dma_offset);
+	dp->addr = cpu_to_le32((u32) mapping + bp->dma_offset);
 
 	return RX_PKT_BUF_SZ;
 }
@@ -798,7 +798,7 @@ static int b44_rx(struct b44 *bp, int budget)
 				    PCI_DMA_FROMDEVICE);
 		rh = (struct rx_header *) skb->data;
 		len = cpu_to_le16(rh->len);
-		if ((len > (RX_PKT_BUF_SZ - bp->rx_offset)) ||
+		if ((len > (RX_PKT_BUF_SZ - RX_HEADER_OFS)) ||
 		    (rh->flags & cpu_to_le16(RX_FLAG_ERRORS))) {
 		drop_it:
 			b44_recycle_rx(bp, cons, bp->rx_prod);
@@ -830,8 +830,8 @@ static int b44_rx(struct b44 *bp, int budget)
 			pci_unmap_single(bp->pdev, map,
 					 skb_size, PCI_DMA_FROMDEVICE);
 			/* Leave out rx_header */
-                	skb_put(skb, len+bp->rx_offset);
-            	        skb_pull(skb,bp->rx_offset);
+			skb_put(skb, len+RX_HEADER_OFS);
+			skb_pull(skb,RX_HEADER_OFS);
 		} else {
 			struct sk_buff *copy_skb;
 
@@ -844,7 +844,7 @@ static int b44_rx(struct b44 *bp, int budget)
 			skb_reserve(copy_skb, 2);
 			skb_put(copy_skb, len);
 			/* DMA sync done above, copy just the actual packet */
-			memcpy(copy_skb->data, skb->data+bp->rx_offset, len);
+			memcpy(copy_skb->data, skb->data+RX_HEADER_OFS, len);
 
 			skb = copy_skb;
 		}
@@ -1322,7 +1322,7 @@ static void b44_init_hw(struct b44 *bp)
 	bw32(B44_DMATX_CTRL, DMATX_CTRL_ENABLE);
 	bw32(B44_DMATX_ADDR, bp->tx_ring_dma + bp->dma_offset);
 	bw32(B44_DMARX_CTRL, (DMARX_CTRL_ENABLE |
-			      (bp->rx_offset << DMARX_CTRL_ROSHIFT)));
+			      (RX_HEADER_OFS << DMARX_CTRL_ROSHIFT)));
 	bw32(B44_DMARX_ADDR, bp->rx_ring_dma + bp->dma_offset);
 
 	bw32(B44_DMARX_PTR, bp->rx_pending);
@@ -1851,13 +1851,7 @@ static int __devinit b44_get_invariants(struct b44 *bp)
 		bp->mdc_port = (eeprom[90] >> 14) & 0x1;
 	}
 
-	/* With this, plus the rx_header prepended to the data by the
-	 * hardware, we'll land the ethernet header on a 2-byte boundary.
-	 */
-	bp->rx_offset = 30;
-
 	bp->imask = IMASK_DEF;
-
 	bp->core_unit = ssb_core_unit(bp);
 
 	/* XXX - really required? 
