@@ -9,52 +9,44 @@
 #define uint32 unsigned long int
 #endif
 
-typedef struct
-{
-    uint32 total[2];
-    uint32 state[4];
-    uint8 buffer[64];
-}
-md5_context;
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+// We don't use EVP. Bite me
+#include <openssl/rc4.h>
+#include <openssl/aes.h>
 
-void md5_starts( md5_context *ctx );
-void md5_update( md5_context *ctx, uint8 *input, uint32 length );
-void md5_finish( md5_context *ctx, uint8 digest[16] );
-void hmac_md5( uint8 *key, int keylen, uint8 *buffer, int length,
-               uint8 digest[16] );
+#define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
+#define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
+#define S_LLC_SNAP_IP   (S_LLC_SNAP "\x08\x00")
+#define S_LLC_SNAP_SPANTREE   "\x42\x42\x03\x00\x00\x00\x00\x00"
+#define S_LLC_SNAP_CDP  "\xAA\xAA\x03\x00\x00\x0C\x20"
+#define IEEE80211_FC1_DIR_FROMDS                0x02    /* AP ->STA */
 
-typedef struct
-{
-    uint32 total[2];
-    uint32 state[5];
-    uint8 buffer[64];
-}
-sha1_context;
+#define TYPE_ARP    0
+#define TYPE_IP     1
 
-void sha1_starts( sha1_context *ctx );
-void sha1_update( sha1_context *ctx, uint8 *input, uint32 length );
-void sha1_finish( sha1_context *ctx, uint8 digest[20] );
-void hmac_sha1( uint8 *key, int keylen, uint8 *buffer, int length,
-                uint8 digest[20] );
+#define NULL_MAC  (uchar*)"\x00\x00\x00\x00\x00\x00"
+#define BROADCAST (uchar*)"\xFF\xFF\xFF\xFF\xFF\xFF"
+#define SPANTREE  (uchar*)"\x01\x80\xC2\x00\x00\x00"
+#define CDP_VTP   (uchar*)"\x01\x00\x0C\xCC\xCC\xCC"
 
+/* Used for own RC4 implementation */
 struct rc4_state
 {
     int x, y, m[256];
 };
 
-void rc4_setup( struct rc4_state *s, unsigned char *key,  int length );
-void rc4_crypt( struct rc4_state *s, unsigned char *data, int length );
+struct AP_info;
 
-typedef struct
-{
-    uint32 erk[64];     /* encryption round keys */
-    uint32 drk[64];     /* decryption round keys */
-    int nr;             /* number of rounds */
-}
-aes_context;
-
-int  aes_set_key( aes_context *ctx, uint8 *key, int nbits );
-void aes_encrypt( aes_context *ctx, uint8 input[16], uint8 output[16] );
-void aes_decrypt( aes_context *ctx, uint8 input[16], uint8 output[16] );
+void calc_pmk( char *key, char *essid, unsigned char pmk[40] );
+int decrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen );
+int encrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen );
+int check_crc_buf( unsigned char *buf, int len );
+int calc_crc_buf( unsigned char *buf, int len );
+void calc_mic(struct AP_info *ap, unsigned char *pmk, unsigned char *ptk,
+	      unsigned char *mic);
+int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len);
+int add_crc32(unsigned char* data, int length);
+int add_crc32_plain(unsigned char* data, int length);
 
 #endif /* crypto.h */
