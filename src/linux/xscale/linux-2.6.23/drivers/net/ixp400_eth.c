@@ -4431,8 +4431,8 @@ static int __init ixp400_eth_init(void)
 	}
     if (machine_is_wg302v1())
 	{
-	phyAddresses[0]=0x30;
-	phyAddresses[1]=0x1;
+	phyAddresses[0]=30;
+	phyAddresses[1]=1;
 	default_phy_cfg[0].linkMonitor=FALSE;
 	default_phy_cfg[1].linkMonitor=TRUE;
 	}

@@ -47,6 +47,17 @@ static struct platform_device avila_flash = {
 	.resource	= &avila_flash_resource,
 };
 
+#define IXDP425_KSSPI_SELECT	4
+#define IXDP425_KSSPI_TXD	3
+#define IXDP425_KSSPI_CLOCK	2
+#define IXDP425_KSSPI_RXD	0
+
+#define IXDP425_GW2355_KSSPI_SELECT	3
+#define IXDP425_GW2355_KSSPI_TXD	2
+#define IXDP425_GW2355_KSSPI_CLOCK	1
+#define IXDP425_GW2355_KSSPI_RXD	0
+
+
 static struct ixp4xx_spi_pins ixdp425_spi_gpio_pins = {
 	.spis_pin       = IXDP425_KSSPI_SELECT,
 	.spic_pin       = IXDP425_KSSPI_CLOCK,
@@ -59,6 +70,23 @@ static struct platform_device ixdp425_spi_controller = {
 	.id                 = 0,
 	.dev                = {
 		.platform_data  = &ixdp425_spi_gpio_pins,
+	},
+	.num_resources      = 0
+};
+
+
+static struct ixp4xx_spi_pins ixdp425_gw2355_spi_gpio_pins = {
+	.spis_pin       = IXDP425_GW2355_KSSPI_SELECT,
+	.spic_pin       = IXDP425_GW2355_KSSPI_CLOCK,
+	.spid_pin       = IXDP425_GW2355_KSSPI_TXD,
+	.spiq_pin       = IXDP425_GW2355_KSSPI_RXD
+};
+
+static struct platform_device ixdp425_gw2355_spi_controller = {
+    .name               = "IXP4XX-SPI-GW2355",
+	.id                 = 0,
+	.dev                = {
+		.platform_data  = &ixdp425_gw2355_spi_gpio_pins,
 	},
 	.num_resources      = 0
 };
@@ -153,7 +181,8 @@ static struct platform_device *avila_devices[] __initdata = {
 	&avila_i2c_controller,
 	&avila_flash,
 	&avila_uart,
-	&ixdp425_spi_controller
+	&ixdp425_spi_controller,
+	&ixdp425_gw2355_spi_controller
 };
 
 static void __init avila_init(void)

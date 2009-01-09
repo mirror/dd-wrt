@@ -121,8 +121,9 @@ void __init avila_ide_init(void)
 	ide_hwif_t *hwif;
 	unsigned char *avila_ide_iobase;
 	int i;
-	if (!machine_is_compex())
-	{
+	if (machine_is_compex() || machine_is_wg302v1())
+	    return;
+
 	gpio_line_config(AVILA_IDE_INT, IXP4XX_GPIO_IN | IXP4XX_GPIO_STYLE_ACTIVE_HIGH);
 	gpio_line_isr_clear(AVILA_IDE_INT);
 
@@ -152,7 +153,6 @@ void __init avila_ide_init(void)
 	hwif->INB = avila_ide_inb;
 	hwif->INW = avila_ide_inw;
 	hwif->INSW = avila_ide_insw;
-	}
 }
 
 
