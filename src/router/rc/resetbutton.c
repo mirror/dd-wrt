@@ -708,6 +708,9 @@ if (brand==ROUTER_BOARD_WHRG300N)
 int main( int argc, char *argv[] )
 {
 
+#ifdef HAVE_WG302V1
+    return 0;
+#endif
     brand = getRouterBrand(  );
 #ifndef HAVE_NOP8670
     if( ( brand & 0x000f ) == 0x000f )
