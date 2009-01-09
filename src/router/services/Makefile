@@ -295,6 +295,9 @@ endif
 ifeq ($(CONFIG_WG302),y)
   CFLAGS += -DHAVE_WG302
 endif
+ifeq ($(CONFIG_WG302V1),y)
+  CFLAGS += -DHAVE_WG302V1
+endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL

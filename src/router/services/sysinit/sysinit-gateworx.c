@@ -340,11 +340,15 @@ void start_sysinit( void )
 	// switch
     {
 	insmod( "spi-algo-bit" );
-	insmod( "spi-ixp4xx" );
+	if (nvram_match("DD_BOARD","Avila GW2355"))
+	    insmod( "spi-ixp4xx-gw2355" );
+	else
+	    insmod( "spi-ixp4xx" );
 	insmod( "ks8995m" );
 	sleep( 1 );
 	system2( "echo R01=01 > /proc/driver/KS8995M" );	// enable switch 
     }
+
     char filename2[64];
 
     sprintf( filename2, "/dev/mtdblock/%d", getMTD( "RedBoot" ) );
