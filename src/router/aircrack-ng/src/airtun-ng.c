@@ -2,8 +2,8 @@
  *  802.11 WEP network connection tunneling
  *  based on aireplay-ng
  *
- *  Copyright (C) 2006,2007,2008 Thomas d'Otreppe
- *  Copyright (C) 2006,2007,2008 Martin Beck
+ *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2006, 2007, 2008 Martin Beck
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,43 +18,33 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ *  In addition, as a special exception, the copyright holders give
+ *  permission to link the code of portions of this program with the
+ *  OpenSSL library under certain conditions as described in each
+ *  individual source file, and distribute linked combinations
+ *  including the two.
+ *  You must obey the GNU General Public License in all respects
+ *  for all of the code used other than OpenSSL. *  If you modify
+ *  file(s) with this exception, you may extend this exception to your
+ *  version of the file(s), but you are not obligated to do so. *  If you
+ *  do not wish to do so, delete this exception statement from your
+ *  version. *  If you delete this exception statement from all source
+ *  files in the program, then also delete it here.
  */
-
-#if !(defined(linux) || defined(__FreeBSD__) || defined(__FreeBSD_kernel__))
-    #warning Airtun-ng could fail on this OS
-#endif
 
 #ifdef linux
     #include <linux/rtc.h>
 #endif
 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
 
-#if defined(linux)
-    #include <netpacket/packet.h>
-    #include <linux/if_ether.h>
-    #include <linux/if.h>
-    #include <linux/wireless.h>
-#endif /* linux */
-
-#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
-    #include <sys/param.h>
-    #include <sys/sysctl.h>
-    #include <sys/uio.h>
-    #include <net/bpf.h>
-    #include <net/if.h>
-    #include <net/if_media.h>
-    #include <netinet/in.h>
-    #include <netinet/if_ether.h>
-    #include <net80211/ieee80211.h>
-    #include <net80211/ieee80211_freebsd.h>
-    #include <net80211/ieee80211_radiotap.h>
-#endif /* __FreeBSD__ */
-
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <dirent.h>
@@ -67,23 +57,14 @@
 #include <getopt.h>
 
 #include <fcntl.h>
-//#include <errno.h>
-//#include <time.h>
-
-#if defined(linux)
-    #include <linux/if_tun.h>
-#endif
-
-#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
-    #include <net/if_tun.h>
-#endif
 
 #include "version.h"
 #include "pcap.h"
 #include "crypto.h"
 
-#define NULL_MAC        "\x00\x00\x00\x00\x00\x00"
-#define BROADCAST       "\xFF\xFF\xFF\xFF\xFF\xFF"
+#include "osdep/osdep.h"
+
+static struct wif *_wi_in, *_wi_out;
 
 #define ARPHRD_IEEE80211        801
 #define ARPHRD_IEEE80211_PRISM  802
@@ -96,20 +77,18 @@
 #define CRYPT_NONE 0
 #define CRYPT_WEP  1
 
-#if defined(linux)
+#ifndef MAX
 #define MAX(x,y) ( (x)>(y) ? (x) : (y) )
 #endif
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+//if not all fragments are available 60 seconds after the last fragment was received, they will be removed
+#define FRAG_TIMEOUT (1000000*60)
+
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern char * searchInside(const char * dir, const char * filename);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern int add_crc32(unsigned char* data, int length);
-
-#if defined(linux)
-extern int is_ndiswrapper(const char * iface, const char * path);
-extern char * wiToolsPath(const char * tool);
-#endif /* linux */
 
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
@@ -168,7 +147,7 @@ struct devices
     int fd_in,  arptype_in;
     int fd_out, arptype_out;
     int fd_rtc;
-    int fd_tap;
+    struct tif *dv_ti;
 
     int is_wlanng;
     int is_hostap;
@@ -188,6 +167,21 @@ struct ARP_req
     int len;
 };
 
+typedef struct Fragment_list* pFrag_t;
+struct Fragment_list
+{
+    unsigned char   source[6];
+    unsigned short  sequence;
+    unsigned char*  fragment[16];
+    short           fragmentlen[16];
+    char            fragnum;
+    unsigned char*  header;
+    short           headerlen;
+    struct timeval  access;
+    char            wep;
+    pFrag_t         next;
+};
+
 unsigned long nb_pkt_sent;
 unsigned char h80211[4096];
 unsigned char tmpbuf[4096];
@@ -198,6 +192,7 @@ int ctrl_c, alarmed;
 
 char * iwpriv;
 
+pFrag_t     rFragment;
 
 void sighandler( int signum )
 {
@@ -206,6 +201,291 @@ void sighandler( int signum )
 
     if( signum == SIGALRM )
         alarmed++;
+}
+
+int addFrag(unsigned char* packet, unsigned char* smac, int len)
+{
+    pFrag_t cur = rFragment;
+    int seq, frag, wep, z, i;
+    unsigned char frame[4096];
+    unsigned char K[128];
+
+    if(packet == NULL)
+        return -1;
+
+    if(smac == NULL)
+        return -1;
+
+    if(len <= 32 || len > 2000)
+        return -1;
+
+    if(rFragment == NULL)
+        return -1;
+
+    bzero(frame, 4096);
+    memcpy(frame, packet, len);
+
+    z = ( ( frame[1] & 3 ) != 3 ) ? 24 : 30;
+    frag = frame[22] & 0x0F;
+    seq = (frame[22] >> 4) | (frame[23] << 4);
+    wep = (frame[1] & 0x40) >> 6;
+
+    if(frag < 0 || frag > 15)
+        return -1;
+
+    if(wep && opt.crypt != CRYPT_WEP)
+        return -1;
+
+    if(wep)
+    {
+        //decrypt it
+        memcpy( K, frame + z, 3 );
+        memcpy( K + 3, opt.wepkey, opt.weplen );
+
+        if (decrypt_wep( frame + z + 4, len - z - 4,
+                        K, 3 + opt.weplen ) == 0 && (len-z-4 > 8) )
+        {
+            printf("error decrypting... len: %d\n", len-z-4);
+            return -1;
+        }
+
+        /* WEP data packet was successfully decrypted, *
+        * remove the WEP IV & ICV and write the data  */
+
+        len -= 8;
+
+        memcpy( frame + z, frame + z + 4, len - z );
+
+        frame[1] &= 0xBF;
+    }
+
+    while(cur->next != NULL)
+    {
+        cur = cur->next;
+        if( (memcmp(smac, cur->source, 6) == 0) && (seq == cur->sequence) && (wep == cur->wep) )
+        {
+            //entry already exists, update
+//             printf("got seq %d, added fragment %d \n", seq, frag);
+            if(cur->fragment[frag] != NULL)
+                return 0;
+
+            if( (frame[1] & 0x04) == 0 )
+            {
+//                 printf("max fragnum is %d\n", frag);
+                cur->fragnum = frag;    //no higher frag number possible
+            }
+            cur->fragment[frag] = (unsigned char*) malloc(len-z);
+            memcpy(cur->fragment[frag], frame+z, len-z);
+            cur->fragmentlen[frag] = len-z;
+            gettimeofday(&cur->access, NULL);
+
+            return 0;
+        }
+    }
+
+//     printf("new seq %d, added fragment %d \n", seq, frag);
+    //new entry, first fragment received
+    //alloc mem
+    cur->next = (pFrag_t) malloc(sizeof(struct Fragment_list));
+    cur = cur->next;
+
+    for(i=0; i<16; i++)
+    {
+        cur->fragment[i] = NULL;
+        cur->fragmentlen[i] = 0;
+    }
+
+    if( (frame[1] & 0x04) == 0 )
+    {
+//         printf("max fragnum is %d\n", frag);
+        cur->fragnum = frag;    //no higher frag number possible
+    }
+    else
+    {
+        cur->fragnum = 0;
+    }
+
+    //remove retry & more fragments flag
+    frame[1] &= 0xF3;
+    //set frag number to 0
+    frame[22] &= 0xF0;
+    memcpy(cur->source, smac, 6);
+    cur->sequence = seq;
+    cur->header = (unsigned char*) malloc(z);
+    memcpy(cur->header, frame, z);
+    cur->headerlen = z;
+    cur->fragment[frag] = (unsigned char*) malloc(len-z);
+    memcpy(cur->fragment[frag], frame+z, len-z);
+    cur->fragmentlen[frag] = len-z;
+    cur->wep = wep;
+    gettimeofday(&cur->access, NULL);
+
+    cur->next = NULL;
+
+    return 0;
+}
+
+int timeoutFrag()
+{
+    pFrag_t old, cur = rFragment;
+    struct timeval tv;
+    int64_t timediff;
+    int i;
+
+    if(rFragment == NULL)
+        return -1;
+
+    gettimeofday(&tv, NULL);
+
+    while(cur->next != NULL)
+    {
+        old = cur->next;
+        timediff = (tv.tv_sec - old->access.tv_sec)*1000000 + (tv.tv_usec - old->access.tv_usec);
+        if(timediff > FRAG_TIMEOUT)
+        {
+            //remove captured fragments
+            if(old->header != NULL)
+                free(old->header);
+            for(i=0; i<16; i++)
+                if(old->fragment[i] != NULL)
+                    free(old->fragment[i]);
+
+            cur->next = old->next;
+            free(old);
+        }
+        cur = cur->next;
+    }
+    return 0;
+}
+
+int delFrag(unsigned char* smac, int sequence)
+{
+    pFrag_t old, cur = rFragment;
+    int i;
+
+    if(rFragment == NULL)
+        return -1;
+
+    if(smac == NULL)
+        return -1;
+
+    if(sequence < 0)
+        return -1;
+
+    while(cur->next != NULL)
+    {
+        old = cur->next;
+        if(memcmp(smac, old->source, 6) == 0 && old->sequence == sequence)
+        {
+            //remove captured fragments
+            if(old->header != NULL)
+                free(old->header);
+            for(i=0; i<16; i++)
+                if(old->fragment[i] != NULL)
+                    free(old->fragment[i]);
+
+            cur->next = old->next;
+            free(old);
+            return 0;
+        }
+        cur = cur->next;
+    }
+    return 0;
+}
+
+unsigned char* getCompleteFrag(unsigned char* smac, int sequence, int *packetlen)
+{
+    pFrag_t old, cur = rFragment;
+    int i, len=0;
+    unsigned char* packet=NULL;
+    unsigned char K[128];
+
+    if(rFragment == NULL)
+        return NULL;
+
+    if(smac == NULL)
+        return NULL;
+
+    while(cur->next != NULL)
+    {
+        old = cur->next;
+        if(memcmp(smac, old->source, 6) == 0 && old->sequence == sequence)
+        {
+            //check if all frags available
+            if(old->fragnum == 0)
+                return NULL;
+            for(i=0; i<=old->fragnum; i++)
+            {
+                if(old->fragment[i] == NULL)
+                    return NULL;
+                len += old->fragmentlen[i];
+            }
+
+            if(len > 2000)
+                return NULL;
+
+//             printf("got a complete frame -> build it\n");
+
+            if(old->wep)
+            {
+                packet = (unsigned char*) malloc(len+old->headerlen+8);
+
+                if( opt.crypt == CRYPT_WEP)
+                {
+                    K[0] = rand() & 0xFF;
+                    K[1] = rand() & 0xFF;
+                    K[2] = rand() & 0xFF;
+                    K[3] = 0x00;
+
+                    memcpy(packet, old->header, old->headerlen);
+                    len=old->headerlen;
+                    memcpy(packet+len, K, 4);
+                    len+=4;
+                    for(i=0; i<=old->fragnum; i++)
+                    {
+                        memcpy(packet+len, old->fragment[i], old->fragmentlen[i]);
+                        len+=old->fragmentlen[i];
+                    }
+
+                    /* write crc32 value behind data */
+                    if( add_crc32(packet+old->headerlen+4, len-old->headerlen-4) != 0 ) return NULL;
+
+                    len += 4; //icv
+
+                    memcpy( K + 3, opt.wepkey, opt.weplen );
+
+                    encrypt_wep( packet+old->headerlen+4, len-old->headerlen-4, K, opt.weplen+3 );
+
+                    packet[1] = packet[1] | 0x40;
+
+                    //delete captured fragments
+                    delFrag(smac, sequence);
+                    *packetlen = len;
+                    return packet;
+                }
+                else
+                    return NULL;
+
+            }
+            else
+            {
+                packet = (unsigned char*) malloc(len+old->headerlen);
+                memcpy(packet, old->header, old->headerlen);
+                len=old->headerlen;
+                for(i=0; i<=old->fragnum; i++)
+                {
+                    memcpy(packet+len, old->fragment[i], old->fragmentlen[i]);
+                    len+=old->fragmentlen[i];
+                }
+                //delete captured fragments
+                delFrag(smac, sequence);
+                *packetlen = len;
+                return packet;
+            }
+        }
+        cur = cur->next;
+    }
+    return packet;
 }
 
 int is_filtered_netmask(uchar *bssid)
@@ -228,162 +508,31 @@ int is_filtered_netmask(uchar *bssid)
     return 0;
 }
 
-/* wlanng-aware frame sending routing */
-
-int send_packet( void *buf, size_t count )
+int send_packet(void *buf, size_t count)
 {
-    int ret;
-
-    if( dev.is_wlanng && count >= 24 )
-    {
-        /* for some reason, wlan-ng requires a special header */
-
-        if( ( ((unsigned char *) buf)[1] & 3 ) != 3 )
-        {
-            memcpy( tmpbuf, buf, 24 );
-            memset( tmpbuf + 24, 0, 22 );
-
-            tmpbuf[30] = ( count - 24 ) & 0xFF;
-            tmpbuf[31] = ( count - 24 ) >> 8;
-
-            memcpy( tmpbuf + 46, buf + 24, count - 24 );
-
-            count += 22;
-        }
-        else
-        {
-            memcpy( tmpbuf, buf, 30 );
-            memset( tmpbuf + 30, 0, 16 );
-
-            tmpbuf[30] = ( count - 30 ) & 0xFF;
-            tmpbuf[31] = ( count - 30 ) >> 8;
-
-            memcpy( tmpbuf + 46, buf + 30, count - 30 );
-
-            count += 16;
+        struct wif *wi = _wi_out; /* XXX globals suck */
+        if (wi_write(wi, buf, count, NULL) == -1) {
+                perror("wi_write()");
+                return -1;
         }
 
-        buf = tmpbuf;
-    }
-
-    if( ( dev.is_wlanng || dev.is_hostap ) &&
-        ( ((uchar *) buf)[1] & 3 ) == 2 )
-    {
-        unsigned char maddr[6];
-
-        /* Prism2 firmware swaps the dmac and smac in FromDS packets */
-
-        memcpy( maddr, buf + 4, 6 );
-        memcpy( buf + 4, buf + 16, 6 );
-        memcpy( buf + 16, maddr, 6 );
-    }
-
-    ret = write( dev.fd_out, buf, count );
-
-    if( ( dev.is_wlanng || dev.is_hostap ) &&
-        ( ((uchar *) buf)[1] & 3 ) == 2 )
-    {
-        unsigned char maddr[6];
-
-        /* Prism2 firmware swaps the dmac and smac in FromDS packets */
-
-        memcpy( maddr, buf + 4, 6 );
-        memcpy( buf + 4, buf + 16, 6 );
-        memcpy( buf + 16, maddr, 6 );
-    }
-
-    if( ret < 0 )
-    {
-        if( errno == EAGAIN || errno == EWOULDBLOCK ||
-            errno == ENOBUFS )
-        {
-            perror("again");
-            usleep( 10000 );
-            return( 0 );
-        }
-
-        perror( "write failed" );
-        return( -1 );
-    }
-
-    nb_pkt_sent++;
-    return( 0 );
+        nb_pkt_sent++;
+        return 0;
 }
 
-/* madwifi-aware frame reading routing */
-
-int read_packet( void *buf, size_t count )
+int read_packet(void *buf, size_t count)
 {
-    unsigned char bssid[6];
-    int caplen, n = 0;
+        struct wif *wi = _wi_in; /* XXX */
+        int rc;
 
-    if( ( caplen = read( dev.fd_in, tmpbuf, count ) ) < 0 )
-    {
-        if( errno == EAGAIN )
-            return( 0 );
-
-        perror( "read failed" );
-        return( -1 );
-    }
-
-    if( dev.is_madwifi && !(dev.is_madwifing) )
-        caplen -= 4;    /* remove the FCS */
-
-    memset( buf, 0, sizeof( buf ) );
-
-    if( dev.arptype_in == ARPHRD_IEEE80211_PRISM )
-    {
-        /* skip the prism header */
-
-        if( tmpbuf[7] == 0x40 )
-            n = 64;
-        else
-            n = *(int *)( tmpbuf + 4 );
-
-        if( n < 8 || n >= caplen )
-            return( 0 );
-    }
-
-    if( dev.arptype_in == ARPHRD_IEEE80211_FULL )
-    {
-        /* skip the radiotap header */
-
-        n = *(unsigned short *)( tmpbuf + 2 );
-
-        if( n <= 0 || n >= caplen )
-            return( 0 );
-    }
-
-    caplen -= n;
-
-    memcpy( buf, tmpbuf + n, caplen );
-
-    if( opt.repeat )
-    {
-        if( memcmp(opt.f_bssid, NULL_MAC, 6) != 0 )
-        {
-            switch( tmpbuf[1+n] & 3 )
-            {
-                case  0: memcpy( bssid, tmpbuf + n + 16, 6 ); break;
-                case  1: memcpy( bssid, tmpbuf + n +  4, 6 ); break;
-                case  2: memcpy( bssid, tmpbuf + n + 10, 6 ); break;
-                default: memcpy( bssid, tmpbuf + n +  4, 6 ); break;
-            }
-            if( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 )
-            {
-                if(is_filtered_netmask(bssid)) return( caplen );
-            }
-            else
-            {
-                if( memcmp(opt.f_bssid, bssid, 6) != 0 ) return( caplen );
-            }
+        rc = wi_read(wi, buf, count, NULL);
+        if (rc == -1) {
+                perror("wi_read()");
+                return -1;
         }
-        send_packet(buf, caplen);
-    }
 
-    return( caplen );
+        return rc;
 }
-
 
 int msleep( int msec )
 {
@@ -513,15 +662,19 @@ int xor_keystream(uchar *ph80211, uchar *keystream, int len)
 void print_packet ( uchar h80211[], int caplen )
 {
 	int i,j;
+	int key_index_offset=0;
 
 	printf( "        Size: %d, FromDS: %d, ToDS: %d",
 		caplen, ( h80211[1] & 2 ) >> 1, ( h80211[1] & 1 ) );
 
 	if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
 	{
-	if( ( h80211[27] & 0x20 ) == 0 )
+	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC adress
+		else key_index_offset = 27;
+
+	    if( ( h80211[key_index_offset] & 0x20 ) == 0 )
 		printf( " (WEP)" );
-	else
+	    else
 		printf( " (WPA)" );
 	}
 
@@ -647,26 +800,6 @@ int create_wep_packet(unsigned char* packet, int *length)
     return 0;
 }
 
-int decrypt_wep( uchar *data, int len, uchar *key, int keylen )
-{
-    struct rc4_state S;
-
-    rc4_setup( &S, key, keylen );
-    rc4_crypt( &S, data, len );
-
-    return( check_crc_buf( data, len - 4 ) );
-}
-
-int encrypt_wep( uchar *data, int len, uchar *key, int keylen )
-{
-    struct rc4_state S;
-
-    rc4_setup( &S, key, keylen );
-    rc4_crypt( &S, data, len );
-
-    return( 0 );
-}
-
 int packet_xmit(uchar* packet, int length)
 {
     uchar K[64];
@@ -728,13 +861,17 @@ int packet_xmit(uchar* packet, int length)
 
 int packet_recv(uchar* packet, int length)
 {
-	int unused;
     uchar K[64];
-    uchar bssid[6];
+    uchar bssid[6], smac[6], dmac[6];
+    uchar *buffer;
 
+    int len;
     int z;
+    int fragnum, seqnum, morefrag;
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( ( packet[0] & 0x80 ) == 0x80 ) /* QoS */
+            z+=2;
 
     if(length < z+8)
     {
@@ -743,10 +880,48 @@ int packet_recv(uchar* packet, int length)
 
     switch( packet[1] & 3 )
     {
-        case  0: memcpy( bssid, packet + 16, 6 ); break;
-        case  1: memcpy( bssid, packet +  4, 6 ); break;
-        case  2: memcpy( bssid, packet + 10, 6 ); break;
-        default: memcpy( bssid, packet +  4, 6 ); break;
+        case  0:
+            memcpy( bssid, packet + 16, 6 );
+            memcpy( dmac, packet + 4, 6 );
+            memcpy( smac, packet + 10, 6 );
+            break;
+        case  1:
+            memcpy( bssid, packet + 4, 6 );
+            memcpy( dmac, packet + 16, 6 );
+            memcpy( smac, packet + 10, 6 );
+            break;
+        case  2:
+            memcpy( bssid, packet + 10, 6 );
+            memcpy( dmac, packet + 4, 6 );
+            memcpy( smac, packet + 16, 6 );
+            break;
+        default:
+            memcpy( bssid, packet + 10, 6 );
+            memcpy( dmac, packet + 16, 6 );
+            memcpy( smac, packet + 24, 6 );
+            break;
+    }
+
+    fragnum = packet[22] & 0x0F;
+    seqnum = (packet[22] >> 4) | (packet[23] << 4);
+    morefrag = packet[1] & 0x04;
+
+    /* Fragment? */
+    if(fragnum > 0 || morefrag)
+    {
+        addFrag(packet, smac, length);
+        buffer = getCompleteFrag(smac, seqnum, &len);
+        timeoutFrag();
+
+        /* we got frag, no compelete packet avail -> do nothing */
+        if(buffer == NULL)
+            return 1;
+
+//             printf("got all frags!!!\n");
+        memcpy(packet, buffer, len);
+        length = len;
+        free(buffer);
+        buffer = NULL;
     }
 
     if( memcmp( bssid, opt.r_bssid, 6) == 0 && ( packet[0] & 0x08 ) == 0x08 )
@@ -803,7 +978,7 @@ int packet_recv(uchar* packet, int length)
         memcpy( h80211+14, packet+z+8, length-z-8);
         length = length -z-8+14;
 
-        unused = write(dev.fd_tap, h80211, length);
+	ti_write(dev.dv_ti, h80211, length);
     }
     else
     {
@@ -813,163 +988,9 @@ int packet_recv(uchar* packet, int length)
     return 0;
 }
 
-int sysfs_inject=0;
-int opensysfs( char *iface, int fd) {
-    int fd2;
-    char buf[256];
-
-    snprintf(buf, 256, "/sys/class/net/%s/device/inject", iface);
-    fd2 = open(buf, O_WRONLY);
-    if (fd2 == -1)
-        return -1;
-
-    dup2(fd2, fd);
-    close(fd2);
-
-    sysfs_inject=1;
-    return 0;
-}
-
-#if defined(linux)
-/* interface initialization routine */
-
-int openraw( char *iface, int fd, int *arptype )
-{
-    struct ifreq ifr;
-    struct packet_mreq mr;
-    struct sockaddr_ll sll;
-
-    /* find the interface index */
-
-    memset( &ifr, 0, sizeof( ifr ) );
-    strncpy( ifr.ifr_name, iface, sizeof( ifr.ifr_name ) - 1 );
-
-    if( ioctl( fd, SIOCGIFINDEX, &ifr ) < 0 )
-    {
-        perror( "ioctl(SIOCGIFINDEX) failed" );
-        return( 1 );
-    }
-
-    /* bind the raw socket to the interface */
-
-    memset( &sll, 0, sizeof( sll ) );
-    sll.sll_family   = AF_PACKET;
-    sll.sll_ifindex  = ifr.ifr_ifindex;
-
-    if( dev.is_wlanng )
-        sll.sll_protocol = htons( ETH_P_80211_RAW );
-    else
-        sll.sll_protocol = htons( ETH_P_ALL );
-
-    if( bind( fd, (struct sockaddr *) &sll,
-              sizeof( sll ) ) < 0 )
-    {
-        perror( "bind(ETH_P_ALL) failed" );
-        return( 1 );
-    }
-
-    /* lookup the hardware type */
-
-    if( ioctl( fd, SIOCGIFHWADDR, &ifr ) < 0 )
-    {
-        perror( "ioctl(SIOCGIFHWADDR) failed" );
-        return( 1 );
-    }
-
-    if( ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211 &&
-        ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_PRISM &&
-        ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL )
-    {
-		/* try sysfs instead (ipw2200) */
-		if (opensysfs(iface, fd) == 0)
-            return 0;
-
-        if( ifr.ifr_hwaddr.sa_family == 1 )
-            fprintf( stderr, "\nARP linktype is set to 1 (Ethernet) " );
-        else
-            fprintf( stderr, "\nUnsupported hardware link type %4d ",
-                     ifr.ifr_hwaddr.sa_family );
-
-        fprintf( stderr, "- expected ARPHRD_IEEE80211\nor ARPHRD_IEEE8021"
-                         "1_PRISM instead.  Make sure RFMON is enabled:\n"
-                         "run 'ifconfig %s up; iwconfig %s mode Monitor "
-                         "channel <#>'\nSysfs injection support was not "
-                         "found either.\n\n", iface, iface );
-        return( 1 );
-    }
-
-    *arptype = ifr.ifr_hwaddr.sa_family;
-
-    /* enable promiscuous mode */
-
-    memset( &mr, 0, sizeof( mr ) );
-    mr.mr_ifindex = sll.sll_ifindex;
-    mr.mr_type    = PACKET_MR_PROMISC;
-
-    if( setsockopt( fd, SOL_PACKET, PACKET_ADD_MEMBERSHIP,
-                    &mr, sizeof( mr ) ) < 0 )
-    {
-        perror( "setsockopt(PACKET_MR_PROMISC) failed" );
-        return( 1 );
-    }
-
-    return( 0 );
-}
-#endif /* linux */
-
-#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
-int openraw(char *name, int fd, int *arptype) {
-    int i;
-//    int fd = -1;
-    struct ifreq ifr;
-
-/*    for(i = 0;i < 10; i++) {
-        sprintf(buf, "/dev/bpf%d", i);
-
-        fd = open(buf, O_RDWR);
-
-        if(fd < 0) {
-            if(errno != EBUSY) {
-                perror("can't open /dev/bpf");
-                return(1);
-            }
-            continue;
-        }
-        else
-            break;
-    }
-
-    if(fd < 0) {
-        perror("can't open /dev/bpf");
-        return(1);
-    }
-*/
-    strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name)-1);
-    ifr.ifr_name[sizeof(ifr.ifr_name)-1] = 0;
-
-    if(ioctl(fd, BIOCSETIF, &ifr) < 0) {
-        perror("ioctl(BIOCSETIF)");
-        return(1);
-    }
-
-    i = 1;
-    if(ioctl(fd, BIOCIMMEDIATE, &i) < 0) {
-        perror("ioctl(BIOCIMMEDIATE)");
-        return(1);
-    }
-
-    *arptype = ifr.ifr_addr.sa_family;
-
-    return 0;
-}
-#endif /* __FreeBSD__ */
-
-char athXraw[] = "athXraw";
-
 int main( int argc, char *argv[] )
 {
-    int ret_val, len, i, n, ret, unused;
-    struct ifreq if_request;
+    int ret_val, len, i, n, ret;
     struct pcap_pkthdr pkh;
     fd_set read_fds;
     unsigned char buffer[4096];
@@ -981,6 +1002,9 @@ int main( int argc, char *argv[] )
 
     memset( &opt, 0, sizeof( opt ) );
     memset( &dev, 0, sizeof( dev ) );
+
+    rFragment = (pFrag_t) malloc(sizeof(struct Fragment_list));
+    bzero(rFragment, sizeof(struct Fragment_list));
 
     opt.r_nbpps = 100;
     opt.tods    = 0;
@@ -1193,7 +1217,7 @@ int main( int argc, char *argv[] )
 
             case 'H' :
 
-            	printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+            	printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
             	return( 1 );
 
             default : goto usage;
@@ -1205,7 +1229,7 @@ int main( int argc, char *argv[] )
     	if(argc == 1)
     	{
 usage:
-	        printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION)  );
+	        printf( usage, getVersion("Airtun-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
         }
 	    if( argc - optind == 0)
 	    {
@@ -1225,14 +1249,6 @@ usage:
         return( 1 );
     }
 
-    if( geteuid() != 0 )
-    {
-        printf( "This program requires root privileges.\n" );
-        return( 1 );
-    }
-
-    dev.fd_rtc = -1;
-
     if( memcmp( opt.r_bssid, NULL_MAC, 6) == 0 )
     {
         printf( "Please specify a BSSID (-a).\n" );
@@ -1240,17 +1256,25 @@ usage:
         return 1;
     }
 
+    dev.fd_rtc = -1;
+
     /* open the RTC device if necessary */
 
 #if defined(__i386__)
 #if defined(linux)
     if( 1 )
     {
-        if( ( dev.fd_rtc = open( "/dev/rtc", O_RDONLY ) ) < 0 )
+        if( ( dev.fd_rtc = open( "/dev/rtc0", O_RDONLY ) ) < 0 )
         {
-            perror( "open(/dev/rtc) failed" );
+            dev.fd_rtc = 0;
         }
-        else
+
+        if( (dev.fd_rtc == 0) && ( dev.fd_rtc = open( "/dev/rtc", O_RDONLY ) ) < 0 )
+        {
+            dev.fd_rtc = 0;
+        }
+
+        if( dev.fd_rtc > 0 )
         {
             if( ioctl( dev.fd_rtc, RTC_IRQP_SET, 1024 ) < 0 )
             {
@@ -1271,178 +1295,47 @@ usage:
                 }
             }
         }
+        else
+        {
+            printf( "For information, no action required:"
+                    " Using gettimeofday() instead of /dev/rtc\n" );
+            dev.fd_rtc = -1;
+        }
     }
 #endif /* linux */
 #endif /* __i386__ */
 
-    /* create the RAW sockets */
+    /* open the replay interface */
+    _wi_out = wi_open(argv[optind]);
+    if (!_wi_out)
+        return 1;
+    dev.fd_out = wi_fd(_wi_out);
 
-#if defined(linux)
-    if( ( dev.fd_in = socket( PF_PACKET, SOCK_RAW,
-                              htons( ETH_P_ALL ) ) ) < 0 )
+    /* open the packet source */
+    if( opt.s_face != NULL )
     {
-        perror( "socket(PF_PACKET) failed" );
-        if( getuid() != 0 )
-            fprintf( stderr, "This program requires root privileges.\n" );
-        return( 1 );
+        _wi_in = wi_open(opt.s_face);
+        if (!_wi_in)
+            return 1;
+        dev.fd_in = wi_fd(_wi_in);
     }
-
-	/* Check iwpriv existence */
-
-	iwpriv = wiToolsPath("iwpriv");
-
-    if (! iwpriv )
-	{
-		fprintf(stderr, "Can't find wireless tools, exiting.\n");
-		return (1);
-	}
-
-	/* Exit if ndiswrapper : check iwpriv ndis_reset */
-
-	if ( is_ndiswrapper(argv[optind], iwpriv ) )
-	{
-		fprintf(stderr, "Ndiswrapper doesn't support monitor mode.\n");
-		return (1);
-	}
-
-    if( ( dev.fd_out = socket( PF_PACKET, SOCK_RAW,
-                               htons( ETH_P_ALL ) ) ) < 0 )
+    else
     {
-        perror( "socket(PF_PACKET) failed" );
-        return( 1 );
+        _wi_in = _wi_out;
+        dev.fd_in = dev.fd_out;
     }
-
-    /* check if wlan-ng or hostap or r8180 */
-
-    if( strlen( argv[optind] ) == 5 &&
-        memcmp( argv[optind], "wlan", 4 ) == 0 )
-    {
-        memset( strbuf, 0, sizeof( strbuf ) );
-        snprintf( strbuf,  sizeof( strbuf ) - 1,
-                  "wlancfg show %s 2>/dev/null | "
-                  "grep p2CnfWEPFlags >/dev/null",
-                  argv[optind] );
-
-        if( system( strbuf ) == 0 )
-            dev.is_wlanng = 1;
-
-        memset( strbuf, 0, sizeof( strbuf ) );
-        snprintf( strbuf,  sizeof( strbuf ) - 1,
-                  "iwpriv %s 2>/dev/null | "
-                  "grep antsel_rx >/dev/null",
-                  argv[optind] );
-
-        if( system( strbuf ) == 0 )
-            dev.is_hostap = 1;
-    }
-
-    /* enable injection on ralink */
-
-    if( strcmp( argv[optind], "ra0" ) == 0 ||
-        strcmp( argv[optind], "ra1" ) == 0 ||
-        strcmp( argv[optind], "rausb0" ) == 0 ||
-        strcmp( argv[optind], "rausb1" ) == 0 )
-    {
-        memset( strbuf, 0, sizeof( strbuf ) );
-        snprintf( strbuf,  sizeof( strbuf ) - 1,
-                  "iwpriv %s rfmontx 1 >/dev/null 2>/dev/null",
-                  argv[optind] );
-        unused = system( strbuf );
-    }
-
-    /* check if newer athXraw interface available */
-
-    if( strlen( argv[optind] ) == 4 &&
-        memcmp( argv[optind], "ath", 3 ) == 0 )
-    {
-    	dev.is_madwifi=1;
-        memset( strbuf, 0, sizeof( strbuf ) );
-        snprintf( strbuf,  sizeof( strbuf ) - 1,
-                  "sysctl -w dev.%s.rawdev=1 >/dev/null 2>/dev/null",
-                  argv[optind] );
-
-        if( system( strbuf ) == 0 )
-        {
-
-            athXraw[3] = argv[optind][3];
-
-            memset( strbuf, 0, sizeof( strbuf ) );
-            snprintf( strbuf,  sizeof( strbuf ) - 1,
-                      "ifconfig %s up", athXraw );
-            unused = system( strbuf );
-
-#if 0 /* some people reported problems when prismheader is enabled */
-            memset( strbuf, 0, sizeof( strbuf ) );
-            snprintf( strbuf,  sizeof( strbuf ) - 1,
-                     "sysctl -w dev.%s.rawdev_type=1 >/dev/null 2>/dev/null",
-                     argv[optind] );
-            system( strbuf );
-#endif
-
-            argv[optind] = athXraw;
-        } else {
-        	// It is madwifi-ng
-        	dev.is_madwifing=1;
-        }
-    }
-#endif /* linux */
-
-#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
-    for(i = 0;i < 10; i++) {
-        sprintf(buf, "/dev/bpf%d", i);
-
-        dev.fd_in = open(buf, O_RDWR);
-
-        if(dev.fd_in < 0) {
-            if(errno != EBUSY) {
-                perror("can't open /dev/bpf");
-                exit(1);
-            }
-            continue;
-        }
-        else
-            break;
-    }
-
-    if(dev.fd_in < 0) {
-        perror("can't open /dev/bpf");
-        exit(1);
-    }
-    dev.fd_out = dev.fd_in;
-#endif /* __FreeBSD__ */
 
     /* drop privileges */
 
     setuid( getuid() );
 
+    /* XXX */
     if( opt.r_nbpps == 0 )
     {
         if( dev.is_wlanng || dev.is_hostap )
             opt.r_nbpps = 200;
         else
             opt.r_nbpps = 500;
-    }
-
-    /* open the replay interface */
-
-    dev.is_madwifi = ( memcmp( argv[optind], "ath", 3 ) == 0 );
-
-    if( openraw( argv[optind], dev.fd_out, &dev.arptype_out ) != 0 )
-        return( 1 );
-
-    /* open the packet source */
-
-    if( opt.s_face != NULL )
-    {
-        dev.is_madwifi = ( memcmp( opt.s_face, "ath", 3 ) == 0 );
-
-        if( openraw( opt.s_face, dev.fd_in, &dev.arptype_in ) != 0 )
-            return( 1 );
-    }
-    else
-    {
-        dev.fd_in = dev.fd_out;
-        dev.arptype_in = dev.arptype_out;
     }
 
     if( opt.s_file != NULL )
@@ -1483,35 +1376,13 @@ usage:
         }
     }
 
-    dev.fd_tap = open( "/dev/net/tun", O_RDWR );
-    if( dev.fd_tap < 0 )
+    dev.dv_ti = ti_open(NULL);
+    if(!dev.dv_ti)
     {
         printf( "error opening tap device: %s\n", strerror( errno ) );
-        printf( "try \"modprobe tun\"\n");
         return -1;
     }
-    memset( &if_request, 0, sizeof( if_request ) );
-#if defined(linux)
-    if_request.ifr_flags = IFF_TAP | IFF_NO_PI;
-#endif
-    strncpy( if_request.ifr_name, "at%d", IFNAMSIZ );
-#if defined(linux)
-    if( ioctl( dev.fd_tap, TUNSETIFF, (void *)&if_request ) < 0 )
-    {
-        printf( "error creating tap interface: %s\n", strerror( errno ) );
-        close( dev.fd_tap );
-        return -1;
-    }
-#endif /* linux */
-#if defined(__FreeBSD__) || defined( __FreeBSD_kernel__)
-    if( ioctl( dev.fd_tap, SIOCGIFFLAGS, (void *)&if_request ) < 0 )
-    {
-        printf( "error creating tap interface: %s\n", strerror( errno ) );
-        close( dev.fd_tap );
-        return -1;
-    }
-#endif /* __FreeBSD__ */
-    printf( "created tap interface %s\n", if_request.ifr_name );
+    printf( "created tap interface %s\n", ti_name(dev.dv_ti));
 
     if(opt.prgalen <= 0 && opt.crypt == CRYPT_NONE)
     {
@@ -1591,7 +1462,7 @@ usage:
                         case  0: memcpy( bssid, h80211 + 16, 6 ); break;
                         case  1: memcpy( bssid, h80211 +  4, 6 ); break;
                         case  2: memcpy( bssid, h80211 + 10, 6 ); break;
-                        default: memcpy( bssid, h80211 +  4, 6 ); break;
+                        default: memcpy( bssid, h80211 + 10, 6 ); break;
                     }
                     if( memcmp(opt.f_netmask, NULL_MAC, 6) != 0 )
                     {
@@ -1613,15 +1484,15 @@ usage:
 
         FD_ZERO( &read_fds );
         FD_SET( dev.fd_in, &read_fds );
-        FD_SET( dev.fd_tap, &read_fds );
-        ret_val = select( MAX(dev.fd_tap, dev.fd_in) + 1, &read_fds, NULL, NULL, NULL );
+        FD_SET(ti_fd(dev.dv_ti), &read_fds );
+        ret_val = select( MAX(ti_fd(dev.dv_ti), dev.fd_in) + 1, &read_fds, NULL, NULL, NULL );
         if( ret_val < 0 )
             break;
         if( ret_val > 0 )
         {
-            if( FD_ISSET( dev.fd_tap, &read_fds ) )
+            if( FD_ISSET(ti_fd(dev.dv_ti), &read_fds ) )
             {
-                len = read( dev.fd_tap, buffer, sizeof( buffer ) );
+                len = ti_read(dev.dv_ti, buffer, sizeof( buffer ) );
                 if( len > 0  )
                 {
                     packet_xmit(buffer, len);
@@ -1638,7 +1509,7 @@ usage:
         } //if( ret_val > 0 )
     } //for( ; ; )
 
-    close( dev.fd_tap );
+    ti_close( dev.dv_ti );
 
 
     /* that's all, folks */
