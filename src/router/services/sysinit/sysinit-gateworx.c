@@ -429,6 +429,19 @@ void start_sysinit( void )
 	close( s );
     }
 #endif
+#ifdef HAVE_WG302V1
+    eval( "setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r",
+	  "npe_eth1_esa" );
+    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+    {
+	char eabuf[32];
+
+	strncpy( ifr.ifr_name, "ixp1", IFNAMSIZ );
+	ioctl( s, SIOCGIFHWADDR, &ifr );
+	close( s );
+    }
+
+#endif
 #ifdef HAVE_TONZE
     {
 	struct ifreq ifr;
