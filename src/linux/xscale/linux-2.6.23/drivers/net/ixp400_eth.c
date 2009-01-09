@@ -3154,7 +3154,7 @@ static int phy_init(void)
     }
 
     /* Module parameter */
-    if (no_phy_scan || machine_is_compex()) 
+    if (no_phy_scan || machine_is_compex() || machine_is_wg302v1()) 
     { 
 	/* Use hardcoded phy addresses */
 	num_phys_to_set = (sizeof(default_phy_cfg) / sizeof(phy_cfg_t));
@@ -4426,6 +4426,13 @@ static int __init ixp400_eth_init(void)
 	{
 	phyAddresses[0]=0x10;
 	phyAddresses[1]=0x3;
+	default_phy_cfg[0].linkMonitor=FALSE;
+	default_phy_cfg[1].linkMonitor=TRUE;
+	}
+    if (machine_is_wg302v1())
+	{
+	phyAddresses[0]=0x30;
+	phyAddresses[1]=0x1;
 	default_phy_cfg[0].linkMonitor=FALSE;
 	default_phy_cfg[1].linkMonitor=TRUE;
 	}

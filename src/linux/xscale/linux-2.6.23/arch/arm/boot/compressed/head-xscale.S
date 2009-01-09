@@ -40,6 +40,10 @@ __XScale_start:
                mov     r7, #(MACH_TYPE_WG302V2 & 0xff)
                orr     r7, r7, #(MACH_TYPE_WG302V2 & 0xff00)
 #endif
+#ifdef CONFIG_MACH_WG302V1
+               mov     r7, #(MACH_TYPE_WG302V1 & 0xff)
+               orr     r7, r7, #(MACH_TYPE_WG302V1 & 0xff00)
+#endif
 #ifdef CONFIG_ARCH_LUBBOCK
 		mov	r7, #MACH_TYPE_LUBBOCK
 #endif

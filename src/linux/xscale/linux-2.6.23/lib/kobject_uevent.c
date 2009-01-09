@@ -71,11 +71,11 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	int retval = 0;
 	int j;
 
-	pr_debug("%s\n", __FUNCTION__);
+//	printk(KERN_EMERG "%s\n", __FUNCTION__);
 
 	action_string = kobject_actions[action];
 	if (!action_string) {
-		pr_debug("kobject attempted to send uevent without action_string!\n");
+//		printk(KERN_EMERG "kobject attempted to send uevent without action_string!\n");
 		return -EINVAL;
 	}
 
@@ -85,7 +85,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 		top_kobj = top_kobj->parent;
 	}
 	if (!top_kobj->kset) {
-		pr_debug("kobject attempted to send uevent without kset!\n");
+//		printk(KERN_EMERG "kobject attempted to send uevent without kset!\n");
 		return -EINVAL;
 	}
 
@@ -95,7 +95,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	/*  skip the event, if the filter returns zero. */
 	if (uevent_ops && uevent_ops->filter)
 		if (!uevent_ops->filter(kset, kobj)) {
-			pr_debug("kobject filter function caused the event to drop!\n");
+//			printk(KERN_EMERG "kobject filter function caused the event to drop!\n");
 			return 0;
 		}
 
@@ -105,7 +105,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	else
 		subsystem = kobject_name(&kset->kobj);
 	if (!subsystem) {
-		pr_debug("unset subsytem caused the event to drop!\n");
+//		printk(KERN_EMERG "unset subsytem caused the event to drop!\n");
 		return 0;
 	}
 
@@ -152,8 +152,8 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 				  &envp[i], NUM_ENVP - i, scratch,
 				  BUFFER_SIZE - (scratch - buffer));
 		if (retval) {
-			pr_debug ("%s - uevent() returned %d\n",
-				  __FUNCTION__, retval);
+//			printk(KERN_EMERG "%s - uevent() returned %d\n",
+//				  __FUNCTION__, retval);
 			goto exit;
 		}
 	}
@@ -198,6 +198,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 		argv [0] = uevent_helper;
 		argv [1] = (char *)subsystem;
 		argv [2] = NULL;
+//		printk(KERN_EMERG "call %s %s\n",argv[0],argv[1]);
 		call_usermodehelper (argv[0], argv, envp, UMH_WAIT_EXEC);
 	}
 
