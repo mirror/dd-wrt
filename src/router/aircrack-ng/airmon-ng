@@ -7,8 +7,19 @@ CH=$3; [ x$3 = "x" ] && CH=10
 IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
+USE_IW=0
 
-PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon"
+if [ -f "`which iw 2>&1`" ]
+then
+	USE_IW=1
+fi
+
+if [ "x$MON_PREFIX"="x" ]
+then
+MON_PREFIX="mon"
+fi
+
+PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon|wlassistant"
 
 usage() {
 	printf "usage: `basename $0` <start|stop|check> <interface> [channel]\n"
@@ -38,7 +49,7 @@ getModule() {
         srcver1=`cat "/sys/class/net/$1/device/driver/module/srcversion"`
         for j in `lsmod | awk '{print $1}' | grep -v "^Module$"`
         do
-            srcver2="`modinfo $j | grep srcversion | awk '{print $2}'`"
+            srcver2="`modinfo $j 2>/dev/null | grep srcversion | awk '{print $2}'`"
             if [ $srcver1 = "$srcver2" ]
             then
                 MODULE=$j
@@ -64,7 +75,7 @@ getDriver() {
 
 scanProcesses() {
     match=`ps -A -o comm= | grep $PROCESSES | grep -v grep | wc -l`
-    if [ $match -gt 0 ]
+    if [ $match -gt 0 -a x"$1" != xkill ]
     then
         echo && echo
         echo "Found $match processes that could cause trouble."
@@ -73,7 +84,15 @@ scanProcesses() {
         echo
         echo "PID\tName"
     else
-        return
+        if [ x"$1" != xkill ]
+        then
+            return
+        fi
+    fi
+
+    if [ $match -gt 0 -a x"$1" = xkill ]
+    then
+        echo "Killing all those processes..."
     fi
 
     i=1
@@ -81,7 +100,12 @@ scanProcesses() {
     do
         pid=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $1}'`
         pname=`ps -A -o pid= -o comm= | grep $PROCESSES | grep -v grep | head -n $i | tail -n 1 | awk '{print $2}'`
-        printf "$pid\t$pname\n"
+        if [ x"$1" != xkill ]
+        then
+            printf "$pid\t$pname\n"
+        else
+            kill $pid
+        fi
         i=$(($i+1))
     done
 }
@@ -124,7 +148,17 @@ getChipset() {
 
     if [ x$DRIVER = "xzd1211rw" -o x$DRIVER = "xzd1211rw_mac80211" ]
     then
-        CHIPSET="Zydas 1211"
+        CHIPSET="ZyDAS 1211"
+    fi
+
+    if [ x$DRIVER = "xb43" -o x$DRIVER = "xb43legacy" -o x$DRIVER = "xbcm43xx" ]
+    then
+        CHIPSET="Broadcom 43xx"
+    fi
+
+    if [ x$DRIVER = "xprism54" -o x$DRIVER = "xp54pci" -o x$DRIVER = "xp54usb" ]
+    then
+        CHIPSET="PrismGT"
     fi
 
     if [ x$DRIVER = "xhostap" ]
@@ -167,17 +201,17 @@ getChipset() {
         CHIPSET="Intel 2200 b/g"
     fi
 
-    if [ x$DRIVER = "xipw3945" ]
+    if [ x$DRIVER = "xipw3945" -o x$DRIVER = "xipwraw" -o x$DRIVER = "xiwl3945" ]
     then
         CHIPSET="Intel 3945 a/b/g"
     fi
 
-    if [ x$DRIVER = "xipw4965" ]
+    if [ x$DRIVER = "xipw4965" -o x$DRIVER = "xiwl4965" ]
     then
-        CHIPSET="Intel 4945 a/b/g/n"
+        CHIPSET="Intel 4965 a/b/g/n"
     fi
 
-    if [ x$DRIVER = "xath_pci" ]
+    if [ x$DRIVER = "xath_pci" -o x$DRIVER = "xath5k" ]
     then
         CHIPSET="Atheros"
     fi
@@ -206,12 +240,12 @@ getPhy() {
 getNewMon() {
     i=0
 
-    while [ -d /sys/class/net/mon$i/ ]
+    while [ -d /sys/class/net/$MON_PREFIX$i/ ]
     do
         i=$(($i+1))
     done
 
-    MONDEV="mon$i"
+    MONDEV="$MON_PREFIX$i"
 }
 
 if [ x"`which id 2> /dev/null`" != "x" ]
@@ -241,6 +275,12 @@ then
 #         getDriver $iface
         checkProcessesIface $iface
     done
+
+    if [ x"$2" = xkill ]
+    then
+        scanProcesses "$2"
+    fi
+
     exit
 fi
 
@@ -299,7 +339,7 @@ do
     printf "$iface\t\tAtheros\t\tmadwifi-ng"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
-        IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor -bssid`
+        IFACE=`wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath`
         cp $KISMET~ $KISMET 2>/dev/null &&
         echo "source=madwifi_g,$iface,Atheros" >>$KISMET
         ifconfig $iface up
@@ -335,19 +375,43 @@ do
     printf "$iface\t\t$CHIPSET\t$DRIVER - [$PHYDEV]"
     if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
     then
-        echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
-        sleep 0.1
-        iwconfig $MONDEV mode Monitor &>/dev/null
-        ifconfig $MONDEV up
-        printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+        if [ $USE_IW = 1 ]
+        then
+            iw dev $iface interface add $MONDEV type monitor
+            sleep 0.1
+            ifconfig $MONDEV up
+            printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+        else
+            if [ -f /sys/class/ieee80211/"$PHYDEV"/add_iface ]
+            then
+                echo -n "$MONDEV" > /sys/class/ieee80211/"$PHYDEV"/add_iface
+                sleep 0.1
+                iwconfig $MONDEV mode Monitor >/dev/null 2>&1
+                ifconfig $MONDEV up
+                printf "\n\t\t\t\t(monitor mode enabled on $MONDEV)"
+            else
+                printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from http://dl.aircrack-ng.org/iw.tar.bz2\n"
+            fi
+        fi
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
     then
-        z="`echo $iface | cut -b -3`"
-        if [ x$z = "xmon" ]
+        z="`echo $iface | cut -b -${#MON_PREFIX}`"
+        if [ x$z = "x$MON_PREFIX" ]
         then
-            echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
-            printf " (removed)"
+            if [ $USE_IW = 1 ]
+            then
+                iw dev "$iface" interface del
+                printf " (removed)"
+            else
+                if [ -f /sys/class/ieee80211/"$PHYDEV"/remove_iface ]
+                then
+                    echo -n "$iface" > /sys/class/ieee80211/"$PHYDEV"/remove_iface
+                    printf " (removed)"
+                else
+                    printf "\n\nERROR: Neither the sysfs interface links nor the iw command is available.\nPlease download and install iw from http://dl.aircrack-ng.org/iw.tar.bz2\n"
+                fi
+	    fi
         else
             ifconfig $iface down
             iwconfig $iface mode managed
@@ -366,16 +430,16 @@ do
     then
         cp $KISMET~ $KISMET 2>/dev/null &&
         echo "source=orinoco,$iface,HermesI" >>$KISMET
-        iwconfig $iface mode Monitor channel $CH &>/dev/null
-        iwpriv $iface monitor 1 $CH &>/dev/null
+        iwconfig $iface mode Monitor channel $CH >/dev/null 2>&1
+        iwpriv $iface monitor 1 $CH >/dev/null 2>&1
         ifconfig $iface up
         printf " (monitor mode enabled)"
     fi
     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
     then
         ifconfig $iface down
-        iwpriv $iface monitor 0 &>/dev/null
-        iwconfig $iface mode Managed &>/dev/null
+        iwpriv $iface monitor 0 >/dev/null 2>&1
+        iwconfig $iface mode Managed >/dev/null 2>&1
         printf " (monitor mode disabled)"
     fi
     echo
@@ -403,7 +467,7 @@ do
 
  if [ x$DRIVER = "xipw2200" ] || [ x"`iwpriv $iface 2>/dev/null | grep sw_reset`" != "x" ]
  then
-    MODINFO=`modinfo ipw2200 2>/dev/null | awk '/^version/ {print $2}'`
+    MODINFO=`modinfo ipw2200  2>/dev/null | awk '/^version/ {print $2}'`
     if { echo "$MODINFO" | grep -E '^1\.0\.(0|1|2|3)$' ; }
     then
     	echo "Monitor mode not supported, please upgrade"
@@ -511,7 +575,7 @@ do
          echo "source=prism54g,$iface,Prism54" >>$KISMET
          ifconfig $iface up
          iwconfig $iface mode Monitor channel $CH
-         iwpriv $iface set_prismhdr 1 &>/dev/null
+         iwpriv $iface set_prismhdr 1 >/dev/null 2>&1
          printf " (monitor mode enabled)"
      fi
      if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
@@ -531,7 +595,7 @@ do
          cp $KISMET~ $KISMET 2>/dev/null &&
          echo "source=hostap,$iface,Prism2" >>$KISMET
          iwconfig $iface mode Monitor channel $CH
-         iwpriv $iface monitor_type 1 &>/dev/null
+         iwpriv $iface monitor_type 1 >/dev/null 2>&1
          ifconfig $iface up
          printf " (monitor mode enabled)"
      fi
@@ -588,6 +652,10 @@ do
          startStdIface $iface $CH
          iwpriv $iface rfmontx 1
     fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+     	stopStdIface $iface
+    fi
     echo
     continue
 
@@ -603,6 +671,10 @@ do
          startStdIface $iface $CH
          iwpriv $iface rfmontx 1
     fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+     	stopStdIface $iface
+    fi    
     echo
     continue
 
@@ -618,6 +690,10 @@ do
          startStdIface $iface $CH
          iwpriv $iface rfmontx 1
     fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+     	stopStdIface $iface
+    fi    
     echo
     continue
 
@@ -676,7 +752,7 @@ do
          iwconfig $iface mode Monitor channel $CH
          if [ x"`iwpriv $iface 2>/dev/null | grep prismhdr`" != "x" ]
          then
-            iwpriv $iface prismhdr 1 &>/dev/null
+            iwpriv $iface prismhdr 1 >/dev/null 2>&1
          fi
          ifconfig $iface up
          printf " (monitor mode enabled)"
@@ -700,7 +776,7 @@ do
          iwconfig $iface mode Monitor channel $CH
          if [ x"`iwpriv $iface 2>/dev/null | grep rawtx`" != "x" ]
          then
-             iwpriv $iface rawtx 1 &>/dev/null
+             iwpriv $iface rawtx 1 >/dev/null 2>&1
          fi
          ifconfig $iface up
          printf " (monitor mode enabled)"
@@ -795,6 +871,10 @@ do
     then
          startStdIface $iface $CH
     fi
+    if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+     then
+     	stopStdIface $iface
+    fi    
     echo
     continue
 
@@ -808,6 +888,10 @@ do
      then
           startStdIface $iface $CH
      fi
+     if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
+      then
+      	 stopStdIface $iface
+     fi     
      echo
      continue
 

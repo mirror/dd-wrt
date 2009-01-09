@@ -1,4 +1,9 @@
+#ifndef _AIRCRACK_NG_H
+#define _AIRCRACK_NG_H
+
 #include <stdint.h>
+#include <stdio.h>
+#include "aircrack-ptw-lib.h"
 
 #define SUCCESS  0
 #define FAILURE  1
@@ -20,28 +25,46 @@
 
 #define PTW_TRY_STEP    5000
 
-#define SWAP(x,y) { uchar tmp = x; x = y; y = tmp; }
+#define SWAP(x,y) { unsigned char tmp = x; x = y; y = tmp; }
 
 #define KEYHSBYTES PTW_KEYHSBYTES
 
+#define MAX_THREADS 128
+
+#define CLOSE_IT	100000
+
+#define GENPMKMAGIC 0x43575041
+struct hashdb_head {
+	uint32_t magic;
+	uint8_t reserved1[3];
+	uint8_t ssidlen;
+	uint8_t ssid[32];
+};
+
+struct hashdb_rec {
+	uint8_t rec_size;
+	char *word;
+	uint8_t pmk[32];
+} __attribute__ ((packed));
+
 #ifdef __i386__
 
-extern int shammx_init( uchar ctx[40] )
+extern int shammx_init( unsigned char ctx[40] )
 __attribute__((regparm(1)));
 
-extern int shammx_ends( uchar ctx[40], uchar digests[40] )
+extern int shammx_ends( unsigned char ctx[40], unsigned char digests[40] )
 __attribute__((regparm(2)));
 
-extern int shammx_data( uchar ctx[40], uchar data[128], uchar buf[640] )
+extern int shammx_data( unsigned char ctx[40], unsigned char data[128], unsigned char buf[640] )
 __attribute__((regparm(3)));
 #endif
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev);
+extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
+extern int readLine(char line[], int maxlength);
+extern int hexToInt(char s[], int len);
+extern int hexCharToInt(unsigned char c);
 
-
-#define BROADCAST "\xFF\xFF\xFF\xFF\xFF\xFF"
-#define SPANTREE  "\x01\x80\xC2\x00\x00\x00"
 
 #define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
@@ -78,14 +101,14 @@ struct options
 	int essid_set;				 /* essid set flag       */
 	int bssid_set;				 /* bssid set flag       */
 	char essid[33];				 /* target ESSID         */
-	uchar bssid[6];				 /* target BSSID         */
+	unsigned char bssid[6];				 /* target BSSID         */
 	int nbcpu;					 /* # of cracker threads
 									(= # of CPU)         */
 	int is_quiet;				 /* quiet mode flag      */
 
-	uchar debug[64];			 /* user-defined WEP key */
+	unsigned char debug[64];			 /* user-defined WEP key */
 	int debug_row[64] ;          /* user-defined Row WEP key */
-	uchar maddr[6];				 /* MAC address filter   */
+	unsigned char maddr[6];				 /* MAC address filter   */
 	int keylen;					 /* WEP key length       */
 	int index;					 /* WEP key index        */
 	float ffact;				 /* bruteforce factor    */
@@ -118,7 +141,22 @@ struct options
 	int brutebytes[64];			/* bytes to bruteforce */
         int next_ptw_try;
 
+	int max_ivs;
+
+	char *bssidmerge;
+	unsigned char *firstbssid;
+	struct mergeBSSID * bssid_list_1st;
+
 	struct AP_info *ap;
+
+	int wep_decloak;
+	int ptw_attack;
+
+	int visual_inspection;       /* Enabling/disabling visual    */
+                                 /* inspection of the different  */
+                                 /* keybytes                     */
+
+	int oneshot;
 }
 
 opt;
@@ -128,8 +166,8 @@ vote;
 
 struct WEP_data
 {
-	uchar key[64];				 /* the current chosen WEP key   */
-	uchar *ivbuf;				 /* buffer holding all the IVs   */
+	unsigned char key[64];				 /* the current chosen WEP key   */
+	unsigned char *ivbuf;				 /* buffer holding all the IVs   */
 	int nb_aps;					 /* number of targeted APs       */
 	long nb_ivs;				 /* # of unique IVs in buffer    */
 	long nb_ivs_now;			 /* # of unique IVs available    */
@@ -142,11 +180,11 @@ wep;
 
 struct WPA_hdsk
 {
-	uchar stmac[6];				 /* supplicant MAC               */
-	uchar snonce[32];			 /* supplicant nonce             */
-	uchar anonce[32];			 /* authenticator nonce          */
-	uchar keymic[16];			 /* eapol frame MIC              */
-	uchar eapol[256];			 /* eapol frame contents         */
+	unsigned char stmac[6];				 /* supplicant MAC               */
+	unsigned char snonce[32];			 /* supplicant nonce             */
+	unsigned char anonce[32];			 /* authenticator nonce          */
+	unsigned char keymic[16];			 /* eapol frame MIC              */
+	unsigned char eapol[256];			 /* eapol frame contents         */
 	int eapol_size;				 /* eapol frame size             */
 	int keyver;					 /* key version (TKIP / AES)     */
 	int state;					 /* handshake completion         */
@@ -155,19 +193,22 @@ struct WPA_hdsk
 struct AP_info
 {
 	struct AP_info *next;		 /* next AP in linked list       */
-	uchar bssid[6];				 /* access point MAC address     */
+	unsigned char bssid[6];				 /* access point MAC address     */
 	char essid[33];				 /* access point identifier      */
-	uchar lanip[4];				 /* IP address if unencrypted    */
-	uchar *ivbuf;				 /* table holding WEP IV data    */
-	uchar **uiv_root;			 /* IV uniqueness root struct    */
+	unsigned char lanip[4];				 /* IP address if unencrypted    */
+	unsigned char *ivbuf;				 /* table holding WEP IV data    */
+	unsigned char **uiv_root;			 /* IV uniqueness root struct    */
 	long ivbuf_size;			 /* IV buffer allocated size     */
 	long nb_ivs;				 /* total number of unique IVs   */
+	long nb_ivs_clean;			 /* total number of unique IVs   */
+	long nb_ivs_vague;				 /* total number of unique IVs   */
 	int crypt;					 /* encryption algorithm         */
 	int eapol;					 /* set if EAPOL is present      */
 	int target;					 /* flag set if AP is a target   */
 	struct ST_info *st_1st;		 /* linked list of stations      */
 	struct WPA_hdsk wpa;		 /* valid WPA handshake data     */
-        PTW_attackstate *ptw;
+        PTW_attackstate *ptw_clean;
+        PTW_attackstate *ptw_vague;
 };
 
 struct ST_info
@@ -178,4 +219,15 @@ struct ST_info
 	unsigned char stmac[6];		 /* client MAC address           */
 };
 
-void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod, int keylimit );
+struct mergeBSSID
+{
+	unsigned char bssid [6];     /* BSSID */
+	char unused[2];				 /* Alignment */
+	int convert;				 /* Does this BSSID has to       */
+								 /* be converted                 */
+	struct mergeBSSID * next;
+};
+
+void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod );
+
+#endif /* _AIRCRACK_NG_H */

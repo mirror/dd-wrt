@@ -1,7 +1,7 @@
 /*
  *  Common functions for all aircrack-ng tools
  *
- *  Copyright (C) 2006,2007 Thomas d'Otreppe
+ *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
  *
  *  WEP decryption attack (chopchop) developped by KoreK
  *
@@ -30,123 +30,148 @@
 #include <unistd.h>
 #include <ctype.h>
 
-#if defined(linux)
-//Check if the driver is ndiswrapper */
-int is_ndiswrapper(const char * iface, const char * path)
-{
-	int n, pid, unused;
-	if ((pid=fork())==0)
-	{
-		close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
-		execl(path, "iwpriv",iface, "ndis_reset", NULL);
-		exit( 1 );
-	}
-
-	waitpid( pid, &n, 0 );
-	return ( ( WIFEXITED(n) && WEXITSTATUS(n) == 0 ));
-}
-#endif /* linux */
+#define isHex(c) (hexToInt(c) != -1)
+#define HEX_BASE 16
 
 /* Return the version number */
-char * getVersion(char * progname, int maj, int min, int submin, int svnrev)
+char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc)
 {
+	int len;
 	char * temp;
 	char * provis = calloc(1,20);
-	temp = (char *) calloc(1,strlen(progname)+50);
-	sprintf(temp, "%s %d.%d", progname, maj, min);
+	len = strlen(progname) + 200;
+	temp = (char *) calloc(1,len);
+
+	snprintf(temp, len, "%s %d.%d", progname, maj, min);
+
 	if (submin > 0) {
-		sprintf(provis,".%d",submin);
-		strcat(temp,provis);
+		snprintf(provis, 20,".%d",submin);
+		strncat(temp, provis, len - strlen(temp));
 		memset(provis,0,20);
 	}
-	if (svnrev > 0) {
-		sprintf(provis," r%d",svnrev);
-		strcat(temp,provis);
+
+	if (rc > 0) {
+		snprintf(provis, 20, " rc%d", rc);
+		strncat(temp, provis, len - strlen(temp));
+		memset(provis, 0, 20);
+	} else if (beta > 0) {
+		snprintf(provis, 20, " beta%d", beta);
+		strncat(temp, provis, len - strlen(temp));
+		memset(provis, 0, 20);
 	}
+
+	if (svnrev > 0) {
+		snprintf(provis, 20," r%d",svnrev);
+		strncat(temp, provis, len - strlen(temp));
+		memset(provis, 0, 20);
+	}
+
 	free(provis);
 	temp = realloc(temp, strlen(temp)+1);
 	return temp;
 }
 
-/* Search a file recursively */
-
-char * searchInside(const char * dir, const char * filename)
+//compares two MACs
+int maccmp(unsigned char *mac1, unsigned char *mac2)
 {
-	char * ret;
-	char * curfile;
-	struct stat sb;
-	int len, lentot;
-	DIR *dp;
-	struct dirent *ep;
+    int i=0;
 
-	len = strlen(filename);
-	lentot = strlen(dir) + 256 + 2;
-	curfile = (char *)calloc(1, lentot);
-	dp = opendir(dir);
-	if (dp == NULL)
-		return NULL;
-	while ((ep = readdir(dp)) != NULL)
+    if(mac1 == NULL || mac2 == NULL)
+        return -1;
+
+    for(i=0; i<6; i++)
+    {
+        if( toupper(mac1[i]) != toupper(mac2[i]) )
+            return -1;
+    }
+    return 0;
+}
+
+/* Return -1 if it's not an hex value and return its value when it's a hex value */
+int hexCharToInt(unsigned char c)
+{
+	static int table_created = 0;
+	static int table[256];
+
+	int i;
+
+	if (table_created == 0)
 	{
-
-		memset(curfile, 0, lentot);
-		sprintf(curfile, "%s/%s", dir, ep->d_name);
-
-		//Checking if it's the good file
-		if ((int)strlen( ep->d_name) == len && !strcmp(ep->d_name, filename))
+		/*
+		 * It may seem a bit long to calculate the table
+		 * but character position depend on the charset used
+		 * Example: EBCDIC
+		 * but it's only done once and then conversion will be really fast
+		 */
+		for (i=0; i < 256; i++)
 		{
-			(void)closedir(dp);
-			return curfile;
-		}
-		lstat(curfile, &sb);
 
-		//If it's a directory and not a link, try to go inside to search
-		if (S_ISDIR(sb.st_mode) && !S_ISLNK(sb.st_mode))
-		{
-			//Check if the directory isn't "." or ".."
-			if (strcmp(".", ep->d_name) && strcmp("..", ep->d_name))
+			switch ((unsigned char)i)
 			{
-				//Recursive call
-				ret = searchInside(curfile, filename);
-				if (ret != NULL)
-				{
-					(void)closedir(dp);
-					return ret;
-				}
+				case '0':
+					table[i] = 0;
+					break;
+				case '1':
+					table[i] = 1;
+					break;
+				case '2':
+					table[i] = 2;
+					break;
+				case '3':
+					table[i] = 3;
+					break;
+				case '4':
+					table[i] = 4;
+					break;
+				case '5':
+					table[i] = 5;
+					break;
+				case '6':
+					table[i] = 6;
+					break;
+				case '7':
+					table[i] = 7;
+					break;
+				case '8':
+					table[i] = 8;
+					break;
+				case '9':
+					table[i] = 9;
+					break;
+				case 'A':
+				case 'a':
+					table[i] = 10;
+					break;
+				case 'B':
+				case 'b':
+					table[i] = 11;
+					break;
+				case 'C':
+				case 'c':
+					table[i] = 12;
+					break;
+				case 'D':
+				case 'd':
+					table[i] = 13;
+					break;
+				case 'E':
+				case 'e':
+					table[i] = 14;
+					break;
+				case 'F':
+				case 'f':
+					table[i] = 15;
+					break;
+				default:
+					table[i] = -1;
 			}
 		}
-	}
-	(void)closedir(dp);
-	return NULL;
-}
 
-#if defined(linux)
-/* Search a wireless tool and return its path */
-char * wiToolsPath(const char * tool)
-{
-	char * path;
-	int i, nbelems;
-	static const char * paths [] = {
-		"/sbin",
-		"/usr/sbin",
-		"/usr/local/sbin",
-		"/bin",
-		"/usr/bin",
-		"/usr/local/bin",
-		"/tmp"
-	};
-
-	nbelems = sizeof(paths) / sizeof(char *);
-
-	for (i = 0; i < nbelems; i++)
-	{
-		path = searchInside(paths[i], tool);
-		if (path != NULL)
-			return path;
+		table_created = 1;
 	}
 
-	return NULL;
+	return table[c];
 }
-#endif
 
 //Return the mac address bytes (or null if it's not a mac address)
 int getmac(char * macAddress, int strict, unsigned char * mac)
@@ -174,12 +199,15 @@ int getmac(char * macAddress, int strict, unsigned char * mac)
 			&& strlen(byte) == 2)
 			return 1;
 
-		if (!(isdigit(byte[1]) || (toupper(byte[1])>='A' && toupper(byte[1])<='F')))
+		if (hexCharToInt(byte[1]) < 0)
 			return 1;
+
 		mac[nbElem] = n;
+
 		i+=2;
 		nbElem++;
-		if (macAddress[i] == ':' || macAddress[i] == '-')
+
+		if (macAddress[i] == ':' || macAddress[i] == '-'  || macAddress[i] == '_')
 			i++;
 	}
 
@@ -188,4 +216,69 @@ int getmac(char * macAddress, int strict, unsigned char * mac)
 		return 1;
 
 	return 0;
+}
+
+// Read a line of characters inputted by the user
+int readLine(char line[], int maxlength)
+{
+	int c;
+	int i = -1;
+
+	do
+	{
+		// Read char
+		c = getchar();
+
+		if (c == EOF)
+			c = '\0';
+
+		line[++i] = (char)c;
+
+		if (line[i] == '\n')
+			break;
+		if (line[i] == '\r')
+			break;
+		if (line[i] == '\0')
+			break;
+	}
+	while (i + 1 < maxlength);
+	// Stop at 'Enter' key pressed or EOF or max number of char read
+
+	// Return current size
+    return i;
+}
+
+int hexToInt(char s[], int len)
+{
+	int i = 0;
+	int convert = -1;
+	int value = 0;
+
+	// Remove leading 0 (and also the second char that can be x or X)
+
+	while (i < len)
+	{
+		if (s[i] != '0' || (i == 1 && toupper((int)s[i]) != 'X'))
+			break;
+
+		++i;
+	}
+
+	// Convert to hex
+
+	while (i < len)
+	{
+		convert = hexCharToInt((unsigned char)s[i]);
+
+		// If conversion failed, return -1
+		if (convert == -1)
+			return -1;
+
+		value = (value * HEX_BASE) + convert;
+
+		++i;
+	}
+
+
+	return value;
 }
