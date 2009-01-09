@@ -518,8 +518,6 @@ struct b44 {
 #define B44_FLAG_ADV_100FULL	0x08000000
 #define B44_FLAG_INTERNAL_PHY	0x10000000
 
-	u32			rx_offset;
-
 	u32			msg_enable;
 
 	struct timer_list	timer;
