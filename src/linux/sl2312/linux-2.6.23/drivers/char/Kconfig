@@ -741,7 +741,7 @@ config NVRAM
 
 config RTC
 	tristate "Enhanced Real Time Clock Support"
-	depends on !PPC && !PARISC && !IA64 && !M68K && !SPARC && !FRV && !ARM && !SUPERH && !S390
+	depends on !PPC && !PARISC && !IA64 && !M68K && !SPARC && !FRV && !SUPERH && !S390
 	---help---
 	  If you say Y here and create a character special file /dev/rtc with
 	  major number 10 and minor number 135 using mknod ("man mknod"), you
@@ -764,6 +764,11 @@ config RTC
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called rtc.
+
+config SL2312_RTC
+    tristate "Storlink Real Time Clock Support"
+    depends on ARCH_SL2312
+
 
 config JS_RTC
 	tristate "Enhanced Real Time Clock Support"

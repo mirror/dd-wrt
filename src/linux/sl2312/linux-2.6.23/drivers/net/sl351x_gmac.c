@@ -80,7 +80,7 @@
 #ifdef CONFIG_SL351x_NAT
 #endif
 #define GMAX_TX_INTR_DISABLED			1
-//#define DO_HW_CHKSUM					1
+// #define DO_HW_CHKSUM					1
 //#define ENABLE_TSO						1
 #define GMAC_USE_TXQ0					1
 // #define NAT_WORKAROUND_BY_RESET_GMAC	1
@@ -97,7 +97,7 @@
 #define PAUSE_REL_HW_FREEQ			((TOE_HW_FREEQ_DESC_NUM / 2) + 10)
 #define DEFAULT_RXQ_MAX_CNT			256
 #ifdef	L2_jumbo_frame
-#define TCPHDRLEN(tcp_hdr)  ((ntohs(*((__u16 *)tcp_hdr + 6)) >> 12) & 0x000F)
+#define TCPHDRLEN(tcp_hdr2)  ((ntohs(*((__u16 *)tcp_hdr2 + 6)) >> 12) & 0x000F)
 #endif
 
 /* define chip information */
@@ -173,6 +173,7 @@ static void toe_init_interrupt_queue(void);
 static void toe_init_interrupt_config(void);
 static void toe_gmac_sw_reset(void);
 static int toe_gmac_init_chip(struct net_device *dev);
+static int gmac_change_mtu(struct net_device *dev, int new_mtu);
 static void toe_gmac_enable_tx_rx(struct net_device* dev);
 static void toe_gmac_disable_tx_rx(struct net_device *dev);
 static void toe_gmac_hw_start(struct net_device *dev);
@@ -360,9 +361,7 @@ static int __init gmac_init_module(void)
 		dev->tx_timeout = gmac_tx_timeout;
 		dev->watchdog_timeo = GMAC_DEV_TX_TIMEOUT;
 		dev->ethtool_ops = &gmac_ethtool_ops;
-#ifdef	L2_jumbo_frame
-		dev->mtu = 2018; //2002  ,2018
-#endif
+		dev->change_mtu = gmac_change_mtu;
 		if (tp->port_id == 0)
 			dev->tx_queue_len = TOE_GMAC0_SWTXQ_DESC_NUM;
 		else
@@ -1713,8 +1712,8 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	unsigned short			wptr, rptr;
 #ifdef	L2_jumbo_frame
 	int header_len = skb->len;
-	struct iphdr	*ip_hdr;
-	struct tcphdr	*tcp_hdr;
+	struct iphdr	*ip_hdr2;
+	struct tcphdr	*tcp_hdr2;
 	int             tcp_hdr_len;
 	unsigned char 	*ptr;
 	int             data_len,a;
@@ -1769,16 +1768,16 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 //		data_len = skb->len - 14 - ip_hdr->ihl *4 - tcp_hdr_len;
 //		if ((skb->nh.iph->protocol == __constant_htons(ETH_P_IP)) && ((skb->nh.iph->protocol & 0x00ff)  == IPPROTO_TCP))
 //		if (skb->nh.iph->protocol == 0x006 && (skb->nh.iph->protocol == __constant_htons(ETH_P_IP)))
-		if (((skb->nh.iph->protocol & 0x00ff)  == IPPROTO_TCP))
+		if (((ip_hdr(skb)->protocol & 0x00ff)  == IPPROTO_TCP))
 		{
-				ip_hdr = (struct iphdr*)(skb->nh.iph);
-				tcp_hdr = (struct tcphdr*)(skb->h.th);
-				tcp_hdr_len = TCPHDRLEN(tcp_hdr) * 4;
-				tcp_hdr_len = TCPHDRLEN(tcp_hdr) * 4;
+		//		ip_hdr2 = ip_hdr(skb);
+				tcp_hdr2 = tcp_hdr(skb);
+				tcp_hdr_len = TCPHDRLEN(tcp_hdr2) * 4;
+				tcp_hdr_len = TCPHDRLEN(tcp_hdr2) * 4;
 
-				if ((skb->h.th->syn) && (tcp_hdr_len > 20))
+				if ((tcp_hdr2->syn) && (tcp_hdr_len > 20))
 				{
-					ptr = (unsigned char *)(tcp_hdr+1);
+					ptr = (unsigned char *)(tcp_hdr2+1);
 					if ((ptr[0] == 0x02) && (ptr[1] == 0x04) && (ptr[2] == 0x07) && (ptr[3] == 0xba)) // 0x07 aa=2016-54=1962  ,0x07ba=2032-54=1978
 					{
 						ptr[2]=0x20;	//23
@@ -1855,7 +1854,7 @@ static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
 #ifdef	L2_jumbo_frame
 		word3 = (dev->mtu+14) | EOFIE_BIT;  //2016 ,2032
 #else
-		word3 = 1514 | EOFIE_BIT;
+		word3 = (dev->mtu+14) | EOFIE_BIT;  //2016 ,2032
 #endif
 
 #ifdef DO_HW_CHKSUM
@@ -3870,6 +3869,53 @@ void gmac_tx_timeout(struct net_device *dev)
 	}
 }
 
+/*----------------------------------------------------------------------
+* gmac_change_mtu -- Change the Maximum Transfer Unit
+* @netdev: network interface device structure
+* @new_mtu: new value for maximum frame size
+*
+* Returns 0 on success, negative on failure
+*----------------------------------------------------------------------*/
+static int gmac_change_mtu(struct net_device *dev, int new_mtu)
+{
+	GMAC_INFO_T				*tp = (GMAC_INFO_T *)dev->priv;
+	int max_frame = new_mtu + ENET_HEADER_SIZE + ETHERNET_FCS_SIZE;
+	GMAC_STATUS_T   status, old_status;
+	
+	old_status.bits32 = status.bits32 = gmac_read_reg(tp->base_addr, GMAC_STATUS);
+	
+	if((max_frame < MINIMUM_ETHERNET_FRAME_SIZE) ||	(max_frame > MAX_JUMBO_FRAME_SIZE)) 
+	{
+		printk("Invalid MTU setting\n");
+		return -EINVAL;
+	}
+
+	dev->mtu = new_mtu;
+	if (new_mtu > MAX_JUMBO_FRAME_SIZE)
+	{
+		printk("GMAC-%d MTU must <= %d \n",tp->port_id,MAX_JUMBO_FRAME_SIZE);
+		return -EINVAL;
+	}
+	else 
+	{
+		printk("GMAC-%d Change MTU = %d\n",tp->port_id,new_mtu);
+	}
+	if (!netif_running(dev))
+		goto out;
+	
+	netif_stop_queue(dev);
+	toe_gmac_disable_tx_rx(dev);
+	clear_bit(__LINK_STATE_START, &dev->state);
+	//printk("GMAC-%d Change Status Bits 0x%x-->0x%x\n",tp->port_id, old_status.bits32, status.bits32);
+	mdelay(30); // Let GMAC consume packet
+	
+	gmac_write_reg(tp->base_addr, GMAC_STATUS, 0x7c, 0x0000007f);
+			
+out:	
+	return 0;
+
+
+}
 
 
 /*----------------------------------------------------------------------
