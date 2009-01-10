@@ -430,7 +430,7 @@ static int adm5120_switch_rx(int limit)
 				dma_cache_wback_inv((unsigned long)skb->data,
 					skb->len);
 
-#ifdef CONFIG_ADM5120_SWITCH_USE_NAPI
+#ifdef CONFIG_ADM5120_SWITCH_NAPI
 				netif_receive_skb(skb);
 #else
 				netif_rx(skb);

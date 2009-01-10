@@ -133,7 +133,11 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 	int err;
 	int i;
 	int retlen;
+#ifdef CONFIG_ADM5120_COMPEX_WP54G
 	trx_parts[0].offset = 0x20000;
+#else
+	trx_parts[0].offset = 0x20000;
+#endif
 	trx_parts[0].size = (mtd->size-mtd->erasesize) - trx_parts[0].offset;
 	int offset = 0;
 
@@ -150,6 +154,7 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 					break;
 				    } 
 //			    offset+=mtd->erasesize;
+//			    offset++;
 			    offset+=4096; //scan in smaller blocks
 			    }
 	trx_parts[1].size = (mtd->size-mtd->erasesize) - trx_parts[1].offset;
@@ -171,8 +176,8 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 	
 	trx_nr_parts++;
 
-	for (i=0;i<3;i++)
-	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
+//	for (i=0;i<3;i++)
+//	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
 	
 	/*
 	detect OSBridge 
@@ -188,10 +193,14 @@ static void trxsplit_create_partitions(struct mtd_info *mtd)
 	    }
 	boot.name="boot";
 	boot.offset=0;
+#ifdef CONFIG_ADM5120_COMPEX_WP54G
+	boot.size=0x10000;
+#else
 	boot.size=mtd->erasesize*bootmul;
+#endif
 	err = add_mtd_partitions(mtd, &boot, 1);
-	for (i=0;i<3;i++)
-	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
+//	for (i=0;i<3;i++)
+//	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
 	
 	err = add_mtd_partitions(mtd, trx_parts, 3);
 	if (err) {

@@ -20,6 +20,7 @@
 */
 
 #include "LzmaDecode.h"
+#include <linux/module.h>
 
 #ifndef Byte
 #define Byte unsigned char
@@ -455,6 +456,7 @@ int LzmaDecode(
   UInt32 posStateMask = (1 << pb) - 1;
   UInt32 literalPosMask = (1 << lp) - 1;
   int len = 0;
+//  printk(KERN_EMERG "bufferSize %d < probs %d %d %d %d\n",bufferSize,numProbs * sizeof(CProb),lc,pb,lp);
   if (bufferSize < numProbs * sizeof(CProb))
     return LZMA_RESULT_NOT_ENOUGH_MEM;
   for (i = 0; i < numProbs; i++)
