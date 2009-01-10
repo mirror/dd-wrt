@@ -415,6 +415,21 @@ void start_sysinit( void )
 	    close( s );
 	}
     }
+#ifdef HAVE_WG302V1
+    eval( "setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r",
+	  "zcom_npe_esa" );
+    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+    {
+	char eabuf[32];
+
+	strncpy( ifr.ifr_name, "ixp0", IFNAMSIZ );
+	ioctl( s, SIOCGIFHWADDR, &ifr );
+	strncpy( ifr.ifr_name, "ixp1", IFNAMSIZ );
+	ioctl( s, SIOCGIFHWADDR, &ifr );
+	close( s );
+    }
+
+#else
 #ifdef HAVE_WG302
     eval( "setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r",
 	  "npe_eth0_esa" );
@@ -433,18 +448,6 @@ void start_sysinit( void )
 	close( s );
     }
 #endif
-#ifdef HAVE_WG302V1
-    eval( "setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r",
-	  "npe_eth1_esa" );
-    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
-    {
-	char eabuf[32];
-
-	strncpy( ifr.ifr_name, "ixp1", IFNAMSIZ );
-	ioctl( s, SIOCGIFHWADDR, &ifr );
-	close( s );
-    }
-
 #endif
 #ifdef HAVE_TONZE
     {
