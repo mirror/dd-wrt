@@ -418,6 +418,8 @@ void start_sysinit( void )
 #ifdef HAVE_WG302V1
     eval( "setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r",
 	  "zcom_npe_esa" );
+    struct ifreq ifr;
+    int s;
     if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
     {
 	char eabuf[32];
