@@ -978,6 +978,7 @@ process_pkts:
                  * also pulls the ether header
                  */
                 skb->protocol       = eth_type_trans(skb, dev);
+                skb->ip_summed      = CHECKSUM_NONE;
                 skb->dev            = dev;
                 bp->buf_pkt         = NULL;
                 dev->last_rx        = jiffies;
@@ -1004,6 +1005,7 @@ process_pkts:
             * also pulls the ether header
             */
             skb->protocol       = eth_type_trans(skb, dev);
+            skb->ip_summed      = CHECKSUM_NONE;
             skb->dev            = dev;
             bp->buf_pkt         = NULL;
             dev->last_rx        = jiffies;
