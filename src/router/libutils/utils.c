@@ -488,6 +488,9 @@ return 0;
 #elif HAVE_WG302
     setRouter( "Netgear WG302v2" );
     return ROUTER_BOARD_GATEWORX;
+#elif HAVE_WG302V1
+    setRouter( "Netgear WG302v1" );
+    return ROUTER_BOARD_GATEWORX;
 #elif HAVE_GATEWORX
     char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 
 												 */
