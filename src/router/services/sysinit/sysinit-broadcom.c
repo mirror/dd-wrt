@@ -436,6 +436,9 @@ void start_sysinit( void )
      */
     mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
     eval( "mkdir", "/tmp/www" );
+#ifdef HAVE_MICRO
+    mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
+#endif
 
     cprintf( "sysinit() var\n" );
 

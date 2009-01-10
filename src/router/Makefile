@@ -40,7 +40,7 @@ export PLATFORM := $(PLATFORM)-uclibc
 endif
 
 ifeq ($(CONFIG_BCM5354),y)
-export LINUXVER := 2.4.36
+export LINUXVER := 2.4.37
 else
 export LINUXVER := 2.4.35
 endif
@@ -359,7 +359,15 @@ endif
 #	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)
 
         # Prepare filesystem
+ifeq ($(CONFIG_DIST),"micro")
+	cd $(TARGETDIR) && $(TOP)/misc/rootprep_micro.sh
+else
+ifeq ($(CONFIG_DIST),"micro-special")
+	cd $(TARGETDIR) && $(TOP)/misc/rootprep_micro.sh
+else
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
+endif
+endif
         # Make sure mksquashfs-2.0 is used
 #	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs
 	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
