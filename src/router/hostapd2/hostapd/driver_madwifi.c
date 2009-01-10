@@ -573,7 +573,7 @@ madwifi_read_sta_driver_data(void *priv, struct hostap_sta_driver_data *data,
 {
 	struct madwifi_driver_data *drv = priv;
 
-#ifdef MADWIFI_BSD
+#if 1
 	struct ieee80211req_sta_stats stats;
 
 	memset(data, 0, sizeof(*data));
