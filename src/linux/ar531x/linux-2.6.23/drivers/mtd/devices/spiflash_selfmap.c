@@ -562,9 +562,9 @@ spiflash_write_page (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,co
 		    return -EINTR;
 
 	        local_irq_disable();
-                sysGpioCtrlOutput(0); /* set GPIO_0 as output */
+                sysGpioCtrlOutput(CONFIG_MTD_SPIFLASH_PP_GPIO); /* set GPIO_0 as output */
 
-                sysGpioSet(0, 0);     /* drive low GPIO_0     */
+                sysGpioSet(CONFIG_MTD_SPIFLASH_PP_GPIO, 0);     /* drive low GPIO_0     */
 
                 spiflash_regwrite32(SPI_FLASH_DATA, spi_data);
                 opcode = (sf_opcode & SPI_OPCODE_MASK) | ((__u32) flashAddr << 8);
@@ -611,7 +611,7 @@ spiflash_write_page (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,co
                 buf += 4;
 		busy_wait((reg = spiflash_regread32(SPI_FLASH_CTL)) & SPI_CTL_BUSY, 0);
 
-                sysGpioSet(0, 1);   /* drive high GPIO_0 */
+                sysGpioSet(CONFIG_MTD_SPIFLASH_PP_GPIO, 1);   /* drive high GPIO_0 */
 	        local_irq_enable();
 		spiflash_done();
 
