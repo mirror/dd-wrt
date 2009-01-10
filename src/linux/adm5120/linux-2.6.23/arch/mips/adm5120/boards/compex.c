@@ -107,6 +107,9 @@ static void __init np2xg_setup(void)
 	gpio_request(ADM5120_GPIO_PIN5, NULL); /* for flash A20 line */
 	gpio_direction_output(ADM5120_GPIO_PIN5, 0);
 
+	gpio_request(ADM5120_GPIO_PIN4, NULL);
+	gpio_direction_output(ADM5120_GPIO_PIN4, 1);
+
 	/* setup data for flash0 device */
 	adm5120_flash0_data.switch_bank = switch_bank_gpio5;
 

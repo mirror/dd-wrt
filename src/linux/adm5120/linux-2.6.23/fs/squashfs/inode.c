@@ -1026,8 +1026,6 @@ static int squashfs_fill_super(struct super_block *s, void *data, int silent)
 
 	/* Check it is a SQUASHFS superblock */
 	msblk->swap = 0;
-	printk(KERN_EMERG "%s\n",(char*) sblk);
-	printk(KERN_EMERG "magic is %X\n",sblk->s_magic);
 	if ((s->s_magic = sblk->s_magic) != SQUASHFS_MAGIC) {
 		if (sblk->s_magic == SQUASHFS_MAGIC_SWAP) {
 			struct squashfs_super_block ssblk;

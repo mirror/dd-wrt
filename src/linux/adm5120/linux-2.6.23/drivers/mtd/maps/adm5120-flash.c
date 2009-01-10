@@ -49,7 +49,7 @@
 #define DRV_DESC	"ADM5120 flash MAP driver"
 #define MAX_PARSED_PARTS 8
 
-#ifdef ADM5120_FLASH_DEBUG
+#if ADM5120_FLASH_DEBUG
 #define MAP_DBG(m, f, a...)	printk(KERN_INFO "%s: " f, (m->name) , ## a)
 #else
 #define MAP_DBG(m, f, a...)	do {} while (0)
@@ -326,8 +326,8 @@ static void adm5120_flash_initbanks(struct adm5120_flash_info *info)
 	}
 
 	MAP_ERR(map, "reduce visibility from %ldKiB to %ldKiB\n",
-		(unsigned long)map->size >> 10,
-		(unsigned long)info->mtd->size >> 10);
+		(unsigned long)map->size,
+		(unsigned long)info->mtd->size);
 
 	info->mtd->size = info->amap.window_size;
 }

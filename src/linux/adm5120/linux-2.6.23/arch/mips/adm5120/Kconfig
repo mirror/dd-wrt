@@ -2,6 +2,14 @@ if MIPS_ADM5120
 
 menu "ADM5120 Implementation Options"
 
+config ADM5120_COMPEX_WP54G
+	bool "compex wp54g support"
+	default n
+
+config ADM5120_COMPEX_NP28G
+	bool "compex wp54g support"
+	default n
+
 config ADM5120_CPU_OVERRIDES
 	bool "Enable CPU feature overrides"
 	default y
