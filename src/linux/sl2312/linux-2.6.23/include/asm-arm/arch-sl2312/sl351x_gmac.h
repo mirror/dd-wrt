@@ -24,7 +24,7 @@
 #define BIG_ENDIAN  				0
 #define GMAC_DEBUG      			1
 #define GMAC_NUM					1
-//#define	L2_jumbo_frame				1
+#define	L2_jumbo_frame				1
 
 #define _PACKED_					__attribute__ ((aligned(1), packed))
 
@@ -48,6 +48,13 @@
 #else
 #define SW_RX_BUF_SIZE				1536	// 2048
 #endif
+
+#define ENET_HEADER_SIZE             14
+#define MAXIMUM_ETHERNET_FRAME_SIZE  1518 /* With FCS */
+#define MINIMUM_ETHERNET_FRAME_SIZE  64   /* With FCS */
+#define ETHERNET_FCS_SIZE            4
+#define MAX_JUMBO_FRAME_SIZE         9100  //
+
 
 #define HW_RX_BUF_SIZE				1536	// 2048
 

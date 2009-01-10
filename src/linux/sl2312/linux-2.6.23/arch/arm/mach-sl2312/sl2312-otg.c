@@ -53,7 +53,7 @@ static struct resource sl2312_otg_resources_2[] = {
 	},
 };
 
-static struct platform_device ehci_device_1 = {
+static struct platform_device ehci_device_1 = { 
 	.name		= "ehci-hcd-FOTG2XX",
 	.id		= 1,
 	.dev		= {
@@ -76,7 +76,8 @@ static struct platform_device ehci_device_2 = {
 };
 
 static struct platform_device *devices[] __initdata = {
-	&ehci_device_1, /* &ehci_device_2, */
+	&ehci_device_1,
+	//&ehci_device_2,
 };
 
 static int __init sl2312_init(void)
