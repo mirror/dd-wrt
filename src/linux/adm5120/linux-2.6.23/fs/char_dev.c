@@ -100,7 +100,6 @@ __register_chrdev_region(unsigned int major, unsigned int baseminor,
 	struct char_device_struct *cd, **cp;
 	int ret = 0;
 	int i;
-	printk(KERN_EMERG "register major %d, minor %d, minorct %d for %s\n",major,baseminor,minorct,name);
 
 	cd = kzalloc(sizeof(struct char_device_struct), GFP_KERNEL);
 	if (cd == NULL)

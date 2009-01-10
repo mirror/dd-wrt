@@ -25,11 +25,9 @@ static struct class *mtd_class;
 
 static void mtd_notify_add(struct mtd_info* mtd)
 {
-printk(KERN_EMERG "mtd: notify add\n");
 	if (!mtd)
 		return;
 
-printk(KERN_EMERG "mtd: class device create\n");
 	class_device_create(mtd_class, NULL, MKDEV(MTD_CHAR_MAJOR, mtd->index*2),
 			    NULL, "mtd%d", mtd->index);
 
