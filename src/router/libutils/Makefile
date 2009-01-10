@@ -180,9 +180,6 @@ endif
 ifeq ($(CONFIG_FONERA),y)
   CFLAGS += -DHAVE_FONERA
 endif
-ifeq ($(CONFIG_WG302),y)
-  CFLAGS += -DHAVE_WG302
-endif
 ifeq ($(CONFIG_WBD500),y)
   CFLAGS += -DHAVE_WBD500
 endif
