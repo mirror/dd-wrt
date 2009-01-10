@@ -27,6 +27,13 @@
 #define BLOCK_SIZE_BITS 10
 #define BLOCK_SIZE (1<<BLOCK_SIZE_BITS)
 
+#ifdef CONFIG_SL2312_TSO
+struct page_chain {
+	struct page* page;
+	struct page_chain* next;
+};
+#endif
+
 #define SEEK_SET	0	/* seek relative to beginning of file */
 #define SEEK_CUR	1	/* seek relative to current file position */
 #define SEEK_END	2	/* seek relative to end of file */
@@ -1123,6 +1130,9 @@ struct file_operations {
 	int (*fasync) (int, struct file *, int);
 	int (*lock) (struct file *, int, struct file_lock *);
 	ssize_t (*sendpage) (struct file *, struct page *, int, size_t, loff_t *, int);
+#ifdef CONFIG_SL2312_TSO
+	ssize_t (*send_mpages) (struct file *, struct page_chain *, int, size_t, loff_t *, int);
+#endif
 	unsigned long (*get_unmapped_area)(struct file *, unsigned long, unsigned long, unsigned long, unsigned long);
 	int (*check_flags)(int);
 	int (*dir_notify)(struct file *filp, unsigned long arg);
