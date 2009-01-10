@@ -231,6 +231,8 @@ int getbuttonstate(  )
 
 #ifdef HAVE_STORM	
 	ret = read_bit(60);
+#elif HAVE_WG302V1
+	ret = read_bit( 13 );
 #elif HAVE_WG302
 	ret = read_bit( 3 );
 #elif HAVE_CAMBRIA
@@ -708,9 +710,6 @@ if (brand==ROUTER_BOARD_WHRG300N)
 int main( int argc, char *argv[] )
 {
 
-#ifdef HAVE_WG302V1
-    return 0;
-#endif
     brand = getRouterBrand(  );
 #ifndef HAVE_NOP8670
     if( ( brand & 0x000f ) == 0x000f )
