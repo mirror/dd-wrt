@@ -308,6 +308,37 @@ static inline void spiflash_done(void)
 	wake_up(&spidata->wq);
 }
 
+#ifdef CONFIG_MTD_SPIFLASH_PP
+static void sysGpioCtrlInput(int gpio_bit)
+{
+	unsigned int tmpVal;
+	tmpVal = *(volatile int *)(0xb1000098);
+	tmpVal &= ~(1<<gpio_bit);
+	tmpVal |=(0<<gpio_bit);
+	*(volatile int *)(0xb1000098) = tmpVal;  
+}
+
+static void sysGpioCtrlOutput(int gpio_bit)
+{
+	unsigned int tmpVal;
+	tmpVal = *(volatile int *)(0xb1000098);
+	tmpVal &= ~(1<<gpio_bit);
+	tmpVal |=(1<<gpio_bit);
+	*(volatile int *)(0xb1000098) = tmpVal;  
+}
+
+static void sysGpioSet(int gpio_bit, int val)
+{
+    unsigned int reg;
+
+    reg = *(volatile int *)(0xb1000090);
+    reg &= ~(1 << gpio_bit);
+    reg |= (val&1) << gpio_bit;
+    *(volatile int *)(0xb1000090) = reg;
+}
+
+#endif
+
 static int 
 spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 {
@@ -315,7 +346,11 @@ spiflash_erase (struct mtd_info *mtd,struct erase_info *instr)
 	__u32 temp, reg;
 	int finished = 0;
 	unsigned int addr = instr->addr;
+#ifdef CONFIG_MTD_SPIFLASH_PP
+        sysGpioCtrlOutput(CONFIG_MTD_SPIFLASH_PP_GPIO); /* set GPIO_0 as output */
 
+        sysGpioSet(CONFIG_MTD_SPIFLASH_PP_GPIO, 1);     /* drive low GPIO_0     */
+#endif
 #ifdef SPIFLASH_DEBUG
    	printk (KERN_DEBUG "%s(addr = 0x%.8x, len = %d)\n",__FUNCTION__,instr->addr,instr->len);
 #endif
@@ -466,34 +501,6 @@ spiflash_write (struct mtd_info *mtd,loff_t to,size_t len,size_t *retlen,const u
 #endif
 
 
-
-static void sysGpioCtrlInput(int gpio_bit)
-{
-	unsigned int tmpVal;
-	tmpVal = *(volatile int *)(0xb1000098);
-	tmpVal &= ~(1<<gpio_bit);
-	tmpVal |=(0<<gpio_bit);
-	*(volatile int *)(0xb1000098) = tmpVal;  
-}
-
-static void sysGpioCtrlOutput(int gpio_bit)
-{
-	unsigned int tmpVal;
-	tmpVal = *(volatile int *)(0xb1000098);
-	tmpVal &= ~(1<<gpio_bit);
-	tmpVal |=(1<<gpio_bit);
-	*(volatile int *)(0xb1000098) = tmpVal;  
-}
-
-static void sysGpioSet(int gpio_bit, int val)
-{
-    unsigned int reg;
-
-    reg = *(volatile int *)(0xb1000090);
-    reg &= ~(1 << gpio_bit);
-    reg |= (val&1) << gpio_bit;
-    *(volatile int *)(0xb1000090) = reg;
-}
 
 
 
