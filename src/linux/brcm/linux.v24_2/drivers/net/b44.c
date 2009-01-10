@@ -722,8 +722,7 @@ static int b44_alloc_rx_skb(struct b44 *bp, int src_idx, u32 dest_idx_unmasked)
 				 RX_PKT_BUF_SZ,
 				 PCI_DMA_FROMDEVICE);
 
-	rh = (struct rx_header *)
-		(skb->data - RX_HEADER_OFS);
+	rh = (struct rx_header *) skb->data;
 	rh->len = 0;
 	rh->flags = 0;
 
