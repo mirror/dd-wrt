@@ -333,7 +333,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		len +=  (mtd->erasesize - 1);
 		len &= ~(mtd->erasesize - 1);
 		part->size = len - part->offset;
-//		printk(KERN_EMERG "partition size = %d\n",part->size);
+		printk(KERN_EMERG "partition size = %d\n",part->size);
 	} else if (*((__u16 *) buf) == JFFS2_MAGIC_BITMASK) {
 		printk(KERN_EMERG  "%s: Filesystem type: jffs2\n", mtd->name);
 
