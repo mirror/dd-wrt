@@ -89,7 +89,7 @@ CONFIG_BCM5354=y
 # CONFIG_HIGHMEM is not set
 CONFIG_RWSEM_GENERIC_SPINLOCK=y
 # CONFIG_RWSEM_XCHGADD_ALGORITHM is not set
-CONFIG_CMDLINE="root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200"
+CONFIG_CMDLINE="root=1f02 rootfstype=squashfs noinitrd console=ttyS0,115200"
 CONFIG_PCI=y
 CONFIG_NONCOHERENT_IO=y
 CONFIG_NEW_TIME_C=y
@@ -765,6 +765,7 @@ CONFIG_NET_WIRELESS=y
 #
 # CONFIG_VT is not set
 # CONFIG_SERIAL is not set
+# CONFIG_SERIAL_CONSOLE is not set
 # CONFIG_SERIAL_EXTENDED is not set
 # CONFIG_SERIAL_NONSTANDARD is not set
 CONFIG_UNIX98_PTYS=y
@@ -898,8 +899,8 @@ CONFIG_RAMFS=y
 # CONFIG_NTFS_RW is not set
 # CONFIG_HPFS_FS is not set
 CONFIG_PROC_FS=y
-CONFIG_DEVFS_FS=y
-CONFIG_DEVFS_MOUNT=y
+# CONFIG_DEVFS_FS is not set
+# CONFIG_DEVFS_MOUNT is not set
 # CONFIG_DEVFS_DEBUG is not set
 # CONFIG_DEVPTS_FS is not set
 # CONFIG_QNX4FS_FS is not set
