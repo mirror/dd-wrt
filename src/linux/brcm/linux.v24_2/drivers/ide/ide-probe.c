@@ -819,7 +819,7 @@ void probe_hwif (ide_hwif_t *hwif)
 {
 	unsigned int unit;
 	unsigned long flags;
-	unsigned int irqd;
+	int irqd;
 
 	if (hwif->noprobe)
 		return;
@@ -855,8 +855,8 @@ void probe_hwif (ide_hwif_t *hwif)
 	 * we'll install our IRQ driver much later...
 	 */
 	irqd = hwif->irq;
-	if (irqd)
-		disable_irq(hwif->irq);
+	if (irqd > 0)
+		disable_irq(irqd);
 
 	local_irq_set(flags);
 
@@ -909,7 +909,7 @@ void probe_hwif (ide_hwif_t *hwif)
 	 * Use cached IRQ number. It might be (and is...) changed by probe
 	 * code above
 	 */
-	if (irqd)
+	if (irqd > 0)
 		enable_irq(irqd);
 		
 	ide_tune_drives(hwif);
