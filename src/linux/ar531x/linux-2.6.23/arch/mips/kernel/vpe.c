@@ -936,8 +936,18 @@ static int vpe_elfload(struct vpe * v)
 
   		}
   	} else {
-  		for (i = 0; i < hdr->e_shnum; i++) {
+		struct elf_phdr *phdr = (struct elf_phdr *) ((char *)hdr + hdr->e_phoff);
 
+		for (i = 0; i < hdr->e_phnum; i++) {
+			if (phdr->p_type != PT_LOAD)
+				continue;
+
+			memcpy((void *)phdr->p_vaddr, (char *)hdr + phdr->p_offset, phdr->p_filesz);
+			memset((void *)phdr->p_vaddr + phdr->p_filesz, 0, phdr->p_memsz - phdr->p_filesz);
+			phdr++;
+		}
+
+		for (i = 0; i < hdr->e_shnum; i++) {
  			/* Internal symbols and strings. */
  			if (sechdrs[i].sh_type == SHT_SYMTAB) {
  				symindex = i;
@@ -948,39 +958,6 @@ static int vpe_elfload(struct vpe * v)
  				   magic symbols */
  				sechdrs[i].sh_addr = (size_t) hdr + sechdrs[i].sh_offset;
  			}
-
- 			/* filter sections we dont want in the final image */
- 			if (!(sechdrs[i].sh_flags & SHF_ALLOC) ||
- 			    (sechdrs[i].sh_type == SHT_MIPS_REGINFO)) {
- 				printk( KERN_DEBUG " ignoring section, "
- 					"name %s type %x address 0x%x \n",
- 					secstrings + sechdrs[i].sh_name,
- 					sechdrs[i].sh_type, sechdrs[i].sh_addr);
- 				continue;
- 			}
-
-  			if (sechdrs[i].sh_addr < (unsigned int)v->load_addr) {
- 				printk( KERN_WARNING "VPE loader: "
- 					"fully linked image has invalid section, "
- 					"name %s type %x address 0x%x, before load "
- 					"address of 0x%x\n",
- 					secstrings + sechdrs[i].sh_name,
- 					sechdrs[i].sh_type, sechdrs[i].sh_addr,
- 					(unsigned int)v->load_addr);
-  				return -ENOEXEC;
-  			}
-
- 			printk(KERN_DEBUG " copying section sh_name %s, sh_addr 0x%x "
-			       "size 0x%x0 from x%p\n",
-			       secstrings + sechdrs[i].sh_name, sechdrs[i].sh_addr,
-			       sechdrs[i].sh_size, hdr + sechdrs[i].sh_offset);
-
-  			if (sechdrs[i].sh_type != SHT_NOBITS)
-				memcpy((void *)sechdrs[i].sh_addr,
-				       (char *)hdr + sechdrs[i].sh_offset,
- 				       sechdrs[i].sh_size);
-			else
-				memset((void *)sechdrs[i].sh_addr, 0, sechdrs[i].sh_size);
 		}
 	}
 
@@ -1026,6 +1003,7 @@ static void cleanup_tc(struct tc *tc)
 	write_tc_c0_tcstatus(tmp);
 
 	write_tc_c0_tchalt(TCHALT_H);
+	mips_ihb();
 
 	/* bind it to anything other than VPE1 */
 //	write_tc_c0_tcbind(read_tc_c0_tcbind() & ~TCBIND_CURVPE); // | TCBIND_CURVPE
@@ -1258,9 +1236,12 @@ int vpe_free(vpe_handle vpe)
 	settc(t->index);
 	write_vpe_c0_vpeconf0(read_vpe_c0_vpeconf0() & ~VPECONF0_VPA);
 
-	/* mark the TC unallocated and halt'ed */
-	write_tc_c0_tcstatus(read_tc_c0_tcstatus() & ~TCSTATUS_A);
+	/* halt the TC */
 	write_tc_c0_tchalt(TCHALT_H);
+	mips_ihb();
+
+	/* mark the TC unallocated */
+	write_tc_c0_tcstatus(read_tc_c0_tcstatus() & ~TCSTATUS_A);
 
 	v->state = VPE_STATE_UNUSED;
 
@@ -1553,14 +1534,16 @@ static int __init vpe_module_init(void)
 				t->pvpe = get_vpe(0);	/* set the parent vpe */
 			}
 
+			/* halt the TC */
+			write_tc_c0_tchalt(TCHALT_H);
+			mips_ihb();
+
 			tmp = read_tc_c0_tcstatus();
 
 			/* mark not activated and not dynamically allocatable */
 			tmp &= ~(TCSTATUS_A | TCSTATUS_DA);
 			tmp |= TCSTATUS_IXMT;	/* interrupt exempt */
 			write_tc_c0_tcstatus(tmp);
-
-			write_tc_c0_tchalt(TCHALT_H);
 		}
 	}
 

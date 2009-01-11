@@ -144,12 +144,7 @@
 
 #ifndef MULTIPLE_PAD_SIZES
 
-#ifdef CONFIG_CPU_HAS_WB
-#include <asm/wbflush.h>
-#define esp_write(__reg, __val) do{(__reg) = (__val); wbflush();} while(0)
-#else
-#define esp_write(__reg, __val) ((__reg) = (__val))
-#endif
+#define esp_write(__reg, __val) do{(__reg) = (__val); iob();} while(0)
 #define esp_read(__reg) (__reg)
 
 struct ESP_regs {
