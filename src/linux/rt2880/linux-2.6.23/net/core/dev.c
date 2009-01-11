@@ -1781,6 +1781,19 @@ int netif_rx(struct sk_buff *skb)
 	queue = &__get_cpu_var(softnet_data);
 
 	__get_cpu_var(netdev_rx_stat).total++;
+
+#ifdef CONFIG_BRIDGE
+	/* Optimisation for framebursting (allow interleaving of pkts by
+	 * immediately processing the rx pkt instead of Qing the pkt and deferring
+	 * the processing). Only optimise for bridging and guard against non
+	 * TASKLET based netif_rx calls.
+	 */
+	if (!in_irq() && (skb->dev->br_port != NULL) && br_handle_frame_hook != NULL) {
+		local_irq_restore(flags);
+		return netif_receive_skb(skb);
+	}
+#endif		
+
 	if (queue->input_pkt_queue.qlen <= netdev_max_backlog) {
 		if (queue->input_pkt_queue.qlen) {
 enqueue:
