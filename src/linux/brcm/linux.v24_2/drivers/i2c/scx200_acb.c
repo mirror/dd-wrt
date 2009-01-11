@@ -3,6 +3,7 @@
     Copyright (c) 2001,2002 Christer Weinigel <wingel@nano-system.com>
 
     National Semiconductor SCx200 ACCESS.bus support
+    Also supports AMD CS5535 and AMD CS5536
     
     Based on i2c-keywest.c which is:
         Copyright (c) 2001 Benjamin Herrenschmidt <benh@kernel.crashing.org>
@@ -34,6 +35,7 @@
 #include <linux/smp_lock.h>
 #include <linux/pci.h>
 #include <asm/io.h>
+#include <asm/msr.h>
 
 #include <linux/scx200.h>
 
@@ -526,23 +528,48 @@ static int  __init scx200_acb_create(int base, int index)
 	return rc;
 }
 
+#define MSR_LBAR_SMB		0x5140000B
+
+static int scx200_add_cs553x(void)
+{
+	u32	low, hi;
+	u32	smb_base;
+
+	/* Grab & reserve the SMB I/O range */
+	rdmsr(MSR_LBAR_SMB, low, hi);
+
+	/* Check the IO mask and whether SMB is enabled */
+	if (hi != 0x0000F001) {
+		printk(KERN_WARNING NAME ": SMBus not enabled\n");
+		return -ENODEV;
+	}
+
+	/* SMBus IO size is 8 bytes */
+	smb_base = low & 0x0000FFF8;
+
+	return scx200_acb_create(smb_base, 0);
+}
+
 static int __init scx200_acb_init(void)
 {
 	int i;
-	int rc;
+	int rc = -ENODEV;
 
 	printk(KERN_DEBUG NAME ": NatSemi SCx200 ACCESS.bus Driver\n");
 
 	/* Verify that this really is a SCx200 processor */
 	if (pci_find_device(PCI_VENDOR_ID_NS,
 			    PCI_DEVICE_ID_NS_SCx200_BRIDGE,
-			    NULL) == NULL)
-		return -ENODEV;
-
-	rc = -ENXIO;
+			    NULL)) {
 	for (i = 0; i < MAX_DEVICES; ++i) {
 		if (base[i] > 0)
 			rc = scx200_acb_create(base[i], i);
+	}
+	} else if (pci_find_device(PCI_VENDOR_ID_NS,
+				   PCI_DEVICE_ID_NS_CS5535_ISA, NULL) ||
+		   pci_find_device(PCI_VENDOR_ID_AMD,
+				   PCI_DEVICE_ID_AMD_CS5536_ISA, NULL)) {
+		rc = scx200_add_cs553x();
 	}
 	if (scx200_acb_list)
 		return 0;
