@@ -426,8 +426,9 @@ void start_sysinit( void )
 
 	strncpy( ifr.ifr_name, "ixp0", IFNAMSIZ );
 	ioctl( s, SIOCGIFHWADDR, &ifr );
-	strncpy( ifr.ifr_name, "ixp1", IFNAMSIZ );
-	ioctl( s, SIOCGIFHWADDR, &ifr );
+	nvram_set( "et0macaddr_safe",
+		   ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.sa_data,
+			       eabuf ) );
 	close( s );
     }
 
