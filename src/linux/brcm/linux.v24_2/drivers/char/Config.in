@@ -274,6 +274,9 @@ if [ "$CONFIG_WATCHDOG" != "n" ]; then
    if [ "$CONFIG_SGI_IP22" = "y" ]; then
       dep_tristate '  Indy/I2 Hardware Watchdog' CONFIG_INDYDOG $CONFIG_SGI_IP22
    fi
+   if [ "$CONFIG_MGEODE_LX" = "y" ]; then
+      tristate '  Geode GX/LX on-chip Watchdog timer' CONFIG_GEODE_WDT
+   fi
    if [ "$CONFIG_8xx" = "y" ]; then
       tristate '  MPC8xx Watchdog Timer' CONFIG_8xx_WDT
    fi
@@ -304,6 +307,9 @@ fi
 if [ "$CONFIG_X86" = "y" -o "$CONFIG_IA64" = "y" -o \
      "$CONFIG_X86_64" = "y" ]; then
    dep_tristate 'Intel/AMD/VIA HW Random Number Generator support' CONFIG_HW_RANDOM $CONFIG_PCI
+fi
+if [ "$CONFIG_X86" = "y" ]; then
+   dep_tristate 'AMD Geode Random Number Generator support' CONFIG_GEODE_RNG $CONFIG_PCI
 fi
 dep_tristate 'AMD 76x native power management (Experimental)' CONFIG_AMD_PM768 $CONFIG_PCI
 tristate '/dev/nvram support' CONFIG_NVRAM
