@@ -744,6 +744,11 @@ static void * storage_probe(struct usb_device *dev, unsigned int ifnum,
 		/* unlock the device pointers */
 		up(&(ss->dev_semaphore));
 
+		/* Try to re-connect ourselves to the SCSI subsystem */
+		if (scsi_add_single_device(ss->host, 0, 0, 0))
+		    printk(KERN_WARNING "Unable to connect USB device to the SCSI subsystem\n");
+		else
+		    printk(KERN_WARNING "USB device connected to the SCSI subsystem\n");
 	} else { 
 		/* New device -- allocate memory and initialize */
 		US_DEBUGP("New GUID " GUID_FORMAT "\n", GUID_ARGS(guid));
@@ -1065,6 +1070,12 @@ static void storage_disconnect(struct usb_device *dev, void *ptr)
 
 	/* lock access to the device data structure */
 	down(&(ss->dev_semaphore));
+
+	/* Try to un-hook ourselves from the SCSI subsystem */
+	if (scsi_remove_single_device(ss->host, 0, 0, 0))
+	    printk(KERN_WARNING "Unable to disconnect USB device from the SCSI subsystem\n");
+	else
+	    printk(KERN_WARNING "USB device disconnected from the SCSI subsystem\n");
 
 	/* release the IRQ, if we have one */
 	if (ss->irq_urb) {

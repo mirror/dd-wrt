@@ -255,6 +255,7 @@ static struct ata_port_info ahci_port_info[] = {
 };
 
 static const struct pci_device_id ahci_pci_tbl[] = {
+	/* INTEL */
 	{ PCI_VENDOR_ID_INTEL, 0x2652, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
 	  board_ahci }, /* ICH6 */
 	{ PCI_VENDOR_ID_INTEL, 0x2653, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
@@ -285,14 +286,211 @@ static const struct pci_device_id ahci_pci_tbl[] = {
 	  board_ahci }, /* ICH8M */
 	{ PCI_VENDOR_ID_INTEL, 0x282a, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
 	  board_ahci }, /* ICH8M */
+	{ PCI_VENDOR_ID_INTEL, 0x2922, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9 */
+	{ PCI_VENDOR_ID_INTEL, 0x2923, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9 */
+	{ PCI_VENDOR_ID_INTEL, 0x2924, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9 */
+	{ PCI_VENDOR_ID_INTEL, 0x2925, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9 */
+	{ PCI_VENDOR_ID_INTEL, 0x2927, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9 */
+	{ PCI_VENDOR_ID_INTEL, 0x2929, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9M */
+	{ PCI_VENDOR_ID_INTEL, 0x292a, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9M */
+	{ PCI_VENDOR_ID_INTEL, 0x292b, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9M */
+	{ PCI_VENDOR_ID_INTEL, 0x292c, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9M */
+	{ PCI_VENDOR_ID_INTEL, 0x292f, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9M */
+	{ PCI_VENDOR_ID_INTEL, 0x294d, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9 */
+	{ PCI_VENDOR_ID_INTEL, 0x294e, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci }, /* ICH9M */
+	{ PCI_VENDOR_ID_INTEL, 0x502a, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* Tolapai */
+	{ PCI_VENDOR_ID_INTEL, 0x502b, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* Tolapai */
+	{ PCI_VENDOR_ID_INTEL, 0x3a05, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* ICH10 */
+	{ PCI_VENDOR_ID_INTEL, 0x3a25, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* ICH10 */
+	{ PCI_VENDOR_ID_INTEL, 0x3b24, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* PCH RAID */
+	{ PCI_VENDOR_ID_INTEL, 0x3b2b, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* PCH RAID */
+
+	/* JMICRON */
 	{ 0x197b, 0x2360, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
 	  board_ahci }, /* JMicron JMB360 */
 	{ 0x197b, 0x2363, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
 	  board_ahci }, /* JMicron JMB363 */
+
+	/* ATI */
 	{ PCI_VENDOR_ID_ATI, 0x4380, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
-	  board_ahci }, /* ATI SB600 non-raid */
-	{ PCI_VENDOR_ID_ATI, 0x4381, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
-	  board_ahci }, /* ATI SB600 raid */
+	  board_ahci }, /* ATI SB600 */
+	{ PCI_VENDOR_ID_ATI, 0x4390, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* ATI SB700/800 */
+	{ PCI_VENDOR_ID_ATI, 0x4391, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* ATI SB700/800 */
+	{ PCI_VENDOR_ID_ATI, 0x4392, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* ATI SB700/800 */
+	{ PCI_VENDOR_ID_ATI, 0x4393, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* ATI SB700/800 */
+	{ PCI_VENDOR_ID_ATI, 0x4394, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* ATI SB700/800 */
+	{ PCI_VENDOR_ID_ATI, 0x4395, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* ATI SB700/800 */
+
+	/* NVIDIA */
+	{ PCI_VENDOR_ID_NVIDIA, 0x044c, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP65 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x044d, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP65 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x044e, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP65 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x044f, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP65 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x045c, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP65 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x045d, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP65 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x045e, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP65 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x045f, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP65 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0550, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0551, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0552, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0553, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0554, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0555, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0556, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0557, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0558, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0559, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x055a, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x055b, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP67 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07f0, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07f1, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07f2, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07f3, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07f4, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07f5, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07f6, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07f7, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07f8, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07f9, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07fa, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x07fb, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP73 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ad0, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ad1, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ad2, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ad3, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ad4, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ad5, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ad6, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ad7, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ad8, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ad9, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ada, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0adb, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP77 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ab4, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ab5, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ab6, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ab7, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ab8, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0ab9, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0aba, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0abb, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0abc, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0abd, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0abe, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0abf, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP79 */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bc4, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bc5, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bc6, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bc7, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bc8, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bc9, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bca, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bcb, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bcc, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bcd, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bce, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+	{ PCI_VENDOR_ID_NVIDIA, 0x0bcf, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },	/* MCP7B */
+
+	/* SIS */
+	{ PCI_VENDOR_ID_SI, 0x1184, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },		/* SiS 966 */
+	{ PCI_VENDOR_ID_SI, 0x1185, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },		/* SiS 966 */
+	{ PCI_VENDOR_ID_SI, 0x1186, PCI_ANY_ID, PCI_ANY_ID, 0, 0,
+	  board_ahci },		/* SiS 968 */
+
 	{ }	/* terminate list */
 };
 
