@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 4
-SUBLEVEL = 36
-EXTRAVERSION = 
+SUBLEVEL = 37
+EXTRAVERSION =
 
 KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
@@ -94,7 +94,7 @@ if_gcc4 = $(shell if echo __GNUC__ | $(CC) -E -xc - | grep -q '^4$$' > /dev/null
 
 CPPFLAGS := -D__KERNEL__ -I$(HPATH)
 
-CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -O2 \
+CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs \
 	  -fno-strict-aliasing -fno-common
 CFLAGS += -fno-builtin-strpbrk
 CFLAGS += -fno-builtin-sprintf -DBCMDRIVER -DBCMVISTAROUTER -DBCM5354 -DBCMWPA2 
@@ -305,6 +305,10 @@ Version: dummy
 
 boot: vmlinux
 	@$(MAKE) CFLAGS="$(CFLAGS) $(CFLAGS_KERNEL)" -C arch/$(ARCH)/boot
+
+vmlinus: vmlinux
+	/opt/3.3.4/bin/mipsel-linux-objcopy -O binary vmlinux vmlinus 
+
 
 vmlinux: include/linux/version.h $(CONFIGURATION) init/main.o init/version.o init/do_mounts.o linuxsubdirs
 	$(LD) $(LINKFLAGS) $(HEAD) init/main.o init/version.o init/do_mounts.o \

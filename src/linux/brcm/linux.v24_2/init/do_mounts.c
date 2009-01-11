@@ -6,6 +6,7 @@
 #include <linux/ctype.h>
 #include <linux/blk.h>
 #include <linux/fd.h>
+#include <linux/delay.h>
 #include <linux/tty.h>
 #include <linux/init.h>
 
@@ -322,8 +323,16 @@ static int __init fs_names_setup(char *str)
 	return 1;
 }
 
+static unsigned int __initdata root_delay;
+static int __init root_delay_setup(char *str)
+{
+	root_delay = simple_strtoul(str, NULL, 0);
+	return 1;
+}
+
 __setup("rootflags=", root_data_setup);
 __setup("rootfstype=", fs_names_setup);
+__setup("rootdelay=", root_delay_setup);
 
 static void __init get_fs_names(char *page)
 {
@@ -919,7 +928,15 @@ static int __init initrd_load(void)
  */
 void prepare_namespace(void)
 {
-	int is_floppy = MAJOR(ROOT_DEV) == FLOPPY_MAJOR;
+	int is_floppy;
+
+	if (root_delay) {
+		printk(KERN_INFO "Waiting %dsec before mounting root device...\n",
+		       root_delay);
+		ssleep(root_delay);
+	}
+
+	is_floppy = MAJOR(ROOT_DEV) == FLOPPY_MAJOR;
 #ifdef CONFIG_ALL_PPC
 	extern void arch_discover_root(void);
 	arch_discover_root();
