@@ -229,6 +229,8 @@ CONFIG_MMU=y
 #
 # PCCARD (PCMCIA/CardBus) support
 #
+# CONFIG_PCCARD is not set
+# CONFIG_FW_LOADER is not set
 
 #
 # Executable file formats

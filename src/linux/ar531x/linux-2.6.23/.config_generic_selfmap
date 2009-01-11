@@ -168,7 +168,7 @@ CONFIG_SYSCTL=y
 CONFIG_EMBEDDED=y
 # CONFIG_SYSCTL_SYSCALL is not set
 # CONFIG_KALLSYMS is not set
-# CONFIG_HOTPLUG is not set
+CONFIG_HOTPLUG=y
 CONFIG_PRINTK=y
 # CONFIG_BUG is not set
 # CONFIG_ELF_CORE is not set
@@ -221,6 +221,8 @@ CONFIG_MMU=y
 #
 # PCCARD (PCMCIA/CardBus) support
 #
+# CONFIG_PCCARD is not set
+# CONFIG_FW_LOADER is not set
 
 #
 # Executable file formats
@@ -673,8 +675,8 @@ CONFIG_PHYLIB=y
 # CONFIG_SMSC_PHY is not set
 # CONFIG_BROADCOM_PHY is not set
 # CONFIG_ICPLUS_PHY is not set
-CONFIG_ADM6996_PHY=y
-CONFIG_MVSWITCH_PHY=y
+# CONFIG_ADM6996_PHY is not set
+# CONFIG_MVSWITCH_PHY is not set 
 # CONFIG_FIXED_PHY is not set
 CONFIG_NET_ETHERNET=y
 CONFIG_MII=y
