@@ -168,7 +168,7 @@ CONFIG_SYSCTL=y
 CONFIG_EMBEDDED=y
 # CONFIG_SYSCTL_SYSCALL is not set
 # CONFIG_KALLSYMS is not set
-# CONFIG_HOTPLUG is not set
+CONFIG_HOTPLUG=y
 # CONFIG_PRINTK is not set
 # CONFIG_BUG is not set
 # CONFIG_ELF_CORE is not set
@@ -218,6 +218,8 @@ CONFIG_MMU=y
 #
 # PCCARD (PCMCIA/CardBus) support
 #
+# CONFIG_PCCARD is not set
+# CONFIG_FW_LOADER is not set
 
 #
 # Executable file formats
@@ -602,8 +604,8 @@ CONFIG_MTD_PHYSMAP_BANKWIDTH=0
 # Self-contained MTD device drivers
 #
 CONFIG_MTD_SPIFLASH=y
-# CONFIG_MTD_SPIFLASH_SELFMAP is not set
 # CONFIG_MTD_SPIFLASH_PP is not set
+# CONFIG_MTD_SPIFLASH_PP_GPIO is not set
 # CONFIG_MTD_SLRAM is not set
 # CONFIG_MTD_PHRAM is not set
 # CONFIG_MTD_MTDRAM is not set

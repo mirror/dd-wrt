@@ -835,6 +835,11 @@ __init void cpu_probe(void)
 				c->ases |= MIPS_ASE_MIPS3D;
 		}
 	}
+
+	if (cpu_has_mips_r2)
+		c->srsets = ((read_c0_srsctl() >> 26) & 0x0f) + 1;
+	else
+		c->srsets = 1;
 }
 
 __init void cpu_report(void)

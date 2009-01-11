@@ -538,7 +538,7 @@ asmlinkage void do_ade(struct pt_regs *regs)
 		set_fs(KERNEL_DS);
 	emulate_load_store_insn(regs, (void __user *)regs->cp0_badvaddr, pc);
 	set_fs(seg);
-
+	
 	return;
 
 sigbus:

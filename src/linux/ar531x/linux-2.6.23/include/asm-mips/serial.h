@@ -19,4 +19,9 @@
  */
 #define BASE_BAUD (1843200 / 16)
 
+#ifdef CONFIG_SERIAL_8250_AU1X00
+#undef is_real_interrupt
+#define is_real_interrupt(irq)  (1)
+#endif
+
 #endif /* _ASM_SERIAL_H */
