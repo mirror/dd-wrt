@@ -530,7 +530,7 @@ struct netdev_private {
 	/* MII transceiver section. */
 	unsigned char phys[MAX_MII_CNT];			/* MII device addresses. */
 	unsigned int mii_cnt;			/* number of MIIs found, but only the first one is used */
-	u16 mii_status;						/* last read MII status */
+	int last_duplex;					/* last checked duplex */
 	struct mii_if_info mii_if;
 };
 
@@ -808,11 +808,11 @@ static int __devinit via_rhine_init_one (struct pci_dev *pdev,
 	/* The lower four bits are the media type. */
 	if (option > 0) {
 		if (option & 0x220)
-			np->mii_if.full_duplex = 1;
+			np->last_duplex = np->mii_if.full_duplex = 1;
 		np->default_port = option & 15;
 	}
 	if (card_idx < MAX_UNITS  &&  full_duplex[card_idx] > 0)
-		np->mii_if.full_duplex = 1;
+		np->last_duplex = np->mii_if.full_duplex = 1;
 
 	if (np->mii_if.full_duplex) {
 		printk(KERN_INFO "%s: Set to forced full duplex, autonegotiation"
@@ -859,7 +859,7 @@ static int __devinit via_rhine_init_one (struct pci_dev *pdev,
 	/* Allow forcing the media type. */
 	if (option > 0) {
 		if (option & 0x220)
-			np->mii_if.full_duplex = 1;
+			np->last_duplex = np->mii_if.full_duplex = 1;
 		np->default_port = option & 0x3ff;
 		if (np->default_port & 0x330) {
 			/* FIXME: shouldn't someone check this variable? */
@@ -1058,6 +1058,7 @@ static void init_registers(struct net_device *dev)
 	np->tx_thresh = 0x20;
 	np->rx_thresh = 0x60;			/* Written in via_rhine_set_rx_mode(). */
 	np->mii_if.full_duplex = 0;
+	np->last_duplex = 0;
 
 	if (dev->if_port == 0)
 		dev->if_port = np->default_port;
@@ -1119,7 +1120,7 @@ static void mdio_write(struct net_device *dev, int phy_id, int regnum, int value
 			if (value & 0x9000)			/* Autonegotiation. */
 				np->mii_if.force_media = 0;
 			else
-				np->mii_if.full_duplex = (value & 0x0100) ? 1 : 0;
+				np->last_duplex = np->mii_if.full_duplex = (value & 0x0100) ? 1 : 0;
 			break;
 		case MII_ADVERTISE:
 			np->mii_if.advertising = value;
@@ -1184,20 +1185,20 @@ static void via_rhine_check_duplex(struct net_device *dev)
 {
 	struct netdev_private *np = dev->priv;
 	long ioaddr = dev->base_addr;
-	int mii_lpa = mdio_read(dev, np->phys[0], MII_LPA);
-	int negotiated = mii_lpa & np->mii_if.advertising;
-	int duplex;
 
-	if (np->mii_if.force_media  ||  mii_lpa == 0xffff)
+	if (np->mii_if.force_media)
 		return;
-	duplex = (negotiated & 0x0100) || (negotiated & 0x01C0) == 0x0040;
-	if (np->mii_if.full_duplex != duplex) {
-		np->mii_if.full_duplex = duplex;
+
+	mii_check_media(&np->mii_if, debug, 0);
+
+	if (np->last_duplex != np->mii_if.full_duplex) {
+		np->last_duplex = np->mii_if.full_duplex;
 		if (debug)
 			printk(KERN_INFO "%s: Setting %s-duplex based on MII #%d link"
 				   " partner capability of %4.4x.\n", dev->name,
-				   duplex ? "full" : "half", np->phys[0], mii_lpa);
-		if (duplex)
+				   np->mii_if.full_duplex ? "full" : "half", np->phys[0],
+			           mdio_read(dev, np->phys[0], MII_LPA));
+		if (np->mii_if.full_duplex)
 			np->chip_cmd |= CmdFDuplex;
 		else
 			np->chip_cmd &= ~CmdFDuplex;
@@ -1211,8 +1212,7 @@ static void via_rhine_timer(unsigned long data)
 	struct net_device *dev = (struct net_device *)data;
 	struct netdev_private *np = dev->priv;
 	long ioaddr = dev->base_addr;
-	int next_tick = 10*HZ;
-	int mii_status;
+	int next_tick = 2*HZ/10;
 
 	if (debug > 3) {
 		printk(KERN_DEBUG "%s: VIA Rhine monitor tick, status %4.4x.\n",
@@ -1222,16 +1222,6 @@ static void via_rhine_timer(unsigned long data)
 	spin_lock_irq (&np->lock);
 
 	via_rhine_check_duplex(dev);
-
-	/* make IFF_RUNNING follow the MII status bit "Link established" */
-	mii_status = mdio_read(dev, np->phys[0], MII_BMSR);
-	if ( (mii_status & BMSR_LSTATUS) != (np->mii_status & BMSR_LSTATUS) ) {
-		if (mii_status & BMSR_LSTATUS)
-			netif_carrier_on(dev);
-		else
-			netif_carrier_off(dev);
-	}
-	np->mii_status = mii_status;
 
 	spin_unlock_irq (&np->lock);
 
