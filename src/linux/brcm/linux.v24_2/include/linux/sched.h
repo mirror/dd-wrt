@@ -415,6 +415,8 @@ struct task_struct {
 
 /* journalling filesystem info */
 	void *journal_info;
+
+	struct list_head *scm_work_list;
 };
 
 /*

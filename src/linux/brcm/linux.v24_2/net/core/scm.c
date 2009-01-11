@@ -70,6 +70,7 @@ static int scm_fp_copy(struct cmsghdr *cmsg, struct scm_fp_list **fplp)
 		if (!fpl)
 			return -ENOMEM;
 		*fplp = fpl;
+		INIT_LIST_HEAD(&fpl->list);
 		fpl->count = 0;
 	}
 	fpp = &fpl->fp[fpl->count];
@@ -101,9 +102,25 @@ void __scm_destroy(struct scm_cookie *scm)
 
 	if (fpl) {
 		scm->fp = NULL;
-		for (i=fpl->count-1; i>=0; i--)
-			fput(fpl->fp[i]);
-		kfree(fpl);
+		if (current->scm_work_list) {
+			list_add_tail(&fpl->list, current->scm_work_list);
+		} else {
+			LIST_HEAD(work_list);
+
+			current->scm_work_list = &work_list;
+
+			list_add(&fpl->list, &work_list);
+			while (!list_empty(&work_list)) {
+				fpl = list_entry(work_list.next, struct scm_fp_list, list);
+
+				list_del(&fpl->list);
+				for (i=fpl->count-1; i>=0; i--)
+					fput(fpl->fp[i]);
+				kfree(fpl);
+			}
+
+			current->scm_work_list = NULL;
+		}
 	}
 }
 
@@ -263,6 +280,7 @@ struct scm_fp_list *scm_fp_dup(struct scm_fp_list *fpl)
 
 	new_fpl = kmalloc(sizeof(*fpl), GFP_KERNEL);
 	if (new_fpl) {
+		INIT_LIST_HEAD(&new_fpl->list);
 		for (i=fpl->count-1; i>=0; i--)
 			get_file(fpl->fp[i]);
 		memcpy(new_fpl, fpl, sizeof(*fpl));
