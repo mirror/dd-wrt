@@ -665,6 +665,9 @@ return 0;
     setRouter( "Senao EOC-2610" );
 #endif
     return ROUTER_BOARD_FONERA;
+#elif HAVE_ECB3500
+    setRouter( "Senao ECB-3500" );
+    return ROUTER_BOARD_FONERA;
 #elif HAVE_EAP3660
     setRouter( "Senao EAP-3660" );
     return ROUTER_BOARD_FONERA;
