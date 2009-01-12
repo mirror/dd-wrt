@@ -104,7 +104,10 @@ int main( int argc, char **argv )
     int day, month, year;
     FILE *in;
 
-    strncpy( wanface, get_wan_face(  ), sizeof( wanface ) );
+    if( nvram_match ("ttraff_iface", "" ) )
+    	strncpy( wanface, get_wan_face(  ), sizeof( wanface ) );
+    else
+    	strncpy( wanface, nvram_safe_get ("ttraff_iface"), sizeof( wanface ) );
 
     /* 
      * now we can loop and collect data 
