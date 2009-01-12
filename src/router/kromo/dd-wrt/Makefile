@@ -102,8 +102,10 @@ endif
 
 ifeq ($(CONFIG_CORENET),y)
 	mkdir $(INSTALLDIR)/www/style/corenet
+	cp -a corenet/help $(INSTALLDIR)/www
 	cp corenet/style.css $(INSTALLDIR)/www/style/corenet
 	cp corenet/images/* $(INSTALLDIR)/www/images
+	rm -f $(INSTALLDIR)/www/images/favicon.ico
 endif
 ifeq ($(CONFIG_XIOCOM),y)
 	mkdir $(INSTALLDIR)/www/style/xiocom
