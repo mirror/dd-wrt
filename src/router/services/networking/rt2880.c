@@ -417,6 +417,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 
     char *vifs;
 
+
     if( isSTA(  ) )
     {
 	fprintf( fp, "SSID=%s\n", nvram_safe_get( "wl0_ssid" ) );
@@ -441,12 +442,13 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	}
 	fprintf( fp, "BssidNum=%d\n", count - 1 );
 
-/* suggestion by Jimmy */
-	fprintf( fp, "HtBw=1\n" );
 /* need to check if these values are okay for RT3052 too */
 	fprintf( fp, "HtTxStream=2\n" );
 	fprintf( fp, "HtRxStream=3\n" );
     }
+/* suggestion by Jimmy */
+	fprintf( fp, "HtBw=1\n" );
+
     if( nvram_match( "wl0_net_mode", "bg-mixed" ) )
 	fprintf( fp, "WirelessMode=0\n" );
     if( nvram_match( "wl0_net_mode", "b-only" ) )
