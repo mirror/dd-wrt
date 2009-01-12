@@ -715,6 +715,9 @@ return 0;
 #elif HAVE_MERAKI
     setRouter( "Meraki Mini" );
     return ROUTER_BOARD_MERAKI;
+#elif defined(HAVE_CORENET) && defined(HAVE_NS2)
+    setRouter( "CORENET UNS2" );
+    return ROUTER_BOARD_LS2;
 #elif HAVE_NS2
     setRouter( "Ubiquiti Nanostation 2" );
     return ROUTER_BOARD_LS2;
