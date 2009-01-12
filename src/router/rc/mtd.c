@@ -299,7 +299,11 @@ int mtd_write( const char *path, const char *mtd )
 	 */
 	// if(check_action() == ACT_WEBS_UPGRADE || check_action() ==
 	// ACT_WEB_UPGRADE)
+#if defined(HAVE_EOC2610) || defined(HAVE_EAP3660) || defined(HAVE_ECB3500)
+	erase_info.length = mtd_info.erasesize; 
+#else
 	erase_info.length = ROUNDUP( trx.len, mtd_info.erasesize );
+#endif
 	// else
 	// erase_info.length = mtd_info.erasesize; 
     }
