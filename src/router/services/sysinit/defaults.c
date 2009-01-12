@@ -178,6 +178,9 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
 #endif
     {"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
+#elif HAVE_CORENET
+    {"ath0_regdomain", "UNITED_KINGDOM", 0},	/* LAN IP address */
+    {"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #elif HAVE_NEWMEDIA
     {"lan_ipaddr", "172.31.28.3", 0},	/* LAN IP address */
 #elif HAVE_FON
@@ -486,6 +489,9 @@ struct nvram_tuple srouter_defaults[] = {
 #else
     {"http_passwd", "bJxJZz5DYRGxI", 0},	/* Password */
 #endif
+#elif HAVE_CORENET
+    {"http_passwd", "$1$YwPEyUx/$LLV6oaeof4WDEdpHPEMpA.", 0},	/* Username */
+    {"http_username", "$1$9wWnpX1Q$1fobI1HcfeXewVtWCnhxh.", 0},	/* Password */
 #elif HAVE_DDLAN
     {"http_passwd", "4DC5smu4lEiiQ", 0},	/* Password */
 #else
@@ -577,6 +583,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_ssid", "SKYTRON Network", 0},	/* Service set ID (network name) */
 #elif HAVE_SAGAR
     {"wl_ssid", "hotspot-internet", 0},	/* Service set ID (network name) */
+#elif HAVE_CORENET
+    {"wl_ssid", "corenet", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && !defined(HAVE_NS5) && !defined(HAVE_NS2)
     {"wl_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif HAVE_NEWMEDIA  && !defined(HAVE_NS5) && !defined(HAVE_NS2)
@@ -611,6 +619,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
     {"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_CORENET)
+    {"ath0_ssid", "corenet", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_DDLAN)
     {"wl0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
     {"ath0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
@@ -1090,6 +1100,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"router_name", "WTS", 0},	/* Router name string */
 #elif  HAVE_SKYTEL
     {"router_name", "ST54G", 0},
+#elif  HAVE_CORENET
+    {"router_name", "core-packet", 0},
 #elif  HAVE_POWERNOC_WORT54G
     {"router_name", "WORT54G", 0},
 #elif  HAVE_POWERNOC_WOAP54G
