@@ -167,7 +167,7 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							
 							<div id="wan_showtraff" style="display:none">
-							<h2><% tran("status_inet.traff"); %></h2>
+							<h2><% tran("status_inet.traff"); %> <% nvram_get("ttraff_iface"); %></h2>
 								<fieldset>
 									<legend><% tran("status_inet.traff_tot"); %></legend>
 										 <div class="setting">
