@@ -1320,7 +1320,10 @@ void ej_get_totaltraff( webs_t wp, int argc, char_t ** argv )
     if( !nvram_match( "ttraff_enable", "1" ) )
 	return;
 
-    strncpy( wanface, get_wan_face(  ), sizeof( wanface ) );
+    if( nvram_match ("ttraff_iface", "" ) )
+    	strncpy( wanface, get_wan_face(  ), sizeof( wanface ) );
+    else
+    	strncpy( wanface, nvram_safe_get ("ttraff_iface"), sizeof( wanface ) );
 
     in = fopen( "/proc/net/dev", "rb" );
     if( in == NULL )
