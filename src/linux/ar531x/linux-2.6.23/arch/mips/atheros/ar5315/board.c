@@ -246,6 +246,16 @@ static void ar5315_restart(char *command)
 	/* give it some time to attempt a gpio based hardware reset
 	 * (atheros reference design workaround) */
 	mdelay(100);
+	
+	/* now do GPIO 0 reset, known to be used on Seano devices */
+	reg = sysRegRead(AR5315_GPIO_DO);
+	reg &= ~(1 << 0);
+	sysRegWrite(AR5315_GPIO_DO, reg);
+	(void)sysRegRead(AR5315_GPIO_DO); /* flush write to hardware */
+
+	/* give it some time to attempt a gpio based hardware reset
+	 * (atheros reference design workaround) */
+	mdelay(100);
 
 	/* Some boards (e.g. Senao EOC-2610) don't implement the reset logic
 	 * workaround as in the atheros reference design. Attempt to jump
