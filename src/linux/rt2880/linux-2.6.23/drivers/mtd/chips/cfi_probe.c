@@ -108,7 +108,6 @@ static int __xipram cfi_probe_chip(struct map_info *map, __u32 base,
 				   unsigned long *chip_map, struct cfi_private *cfi)
 {
 	int i;
-
 	if ((base + 0) >= map->size) {
 		printk(KERN_NOTICE
 			"Probe at base[0x00](0x%08lx) past the end of the map(0x%08lx)\n",

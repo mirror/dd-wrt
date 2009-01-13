@@ -519,7 +519,6 @@ int32_t FlashSectNum(uint32_t sector_addr)
 	printk("%s: %08X out of scope \n",__FUNCTION__, (uint32_t)sector_addr);
 	return -1;
     }
-
     for(i=0;i< MAX_SECTOR_GROUPS;i++) {
 	for(j=0;j<flsh_entry->sector[i].count;j++) {
 	    offset += flsh_entry->sector[i].size;
@@ -783,7 +782,6 @@ int32_t FlashWrite(uint16_t *source, uint16_t *destination, uint32_t numBytes)
 
     src=(uint8_t *)source;
     dst=(uint8_t *)(logic2phy((uint32_t)destination));
-
     /* get covered sector range */
     first_sector = FlashSectNum((uint32_t)dst);
     last_sector =  FlashSectNum((uint32_t)dst+numBytes -1);
@@ -808,6 +806,7 @@ int32_t FlashWrite(uint16_t *source, uint16_t *destination, uint32_t numBytes)
 	}
 
 	/* burn new sector contents */
+//	printk(KERN_EMERG "erase sector %d\n",sector_num);
 	FlashErase(sector_num, sector_num);
 #ifdef CONFIG_FLASH_SST39VF320X
 	if(isSST) {
@@ -816,6 +815,7 @@ int32_t FlashWrite(uint16_t *source, uint16_t *destination, uint32_t numBytes)
 		__FlashWrite((uint16_t *)buffer, (uint16_t *)sector_base, sector_size);
 	}
 #else
+//	printk(KERN_EMERG "write to sector base %X\n",sector_base);
 	__FlashWrite((uint16_t *)buffer, (uint16_t *)sector_base, sector_size);
 #endif
 	
@@ -1077,7 +1077,10 @@ int32_t FlashRead(uint32_t *dst, uint32_t *src, uint32_t count)
 	printk("%s: %08X Out Of Scope \n",__FUNCTION__, (uint32_t)src);
 	return -1;
     }
-
+#ifdef CONFIG_FLASH_ST_M29W640
+    Flash_SetModeRead(); /* marklin : return read mode for ST */
+#endif
+//printk(KERN_EMERG "read from %p / %p\n",src,logic2phy((uint32_t)src) );
     memcpy((char *)dst,(char *)(logic2phy((uint32_t)src)),count);
     
     return 0;
@@ -1122,7 +1125,6 @@ int32_t FlashGetSector(uint32_t addr, uint32_t *sect_num)
 
     //get offset not physical address
     addr = logic2phy(addr) - FL_BASE;
-
     for(i=0;i< MAX_FLSH_TBL;i++) {
 
             //find flash chip info
