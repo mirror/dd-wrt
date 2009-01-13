@@ -443,11 +443,11 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	fprintf( fp, "BssidNum=%d\n", count - 1 );
 
 /* need to check if these values are okay for RT3052 too */
-	fprintf( fp, "HtTxStream=2\n" );
-	fprintf( fp, "HtRxStream=3\n" );
+	fprintf( fp, "Ht_TxStream=2\n" );
+	fprintf( fp, "Ht_RxStream=3\n" );
     }
 /* suggestion by Jimmy */
-	fprintf( fp, "HtBw=1\n" );
+//	fprintf( fp, "HtBw=1\n" );
 
     if( nvram_match( "wl0_net_mode", "bg-mixed" ) )
 	fprintf( fp, "WirelessMode=0\n" );
