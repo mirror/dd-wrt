@@ -5,4 +5,4 @@ wgets:
 	$(MAKE) -C wgets clean
 
 wgets-install:
-	install -D wgets/wgets $(INSTALLDIR)/wol/usr/sbin/wgets
+	install -D wgets/wgets $(INSTALLDIR)/wgets/usr/sbin/wgets
