@@ -172,7 +172,7 @@ obj-$(CONFIG_POUND) += pound
 
 obj-y+=anchorfree
 obj-y+=ttraff
-#obj-y+=speedtest
+obj-y+=speedtest
 
 
 obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
