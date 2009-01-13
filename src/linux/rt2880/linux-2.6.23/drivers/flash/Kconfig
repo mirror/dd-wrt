@@ -56,6 +56,10 @@ config FLASH_S29GL064N
 	bool "Spansion S29GL064N"
 	depends on RALINK_FLASH_API
 
+config FLASH_ST_M29W640
+	bool "ST M29W640"
+	depends on RALINK_FLASH_API
+
 comment "16MB Flash"
 	
 config FLASH_MX29LV128

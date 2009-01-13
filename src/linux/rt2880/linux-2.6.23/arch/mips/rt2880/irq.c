@@ -266,12 +266,12 @@ void surfboard_hw0_irqdispatch(void)
 	if (irq == 5) {
 		irq = SURFBOARDINT_UART;
 	}
-
+#if defined (CONFIG_RALINK_RT3052)
 	/* ESW */ 
 	if (irq == 17) {
 		irq = SURFBOARDINT_ESW;
 	}
-
+#endif
 	action = irq_desc[irq].action;
 	do_IRQ(irq);
 	return;

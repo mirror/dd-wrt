@@ -129,7 +129,7 @@ int cfi_varsize_frob(struct mtd_info *mtd, varsize_frob_t frob,
 	int chipnum, ret = 0;
 	int i, first;
 	struct mtd_erase_region_info *regions = mtd->eraseregions;
-
+//printk(KERN_EMERG "erase at %X with len %X\n",ofs,len);
 	if (ofs > mtd->size){
 		return -EINVAL;
 	}
@@ -187,6 +187,10 @@ int cfi_varsize_frob(struct mtd_info *mtd, varsize_frob_t frob,
 	adr = ofs - (chipnum << cfi->chipshift);
 
 	i=first;
+//#ifdef CONFIG_FLASH_ST_M29W640 /* marklin 20080905 : solve top flash 8K*8 erase fail */
+//	if(adr == 0x7F0000)
+//	   i=1; /* using Erase Region #1 not Erase Region #0 for 8K*8 region */
+//#endif
 
 	while(len) {
 		int size = regions[i].erasesize;
