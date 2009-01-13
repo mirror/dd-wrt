@@ -216,7 +216,15 @@ struct nvram_tuple srouter_defaults[] = {
      */
 
     {"wan_ifname", "", 0},	/* WAN interface name */
+#ifdef HAVE_XSCALE
+#ifdef HAVE_XIOCOM
+    {"wan_ifname2", "ixp1", 0},	/* WAN interface name (clone) */
+#else
     {"wan_ifname2", "", 0},	/* WAN interface name (clone) */
+#endif    
+#else
+    {"wan_ifname2", "", 0},	/* WAN interface name (clone) */
+#enduf
     {"wan_ifnames", "", 0},	/* WAN interface names */
     {"wan_default", "", 0},	/* WAN interface names */
     {"wan_hwname", "", 0},	/* WAN driver name (e.g. et1) */
@@ -263,6 +271,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_XSCALE
 #ifdef HAVE_SPUTNIK
+    {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif HAVE_XIOCOM
     {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #else
     {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
@@ -1495,6 +1505,8 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_SKYTEL
     {"sshd_enable", "0", 0},
 #elif HAVE_GGEW
+    {"sshd_enable", "1", 0},
+#elif HAVE_XIOCOM
     {"sshd_enable", "1", 0},
 #elif HAVE_34TELECOM
     {"sshd_enable", "1", 0},
