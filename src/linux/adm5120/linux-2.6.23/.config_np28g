@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.17
-# Tue Jan 13 07:57:34 2009
+# Thu Dec 11 21:11:06 2008
 #
 CONFIG_MIPS=y
 
@@ -1039,3 +1039,4 @@ CONFIG_TEXTSEARCH_FSM=y
 CONFIG_HAS_IOMEM=y
 CONFIG_HAS_IOPORT=y
 CONFIG_HAS_DMA=y
+CONFIG_IP_NF_TARGET_ROUTE=y
