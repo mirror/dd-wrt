@@ -166,7 +166,7 @@ void device_xml(PDevice pdev, UFILE *up)
 		"<minor>0</minor>\r\n"
 		"</specVersion>\r\n"
 		);
-        uprintf(up, "<URLBase>http://%s:%d</URLBase>\r\n", nvram_safe_get("lan_ipaddr"), HTTP_PORT);
+        uprintf(up, "<URLBase>http://%s:%s</URLBase>\r\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("http_lanport"));
     }
 
     if (pdev->friendlyname)
