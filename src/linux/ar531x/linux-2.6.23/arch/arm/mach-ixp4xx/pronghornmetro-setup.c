@@ -87,6 +87,36 @@ static struct platform_device pronghornmetro_uart = {
 	.resource	= &pronghornmetro_uart_resource,
 };
 
+static struct resource pronghorn_pata_resources[] = {
+	{
+		.flags	= IORESOURCE_MEM
+	},
+	{
+		.flags	= IORESOURCE_MEM,
+	},
+	{
+		.name	= "intrq",
+		.start	= IRQ_IXP4XX_GPIO0,
+		.end	= IRQ_IXP4XX_GPIO0,
+		.flags	= IORESOURCE_IRQ,
+	},
+};
+
+static struct ixp4xx_pata_data pronghorn_pata_data = {
+	.cs0_bits	= 0xbfff0043,
+	.cs1_bits	= 0xbfff0043,
+};
+
+static struct platform_device pronghorn_pata = {
+	.name			= "pata_ixp4xx_cf",
+	.id			= 0,
+	.dev.platform_data      = &pronghorn_pata_data,
+	.num_resources		= ARRAY_SIZE(pronghorn_pata_resources),
+	.resource		= pronghorn_pata_resources,
+};
+
+
+
 static struct platform_device *pronghornmetro_devices[] __initdata = {
 	&pronghornmetro_i2c_controller,
 	&pronghornmetro_flash,
@@ -104,6 +134,19 @@ static void __init pronghornmetro_init(void)
 	*IXP4XX_EXP_CS1 = *IXP4XX_EXP_CS0;
 
 	platform_add_devices(pronghornmetro_devices, ARRAY_SIZE(pronghornmetro_devices));
+
+	pronghorn_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(2);
+	pronghorn_pata_resources[0].end = IXP4XX_EXP_BUS_END(2);
+
+	pronghorn_pata_resources[1].start = IXP4XX_EXP_BUS_BASE(3);
+	pronghorn_pata_resources[1].end = IXP4XX_EXP_BUS_END(3);
+
+	pronghorn_pata_data.cs0_cfg = IXP4XX_EXP_CS2;
+	pronghorn_pata_data.cs1_cfg = IXP4XX_EXP_CS3;
+
+	platform_device_register(&pronghorn_pata);
+
+
 }
 
 #ifdef CONFIG_MACH_PRONGHORNMETRO
