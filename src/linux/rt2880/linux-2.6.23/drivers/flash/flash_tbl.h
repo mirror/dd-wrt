@@ -45,6 +45,14 @@ static struct flsh_dev flsh_tbl[] =
              {.size=KBYTES(64),.count=63}
 	    }
  },
+ { .man_id= 0xc2, /* Mxic */
+   .dev_id= 0x22A7, /* MX29LV320C */
+   .max_sector = 70,
+   .sector= {
+	     {.size=KBYTES(8),.count=8},
+             {.size=KBYTES(64),.count=63}
+	    }
+ },
 #endif
 #ifdef CONFIG_FLASH_MX29LV160
  { .man_id= 0xc2, /* Mxic */
@@ -86,6 +94,18 @@ static struct flsh_dev flsh_tbl[] =
 	     {.size=KBYTES(8),.count=8},
 	     {.size=KBYTES(64),.count=127}
 	    }
+ },
+
+
+#endif
+#ifdef CONFIG_FLASH_ST_M29W640 /* marklin 20080612 */
+ { .man_id= ST_FL_MANUFACT,   /* ST */
+	 .dev_id= 0x22ED,     /* ST M29W640FT */
+	 .max_sector = 135,
+	 .sector= {
+	     {.size=KBYTES(64),.count=127},
+             {.size=KBYTES(8),.count=8}
+	 }
  },
 #endif
 #ifdef CONFIG_FLASH_MX29LV128

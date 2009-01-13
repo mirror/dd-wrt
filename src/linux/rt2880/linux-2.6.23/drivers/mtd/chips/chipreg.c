@@ -66,7 +66,6 @@ struct mtd_info *do_map_probe(const char *name, struct map_info *map)
 
 	if (!drv && !request_module("%s", name))
 		drv = get_mtd_chip_driver(name);
-
 	if (!drv)
 		return NULL;
 

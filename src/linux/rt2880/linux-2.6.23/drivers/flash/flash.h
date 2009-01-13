@@ -52,7 +52,7 @@
 #define MAX_FLSH_TBL		(sizeof(flsh_tbl) / sizeof(struct flsh_dev))
 
 #if defined (CONFIG_RT2880_FLASH_8M)
-#define FL_BASE                 (CONFIG_MTD_PHYSMAP_START - 0x400000)
+#define FL_BASE                 CONFIG_MTD_PHYSMAP_START - 0x400000
 #elif defined (CONFIG_RT2880_FLASH_16M)
 #define FL_BASE                 (CONFIG_MTD_PHYSMAP_START - 0xC00000)
 #else
@@ -78,6 +78,9 @@
 #define SST_FL_CMD1_REG_16             FL_REG_16(SST_FL_CMD1<<FL_ADDR_SHIFT_16)
 #define SST_FL_CMD2_REG_16             FL_REG_16((SST_FL_CMD2 << FL_ADDR_SHIFT_16))
 #define SST_FL_MANUFACT                (0xBF)
+
+// marklin 20080612 ,define for ST
+#define ST_FL_MANUFACT                 (0x20)
 
 #define FL_CMD1                        (0x555)
 #define FL_CMD2                        (0x2AA)

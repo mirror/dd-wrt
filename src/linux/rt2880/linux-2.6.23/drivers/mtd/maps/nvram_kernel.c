@@ -122,7 +122,6 @@ _nvram_read(char *buf)
 	if (!nvram_mtd || nvram_mtd->read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf) ||
 	    len != NVRAM_SPACE ||
 	    header->magic != NVRAM_MAGIC) {
-	        //printk(KERN_EMERG "Broken NVRAM found, recovering it (Magic %X on %X)\n",header->magic,header);
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf,0,NVRAM_SPACE);
@@ -445,8 +444,6 @@ dev_nvram_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsign
 	}
 	return nvram_commit();
 }
-//int remap_pfn_range(struct vm_area_struct *vma, unsigned long addr,
-//		    unsigned long pfn, unsigned long size, pgprot_t prot)
 
 static int
 dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)
@@ -521,7 +518,6 @@ dev_nvram_init(void)
 		mem_map_reserve(page);
 
 #ifdef CONFIG_MTD
-//	printk(KERN_EMERG "searching for nvram\n");
 	/* Find associated MTD device */
 	for (i = 0; i < MAX_MTD_DEVICES; i++) {
 		nvram_mtd = get_mtd_device(NULL, i);

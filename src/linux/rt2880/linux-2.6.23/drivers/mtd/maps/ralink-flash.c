@@ -24,29 +24,47 @@
 #ifndef CONFIG_RT2880_FLASH_32M 
 #define WINDOW_ADDR		CONFIG_MTD_PHYSMAP_START
 #define WINDOW_SIZE		CONFIG_MTD_PHYSMAP_LEN
-#define NUM_FLASH_BANKS		1
 #else
 #define WINDOW_ADDR_0		CONFIG_MTD_PHYSMAP_START
 #define WINDOW_ADDR_1		0xBB000000
 #define WINDOW_SIZE		(CONFIG_MTD_PHYSMAP_LEN / 2)
-#define NUM_FLASH_BANKS		2
 #endif
 
 #define BUSWIDTH		CONFIG_MTD_PHYSMAP_BUSWIDTH
+static struct mtd_info *merged_mtd=NULL;
+static struct mtd_info *concat_mtd=NULL;
 
 
-static struct mtd_info *ralink_mtd[NUM_FLASH_BANKS];
 #ifndef CONFIG_RT2880_FLASH_32M 
+
+#if defined(CONFIG_RT2880_ASIC) && defined(CONFIG_RT2880_FLASH_8M)
+#define NUM_FLASH_BANKS 1
+
+static struct map_info ralink_map[] = {
+	{
+	.name = "Ralink SoC physically mapped flash bank 1",
+	.bankwidth = BUSWIDTH,
+	.size = CONFIG_MTD_PHYSMAP_LEN,
+	.phys = (CONFIG_MTD_PHYSMAP_START-(CONFIG_MTD_PHYSMAP_LEN/2))
+	},
+};
+
+#else
+#define NUM_FLASH_BANKS 1
+
 static struct map_info ralink_map[] = {
 	{
 	.name = "Ralink SoC physically mapped flash",
 	.bankwidth = BUSWIDTH,
-	.size = WINDOW_SIZE,
-	.phys = WINDOW_ADDR
-	}
+	.size = CONFIG_MTD_PHYSMAP_LEN/2,
+	.phys = CONFIG_MTD_PHYSMAP_START
+	},
 };
+#endif
+
+
 #else
-static struct mtd_info *merged_mtd;
+#define NUM_FLASH_BANKS 2
 static struct map_info ralink_map[] = {
 	{
 	.name = "Ralink SoC physically mapped flash bank 0",
@@ -62,6 +80,7 @@ static struct map_info ralink_map[] = {
 	}
 };
 #endif
+static struct mtd_info *ralink_mtd[NUM_FLASH_BANKS];
 
 #if defined (CONFIG_RT2880_FLASH_32M) && defined (CONFIG_RALINK_RT3052_MP2)
 static struct mtd_partition rt2880_partitions[] = {
@@ -152,7 +171,6 @@ int __init rt2880_mtd_init(void)
 			return -EIO;
 		}
 		simple_map_init(&ralink_map[i]);
-
 		ralink_mtd[i] = do_map_probe("cfi_probe", &ralink_map[i]);
 		if (ralink_mtd[i]) {
 			ralink_mtd[i]->owner = THIS_MODULE;
@@ -164,25 +182,33 @@ int __init rt2880_mtd_init(void)
 			iounmap(ralink_map[i].virt);
 	}
 	if (found == NUM_FLASH_BANKS) {
-#ifdef CONFIG_RT2880_FLASH_32M
+#ifdef CONFIG_RT2880_FLASH_32M 
 		merged_mtd = mtd_concat_create(ralink_mtd, NUM_FLASH_BANKS,
 				"Ralink Merged Flash");
 		ret = add_mtd_partitions(merged_mtd, rt2880_partitions,
 				ARRAY_SIZE(rt2880_partitions));
 #else
+
+#ifdef CONFIG_RT2880_FLASH_8M 
+int nvramsize = ralink_mtd[0]->erasesize*2;
+#else
+int nvramsize = ralink_mtd[0]->erasesize;
+#endif
 		char *buf = vmalloc(4096);
 		int offset = 0;
 			    while((offset+ralink_mtd[0]->erasesize)<ralink_mtd[0]->size)
 			    {
 			    int retlen;
-			    ralink_mtd[0]->read(ralink_mtd[0],offset,4096, &retlen, buf);
+			    ralink_mtd[0]->read(ralink_mtd[0],offset,4, &retlen, buf);
 //			    printk(KERN_EMERG "%X: %c %c %c %c\n",offset,buf[0],buf[1],buf[2],buf[3]);
 			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
 				    {
 				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
-					rt2880_partitions[3].size=((ralink_mtd[0]->size-0x10000)-0x50000);					
+					rt2880_partitions[3].size=((ralink_mtd[0]->size-nvramsize)-0x50000);					
 					rt2880_partitions[4].offset=offset;					
 					rt2880_partitions[4].size = rt2880_partitions[3].size-(offset-0x50000);					
+					rt2880_partitions[5].offset=ralink_mtd[0]->size-nvramsize;					
+					rt2880_partitions[5].size = ralink_mtd[0]->erasesize;					
 					break;
 				    } 
 			    offset+=4096;
@@ -207,12 +233,10 @@ static void __exit rt2880_mtd_cleanup(void)
 {
 	int i;
 
-#ifdef CONFIG_RT2880_FLASH_32M 
 	if (merged_mtd) {
 		del_mtd_device(merged_mtd);
 		mtd_concat_destroy(merged_mtd);
 	}
-#endif
 	for (i = 0; i < NUM_FLASH_BANKS; i++) {
 		if (ralink_mtd[i])
 			map_destroy(ralink_mtd[i]);

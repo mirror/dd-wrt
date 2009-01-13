@@ -249,7 +249,16 @@ static struct cfi_fixup fixup_table[] = {
 	{ CFI_MFR_ATMEL, AT49BV6416, fixup_use_atmel_lock, NULL },
 	{ 0, 0, NULL, NULL }
 };
+#ifdef CONFIG_FLASH_ST_M29W640
+/* marklin 20080605 ; for ST M29W640 */
+static void Flash_SetModeRead(void)
+{
+	volatile unsigned int delay;
 
+	(*((volatile uint16_t *)(((0xBF400000 - 0x400000)) + (0)))) = 0x00F0;
+	for (delay = 0; delay < 5; delay++) ;
+}
+#endif
 
 struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 {
@@ -343,8 +352,8 @@ struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 			((cfi->device_type == CFI_DEVICETYPE_X16) &&
 				(cfi->cfiq->InterfaceDesc == 4)))
 		{
-			cfi->addr_unlock1 = 0xaaa;
-			cfi->addr_unlock2 = 0x555;
+		cfi->addr_unlock1 = 0xaaa;
+		cfi->addr_unlock2 = 0x555;
 		}
 
 	} /* CFI mode */
@@ -853,8 +862,12 @@ static int cfi_amdstd_read (struct mtd_info *mtd, loff_t from, size_t len, size_
 	unsigned long ofs;
 	int chipnum;
 	int ret = 0;
-
 	/* ofs: offset within the first chip that the first read should start */
+
+#ifdef CONFIG_FLASH_ST_M29W640
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
 
 	chipnum = (from >> cfi->chipshift);
 	ofs = from - (chipnum <<  cfi->chipshift);
@@ -986,6 +999,8 @@ static int __xipram do_write_oneword(struct map_info *map, struct flchip *chip, 
 {
 	struct cfi_private *cfi = map->fldrv_priv;
 	unsigned long timeo = jiffies + HZ;
+
+
 	/*
 	 * We use a 1ms + 1 jiffies generic timeout for writes (most devices
 	 * have a max write time of a few hundreds usec). However, we should
@@ -1448,8 +1463,8 @@ static int __xipram do_erase_chip(struct map_info *map, struct flchip *chip)
 		return ret;
 	}
 
-	DEBUG( MTD_DEBUG_LEVEL3, "MTD %s(): ERASE 0x%.8lx\n",
-	       __func__, chip->start );
+//	printk(KERN_EMERG "MTD %s(): ERASECHIP 0x%.8lx\n",
+//	       __func__, chip->start );
 
 	XIP_INVAL_CACHED_RANGE(map, adr, map->size);
 	ENABLE_VPP(map);
@@ -1535,17 +1550,19 @@ static int __xipram do_erase_oneblock(struct map_info *map, struct flchip *chip,
 	DECLARE_WAITQUEUE(wait, current);
 	int ret = 0;
 
+
 	adr += chip->start;
 
 	spin_lock(chip->mutex);
 	ret = get_chip(map, chip, adr, FL_ERASING);
 	if (ret) {
+//		printk(KERN_EMERG "strange things happen %d\n",ret);
 		spin_unlock(chip->mutex);
 		return ret;
 	}
 
-	DEBUG( MTD_DEBUG_LEVEL3, "MTD %s(): ERASE 0x%.8lx\n",
-	       __func__, adr );
+//	printk( KERN_EMERG "MTD %s(): ERASEONEBLOCK 0x%.8lx\n",
+//	       __func__, adr );
 
 	XIP_INVAL_CACHED_RANGE(map, adr, len);
 	ENABLE_VPP(map);
@@ -1556,8 +1573,11 @@ static int __xipram do_erase_oneblock(struct map_info *map, struct flchip *chip,
 	cfi_send_gen_cmd(0x80, cfi->addr_unlock1, chip->start, map, cfi, cfi->device_type, NULL);
 	cfi_send_gen_cmd(0xAA, cfi->addr_unlock1, chip->start, map, cfi, cfi->device_type, NULL);
 	cfi_send_gen_cmd(0x55, cfi->addr_unlock2, chip->start, map, cfi, cfi->device_type, NULL);
+#ifdef FLASH_SST_39VF640 /* marklin 20080612 */
+	map_write(map, CMD(0x50), adr);
+#else
 	map_write(map, CMD(0x30), adr);
-
+#endif
 	chip->state = FL_ERASING;
 	chip->erase_suspended = 0;
 	chip->in_progress_block_addr = adr;
@@ -1631,7 +1651,7 @@ int cfi_amdstd_erase_varsize(struct mtd_info *mtd, struct erase_info *instr)
 
 	ofs = instr->addr;
 	len = instr->len;
-
+//	printk(KERN_EMERG "erasing %p, len %d\n",ofs,len);
 	ret = cfi_varsize_frob(mtd, do_erase_oneblock, ofs, len, NULL);
 	if (ret)
 		return ret;
@@ -1654,6 +1674,7 @@ static int cfi_amdstd_erase_chip(struct mtd_info *mtd, struct erase_info *instr)
 
 	if (instr->len != mtd->size)
 		return -EINVAL;
+//	printk(KERN_EMERG "erasing chip\n");
 
 	ret = do_erase_chip(map, &cfi->chips[0]);
 	if (ret)
