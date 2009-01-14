@@ -216,15 +216,7 @@ struct nvram_tuple srouter_defaults[] = {
      */
 
     {"wan_ifname", "", 0},	/* WAN interface name */
-#ifdef HAVE_XSCALE
-#ifdef HAVE_XIOCOM
-    {"wan_ifname2", "ixp1", 0},	/* WAN interface name (clone) */
-#else
     {"wan_ifname2", "", 0},	/* WAN interface name (clone) */
-#endif    
-#else
-    {"wan_ifname2", "", 0},	/* WAN interface name (clone) */
-#endif
     {"wan_ifnames", "", 0},	/* WAN interface names */
     {"wan_default", "", 0},	/* WAN interface names */
     {"wan_hwname", "", 0},	/* WAN driver name (e.g. et1) */
