@@ -63,7 +63,7 @@ function reloadIt() {
 
 addEvent(window, "load", function() {
 	setElementVisible("wan_show", "<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet");
-	setElementVisible("wan_showtraff", "<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet" && "<% nvram_get("wan_proto"); %>" != "disabled" && "<% nvram_get("ttraff_enable"); %>" == "1");	
+	setElementVisible("wan_showtraff", "<% nvram_get("ttraff_enable"); %>" == "1" && ("<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet" && "<% nvram_get("wan_proto"); %>" != "disabled" || "<% nvram_get("ttraff_iface"); %>" != "") );
 	setElementVisible("wan_showdisabled", "<% nvram_get("wl0_mode"); %>" == "wet" || "<% nvram_get("wl0_mode"); %>" == "apstawet");
 	setElementVisible("wan_info", "<% nvram_get("wan_proto"); %>" != "disabled");
 	setElementVisible("wan_dhcp", "<% nvram_get("wan_proto"); %>" == "dhcp");
