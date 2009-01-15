@@ -5,8 +5,7 @@
 # header files are present in the include/linux directory of this iptables
 # package (HW)
 #
-#PF_EXT_SLIB:= CLASSIFY ah connlimit connmark conntrack dscp ecn esp helper icmp iprange length limit mark multiport owner physdev pkttype realm standard state tcp tcpmss tos ttl udp unclean CONNMARK DNAT DSCP LOG MARK MASQUERADE MIRROR NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac random nth
-PF_EXT_SLIB:= CLASSIFY ah connlimit connmark conntrack dscp ecn esp helper icmp iprange length limit mark multiport owner physdev pkttype realm standard state tcp tcpmss tos ttl udp unclean CONNMARK DNAT DSCP LOG MARK MASQUERADE MIRROR NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac ROUTE
+PF_EXT_SLIB:= CLASSIFY ah connlimit connmark conntrack dscp ecn esp helper icmp iprange length limit mark multiport owner physdev pkttype realm standard state tcp tcpmss tos ttl udp unclean CONNMARK DNAT DSCP LOG MARK MASQUERADE MIRROR NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac random nth ROUTE
 
 #PF_EXT_SLIB:=ah addrtype comment connlimit connmark conntrack dscp ecn esp hashlimit helper icmp iprange length limit mac mark multiport owner physdev pkttype realm rpc sctp standard state tcp tcpmss tos ttl udp unclean CLASSIFY CONNMARK DNAT DSCP ECN LOG MARK MASQUERADE MIRROR NETMAP NFQUEUE NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG
 PF6_EXT_SLIB:=
