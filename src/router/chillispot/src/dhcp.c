@@ -712,7 +712,7 @@ if (this->debug) printf("Sending IP packet\n");
 
   memset(&dest, '\0', sizeof(dest));
   dest.sll_family = AF_PACKET;
-  dest.sll_protocol = htons(protocol);
+/*  dest.sll_protocol = htons(protocol); */
   dest.sll_ifindex = ifindex;
   dest.sll_halen = DHCP_ETH_ALEN;
   memcpy (dest.sll_addr, hismac, DHCP_ETH_ALEN);
@@ -1364,6 +1364,11 @@ int dhcp_doDNAT(struct dhcp_conn_t *conn,
   if ((pack->iph.daddr == conn->ourip.s_addr) &&
       (pack->iph.protocol == DHCP_IP_ICMP))
     return 0;
+
+   /* Was it an ICMP request for us? */
+   if ((pack->iph.daddr == conn->ourip.s_addr) &&
+       (pack->iph.protocol == DHCP_IP_ICMP))
+     return 0;
 
   /* Was it a http or https request for authentication server? */
   /* Was it a request for authentication server? */

@@ -850,13 +850,6 @@ int static process_options(int argc, char **argv, int firsttime) {
   /* condown */
   options.condown = args_info.condown_arg;
 
-  /* conup */
-  options.conup = args_info.conup_arg;
-
-  /* condown */
-  options.condown = args_info.condown_arg;
-
-
 
   /* radiuslisten                                                 */
   /* If no listen option is specified listen to any local port    */
@@ -3239,20 +3232,6 @@ int cb_radius_auth_conf(struct radius_t *radius,
     appconn->sessionterminatetime = 0;
   }
 
-  /* Filter ID */
-  if (!radius_getattr(pack, &attr, RADIUS_ATTR_FILTER_ID,
-		      0, 0, 0)) {
-    appconn->filteridlen = attr->l-2;
-    memcpy(appconn->filteridbuf, attr->v.t, attr->l-2);
-    appconn->filteridbuf[attr->l-2] = 0;
-    /*conn->filterid = conn->filteridbuf;*/
-  }
-  else {
-    appconn->filteridlen = 0;
-    appconn->filteridbuf[0] = 0;
-    /*conn->filterid = NULL;*/
-  }
-
 
   /* EAP Message */
   appconn->challen = 0;
@@ -3587,7 +3566,6 @@ int cb_dhcp_disconnect(struct dhcp_conn_t *conn) {
 	  conn->hismac[2], conn->hismac[3],
 	  conn->hismac[4], conn->hismac[5], 
 	  inet_ntoa(conn->hisip));
-
   if (conn->hismac[0]==0 && conn->hismac[1]==0 && conn->hismac[2]==0 && conn->hismac[3]==0 && conn->hismac[4]==0 && conn->hismac[5]==0)
      {
      sys_err(LOG_NOTICE, __FILE__, __LINE__, 0,
@@ -3606,6 +3584,7 @@ int cb_dhcp_disconnect(struct dhcp_conn_t *conn) {
 	  conn->hismac[4], conn->hismac[5]);
 	 return 0;
 	 }
+  
   if (options.debug) printf("DHCP connection removed\n");
 
   if (!conn->peer) 
@@ -3631,7 +3610,8 @@ int cb_dhcp_disconnect(struct dhcp_conn_t *conn) {
 
   conn->authstate = DHCP_AUTH_NONE; /* TODO: Redundant */
 
-	if (ippool_freeip(ippool, (struct ippoolm_t *) appconn->uplink)) {
+  if (appconn->uplink)
+  if (ippool_freeip(ippool, (struct ippoolm_t *) appconn->uplink)) {
     sys_err(LOG_ERR, __FILE__, __LINE__, 0,
 		 "ippool_freeip() failed!");
   }
@@ -3651,10 +3631,10 @@ int cb_dhcp_data_ind(struct dhcp_conn_t *conn, void *pack, unsigned len) {
     printf("cb_dhcp_data_ind. Packet received. DHCP authstate: %d\n", 
 	   conn->authstate);*/
 
-/*  if (iph->src != conn->hisip.s_addr) {
+  if (iph->src != conn->hisip.s_addr) {
     if (options.debug) printf("Received packet with spoofed source!!!\n");
     return 0;
-  }*/
+  }
 
   if (!appconn) {
     sys_err(LOG_ERR, __FILE__, __LINE__, 0,
@@ -4165,37 +4145,6 @@ int main(int argc, char **argv)
     if (msgresult > 0) (void) uam_msg(&msg);
     
     if (status > 0) {
-/*JAC
-      if (tun->fd != -1 && FD_ISSET(tun->fd, &fds))
-           printf(">>>>>>>>tun_decaps()\n");
-     
-#if defined(__linux__)
-      if ((dhcp) && FD_ISSET(dhcp->fd, &fds) )
-           printf(">>>>>>>>dhcp_decaps()\n");
-      
-      if ((dhcp) && FD_ISSET(dhcp->arp_fd, &fds))
-           printf(">>>>>>>>dhcp_arp_ind()\n");
-
-
-      if ((dhcp) && (dhcp->eapol_fd) && FD_ISSET(dhcp->eapol_fd, &fds))
-           printf(">>>>>>>>dhcp_eapol_ind()\n");
-
-#elif defined (__FreeBSD__)  || defined (__APPLE__)
-      if ((dhcp) && FD_ISSET(dhcp->fd, &fds)) 
-           printf(">>>>>>>>dhcp_receive()\n");
-#endif
-
-      if (radius->fd != -1 && FD_ISSET(radius->fd, &fds))
-           printf(">>>>>>>>radius_decaps()\n");
-
-      if (radius->proxyfd != -1 && FD_ISSET(radius->proxyfd, &fds))
-           printf(">>>>>>>>radius_proxy_ind()\n");
-
-      if (redir->fd != -1 && FD_ISSET(redir->fd, &fds))
-           printf(">>>>>>>>redir_accept()\n");
-
-
-EndJAC*/
 
       if (tun->fd != -1 && FD_ISSET(tun->fd, &fds) && 
 	  tun_decaps(tun) < 0) {
