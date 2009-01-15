@@ -175,6 +175,8 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
 	eval( "fischecksum" );
     if( nvram_match( "DD_BOARD", "Netgear WG302v2" ) )
 	eval( "fischecksum" );
+    if( nvram_match( "DD_BOARD", "Netgear WG302v1" ) )
+	eval( "fischecksum" );
 
     if( url )
 	return eval( "write", url, "linux" );
