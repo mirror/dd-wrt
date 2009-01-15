@@ -43,6 +43,7 @@
 #endif /* IEEE80211_IOCTL_SETWMMPARAMS */
 
 #include "wireless_copy.h"
+#include <linux/if_vlan.h>
 
 #include "hostapd.h"
 #include "driver.h"
@@ -57,6 +58,7 @@
 #include "ieee802_11.h"
 #include "accounting.h"
 #include "common.h"
+#include "vlan_init.h"
 
 
 struct madwifi_driver_data {
@@ -290,6 +292,138 @@ madwifi_configure_wpa(struct madwifi_driver_data *drv)
 		return -1;
 	}
 	return 0;
+}
+
+
+/**
+ * Add an interface.
+ *
+ * \param iface interface (eg. ath0)
+ * \param priv 
+ * \param type type of interface to add (eg. VLAN...)
+ * \param ifname name of interface to add (eg. vlan2)
+ * \param addr l2 addr
+ * \return 0 if success, -1 otherwise
+ * \author Sebastien Vincent
+ * \warning Works only for VLAN type.
+ */
+static int madwifi_if_add(const char* iface, void* priv, enum hostapd_driver_if_type type, char* ifname, const u8* addr)
+{
+	struct madwifi_driver_data* drv=priv;
+
+
+	if(type==HOSTAPD_IF_VLAN)
+	{
+		int ret=0;
+		
+		/* We create a vlan for wireless interface
+		 * and one for ethernet interface (vlan_tagged_interface).
+		 * The last one is automatically create when we create the first one.
+		 */
+
+		/* change the convention name of the vlan => ath0.4 for wireless interface */
+		vlan_set_name_type(VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD);
+		ret=vlan_add(iface, atoi(ifname+5));
+		
+		/* restore the previous convention => vlan4 for ethernet interface */
+		vlan_set_name_type(VLAN_NAME_TYPE_PLUS_VID_NO_PAD);
+		vlan_newlink(ifname, drv->hapd);
+		
+		return ret;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+/**
+ * Remove an interface.
+ *
+ * \param priv
+ * \param type type of interface to remove (eg. VLAN...)
+ * \param ifname name of interface to remove (eg. vlan2)
+ * \param addr l2 addr 
+ * \return 0 if success, -1 otherwise
+ * \author Sebastien Vincent
+ * \warning Works only for VLAN type.
+ */
+static int madwifi_if_remove(void *priv, enum hostapd_driver_if_type type, const char *ifname, const u8 *addr)
+{
+	
+	if(type==HOSTAPD_IF_VLAN)
+	{
+		/* vlan interface is removed automatically 
+		 * (before deleting the bridge)
+		 */
+
+		/*
+		struct madwifi_driver_data* drv=priv;
+		vlan_dellink((char*)ifname, drv->hapd);
+		*/
+		return 0;
+	}
+	else
+	{
+		return -1;
+	}
+
+}
+
+/**
+ * Set a vlan for a station.
+ *
+ * \param priv driver data
+ * \param addr station l2 address
+ * \param ifname interface name 
+ * \param vlan_id VLAN identifier
+ * \return 0 if success, -1 otherwise
+ * \author Sebastien Vincent
+ */
+static int madwifi_set_sta_vlan(void *priv, const u8 *addr, const char *ifname, int vlan_id)
+{
+	int sock=-1;
+	int ret=0;
+	struct iwreq iwr;
+	struct ieee80211_vlan_data vdata;
+	struct madwifi_driver_data* drv=priv;
+
+	/* do a ioctl() here, we have the VLAN-ID and the MAC addr.
+	 * Give them to the driver!
+	 */
+	sock=socket(AF_INET, SOCK_DGRAM, 0);
+	if(sock==-1)
+	{
+		return -1;
+	}
+
+	/* data for vlan */
+	memcpy(vdata.addr, addr, ETH_ALEN);
+	vdata.vlan_id=vlan_id;
+
+	/* set up argument for ioctl */
+        memset(&iwr, 0x00, sizeof(struct iwreq));
+        strncpy(iwr.ifr_ifrn.ifrn_name, drv->iface, IFNAMSIZ);
+
+/*
+	iwr.u.data.pointer=&vdata;
+	iwr.u.data.length=sizeof(struct ieee80211_vlan_data);
+*/
+	/* 
+	 * the informations (L2 addr + integer) is less than IFNAMSIZ 
+	 * so we did it this way to avoid copy_from_user 
+	 */
+	memcpy(iwr.u.name, &vdata, sizeof(vdata)); 
+//	printf("Set STA VLAN %s %s %d\n", ifname, ether_sprintf(vdata.addr), vlan_id);
+        ret=ioctl(sock, IEEE80211_IOCTL_SET_STA_VLAN, &iwr);
+
+        if(ret==-1)
+        {
+                perror("Failed to set vlan for STA\n");
+        }
+        close(sock);
+
+	return ret;
 }
 
 
@@ -1365,4 +1499,7 @@ const struct wpa_driver_ops wpa_driver_madwifi_ops = {
 	.set_countermeasures	= madwifi_set_countermeasures,
 	.sta_clear_stats        = madwifi_sta_clear_stats,
 	.commit			= madwifi_commit,
+	.if_add			= madwifi_if_add,
+	.if_remove		= madwifi_if_remove,
+	.set_sta_vlan		= madwifi_set_sta_vlan
 };

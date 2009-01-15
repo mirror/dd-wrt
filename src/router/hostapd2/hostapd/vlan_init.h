@@ -28,4 +28,10 @@ int vlan_setup_encryption_dyn(struct hostapd_data *hapd,
 			      struct hostapd_ssid *mssid,
 			      const char *dyn_vlan);
 
+/* For madwifi : dvlan support */
+void vlan_newlink(char* if_name, struct hostapd_data* hapd);
+void vlan_dellink(char* if_name, struct hostapd_data* hapd);
+int vlan_add(const char *if_name, int vid);
+int vlan_set_name_type(unsigned int name_type);
+
 #endif /* VLAN_INIT_H */
