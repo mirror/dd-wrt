@@ -413,30 +413,18 @@ static bool ipt_route_checkentry(const char *tablename,
 				void *targinfo,
 				unsigned int hook_mask)
 {
-	if (strcmp(tablename, "mangle") != 0) {
-		printk("ipt_ROUTE: bad table `%s', use the `mangle' table.\n",
-		       tablename);
-		return 0;
-	}
-
-	if (hook_mask & ~(  (1 << NF_IP_PRE_ROUTING)
-			    | (1 << NF_IP_LOCAL_IN)
-			    | (1 << NF_IP_FORWARD)
-			    | (1 << NF_IP_LOCAL_OUT)
-			    | (1 << NF_IP_POST_ROUTING))) {
-		printk("ipt_ROUTE: bad hook\n");
-		return 0;
-	}
-
 	return 1;
 }
 
 
 static struct ipt_target ipt_route_reg = { 
 	.name = "ROUTE",
+	.family	= AF_INET,
 	.target = ipt_route_target,
 	.targetsize = sizeof(struct ipt_route_target_info),
 	.checkentry = ipt_route_checkentry,
+	.table	= "mangle",
+	.hooks	= 1 << NF_IP_PRE_ROUTING | 1 << NF_IP_LOCAL_IN | 1 << NF_IP_FORWARD | 1 << NF_IP_LOCAL_OUT | 1 << NF_IP_POST_ROUTING, 
 	.me = THIS_MODULE,
 };
 
