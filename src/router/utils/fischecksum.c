@@ -139,6 +139,7 @@ if (!strcmp(buf,"00020000"))
 pclose(fp);
 return esize;
 }
+#define SQUASHFS_MAGIC			0x74717368
 
 int main (int argc, char** argv) {
   FILE *in;
@@ -164,8 +165,24 @@ int main (int argc, char** argv) {
   struct fis_image_desc *fis;  
   struct fis_image_desc *lfis;  
   fis=p;
-  long len=0;
+  int i;
+  for (i=0;i<esize-7;i++)
+    {
+    if (memcmp(p+i,"RedBoot",7)==0)
+	{
+	p+=i;
+	fis = p;
+	break;
+	}
+    }
+  if (i==esize-7)
+    {
+    fprintf(stderr, "no valid redboot partition found\n");
+    return;
+    }
+  unsigned long len=0;
   int flash=0;
+  unsigned long redbootsize=0;
   while (fis->name[0]!=0xff)
     {
     fprintf(stderr,"==========[%s]===========\n",fis->name);
@@ -176,16 +193,51 @@ int main (int argc, char** argv) {
     fprintf(stderr,"data_length %lX\n",fis->data_length);
     fprintf(stderr,"desc_cksum %lX\n",fis->desc_cksum);
     fprintf(stderr,"file_cksum %lX\n",fis->file_cksum);
-    if (!strcmp(fis->name,"linux") || !strncmp(fis->name,"vmlinux",7) || !strcmp(fis->name,"kernel") || !strcmp(fis->name,"rootfs") )
+    if (!strncmp(fis->name,"RedBoot",7))
+	{
+	redbootsize=fis->size;
+	}
+    p+=sizeof(struct fis_image_desc);
+    fis=p;
+    }
+  p=&mem[0];
+  fis=p;
+  unsigned char detect[4];
+  unsigned int *check=&detect[0];  
+  unsigned long oldsize;
+  while (fis->name[0]!=0xff)
+    {
+    if (!strncmp(fis->name,"linux",5) || !strncmp(fis->name,"vmlinux",7) || !strcmp(fis->name,"kernel") || !strncmp(fis->name,"rootfs",6) )
 	{
 	lfis=fis;
-	if (fis->size!=fis->data_length)
-	    flash=1;
 	if (fis->file_cksum!=0)
 	    flash=1;
-	len=fis->size;
 	fis->file_cksum=0;
-	fis->data_length=len;
+	oldsize=fis->data_length;
+	int mtd = getMTD("linux");
+	char fname[64];
+	sprintf(fname,"/dev/mtdblock/%d",mtd);
+	fprintf(stderr,"scan for rootfs to detect kernel size\n");
+	FILE *fp = fopen(fname,"rb");
+	while(!feof(fp))
+	    {
+	    detect[0]=detect[1];
+	    detect[1]=detect[2];
+	    detect[2]=detect[3];
+	    detect[3]=getc(in);
+	    if (*check==SQUASHFS_MAGIC)
+		{
+		fprintf(stderr,"found at %08X\n",ftell(in)-4);
+		fis->data_length=ftell(in)-4;
+		if (fis->data_length!=oldsize)
+		{
+		fprintf(stderr,"new kernel data len = 0x%08X\n",fis->data_length);
+		flash=1;
+		}
+		break;
+		}
+	    }
+	fclose(fp);
 	}
     p+=sizeof(struct fis_image_desc);
     fis=p;
