@@ -334,7 +334,7 @@ static int vlan_rem(const char *if_name)
 	returns 1 if the interface already exists
 	returns 0 otherwise
 */
-static int vlan_add(const char *if_name, int vid)
+int vlan_add(const char *if_name, int vid)
 {
 	int fd;
 	struct vlan_ioctl_args if_request;
@@ -392,7 +392,7 @@ static int vlan_add(const char *if_name, int vid)
 }
 
 
-static int vlan_set_name_type(unsigned int name_type)
+int vlan_set_name_type(unsigned int name_type)
 {
 	int fd;
 	struct vlan_ioctl_args if_request;
@@ -417,7 +417,7 @@ static int vlan_set_name_type(unsigned int name_type)
 }
 
 
-static void vlan_newlink(char *ifname, struct hostapd_data *hapd)
+void vlan_newlink(char *ifname, struct hostapd_data *hapd)
 {
 	char vlan_ifname[IFNAMSIZ];
 	char br_name[IFNAMSIZ];
@@ -461,7 +461,7 @@ static void vlan_newlink(char *ifname, struct hostapd_data *hapd)
 }
 
 
-static void vlan_dellink(char *ifname, struct hostapd_data *hapd)
+void vlan_dellink(char *ifname, struct hostapd_data *hapd)
 {
 	char vlan_ifname[IFNAMSIZ];
 	char br_name[IFNAMSIZ];
