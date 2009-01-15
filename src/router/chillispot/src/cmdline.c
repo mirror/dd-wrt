@@ -440,26 +440,6 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
       free (args_info->condown_orig); /* free previous argument */
       args_info->condown_orig = 0;
     }
-  if (args_info->conup_arg)
-    {
-      free (args_info->conup_arg); /* free previous argument */
-      args_info->conup_arg = 0;
-    }
-  if (args_info->conup_orig)
-    {
-      free (args_info->conup_orig); /* free previous argument */
-      args_info->conup_orig = 0;
-    }
-  if (args_info->condown_arg)
-    {
-      free (args_info->condown_arg); /* free previous argument */
-      args_info->condown_arg = 0;
-    }
-  if (args_info->condown_orig)
-    {
-      free (args_info->condown_orig); /* free previous argument */
-      args_info->condown_orig = 0;
-    }
   if (args_info->radiuslisten_arg)
     {
       free (args_info->radiuslisten_arg); /* free previous argument */
@@ -878,20 +858,6 @@ cmdline_parser_file_save(const char *filename, struct gengetopt_args_info *args_
       fprintf(outfile, "%s=\"%s\"\n", "ipdown", args_info->ipdown_orig);
     } else {
       fprintf(outfile, "%s\n", "ipdown");
-    }
-  }
-  if (args_info->conup_given) {
-    if (args_info->conup_orig) {
-      fprintf(outfile, "%s=\"%s\"\n", "conup", args_info->conup_orig);
-    } else {
-      fprintf(outfile, "%s\n", "conup");
-    }
-  }
-  if (args_info->condown_given) {
-    if (args_info->condown_orig) {
-      fprintf(outfile, "%s=\"%s\"\n", "condown", args_info->condown_orig);
-    } else {
-      fprintf(outfile, "%s\n", "condown");
     }
   }
   if (args_info->conup_given) {
@@ -1621,44 +1587,6 @@ cmdline_parser_internal (int argc, char * const *argv, struct gengetopt_args_inf
             if (args_info->ipdown_orig)
               free (args_info->ipdown_orig); /* free previous string */
             args_info->ipdown_orig = gengetopt_strdup (optarg);
-          }
-          /* Script to run after user logon.  */
-          else if (strcmp (long_options[option_index].name, "conup") == 0)
-          {
-            if (local_args_info.conup_given)
-              {
-                fprintf (stderr, "%s: `--conup' option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
-                goto failure;
-              }
-            if (args_info->conup_given && ! override)
-              continue;
-            local_args_info.conup_given = 1;
-            args_info->conup_given = 1;
-            if (args_info->conup_arg)
-              free (args_info->conup_arg); /* free previous string */
-            args_info->conup_arg = gengetopt_strdup (optarg);
-            if (args_info->conup_orig)
-              free (args_info->conup_orig); /* free previous string */
-            args_info->conup_orig = gengetopt_strdup (optarg);
-          }
-          /* Script to run after user logoff.  */
-          else if (strcmp (long_options[option_index].name, "condown") == 0)
-          {
-            if (local_args_info.condown_given)
-              {
-                fprintf (stderr, "%s: `--condown' option given more than once%s\n", argv[0], (additional_error ? additional_error : ""));
-                goto failure;
-              }
-            if (args_info->condown_given && ! override)
-              continue;
-            local_args_info.condown_given = 1;
-            args_info->condown_given = 1;
-            if (args_info->condown_arg)
-              free (args_info->condown_arg); /* free previous string */
-            args_info->condown_arg = gengetopt_strdup (optarg);
-            if (args_info->condown_orig)
-              free (args_info->condown_orig); /* free previous string */
-            args_info->condown_orig = gengetopt_strdup (optarg);
           }
           /* Script to run after user logon.  */
           else if (strcmp (long_options[option_index].name, "conup") == 0)
