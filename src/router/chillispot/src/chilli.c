@@ -4078,11 +4078,6 @@ int main(int argc, char **argv)
     log_pid(options.pidfile);
   }
 
-  /* Store the process ID in pidfile */
-  if (options.pidfile) {
-    log_pid(options.pidfile);
-  }
-
   if (options.debug) 
     printf("Waiting for client request...\n");
 
