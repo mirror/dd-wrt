@@ -131,7 +131,7 @@ pid_t ddrun_shell( int timeout, int nowait )
 	"TERMINFO=/etc/terminfo",
 	"HOME=/",
 	"PS1=\\u@\\h:\\w\\$ ",
-	"PATH=/usr/bin:/bin:/usr/sbin:/sbin:/jffs/usr/bin:/jffs/bin:/jffs/usr/sbin:/jffs/sbin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",
+	"PATH=/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin",
 	"LD_LIBRARY_PATH=/usr/lib:/lib:/jffs/usr/lib:/jffs/lib:/opt/lib:/opt/usr/lib",
 	"SHELL=" SHELL,
 	"USER=root",
