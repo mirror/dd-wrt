@@ -1365,11 +1365,6 @@ int dhcp_doDNAT(struct dhcp_conn_t *conn,
       (pack->iph.protocol == DHCP_IP_ICMP))
     return 0;
 
-   /* Was it an ICMP request for us? */
-   if ((pack->iph.daddr == conn->ourip.s_addr) &&
-       (pack->iph.protocol == DHCP_IP_ICMP))
-     return 0;
-
   /* Was it a http or https request for authentication server? */
   /* Was it a request for authentication server? */
   for (i = 0; i<this->authiplen; i++) {
@@ -1449,11 +1444,6 @@ int dhcp_undoDNAT(struct dhcp_conn_t *conn,
     return 0; 
   
   /* Was it an ICMP reply from us? */ /* Added by Freddy */
-  if ((pack->iph.saddr == conn->ourip.s_addr) &&
-      (pack->iph.protocol == DHCP_IP_ICMP))
-    return 0;
-
-  /* Was it an ICMP reply from us? */
   if ((pack->iph.saddr == conn->ourip.s_addr) &&
       (pack->iph.protocol == DHCP_IP_ICMP))
     return 0;
