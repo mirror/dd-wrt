@@ -265,7 +265,7 @@ static int WANIPConnectionInit(struct Service *psvc, service_state_t state)
     case SERVICE_DESTROY:
 	pdata = (PWANIPConnectionData) psvc->opaque;
 	
-	timer_delete(pdata->eventhandle);
+	dd_timer_delete(pdata->eventhandle);
 	free(pdata);
 	break;
     } /* end switch */
