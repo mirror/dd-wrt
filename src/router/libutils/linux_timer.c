@@ -154,6 +154,8 @@ void init_event_queue( int n )
     // getitimer (ITIMER_REAL, &tv);
     setitimer( ITIMER_REAL, 0, &tv );
     g_granularity = tv.it_interval.tv_usec;
+    if (g_granulatity<1)
+	g_granulatity=1;
     signal( SIGALRM, alarm_handler );
 }
 
