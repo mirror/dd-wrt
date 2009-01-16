@@ -1,14 +1,16 @@
-//////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 //		Chinese (Simplified) reference translation file - DD-WRT V23 SP1 by JnJn 25/05/2006		//
+//    update to svn 11296, correct some errors. - by muziling 12/01/2009
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
 
+var lang_charset = new Object();
 lang_charset.set="UTF-8";
-
+var share = new Object();
 share.firmware="固件";
 share.time="时间";
-share.interipaddr="Internet IP地址";
+share.interipaddr="WAN IP地址";
 share.more="更多...";
 share.help="帮助";
 share.enable="启用";
@@ -18,9 +20,12 @@ share.disabled="已禁用";
 share.usrname="用户名";
 share.passwd="密码";
 share.hostname="主机名";
+share.vdsl="DTAG VDSL Vlan Tagging";
+share.wan_vlantag="Vlan标记ID";
+share.compression="PPP Compression";
 share.domainname="域名";
-share.wandomainname="WAN Domain Name";
-share.landomainname="LAN Domain Name";
+share.wandomainname="WAN 域名";
+share.landomainname="LAN 域名";
 share.statu="状态";
 share.start="开始";
 share.end="结束";
@@ -28,7 +33,8 @@ share.proto="协议";
 share.ip="IP地址";
 share.mac="MAC地址";
 share.none="无";
-share.both="两者都有";
+share.none2="无";
+share.both="两者";
 share.del="删除";
 share.remove="移除";
 share.descr="描述";
@@ -57,10 +63,22 @@ share.fri_s1="五";
 share.sat="星期六";
 share.sat_s="周六";
 share.sat_s1="六";
+share.jan="1月";
+share.feb="2月";
+share.mar="3月";
+share.apr="4月";
+share.may="5月";
+share.jun="6月";
+share.jul="7月";
+share.aug="8月";
+share.sep="9月";
+share.oct="10月";
+share.nov="11月";
+share.dec="12月";
 share.expires="过期";
 share.yes="是";
 share.no="否";
-share.filter="Filter";
+share.filter="过滤";
 share.deny="拒绝";
 share.range="范围";
 share.use="使用";
@@ -78,34 +96,39 @@ share.beacon="信标";
 share.openn="打开";
 share.dtim="dtim";
 share.rates="速率";
+share.rate="速率";
+share.txrate="传输速率";
+share.rxrate="接收速率";
 share.low="低";
 share.medium="中";
 share.high="高";
 share.option="选项";
 share.rule="规则";
-share.lan="LAN（局域网络）";
+share.lan="局域网（LAN）";
 share.point2point="点对点";
-share.nat="NAT（网络地址转换）";
+share.nat="网络地址转换（NAT）";
 share.subnet="子网掩码";
-share.unmask="非掩模";
-share.deflt="默认";  //don't use share.default !!!
+share.unmask="显示密码";
+share.deflt="预设";  //don't use share.default !!!
 share.all="全部";
 share.auto="自动";
 share.right="右";
 share.left="左";
-share.share_key="Shared Key（共享秘钥）";
-share.inter="间歇（以秒为单位）";
+share.share_key="共享秘钥";
+share.inter="间隔（秒）";
 share.srv="服务名称";
 share.port_range="端口范围";
 share.priority="优先级";
 share.gateway="网关";
 share.intrface="接口";  //don't use share.interface, Mozilla problem!!!
-share.pintrface="Physical Interface";
-share.vintrface="Virtual Interfaces";
+share.ccq="CCQ"; 
+share.pintrface="物理接口";
+share.vintrface="虚拟接口";
 share.router="路由器";
-share.static_lease="静态租用";
-share.srvip="服务器IP地址";
-share.localdns="本地DNS（域名服务器）";
+share.static_lease="永久租用";
+share.srvip="服务器IP";
+share.srvipname="服务器IP/主机名";
+share.localdns="本地DNS";
 share.minutes="分钟";
 share.oui="OUI搜索";
 share.sttic="静态";
@@ -122,21 +145,61 @@ share.key="秘钥";
 share.wireless="无线";
 share.dhcp="DHCP";
 share.styl="风格";
-share.meters="meters";
-share.full="Full (20 Mhz)";
-share.half="Half (10 Mhz)";
-share.quarter="Quarter (5 Mhz)";
-share.seealso="See also";
-share.never="never";
-share.unknown="unknown";
-share.expired="expired";
+share.err="错误";
+share.errs="错误";
+share.meters="米";
+share.turbo="加速 (40 Mhz)";
+share.full="全部 (20 Mhz)";
+share.half="1/2 (10 Mhz)";
+share.quarter="1/4 (5 Mhz)";
+share.seealso="参见";
+share.never="从不";
+share.unknown="未知";
+share.expired="过期";
+share.logout="退出";
+share.nmounted="未挂载";
+share.fssize="总共 / 剩余大小";
+share.src="来源地址";
+share.dst="远程地址";
+share.name_resolution="名字解析";
+share.timeout="超时(秒)";
+share.detail="点击查看详情";
+share.tmpmem="临时内存";
+share._1h="每小时";
+share._2h="每2小时";
+share._3h="每3小时";
+share._4h="每4小时";
+share._5h="每5小时";
+share._6h="每6小时";
+share._12h="每12小时";
+share._24h="每天";
+share._48h="每2天";
+share._168h="每周";
+share.days="天";
+share.from2 = share.from;
+share.to2 = share.to;
+share.days_genetive = share.days;
 share.standard="Standard（标准）";
-
-
+share.execscript="执行脚本";
+share.user="用户";
+share.privatekey="私钥";
+share.bytes="字节";
+share.kbytes="KB";
+share.mbytes="MB";
+share.gbytes="GB";
+share.preempt="Preemption";
+share.acktiming="ACK 时序";
+share.broadcast="广播支持";
+share.secondcharacter="s";
+var sbutton = new Object();
 sbutton.save="保存设置";
-sbutton.saving="已保存"; // is this saving or saved? if saving, use "正在保存"
+sbutton.savetitle="只保存设置不提交";
+sbutton.apply="应用";
+sbutton.applytitle="立即应用设置";
+sbutton.saving="已保存";
 sbutton.cmd="正在执行";
 sbutton.cancel="取消改动";
+sbutton.canceltitle="只取消此表单的改动";
 sbutton.refres="刷新";
 sbutton.clos="关闭";
 sbutton.del="删除";
@@ -146,193 +209,169 @@ sbutton.remove="移除";
 sbutton.modify="修改";
 sbutton.deleted="已删除";
 sbutton.delall="删除全部";
-sbutton.autorefresh="自动刷新状态[打开]";
+sbutton.autorefresh="自动刷新[开启]";
 sbutton.backup="备份";
 sbutton.restore="恢复";
-sbutton.cptotext="复制到文字区";
+sbutton.cptotext="编辑";
 sbutton.runcmd="运行命令";
-sbutton.startup="保存启动命令";
-sbutton.firewall="保存防火墙命令";
+sbutton.startup="保存为启动指令";
+sbutton.shutdown="保存为关机指令";
+sbutton.firewall="保存为防火墙指令";
+sbutton.custom="保存为自定义指令";
 sbutton.wol="唤醒";
 sbutton.add_wol="添加主机";
 sbutton.manual_wol="手动唤醒";
-sbutton.summary="综述";
-sbutton.filterIP="编辑PC列表";
-sbutton.filterMac="编辑MAC过滤器列表";
+sbutton.summary="摘要";
+sbutton.filterIP="编辑客户端列表";
+sbutton.filterMac="编辑MAC过滤列表";
 sbutton.filterSer="添加/编辑服务";
-sbutton.reboot="重新启动路由器";
+sbutton.reboot="重启路由器";
 sbutton.help="   帮助  ";
 sbutton.wl_client_mac="无线客户端MAC列表";
-sbutton.update_filter="更新过滤器列表";
+sbutton.update_filter="更新过滤列表";
 sbutton.join="加入";
 sbutton.log_in="连入日志";
 sbutton.log_out="连出日志";
-sbutton.apply="应用";
 sbutton.edit_srv="添加/编辑服务";
 sbutton.routingtab="显示路由表";
 sbutton.wanmac="获取当前PC的MAC地址";
-sbutton.dhcprel="DHCP发放";
-sbutton.dhcpren="DHCP更新";
-sbutton.survey="Site Survey（选址）";
+sbutton.dhcprel="DHCP 释放";
+sbutton.dhcpren="DHCP 续期";
+sbutton.survey="基站勘查";
 sbutton.upgrading="正在升级";
 sbutton.upgrade="升级";
 sbutton.preview="预览";
-
-
-// ******************************************* COMMON ERROR MESSAGES  *******************************************//
-
+sbutton.allways_on="总是打开";
+sbutton.allways_off="总是关闭";
+var errmsg = new Object();
 errmsg.err0="您必须输入一个用户名。";
 errmsg.err1="您必须输入一个路由器名称。";
-errmsg.err2="超出范围，请调整起始IP地址或用户的个数。";
+errmsg.err2="超出范围，请调整IP起始地址或用户的个数。";
 errmsg.err3="您必须至少选择一个日期。"
-errmsg.err4="结束时间必须比开始时间大。";
+errmsg.err4="结束时间必须大于起始时间。";
 errmsg.err5="MAC地址长度不正确。";
 errmsg.err6="您必须输入一个密码。";
 errmsg.err7="您必须输入一个主机名。";
 errmsg.err8="您必须输入一个IP地址或者域名。";
 errmsg.err9="非法DMZ IP地址。";
-errmsg.err10="确认密码与所输入密码不相符。请重新输入密码。";
-errmsg.err11="在密码中不允许使用空格";
-errmsg.err12="你必须输入一个要运行的命令。";
+errmsg.err10="密码确认与密码不相符。请重新输入密码。";
+errmsg.err11="密码中不允许使用空格";
+errmsg.err12="你必须输入一个命令以运行。";
 errmsg.err13="升级失败。";
 errmsg.err45="HTTPS模式下不可用！请使用HTTP模式连接。";
 errmsg.err46="HTTPS模式下不可用";
-
-
-//common.js error messages
 errmsg.err14=" 值超出范围 [";
-errmsg.err15="WAM口MAC地址超出范围 [00 - ff].";
-errmsg.err16="MAC地址的第二个字符必须是偶数 : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err15="WAM MAC地址超出范围 [00 - ff]。";
+errmsg.err16="MAC地址的第二个字符必须是偶数 : [0, 2, 4, 6, 8, A, C, E]。";
 errmsg.err17="MAC地址不正确。";
 errmsg.err18="MAC地址长度不正确。";
-errmsg.err19="MAC地址不能是广播MAC地址。"
-errmsg.err20="使用形如(xx:xx:xx:xx:xx:xx)的格式输入MAC地址。";
-errmsg.err21="无效MAC地址格式。";
-errmsg.err22="WAN口MAC地址不正确。";
+errmsg.err19="MAC地址不能是广播的MAC地址。"
+errmsg.err20="输入MAC地址，格式为(xx:xx:xx:xx:xx:xx)。";
+errmsg.err21="无效的MAC地址格式。";
+errmsg.err22="WAN MAC地址不正确。";
 errmsg.err23="无效16进制数值 ";
-errmsg.err24=" 在如下MAC地址中出现 ";
-errmsg.err25="秘钥值不正确。";
+errmsg.err24=" 在MAC地址中找到 ";
+errmsg.err25="密钥值不正确。";
 errmsg.err26="秘钥长度不正确。";
 errmsg.err27="非法子网掩码。";
-errmsg.err28=" 含有非法字符, 字符必须是 [ 0 - 9 ]。";
-errmsg.err29=" 含有非法ASCII码。";
-errmsg.err30=" 含有非法16进制数字。";
+errmsg.err28=" 包含非法字符, 字符必须是 [ 0 - 9 ]。";
+errmsg.err29=" 包含非法ASCII码。";
+errmsg.err30=" 包含非法16进制数字。";
 errmsg.err31=" 数值非法。";
 errmsg.err32="IP地址和网关不在同一子网中。";
 errmsg.err33="IP地址与网关不能相同。";
 errmsg.err34=" 中不允许含有空格。";
-
-//Wol.asp error messages
+errmsg.err110="结束数字必须大于开始数字";
+errmsg.err111="无效IP地址";
 errmsg.err35="你必须输入一个MAC地址来执行操作。";
 errmsg.err36="你必须输入一个网络广播地址来执行操作。";
 errmsg.err37="你必须输入一个UDP端口来执行操作。";
-
-//WL_WPATable.asp error messages
-//WPA.asp error messages
-errmsg.err38="请输入一个Shared Key（共享秘钥）！";
+errmsg.err38="请输入一个共享秘钥（Shared Key）！";
 errmsg.err39="无效秘钥，必须是长度为8到63个ASCII字符或者64个十六进制数字";
-errmsg.err40="你必须为如下秘钥输入一个关键字 ";
+errmsg.err40="你必须为秘钥输入一个关键字 ";
 errmsg.err41="关键字长度无效 ";
 errmsg.err43="重新获取秘钥间隔";
-
-//config.asp error messages
 errmsg.err42="请选择一个用来恢复的配置文件。";
-
-//WL_ActiveTable.asp error messages
 errmsg.err44="总检查次数超过128次。";
-
-//Site_Survey.asp error messages
 errmsg.err47="无效SSID。";   //changed 20060525
-
-//Wireless_WDS.asp error messages
-errmsg.err48="WDS与当前路由器的配置不兼容。请检查以下几点 :\n * 无线模式必须被设置为AP（接入点） \n * WDS下不支持WPA2 \n * WDS下不支持无线网络使用 仅B 模式";
-
-//Wireless_radauth.asp error messages
-errmsg.err49="Radius仅在AP（接入点）模式下可用。";
-
-//Wireless_Basic.asp error messages
-errmsg.err50="你必须输入一个SSID。";
-
-// Management.asp error messages
-errmsg.err51="本路由器当前配置的密码为默认密码。 \
-			出于安全的考虑，您必须远程管理特性被开启前更改密码。 \
-			点击确定按钮更改您的密码。点击取消按钮保持远程管理特性关闭。";
-errmsg.err52="密码复核不相符。";
-
-// Port_Services.asp error messages
-errmsg.err53="当所有操作完成之后，点击[应用]按钮保存设置。";
+errmsg.err48="WDS与路由器当前的配置不兼容。请检查以下几点 :\n * 无线模式必须被设置为AP\n * WDS下不支持WPA2 \n * WDS下不支持使用 仅B 模式的无线网络";
+errmsg.err49="Radius仅在AP模式下可用。";
+errmsg.err50="您必须输入一个SSID。";
+errmsg.err51="本路由器当前密码为预设密码。出于安全考虑，您必须修改密码后才能使用远程管理。点击确定按钮修改您的密码。点击取消按钮保持远程管理特性关闭。";
+errmsg.err52="确认密码和密码不一致。";
+errmsg.err53="完成所有操作后，点击[应用]按钮保存设置。";
 errmsg.err54="你必须输入一个服务名称。";
 errmsg.err55="此服务名称已存在。";
-
-// QoS.asp error messages
 errmsg.err56="端口值超出范围 [0 - 65535]";
-
-// Routing.asp error messages
 errmsg.err57="删除此条目？";
-
-// Status_Lan.asp error messages
-errmsg.err58="点击删除";
-
-//Status_Wireless.asp error messages
+errmsg.err103=" 必须小于 ";
+errmsg.err58="点击删除租约";
 errmsg.err59="不可用！请启用无线网络。";
-
-//Upgrade.asp error messages
-errmsg.err60="请选择升级文件。";
+errmsg.err60="请选择要升级的文件。";
 errmsg.err61="不正确的镜像文件。";
-
-// *******************************************  COMMON MENU ENTRIES  *******************************************//
-
+errmsg.err62=" 已经定义为永久租用";
+errmsg.err100="处理中...<br/>请稍候。";
+errmsg.err101="正在恢复配置...<br/>请稍候。";
+errmsg.err102="升级固件中...<br/>请稍候";
+var bmenu= new Object();
 bmenu.setup="设置";
 bmenu.setupbasic="基本设置";
-bmenu.setupddns="DDNS（动态DNS）";
+bmenu.setupddns="动态DNS（DDNS）";
 bmenu.setupmacclone="MAC地址克隆";
 bmenu.setuprouting="高级路由";
 bmenu.setupvlan="VLANs";
-bmenu.setupeop="EoIP Tunnel";
-bmenu.networking="Networking";
-
+bmenu.setupeop="EoIP 通道";
+bmenu.networking="网络";
 bmenu.wireless="无线";
 bmenu.wirelessBasic="基本设置";
 bmenu.wirelessRadius="Radius";
+bmenu.wirelessSuperchannel="SuperChannel";
+bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="无线安全";
 bmenu.wirelessMac="MAC过滤";
 bmenu.wirelessAdvanced="高级设置";
 bmenu.wirelessWds="WDS";
-
+bmenu.wirelessWds0="Ath0-WDS";
+bmenu.wirelessWds1="Ath1-WDS";
+bmenu.wirelessWds2="Ath2-WDS";
+bmenu.wirelessWds3="Ath3-WDS";
+bmenu.wirelessWdswl0="WL0-WDS";
+bmenu.wirelessWdswl1="WL1-WDS";
 bmenu.security="安全";
 bmenu.firwall="防火墙";
 bmenu.vpn="VPN穿透";
-
 bmenu.accrestriction="访问限制";
-bmenu.webaccess="Internet访问";
-
-
-bmenu.applications="应用程序 &amp; 游戏";
-bmenu.applicationsprforwarding="端口段转发（映射）";
-bmenu.applicationspforwarding="端口转发（映射）";
-bmenu.applicationsptriggering="端口激发";
+bmenu.webaccess="WAN访问";
+bmenu.applications="NAT / QoS";
+bmenu.applicationsprforwarding="端口范围转发";
+bmenu.applicationspforwarding="端口转发";
+bmenu.applicationsptriggering="端口触发";
 bmenu.applicationsUpnp="UPnP";
 bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
-
+bmenu.applicationsP2P="点对点";
 bmenu.sipath="SIPatH";
 bmenu.sipathoverview="总览";
 bmenu.sipathphone="电话本";
 bmenu.sipathstatus="状态";
-
 bmenu.admin="管理";
-bmenu.adminManagement="普通管理";
-bmenu.adminHotspot="热点";
-bmenu.adminServices="服务";
+bmenu.adminManagement="管理";
 bmenu.adminAlive="保持活动";
 bmenu.adminLog="日志";
-bmenu.adminDiag="诊断";
-bmenu.adminWol="WOL（网络唤醒）";
-bmenu.adminFactory="出厂默认设置";
+bmenu.adminDiag="命令";
+bmenu.adminWol="网络唤醒（WOL）";
+bmenu.adminFactory="出厂预设值";
 bmenu.adminUpgrade="固件升级";
 bmenu.adminBackup="备份";
-
-
+bmenu.services="服务";
+bmenu.servicesServices="服务";
+bmenu.servicesPppoesrv="PPPoE 服务器";
+bmenu.servicesPptp="VPN";
+bmenu.servicesUSB="USB";
+bmenu.servicesNAS="NAS";
+bmenu.servicesHotspot="热点";
+bmenu.servicesMilkfish="Milkfish SIP 路由器";
+bmenu.servicesAnchorFree="我的广告网络";
 bmenu.statu="状态";
 bmenu.statuRouter="路由器";
 bmenu.statuInet="WAN";
@@ -340,185 +379,130 @@ bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik代理";
 bmenu.statuWLAN="无线";
 bmenu.statuVPN="OpenVPN";
+bmenu.statuBand="带宽";
 bmenu.statuSysInfo="系统信息";
-
-
-// ******************************************* Alive.asp *******************************************//
-
+bmenu.statuActivate="活动";
+var alive = new Object();
 alive.titl="保持活动";
 alive.h2="保持活动";
-alive.legend="计划重新启动";
-alive.sevr1="计划重新启动";
-alive.hour="在设置的时间";
-alive.legend2="WDS/连接看门狗";
-alive.sevr2="开启看门狗";
+alive.legend="定时重启";
+alive.sevr1="定时重启";
+alive.hour="在设定的时间";
+alive.legend2="WDS/连接监控";
+alive.sevr2="启用监控";
 alive.IP="IP地址";
-alive.legend3="代理服务器/连接看门口";
-alive.sevr3="开启代理服务器看守程序";
+alive.legend3="代理服务器/连接监控";
+alive.sevr3="启用代理监控";
 alive.IP2="代理服务器IP地址";
 alive.port="代理服务器端口";
-
-//help container
-
-halive.right2="选择何时重新启动路由器。在普通管理标签中的Cron选项必须被开启。";
-halive.right4="最多允许3个IP地址，之间使用<em>空格</em> 分割。<BR/>IP地址格式为：xxx.xxx.xxx.xxx。";
-
-
-
-// ******************************************* config.asp *******************************************//
-
-config.titl="备份与恢复";
+var halive = new Object();
+halive.right2="选择何时重新启动路由器。在管理标签中，Cron选项必须被开启。";
+halive.right4="最多允许3个IP地址，之间使用<em>空格</em>分隔。<BR/>IP地址格式为：xxx.xxx.xxx.xxx。";
+var config = new Object();
+config.titl="备份 & 恢复";
 config.h2="备份配置";
 config.legend="备份设置";
-config.mess1="点击 \"" + sbutton.backup + "\" 按钮将配置备份文件下载到您的个人电脑。";
+config.mess1="点击 \"" + sbutton.backup + "\" 按钮将配置备份文件下载到您的电脑。";
 config.h22="恢复配置";
 config.legend2="恢复设置";
 config.mess2="请选择一个用来恢复的文件";
 config.mess3=" [ 警 ] [ 告 ] ";
-config.mess4="请仅上传使用此（版本）固件并且从相同型号路由器上备份的文件。<br />请勿上传任何不是使用本界面创建的文件！";
-
-//help container
-
-hconfig.right2="您可以备份您当前配置以备您将来需要将路由器复位到出厂设置后使用。<br /><br />点击 <em>备份</em> 按钮备份您的当前设置。";
-hconfig.right4="点击 <em>浏览...</em> 按钮浏览到一个当前存储在您个人电脑上的配置文件。<br /><br />点击 <em>" + sbutton.restore + "</em> 按钮使用配置文件覆盖当前配置。";
-
-
-
-// ******************************************* DDNS.asp *******************************************//
-
+config.mess4="只能上传使用此固件并且相同型号路由器的备份文件。<br />请勿上传任何不是通过本界面创建的文件！";
+var hconfig = new Object();
+hconfig.right2="您应该备份您当前的配置以备您将来需要将路由器复位到出厂设置。<br /><br />点击 <em>备份</em> 按钮备份您的当前设置。";
+hconfig.right4="点击 <em>浏览...</em> 按钮浏览到一个当前存储在您电脑上的配置文件。<br /><br />点击 <em>" + sbutton.restore + "</em> 按钮使用配置文件覆盖当前所有配置。";
+var ddns = new Object();
 ddns.titl="动态DNS"
 ddns.h2="动态域名系统(DDNS)";
 ddns.legend="DDNS";
-ddns.srv="DDNS服务";
+ddns.srv="DDNS 服务";
 ddns.emailaddr="E-mail地址";
 ddns.typ="类型";
 ddns.dynamic="动态";
-// ddns.static="静态"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
 ddns.custom="自定义";
-ddns.wildcard="统配符";
-ddns.statu="DDNS状态";
-
-
-ddnsm.all_closed="DDNS服务器当前处于关闭状态";
+ddns.wildcard="通配符";
+ddns.statu="DDNS 状态";
+ddns.system="DYNDNS 服务器";
+ddns.options="DDNS 附加选项";
+ddns.forceupd="强制更新间隔";
+var ddnsm = new Object();
+ddnsm.all_closed="DDNS 服务器当前已关闭";
 ddnsm.all_resolving="正在解析域名";
 ddnsm.all_errresolv="域名解析失败";
 ddnsm.all_connecting="正在连接到服务器";
 ddnsm.all_connectfail="连接到服务器失败";
-ddnsm.all_disabled="DDNS功能被禁用";
-ddnsm.all_noip="没有Internet连接";
-
-//help container
-
-hddns.right2="DDNS允许您使用域名代替IP地址来访问您的网络。 \
-	这个服务动态的管理IP地址的变动，更新您的域名信息。 \
-	您必须通过DynDNS.org，TZO.com或ZoneEdit.com进行注册。";
-
-
-
-// ******************************************* Diagnostics.asp *******************************************//
-
+ddnsm.all_disabled="DDNS 功能已禁用";
+ddnsm.all_noip="无WAN连接";
+var hddns = new Object();
+hddns.right2="DDNS 允许您使用域名代替IP地址来访问您的网络。这个服务动态的管理IP地址的变动，更新您的域名信息。您必须在 DynDNS.org，freedns.afraid.org，ZoneEdit.com，No-IP.com 或其它网站注册以得到此服务。";
+hddns.right4="在框框中输入一个整型数字以设置强制更新间隔(天)。只要在您的IP变化时，更新才会自动执行。注意您的DDNS提供商对更新频率的限制或您的域名被封锁。";
+var diag = new Object();
 diag.titl="诊断";
 diag.h2="诊断";
-diag.legend="命令外壳";
-diag.cmd="命令";
+diag.legend="指令解释器";
+diag.cmd="指令";
 diag.startup="启动";
+diag.shutdown="关机";
 diag.firewall="防火墙";
-
-//help container
-
-hdiag.right2="您可以通过Web界面运行命令行。将您的命令填入文本区域并且点击 <em>" + sbutton.runcmd + "</em> 按钮进行提交。";
-
-
-
-// ******************************************* DMZ.asp *******************************************//
-
-
+diag.custom="自定义脚本";
+var hdiag = new Object();
+hdiag.right2="您可以通过Web界面运行命令行。将您的命令填入文本区域并且点击 <em>" + sbutton.runcmd + "</em> 按钮提交。";
+var dmz = new Object();
 dmz.titl="DMZ";
 dmz.h2="非军事区 (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="使用DMZ";
 dmz.host="DMZ主机IP地址";
-
-
-//help container
-
-hdmz.right2="启用这个选项将使特定的主机被暴露给Internet。所有的端口都可以被从Internet访问。";
-
-
-
-// ******************************************* Factory_Defaults.asp *******************************************//
-
-factdef.titl="出厂默认设置";
-factdef.h2="出厂默认设置";
+var hdmz = new Object();
+hdmz.right2="启用这个选项将使特定的主机被暴露给Internet。所有的端口都可以从Internet访问到。";
+var factdef = new Object();
+factdef.titl="出厂预设值";
+factdef.h2="出厂预设值";
 factdef.legend="复位路由器设置";
-factdef.restore="恢复出厂默认设置";
-
-factdef.mess1="警告！如果您点击确定，此设备将会被复位到出厂默认设置，所有以往的设置都会被清除。";
-
-//help container
-
-hfactdef.right1="此操作将会将所有设置复位回出厂默认设置。您所做的所有设置都将被清除。";
-
-
-
-// ******************************************* FilterIP%AC.asp *******************************************//
-
-
-filterIP.titl="PC列表";
-filterIP.h2="PC列表";
-filterIP.h3="以如下格式输入PC的MAC地址：xx:xx:xx:xx:xx:xx";
-filterIP.h32="输入PC的IP地址";
-filterIP.h33="输入PC的IP范围";
+factdef.restore="恢复出厂预设值";
+factdef.mess1="警告！如果您点击确定，此设备将会被复位到出厂预设值，先前所有的设置都会被擦除。";
+var hfactdef = new Object();
+hfactdef.right1="此操作把设置复位回出厂预设值。您的所有设置都将被擦除。";
+var filterIP = new Object();
+filterIP.titl="客户端列表";
+filterIP.h2="客户端列表";
+filterIP.h3="输入客户端MAC地址，格式为：xx:xx:xx:xx:xx:xx";
+filterIP.h32="输入客户端的IP地址";
+filterIP.h33="输入客户端的IP范围";
 filterIP.ip_range="IP范围";
-
-
-
-// ******************************************* Filter.asp *******************************************//
-
+var filter = new Object();
 filter.titl="访问限制";
-filter.h2="Internet访问";
+filter.h2="WAN访问";
 filter.legend="访问策略";
 filter.pol="策略";
 filter.polname="策略名称";
-filter.pcs="PC";
+filter.pcs="PCs";
 filter.polallow="在选定的日期和时间允许Internet访问。";
-filter.legend2="日期";
+filter.legend2="天";
 filter.time="时间";
 filter.h24="24小时";
-filter.legend3="被封禁的服务";
+filter.legend3="已阻止的服务";
 filter.catchall="捕获所有P2P协议";
 filter.legend4="通过URL地址封锁Web站点";
 filter.legend5="通过关键字封锁Web站点";
-
 filter.mess1="删除此策略？";
 filter.mess2="您必须至少选择一个日期。";
 filter.mess3="结束时间必须大于起始时间。";
-
-//help container
-
-hfilter.right2="您可以最多定义10条访问策略。点击 <em>" + sbutton.del + "</em> 按钮删除一条策略，或者点击 <em>" + sbutton.summary + "</em> 按钮察看策略综述。";
+var hfilter = new Object();
+hfilter.right2="您最多可以定义10条访问策略。点击 <em>" + sbutton.del + "</em> 按钮删除一条策略，或者点击 <em>" + sbutton.summary + "</em> 按钮察看策略综述。";
 hfilter.right4="启用或禁用一条策略。";
-hfilter.right6="您可以为您的策略指定一个名称。";
+hfilter.right6="您应该为您的策略指定一个名称。";
 hfilter.right8="请选择您希望您的策略被应用的日期。";
-hfilter.right10="请输入您希望您的策略被应用的时间。";
-hfilter.right12="您可以选择封禁特定的服务。点击 <em>" + sbutton.filterSer + "</em> 按钮更改这些设置。";
-hfilter.right14="您可以通过输入特定Web站点的URL来封禁对其访问。";
-hfilter.right16="您可以通过输入包含在特定Web站点页面中的关键字来封禁对其访问。";;
-
-
-
-// ******************************************* FilterSummary.asp *******************************************//
-
-filterSum.titl="访问限制综览";
-filterSum.h2="Internet策略综览";
+hfilter.right10="输入您希望您的策略被应用的时间。";
+hfilter.right12="您可以选择封禁某些服务。点击 <em>" + sbutton.filterSer + "</em> 按钮更改这些设置。";
+hfilter.right14="您可以通过输入的URL来封锁对部分网站的访问。";
+hfilter.right16="您可以通过包含在Web页面中的关键字来封锁对其的访问。";
+var filterSum = new Object();
+filterSum.titl="访问限制总览";
+filterSum.h2="Internet策略一览";
 filterSum.polnum="序号";
 filterSum.polday="（每天的）时间";
-
-
-
-// ******************************************* Firewall.asp *******************************************//
-
-
+var firewall = new Object();
 firewall.titl="防火墙";
 firewall.h2="安全";
 firewall.legend="防火墙保护";
@@ -526,484 +510,478 @@ firewall.firewall="SPI防火墙";
 firewall.legend2="附加的过滤器";
 firewall.proxy="过滤代理";
 firewall.cookies="过滤Cookies";
-firewall.applet="过滤Java Applets（Java小应用程序）";
+firewall.applet="过滤Java Applets、";
 firewall.activex="过滤ActiveX";
-firewall.legend3="封禁来自WAN口的请求";
-firewall.ping="封禁来自Internet的匿名请求";
+firewall.legend3="阻止来自WAN口的请求";
+firewall.ping="阻止来自WAN口的匿名请求(ping)";
 firewall.muticast="过滤多播";
-filter.nat="过滤Internet NAT重定向";
-filter.port113="过滤IDENT（113号端口）";
-
-//help container
-
+filter.nat="过滤WAN NAT重定向";
+filter.port113="过滤IDENT（端口 113、）";
+var hfirewall = new Object();
 hfirewall.right2="启用或禁用SPI防火墙。";
-
-
-
-// ******************************************* Forward.asp *******************************************//
-
-prforward.titl="端口段转发（映射）";
-prforward.h2="端口段转发（映射）";
-prforward.legend="转发（映射）";
+var prforward = new Object();
+prforward.titl="端口范围转发";
+prforward.h2="端口范围转发";
+prforward.legend="转发";
 prforward.app="应用程序";
+var hprforward = new Object();
+hprforward.right2="某些应用程序可能需要打开特定端口才能正常工作。举例来说，这些应用程序包括服务器软件和一些在线游戏。当从Internet接收到一个针对特定端口的请求时，路由器将会把这些数据路由到您指定的计算机。出于安全的考虑，您可能想只对您需要使用的端口设置端口转发，同时，在您完成之后，取消对 <em>" + share.enable +"</em> 复选框的选定。";
+var p2p = new Object();
+p2p.titl="点对点程序";
+p2p.h2="BitTorrent 客户端";
+p2p.legend="CTorrent";
+p2p.ctorrent_srv="Ctorrent 服务";
+//var hp2p = new Object();
+//hpp2p.right2=
 
-//help container
-
-hprforward.right2="某些应用程序可能需要打开特定端口才能正常工作。 \
-	举例来说，这些应用程序包括服务器软件和一些在线游戏。 \
-	当从Internet接收到一个针对特定端口的请求时，路由器将会把这些数据路由到您指定的计算机。 \
-	处于安全的考虑，您可能想只对您需要使用的端口设置端口转发（映射）， \
-	同时，在您完成之后，取消对 <em>" + share.enable +"</em> 复选框的选定。";
-
-
-
-// ******************************************* ForwardSpec.asp *******************************************//
-
-pforward.titl="端口转发（映射）";
-pforward.h2="端口转发（映射）";
-pforward.legend="转发（映射）";
+var pforward = new Object();
+pforward.titl="端口转发";
+pforward.h2="端口转发";
+pforward.legend="映射";
 pforward.app="应用程序";
-pforward.from="源端口";
+pforward.from="来源端口";
 pforward.to="目的端口";
-
-//help container
-
-hpforward.right2="某些应用程序可能需要打开特定端口才能正常工作。 \
-	举例来说，这些应用程序包括服务器软件和一些在线游戏。 \
-	当从Internet接收到一个针对特定端口的请求时，路由器将会把这些数据路由到您指定的计算机。 \
-	处于安全的考虑，您可能想只对您需要使用的端口设置端口转发（映射）， \
-	同时，在您完成之后，取消对 <em>开启</em> 复选框的选定。";
-
-
-
-// ******************************************* Hotspot.asp *******************************************//
-
-hotspot.titl="Hotspot";
-hotspot.h2="Hotspot门户";
+var hpforward = new Object();
+hpforward.right2="某些应用程序可能需要打开特定端口才能正常工作。举例来说，这些应用程序包括服务器软件和一些在线游戏。当从Internet接收到一个针对特定端口的请求时，路由器将会把这些数据路由到您指定的计算机。处于安全的考虑，您可能想只对您需要使用的端口设置端口转发，同时，在您完成之后，取消对 <em>开启</em> 复选框的选定。";
+var usb = new Object();
+usb.titl="USB";
+usb.usb_legend="USB支持";
+usb.usb_core="核心 USB 支持";
+usb.usb_uhci="USB 1.1支持(UHCI)";
+usb.usb_ohci="USB 1.1支持(OHCI)";
+usb.usb_ehci="USB 2.0支持";
+usb.usb_storage="USB存储设备支持";
+usb.usb_extfs="ext2/ext3文件系统支持";
+usb.usb_fatfs="FAT文件系统支持";
+usb.usb_printer="USB打印机支持";
+usb.usb_automnt="自动挂载磁盘";
+usb.usb_mntpoint="磁盘挂载点";
+usb.usb_runonmount="挂载时运行的脚本名";
+usb.usb_diskinfo="磁盘信息";
+var nas = new Object();
+nas.titl="NAS";
+nas.proftpd_legend="FTP 服务器";
+nas.proftpd_srv="ProFTPD";
+nas.proftpd_port="服务器端口";
+nas.proftpd_dir="文件目录";
+nas.proftpd_passw="用户密码列表";
+nas.proftpd_writeen="允许写入";
+nas.proftpd_anon="匿名登陆（只读）";
+nas.proftpd_anon_subdir="匿名 Home 子目录";
+nas.sambasrv_legend="Samba服务器";
+var hnas = new Object();
+hnas.right2="用户密码列表：一个用户密码一行。密码可以是明文或MD5加密。";
+var hotspot = new Object();
+hotspot.titl="热点";
+hotspot.h2="热点入口";
 hotspot.legend="Chillispot";
+hotspot.nowifibridge="从LAN Bridge隔离出Wifi";
 hotspot.hotspot="Chillispot";
-hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
-hotspot.pserver="主Radius服务器IP/DNS";
-hotspot.bserver="备份RadiusIP/DNS";
+hotspot.pserver="主用Radius服务器IP/DNS";
+hotspot.bserver="备用Radius服务器IP/DNS";
 hotspot.dns="DNS IP";
 hotspot.url="重定向URL";
-hotspot.dhcp="DHCP接口";
+hotspot.dhcp="DHCP 接口";
 hotspot.radnas="Radius NAS ID";
+hotspot.net="远程网络";
 hotspot.uam="UAM秘密";
 hotspot.uamdns="UAM任意DNS";
 hotspot.allowuam="UAM被允许";
 hotspot.macauth="MACauth";
-hotspot.option="附加的Chillispot选项";
+hotspot.option="Chillispot附加选项";
 hotspot.fon_chilli="Chillispot本地用户管理";
 hotspot.fon_user="用户列表";
 hotspot.http_legend="HTTP重定向";
 hotspot.http_srv="HTTP重定向";
 hotspot.http_ip="HTTP目标IP";
 hotspot.http_port="HTTP目标端口";
-hotspot.http_net="HTTP源网络";
+hotspot.http_net="HTTP来源网络";
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="网关名称";
 hotspot.nocat_home="主页";
-hotspot.nocat_allowweb="被许可的Web主机列表";
-hotspot.nocat_docroot="文档根（目录）";
+hotspot.nocat_allowweb="已允许的 Web 主机";
+hotspot.nocat_docroot="档案（根目录）";
 hotspot.nocat_splash="Splash URL";
 hotspot.nocat_port="排除的端口";
 hotspot.nocat_timeout="登录超时";
 hotspot.nocat_verbose="细致程度";
 hotspot.nocat_route="仅路由";
-hotspot.nocat_MAClist="MAC White List";
+hotspot.nocat_MAClist="MAC白名单列表";
 hotspot.smtp_legend="SMTP重定向";
 hotspot.smtp_srv="SMTP重定向";
 hotspot.smtp_ip="SMTP目标IP";
-hotspot.smtp_net="SMTP源网络";
+hotspot.smtp_net="SMTP来源网络";
 hotspot.shat_legend="零IP配置";
 hotspot.shat_srv="零IP配置";
 hotspot.shat_srv2="零IP配置已开启";
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnik代理";
+hotspot.sputnik_mode="Sputnik模式";
 hotspot.sputnik_id="Sputnik服务器ID";
 hotspot.sputnik_instant="使用Sputnik即时设置";
 hotspot.sputnik_express="使用SputnikNet Express";
 hotspot.sputnik_about="关于Sputnik";
-
-
-
-// ******************************************* Info.htm *******************************************//
-
+hotspot.sputnik_learn="学习更多";
+hotspot.wifidog_legend="Wifidog";
+hotspot.wifidog_srv="Wifidog守护进程";
+hotspot.wifidog_id="网关ID";
+hotspot.wifidog_url="入口URL地址";
+hotspot.wifidog_port="端口";
+hotspot.wifidog_httpdname="Web服务器名";
+hotspot.wifidog_httpdconn="最大用户数";
+hotspot.wifidog_checkinter="检查间隔 (秒)";
+hotspot.wifidog_checktimeout="客户端超时";
+hotspot.wifidog_tmaclist="信任的MAC列表";
+hotspot.wifidog_authsrv="鉴权服务器主机名";
+hotspot.wifidog_authsrvssl="鉴权服务器SSL启用";
+hotspot.wifidog_authsrvsslport="鉴权服务器SSL端口";
+hotspot.wifidog_authsrvhttpport="鉴权服务器HTTP端口";
+hotspot.wifidog_authsrvpath="鉴权服务器路径";
+hotspot.wifidog_config="防火墙规则设置";
+var anchorfree = new Object();
+anchorfree.anchorfree="AnchorFree";
+anchorfree.titl="我的广告网络";
+anchorfree.h2="AnchorFree 广告网络";
+anchorfree.anchorfree_revenue="通过创建支持广告的AnchorFree热点赚取收入";
+anchorfree.email="接收收入报告的Email地址";
+anchorfree.ssid="使用不同的SSID";
+anchorfree.ssid_name="SSID";
+anchorfree.address_1="街道地址";
+anchorfree.address_2="街道地址2";
+anchorfree.city="城市";
+anchorfree.zip="邮政或邮政编码";
+anchorfree.state="国家/州/省";
+anchorfree.country="国家";
+anchorfree.category="类别";
+anchorfree.publish="在WiFi地图上发布此热点";
+anchorfree.serviceid="服务ID";
+anchorfree.servicestatus="服务状态";
+anchorfree.agreement="条款和条件";
+anchorfree.agree="我接受并同意";
+anchorfree.validaddr="如果此热点要在 wifi 热点地图上发布，必须输入一个有效的地址信息！";
+anchorfree.validcity="如果此热点要在 wifi 热点地图上发布，必须输入一个有效的城市或邮政编码！";
+anchorfree.validcat="请为您的热点选择一个广告类别";
+anchorfree.validcountry="请选择您的热点所在地";
+anchorfree.validterms="您必须接受条款和条件！";
+var hanchorfree = new Object();
+hanchorfree.right1="加入AnchorFree 的热点广告网络";
+hanchorfree.right2="AnchorFree 管理一个热点，允许 DD-WRT 客户通过网络做广告达到创收。";
+hanchorfree.right3="通过广告从AnchorFree获得收入。";
+hanchorfree.right4="用此功能，并在 AnchorFree 建立一个帐户（免费且简单），永久的广告框架将会被直接插入到用户的Web浏览器，它每月会为您赚取美金。每月赚到25美元以上，AnchorFree 就会自动把资金存入您的帐户。";
+hanchorfree.right5="更多信息请访问 www.anchorfree.com";
+hanchorfree.right6="Activation is easy";
+hanchorfree.right7="一旦您激活了，AnchorFree将会发送一封电子邮件给帐号拥有者，邮件包含如何优化你的hotspot，FAQs，以及其它有关如何通过您的路由器赚钱的资料。通过这个配置界面，AnchorFree将会直接插入一个小的，无害的广告框架到WEB浏览器（通过此路由器上网的）";
+hanchorfree.right8="用户支持";
+hanchorfree.right9="有疑问？通过 boxhelp@anchorfree.com 联系我们";
+var info = new Object();
 info.titl="信息";
 info.h2="系统信息";
 info.wlanmac="无线MAC";
 info.srv="服务";
-
-
-
-// ******************************************* index_heartbeat.asp *******************************************//
-
+info.ap="访问点(AP)";
+var idx_h = new Object();
 idx_h.srv="心跳服务器";
 idx_h.con_strgy="连接策略";
 idx_h.max_idle="按需连接：最大空闲时间";
-idx_h.alive="保持活动：重拨间期";
-
-
-
-// ******************************************* index_l2tp.asp *******************************************//
-
-
+idx_h.alive="保持活动：重拨周期";
+idx_h.reconnect="强制重新连接";
+var idx_l = new Object();
 idx_l.srv="L2TP服务器";
-
-
-
-// ******************************************* index_pppoe.asp *******************************************//
-
-
+var idx_pppoe = new Object();
 idx_pppoe.use_rp="使用RP PPPoE";
-
-
-
-// ******************************************* index_pptp.asp *******************************************//
-
+var idx_pptp = new Object();
 idx_pptp.srv="使用DHCP";
-idx_pptp.wan_ip="Internet IP地址";
+idx_pptp.wan_ip="WAN IP地址";
 idx_pptp.gateway="网关（PPTP服务）";
 idx_pptp.encrypt="PPTP加密";
-
-
-
-// ******************************************* index_static.asp *******************************************//
-
+var idx_static = new Object();
 idx_static.dns="静态DNS";
-
-
-
-// ******************************************* index.asp *******************************************//
-
+var idx = new Object();
 idx.titl="设置";
-idx.h2="Internet设置";
+idx.h2="WAN设置";
 idx.h22="无线设置";
-idx.legend="Internet连接类型";
+idx.legend="WAN连接类型";
 idx.conn_type="连接类型";
 idx.stp="STP";
 idx.stp_mess="(对COMCAST ISP禁用)";
-idx.optional="可选设置（某些ISP需要这些设置）";
+idx.optional="可选设置";
 idx.mtu="MTU";
 idx.h23="网络设置";
 idx.routerip="路由器IP";
 idx.lanip="本地IP地址";
 idx.legend2="WAN端口";
-idx.wantoswitch="将WAN口指定给交换机";
+idx.wantoswitch="指派WAN口为交换口（WAN口变交换口）";
 idx.legend3="时间设置";
 idx.timeset="时区";
 idx.dsttime="夏令时 (DST)";
 idx.static_ip="静态IP";
 idx.dhcp="自动配置 - DHCP";
 idx.dhcp_legend="网络地址服务器设置 (DHCP)";
-idx.dhcp_type="DHCP类型";
-idx.dhcp_srv="DHCP服务器";
-idx.dhcp_fwd="DHCP转发器";
+idx.dhcp_type="DHCP 类型";
+idx.dhcp_srv="DHCP 服务器";
+idx.dhcp_fwd="DHCP 转发器";
 idx.dhcp_start="起始IP地址";
-idx.dhcp_end="终止IP地址";		//used in Status_Lan.asp
+idx.dhcp_end="结束IP地址";		//used in Status_Lan.asp
 idx.dhcp_maxusers="最大DHCP用户数";
-idx.dhcp_lease="客户端租用时间";
+idx.dhcp_lease="客户端租约时间";
 idx.dhcp_dnsmasq="为DHCP使用DNSMasq";
 idx.dns_dnsmasq="为DNS使用DNSMasq";
 idx.auth_dnsmasq="以DHCP为准";
-idx.summt_opt1="none";
-idx.summt_opt2="first Sun Apr - last Sun Oct";
-idx.summt_opt3="last Sun Mar - last Sun Oct";
-idx.summt_opt4="last Sun Oct - last Sun Mar";
-idx.summt_opt5="2nd Sun Mar - first Sun Nov";
+idx.summt_opt1="无";
+idx.summt_opt2="4月第1个星期天 - 8月最后一个星期天";
+idx.summt_opt3="5月最后一个星期天 - 8月最后一个星期天";
+idx.summt_opt4="8月最后一个星期天 - 5月最后一个星期天";
+idx.summt_opt5="5月第2个星期天 - 11月第1个星期天";
+idx.summt_opt6="8月第1个星期天 - 5月第3个星期天";
+idx.summt_opt7="9月最后一个星期天 - 4月第1个星期天";
+idx.summt_opt8="8月第3个星期天 - 5月第3个星期天";
+idx.portsetup="端口配置";
+idx.wanport="WAN端口指派";
 idx.ntp_client="NTP客户端";
-
-
-
-//help container
-
-hidx.right2="这些设置最经常被有线电视操作人员使用。";
-hidx.right4="请输入您的ISP提供的主机名。";
-hidx.right6="请输入您的ISP提供的域名。";
+var hidx = new Object();
+hidx.right2="Cable使用者的常用选项。";
+hidx.right4="输入ISP提供给您的主机名。";
+hidx.right6="输入ISP提供给您的域名。";
 hidx.right8="这是路由器的地址。";
 hidx.right10="这是路由器的子网掩码。";
 hidx.right12="允许路由器管理您的IP地址。";
-hidx.right14="您希望起始的地址。";
-hidx.right16="您可以限制您的路由器提交的地址个数。";
+hidx.right14="您希望的起始地址。";
+hidx.right16="您可以限制您的路由器分配出的地址个数。0表示只分配预先设定的静态地址。";
 hidx.right18="请选择您所在的时区和夏令时（DST）期间。本路由器可以使用本地时间或者UTC时间。";
-
-
-
-// ******************************************* Join.asp *******************************************//
-
-
-//sshd.webservices
+var join = new Object();
 join.titl="加入";
-join.mess1="已经以客户端身份成功地加入了下列网络：";
-
-
-
-// ******************************************* Log_incoming.asp *******************************************//
-
+join.mess1="成功以客户端身份加入以下网络：";
+var log_in = new Object();
 log_in.titl="连入日志表";
 log_in.h2="连入日志表";
-log_in.th_ip="源IP";
+log_in.th_ip="来源IP";
 log_in.th_port="目的端口号";
-
-
-
-// ******************************************* Log_outgoing.asp *******************************************//
-
+var log_out = new Object();
 log_out.titl="连出日志表";
 log_out.h2="连出日志表";
 log_out.th_lanip="LAN IP";
-log_out.th_wanip="目的URL/IP";
+log_out.th_wanip="目的 URL/IP";
 log_out.th_port="服务/端口号";
-
-
-
-// ******************************************* Log.asp *******************************************//
-
+var log = new Object();
 log.titl="日志";
 log.h2="日志管理";
 log.legend="日志";
 log.lvl="日志等级";
 log.drop="丢弃的";
 log.reject="拒绝的";
-log.accept="接受的";
-
-
-
-// ******************************************* Management.asp *******************************************//
-
+log.accept="已接受的";
+var management = new Object();
 management.titl="管理";
 management.h2="路由器管理";
-
+management.changepassword="您的路由器目前不受保护且使用不安全的预设用户名和密码组合，请使用以下对话框修改！";
 management.psswd_legend="路由器密码";
 management.psswd_user="路由器用户名";
 management.psswd_pass="路由器密码";
-management.pass_conf="重新输入从而确认";
-
+management.pass_conf="密码确认";
 management.remote_legend="远程管理";
-management.remote_gui="Web图形用户界面管理";
+management.remote_gui="Web界面管理";
 management.remote_https="使用HTTPS";
-management.remote_guiport="Web图形用户界面端口";
+management.remote_guiport="Web界面端口";
 management.remote_ssh="SSH管理";
-management.remote_sshport="SSH端口";
-
+management.remote_sshport="SSH远程端口";
+management.remote_telnet="Telnet管理";
+management.remote_telnetport="Telnet远程端口";
+management.remote_allowanyip="允许任意远程IP地址";
+management.remote_ip="允许远程IP地址范围";
 management.web_legend="Web访问";
-management.web_refresh="自动刷新（以秒为单位）";
-management.web_sysinfo="启用信息站点";
-management.web_sysinfopass="信息站点密码保护";
-management.web_sysinfomasq="信息站点MAC伪装";
-
-management.boot_legend="Boot Wait";
-management.boot_srv="Boot Wait";
-
+management.web_refresh="自动刷新（秒）";
+management.web_sysinfo="登陆前显示系统信息网页";
+management.web_sysinfopass="系统信息网页密码保护";
+management.web_sysinfomasq="系统信息网页隐藏MAC";
+management.boot_legend="启动时等待";
+management.boot_srv="启动时等待";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
-management.cron_jobs="Additional Cron Jobs";
-
+management.cron_jobs="Cron 附加任务";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-
 management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
-
 management.rst_legend="复位按钮";
 management.rst_srv="复位按钮";
-
 management.routing_legend="路由";
 management.routing_srv="路由";
-
 management.ipv6_legend="IPv6支持";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Radvd已开启";
 management.ipv6_radconf="Radvd配置";
-
 management.jffs_legend="JFFS2支持";
 management.jffs_srv="JFFS2";
-management.jffs_clean="清除JFFS2";
-
+management.jffs_clean="清除 JFFS2";
 management.lang_legend="语言选择";
 management.lang_srv="语言";
-management.lang_bulgarian="bulgarian（保加利亚语）";
-management.lang_chinese_traditional="tradchinese（繁体中文）"; 
-management.lang_chinese_simplified="simpchinese（简体中文，Simplified Chinese）";
-management.lang_croatian="croatian（克罗地亚）";
-management.lang_czech="czech（捷克）";
-management.lang_dutch="dutch（荷兰语）";
-management.lang_portuguese_braz="brazilian（巴西语）";
-management.lang_english="english（英语）";
-management.lang_french="french（法语）";
-management.lang_german="german（德语）";
-management.lang_italian="italian（意大利语）";
-management.lang_brazilian="brazilian（巴西语）";
-management.lang_slovenian="slovenian（斯洛文尼亚语）";
-management.lang_spanish="spanish（西班牙语）";
-management.lang_swedish="swedish（瑞典语）";
-management.lang_polish="polish";
-management.lang_japanese="japanese";
-
+management.lang_bulgarian="保加利亚语（bulgarian）";
+management.lang_chinese_traditional="繁体中文（Traditional Chinese）"; 
+management.lang_chinese_simplified="简体中文（Simplified Chinese）";
+management.lang_croatian="克罗地亚（croatian）";
+management.lang_czech="捷克（czech）";
+management.lang_dutch="荷兰语（dutch）";
+management.lang_portuguese_braz="葡萄牙语（Portuguese）";
+management.lang_english="英语（english）";
+management.lang_polish="波兰语（polish）";
+management.lang_french="法语（french）";
+management.lang_german="德语（german）";
+management.lang_italian="意大利语（italian）";
+management.lang_brazilian="巴西语（brazilian）";
+management.lang_russian="俄语（Russian）";
+management.lang_slovenian="斯洛文尼亚语（slovenian）";
+management.lang_spanish="西班牙语（spanish）";
+management.lang_swedish="瑞典语（swedish）";
+management.lang_japanese="日语（japanese）";
+management.lang_hungarian="匈牙利语（Hungarian）";
 management.net_legend="IP过滤设置（为P2P调整这些设置）";
 management.net_port="最大端口数";
-management.net_tcptimeout="TCP超时（以秒为单位）";
-management.net_udptimeout="UDP超时（以秒为单位）";
-
+management.net_tcptimeout="TCP超时（秒）";
+management.net_udptimeout="UDP超时（秒）";
 management.clock_legend="超频";
 management.clock_frq="频率";
 management.clock_support="不支持";
-
 management.mmc_legend="MMC/SD卡支持";
 management.mmc_srv="MMC设备";
-
-management.samba_legend="Samba FS自动装载";
-management.samba_srv="SMB文件系统";
+management.mmc_gpiosel="GPIO 引脚选择";
+management.mmc_gpiopins="GPIO 引脚";
+management.samba_legend="CIFS 自动挂载";
+management.samba_srv="通用 Internet 文件系统";
 management.samba_share="共享";
 management.samba_stscript="启动脚本";
-
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP端口";
 management.SIPatH_domain="SIP域";
-
-management.gui_style="路由器图形用户界面风格";
-
-
-
-//help container
-
+management.gui_style="WEB界面风格";
+var hmanagement = new Object();
 hmanagement.right1="自动刷新：";
-hmanagement.right2="调整Web图形用户界面自动刷新间隙。输入0完全关闭这个特性。";
-
-
-
-// ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
-
+hmanagement.right2="调整 Web 界面自动刷新时间间隔。0 表示关闭这个特性。";
+var portserv = new Object();
 portserv.titl="端口服务";
 portserv.h2="端口服务";
-
-
-
-// ******************************************* QoS.asp *******************************************//
-
+var networking = new Object();
+networking.h2="VLAN标记";
+networking.legend="标记";
+networking.h22="桥接中";
+networking.legend2="创建网桥";
+networking.legend3="指派到网桥";
+networking.legend4="当前桥接列表";
+networking.brname="网桥名";
+networking.stp="STP已启用";
+networking.iface="接口";
+networking.h5="DHCPD";
+networking.legend5="多路DHCP服务器";
+var qos = new Object();
 qos.titl="服务质量（QoS）";
 qos.h2="服务质量（QoS）";
 qos.legend="QoS设置";
 qos.srv="开启QoS";
-qos.type="数据包计划器";
-qos.uplink="上行 (kbps)";
-qos.dnlink="下行 (kbps)";
+qos.type="数据包调度器";
+qos.uplink="上传 (kbps)";
+qos.dnlink="下载 (kbps)";
 qos.gaming="为游戏优化";
-qos.legend2="服务优先级";
-qos.prio_x="Exempt（豁免）";
-qos.prio_p="Premium（促进）";
-qos.prio_e="Express（快速）";
-qos.prio_b="Bulk（压底）";
-qos.legend3="Netmask优先级";
-qos.ipmask="IP/掩模";
+qos.legend2="服务优先顺序";
+qos.prio_x="Exempt（不受限）";
+qos.prio_p="Premium（高优先）";
+qos.prio_e="Express（优先）";
+qos.prio_b="Bulk（低）";
+qos.legend3="Netmask优先顺序";
+qos.ipmask="IP/Mask";
 qos.maxrate_b="最大Kbits";
-qos.maxrate_o="最大数据率";
-qos.legend4="MAC优先级";
-qos.legend5="以太网端口优先级";
-qos.legend6="默认带宽等级";
+qos.maxuprate_b="最大上传量(Kbits)";
+qos.maxdownrate_b="最大下载量(Kbits)";
+qos.maxrate_o="最大数据传输率";
+qos.legend4="MAC优先顺序";
+qos.legend5="以太网端口优先顺序";
+qos.legend6="预设带宽等级";
 qos.bandwidth="以Kbits表示的带宽";
-
-//help container
-
-hqos.right1="上行：";
-hqos.right2="将此设置为您的总上行限制的80%-95%（最大）。";
-hqos.right3="下行：";
-hqos.right4="将此设置为您的总下行限制的80%-100%（最大）。";
+var hqos = new Object();
+hqos.right1="上传：";
+hqos.right2="将此设置为您总上传限制的80%-95%（最大）。";
+hqos.right3="下载：";
+hqos.right4="将此设置为您总下载限制的80%-100%（最大）。";
 hqos.right6="您可以注意消耗带宽的应用程序，从而控制您的数据传输速率。";
-hqos.right8="您可以为一个给定的IP地址或者IP段指定优先级。";
-hqos.right10="您可以通过为一个设备指定设备名，制定优先级并输入MAC地址， \
-			从而为该设备的所有流量指定优先级。";
-hqos.right12="您可以根据您的设备连接到哪一个无力的LAN口来控制它的数据传输速率。 \
-			您可以根据设备连接到从1到4号LAN端口从而制定优先级。";
-
-
-
-// ******************************************* RouteTable.asp *******************************************//
-
+hqos.right8="您可以为一个给定的IP地址或者IP范围的所有流量指定优先顺序。";
+hqos.right10="您可以通过为一个设备指定设备名，制定优先顺序并输入MAC地址，从而为该设备的所有流量指定优先顺序。";
+hqos.right12="您可以根据您的设备连接到哪一个物理LAN口来控制它的数据传输速率。您可以根据已连接到1到4号LAN端口的设备制定优先顺序。";
+var routetbl = new Object();
 routetbl.titl="路由表";
-routetbl.h2="路由表项目列表";
+routetbl.h2="路由表条目列表";
 routetbl.th1="目的LAN IP";
-
-
-
-// ******************************************* Routing.asp *******************************************//
-
-route.titl="路由操作";
-route.h2="高级路由操作";
+var route = new Object();
+route.titl="路由设置";
+route.h2="高级路由设置";
+route.metric="度量标准";
 route.mod="工作模式";
 route.bgp_legend="BGP设置";
-route.bgp_own_as="BGP Own AS#";
 route.bgp_ip="邻近IP";
+route.bgp_own_as="BGP Own AS#";
 route.bgp_as="邻近AS#";
 route.rip2_mod="RIP2路由器";
+route.olsrd_mod="OLSR路由器";
+route.olsrd_legend="OLSR路由 (Optimized Link State Routing)";
+route.olsrd_poll="Poll传输率真";
+route.olsrd_hna="主机网络通告";
+route.olsrd_tc="TC冗余";
+route.olsrd_mpr="MPR覆盖范围";
+route.olsrd_lqfe="Fish Eye链路质量";
+route.olsrd_lqag="链路质量老化";
+route.olsrd_lqdmin="最小Dijkstra链路质量";
+route.olsrd_lqdmax="最大Dijkstra链路质量";
+route.olsrd_lqlvl="链路质量等级";
+route.olsrd_hysteresis="临界";
+route.olsrd_newiface="新接口";
 route.ospf_mod="OSPF路由器";
-route.gateway_legend="动态路由操作";
-route.static_legend="动态路由操作";
-route.static_setno="选择设置号";
+route.ospf_legend="OSPF Routing";
+route.ospf_conf="OSPF配置";
+route.gateway_legend="动态路由";
+route.static_legend="静态路由";
+route.static_setno="选择设置编号";
 route.static_name="路由名称";
 route.static_ip="目的LAN IP";
-
-//help container
-
+var hroute = new Object();
 hroute.right2="如果本路由器正主控您的Internet连接，选择 <em>网关</em> 模式。如果您的网络中存在另外一个路由器，选择 <em>路由</em> 模式。";
-hroute.right4="这是唯一的路由号，您可以设置最多20条路由。";
-hroute.right6="设置您希望指定给这条路由的名称。";
-hroute.right8="这是您希望设定静态路由的远程主机。";
+hroute.right4="这是唯一的路由编号，您最多可以设置20条路由。";
+hroute.right6="输入您想要的这条路由名称。";
+hroute.right8="这是您想要设定静态路由的远程主机。";
 hroute.right10="决定主机和网络分配。";
-
-
-// ******************************************* Site_Survey.asp *******************************************//
-
-
-survey.titl="Site Survey（选址）";
+var survey = new Object();
+survey.titl="基站勘查";
 survey.h2="邻近的无线网络";
-survey.thjoin="加入站点";
-
-
-
-// ******************************************* Services.asp *******************************************//
-
+survey.thjoin="加入基站";
+var service = new Object();
 service.titl="服务";
 service.h2="服务管理";
-
-//kaid
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="开启Kaid";
-service.kaid_locdevnum="Number of Local Devices";
-
-//DHCPd
-service.dhcp_legend="DHCP客户端";
-service.dhcp_vendor="设置Vendorclass";
+service.kaid_locdevnum="本地设备数量";
+service.kaid_uibind="UI监听端口";
+service.kaid_orbport="ORB端口";
+service.kaid_orbdeepport="ORB Deep Port";
+service.dhcp_legend="DHCP 客户端";
+service.dhcp_vendor="设置供应商类";
 service.dhcp_reqip="Request IP";
-service.dhcp_legend2="DHCP服务器";
-service.dhcp_srv="DHCP Daemon";
-service.dhcp_jffs2="使用JFFS2作为客户端租约数据库";
+service.dhcp_legend2="DHCP 服务器";
+service.dhcp_srv="DHCP 守护进程";
+service.dhcp_jffs2="使用JFFS2存储客户端租约数据";
+service.dhcp_nvramlease="使用NVRAM存储客户端租约数据";
 service.dhcp_domain="已使用的域";
 service.dhcp_landomain="LAN域";
-service.dhcp_option="附加的DHCPd选项";
+service.dhcp_option="DHCPd 附加选项";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="本地DNS";
-service.dnsmasq_opt="附加的DNSMasq选项";
-
-//pptp.webservices
+service.dnsmasq_opt="DNSMasq 附加选项";
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP服务器";
 service.pptp_client="客户端IP";
 service.pptp_chap="CHAP-Secrets";
-
-//syslog.webservices
 service.syslog_legend="系统日志";
 service.syslog_srv="系统日志";
 service.syslog_ip="远程服务器";
-
-//telnet.webservices
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
-
-//pptpd_client.webservices
 service.pptpd_legend="PPTP客户端";
 service.pptpd_option="PPTP客户端选项";
 service.pptpd_ipdns="服务器IP或DNS名称";
@@ -1013,77 +991,167 @@ service.pptpd_encry="MPPE加密";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
 service.pptpd_nat="NAT";
-
-//rflow.webservices
 service.rflow_legend="RFlow / MACupd";
 service.rflow_srv1="RFlow";
 service.rflow_srv2="MACupd";
-
-//pppoe-relay.webservices
-service.pppoe_legend="PPPOE中继";
+service.pppoe_legend="PPPOE中继代理";
 service.pppoe_srv="中继";
-
-//snmp.webservices
+service.pppoesrv_legend="PPPoE 服务器";
+service.pppoesrv_srv="RP-PPPoE服务端守护进程";
+service.pppoesrv_srvopt="RP-PPPoE服务器选项";
+service.pppoesrv_compr="压缩";
+service.pppoesrv_remoteaddr="远程起始IP";
+service.pppoesrv_remotenet="远程网络IP";
+service.pppoesrv_remotemask="远程网络掩码";
+service.pppoesrv_lcpei="LCP回应间隔";
+service.pppoesrv_lcpef="LCP回应失败";
+service.pppoesrv_idlet="空闲时间";
+service.pppoesrv_auth="鉴权";
+service.pppoesrv_radip="Radius服务器IP";
+service.pppoesrv_radauthport="Radius鉴权端口";
+service.pppoesrv_radaccport="Radius计账端口";
+service.pppoesrv_radkey="Radius共享秘钥";
+service.pppoesrv_chaps="本地用户管理（CHAP Secrets）";
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
 service.snmp_loc="位置";
 service.snmp_contact="联系";
 service.snmp_name="名称";
-service.snmp_read="RO群社";
-service.snmp_write="RW群社";
-
-//openvpn.webservices
+service.snmp_read="只读Community";
+service.snmp_write="可读写Community";
 service.vpn_legend="OpenVPN客户端";
 service.vpn_srv="开启OpenVPN";
 service.vpn_ipname="服务器IP/名称";
 service.vpn_mtu="TUN MTU设置";
-service.vpn_mru="TUN MTU额外附加";
+service.vpn_mru="TUN MTU Extra";
 service.vpn_mss="TCP MSS";
 service.vpn_compress="使用LZO压缩";
-service.vpn_tunnel="隧道协议";
+service.vpn_tunnel="通道协议";
+service.vpn_tuntap="通道设备";
 service.vpn_srvcert="公共服务器端证书";
 service.vpn_clicert="公共客户端证书";
-service.vpn_certtype="nsCertType（ns证书类型）";
+service.vpn_certtype="ns证书类型（nsCertType）";
 service.vpn_clikey="客户端私钥";
-
-//sshd.webservices
-service.ssh_legend="Secure Shell（安全外壳）";
+service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
 service.ssh_password="密码登录";
 service.ssh_key="授权秘钥";
+service.ssh_forwarding="SSH TCP转发";
+service.radiooff_legend="SES / AOSS / EZ-SETUP / WPS 按钮";
+service.radiooff_srv="使用此按钮关闭无线网络";
+service.radiooff_bootoff="启动时关闭无线网络";
+//ses.webservices =
 
+service.ses_legend="SES / AOSS / EZ-SETUP / WPS 按钮";
+service.ses_srv="按钮动作";
+service.ses_toggleradio="无线切换（Toggle Wireless）";
+service.ses_script="自定义脚本";
+service.hwmon_legend="硬件监控中";
+service.hwmon_critemp="临界温度（风扇开启）";
+service.hwmon_hystemp="滞后温度（风扇关闭）";
+service.rstats_legend="带宽监控";
+service.rstats_srv="rstats守护进程";
+service.rstats_path="保存带宽数据到";
+service.rstats_time="保存时间间隔";
+service.rstats_usrdir="用户指南";
+service.nstx_legend="IP over DNS Tunneling";
+service.nstx_srv="nstx 守护进程";
+service.nstx_ipenable="只绑定到此IP";
+service.nstx_log="开启debug信息";
+service.ttraff_legend="WAN流量计数器";
+service.ttraff_daemon="ttraff守护进程";
+service.milkfish_siprouter="Milkfish SIP 路由器";
+service.milkfish_alias="别名";
+service.milkfish_uri="SIP URI";
+service.milkfish_mainswitch="Main Switch";
+service.milkfish_fromswitch="From-Substitution";
+service.milkfish_fromdomain="From-Domain";
+service.milkfish_username="Milkfish 用户名";
+service.milkfish_password="Milkfish 密码";
+service.milkfish_audit="Milkfish Audit";
+service.milkfish_siptrace="SIP跟踪";
+service.milkfish_subscribers="本地订阅者";
+service.milkfish_aliases="本地别名";
+service.milkfish_dynsip="动态 SIP";
+service.milkfish_status="SIP状态";
+service.milkfish_database="SIP数据库";
+service.milkfish_messaging="SIP信息";
+service.milkfish_phonebook="SIP电话本";
+service.milkfish_dynsipdomain="DynSIP 域名";
+service.milkfish_dynsipurl="DynSIP 更新URL";
+service.milkfish_dsusername="DynSIP 用户名";
+service.milkfish_dspassword="DynSIP 密码";
+service.milkfish_sipmessage="SIP信息";
+service.milkfish_destination="SIP目标";
+service.milkfish_contact="联系";
+service.milkfish_agent="用户代理";
+service.milkfish_registrations="Active Registrations";
+//service.milkfish_=
 
+service.hmilkfish_right2="启用/禁用 您的Milkfish SIP路由器。";
+service.hmilkfish_right4="启用/禁用 数据包头部分的来源替换为您的WAN IP传出SIP信息。如果WAN IP已变更，让呼叫端可以呼叫您，此设置必须启用";
+service.hmilkfish_right6="当您把数据包来源部分用域名替换掉您的WAN IP，呼叫端就可以呼叫此域名(代替呼叫您的WAN IP)。来源替换必须开启才可以使用此特性";
+service.hmilkfish_right8="这里填上您在Milkfish社区论坛的用户名 - 注册后分配给您 yourname.homesip.net";
+service.hmilkfish_right10="这里填上您在Milkfish社区论坛的密码 - 注册后分配给您 yourname.homesip.net";
+service.hmilkfish_right12="在您的路由器上启用/禁用 基本SIP 跟踪";
+service.hmilkfish_right14="本地SIP订阅者是本地管理的SIP帐号";
+service.hmilkfish_right16="本地SIP别名是SIP转发，类似于Email转发。可以用来转发字母到以数字为电话号码的帐号，反之亦然";
+service.hmilkfish_right18="启用/禁用 动态SIP（如Homesip.net服务） - 需要设置用户名和密码";
+service.hmilkfish_right20="尚未实现 - 留空";
+service.hmilkfish_right22="尚未实现 - 留空";
+service.hmilkfish_right24="尚未实现 - 留空";
+service.hmilkfish_right26="尚未实现 - 留空";
+//service.hmilkfish_=
 
-// ******************************************* Sipath.asp + cgi *******************************************//
-
+var eoip = new Object();
+eoip.titl="EoIP 通道";
+eoip.tunnel="通道";
+eoip.legend="Ethernet Over IP Tunneling";
+eoip.srv="EoIP 通道";
+eoip.remoteIP="远程IP地址";
+eoip.tunnelID="通道ID";
+eoip.comp="压缩";
+eoip.passtos="TOS穿透";
+eoip.frag="片段";
+eoip.mssfix="mssfix";
+eoip.shaper="shaper";
+eoip.bridging="桥接中";
+var sipath = new Object();
 sipath.titl="SiPath总览";
 sipath.phone_titl="电话本";
 sipath.status_titl="状态";
-
-
-
-// ******************************************* Status_Lan.asp *******************************************//
-
-status_lan.titl="LAN状态";
+var status_lan = new Object();
+status_lan.titl="LAN 状态";
 status_lan.h2="本地网络";
-status_lan.legend="LAN状态";
+status_lan.legend="LAN 状态";
 status_lan.h22="动态主机配置协议";
-status_lan.legend2="DHCP状态";
-status_lan.legend3="DHCP客户端";
-status_lan.legend4="Active Clients";
-
-//help container
-
+status_lan.legend2="DHCP 状态";
+status_lan.legend3="DHCP 客户端";
+status_lan.legend4="活动的客户端";
+status_lan.concount="连接数";
+status_lan.conratio="比例";
+var hstatus_lan = new Object();
 hstatus_lan.right2="这是您的本地以太网络中看到的路由器的MAC地址。";
 hstatus_lan.right4="这是您的本地以太网络中看到的路由器的IP地址。";
 hstatus_lan.right6="当路由器使用一个子网掩码的时候，它被显示在这里。";
-hstatus_lan.right8="如果您将您的路由器当作DHCP服务器使用，那将被显示在这里。";
-hstatus_lan.right10="点击任意MAC地址，您将能获取该网络接口的“唯一组织识别码”（IEEE标准OUI数据库搜索）。";
-
-
-
-// ******************************************* Status_Router.asp *******************************************//
-
+hstatus_lan.right8="如果您把您的路由器当作DHCP服务器使用，那将会显示在这里。";
+hstatus_lan.right10="点击任意MAC地址，您将能获取该网络接口的全球唯一识别码（从IEEE标准OUI数据库搜索）。";
+var status_band = new Object();
+status_band.titl="带宽监控";
+status_band.h2="带宽监控中";
+status_band.chg_unit="切换为";
+status_band.chg_scale="自动调整";
+status_band.chg_error="无法获取和接口有关的数据";
+status_band.chg_collect_initial="收集初始化数据中，请稍候...";
+status_band.strin="入";
+status_band.strout="出";
+status_band.follow="跟随";
+status_band.up="up";
+var hstatus_band = new Object();
+hstatus_band.svg="显示带宽图表需要Adobe的SVG plugin。";
+hstatus_band.right1="点击标签选择单位（字节/秒 或 位/秒）。";
+hstatus_band.right2="点击标签选择图形自动调整类型。";
+var status_router = new Object();
 status_router.titl="路由器状态";
 status_router.h2="路由器信息";
 status_router.legend="系统";
@@ -1093,358 +1161,311 @@ status_router.sys_time="当前时间";
 status_router.sys_up="运行时间";
 status_router.sys_load="平均负载";
 status_router.legend2="CPU";
-status_router.cpu="CPU型号";
-status_router.clock="CPU时钟";
+status_router.cpu="CPU 型号";
+status_router.clock="CPU 频率";
 status_router.legend3="内存";
 status_router.mem_tot="所有可用";
 status_router.mem_free="空闲";
 status_router.mem_used="已使用";
-status_router.mem_buf="缓冲";
-status_router.mem_cached="被缓存的";
-status_router.mem_active="活动";
-status_router.mem_inactive="不活动";
+status_router.mem_buf="缓冲区";
+status_router.mem_cached="已缓存";
+status_router.mem_active="使用中";
+status_router.mem_inactive="非使用中";
+status_router.mem_hidden=
 status_router.legend4="网络";
 status_router.net_maxports="IP过滤器最大端口数";
-status_router.net_conntrack="活动的IP连接数";
-status_router.notavail="Not available";
-
-//help container
-
+status_router.net_conntrack="活动的IP连接";
+status_router.notavail="不可用";
+status_router.legend6="空间使用";
+status_router.inpvolt="主板输入电压";
+status_router.cputemp="CPU 温度";
+var hstatus_router = new Object();
 hstatus_router.right2="这是您在 <i>设置</i> 标签中所指定的路由器的名称。";
 hstatus_router.right4="这是您的ISP所看到的路由器的MAC地址。";
 hstatus_router.right6="这是路由器当前的固件。";
-hstatus_router.right8="这是您在设置标签中设置得到时间。";
-hstatus_router.right10="这个数值表示路由器\"启动\"并且运行的时间。";
+hstatus_router.right8="这是您从ntp服务器（在<em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>标签页设置）获取的时间。";
+hstatus_router.right10="这个数值表示路由器\"启动\"和运行的时间。";
 hstatus_router.right12="这里给出的三个数字表示系统在过去1、5、15分钟时间内的系统负载。";
-
-// ** Status_Internet.asp **//
-
-status_inet.titl="WAN Status";
+var status_inet = new Object();
+status_inet.titl="WAN状态";
 status_inet.h11="WAN";
-status_inet.conft="配置类型";
+status_inet.conft="连接类型";
 status_inet.www_loginstatus="登录状态";
-status_inet.wanuptime="Connection Uptime";
-status_inet.leasetime="Remaining Lease Time";
-status_inet.traff="Traffic";
-status_inet.traff_tot="Total Traffic";
-status_inet.traff_mon="Traffic by Month";
-status_inet.traffin="Incoming";
-status_inet.traffout="Outgoing";
-status_inet.previous="Previous Month";
-status_inet.next="Next Month";
-
-//help container
-hstatus_inet.right2="这里显示您的ISP所需要将您连接到Internet的信息。 \
-				这些信息被输入在设置标签中。通过按这里的按钮，您可以 <em>连接</em> 或者 <em>断开</em> 您的连接。";
-hstatus_inet.right4="This shows your router's Internet traffic.";
-
-// ******************************************* Status_SputnikAPD.asp *******************************************//
-
+status_inet.wanuptime="已连接时间";
+status_inet.leasetime="租约剩余时间";
+status_inet.traff="流量";
+status_inet.traff_tot="总流量";
+status_inet.traff_mon="月流量";
+status_inet.traffin="下载";
+status_inet.traffout="上传";
+status_inet.previous="上月";
+status_inet.next="下月";
+status_inet.dataadmin="数据管理";
+status_inet.delete_confirm="警告！此将删除所有的流量信息数据，删除？";
+var hstatus_inet = new Object();
+hstatus_inet.right2="这里显示连接到Internet时，您的ISP所需要的您的信息。这些信息在设置标签中设置。通过点击那个按钮，您可以 <em>连接</em> 或者 <em>断开</em> 您的连接。";
+hstatus_inet.right4="这里显示您的路由器自重启以来的上网流量。";
+hstatus_inet.right6="这里显示您的路由器月上网流量。拖动鼠标到图形上查看详细日流量。数据是存储在nvram上的。";
+var status_conn = new Object();
+status_conn.titl="活动的IP连接列表";
+status_conn.h2="活动的IP连接";
+var status_sputnik = new Object();
 status_sputnik.titl="Sputnik代理状态";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
-status_sputnik.manage="管理器";
+status_sputnik.manage="Managed By";
 status_sputnik.license="SCC授权编号";
-
-//help container
-
+var hstatus_sputnik = new Object();
 hstatus_sputnik.right1="Sputnik代理状态";
-hstatus_sputnik.right2="此屏幕显示Sputnik代理操作的状态。";
+hstatus_sputnik.right2="此屏幕显示Sputnik代理进程的状态。";
 hstatus_sputnik.right4="本访问点所连接到的Sputnik控制中心。";
 hstatus_sputnik.right6="当前代理状态。";
-hstatus_sputnik.right8="您的Sputnik控制中心的授权数。";
-
-
-
-// ******************************************* Status_Wireless.asp *******************************************//
-
+hstatus_sputnik.right8="您的Sputnik控制中心的授权号。";
+var status_wireless = new Object();
 status_wireless.titl="无线状态";
 status_wireless.h2="无线";
 status_wireless.legend="无线状态";
 status_wireless.net="网络";
 status_wireless.pptp="PPTP状态";
-status_wireless.legend2="数据包信息";
+status_wireless.legend2="无线数据包信息";
 status_wireless.rx="已接收的 (RX)";
 status_wireless.tx="已传送的 (TX)";
 status_wireless.h22="无线节点";
-status_wireless.legend3="无线客户端";
-status_wireless.signal_qual="信号品质";
+status_wireless.legend3="客户端";
+status_wireless.signal_qual="信号质量";
 status_wireless.wds="WDS节点";
-
-//help container
-
+var status_gpsi = new Object();
+status_gpsi.legend="GPS 信息";
+status_gpsi.status="状态";
+status_gpsi.lon="经度";
+status_gpsi.lat="纬度";
+status_gpsi.alt="海拔";
+status_gpsi.sat="搜寻到的卫星";
+var hstatus_wireless = new Object();
 hstatus_wireless.right2="这是您在您的本地无线网络中看到的路由器的MAC地址。";
-hstatus_wireless.right4="正如您在在无线标签里所设置的，这里将显示网络所使用的无线模式（混合，仅G，仅B或者禁用）。";
-
-
-
-// ******************************************* Status_OpenVPN.asp *******************************************//
-
-status_openvpn.titl="OpenVPN Status";
-
-
-// ******************************************* Triggering.asp *******************************************//
-
-trforward.titl="端口激发器";
-trforward.h2="端口激发器";
-trforward.legend="转发（映射）";
-trforward.trrange="被激发的端口范围";
-trforward.fwdrange="被转发（映射）的端口范围";
-trforward.app="应用程序。";
-
-//help container
-
-htrforward.right2="输入激发器的应用名称。";
-htrforward.right4="为每一个应用程序列出被激发的端口范围。请参考Internet应用程序文档来查找所需要的端口号。";
-htrforward.right6="为每一个应用程序列出被转发（映射）的端口范围。请参考Internet应用程序文档来查找所需要的端口号。";
-htrforward.right8="输入被激发和被转发（映射）端口范围的起始端口号。";
-htrforward.right10="输入被激发和被转发（映射）端口范围的终止端口号。";
-
-
-
-// ******************************************* Upgrade.asp *******************************************//
-
+hstatus_wireless.right4="正如您在在无线标签里设置的，这里将显示网络所使用的无线模式（混合，仅G，仅B或者禁用）。";
+var status_openvpn = new Object();
+status_openvpn.titl="OpenVPN状态";
+var trforward = new Object();
+trforward.titl="端口触发";
+trforward.h2="端口触发";
+trforward.legend="转发";
+trforward.trrange="已触发端口范围";
+trforward.fwdrange="转发端口范围";
+trforward.app="应用程序";
+var htrforward = new Object();
+htrforward.right2="输入触发器的应用程序名。";
+htrforward.right4="为每一个应用程序列出触发的端口范围。请参考Internet应用程序文档来查找所需要的端口号。";
+htrforward.right6="为每一个应用程序列出转发的端口范围。请参考Internet应用程序文档来查找所需要的端口号。";
+htrforward.right8="输入触发和转发端口范围的起始端口号。";
+htrforward.right10="输入触发和转发端口范围的结束端口号。";
+var upgrad = new Object();
 upgrad.titl="固件升级";
 upgrad.h2="固件管理";
 upgrad.legend="固件升级";
-upgrad.info1="在刷新之后，复位到";
+upgrad.info1="刷新后，复位到";
 upgrad.resetOff="不复位";
-upgrad.resetOn="默认设置";
+upgrad.resetOn="预设设置";
 upgrad.file="请选择一个用来升级的文件";
 upgrad.warning=" [警] [告] ";
-upgrad.mess1="升级固件可能需要花费数分钟。<br />请不要关闭电源或者按复位按钮！";
-
-//help container
-
-hupgrad.right2="点击 <em>浏览...</em> 按钮选择将要上载到路由器的固件文件。<br /><br /> \
-			点击 <em>升级</em> 按钮开始升级过程。升级绝对不可以被打断。";
-
-
-
-// ******************************************* UPnP.asp *******************************************//
-
+upgrad.mess1="升级固件可能需要几分钟。<br />请不要关闭电源或者按复位按钮！";
+var hupgrad = new Object();
+hupgrad.right2="点击 <em>浏览...</em> 按钮选择要上传到路由器的固件文件。<br /><br />。点击 <em>升级</em> 按钮开始升级。升级过程绝对不可以被中断。";
+var upnp = new Object();
 upnp.titl="UPnP";
 upnp.h2="通用即插即用（UPnP）";
-upnp.legend="转发（映射）";
+upnp.legend="转发";
 upnp.legend2="UPnP配置";
 upnp.serv="UPnP服务";
-upnp.clear="在启动时清除端口转发（映射）";
-upnp.url="发送陈述URL";
-upnp.msg1="点击删除租用";
-upnp.msg2="删除所有项目？";
-
-
-//help container
-
+upnp.clear="启动时清除端口转发";
+upnp.url="发送网络发现URL";
+upnp.msg1="点击删除条目";
+upnp.msg2="删除所有条目？";
+var hupnp = new Object();
 hupnp.right2="点击垃圾桶删除单一条目。";
-hupnp.right4="允许应用程序自动地设置端口转发（映射）";
-
-
-
-// ******************************************* VPN.asp *******************************************//
-
+hupnp.right4="允许应用程序自动设置端口转发";
+var vpn = new Object();
 vpn.titl="VPN穿透";
-vpn.h2="虚拟专用网络（VPN）";
+vpn.h2="虚拟专用网（VPN）";
 vpn.legend="VPN穿透";
 vpn.ipsec="IPSec穿透";
 vpn.pptp="PPTP穿透";
 vpn.l2tp="L2TP穿透";
-
-//help container
-
+var hvpn = new Object();
 hvpn.right1="您可以选择启用IPSec，PPTP 和/或 L2TP 穿透，从而允许您的网络设备通过VPN进行通讯。";
-
-
-// ******************************************* Vlan.asp *******************************************//
-
+var vlan = new Object();
 vlan.titl="虚拟LAN";
 vlan.h2="虚拟本地网络（VLAN）";
 vlan.legend="VLAN";
 vlan.bridge="被指定到<br />网桥";
 vlan.tagged="已标记的";
 vlan.negociate="自动协商";
-vlan.aggregation="<br>3号与4号端口链路聚合";
-vlan.trunk="主干";
-
-
-// ******************************************* WEP.asp *******************************************//
-
+vlan.aggregation="<br>3号与4号端口链路汇聚";
+vlan.trunk="汇集";
+var wep = new Object();
 wep.defkey="默认传输秘钥";
-wep.passphrase="口令";
-
-
-
-// ******************************************* WOL.asp *******************************************//
-
-
+wep.passphrase="通行短语";
+var wol = new Object();
 wol.titl="WOL";
 wol.h2="网络唤醒";
 wol.legend="可用主机";
 wol.legend2="WOL地址";
 wol.legend3="输出";
-wol.legend4="手工WOL";
+wol.legend4="手动WOL";
 wol.enable="启用WOL？";
 wol.mac="MAC地址";
 wol.broadcast="网络广播";
 wol.udp="UDP端口";
-wol.msg1="点击移除WOL主机";
-wol.h22="Automatic Wake-On-LAN";
+wol.msg1="点击移除 WOL 主机";
+wol.h22="自动网络唤醒";
 wol.legend5="网络唤醒";
-wol.srv="WOL";
-wol.pass="SecureOn密码";
-
-//help container
-
-hwol.right2="本页面允许您 <em>唤醒</em> 在您本地网络上的主机（例如，本地的连接到您的路由器上的）。";
-hwol.right4="MAC地址使用如下格式输入 xx:xx:xx:xx:xx:xx （例如 01:23:45:67:89:AB）";
-hwol.right6="IP地址通常是本地网络的广播地址，但是如果目标主机并为连接到路由器的本地网络，则应该设置为远程地址。"
-
-
-
-// ******************************************* WanMAC.asp *******************************************//
-
+wol.srv="WOL守护进程";
+wol.pass="SecureOn Password";
+var hwol = new Object();
+hwol.right2="本页面允许您 <em>唤醒</em> 在您本地网络上的主机（例如，本地已连接到您的路由器上的）。您可以通过点击<em>"+sbutton.wol+"</em>手动唤醒主机，或编写一个借助于"+wol.srv+"的自动定时唤醒。";
+hwol.right4="MAC地址使用如下格式输入 xx:xx:xx:xx:xx:xx （例如 01:23:45:67:89:AB），且必须以<em>空格</em>分隔";
+hwol.right6="IP地址通常是本地网络的广播地址，但是如果目标主机是并未连接到路由器的本地网络，则应该设置为远程地址。"
+var wanmac = new Object();
 wanmac.titl="MAC地址克隆";
 wanmac.h2="MAC地址克隆";
 wanmac.legend="MAC克隆";
 wanmac.wan="克隆WAN口MAC";
 wanmac.wlan="克隆无线MAC";
-
-//help container
-
-hwanmac.right2="某些ISP可能要求您注册您的MAC地址。 \
-			如果您不想重新注册您的MAC地址，您可以将路由器的MAC地址克隆为您注册在您的ISP处的MAC地址。";
-
-
-
-// ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
-
+var hwanmac = new Object();
+hwanmac.right2="某些ISP可能要求您注册您的MAC地址。如果您不想重新注册您的MAC地址，您可以将路由器的MAC地址克隆为您在ISP注册的MAC地址。";
+var wpa = new Object();
 wpa.titl="无线安全";
 wpa.h2="无线安全";
+wpa.secmode="安全模式";
 wpa.legend="无线加密";
 wpa.auth_mode="网络鉴权";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA组重新获取秘钥间隔";
-wpa.rekey="秘钥更新间歇（以秒为单位）";
-wpa.radius_ipaddr="RADIUS服务器地址";
-wpa.radius_port="RADIUS服务器端口";
-wpa.radius_key="RADIUS秘钥";
+wpa.rekey="秘钥更新时间间隔（秒）";
+wpa.radius_ipaddr="Radius服务器地址";
+wpa.radius_port="Radius服务器端口";
+wpa.radius_key="Radius秘钥";
 wpa.algorithms="WPA算法";
 wpa.shared_key="WPA共享秘钥";
-wpa.rekeyInt="重新获取秘钥间隔";
-
-//help container
-
-hwpa.right1="安全模式：";
-hwpa.right2="您可以从禁用、WEP、WPA预共享秘钥、WPA RADIUS或者RADIUS中选取一种。在您的网络上的所有设备必须使用相同的安全模式。";
-
-
-
-// ******************************************* WL_FilterTable.asp *******************************************//
-
-wl_filter.titl="MAC地址过滤器列表";
-wl_filter.h2="MAC地址过滤器列表";
-wl_filter.h3="使用如下格式输入MAC地址&nbsp;：&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
-
-
-
-// ******************************************* WL_ActiveTable.asp *******************************************//
-
+var sec80211x = new Object();
+sec80211x.xsuptype="XSupplicant类型";
+sec80211x.servercertif="公共服务器端认证";
+sec80211x.clientcertif="客户端认证";
+sec80211x.phase2="Phase2 Authentication";
+sec80211x.anon="匿名验证";
+var hwpa = new Object();
+hwpa.right2="您应该在禁用、WEP、WPA Personal、WPA Enterprise或RADIUS中选择一种。您网络中的所有设备将会使用相同的安全模式。";
+var wl_filter = new Object();
+wl_filter.titl="MAC地址过滤列表";
+wl_filter.h2="MAC地址过滤列表";
+wl_filter.h3="输入此格式的MAC地址&nbsp;：&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+var wl_active = new Object();
 wl_active.titl="活动的无线客户端MAC列表";
 wl_active.h2="无线客户端MAC列表";
-wl_active.h3="启用MAC过滤器";
-wl_active.active="活动的PC";
-wl_active.inactive="不活动的PC";
-
-
-
-// ******************************************* Wireless_WDS.asp *******************************************//
-
+wl_active.h3="启用MAC过滤";
+wl_active.active="活动的客户端";
+wl_active.inactive="无活动的客户端";
+var wds = new Object();
 wds.titl="WDS";
-wds.h2="无线分布系统";
+wds.h2="无线分布式系统";
 wds.legend="WDS设置";
 wds.label="Lazy WDS";
 wds.label2="WDS子网";
 wds.wl_mac="无线MAC";
+wds.lazy_default="预设：禁用";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="子网";
-wds.legend2="额外的选项";
-
-
-
-// ******************************************* Wireless_radauth.asp *******************************************//
-
+wds.legend2="其它选项";
+var radius = new Object();
 radius.titl="Radius";
 radius.h2="远程授权拨入用户服务（Radius）";
 radius.legend="Radius";
 radius.label="MAC Radius客户端";
 radius.label2="MAC格式";
-radius.label3="Radius服务器IP";
-radius.label4="Radius服务器端口";
+radius.label3="Radius鉴权服务器地址";
+radius.label4="Radius鉴权服务器端口";
 radius.label5="最大非授权用户数";
 radius.label6="密码格式";
-radius.label7="RADIUS Shared Secret";
+radius.label7="Radius鉴权共享秘钥";
 radius.label8="如果服务器不可用则越过Radius";
-
-
-
-// ******************************************* Wireless_MAC.asp *******************************************//
-
-wl_mac.titl="MAC过滤器";
-wl_mac.h2="无线MAC过滤器";
-wl_mac.legend="MAC过滤器";
-wl_mac.label="使用过滤器";
-wl_mac.label2="过滤器模式";
-wl_mac.deny="阻止所列PC机访问无线网络";
-wl_mac.allow="只允许所列PC机访问无线网络";
-
-// ******************************************* Wireless_Advanced.asp *******************************************//
-
+radius.label13="Radius计账服务器地址";
+radius.label14="Radius计账服务器端口";
+radius.label17="Radius计账共享秘钥";
+radius.label18="Radius计账";
+var wl_mac = new Object();
+wl_mac.titl="MAC过滤";
+wl_mac.h2="无线MAC过滤";
+wl_mac.legend="MAC过滤";
+wl_mac.label="开启过滤";
+wl_mac.label2="过滤模式";
+wl_mac.deny="阻止所列客户端机访问无线网络";
+wl_mac.allow="只允许所列客户端访问无线网络";
+var wl_wimax = new Object();
+wl_wimax.titl="WiMAX";
+wl_wimax.h2="全球微波接入互通";
+wl_wimax.downstream="流下载频率";
+wl_wimax.upstream="上传频率";
+wl_wimax.width="频道宽度";
+wl_wimax.duplex="双向模式";
+wl_wimax.mode="工作模式";
+wl_wimax.mac="订阅者MAC地址";
+var wl_adv = new Object();
 wl_adv.titl="高级无线设置";
 wl_adv.h2="高级无线设置";
 wl_adv.legend="高级设置";
 wl_adv.legend2="无线多媒体支持设置";
 wl_adv.label="鉴权类型";
 wl_adv.label2="基本速率";
-wl_adv.label3="传输速率";
-wl_adv.label4="CTS保护模式";
+wl_adv.label3="固定传输速率";
+wl_adv.label4="CTS 保护模式";
 wl_adv.label5="帧突发";
-wl_adv.label6="信标间隙";
-wl_adv.label7="DTIM间隙";
+wl_adv.label6="发射站间隔";
+wl_adv.label7="DTIM 间隔";
 wl_adv.label8="分片阈值";
 wl_adv.label9="RTS阈值";
 wl_adv.label10="最大关联的客户端数";
-wl_adv.label11="AP独立";
+wl_adv.label11="AP 独立";
 wl_adv.label12="传送天线";
 wl_adv.label13="接受天线";
-wl_adv.label14="Preamble";
+wl_adv.label14="前导码";
 wl_adv.reference="噪声参照";
 wl_adv.label16="Afterburner";
-wl_adv.label17="无线图形用户界面访问";
-wl_adv.label18="WMM支持";
-wl_adv.label19="无知晓";
+wl_adv.label17="界面无线访问";
+wl_adv.label18="无线多媒体支持";
+wl_adv.label19="无ACK";
+wl_adv.label20="Shortslot Override";
+wl_adv.label21="最大传输速率";
+wl_adv.label23="最小传输速率";
+wl_adv.label22="蓝牙共存模式";
+wl_adv.label24="天线校准";
 wl_adv.table1="EDCA AP参数（AP到客户端）";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
+wl_adv.table3="WMM传送重试限制，fallback限制和最大速率参数。";
+wl_adv.txpcol1="S. Retry";
+wl_adv.txpcol2="S. Fallbk";
+wl_adv.txpcol3="L. Retry";
+wl_adv.txpcol4="L. Fallbk";
+wl_adv.txpcol5="最大数率";
+wl_adv.txprow1="AC BE 传送参数";
+wl_adv.txprow2="AC BK 传送参数";
+wl_adv.txprow3="AC VI 传送参数";
+wl_adv.txprow4="AC VO 传送参数";
 wl_adv.col6="管理员强制";
 wl_adv.row1="背景";
-wl_adv.row2="尽力服务";
+wl_adv.row2="尽最大努力";
 wl_adv.row3="视频";
 wl_adv.row4="语音";
 wl_adv.table2="EDCA STA参数（客户端到AP）";
 wl_adv.lng="长"; 					//************* don't use .long ! *************
 wl_adv.shrt="短"; 				//************* don't use .short ! **************
-
-//help container
-
-hwl_adv.right2="您可以从自动或者共享秘钥中选择一个。共享秘钥授权更加安全，但是所有在您网络中的设备必须支持共享秘钥授权。";
-
-
-// ******************************************* Wireless_Basic.asp *******************************************//
-
+var hwl_adv = new Object();
+hwl_adv.right2="您应该在自动或共享秘钥中选择一种。共享秘钥授权更加安全，在您网络中的所有设备都必须支持共享秘钥授权。";
+var wl_basic = new Object();
 wl_basic.titl="无线";
 wl_basic.h2="无线";
 wl_basic.legend="基本设置";
@@ -1453,54 +1474,97 @@ wl_basic.label2="无线网络模式";
 wl_basic.label3="无线网络名（SSID）";
 wl_basic.label4="无线频道";
 wl_basic.label5="无线SSID广播";
-wl_basic.label6="感受范围（ACK时序）";
+wl_basic.label6="灵敏度范围（ACK时序）";
+wl_basic.label7="802.11n 传输模式";
+wl_basic.scanlist="扫描列表";
+wl_basic.duallink="双重连接";
+wl_basic.parent="Parent IP";
 wl_basic.ap="访问点（AP）";
 wl_basic.client="客户端";
+wl_basic.repeater="中继";
+wl_basic.repeaterbridge="中继桥接";
 wl_basic.clientBridge="客户端网桥";
 wl_basic.adhoc="Adhoc";
+wl_basic.wdssta="WDS Station";
+wl_basic.wdsap="WDS AP";
 wl_basic.mixed="混合";
+wl_basic.greenfield="绿色字段";
+wl_basic.preamble="短前导码";
 wl_basic.b="仅B";
+wl_basic.a="仅 A";
+wl_basic.na="仅NA";
 wl_basic.g="仅G";
-wl_basic.legend2="Radio Time Restrictions";
-wl_basic.radio="Radio";
-wl_basic.radiotimer="Radio Scheduling";
-wl_basic.radio_on="Radio is On";
-wl_basic.radio_off="Radio is Off";
-
-//help container
-
-hwl_basic.right2="如果您想剔除无线-G客户端，选择 <em>仅B</em> 模式。如果您想禁用无线访问，选择 <em>禁用</em>。";
-hwl_basic.right3="感受范围：";
-hwl_basic.right4="调整ack时序。输入0将完全禁用ack时序。";
-
-
-// ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
-
-fail.mess1="您所输入的数值是无效的。请再试一次。";
+wl_basic.bg="BG-混合";
+wl_basic.n="仅N";
+wl_basic.rts="RTS阈值";
+wl_basic.rtsvalue="阈值";
+wl_basic.protmode="保护模式";
+wl_basic.legend2="无线网络时间限制";
+wl_basic.radio="无线网络";
+wl_basic.radiotimer="无线网络调度";
+wl_basic.radio_on="无线网络开启";
+wl_basic.radio_off="无线网络关闭";
+wl_basic.h2_v24="无线物理接口";
+wl_basic.h2_vi="虚拟接口";
+wl_basic.regdom="管制范畴";
+wl_basic.TXpower="传送功率";
+wl_basic.AntGain="天线增益";
+wl_basic.diversity="差异";
+wl_basic.primary="主要";
+wl_basic.secondary="次要";
+wl_basic.vertical="垂直偏波";
+wl_basic.horizontal="水平偏波";
+wl_basic.adaptive="自动选择";
+wl_basic.external="外来";
+wl_basic.network="网络配置";
+wl_basic.unbridged="未桥接";
+wl_basic.bridged="已桥接";
+wl_basic.turbo="加速模式";
+wl_basic.extrange="扩大范围";
+wl_basic.supergcomp="Super G 压缩";
+wl_basic.supergff="Super G Fast Framing";
+wl_basic.extchannel="延长通道模式";
+wl_basic.outband="Outdoor Band";
+wl_basic.channel_width="频道宽度";
+wl_basic.channel_wide="宽频";
+wl_basic.regulatory="SuperChannel";
+wl_basic.chanshift="频道变换";
+wl_basic.specialmode="2.3 Ghz 模式";
+wl_basic.wifi_bonding="Wifi结合";
+wl_basic.sifstime="OFDM SIFS Time";
+wl_basic.preambletime="OFDM Preamble Time";
+wl_basic.multicast="组播转发";
+wl_basic.intmit="抗干扰";
+wl_basic.noise_immunity="抗干扰等级";
+wl_basic.ofdm_weak_det="OFDM Weak Detection";
+wl_basic.radar="雷达探测";
+wl_basic.mtikie="MT 兼容性";
+wl_basic.csma="波波侦听";
+var hwl_basic = new Object();
+hwl_basic.right2="如果您想剔除无线-G客户端，选择 <em>仅B</em> 模式。如果您想禁用无线访问，选择 <em>禁用</em>。<br/><b>注意：</b> 当修改无线模式时，一些高级参数会相应被修改（\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\"）。";
+hwl_basic.right3="灵敏度范围：";
+hwl_basic.right4="调整 ack 时序。输入0，禁用ack时序（broadcom 版的固件）。自动 ack 时序模式（基于 Atheros 的固件）";
+hwl_basic.right6="点击任何时刻启用或禁用无线信号（<em>绿色</em> 代表允许无线访问，<em>红色</em> 代表阻止无线访问）";
+var fail = new Object();
+fail.mess1="您所输入的值是无效的。请再试一次。";
 fail.mess2="升级失败。";
-
-
-
-// ******************************************* Success*.asp / Reboot.asp  *******************************************//
-
+var success = new Object();
 success.saved="设置已保存。";
-success.restore="设置已恢复。<br/>设备正在重新启动。请稍候……";
-success.upgrade="升级成功。<br/>设备正在重新启动。请稍候……";
+success.restore="设置已恢复。<br/>模块正在重新启动。请稍候……";
+success.upgrade="升级成功。<br/>模块正在重新启动。请稍候……";
 success.success_noreboot="设置成功。";
-success.success_reboot=success.success_noreboot + "<br />设备正在重新启动。请稍候……";
-
+success.success_reboot=success.success_noreboot + "<br />模块正在重新启动。请稍候……";
 success.alert_reset="所有配置已经被恢复到它们的默认值。<br /><br />";
-success.alert1="请在再次连接前检查以下内容：";
-success.alert2="如果您更改了您的路由器的IP地址，请注意您必须release并且renew您网络上客户端的地址。";
-success.alert3="如果您是通过WLAN连接的，请加入网络并且点击 <em>继续</em>.";
-
-// *****************************************************		OLD PAGES 		************************************************************************//
-// **************************************************************** DHCPTable.asp **********************************************************************//
-
-dhcp.titl="DHCP活动IP列表";
-dhcp.h2="DHCP活动IP列表";
-dhcp.server="DHCP服务器IP地址：";
+success.alert1="连接前请再次检查以下内容：";
+success.alert2="如果您更改了您的路由器IP地址，请注意您必须释放/续期您网络上的客户端地址。";
+success.alert3="如果您是通过WLAN连接的，请加入网络并且点击 <em>继续</em>。";
+var logout = new Object();
+logout.message="您已经成功登出。<br />谢谢您使用DD-WRT！";
+var dhcp = new Object();
+dhcp.titl="DHCP 活动IP列表";
+dhcp.h2="DHCP 活动IP列表";
+dhcp.server="DHCP 服务器IP地址：";
 dhcp.tclient="客户端主机名";
-
-
-donate.mb="您也可以通过Moneybookers帐号mb@dd-wrt.com进行捐赠";
+var donate = new Object();
+donate.mb="您也可以通过Moneybookers的帐号mb@dd-wrt.com进行捐赠";
+
