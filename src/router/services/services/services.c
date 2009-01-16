@@ -1528,8 +1528,7 @@ void start_ttraff( void )
     if( !nvram_match( "ttraff_enable", "1" ) )
 	return;
 
-    if( nvram_match ("ttraff_iface", "" ) &&
-	( nvram_match( "wan_proto", "disabled" )
+    if( ( nvram_match( "wan_proto", "disabled" )
 	|| nvram_match( "wl0_mode", "wet" )
 	|| nvram_match( "wl0_mode", "apstawet" ) ) )
 	return;
