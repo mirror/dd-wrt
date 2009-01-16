@@ -2111,7 +2111,7 @@ int cb_tun_ind(struct tun_t *tun, void *pack, unsigned len) {
   dst.s_addr = iph->dst;
 
   if (ippool_getip(ippool, &ipm, &dst)) {
-    if (options.debug) printf("Received packet with no destination!!!\n");
+    if (options.debug) printf("Received packet with no destination!!! %08X\n",dst.s_addr);
     return 0;
   }
 
