@@ -1362,7 +1362,7 @@ static void configure_single( int count )
 	sprintf( isolate, "%s_ap_isolate", var );
 	if( nvram_default_match( isolate, "1", "0" ) )
 	    sysprintf( "iwpriv %s ap_bridge 0", var );
-	if( !strcmp( m, "wdssta" ) || !strcmp( m, "wdsap" ) )
+	if( !strcmp( mvap, "wdssta" ) || !strcmp( mvap, "wdsap" ) )
 	    sysprintf( "iwpriv %s wds 1", var );
 	sprintf( mtikie, "%s_mtikie", var );
 	if( nvram_default_match( mtikie, "1", "0" ) )
@@ -1418,7 +1418,7 @@ static void configure_single( int count )
     sysprintf( "iwpriv %s hide_ssid %s", dev,
 	       nvram_default_get( broadcast, "0" ) );
     sysprintf( "iwpriv %s bgscan 0", dev );
-    m = nvram_default_get( wl, "ap" );
+    apm = nvram_default_get( wl, "ap" );
 
     char preamble[32];
 
@@ -1509,9 +1509,9 @@ static void configure_single( int count )
 	foreach( var, vifs, next )
     {
 	sprintf( mode, "%s_mode", var );
-	m = nvram_default_get( mode, "ap" );
-	if( strcmp( m, "sta" ) && strcmp( m, "wdssta" )
-	    && strcmp( m, "wet" ) )
+	char *vapm = nvram_default_get( mode, "ap" );
+	if( strcmp( vapm, "sta" ) && strcmp( vapm, "wdssta" )
+	    && strcmp( vapm, "wet" ) )
 	    setupHostAP( var, 0 );
 	else
 	    setupSupplicant( var, NULL );
@@ -1540,8 +1540,8 @@ static void configure_single( int count )
 		{
 		    sysprintf( "ifconfig %s 0.0.0.0 up", var );
 		    br_add_interface( getBridge( var ), var );
-		    if( !strcmp( m, "sta" ) || !strcmp( m, "wdssta" )
-			|| !strcmp( m, "wet" ) )
+		    if( !strcmp( apm, "sta" ) || !strcmp( apm, "wdssta" )
+			|| !strcmp( apm, "wet" ) )
 			sysprintf( "ifconfig %s 0.0.0.0 down", var );
 		    else
 		    {
@@ -1559,8 +1559,8 @@ static void configure_single( int count )
 		    sprintf( mask, "%s_netmask", var );
 		    sysprintf( "ifconfig %s mtu 1500", var );
 		    sysprintf( "ifconfig %s %s netmask %s up", var, nvram_safe_get( ip ),nvram_safe_get( mask ) );
-		    if( !strcmp( m, "sta" ) || !strcmp( m, "wdssta" )
-			|| !strcmp( m, "wet" ) )
+		    if( !strcmp( apm, "sta" ) || !strcmp( apm, "wdssta" )
+			|| !strcmp( apm, "wet" ) )
 			sysprintf( "ifconfig %s down", var );
 		    else
 		    {
