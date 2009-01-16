@@ -1316,7 +1316,7 @@ static void configure_single( int count )
 		sysprintf( "iwpriv %s channelshift 0", var );
 		break;
 	}
-	char mvap = nvram_default_get( mode, "ap" );
+	char *mvap = nvram_default_get( mode, "ap" );
 	set_scanlist( dev, wif );
 	setRTS( var );
 
