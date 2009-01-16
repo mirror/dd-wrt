@@ -117,7 +117,7 @@ static void DelPortMapping_Alerm(timer_t t, int i)
     cprintf("Delete port_forward%d due to expire (%d seconds)\n", i);
 
     mapmgr_delete_port_map(i);
-    timer_delete(t);
+    dd_timer_delete(t);
 }
 
 int AddPortMapping( UFILE *uclient, PService psvc, PAction ac, pvar_entry_t args, int nargs)
