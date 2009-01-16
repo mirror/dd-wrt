@@ -28,7 +28,7 @@
 #define NTP_M_TIMER "3600"
 #define NTP_N_TIMER "30"
 
-extern void timer_cancel( timer_t timerid );
+extern void dd_timer_cancel( timer_t timerid );
 int isRunning( char *name )
 {
     return eval( "pidof", name ) == 0 ? 1 : 0;
@@ -181,7 +181,7 @@ void ntp_main( timer_t t, int arg )
     if( do_ntp(  ) == 0 )
     {
 	if( arg == FIRST )
-	    timer_cancel( t );
+	    dd_timer_cancel( t );
 	eval( "filtersync" );
 	nvram_set( "timer_interval", NTP_M_TIMER );	// are these used??
     }
