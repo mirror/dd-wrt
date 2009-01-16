@@ -998,7 +998,7 @@ static void configure_single( int count )
     // create wds interface(s)
     int s;
 
-    char *m;
+    char *apm;
     int vif = 0;
 
     char *vifs = nvram_safe_get( wifivifs );
@@ -1007,16 +1007,16 @@ static void configure_single( int count )
 	foreach( var, vifs, next )
     {
 	sprintf( mode, "%s_mode", var );
-	m = nvram_default_get( mode, "ap" );
+	char *vapm = nvram_default_get( mode, "ap" );
 	// create device
 	if( strlen( mode ) > 0 )
 	{
-	    if( !strcmp( m, "wet" ) || !strcmp( m, "sta" )
-		|| !strcmp( m, "wdssta" ) )
+	    if( !strcmp( vapm, "wet" ) || !strcmp( vapm, "sta" )
+		|| !strcmp( vapm, "wdssta" ) )
 		sysprintf
 		    ( "wlanconfig %s create wlandev %s wlanmode sta nosbeacon",
 		      var, wif );
-	    else if( !strcmp( m, "ap" ) || !strcmp( m, "wdsap" ) )
+	    else if( !strcmp( vapm, "ap" ) || !strcmp( vapm, "wdsap" ) )
 		sysprintf( "wlanconfig %s create wlandev %s wlanmode ap", var,
 			   wif );
 	    else
@@ -1039,9 +1039,9 @@ static void configure_single( int count )
     }
 
     // create original primary interface
-    m = nvram_default_get( wl, "ap" );
+    apm = nvram_default_get( wl, "ap" );
 
-    if( !strcmp( m, "wet" ) || !strcmp( m, "wdssta" ) || !strcmp( m, "sta" ) )
+    if( !strcmp( apm, "wet" ) || !strcmp( apm, "wdssta" ) || !strcmp( apm, "sta" ) )
     {
 	if( vif )
 	    sysprintf
@@ -1052,7 +1052,7 @@ static void configure_single( int count )
 		       wif );
 
     }
-    else if( !strcmp( m, "ap" ) || !strcmp( m, "wdsap" ) )
+    else if( !strcmp( apm, "ap" ) || !strcmp( apm, "wdsap" ) )
 	sysprintf( "wlanconfig %s create wlandev %s wlanmode ap", dev, wif );
     else
 	sysprintf( "wlanconfig %s create wlandev %s wlanmode adhoc", dev,
@@ -1085,7 +1085,7 @@ static void configure_single( int count )
     }
 
     cprintf( "detect maxpower\n" );
-    m = nvram_default_get( wl, "ap" );
+    apm = nvram_default_get( wl, "ap" );
     char maxp[16];
 
     vifs = nvram_safe_get( wifivifs );
@@ -1120,7 +1120,7 @@ static void configure_single( int count )
     int disablescan = 0;
 
     set_scanlist( dev, wif );
-    if( strcmp( m, "sta" ) && strcmp( m, "wdssta" ) && strcmp( m, "wet" ) )
+    if( strcmp( apm, "sta" ) && strcmp( apm, "wdssta" ) && strcmp( apm, "wet" ) )
     {
 	char *ch = nvram_default_get( channel, "0" );
 
@@ -1269,6 +1269,14 @@ static void configure_single( int count )
 	    sysprintf( "iwpriv %s channelshift 0", dev );
 	    break;
     }
+    if( !strcmp( apm, "wdssta" ) || !strcmp( apm, "wdsap" ) )
+	sysprintf( "iwpriv %s wds 1", dev );
+
+    if( !strcmp( apm, "wdsap" ) )
+	sysprintf( "iwpriv %s wdssep 1", dev );
+    else
+	sysprintf( "iwpriv %s wdssep 0", dev );
+
     vifs = nvram_safe_get( wifivifs );
     if( vifs != NULL )
 	foreach( var, vifs, next )
@@ -1308,12 +1316,12 @@ static void configure_single( int count )
 		sysprintf( "iwpriv %s channelshift 0", var );
 		break;
 	}
-	m = nvram_default_get( mode, "ap" );
+	char mvap = nvram_default_get( mode, "ap" );
 	set_scanlist( dev, wif );
 	setRTS( var );
 
-	if( strcmp( m, "sta" ) && strcmp( m, "wdssta" )
-	    && strcmp( m, "wet" ) )
+	if( strcmp( mvap, "sta" ) && strcmp( mvap, "wdssta" )
+	    && strcmp( mvap, "wet" ) )
 	{
 	    cprintf( "set channel\n" );
 	    char *ch = nvram_default_get( channel, "0" );
@@ -1361,9 +1369,9 @@ static void configure_single( int count )
 	    sysprintf( "iwpriv %s addmtikie 1", var );
 
 #ifdef HAVE_BONDING
-	if( !strcmp( m, "wdsap" ) && !isBond( var ) )
+	if( !strcmp( mvap, "wdsap" ) && !isBond( var ) )
 #else
-	if( !strcmp( m, "wdsap" ) )
+	if( !strcmp( mvap, "wdsap" ) )
 #endif
 	    sysprintf( "iwpriv %s wdssep 1", var );
 	else
@@ -1373,13 +1381,6 @@ static void configure_single( int count )
 	cnt++;
     }
 
-    if( !strcmp( m, "wdssta" ) || !strcmp( m, "wdsap" ) )
-	sysprintf( "iwpriv %s wds 1", dev );
-
-    if( !strcmp( m, "wdsap" ) )
-	sysprintf( "iwpriv %s wdssep 1", dev );
-    else
-	sysprintf( "iwpriv %s wdssep 0", dev );
 
     sprintf( mtikie, "%s_mtikie", dev );
     if( nvram_default_match( mtikie, "1", "0" ) )
@@ -1429,8 +1430,8 @@ static void configure_single( int count )
     else
 	sysprintf( "iwpriv %s shpreamble 0", dev );
 
-    if( strcmp( m, "sta" ) == 0 || strcmp( m, "infra" ) == 0
-	|| strcmp( m, "wet" ) == 0 || strcmp( m, "wdssta" ) == 0 )
+    if( strcmp( apm, "sta" ) == 0 || strcmp( apm, "infra" ) == 0
+	|| strcmp( apm, "wet" ) == 0 || strcmp( apm, "wdssta" ) == 0 )
     {
 	cprintf( "set ssid\n" );
 #ifdef HAVE_MAKSAT
@@ -1463,7 +1464,7 @@ static void configure_single( int count )
 
     set_netmode( wif, dev, dev );
 
-    if( strcmp( m, "sta" ) )
+    if( strcmp( apm, "sta" ) )
     {
 	char bridged[32];
 
@@ -1496,7 +1497,7 @@ static void configure_single( int count )
 	}
 
     }
-    if( strcmp( m, "sta" ) && strcmp( m, "wdssta" ) && strcmp( m, "wet" ) )
+    if( strcmp( apm, "sta" ) && strcmp( apm, "wdssta" ) && strcmp( apm, "wet" ) )
 	setupHostAP( dev, 0 );
     else
 	setupSupplicant( dev, NULL );
@@ -1574,8 +1575,8 @@ static void configure_single( int count )
 	}
     }
 
-    m = nvram_default_get( wl, "ap" );
-    if( strcmp( m, "sta" ) && strcmp( m, "wdssta" ) && strcmp( m, "wet" ) )
+    apm = nvram_default_get( wl, "ap" );
+    if( strcmp( apm, "sta" ) && strcmp( apm, "wdssta" ) && strcmp( apm, "wet" ) )
     {
 	cprintf( "set channel\n" );
 	char *ch = nvram_default_get( channel, "0" );
