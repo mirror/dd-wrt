@@ -2238,10 +2238,12 @@ static void filter_forward( void )
     /*
      * Incoming connection will be accepted, if it match the port-ranges. 
      */
+    if (strlen(wanface)>0)
+    {
     save2file( "-A FORWARD -i %s -o %s -j TRIGGER --trigger-type in\n",
 	       wanface, lanface );
     save2file( "-A FORWARD -i %s -j trigger_out\n", lanface );
-
+    }
     /*
      * DMZ forwarding 
      */
@@ -2326,8 +2328,7 @@ static void filter_table( void )
 	if( nvram_match( "wk_mode", "gateway" ) )
 	{
 	    save2file( "-I INPUT -m state --state NEW -i tun0 -j ACCEPT\n" );
-	    save2file
-		( "-I FORWARD -m state --state NEW -i tun0 -j ACCEPT\n" );
+	    save2file( "-I FORWARD -m state --state NEW -i tun0 -j ACCEPT\n" );
 	}
 	else
 	{
@@ -2362,7 +2363,7 @@ static void filter_table( void )
 	 * Botho 03-05-2006 
 	 */
 #ifdef HAVE_SSHD
-	if( !remotessh )
+	if( !remotessh && strlen(wanface)>0 )
 	{
 	    save2file( "-A INPUT -p tcp -i %s --dport %s -j DROP\n",
 		       wanface, nvram_safe_get( "sshd_wanport" ) );
@@ -2372,7 +2373,7 @@ static void filter_table( void )
 		       wanface );
 	}
 #else
-	if( !remotetelnet )
+	if( !remotetelnet  && strlen(wanface)>0 )
 	{
 	    save2file( "-A INPUT -p tcp -i %s --dport 22 -j DROP\n",
 		       wanface );
