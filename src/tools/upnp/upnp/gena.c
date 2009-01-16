@@ -623,7 +623,7 @@ static void gena_send_initial_events(timer_t t, void *arg)
     }
 
     // delete this timer and free the resources.
-    timer_delete(t);
+    dd_timer_delete(t);
 }
 
 

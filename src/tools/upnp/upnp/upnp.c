@@ -32,7 +32,7 @@ extern void delete_all_subscriptions();
 extern void delete_all_connections();
 extern PDevice init_device(PDevice, PDeviceTemplate, ...);
 extern void destroy_device(PDevice);
-extern int timer_connect(timer_t, VOIDFUNCPTR, int);
+extern int dd_timer_connect(timer_t, VOIDFUNCPTR, int);
 
 
 void interrupt_handler(int i);
@@ -143,9 +143,9 @@ int upnp_main(PDeviceTemplate pdevtmpl, char *ifname)
     UPNP_TRACE(("Exiting upnp loop\n"));
 
     /* cancel timers */
-    timer_delete(td1);
-    timer_delete(td2);
-    timer_delete(td3);
+    dd_timer_delete(td1);
+    dd_timer_delete(td2);
+    dd_timer_delete(td3);
 
     delete_all_subscriptions();
     delete_all_connections();
@@ -336,11 +336,11 @@ timer_t enqueue_event(struct itimerspec *value, event_callback_t func, void *arg
 {
     timer_t          td;
 
-    timer_create(CLOCK_REALTIME, NULL, &td);
+    dd_timer_create(CLOCK_REALTIME, NULL, &td);
 
-    timer_connect(td, (VOIDFUNCPTR) func, (int) arg);
+    dd_timer_connect(td, (VOIDFUNCPTR) func, (int) arg);
 
-    timer_settime(td, 0, value, NULL);
+    dd_timer_settime(td, 0, value, NULL);
 
     return(td);
 }
@@ -389,7 +389,7 @@ static void delayed_call_helper(timer_t t, void *arg)
 {
     voidfp_t f = (voidfp_t) arg;
 
-    timer_delete(t);
+    dd_timer_delete(t);
     (*f)();
 }
 

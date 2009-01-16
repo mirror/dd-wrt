@@ -341,6 +341,14 @@ extern int DefaultAction(UFILE *, struct Service *psvc, PAction ac, pvar_entry_t
 
 extern int unique;
 
+extern int dd_timer_delete( timer_t timer);
+extern int dd_timer_create( clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
+		  struct sigevent *evp,	/* user event handler */
+		  timer_t * pTimer	/* ptr to return value */
+     );
+     
+
+
      // extern void forall_devices(PFDEVFOREACH func, ...);
      // extern void forall_services(PFSVCFOREACH func, ...);
 
