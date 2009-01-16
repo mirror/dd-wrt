@@ -1178,8 +1178,8 @@ static void configure_single( int count )
     setsysctrl( wif, "ofdm_weak_det",
 		atoi( nvram_default_get( wl_ofdm_weak_det, "1" ) ) );
 
-    int *enable = "enable";
-    int *disable = "disable";
+    char *enable = "enable";
+    char *disable = "disable";
 
 #ifdef HAVE_NS5
     char *gpio = "1";
