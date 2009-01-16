@@ -2306,7 +2306,7 @@ int pidof( const char *name )
 
     if( _pidof( name, &pids ) > 0 )
     {
-	p = *pids;
+	memcpy(p,*pids,sizeof(pid_t));
 	free( pids );
 	return p;
     }
