@@ -243,7 +243,11 @@ int getbuttonstate(  )
     else
 	ret = read_bit( 4 );
 #endif
+#ifdef HAVE_TONZE
+    return ret == 0 ? 0 : 1;
+#else
     return ret == 0 ? 1 : 0;
+#endif
 }
 #endif
 
