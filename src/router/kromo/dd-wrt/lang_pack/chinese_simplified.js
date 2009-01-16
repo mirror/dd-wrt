@@ -1,13 +1,11 @@
-/////////////////////////////////////////////////////////////////////////////////////////////////////
+﻿/////////////////////////////////////////////////////////////////////////////////////////////////////
 //		Chinese (Simplified) reference translation file - DD-WRT V23 SP1 by JnJn 25/05/2006		//
 //    update to svn 11296, correct some errors. - by muziling 12/01/2009
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
 
-var lang_charset = new Object();
 lang_charset.set="UTF-8";
-var share = new Object();
 share.firmware="固件";
 share.time="时间";
 share.interipaddr="WAN IP地址";
@@ -191,7 +189,7 @@ share.preempt="Preemption";
 share.acktiming="ACK 时序";
 share.broadcast="广播支持";
 share.secondcharacter="s";
-var sbutton = new Object();
+
 sbutton.save="保存设置";
 sbutton.savetitle="只保存设置不提交";
 sbutton.apply="应用";
@@ -243,7 +241,7 @@ sbutton.upgrade="升级";
 sbutton.preview="预览";
 sbutton.allways_on="总是打开";
 sbutton.allways_off="总是关闭";
-var errmsg = new Object();
+
 errmsg.err0="您必须输入一个用户名。";
 errmsg.err1="您必须输入一个路由器名称。";
 errmsg.err2="超出范围，请调整IP起始地址或用户的个数。";
@@ -313,7 +311,7 @@ errmsg.err62=" 已经定义为永久租用";
 errmsg.err100="处理中...<br/>请稍候。";
 errmsg.err101="正在恢复配置...<br/>请稍候。";
 errmsg.err102="升级固件中...<br/>请稍候";
-var bmenu= new Object();
+
 bmenu.setup="设置";
 bmenu.setupbasic="基本设置";
 bmenu.setupddns="动态DNS（DDNS）";
@@ -382,7 +380,7 @@ bmenu.statuVPN="OpenVPN";
 bmenu.statuBand="带宽";
 bmenu.statuSysInfo="系统信息";
 bmenu.statuActivate="活动";
-var alive = new Object();
+
 alive.titl="保持活动";
 alive.h2="保持活动";
 alive.legend="定时重启";
@@ -395,10 +393,10 @@ alive.legend3="代理服务器/连接监控";
 alive.sevr3="启用代理监控";
 alive.IP2="代理服务器IP地址";
 alive.port="代理服务器端口";
-var halive = new Object();
+
 halive.right2="选择何时重新启动路由器。在管理标签中，Cron选项必须被开启。";
 halive.right4="最多允许3个IP地址，之间使用<em>空格</em>分隔。<BR/>IP地址格式为：xxx.xxx.xxx.xxx。";
-var config = new Object();
+
 config.titl="备份 & 恢复";
 config.h2="备份配置";
 config.legend="备份设置";
@@ -408,10 +406,10 @@ config.legend2="恢复设置";
 config.mess2="请选择一个用来恢复的文件";
 config.mess3=" [ 警 ] [ 告 ] ";
 config.mess4="只能上传使用此固件并且相同型号路由器的备份文件。<br />请勿上传任何不是通过本界面创建的文件！";
-var hconfig = new Object();
+
 hconfig.right2="您应该备份您当前的配置以备您将来需要将路由器复位到出厂设置。<br /><br />点击 <em>备份</em> 按钮备份您的当前设置。";
 hconfig.right4="点击 <em>浏览...</em> 按钮浏览到一个当前存储在您电脑上的配置文件。<br /><br />点击 <em>" + sbutton.restore + "</em> 按钮使用配置文件覆盖当前所有配置。";
-var ddns = new Object();
+
 ddns.titl="动态DNS"
 ddns.h2="动态域名系统(DDNS)";
 ddns.legend="DDNS";
@@ -425,7 +423,7 @@ ddns.statu="DDNS 状态";
 ddns.system="DYNDNS 服务器";
 ddns.options="DDNS 附加选项";
 ddns.forceupd="强制更新间隔";
-var ddnsm = new Object();
+
 ddnsm.all_closed="DDNS 服务器当前已关闭";
 ddnsm.all_resolving="正在解析域名";
 ddnsm.all_errresolv="域名解析失败";
@@ -433,10 +431,10 @@ ddnsm.all_connecting="正在连接到服务器";
 ddnsm.all_connectfail="连接到服务器失败";
 ddnsm.all_disabled="DDNS 功能已禁用";
 ddnsm.all_noip="无WAN连接";
-var hddns = new Object();
+
 hddns.right2="DDNS 允许您使用域名代替IP地址来访问您的网络。这个服务动态的管理IP地址的变动，更新您的域名信息。您必须在 DynDNS.org，freedns.afraid.org，ZoneEdit.com，No-IP.com 或其它网站注册以得到此服务。";
 hddns.right4="在框框中输入一个整型数字以设置强制更新间隔(天)。只要在您的IP变化时，更新才会自动执行。注意您的DDNS提供商对更新频率的限制或您的域名被封锁。";
-var diag = new Object();
+
 diag.titl="诊断";
 diag.h2="诊断";
 diag.legend="指令解释器";
@@ -445,32 +443,32 @@ diag.startup="启动";
 diag.shutdown="关机";
 diag.firewall="防火墙";
 diag.custom="自定义脚本";
-var hdiag = new Object();
+
 hdiag.right2="您可以通过Web界面运行命令行。将您的命令填入文本区域并且点击 <em>" + sbutton.runcmd + "</em> 按钮提交。";
-var dmz = new Object();
+
 dmz.titl="DMZ";
 dmz.h2="非军事区 (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="使用DMZ";
 dmz.host="DMZ主机IP地址";
-var hdmz = new Object();
+
 hdmz.right2="启用这个选项将使特定的主机被暴露给Internet。所有的端口都可以从Internet访问到。";
-var factdef = new Object();
+
 factdef.titl="出厂预设值";
 factdef.h2="出厂预设值";
 factdef.legend="复位路由器设置";
 factdef.restore="恢复出厂预设值";
 factdef.mess1="警告！如果您点击确定，此设备将会被复位到出厂预设值，先前所有的设置都会被擦除。";
-var hfactdef = new Object();
+
 hfactdef.right1="此操作把设置复位回出厂预设值。您的所有设置都将被擦除。";
-var filterIP = new Object();
+
 filterIP.titl="客户端列表";
 filterIP.h2="客户端列表";
 filterIP.h3="输入客户端MAC地址，格式为：xx:xx:xx:xx:xx:xx";
 filterIP.h32="输入客户端的IP地址";
 filterIP.h33="输入客户端的IP范围";
 filterIP.ip_range="IP范围";
-var filter = new Object();
+
 filter.titl="访问限制";
 filter.h2="WAN访问";
 filter.legend="访问策略";
@@ -488,7 +486,7 @@ filter.legend5="通过关键字封锁Web站点";
 filter.mess1="删除此策略？";
 filter.mess2="您必须至少选择一个日期。";
 filter.mess3="结束时间必须大于起始时间。";
-var hfilter = new Object();
+
 hfilter.right2="您最多可以定义10条访问策略。点击 <em>" + sbutton.del + "</em> 按钮删除一条策略，或者点击 <em>" + sbutton.summary + "</em> 按钮察看策略综述。";
 hfilter.right4="启用或禁用一条策略。";
 hfilter.right6="您应该为您的策略指定一个名称。";
@@ -497,12 +495,12 @@ hfilter.right10="输入您希望您的策略被应用的时间。";
 hfilter.right12="您可以选择封禁某些服务。点击 <em>" + sbutton.filterSer + "</em> 按钮更改这些设置。";
 hfilter.right14="您可以通过输入的URL来封锁对部分网站的访问。";
 hfilter.right16="您可以通过包含在Web页面中的关键字来封锁对其的访问。";
-var filterSum = new Object();
+
 filterSum.titl="访问限制总览";
 filterSum.h2="Internet策略一览";
 filterSum.polnum="序号";
 filterSum.polday="（每天的）时间";
-var firewall = new Object();
+
 firewall.titl="防火墙";
 firewall.h2="安全";
 firewall.legend="防火墙保护";
@@ -517,33 +515,32 @@ firewall.ping="阻止来自WAN口的匿名请求(ping)";
 firewall.muticast="过滤多播";
 filter.nat="过滤WAN NAT重定向";
 filter.port113="过滤IDENT（端口 113、）";
-var hfirewall = new Object();
+
 hfirewall.right2="启用或禁用SPI防火墙。";
-var prforward = new Object();
+
 prforward.titl="端口范围转发";
 prforward.h2="端口范围转发";
 prforward.legend="转发";
 prforward.app="应用程序";
-var hprforward = new Object();
+
 hprforward.right2="某些应用程序可能需要打开特定端口才能正常工作。举例来说，这些应用程序包括服务器软件和一些在线游戏。当从Internet接收到一个针对特定端口的请求时，路由器将会把这些数据路由到您指定的计算机。出于安全的考虑，您可能想只对您需要使用的端口设置端口转发，同时，在您完成之后，取消对 <em>" + share.enable +"</em> 复选框的选定。";
-var p2p = new Object();
+
 p2p.titl="点对点程序";
 p2p.h2="BitTorrent 客户端";
 p2p.legend="CTorrent";
 p2p.ctorrent_srv="Ctorrent 服务";
-//var hp2p = new Object();
+
 //hpp2p.right2=
 
-var pforward = new Object();
 pforward.titl="端口转发";
 pforward.h2="端口转发";
 pforward.legend="映射";
 pforward.app="应用程序";
 pforward.from="来源端口";
 pforward.to="目的端口";
-var hpforward = new Object();
+
 hpforward.right2="某些应用程序可能需要打开特定端口才能正常工作。举例来说，这些应用程序包括服务器软件和一些在线游戏。当从Internet接收到一个针对特定端口的请求时，路由器将会把这些数据路由到您指定的计算机。处于安全的考虑，您可能想只对您需要使用的端口设置端口转发，同时，在您完成之后，取消对 <em>开启</em> 复选框的选定。";
-var usb = new Object();
+
 usb.titl="USB";
 usb.usb_legend="USB支持";
 usb.usb_core="核心 USB 支持";
@@ -558,7 +555,7 @@ usb.usb_automnt="自动挂载磁盘";
 usb.usb_mntpoint="磁盘挂载点";
 usb.usb_runonmount="挂载时运行的脚本名";
 usb.usb_diskinfo="磁盘信息";
-var nas = new Object();
+
 nas.titl="NAS";
 nas.proftpd_legend="FTP 服务器";
 nas.proftpd_srv="ProFTPD";
@@ -569,9 +566,9 @@ nas.proftpd_writeen="允许写入";
 nas.proftpd_anon="匿名登陆（只读）";
 nas.proftpd_anon_subdir="匿名 Home 子目录";
 nas.sambasrv_legend="Samba服务器";
-var hnas = new Object();
+
 hnas.right2="用户密码列表：一个用户密码一行。密码可以是明文或MD5加密。";
-var hotspot = new Object();
+
 hotspot.titl="热点";
 hotspot.h2="热点入口";
 hotspot.legend="Chillispot";
@@ -639,7 +636,7 @@ hotspot.wifidog_authsrvsslport="鉴权服务器SSL端口";
 hotspot.wifidog_authsrvhttpport="鉴权服务器HTTP端口";
 hotspot.wifidog_authsrvpath="鉴权服务器路径";
 hotspot.wifidog_config="防火墙规则设置";
-var anchorfree = new Object();
+
 anchorfree.anchorfree="AnchorFree";
 anchorfree.titl="我的广告网络";
 anchorfree.h2="AnchorFree 广告网络";
@@ -664,7 +661,7 @@ anchorfree.validcity="如果此热点要在 wifi 热点地图上发布，必须�
 anchorfree.validcat="请为您的热点选择一个广告类别";
 anchorfree.validcountry="请选择您的热点所在地";
 anchorfree.validterms="您必须接受条款和条件！";
-var hanchorfree = new Object();
+
 hanchorfree.right1="加入AnchorFree 的热点广告网络";
 hanchorfree.right2="AnchorFree 管理一个热点，允许 DD-WRT 客户通过网络做广告达到创收。";
 hanchorfree.right3="通过广告从AnchorFree获得收入。";
@@ -674,30 +671,30 @@ hanchorfree.right6="Activation is easy";
 hanchorfree.right7="一旦您激活了，AnchorFree将会发送一封电子邮件给帐号拥有者，邮件包含如何优化你的hotspot，FAQs，以及其它有关如何通过您的路由器赚钱的资料。通过这个配置界面，AnchorFree将会直接插入一个小的，无害的广告框架到WEB浏览器（通过此路由器上网的）";
 hanchorfree.right8="用户支持";
 hanchorfree.right9="有疑问？通过 boxhelp@anchorfree.com 联系我们";
-var info = new Object();
+
 info.titl="信息";
 info.h2="系统信息";
 info.wlanmac="无线MAC";
 info.srv="服务";
 info.ap="访问点(AP)";
-var idx_h = new Object();
+
 idx_h.srv="心跳服务器";
 idx_h.con_strgy="连接策略";
 idx_h.max_idle="按需连接：最大空闲时间";
 idx_h.alive="保持活动：重拨周期";
 idx_h.reconnect="强制重新连接";
-var idx_l = new Object();
+
 idx_l.srv="L2TP服务器";
-var idx_pppoe = new Object();
+
 idx_pppoe.use_rp="使用RP PPPoE";
-var idx_pptp = new Object();
+
 idx_pptp.srv="使用DHCP";
 idx_pptp.wan_ip="WAN IP地址";
 idx_pptp.gateway="网关（PPTP服务）";
 idx_pptp.encrypt="PPTP加密";
-var idx_static = new Object();
+
 idx_static.dns="静态DNS";
-var idx = new Object();
+
 idx.titl="设置";
 idx.h2="WAN设置";
 idx.h22="无线设置";
@@ -739,7 +736,7 @@ idx.summt_opt8="8月第3个星期天 - 5月第3个星期天";
 idx.portsetup="端口配置";
 idx.wanport="WAN端口指派";
 idx.ntp_client="NTP客户端";
-var hidx = new Object();
+
 hidx.right2="Cable使用者的常用选项。";
 hidx.right4="输入ISP提供给您的主机名。";
 hidx.right6="输入ISP提供给您的域名。";
@@ -749,21 +746,21 @@ hidx.right12="允许路由器管理您的IP地址。";
 hidx.right14="您希望的起始地址。";
 hidx.right16="您可以限制您的路由器分配出的地址个数。0表示只分配预先设定的静态地址。";
 hidx.right18="请选择您所在的时区和夏令时（DST）期间。本路由器可以使用本地时间或者UTC时间。";
-var join = new Object();
+
 join.titl="加入";
 join.mess1="成功以客户端身份加入以下网络：";
-var log_in = new Object();
+
 log_in.titl="连入日志表";
 log_in.h2="连入日志表";
 log_in.th_ip="来源IP";
 log_in.th_port="目的端口号";
-var log_out = new Object();
+
 log_out.titl="连出日志表";
 log_out.h2="连出日志表";
 log_out.th_lanip="LAN IP";
 log_out.th_wanip="目的 URL/IP";
 log_out.th_port="服务/端口号";
-var log = new Object();
+
 log.titl="日志";
 log.h2="日志管理";
 log.legend="日志";
@@ -771,7 +768,7 @@ log.lvl="日志等级";
 log.drop="丢弃的";
 log.reject="拒绝的";
 log.accept="已接受的";
-var management = new Object();
+
 management.titl="管理";
 management.h2="路由器管理";
 management.changepassword="您的路由器目前不受保护且使用不安全的预设用户名和密码组合，请使用以下对话框修改！";
@@ -854,13 +851,13 @@ management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP端口";
 management.SIPatH_domain="SIP域";
 management.gui_style="WEB界面风格";
-var hmanagement = new Object();
+
 hmanagement.right1="自动刷新：";
 hmanagement.right2="调整 Web 界面自动刷新时间间隔。0 表示关闭这个特性。";
-var portserv = new Object();
+
 portserv.titl="端口服务";
 portserv.h2="端口服务";
-var networking = new Object();
+
 networking.h2="VLAN标记";
 networking.legend="标记";
 networking.h22="桥接中";
@@ -872,7 +869,7 @@ networking.stp="STP已启用";
 networking.iface="接口";
 networking.h5="DHCPD";
 networking.legend5="多路DHCP服务器";
-var qos = new Object();
+
 qos.titl="服务质量（QoS）";
 qos.h2="服务质量（QoS）";
 qos.legend="QoS设置";
@@ -896,7 +893,7 @@ qos.legend4="MAC优先顺序";
 qos.legend5="以太网端口优先顺序";
 qos.legend6="预设带宽等级";
 qos.bandwidth="以Kbits表示的带宽";
-var hqos = new Object();
+
 hqos.right1="上传：";
 hqos.right2="将此设置为您总上传限制的80%-95%（最大）。";
 hqos.right3="下载：";
@@ -905,11 +902,11 @@ hqos.right6="您可以注意消耗带宽的应用程序，从而控制您的数�
 hqos.right8="您可以为一个给定的IP地址或者IP范围的所有流量指定优先顺序。";
 hqos.right10="您可以通过为一个设备指定设备名，制定优先顺序并输入MAC地址，从而为该设备的所有流量指定优先顺序。";
 hqos.right12="您可以根据您的设备连接到哪一个物理LAN口来控制它的数据传输速率。您可以根据已连接到1到4号LAN端口的设备制定优先顺序。";
-var routetbl = new Object();
+
 routetbl.titl="路由表";
 routetbl.h2="路由表条目列表";
 routetbl.th1="目的LAN IP";
-var route = new Object();
+
 route.titl="路由设置";
 route.h2="高级路由设置";
 route.metric="度量标准";
@@ -940,17 +937,17 @@ route.static_legend="静态路由";
 route.static_setno="选择设置编号";
 route.static_name="路由名称";
 route.static_ip="目的LAN IP";
-var hroute = new Object();
+
 hroute.right2="如果本路由器正主控您的Internet连接，选择 <em>网关</em> 模式。如果您的网络中存在另外一个路由器，选择 <em>路由</em> 模式。";
 hroute.right4="这是唯一的路由编号，您最多可以设置20条路由。";
 hroute.right6="输入您想要的这条路由名称。";
 hroute.right8="这是您想要设定静态路由的远程主机。";
 hroute.right10="决定主机和网络分配。";
-var survey = new Object();
+
 survey.titl="基站勘查";
 survey.h2="邻近的无线网络";
 survey.thjoin="加入基站";
-var service = new Object();
+
 service.titl="服务";
 service.h2="服务管理";
 service.kaid_legend="XBOX Kaid";
@@ -1103,7 +1100,6 @@ service.hmilkfish_right24="尚未实现 - 留空";
 service.hmilkfish_right26="尚未实现 - 留空";
 //service.hmilkfish_=
 
-var eoip = new Object();
 eoip.titl="EoIP 通道";
 eoip.tunnel="通道";
 eoip.legend="Ethernet Over IP Tunneling";
@@ -1116,11 +1112,11 @@ eoip.frag="片段";
 eoip.mssfix="mssfix";
 eoip.shaper="shaper";
 eoip.bridging="桥接中";
-var sipath = new Object();
+
 sipath.titl="SiPath总览";
 sipath.phone_titl="电话本";
 sipath.status_titl="状态";
-var status_lan = new Object();
+
 status_lan.titl="LAN 状态";
 status_lan.h2="本地网络";
 status_lan.legend="LAN 状态";
@@ -1130,13 +1126,13 @@ status_lan.legend3="DHCP 客户端";
 status_lan.legend4="活动的客户端";
 status_lan.concount="连接数";
 status_lan.conratio="比例";
-var hstatus_lan = new Object();
+
 hstatus_lan.right2="这是您的本地以太网络中看到的路由器的MAC地址。";
 hstatus_lan.right4="这是您的本地以太网络中看到的路由器的IP地址。";
 hstatus_lan.right6="当路由器使用一个子网掩码的时候，它被显示在这里。";
 hstatus_lan.right8="如果您把您的路由器当作DHCP服务器使用，那将会显示在这里。";
 hstatus_lan.right10="点击任意MAC地址，您将能获取该网络接口的全球唯一识别码（从IEEE标准OUI数据库搜索）。";
-var status_band = new Object();
+
 status_band.titl="带宽监控";
 status_band.h2="带宽监控中";
 status_band.chg_unit="切换为";
@@ -1147,11 +1143,11 @@ status_band.strin="入";
 status_band.strout="出";
 status_band.follow="跟随";
 status_band.up="up";
-var hstatus_band = new Object();
+
 hstatus_band.svg="显示带宽图表需要Adobe的SVG plugin。";
 hstatus_band.right1="点击标签选择单位（字节/秒 或 位/秒）。";
 hstatus_band.right2="点击标签选择图形自动调整类型。";
-var status_router = new Object();
+
 status_router.titl="路由器状态";
 status_router.h2="路由器信息";
 status_router.legend="系统";
@@ -1179,14 +1175,14 @@ status_router.notavail="不可用";
 status_router.legend6="空间使用";
 status_router.inpvolt="主板输入电压";
 status_router.cputemp="CPU 温度";
-var hstatus_router = new Object();
+
 hstatus_router.right2="这是您在 <i>设置</i> 标签中所指定的路由器的名称。";
 hstatus_router.right4="这是您的ISP所看到的路由器的MAC地址。";
 hstatus_router.right6="这是路由器当前的固件。";
 hstatus_router.right8="这是您从ntp服务器（在<em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>标签页设置）获取的时间。";
 hstatus_router.right10="这个数值表示路由器\"启动\"和运行的时间。";
 hstatus_router.right12="这里给出的三个数字表示系统在过去1、5、15分钟时间内的系统负载。";
-var status_inet = new Object();
+
 status_inet.titl="WAN状态";
 status_inet.h11="WAN";
 status_inet.conft="连接类型";
@@ -1202,25 +1198,25 @@ status_inet.previous="上月";
 status_inet.next="下月";
 status_inet.dataadmin="数据管理";
 status_inet.delete_confirm="警告！此将删除所有的流量信息数据，删除？";
-var hstatus_inet = new Object();
+
 hstatus_inet.right2="这里显示连接到Internet时，您的ISP所需要的您的信息。这些信息在设置标签中设置。通过点击那个按钮，您可以 <em>连接</em> 或者 <em>断开</em> 您的连接。";
 hstatus_inet.right4="这里显示您的路由器自重启以来的上网流量。";
 hstatus_inet.right6="这里显示您的路由器月上网流量。拖动鼠标到图形上查看详细日流量。数据是存储在nvram上的。";
-var status_conn = new Object();
+
 status_conn.titl="活动的IP连接列表";
 status_conn.h2="活动的IP连接";
-var status_sputnik = new Object();
+
 status_sputnik.titl="Sputnik代理状态";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="Managed By";
 status_sputnik.license="SCC授权编号";
-var hstatus_sputnik = new Object();
+
 hstatus_sputnik.right1="Sputnik代理状态";
 hstatus_sputnik.right2="此屏幕显示Sputnik代理进程的状态。";
 hstatus_sputnik.right4="本访问点所连接到的Sputnik控制中心。";
 hstatus_sputnik.right6="当前代理状态。";
 hstatus_sputnik.right8="您的Sputnik控制中心的授权号。";
-var status_wireless = new Object();
+
 status_wireless.titl="无线状态";
 status_wireless.h2="无线";
 status_wireless.legend="无线状态";
@@ -1233,32 +1229,32 @@ status_wireless.h22="无线节点";
 status_wireless.legend3="客户端";
 status_wireless.signal_qual="信号质量";
 status_wireless.wds="WDS节点";
-var status_gpsi = new Object();
+
 status_gpsi.legend="GPS 信息";
 status_gpsi.status="状态";
 status_gpsi.lon="经度";
 status_gpsi.lat="纬度";
 status_gpsi.alt="海拔";
 status_gpsi.sat="搜寻到的卫星";
-var hstatus_wireless = new Object();
+
 hstatus_wireless.right2="这是您在您的本地无线网络中看到的路由器的MAC地址。";
 hstatus_wireless.right4="正如您在在无线标签里设置的，这里将显示网络所使用的无线模式（混合，仅G，仅B或者禁用）。";
-var status_openvpn = new Object();
+
 status_openvpn.titl="OpenVPN状态";
-var trforward = new Object();
+
 trforward.titl="端口触发";
 trforward.h2="端口触发";
 trforward.legend="转发";
 trforward.trrange="已触发端口范围";
 trforward.fwdrange="转发端口范围";
 trforward.app="应用程序";
-var htrforward = new Object();
+
 htrforward.right2="输入触发器的应用程序名。";
 htrforward.right4="为每一个应用程序列出触发的端口范围。请参考Internet应用程序文档来查找所需要的端口号。";
 htrforward.right6="为每一个应用程序列出转发的端口范围。请参考Internet应用程序文档来查找所需要的端口号。";
 htrforward.right8="输入触发和转发端口范围的起始端口号。";
 htrforward.right10="输入触发和转发端口范围的结束端口号。";
-var upgrad = new Object();
+
 upgrad.titl="固件升级";
 upgrad.h2="固件管理";
 upgrad.legend="固件升级";
@@ -1268,9 +1264,9 @@ upgrad.resetOn="预设设置";
 upgrad.file="请选择一个用来升级的文件";
 upgrad.warning=" [警] [告] ";
 upgrad.mess1="升级固件可能需要几分钟。<br />请不要关闭电源或者按复位按钮！";
-var hupgrad = new Object();
+
 hupgrad.right2="点击 <em>浏览...</em> 按钮选择要上传到路由器的固件文件。<br /><br />。点击 <em>升级</em> 按钮开始升级。升级过程绝对不可以被中断。";
-var upnp = new Object();
+
 upnp.titl="UPnP";
 upnp.h2="通用即插即用（UPnP）";
 upnp.legend="转发";
@@ -1280,19 +1276,19 @@ upnp.clear="启动时清除端口转发";
 upnp.url="发送网络发现URL";
 upnp.msg1="点击删除条目";
 upnp.msg2="删除所有条目？";
-var hupnp = new Object();
+
 hupnp.right2="点击垃圾桶删除单一条目。";
 hupnp.right4="允许应用程序自动设置端口转发";
-var vpn = new Object();
+
 vpn.titl="VPN穿透";
 vpn.h2="虚拟专用网（VPN）";
 vpn.legend="VPN穿透";
 vpn.ipsec="IPSec穿透";
 vpn.pptp="PPTP穿透";
 vpn.l2tp="L2TP穿透";
-var hvpn = new Object();
+
 hvpn.right1="您可以选择启用IPSec，PPTP 和/或 L2TP 穿透，从而允许您的网络设备通过VPN进行通讯。";
-var vlan = new Object();
+
 vlan.titl="虚拟LAN";
 vlan.h2="虚拟本地网络（VLAN）";
 vlan.legend="VLAN";
@@ -1301,10 +1297,10 @@ vlan.tagged="已标记的";
 vlan.negociate="自动协商";
 vlan.aggregation="<br>3号与4号端口链路汇聚";
 vlan.trunk="汇集";
-var wep = new Object();
+
 wep.defkey="默认传输秘钥";
 wep.passphrase="通行短语";
-var wol = new Object();
+
 wol.titl="WOL";
 wol.h2="网络唤醒";
 wol.legend="可用主机";
@@ -1320,19 +1316,19 @@ wol.h22="自动网络唤醒";
 wol.legend5="网络唤醒";
 wol.srv="WOL守护进程";
 wol.pass="SecureOn Password";
-var hwol = new Object();
+
 hwol.right2="本页面允许您 <em>唤醒</em> 在您本地网络上的主机（例如，本地已连接到您的路由器上的）。您可以通过点击<em>"+sbutton.wol+"</em>手动唤醒主机，或编写一个借助于"+wol.srv+"的自动定时唤醒。";
 hwol.right4="MAC地址使用如下格式输入 xx:xx:xx:xx:xx:xx （例如 01:23:45:67:89:AB），且必须以<em>空格</em>分隔";
 hwol.right6="IP地址通常是本地网络的广播地址，但是如果目标主机是并未连接到路由器的本地网络，则应该设置为远程地址。"
-var wanmac = new Object();
+
 wanmac.titl="MAC地址克隆";
 wanmac.h2="MAC地址克隆";
 wanmac.legend="MAC克隆";
 wanmac.wan="克隆WAN口MAC";
 wanmac.wlan="克隆无线MAC";
-var hwanmac = new Object();
+
 hwanmac.right2="某些ISP可能要求您注册您的MAC地址。如果您不想重新注册您的MAC地址，您可以将路由器的MAC地址克隆为您在ISP注册的MAC地址。";
-var wpa = new Object();
+
 wpa.titl="无线安全";
 wpa.h2="无线安全";
 wpa.secmode="安全模式";
@@ -1347,25 +1343,25 @@ wpa.radius_port="Radius服务器端口";
 wpa.radius_key="Radius秘钥";
 wpa.algorithms="WPA算法";
 wpa.shared_key="WPA共享秘钥";
-var sec80211x = new Object();
+
 sec80211x.xsuptype="XSupplicant类型";
 sec80211x.servercertif="公共服务器端认证";
 sec80211x.clientcertif="客户端认证";
 sec80211x.phase2="Phase2 Authentication";
 sec80211x.anon="匿名验证";
-var hwpa = new Object();
+
 hwpa.right2="您应该在禁用、WEP、WPA Personal、WPA Enterprise或RADIUS中选择一种。您网络中的所有设备将会使用相同的安全模式。";
-var wl_filter = new Object();
+
 wl_filter.titl="MAC地址过滤列表";
 wl_filter.h2="MAC地址过滤列表";
 wl_filter.h3="输入此格式的MAC地址&nbsp;：&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
-var wl_active = new Object();
+
 wl_active.titl="活动的无线客户端MAC列表";
 wl_active.h2="无线客户端MAC列表";
 wl_active.h3="启用MAC过滤";
 wl_active.active="活动的客户端";
 wl_active.inactive="无活动的客户端";
-var wds = new Object();
+
 wds.titl="WDS";
 wds.h2="无线分布式系统";
 wds.legend="WDS设置";
@@ -1377,7 +1373,7 @@ wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="子网";
 wds.legend2="其它选项";
-var radius = new Object();
+
 radius.titl="Radius";
 radius.h2="远程授权拨入用户服务（Radius）";
 radius.legend="Radius";
@@ -1393,7 +1389,7 @@ radius.label13="Radius计账服务器地址";
 radius.label14="Radius计账服务器端口";
 radius.label17="Radius计账共享秘钥";
 radius.label18="Radius计账";
-var wl_mac = new Object();
+
 wl_mac.titl="MAC过滤";
 wl_mac.h2="无线MAC过滤";
 wl_mac.legend="MAC过滤";
@@ -1401,7 +1397,7 @@ wl_mac.label="开启过滤";
 wl_mac.label2="过滤模式";
 wl_mac.deny="阻止所列客户端机访问无线网络";
 wl_mac.allow="只允许所列客户端访问无线网络";
-var wl_wimax = new Object();
+
 wl_wimax.titl="WiMAX";
 wl_wimax.h2="全球微波接入互通";
 wl_wimax.downstream="流下载频率";
@@ -1410,7 +1406,7 @@ wl_wimax.width="频道宽度";
 wl_wimax.duplex="双向模式";
 wl_wimax.mode="工作模式";
 wl_wimax.mac="订阅者MAC地址";
-var wl_adv = new Object();
+
 wl_adv.titl="高级无线设置";
 wl_adv.h2="高级无线设置";
 wl_adv.legend="高级设置";
@@ -1463,9 +1459,9 @@ wl_adv.row4="语音";
 wl_adv.table2="EDCA STA参数（客户端到AP）";
 wl_adv.lng="长"; 					//************* don't use .long ! *************
 wl_adv.shrt="短"; 				//************* don't use .short ! **************
-var hwl_adv = new Object();
+
 hwl_adv.right2="您应该在自动或共享秘钥中选择一种。共享秘钥授权更加安全，在您网络中的所有设备都必须支持共享秘钥授权。";
-var wl_basic = new Object();
+
 wl_basic.titl="无线";
 wl_basic.h2="无线";
 wl_basic.legend="基本设置";
@@ -1540,15 +1536,15 @@ wl_basic.ofdm_weak_det="OFDM Weak Detection";
 wl_basic.radar="雷达探测";
 wl_basic.mtikie="MT 兼容性";
 wl_basic.csma="波波侦听";
-var hwl_basic = new Object();
+
 hwl_basic.right2="如果您想剔除无线-G客户端，选择 <em>仅B</em> 模式。如果您想禁用无线访问，选择 <em>禁用</em>。<br/><b>注意：</b> 当修改无线模式时，一些高级参数会相应被修改（\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\"）。";
 hwl_basic.right3="灵敏度范围：";
 hwl_basic.right4="调整 ack 时序。输入0，禁用ack时序（broadcom 版的固件）。自动 ack 时序模式（基于 Atheros 的固件）";
 hwl_basic.right6="点击任何时刻启用或禁用无线信号（<em>绿色</em> 代表允许无线访问，<em>红色</em> 代表阻止无线访问）";
-var fail = new Object();
+
 fail.mess1="您所输入的值是无效的。请再试一次。";
 fail.mess2="升级失败。";
-var success = new Object();
+
 success.saved="设置已保存。";
 success.restore="设置已恢复。<br/>模块正在重新启动。请稍候……";
 success.upgrade="升级成功。<br/>模块正在重新启动。请稍候……";
@@ -1558,13 +1554,13 @@ success.alert_reset="所有配置已经被恢复到它们的默认值。<br /><b
 success.alert1="连接前请再次检查以下内容：";
 success.alert2="如果您更改了您的路由器IP地址，请注意您必须释放/续期您网络上的客户端地址。";
 success.alert3="如果您是通过WLAN连接的，请加入网络并且点击 <em>继续</em>。";
-var logout = new Object();
+
 logout.message="您已经成功登出。<br />谢谢您使用DD-WRT！";
-var dhcp = new Object();
+
 dhcp.titl="DHCP 活动IP列表";
 dhcp.h2="DHCP 活动IP列表";
 dhcp.server="DHCP 服务器IP地址：";
 dhcp.tclient="客户端主机名";
-var donate = new Object();
+
 donate.mb="您也可以通过Moneybookers的帐号mb@dd-wrt.com进行捐赠";
 
