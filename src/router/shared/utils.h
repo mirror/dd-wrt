@@ -689,6 +689,12 @@ struct wl_client_mac
     int check;
 };
 
+extern int dd_timer_delete( timer_t timer);
+extern int dd_timer_create( clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
+		  struct sigevent *evp,	/* user event handler */
+		  timer_t * pTimer	/* ptr to return value */
+     );
+
 int endswith( char *str, char *cmp );
 
 int isListed( char *listname, char *value );
