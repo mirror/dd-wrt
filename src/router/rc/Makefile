@@ -175,6 +175,9 @@ endif
 ifeq ($(CONFIG_XSCALE),y)
 CFLAGS += -DHAVE_XSCALE
 endif
+ifeq ($(CONFIG_TONZE),y)
+CFLAGS += -DHAVE_TONZE
+endif
 ifeq ($(CONFIG_WG302),y)
 CFLAGS += -DHAVE_WG302
 endif

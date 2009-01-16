@@ -52,9 +52,9 @@ int main( int argc, char **argv )
 	memset( &t1, 0, sizeof( t1 ) );
 	t1.it_interval.tv_sec = ( int )leasetime;
 	t1.it_value.tv_sec = ( int )leasetime;
-	timer_create( CLOCK_REALTIME, NULL, ( timer_t * ) & udhcpd_id );
-	timer_connect( udhcpd_id, check_udhcpd, FIRST );
-	timer_settime( udhcpd_id, 0, &t1, NULL );
+	dd_timer_create( CLOCK_REALTIME, NULL, ( timer_t * ) & udhcpd_id );
+	dd_timer_connect( udhcpd_id, check_udhcpd, FIRST );
+	dd_timer_settime( udhcpd_id, 0, &t1, NULL );
     }
 
     if( nvram_invmatch( "ntp_enable", "0" ) )
@@ -79,9 +79,9 @@ int main( int argc, char **argv )
 	    t4.it_interval.tv_sec = time;
 	    t4.it_value.tv_sec = time;
 
-	    timer_create( CLOCK_REALTIME, NULL, ( timer_t * ) & ntp1_id );
-	    timer_connect( ntp1_id, ntp_main, FIRST );
-	    timer_settime( ntp1_id, 0, &t4, NULL );
+	    dd_timer_create( CLOCK_REALTIME, NULL, ( timer_t * ) & ntp1_id );
+	    dd_timer_connect( ntp1_id, ntp_main, FIRST );
+	    dd_timer_settime( ntp1_id, 0, &t4, NULL );
 	}
 
 	struct timeval then;
@@ -126,9 +126,9 @@ int main( int argc, char **argv )
 	t5.it_interval.tv_sec = time;
 	t5.it_value.tv_sec = time;
 
-	timer_create( CLOCK_REALTIME, NULL, ( timer_t * ) & ntp2_id );
-	timer_connect( ntp2_id, ntp_main, SECOND );
-	timer_settime( ntp2_id, 0, &t5, NULL );
+	dd_timer_create( CLOCK_REALTIME, NULL, ( timer_t * ) & ntp2_id );
+	dd_timer_connect( ntp2_id, ntp_main, SECOND );
+	dd_timer_settime( ntp2_id, 0, &t5, NULL );
 
     }
     printf( "process_monitor..done\n" );
