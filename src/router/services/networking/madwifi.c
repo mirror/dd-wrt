@@ -266,6 +266,11 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 
 	fprintf( fp, "\tpsk=\"%s\"\n", nvram_nget( "%s_wpa_psk", prefix ) );
 	fprintf( fp, "}\n" );
+	char extra[32];
+	sprintf(extra,"%s_supplicantext",prefix);
+	if (nvram_invmatch(extra,""))
+	fwritenvram(extra,fp);
+	
 	fclose( fp );
 	sprintf( psk, "-i%s", prefix );
 	if( ( nvram_match( wmode, "wdssta" ) || nvram_match( wmode, "wet" ) )
@@ -417,6 +422,10 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    }
 	}
 	fprintf( fp, "}\n" );
+	char extra[32];
+	sprintf(extra,"%s_supplicantext",prefix);
+	if (nvram_invmatch(extra,""))
+	fwritenvram(extra,fp);
 	fclose( fp );
 	sprintf( psk, "-i%s", prefix );
 	sysprintf( "iwpriv %s hostroaming 2", prefix );
