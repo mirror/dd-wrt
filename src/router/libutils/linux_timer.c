@@ -75,10 +75,7 @@ typedef void ( *event_callback_t ) ( timer_t, int );
 }
 #endif
 
-unsigned long ROUNDUP( unsigned long x, unsigned long y )
-{
-    return ( ( ( ( x ) + ( y ) - 1 ) / ( y ) ) * ( y ) );
-}
+#define ROUNDUP(x, y) ((((x)+(y)-1)/(y))*(y))
 
 #define timerroundup(t,g) \
     do { \
@@ -107,7 +104,7 @@ struct event
 #endif
 };
 
-void timer_cancel( timer_t timerid );
+void dd_timer_cancel( timer_t timerid );
 
 static void alarm_handler( int i );
 static void check_event_queue(  );
@@ -117,10 +114,10 @@ static void check_timer(  );
 #if THIS_FINDS_USE
 static int count_queue( struct event * );
 #endif
-static int timer_change_settime( timer_t timer_id,
+static int dd_timer_change_settime( timer_t timer_id,
 				 const struct itimerspec *timer_spec );
-void block_timer(  );
-void unblock_timer(  );
+void dd_block_timer(  );
+void dd_unblock_timer(  );
 
 static struct event *event_queue = NULL;
 static struct event *event_freelist;
@@ -157,8 +154,6 @@ void init_event_queue( int n )
     // getitimer (ITIMER_REAL, &tv);
     setitimer( ITIMER_REAL, 0, &tv );
     g_granularity = tv.it_interval.tv_usec;
-    if( g_granularity < 1 )
-	g_granularity = 1;
     signal( SIGALRM, alarm_handler );
 }
 
@@ -175,7 +170,7 @@ int clock_gettime( clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
     return n;
 }
 
-int timer_create( clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
+int dd_timer_create( clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 		  struct sigevent *evp,	/* user event handler */
 		  timer_t * pTimer	/* ptr to return value */
      )
@@ -218,7 +213,7 @@ int timer_create( clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
     return 0;
 }
 
-int timer_delete( timer_t timerid	/* timer ID */
+int dd_timer_delete( timer_t timerid	/* timer ID */
      )
 {
     struct event *event = ( struct event * )timerid;
@@ -229,7 +224,7 @@ int timer_delete( timer_t timerid	/* timer ID */
 	return 1;
     }
 
-    timer_cancel( timerid );
+    dd_timer_cancel( timerid );
 
     event->flags |= TFLAG_DELETED;
 
@@ -239,7 +234,7 @@ int timer_delete( timer_t timerid	/* timer ID */
     return 0;
 }
 
-int timer_connect( timer_t timerid,	/* timer ID */
+int dd_timer_connect( timer_t timerid,	/* timer ID */
 		   void ( *routine ) ( timer_t, int ),	/* user routine */
 		   int arg	/* user argument */
      )
@@ -257,7 +252,7 @@ int timer_connect( timer_t timerid,	/* timer ID */
  * Please Call this function only from the call back functions of the alarm_handler.
  * This is just a hack 
  */
-int timer_change_settime( timer_t timerid,	/* timer ID */
+int dd_timer_change_settime( timer_t timerid,	/* timer ID */
 			  const struct itimerspec *value	/* time to be 
 								 * set */
      )
@@ -270,7 +265,7 @@ int timer_change_settime( timer_t timerid,	/* timer ID */
     return 1;
 }
 
-int timer_settime( timer_t timerid,	/* timer ID */
+int dd_timer_settime( timer_t timerid,	/* timer ID */
 		   int flags,	/* absolute or relative */
 		   const struct itimerspec *value,	/* time to be set */
 		   struct itimerspec *ovalue	/* previous time set (NULL=no 
@@ -289,11 +284,11 @@ int timer_settime( timer_t timerid,	/* timer ID */
      */
     if( !timerisset( &event->it_value ) )
     {
-	timer_cancel( timerid );
+	dd_timer_cancel( timerid );
 	return 0;
     }
 
-    block_timer(  );
+    dd_block_timer(  );
 
 #ifdef TIMER_PROFILE
     event->expected_ms =
@@ -407,7 +402,7 @@ int timer_settime( timer_t timerid,	/* timer ID */
     event->flags &= ~TFLAG_CANCELLED;
     event->flags |= TFLAG_QUEUED;
 
-    unblock_timer(  );
+    dd_unblock_timer(  );
 
     return 0;
 }
@@ -504,7 +499,7 @@ static void alarm_handler( int i )
     uint actual;
 #endif
 
-    block_timer(  );
+    dd_block_timer(  );
 
     // Loop through the event queue and remove the first event plus any 
     // subsequent events that will expire very soon thereafter (within
@@ -635,12 +630,12 @@ static void alarm_handler( int i )
 	TIMERDBG( "There are no events in the queue - timer not reset." );
     }
 
-    unblock_timer(  );
+    dd_unblock_timer(  );
 }
 
 static int block_count = 0;
 
-void block_timer(  )
+void dd_block_timer(  )
 {
     sigset_t set;
 
@@ -652,7 +647,7 @@ void block_timer(  )
     }
 }
 
-void unblock_timer(  )
+void dd_unblock_timer(  )
 {
     sigset_t set;
 
@@ -664,7 +659,7 @@ void unblock_timer(  )
     }
 }
 
-void timer_cancel_all(  )
+void dd_timer_cancel_all(  )
 {
     struct itimerval timeroff = { {0, 0}, {0, 0} };
     struct event *event;
@@ -681,7 +676,7 @@ void timer_cancel_all(  )
     }
 }
 
-void timer_cancel( timer_t timerid )
+void dd_timer_cancel( timer_t timerid )
 {
     struct itimerval itimer;
     struct itimerval timeroff = { {0, 0}, {0, 0} };
@@ -694,7 +689,7 @@ void timer_cancel( timer_t timerid )
 	return;
     }
 
-    block_timer(  );
+    dd_block_timer(  );
 
     ppevent = &event_queue;
     while( *ppevent )
@@ -770,7 +765,7 @@ void timer_cancel( timer_t timerid )
 
     event->flags |= TFLAG_CANCELLED;
 
-    unblock_timer(  );
+    dd_unblock_timer(  );
 }
 
 /*
@@ -811,21 +806,21 @@ int bcm_timer_module_cleanup( bcm_timer_module_id module_id )
 int bcm_timer_module_enable( bcm_timer_module_id module_id, int enable )
 {
     if( enable )
-	unblock_timer(  );
+	dd_unblock_timer(  );
     else
-	block_timer(  );
+	dd_block_timer(  );
     return 0;
 }
 
 int bcm_timer_create( bcm_timer_module_id module_id, bcm_timer_id * timer_id )
 {
     module_id = 0;
-    return timer_create( CLOCK_REALTIME, NULL, ( timer_t * ) timer_id );
+    return dd_timer_create( CLOCK_REALTIME, NULL, ( timer_t * ) timer_id );
 }
 
 int bcm_timer_delete( bcm_timer_id timer_id )
 {
-    return timer_delete( ( timer_t ) timer_id );
+    return dd_timer_delete( ( timer_t ) timer_id );
 }
 
 int bcm_timer_gettime( bcm_timer_id timer_id, struct itimerspec *timer_spec )
@@ -837,17 +832,17 @@ int
 bcm_timer_settime( bcm_timer_id timer_id,
 		   const struct itimerspec *timer_spec )
 {
-    return timer_settime( ( timer_t ) timer_id, 0, timer_spec, NULL );
+    return dd_timer_settime( ( timer_t ) timer_id, 0, timer_spec, NULL );
 }
 
 int bcm_timer_connect( bcm_timer_id timer_id, bcm_timer_cb func, int data )
 {
-    return timer_connect( ( timer_t ) timer_id, ( void * )func, data );
+    return dd_timer_connect( ( timer_t ) timer_id, ( void * )func, data );
 }
 
 int bcm_timer_cancel( bcm_timer_id timer_id )
 {
-    timer_cancel( ( timer_t ) timer_id );
+    dd_timer_cancel( ( timer_t ) timer_id );
     return 0;
 }
 
@@ -855,6 +850,6 @@ int
 bcm_timer_change_expirytime( bcm_timer_id timer_id,
 			     const struct itimerspec *timer_spec )
 {
-    timer_change_settime( ( timer_t ) timer_id, timer_spec );
+    dd_timer_change_settime( ( timer_t ) timer_id, timer_spec );
     return 1;
 }
