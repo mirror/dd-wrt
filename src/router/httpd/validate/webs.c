@@ -331,7 +331,6 @@ void save_policy( webs_t wp )
 
     nvram_set( filter_buf, buf );
 
-    addAction( "filters" );
     if( !strcmp( value, "ApplyTake" ) )
     {
 	nvram_commit(  );
@@ -442,7 +441,6 @@ void save_services_port( webs_t wp )
     validate_services_port( wp );
     char *value = websGetVar( wp, "action", "" );
 
-    addAction( "index" );
     if( !strcmp( value, "ApplyTake" ) )
     {
 	nvram_commit(  );
@@ -494,7 +492,6 @@ void delete_policy( webs_t wp, int which )
 
 void single_delete_policy( webs_t wp )
 {
-    addAction( "filters" );
     char *id = nvram_safe_get( "filter_id" );
 
     D( "single delete policy" );
@@ -505,7 +502,6 @@ void single_delete_policy( webs_t wp )
 
 void summary_delete_policy( webs_t wp )
 {
-    addAction( "filters" );
     int i;
 
     D( "summary delete policy" );
@@ -540,10 +536,9 @@ void addDeletion( char *word )
 
 void delete_static_route( webs_t wp )
 {
-    addAction( "routing" );
+    addAction("routing");
     char *buf = malloc( 1000 );
     char *buf_name = malloc( 1000 );
-
     memset( buf, 0, 1000 );
     memset( buf_name, 0, 1000 );
     char *cur = buf;
@@ -878,7 +873,6 @@ void security_save( webs_t wp )
 {
     char *value = websGetVar( wp, "action", "" );
 
-    addAction( "wireless_2" );
 #ifdef HAVE_MADWIFI
     int dc = getdevicecount(  );
     int i;
@@ -2198,7 +2192,6 @@ void save_networking( webs_t wp )
     validate_portsetup( wp, NULL, NULL );
 #endif
 
-    addAction( "index" );
     if( !strcmp( value, "ApplyTake" ) )
     {
 	nvram_commit(  );
@@ -2766,7 +2759,6 @@ void wireless_save( webs_t wp )
 {
     char *value = websGetVar( wp, "action", "" );
 
-    addAction( "wireless" );
 #ifdef HAVE_MSSID
     char *next;
     char var[80];
