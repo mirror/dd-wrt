@@ -855,15 +855,13 @@ static struct gozila_action gozila_actions[] = {
     {"Filters", "delete", "filters", 1, REFRESH, "single_delete_policy"},
     {"FilterSummary", "delete", "filters", 1, REFRESH,
      "summary_delete_policy"},
-    {"Routing", "del", "static_route_del", 1, REFRESH,
-     "delete_static_route"},
-    {"RouteStatic", "del", "static_route_del", 1, REFRESH,
-     "delete_static_route"},
+    {"Routing", "del", "static_route_del", 1, REFRESH,"delete_static_route"},
+    {"RouteStatic", "del", "static_route_del", 1, REFRESH,"delete_static_route"},
     {"WL_WPATable", "wep_key_generate", "", 1, REFRESH, "generate_wep_key"},
     {"WL_WPATable", "security", "", 1, REFRESH, "set_security"},
 #ifdef HAVE_MSSID
-    {"WL_WPATable", "save", "", 1, REFRESH, "security_save"},
-    {"WL_WPATable", "keysize", "", 1, REFRESH, "security_save"},
+    {"WL_WPATable", "save", "wireless_2", 1, REFRESH, "security_save"},
+    {"WL_WPATable", "keysize", "wireless_2", 1, REFRESH, "security_save"},
 #endif
     {"WL_ActiveTable", "add_mac", "", 1, REFRESH, "add_active_mac"},
     /*
@@ -875,13 +873,13 @@ static struct gozila_action gozila_actions[] = {
      */
     // {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
 #ifndef HAVE_MADWIFI
-    {"Wireless_WDS-wl0", "save", "", 0, REFRESH, "save_wds"},
-    {"Wireless_WDS-wl1", "save", "", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-wl0", "save", "wireless", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-wl1", "save", "wireless", 0, REFRESH, "save_wds"},
 #else
-    {"Wireless_WDS-ath0", "save", "", 0, REFRESH, "save_wds"},
-    {"Wireless_WDS-ath1", "save", "", 0, REFRESH, "save_wds"},
-    {"Wireless_WDS-ath2", "save", "", 0, REFRESH, "save_wds"},
-    {"Wireless_WDS-ath3", "save", "", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-ath0", "save", "wireless", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-ath1", "save", "wireless", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-ath2", "save", "wireless", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-ath3", "save", "wireless", 0, REFRESH, "save_wds"},
 #endif
     {"Ping", "startup", "", 1, SYS_RESTART, "ping_startup"},
     {"Ping", "shutdown", "", 1, SYS_RESTART, "ping_shutdown"},
@@ -915,11 +913,11 @@ static struct gozila_action gozila_actions[] = {
     {"Networking", "del_vlan", "", 0, REFRESH, "del_vlan"},
     {"Networking", "del_bridge", "", 0, REFRESH, "del_bridge"},
     {"Networking", "del_bridgeif", "", 0, REFRESH, "del_bridgeif"},
-    {"Networking", "save_networking", "", 0, REFRESH, "save_networking"},
+    {"Networking", "save_networking", "index", 0, REFRESH, "save_networking"},
     {"Networking", "add_mdhcp", "", 0, REFRESH, "add_mdhcp"},
     {"Networking", "del_mdhcp", "", 0, REFRESH, "del_mdhcp"},
 #endif
-    {"Wireless_Basic", "save", "", 1, REFRESH, "wireless_save"},
+    {"Wireless_Basic", "save", "wireless", 1, REFRESH, "wireless_save"},
 #ifdef HAVE_WIVIZ
     {"Wiviz_Survey", "Set", "", 0, REFRESH, "set_wiviz"},
 #endif
