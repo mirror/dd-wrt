@@ -15,7 +15,7 @@
 /*
  * debug facilities
  */
-#define TIMER_DEBUG	1
+#define TIMER_DEBUG	0
 #if TIMER_DEBUG
 #define TIMERDBG(fmt, args...) fprintf(stderr,"%s: " fmt "\n" , __FUNCTION__ , ## args)
 #else
