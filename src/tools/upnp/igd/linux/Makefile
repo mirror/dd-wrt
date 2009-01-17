@@ -61,7 +61,7 @@ SOURCES = igd.c igd_desc.c wancommon.c wanipc.c ipt.c \
 	  mapmgr.c
 
 # Add the OS-specific source files.
-SOURCES += linux_main.c linux_net.c linux_igd.c linux_timer.c
+SOURCES += linux_main.c linux_net.c linux_igd.c
 
 
 SOURCES.TEST = test.c shutils.c 
