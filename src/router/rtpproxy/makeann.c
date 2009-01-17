@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2003-2006 Sippy Software, Inc. <sales@sippysoft.com>
+ * Copyright (c) 2004-2006 Maxim Sobolev <sobomax@FreeBSD.org>
+ * Copyright (c) 2006-2007 Sippy Software, Inc., http://www.sippysoft.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,18 +24,23 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: makeann.c,v 1.4 2006/12/04 22:54:05 sobomax Exp $
+ * $Id: makeann.c,v 1.12 2008/11/15 10:32:51 sobomax Exp $
  *
  */
 
+#include "config.h"
+
 #include <stdint.h>
+#if defined(HAVE_ERR_H)
 #include <err.h>
+#else
+#include "rtpp_util.h"
+#endif
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#include "config.h"
+#include <sys/socket.h>
 
 #include "g711.h"
 #ifdef ENABLE_G729
@@ -54,7 +60,8 @@
 #include "rtp.h"
 
 #if BYTE_ORDER == BIG_ENDIAN
-#define LE16_2_HOST(x) ((((uint16_t)(x)) >> 8) & 0xff) | ((((uint16_t)(x)) & 0xff) << 8) 
+#define LE16_2_HOST(x) \
+ ((((uint16_t)(x)) >> 8) & 0xff) | ((((uint16_t)(x)) & 0xff) << 8)
 #else
 #define LE16_2_HOST(x) (x)
 #endif

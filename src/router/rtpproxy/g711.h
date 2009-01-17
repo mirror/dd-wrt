@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2004 Maxim Sobolev
+ * Copyright (c) 2004-2006 Maxim Sobolev <sobomax@FreeBSD.org>
+ * Copyright (c) 2006-2007 Sippy Software, Inc., http://www.sippysoft.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: g711.h,v 1.2 2006/12/04 22:29:55 sobomax Exp $
+ * $Id: g711.h,v 1.3 2007/07/28 01:10:27 sobomax Exp $
  *
  */
 

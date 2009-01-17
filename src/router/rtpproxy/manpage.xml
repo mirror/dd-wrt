@@ -1,0 +1,468 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+
+<!-- Use the following command to generate rtpproxy.8: -->
+<!-- xsltproc /usr/local/share/xsl/docbook/manpages/docbook.xsl manpage.xml -->
+
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+  <!ENTITY dhfirstname "<firstname>Maxim</firstname>">
+  <!ENTITY dhsurname   "<surname>Sobolev</surname>">
+  <!-- Please adjust the date whenever revising the manpage. -->
+  <!ENTITY dhdate      "<date>Jun 16, 2008</date>">
+  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
+       allowed: see man(7), man(1). -->
+  <!ENTITY dhsection   "<manvolnum>8</manvolnum>">
+  <!ENTITY dhemail     "<email>sobomax@sippysoft.com</email>">
+  <!ENTITY dhusername  "janakj">
+  <!ENTITY dhucpackage "<refentrytitle>rtpproxy</refentrytitle>">
+  <!ENTITY dhpackage   "rtpproxy">
+
+  <!ENTITY debian      "<productname>Debian</productname>">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+    <refentryinfo>
+	<address>
+	    &dhemail;
+	</address>
+	<author>
+	    &dhfirstname;
+	    &dhsurname;
+	</author>
+	<copyright>
+	    <year>2006</year>
+	    <holder>&dhusername;</holder>
+	</copyright>
+	&dhdate;
+    </refentryinfo>
+    <refmeta>
+	&dhucpackage;
+	
+	&dhsection;
+    </refmeta>
+    <refnamediv>
+	<refname>&dhpackage;</refname>
+	<refpurpose>RTP (Real-time Transport Protocol) Proxy Server</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+	<cmdsynopsis>
+	    <command>&dhpackage;</command>
+	    
+	    <arg choice="opt"><option>-?</option></arg>
+	    <arg choice="opt"><option>-2</option></arg>
+	    <arg choice="opt"><option>-f</option></arg>
+	    <arg choice="opt"><option>-v</option></arg>
+	    <arg choice="opt"><option>-R</option></arg>
+	    <arg choice="opt"><option>-l</option> <replaceable>addr1<optional>/addr2</optional></replaceable></arg>
+	    <arg choice="opt"><option>-6</option> <replaceable>addr1<optional>/addr2</optional></replaceable></arg>
+	    <arg choice="opt"><option>-s</option> <replaceable>ctrl_socket</replaceable></arg>
+	    <arg choice="opt"><option>-t</option> <replaceable>tos</replaceable></arg>
+	    <arg choice="opt"><option>-p</option> <replaceable>pidfile</replaceable></arg>
+	    <arg choice="opt"><option>-T</option> <replaceable>max_ttl</replaceable></arg>
+	    <arg choice="opt">
+		<option>-r</option> <replaceable>rdir</replaceable>
+		<arg choice="opt"><option>-S</option> <replaceable>sdir</replaceable></arg>
+	    </arg>
+	    <arg choice="opt"><option>-m</option> <replaceable>min_port</replaceable></arg>
+	    <arg choice="opt"><option>-M</option> <replaceable>max_port</replaceable></arg>
+	    <arg choice="opt"><option>-u</option> <replaceable>uname<optional>:gname</optional></replaceable></arg>
+	    <arg choice="opt"><option>-F</option></arg>
+            <arg choice="opt"><option>-i</option></arg>
+            <arg choice="opt"><option>-n</option> <replaceable>timeout_socket</replaceable></arg>
+            <arg choice="opt"><option>-P</option></arg>
+            <arg choice="opt"><option>-a</option></arg>
+            <arg choice="opt"><option>-d</option> <replaceable>log_level</replaceable></arg>
+	</cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+	<title>DESCRIPTION</title>
+	<para>
+	    <command>&dhpackage;</command> is a symmetric RTP proxy designed to
+	    be used in conjunction with the SIP Express Router (SER) or any
+	    other SIP proxy or SIP B2BUA capable of rewriting SDP bodies in SIP messages
+	    that it processes.
+	</para>
+	<para>
+	    The main purpose of rtpproxy is to make the communication between
+	    SIP user agents behind NAT(s) (Network Address Translator)
+	    possible. Several cases exists when direct end-to-end communication
+	    is not possible and RTP streams have to be relayed through another
+	    host. Rtpproxy can be used to setup such a relaying host.
+	</para>
+	<para>
+	    When two listen interfaces have been specified using the command
+	    line parameters described below then rtpproxy will enter so called
+	    bridging mode. In briding mode rtpproxy forwards RTP packets
+	    received on one interface to the other interface and vice
+	    versa. This mode can be used to forward RTP packets between
+	    networks without direct network level connectivy (provided that the
+	    host running rtpproxy has one interface in both of them). One
+	    particular application of bridging mode is IPv4/IPv6 traversal of
+	    RTP packets.
+	</para>
+	<para>
+	    When instructured by SER rtpproxy can also record the entire RTP
+	    session in a file on a local harddisk or play a pre-recorded file
+	    to the user agent (so called Music-on-Hold).
+	</para>
+    </refsect1>
+    <refsect1>
+	<title>OPTIONS</title>
+	<variablelist>
+	    <varlistentry>
+		<term><option>-?</option></term>
+		<listitem>
+		    <para>Show summary of options.</para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-2</option></term>
+		<listitem>
+		    <para>
+			Send every RTP packet twice in sessions that use
+			low-bitrate codecs. Only packets that are smaller than
+			128 bytes will be sent twice. This option can improve
+			audio quality on lossy links.
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-f</option></term>
+		<listitem>
+		    <para>
+			Rtpproxy will stay in foreground mode if this option is
+			set.
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-v</option></term>
+		<listitem>
+		    <para>Show version of program.</para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-l</option> <replaceable>addr1<optional>/addr2</optional></replaceable></term>
+		<listitem>
+		    <para>
+			IPv4 listen IP address(es). You can specify either
+			one or two addresses. If two addresses have been
+			specified then rtpproxy will work in bridging mode.
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-6</option> <replaceable>addr1<optional>/addr2</optional></replaceable></term>
+		<listitem>
+		    <para>
+			IPv6 listen IP address(es). You can specify either one
+			or two addresses. If two addresses have been specified
+			then rtpproxy will work in bridging mode.
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-s</option> <replaceable>ctrl_socket</replaceable></term>
+		<listitem>
+		    <para>
+			This parameter configures rtpproxy control socket. The
+			control socket is used by nathelper module of SER to 
+			create/modify/delete RTP sessions to be relayed. 
+			Format of <replaceable>ctrl_socket</replaceable> is 
+			&lt;type&gt;:&lt;socket&gt;. Following types are
+			supported:
+			<itemizedlist>
+			    <listitem>
+				<para>
+				    <emphasis>udp:</emphasis> Create UDP
+				    control socket. In this mode RTPProxy will
+				    listen on UDP for control messages from
+				    SER/nathelper.
+				</para>
+				<para>
+				    Example: -s udp:127.0.0.1:9000
+				</para>
+				<para>
+				    IP address can be '*' in which case
+				    rtpproxy will listen on all local
+				    interfaces. If omitted port 22222 is used.
+				</para>
+				<note>
+				    <para>
+					RTPProxy control protocol has no
+					built-in security mechanisms. Make sure
+					that you protect the listening IP and
+					port properly when using RTPProxy with
+					UDP control socket.
+				    </para>
+				</note>
+			    </listitem>
+			    <listitem>
+				<para>
+				    <emphasis>udp6:</emphasis> Create IPv6 UDP
+				    control socket. In this mode RTPProxy will
+				    listen on UDP/IPv6 for control messages
+				    from SER/nathelper.
+				</para>
+				<para>
+				    Example: -s udp6:::1:9000
+				</para>
+			    </listitem>
+			    <listitem>
+				<para>
+				    <emphasis>unix:</emphasis> Create UNIX
+				    domain socket for control interface. In
+				    this mode SER/nathelper and RTPProxy must
+				    be running on the same host. This is the
+				    default setting for both SER/nathelper and
+				    rtpproxy.
+				</para>
+				<para>Example: -s unix:/var/run/rtpproxy.sock</para>
+				<para>Default value is <filename>/var/run/rtpproxy.sock</filename>.</para>
+			    </listitem>
+			</itemizedlist>
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-t</option> <replaceable>tos</replaceable></term>
+		<listitem>
+		    <para>
+			Set this ToS (Type of Service) in outgoing
+			packets. Default value is 0xB8.
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-r</option> <replaceable>rec_dir</replaceable></term>
+		<listitem>
+		    <para>Directory where recorded RTP sessions will be stored.</para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-S</option> <replaceable>spool_dir</replaceable></term>
+		<listitem>
+		    <para>
+			Spool directory for RTP sessions being recorded. The
+			file will be moved to directory configured in
+			<option>-r</option> option after the session finishes.
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-R</option></term>
+		<listitem>
+		    <para>
+			Do not record RTCP when recording an RTP session. This
+			option is disabled (rtpproxy will record RTCP) by default.
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-p</option> <replaceable>pid_file</replaceable></term>
+		<listitem>
+		    <para>
+			This parameter configures the name of the file where
+			PID of running rtpproxy will be stored. Default is
+			<filename>/var/run/rtpproxy.pid</filename>.
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term><option>-T</option> <replaceable>max_ttl</replaceable></term>
+		<listitem>
+		    <para>
+			Limit the maximum TTL (Time To Live) of outgoing IP packets to
+			the value of <replaceable>max_ttl</replaceable>.
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+	        <term><option>-m</option> <replaceable>min_port</replaceable></term>
+	        <listitem>
+	            <para>
+	                Set lower limit on UDP ports range that the RTPproxy uses for
+	                RTP/RTCP sessions to <replaceable>min_port</replaceable>.
+	                Default is 35000.
+	            </para>
+	        </listitem>
+	    </varlistentry>
+	    <varlistentry>
+	        <term><option>-M</option> <replaceable>max_port</replaceable></term>
+	        <listitem>
+	            <para>
+	                Set upper limit on UDP ports range that the RTPproxy uses for
+	                RTP/RTCP sessions to <replaceable>max_port</replaceable>.
+	                Default is 65000.
+	            </para>
+	        </listitem>
+	    </varlistentry>
+	    <varlistentry>
+	        <term><option>-u</option> <replaceable>uname<optional>:gname</optional></replaceable></term>
+	        <listitem>
+	            <para>
+	                Switch RTPproxy to UID identified by the <replaceable>uname</replaceable>
+	                and optional GID identified by <replaceable>gname</replaceable> when
+	                proxy is up and running.
+	            </para>
+	        </listitem>
+	    </varlistentry>
+	    <varlistentry>
+	        <term><option>-F</option></term>
+	        <listitem>
+	            <para>
+	                By default the RTPproxy will warn user if running as superuser (UID 0) in
+	                local control mode and refuse to run in remote control mode at all.
+	                This switch removes the check.
+	            </para>
+	        </listitem>
+	    </varlistentry>
+            <varlistentry>
+                <term><option>-i</option></term>
+                <listitem>
+                    <para>
+                        Enable independent timeout mode.  By default, a timeout (which
+                        results in automatic destruction of the session) can only occur
+                        if no RTP packets are received on any of the session's ports.  This
+                        option if set varies that behaviour, such that a timeout will
+                        occur if packets are still being received on one port but not
+                        the other.  The option should be used with caution since in some
+                        cases it's perfectly fine to have packets coming from only one
+                        side of conversation (i.e. when the second party has muted its
+                        audio).
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-n</option> <replaceable>timeout_socket</replaceable></term>
+                 <listitem>
+                    <para>
+                        This parameter configures the optional timeout notification
+                        socket.  The socket should be created by another application,
+                        preferably before starting rtpproxy.   For those sessions where
+                        the timeout mechanism is enabled, notifications are sent on
+                        this socket if the session times out.
+                    </para>
+                    <para>
+                        Example: -n unix:/var/run/rtpproxy_timeout.sock
+                    </para>
+                    <para>
+                        There is no default value, notifications are not sent and not
+                        permitted unless a value is specified explicitly.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-P</option></term>
+                <listitem>
+                    <para>
+                        Record sessions using PCAP file format instead of non-standard
+                        ad-hoc format.  The PCAP format, which is the de-facto
+                        standard for packet capturing software, has the advantage of
+                        being compatible with numerous third-party tools and utilities,
+                        such as Wireshark (Ethereal) for example.  The drawback of PCAP
+                        is sligtly larger overhead (extra 12 bytes for every saved RTP
+                        packet for IPv4).  Also, recording IPv6 sessions in PCAP format
+                        is not supported at the moment.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-a</option></term>
+                <listitem>
+                    <para>
+                        Record all sessions going through the RTPproxy unconditionally.
+                        By default the RTPproxy requires call control software (i.e.
+                        SER, OpenSER or B2BUA) to enable recording explicitly on
+                        per-session basis by sending appropriate record command.
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><option>-d</option> <replaceable>log_level</replaceable></term>
+                 <listitem>
+                    <para>
+                        This parameter configures the verbosity level of the log output.
+                        Possible <replaceable>log_level</replaceable> values in the order
+                        from the most verboe to the least verbose are: DBUG, INFO, WARN,
+                        ERR and CRIT.
+                    </para>
+                    <para>
+                        Example: -d WARN
+                    </para>
+                    <para>
+                        The default level is DBUG.
+                    </para>
+                </listitem>
+            </varlistentry>
+	</variablelist>
+    </refsect1>
+
+    <refsect1>
+	<title>HowItWorks</title>
+	<para>
+	    When SER receives an INVITE request, it extracts Call-ID from it
+	    and communicates it to rtpproxy via Unix domain socket or
+	    UDP. Rtproxy looks for an existing session with such Call-ID. If
+	    the session exists it returns UDP port for that session, if not,
+	    then it creates a new session, binds to a first empty UDP port from
+	    the range specified at the compile time and returns number of that
+	    port to a SER. After receiving reply from the proxy, SER replaces
+	    media ip:port in the SDP to point to the proxy and forwards request
+	    as usually.
+	</para>
+	<para>
+	    When SER receives a non-negative SIP reply with SDP it again extracts
+	    Call-ID from it and communicates it to the proxy. In this case the proxy
+	    does not allocate a new session if it doesn't exist, but simply performs a
+	    lookup among existing sessions and returns either a port number if the
+	    session is found, or error code indicating that there is no session with
+	    such id. After receiving positive reply from the proxy, SER replaces media
+	    ip:port in the SIP reply to point to the proxy and forwards reply as
+	    usually.
+	</para>
+	<para>
+	    After the session has been created, the proxy listens on the port
+	    it has allocated for that session and waits for receiving at least
+	    one UDP packet from each of two parties participating in the
+	    call. Once such packet is received, the proxy fills one of two
+	    ip:port structures associated with each call with source ip:port of
+	    that packet. When both structures are filled in, the proxy starts
+	    relaying UDP packets between parties.
+	</para>
+	<para>
+	    The proxy tracks idle time for each of existing sessions (i.e. the time
+	    within which there were no packets relayed), and automatically cleans
+	    up a sessions whose idle times exceed the value specified at compile
+	    time (60 seconds by default).
+	</para>
+    </refsect1>
+    <refsect1>
+	<title>FILES</title>
+	<para>
+	    <filename>/usr/sbin/rtpproxy</filename>
+	</para>
+    </refsect1>
+    <refsect1>
+	<title>LICENSE</title>
+	<para>
+	    This program is licensed under the BSD license. See
+	    <filename>COPYING</filename> file in the rtpproxy sources for details.
+	</para>
+    </refsect1>
+
+    <refsect1>
+	<title>AVAILABILITY</title>
+	<para>
+	    The latest version of this program can be found at 
+	    <ulink url="http://www.rtpproxy.org/">http://www.rtpproxy.org/</ulink>.
+	</para>
+    </refsect1>
+
+    <refsect1>
+	<title>SEEALSO</title>
+	<para>ser(8).</para>
+    </refsect1>
+</refentry>
