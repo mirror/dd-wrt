@@ -104,7 +104,7 @@ int main( int argc, char **argv )
     int day, month, year;
     FILE *in;
 
-    if( nvram_match ("ttraff_iface", "" ) )
+    if( nvram_match( "ttraff_iface", "" ) || !nvram_get( "ttraff_iface" ) )
     	strncpy( wanface, get_wan_face(  ), sizeof( wanface ) );
     else
     	strncpy( wanface, nvram_safe_get ("ttraff_iface"), sizeof( wanface ) );
