@@ -1064,10 +1064,10 @@ gozila_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     }
 
     cprintf( "refresh to %s\n", path );
-    if( !strncmp( path, "WL_FilterTable", strlen( "WL_FilterTable" ) ) )
+    if( !strncmp( path, "WL_FilterTable", 14 ) )
 	do_filtertable( NULL, path, wp, NULL );	// refresh
     // #ifdef HAVE_MADWIFI
-    else if( !strncmp( path, "Wireless_WDS", strlen( "Wireless_WDS" ) ) )
+    else if( !strncmp( path, "Wireless_WDS", 12 ) )
 	do_wds( NULL, path, wp, NULL );	// refresh
     // #endif
     else
