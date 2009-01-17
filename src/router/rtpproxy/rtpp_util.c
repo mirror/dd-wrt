@@ -229,7 +229,7 @@ dtime2ts(double dtime, uint32_t *ts_sec, uint32_t *ts_usec)
 {
 
     *ts_sec = trunc(dtime);
-    *ts_usec = round(1000000.0 * (dtime - ((double)*ts_sec)));
+    *ts_usec = lround(1000000.0 * (dtime - ((double)*ts_sec)));
 }
 
 int
