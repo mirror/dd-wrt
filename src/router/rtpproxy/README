@@ -1,12 +1,18 @@
 I. About
 
-This is symmetric RTP proxy designed to be used in conjunction with the
-SIP Express Router (SER) or any other SIP proxy capable of rewriting SDP
-bodies in SIP messages that it processes.
+The RTPproxy is a high-performance software proxy for RTP streams that can
+work together with SER or OpenSER. Originally created for handling NAT
+scenarious it can also act as a generic media relay as well as gateway RTP
+sessions between IPv4 and IPv6 networks. RTPproxy was developed by Maxim
+Sobolev and now is being actively maintained by the Sippy Software, Inc.
 
-The code has been extensively tested on FreeBSD and Linux and verified
-that it compiles on Solaris. It should be relatively easy to port it
-to any system which has a POSIX layer.
+The RTPproxy supports some advanced features, such as remote control mode,
+allowing building scalable distributed SIP VoIP networks. The nathelper module
+included into the SER or OpenSER SIP Proxy software allows using multiple
+RTPproxy instances running on remote machines for fault-tolerance and
+load-balancing purposes.
+
+The software also supports video relaying and RTP session recording.
 
 
 II. How it works
@@ -60,4 +66,14 @@ IV. TODO (in no particular order)
 - make more parameters (e.g. ports range, max idle time etc.) to be
   adjustible via command line.
 
-$Id: README,v 1.2 2005/06/22 18:16:45 sobomax Exp $
+
+V. Support
+
+Community-based support could be obtained via SER mailing lists
+<serusers@iptel.org>.
+
+Commercial support is available from the Sippy Software, Inc. - visit
+http://www.sippysoft.com for details.
+
+
+$Id: README,v 1.3 2007/07/28 01:55:12 sobomax Exp $

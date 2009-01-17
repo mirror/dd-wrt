@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2004 Maxim Sobolev
+ * Copyright (c) 2004-2006 Maxim Sobolev <sobomax@FreeBSD.org>
+ * Copyright (c) 2006-2007 Sippy Software, Inc., http://www.sippysoft.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,7 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtpp_session.h,v 1.4 2006/04/12 22:41:49 sobomax Exp $
+ * $Id: rtpp_session.h,v 1.17 2008/12/24 10:46:03 sobomax Exp $
  *
  */
 
@@ -34,10 +35,18 @@
 #include <sys/socket.h>
 
 #include "rtp_server.h"
+#include "rtp_resizer.h"
 #include "rtpp_log.h"
 
+struct rtpp_timeout_data {
+    char *notify_tag;
+    struct rtpp_timeout_handler *handler;
+};
+
 struct rtpp_session {
-    int ttl;
+    /* ttl for caller [0] and callee [1] */
+    int ttl[2];
+    rtpp_ttl_mode ttl_mode;
     unsigned long pcount[4];
     char *call_id;
     char *tag;
@@ -46,6 +55,8 @@ struct rtpp_session {
     struct rtpp_session* rtp;
     /* Remote source addresses, one for caller and one for callee */
     struct sockaddr *addr[2];
+    /* Save previous address when doing update */
+    struct sockaddr *prev_addr[2];
     /* Flag which tells if we are allowed to update address with RTP src IP */
     int canupdate[2];
     /* Local listen addresses/ports */
@@ -66,6 +77,27 @@ struct rtpp_session {
     int sidx[2];
     /* Reference to active RTP generators table */
     int sridx;
+    /* Flag that indicates whether or not address supplied by client can't be trusted */
+    int untrusted_addr[2];
+    struct rtp_resizer resizers[2];
+    struct rtpp_session *prev;
+    struct rtpp_session *next;
+    struct rtpp_timeout_data timeout_data;
+    /* Timestamp of the last session update */
+    double last_update[2];
+    /* Supported codecs */
+    char *codecs[2];
 };
+
+void init_hash_table(struct cfg *);
+struct rtpp_session *session_findfirst(struct cfg *, char *);
+struct rtpp_session *session_findnext(struct rtpp_session *);
+void hash_table_append(struct cfg *, struct rtpp_session *);
+void append_session(struct cfg *, struct rtpp_session *, int);
+void remove_session(struct cfg *, struct rtpp_session *);
+int compare_session_tags(char *, char *, unsigned *);
+int find_stream(struct cfg *, char *, char *, char *, struct rtpp_session **);
+void do_timeout_notification(struct rtpp_session *, int);
+int get_ttl(struct rtpp_session *);
 
 #endif
