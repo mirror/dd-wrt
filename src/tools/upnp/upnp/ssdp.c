@@ -431,7 +431,6 @@ void send_advertisements(ssdp_t sstype)
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(SSDP_IP);
     addr.sin_port = htons(SSDP_PORT);
-
     for (pif = global_lans; pif; pif = pif->next) {
 	forall_devices(pdev) {
 	    advertise_device(pdev, sstype, pif, (struct sockaddr *)&addr,  sizeof(addr));
