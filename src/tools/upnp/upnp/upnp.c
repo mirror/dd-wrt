@@ -336,7 +336,7 @@ timer_t enqueue_event(struct itimerspec *value, event_callback_t func, void *arg
 {
     timer_t          td;
 
-    dd_timer_create(CLOCK_REALTIME, NULL, &td);
+    dd_timer_create(1, NULL, &td);
 
     dd_timer_connect(td, (VOIDFUNCPTR) func, (int) arg);
 
