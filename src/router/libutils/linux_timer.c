@@ -89,6 +89,7 @@ typedef long uclock_t;
 #define TFLAG_CANCELLED	(1<<0)
 #define TFLAG_DELETED	(1<<1)
 #define TFLAG_QUEUED	(1<<2)
+#define TFLAG_NOQ	(1<<3)
 
 struct event
 {
@@ -179,11 +180,11 @@ int dd_timer_create( clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 {
     struct event *event;
 
-    if( clock_id != CLOCK_REALTIME )
+/*    if( clock_id != CLOCK_REALTIME )
     {
 	TIMERDBG( "timer_create can only support clock id CLOCK_REALTIME" );
 	exit( 1 );
-    }
+    }*/
 
     if( evp != NULL )
     {
@@ -206,8 +207,10 @@ int dd_timer_create( clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 
     event_freelist = event->next;
     event->next = NULL;
-    event->flags &= ~TFLAG_QUEUED;
-
+    if (clock_id == CLOCK_REALTIME)
+	event->flags &= ~TFLAG_QUEUED;
+    else
+	event->flags |= TFLAG_NOQ;
     check_event_queue(  );
 
     *pTimer = ( timer_t ) event;
@@ -402,7 +405,8 @@ int dd_timer_settime( timer_t timerid,	/* timer ID */
     }
 
     event->flags &= ~TFLAG_CANCELLED;
-    event->flags |= TFLAG_QUEUED;
+    if (!(event->flags & TFLAG_NOQ))
+	event->flags |= TFLAG_QUEUED;
 
     dd_unblock_timer(  );
 
@@ -544,7 +548,7 @@ static void alarm_handler( int i )
 	 * more. And this way, loop in event queue is created. 
 	 */
 	if( !( event->flags & TFLAG_CANCELLED )
-	    && !( event->flags & TFLAG_QUEUED ) )
+	    && (!( event->flags & TFLAG_QUEUED ) || (event->flags & TFLAG_NOQ)) )
 	{
 
 	    // if the event is a recurring event, reset the timer and
@@ -595,7 +599,8 @@ static void alarm_handler( int i )
 		// link our new event into the pending event queue.
 		event->next = *ppevent;
 		*ppevent = event;
-		event->flags |= TFLAG_QUEUED;
+		if (!(event->flags & TFLAG_NOQ))
+		    event->flags |= TFLAG_QUEUED;
 	    }
 	    else
 	    {
