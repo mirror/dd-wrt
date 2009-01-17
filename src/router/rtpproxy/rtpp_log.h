@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2004 Maxim Sobolev
+ * Copyright (c) 2004-2006 Maxim Sobolev <sobomax@FreeBSD.org>
+ * Copyright (c) 2006-2007 Sippy Software, Inc., http://www.sippysoft.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,41 +24,45 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtpp_log.h,v 1.3 2006/04/12 03:10:12 sobomax Exp $
+ * $Id: rtpp_log.h,v 1.6 2008/09/17 01:12:41 sobomax Exp $
  *
  */
 
 #ifndef _RTPP_LOG_H_
 #define _RTPP_LOG_H_
 
-#include <errno.h>
-#include <stdio.h>
+#include <syslog.h>
+#include <stdarg.h>
+
+#define	rtpp_log_t	struct cfg *
 
 #include "rtpp_defines.h"
 
-#define	RTPP_LOG_DBUG	0
-#define	RTPP_LOG_INFO	1
-#define	RTPP_LOG_WARN	2
-#define	RTPP_LOG_ERR	3
-#define	RTPP_LOG_CRIT	4
+#define	RTPP_LOG_DBUG	LOG_DEBUG
+#define	RTPP_LOG_INFO	LOG_INFO
+#define	RTPP_LOG_WARN	LOG_WARNING
+#define	RTPP_LOG_ERR	LOG_ERR
+#define	RTPP_LOG_CRIT	LOG_CRIT
 
-#define	rtpp_log_t	int
-
-#define	rtpp_log_open(app, call_id, flag) (0)
+#define	rtpp_log_open(cf, app, call_id, flag) _rtpp_log_open(cf, app);
 #define	rtpp_log_write(level, handle, format, args...)			\
-	do {								\
-		if (level >= LOG_LEVEL) {				\
-			fprintf(stderr, format, ## args);		\
-			fprintf(stderr, "\n");				\
-		}							\
-	} while (0);
+	if (level <= handle->log_level) {				\
+		_rtpp_log_write(handle, level, __FUNCTION__, format,	\
+		    ## args);						\
+	};
 #define	rtpp_log_ewrite(level, handle, format, args...)			\
-	do {								\
-		if (level >= LOG_LEVEL) {				\
-			fprintf(stderr, format, ## args);		\
-			fprintf(stderr, ": %s\n", strerror(errno));	\
-		}							\
-	} while (0);
-#define	rtpp_log_close(handle) while (0) {}
+	if (level <= handle->log_level) {				\
+		_rtpp_log_ewrite(handle, level, __FUNCTION__, format,	\
+		    ## args);						\
+	};
+#define	rtpp_log_close(handle) _rtpp_log_close();
+
+struct cfg;
+
+void _rtpp_log_write(struct cfg *, int, const char *, const char *, ...);
+void _rtpp_log_ewrite(struct cfg *, int, const char *, const char *, ...);
+struct cfg *_rtpp_log_open(struct cfg *, const char *);
+void _rtpp_log_close(void);
+int rtpp_log_str2lvl(const char *);
 
 #endif

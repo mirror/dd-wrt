@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2004-2006 Maxim Sobolev <sobomax@FreeBSD.org>
- * Copyright (c) 2006-2007 Sippy Software, Inc., http://www.sippysoft.com
+ * Copyright (c) 2007 Sippy Software, Inc., http://www.sippysoft.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,43 +23,38 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtp_server.h,v 1.4 2008/03/31 23:42:11 sobomax Exp $
+ * $Id: rtp_resizer.h,v 1.1 2007/11/16 08:43:26 sobomax Exp $
  *
  */
 
-#ifndef _RTP_SERVER_H_
-#define _RTP_SERVER_H_
+#ifndef __RTP_RESIZER_H
+#define __RTP_RESIZER_H
 
-#include <sys/types.h>
+struct rtp_resizer {
+    int         nsamples_total;
 
-#include "rtp.h"
-#include "rtpp_defines.h"
-#include "rtpp_session.h"
+    int         seq_initialized;
+    uint16_t    seq;
 
-struct rtp_server {
-    double btime;
-    unsigned char buf[1024];
-    rtp_hdr_t *rtp;
-    unsigned char *pload;
-    int fd;
-    int loop;
+    int         last_sent_ts_inited;
+    uint32_t    last_sent_ts;
+
+    int         tsdelta_inited;
+    uint32_t    tsdelta;
+
+    int         output_nsamples;
+
+    struct {
+	struct rtp_packet *first;
+	struct rtp_packet *last;
+    } queue;
 };
 
-#define	RTPS_LATER	(0)
-#define	RTPS_EOF	(-1)
-#define	RTPS_ERROR	(-2)
+void rtp_resizer_enqueue(struct rtp_resizer *, struct rtp_packet **);
+struct rtp_packet *rtp_resizer_get(struct rtp_resizer *, double);
 
-/*
- * Minimum length of each RTP packet in ms.
- * Actual length may differ due to codec's framing constrains.
- */
-#define	RTPS_TICKS_MIN	10
+void rtp_resizer_free(struct rtp_resizer *);
 
-#define	RTPS_SRATE	8000
+#define is_rtp_resizer_enabled(resizer) ((resizer).output_nsamples > 0)
 
-struct rtp_server *rtp_server_new(const char *, rtp_type_t, int);
-void rtp_server_free(struct rtp_server *);
-int rtp_server_get(struct rtp_server *, double);
-void append_server(struct cfg *, struct rtpp_session *);
-
-#endif
+#endif /* __RTP_RESIZER_H */

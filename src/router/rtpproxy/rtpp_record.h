@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2004 Maxim Sobolev
+ * Copyright (c) 2004-2006 Maxim Sobolev <sobomax@FreeBSD.org>
+ * Copyright (c) 2006-2007 Sippy Software, Inc., http://www.sippysoft.com
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,26 +24,66 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtpp_record.h,v 1.2 2006/01/29 09:11:43 sobomax Exp $
+ * $Id: rtpp_record.h,v 1.9 2008/07/18 00:17:25 sobomax Exp $
  *
  */
 
 #ifndef _RTPP_RECORD_H_
 #define _RTPP_RECORD_H_
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/udp.h>
+
+#include "rtpp_defines.h"
+#include "rtp.h"
 #include "rtpp_util.h"
+
+#define	DLT_NULL	0
+#define	PCAP_MAGIC	0xa1b2c3d4
+#define	PCAP_VER_MAJR	2
+#define	PCAP_VER_MINR	4
 
 struct rtpp_session;
 
 /* Function prototypes */
-void *ropen(struct rtpp_session *, const char *, const char *, int);
-void rwrite(struct rtpp_session *, void *, struct sockaddr *, void *, int);
-void rclose(struct rtpp_session *, void *);
+void *ropen(struct cfg *cf, struct rtpp_session *, char *, int);
+void rwrite(struct rtpp_session *, void *, struct rtp_packet *);
+void rclose(struct rtpp_session *, void *, int);
+
+/* Global PCAP Header */
+typedef struct pcap_hdr_s {
+    uint32_t magic_number;   /* magic number */
+    uint16_t version_major;  /* major version number */
+    uint16_t version_minor;  /* minor version number */
+    int32_t  thiszone;       /* GMT to local correction */
+    uint32_t sigfigs;        /* accuracy of timestamps */
+    uint32_t snaplen;        /* max length of captured packets, in octets */
+    uint32_t network;        /* data link type */
+} pcap_hdr_t;
+
+/* PCAP Packet Header */
+typedef struct pcaprec_hdr_s {
+    uint32_t ts_sec;         /* timestamp seconds */
+    uint32_t ts_usec;        /* timestamp microseconds */
+    uint32_t incl_len;       /* number of octets of packet saved in file */
+    uint32_t orig_len;       /* actual length of packet */
+} pcaprec_hdr_t;
 
 /*
  * Recorded data header
  */
-struct pkt_hdr {
+struct pkt_hdr_pcap {
+    pcaprec_hdr_t pcaprec_hdr;
+    uint32_t family;
+    struct ip iphdr;
+    struct udphdr udphdr;
+} __packed;
+
+struct pkt_hdr_adhoc {
     union sockaddr_in_s addr;   /* Source address */
     double time;		/* Time of arrival */
     unsigned short plen;	/* Length of following RTP/RTCP packet */

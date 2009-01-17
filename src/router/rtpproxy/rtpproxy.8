@@ -1,0 +1,422 @@
+.\"     Title: rtpproxy
+.\"    Author: Maxim Sobolev
+.\" Generator: DocBook XSL Stylesheets v1.74.0 <http://docbook.sf.net/>
+.\"      Date: Jun 16, 2008
+.\"    Manual: [FIXME: manual]
+.\"    Source: [FIXME: source]
+.\"  Language: English
+.\"
+.TH "RTPPROXY" "8" "Jun 16, 2008" "[FIXME: source]" "[FIXME: manual]"
+.\" -----------------------------------------------------------------
+.\" * (re)Define some macros
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" toupper - uppercase a string (locale-aware)
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de toupper
+.tr aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ
+\\$*
+.tr aabbccddeeffgghhiijjkkllmmnnooppqqrrssttuuvvwwxxyyzz
+..
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" SH-xref - format a cross-reference to an SH section
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de SH-xref
+.ie n \{\
+.\}
+.toupper \\$*
+.el \{\
+\\$*
+.\}
+..
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" SH - level-one heading that works better for non-TTY output
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de1 SH
+.\" put an extra blank line of space above the head in non-TTY output
+.if t \{\
+.sp 1
+.\}
+.sp \\n[PD]u
+.nr an-level 1
+.set-an-margin
+.nr an-prevailing-indent \\n[IN]
+.fi
+.in \\n[an-margin]u
+.ti 0
+.HTML-TAG ".NH \\n[an-level]"
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+\." make the size of the head bigger
+.ps +3
+.ft B
+.ne (2v + 1u)
+.ie n \{\
+.\" if n (TTY output), use uppercase
+.toupper \\$*
+.\}
+.el \{\
+.nr an-break-flag 0
+.\" if not n (not TTY), use normal case (not uppercase)
+\\$1
+.in \\n[an-margin]u
+.ti 0
+.\" if not n (not TTY), put a border/line under subheading
+.sp -.6
+\l'\n(.lu'
+.\}
+..
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" SS - level-two heading that works better for non-TTY output
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de1 SS
+.sp \\n[PD]u
+.nr an-level 1
+.set-an-margin
+.nr an-prevailing-indent \\n[IN]
+.fi
+.in \\n[IN]u
+.ti \\n[SN]u
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.ps \\n[PS-SS]u
+\." make the size of the head bigger
+.ps +2
+.ft B
+.ne (2v + 1u)
+.if \\n[.$] \&\\$*
+..
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" BB/BE - put background/screen (filled box) around block of text
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de BB
+.if t \{\
+.sp -.5
+.br
+.in +2n
+.ll -2n
+.gcolor red
+.di BX
+.\}
+..
+.de EB
+.if t \{\
+.if "\\$2"adjust-for-leading-newline" \{\
+.sp -1
+.\}
+.br
+.di
+.in
+.ll
+.gcolor
+.nr BW \\n(.lu-\\n(.i
+.nr BH \\n(dn+.5v
+.ne \\n(BHu+.5v
+.ie "\\$2"adjust-for-leading-newline" \{\
+\M[\\$1]\h'1n'\v'+.5v'\D'P \\n(BWu 0 0 \\n(BHu -\\n(BWu 0 0 -\\n(BHu'\M[]
+.\}
+.el \{\
+\M[\\$1]\h'1n'\v'-.5v'\D'P \\n(BWu 0 0 \\n(BHu -\\n(BWu 0 0 -\\n(BHu'\M[]
+.\}
+.in 0
+.sp -.5v
+.nf
+.BX
+.in
+.sp .5v
+.fi
+.\}
+..
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" BM/EM - put colored marker in margin next to block of text
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.de BM
+.if t \{\
+.br
+.ll -2n
+.gcolor red
+.di BX
+.\}
+..
+.de EM
+.if t \{\
+.br
+.di
+.ll
+.gcolor
+.nr BH \\n(dn
+.ne \\n(BHu
+\M[\\$1]\D'P -.75n 0 0 \\n(BHu -(\\n[.i]u - \\n(INu - .75n) 0 0 -\\n(BHu'\M[]
+.in 0
+.nf
+.BX
+.in
+.fi
+.\}
+..
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "Name"
+rtpproxy \- RTP (Real\-time Transport Protocol) Proxy Server
+.SH "Synopsis"
+.fam C
+.HP \w'\fBrtpproxy\fR\ 'u
+\fBrtpproxy\fR [\fB\-?\fR] [\fB\-2\fR] [\fB\-f\fR] [\fB\-v\fR] [\fB\-R\fR] [\fB\-l\fR\ \fIaddr1\fR\fI[/addr2]\fR] [\fB\-6\fR\ \fIaddr1\fR\fI[/addr2]\fR] [\fB\-s\fR\ \fIctrl_socket\fR] [\fB\-t\fR\ \fItos\fR] [\fB\-p\fR\ \fIpidfile\fR] [\fB\-T\fR\ \fImax_ttl\fR] [\fB\-r\fR\ \fIrdir\fR\ [\fB\-S\fR\ \fIsdir\fR]] [\fB\-m\fR\ \fImin_port\fR] [\fB\-M\fR\ \fImax_port\fR] [\fB\-u\fR\ \fIuname\fR\fI[:gname]\fR] [\fB\-F\fR] [\fB\-i\fR] [\fB\-n\fR\ \fItimeout_socket\fR] [\fB\-P\fR] [\fB\-a\fR] [\fB\-d\fR\ \fIlog_level\fR]
+.fam
+.SH "DESCRIPTION"
+.PP
+
+\fBrtpproxy\fR
+is a symmetric RTP proxy designed to be used in conjunction with the SIP Express Router (SER) or any other SIP proxy or SIP B2BUA capable of rewriting SDP bodies in SIP messages that it processes\&.
+.PP
+The main purpose of rtpproxy is to make the communication between SIP user agents behind NAT(s) (Network Address Translator) possible\&. Several cases exists when direct end\-to\-end communication is not possible and RTP streams have to be relayed through another host\&. Rtpproxy can be used to setup such a relaying host\&.
+.PP
+When two listen interfaces have been specified using the command line parameters described below then rtpproxy will enter so called bridging mode\&. In briding mode rtpproxy forwards RTP packets received on one interface to the other interface and vice versa\&. This mode can be used to forward RTP packets between networks without direct network level connectivy (provided that the host running rtpproxy has one interface in both of them)\&. One particular application of bridging mode is IPv4/IPv6 traversal of RTP packets\&.
+.PP
+When instructured by SER rtpproxy can also record the entire RTP session in a file on a local harddisk or play a pre\-recorded file to the user agent (so called Music\-on\-Hold)\&.
+.SH "OPTIONS"
+.PP
+\fB\-?\fR
+.RS 4
+Show summary of options\&.
+.RE
+.PP
+\fB\-2\fR
+.RS 4
+Send every RTP packet twice in sessions that use low\-bitrate codecs\&. Only packets that are smaller than 128 bytes will be sent twice\&. This option can improve audio quality on lossy links\&.
+.RE
+.PP
+\fB\-f\fR
+.RS 4
+Rtpproxy will stay in foreground mode if this option is set\&.
+.RE
+.PP
+\fB\-v\fR
+.RS 4
+Show version of program\&.
+.RE
+.PP
+\fB\-l\fR \fIaddr1\fR\fI[/addr2]\fR
+.RS 4
+IPv4 listen IP address(es)\&. You can specify either one or two addresses\&. If two addresses have been specified then rtpproxy will work in bridging mode\&.
+.RE
+.PP
+\fB\-6\fR \fIaddr1\fR\fI[/addr2]\fR
+.RS 4
+IPv6 listen IP address(es)\&. You can specify either one or two addresses\&. If two addresses have been specified then rtpproxy will work in bridging mode\&.
+.RE
+.PP
+\fB\-s\fR \fIctrl_socket\fR
+.RS 4
+This parameter configures rtpproxy control socket\&. The control socket is used by nathelper module of SER to create/modify/delete RTP sessions to be relayed\&. Format of
+\fIctrl_socket\fR
+is <type>:<socket>\&. Following types are supported:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+
+\fIudp:\fR
+Create UDP control socket\&. In this mode RTPProxy will listen on UDP for control messages from SER/nathelper\&.
+.sp
+Example: \-s udp:127\&.0\&.0\&.1:9000
+.sp
+IP address can be \'*\' in which case rtpproxy will listen on all local interfaces\&. If omitted port 22222 is used\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.BM yellow
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+RTPProxy control protocol has no built\-in security mechanisms\&. Make sure that you protect the listening IP and port properly when using RTPProxy with UDP control socket\&.
+.sp .5v
+.EM yellow
+.RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+
+\fIudp6:\fR
+Create IPv6 UDP control socket\&. In this mode RTPProxy will listen on UDP/IPv6 for control messages from SER/nathelper\&.
+.sp
+Example: \-s udp6:::1:9000
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+
+\fIunix:\fR
+Create UNIX domain socket for control interface\&. In this mode SER/nathelper and RTPProxy must be running on the same host\&. This is the default setting for both SER/nathelper and rtpproxy\&.
+.sp
+Example: \-s unix:/var/run/rtpproxy\&.sock
+.sp
+Default value is
+\FC/var/run/rtpproxy\&.sock\F[]\&.
+.RE
+.RS 4
+.RE
+.PP
+\fB\-t\fR \fItos\fR
+.RS 4
+Set this ToS (Type of Service) in outgoing packets\&. Default value is 0xB8\&.
+.RE
+.PP
+\fB\-r\fR \fIrec_dir\fR
+.RS 4
+Directory where recorded RTP sessions will be stored\&.
+.RE
+.PP
+\fB\-S\fR \fIspool_dir\fR
+.RS 4
+Spool directory for RTP sessions being recorded\&. The file will be moved to directory configured in
+\fB\-r\fR
+option after the session finishes\&.
+.RE
+.PP
+\fB\-R\fR
+.RS 4
+Do not record RTCP when recording an RTP session\&. This option is disabled (rtpproxy will record RTCP) by default\&.
+.RE
+.PP
+\fB\-p\fR \fIpid_file\fR
+.RS 4
+This parameter configures the name of the file where PID of running rtpproxy will be stored\&. Default is
+\FC/var/run/rtpproxy\&.pid\F[]\&.
+.RE
+.PP
+\fB\-T\fR \fImax_ttl\fR
+.RS 4
+Limit the maximum TTL (Time To Live) of outgoing IP packets to the value of
+\fImax_ttl\fR\&.
+.RE
+.PP
+\fB\-m\fR \fImin_port\fR
+.RS 4
+Set lower limit on UDP ports range that the RTPproxy uses for RTP/RTCP sessions to
+\fImin_port\fR\&. Default is 35000\&.
+.RE
+.PP
+\fB\-M\fR \fImax_port\fR
+.RS 4
+Set upper limit on UDP ports range that the RTPproxy uses for RTP/RTCP sessions to
+\fImax_port\fR\&. Default is 65000\&.
+.RE
+.PP
+\fB\-u\fR \fIuname\fR\fI[:gname]\fR
+.RS 4
+Switch RTPproxy to UID identified by the
+\fIuname\fR
+and optional GID identified by
+\fIgname\fR
+when proxy is up and running\&.
+.RE
+.PP
+\fB\-F\fR
+.RS 4
+By default the RTPproxy will warn user if running as superuser (UID 0) in local control mode and refuse to run in remote control mode at all\&. This switch removes the check\&.
+.RE
+.PP
+\fB\-i\fR
+.RS 4
+Enable independent timeout mode\&. By default, a timeout (which results in automatic destruction of the session) can only occur if no RTP packets are received on any of the session\'s ports\&. This option if set varies that behaviour, such that a timeout will occur if packets are still being received on one port but not the other\&. The option should be used with caution since in some cases it\'s perfectly fine to have packets coming from only one side of conversation (i\&.e\&. when the second party has muted its audio)\&.
+.RE
+.PP
+\fB\-n\fR \fItimeout_socket\fR
+.RS 4
+This parameter configures the optional timeout notification socket\&. The socket should be created by another application, preferably before starting rtpproxy\&. For those sessions where the timeout mechanism is enabled, notifications are sent on this socket if the session times out\&.
+.sp
+Example: \-n unix:/var/run/rtpproxy_timeout\&.sock
+.sp
+There is no default value, notifications are not sent and not permitted unless a value is specified explicitly\&.
+.RE
+.PP
+\fB\-P\fR
+.RS 4
+Record sessions using PCAP file format instead of non\-standard ad\-hoc format\&. The PCAP format, which is the de\-facto standard for packet capturing software, has the advantage of being compatible with numerous third\-party tools and utilities, such as Wireshark (Ethereal) for example\&. The drawback of PCAP is sligtly larger overhead (extra 12 bytes for every saved RTP packet for IPv4)\&. Also, recording IPv6 sessions in PCAP format is not supported at the moment\&.
+.RE
+.PP
+\fB\-a\fR
+.RS 4
+Record all sessions going through the RTPproxy unconditionally\&. By default the RTPproxy requires call control software (i\&.e\&. SER, OpenSER or B2BUA) to enable recording explicitly on per\-session basis by sending appropriate record command\&.
+.RE
+.PP
+\fB\-d\fR \fIlog_level\fR
+.RS 4
+This parameter configures the verbosity level of the log output\&. Possible
+\fIlog_level\fR
+values in the order from the most verboe to the least verbose are: DBUG, INFO, WARN, ERR and CRIT\&.
+.sp
+Example: \-d WARN
+.sp
+The default level is DBUG\&.
+.RE
+.SH "HowItWorks"
+.PP
+When SER receives an INVITE request, it extracts Call\-ID from it and communicates it to rtpproxy via Unix domain socket or UDP\&. Rtproxy looks for an existing session with such Call\-ID\&. If the session exists it returns UDP port for that session, if not, then it creates a new session, binds to a first empty UDP port from the range specified at the compile time and returns number of that port to a SER\&. After receiving reply from the proxy, SER replaces media ip:port in the SDP to point to the proxy and forwards request as usually\&.
+.PP
+When SER receives a non\-negative SIP reply with SDP it again extracts Call\-ID from it and communicates it to the proxy\&. In this case the proxy does not allocate a new session if it doesn\'t exist, but simply performs a lookup among existing sessions and returns either a port number if the session is found, or error code indicating that there is no session with such id\&. After receiving positive reply from the proxy, SER replaces media ip:port in the SIP reply to point to the proxy and forwards reply as usually\&.
+.PP
+After the session has been created, the proxy listens on the port it has allocated for that session and waits for receiving at least one UDP packet from each of two parties participating in the call\&. Once such packet is received, the proxy fills one of two ip:port structures associated with each call with source ip:port of that packet\&. When both structures are filled in, the proxy starts relaying UDP packets between parties\&.
+.PP
+The proxy tracks idle time for each of existing sessions (i\&.e\&. the time within which there were no packets relayed), and automatically cleans up a sessions whose idle times exceed the value specified at compile time (60 seconds by default)\&.
+.SH "FILES"
+.PP
+
+\FC/usr/sbin/rtpproxy\F[]
+.SH "LICENSE"
+.PP
+This program is licensed under the BSD license\&. See
+\FCCOPYING\F[]
+file in the rtpproxy sources for details\&.
+.SH "AVAILABILITY"
+.PP
+The latest version of this program can be found at
+\m[blue]\fBhttp://www\&.rtpproxy\&.org/\fR\m[]\&.
+.SH "SEEALSO"
+.PP
+ser(8)\&.
+.SH "Author"
+.PP
+\fBMaxim Sobolev\fR
+.RS 4
+Author.
+.RE
+.SH "Copyright"
+.br
+Copyright \(co 2006 janakj
+.br
