@@ -24,43 +24,22 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $Id: rtp_server.h,v 1.4 2008/03/31 23:42:11 sobomax Exp $
+ * $Id: rtpp_command.h,v 1.2 2008/11/03 06:09:56 sobomax Exp $
  *
  */
 
-#ifndef _RTP_SERVER_H_
-#define _RTP_SERVER_H_
+#ifndef _RTPP_COMMAND_H_
+#define _RTPP_COMMAND_H_
 
-#include <sys/types.h>
-
-#include "rtp.h"
 #include "rtpp_defines.h"
-#include "rtpp_session.h"
 
-struct rtp_server {
-    double btime;
-    unsigned char buf[1024];
-    rtp_hdr_t *rtp;
-    unsigned char *pload;
-    int fd;
-    int loop;
+struct proto_cap {
+    const char  *pc_id;
+    const char  *pc_description;
 };
 
-#define	RTPS_LATER	(0)
-#define	RTPS_EOF	(-1)
-#define	RTPS_ERROR	(-2)
+extern struct proto_cap proto_caps[];
 
-/*
- * Minimum length of each RTP packet in ms.
- * Actual length may differ due to codec's framing constrains.
- */
-#define	RTPS_TICKS_MIN	10
-
-#define	RTPS_SRATE	8000
-
-struct rtp_server *rtp_server_new(const char *, rtp_type_t, int);
-void rtp_server_free(struct rtp_server *);
-int rtp_server_get(struct rtp_server *, double);
-void append_server(struct cfg *, struct rtpp_session *);
+int handle_command(struct cfg *, int, double);
 
 #endif
