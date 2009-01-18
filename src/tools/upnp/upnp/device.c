@@ -183,7 +183,7 @@ void device_xml(PDevice pdev, UFILE *up)
     uprintf(up, "<device>\r\n");
     uprintf(up, "<deviceType>%s</deviceType>\r\n", pdev->template->type);
     if (ISROOT(pdev)) {
-        uprintf(up, "<presentationURL>/index.asp:%s</presentationURL>\r\n", nvram_safe_get("http_lanport"));
+        uprintf(up, "<presentationURL>:%s/index.asp</presentationURL>\r\n", nvram_safe_get("http_lanport"));
     }
     uprintf(up, "<friendlyName>%s</friendlyName>\r\n", friendlyname);
     uprintf(up, "<manufacturer>%s</manufacturer>\r\n", DEV_MFR);
