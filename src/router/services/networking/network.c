@@ -682,6 +682,9 @@ void start_wlconf( void )
     if( nvram_invmatch( "wl_net_mode", "disabled" ) )
 #endif
 	wlconf_up( nvram_safe_get( "wl0_ifname" ) );
+	
+    if( nvram_invmatch( "wl1_net_mode", "disabled" ) )	
+	wlconf_up( nvram_safe_get( "wl1_ifname" ) );	
 }
 
 // #ifdef HAVE_PORTSETUP
