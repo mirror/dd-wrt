@@ -166,7 +166,7 @@ void device_xml(PDevice pdev, UFILE *up)
 		"<minor>0</minor>\r\n"
 		"</specVersion>\r\n"
 		);
-        uprintf(up, "<URLBase>http://%s:%s</URLBase>\r\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("http_lanport"));
+        uprintf(up, "<URLBase>http://%s:%d</URLBase>\r\n", nvram_safe_get("lan_ipaddr"), HTTP_PORT);
     }
 
     if (pdev->friendlyname)
@@ -183,7 +183,7 @@ void device_xml(PDevice pdev, UFILE *up)
     uprintf(up, "<device>\r\n");
     uprintf(up, "<deviceType>%s</deviceType>\r\n", pdev->template->type);
     if (ISROOT(pdev)) {
-        uprintf(up, "<presentationURL>/index.asp</presentationURL>\r\n");
+        uprintf(up, "<presentationURL>/index.asp:%s</presentationURL>\r\n", nvram_safe_get("http_lanport"));
     }
     uprintf(up, "<friendlyName>%s</friendlyName>\r\n", friendlyname);
     uprintf(up, "<manufacturer>%s</manufacturer>\r\n", DEV_MFR);
