@@ -877,7 +877,7 @@ void start_sysinit( void )
 		{"wl0gpio0", "11", 0},
 		{"wl0gpio1", "11", 0},
 		{"wl0gpio2", "11", 0},
-		{"wl0gpio3", "8", 0},
+		{"wl0gpio3", "11", 0},  //was 8, but causes crash in client mode
 		{"sromrev", "2", 0},
 		{0, 0, 0}
 	    };
