@@ -2308,14 +2308,16 @@ static void showencstatus( webs_t wp, char *prefix )
 
 void ej_get_txpower( webs_t wp, int argc, char_t ** argv )
 {
-#ifndef HAVE_MADWIFI
-    websWrite( wp, "%s mW", nvram_safe_get( "wl0_txpwr" ) );
-#else
+    char txpwr[32];
     char m[32];
 
     strncpy( m, nvram_safe_get( "wifi_display" ), 4 );
     m[4] = 0;
+    sprintf( txpwr, "%s_txpwr", m );
+#ifdef HAVE_MADWIFI
     websWrite( wp, "%d dBm", wifi_gettxpower( m ) );
+#else
+    websWrite( wp, "%s mW", nvram_safe_get( txpwr ) );
 #endif
 }
 
@@ -2328,9 +2330,6 @@ void ej_getencryptionstatus( webs_t wp, int argc, char_t ** argv )
 
 void ej_getwirelessstatus( webs_t wp, int argc, char_t ** argv )
 {
-#ifndef HAVE_MADWIFI
-    char *mode = "wl0_mode";
-#else
     char mode[32];
     char m[32];
 
@@ -2338,7 +2337,6 @@ void ej_getwirelessstatus( webs_t wp, int argc, char_t ** argv )
     m[4] = 0;
     sprintf( mode, "%s_mode", m );
 
-#endif
     if( nvram_match( mode, "wet" ) || nvram_match( mode, "sta" )
 	|| nvram_match( mode, "infra" ) )
 	websWrite( wp,
@@ -2358,28 +2356,22 @@ void ej_getwirelessstatus( webs_t wp, int argc, char_t ** argv )
 #endif
 void ej_getwirelessssid( webs_t wp, int argc, char_t ** argv )
 {
-#ifndef HAVE_MADWIFI
-    tf_webWriteESCNV( wp, "wl0_ssid" );
-#else
     char ssid[32];
 
     sprintf( ssid, "%s_ssid", nvram_safe_get( "wifi_display" ) );
     tf_webWriteESCNV( wp, ssid );
-#endif
+
 }
 
 void ej_getwirelessmode( webs_t wp, int argc, char_t ** argv )
 {
-#ifndef HAVE_MADWIFI
-    char *mode = "wl0_mode";
-#else
     char mode[32];
     char m[32];
 
     strncpy( m, nvram_safe_get( "wifi_display" ), 4 );
     m[4] = 0;
     sprintf( mode, "%s_mode", m );
-#endif
+
     websWrite( wp, "<script type=\"text/javascript\">" );
     if( nvram_match( mode, "wet" ) )
 	websWrite( wp, "Capture(wl_basic.clientBridge)" );
@@ -2402,20 +2394,14 @@ void ej_getwirelessmode( webs_t wp, int argc, char_t ** argv )
 
 void ej_getwirelessnetmode( webs_t wp, int argc, char_t ** argv )
 {
-#ifndef HAVE_MADWIFI
-#ifndef HAVE_MSSID
-    char *mode = "wl_net_mode";
-#else
-    char *mode = "wl0_net_mode";
-#endif
-#else
+
     char mode[32];
     char m[32];
 
     strncpy( m, nvram_safe_get( "wifi_display" ), 4 );
     m[4] = 0;
     sprintf( mode, "%s_net_mode", m );
-#endif
+
     websWrite( wp, "<script type=\"text/javascript\">" );
     if( nvram_match( mode, "disabled" ) )
 	websWrite( wp, "Capture(share.disabled)" );
@@ -2532,7 +2518,12 @@ void ej_get_radio_state( webs_t wp, int argc, char_t ** argv )
 
 
 #else
-    wl_ioctl( get_wdev(  ), WLC_GET_RADIO, &radiooff, sizeof( int ) );
+    char name[32];
+    sprintf( name, "%s_ifname", nvram_safe_get( "wifi_display" ) );
+    
+    char *ifname = nvram_safe_get( name );
+    
+    wl_ioctl( ifname, WLC_GET_RADIO, &radiooff, sizeof( int ) );
 
     switch ( ( radiooff & WL_RADIO_SW_DISABLE ) )
     {
