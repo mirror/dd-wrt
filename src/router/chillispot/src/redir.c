@@ -631,6 +631,20 @@ int redir_new(struct redir_t **redir,
     close((*redir)->fd);
     return -1;
   }
+  FILE *fp=fopen("/tmp/.chilli_id","rb");
+  if (fp!=NULL)
+    {
+    int msgid;
+    int count = fread(&msgid,4,1,fp);
+    if (count>0)
+	{
+	if (msgctl(msgid, IPC_RMID, NULL)) {
+	    sys_err(LOG_ERR, __FILE__, __LINE__, errno, "msgctl() failed");
+	 }
+	
+	}
+    fclose(fp);
+    }
   
   if (((*redir)->msgid = msgget(IPC_PRIVATE, 0)) < 0) {
     sys_err(LOG_ERR, __FILE__, __LINE__, errno, "msgget() failed");
@@ -639,6 +653,9 @@ int redir_new(struct redir_t **redir,
     close((*redir)->fd);
     return -1;
   }
+  fp=fopen("/tmp/.chilli_id","wb");
+  fwrite(&(*redir)->msgid,4,1,fp);
+  fclose(fp);
   
   return 0;
 }
