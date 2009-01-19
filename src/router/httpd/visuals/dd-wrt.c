@@ -3137,7 +3137,11 @@ static void show_netmode( webs_t wp, char *prefix )
 	       "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n",
 	       nvram_match( wl_net_mode,
 			    "mixed" ) ? "selected=\\\"selected\\\"" : "" );
+#ifdef HAVE_MADWIFI 			    
     if( has_mimo( prefix ) )
+#else
+    if( has_mimo( prefix ) && !nvram_nmatch( "a", "%s_phytypes", prefix ) )
+#endif     
     {
 	websWrite( wp,
 		   "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n",
@@ -3151,11 +3155,16 @@ static void show_netmode( webs_t wp, char *prefix )
 #ifdef HAVE_TW6600
 	if( !strcmp( prefix, "ath1" ) )
 #endif
+#ifndef HAVE_MADWIFI
+    if( !nvram_nmatch( "a", "%s_phytypes", prefix ) )
+#endif
+    {
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n",
 		       nvram_match( wl_net_mode,
 				    "b-only" ) ? "selected=\\\"selected\\\"" :
 		       "" );
+    }
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_WHRAG108
     if( !strcmp( prefix, "ath1" ) )
@@ -3186,11 +3195,16 @@ static void show_netmode( webs_t wp, char *prefix )
     if( !strcmp( prefix, "ath1" ) )
 #endif
 #ifndef HAVE_LS5
+#ifndef HAVE_MADWIFI
+    if( !nvram_nmatch( "a", "%s_phytypes", prefix ) )
+#endif
+    {
 	websWrite( wp,
 		   "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n",
 		   nvram_match( wl_net_mode,
 				"g-only" ) ? "selected=\\\"selected\\\"" :
 		   "" );
+    }
 #endif
 #endif
     if( has_mimo( prefix ) )
