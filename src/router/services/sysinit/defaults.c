@@ -908,6 +908,7 @@ struct nvram_tuple srouter_defaults[] = {
 					 * (mixed|g-only|b-only|disable) */
     {"wl0_net_mode", "mixed", 0},	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
+    {"wl1_net_mode", "disabled", 0},
 #endif
 
 #ifndef HAVE_MSSID
