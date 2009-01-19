@@ -1770,7 +1770,29 @@ void ej_show_wifiselect( webs_t wp, int argc, char_t ** argv )
 #else
 void ej_show_wifiselect( webs_t wp, int argc, char_t ** argv )
 {
-    // nothing for now
+    char *next;
+    char var[32];
+    int count =  get_wl_instances(  );
+
+    if( count < 2 )
+	return;
+    websWrite( wp, "<div class=\"setting\">\n" );
+    websWrite( wp,
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.intrface)</script></div>\n" );
+    websWrite( wp,
+	       "<select name=\"wifi_display\" onchange=\"refresh(this.form)\">\n" );
+    int i;
+
+    for( i = 0; i < count; i++ )
+    {
+	sprintf( var, "wl%d", i );
+	websWrite( wp, "<option value=\"%s\" %s >%s</option>\n",
+		   var, nvram_match( "wifi_display",
+				     var ) ? "selected=\"selected\"" : "",
+		   var );
+    }
+    websWrite( wp, "</select>\n" );
+    websWrite( wp, "</div>\n" );
 }
 
 #endif
@@ -5434,8 +5456,12 @@ void ej_update_acktiming( webs_t wp, int argc, char_t ** argv )
 void ej_get_currate( webs_t wp, int argc, char_t ** argv )
 {
     int rate = 0;
+    char name[32];
 
-    wl_ioctl( get_wdev(  ), WLC_GET_RATE, &rate, sizeof( rate ) );
+    sprintf( name, "%s_ifname", nvram_safe_get( "wifi_display" ) );
+    char *ifname = nvram_safe_get ( name );
+
+    wl_ioctl( ifname, WLC_GET_RATE, &rate, sizeof( rate ) );
 
     if( rate > 0 )
 	websWrite( wp, "%d%s Mbps", ( rate / 2 ), ( rate & 1 ) ? ".5" : "" );
@@ -5548,9 +5574,13 @@ void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
 void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
 {
     channel_info_t ci;
+    char name[32];
 
+    sprintf( name, "%s_ifname", nvram_safe_get( "wifi_display" ) );
+    char *ifname = nvram_safe_get ( name );
+    
     memset( &ci, 0, sizeof( ci ) );
-    wl_ioctl( get_wdev(  ), WLC_GET_CHANNEL, &ci, sizeof( ci ) );
+    wl_ioctl( ifname, WLC_GET_CHANNEL, &ci, sizeof( ci ) );
     if( ci.scan_channel > 0 )
     {
 	websWrite( wp, "%d (scanning)", ci.scan_channel );
@@ -7289,7 +7319,9 @@ void ej_wl_packet_get( webs_t wp, int argc, char_t ** argv )
 #elif HAVE_RT2880
     char *ifname = "ra0";
 #else
-    char *ifname = nvram_safe_get( "wl0_ifname" );
+	char name[32];
+	sprintf( name, "%s_ifname", nvram_safe_get( "wifi_display" ) );
+	char *ifname = nvram_safe_get( name );
 #endif
     struct dev_info
     {
