@@ -345,17 +345,20 @@ void ej_show_wan_domain( webs_t wp, int argc, char_t ** argv )
 #ifndef HAVE_MADWIFI
 void ej_show_wl_mac( webs_t wp, int argc, char_t ** argv )
 {
-    char *wl_mac;
-
+    char wifmac[32];
+    char mode[32];
+    
+    sprintf( wifmac, "%s_hwaddr", nvram_safe_get( "wifi_display" ) );
+    sprintf( mode, "%s_mode", nvram_safe_get( "wifi_display" ) );    
     /*
      * In client mode the WAN MAC is the Wireless MAC 
      */
-    if( nvram_match( "wl_mode", "sta" ) )
-	wl_mac = nvram_safe_get( "wan_hwaddr" );
+     
+    if( nvram_match( mode, "sta" ) || nvram_match( mode, "apsta" ) )
+        websWrite( wp, "%s", nvram_safe_get("wan_hwaddr") );
     else
-	wl_mac = nvram_safe_get( "wl0_hwaddr" );
+        websWrite( wp, "%s", nvram_safe_get( wifmac ) );
 
-    websWrite( wp, "%s", wl_mac );
     return;
 }
 #else
