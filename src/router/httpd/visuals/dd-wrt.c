@@ -3162,7 +3162,7 @@ static void show_netmode( webs_t wp, char *prefix )
 #ifdef HAVE_MADWIFI 			    
     if( has_mimo( prefix ) )
 #else
-    if( has_mimo( prefix ) && !nvram_nmatch( "a", "%s_phytypes", prefix ) )
+    if( has_mimo( prefix ) && !nvram_nmatch( "a", "%s_bandlist", prefix ) )
 #endif     
     {
 	websWrite( wp,
@@ -3178,7 +3178,7 @@ static void show_netmode( webs_t wp, char *prefix )
 	if( !strcmp( prefix, "ath1" ) )
 #endif
 #ifndef HAVE_MADWIFI
-    if( !nvram_nmatch( "a", "%s_phytypes", prefix ) )
+    if( !nvram_nmatch( "a", "%s_bandlist", prefix ) )
 #endif
     {
 	    websWrite( wp,
@@ -3218,7 +3218,7 @@ static void show_netmode( webs_t wp, char *prefix )
 #endif
 #ifndef HAVE_LS5
 #ifndef HAVE_MADWIFI
-    if( !nvram_nmatch( "a", "%s_phytypes", prefix ) )
+    if( !nvram_nmatch( "a", "%s_bandlist", prefix ) )
 #endif
     {
 	websWrite( wp,
