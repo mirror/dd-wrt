@@ -1389,6 +1389,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl0_txpwr", "100", 0},
 #else
     {"wl0_txpwr", "70", 0},
+    {"wl1_txpwr", "70", 0},
 #endif
 
 #endif
