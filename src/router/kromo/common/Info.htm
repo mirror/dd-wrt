@@ -342,7 +342,7 @@ function refresh(F)
 									<% ifndef("SPUTNIK_APD", "-->"); %>
 									<% ifndef("USB", "<!--"); %>
 									<div class="setting">
-										<div class="label"><% tran("service.usb_legend"); %></div>
+										<div class="label"><% tran("usb.usb_legend"); %></div>
 										<% nvram_match("usb_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("usb_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<% ifndef("USB", "-->"); %>
