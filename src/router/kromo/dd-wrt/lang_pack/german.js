@@ -1019,7 +1019,7 @@ route.static_ip="Ziel-LAN-Netz";
 //help container
 
 hroute.right2="Wenn Ihr Router die Internetverbindung bereitstellt, nutzen Sie bitte den <em>Gateway</em>-Modus. Wenn ein anderer Router in Ihrem Netzwerk existiert, nutzen Sie den <em>Router</em>-Modus.";
-hroute.right4="Dies ist eine eindeutige Routen-Nummer, Sie können bis zu 20 Routen definieren.";
+hroute.right4="Dies ist eine eindeutige Routen-Nummer, Sie können bis zu 50 Routen definieren.";
 hroute.right6="Geben Sie einen Namen an, den Sie der Route zuweisen möchten.";
 hroute.right8="Dies ist die IP-Adresse des Zielnetzes, dem die statische Route zugewiesen wird.";
 hroute.right10="Setzt den angewanden Netzwerk-Bereich.";

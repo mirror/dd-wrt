@@ -1041,7 +1041,7 @@ route.static_ip="IP Della LAN di Destinazione";
 
 //help container
 hroute.right2="Se il router è direttamente connesso a internet, seleziona la modalità <em>Gateway</em>. Se è ptresente un altro router sulla tua rete, seleziona la modalità <em>Router</em>.";
-hroute.right4="Questo è l'unico numero d'instradamento, puoi impostare fino a 20 instradamenti.";
+hroute.right4="Questo è l'unico numero d'instradamento, puoi impostare fino a 50 instradamenti.";
 hroute.right6="Inserisci il nome che vorresti assegnare a questo instradamento.";
 hroute.right8="Questo è l'host remoto al quale vorresti assegnare la route statica.";
 hroute.right10="Determina l'host e la porzione di rete.";

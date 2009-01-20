@@ -884,7 +884,7 @@ route.static_name="Nome da Rota";
 route.static_ip="Endereço IP de Destino da LAN";
 
 hroute.right2="Se o roteador está hospedando sua conexão à Internet, selecione o modo <em>Gateway</em>. Se existir algum outro roteador na sua rede, selecione o modo <em>Router</em>.";
-hroute.right4="Este é o número único da rota, você pode definir até 20 rotas.";
+hroute.right4="Este é o número único da rota, você pode definir até 50 rotas.";
 hroute.right6="Insira o nome desejado que deseja associar à esta regra.";
 hroute.right8="Este é o host remoto ao qual você gostaria de atribuir a rota estática.";
 hroute.right10="Determina o host e a porção de rede a qual pertence a rota.";
