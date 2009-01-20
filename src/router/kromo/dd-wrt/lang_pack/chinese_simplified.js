@@ -95,8 +95,8 @@ share.openn="打开";
 share.dtim="dtim";
 share.rates="速率";
 share.rate="速率";
-share.txrate="传输速率";
-share.rxrate="接收速率";
+share.txrate="传输<br />速率";
+share.rxrate="接收<br />速率";
 share.low="低";
 share.medium="中";
 share.high="高";
@@ -432,8 +432,8 @@ ddnsm.all_connectfail="连接到服务器失败";
 ddnsm.all_disabled="DDNS 功能已禁用";
 ddnsm.all_noip="无WAN连接";
 
-hddns.right2="DDNS 允许您使用域名代替IP地址来访问您的网络。这个服务动态的管理IP地址的变动，更新您的域名信息。您必须在 DynDNS.org，freedns.afraid.org，ZoneEdit.com，No-IP.com 或其它网站注册以得到此服务。";
-hddns.right4="在框框中输入一个整型数字以设置强制更新间隔(天)。只要在您的IP变化时，更新才会自动执行。注意您的DDNS提供商对更新频率的限制或您的域名被封锁。";
+hddns.right2="DDNS 允许您使用域名代替IP地址来访问您的网络。这个服务动态管理IP地址的变动，并更新您的域名信息。您必须到 DynDNS.org，freedns.afraid.org，ZoneEdit.com，No-IP.com 或其它网站注册以得到此服务。";
+hddns.right4="在方框中输入一个整型数值以设置强制更新间隔(天)。只有在您的IP变化时，更新才会自动执行。注意您的DDNS提供商对更新频率的限制以及您的域名是否被封锁。";
 
 diag.titl="诊断";
 diag.h2="诊断";
@@ -508,13 +508,13 @@ firewall.firewall="SPI防火墙";
 firewall.legend2="附加的过滤器";
 firewall.proxy="过滤代理";
 firewall.cookies="过滤Cookies";
-firewall.applet="过滤Java Applets、";
+firewall.applet="过滤Java Applets";
 firewall.activex="过滤ActiveX";
 firewall.legend3="阻止来自WAN口的请求";
 firewall.ping="阻止来自WAN口的匿名请求(ping)";
 firewall.muticast="过滤多播";
 filter.nat="过滤WAN NAT重定向";
-filter.port113="过滤IDENT（端口 113、）";
+filter.port113="过滤IDENT（端口113）";
 
 hfirewall.right2="启用或禁用SPI防火墙。";
 
@@ -523,7 +523,7 @@ prforward.h2="端口范围转发";
 prforward.legend="转发";
 prforward.app="应用程序";
 
-hprforward.right2="某些应用程序可能需要打开特定端口才能正常工作。举例来说，这些应用程序包括服务器软件和一些在线游戏。当从Internet接收到一个针对特定端口的请求时，路由器将会把这些数据路由到您指定的计算机。出于安全的考虑，您可能想只对您需要使用的端口设置端口转发，同时，在您完成之后，取消对 <em>" + share.enable +"</em> 复选框的选定。";
+hprforward.right2="某些应用程序可能需要打开特定端口才能正常工作。举例来说，这些应用程序包括服务器软件和一些在线游戏。当从Internet接收到一个针对特定端口的请求时，路由器将会把这些数据路由到您指定的计算机。出于安全的考虑，您可能只想对您需要使用的端口设置端口转发，同时，在您完成之后，取消对 <em>" + share.enable +"</em> 复选框的选定。";
 
 p2p.titl="点对点程序";
 p2p.h2="BitTorrent 客户端";
@@ -665,16 +665,16 @@ anchorfree.validterms="您必须接受条款和条件！";
 hanchorfree.right1="加入AnchorFree 的热点广告网络";
 hanchorfree.right2="AnchorFree 管理一个热点，允许 DD-WRT 客户通过网络做广告达到创收。";
 hanchorfree.right3="通过广告从AnchorFree获得收入。";
-hanchorfree.right4="用此功能，并在 AnchorFree 建立一个帐户（免费且简单），永久的广告框架将会被直接插入到用户的Web浏览器，它每月会为您赚取美金。每月赚到25美元以上，AnchorFree 就会自动把资金存入您的帐户。";
+hanchorfree.right4="启用此功能，并在 AnchorFree 创建一个帐户（免费且简单），永久的广告框架将会直接嵌入到用户的Web浏览器，它每月会为您赚取美金。当每月赚到25美元以上，AnchorFree 就会自动把资金存入您的帐户。";
 hanchorfree.right5="更多信息请访问 www.anchorfree.com";
-hanchorfree.right6="Activation is easy";
-hanchorfree.right7="一旦您激活了，AnchorFree将会发送一封电子邮件给帐号拥有者，邮件包含如何优化你的hotspot，FAQs，以及其它有关如何通过您的路由器赚钱的资料。通过这个配置界面，AnchorFree将会直接插入一个小的，无害的广告框架到WEB浏览器（通过此路由器上网的）";
+hanchorfree.right6="激活方便快捷";
+hanchorfree.right7="一旦您激活了，AnchorFree将会发送一封电子邮件给帐号拥有者，邮件包含如何优化你的热点，FAQs，以及其它如何通过您的路由器赚钱的相关资料。通过这个配置界面，AnchorFree将会直接插入一个小的，无害的广告框架到WEB浏览器（通过此路由器上网的）";
 hanchorfree.right8="用户支持";
-hanchorfree.right9="有疑问？通过 boxhelp@anchorfree.com 联系我们";
+hanchorfree.right9="还有疑问？通过 boxhelp@anchorfree.com 联系我们";
 
 info.titl="信息";
 info.h2="系统信息";
-info.wlanmac="无线MAC";
+info.wlanmac="Wireless MAC";
 info.srv="服务";
 info.ap="访问点(AP)";
 
@@ -865,7 +865,7 @@ networking.legend2="创建网桥";
 networking.legend3="指派到网桥";
 networking.legend4="当前桥接列表";
 networking.brname="网桥名";
-networking.stp="STP已启用";
+networking.stp="启用STP";
 networking.iface="接口";
 networking.h5="DHCPD";
 networking.legend5="多路DHCP服务器";
@@ -901,7 +901,7 @@ hqos.right4="将此设置为您总下载限制的80%-100%（最大）。";
 hqos.right6="您可以注意消耗带宽的应用程序，从而控制您的数据传输速率。";
 hqos.right8="您可以为一个给定的IP地址或者IP范围的所有流量指定优先顺序。";
 hqos.right10="您可以通过为一个设备指定设备名，制定优先顺序并输入MAC地址，从而为该设备的所有流量指定优先顺序。";
-hqos.right12="您可以根据您的设备连接到哪一个物理LAN口来控制它的数据传输速率。您可以根据已连接到1到4号LAN端口的设备制定优先顺序。";
+hqos.right12="您可以根据您的设备连接到哪一个物理LAN口来控制它的数据传输速率。您可以根据已连接到1~4 LAN口的设备制定优先顺序。";
 
 routetbl.titl="路由表";
 routetbl.h2="路由表条目列表";
@@ -909,7 +909,7 @@ routetbl.th1="目的LAN IP";
 
 route.titl="路由设置";
 route.h2="高级路由设置";
-route.metric="度量标准";
+route.metric="跃点数";
 route.mod="工作模式";
 route.bgp_legend="BGP设置";
 route.bgp_ip="邻近IP";
@@ -1129,19 +1129,19 @@ status_lan.conratio="比例";
 
 hstatus_lan.right2="这是您的本地以太网络中看到的路由器的MAC地址。";
 hstatus_lan.right4="这是您的本地以太网络中看到的路由器的IP地址。";
-hstatus_lan.right6="当路由器使用一个子网掩码的时候，它被显示在这里。";
+hstatus_lan.right6="当路由器使用一个子网掩码的时候，它将显示在这里。";
 hstatus_lan.right8="如果您把您的路由器当作DHCP服务器使用，那将会显示在这里。";
 hstatus_lan.right10="点击任意MAC地址，您将能获取该网络接口的全球唯一识别码（从IEEE标准OUI数据库搜索）。";
 
 status_band.titl="带宽监控";
 status_band.h2="带宽监控中";
-status_band.chg_unit="切换为";
-status_band.chg_scale="自动调整";
-status_band.chg_error="无法获取和接口有关的数据";
-status_band.chg_collect_initial="收集初始化数据中，请稍候...";
-status_band.strin="入";
-status_band.strout="出";
-status_band.follow="跟随";
+status_band.chg_unit="Switch to ";
+status_band.chg_scale="Autoscale";
+status_band.chg_error="Cannot get data about interface";
+status_band.chg_collect_initial="Collecting initial data, please wait...";
+status_band.strin="In";
+status_band.strout="Out";
+status_band.follow="follow";
 status_band.up="up";
 
 hstatus_band.svg="显示带宽图表需要Adobe的SVG plugin。";
@@ -1265,7 +1265,7 @@ upgrad.file="请选择一个用来升级的文件";
 upgrad.warning=" [警] [告] ";
 upgrad.mess1="升级固件可能需要几分钟。<br />请不要关闭电源或者按复位按钮！";
 
-hupgrad.right2="点击 <em>浏览...</em> 按钮选择要上传到路由器的固件文件。<br /><br />。点击 <em>升级</em> 按钮开始升级。升级过程绝对不可以被中断。";
+hupgrad.right2="点击 <em>浏览...</em> 按钮选择要上传到路由器的固件文件。<br /><br />点击 <em>升级</em> 按钮开始升级。升级过程中绝对不可以被中断。";
 
 upnp.titl="UPnP";
 upnp.h2="通用即插即用（UPnP）";
@@ -1289,13 +1289,13 @@ vpn.l2tp="L2TP穿透";
 
 hvpn.right1="您可以选择启用IPSec，PPTP 和/或 L2TP 穿透，从而允许您的网络设备通过VPN进行通讯。";
 
-vlan.titl="虚拟LAN";
-vlan.h2="虚拟本地网络（VLAN）";
+vlan.titl="虚拟本地网";
+vlan.h2="虚拟本地网（VLAN）";
 vlan.legend="VLAN";
-vlan.bridge="被指定到<br />网桥";
+vlan.bridge="指派到<br />网桥";
 vlan.tagged="已标记的";
 vlan.negociate="自动协商";
-vlan.aggregation="<br>3号与4号端口链路汇聚";
+vlan.aggregation="3号与4号端口<br>链路汇聚";
 vlan.trunk="汇集";
 
 wep.defkey="默认传输秘钥";
@@ -1317,9 +1317,9 @@ wol.legend5="网络唤醒";
 wol.srv="WOL守护进程";
 wol.pass="SecureOn Password";
 
-hwol.right2="本页面允许您 <em>唤醒</em> 在您本地网络上的主机（例如，本地已连接到您的路由器上的）。您可以通过点击<em>"+sbutton.wol+"</em>手动唤醒主机，或编写一个借助于"+wol.srv+"的自动定时唤醒。";
+hwol.right2="本页面允许您 <em>唤醒</em> 同一本地网络上的主机（比如，已连接到您的路由器上的本地主机）。您可以通过点击<em>"+sbutton.wol+"</em>手动唤醒主机，或编写一个借助于"+wol.srv+"的定时自动唤醒。";
 hwol.right4="MAC地址使用如下格式输入 xx:xx:xx:xx:xx:xx （例如 01:23:45:67:89:AB），且必须以<em>空格</em>分隔";
-hwol.right6="IP地址通常是本地网络的广播地址，但是如果目标主机是并未连接到路由器的本地网络，则应该设置为远程地址。"
+hwol.right6="IP地址通常是本地网络的广播地址，但是如果目标主机并未连接到路由器上的本地网络，则应该设置为远程地址。"
 
 wanmac.titl="MAC地址克隆";
 wanmac.h2="MAC地址克隆";
@@ -1395,7 +1395,7 @@ wl_mac.h2="无线MAC过滤";
 wl_mac.legend="MAC过滤";
 wl_mac.label="开启过滤";
 wl_mac.label2="过滤模式";
-wl_mac.deny="阻止所列客户端机访问无线网络";
+wl_mac.deny="阻止所列客户端访问无线网络";
 wl_mac.allow="只允许所列客户端访问无线网络";
 
 wl_wimax.titl="WiMAX";
@@ -1420,7 +1420,7 @@ wl_adv.label6="发射站间隔";
 wl_adv.label7="DTIM 间隔";
 wl_adv.label8="分片阈值";
 wl_adv.label9="RTS阈值";
-wl_adv.label10="最大关联的客户端数";
+wl_adv.label10="最大关联客户端数";
 wl_adv.label11="AP 独立";
 wl_adv.label12="传送天线";
 wl_adv.label13="接受天线";
@@ -1441,7 +1441,7 @@ wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
-wl_adv.table3="WMM传送重试限制，fallback限制和最大速率参数。";
+wl_adv.table3="WMM传送Retry限制，fallback限制和最大速率参数。";
 wl_adv.txpcol1="S. Retry";
 wl_adv.txpcol2="S. Fallbk";
 wl_adv.txpcol3="L. Retry";
@@ -1452,15 +1452,15 @@ wl_adv.txprow2="AC BK 传送参数";
 wl_adv.txprow3="AC VI 传送参数";
 wl_adv.txprow4="AC VO 传送参数";
 wl_adv.col6="管理员强制";
-wl_adv.row1="背景";
-wl_adv.row2="尽最大努力";
+wl_adv.row1="后台";
+wl_adv.row2="尽力达到";
 wl_adv.row3="视频";
 wl_adv.row4="语音";
 wl_adv.table2="EDCA STA参数（客户端到AP）";
 wl_adv.lng="长"; 					//************* don't use .long ! *************
 wl_adv.shrt="短"; 				//************* don't use .short ! **************
 
-hwl_adv.right2="您应该在自动或共享秘钥中选择一种。共享秘钥授权更加安全，在您网络中的所有设备都必须支持共享秘钥授权。";
+hwl_adv.right2="您应该在自动或共享秘钥中选择一种。共享秘钥授权更加安全，但您网络中的所有设备都必须支持共享秘钥授权。";
 
 wl_basic.titl="无线";
 wl_basic.h2="无线";
