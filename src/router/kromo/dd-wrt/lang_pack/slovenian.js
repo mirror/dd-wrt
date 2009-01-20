@@ -1120,7 +1120,7 @@ route.static_ip="Ciljni LAN IP";
 //help container
 
 hroute.right2="Èe usmerjalnik gosti va¹o povezavo v medmere¾je, izberite naèin <em>Prehod</em>. Èe na va¹i mre¾i obstaja kak drug usmerjevalnik, izberite naèin <em>Usmerjevalnik</em>.";
-hroute.right4="To je edinstvena ¹tevilka; doloèite lahko do 20 smeri.";
+hroute.right4="To je edinstvena ¹tevilka; doloèite lahko do 50 smeri.";
 hroute.right6="Vnesite ime, ki ga doloèite za smer.";
 hroute.right8="To je oddaljeni gostitelj do katerage doloèate statièno smer.";
 hroute.right10="Doloèi gostitelja in mre¾o.";

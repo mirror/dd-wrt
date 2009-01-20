@@ -1035,7 +1035,7 @@ route.static_ip="Destinations Nät";
 
 //help container
 hroute.right2="Om routern sköter din internetkoppling, välj <em>Gateway</em> mode. Om en annan router finns i ditt nät, välj <em>Router</em> mode.";
-hroute.right4="Detta är ett unikt route nummer, du kan ha upp till 20 routes.";
+hroute.right4="Detta är ett unikt route nummer, du kan ha upp till 50 routes.";
 hroute.right6="Namn för denna route.";
 hroute.right8="Fjärrdatorn du vill ange denna route till.";
 hroute.right10="Anger host o nätverksdel.";
