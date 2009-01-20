@@ -1067,7 +1067,7 @@ route.static_ip="Bestemming LAN IP";
 //help container
 
 hroute.right2="Indien de router gehost is via uw internet connectie, kies dan <em>Gateway</em> modus. Indien er zich een andere router bevind in het netwerk, selecteer <em>Router</em> modus.";
-hroute.right4="Dit is het unieke routerings nummer, je kan tot 20 routes aanmaken.";
+hroute.right4="Dit is het unieke routerings nummer, je kan tot 50 routes aanmaken.";
 hroute.right6="Voer de naam in die u wilt toekennen aan deze route.";
 hroute.right8="Dit is de remote host naar waar u de statische route wilt verwijzen.";
 hroute.right10="Herkent de host en netwerk grootte.";

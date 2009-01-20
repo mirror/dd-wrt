@@ -1123,7 +1123,7 @@ route.static_ip="Destination LAN NET";
 //help container
 var hroute = new Object();
 hroute.right2="If the router is hosting your Internet connection, select <em>Gateway</em> mode. If another router exists on your network, select <em>Router</em> mode.";
-hroute.right4="This is the unique route number, you may set up to 20 routes.";
+hroute.right4="This is the unique route number, you may set up to 50 routes.";
 hroute.right6="Enter the name you would like to assign to this route.";
 hroute.right8="This is the remote host to which you would like to assign the static route.";
 hroute.right10="Determines the host and the network portion.";

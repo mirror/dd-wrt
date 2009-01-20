@@ -948,7 +948,7 @@ route.static_ip="Cél-LAN IP";
 //help container
 
 hroute.right2="Amennyiben ez a router biztosítja Önnek az Internet-szolgáltatást válassza a <em>Gateway</em>-módot. Ha van másik router is a hálózatában, válassza a <em>Router</em>-módot.";
-hroute.right4="Ez egy egyedi útvonal azonosító szám, összesen 20 útvonalat definiálhat.";
+hroute.right4="Ez egy egyedi útvonal azonosító szám, összesen 50 útvonalat definiálhat.";
 hroute.right6="Adjon meg egy nevet, ami alapján azonosítani tudja az útvonalat.";
 hroute.right8="Ez a távoli állomás, amihez hozzá szeretné rendelni a statikus útvonalat.";
 hroute.right10="Érzékeli az állomás és a hálózat kiosztásait.";

@@ -945,7 +945,7 @@ route.static_ip="IP LAN de Destino";
 //help container
 
 hroute.right2="Si el router está hospedando tu conexión de Internet, elegir el modo <em>Puerta de Enlace</em> (en inglés Gateway). Si hay otro router en tu red, entonces selecciona el modo <em>Router</em>.";
-hroute.right4="Este es el número de ruteo único, puedes establecer hasta 20 rutas.";
+hroute.right4="Este es el número de ruteo único, puedes establecer hasta 50 rutas.";
 hroute.right6="Introduce el nombre que te gustaría asignar a este ruteo.";
 hroute.right8="Este es el host remoto al cual querrías asignar el ruteo estático..";
 hroute.right10="Determina el host y la segmento de red.";
