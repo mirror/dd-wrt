@@ -11,5 +11,7 @@ radvd:
 	make -C radvd
 
 radvd-install:
-	make -C radvd install
+	install -d $(INSTALLDIR)/radvd/usr/sbin 
+	install radvd/radvd $(INSTALLDIR)/radvd/usr/sbin
+	install radvd/radvdump $(INSTALLDIR)/radvd/usr/sbin
 
