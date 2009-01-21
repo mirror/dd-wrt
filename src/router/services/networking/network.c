@@ -1065,7 +1065,7 @@ void start_lan( void )
 #ifdef HAVE_LS2
     if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
     {
-#if defined(HAVE_NS2) || defined(HAVE_BS2) || defined(HAVE_LC2)
+#if defined(HAVE_NS2) || defined(HAVE_BS2) || defined(HAVE_LC2) || defined(HAVE_BS2HP)
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 vlan2 ath0" );
 	PORTSETUPWAN( "" );
@@ -1077,7 +1077,7 @@ void start_lan( void )
     }
     else
     {
-#if defined(HAVE_NS2) || defined(HAVE_BS2) || defined(HAVE_LC2)
+#if defined(HAVE_NS2) || defined(HAVE_BS2) || defined(HAVE_LC2) || defined(HAVE_BS2HP)
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 ath0" );
 	PORTSETUPWAN( "eth0" );
@@ -2603,6 +2603,10 @@ void start_wan( int status )
 					     "" ) ?
 	nvram_safe_get( "pppoe_wan_ifname" ) : "eth0";
 #elif HAVE_BS2
+    char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
+					     "" ) ?
+	nvram_safe_get( "pppoe_wan_ifname" ) : "eth0";
+#elif HAVE_BS2HP
     char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
 					     "" ) ?
 	nvram_safe_get( "pppoe_wan_ifname" ) : "eth0";
