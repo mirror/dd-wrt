@@ -1,5 +1,5 @@
 /*
- *   $Id: includes.h,v 1.12 2002/06/15 10:25:04 psavola Exp $
+ *   $Id: includes.h,v 1.14 2007/10/25 19:29:40 psavola Exp $
  *
  *   Authors:
  *    Lars Fenneberg		<lf@elemental.net>	 
@@ -9,7 +9,7 @@
  *
  *   The license which is distributed with this software in the file COPYRIGHT
  *   applies to this software. If your distribution is missing this file, you
- *   may request it from <lutchann@litech.org>.
+ *   may request it from <pekkas@netcore.fi>.
  *
  */
 
@@ -93,6 +93,10 @@
 
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
+#endif
+
+#ifdef HAVE_IFADDRS_H
+# include <ifaddrs.h>
 #endif
 
 #endif /* INCLUDES_H */
