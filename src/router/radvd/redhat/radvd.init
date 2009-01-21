@@ -1,0 +1,88 @@
+#! /bin/sh
+#
+# $Id: radvd.init,v 1.5 2008/02/27 13:02:59 psavola Exp $
+#
+### BEGIN INIT INFO
+# provides: radvd
+# chkconfig: - 54 46
+# short-Description: router advertisement daemon for IPv6
+# description:	radvd is the router advertisement daemon for IPv6.  It \
+#		listens to router solicitations and sends router \
+#		advertisements as described in "Neighbor Discovery for IP \
+#		Version 6 (IPv6)" (RFC 2461).  With these advertisements \
+#		hosts can automatically configure their addresses and some \
+#		other parameters.  They also can choose a default router \
+#		based on these advertisements.
+#
+# processname: radvd
+# pidfile: /var/run/radvd.pid
+# config: /etc/radvd.conf
+# config: /etc/sysconfig/radvd
+### END INIT INFO
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Get config.
+. /etc/sysconfig/network
+
+[ -f /etc/sysconfig/radvd ] && . /etc/sysconfig/radvd
+
+if [ "$1" == "status" ]; then
+	[ -f /usr/sbin/radvd ] || exit 4
+else 
+	[ -f /usr/sbin/radvd ] || exit 1
+fi
+
+RETVAL=0
+PROG="radvd"
+LOCKFILE=/var/lock/subsys/radvd
+
+# See how we were called.
+case "$1" in
+  start)
+
+	# Check that networking is up.	
+	[ "${NETWORKING_IPV6}" = "yes" ] || exit 1
+
+	echo -n $"Starting $PROG: "
+	daemon radvd $OPTIONS
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch $LOCKFILE
+	;;
+  stop)
+	echo -n $"Stopping $PROG: "
+	killproc radvd
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && rm -f $LOCKFILE
+	;;
+  status)
+	status radvd
+	RETVAL=$?
+	;;
+  restart)
+	$0 stop
+	$0 start
+	RETVAL=$?
+	;;
+  reload)
+	echo -n $"Reloading $PROG: "
+	killproc radvd -HUP
+	RETVAL=$?	
+	echo
+	;;
+  condrestart)
+        if [ -f $LOCKFILE ]; then
+		$0 stop
+		$0 start
+		RETVAL=$?
+	fi
+        ;;  
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
+	exit 2
+esac
+
+exit $RETVAL
