@@ -734,7 +734,10 @@ return 0;
     setRouter( "Ubiquiti Bullet 2 HP" );
     return ROUTER_BOARD_LS2;
 #elif HAVE_LC2
-    setRouter( "Ubiquiti Bullet 2" );
+    setRouter( "Ubiquiti Nanostation Loco 2" );
+    return ROUTER_BOARD_LS2;
+#elif HAVE_LC5
+    setRouter( "Ubiquiti Nanostation Loco 5" );
     return ROUTER_BOARD_LS2;
 #elif HAVE_PS2
     setRouter( "Ubiquiti Powerstation 2" );
