@@ -1,5 +1,5 @@
 /*
- *   $Id: recv.c,v 1.5 2001/11/14 19:58:11 lutchann Exp $
+ *   $Id: recv.c,v 1.11 2006/10/09 06:21:59 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -10,7 +10,7 @@
  *
  *   The license which is distributed with this software in the file COPYRIGHT
  *   applies to this software. If your distribution is missing this file, you
- *   may request it from <lutchann@litech.org>.
+ *   may request it from <pekkas@netcore.fi>.
  *
  */
 
@@ -26,7 +26,7 @@ recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr,
 	struct cmsghdr *cmsg;
 	struct iovec iov;
 	static unsigned char *chdr = NULL;
-	static int chdrlen = 0;
+	static unsigned int chdrlen = 0;
 	int len;
 	fd_set rfds;
 
@@ -34,7 +34,10 @@ recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr,
 	{
 		chdrlen = CMSG_SPACE(sizeof(struct in6_pktinfo)) +
 				CMSG_SPACE(sizeof(int));
-		chdr = malloc( chdrlen );
+		if ((chdr = malloc(chdrlen)) == NULL) {
+			flog(LOG_ERR, "recv_rs_ra: malloc: %s", strerror(errno));
+			return -1;
+		}
 	}
 
 	FD_ZERO( &rfds );
@@ -43,7 +46,7 @@ recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr,
 	if( select( sock+1, &rfds, NULL, NULL, NULL ) < 0 )
 	{
 		if (errno != EINTR)
-			log(LOG_ERR, "select: %s", strerror(errno));
+			flog(LOG_ERR, "select: %s", strerror(errno));
 			
 		return -1;
 	}
@@ -51,8 +54,9 @@ recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr,
 	iov.iov_len = MSG_SIZE;
 	iov.iov_base = (caddr_t) msg;
 
+	memset(&mhdr, 0, sizeof(mhdr));
 	mhdr.msg_name = (caddr_t)addr;
-	mhdr.msg_namelen = sizeof(struct sockaddr_in6);
+	mhdr.msg_namelen = sizeof(*addr);
 	mhdr.msg_iov = &iov;
 	mhdr.msg_iovlen = 1;
 	mhdr.msg_control = (void *)chdr;
@@ -63,14 +67,14 @@ recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr,
 	if (len < 0)
 	{
 		if (errno != EINTR)
-			log(LOG_ERR, "recvmsg: %s", strerror(errno));
+			flog(LOG_ERR, "recvmsg: %s", strerror(errno));
 			
 		return len;
 	}
 
 	*hoplimit = 255;
 
-        for (cmsg = CMSG_FIRSTHDR(&mhdr); cmsg; cmsg = CMSG_NXTHDR(&mhdr, cmsg))
+        for (cmsg = CMSG_FIRSTHDR(&mhdr); cmsg != NULL; cmsg = CMSG_NXTHDR(&mhdr, cmsg))
 	{
           if (cmsg->cmsg_level != IPPROTO_IPV6)
           	continue;
@@ -87,7 +91,7 @@ recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr,
                 }
                 else
                 {
-                  log(LOG_ERR, "received a bogus IPV6_HOPLIMIT from the kernel! len=%d, data=%d",
+                  flog(LOG_ERR, "received a bogus IPV6_HOPLIMIT from the kernel! len=%d, data=%d",
                   	cmsg->cmsg_len, *(int *)CMSG_DATA(cmsg));
                   return (-1);	
                 }  
@@ -101,7 +105,7 @@ recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr,
                 }
                 else
                 {
-                  log(LOG_ERR, "received a bogus IPV6_PKTINFO from the kernel! len=%d, index=%d", 
+                  flog(LOG_ERR, "received a bogus IPV6_PKTINFO from the kernel! len=%d, index=%d", 
                   	cmsg->cmsg_len, ((struct in6_pktinfo *)CMSG_DATA(cmsg))->ipi6_ifindex);
                   return (-1);
                 } 

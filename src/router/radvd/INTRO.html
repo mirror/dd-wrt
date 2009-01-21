@@ -1,5 +1,5 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
-<!-- $Id: INTRO.html,v 1.3 2002/01/12 17:48:43 psavola Exp $ -->
+<!-- $Id: INTRO.html,v 1.5 2008/03/31 09:18:15 psavola Exp $ -->
 <html lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
@@ -29,7 +29,7 @@ On Linux this program is called
 Router ADVertisement Daemon. This daemon listens to Router Solicitations
 (RS) and answers with Router Advertisement (RA). Furthermore unsolicited
 RAs are also send from time to time.
-<a href="http://www.ietf.org/rfc/rfc2461.txt">RFC 2461</a> defines most
+<a href="http://www.ietf.org/rfc/rfc4861.txt">RFC 4861</a> defines most
 functions of radvd.
 </p>
 
@@ -56,7 +56,7 @@ A small and simple configuration file for radvd might look like this:
 interface eth0
 {
         AdvSendAdvert on;
-        prefix fec0:0:0:1::/64
+        prefix 2001:db8:0:1::/64
         {
                 AdvOnLink on;
                 AdvAutonomous on;
@@ -67,7 +67,7 @@ interface eth0
 
 <p>
 It says that radvd should advertise (AdvSendAdvert on) the prefix
-fec0:0:0:1:: which has a lenght of 64 on the interface eth0.
+2001:db8:0:1:: which has a lenght of 64 on the interface eth0.
 Also the prefix is marked as autonomous (AdvAutonomous on) and as on-link
 (AdvOnLink on). The both currently default to enabled but are included
 here for introductory purposes; it isn't necessary to define them.
@@ -85,7 +85,7 @@ received this RA.
 The prefix must be 64 bits long (apart from very few exceptions), as dictated by
 <a href="http://www.ietf.org/rfc/rfc2464.txt">RFC 2464</a> and other
 standards for different link-layer technologies. For more
-details, see <a href="http://www.ietf.org/rfc/rfc2462.txt">RFC 2462</a>
+details, see <a href="http://www.ietf.org/rfc/rfc4862.txt">RFC 4862</a>
 (IPv6 Stateless Address Autoconfiguration) and
 <a href="http://www.ietf.org/rfc/rfc2464.txt">RFC 2464</a>
 (Transmission of IPv6 Packets over Ethernet Networks). For more information
@@ -104,11 +104,13 @@ after the prefix. For example:
 <p>
 <pre>
 
-   Announced prefix:    fec0:0:0:1::
+   Announced prefix:    2001:db8:0:1::
 
-   EUI-64 identifier:   a4:c2:b2:32
+   MAC address:         00:07:E9:7B:02:59
 
-   Configured address:  fec0:0:0:1:a4:c2:b2:32
+   EUI-64 identifier:   0207:e9ff:fe7b:259
+
+   Configured address:  2001:db8:0:1:207:e9ff:fe7b:259
 
 </pre>
 

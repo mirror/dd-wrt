@@ -1,5 +1,5 @@
 /*
- *   $Id: radvd.c,v 1.12 2001/12/28 08:39:54 psavola Exp $
+ *   $Id: radvd.c,v 1.37 2008/10/15 05:34:35 psavola Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -10,7 +10,7 @@
  *
  *   The license which is distributed with this software in the file COPYRIGHT
  *   applies to this software. If your distribution is missing this file, you
- *   may request it from <lutchann@litech.org>.
+ *   may request it from <pekkas@netcore.fi>.
  *
  */
 
@@ -22,7 +22,7 @@
 struct Interface *IfaceList = NULL;
 
 char usage_str[] =
-	"[-vh] [-d level] [-C config_file] [-m log_method] [-l log_file]\n"
+	"[-hsv] [-d level] [-C config_file] [-m log_method] [-l log_file]\n"
 	"\t[-f facility] [-p pid_file] [-u username] [-t chrootdir]";
 
 #ifdef HAVE_GETOPT_LONG
@@ -37,6 +37,7 @@ struct option prog_opt[] = {
 	{"chrootdir", 1, 0, 't'},
 	{"version", 0, 0, 'v'},
 	{"help", 0, 0, 'h'},
+	{"singleprocess", 0, 0, 's'},
 	{NULL, 0, 0, 0}
 };
 #endif
@@ -55,13 +56,13 @@ void sighup_handler(int sig);
 void sigterm_handler(int sig);
 void sigint_handler(int sig);
 void timer_handler(void *data);
+void config_interface(void);
 void kickoff_adverts(void);
-void reload_config(void);
+void stop_adverts(void);
 void version(void);
 void usage(void);
 int drop_root_privileges(const char *);
 int readin_config(char *);
-int check_ip6_forwarding();
 int check_conffile_perm(const char *, const char *);
 
 int
@@ -69,11 +70,14 @@ main(int argc, char *argv[])
 {
 	unsigned char msg[MSG_SIZE];
 	char pidstr[16];
+	ssize_t ret;
 	int c, log_method;
 	char *logfile, *pidfile;
+	sigset_t oset, nset;
 	int facility, fd;
 	char *username = NULL;
 	char *chrootdir = NULL;
+	int singleprocess = 0;
 #ifdef HAVE_GETOPT_LONG
 	int opt_idx;
 #endif
@@ -82,7 +86,7 @@ main(int argc, char *argv[])
 
 	srand((unsigned int)time(NULL));
 
-	log_method = L_SYSLOG;
+	log_method = L_STDERR_SYSLOG;
 	logfile = PATH_RADVD_LOG;
 	conf_file = PATH_RADVD_CONF;
 	facility = LOG_FACILITY;
@@ -90,9 +94,9 @@ main(int argc, char *argv[])
 
 	/* parse args */
 #ifdef HAVE_GETOPT_LONG
-	while ((c = getopt_long(argc, argv, "d:C:l:m:p:t:u:vh", prog_opt, &opt_idx)) > 0)
+	while ((c = getopt_long(argc, argv, "d:C:l:m:p:t:u:vhs", prog_opt, &opt_idx)) > 0)
 #else
-	while ((c = getopt(argc, argv, "d:C:l:m:p:t:u:vh")) > 0)
+	while ((c = getopt(argc, argv, "d:C:l:m:p:t:u:vhs")) > 0)
 #endif
 	{
 		switch (c) {
@@ -115,6 +119,10 @@ main(int argc, char *argv[])
 			if (!strcmp(optarg, "syslog"))
 			{
 				log_method = L_SYSLOG;
+			}
+			else if (!strcmp(optarg, "stderr_syslog"))
+			{
+				log_method = L_STDERR_SYSLOG;
 			}
 			else if (!strcmp(optarg, "stderr"))
 			{
@@ -143,6 +151,9 @@ main(int argc, char *argv[])
 		case 'v':
 			version();
 			break;
+		case 's':
+			singleprocess = 1;
+			break;
 		case 'h':
 			usage();
 #ifdef HAVE_GETOPT_LONG
@@ -167,26 +178,22 @@ main(int argc, char *argv[])
 			exit (1);
 		}
 		
-		chdir("/");
-	
+		if (chdir("/") == -1) {
+			perror("chdir");
+			exit (1);
+		}
 		/* username will be switched later */
 	}
 	
 	if (log_open(log_method, pname, logfile, facility) < 0)
 		exit(1);
 
-	log(LOG_INFO, "version %s started", VERSION);
+	flog(LOG_INFO, "version %s started", VERSION);
 
 	/* get a raw socket for sending and receiving ICMPv6 messages */
 	sock = open_icmpv6_socket();
 	if (sock < 0)
 		exit(1);
-
-	/* drop root privileges if requested. */
-	if (username) {
-		if (drop_root_privileges(username) < 0)
-			exit(1);
-	}
 
 	/* check that 'other' cannot write the file
          * for non-root, also that self/own group can't either
@@ -195,27 +202,58 @@ main(int argc, char *argv[])
 		if (get_debuglevel() == 0)
 			exit(1);
 		else
-			log(LOG_WARNING, "Insecure file permissions, but continuing anyway");
+			flog(LOG_WARNING, "Insecure file permissions, but continuing anyway");
 	}
 	
 	/* if we know how to do it, check whether forwarding is enabled */
 	if (check_ip6_forwarding()) {
 		if (get_debuglevel() == 0) {
-			log(LOG_ERR, "IPv6 forwarding seems to be disabled, exiting");
+			flog(LOG_ERR, "IPv6 forwarding seems to be disabled, exiting");
 			exit(1);
 		}
 		else
-			log(LOG_WARNING, "IPv6 forwarding seems to be disabled, but continuing anyway.");
+			flog(LOG_WARNING, "IPv6 forwarding seems to be disabled, but continuing anyway.");
 	}
 
 	/* parse config file */
 	if (readin_config(conf_file) < 0)
 		exit(1);
 
-	/* FIXME: not atomic if pidfile is on an NFS mounted volume */	
-	if ((fd = open(pidfile, O_CREAT|O_EXCL|O_WRONLY, 0644)) < 0)
+	/* drop root privileges if requested. */
+	if (username) {
+		if (!singleprocess) {
+		 	dlog(LOG_DEBUG, 3, "Initializing privsep");
+		 	if (privsep_init() < 0)
+				flog(LOG_WARNING, "Failed to initialize privsep.");
+		}
+
+		if (drop_root_privileges(username) < 0)
+			exit(1);
+	}
+
+	if ((fd = open(pidfile, O_RDONLY, 0)) > 0)
 	{
-		log(LOG_ERR, "another radvd seems to be already running, terminating");
+		ret = read(fd, pidstr, sizeof(pidstr) - 1);
+		if (ret < 0)
+		{
+			flog(LOG_ERR, "cannot read radvd pid file, terminating: %s", strerror(errno));
+			exit(1);
+		}
+		pidstr[ret] = '\0';
+		if (!kill((pid_t)atol(pidstr), 0))
+		{
+			flog(LOG_ERR, "radvd already running, terminating.");
+			exit(1);
+		}
+		close(fd);
+		fd = open(pidfile, O_CREAT|O_TRUNC|O_WRONLY, 0644);
+	}
+	else	/* FIXME: not atomic if pidfile is on an NFS mounted volume */
+		fd = open(pidfile, O_CREAT|O_EXCL|O_WRONLY, 0644);
+
+	if (fd < 0)
+	{
+		flog(LOG_ERR, "cannot create radvd pid file, terminating: %s", strerror(errno));
 		exit(1);
 	}
 	
@@ -230,28 +268,38 @@ main(int argc, char *argv[])
 		if (daemon(0, 0) < 0)
 			perror("daemon");
 
-		/*
-		 * reopen logfile, so that we get the process id right in the syslog
-		 */
-		if (log_reopen() < 0)
+		/* close old logfiles, including stderr */
+		log_close();
+		
+		/* reopen logfiles, but don't log to stderr unless explicitly requested */
+		if (log_method == L_STDERR_SYSLOG)
+			log_method = L_SYSLOG;
+		if (log_open(log_method, pname, logfile, facility) < 0)
 			exit(1);
 
 	}
 
 	/*
-	 *	config signal handlers
+	 *	config signal handlers, also make sure ALRM isn't blocked and raise a warning if so
+	 *      (some stupid scripts/pppd appears to do this...)
 	 */
+	sigemptyset(&nset);
+	sigaddset(&nset, SIGALRM);
+	sigprocmask(SIG_UNBLOCK, &nset, &oset);
+	if (sigismember(&oset, SIGALRM))
+		flog(LOG_WARNING, "SIGALRM has been unblocked. Your startup environment might be wrong.");
 
 	signal(SIGHUP, sighup_handler);
 	signal(SIGTERM, sigterm_handler);
 	signal(SIGINT, sigint_handler);
 
-	snprintf(pidstr, sizeof(pidstr), "%d\n", getpid());
+	snprintf(pidstr, sizeof(pidstr), "%ld\n", (long)getpid());
 	
 	write(fd, pidstr, strlen(pidstr));
 	
 	close(fd);
 
+	config_interface();
 	kickoff_adverts();
 
 	/* enter loop */
@@ -267,8 +315,10 @@ main(int argc, char *argv[])
 			process(sock, IfaceList, msg, len, 
 				&rcv_addr, pkt_info, hoplimit);
 
-		if (sigterm_received || sigint_received)
+		if (sigterm_received || sigint_received) {
+			stop_adverts();
 			break;
+		}
 
 		if (sighup_received)
 		{
@@ -292,7 +342,31 @@ timer_handler(void *data)
 	send_ra(sock, iface, NULL);
 
 	next = rand_between(iface->MinRtrAdvInterval, iface->MaxRtrAdvInterval); 
+
+	if (iface->init_racount < MAX_INITIAL_RTR_ADVERTISEMENTS)
+	{
+		iface->init_racount++;
+		next = min(MAX_INITIAL_RTR_ADVERT_INTERVAL, next);
+	}
+
 	set_timer(&iface->tm, next);
+}
+
+void
+config_interface(void)
+{
+	struct Interface *iface;
+	for(iface=IfaceList; iface; iface=iface->next)
+	{
+		if (iface->AdvLinkMTU)
+			set_interface_linkmtu(iface->Name, iface->AdvLinkMTU);
+		if (iface->AdvCurHopLimit)
+			set_interface_curhlim(iface->Name, iface->AdvCurHopLimit);
+		if (iface->AdvReachableTime)
+			set_interface_reachtime(iface->Name, iface->AdvReachableTime);
+		if (iface->AdvRetransTimer)
+			set_interface_retranstimer(iface->Name, iface->AdvRetransTimer);
+	}
 }
 
 void
@@ -314,7 +388,31 @@ kickoff_adverts(void)
 				/* send an initial advertisement */
 				send_ra(sock, iface, NULL);
 
-				set_timer(&iface->tm, iface->MaxRtrAdvInterval);
+				iface->init_racount++;
+
+				set_timer(&iface->tm,
+					  min(MAX_INITIAL_RTR_ADVERT_INTERVAL,
+					      iface->MaxRtrAdvInterval));
+			}
+		}
+	}
+}
+
+void
+stop_adverts(void)
+{
+	struct Interface *iface;
+
+	/*
+	 *	send final RA (a SHOULD in RFC4861 section 6.2.5)
+	 */
+
+	for (iface=IfaceList; iface; iface=iface->next) {
+		if( ! iface->UnicastOnly ) {
+			if (iface->AdvSendAdvert) {
+				/* send a final advertisement with zero Router Lifetime */
+				iface->AdvDefaultLifetime = 0;
+				send_ra(sock, iface, NULL);
 			}
 		}
 	}
@@ -324,7 +422,7 @@ void reload_config(void)
 {
 	struct Interface *iface;
 
-	log(LOG_INFO, "attempting to reread config file");
+	flog(LOG_INFO, "attempting to reread config file");
 
 	dlog(LOG_DEBUG, 4, "reopening log");
 	if (log_reopen() < 0)
@@ -333,8 +431,12 @@ void reload_config(void)
 	/* disable timers, free interface and prefix structures */
 	for(iface=IfaceList; iface; iface=iface->next)
 	{
-		dlog(LOG_DEBUG, 4, "disabling timer for %s", iface->Name);
-		clear_timer(&iface->tm);
+		/* check that iface->tm was set in the first place */
+		if (iface->tm.next && iface->tm.prev)
+		{
+			dlog(LOG_DEBUG, 4, "disabling timer for %s", iface->Name);
+			clear_timer(&iface->tm);
+		}
 	}
 
 	iface=IfaceList; 
@@ -342,6 +444,8 @@ void reload_config(void)
 	{
 		struct Interface *next_iface = iface->next;
 		struct AdvPrefix *prefix;
+		struct AdvRoute *route;
+		struct AdvRDNSS *rdnss;
 
 		dlog(LOG_DEBUG, 4, "freeing interface %s", iface->Name);
 		
@@ -354,6 +458,24 @@ void reload_config(void)
 			prefix = next_prefix;
 		}
 		
+		route = iface->AdvRouteList;
+		while (route)
+		{
+			struct AdvRoute *next_route = route->next;
+
+			free(route);
+			route = next_route;
+		}
+		
+		rdnss = iface->AdvRDNSSList;
+		while (rdnss) 
+		{
+			struct AdvRDNSS *next_rdnss = rdnss->next;
+			
+			free(rdnss);
+			rdnss = next_rdnss;
+		}	 
+
 		free(iface);
 		iface = next_iface;
 	}
@@ -364,9 +486,11 @@ void reload_config(void)
 	if (readin_config(conf_file) < 0)
 		exit(1);
 
+	/* XXX: fails due to lack of permissions with non-root user */
+	config_interface();
 	kickoff_adverts();
 
-	log(LOG_INFO, "resuming normal operation");
+	flog(LOG_INFO, "resuming normal operation");
 }
 
 void
@@ -409,13 +533,13 @@ drop_root_privileges(const char *username)
 	pw = getpwnam(username);
 	if (pw) {
 		if (initgroups(username, pw->pw_gid) != 0 || setgid(pw->pw_gid) != 0 || setuid(pw->pw_uid) != 0) {
-			log(LOG_ERR, "Couldn't change to '%.32s' uid=%d gid=%d\n", 
+			flog(LOG_ERR, "Couldn't change to '%.32s' uid=%d gid=%d\n", 
 					username, pw->pw_uid, pw->pw_gid);
 			return (-1);
 		}
 	}
 	else {
-		log(LOG_ERR, "Couldn't find user '%.32s'\n", username);
+		flog(LOG_ERR, "Couldn't find user '%.32s'\n", username);
 		return (-1);
 	}
 	return 0;
@@ -429,7 +553,7 @@ check_conffile_perm(const char *username, const char *conf_file)
 	FILE *fp = fopen(conf_file, "r");
 
 	if (fp == NULL) {
-		log(LOG_ERR, "can't open %s: %s", conf_file, strerror(errno));
+		flog(LOG_ERR, "can't open %s: %s", conf_file, strerror(errno));
 		return (-1);
 	}
 	fclose(fp);
@@ -447,7 +571,7 @@ check_conffile_perm(const char *username, const char *conf_file)
 		goto errorout;
 
 	if (st->st_mode & S_IWOTH) {
-                log(LOG_ERR, "Insecure file permissions (writable by others): %s", conf_file);
+                flog(LOG_ERR, "Insecure file permissions (writable by others): %s", conf_file);
 		goto errorout;
         }
 
@@ -455,7 +579,7 @@ check_conffile_perm(const char *username, const char *conf_file)
 	if (strncmp(username, "root", 5) != 0 &&
 	    ((st->st_mode & S_IWGRP && pw->pw_gid == st->st_gid) ||
 	     (st->st_mode & S_IWUSR && pw->pw_uid == st->st_uid))) {
-                log(LOG_ERR, "Insecure file permissions (writable by self/group): %s", conf_file);
+                flog(LOG_ERR, "Insecure file permissions (writable by self/group): %s", conf_file);
 		goto errorout;
         }
 
@@ -463,7 +587,8 @@ check_conffile_perm(const char *username, const char *conf_file)
         return 0;
 
 errorout:
-	free(st);
+	if (st)
+		free(st);
 	return(-1);
 }
 
@@ -473,16 +598,29 @@ check_ip6_forwarding(void)
 	int forw_sysctl[] = { SYSCTL_IP6_FORWARDING };
 	int value;
 	size_t size = sizeof(value);
+	FILE *fp = NULL;
 
-	if (sysctl(forw_sysctl, sizeof(forw_sysctl)/sizeof(forw_sysctl[0]),
+#ifdef __linux__
+	fp = fopen(PROC_SYS_IP6_FORWARDING, "r");
+	if (fp) {
+		fscanf(fp, "%d", &value);
+		fclose(fp);
+	}
+	else
+		flog(LOG_DEBUG, "Correct IPv6 forwarding procfs entry not found, "
+	                       "perhaps the procfs is disabled, "
+	                        "or the kernel interface has changed?");
+#endif /* __linux__ */
+
+	if (!fp && sysctl(forw_sysctl, sizeof(forw_sysctl)/sizeof(forw_sysctl[0]),
 	    &value, &size, NULL, 0) < 0) {
-		log(LOG_DEBUG, "Correct IPv6 forwarding sysctl branch not found, "
+		flog(LOG_DEBUG, "Correct IPv6 forwarding sysctl branch not found, "
 			"perhaps the kernel interface has changed?");
 		return(0);	/* this is of advisory value only */
 	}
 	
 	if (value != 1) {
-		log(LOG_DEBUG, "IPv6 forwarding setting is: %u, should be 1", value);
+		flog(LOG_DEBUG, "IPv6 forwarding setting is: %u, should be 1", value);
 		return(-1);
 	}
 		
@@ -494,13 +632,13 @@ readin_config(char *fname)
 {
 	if ((yyin = fopen(fname, "r")) == NULL)
 	{
-		log(LOG_ERR, "can't open %s: %s", fname, strerror(errno));
+		flog(LOG_ERR, "can't open %s: %s", fname, strerror(errno));
 		return (-1);
 	}
 
 	if (yyparse() != 0)
 	{
-		log(LOG_ERR, "syntax error in config file: %s", fname);
+		flog(LOG_ERR, "error parsing or activating the config file: %s", fname);
 		return (-1);
 	}
 	
@@ -529,6 +667,4 @@ usage(void)
 	fprintf(stderr, "usage: %s %s\n", pname, usage_str);
 	exit(1);	
 }
-
-
 
