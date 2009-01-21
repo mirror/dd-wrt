@@ -4107,7 +4107,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );
 
-#if defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) // no informations about loco 5 yet
+#if defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5)
 
     websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label24)</script></div><select name=\"%s\" >\n",
@@ -4121,6 +4121,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.horizontal + \"</option>\");\n",
 	       nvram_match( wl_txantenna,
 			    "1" ) ? "selected=\\\"selected\\\"" : "" );
+#if defined(HAVE_NS5) || defined(HAVE_NS2)
     websWrite( wp,
 	       "document.write(\"<option value=\\\"3\\\" %s >\" + wl_basic.adaptive + \"</option>\");\n",
 	       nvram_match( wl_txantenna,
@@ -4129,7 +4130,9 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.external + \"</option>\");\n",
 	       nvram_match( wl_txantenna,
 			    "2" ) ? "selected=\\\"selected\\\"" : "" );
+#endif
     websWrite( wp, "//]]>\n</script>\n" );
+
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );
 
