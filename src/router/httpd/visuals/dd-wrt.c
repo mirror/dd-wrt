@@ -4107,7 +4107,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );
 
-#if defined(HAVE_NS2) || defined(HAVE_NS5)
+#if defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) // no informations about loco 5 yet
 
     websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label24)</script></div><select name=\"%s\" >\n",
