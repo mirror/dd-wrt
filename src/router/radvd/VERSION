@@ -1,6 +1,6 @@
 #
-# $Id: VERSION,v 1.13 2002/10/28 17:00:58 lutchann Exp $
+# $Id: VERSION,v 1.22 2008/10/28 16:35:43 psavola Exp $
 #
 # this file is automatically processed by configure
 #
-0.7.2
+1.2
