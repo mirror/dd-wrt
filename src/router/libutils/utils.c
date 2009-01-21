@@ -727,6 +727,12 @@ return 0;
 #elif HAVE_BS5
     setRouter( "Ubiquiti Bullet 5" );
     return ROUTER_BOARD_LS2;
+#elif HAVE_BS2
+    setRouter( "Ubiquiti Bullet 2" );
+    return ROUTER_BOARD_LS2;
+#elif HAVE_LC2
+    setRouter( "Ubiquiti Bullet 2" );
+    return ROUTER_BOARD_LS2;
 #elif HAVE_PS2
     setRouter( "Ubiquiti Powerstation 2" );
     return ROUTER_BOARD_LS2;
