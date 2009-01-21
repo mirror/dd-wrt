@@ -1,7 +1,7 @@
 radvd-configure:
 	if test ! -e "radvd/Makefile"; then \
 	    cd radvd/flex && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"; \
-	    cd .. && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -I$(TOP)/radvd/flex" LDFLAGS="-L$(TOP)/radvd/flex"  --with-flex=$(TOP)/radvd/flex; \
+	    cd .. && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -DNEED_PRINTF -I$(TOP)/radvd/flex" LDFLAGS="-L$(TOP)/radvd/flex"  --with-flex=$(TOP)/radvd/flex; \
 	fi
 	
 radvd-clean:
