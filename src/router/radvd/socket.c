@@ -1,5 +1,5 @@
 /*
- *   $Id: socket.c,v 1.5 2002/07/02 06:49:20 psavola Exp $
+ *   $Id: socket.c,v 1.7 2005/10/18 19:17:29 lutchann Exp $
  *
  *   Authors:
  *    Pedro Roque		<roque@di.fc.ul.pt>
@@ -10,7 +10,7 @@
  *
  *   The license which is distributed with this software in the file COPYRIGHT
  *   applies to this software. If your distribution is missing this file, you
- *   may request it from <lutchann@litech.org>.
+ *   may request it from <pekkas@netcore.fi>.
  *
  */
 
@@ -37,7 +37,7 @@ open_icmpv6_socket(void)
         sock = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 	if (sock < 0)
 	{
-		log(LOG_ERR, "can't create socket(AF_INET6): %s", strerror(errno));
+		flog(LOG_ERR, "can't create socket(AF_INET6): %s", strerror(errno));
 		return (-1);
 	}
 
@@ -45,7 +45,7 @@ open_icmpv6_socket(void)
 	err = setsockopt(sock, IPPROTO_IPV6, IPV6_RECVPKTINFO, &val, sizeof(val));
 	if (err < 0)
 	{
-		log(LOG_ERR, "setsockopt(IPV6_RECVPKTINFO): %s", strerror(errno));
+		flog(LOG_ERR, "setsockopt(IPV6_RECVPKTINFO): %s", strerror(errno));
 		return (-1);
 	}
 
@@ -57,7 +57,7 @@ open_icmpv6_socket(void)
 #endif
 	if (err < 0)
 	{
-		log(LOG_ERR, "setsockopt(IPV6_CHECKSUM): %s", strerror(errno));
+		flog(LOG_ERR, "setsockopt(IPV6_CHECKSUM): %s", strerror(errno));
 		return (-1);
 	}
 
@@ -65,7 +65,7 @@ open_icmpv6_socket(void)
 	err = setsockopt(sock, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &val, sizeof(val));
 	if (err < 0)
 	{
-		log(LOG_ERR, "setsockopt(IPV6_UNICAST_HOPS): %s", strerror(errno));
+		flog(LOG_ERR, "setsockopt(IPV6_UNICAST_HOPS): %s", strerror(errno));
 		return (-1);
 	}
 
@@ -73,7 +73,7 @@ open_icmpv6_socket(void)
 	err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &val, sizeof(val));
 	if (err < 0)
 	{
-		log(LOG_ERR, "setsockopt(IPV6_MULTICAST_HOPS): %s", strerror(errno));
+		flog(LOG_ERR, "setsockopt(IPV6_MULTICAST_HOPS): %s", strerror(errno));
 		return (-1);
 	}
 
@@ -82,7 +82,7 @@ open_icmpv6_socket(void)
 	err = setsockopt(sock, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &val, sizeof(val));
 	if (err < 0)
 	{
-		log(LOG_ERR, "setsockopt(IPV6_RECVHOPLIMIT): %s", strerror(errno));
+		flog(LOG_ERR, "setsockopt(IPV6_RECVHOPLIMIT): %s", strerror(errno));
 		return (-1);
 	}
 #endif
@@ -99,7 +99,7 @@ open_icmpv6_socket(void)
 			 sizeof(filter));
 	if (err < 0)
 	{
-		log(LOG_ERR, "setsockopt(ICMPV6_FILTER): %s", strerror(errno));
+		flog(LOG_ERR, "setsockopt(ICMPV6_FILTER): %s", strerror(errno));
 		return (-1);
 	}
 

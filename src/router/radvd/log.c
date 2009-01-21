@@ -1,5 +1,5 @@
 /*
- *	$Id: log.c,v 1.3 2001/11/14 19:58:11 lutchann Exp $
+ *	$Id: log.c,v 1.11 2008/01/24 17:08:46 psavola Exp $
  *
  *	Authors:
  *	 Lars Fenneberg		<lf@elemental.net>	 
@@ -9,7 +9,7 @@
  *
  *	The license which is distributed with this software in the file
  *	COPYRIGHT applies to this software. If your distribution is missing 
- *	this file, you may request it from <lutchann@litech.org>.
+ *	this file, you may request it from <pekkas@netcore.fi>.
  *
  */
 
@@ -34,6 +34,8 @@ log_open(int method, char *ident, char *log, int facility)
 		case L_NONE:
 		case L_STDERR:
 			break;
+		case L_STDERR_SYSLOG:
+			/* fallthrough */
 		case L_SYSLOG:
 			if (facility == -1)
 				log_facility = LOG_DAEMON;
@@ -63,6 +65,7 @@ log_open(int method, char *ident, char *log, int facility)
 	return 0;
 }
 
+/* note: [dfv]log() is also called from root context */
 static int
 vlog(int prio, char *format, va_list ap)
 {
@@ -70,21 +73,24 @@ vlog(int prio, char *format, va_list ap)
 	struct tm *tm;
 	time_t current;
                   
+	vsnprintf(buff, sizeof(buff), format, ap);
+
 	switch (log_method) {
 		case L_NONE:
 			break;
 		case L_SYSLOG:
-	    		vsnprintf(buff, sizeof(buff), format, ap);
 			syslog(prio, "%s", buff);
 			break;
+		case L_STDERR_SYSLOG:
+			syslog(prio, "%s", buff);
+			if (prio > LOG_ERR) /* fall through for messages with high priority */
+				break;
 		case L_STDERR:
 			current = time(NULL);
 			tm = localtime(&current);
 			(void) strftime(tstamp, sizeof(tstamp), LOG_TIME_FORMAT, tm);
 
-			fprintf(stderr, "[%s] %s: ", tstamp, log_ident);
-	    		vfprintf(stderr, format, ap);
-    			fputs("\n", stderr);
+			fprintf(stderr, "[%s] %s: %s\n", tstamp, log_ident, buff);
     			fflush(stderr);
 			break;
 		case L_LOGFILE:
@@ -92,9 +98,7 @@ vlog(int prio, char *format, va_list ap)
 			tm = localtime(&current);
 			(void) strftime(tstamp, sizeof(tstamp), LOG_TIME_FORMAT, tm);
 
-			fprintf(log_file_fd, "[%s] %s: ", tstamp, log_ident);
-    			vfprintf(log_file_fd, format, ap);
-    			fputs("\n", log_file_fd);
+			fprintf(log_file_fd, "[%s] %s: %s\n", tstamp, log_ident, buff);
     			fflush(log_file_fd);
 			break;
 		default:
@@ -105,24 +109,24 @@ vlog(int prio, char *format, va_list ap)
 	return 0;
 }
 
-int
+void
 dlog(int prio, int level, char *format, ...)
 {
 	va_list ap;
 	int res;
 
 	if (debug_level < level)
-		return 0;
+		return;
 	
 	va_start(ap, format);
 	res = vlog(prio, format, ap);
 	va_end(ap);		
-	
-	return res;
+
+	/* XXX: should we do something if res < 0.. */
 }
 
-int
-log(int prio, char *format, ...)
+void
+flog(int prio, char *format, ...)
 {
 	va_list ap;
 	int res;
@@ -130,8 +134,8 @@ log(int prio, char *format, ...)
 	va_start(ap, format);
 	res = vlog(prio, format, ap);
 	va_end(ap);		
-	
-	return res;
+
+	/* XXX: should we do something if res < 0.. */
 }
 
 int
@@ -141,6 +145,7 @@ log_close(void)
 		case L_NONE:
 		case L_STDERR:
 			break;
+		case L_STDERR_SYSLOG:
 		case L_SYSLOG:
 			closelog();
 			break;

@@ -1,5 +1,5 @@
 /*
- *   $Id: radvdump.c,v 1.7 2001/12/31 11:40:56 psavola Exp $
+ *   $Id: radvdump.c,v 1.18 2007/06/25 11:42:10 psavola Exp $
  *
  *   Authors:
  *    Lars Fenneberg		<lf@elemental.net>
@@ -10,7 +10,7 @@
  *
  *   The license which is distributed with this software in the file COPYRIGHT
  *   applies to this software. If your distribution is missing this file, you
- *   may request it from <lutchann@litech.org>.
+ *   may request it from <pekkas@netcore.fi>.
  *
  */
 
@@ -36,15 +36,14 @@ int sock = -1;
 
 void version(void);
 void usage(void);
-void print_ra(unsigned char *, int, struct sockaddr_in6 *, int, int);
-void print_ff(unsigned char *, int, struct sockaddr_in6 *, int, int, int);
+void print_ff(unsigned char *, int, struct sockaddr_in6 *, int, unsigned int, int);
+void print_preferences(int);
 
 int
 main(int argc, char *argv[])
 {
 	unsigned char msg[MSG_SIZE];
 	int c, len, hoplimit;
-	int fform = 0;
 	int edefs = 0;
 	struct sockaddr_in6 rcv_addr;
         struct in6_pktinfo *pkt_info = NULL;
@@ -66,7 +65,6 @@ main(int argc, char *argv[])
 			set_debuglevel(atoi(optarg));
 			break;
 		case 'f':
-			fform = 1;
 			break;
 		case 'e':
 			edefs = 1;
@@ -108,7 +106,7 @@ main(int argc, char *argv[])
 
 			if (len < sizeof(struct icmp6_hdr))
 			{
-				log(LOG_WARNING, "received icmpv6 packet with invalid length: %d",
+				flog(LOG_WARNING, "received icmpv6 packet with invalid length: %d",
 					len);
 				exit(1);
 			}
@@ -122,32 +120,27 @@ main(int argc, char *argv[])
 				 *	We just want to listen to RSs and RAs
 				 */
 			
-				log(LOG_ERR, "icmpv6 filter failed");
+				flog(LOG_ERR, "icmpv6 filter failed");
 				exit(1);
 			}
 
-			dlog(LOG_DEBUG, 4, "receiver if_index: %d", pkt_info->ipi6_ifindex);
+			dlog(LOG_DEBUG, 4, "receiver if_index: %u", pkt_info->ipi6_ifindex);
 
 			if (icmph->icmp6_type == ND_ROUTER_SOLICIT)
 			{
 				/* not yet */	
 			}
 			else if (icmph->icmp6_type == ND_ROUTER_ADVERT)
-			{
-				if (!fform)
-					print_ra(msg, len, &rcv_addr, hoplimit, pkt_info->ipi6_ifindex);
-				else
-					print_ff(msg, len, &rcv_addr, hoplimit, pkt_info->ipi6_ifindex, edefs);
-			}
+				print_ff(msg, len, &rcv_addr, hoplimit, (unsigned int)pkt_info->ipi6_ifindex, edefs);
         	}
 		else if (len == 0)
        	 	{
-       	 		log(LOG_ERR, "received zero lenght packet");
+       	 		flog(LOG_ERR, "received zero lenght packet");
        	 		exit(1);
         	}
         	else
         	{
-			log(LOG_ERR, "recv_rs_ra: %s", strerror(errno));
+			flog(LOG_ERR, "recv_rs_ra: %s", strerror(errno));
 			exit(1);
         	}
         }                                                                                            
@@ -156,195 +149,14 @@ main(int argc, char *argv[])
 }
 
 void
-print_ra(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, int if_index)
+print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, unsigned int if_index, int edefs)
 {
-	struct nd_router_advert *radvert;
-	char addr_str[INET6_ADDRSTRLEN];
-	uint8_t *opt_str;
-	int i;
-	char if_name[IFNAMSIZ];
-
-	if (get_debuglevel() > 2)
-	{
-		int j;
-		char hd[64];
-		
-		dlog(LOG_DEBUG, 3, "Hexdump of packet (length %d):", len);
-		
-		for (j = 0; j < len; j++)
-		{
-			sprintf(hd+3*(j%16), "%02X ", (unsigned int) msg[j]);
-				
-			if (!((j+1)%16) || (j+1) == len)
-			{
-				dlog(LOG_DEBUG, 3, hd);
-			}
-		}
-		
-		dlog(LOG_DEBUG, 4, "Hexdump printed");
-	}
-
-	print_addr(&addr->sin6_addr, addr_str);
-	printf("Router advertisement from %s (hoplimit %d)\n", addr_str, hoplimit);
-	if_indextoname(if_index, if_name);
-	printf("Received by interface %s\n", if_name);
-
-	radvert = (struct nd_router_advert *) msg;
-
-	printf("\t# Note: {Min,Max}RtrAdvInterval cannot be obtained with radvdump\n");
-
-	printf("\tAdvCurHopLimit: %d\n", (int) radvert->nd_ra_curhoplimit);
-
-	printf("\tAdvManagedFlag: %s\n", 
-		(radvert->nd_ra_flags_reserved & ND_RA_FLAG_MANAGED)?"on":"off");
-
-	printf("\tAdvOtherConfigFlag: %s\n", 
-		(radvert->nd_ra_flags_reserved & ND_RA_FLAG_OTHER)?"on":"off");
-
-	/* Mobile IPv6 ext */
-	printf("\tAdvHomeAgentFlag: %s\n", 
-		(radvert->nd_ra_flags_reserved & ND_RA_FLAG_HOME_AGENT)?"on":"off");
-
-	printf("\tAdvReachableTime: %lu\n", (unsigned long)ntohl(radvert->nd_ra_reachable));
-
-	printf("\tAdvRetransTimer: %lu\n", (unsigned long)ntohl(radvert->nd_ra_retransmit));
-
-	len -= sizeof(struct nd_router_advert);
-
-	if (len == 0)
-		return;
-		
-	opt_str = (uint8_t *)(msg + sizeof(struct nd_router_advert));
-		
-	while (len > 0)
-	{
-		int optlen;
-		struct nd_opt_prefix_info *pinfo;
-		struct nd_opt_mtu *mtu;
-		struct AdvInterval *a_ival;
-		struct HomeAgentInfo *ha_info;
-		char prefix_str[INET6_ADDRSTRLEN];
-
-		if (len < 2)
-		{
-			log(LOG_ERR, "trailing garbage in RA from %s", 
-				addr_str);
-			break;
-		}
-		
-		optlen = (opt_str[1] << 3);
-
-		dlog(LOG_DEBUG,4, "option type %d, length %d", (int)*opt_str,
-			optlen);
-
-		if (optlen == 0) 
-		{
-			log(LOG_ERR, "zero length option in RA");
-			break;
-		} 
-		else if (optlen > len)
-		{
-			log(LOG_ERR, "option length greater than total"
-				" length in RA (type %d, optlen %d, len %d)", 
-				(int)*opt_str, optlen, len);
-			break;
-		} 		
-
-		switch (*opt_str)
-		{
-		case ND_OPT_MTU:
-			mtu = (struct nd_opt_mtu *)opt_str;
-
-			printf("\tAdvLinkMTU: %lu\n", (unsigned long)ntohl(mtu->nd_opt_mtu_mtu));
-			break;
-		case ND_OPT_PREFIX_INFORMATION:
-			pinfo = (struct nd_opt_prefix_info *) opt_str;
-			
-			print_addr(&pinfo->nd_opt_pi_prefix, prefix_str);	
-				
-			printf("\tPrefix %s/%d\n", prefix_str, pinfo->nd_opt_pi_prefix_len);
-	
-	
-			if (ntohl(pinfo->nd_opt_pi_valid_time) == 0xffffffff)
-			{		
-				printf("\t\tAdvValidLifetime: infinity (0xffffffff)\n");
-			}
-			else
-			{
-				printf("\t\tAdvValidLifetime: %lu\n", (unsigned long) ntohl(pinfo->nd_opt_pi_valid_time));
-			}
-			if (ntohl(pinfo->nd_opt_pi_preferred_time) == 0xffffffff)
-			{
-				printf("\t\tAdvPreferredLifetime: infinity (0xffffffff)\n");
-			}
-			else
-			{
-				printf("\t\tAdvPreferredLifetime: %lu\n", (unsigned long) ntohl(pinfo->nd_opt_pi_preferred_time));
-			}
-			printf("\t\tAdvOnLink: %s\n", 
-				(pinfo->nd_opt_pi_flags_reserved & ND_OPT_PI_FLAG_ONLINK)?"on":"off");
-
-			printf("\t\tAdvAutonomous: %s\n", 
-				(pinfo->nd_opt_pi_flags_reserved & ND_OPT_PI_FLAG_AUTO)?"on":"off");
-
-			/* Mobile IPv6 ext */
-			printf("\t\tAdvRouterAddr: %s\n", 
-				(pinfo->nd_opt_pi_flags_reserved & ND_OPT_PI_FLAG_RADDR)?"on":"off");
-
-			break;
-		case ND_OPT_SOURCE_LINKADDR:
-			printf("\tAdvSourceLLAddress: ");
-			
-			for (i = 2; i < optlen; i++)
-			{
-				printf("%02X ", (unsigned int) opt_str[i]);
-			}
-			
-			printf("\n");
-			break;
-		/* Mobile IPv6 ext */
-		case ND_OPT_RTR_ADV_INTERVAL:
-			a_ival = (struct AdvInterval *)opt_str;
-
-			printf("\tAdvIntervalOpt:\n");
-			printf("\t\tAdvInterval: %lu", (unsigned long)ntohl(a_ival->adv_ival) / 1000);
-			printf("\n");
-			break;
-		/* Mobile IPv6 ext */
-		case ND_OPT_HOME_AGENT_INFO:
-			ha_info = (struct HomeAgentInfo *)opt_str;
-
-			printf("\tAdvHomeAgentInfo:\n");
-			printf("\t\tHomeAgentPreference: %hu", (unsigned short)ntohs(ha_info->preference));
-			printf("\n");
-			printf("\t\tHomeAgentLifetime: %hu", (unsigned short)ntohs(ha_info->lifetime));
-			printf("\n");
-			break;
-		case ND_OPT_TARGET_LINKADDR:
-		case ND_OPT_REDIRECTED_HEADER:
-			log(LOG_ERR, "invalid option %d in RA", (int)*opt_str);
-			break;
-		default:
-			dlog(LOG_DEBUG, 1, "unknown option %d in RA",
-				(int)*opt_str);
-			break;
-		}
-		
-		len -= optlen;
-		opt_str += optlen;
-	}
-	
-	fflush(stdout);
-}
-
-void
-print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, int if_index, int edefs)
-{
+	/* XXX: hoplimit not being used for anything here.. */
 	struct nd_router_advert *radvert;
 	char addr_str[INET6_ADDRSTRLEN];
 	uint8_t *opt_str;
 	int orig_len = len;
-	char if_name[IFNAMSIZ];
+	char if_name[IFNAMSIZ] = "";
 
 	print_addr(&addr->sin6_addr, addr_str);
 	printf("#\n# radvd configuration generated by radvdump %s\n", VERSION);
@@ -365,19 +177,30 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 	printf("\tAdvOtherConfigFlag %s;\n", 
 		(radvert->nd_ra_flags_reserved & ND_RA_FLAG_OTHER)?"on":"off");
 
-	if (!edefs || DFLT_AdvReachableTime != (unsigned long)ntohl(radvert->nd_ra_reachable))
-	printf("\tAdvReachableTime %lu;\n", (unsigned long)ntohl(radvert->nd_ra_reachable));
+	if (!edefs || DFLT_AdvReachableTime != ntohl(radvert->nd_ra_reachable))
+	printf("\tAdvReachableTime %u;\n", ntohl(radvert->nd_ra_reachable));
 
-	if (!edefs || DFLT_AdvRetransTimer != (unsigned long)ntohl(radvert->nd_ra_retransmit))
-	printf("\tAdvRetransTimer %lu;\n", (unsigned long)ntohl(radvert->nd_ra_retransmit));
+	if (!edefs || DFLT_AdvRetransTimer != ntohl(radvert->nd_ra_retransmit))
+	printf("\tAdvRetransTimer %u;\n", ntohl(radvert->nd_ra_retransmit));
 
-	if (!edefs || DFLT_AdvCurHopLimit != (int) radvert->nd_ra_curhoplimit)
-	printf("\tAdvCurHopLimit %d;\n", (int) radvert->nd_ra_curhoplimit);
+	if (!edefs || DFLT_AdvCurHopLimit != radvert->nd_ra_curhoplimit)
+	printf("\tAdvCurHopLimit %u;\n", radvert->nd_ra_curhoplimit);
+
+	if (!edefs || (3*DFLT_MaxRtrAdvInterval) != ntohs(radvert->nd_ra_router_lifetime))
+	printf("\tAdvDefaultLifetime %hu;\n", ntohs(radvert->nd_ra_router_lifetime));
 
 	/* Mobile IPv6 ext */
 	if (!edefs || DFLT_AdvHomeAgentFlag != (ND_RA_FLAG_HOME_AGENT == (radvert->nd_ra_flags_reserved & ND_RA_FLAG_HOME_AGENT)))
 	printf("\tAdvHomeAgentFlag %s;\n", 
 		(radvert->nd_ra_flags_reserved & ND_RA_FLAG_HOME_AGENT)?"on":"off");
+
+        /* Route Preferences and more specific routes */
+        /* XXX two middlemost bits from 8 bit field */
+	if (!edefs || (((radvert->nd_ra_flags_reserved & 0x18) >> 3) & 0xff) != DFLT_AdvDefaultPreference) {
+	        printf("\tAdvDefaultPreference ");
+	        print_preferences(((radvert->nd_ra_flags_reserved & 0x18) >> 3) & 0xff);
+	        printf(";\n");
+	}
 
 	len -= sizeof(struct nd_router_advert);
 
@@ -390,12 +213,11 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 	{
 		int optlen;
 		struct nd_opt_mtu *mtu;
-		struct AdvInterval *a_ival;
 		struct HomeAgentInfo *ha_info;
 
 		if (len < 2)
 		{
-			log(LOG_ERR, "trailing garbage in RA from %s", 
+			flog(LOG_ERR, "trailing garbage in RA from %s", 
 				addr_str);
 			break;
 		}
@@ -404,12 +226,12 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 
 		if (optlen == 0) 
 		{
-			log(LOG_ERR, "zero length option in RA");
+			flog(LOG_ERR, "zero length option in RA");
 			break;
 		} 
 		else if (optlen > len)
 		{
-			log(LOG_ERR, "option length greater than total"
+			flog(LOG_ERR, "option length greater than total"
 				" length in RA (type %d, optlen %d, len %d)", 
 				(int)*opt_str, optlen, len);
 			break;
@@ -420,8 +242,8 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 		case ND_OPT_MTU:
 			mtu = (struct nd_opt_mtu *)opt_str;
 
-			if (!edefs || DFLT_AdvLinkMTU != (unsigned long)ntohl(mtu->nd_opt_mtu_mtu))
-			printf("\tAdvLinkMTU %lu;\n", (unsigned long)ntohl(mtu->nd_opt_mtu_mtu));
+			if (!edefs || DFLT_AdvLinkMTU != ntohl(mtu->nd_opt_mtu_mtu))
+			printf("\tAdvLinkMTU %u;\n", ntohl(mtu->nd_opt_mtu_mtu));
 			break;
 		case ND_OPT_SOURCE_LINKADDR:
 			/* XXX: !DFLT depends on current DFLT_ value */
@@ -430,8 +252,6 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 			break;
 		/* Mobile IPv6 ext */
 		case ND_OPT_RTR_ADV_INTERVAL:
-			a_ival = (struct AdvInterval *)opt_str;
-
 			/* XXX: !DFLT depends on current DFLT_ value */
 			if (!edefs || !DFLT_AdvIntervalOpt)
 			printf("\tAdvIntervalOpt on;\n");
@@ -440,21 +260,29 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 		case ND_OPT_HOME_AGENT_INFO:
 			ha_info = (struct HomeAgentInfo *)opt_str;
 
-			/* XXX: !DFLT depends on current DFLT_ value */
-			if (!edefs || !DFLT_AdvHomeAgentInfo)
+			/* XXX: we check DFLT_HomeAgentInfo by interface, and it's outside
+			   of context here, so we always need to print it out.. */
 			printf("\tAdvHomeAgentInfo on;\n");
 
-			if (!edefs || DFLT_HomeAgentPreference != (unsigned short)ntohs(ha_info->preference))
-			printf("\tHomeAgentPreference %hu;\n", (unsigned short)ntohs(ha_info->preference));
+			/* NEMO ext */
+			if (!edefs || DFLT_AdvMobRtrSupportFlag != (ha_info->flags_reserved & ND_OPT_HAI_FLAG_SUPPORT_MR))
+				printf("\tAdvMobRtrSupportFlag %s;\n", (ha_info->flags_reserved & ND_OPT_HAI_FLAG_SUPPORT_MR)?"on":"off");
+
+			if (!edefs || DFLT_HomeAgentPreference != ntohs(ha_info->preference))
+			printf("\tHomeAgentPreference %hu;\n", ntohs(ha_info->preference));
 			/* Hum.. */
-			if (!edefs || (3*DFLT_MaxRtrAdvInterval) != (unsigned short)ntohs(ha_info->lifetime))
-			printf("\tHomeAgentLifetime %hu;\n", (unsigned short)ntohs(ha_info->lifetime));
+			if (!edefs || (3*DFLT_MaxRtrAdvInterval) != ntohs(ha_info->lifetime))
+			printf("\tHomeAgentLifetime %hu;\n", ntohs(ha_info->lifetime));
 			break;
 		case ND_OPT_TARGET_LINKADDR:
 		case ND_OPT_REDIRECTED_HEADER:
-			log(LOG_ERR, "invalid option %d in RA", (int)*opt_str);
+			flog(LOG_ERR, "invalid option %d in RA", (int)*opt_str);
 			break;
 		case ND_OPT_PREFIX_INFORMATION:
+			break;
+		case ND_OPT_ROUTE_INFORMATION:
+			break;
+		case ND_OPT_RDNSS_INFORMATION:
 			break;
 		default:
 			dlog(LOG_DEBUG, 1, "unknown option %d in RA",
@@ -477,11 +305,13 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 	{
 		int optlen;
 		struct nd_opt_prefix_info *pinfo;
+		struct nd_opt_route_info_local *rinfo;
+		struct nd_opt_rdnss_info_local *rdnss_info;
 		char prefix_str[INET6_ADDRSTRLEN];
 
 		if (orig_len < 2)
 		{
-			log(LOG_ERR, "trailing garbage in RA from %s", 
+			flog(LOG_ERR, "trailing garbage in RA from %s", 
 				addr_str);
 			break;
 		}
@@ -490,12 +320,12 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 
 		if (optlen == 0) 
 		{
-			log(LOG_ERR, "zero length option in RA");
+			flog(LOG_ERR, "zero length option in RA");
 			break;
 		} 
 		else if (optlen > orig_len)
 		{
-			log(LOG_ERR, "option length greater than total"
+			flog(LOG_ERR, "option length greater than total"
 				" length in RA (type %d, optlen %d, len %d)", 
 				(int)*opt_str, optlen, orig_len);
 			break;
@@ -517,8 +347,8 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 			}
 			else
 			{
-				if (!edefs || DFLT_AdvValidLifetime != (unsigned long)ntohl(pinfo->nd_opt_pi_valid_time))
-				printf("\t\tAdvValidLifetime %lu;\n", (unsigned long)ntohl(pinfo->nd_opt_pi_valid_time));
+				if (!edefs || DFLT_AdvValidLifetime != ntohl(pinfo->nd_opt_pi_valid_time))
+				printf("\t\tAdvValidLifetime %u;\n", ntohl(pinfo->nd_opt_pi_valid_time));
 			}
 			if (ntohl(pinfo->nd_opt_pi_preferred_time) == 0xffffffff)
 			{
@@ -527,8 +357,8 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 			}
 			else
 			{
-				if (!edefs || DFLT_AdvPreferredLifetime != (unsigned long)ntohl(pinfo->nd_opt_pi_preferred_time))
-				printf("\t\tAdvPreferredLifetime %lu;\n", (unsigned long)ntohl(pinfo->nd_opt_pi_preferred_time));
+				if (!edefs || DFLT_AdvPreferredLifetime != ntohl(pinfo->nd_opt_pi_preferred_time))
+				printf("\t\tAdvPreferredLifetime %u;\n", ntohl(pinfo->nd_opt_pi_preferred_time));
 			}
 
 			if (!edefs || DFLT_AdvOnLinkFlag != (ND_OPT_PI_FLAG_ONLINK == (pinfo->nd_opt_pi_flags_reserved & ND_OPT_PI_FLAG_ONLINK)))
@@ -546,6 +376,62 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 
 			printf("\t}; # End of prefix definition\n\n");
 			break;
+		case ND_OPT_ROUTE_INFORMATION:
+			rinfo = (struct nd_opt_route_info_local *) opt_str;
+			
+			print_addr(&rinfo->nd_opt_ri_prefix, prefix_str);	
+				
+			printf("\n\troute %s/%d\n\t{\n", prefix_str, rinfo->nd_opt_ri_prefix_len);
+
+			if (!edefs || (((radvert->nd_ra_flags_reserved & 0x18) >> 3) & 0xff) != DFLT_AdvRoutePreference) {
+				printf("\t\tAdvRoutePreference ");
+				print_preferences(((rinfo->nd_opt_ri_flags_reserved & 0x18) >> 3) & 0xff);
+				printf(";\n");
+			}
+			
+			/* XXX: we check DFLT_AdvRouteLifetime by interface, and it's outside of context here */
+			if (ntohl(rinfo->nd_opt_ri_lifetime) == 0xffffffff)
+				printf("\t\tAdvRouteLifetime infinity; # (0xffffffff)\n");
+			else
+				printf("\t\tAdvRouteLifetime %u;\n", ntohl(rinfo->nd_opt_ri_lifetime));
+
+			printf("\t}; # End of route definition\n\n");
+			break;
+		case ND_OPT_RDNSS_INFORMATION:
+			rdnss_info = (struct nd_opt_rdnss_info_local *) opt_str;
+
+			printf("\n\tRDNSS");
+
+			print_addr(&rdnss_info->nd_opt_rdnssi_addr1, prefix_str);
+			printf(" %s", prefix_str);
+
+			if (rdnss_info->nd_opt_rdnssi_len >= 5) {
+				print_addr(&rdnss_info->nd_opt_rdnssi_addr2, prefix_str);
+				printf(" %s", prefix_str);
+			}
+			if (rdnss_info->nd_opt_rdnssi_len >= 7) {
+				print_addr(&rdnss_info->nd_opt_rdnssi_addr3, prefix_str);
+				printf(" %s", prefix_str);
+			}
+			
+			printf("\n\t{\n");
+			if (!edefs 
+			    || ((rdnss_info->nd_opt_rdnssi_pref_flag_reserved & ND_OPT_RDNSSI_PREF_MASK) >> ND_OPT_RDNSSI_PREF_SHIFT) != DFLT_AdvRDNSSPreference)
+				printf("\t\tAdvRDNSSPreference %d;\n", 
+				  (rdnss_info->nd_opt_rdnssi_pref_flag_reserved & ND_OPT_RDNSSI_PREF_MASK) >> ND_OPT_RDNSSI_PREF_SHIFT);
+
+			if (!edefs 
+			    || ((rdnss_info->nd_opt_rdnssi_pref_flag_reserved & ND_OPT_RDNSSI_FLAG_S) == 0 ) == DFLT_AdvRDNSSOpenFlag)
+				printf("\t\tAdvRDNSSOpen %s;\n", rdnss_info->nd_opt_rdnssi_pref_flag_reserved & ND_OPT_RDNSSI_FLAG_S ? "on" : "off");
+
+			/* as AdvRDNSSLifetime may depend on MaxRtrAdvInterval, it could change */
+			if (ntohl(rdnss_info->nd_opt_rdnssi_lifetime) == 0xffffffff)
+				printf("\t\tAdvRDNSSLifetime infinity; # (0xffffffff)\n");
+			else
+				printf("\t\tAdvRDNSSLifetime %u;\n", ntohl(rdnss_info->nd_opt_rdnssi_lifetime));
+			
+			printf("\t}; # End of RDNSS definition\n\n");
+			break;
 		default:
 			break;
 		}
@@ -556,6 +442,25 @@ print_ff(unsigned char *msg, int len, struct sockaddr_in6 *addr, int hoplimit, i
 	printf("}; # End of interface definition\n");
 
 	fflush(stdout);
+}
+
+void
+print_preferences(int p)
+{
+	switch (p) {
+		case 0:
+			printf("medium");
+			break;
+		case 1:
+			printf("high");
+			break;
+		case 2:
+			/* reserved, ignore */
+			break;
+		case 3:
+			printf("low");
+			break;
+	}		
 }
 
 void

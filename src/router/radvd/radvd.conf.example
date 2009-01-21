@@ -1,6 +1,21 @@
+#
+# NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE 
+# NOTE                                                             NOTE
+# NOTE  This is an EXAMPLE, which serves only to demonstrate the   NOTE
+# NOTE  syntax of radvd.conf, and is not meant to be used for a    NOTE
+# NOTE  real radvd configuration.                                  NOTE
+# NOTE                                                             NOTE
+# NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE 
+#
+
 interface eth0
 {
 	AdvSendAdvert on;
+
+# This may be needed on some interfaces which are not active when
+# radvd starts, but becomoe available later on; see man page for details.
+
+	# IgnoreIfMissing on;
 
 #
 # These settings cause advertisements to be sent every 3-10 seconds.  This
@@ -12,6 +27,13 @@ interface eth0
 	MaxRtrAdvInterval 10;
 
 #
+# You can use AdvDefaultPreference setting to advertise the preference of
+# the router for the purposes of default router determination.
+# NOTE: This feature is still being specified and is not widely supported!
+#
+	AdvDefaultPreference low;
+
+#
 # Disable Mobile IPv6 support
 #
 	AdvHomeAgentFlag off;
@@ -19,7 +41,7 @@ interface eth0
 #
 # example of a standard prefix
 #
-	prefix 3ffe:0302:0011:0002::/64
+	prefix 2001:db8:1:0::/64
 	{
 		AdvOnLink on;
 		AdvAutonomous on;
@@ -68,5 +90,27 @@ interface eth0
 		AdvPreferredLifetime 120;
 		AdvValidLifetime 300;
 	};
+#
+# example of a more specific route
+# NOTE: This feature is still being specified and is not widely supported!
+#
+	route 2001:db0:fff::/48
+	{
+		AdvRoutePreference high;
+		AdvRouteLifetime 3600;
+	};
+
+#
+# RDNSS
+# NOTE: This feature is still a draft has no IANA number type for the moment
+#
+        RDNSS 2001:db8::1 2001:db8::2
+        {
+                AdvRDNSSPreference 8;
+                AdvRDNSSOpen off;
+                AdvRDNSSLifetime 30;
+        };
+
 
 };
+
