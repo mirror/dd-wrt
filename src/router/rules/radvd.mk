@@ -1,12 +1,14 @@
 radvd-configure:
-	cd radvd/flex && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"
-	cd radvd && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -I$(TOP)/radvd/flex" LDFLAGS="-L$(TOP)/radvd/flex"  --with-flex=$(TOP)/radvd/flex
-
+	if test ! -e "radvd/Makefile"; then \
+	    cd radvd/flex && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"; \
+	    cd .. && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) -I$(TOP)/radvd/flex" LDFLAGS="-L$(TOP)/radvd/flex"  --with-flex=$(TOP)/radvd/flex; \
+	fi
+	
 radvd-clean:
-	make -C radvd/flex clean
-	make -C radvd clean
+	if test -e "radvd/Makefile"; then make -C make -C radvd/flex clean; make -C radvd clean; fi
+		
 
-radvd:
+radvd: radvd-configure
 	make -C radvd/flex libfl.a
 	make -C radvd
 
