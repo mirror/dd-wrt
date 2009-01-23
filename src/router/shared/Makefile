@@ -103,7 +103,9 @@ endif
 ifeq ($(CONFIG_RB500),y)
   CFLAGS += -DHAVE_RB500
 endif
-
+ifeq ($(CONFIG_WG302),y)
+CFLAGS += -DHAVE_WG302
+endif
 ifeq ($(CONFIG_XSCALE),y)
   CFLAGS += -DHAVE_XSCALE
 endif

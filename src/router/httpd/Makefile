@@ -255,6 +255,9 @@ else
 ifeq ($(CONFIG_TONZE),y)
 CFLAGS += -DHAVE_TONZE
 endif
+ifeq ($(CONFIG_WG302),y)
+CFLAGS += -DHAVE_WG302
+endif
 
 ifeq ($(CONFIG_GATEWORX),y)
 CFLAGS += -DHAVE_GATEWORX
