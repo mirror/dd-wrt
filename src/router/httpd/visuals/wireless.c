@@ -107,9 +107,9 @@ void ej_wireless_filter_table( webs_t wp, int argc, char_t ** argv )
     int item;
 
 #if LANGUAGE == JAPANESE
-    int box_len = 20;
+#define BOX_LEN 20
 #else
-    int box_len = 17;
+#define BOX_LEN 17
 #endif
 
     char *mac_mess = "MAC";
@@ -135,12 +135,12 @@ void ej_wireless_filter_table( webs_t wp, int argc, char_t ** argv )
 
 	    websWrite( wp,
 		       "<div>%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
-		       mac_mess, item, box_len, ifname, item - 1,
+		       mac_mess, item, BOX_LEN, ifname, item - 1,
 		       wl_filter_mac_get( ifname, "mac", item - 1 ) );
 
 	    websWrite( wp,
 		       "%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
-		       mac_mess, item + ( WL_FILTER_MAC_NUM / 2 ), box_len,
+		       mac_mess, item + ( WL_FILTER_MAC_NUM / 2 ), BOX_LEN,
 		       ifname, item + ( WL_FILTER_MAC_NUM / 2 ) - 1,
 		       wl_filter_mac_get( ifname, "mac",
 					  item + ( WL_FILTER_MAC_NUM / 2 ) -
@@ -159,12 +159,12 @@ void ej_wireless_filter_table( webs_t wp, int argc, char_t ** argv )
 
 	    websWrite( wp,
 		       "<div/>%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
-		       mac_mess, item, box_len, ifname, item - 1,
+		       mac_mess, item, BOX_LEN, ifname, item - 1,
 		       wl_filter_mac_get( ifname, "mac", item - 1 ) );
 
 	    websWrite( wp,
 		       "%s %03d : <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"%s_mac%d\" value=\"%s\"/></div>\n",
-		       mac_mess, item + ( WL_FILTER_MAC_NUM / 2 ), box_len,
+		       mac_mess, item + ( WL_FILTER_MAC_NUM / 2 ), BOX_LEN,
 		       ifname, item + ( WL_FILTER_MAC_NUM / 2 ) - 1,
 		       wl_filter_mac_get( ifname, "mac",
 					  item + ( WL_FILTER_MAC_NUM / 2 ) -
