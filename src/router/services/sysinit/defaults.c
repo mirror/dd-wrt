@@ -176,6 +176,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath0_regdomain", "GERMANY_BFWA", 0},	/* LAN IP address */
 #elif HAVE_NS2
     {"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
+#elif HAVE_EOC2610
+    {"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
 #endif
     {"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #elif HAVE_CORENET
@@ -250,6 +252,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
     {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
+    {"wan_proto", "pptp", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
     {"wan_proto", "pptp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_X86
 #ifdef HAVE_GW700
@@ -621,6 +625,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
     {"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
+    {"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_CORENET)
     {"ath0_ssid", "corenet", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_DDLAN)
@@ -749,6 +755,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
     {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
+    {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_TRIMAX
     {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
@@ -766,6 +774,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
     {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
+    {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
     {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_TRIMAX
     {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
