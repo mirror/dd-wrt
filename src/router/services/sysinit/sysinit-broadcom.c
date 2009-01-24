@@ -270,11 +270,8 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_WNR834BV2:
 	case ROUTER_NETGEAR_WNDR3300:
 	case ROUTER_ASUS_WL500W:
-	    insmod( "wl" );	// load module
 	    break;
 	case ROUTER_WRT600N:
-	case ROUTER_WRT610N:
-	    insmod( "wl" );	// load module
 	    wl_hwaddr( "eth0", macbuf );
 	    ether_etoa( ( uchar * ) macbuf, eaddr );
 	    nvram_set( "wl0_hwaddr", eaddr );
@@ -290,6 +287,15 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	    ether_etoa( ( uchar * ) macbuf, eaddr );
 	    nvram_set( "wl1_hwaddr", eaddr );
 	    break;
+	case ROUTER_WRT610N:
+	    wl_hwaddr( "eth0", macbuf );
+	    ether_etoa( ( uchar * ) macbuf, eaddr );
+	    nvram_set( "wl0_hwaddr", eaddr );
+	    wl_hwaddr( "eth1", macbuf );
+	    ether_etoa( ( uchar * ) macbuf, eaddr );
+	    nvram_set( "wl1_hwaddr", eaddr );
+	    break;
+
 	default:
 	    boardflags = strtoul( nvram_safe_get( "boardflags" ), NULL, 0 );
 	    fprintf( stderr, "boardflags are 0x%04X\n", boardflags );
