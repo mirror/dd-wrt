@@ -3780,7 +3780,7 @@ int inline issuperchannel( void )
 }
 #endif
 
-#ifdef HAVE_MADWIFI
+
 void ej_show_countrylist( webs_t wp, int argc, char_t ** argv )
 {
     if( argc < 1 )
@@ -3791,7 +3791,7 @@ void ej_show_countrylist( webs_t wp, int argc, char_t ** argv )
 
     showOptionsChoose( wp, argv[0], list, nvram_safe_get( argv[0] ) );
 }
-#endif
+
 void ej_show_wireless_single( webs_t wp, char *prefix )
 {
     char wl_mode[16];
