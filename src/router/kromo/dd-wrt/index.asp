@@ -20,7 +20,7 @@ function valid_mtu(I) {
 		end = 1492;
 	} else {
 		start = 576;
-		end = 1500;
+		end = 10000;
 	}
 
 	valid_range(I,start,end,"MTU");
