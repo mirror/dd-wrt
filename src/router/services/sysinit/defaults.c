@@ -1382,12 +1382,22 @@ struct nvram_tuple srouter_defaults[] = {
     {"rc_custom", "", 0},
     {"rc_shutdown", "", 0},
 #ifdef HAVE_MADWIFI
+#ifdef HAVE_XIOCOM
+    {"ath0_txpwrdbm", "17", 0},
+    {"ath1_txpwrdbm", "17", 0},
+    {"ath2_txpwrdbm", "17", 0},
+    {"ath3_txpwrdbm", "17", 0},
+    {"ath4_txpwrdbm", "17", 0},
+    {"ath5_txpwrdbm", "17", 0},
+#else
+
     {"ath0_txpwrdbm", "20", 0},
     {"ath1_txpwrdbm", "20", 0},
     {"ath2_txpwrdbm", "20", 0},
     {"ath3_txpwrdbm", "20", 0},
     {"ath4_txpwrdbm", "20", 0},
     {"ath5_txpwrdbm", "20", 0},
+#endif
 #else
 #ifdef HAVE_POWERNOC
     {"wl0_txpwr", "200", 0},
