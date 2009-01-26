@@ -916,9 +916,12 @@ int wifi_gettxpoweroffset( char *ifname )
 
 int get_wifioffset( char *ifname )
 {
-if (strlen(nvram_nget("%s_offset",ifname)>0))
+char *var = NULL;
+if (ifname)
+    var = nvram_nget("%s_offset",ifname);
+if (var)
 	{
-	return atoi(nvram_nget("%s_offset",ifname));
+	return atoi(var);
 	}
     int vendor;
     int devcount;
