@@ -7543,6 +7543,13 @@ void ej_portsetup( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp, "</div>\n" );
 
 	websWrite( wp, "<div id=\"%s_idnet\">\n", layer );
+
+	websWrite( wp, "<div class=\"setting\">\n");
+	websWrite( wp, "<div class=\"label\">%s</div>\n",live_translate("idx.mtu"));
+	websWrite( wp, "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s_mtu\" value=\"%s\" />\n",var,nvram_nget("%s_mtu",var));
+	websWrite( wp, "</div>\n");
+
+
 	char mcast[32];
 
 	sprintf( mcast, "%s_multicast", var );

@@ -1489,7 +1489,7 @@ static void configure_single( int count )
 	}
 	else
 	{
-	    sysprintf( "ifconfig %s mtu 1500", dev );
+	    sysprintf( "ifconfig %s mtu %s", dev,getMTU(dev) );
 	    sysprintf( "ifconfig %s %s netmask %s up", dev,
 		       nvram_nget( "%s_ipaddr", dev ),
 		       nvram_nget( "%s_netmask", dev ) );
@@ -1502,7 +1502,7 @@ static void configure_single( int count )
 	sprintf( bridged, "%s_bridged", dev );
 	if( nvram_default_match( bridged, "0", "1" ) )
 	{
-	    sysprintf( "ifconfig %s mtu 1500", dev );
+	    sysprintf( "ifconfig %s mtu %s", dev,getMTU(dev) );
 	    sysprintf( "ifconfig %s %s netmask %s up", dev,
 		       nvram_nget( "%s_ipaddr", dev ),
 		       nvram_nget( "%s_netmask", dev ) );
@@ -1569,7 +1569,7 @@ static void configure_single( int count )
 
 		    sprintf( ip, "%s_ipaddr", var );
 		    sprintf( mask, "%s_netmask", var );
-		    sysprintf( "ifconfig %s mtu 1500", var );
+		    sysprintf( "ifconfig %s mtu %s", var,getMTU(var) );
 		    sysprintf( "ifconfig %s %s netmask %s up", var, nvram_safe_get( ip ),nvram_safe_get( mask ) );
 		    if( !strcmp( apm, "sta" ) || !strcmp( apm, "wdssta" )
 			|| !strcmp( apm, "wet" ) )
@@ -1683,7 +1683,7 @@ void start_vifs( void )
 
 			sprintf( ip, "%s_ipaddr", var );
 			sprintf( mask, "%s_netmask", var );
-			eval( "ifconfig", var, "mtu", "1500" );
+			eval( "ifconfig", var, "mtu", getMTU(var) );
 			sysprintf("ifconfig %s %s netmask %s up",var, nvram_safe_get( ip ),nvram_safe_get( mask ) );
 		    }
 		}

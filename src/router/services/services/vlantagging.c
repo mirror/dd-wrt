@@ -241,6 +241,16 @@ char *getBridgeMTU( char *ifname )
     return "1500";
 }
 
+char *getMTU(char *ifname)
+{
+    if (!ifname)
+	return "1500";
+    char *mtu = nvram_nget("%s_mtu",ifname);
+    if (!mtu || strlen(mtu)==0)
+	return "1500";
+    return mtu;
+}
+
 char *getBridge( char *ifname )
 {
     static char word[256];
