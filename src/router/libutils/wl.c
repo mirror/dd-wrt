@@ -918,7 +918,11 @@ int get_wifioffset( char *ifname )
 {
 char *var = NULL;
 if (ifname)
-    var = nvram_nget("%s_offset",ifname);
+    {
+    char localvar[32];
+    sprintf(localvar,"%s_offset",ifname);
+    var = nvram_get(localvar);
+    }
 if (var)
 	{
 	return atoi(var);
