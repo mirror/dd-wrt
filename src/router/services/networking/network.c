@@ -1530,6 +1530,9 @@ void start_lan( void )
 	     */
 	    if( ifconfig( realname, IFUP, "0.0.0.0", NULL ) )
 		continue;
+	
+	    // set proper mtu
+	    eval("ifconfig",realname,"mtu",getMTU(realname));
 
 	    /*
 	     * Set the logical bridge address to that of the first interface 
@@ -2808,11 +2811,16 @@ void start_wan( int status )
 #ifdef HAVE_PPPOE
     if( nvram_match( "wan_proto", "pppoe" ) )
     {
-	ifr.ifr_mtu = 1500;	// default ethernet frame size
+	ifr.ifr_mtu = getMTU(wan_ifname);	// default ethernet frame size
     }
     else
 #endif
-	ifr.ifr_mtu = atoi( nvram_safe_get( "wan_mtu" ) );
+	{
+	int mtu = atoi(nvram_safe_get("wan_mtu"));
+	if (mtu==1500)
+	    mtu = atoi(getMTU(wan_ifname));
+	ifr.ifr_mtu = mtu;
+	}
     // fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
     ioctl( s, SIOCSIFMTU, &ifr );
 

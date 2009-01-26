@@ -49,9 +49,14 @@ static char *get_mtu_val( void )
 	&& nvram_match( "wan_proto", "pppoe" ) )
 	return nvram_safe_get( "ppp_mtu" );
     else if( nvram_match( "wshaper_dev", "WAN" ) )
-	return nvram_safe_get( "wan_mtu" );
+	{
+	    if (nvram_match("wan_mtu","1500"))
+		return getMTU(get_wshaper_dev());
+	    else
+		return nvram_safe_get("wan_mtu");
+	}
     else
-	return "1500";
+	return getBridgeMTU(get_wshaper_dev());
 }
 
 #ifdef HAVE_SVQOS
@@ -590,10 +595,7 @@ void start_wshaper( void )
     ulcalc2 = atoi( ul_val ) / 12;
     sprintf( ulcalc1_val, "%d", ulcalc1 );
     sprintf( ulcalc2_val, "%d", ulcalc2 );
-    if( nvram_match( "wshaper_dev", "WAN" ) )
-	mtu_val = get_mtu_val(  );
-    else
-	mtu_val = "1500";
+    mtu_val = get_mtu_val(  );
 #ifdef HAVE_WSHAPER
     ret =
 	eval( "wshaper", dl_val, ul_val, dev_val, ulcalc1_val,

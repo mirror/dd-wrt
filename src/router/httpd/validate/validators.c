@@ -815,9 +815,16 @@ void validate_portsetup( webs_t wp, char *value, struct variable *v )
 	sprintf( val, "%s_multicast", var );
 	char *multicast = websGetVar( wp, val, NULL );
 
+	sprintf( val, "%s_mtu", var );
+	char *mtu = websGetVar( wp, val, NULL );
+
 	if( multicast )
 	    nvram_set( val, multicast );
-
+	if (mtu)
+	    nvram_set( val, mtu);
+	else
+	    nvram_set( val, "1500");
+	    
 	if( bridged && strcmp( bridged, "0" ) == 0 )
 	{
 	    sprintf( val, "%s_ipaddr", var );
