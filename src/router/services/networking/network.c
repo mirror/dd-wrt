@@ -2294,7 +2294,7 @@ void start_lan( void )
 	    {
 		ifconfig( dev, IFUP, 0, 0 );
 		sleep( 1 );
-		br_add_interface( "br0", dev );
+		br_add_interface( getBridge(dev), dev );
 	    }
 	}
     }
