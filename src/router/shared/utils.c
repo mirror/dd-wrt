@@ -1050,13 +1050,13 @@ struct mtu_lists mtu_list[] = {
     {
      "l2tp", "576", "1460"},
     {
-     "dhcp", "576", "1500"},
+     "dhcp", "576", "10000"},
     {
-     "static", "576", "1500"},
+     "static", "576", "10000"},
     {
      "heartbeat", "576", "1500"},
     {
-     "default", "576", "1500"},	// The value must be at last
+     "default", "576", "10000"},	// The value must be at last
 };
 
 struct mtu_lists *get_mtu( char *proto )
