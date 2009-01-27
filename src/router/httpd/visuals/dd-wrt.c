@@ -7548,7 +7548,7 @@ void ej_portsetup( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp, "<div class=\"label\">%s</div>\n",live_translate("idx.mtu"));
 	char mtu[32];
 	sprintf(mtu,"%s_mtu",var);
-	websWrite( wp, "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s_mtu\" value=\"%s\" />\n",var,nvram_default_get(mtu));
+	websWrite( wp, "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s_mtu\" value=\"%s\" />\n",var,nvram_default_get(mtu,"1500"));
 	websWrite( wp, "</div>\n");
 
 
