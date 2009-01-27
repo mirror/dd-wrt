@@ -1070,29 +1070,8 @@ static void configure_single( int count )
     if( strlen( primary ) == 0 )
 	strcpy( primary, dev );
 
-    for( s = 1; s <= 10; s++ )
-    {
-	char wdsvarname[32] = { 0 };
-	char wdsdevname[32] = { 0 };
-	char wdsmacname[32] = { 0 };
-	char *wdsdev;
-	char *hwaddr;
-
-	sprintf( wdsvarname, "%s_wds%d_enable", dev, s );
-	sprintf( wdsdevname, "%s_wds%d_if", dev, s );
-	sprintf( wdsmacname, "%s_wds%d_hwaddr", dev, s );
-	wdsdev = nvram_safe_get( wdsdevname );
-	if( strlen( wdsdev ) == 0 )
-	    continue;
-	if( nvram_match( wdsvarname, "0" ) )
-	    continue;
-	hwaddr = nvram_get( wdsmacname );
-	if( hwaddr != NULL )
-	{
-	    sysprintf( "iwpriv %s wds_add %s", primary, hwaddr );
-	}
-    }
-
+#if 0
+#endif 
     cprintf( "detect maxpower\n" );
     apm = nvram_default_get( wl, "ap" );
     char maxp[16];
@@ -1605,6 +1584,28 @@ static void configure_single( int count )
 	    sysprintf( "ifconfig %s down", dev );
 	    sleep( 1 );
 	    sysprintf( "ifconfig %s up", dev );
+	}
+    }
+    for( s = 1; s <= 10; s++ )
+    {
+	char wdsvarname[32] = { 0 };
+	char wdsdevname[32] = { 0 };
+	char wdsmacname[32] = { 0 };
+	char *wdsdev;
+	char *hwaddr;
+
+	sprintf( wdsvarname, "%s_wds%d_enable", dev, s );
+	sprintf( wdsdevname, "%s_wds%d_if", dev, s );
+	sprintf( wdsmacname, "%s_wds%d_hwaddr", dev, s );
+	wdsdev = nvram_safe_get( wdsdevname );
+	if( strlen( wdsdev ) == 0 )
+	    continue;
+	if( nvram_match( wdsvarname, "0" ) )
+	    continue;
+	hwaddr = nvram_get( wdsmacname );
+	if( hwaddr != NULL )
+	{
+	    sysprintf( "iwpriv %s wds_add %s", primary, hwaddr );
 	}
     }
 
