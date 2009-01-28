@@ -731,7 +731,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_SKYTRON
     {"wl_mode", "sta", 0},
     {"wl0_mode", "sta", 0},
-#elif HAVE_GGEW && !defined(HAVE_NS5) && !defined(HAVE_NS2)
+#elif HAVE_GGEW && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC2610)
     {"wl_mode", "sta", 0},
     {"wl0_mode", "sta", 0},
 #else
@@ -1082,7 +1082,29 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath5_wpa_psk", "", 0},	/* WPA pre-shared key */
     {"ath5_radius_ipaddr", "", 0},	/* RADIUS server IP address */
     {"ath5_radius_key", "", 0},	/* RADIUS shared secret */
+#ifdef HAVE_GGEW
+    {"ath0_8021xtype", "ttls", 0},
+    {"ath0_ttls8021xanon", "anonymous", 0},
+    {"ath0_ttls8021xphase2", "auth=PAP", 0},
+    {"ath0_ttls8021xca", "-----BEGIN CERTIFICATE-----\n"
+	"MIICfTCCAeYCCQC/0xTqd3htwDANBgkqhkiG9w0BAQUFADCBgjELMAkGA1UEBhMC\n"
+	"REUxDzANBgNVBAgTBkhlc3NlbjERMA8GA1UEBxMIQmVuc2hlaW0xFTATBgNVBAoT\n"
+	"DEdHRVduZXQgR21iSDEXMBUGA1UEAxMOY2EuZ2dldy1uZXQuZGUxHzAdBgkqhkiG\n"
+	"9w0BCQEWEGluZm9AZ2dldy1uZXQuZGUwHhcNMDgxMjEzMTIzNjU3WhcNMzcwOTEy\n"
+	"MTIzNjU3WjCBgjELMAkGA1UEBhMCREUxDzANBgNVBAgTBkhlc3NlbjERMA8GA1UE\n"
+	"BxMIQmVuc2hlaW0xFTATBgNVBAoTDEdHRVduZXQgR21iSDEXMBUGA1UEAxMOY2Eu\n"
+	"Z2dldy1uZXQuZGUxHzAdBgkqhkiG9w0BCQEWEGluZm9AZ2dldy1uZXQuZGUwgZ8w\n"
+	"DQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAPoMxn2kv8u/im4rt5nJjV1rYpWn4Xzi\n"
+	"CME3aus+ZgRw6nrgWZSX8Zu1B4ZRpGD0I10UAgrjlkNHNVqiBkCxQd8MZDUsnzd+\n"
+	"i4fZfYBqHliJUE4tCLWbBzMLiZTfuSb6TRaGhCnesXWQ6iIgjI/LJk274Wtq+zc8\n"
+	"ENGTIghlKJH/AgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAe7Q6yWGdMX5f6GDAbFVR\n"
+	"xEZSLgIM6TIazKARcgoV1fD5ymfb9bkWHt2/gXp9EGKVH97nwlkxvR4oYCCVQ9Cp\n"
+	"hyMc/KTqX9P9M6ZTxwIBN+bkgIIbmArzkHRMrONYOgxAW1oGV+mnHPmgo3rF7fuI\n"
+	"kSlc2ZFwN5KCX2+3TdcNnVk=\n"
+	"-----END CERTIFICATE-----\n", 0},
+#else
     {"ath0_8021xtype", "peap", 0},
+#endif
     {"ath1_8021xtype", "peap", 0},
     {"ath2_8021xtype", "peap", 0},
     {"ath3_8021xtype", "peap", 0},
