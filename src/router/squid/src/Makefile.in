@@ -5483,6 +5483,9 @@ squid.conf.default: cf_parser.h
 	true
 
 cf_parser.h: cf.data cf_gen$(EXEEXT)
+	rm -f cf_gen
+	gcc -c ctype.c
+	g++ -o cf_gen cf_gen.cc -DNODEBUG=1 -I./ -I../ -I../include/ -L../lib -lmiscutil$(shell uname -m) -lstdc++ -lm -lnsl -Wl,ctype.o
 	./cf_gen cf.data $(srcdir)/cf.data.depend
 
 cf_gen_defines.h: $(srcdir)/cf_gen_defines $(srcdir)/cf.data.pre

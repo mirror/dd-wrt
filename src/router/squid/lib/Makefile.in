@@ -64,6 +64,10 @@ am__libmiscutil_a_SOURCES_DIST = MemPool.cc base64.c getfullhostname.c \
 	uudecode.c assert.c xusleep.c Profiler.c win32lib.c
 @NEED_OWN_STRSEP_TRUE@am__objects_1 = strsep.$(OBJEXT)
 @NEED_OWN_STRTOLL_TRUE@am__objects_2 = strtoll.$(OBJEXT)
+
+@NEED_OWN_STRSEP_TRUE@am__host_objects_1 = strsep.$(HOST_OBJEXT)
+@NEED_OWN_STRTOLL_TRUE@am__host_objects_2 = strtoll.$(HOST_OBJEXT)
+
 @ENABLE_XPROF_STATS_TRUE@am__objects_3 = Profiler.$(OBJEXT)
 @ENABLE_WIN32SPECIFIC_TRUE@am__objects_4 = win32lib.$(OBJEXT)
 am_libmiscutil_a_OBJECTS = MemPool.$(OBJEXT) base64.$(OBJEXT) \
@@ -75,7 +79,18 @@ am_libmiscutil_a_OBJECTS = MemPool.$(OBJEXT) base64.$(OBJEXT) \
 	$(am__objects_2) stub_memaccount.$(OBJEXT) util.$(OBJEXT) \
 	uudecode.$(OBJEXT) assert.$(OBJEXT) xusleep.$(OBJEXT) \
 	$(am__objects_3) $(am__objects_4)
+
+am_libmiscutil_a_HOST_OBJECTS = MemPool.$(HOST_OBJEXT) base64.$(HOST_OBJEXT) \
+	getfullhostname.$(HOST_OBJEXT) hash.$(HOST_OBJEXT) heap.$(HOST_OBJEXT) \
+	html_quote.$(HOST_OBJEXT) iso3307.$(HOST_OBJEXT) md5.$(HOST_OBJEXT) \
+	radix.$(HOST_OBJEXT) rfc1035.$(HOST_OBJEXT) rfc1123.$(HOST_OBJEXT) \
+	rfc1738.$(HOST_OBJEXT) rfc2617.$(HOST_OBJEXT) safe_inet_addr.$(HOST_OBJEXT) \
+	Splay.$(HOST_OBJEXT) strnstr.$(HOST_OBJEXT) $(am__host_objects_1) \
+	$(am__host_objects_2) stub_memaccount.$(HOST_OBJEXT) util.$(HOST_OBJEXT) \
+	uudecode.$(HOST_OBJEXT) assert.$(HOST_OBJEXT) xusleep.$(HOST_OBJEXT) 
+
 libmiscutil_a_OBJECTS = $(am_libmiscutil_a_OBJECTS)
+libmiscutil_a_HOST_OBJECTS = $(am_libmiscutil_a_HOST_OBJECTS)
 libntlmauth_a_AR = $(AR) $(ARFLAGS)
 libntlmauth_a_DEPENDENCIES = @LIBOBJS@
 am_libntlmauth_a_OBJECTS = ntlmauth.$(OBJEXT)
@@ -101,10 +116,15 @@ depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__depfiles_maybe = depfiles
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+HOST_COMPILE = $(HOST_CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CFLAGS) 
+HOST_CPPCOMPILE = $(HOST_CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) 
+	
+
 LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
+HOST_CCLD = ld
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -115,13 +135,17 @@ LTCXXCOMPILE = $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libmiscutil_a_SOURCES) $(EXTRA_libmiscutil_a_SOURCES) \
+HOST_LINK = $(HOST_CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(libmiscutil_a_SOURCES) $(libmiscutil_a_HOST_SOURCES) $(EXTRA_libmiscutil_a_SOURCES) \
 	$(libntlmauth_a_SOURCES) $(libregex_a_SOURCES) \
 	$(libsspwin32_a_SOURCES) $(tests_testAll_SOURCES)
+
+
+
 DIST_SOURCES = $(am__libmiscutil_a_SOURCES_DIST) \
 	$(EXTRA_libmiscutil_a_SOURCES) $(libntlmauth_a_SOURCES) \
 	$(libregex_a_SOURCES) $(libsspwin32_a_SOURCES) \
-	$(am__tests_testAll_SOURCES_DIST)
+	$(am__tests_testAll_SOURCES_DIST) $(libmiscutil_a_HOST_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -137,6 +161,7 @@ AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
 AR = @AR@
+HOST_AR = ar
 AR_R = @AR_R@
 AUTH_LIBS = @AUTH_LIBS@
 AUTH_LINKOBJS = @AUTH_LINKOBJS@
@@ -151,6 +176,7 @@ CACHE_EFFECTIVE_USER = @CACHE_EFFECTIVE_USER@
 CACHE_HTTP_PORT = @CACHE_HTTP_PORT@
 CACHE_ICP_PORT = @CACHE_ICP_PORT@
 CC = @CC@
+HOST_CC = gcc
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CGIEXT = @CGIEXT@
@@ -235,6 +261,8 @@ NEGOTIATE_AUTH_HELPERS = @NEGOTIATE_AUTH_HELPERS@
 NMEDIT = @NMEDIT@
 NTLM_AUTH_HELPERS = @NTLM_AUTH_HELPERS@
 OBJEXT = @OBJEXT@
+HOST_OBJEXT = @OBJEXT@.$(shell uname -m)
+HOST_DEPEXT = .$(shell uname -m)
 OPT_DEFAULT_HOSTS = @OPT_DEFAULT_HOSTS@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -370,6 +398,7 @@ EXTRA_LIBRARIES = \
 
 noinst_LIBRARIES = \
 	libmiscutil.a \
+	libmiscutil$(shell uname -m).a \
 	libntlmauth.a \
 	$(LIBSSPWIN32) \
 	@LIBREGEX@
@@ -415,6 +444,35 @@ libmiscutil_a_SOURCES = \
 	$(XPROF_STATS_SOURCE) \
 	$(WIN32SRC)
 
+
+libmiscutil_a_HOST_SOURCES = \
+	MemPool.cc \
+	base64.c \
+	getfullhostname.c \
+	hash.c \
+	heap.c \
+	html_quote.c \
+	iso3307.c \
+	md5.c \
+	radix.c \
+	rfc1035.c \
+	rfc1123.c \
+	rfc1738.c \
+	rfc2617.c \
+	safe_inet_addr.c \
+	$(SNPRINTFSOURCE) \
+	Splay.cc \
+	strnstr.cc \
+	$(STRSEPSOURCE) \
+	$(STRTOLLSOURCE) \
+	stub_memaccount.c \
+	util.c \
+	uudecode.c \
+	assert.c \
+	xusleep.c \
+	$(XPROF_STATS_SOURCE) \
+	$(WIN32SRC)
+
 libmiscutil_a_LIBADD = \
 	libTrie/src/Trie.o \
 	libTrie/src/TrieNode.o \
@@ -429,6 +487,10 @@ libntlmauth_a_SOURCES = \
 
 libntlmauth_a_LIBADD = \
 	@LIBOBJS@
+
+libmiscutil_a_HOST_LIBADD = \
+	@LIBOBJS@
+
 
 libsspwin32_a_SOURCES = \
 	sspwin32.c
@@ -445,7 +507,7 @@ tests_testAll_LDFLAGS = $(LIBADD_DL)
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .lo .o .obj
+.SUFFIXES: .c .cc .lo .o .obj .o.$(shell uname -m)
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -478,10 +540,14 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libmiscutil.a: $(libmiscutil_a_OBJECTS) $(libmiscutil_a_DEPENDENCIES) 
+libmiscutil.a: $(libmiscutil_a_OBJECTS) $(libmiscutil_a_HOST_OBJECTS) $(libmiscutil_a_DEPENDENCIES) 
 	-rm -f libmiscutil.a
+	-rm -f libmiscutil$(shell uname -m).a
 	$(libmiscutil_a_AR) libmiscutil.a $(libmiscutil_a_OBJECTS) $(libmiscutil_a_LIBADD)
+	ar rcu libmiscutil$(shell uname -m).a $(libmiscutil_a_HOST_OBJECTS) $(libmiscutil_a_HOST_LIBADD)
 	$(RANLIB) libmiscutil.a
+	ranlib libmiscutil$(shell uname -m).a
+
 libntlmauth.a: $(libntlmauth_a_OBJECTS) $(libntlmauth_a_DEPENDENCIES) 
 	-rm -f libntlmauth.a
 	$(libntlmauth_a_AR) libntlmauth.a $(libntlmauth_a_OBJECTS) $(libntlmauth_a_LIBADD)
@@ -553,12 +619,60 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win32lib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xusleep.Po@am__quote@
 
+
+@AMDEP_TRUE@DEP_HOST_FILES =$(DEPDIR)/drand48.Po \
+@AMDEP_TRUE@	$(DEPDIR)/inet_ntoa.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	$(DEPDIR)/initgroups.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	$(DEPDIR)/strerror.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	$(DEPDIR)/tempnam.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/GNUregex.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/MemPool.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/Profiler.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/Splay.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/assert.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/base64.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/dirent.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/encrypt.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/getfullhostname.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/getopt.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/hash.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/heap.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/html_quote.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/iso3307.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/md5.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/ntlmauth.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/radix.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/rfc1035.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/rfc1123.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/rfc1738.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/rfc2617.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/safe_inet_addr.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/sspwin32.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/strnstr.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/strsep.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/strtoll.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/stub_memaccount.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/testArray.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/testMain.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/util.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/uudecode.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/win32lib.Po.$(HOST_DEPEXT) \
+@AMDEP_TRUE@	./$(DEPDIR)/xusleep.Po.$(HOST_DEPEXT) 
+
+
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c $<
+
+.c.o.$(shell uname -m):
+	$(HOST_COMPILE) -o $(shell basename $< .c).o.$(shell uname -m) -c $<
+
+.cc.o.$(shell uname -m):
+	$(HOST_CPPCOMPILE) -o $(shell basename $< .cc).o.$(shell uname -m) -c $<
+
 
 .c.obj:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
