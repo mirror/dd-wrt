@@ -45278,7 +45278,7 @@ else
 See \`config.log' for more details." >&5
 $as_echo "$as_me: error: cannot run test program while cross compiling
 See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
+   { (true); true; }; }
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -45494,7 +45494,7 @@ else
 See \`config.log' for more details." >&5
 $as_echo "$as_me: error: cannot run test program while cross compiling
 See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
+   { (true); true; }; }
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -45571,7 +45571,7 @@ else
 See \`config.log' for more details." >&5
 $as_echo "$as_me: error: cannot run test program while cross compiling
 See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
+   { (true); true; }; }
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -45706,7 +45706,7 @@ else
 See \`config.log' for more details." >&5
 $as_echo "$as_me: error: cannot run test program while cross compiling
 See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
+   { (true); true; }; }
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -45788,7 +45788,7 @@ else
 See \`config.log' for more details." >&5
 $as_echo "$as_me: error: cannot run test program while cross compiling
 See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
+   { (true); true; }; }
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
