@@ -539,6 +539,11 @@ return 0;
 	    setRouter( "Cambria GW2358-4" );
 	    return ROUTER_BOARD_GATEWORX;
 	}
+	if( !strncmp( gwid, "GW2350",6 ) )
+	{
+	    setRouter( "Cambria GW2350" );
+	    return ROUTER_BOARD_GATEWORX;
+	}
 	if( !strncmp( gwid, "GW2355",6 ) )
 	{
 	    setRouter( "Avila GW2355" );
