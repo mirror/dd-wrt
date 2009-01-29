@@ -628,7 +628,9 @@ static void display_opts(void)
   
   for (i = 0; opttab[i].name; i++)
     if (opttab[i].size != OT_INTERNAL)
-      printf("%3d %s\n", opttab[i].val, opttab[i].name);
+	{
+         printf("%3d %s\n", opttab[i].val, opttab[i].name);
+        }
 }
 
 /* This is too insanely large to keep in-line in the switch */
