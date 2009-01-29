@@ -1406,7 +1406,8 @@ struct wifi_channels
 {
     int channel;
     int freq;
-int noise};
+    int noise;
+};
 extern struct wifi_channels *list_channels( char *devnr );
 
 // extern int getchannelcount (void);
@@ -7276,9 +7277,7 @@ void ej_gethostnamebyip( webs_t wp, int argc, char_t ** argv )
     if( argc == 1 )
     {
 	getHostName( buf, argument );
-	websWrite( wp, "%s",
-		   buf !=
-		   "unknown" ? buf : live_translate( "share.unknown" ) );
+	websWrite( wp, "%s", strcmp(buf,"unknown") ? buf : live_translate( "share.unknown" ) );
     }
 
     return;

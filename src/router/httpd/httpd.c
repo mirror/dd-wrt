@@ -247,7 +247,7 @@ static int auth_check( char *dirname, char *authorization )
     authinfo[l] = '\0';
     /* Split into user and password. */
     authpass = strchr( ( char * )authinfo, ':' );
-    if( authpass == ( char * )0 )
+    if( authpass == ( unsigned char * )0 )
     {
 	/* No colon?  Bogus auth info. */
 	//send_authenticate( dirname );
@@ -1156,7 +1156,7 @@ get_client_ip_mac( int conn_fp )
 
     getpeername( conn_fp, ( struct sockaddr * )&sa, &len );
     char client[32];
-    char *peer = inet_ntop( AF_INET, &sa.sin_addr, client, 16 );
+    char *peer = (char*)inet_ntop( AF_INET, &sa.sin_addr, client, 16 );
 
     nvram_set( "http_client_ip", peer );
     m = get_mac_from_ip( peer );
@@ -1288,10 +1288,6 @@ int main( int argc, char **argv )
     int timeout = TIMEOUT;
     struct stat stat_dir;
 
-//#ifdef HAVE_MATRIXSSL
-//  if (strstr(argv[0],"httpsclient"))
-//    return https_main(argc,argv);
-//#endif
     nvram_set( "gozila_action", "0" );
 
 #ifdef FILTER_DEBUG

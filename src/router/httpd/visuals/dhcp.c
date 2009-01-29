@@ -224,7 +224,7 @@ void ej_dumpleases( webs_t wp, int argc, char_t ** argv )
 		addr.s_addr = lease.yiaddr;
 
 		char client[32];
-		ipaddr = inet_ntop(AF_INET, &addr,client,16);
+		ipaddr = (char*)inet_ntop(AF_INET, &addr,client,16);
 
 		expires = ntohl( lease.expires );
 
