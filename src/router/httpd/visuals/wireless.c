@@ -242,7 +242,7 @@ int dhcp_lease_table_init( void )
 		    continue;
 		addr.s_addr = lease.yiaddr;
 		char client[32];
-		char *peer = inet_ntop(AF_INET, &addr,client,16);
+		char *peer = (char*)inet_ntop(AF_INET, &addr,client,16);
 		fprintf( fp_w, "%s %s %s\n", mac, peer,
 			 lease.hostname );
 		count++;
