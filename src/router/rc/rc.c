@@ -173,6 +173,7 @@ struct MAIN
     char *execname;
     int ( *exec ) ( int argc, char **argv );
 };
+extern char *getSoftwareRevision(void);
 int softwarerevision_main( int argc, char **argv )
 {
 fprintf(stdout,"%s\n",getSoftwareRevision());
