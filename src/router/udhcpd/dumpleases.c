@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 		printf("%-16s ", lease.hostname);
 		for (i = 0; i < 6; i++) {
 			printf("%02x", lease.chaddr[i]);
-			if (i != 5) printf(":");
+			if (i != 5) {printf(":");}
 		}
 		addr.s_addr = lease.yiaddr;
 		printf(" %-15s", inet_ntoa(addr));
