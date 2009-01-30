@@ -970,7 +970,7 @@ int radius_pwencode(struct radius_t *this, uint8_t *dst, int dstsize,
   }
 
   /* Copy first 128 octets of src into dst */
-  if (srclen <= 128) 
+  if (srclen > 128) 
     memcpy(dst, src, 128);
   else
     memcpy(dst, src, srclen);
