@@ -4108,7 +4108,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );
 
-#if defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5)
+#if defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
 
     websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label24)</script></div><select name=\"%s\" >\n",
@@ -4122,7 +4122,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	       "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.horizontal + \"</option>\");\n",
 	       nvram_match( wl_txantenna,
 			    "1" ) ? "selected=\\\"selected\\\"" : "" );
-#if defined(HAVE_NS5) || defined(HAVE_NS2)
+#if defined(HAVE_NS5) || defined(HAVE_NS2) || defined(HAVE_NS3)
     websWrite( wp,
 	       "document.write(\"<option value=\\\"3\\\" %s >\" + wl_basic.adaptive + \"</option>\");\n",
 	       nvram_match( wl_txantenna,
