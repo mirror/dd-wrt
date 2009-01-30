@@ -1172,6 +1172,9 @@ static void configure_single( int count )
 #ifdef HAVE_NS5
     char *gpio = "1";
 #endif
+#ifdef HAVE_NS3
+    char *gpio = "1";
+#endif
 #ifdef HAVE_LC5
     char *gpio = "1";
 #endif
