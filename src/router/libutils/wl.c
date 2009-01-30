@@ -805,6 +805,8 @@ int wifi_gettxpower( char *ifname )
     poweroffset = 10;
 #elif HAVE_NS5
     poweroffset = 5;
+#elif HAVE_NS3
+    poweroffset = 5;
 #elif HAVE_LC5
     poweroffset = 5;
 #elif HAVE_BS5
@@ -885,6 +887,8 @@ int wifi_gettxpoweroffset( char *ifname )
     poweroffset = 10;
 #elif HAVE_NS5
     poweroffset = 5;
+#elif HAVE_NS3
+    poweroffset = 5;
 #elif HAVE_LC5
     poweroffset = 5;
 #elif HAVE_BS5
@@ -916,6 +920,9 @@ int wifi_gettxpoweroffset( char *ifname )
 
 int get_wifioffset( char *ifname )
 {
+#ifdef HAVE_NS3
+return -2000;
+#endif
 char *var = NULL;
 if (ifname)
     {
