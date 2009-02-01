@@ -111,9 +111,6 @@ void start_sysinit( void )
      */
     insmod( "ag7100_mod" );
     // sleep(1);
-    eval( "ifconfig", "eth0", "up" );
-    struct ifreq ifr;
-    int s;
 #ifdef HAVE_RS
     FILE *fp=fopen("/dev/mtdblock/7","rb");
     char buf2[256];
@@ -123,7 +120,7 @@ void start_sysinit( void )
     int i;
     for (i=0;i<256-10;i++)
 	{
-	if (!strncmp(&buf[i],"ar7100_esa",10))
+	if (!strncmp(&buf2[i],"ar7100_esa",10))
 	    {
 	    break;
 	    }
@@ -132,14 +129,18 @@ void start_sysinit( void )
     {
     char mac[32];
     i+=11;
-    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf2[0+i], buf2[1+i],
-		     buf2[2+i], buf2[3+i], buf2[4+i], buf2[5+i] );
+    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf2[0+i]&0xff, buf2[1+i]&0xff,
+		     buf2[2+i]&0xff, buf2[3+i]&0xff, buf2[4+i]&0xff, buf2[5+i]&0xff );
     fprintf( stderr, "configure eth0 to %s\n", mac );
     eval("ifconfig","eth0","hw","ether",mac);
     fprintf( stderr, "configure eth1 to %s\n", mac );
     eval("ifconfig","eth1","hw","ether",mac);
     }
 #endif
+    eval( "ifconfig", "eth0", "up" );
+    eval( "ifconfig", "eth1", "up" );
+    struct ifreq ifr;
+    int s;
     if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
     {
 	char eabuf[32];
