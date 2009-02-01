@@ -1885,7 +1885,7 @@ showOptions( webs_t wp, char *propname, char *names, char *select )
     websWrite( wp, "//]]>\n</script>\n</select>\n" );
 }
 
-#ifdef HAVE_MADWIFI
+
 static void
 showOptionsChoose( webs_t wp, char *propname, char *names, char *select )
 {
@@ -1906,7 +1906,7 @@ showOptionsChoose( webs_t wp, char *propname, char *names, char *select )
     }
     websWrite( wp, "//]]>\n</script>\n</select>\n" );
 }
-#endif
+
 static void
 showOptionsLabel( webs_t wp, char *labelname, char *propname, char *names,
 		  char *select )
