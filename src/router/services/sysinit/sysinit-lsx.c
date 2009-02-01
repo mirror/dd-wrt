@@ -117,20 +117,20 @@ void start_sysinit( void )
 #ifdef HAVE_RS
     FILE *fp=fopen("/dev/mtdblock/7","rb");
     char buf2[256];
-    char mac[32];
     fseek(fp,0xfff000,SEEK_SET);
-    fread(mac,256,1,fp);
+    fread(buf2,256,1,fp);
     fclose(fp);
     int i;
     for (i=0;i<256-10;i++)
 	{
-	if (!strncmp(&mac[i],"ar7100_esa",10))
+	if (!strncmp(&buf[i],"ar7100_esa",10))
 	    {
 	    break;
 	    }
 	}
     if (i<256)
     {
+    char mac[32];
     i+=11;
     sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf2[0+i], buf2[1+i],
 		     buf2[2+i], buf2[3+i], buf2[4+i], buf2[5+i] );
