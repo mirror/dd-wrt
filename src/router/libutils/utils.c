@@ -2081,6 +2081,7 @@ char *getWDSSTA( void )
 }
 
 
+
 char *getSTA( void )
 {
 
@@ -2133,6 +2134,8 @@ char *getWET( void )
     }
     return NULL;
 }
+
+
 #elif HAVE_RT2880
 
 char *getSTA(  )
