@@ -129,6 +129,8 @@ void start_sysinit( void )
 	    break;
 	    }
 	}
+    if (i<256)
+    {
     i+=11;
     sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0+i], buf[1+i],
 		     buf[2+i], buf[3+i], buf[4+i], buf[5+i] );
@@ -136,6 +138,7 @@ void start_sysinit( void )
     eval("ifconfig","eth0","hw","ether",mac);
     fprintf( stderr, "configure eth1 to %s\n", mac );
     eval("ifconfig","eth1","hw","ether",mac);
+    }
 #endif
     if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
     {
