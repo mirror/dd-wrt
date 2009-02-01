@@ -116,7 +116,7 @@ void start_sysinit( void )
     int s;
 #ifdef HAVE_RS
     FILE *fp=fopen("/dev/mtdblock/7","rb");
-    char buf[256];
+    char buf2[256];
     char mac[32];
     fseek(fp,0xfff000,SEEK_SET);
     fread(mac,256,1,fp);
@@ -132,8 +132,8 @@ void start_sysinit( void )
     if (i<256)
     {
     i+=11;
-    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0+i], buf[1+i],
-		     buf[2+i], buf[3+i], buf[4+i], buf[5+i] );
+    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf2[0+i], buf2[1+i],
+		     buf2[2+i], buf2[3+i], buf2[4+i], buf2[5+i] );
     fprintf( stderr, "configure eth0 to %s\n", mac );
     eval("ifconfig","eth0","hw","ether",mac);
     fprintf( stderr, "configure eth1 to %s\n", mac );
