@@ -114,14 +114,38 @@ void start_sysinit( void )
     eval( "ifconfig", "eth0", "up" );
     struct ifreq ifr;
     int s;
-
+#ifdef HAVE_RS
+    FILE *fp=fopen("/dev/mtdblock/7","rb");
+    char buf[256];
+    char mac[32];
+    fseek(fp,0xfff000,SEEK_SET);
+    fread(mac,256,1,fp);
+    fclose(fp);
+    int i;
+    for (i=0;i<256-10;i++)
+	{
+	if (!strncmp(&mac[i],"ar7100_esa",10))
+	    {
+	    break;
+	    }
+	}
+    i+=11;
+    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0+i], buf[1+i],
+		     buf[2+i], buf[3+i], buf[4+i], buf[5+i] );
+    fprintf( stderr, "configure eth0 to %s\n", mac );
+    eval("ifconfig","eth0","hw","ether",mac);
+    fprintf( stderr, "configure eth1 to %s\n", mac );
+    eval("ifconfig","eth1","hw","ether",mac);
+#endif
     if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
     {
 	char eabuf[32];
-
 	strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
 	ioctl( s, SIOCGIFHWADDR, &ifr );
 	nvram_set( "et0macaddr",
+		   ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.sa_data,
+			       eabuf ) );
+	nvram_set( "et0macaddr_safe",
 		   ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.sa_data,
 			       eabuf ) );
 	close( s );
