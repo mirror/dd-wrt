@@ -35,6 +35,9 @@
 #include <err.h>
 #include <shutils.h>
 
+#include <typedefs.h>
+#include <bcmnvram.h>
+
 #include "wireless_copy.h"
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
@@ -144,12 +147,12 @@ int site_survey_main( int argc, char *argv[] )
     if( len == -1 )
     {
 	fprintf( stderr, "unable to get scan results" );
-	return;
+	return -1;
     }
     if( len < sizeof( struct ieee80211req_scan_result ) )
     {
 	free( buf );
-	return;
+	return -1;
     }
     cp = buf;
     do
