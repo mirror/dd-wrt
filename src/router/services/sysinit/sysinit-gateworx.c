@@ -307,7 +307,7 @@ void start_sysinit( void )
 	for( i = 0; i < 12; i++ )
 	    copy[i] = buf[i] & 0xff;
 	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7],
-		 copy[8], copy[9], copy[10], copy, copy[11] );
+		 copy[8], copy[9], copy[10], copy[11] );
 	fprintf( stderr, "configure IXP1 to %s\n", mac );
 	eval( "ifconfig", "ixp1", "hw", "ether", mac );
 	fclose( file );
@@ -335,7 +335,7 @@ void start_sysinit( void )
 		 copy[2], copy[3], copy[4], copy[5] );
 	eval( "ifconfig", "ixp0", "hw", "ether", mac );
 	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7],
-		 copy[8], copy[9], copy[10], copy, copy[11] );
+		 copy[8], copy[9], copy[10], copy[11] );
 	eval( "ifconfig", "ixp1", "hw", "ether", mac );
 
 	fclose( file );
@@ -396,7 +396,7 @@ void start_sysinit( void )
 	    for( i = 0; i < 12; i++ )
 		copy[i] = buf[i] & 0xff;
 	    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7],
-		     copy[8], copy[9], copy[10], copy, copy[11] );
+		     copy[8], copy[9], copy[10], copy[11] );
 	    fprintf( stderr, "configure IXP1 to %s\n", mac );
 	    eval( "ifconfig", "ixp1", "hw", "ether", mac );
 	    eval( "ifconfig", "ixp0", "0.0.0.0", "up" );
