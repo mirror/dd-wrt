@@ -294,14 +294,14 @@ void start_sysinit( void )
 	fread( &buf[0], 6, 1, file );
 	char mac[16];
 
-	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
-		 buf[3], buf[4], buf[5] );
+	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff,
+		 buf[3]&0xff, buf[4]&0xff, buf[5]&0xff );
 	fprintf( stderr, "configure IXP0 to %s\n", mac );
 	eval( "ifconfig", "ixp0", "hw", "ether", mac );
 	fseek( file, 0x43b, SEEK_SET );
 	fread( &buf[6], 6, 1, file );
-	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
-		 buf[9], buf[10], buf[11] );
+	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6]&0xff, buf[7]&0xff, buf[8]&0xff,
+		 buf[9]&0xff, buf[10]&0xff, buf[11]&0xff );
 	fprintf( stderr, "configure IXP1 to %s\n", mac );
 	eval( "ifconfig", "ixp1", "hw", "ether", mac );
 	fclose( file );
