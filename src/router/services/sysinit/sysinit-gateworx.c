@@ -289,19 +289,24 @@ void start_sysinit( void )
 	eval( "ifconfig", "ixp0", "0.0.0.0", "down" );
 	eval( "ifconfig", "ixp1", "0.0.0.0", "down" );
 	unsigned char buf[16];
+	int i;
 
 	fseek( file, 0x422, SEEK_SET );
 	fread( &buf[0], 6, 1, file );
 	char mac[16];
-
-	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff,
-		 buf[3]&0xff, buf[4]&0xff, buf[5]&0xff );
+	unsigned int copy[16];
+	for (i=0;i<6;i++)
+	    copy[i]=buf[i]&0xff;
+	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2],
+		 copy[3], copy[4], copy[5] );
 	fprintf( stderr, "configure IXP0 to %s\n", mac );
 	eval( "ifconfig", "ixp0", "hw", "ether", mac );
 	fseek( file, 0x43b, SEEK_SET );
 	fread( &buf[6], 6, 1, file );
-	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6]&0xff, buf[7]&0xff, buf[8]&0xff,
-		 buf[9]&0xff, buf[10]&0xff, buf[11]&0xff );
+	for (i=0;i<12;i++)
+	    copy[i]=buf[i]&0xff;
+	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8],
+		 copy[9], copy[10],copy, copy[11] );
 	fprintf( stderr, "configure IXP1 to %s\n", mac );
 	eval( "ifconfig", "ixp1", "hw", "ether", mac );
 	fclose( file );
@@ -320,11 +325,14 @@ void start_sysinit( void )
 	fread( &buf[0], 16, 1, file );
 	char mac[16];
 
-	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2],
-		 buf[3], buf[4], buf[5] );
+	unsigned int copy[16];
+	for (i=0;i<12;i++)
+	    copy[i]=buf[i]&0xff;
+	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2],
+		 copy[3], copy[4], copy[5] );
 	eval( "ifconfig", "ixp0", "hw", "ether", mac );
-	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7], buf[8],
-		 buf[9], buf[10], buf[11] );
+	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8],
+		 copy[9], copy[10],copy, copy[11] );
 	eval( "ifconfig", "ixp1", "hw", "ether", mac );
 
 	fclose( file );
@@ -370,14 +378,20 @@ void start_sysinit( void )
 	    fread( &buf[0], 6, 1, file );
 	    char mac[16];
 
-	    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1],
-		     buf[2], buf[3], buf[4], buf[5] );
+	    unsigned int copy[16];
+	    for (i=0;i<12;i++)
+		copy[i]=buf[i]&0xff;
+	    
+	    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2],
+		 copy[3], copy[4], copy[5] );
 	    fprintf( stderr, "configure IXP0 to %s\n", mac );
 	    eval( "ifconfig", "ixp0", "hw", "ether", mac );
 	    fseek( file, 0x1f818, SEEK_SET );
 	    fread( &buf[6], 6, 1, file );
-	    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[6], buf[7],
-		     buf[8], buf[9], buf[10], buf[11] );
+	    for (i=0;i<12;i++)
+		copy[i]=buf[i]&0xff;
+	    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8],
+		 copy[9], copy[10],copy, copy[11] );
 	    fprintf( stderr, "configure IXP1 to %s\n", mac );
 	    eval( "ifconfig", "ixp1", "hw", "ether", mac );
 	    eval( "ifconfig", "ixp0", "0.0.0.0", "up" );
