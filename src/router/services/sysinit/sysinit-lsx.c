@@ -112,41 +112,47 @@ void start_sysinit( void )
     insmod( "ag7100_mod" );
     // sleep(1);
 #ifdef HAVE_RS
-    FILE *fp=fopen("/dev/mtdblock/7","rb");
+    FILE *fp = fopen( "/dev/mtdblock/7", "rb" );
     unsigned char buf2[256];
-    fseek(fp,0xfff000,SEEK_SET);
-    fread(buf2,256,1,fp);
-    fclose(fp);
+
+    fseek( fp, 0xfff000, SEEK_SET );
+    fread( buf2, 256, 1, fp );
+    fclose( fp );
     int i;
     unsigned int copy[256];
-    for (i=0;i<256;i++)
-	copy[i]=buf2[i]&0xff;
-    for (i=0;i<256-10;i++)
-	{
-	if (!strncmp(&buf2[i],"ar7100_esa",10))
-	    {
-	    break;
-	    }
-	}
-    if (i<256)
+
+    for( i = 0; i < 256; i++ )
+	copy[i] = buf2[i] & 0xff;
+    for( i = 0; i < 256 - 10; i++ )
     {
-    char mac[32];
-    i+=11;
-    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0+i], copy[1+i],
-		     copy[2+i], copy[3+i], copy[4+i], copy[5+i] );
-    fprintf( stderr, "configure eth0 to %s\n", mac );
-    eval("ifconfig","eth0","hw","ether",mac);
-    fprintf( stderr, "configure eth1 to %s\n", mac );
-    eval("ifconfig","eth1","hw","ether",mac);
+	if( !strncmp( &buf2[i], "ar7100_esa", 10 ) )
+	{
+	    break;
+	}
+    }
+    if( i < 256 )
+    {
+	char mac[32];
+
+	i += 11;
+	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0 + i],
+		 copy[1 + i], copy[2 + i], copy[3 + i], copy[4 + i],
+		 copy[5 + i] );
+	fprintf( stderr, "configure eth0 to %s\n", mac );
+	eval( "ifconfig", "eth0", "hw", "ether", mac );
+	fprintf( stderr, "configure eth1 to %s\n", mac );
+	eval( "ifconfig", "eth1", "hw", "ether", mac );
     }
 #endif
     eval( "ifconfig", "eth0", "up" );
     eval( "ifconfig", "eth1", "up" );
     struct ifreq ifr;
     int s;
+
     if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
     {
 	char eabuf[32];
+
 	strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
 	ioctl( s, SIOCGIFHWADDR, &ifr );
 	nvram_set( "et0macaddr",
