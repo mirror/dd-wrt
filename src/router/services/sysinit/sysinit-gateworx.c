@@ -327,6 +327,7 @@ void start_sysinit( void )
 	char mac[16];
 
 	unsigned int copy[16];
+	int i;
 
 	for( i = 0; i < 12; i++ )
 	    copy[i] = buf[i] & 0xff;
@@ -375,10 +376,11 @@ void start_sysinit( void )
 	    eval( "ifconfig", "ixp0", "0.0.0.0", "down" );
 	    eval( "ifconfig", "ixp1", "0.0.0.0", "down" );
 	    unsigned char buf[16];
-
+	
 	    fseek( file, 0x1f810, SEEK_SET );
 	    fread( &buf[0], 6, 1, file );
 	    char mac[16];
+	    int i;
 
 	    unsigned int copy[16];
 
