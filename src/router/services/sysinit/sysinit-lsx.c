@@ -113,11 +113,14 @@ void start_sysinit( void )
     // sleep(1);
 #ifdef HAVE_RS
     FILE *fp=fopen("/dev/mtdblock/7","rb");
-    char buf2[256];
+    unsigned char buf2[256];
     fseek(fp,0xfff000,SEEK_SET);
     fread(buf2,256,1,fp);
     fclose(fp);
     int i;
+    unsigned int copy[256];
+    for (i=0;i<256;i++)
+	copy[i]=buf2[i]&0xff;
     for (i=0;i<256-10;i++)
 	{
 	if (!strncmp(&buf2[i],"ar7100_esa",10))
@@ -129,8 +132,8 @@ void start_sysinit( void )
     {
     char mac[32];
     i+=11;
-    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf2[0+i]&0xff, buf2[1+i]&0xff,
-		     buf2[2+i]&0xff, buf2[3+i]&0xff, buf2[4+i]&0xff, buf2[5+i]&0xff );
+    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0+i], copy[1+i],
+		     copy[2+i], copy[3+i], copy[4+i], copy[5+i] );
     fprintf( stderr, "configure eth0 to %s\n", mac );
     eval("ifconfig","eth0","hw","ether",mac);
     fprintf( stderr, "configure eth1 to %s\n", mac );
