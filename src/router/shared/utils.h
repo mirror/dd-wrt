@@ -407,6 +407,7 @@ extern void strtrim_right( char *p, int c );
 extern unsigned int daysformonth( unsigned int month, unsigned int year );
 extern int weekday( int month, int day, int year );
 extern int getRouterBrand( void );
+extern char  *getRouter( void );
 extern int diag_led( int type, int act );
 extern int C_led( int i );
 extern int get_single_ip( char *ipaddr, int which );
