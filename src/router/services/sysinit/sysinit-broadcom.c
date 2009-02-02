@@ -39,11 +39,19 @@
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <linux/if_ether.h>
+#include <linux/sockios.h>
+#include <net/if.h>
+
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/sockios.h>
 
 #include <bcmnvram.h>
+#include <bcmdevs.h>
 #include <shutils.h>
 #include <utils.h>
-#include <bcmdevs.h>
+#include <wlutils.h>
 #include <cymac.h>
 #include <services.h>
 
@@ -272,6 +280,7 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	case ROUTER_ASUS_WL500W:
 	    break;
 	case ROUTER_WRT600N:
+	    fprintf( stderr, "fixing wrt600n\n" );
 	    wl_hwaddr( "eth0", macbuf );
 	    ether_etoa( ( uchar * ) macbuf, eaddr );
 	    nvram_set( "wl0_hwaddr", eaddr );
@@ -280,9 +289,10 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	    {
 		nvram_set( "et0macaddr", eaddr );
 		nvram_commit(  );
-		eval("reboot");
-		exit( 0 );
+//              eval("/sbin/reboot");
+//              exit( 0 );
 	    }
+	    eval( "/sbin/ifconfig", "eth2", "hw", "ether", eaddr );
 	    wl_hwaddr( "eth1", macbuf );
 	    ether_etoa( ( uchar * ) macbuf, eaddr );
 	    nvram_set( "wl1_hwaddr", eaddr );
@@ -703,11 +713,11 @@ void start_sysinit( void )
 	     * set router's extra parameters 
 	     */
 	    extra_params = wnr834bv2_pci_1_1_params;
-	    for( extra_params; extra_params && extra_params->name;
-		 extra_params++ )
+	    while( extra_params->name )
 	    {
 		nvram_nset( extra_params->value, "pci/1/1/%s",
 			    extra_params->name );
+		extra_params++;
 	    }
 	    break;
 
@@ -861,11 +871,11 @@ void start_sysinit( void )
 	     * set router's extra parameters 
 	     */
 	    extra_params = wndr3300_pci_1_1_params;
-	    for( extra_params; extra_params && extra_params->name;
-		 extra_params++ )
+	    while( extra_params->name )
 	    {
 		nvram_nset( extra_params->value, "pci/1/1/%s",
 			    extra_params->name );
+		extra_params++;
 	    }
 
 	    struct nvram_tuple wndr3300_pci_1_3_params[] = {
@@ -891,11 +901,11 @@ void start_sysinit( void )
 	     * set router's extra parameters 
 	     */
 	    extra_params = wndr3300_pci_1_3_params;
-	    for( extra_params; extra_params && extra_params->name;
-		 extra_params++ )
+	    while( extra_params->name )
 	    {
-		nvram_nset( extra_params->value, "pci/1/3/%s",
+		nvram_nset( extra_params->value, "pci/1/1/%s",
 			    extra_params->name );
+		extra_params++;
 	    }
 	    break;
 
@@ -1127,9 +1137,10 @@ void start_sysinit( void )
     /*
      * set router's basic parameters 
      */
-    for( basic_params; basic_params && basic_params->name; basic_params++ )
+    while( basic_params && basic_params->name )
     {
 	nvram_set( basic_params->name, basic_params->value );
+	basic_params++;
     }
 
     /*
@@ -1401,7 +1412,7 @@ void start_sysinit( void )
 		    break;
 	    }
 	}
-	cprintf( "insmod %s\n", modules );
+//      fprintf( "insmod %s\n", modules );
 
 	foreach( module, modules, next )
 	{
@@ -1410,7 +1421,7 @@ void start_sysinit( void )
 		insmod( module );
 #else
 
-	    cprintf( "loading %s\n", module );
+	    fprintf( stderr, "loading %s\n", module );
 	    insmod( module );
 	    cprintf( "done\n" );
 #endif
@@ -2015,7 +2026,7 @@ char *enable_dtag_vlan( int enable )
     return eth;
 }
 
-start_dtag( void )
+void start_dtag( void )
 {
     enable_dtag_vlan( 1 );
 }
