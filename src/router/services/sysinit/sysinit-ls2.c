@@ -130,7 +130,6 @@ void start_sysinit( void )
 	insmod( "ath_ahb" );
     }
 
-
 #ifdef HAVE_LS2
 #if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) && !defined(HAVE_BS2HP)
     eval( "ifconfig", "eth0", "up" );	// wan
