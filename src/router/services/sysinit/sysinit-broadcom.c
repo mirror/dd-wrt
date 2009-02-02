@@ -280,7 +280,7 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	    {
 		nvram_set( "et0macaddr", eaddr );
 		nvram_commit(  );
-		kill( 1, SIGTERM );
+		eval("reboot");
 		exit( 0 );
 	    }
 	    wl_hwaddr( "eth1", macbuf );
