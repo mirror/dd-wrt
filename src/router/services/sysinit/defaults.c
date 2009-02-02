@@ -110,8 +110,8 @@ struct nvram_tuple srouter_defaults[] = {
 #else
     {"upnp_enable", "0", 0},	/* 0:Disable 1:Enable */
 #endif
-    { "upnp_config", "1", 0 },		/* Allow Users to Configure. 0:Disable 1:Enable */
-    { "upnp_internet_dis", "0", 0 },	/* Allow Users to Disable Internet Access. 0:Disable 1:Enable */
+    {"upnp_config", "1", 0},	/* Allow Users to Configure. 0:Disable 1:Enable */
+    {"upnp_internet_dis", "0", 0},	/* Allow Users to Disable Internet Access. 0:Disable 1:Enable */
     {"upnp_ssdp_interval", "60", 0},	/* SSDP interval */
     {"upnp_max_age", "180", 0},	/* MAX age time */
     {"upnpmnp", "0", 0},	/* UPnP URL */
@@ -1087,21 +1087,20 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath0_ttls8021xanon", "anonymous", 0},
     {"ath0_ttls8021xphase2", "auth=PAP", 0},
     {"ath0_ttls8021xca", "-----BEGIN CERTIFICATE-----\n"
-	"MIICfTCCAeYCCQC/0xTqd3htwDANBgkqhkiG9w0BAQUFADCBgjELMAkGA1UEBhMC\n"
-	"REUxDzANBgNVBAgTBkhlc3NlbjERMA8GA1UEBxMIQmVuc2hlaW0xFTATBgNVBAoT\n"
-	"DEdHRVduZXQgR21iSDEXMBUGA1UEAxMOY2EuZ2dldy1uZXQuZGUxHzAdBgkqhkiG\n"
-	"9w0BCQEWEGluZm9AZ2dldy1uZXQuZGUwHhcNMDgxMjEzMTIzNjU3WhcNMzcwOTEy\n"
-	"MTIzNjU3WjCBgjELMAkGA1UEBhMCREUxDzANBgNVBAgTBkhlc3NlbjERMA8GA1UE\n"
-	"BxMIQmVuc2hlaW0xFTATBgNVBAoTDEdHRVduZXQgR21iSDEXMBUGA1UEAxMOY2Eu\n"
-	"Z2dldy1uZXQuZGUxHzAdBgkqhkiG9w0BCQEWEGluZm9AZ2dldy1uZXQuZGUwgZ8w\n"
-	"DQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAPoMxn2kv8u/im4rt5nJjV1rYpWn4Xzi\n"
-	"CME3aus+ZgRw6nrgWZSX8Zu1B4ZRpGD0I10UAgrjlkNHNVqiBkCxQd8MZDUsnzd+\n"
-	"i4fZfYBqHliJUE4tCLWbBzMLiZTfuSb6TRaGhCnesXWQ6iIgjI/LJk274Wtq+zc8\n"
-	"ENGTIghlKJH/AgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAe7Q6yWGdMX5f6GDAbFVR\n"
-	"xEZSLgIM6TIazKARcgoV1fD5ymfb9bkWHt2/gXp9EGKVH97nwlkxvR4oYCCVQ9Cp\n"
-	"hyMc/KTqX9P9M6ZTxwIBN+bkgIIbmArzkHRMrONYOgxAW1oGV+mnHPmgo3rF7fuI\n"
-	"kSlc2ZFwN5KCX2+3TdcNnVk=\n"
-	"-----END CERTIFICATE-----\n", 0},
+     "MIICfTCCAeYCCQC/0xTqd3htwDANBgkqhkiG9w0BAQUFADCBgjELMAkGA1UEBhMC\n"
+     "REUxDzANBgNVBAgTBkhlc3NlbjERMA8GA1UEBxMIQmVuc2hlaW0xFTATBgNVBAoT\n"
+     "DEdHRVduZXQgR21iSDEXMBUGA1UEAxMOY2EuZ2dldy1uZXQuZGUxHzAdBgkqhkiG\n"
+     "9w0BCQEWEGluZm9AZ2dldy1uZXQuZGUwHhcNMDgxMjEzMTIzNjU3WhcNMzcwOTEy\n"
+     "MTIzNjU3WjCBgjELMAkGA1UEBhMCREUxDzANBgNVBAgTBkhlc3NlbjERMA8GA1UE\n"
+     "BxMIQmVuc2hlaW0xFTATBgNVBAoTDEdHRVduZXQgR21iSDEXMBUGA1UEAxMOY2Eu\n"
+     "Z2dldy1uZXQuZGUxHzAdBgkqhkiG9w0BCQEWEGluZm9AZ2dldy1uZXQuZGUwgZ8w\n"
+     "DQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAPoMxn2kv8u/im4rt5nJjV1rYpWn4Xzi\n"
+     "CME3aus+ZgRw6nrgWZSX8Zu1B4ZRpGD0I10UAgrjlkNHNVqiBkCxQd8MZDUsnzd+\n"
+     "i4fZfYBqHliJUE4tCLWbBzMLiZTfuSb6TRaGhCnesXWQ6iIgjI/LJk274Wtq+zc8\n"
+     "ENGTIghlKJH/AgMBAAEwDQYJKoZIhvcNAQEFBQADgYEAe7Q6yWGdMX5f6GDAbFVR\n"
+     "xEZSLgIM6TIazKARcgoV1fD5ymfb9bkWHt2/gXp9EGKVH97nwlkxvR4oYCCVQ9Cp\n"
+     "hyMc/KTqX9P9M6ZTxwIBN+bkgIIbmArzkHRMrONYOgxAW1oGV+mnHPmgo3rF7fuI\n"
+     "kSlc2ZFwN5KCX2+3TdcNnVk=\n" "-----END CERTIFICATE-----\n", 0},
 #else
     {"ath0_8021xtype", "peap", 0},
 #endif

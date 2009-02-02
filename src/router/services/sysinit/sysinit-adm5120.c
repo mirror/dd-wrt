@@ -100,9 +100,9 @@ void start_change_mac( void )
 
     fscanf( stdin, "%s", maddr );
     int newmac[6];
-    int ret =
-	sscanf( maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0],
-		&newmac[1], &newmac[2], &newmac[3], &newmac[4], &newmac[5] );
+    int ret = sscanf( maddr, "%02x:%02x:%02x:%02x:%02x:%02x", &newmac[0],
+		      &newmac[1], &newmac[2], &newmac[3], &newmac[4],
+		      &newmac[5] );
     if( ret != 6 )
     {
 	fprintf( stdout, "\ninvalid format!, try again\n" );
