@@ -265,7 +265,6 @@
 #define ROUTER_BELKIN_F5D7230_V2000 0x400f
 
 // Belkin F5D7231-4 v1212UK (BCM5352E cpu, fccid: Askey H8NRT2406W)
-// Belkin F5D7231-4 v2000 (BCM5352E cpu, fccid: Belkin K7SF5D7231B)
 #define ROUTER_BELKIN_F5D7231 0x410f
 
 // Linksys WAP54G v3, WAP54G v3.1 (BCM5352E cpu, fccid: Linksys Q87-WAP54GV3, 
@@ -381,7 +380,10 @@
 #define ROUTER_BOARD_WP54G 0x7004
 
 // Compex NP28G (and compatible)
-#define ROUTER_BOARD_NP28G 0x700f
+#define ROUTER_BOARD_NP28G 0x710f
+
+// Belkin F5D7231-4 v2000 (BCM5352E cpu, fccid: Belkin K7SF5D7231B)
+#define ROUTER_BELKIN_F5D7231_V2000 0x7213
 
 #define NVROUTER "DD_BOARD"
 
