@@ -1172,7 +1172,7 @@ return 0;
     {
 	cprintf( "router is Belkin F5D7231-4 v2000\n" );
 	setRouter( "Belkin F5D7231-4 v2000" );
-	return ROUTER_BELKIN_F5D7231;
+	return ROUTER_BELKIN_F5D7231_V2000;
     }
 
     if( nvram_match( "boardtype", "0x467" ) )
@@ -2896,6 +2896,11 @@ int led_control( int type, int act )
 	case ROUTER_NETGEAR_WG602_V4:
 	    power_gpio = 0x11;  // trick: make lan led green for 100Mbps
 	    break;
+	case ROUTER_BELKIN_F5D7231_V2000:
+		connected_gpio = 0x14;
+		diag_gpio = 0x01; // power led blink /off to indicate factory defaults
+		break;
+		
 		
 #endif
     }
