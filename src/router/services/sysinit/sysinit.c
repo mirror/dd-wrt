@@ -1233,6 +1233,7 @@ void start_restore_defaults( void )
 		    break;
 		case ROUTER_MOTOROLA:
 		case ROUTER_WRT54G_V8:
+		case ROUTER_BELKIN_F5D7231_V2000:
 		    nvram_set( "vlan0ports", "3 2 1 0 5*" );
 		    break;
 		case ROUTER_LINKSYS_WRT55AG:
@@ -1283,6 +1284,7 @@ void start_restore_defaults( void )
 		case ROUTER_ASUS_WL520G:
 		case ROUTER_ASUS_WL500G_PRE_V2:
 		case ROUTER_BELKIN_F5D7230_V3000:
+		case ROUTER_BELKIN_F5D7231_V2000:
 		    nvram_set( "vlan1ports", "4 5" );
 		    break;
 		default:
