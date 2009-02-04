@@ -72,6 +72,14 @@ config IP_NF_MATCH_TOS
 
 	  To compile it as a module, choose M here.  If unsure, say N.
 
+config IP_NF_MATCH_RANDOM
+	tristate "RANDOM match support"
+	depends on IP_NF_IPTABLES
+
+config IP_NF_MATCH_NTH
+	tristate "NTH match support"
+	depends on IP_NF_IPTABLES
+
 config IP_NF_MATCH_RECENT
 	tristate "recent match support"
 	depends on IP_NF_IPTABLES
