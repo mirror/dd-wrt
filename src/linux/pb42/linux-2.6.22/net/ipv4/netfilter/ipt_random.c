@@ -20,10 +20,10 @@
 MODULE_LICENSE("GPL");
 
 
-static bool ipt_rand_match(const struct sk_buff *skb,
+static int ipt_rand_match(const struct sk_buff *skb,
 		  const struct net_device *in, const struct net_device *out,
 		  const struct xt_match *match, const void *matchinfo,
-		  int offset, unsigned int protoff, bool *hotdrop)
+		  int offset, unsigned int protoff, int *hotdrop)
 {
 	/* Parameters from userspace */
 	const struct ipt_rand_info *info = matchinfo;
@@ -39,7 +39,7 @@ static bool ipt_rand_match(const struct sk_buff *skb,
 		return 0;
 }
 
-static bool ipt_rand_checkentry(const char *tablename,
+static int ipt_rand_checkentry(const char *tablename,
 	   const void *e,
 	   const struct xt_match *match,
 	   void *matchinfo,
