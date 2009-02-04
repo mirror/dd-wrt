@@ -177,7 +177,6 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	    break;
 	case ROUTER_LINKSYS_WTR54GS:
 	case ROUTER_WAP54G_V1:
-	case ROUTER_BELKIN_F5D7231_V2000:
 	    nvram_set( "wl0gpio0", "136" );
 	    nvram_set( "wl0gpio1", "0" );
 	    nvram_set( "wl0gpio2", "0" );
@@ -221,6 +220,10 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	    break;
 	case ROUTER_NETGEAR_WGR614L:
 	    nvram_set( "wl0gpio5", "8" );
+	    break;
+	case ROUTER_BELKIN_F5D7231_V2000:
+		nvram_set( "wl0gpio0", "2" );
+	    nvram_set( "wl0gpio1", "0" );
 	    break;
     }
 #else // v23
