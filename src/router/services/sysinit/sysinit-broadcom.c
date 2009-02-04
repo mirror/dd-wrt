@@ -177,6 +177,7 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	    break;
 	case ROUTER_LINKSYS_WTR54GS:
 	case ROUTER_WAP54G_V1:
+	case ROUTER_BELKIN_F5D7231_V2000:
 	    nvram_set( "wl0gpio0", "136" );
 	    nvram_set( "wl0gpio1", "0" );
 	    nvram_set( "wl0gpio2", "0" );
@@ -525,7 +526,18 @@ void start_sysinit( void )
 	case ROUTER_RT480W:
 	    setup_4712(  );
 	    break;
-
+	    
+	case ROUTER_BELKIN_F5D7231_V2000:
+	    nvram_set( "lan_ifnames", "vlan0 eth1" );
+	    nvram_set( "wan_ifname", "vlan1" );
+	    nvram_set( "wl0_ifname", "eth1" );
+	    if( nvram_match( "vlan1ports", "0 5u" ) )
+	    {
+		nvram_set( "vlan0ports", "3 2 1 0 5*" );
+		nvram_set( "vlan1ports", "4 5" );
+		}
+		break;
+	    
 	case ROUTER_BELKIN_F5D7231:
 	case ROUTER_USR_5461:
 	    nvram_set( "lan_ifnames", "vlan0 eth1" );
@@ -1075,28 +1087,8 @@ void start_sysinit( void )
 		nvram_set( "vlan1ports", "4 5" );
 		nvram_set( "vlan0ports", "0 1 2 3 5*" );
 	    }
-	    if( !nvram_match( "no_sercom", "1" ) )
-	    {
-		//fix mac
-		unsigned char mac[6];
-		FILE *in = fopen( "/dev/mtdblock/0", "rb" );
-
-		if( in != NULL )	//special sercom mac address handling
-		{
-		    fseek( in, 0x1ffa0, SEEK_SET );
-		    fread( mac, 6, 1, in );
-		    fclose( in );
-		    char macstr[32];
-
-		    sprintf( macstr, "%02X:%02X:%02X:%02X:%02X:%02X",
-			     ( int )mac[0] & 0xff, ( int )mac[1] & 0xff,
-			     ( int )mac[2] & 0xff, ( int )mac[3] & 0xff,
-			     ( int )mac[4] & 0xff, ( int )mac[5] & 0xff );
-		    nvram_set( "et0macaddr", macstr );
-		    eval( "ifconfig", "eth0", "hw", "ether", macstr );
-		}
-	    }
 	    break;
+
 	case ROUTER_LINKSYS_WTR54GS:
 	    eval( "gpio", "enable", "3" );	// prevent reboot loop on
 	    // reset
@@ -1158,6 +1150,39 @@ void start_sysinit( void )
     nvram_set( "pppoe_wan_ifname", wanifname );
     nvram_set( "pppoe_ifname", wanifname );
 
+    
+    /*
+     * MAC address sdjustments 
+     */
+    switch ( brand )
+    {
+	case ROUTER_ALLNET01:
+	case ROUTER_BELKIN_F5D7231_V2000:
+		
+		if( !nvram_match( "no_sercom", "1" ) )
+	    {
+		//fix mac
+		unsigned char mac[6];
+		FILE *in = fopen( "/dev/mtdblock/0", "rb" );
+
+		if( in != NULL )	//special sercom mac address handling
+		{
+		    fseek( in, 0x1ffa0, SEEK_SET );
+		    fread( mac, 6, 1, in );
+		    fclose( in );
+		    char macstr[32];
+
+		    sprintf( macstr, "%02X:%02X:%02X:%02X:%02X:%02X",
+			     ( int )mac[0] & 0xff, ( int )mac[1] & 0xff,
+			     ( int )mac[2] & 0xff, ( int )mac[3] & 0xff,
+			     ( int )mac[4] & 0xff, ( int )mac[5] & 0xff );
+		    nvram_set( "et0macaddr", macstr );
+		    eval( "ifconfig", "eth0", "hw", "ether", macstr );
+		}
+	    }
+	break;	
+    }
+    
     /*
      * additional boardflags adjustment 
      */
