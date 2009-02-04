@@ -43,7 +43,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
-
+#include <cymac.h>
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 #include <arpa/inet.h>
@@ -54,9 +54,7 @@
 
 void start_sysinit( void )
 {
-    char buf[PATH_MAX];
     struct utsname name;
-    struct stat tmp_stat;
     time_t tm = 0;
 
     unlink( "/etc/nvram/.lock" );
@@ -99,7 +97,6 @@ void start_sysinit( void )
     klogctl( 8, NULL, atoi( nvram_safe_get( "console_loglevel" ) ) );
     cprintf( "sysinit() get router\n" );
 
-    int brand = getRouterBrand(  );
 
     /*
      * Modules 
@@ -119,6 +116,8 @@ void start_sysinit( void )
     fread( buf2, 256, 1, fp );
     fclose( fp );
     int i;
+    int offsetmac1=-1;
+    int offsetmac2=-1;
     unsigned int copy[256];
 
     for( i = 0; i < 256; i++ )
@@ -127,19 +126,42 @@ void start_sysinit( void )
     {
 	if( !strncmp( &buf2[i], "ar7100_esa", 10 ) )
 	{
-	    break;
+	    offsetmac1=i;
+	}
+	if( !strncmp( &buf2[i], "ar7100_esa_2", 10 ) )
+	{
+	    offsetmac2=i;
 	}
     }
-    if( i < 256 )
+    if( offsetmac1 != -1 )
     {
 	char mac[32];
 
 	i += 11;
-	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0 + i],
-		 copy[1 + i], copy[2 + i], copy[3 + i], copy[4 + i],
-		 copy[5 + i] );
+	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0 + offsetmac1],
+		 copy[1 + offsetmac1], copy[2 + offsetmac1], copy[3 + offsetmac1], copy[4 + offsetmac1],
+		 copy[5 + offsetmac1] );
 	fprintf( stderr, "configure eth0 to %s\n", mac );
 	eval( "ifconfig", "eth0", "hw", "ether", mac );
+	/*
+	 * Right now the routerstation has no on-board mac stored for the secondary interface (LAN)
+	 * to solve this i advised UBNT to use "ar7100_esa_2" as future redboot parameter for the secondary mac address
+	 * if this parameter exists, we will take it as secondary mac, if not we increase the primary mac by 1
+	 * consider that if you feel you have problems with mac conflicts using multiple routerstations, add this secondary parameter to redboot
+	 * this should only happen, if you connect the wan port of a routerstation to the lan port of another one and if these routerstation are 
+	 * from the same production batch 
+	 * 
+	 */
+	if (offsetmac2 != -1)
+	    {
+	    sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0 + offsetmac2],
+		 copy[1 + offsetmac2], copy[2 + offsetmac2], copy[3 + offsetmac2], copy[4 + offsetmac2],
+		 copy[5 + offsetmac2] );
+	    }
+	    else
+	    {
+	    	MAC_ADD( mac );
+	    }
 	fprintf( stderr, "configure eth1 to %s\n", mac );
 	eval( "ifconfig", "eth1", "hw", "ether", mac );
     }
