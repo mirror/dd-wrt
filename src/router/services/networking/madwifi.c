@@ -558,7 +558,7 @@ void setupHostAP( char *prefix, int iswan )
 	if( nvram_match( akm, "psk" ) ||
 	    nvram_match( akm, "psk2" ) || nvram_match( akm, "psk psk2" ) )
 	{
-	    fprintf( fp, "wpa_passphrase=\"%s\"\n",
+	    fprintf( fp, "wpa_passphrase=%s\n",
 		     nvram_nget( "%s_wpa_psk", prefix ) );
 	    fprintf( fp, "wpa_key_mgmt=WPA-PSK\n" );
 	}
