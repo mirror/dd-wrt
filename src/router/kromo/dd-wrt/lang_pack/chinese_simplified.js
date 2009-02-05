@@ -181,7 +181,7 @@ share.standard="Standard（标准）";
 share.execscript="执行脚本";
 share.user="用户";
 share.privatekey="私钥";
-share.bytes="字节";
+share.bytes="bytes";
 share.kbytes="KB";
 share.mbytes="MB";
 share.gbytes="GB";
@@ -939,7 +939,7 @@ route.static_name="路由名称";
 route.static_ip="目的LAN IP";
 
 hroute.right2="如果本路由器正主控您的Internet连接，选择 <em>网关</em> 模式。如果您的网络中存在另外一个路由器，选择 <em>路由</em> 模式。";
-hroute.right4="这是唯一的路由编号，您最多可以设置20条路由。";
+hroute.right4="这是唯一的路由编号，您最多可以设置50条路由。";
 hroute.right6="输入您想要的这条路由名称。";
 hroute.right8="这是您想要设定静态路由的远程主机。";
 hroute.right10="决定主机和网络分配。";
@@ -1144,7 +1144,7 @@ status_band.strout="Out";
 status_band.follow="follow";
 status_band.up="up";
 
-hstatus_band.svg="显示带宽图表需要Adobe的SVG plugin。";
+hstatus_band.svg="显示带宽图表需要Adobe的SVG插件";
 hstatus_band.right1="点击标签选择单位（字节/秒 或 位/秒）。";
 hstatus_band.right2="点击标签选择图形自动调整类型。";
 
