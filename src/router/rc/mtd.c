@@ -304,6 +304,14 @@ int mtd_write( const char *path, const char *mtd )
 #else
 	erase_info.length = ROUNDUP( trx.len, mtd_info.erasesize );
 #endif
+#ifdef HAVE_MAKSAT
+    if( nvram_match( "DD_BOARD2", "ADI Engineering Pronghorn Metro" ) )
+#else
+    if( nvram_match( "DD_BOARD", "ADI Engineering Pronghorn Metro" ) )
+#endif
+    {
+	erase_info.length = mtd_info.erasesize;     
+    }
 	// else
 	// erase_info.length = mtd_info.erasesize; 
     }
