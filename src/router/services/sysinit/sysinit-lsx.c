@@ -126,18 +126,17 @@ void start_sysinit( void )
     {
 	if( !strncmp( &buf2[i], "ar7100_esa", 10 ) )
 	{
-	    offsetmac1=i;
+	    offsetmac1=i+11;
 	}
 	if( !strncmp( &buf2[i], "ar7100_esa_2", 10 ) )
 	{
-	    offsetmac2=i;
+	    offsetmac2=i+11;
 	}
     }
     if( offsetmac1 != -1 )
     {
 	char mac[32];
 
-	i += 11;
 	sprintf( mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0 + offsetmac1],
 		 copy[1 + offsetmac1], copy[2 + offsetmac1], copy[3 + offsetmac1], copy[4 + offsetmac1],
 		 copy[5 + offsetmac1] );
