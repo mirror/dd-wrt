@@ -1160,10 +1160,10 @@ static void configure_single( int count )
     sprintf( wl_csma, "%s_csma", dev );
 
     setsysctrl( wif, "csma", atoi( nvram_default_get( wl_csma, "1" ) ) );
-    setsysctrl( wif, "nintmit", atoi( nvram_default_get( wl_intmit, "0" ) ) );
+    setsysctrl( wif, "intmit", atoi( nvram_default_get( wl_intmit, "0" ) ) );
     setsysctrl( wif, "noise_immunity",
 		atoi( nvram_default_get( wl_noise_immunity, "-1" ) ) );
-    setsysctrl( wif, "nofdm_weak_det",
+    setsysctrl( wif, "ofdm_weak_det",
 		atoi( nvram_default_get( wl_ofdm_weak_det, "0" ) ) );
 
     char *enable = "enable";
