@@ -2574,10 +2574,10 @@ static void save_prefix( webs_t wp, char *prefix )
     copytonv( wp, "%s_wmm", prefix );
     copytonv( wp, "%s_txantenna", prefix );
     copytonv( wp, "%s_rxantenna", prefix );
-    copytonv( wp, "%s_nintmit", prefix );
+    copytonv( wp, "%s_intmit", prefix );
     copytonv( wp, "%s_csma", prefix );
     copytonv( wp, "%s_noise_immunity", prefix );
-    copytonv( wp, "%s_nofdm_weak_det", prefix );
+    copytonv( wp, "%s_ofdm_weak_det", prefix );
 
     copytonv( wp, "%s_chanshift", prefix );
     copytonv( wp, "%s_doth", prefix );
