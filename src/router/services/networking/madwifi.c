@@ -1181,14 +1181,13 @@ static void configure_single( int count )
 #ifdef HAVE_NS2
     char *gpio = "7";
 #endif
-
 #ifdef HAVE_LC2
     enable = "disable";		// swap it
     disable = "enable";
     char *gpio = "2";
 #endif
 
-#if defined(HAVE_NS2)  || defined(HAVE_NS5) || defined(HAVE_LC2)
+#if defined(HAVE_NS2)  || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
     int tx = atoi( nvram_default_get( txantenna, "0" ) );
 
     setsysctrl( wif, "diversity", 0 );
