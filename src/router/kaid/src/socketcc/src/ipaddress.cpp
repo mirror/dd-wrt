@@ -57,6 +57,7 @@
 #include <errno.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <string.h>
 
 /******************************************************************************/
 /* Include class header file.                                                 */
