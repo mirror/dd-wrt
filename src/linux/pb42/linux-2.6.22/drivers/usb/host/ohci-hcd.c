@@ -920,6 +920,11 @@ MODULE_LICENSE ("GPL");
 #define PS3_SYSTEM_BUS_DRIVER	ps3_ohci_sb_driver
 #endif
 
+#ifdef CONFIG_USB_OHCI_AR7100
+#include "ohci-ar71xx.c"
+#define PLATFORM_DRIVER		ohci_hcd_ar71xx_driver
+#endif
+
 #if	!defined(PCI_DRIVER) &&		\
 	!defined(PLATFORM_DRIVER) &&	\
 	!defined(OF_PLATFORM_DRIVER) &&	\

@@ -3,9 +3,10 @@
 #include "ag7100_phy.h"
 
 typedef struct {
-    int     is_enet_port;
-    int     mac_unit;
-    u32     phy_addr;
+    int         is_enet_port;
+    int         mac_unit;
+    uint32_t    phy_addr;
+    uint16_t    status;
 }vsc_phy_t;
 
 vsc_phy_t phy_info[] = {
@@ -111,6 +112,102 @@ vsc_phy_speed(int unit)
         case 2:
             return AG7100_PHY_SPEED_1000T;
         default:
-            printk("Unkown speed read!\n");
+            return (0);
     }
+}
+
+
+/******************************************************************************/
+/*!
+**  \brief vscgen_phy_get_link_status
+**
+**  Provides various status values to be used by upper layer.  This version is
+**  different from the redboot version in that it needs to return a negative
+**  number if the phy has not changed, or 0 if "successful"
+**
+**  \param unit unit number
+**  \param *link Pointer to int to store link status
+**  \param *fdx Pointer to int to store duplex status
+**  \param *speed Pointer to ag7100_phy_speed_t variable to store current speed
+**  \param *cfg Pointer to int to store link status change indicator
+**  \return 0 if status change
+**  \return -1 if PHY unit not found
+**  \return -2 if no status change
+*/
+
+unsigned int
+vsc_phy_get_link_status(int unit, int *link, int *fdx, 
+    ag7100_phy_speed_t *speed, unsigned int *cfg)
+{
+    unsigned short ms;
+    unsigned int   tc;
+    vsc_phy_t *phy = vsc_phy_find(unit);
+
+    if (!phy) 
+        return -1;
+
+    ms = vsc_phy_is_up(unit);
+    if (link)
+        *link = ms;
+
+    if (speed)
+        *speed = vsc_phy_speed(unit);
+
+    if (fdx)
+        *fdx = vsc_phy_is_fdx(unit);
+
+    tc = phy->status != ms;
+    phy->status = ms;
+
+    if (cfg)
+        *cfg=tc;
+
+    if(tc)
+        return (0);
+    else
+        return (-2);
+}
+
+/******************************************************************************/
+/*!
+**  \brief vscgen_phy_print_link_status
+**
+**  Diagnostic print showing the current link status, duplex status, and speed.
+**
+**  \param unit unit number
+**  \return link status
+*/
+
+int
+vsc_phy_print_link_status(int unit)
+{
+    int speed;
+    int link;
+
+    link = vsc_phy_is_up(unit);
+
+    printk("Phy is %s\n",link ? "up" : "down");
+    printk("Duplex is %s\n",vsc_phy_is_fdx(unit) ? "Full" : "Half");
+
+    speed = vsc_phy_speed(unit);
+
+    switch(speed)
+    {
+    case AG7100_PHY_SPEED_10T:
+        printk("Speed is 10 Mbps\n");
+        break;
+        
+    case AG7100_PHY_SPEED_100TX:
+        printk("Speed is 100 Mbps\n");
+        break;
+        
+    case AG7100_PHY_SPEED_1000T:
+        printk("Speed is 1000 Mbps\n");
+        break;
+        
+    default:
+        printk("Speed is UNKNOWN\n");
+    }
+
+    return (link);
 }

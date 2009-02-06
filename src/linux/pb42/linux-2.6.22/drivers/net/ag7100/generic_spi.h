@@ -26,10 +26,14 @@ generic_spi_access_done(void);
 void
 generic_spi_raw_output_u8(unsigned char val);
 
-unsigned int 
+unsigned int
 generic_spi_raw_input_u32(void);
 
-unsigned int 
+unsigned int
 generic_spi_raw_input_u8(void);
+
+#ifdef CONFIG_AR9100
+void gpio_clk_setup(void);
+#endif
 
 #endif

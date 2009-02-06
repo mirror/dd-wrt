@@ -935,13 +935,7 @@ MODULE_DESCRIPTION (DRIVER_INFO);
 MODULE_AUTHOR (DRIVER_AUTHOR);
 MODULE_LICENSE ("GPL");
 
-#if defined(CONFIG_USB_EHCI_AR7100)
-#include "ehci-ar7100.c"
-#define	PCI_DRIVER		ehci_pci_driver
-#elif defined(CONFIG_USB_EHCI_AR9130)
-#include "ehci-ar9130.c"
-#define	PCI_DRIVER		ehci_pci_driver
-#elif defined(CONFIG_PCI)
+#if defined(CONFIG_PCI)
 #include "ehci-pci.c"
 #define	PCI_DRIVER		ehci_pci_driver
 #endif
@@ -959,6 +953,11 @@ MODULE_LICENSE ("GPL");
 #ifdef CONFIG_PPC_PS3
 #include "ehci-ps3.c"
 #define	PS3_SYSTEM_BUS_DRIVER	ps3_ehci_sb_driver
+#endif
+
+#ifdef CONFIG_USB_EHCI_AR7100
+#include "ehci-ar71xx.c"
+#define PLATFORM_DRIVER		ehci_ar71xx_driver
 #endif
 
 #if !defined(PCI_DRIVER) && !defined(PLATFORM_DRIVER) && \

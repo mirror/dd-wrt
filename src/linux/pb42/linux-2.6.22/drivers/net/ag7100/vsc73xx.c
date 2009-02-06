@@ -29,6 +29,9 @@
 #include "vsc73xx.h"
 
 #define MODULE_NAME "VSC73XX"
+#ifdef CONFIG_AR9100
+extern int board_version;
+#endif
 
 /* ************************************************************** */
 
@@ -124,6 +127,11 @@ vsc73xx_rd(int block, int subblock, int reg, unsigned int  *value)
   }
 
   rc=generic_spi_access_enable(GENERIC_SPI_VSC73XX_CS);
+#ifdef CONFIG_AR9100
+  if (board_version >= 50) {
+    gpio_clk_setup();
+  }
+#endif
   if (rc<0) {
     printk(MODULE_NAME": unable to CS %08x \n", GENERIC_SPI_VSC73XX_CS);
     return -1;
@@ -197,18 +205,45 @@ vsc73xx_get_and_verify_chipid(void)
     vsc73xx_rd(VSC73XX_SYSTEM, 0, VSC73XX_ICPU_CHIPID, &curVal);
     chip = (curVal >> 12)  & 0x0ffff;
   } while ((chip != 0x7385) && (chip != 0x7395) && (chip != 0x7396) && --ii);
-  
+
+#ifdef VSC73XX_DEBUG
+  printk(MODULE_NAME": curval = 0x%08x\n", curVal);
+#endif
+
   if (0==ii) {
     printk(MODULE_NAME": unknown chip: %08x\n", chip);
     return -1;
-  } 
+  }
+
+#ifdef CONFIG_AR9100
+
+  /*
+   * Per Martin Olsen [martino@vitesse.com],
+   * VSC7385YV chips with 0x0 in bits 31:28 of "Block 7 Subblock 0
+   * Address 0x18" is the first revision and that have a problem
+   * with the reset. This can be the reason why this doesn't work.
+   */
+  if (!((curVal >> 28) & 0xf)) {
+    printk("\n==================================================\n"
+           "WARNING:\n"
+           "Using revision 0 of chip 0x%x. It might not work!\n"
+           "==================================================\n", chip);
+  }
+#endif
+
   return chip;
 }
 
 static int
 vsc73xx_reset_and_verify_chipid(void)
 {
+#ifdef CONFIG_AR9100
+  if (board_version < 50) {
+    vsc73xx_force_reset();
+  }
+#else
   vsc73xx_force_reset();
+#endif
   return vsc73xx_get_and_verify_chipid();
 }
 
@@ -440,11 +475,15 @@ vsc73xx_load_firmware_raw(unsigned char *lutonuAddr, int lutonuSize)
 }
 
 #define VSC73XX_SFTW_VERSION            0x229
-
-#include "g5_Plus1_2_29b_unmanaged_Atheros_v5.c"
-
-#include "g5e_Plus1_2_29a_unmanaged_Atheros_v3.c"
-
+#ifdef CONFIG_AR9100
+#	include "g5_Plus1_2_31_unmanaged_Atheros_v3.c"
+#	include "g5_Plus1_2_31_unmanaged_Atheros_v6.c"
+#	include "g5_Plus1_2_31_unmanaged_Atheros_v4.c"
+#else
+#	include "g5_Plus1_2_29b_unmanaged_Atheros_v5.c"
+#	include "g5e_Plus1_2_29a_unmanaged_Atheros_v3.c"
+#	include "g5_Plus1_2_29a_unmanaged_Atheros_v5.c"
+#endif
 static int
 vsc73xx_load_firmware(void) 
 {
@@ -452,6 +491,9 @@ vsc73xx_load_firmware(void)
   int resetNeeded;
   int rc;
 
+#ifdef CONFIG_AR9100
+ ar7100_reg_rmw_set(AR9100_FLASH_CONFIG,0x3fffff);
+#endif
   rc = vsc73xx_reset_and_verify_chipid();
   if (rc < 0) {
     printk(MODULE_NAME": could not identify chip, err %d\n", rc);
@@ -464,14 +506,24 @@ vsc73xx_load_firmware(void)
 #else
   switch (rc) {
   case 0x00007385:  
-    rc = vsc73xx_load_firmware_raw(g5_Plus1_2_29b_unmanaged_Atheros_v5, 
-				   sizeof(g5_Plus1_2_29b_unmanaged_Atheros_v5));
+#ifdef CONFIG_AR9100
+    rc = vsc73xx_load_firmware_raw(g5_Plus1_2_31_unmanaged_Atheros_v6,
+				   sizeof(g5_Plus1_2_31_unmanaged_Atheros_v6));
+#else
+    rc = vsc73xx_load_firmware_raw(g5_Plus1_2_29b_unmanaged_Atheros_v5,
+                                   sizeof(g5_Plus1_2_29b_unmanaged_Atheros_v5));
+#endif
     break;
 
   case 0x00007395:
     /* source from vitesse uses symbol lutonu, later versions use the name of the file.  */
+#ifdef CONFIG_AR9100
+    rc = vsc73xx_load_firmware_raw(g5_Plus1_2_31_unmanaged_Atheros_v4,
+				   sizeof(g5_Plus1_2_31_unmanaged_Atheros_v4));
+#else
     rc = vsc73xx_load_firmware_raw(lutonu,       /* g5e_Plus1_2_29a_unmanaged_Atheros_v3 */
 				   sizeof(lutonu /* g5e_Plus1_2_29a_unmanaged_Atheros_v3 */));
+#endif
     break;
     
   default:
@@ -490,9 +542,19 @@ vsc73xx_load_firmware(void)
   }
   if (sVersion < VSC73XX_SFTW_VERSION) {
     printk(MODULE_NAME": incorrect software version %04x\n", sVersion);
+#ifdef CONFIG_AR9100
+    if (board_version < 50) {
+      return -1;
+    }
+#else
     return -1;
+#endif
   }
   printk(MODULE_NAME": software version %08x started OK\n",sVersion);
+
+#ifdef CONFIG_AR9100
+ ar7100_reg_rmw_set(AR9100_FLASH_CONFIG,0xf2288);
+#endif
 
   return 0;
 }
@@ -792,7 +854,7 @@ vsc73xx_setup_raw(void)
   unsigned int t_cfg;
   unsigned int t_clock_delay;
   unsigned int t_advportm;
-  
+
   rc = generic_spi_init(GENERIC_SPI_VSC73XX_CS);
   if (rc < 0) {
     printk(MODULE_NAME": could not initialize spi interface, err %d\n", rc);
@@ -800,7 +862,7 @@ vsc73xx_setup_raw(void)
   }
 
   vsc73xx_get_sVersion_resetNeeded(&sVersion, &resetNeeded);
-  if ( (resetNeeded) || (sVersion < VSC73XX_SFTW_VERSION) ) {
+ if ( (resetNeeded) || (sVersion < VSC73XX_SFTW_VERSION) ) {
     rc = vsc73xx_load_firmware();
     if (rc < 0)
       return rc;
@@ -834,16 +896,24 @@ vsc73xx_setup_raw(void)
     vsc73xx_print_advportm_val(t_advportm);
   
   /* We must tell the VSC73XX that it can send/recieve data */
+#ifdef CONFIG_AR9100
+  vsc73xx_set_mac_cfg(VSC73XX_PORT_MAC, VSC73XX_MAC_CFG_PORT_RST |
+		VSC73XX_MAC_CFG_MAC_RX_RST | VSC73XX_MAC_CFG_MAC_TX_RST);
+  vsc73xx_set_mac_cfg(VSC73XX_PORT_MAC, VSC73XX_MAC_CFG_AR9100);
+#else
   vsc73xx_set_mac_cfg(VSC73XX_PORT_MAC, 
 		      VSC73XX_MAC_CFG_HYDRA );
+#endif
   vsc73xx_get_mac_cfg(VSC73XX_PORT_MAC, &t_cfg);
-  
+
+#ifndef CONFIG_AR9100
   if ((VSC73XX_MAC_CFG_HYDRA_MASK & t_cfg) != VSC73XX_MAC_CFG_HYDRA) {
     printk(MODULE_NAME":   unable to set mac_cfg for port 6 %08x %08x\n", 
 		   VSC73XX_MAC_CFG_HYDRA, 
 		   VSC73XX_MAC_CFG_HYDRA_MASK & t_cfg);
   }
   else
+#endif
     vsc73xx_print_mac_cfg_val(t_cfg);
   
   return rc;
@@ -972,8 +1042,32 @@ vsc73xx_get_link_status(int unit, int *up, int *fdx, ag7100_phy_speed_t *speed, 
   if (speed) *speed = t_speed;
   if (cfg)   *cfg   = t_cfg;
 
+#ifdef VSC73XX_DEBUG
+  printk("\t==== vsc(%d) up:%d fdx:%d speed:%d cfg=0x%08x\n", unit, t_up, t_fdx, t_speed, t_cfg);
+#endif
   return 0;
 }
+
+#ifdef VSC73XX_DEBUG
+void
+vsc73xx_flush_mac_table_all(void)
+{
+	/* This flushes the mac table of all the ports */
+	vsc73xx_wr(2, 0, 0xB0, 0x4);
+}
+
+void
+vsc73xx_get_link_status_dbg(void)
+{
+	printk("\n");
+	vsc73xx_get_link_status(1, 0, 0, 0, 0);
+	vsc73xx_get_link_status(2, 0, 0, 0, 0);
+	vsc73xx_get_link_status(3, 0, 0, 0, 0);
+	vsc73xx_get_link_status(4, 0, 0, 0, 0);
+	vsc73xx_get_link_status(5, 0, 0, 0, 0);
+	vsc73xx_get_link_status(6, 0, 0, 0, 0);
+}
+#endif /* VSC73XX_DEBUG */
 
 int
 vsc73xx_phy_print_link_status(int unit)
