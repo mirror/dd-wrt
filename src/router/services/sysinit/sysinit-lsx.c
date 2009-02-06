@@ -128,9 +128,9 @@ void start_sysinit( void )
 	{
 	    offsetmac1=i+11;
 	}
-	if( !strncmp( &buf2[i], "ar7100_esa_2", 10 ) )
+	if( !strncmp( &buf2[i], "ar7100_esa_2", 12 ) )
 	{
-	    offsetmac2=i+11;
+	    offsetmac2=i+13;
 	}
     }
     if( offsetmac1 != -1 )
