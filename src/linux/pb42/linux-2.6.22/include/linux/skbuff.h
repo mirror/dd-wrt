@@ -327,6 +327,53 @@ struct sk_buff {
 
 #include <asm/system.h>
 
+#ifdef CONFIG_SKB_FIXEDSIZE_CACHE
+
+/** 
+ *	struct skb_data_stack_t Defines the stack that holds skb->data
+ *	@stack_ptr: Index that tracks the top of data stack
+ *  @stack_status: Status of the stack
+ *  @max_elems_in_stack: The maximum number of elements that the stack can hold
+ *  @skb_stack_size: Size of SKB data held by the stack
+ *  @stack: Pointer to SKB data held by stack
+ *  kmem: kmem_cache used for allocation of SKB data
+ *  num_refs: Number of references to the stack
+ *  skb_refcnt: Reference count for SKB data allocated from the stack
+ *  tbl_index : Index in the stack table where a pointer to this stack is stored
+*/
+typedef struct {
+    int stack_ptr;
+    int stack_status;
+    unsigned int max_elems_in_stack;
+    unsigned int skb_stack_size;
+    char** stack;
+    kmem_cache_t* kmem;
+    char kmem_name[32];
+    unsigned int num_refs;
+    unsigned int skb_refcnt;
+    unsigned int tbl_idx;
+} skb_data_stack_t;
+
+typedef enum {
+    SKBUFF_CREATE_NEW = 0,
+    SKBUFF_REUSE_RESIZE,
+    SKBUFF_REUSE_EXPANDSIZE,
+    SKBUFF_REUSE_NORESIZE,
+} SKBUFF_CACHE_CREATE_OPTS;
+/* Use skb_create_cache to create a stack to cache the SKB data 
+   Use dev_alloc_skb_from_cache to allocate SKB data from teh created stack
+   Use skb_destroy_cache to destroy the stack. No allocations can be
+   made once the stack is detroyed 
+*/
+extern void skb_destroy_cache(skb_data_stack_t* skb_data_stack);
+extern skb_data_stack_t* skb_create_cache(unsigned int size, unsigned int num_elems, unsigned long flags, SKBUFF_CACHE_CREATE_OPTS opt);
+extern struct sk_buff *dev_alloc_skb_from_cache(
+                        skb_data_stack_t* skb_data_stack,
+					    unsigned int size,
+					    gfp_t priority);
+#endif
+
+
 extern void kfree_skb(struct sk_buff *skb);
 extern void	       __kfree_skb(struct sk_buff *skb);
 extern struct sk_buff *__alloc_skb(unsigned int size,

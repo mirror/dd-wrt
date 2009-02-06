@@ -314,6 +314,11 @@ extern void ar71xx_ddr_flush(u32 reg);
 #define REV_ID_CHIP_AR7141	0xa1
 #define REV_ID_CHIP_AR7161	0xa2
 #define REV_ID_CHIP_AR9130	0xb0
+#define AR7240_REV_ID_AR7161    0xa2
+#define AR7240_REV_1_0          0xc0
+#define AR7240_REV_1_1          0xc1
+#define AR7240_REV_1_2          0xc2
+ 
 
 #define REV_ID_REVISION_MASK	0x3
 #define REV_ID_REVISION_SHIFT	2

@@ -927,6 +927,15 @@ vsc8601_phy_setup_vsc8601_Rev_A(uint16_t unit, uint16_t phy_addr)
 static void 
 vsc8601_phy_setup_vsc8601_Rev_B(uint16_t unit, uint16_t phy_addr)
 {
+#ifdef CONFIG_AR9100
+ /* Advertise Pause frames */
+  uint16_t uu;
+
+  uu=ag7100_mii_read(unit, phy_addr, 4);
+  uu|= 0xc00;
+  ag7100_mii_write(unit, phy_addr, 4, uu);
+#endif
+
   /* Set Skew */
   vsc8601_phy_rmw_ex_crtl_set_1(unit, phy_addr, 1<<8, 1<<8);
 }

@@ -71,6 +71,353 @@
 static struct kmem_cache *skbuff_head_cache __read_mostly;
 static struct kmem_cache *skbuff_fclone_cache __read_mostly;
 
+#ifdef CONFIG_SKB_FIXEDSIZE_CACHE
+/* Maximum number of stacks to create. Some reasonable number to make sure
+   that we don't have too many stacks created
+ */
+#define MAX_SKB_DATA_STACKS 32
+#define LOCK_STACK()        spin_lock_irqsave(&skb_stack_lock, intr_flags)
+#define UNLOCK_STACK()      spin_unlock_irqrestore(&skb_stack_lock, intr_flags)
+/* XXX Having a single spinlock for all stack related operations rather than
+   one lock per stack, has both advantages as well as disadvantages. The
+   advantage is that it is fairly simple to debug and maintain and the
+   dis-advantage is the that in case of SMP, a process on the other processor
+   has to wait even if the operation is being done on a different stack.
+   However, given that the operations and simple and extremely fast, this
+   should not be a concern. Leave it this way for now and revisit later
+   if required 
+*/
+static spinlock_t skb_stack_lock = SPIN_LOCK_UNLOCKED;
+static skb_data_stack_t* skb_data_stack_tbl[MAX_SKB_DATA_STACKS];
+static int last_tbl_elem = 0;
+static kmem_cache_t *skbuff_datastack_cache = NULL;
+enum {
+    STACK_NULL=0,
+    STACK_MARK_FOR_DELETE,
+    STACK_IN_USE,
+};
+
+static inline struct sk_buff *alloc_skb_from_stack(
+                     skb_data_stack_t* skb_data_stack,
+				     unsigned int size,
+				     gfp_t gfp_mask);
+
+/**
+ *	dev_alloc_skb_from_cache
+ *	@skb_data_stack: The stack that should be looked at for skb data allocation
+ *	@size: size of the skb 
+ *	@gfp_mask: allocation mask
+ *  Returns pointer to skb data stack
+ *  Cannot be called from interrupt context
+ *  Allocates SKB from the provided stack if the stack is not empty, else 
+ *  allocates from kmem_cache
+*/
+struct sk_buff *dev_alloc_skb_from_cache(
+                     skb_data_stack_t* skb_data_stack,
+				     unsigned int size,
+				     gfp_t gfp_mask) {
+    struct sk_buff *skb = alloc_skb_from_stack(skb_data_stack, size, gfp_mask);
+    if ( likely(skb) ) {
+		skb_reserve(skb, 16);
+    }
+    return skb;
+}
+
+/* Allocate from stack if available. Else allocate from slab*/
+static inline void* skb_stack_alloc(skb_data_stack_t* skb_data_stack, unsigned long flags) {
+    void* data = NULL;
+    unsigned long intr_flags;
+    LOCK_STACK();
+    if ( unlikely(skb_data_stack->stack_status != STACK_IN_USE) ) {
+        UNLOCK_STACK();
+        return NULL;
+    }
+    if ( skb_data_stack->stack_ptr == 0 ) {
+        data = kmem_cache_alloc(skb_data_stack->kmem, flags);
+        if ( likely(data) ) {
+            skb_data_stack->skb_refcnt++;
+        }
+    } else {
+        data = skb_data_stack->stack[--skb_data_stack->stack_ptr];
+    }
+    UNLOCK_STACK();
+    return data;
+}
+
+static inline void skb_stack_cleanup(skb_data_stack_t* skb_data_stack) {
+    kmem_cache_destroy(skb_data_stack->kmem);
+    kfree(skb_data_stack->stack);
+    skb_data_stack_tbl[skb_data_stack->tbl_idx] = NULL;
+    kmem_cache_free(skbuff_datastack_cache, skb_data_stack);
+}
+
+/*If stack is full free the buffer, else add it back to the stack */
+static inline void skb_stack_free(skb_data_stack_t* skb_data_stack, void* data) {
+    unsigned long intr_flags;
+    LOCK_STACK();
+    /* A greater than or equal to check for stack_ptr is required since 
+        the stack_create function can resize the stack when in use
+    */
+    if ( (skb_data_stack->stack_status != STACK_IN_USE) || (skb_data_stack->stack_ptr >= skb_data_stack->max_elems_in_stack)) {
+        skb_data_stack->skb_refcnt--;
+        kmem_cache_free(skb_data_stack->kmem, data);
+        if ( (skb_data_stack->stack_status == STACK_MARK_FOR_DELETE) && (!skb_data_stack->skb_refcnt) ) {
+            skb_stack_cleanup(skb_data_stack);
+        }
+    } else {
+        skb_data_stack->stack[skb_data_stack->stack_ptr++] = data;
+    }
+    UNLOCK_STACK();
+}
+
+/**
+ *	skb_destroy_cache
+ *	@skb_data_stack: The stack to be destroyed
+ *  Mark the stack for destroy and drain all the elements so that no more
+ *  allocations are possible. 
+ *  If this is the last reference, cleanup the stack 
+*/
+void skb_destroy_cache(skb_data_stack_t* skb_data_stack) {
+    unsigned long intr_flags;
+    LOCK_STACK();
+    
+    if ( skb_data_stack->stack_status == STACK_IN_USE ) {
+        skb_data_stack->num_refs--;
+        if ( skb_data_stack->num_refs ) {
+            UNLOCK_STACK();
+            return;
+        }
+        skb_data_stack->stack_status = STACK_MARK_FOR_DELETE;
+        skb_data_stack->skb_refcnt -= skb_data_stack->stack_ptr;
+        while ( skb_data_stack->stack_ptr ) {
+            kmem_cache_free(skb_data_stack->kmem, skb_data_stack->stack[--skb_data_stack->stack_ptr]);
+        }
+        if ( !skb_data_stack->skb_refcnt ) {
+            skb_stack_cleanup(skb_data_stack);
+        }
+    }
+    UNLOCK_STACK();
+}
+
+static inline skb_data_stack_t* skb_create_init_stack(unsigned int num_elems) {
+    const char* kmem_name = "skbuff_stack_cache_data";
+    unsigned int tbl_idx = 0;
+    skb_data_stack_t* skb_data_stack = NULL;
+    if ( last_tbl_elem == MAX_SKB_DATA_STACKS ) {
+        /* If we have reached max limit available, check if we there are
+           freed locations in the table. Note that we could optimize this by
+           having the table as linked list, but this is just the create
+           function and should not be in performance critical path
+        */
+        for (tbl_idx=0; tbl_idx < MAX_SKB_DATA_STACKS; tbl_idx++ ) {
+            if ( skb_data_stack_tbl[tbl_idx] == NULL ) {
+                goto stack_create;
+            }
+        }
+        printk(KERN_ERR "Max stacks created. Cannot create more SKB data stacks \n");
+        return NULL;
+    } else {
+        tbl_idx = last_tbl_elem++;
+    }
+stack_create:
+    skb_data_stack = kmem_cache_alloc(skbuff_datastack_cache,GFP_ATOMIC);
+    if ( skb_data_stack ) {
+        skb_data_stack->stack_ptr = 0;
+        skb_data_stack->skb_stack_size = 0;
+        skb_data_stack->skb_refcnt = 0;
+        skb_data_stack->stack_status = STACK_NULL;
+        skb_data_stack->num_refs = 1;
+        skb_data_stack->max_elems_in_stack = num_elems;
+        skb_data_stack->stack = kmalloc(sizeof(void*)*num_elems, GFP_ATOMIC);
+        if ( !skb_data_stack->stack ) {
+            kmem_cache_free(skbuff_datastack_cache, skb_data_stack->stack);
+            return NULL;
+        }
+        sprintf(skb_data_stack->kmem_name, "%s%d", kmem_name, tbl_idx);
+        skb_data_stack_tbl[tbl_idx] = skb_data_stack;
+        skb_data_stack->tbl_idx = tbl_idx;
+        return skb_data_stack;
+    } 
+    return NULL;
+}
+
+static int skb_stack_resize(skb_data_stack_t* skb_data_stack, unsigned int newsize ) {
+    char** new_stack = kmalloc(sizeof(void*)*newsize, GFP_ATOMIC);
+    if ( !new_stack ) {
+        return 1;
+    }
+    if ( newsize < skb_data_stack->stack_ptr ) {
+        while ( skb_data_stack->stack_ptr != newsize ) {
+            skb_data_stack->skb_refcnt--;
+            kmem_cache_free(skb_data_stack->kmem, skb_data_stack->stack[--skb_data_stack->stack_ptr]);
+        }
+    }
+    if ( !skb_data_stack->stack_ptr ) {
+        memcpy(new_stack, skb_data_stack->stack, skb_data_stack->stack_ptr*sizeof(void*));
+    }
+    skb_data_stack->stack = new_stack;
+    return 0;
+}
+
+static inline skb_data_stack_t* skb_check_and_create_stack(unsigned int size, SKBUFF_CACHE_CREATE_OPTS opt, unsigned int num_elems) {
+    int i=0;
+    int newsize = 0;
+    for(i=0; i < last_tbl_elem; i++ ) {
+        if ( skb_data_stack_tbl[i] && skb_data_stack_tbl[i]->skb_stack_size >= size ) {
+            skb_data_stack_t* skb_data_stack = skb_data_stack_tbl[i];
+            if ( !(skb_data_stack->stack_status == STACK_IN_USE || skb_data_stack->stack_status == STACK_MARK_FOR_DELETE) ) {
+                continue;
+            }
+            if ( SKBUFF_REUSE_EXPANDSIZE ) {
+                newsize = skb_data_stack->max_elems_in_stack + num_elems;
+                if ( skb_stack_resize(skb_data_stack, newsize) ) {
+                    return NULL;
+                }
+                skb_data_stack->max_elems_in_stack = newsize;
+            }
+            if ( SKBUFF_REUSE_RESIZE ) {
+                newsize = num_elems;
+                if ( skb_stack_resize(skb_data_stack, newsize) ) {
+                    return NULL;
+                }
+                skb_data_stack->max_elems_in_stack = newsize;
+            }
+            if ( SKBUFF_REUSE_NORESIZE ) {
+                if ( skb_data_stack->max_elems_in_stack < num_elems ) {
+                    newsize = num_elems;
+                    if ( skb_stack_resize(skb_data_stack, newsize) ) {
+                        return NULL;
+                    }
+                    skb_data_stack->max_elems_in_stack = newsize;
+                }
+            }
+            skb_data_stack->num_refs++;
+            skb_data_stack->stack_status = STACK_IN_USE;
+            return skb_data_stack;
+        }
+    }
+    /* No existing stack matches the requirement. Create a new one */
+    return skb_create_init_stack(num_elems);
+}
+
+/* Create a stack and populate elements */
+static skb_data_stack_t* skb_create_stackcache(unsigned int size, unsigned int num_elems, unsigned long flags, SKBUFF_CACHE_CREATE_OPTS opt) {
+    unsigned long intr_flags;
+    skb_data_stack_t* skb_data_stack = NULL;
+    if ( in_interrupt() ) {
+        BUG();
+    }
+    if ( !size ) {
+        return NULL;
+    }
+    if ( !num_elems ) {
+        return NULL;
+    }
+    LOCK_STACK();
+    if ( opt == SKBUFF_CREATE_NEW ) {
+        skb_data_stack = skb_create_init_stack(num_elems);
+    } else {
+        skb_data_stack = skb_check_and_create_stack(size, opt, num_elems);
+    }
+    UNLOCK_STACK();
+
+    if ( skb_data_stack == NULL || skb_data_stack->stack_status == STACK_IN_USE ) {
+            return skb_data_stack;
+    }
+    skb_data_stack->skb_stack_size = size;
+    size = SKB_DATA_ALIGN(size);
+    skb_data_stack->kmem= kmem_cache_create(skb_data_stack->kmem_name,size+16+sizeof(struct skb_shared_info) ,0, flags, NULL, NULL);
+    if ( skb_data_stack->kmem == NULL ) {
+        kfree(skb_data_stack->stack);
+        skb_data_stack_tbl[skb_data_stack->tbl_idx] = NULL;
+        kmem_cache_free(skbuff_datastack_cache, skb_data_stack);
+        return NULL;
+    }
+    skb_data_stack->stack_status = STACK_IN_USE;
+    return skb_data_stack;
+}
+/**
+ *	skb_create_stackcache
+ *	@size: size of the objects in kmem cache
+ *	@num_elems: Number of elements in stack
+ *	@gfp_mask: allocation mask
+ *  Returns pointer to skb data stack
+ *  Cannot be called from interrupt context
+ *  Depending on the options provided
+ *  a new stack will be created or an existing one will be reused.
+ *  If SKBUFF_REUSE_RESIZE option is provided and if a matching stack is 
+ *  found, the number of elements that can be held by the stack is set to
+ *  the value provided and any extra elements drained.
+ *  If SKBUFF_REUSE_EXPANDSIZE is provided, then the number of 
+ *  elements that can be held by the stack is incremented by the value provided.
+ *  If SKBUFF_CREATE_NEW option is provided, a new stack is created without
+ *  checking for reuse of existing stacks. 
+ *  if SKBUFF_REUSE_NORESIZE option is provided, the max elements in stack
+ *  will be left as is as long the the num_elems requested is less than the 
+ *  current value for the max elements in stack. Else the max elements in
+ *  stack will be set to the num_elems provided
+ *  Unless there is a reason to do so, it is recommended to use
+ *  SKBUFF_REUSE_NORESIZE
+
+*/
+
+
+skb_data_stack_t* skb_create_cache(unsigned int size, unsigned int num_elems, unsigned long flags, SKBUFF_CACHE_CREATE_OPTS opt) {
+
+    return skb_create_stackcache(size, num_elems, flags, opt);
+}
+
+static inline struct sk_buff *alloc_skb_from_stack(
+                     skb_data_stack_t* skb_data_stack,
+				     unsigned int size,
+				     gfp_t gfp_mask)
+{
+	struct sk_buff *skb;
+	u8 *data;
+
+	/* Get the HEAD */
+	skb = kmem_cache_alloc(skbuff_head_cache,
+			       gfp_mask & ~__GFP_DMA);
+	if (!skb)
+		goto out;
+
+	/* Get the DATA. */
+	size = SKB_DATA_ALIGN(size);
+	data = skb_stack_alloc(skb_data_stack, gfp_mask);
+	if (!data)
+		goto nodata;
+
+	memset(skb, 0, offsetof(struct sk_buff, truesize));
+	skb->truesize = size + sizeof(struct sk_buff);
+	atomic_set(&skb->users, 1);
+	skb->head = data;
+	skb->data = data;
+	skb->tail = data;
+	skb->end  = data + size;
+#ifdef CONFIG_SKB_FIXEDSIZE_CACHE
+	skb->cache_obj = data;
+	skb->cache_container = skb_data_stack;
+#endif
+
+	atomic_set(&(skb_shinfo(skb)->dataref), 1);
+	skb_shinfo(skb)->nr_frags  = 0;
+	skb_shinfo(skb)->tso_size = 0;
+	skb_shinfo(skb)->tso_segs = 0;
+	skb_shinfo(skb)->frag_list = NULL;
+	skb_shinfo(skb)->ufo_size = 0;
+	skb_shinfo(skb)->ip6_frag_id = 0;
+out:
+	return skb;
+nodata:
+	kmem_cache_free(skbuff_head_cache, skb);
+	skb = NULL;
+	goto out;
+}
+
+
+
+#endif
+
 /*
  *	Keep out-of-line to prevent kernel bloat.
  *	__builtin_return_address is not used because it is not always
@@ -174,6 +521,9 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	skb->data = data;
 	skb_reset_tail_pointer(skb);
 	skb->end = skb->tail + size;
+#ifdef CONFIG_SKB_FIXEDSIZE_CACHE
+	skb->cache_obj = NULL;
+#endif
 	/* make sure we initialize shinfo sequentially */
 	shinfo = skb_shinfo(skb);
 	atomic_set(&shinfo->dataref, 1);
@@ -192,6 +542,9 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 		atomic_set(fclone_ref, 1);
 
 		child->fclone = SKB_FCLONE_UNAVAILABLE;
+#ifdef CONFIG_SKB_FIXEDSIZE_CACHE
+	    child->cache_obj = NULL;
+#endif
 	}
 out:
 	return skb;
@@ -267,8 +620,15 @@ static void skb_release_data(struct sk_buff *skb)
 
 		if (skb_shinfo(skb)->frag_list)
 			skb_drop_fraglist(skb);
-
+#ifdef CONFIG_SKB_FIXEDSIZE_CACHE
+	    if ( skb->cache_obj ) {
+			skb_stack_free(skb->cache_container, skb->cache_obj);
+        } else {
+		    kfree(skb->head);
+    }
+#else
 		kfree(skb->head);
+#endif
 	}
 }
 
@@ -446,6 +806,10 @@ struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t gfp_mask)
 	C(data);
 	C(tail);
 	C(end);
+#ifdef CONFIG_SKB_FIXEDSIZE_CACHE
+    C(cache_obj);
+    C(cache_container);
+#endif
 
 	atomic_inc(&(skb_shinfo(skb)->dataref));
 	skb->cloned = 1;
@@ -686,6 +1050,9 @@ int pskb_expand_head(struct sk_buff *skb, int nhead, int ntail,
 	skb->cloned   = 0;
 	skb->nohdr    = 0;
 	atomic_set(&skb_shinfo(skb)->dataref, 1);
+#ifdef CONFIG_SKB_FIXEDSIZE_CACHE
+    skb->cache_obj = NULL;
+#endif
 	return 0;
 
 nodata:
@@ -2012,6 +2379,16 @@ EXPORT_SYMBOL_GPL(skb_segment);
 
 void __init skb_init(void)
 {
+#ifdef CONFIG_SKB_FIXEDSIZE_CACHE
+	skbuff_datastack_cache = kmem_cache_create("skbuff_datastack_cache",
+					      sizeof(skb_data_stack_t),
+					      0,
+					      SLAB_HWCACHE_ALIGN,
+					      NULL, NULL);
+	if (!skbuff_datastack_cache)
+		panic("cannot create skbuff stack cache");
+#endif
+
 	skbuff_head_cache = kmem_cache_create("skbuff_head_cache",
 					      sizeof(struct sk_buff),
 					      0,
@@ -2245,3 +2622,8 @@ EXPORT_SYMBOL(skb_append_datato_frags);
 
 EXPORT_SYMBOL_GPL(skb_to_sgvec);
 EXPORT_SYMBOL_GPL(skb_cow_data);
+#ifdef CONFIG_SKB_FIXEDSIZE_CACHE
+EXPORT_SYMBOL(skb_create_cache);
+EXPORT_SYMBOL(skb_destroy_cache);
+EXPORT_SYMBOL(dev_alloc_skb_from_cache);
+#endif

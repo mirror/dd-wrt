@@ -32,6 +32,23 @@ typedef struct kmem_cache kmem_cache_t __deprecated;
 #define SLAB_MEM_SPREAD		0x00100000UL	/* Spread some memory over cpuset */
 #define SLAB_TRACE		0x00200000UL	/* Trace allocations and frees */
 
+#ifdef CONFIG_KMALLOC_ACCOUNTING
+void __kmalloc_account(const void *, const void *, int, int);
+
+static void inline kmalloc_account(const void *addr, int size, int req)
+{
+	__kmalloc_account(__builtin_return_address(0), addr, size, req);
+}
+
+static void inline kfree_account(const void *addr, int size)
+{
+	__kmalloc_account(__builtin_return_address(0), addr, size, -1);
+}
+#else
+#define kmalloc_account(a, b, c)
+#define kfree_account(a, b)
+#endif
+
 /*
  * struct kmem_cache related prototypes
  */

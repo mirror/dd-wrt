@@ -502,6 +502,11 @@ static inline struct usb_hcd *ohci_to_hcd (const struct ohci_hcd *ohci)
 #define writel_be(val, addr)	out_be32((__force unsigned *)addr, val)
 #endif
 
+#if defined(CONFIG_ATHEROS_AR71XX)
+#define readl_be(addr)		__raw_readl(addr)
+#define writel_be(val, addr)	__raw_writel(addr, val)
+#endif
+
 static inline unsigned int _ohci_readl (const struct ohci_hcd *ohci,
 					__hc32 __iomem * regs)
 {
