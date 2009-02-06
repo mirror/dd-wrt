@@ -3144,13 +3144,15 @@ void show_rates( webs_t wp, char *prefix, int maxrate )
 static void show_netmode( webs_t wp, char *prefix )
 {
     char wl_net_mode[16];
-
+	char index[2];
+	substring (strlen (prefix)-1, strlen (prefix), prefix, index);
+    
     sprintf( wl_net_mode, "%s_net_mode", prefix );
 
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label2)</script></div><select name=\"%s\" onchange=\"SelWL(this.form.%s.selectedIndex,this.form)\">\n",
-	       wl_net_mode, wl_net_mode );
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label2)</script></div><select name=\"%s\" onchange=\"SelWL%s(this.form.%s.selectedIndex,this.form)\">\n",
+	       wl_net_mode, index, wl_net_mode );
     websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
     websWrite( wp,
 	       "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n",
