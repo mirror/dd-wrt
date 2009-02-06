@@ -74,14 +74,14 @@ OPENWRT     = /opt/3.3.4
 ifeq ($(PLATFORM), linux)
 ifneq ($(strip $(OPENWRT)),)
 PRE_CFLAGS  += -DOPENWRT
-CFLAGS      += $(COPTS) -DNEED_PRINTF
+CFLAGS      += $(COPTS) -DNEED_PRINTF -fPIC
 CXX         = $(ARCH)-linux-g++
 CC			= $(ARCH)-linux-gcc
 LDFLAGS		= -lpthread -shared
 LD			= $(ARCH)-linux-ld
 else
 CC         = gcc
-CFLAGS     = -I$/usr/include -Wall -O2 -fPIC
+CFLAGS     = -I$/usr/include -Wall -fPIC
 LD         = gcc
 LDFLAGS    = -lpthread -shared -Wl,-soname,$(LIB_SONAME)
 endif
