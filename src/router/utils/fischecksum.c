@@ -202,9 +202,10 @@ int main (int argc, char** argv) {
     }
   p=&mem[0];
   fis=p;
-  unsigned char detect[4];
-  unsigned int *check=&detect[0];  
-  unsigned long oldsize;
+//  unsigned char detect[4];
+//  unsigned int *check=&detect[0];  
+ // unsigned long oldsize;
+
   while (fis->name[0]!=0xff)
     {
     if (!strncmp(fis->name,"linux",5) || !strncmp(fis->name,"vmlinux",7) || !strcmp(fis->name,"kernel") || !strncmp(fis->name,"rootfs",6) )
@@ -213,7 +214,7 @@ int main (int argc, char** argv) {
 	if (fis->file_cksum!=0)
 	    flash=1;
 	fis->file_cksum=0;
-	oldsize=fis->data_length;
+/*	oldsize=fis->data_length;
 	int mtd = getMTD("linux");
 	char fname[64];
 	sprintf(fname,"/dev/mtdblock/%d",mtd);
@@ -237,7 +238,7 @@ int main (int argc, char** argv) {
 		break;
 		}
 	    }
-	fclose(fp);
+	fclose(fp);*/
 	}
     p+=sizeof(struct fis_image_desc);
     fis=p;
