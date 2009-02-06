@@ -4020,9 +4020,9 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     sprintf( wl_sifstime, "%s_sifstime", prefix );
     sprintf( wl_xr, "%s_xr", prefix );
 
-    sprintf( wl_intmit, "%s_nintmit", prefix );
+    sprintf( wl_intmit, "%s_intmit", prefix );
     sprintf( wl_noise_immunity, "%s_noise_immunity", prefix );
-    sprintf( wl_ofdm_weak_det, "%s_nofdm_weak_det", prefix );
+    sprintf( wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix );
     showAutoOption( wp, "wl_basic.intmit", wl_intmit );
 
     websWrite( wp, "<div class=\"setting\">\n" );
