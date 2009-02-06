@@ -58,9 +58,9 @@ function create_wchannel0(F) {
 
 	for(ch=3 ; ch<=(parseInt(max_channel)-2) ; ch++){
 		F.wl0_wchannel[ch-3] = new Option(ch);
-		F.wl0_wchannel[ch-3].value = ch;
+		F.wl0_wchannel[ch-3].value = ch; 
 	}
-	if(wch < 3 || wch > max_channel-2 || wch == "0")
+	if(wch < 3 || wch > max_channel-2 || wch == "0") 
 		F.wl0_wchannel[0].selected = true;
 	else
 		F.wl0_wchannel[wch-3].selected = true;	
@@ -335,6 +335,7 @@ addEvent(window, "unload", function() {
 				  	<input type="hidden" name="submit_type" value="save" />
 				  	
 				  	<input type="hidden" name="wl0_nctrlsb" />
+				  	<input type="hidden" name="wl1_nctrlsb" />
 				  	<input type="hidden" name="iface" />
 				  	
 				  	<% show_wireless(); %>
