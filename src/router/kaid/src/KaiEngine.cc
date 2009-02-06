@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <string.h>
 #include <iterator>
 #include <vector>
 
