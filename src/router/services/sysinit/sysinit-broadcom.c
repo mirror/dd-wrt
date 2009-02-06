@@ -918,7 +918,7 @@ void start_sysinit( void )
 	    extra_params = wndr3300_pci_1_3_params;
 	    while( extra_params->name )
 	    {
-		nvram_nset( extra_params->value, "pci/1/1/%s",
+		nvram_nset( extra_params->value, "pci/1/3/%s",
 			    extra_params->name );
 		extra_params++;
 	    }
