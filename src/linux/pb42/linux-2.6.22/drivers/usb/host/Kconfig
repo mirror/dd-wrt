@@ -72,6 +72,12 @@ config USB_EHCI_BIG_ENDIAN_MMIO
 	depends on USB_EHCI_HCD
 	default n
 
+config USB_EHCI_AR7100
+	bool "USB EHCI support for AR71xx"
+	depends on USB_EHCI_HCD && MACH_AR7100
+	help
+	  Support for Atheros AR71xx built-in EHCI controller
+
 config USB_ISP116X_HCD
 	tristate "ISP116X HCD support"
 	depends on USB
@@ -102,6 +108,14 @@ config USB_OHCI_HCD
 	  To compile this driver as a module, choose M here: the
 	  module will be called ohci-hcd.
 
+
+config USB_OHCI_AR7100
+	bool "USB OHCI support for Atheros AR71xx"
+	depends on USB_OHCI_HCD && MACH_AR7100
+	help
+	  Support for Atheros AR71xx built-in OHCI controller
+
+
 config USB_OHCI_HCD_PPC_SOC
 	bool "OHCI support for on-chip PPC USB controller"
 	depends on USB_OHCI_HCD && (STB03xxx || PPC_MPC52xx)
@@ -111,6 +125,7 @@ config USB_OHCI_HCD_PPC_SOC
 	---help---
 	  Enables support for the USB controller on the MPC52xx or
 	  STB03xxx processor chip.  If unsure, say Y.
+
 
 config USB_OHCI_HCD_PPC_OF
 	bool "OHCI support for PPC USB controller on OF platform bus"
@@ -223,18 +238,6 @@ config USB_SL811_CS
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called "sl811_cs".
-
-config USB_OHCI_AR7100
-    bool "USB OHCI support for AR7100"
-    depends on MACH_AR7100 && USB_OHCI_HCD
-    help
-        Support for AR7100 OHCI controller
-
-config USB_EHCI_AR7100
-    bool "USB EHCI support for AR7100"
-    depends on MACH_AR7100 && USB_EHCI_HCD
-    help
-        Support for AR7100 EHCI controller
 
 config USB_EHCI_AR9130
     bool "USB EHCI support for AR9130"

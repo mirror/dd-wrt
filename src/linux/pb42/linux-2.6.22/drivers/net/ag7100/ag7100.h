@@ -80,6 +80,9 @@ typedef struct {
     ag7100_phy_speed_t      mac_speed;
     int                     mac_fdx;
     struct timer_list       mac_phy_timer;
+#if defined(CONFIG_AR9100) && defined(CONFIG_AG7100_GE1_RMII)
+    int                     speed_10t;
+#endif
     ag7100_trc_t            tb;
 }ag7100_mac_t;
 
@@ -204,9 +207,13 @@ typedef enum {
  * fields
  */
 #define AG7100_MAC_CFG1_SOFT_RST       (1 << 31)
+#define AG7100_MAC_CFG1_RX_RST         (1 << 19)
+#define AG7100_MAC_CFG1_TX_RST         (1 << 18)
 #define AG7100_MAC_CFG1_LOOPBACK       (1 << 8)
 #define AG7100_MAC_CFG1_RX_EN          (1 << 2)
 #define AG7100_MAC_CFG1_TX_EN          (1 << 0)
+#define AG7100_MAC_CFG1_RX_FCTL        (1 << 5)
+#define AG7100_MAC_CFG1_TX_FCTL        (1 << 4)
 
 
 #define AG7100_MAC_CFG2_FDX            (1 << 0)

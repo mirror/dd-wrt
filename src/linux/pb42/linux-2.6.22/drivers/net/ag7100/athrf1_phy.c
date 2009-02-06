@@ -29,6 +29,9 @@
 #include <linux/kernel.h>
 #include <asm/delay.h>
 #include "ar7100.h"
+#ifdef CONFIG_CUS109_F1E_PHY
+#define mdelay(_x)         udelay((_x)*1000)
+#endif
 #endif
 #endif
 
@@ -59,7 +62,15 @@ typedef struct {
 athr_phy_t phy_info[] = {
     {is_enet_port: 1,
      mac_unit    : 0,
+#ifdef CONFIG_CUS109_F1E_PHY
+     phy_addr    : 0x00},
+
+    {is_enet_port: 1,
+     mac_unit    : 1,
+     phy_addr    : 0x01}
+#else		   
      phy_addr    : 0x00}
+#endif
 };
 
 static athr_phy_t *
@@ -102,9 +113,19 @@ athr_phy_setup(int unit)
     phy_reg_write(unit, phy->phy_addr, ATHR_1000BASET_CONTROL,
                   ATHR_ADVERTISE_1000FULL);
 
+#ifdef CONFIG_CUS109_F1E_PHY
+    /* delay rx_clk */
+    phy_reg_write(unit, phy->phy_addr, 0x1D, 0x0);
+    phy_reg_write(unit, phy->phy_addr, 0x1E, 0x34E);
+#endif
+
     /* delay tx_clk */
     phy_reg_write(unit, phy->phy_addr, 0x1D, 0x5);
+#ifdef CONFIG_CUS109_F1E_PHY
+    phy_reg_write(unit, phy->phy_addr, 0x1E, 0x3C47);
+#else
     phy_reg_write(unit, phy->phy_addr, 0x1E, 0x100);
+#endif
 
     /* Reset PHYs*/
     phy_reg_write(unit, phy->phy_addr, ATHR_PHY_CONTROL,

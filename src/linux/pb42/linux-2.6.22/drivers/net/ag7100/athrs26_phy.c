@@ -20,15 +20,6 @@
 #include "ag7100_phy.h"
 #include "ag7100.h"
 
-#ifdef DEBUG_CMD
-#include "error.h"
-#include "config.h"
-#include "hsl.h"
-#include "reg_access.h"
-#include "athena_reg.h"
-#include "reg_list.h"
-#endif
-
 /* PHY selections and access functions */
 
 typedef enum {
@@ -129,13 +120,11 @@ static athrPhyInfo_t athrPhyInfo[] = {
 
 static uint8_t athr26_init_flag = 0;
 
-#ifdef HEADER_EN
 static cmd_resp_t cmd_resp;
 static DECLARE_WAIT_QUEUE_HEAD (hd_conf_wait);
 static int wait_flag = 0;
 static ag7100_mac_t *ag7100_macs[2];
 static atomic_t seqcnt = ATOMIC_INIT(0);
-#endif
 
 #define ATHR_GLOBALREGBASE    0
 
@@ -163,13 +152,13 @@ static atomic_t seqcnt = ATOMIC_INIT(0);
             
 /* Forward references */
 BOOL athrs26_phy_is_link_alive(int phyUnit);
-static uint32_t athrs26_reg_read(uint16_t reg_addr);
-static void athrs26_reg_write(uint16_t reg_addr, uint32_t reg_val);
+static uint32_t athrs26_reg_read(uint32_t reg_addr);
+static void athrs26_reg_write(uint32_t reg_addr, uint32_t reg_val);
 
 #if !defined(HEADER_REG_CONF) && !defined(CONFIG_AR9100) 
 #define get_field_val(_reg, _mask, _shift, _res_reg)     \
     do { \
-        unsigned int temp;	\ 
+        unsigned int temp;  \
         temp = ar7100_reg_rd(_reg); \
         temp &= (unsigned int)_mask;\
         _res_reg  = temp >> _shift; \
@@ -213,6 +202,41 @@ void ag7100_ahb_feq_restore(void)
 }
 #endif
 
+#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
+static uint16_t port_def_vid[5] = {1, 1, 1, 1, 1};
+static uint8_t cpu_egress_tagged_flag = 0;
+
+inline uint8_t is_cpu_egress_tagged(void)
+{
+    return cpu_egress_tagged_flag;
+}
+
+void set_cpu_egress_tagged(uint8_t is_tagged)
+{
+    cpu_egress_tagged_flag = is_tagged;   
+}
+
+inline uint16_t athrs26_defvid_get(uint32_t port_id)
+{
+    if ((port_id == 0) || (port_id > 5))
+        return 0;
+
+    return port_def_vid[port_id - 1];
+}
+
+BOOL athrs26_defvid_set(uint32_t port_id, uint16_t def_vid)
+{
+    if ((def_vid == 0) || (def_vid > 4094))
+        return FALSE;
+
+    if ((port_id == 0) || (port_id > 5))
+        return FALSE;
+      
+    port_def_vid[port_id - 1] = def_vid;
+    return TRUE;
+}
+#endif
+
 void athrs26_reg_init()
 {
     int i = 20;
@@ -222,23 +246,27 @@ void athrs26_reg_init()
     if (athr26_init_flag)
         return;
     
-#if (!defined(CONFIG_AR9100)) && (!defined(HEADER_REG_CONF))
-    ag7100_ahb_feq_adjust();  
-#endif  
+#if 0
+	______________________________________________________
+	u-boot has deasserted the RMII's TX_CTL, the following
+	additional reset in athrs26_reg_init() is not needed.
+	______________________________________________________
+
     /* reset switch */
     printk(MODULE_NAME ": resetting s26\n");
     athrs26_reg_write(0x0, athrs26_reg_read(0x0)|0x80000000);
 
     while(i--) {
-    	mdelay(100);
-    	if(!(athrs26_reg_read(0x0)&0x80000000))
-    		break;
-	}
+        mdelay(100);
+        if(!(athrs26_reg_read(0x0)&0x80000000))
+            break;
+    }
 
     mdelay(3000);
     printk(MODULE_NAME ": s26 reset done\n");
-        
+
     phy_reg_write(0, ATHR_PHY4_ADDR, 0, 0x0800);
+#endif
 
     athrs26_reg_write(0x200, 0x200);
     athrs26_reg_write(0x300, 0x200);
@@ -247,11 +275,27 @@ void athrs26_reg_init()
     athrs26_reg_write(0x600, 0x7d);
 
     athrs26_reg_write(0x38, 0xc000050e);
-        
+
+#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)        
+#ifdef HEADER_EN        
+    athrs26_reg_write(0x104, 0x6804);
+#else
+    athrs26_reg_write(0x104, 0x6004);
+#endif
+
+    athrs26_reg_write(0x204, 0x6004);
+    athrs26_reg_write(0x304, 0x6004);
+    athrs26_reg_write(0x404, 0x6004);
+    athrs26_reg_write(0x504, 0x6004);    
+    athrs26_reg_write(0x604, 0x6004);    
+#else
+
+    athrs26_reg_write(0x38, 0xc000050e);      
 #ifdef HEADER_EN        
     athrs26_reg_write(0x104, 0x4804);
 #else
     athrs26_reg_write(0x104, 0x4004);
+#endif
 #endif
        
     athrs26_reg_write(0x60, 0xffffffff);
@@ -261,16 +305,20 @@ void athrs26_reg_init()
 
     athrs26_reg_write(0x70, 0x41af);
 
-#if (!defined(CONFIG_AR9100)) && (!defined(HEADER_REG_CONF))
-        ag7100_ahb_feq_restore(); 
+
+#if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
+    set_cpu_egress_tagged(0); /* use set_cpu_egress_tagged(1) to let s26 forward frame to cpu always tagged */
+                              /* some applications need to know the vlan information, but please make sure  */
+                              /* define HEADER_EN in this case */ 
 #endif
 
-#ifdef DEBUG_CMD  
-    athena_reg_access_init();
+#ifdef FULL_FEATURE
+    athena_init(0, 2);
 #endif
 
     athr26_init_flag = 1;
 }
+
 
 static unsigned int phy_val_saved = 0;
 /******************************************************************************
@@ -300,8 +348,6 @@ void athrs26_phy_off(ag7100_mac_t *mac)
 */
 void athrs26_phy_on(ag7100_mac_t *mac)
 {
-    struct net_device  *dev = mac->mac_dev;
-    
     if ((mac->mac_unit == ENET_UNIT_LAN) || (phy_val_saved == 0))
         return;
         
@@ -317,24 +363,32 @@ void athrs26_phy_on(ag7100_mac_t *mac)
 */
 void athrs26_mac_speed_set(ag7100_mac_t *mac, ag7100_phy_speed_t speed)
 {
-    struct net_device  *dev = mac->mac_dev;
     uint32_t reg_val;
-    
+
     if ((mac->mac_unit == ENET_UNIT_LAN))
         return;
     
+#if (!defined(CONFIG_AR9100)) && (!defined(HEADER_REG_CONF))
+    ag7100_ahb_feq_adjust();
+#endif
+
+    reg_val = athrs26_reg_read(0x600);
+    
     switch (speed) {
         case AG7100_PHY_SPEED_100TX:
-            athrs26_reg_write (0x600, 0x7d);
+            athrs26_reg_write (0x600, (reg_val & 0xfffffffc) | 0x1);
             break;
            
         case AG7100_PHY_SPEED_10T:
-            athrs26_reg_write (0x600, 0x7c);
+            athrs26_reg_write (0x600, (reg_val & 0xfffffffc));
             break; 
         
         default:
             break;  
     }
+#if (!defined(CONFIG_AR9100)) && (!defined(HEADER_REG_CONF))
+    ag7100_ahb_feq_restore();
+#endif
 }
 
 /******************************************************************************
@@ -415,13 +469,11 @@ athrs26_phy_setup(int ethUnit)
      * After the phy is reset, it takes a little while before
      * it can respond properly.
      */
-     if (ethUnit == ENET_UNIT_LAN)
+
         mdelay(1000);
-     else
-        mdelay(3000);
     
     /*
-     * Wait up to 3 seconds for ALL associated PHYs to finish
+     * Wait up to 1 seconds for ALL associated PHYs to finish
      * autonegotiation.  The only way we get out of here sooner is
      * if ALL PHYs are connected AND finish autonegotiation.
      */
@@ -452,11 +504,18 @@ athrs26_phy_setup(int ethUnit)
 
             mdelay(150);
         }
+#ifdef CONFIG_AR9100
+
+        /* fix IOT */
+        phy_reg_write(0, phyUnit, 29, 0x14);
+        phy_reg_write(0, phyUnit, 30, 0x1352); 
+        
 #ifdef S26_VER_1_0
         //turn off power saving
         phy_reg_write(0, phyUnit, 29, 41);
         phy_reg_write(0, phyUnit, 30, 0);
-       	printk("def_ S26_VER_1_0\n");
+        printk("def_ S26_VER_1_0\n");
+#endif
 #endif
     }
 
@@ -488,7 +547,13 @@ athrs26_phy_setup(int ethUnit)
                          ATHR_PHYADDR(phyUnit),
                          ATHR_PHY_SPEC_STATUS)));
     }
-
+#ifndef CONFIG_AR9100
+    if (ethUnit == ENET_UNIT_LAN) {
+        ag7100_ahb_feq_adjust();  
+        athrs26_reg_init();
+        ag7100_ahb_feq_restore();       
+    }    
+#endif
     return (liveLinks > 0);
 }
 
@@ -687,17 +752,15 @@ athrs26_phy_is_up(int ethUnit)
 #endif
 }
 
-#ifdef HEADER_EN
-#ifdef HEADER_REG_CONF
 static int
 athrs26_header_config_reg (struct net_device *dev, uint8_t wr_flag, 
-                           uint16_t reg_addr, uint16_t cmd_len,
-                           uint8_t *val) 
+                           uint32_t reg_addr, uint16_t cmd_len,
+                           uint8_t *val, uint32_t seq_num) 
 {
     struct sk_buff *skb;
     at_header_t at_header;
     reg_cmd_t reg_cmd;
-
+  
     /*allocate skb*/        
     skb = dev_alloc_skb(64);
     if (!skb) {
@@ -732,7 +795,7 @@ athrs26_header_config_reg (struct net_device *dev, uint8_t wr_flag,
     reg_cmd.cmd_len = cmd_len;
     reg_cmd.cmd = wr_flag;
     reg_cmd.reserved2 = 0x5; //default
-    reg_cmd.seq_num = atomic_read(&seqcnt);   
+    reg_cmd.seq_num = seq_num;   
 
     skb->data[2] = reg_cmd.reg_addr & 0xff;
     skb->data[3] = (reg_cmd.reg_addr & 0xff00) >> 8;
@@ -744,8 +807,7 @@ athrs26_header_config_reg (struct net_device *dev, uint8_t wr_flag,
     skb->data[7] = (reg_cmd.seq_num & 0x7f80) >> 7;
     skb->data[8] = (reg_cmd.seq_num & 0x7f8000) >> 15;
     skb->data[9] = (reg_cmd.seq_num & 0x7f800000) >> 23;
-
-    /*fill reg data*/
+  
     if(!wr_flag)//write
         memcpy(skb->data + 10, val, cmd_len);
     
@@ -755,29 +817,37 @@ athrs26_header_config_reg (struct net_device *dev, uint8_t wr_flag,
     skb->cb[0] = 0x7f;
     skb->cb[1] = 0x5d;
     
-    /*start xmit*/        
+    /*start xmit*/
     header_xmit(skb, dev);
+
     return 0;
 }
 
 
 static int
-athrs26_header_write_reg(uint16_t reg_addr, uint16_t cmd_len, uint8_t *reg_data)
+__athrs26_header_write_reg(uint32_t reg_addr, uint16_t cmd_len, uint8_t *reg_data,
+                           uint32_t seq_num)
 {
     long timeout;
     int i = 2;
-
-    atomic_inc(&seqcnt);
-
+    uint8_t reg_tmp[4];
+  
+    /*fill reg data*/
+    reg_tmp[0] = (uint8_t)(0x00ff & (*((uint32_t *)reg_data))); 
+    reg_tmp[1] = (uint8_t)((0xff00 & (*((uint32_t *)reg_data))) >> 8);      
+    reg_tmp[2] = (uint8_t)((0xff0000 & (*((uint32_t *)reg_data))) >> 16);
+    reg_tmp[3] = (uint8_t)((0xff000000 & (*((uint32_t *)reg_data))) >> 24);
+  
     do {
         wait_flag = 0;
-        athrs26_header_config_reg(ag7100_macs[0]->mac_dev, 0, reg_addr, cmd_len, reg_data);
+        athrs26_header_config_reg(ag7100_macs[0]->mac_dev, 0, reg_addr, cmd_len, 
+                                  reg_tmp, seq_num);
         timeout = HZ;     
         if (!in_interrupt()) {
             timeout = wait_event_interruptible_timeout (hd_conf_wait, 
                                                         wait_flag != 0, timeout);
         }
-        if (timeout || ((reg_addr==0)&&(reg_data[3]&0x80)))  //ignore reset write echo 
+        if (timeout || ((reg_addr == 0)&&(reg_tmp[3]&0x80)))  //ignore reset write echo 
             break;
         else
             printk("write time out\n");
@@ -791,7 +861,8 @@ athrs26_header_write_reg(uint16_t reg_addr, uint16_t cmd_len, uint8_t *reg_data)
 }
 
 static int
-athrs26_header_read_reg(uint16_t reg_addr, uint16_t cmd_len, uint8_t *reg_data)
+__athrs26_header_read_reg(uint32_t reg_addr, uint16_t cmd_len, uint8_t *reg_data, 
+                          uint32_t seq_num)
 {
     long timeout;
     int i = 2;
@@ -799,10 +870,10 @@ athrs26_header_read_reg(uint16_t reg_addr, uint16_t cmd_len, uint8_t *reg_data)
     if (in_interrupt())
         return -1;
         
-    atomic_inc(&seqcnt);
     do {
         wait_flag = 0;          
-        athrs26_header_config_reg(ag7100_macs[0]->mac_dev, 1, reg_addr, cmd_len, reg_data);
+        athrs26_header_config_reg(ag7100_macs[0]->mac_dev, 1, reg_addr,
+                                  cmd_len, reg_data, seq_num);
         timeout = HZ;  
         timeout = wait_event_interruptible_timeout (hd_conf_wait, 
                                                     wait_flag != 0, timeout);
@@ -813,14 +884,97 @@ athrs26_header_read_reg(uint16_t reg_addr, uint16_t cmd_len, uint8_t *reg_data)
             printk("read time out\n");
     } while(i--);   
     
-    if ((i==0) || (atomic_read(&seqcnt) != cmd_resp.seq) || (cmd_len != cmd_resp.len)) {
+    if ((i==0) || (seq_num != cmd_resp.seq) || (cmd_len != cmd_resp.len)) {
         return -1;
     }
+  
+    (*((uint32_t *)reg_data)) = cmd_resp.data[0] | (cmd_resp.data[1] << 8)
+                             | (cmd_resp.data[2] << 16)| (cmd_resp.data[3] << 24);
 
-    memcpy (reg_data, cmd_resp.data, cmd_len);
     return 0;   
 }
-#endif
+
+static int
+set_cpu_port_learn(int flags)
+{
+    uint32_t reg_data = 0;
+    uint32_t reg_addr = 0x104;
+    uint32_t seq_num = 0x7fffffff;
+    
+      __athrs26_header_read_reg(reg_addr, 4, (uint8_t *)&reg_data, seq_num);
+    
+    if(flags)
+      reg_data |= 0x1<<14;  //LEARN_EN enable
+    else
+      reg_data &= ~(0x1<<14); //LEARN_EN disable
+    
+    __athrs26_header_write_reg (reg_addr, 4, (uint8_t *)&reg_data, seq_num);
+}
+
+static int
+get_cpu_port_learn(void)
+{
+    uint32_t reg_data = 0;
+    uint32_t reg_addr = 0x104;
+    uint32_t seq_num = 0x7fffffff;
+      
+    __athrs26_header_read_reg(reg_addr, 4, (uint8_t *)&reg_data, seq_num);
+    
+    return  (reg_data >> 14) & 0x1; 
+}
+
+int
+athrs26_header_write_reg(uint32_t reg_addr, uint16_t cmd_len, uint8_t *reg_data)
+{
+    int flagsave = 0;
+  
+    if(flagsave = get_cpu_port_learn())
+        set_cpu_port_learn(0);//LEARN_EN disable
+
+    /*reserve seqcnt 0x7fffffff for set_cpu_port_learn*/ 
+    if(atomic_read(&seqcnt) == 0x7ffffffe){
+        atomic_set(&seqcnt, 0);
+    } else {
+        atomic_inc(&seqcnt);
+    }
+
+    __athrs26_header_write_reg(reg_addr, 4, reg_data, atomic_read(&seqcnt));
+
+    if(flagsave && 
+        !((reg_addr == 0x104) && ((*(uint32_t *)reg_data>>14 & 0x1) == 0)))
+        set_cpu_port_learn(1);//LEARN_EN enable
+
+    return 0;   
+}
+
+int
+athrs26_header_read_reg(uint32_t reg_addr, uint16_t cmd_len, uint8_t *reg_data)
+{
+    int flagsave = 0;
+    
+    if(flagsave = get_cpu_port_learn())
+      set_cpu_port_learn(0);//LEARN_EN disable
+    
+    /*reserve seqcnt 0x7fffffff for set_cpu_port_learn*/ 
+      if(atomic_read(&seqcnt) == 0x7ffffffe){
+      atomic_set(&seqcnt, 0);
+    } else {
+      atomic_inc(&seqcnt);
+    }
+    
+      __athrs26_header_read_reg(reg_addr, 4, reg_data, atomic_read(&seqcnt));
+    
+    /*for r/w register 0x104*/
+    if((reg_addr == 0x104) && (flagsave == 1))
+      *(uint32_t *)reg_data |= 0x1<<14;  //LEARN_EN enable
+    else if ((reg_addr == 0x104) && (flagsave == 0))
+      *(uint32_t *)reg_data &= ~(0x1<<14); //LEARN_EN disable
+    
+    if(flagsave)
+      set_cpu_port_learn(1);//LEARN_EN enable
+    
+    return 0;
+}
 
 int header_receive_skb(struct sk_buff *skb)
 {
@@ -841,7 +995,7 @@ int header_receive_skb(struct sk_buff *skb)
     wake_up_interruptible(&hd_conf_wait);
     
 out:    
-    kfree_skb(skb);	
+    kfree_skb(skb); 
 }
 
 void athrs26_reg_dev(ag7100_mac_t **mac)
@@ -852,239 +1006,101 @@ void athrs26_reg_dev(ag7100_mac_t **mac)
     ag7100_macs[1]->mac_speed = 0xff;
 
 }
-#endif
 
 static uint32_t
-athrs26_reg_read(uint16_t reg_addr)
+athrs26_reg_read(uint32_t reg_addr)
 {
-#ifndef HEADER_REG_CONF	
-    uint16_t reg_word_addr;
-    uint32_t phy_addr, phy_val0, phy_val1, phy_val;
-    uint8_t  phy_reg; 
+#ifndef HEADER_REG_CONF 
+    uint32_t reg_word_addr;
+    uint32_t phy_addr, tmp_val, reg_val;
+    uint16_t phy_val;
+    uint8_t phy_reg;
 
-    /* read the first 16 bits*/
-    reg_word_addr = (reg_addr / 4) * 2;
+    /* change reg_addr to 16-bit word address, 32-bit aligned */
+    reg_word_addr = (reg_addr & 0xfffffffc) >> 1;
+
     /* configure register high address */
     phy_addr = 0x18;
     phy_reg = 0x0;
-    phy_val0 = (reg_word_addr >> 8) & 0x1ff;         /* bit16-8 of reg address*/
-    phy_reg_write (0, phy_addr, phy_reg, phy_val0);
+    phy_val = (uint16_t) ((reg_word_addr >> 8) & 0x1ff);  /* bit16-8 of reg address */
+    phy_reg_write(0, phy_addr, phy_reg, phy_val);
 
-    /* read register with low address */
+    /* For some registers such as MIBs, since it is read/clear, we should */
+    /* read the lower 16-bit register then the higher one */
+
+    /* read register in lower address */
     phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); /* bit7-5 of reg address */
-    phy_reg = reg_word_addr & 0x1f;                 /* bit4-0 of reg address */
-    phy_val0 = phy_reg_read(0, phy_addr, phy_reg);
+    phy_reg = (uint8_t) (reg_word_addr & 0x1f);   /* bit4-0 of reg address */
+    reg_val = (uint32_t) phy_reg_read(0, phy_addr, phy_reg);
 
-    /* read the second 16 bits*/
+    /* read register in higher address */
     reg_word_addr++;
-    /* configure register high address */
-    phy_addr = 0x18;
-    phy_reg = 0x0;
-    phy_val1 = (reg_word_addr >> 8) & 0x1ff;         /* bit16-8 of reg address*/
-    phy_reg_write (0, phy_addr, phy_reg, phy_val1);
-
-    /* read register with low address */
     phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); /* bit7-5 of reg address */
-    phy_reg = reg_word_addr & 0x1f;                 /* bit4-0 of reg address */
-    phy_val1 = phy_reg_read(0, phy_addr, phy_reg);
-    phy_val = ((phy_val1 << 16) | phy_val0);
-    return phy_val;
+    phy_reg = (uint8_t) (reg_word_addr & 0x1f);   /* bit4-0 of reg address */
+    tmp_val = (uint32_t) phy_reg_read(0, phy_addr, phy_reg);
+    reg_val |= (tmp_val << 16);
+
+    return reg_val;
 #else
     uint8_t reg_data[4];
     
     memset (reg_data, 0, 4);
     athrs26_header_read_reg(reg_addr, 4, reg_data);
-    return (reg_data[0] | (reg_data[1] << 8) | (reg_data[2] << 16) | (reg_data[3] << 24));
+    return *((uint32_t *)reg_data);
 #endif    
 }
 
 static void
-athrs26_reg_write(uint16_t reg_addr, uint32_t reg_val)
+athrs26_reg_write(uint32_t reg_addr, uint32_t reg_val)
 {
 #ifndef HEADER_REG_CONF
-    uint16_t reg_word_addr, phy_val;
+    uint32_t reg_word_addr;
     uint32_t phy_addr;
-    uint8_t  phy_reg; 
+    uint16_t phy_val;
+    uint8_t phy_reg;
 
-    /* write the first 16 bits*/
-    reg_word_addr = (reg_addr / 4) * 2;    
+    /* change reg_addr to 16-bit word address, 32-bit aligned */
+    reg_word_addr = (reg_addr & 0xfffffffc) >> 1;
+
     /* configure register high address */
     phy_addr = 0x18;
     phy_reg = 0x0;
-    phy_val = (reg_word_addr >> 8) & 0x1ff;         /* bit16-8 of reg address*/
-    phy_reg_write (0, phy_addr, phy_reg, phy_val);
+    phy_val = (uint16_t) ((reg_word_addr >> 8) & 0x1ff);  /* bit16-8 of reg address */
+    phy_reg_write(0, phy_addr, phy_reg, phy_val);
 
-    /* read register with low address */
-    phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); /* bit7-5 of reg address */
-    phy_reg = reg_word_addr & 0x1f;                 /* bit4-0 of reg address */
-    phy_val = reg_val & 0xffff;
-    phy_reg_write (0, phy_addr, phy_reg, phy_val);
-    
-    /* write the second 16 bits*/
-    reg_word_addr++;    
-    /* configure register high address */
-    phy_addr = 0x18;
-    phy_reg = 0x0;
-    phy_val = (reg_word_addr >> 8) & 0x1ff;         /* bit16-8 of reg address*/
-    phy_reg_write (0, phy_addr, phy_reg, phy_val);
+    /* For some registers such as ARL and VLAN, since they include BUSY bit */
+    /* in lower address, we should write the higher 16-bit register then the */
+    /* lower one */
 
-    /* read register with low address */
+    /* read register in higher address */
+    reg_word_addr++;
     phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); /* bit7-5 of reg address */
-    phy_reg = reg_word_addr & 0x1f;                 /* bit4-0 of reg address */
-    phy_val = (reg_val >> 16) & 0xffff;
-    phy_reg_write (0, phy_addr, phy_reg, phy_val);   
+    phy_reg = (uint8_t) (reg_word_addr & 0x1f);   /* bit4-0 of reg address */
+    phy_val = (uint16_t) ((reg_val >> 16) & 0xffff);
+    phy_reg_write(0, phy_addr, phy_reg, phy_val);
+
+    /* write register in lower address */
+    reg_word_addr--;
+    phy_addr = 0x10 | ((reg_word_addr >> 5) & 0x7); /* bit7-5 of reg address */
+    phy_reg = (uint8_t) (reg_word_addr & 0x1f);   /* bit4-0 of reg address */
+    phy_val = (uint16_t) (reg_val & 0xffff);
+    phy_reg_write(0, phy_addr, phy_reg, phy_val); 
 #else
-    uint8_t reg_data[4];
-    
-    memset (reg_data, 0, 4);    
-    reg_data[0] = (uint8_t)(0x00ff & reg_val); 
-    reg_data[1] = (uint8_t)((0xff00 & reg_val) >> 8);      
-    reg_data[2] = (uint8_t)((0xff0000 & reg_val) >> 16);
-    reg_data[3] = (uint8_t)((0xff000000 & reg_val) >> 24);
-
-    athrs26_header_write_reg (reg_addr, 4, reg_data);
+    athrs26_header_write_reg (reg_addr, 4, (uint8_t *)&reg_val);
 #endif
 }
 
 int
-athr_ioctl(uint32_t unit, uint32_t *args)
+athr_ioctl(uint32_t *args, int cmd)
 {
-#ifdef DEBUG_CMD
-    switch (args[0]) {
-    case ATHRCGREG: {
-        uint32_t reg_val=0;
-        
-        reg_val = (uint32_t)athrs26_reg_read(args[1]);
-        if (copy_to_user((void __user *)args[2], &reg_val, 
-            sizeof(uint32_t)))
-          return EFAULT;
-        return 0;
-    }
-
-    case ATHRCSREG: {
-        athrs26_reg_write ((uint16_t)args[1], (uint32_t)args[2]);
-        return 0;
-    }
-
-    case ATHRCGETY: {
-        uint32_t reg_addr, cmd_num, index;
-        uint16_t entry_len;
-        uint32_t reg_val;
-        sw_hsl_reg_func_t *p_reg = (sw_hsl_reg_func_t *)athena_reg_ptr_get();
-        EBU_STATUS rtn;
-
-        if (!p_reg)
-            return ENXIO;
-        
-        cmd_num = args[1];
-        index = args[2];  
-
-        reg_addr = reg_desc[cmd_num].reg_addr;
-        entry_len = 4;
-        
-        rtn = p_reg->reg_entry_get (0, reg_addr, 
-                                    index * reg_desc[cmd_num].entry_offset,
-                                    entry_len, (uint8_t *)&reg_val, 4); 
-
-        if (rtn == EBU_ERROR)
-            return EINVAL;
-
-        if (copy_to_user((void __user *)args[3], &reg_val, sizeof(uint32_t)))
-            return EFAULT;
-
-        return 0;
-    }
-  
-    case ATHRCSETY: {
-        uint32_t reg_addr, cmd_num, index;
-        uint16_t entry_len;
-        sw_hsl_reg_func_t *p_reg = (sw_hsl_reg_func_t *)athena_reg_ptr_get(); 
-        EBU_STATUS rtn;
-       
-        if (!p_reg)
-            return ENXIO;
-        
-        cmd_num = args[1];
-        index = args[2];
-    
-        reg_addr = reg_desc[cmd_num].reg_addr;
-        entry_len = 4;
-    
-        rtn = p_reg->reg_entry_set (0, reg_addr, (uint16_t)
-                                    (index * reg_desc[cmd_num].entry_offset),
-                                    entry_len, (uint8_t *)&args[3], 4);
-        if (rtn == EBU_ERROR)
-            return EINVAL;
-        
-        return 0;
-    }
-        
-    case ATHRCGFLD: {
-        uint32_t reg_addr, cmd_num, index;
-        uint16_t entry_offset, field_offset, field_len;
-        uint32_t field_val;
-        sw_hsl_reg_func_t *p_reg = (sw_hsl_reg_func_t *)athena_reg_ptr_get(); 
-        EBU_STATUS rtn;
-
-        if (!p_reg)
-            return ENXIO;
-        
-        cmd_num = args[1];
-        index = args[2];  
-
-        reg_addr = reg_desc[field_desc[cmd_num].reg_id].reg_addr;
-        field_len = field_desc[cmd_num].bit_len;
-        field_offset = field_desc[cmd_num].bit_offset;
-        entry_offset = index * 
-                       reg_desc[field_desc[cmd_num].reg_id].entry_offset; 
-
-        rtn = p_reg->reg_field_get (0, reg_addr, entry_offset,
-                                    field_offset, field_len, (uint8_t *)&field_val, 4);
-        if (rtn == EBU_ERROR)
-            return EINVAL;
-
-      if (copy_to_user((void __user *)args[3], &field_val,
-                       sizeof(uint32_t)))
-        return EFAULT;
-
-        return 0;          
-    }
-  
-    case ATHRCSFLD:
-    {
-        uint32_t reg_addr, cmd_num, index;
-        uint16_t entry_offset, field_offset, field_len;
-        sw_hsl_reg_func_t *p_reg = (sw_hsl_reg_func_t *)athena_reg_ptr_get(); 
-        EBU_STATUS rtn;
-
-        if (!p_reg)
-            return ENXIO;
-        
-        cmd_num = args[1];
-        index = args[2];  
-
-        reg_addr = reg_desc[field_desc[cmd_num].reg_id].reg_addr;
-        field_len = field_desc[cmd_num].bit_len;
-        field_offset = field_desc[cmd_num].bit_offset;
-
-        entry_offset = index * 
-                       reg_desc[field_desc[cmd_num].reg_id].entry_offset;
-
-        rtn = p_reg->reg_field_set (0, reg_addr, entry_offset,
-                                    field_offset, field_len, (uint8_t *)&args[3], 4);
-        
-        if (rtn == EBU_ERROR)
-            return EINVAL;
-    
-        return 0;
-    }
-
-    default:
+#ifdef FULL_FEATURE
+    if (sw_ioctl(args, cmd))
         return -EOPNOTSUPP;
-    }
-#endif /* DEBUG_CMD*/
 
+    return 0;
+#else
     return -EOPNOTSUPP;
+#endif
 }
 
 

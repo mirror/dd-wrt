@@ -51,7 +51,7 @@ static struct resource ar7100_usb_ohci_resources[] = {
 static u64 ohci_dmamask = ~(u32)0;
 
 static struct platform_device ar7100_usb_ohci_device = {
-	.name		= "ar7100-ohci",
+	.name		= "ar71xx-ohci",
 	.id		    = 0,
 	.dev = {
 		.dma_mask		= &ohci_dmamask,
@@ -83,7 +83,7 @@ static struct resource ar7100_usb_ehci_resources[] = {
 static u64 ehci_dmamask = ~(u32)0;
 
 static struct platform_device ar7100_usb_ehci_device = {
-	.name		= "ar7100-ehci",
+	.name		= "ar71xx-ehci",
 	.id		    = 0,
 	.dev = {
 		.dma_mask		= &ehci_dmamask,
@@ -127,6 +127,13 @@ static struct platform_device *ar7100_platform_devices[] __initdata = {
 	&ar7100_usb_ehci_device,
 	&ar7100_uart
 };
+
+#define AR71XX_USB_RESET_MASK \
+	(RESET_MODULE_USB_HOST | RESET_MODULE_USB_PHY \
+	| RESET_MODULE_USB_OHCI_DLL)
+
+
+
 
 int __init ar7100_platform_init(void)
 {

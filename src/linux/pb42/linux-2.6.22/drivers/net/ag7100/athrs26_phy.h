@@ -55,7 +55,8 @@
 #define ATHR_ADVERTISE_10FULL                 0x0040  
 #define ATHR_ADVERTISE_10HALF                 0x0020  
 
-#define ATHR_ADVERTISE_ALL (ATHR_ADVERTISE_10HALF | ATHR_ADVERTISE_10FULL | \
+#define ATHR_ADVERTISE_ALL (ATHR_ADVERTISE_ASYM_PAUSE | ATHR_ADVERTISE_PAUSE | \
+                            ATHR_ADVERTISE_10HALF | ATHR_ADVERTISE_10FULL | \
                             ATHR_ADVERTISE_100HALF | ATHR_ADVERTISE_100FULL)
                        
 /* 1000BASET_CONTROL */
@@ -93,7 +94,6 @@
 #define HEADER_EN
 #endif
 
-#ifdef HEADER_EN
 typedef enum {
     NORMAL_PACKET, 
     RESERVED0,
@@ -134,11 +134,7 @@ typedef struct {
 int header_receive_skb(struct sk_buff *skb);
 void athrs26_reg_dev(ag7100_mac_t **mac);
 
-#ifdef HEADER_REG_CONF
 #define header_xmit(skb, dev) ag7100_hard_start(skb, dev) //dev_queue_xmit(skb)
-#endif
-
-#endif
 
 void athrs26_reg_init(void);
 int athrs26_phy_is_up(int unit);
