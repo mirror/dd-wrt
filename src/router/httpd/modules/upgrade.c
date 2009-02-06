@@ -115,97 +115,55 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
 #endif
 	write_argv[3] = NULL;
     }
-eval("cp","/usr/sbin/fischecksum","/tmp");
 #ifdef HAVE_DIR400
+    eval( "fischecksum" );
     if( url )
-	{
-	eval( "write", url, "linux" );
-        eval( "/tmp/fischecksum" );
-        return 0;
-	}
+	return eval( "write", url, "linux" );
 #elif HAVE_DIR300
+    eval( "fischecksum" );
     if( url )
-	{
-	eval( "write", url, "linux" );
-        eval( "/tmp/fischecksum" );
-        return 0;
-	}
+	return eval( "write", url, "linux" );
 #elif HAVE_ADM5120
     if( url )
-	{
-	eval( "write", url, "linux" );
-        eval( "/tmp/fischecksum" );
-        return 0;
-	}
+	return eval( "write", url, "linux" );
 #elif HAVE_WRK54G
+    eval( "fischecksum" );
     if( url )
-	{
-	eval( "write", url, "linux" );
-        eval( "/tmp/fischecksum" );
-        return 0;
-	}
+	return eval( "write", url, "linux" );
 #elif HAVE_MR3202A
+    eval( "fischecksum" );
     if( url )
-	{
-	eval( "write", url, "linux" );
-        eval( "/tmp/fischecksum" );
-        return 0;
-	}
+	return eval( "write", url, "linux" );
 #elif HAVE_USR5453
+    eval( "fischecksum" );
     if( url )
-	{
-	eval( "write", url, "rootfs" );
-	eval( "/tmp/fischecksum" );
-        return 0;
-	}
+	return eval( "write", url, "rootfs" );
 #elif HAVE_CA8PRO
     if( url )
-	{
-	eval( "write", url, "linux" );
-        return 0;
-	}
+	return eval( "write", url, "linux" );
 #elif HAVE_CA8
     if( url )
-	{
-	eval( "write", url, "linux" );
-        return 0;
-	}
+	return eval( "write", url, "linux" );
 #elif HAVE_FONERA2200
+    eval( "fischecksum" );
     if( url )
-	{
-	eval( "write", url, "linux" );
-        eval( "/tmp/fischecksum" );
-        return 0;
-	}
+	return eval( "write", url, "linux" );
 #elif HAVE_LS2
+    eval( "fischecksum" );
     if( url )
-	{
-	eval( "write", url, "linux" );
-        eval( "/tmp/fischecksum" );
-        return 0;
-	}
+	return eval( "write", url, "linux" );
 #elif HAVE_RT2880
     if( url )
 	return eval( "write", url, "linux" );
 #elif HAVE_LSX
-    if( url )
-	{
-	eval( "write", url, "linux" );
-        eval( "/tmp/fischecksum" );
-        return 0;
-	}
-#elif defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) && !defined(HAVE_DIR400)
-    if( url )
-	{
-	eval( "write", url, "rootfs" );
-        eval( "/tmp/fischecksum" );
-        return 0;
-	}
-#else
-
+    eval( "fischecksum" );
     if( url )
 	return eval( "write", url, "linux" );
-///double required
+#elif defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) && !defined(HAVE_DIR400)
+    eval( "fischecksum" );
+    if( url )
+	return eval( "write", url, "rootfs" );
+#else
 #if defined(HAVE_NOP8670) || defined(HAVE_TONZE)
     eval( "fischecksum" );
 #endif
@@ -214,13 +172,14 @@ eval("cp","/usr/sbin/fischecksum","/tmp");
 #else
     if( nvram_match( "DD_BOARD", "ADI Engineering Pronghorn Metro" ) )
 #endif
-        eval( "/tmp/fischecksum" );
+	eval( "fischecksum" );
     if( nvram_match( "DD_BOARD", "Netgear WG302v2" ) )
-	eval( "/tmp/fischecksum" );
+	eval( "fischecksum" );
     if( nvram_match( "DD_BOARD", "Netgear WG302v1" ) )
-	eval( "/tmp/fischecksum" );
+	eval( "fischecksum" );
 
-
+    if( url )
+	return eval( "write", url, "linux" );
 #endif
     // diag_led(DIAG, START_LED); // blink the diag led
     C_led( 1 );
