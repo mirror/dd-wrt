@@ -722,6 +722,62 @@ void do_wds( struct mime_handler *handler, char *path, webs_t stream,
     do_ej_buffer( temp, stream );
 }
 
+void do_wireless_adv( struct mime_handler *handler, char *path, webs_t stream,
+	     char *query )
+{
+    char *temp2 = &path[indexof( path, '-' ) + 1];
+    char ifname[16];
+
+    strcpy( ifname, temp2 );
+    ifname[indexof( ifname, '.' )] = 0;
+    FILE *web = getWebsFile( "Wireless_Advanced.asp" );
+    unsigned int len = getWebsFileLen( "Wireless_Advanced.asp" );
+    char *webfile = ( char * )malloc( len + 1 );
+
+	char index[2];
+	substring (strlen (ifname)-1, strlen (ifname), ifname, index);
+    
+    fread( webfile, len, 1, web );
+    webfile[len] = 0;
+    fclose( web );
+
+    char temp[65536];
+
+    memset( temp, 0, 65536 );
+    int ai = 0;
+    int i = 0;
+    int weblen = strlen( webfile );
+
+    for( i = 0; i < weblen; i++ )
+    {
+	if( webfile[i] == '%' )
+	{
+	    i++;
+	    switch ( webfile[i] )
+	    {
+		case '%':
+		    temp[ai++] = '%';
+		    break;
+		case 'd':
+		    strcpy( &temp[ai], index );
+		    ai ++;
+		    break;
+		case 's':
+		    strcpy( &temp[ai], ifname );
+		    ai += strlen( ifname );
+		    break;
+		default:
+		    temp[ai++] = webfile[i];
+		    break;
+	    }
+	}
+	else
+	    temp[ai++] = webfile[i];
+    }
+    free( webfile );
+    do_ej_buffer( temp, stream );
+}
+
 static void validate_cgi( webs_t wp )
 {
     char *value;
@@ -1070,6 +1126,8 @@ gozila_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     else if( !strncmp( path, "Wireless_WDS", 12 ) )
 	do_wds( NULL, path, wp, NULL );	// refresh
     // #endif
+    else if( !strncmp( path, "Wireless_Advanced", 17 ) )
+	do_wireless_adv( NULL, path, wp, NULL );	// refresh
     else
 	do_ej( NULL, path, wp, NULL );	// refresh
     websDone( wp, 200 );
@@ -1103,6 +1161,8 @@ struct apply_action apply_actions[] = {
     // V24 it's a 
     // gozilla
     // save
+    {"Wireless_Advanced-wl0", "wireless_2", 0, SERVICE_RESTART, NULL},
+    {"Wireless_Advanced-wl1", "wireless_2", 0, SERVICE_RESTART, NULL},
     {"Wireless_Advanced", "wireless_2", 0, SERVICE_RESTART, NULL},
     {"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, "save_macmode"},
     {"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
@@ -1370,10 +1430,12 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	}
 
 	cprintf( "refresh to %s\n", path );
-	if( !strncmp( path, "WL_FilterTable", strlen( "WL_FilterTable" ) ) )
+	if( !strncmp( path, "WL_FilterTable", 14 ) )
 	    do_filtertable( NULL, path, wp, NULL );	// refresh
-	else if( !strncmp( path, "Wireless_WDS", strlen( "Wireless_WDS" ) ) )
+	else if( !strncmp( path, "Wireless_WDS", 12 ) )
 	    do_wds( NULL, path, wp, NULL );	// refresh
+	else if( !strncmp( path, "Wireless_Advanced", 17 ) )
+	    do_wireless_adv( NULL, path, wp, NULL );	// refresh
 	else
 	    do_ej( NULL, path, wp, NULL );	// refresh
 	websDone( wp, 200 );
@@ -2110,6 +2172,7 @@ struct mime_handler mime_handlers[] = {
     // #endif
     // #ifdef HAVE_MADWIFI
     {"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1},
+    {"Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, 1},
     // #endif
     {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1},
     {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL, 0},

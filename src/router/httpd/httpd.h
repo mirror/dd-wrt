@@ -151,6 +151,7 @@ extern char *zencrypt (char *passwd);
 
 extern void do_filtertable (struct mime_handler *handler,char *path, webs_t stream, char *query);
 extern void do_wds (struct mime_handler *handler,char *path, webs_t stream, char *query);
+extern void do_wireless_adv (struct mime_handler *handler,char *path, webs_t stream, char *query);
 #ifndef VISUALSOURCE
 #ifndef VALIDSOURCE
 extern FILE *getWebsFile (char *path);
