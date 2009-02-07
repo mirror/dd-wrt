@@ -908,7 +908,7 @@ void start_sysinit( void )
 		{"wl0gpio0", "11", 0},
 		{"wl0gpio1", "11", 0},
 		{"wl0gpio2", "11", 0},
-		{"wl0gpio3", "11", 0},	//was 8, but causes crash in client mode
+		{"wl0gpio3", "3", 0},	//was 8, but causes crash in client mode, we set 3 (no blink - just radio on/off)
 		{"sromrev", "2", 0},
 		{0, 0, 0}
 	    };
