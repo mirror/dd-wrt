@@ -1567,11 +1567,18 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
 
     for( a = 0; a < ifcount; a++ )
     {
-	sprintf( &menu[1][a + 7][0], "Wireless_WDS-wl%d.asp", a );
+	sprintf( &menu[1][a*2 + 6][0], "Wireless_Advanced-wl%d.asp", a );	    
+	sprintf( &menu[1][a*2 + 7][0], "Wireless_WDS-wl%d.asp", a );
 	if( ifcount == 1 )
-	    sprintf( &menuname[1][a + 8][0], "wirelessWds" );
+	{
+	    sprintf( &menuname[1][a*2 + 7][0], "wirelessAdvanced" );		
+	    sprintf( &menuname[1][a*2 + 8][0], "wirelessWds" );
+    }
 	else
-	    sprintf( &menuname[1][a + 8][0], "wirelessWdswl%d", a );
+	{
+	    sprintf( &menuname[1][a*2 + 7][0], "wirelessAdvancedwl%d", a );		
+	    sprintf( &menuname[1][a*2 + 8][0], "wirelessWdswl%d", a );
+    }
     }
 #endif
 
@@ -1655,7 +1662,7 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
 		    j++;
 		if( !wifi && !strncmp( menu[i][j], "Wireless_MAC.asp", 8 ) )
 		    j++;
-		if( !strcmp( menu[i][j], "Wireless_Advanced.asp" ) )
+		if( !wifi && !strncmp( menu[i][j], "Wireless_Advanced", 17 ) )
 		    j++;
 		if( !wifi && !strncmp( menu[i][j], "Wireless_WDS", 12 ) )
 		    j++;
