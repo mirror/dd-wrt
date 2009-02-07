@@ -3596,9 +3596,9 @@ static int show_virtualssid( webs_t wp, char *prefix )
     if( vifs == NULL )
 	return 0;
 #ifndef HAVE_MADWIFI
-    if( !nvram_match( "wl0_mode", "ap" )
-	&& !nvram_match( "wl0_mode", "apsta" )
-	&& !nvram_match( "wl0_mode", "apstawet" ) )
+    if( !nvram_nmatch( "ap", "%s_mode", prefix )
+	&& !nvram_nmatch( "apsta", "%s_mode", prefix )
+	&& !nvram_nmatch( "apstawet", "%s_mode", prefix ) )
 	return 0;
 #endif
     int count = 1;
