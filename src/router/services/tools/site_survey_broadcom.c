@@ -391,7 +391,10 @@ static char *getEncInfo( wl_bss_info_t * bi )
 
 int site_survey_main( int argc, char *argv[] )
 {
-    char *name = nvram_safe_get( "wl0_ifname" );
+    char tmp[32];
+    sprintf( tmp, "%s_ifname", nvram_safe_get( "wifi_display" ) );
+    char *name = nvram_safe_get( tmp );
+
     unsigned char buf[10000];
     wl_scan_results_t *scan_res = ( wl_scan_results_t * ) buf;
     wl_bss_info_t *bss_info;
@@ -428,7 +431,7 @@ int site_survey_main( int argc, char *argv[] )
 #ifndef HAVE_MSSID
     wl_ioctl( dev, WLC_GET_AP, &oldap, sizeof( oldap ) );
     if( oldap > 0 )
-	eval( "wl", "ap", "0" );
+	eval( "wl", "-i", name, "ap", "0" );
 #endif
     if( wl_ioctl( dev, WLC_SCAN, &params, 64 ) < 0 )
     {
@@ -497,12 +500,12 @@ int site_survey_main( int argc, char *argv[] )
   endss:
 #ifndef HAVE_MSSID
     if( oldap > 0 )
-	eval( "wl", "ap", "1" );
+	eval( "wl", "-i", name, "ap", "1" );
 #endif
 
     C_led( 0 );
 #ifdef HAVE_MSSID
-    eval( "wl", "up" );
+    eval( "wl", "-i", name, "up" );
 #endif
     return 0;
 }
