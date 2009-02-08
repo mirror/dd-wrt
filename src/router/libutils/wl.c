@@ -1584,6 +1584,8 @@ char *get_wdev( void )
 	return "eth1";
     if( !wl_probe( "eth2" ) )
 	return "eth2";
+    if( !wl_probe( "eth3" ) )
+	return "eth3";
     if( !wl_probe( "eth0" ) )
 	return "eth0";
     return nvram_safe_get( "wl0_ifname" );
