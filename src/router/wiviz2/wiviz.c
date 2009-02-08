@@ -82,7 +82,10 @@ int main(int argc, char * * argv) {
 #ifdef HAVE_RT2880
   wl_dev="ra0";
 #else
-  wl_dev=get_wdev();
+//  wl_dev=get_wdev();
+  char tmp[32];
+  sprintf( tmp, "%s_ifname", nvram_safe_get( "wifi_display" ) );
+  wl_dev = nvram_safe_get( tmp );
 #endif
 if (argc>1)
 if (!strcmp(argv[1],"terminate"))
