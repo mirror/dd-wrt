@@ -2631,6 +2631,7 @@ struct ej_handler ej_handlers[] = {
     {"getwirelessmode", ej_getwirelessmode},
     {"getwirelessnetmode", ej_getwirelessnetmode},
     {"getwirelessssid", ej_getwirelessssid},
+    {"radio_on", ej_radio_on},   
     {"get_radio_state", ej_get_radio_state},
     {"dumparptable", ej_dumparptable},
 #ifdef HAVE_WIVIZ

@@ -2475,6 +2475,65 @@ void ej_show_openvpn_status( webs_t wp, int argc, char_t ** argv )
 
 }
 
+void ej_radio_on( webs_t wp, int argc, char_t ** argv )
+{
+    int radiooff = -1;
+
+#ifdef HAVE_MADWIFI
+    char *ifname = nvram_safe_get( "wifi_display" );
+
+    if( strlen( ifname ) > 0 )
+    {
+	int state = get_radiostate( ifname );
+
+	switch ( state )
+	{
+	    case 1:
+		websWrite( wp, "1" );
+		break;
+	    default:
+	    websWrite( wp, "0" );
+		break;
+	}
+    }
+    else
+    {
+	websWrite( wp, "0" );
+    }
+#elif HAVE_RT2880
+
+	int state = get_radiostate( "wl0" );
+
+	switch ( state )
+	{
+	    case 1:
+		websWrite( wp, "1" );
+		break;
+	    default:
+		websWrite( wp, "0" );
+		break;
+	}
+
+
+#else
+    char name[32];
+    sprintf( name, "%s_ifname", nvram_safe_get( "wifi_display" ) );
+    
+    char *ifname = nvram_safe_get( name );
+    
+    wl_ioctl( ifname, WLC_GET_RADIO, &radiooff, sizeof( int ) );
+
+    switch ( ( radiooff & WL_RADIO_SW_DISABLE ) )
+    {
+	case 0:
+	    websWrite( wp, "1" );
+	    break;
+	default:
+	    websWrite( wp, "0" );
+	    break;
+    }
+#endif
+}
 
 void ej_get_radio_state( webs_t wp, int argc, char_t ** argv )
 {
