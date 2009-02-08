@@ -74,6 +74,25 @@ function setPacketInfo(val) {
 	);
 }
 
+function OpenSiteSurvey () {
+	if( "<% radio_on(); %>" == "1" ) {
+		openWindow('Site_Survey.asp', 760, 700);
+	}
+	else {
+		openWindow('Site_Survey.asp', 760, 700);
+		alert(errmsg.err59);
+	};
+}
+
+function OpenWiwizSurvey () {
+	if( "<% radio_on(); %>" == "1" ) {
+		openWindow('Wiviz_Survey.asp', 760, 700);
+	}
+	else {
+		alert(errmsg.err59);
+	};
+}	
+
 var update;
 
 addEvent(window, "load", function() {
@@ -223,8 +242,8 @@ addEvent(window, "unload", function() {
 							<div class="center">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input class=\"button\" type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"<% nvram_else_match("wl0_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Site_Survey.asp', 760, 700)"); %>\" />");
-								<% ifndef("WIVIZ","/"); %><% ifndef("WIVIZ","/"); %>document.write("<input class=\"button\" type=\"button\" name=\"wiviz_survey\" value=\"Wiviz survey\" onclick=\"<% nvram_else_match("wl0_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Wiviz_Survey.asp', 760, 700)"); %>\" />");
+								document.write("<input class=\"button\" type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"OpenSiteSurvey()\" />");
+								<% ifndef("WIVIZ","/"); %><% ifndef("WIVIZ","/"); %>document.write("<input class=\"button\" type=\"button\" name=\"wiviz_survey\" value=\"Wiviz survey\" onclick=\"OpenWiwizSurvey()\" />");
 								//]]>
 								</script>
 							</div><br />
