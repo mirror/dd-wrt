@@ -108,7 +108,7 @@ void start_sysinit( void )
      */
     insmod( "ag7100_mod" );
     // sleep(1);
-#ifdef HAVE_RS
+//#ifdef HAVE_RS
     FILE *fp = fopen( "/dev/mtdblock/7", "rb" );
     unsigned char buf2[256];
 
@@ -164,7 +164,7 @@ void start_sysinit( void )
 	fprintf( stderr, "configure eth1 to %s\n", mac );
 	eval( "ifconfig", "eth1", "hw", "ether", mac );
     }
-#endif
+//#endif
     eval( "ifconfig", "eth0", "up" );
     eval( "ifconfig", "eth1", "up" );
     struct ifreq ifr;
