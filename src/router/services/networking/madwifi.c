@@ -1633,6 +1633,9 @@ static void configure_single( int count )
 	    sysprintf( "ifconfig %s 0.0.0.0 up", wdsdev );
 	}
     }
+
+    sysprintf( "iwconfig %s txpower %ddBm", dev, newpower );
+
 /*    sysprintf("ifconfig %s up",dev);
     vifs = nvram_safe_get( wifivifs );
     if( vifs != NULL && strlen( vifs ) > 0 )
