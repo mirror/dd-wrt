@@ -370,13 +370,13 @@ int main( int argc, char **argv )
 	    if( !strcmp( argv[1], "net" ) )
 		{
 		start_service( "hotplug_net" );
-		return;
+		return 0;
 		}
 #ifdef HAVE_USB
 	    if( !strcmp( argv[1], "usb" ) )
 		{
 		start_service( "hotplug_usb" );
-		return;
+		return 0;
 		}
 #endif
 #ifdef HAVE_XSCALE
@@ -396,7 +396,7 @@ int main( int argc, char **argv )
     if( strstr( base, "filtersync" ) )
 	{
 	start_service( "filtersync" );
-	return;
+	return 0;
 	}
     /* 
      * filter [add|del] number 
@@ -412,12 +412,12 @@ int main( int argc, char **argv )
 		if( strcmp( argv[1], "add" ) == 0 )
 		    {
 		    start_servicei( "filter_add", num );
-		    return;
+		    return 0;
 		    }
 		else if( strcmp( argv[1], "del" ) == 0 )
 		    {
 		    start_servicei( "filter_del", num );
-		    return;
+		    return 0;
 		    }
 	    }
 	}
