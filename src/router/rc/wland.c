@@ -585,6 +585,10 @@ static void do_madwifi_check( void )
 			eval( "ifconfig", dev, "down" );
 			sleep( 1 );
 			eval( "ifconfig", dev, "up" );
+			char power[32];
+			sprintf(power,"%s_txpwrdbm",dev);
+			int newpower = atoi( nvram_default_get( power, "16" ) );
+			sysprintf( "iwconfig %s txpower %ddBm", dev, newpower );
 			eval( "startservice", "set_routes" );
 			lastchans[i] = -1;
 		    }
