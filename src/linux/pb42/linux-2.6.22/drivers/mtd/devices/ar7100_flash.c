@@ -71,6 +71,8 @@ ar7100_flash_geom_t flash_geom_tbl[AR7100_FLASH_MAX_BANKS] =
             {
 #ifdef CONFIG_MTD_FLASH_16MB
                 .size           =   AR7100_FLASH_SIZE_16MB,
+#elif CONFIG_MTD_FLASH_8MB
+                .size           =   AR7100_FLASH_SIZE_16MB,
 #else
                 .size           =   AR7100_FLASH_SIZE_4MB,
 #endif
@@ -167,10 +169,14 @@ ar7100_flash_write (struct mtd_info *mtd, loff_t to, size_t len,
 }
 
 static struct mtd_partition dir_parts[] = {
-        { name: "RedBoot", offset: 0, size: 0x40000, },//, mask_flags: MTD_WRITEABLE, },
 #ifdef CONFIG_MTD_FLASH_16MB
-        { name: "linux", offset: 0x40000, size: 0xf90000, },
+        { name: "RedBoot", offset: 0, size: 0x40000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "linux", offset: 0x30000, size: 0xf90000, },
+#elif CONFIG_MTD_FLASH_8MB
+        { name: "RedBoot", offset: 0, size: 0x30000, },//, mask_flags: MTD_WRITEABLE, },
+        { name: "linux", offset: 0x30000, size: 0x790000, },
 #else
+        { name: "RedBoot", offset: 0, size: 0x40000, },//, mask_flags: MTD_WRITEABLE, },
         { name: "linux", offset: 0x40000, size: 0x390000, },
 #endif
         { name: "rootfs", offset: 0x0, size: 0x2b0000,}, //must be detected
@@ -268,6 +274,9 @@ static int __init ar7100_flash_init (void)
 		dir_parts[6].offset = mtd->size-mtd->erasesize; // board config
 		dir_parts[6].size = mtd->erasesize;
 #ifdef CONFIG_MTD_FLASH_16MB
+		dir_parts[5].offset = dir_parts[6].offset; //fis config
+		dir_parts[5].size = mtd->erasesize;
+#elif CONFIG_MTD_FLASH_8MB
 		dir_parts[5].offset = dir_parts[6].offset; //fis config
 		dir_parts[5].size = mtd->erasesize;
 #else
