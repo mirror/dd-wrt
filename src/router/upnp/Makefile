@@ -1,7 +1,7 @@
 #
-# Linux upnp Makefile
+# Linux upnp Makefile support WFA device
 #
-# Copyright 2004, Broadcom Corporation
+# Copyright (C) 2008, Broadcom Corporation
 # All Rights Reserved.
 # 
 # THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,29 +9,34 @@
 # SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 # FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 #
-# $Id: Makefile,v 1.1.1.6 2004/04/12 04:34:09 honor Exp $
+# $Id: Makefile,v 1.4 2008/12/02 08:12:11 Exp $
 #
-include $(TOP)/.config
 
-UPNP	:= $(SRCBASE)/tools/upnp/igd/linux
-CFLAGS	= -s -O2
-ifeq ($(CONFIG_GATEWORX),y)
-CFLAGS += -DHAVE_GATEWORX
+ifeq "$(SRCBASE)" ""
+	SRCBASE=$(shell cd ../.. ; pwd)
 endif
+
+CFG_BCMIGD ?= 1
+
+UPNP	:= $(TOP)/upnp/src/linux
+CFLAGS += -Os
+ifeq ($(strip $(CFG_BCMIGD)),1)
+CFLAGS  += -D__BCMIGD__
+endif
+#DEBUG	:= 1
 
 all: upnp
 
 install: all
-	install -d $(INSTALLDIR)/upnp/usr/sbin
-	install -m 755 upnp $(INSTALLDIR)/upnp/usr/sbin
-	$(STRIP) $(INSTALLDIR)/upnp/usr/sbin/upnp
+	install -d $(INSTALLDIR)/usr/sbin
+	install -m 755 bcmupnp $(INSTALLDIR)/usr/sbin/upnp
 
 clean:
-	rm -f upnp
 	$(MAKE) -C $(UPNP) clean
+	rm -f bcmupnp
 
 upnp: FORCE
-	$(MAKE) -C $(UPNP) DEBUG=$(DEBUG) SRCBASE=$(SRCBASE) TARGET_PREFIX=$(CROSS_COMPILE)
-	cp $(UPNP)/upnp .
+	$(MAKE) -C $(UPNP) DEBUG=$(DEBUG) SRCBASE=$(SRCBASE) TARGET_PREFIX=$(CROSS_COMPILE) CFG_BCMIGD=$(CFG_BCMIGD)
+	cp $(UPNP)/upnp ./bcmupnp
 
 FORCE:

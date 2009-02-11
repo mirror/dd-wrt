@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<scpd xmlns="urn:schemas-upnp-org:service-1-0">
+	<specVersion>
+		<major>1</major>
+		<minor>0</minor>
+	</specVersion>
+	<actionList>
+		<action>
+			<name>GetEthernetLinkStatus</name>
+				<argumentList>
+					<argument>
+						<name>NewEthernetLinkStatus</name>
+						<direction>out</direction>
+						<relatedStateVariable>EthernetLinkStatus</relatedStateVariable>
+					</argument>
+				</argumentList>
+		</action>
+	</actionList>
+	<serviceStateTable>
+		<stateVariable sendEvents="yes">
+			<name>EthernetLinkStatus</name>
+			<dataType>string</dataType>
+			<allowedValueList>
+				<allowedValue>Up</allowedValue>
+				<allowedValue>Down</allowedValue>
+				<allowedValue>Unavailable</allowedValue>
+			</allowedValueList>
+		</stateVariable>
+	</serviceStateTable>
+</scpd>
