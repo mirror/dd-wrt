@@ -45,12 +45,13 @@ void start_upnp( void )
     ret = killall( "upnp", SIGUSR1 );
     if( ret != 0 )
     {
-	ret = eval( "upnp", "-D",
+/*	ret = eval( "upnp", "-D",
 		    "-L", nvram_safe_get( "lan_ifname" ),
 		    "-W", wan_ifname,
 		    "-S", "0",
 		    "-I", nvram_safe_get( "upnp_ssdp_interval" ),
-		    "-A", nvram_safe_get( "upnp_max_age" ) );
+		    "-A", nvram_safe_get( "upnp_max_age" ) );*/
+	ret = eval( "upnp", "-D","-W", wan_ifname);
 	dd_syslog( LOG_INFO, "upnp : upnp daemon successfully started\n" );
     }
 
