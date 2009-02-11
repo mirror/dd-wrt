@@ -470,8 +470,8 @@ char _SETAPN_code[]=
     if a=0 goto apnerror\n\
     if a>32 goto apnerror\n\
   :enterapn\n\
-    send \"AT+CGDCONT=1,\\\"IP\\\",\\\"\n\
-    send $c\n\
+    send \"AT+CGDCONT=1,\\\"IP\\\",\\\"\"\n\
+    send $x\n\
     send \"\\\"^m\"\n\
     waitfor 20 \"OK\",\"ERR\"\n\
     if % = -1 goto timeerror\n\
