@@ -52,7 +52,14 @@
 #endif
 
 /* Netgear WGR614 v8/L defines */
+#define WGR614_FAKE 1   //we fake checksum only over 4 bytes (HDR0)
+
+#ifdef WGR614_FAKE
+#define WGR614_FAKE_LEN                0x00000004
+#define WGR614_FAKE_CHK                0x02C0010E
+#else
 static unsigned long calculate_checksum (int action, char *s, int size);
+#endif
 #define WGR614_FLASH_SIZE              4 * 1024 * 1024
 #define WGR614_FLASH_BASE              0xBC000000
 #define WGR614_KERNEL_FLASH_ADDR       0xBC020000
@@ -348,7 +355,9 @@ int mtd_write( const char *path, const char *mtd )
 							 flag_version ),
 		 CRC32_INIT_VALUE );
     crc_data = 0;
+#ifndef WGR614_FAKE
     calculate_checksum (0, NULL, 0); // init
+#endif
     /* 
      * Write file or URL to MTD device 
      */
@@ -388,7 +397,9 @@ int mtd_write( const char *path, const char *mtd )
 	 * Update CRC 
 	 */
 	crc = crc32( &buf[off], count - off, crc );
+#ifndef WGR614_FAKE
 	calculate_checksum (1, buf, count);
+#endif
 
 	if( !squashfound )
 	{
@@ -439,13 +450,20 @@ int mtd_write( const char *path, const char *mtd )
 	 */    
 	if ( getRouterBrand(  ) == ROUTER_NETGEAR_WGR614L )
 	{
+#ifndef WGR614_FAKE
 	cal_chksum = calculate_checksum ( 2, NULL, 0 );
+#endif
 	
 	int offset = WGR614_KERNEL_LEN_ADDR - WGR614_KERNEL_FLASH_ADDR;
 	char imageInfo[8];
-	
+
+#ifndef WGR614_FAKE	
 	trx.len = STORE32_LE( trx.len );
 	cal_chksum = STORE32_LE( cal_chksum );
+#else
+	trx.len = STORE32_LE( WGR614_FAKE_LEN );
+	cal_chksum = STORE32_LE( WGR614_FAKE_CHK );
+#endif
 	memcpy( &imageInfo[0], (char *)&trx.len, 4 );
 	memcpy( &imageInfo[4], (char *)&cal_chksum, 4 );
 	
@@ -499,8 +517,12 @@ int mtd_write( const char *path, const char *mtd )
 		goto fail;
 	}
 	
-	//fprintf( stderr, "TRX LEN = %x , CHECKSUM = %x\n", trx.len, cal_chksum );	
+	//fprintf( stderr, "TRX LEN = %x , CHECKSUM = %x\n", trx.len, cal_chksum );
+#ifndef WGR614_FAKE	
 	fprintf( stderr, "Write len/chksum @ 0x003AFFF8...done.\n" );
+#else
+	fprintf( stderr, "Write fake len/chksum @ 0x003AFFF8...done.\n" );
+#endif
 		
 	} // end
 
@@ -594,6 +616,7 @@ int mtd_unlock( const char *mtd )
     return 0;
 }
 
+#ifndef WGR614_FAKE
 // Netgear image checksum
 static unsigned long calculate_checksum (int action, char *s, int size)
 {
@@ -628,3 +651,4 @@ static unsigned long calculate_checksum (int action, char *s, int size)
     }
     return 0;
 }
+#endif
