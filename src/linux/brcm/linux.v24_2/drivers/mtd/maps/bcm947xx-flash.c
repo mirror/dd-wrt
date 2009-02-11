@@ -379,6 +379,47 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 			mtd->sync(mtd);
 		vfree(block);
 		printk(KERN_EMERG "Done\n");
+		
+		/* Write fake Netgear checksum to the flash */		
+		uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
+		if ( (boardnum == 83258 || boardnum == 01)  //or 001 or 0x01
+	  	&& (nvram_match("boardtype", "0x048e") || nvram_match("boardtype", "0x48E"))
+	  	&& (nvram_match("boardrev", "0x11") || nvram_match("boardrev", "0x10"))
+	  	&& (nvram_match("boardflags", "0x750") || nvram_match("boardflags", "0x0750"))
+	  	&&  nvram_match ("sdram_init", "0x000A") ) {
+#define WGR614_CHECKSUM_BLOCK_START    0x003A0000
+#define WGR614_CHECKSUM_OFF            0x003AFFF8
+#define WGR614_FAKE_LEN                0x00000004  //we fake checksum only over 4 bytes (HDR0)
+#define WGR614_FAKE_CHK                0x02C0010E
+		/*
+		 * Read into buffer 
+		 */
+		block = vmalloc(mtd->erasesize);
+		if (MTD_READ(mtd, WGR614_CHECKSUM_BLOCK_START, mtd->erasesize, &len, block) ||
+		    len != mtd->erasesize) {
+			printk(KERN_EMERG "Error accessing the WGR614 checksum eraseblock\n");
+			vfree(block);
+			}
+			else {
+			char imageInfo[8];
+			u32 fake_len = le32_to_cpu(WGR614_FAKE_LEN);
+			u32 fake_chk = le32_to_cpu(WGR614_FAKE_CHK);
+			memcpy(&imageInfo[0], (char *)&fake_len, 4);
+			memcpy(&imageInfo[4], (char *)&fake_chk, 4);
+			char *tmp;	
+			tmp = block + ((WGR614_CHECKSUM_OFF - WGR614_CHECKSUM_BLOCK_START) % mtd->erasesize);
+			memcpy( tmp, imageInfo, sizeof( imageInfo ) );
+			if (mtd->unlock)
+				mtd->unlock(mtd, WGR614_CHECKSUM_BLOCK_START, mtd->erasesize);
+			erase_write(mtd, WGR614_CHECKSUM_BLOCK_START, mtd->erasesize, block);
+			if (mtd->sync)
+				mtd->sync(mtd);
+			vfree(block);
+			printk(KERN_EMERG "Done fixing WGR614 checksum\n");		  
+			}
+		}	
+		
+		
 	}
 	
 	return part->size;
