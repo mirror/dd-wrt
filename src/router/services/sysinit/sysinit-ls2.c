@@ -136,6 +136,10 @@ void start_sysinit( void )
     vlan_init( 0x31 );		// 1 lan + 1 wan, but only first one is used
 #endif
 #endif
+#if defined(HAVE_MS2)
+    system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
+#endif
     // insmod("ipv6");
 
     /*
