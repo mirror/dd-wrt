@@ -4,7 +4,10 @@
 
 function do_join (F,SSID) {
 	F.wl_ssid.value = SSID;
+	F.ath0_ssid.value = SSID;
+	
 	<% nvram_invmatch("wl_mode", "ap", "/"); %><% nvram_invmatch("wl_mode", "ap", "/"); %>F.wl_mode.value="<% nvram_match("wl_mode", "ap", "sta"); %>"
+	<% nvram_invmatch("ath0_mode", "ap", "/"); %><% nvram_invmatch("ath0_mode", "ap", "/"); %>F.ath0_mode.value="<% nvram_match("ath0_mode", "ap", "sta"); %>"
 
 	if (F.wl_ssid.value == "") {
 		alert(errmsg.err47);
@@ -28,6 +31,8 @@ function do_join (F,SSID) {
 			
 			<input type="hidden" name="wl_ssid" />
 			<input type="hidden" name="wl_mode" />
+			<input type="hidden" name="ath0_ssid" />
+			<input type="hidden" name="ath0_mode" />
 			<h2><% tran("survey.h2"); %></h2>
 			<table class="center table" cellspacing="5">
 				<tr>
