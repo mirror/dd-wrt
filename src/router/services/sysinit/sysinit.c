@@ -275,6 +275,18 @@ void start_restore_defaults( void )
 	{0, 0, 0}
     };
 #elif HAVE_GATEWORX
+#ifdef HAVE_XIOCOM
+    struct nvram_tuple generic[] = {
+	{"lan_ifname", "br0", 0},
+	{"lan_ifnames", "ixp1 ath0 ath1 ath2 ath3",
+	 0},
+	{"wan_ifname2", "ixp0", 0},
+	{"wan_ifname", "ixp0", 0},
+	{"wan_default", "ixp0", 0},
+	{"wan_ifnames", "ixp0", 0},
+	{0, 0, 0}
+    };
+#else
     struct nvram_tuple generic[] = {
 	{"lan_ifname", "br0", 0},
 	{"lan_ifnames", "ixp0 ath0 ath1 ath2 ath3",
@@ -285,6 +297,7 @@ void start_restore_defaults( void )
 	{"wan_ifnames", "ixp1", 0},
 	{0, 0, 0}
     };
+#endif
 #elif HAVE_X86
     struct nvram_tuple generic[] = {
 	{"lan_ifname", "br0", 0},
