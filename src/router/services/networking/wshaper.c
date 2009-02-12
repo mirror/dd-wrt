@@ -651,6 +651,9 @@ void stop_wshaper( void )
 #elif HAVE_BS2
     ret = eval( script_name, "stop", "XX", "eth0" );
     ret = eval( script_name, "stop", "XX", "ath0" );
+#elif HAVE_MS2
+    ret = eval( script_name, "stop", "XX", "eth0" );
+    ret = eval( script_name, "stop", "XX", "ath0" );
 #elif HAVE_BS2HP
     ret = eval( script_name, "stop", "XX", "eth0" );
     ret = eval( script_name, "stop", "XX", "ath0" );

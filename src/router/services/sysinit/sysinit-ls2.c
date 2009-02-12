@@ -131,7 +131,7 @@ void start_sysinit( void )
     }
 
 #ifdef HAVE_LS2
-#if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) && !defined(HAVE_BS2HP)
+#if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) && !defined(HAVE_BS2HP) && !defined(HAVE_MS2)
     eval( "ifconfig", "eth0", "up" );	// wan
     vlan_init( 0x31 );		// 1 lan + 1 wan, but only first one is used
 #endif
