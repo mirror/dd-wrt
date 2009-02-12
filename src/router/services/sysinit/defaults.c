@@ -1216,6 +1216,20 @@ struct nvram_tuple srouter_defaults[] = {
     {"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
     {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
     {"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
+#elif HAVE_XIOCOM
+    {"filter", "off", 0},	/* Firewall Protection [on|off] */
+    {"block_wan", "0", 0},	/* Block WAN Request [1|0] */
+    {"block_ident", "0", 0},	/* Block IDENT passthrough [1|0] */
+    {"block_proxy", "0", 0},	/* Block Proxy [1|0] */
+    {"block_java", "0", 0},	/* Block Java [1|0] */
+    {"block_activex", "0", 0},	/* Block ActiveX [1|0] */
+    {"block_cookie", "0", 0},	/* Block Cookie [1|0] */
+    {"block_multicast", "1", 0},	/* Multicast Pass Through [1|0] */
+    {"block_loopback", "0", 0},	/* Block NAT loopback [1|0] */
+    {"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
+    {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
+    {"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
+    {"remote_management", "0", 0},	/* Remote Management [1|0] */
 #else
     {"filter", "on", 0},	/* Firewall Protection [on|off] */
     {"block_wan", "1", 0},	/* Block WAN Request [1|0] */
