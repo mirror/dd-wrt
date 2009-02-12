@@ -183,7 +183,7 @@ int mtd_write( const char *path, const char *mtd )
     struct erase_info_user erase_info;
 
     struct sysinfo info;
-    struct trx_header trx;
+    struct trx_header trx, oldtrx;
     unsigned long crc;
     int squashfound = 0;
     unsigned int crc_data = 0;
@@ -195,7 +195,25 @@ int mtd_write( const char *path, const char *mtd )
     long sum = 0;		// for debug
     int ret = -1;
     int i;
-
+	unsigned char lzmaloader[4096];
+	
+	/* 
+	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
+	 */    
+	if ( getRouterBrand(  ) == ROUTER_NETGEAR_WGR614L )
+	{    
+    if( ( fp = fopen( "/dev/mtdblock/1", "rb" ) ) )
+	count = safe_fread( &oldtrx, 1, sizeof( struct trx_header ), fp );
+    else
+	return -1;    
+    
+	memset( lzmaloader, 0, 4096 );
+	fseek( fp, oldtrx.offsets[0], SEEK_SET );
+	fread( lzmaloader, oldtrx.offsets[1] - oldtrx.offsets[0], 1, fp );
+	fclose (fp);
+	}
+    
+    
     /* 
      * Examine TRX header 
      */
@@ -469,7 +487,7 @@ int mtd_write( const char *path, const char *mtd )
 	
 	int sector_start = ( offset / mtd_info.erasesize ) * mtd_info.erasesize;
 	
-	if( lseek( mtd_fd, sector_start, SEEK_SET) <= 0 )
+	if( lseek( mtd_fd, sector_start, SEEK_SET) < 0 )
 	{
 		//fprintf( stderr, "Error seeking the file descriptor\n" );
 		goto fail;
@@ -491,7 +509,7 @@ int mtd_write( const char *path, const char *mtd )
 		goto fail;
 	}
 
-	if( lseek( mtd_fd, sector_start, SEEK_SET) <= 0)
+	if( lseek( mtd_fd, sector_start, SEEK_SET) < 0 )
 	{
 		//fprintf( stderr, "Error seeking the file descriptor\n" );
 		goto fail;
@@ -523,7 +541,65 @@ int mtd_write( const char *path, const char *mtd )
 #else
 	fprintf( stderr, "Write fake len/chksum @ 0x003AFFF8...done.\n" );
 #endif
+
+
+	/* Write old lzma loader */
+	
+	offset = trx.offsets[0];
+	sector_start = ( offset / mtd_info.erasesize ) * mtd_info.erasesize;
+	
+	if( lseek( mtd_fd, sector_start, SEEK_SET) < 0 )
+	{
+		//fprintf( stderr, "Error seeking the file descriptor\n" );
+		goto fail;
+	}
+
+	free( buf );
+	
+	if( !( buf = malloc( mtd_info.erasesize ) ) ) 
+	{
+		//fprintf( stderr, "Error allocating image block\n");
+		goto fail;
+	}
+
+	memset( buf, 0, mtd_info.erasesize );
+
+	if ( read( mtd_fd, buf, mtd_info.erasesize ) != mtd_info.erasesize ) 
+	{
+		//fprintf( stderr, "Error reading first block from MTD device\n" );
+		goto fail;
+	}
+
+	if( lseek( mtd_fd, sector_start, SEEK_SET) < 0 )
+	{
+		//fprintf( stderr, "Error seeking the file descriptor\n" );
+		goto fail;
+	}
+
+	erase_info.start = sector_start;
+	erase_info.length = mtd_info.erasesize;
+	ioctl( mtd_fd, MEMUNLOCK, &erase_info );
 		
+	if ( ioctl( mtd_fd, MEMERASE, &erase_info ) != 0 ) 
+	{
+		//fprintf( stderr, "Error erasing MTD block\n" );
+		goto fail;
+	}
+	
+	tmp = buf + ( offset % mtd_info.erasesize );
+	if ( trx.offsets[1] - trx.offsets[0] >= oldtrx.offsets[1] - oldtrx.offsets[0] )
+		memcpy( tmp, lzmaloader, trx.offsets[1] - trx.offsets[0] );	//we asume lzma loader is shorter then gz loader
+	else
+		memset( buf, 0, mtd_info.erasesize );  //destroy 1st block, which puts router into tftp mode to allow recover
+	
+	if ( write( mtd_fd, buf, mtd_info.erasesize ) != mtd_info.erasesize ) 
+	{
+		//fprintf( stderr, "Error writing chksum to MTD device\n" );
+		goto fail;
+	}
+	
+	fprintf( stderr, "Write lzma loader...done.\n" );
+
 	} // end
 
 
