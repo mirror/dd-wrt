@@ -1291,6 +1291,18 @@ void start_lan( void )
 	}
 	else
 	{
+#ifdef HAVE_XIOCOM
+	    nvram_set( "lan_ifname", "br0" );
+	    if( nvram_match( "intel_eth", "1" ) )
+		nvram_set( "lan_ifnames",
+			   "eth0 eth1 ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm" );
+	    else
+		nvram_set( "lan_ifnames",
+			   "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm" );
+
+	    PORTSETUPWAN( "ixp0" );
+
+#else
 	    nvram_set( "lan_ifname", "br0" );
 	    if( nvram_match( "intel_eth", "1" ) )
 		nvram_set( "lan_ifnames",
@@ -1300,6 +1312,7 @@ void start_lan( void )
 			   "ixp0 ixp1 ath0 ath1 ath2 ath3 ofdm" );
 
 	    PORTSETUPWAN( "ixp1" );
+#endif
 	}
     }
     strncpy( ifr.ifr_name, "ixp1", IFNAMSIZ );
