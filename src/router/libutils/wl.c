@@ -117,6 +117,10 @@ u_int ieee80211_mhz2ieee( u_int freq )
 	return 14;
     if( freq < 2484 )
 	return ( freq - ( 2407 ) ) / 5;
+    if( freq < 2502 )
+	return 14;
+    if( freq < 2512 )
+	return 15;
     if( freq < 4990 && freq > 4940 )
 	return ( ( freq * 10 ) + ( ( ( freq % 5 ) == 2 ) ? 5 : 0 ) -
 		 49400 ) / 5;
@@ -132,9 +136,11 @@ unsigned int ieee80211_ieee2mhz( unsigned int chan )
 	return 2484;
     if( chan < 14 )
 	return ( ( 2407 ) + chan * 5 );
+    else if (chan <27)
+	return ((2512) + ((chan - 15) * 20));
     else
     {
-	if( chan > 236 && chan < 256 )
+	if( chan > 212 && chan < 256 )
 	{
 	    //recalculate offset
 	    int newchan = chan - 256;
