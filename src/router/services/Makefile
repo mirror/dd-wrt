@@ -406,6 +406,10 @@ ifeq ($(CONFIG_BS2),y)
 CFLAGS += -DHAVE_BS2
 CFLAGS += -DHAVE_LS2
 else
+ifeq ($(CONFIG_MS2),y)
+CFLAGS += -DHAVE_MS2
+CFLAGS += -DHAVE_LS2
+else
 ifeq ($(CONFIG_NS2),y)
 CFLAGS += -DHAVE_NS2
 CFLAGS += -DHAVE_LS2
@@ -413,6 +417,7 @@ else
 ifeq ($(CONFIG_LS2),y)
 CFLAGS += -DHAVE_LS2
 OBJS += icplus.o
+endif
 endif
 endif
 endif
