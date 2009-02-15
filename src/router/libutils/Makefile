@@ -219,6 +219,15 @@ endif
 ifeq ($(CONFIG_BS2),y)
   CFLAGS += -DHAVE_BS2
 endif
+ifeq ($(CONFIG_PICO2),y)
+  CFLAGS += -DHAVE_PICO2
+endif
+ifeq ($(CONFIG_PICO2HP),y)
+  CFLAGS += -DHAVE_PICO2HP
+endif
+ifeq ($(CONFIG_PICO5),y)
+  CFLAGS += -DHAVE_PICO5
+endif
 ifeq ($(CONFIG_MS2),y)
   CFLAGS += -DHAVE_MS2
 endif
