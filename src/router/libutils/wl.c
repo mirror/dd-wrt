@@ -117,9 +117,9 @@ u_int ieee80211_mhz2ieee( u_int freq )
 	return 14;
     if( freq < 2484 )
 	return ( freq - ( 2407 ) ) / 5;
-    if( freq < 2502 )
+    if( freq < 2502)
 	return 14;
-    if( freq < 2512 )
+    if( freq < 2512)
 	return 15;
     if( freq < 4990 && freq > 4940 )
 	return ( ( freq * 10 ) + ( ( ( freq % 5 ) == 2 ) ? 5 : 0 ) -
@@ -806,12 +806,18 @@ int wifi_gettxpower( char *ifname )
 #elif HAVE_LC2
     poweroffset = 10;
 #elif HAVE_BS2
+    poweroffset = 0;
+#elif HAVE_PICO2
+    poweroffset = 0;
+#elif HAVE_PICO2HP
     poweroffset = 10;
 #elif HAVE_MS2
     poweroffset = 10;
 #elif HAVE_BS2HP
     poweroffset = 10;
 #elif HAVE_NS5
+    poweroffset = 5;
+#elif HAVE_PICO5
     poweroffset = 5;
 #elif HAVE_NS3
     poweroffset = 5;
@@ -890,12 +896,18 @@ int wifi_gettxpoweroffset( char *ifname )
 #elif HAVE_LC2
     poweroffset = 10;
 #elif HAVE_BS2
+    poweroffset = 0;
+#elif HAVE_PICO2
+    poweroffset = 0;
+#elif HAVE_PICO2HP
     poweroffset = 10;
 #elif HAVE_MS2
     poweroffset = 10;
 #elif HAVE_BS2HP
     poweroffset = 10;
 #elif HAVE_NS5
+    poweroffset = 5;
+#elif HAVE_PICO5
     poweroffset = 5;
 #elif HAVE_NS3
     poweroffset = 5;

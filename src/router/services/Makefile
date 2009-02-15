@@ -406,6 +406,14 @@ ifeq ($(CONFIG_BS2),y)
 CFLAGS += -DHAVE_BS2
 CFLAGS += -DHAVE_LS2
 else
+ifeq ($(CONFIG_PICO2),y)
+CFLAGS += -DHAVE_PICO2
+CFLAGS += -DHAVE_LS2
+else
+ifeq ($(CONFIG_PICO2HP),y)
+CFLAGS += -DHAVE_PICO2HP
+CFLAGS += -DHAVE_LS2
+else
 ifeq ($(CONFIG_MS2),y)
 CFLAGS += -DHAVE_MS2
 CFLAGS += -DHAVE_LS2
@@ -423,6 +431,8 @@ endif
 endif
 endif
 endif
+endif
+endif
 ifeq ($(CONFIG_NS5),y)
 CFLAGS += -DHAVE_NS5
 endif
@@ -434,6 +444,9 @@ CFLAGS += -DHAVE_LC5
 endif
 ifeq ($(CONFIG_BS5),y)
 CFLAGS += -DHAVE_BS5
+endif
+ifeq ($(CONFIG_PICO5),y)
+CFLAGS += -DHAVE_PICO5
 endif
 
 ifeq ($(CONFIG_LS5),y)

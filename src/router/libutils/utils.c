@@ -738,6 +738,15 @@ return 0;
 #elif HAVE_BS2
     setRouter( "Ubiquiti Bullet 2" );
     return ROUTER_BOARD_LS2;
+#elif HAVE_PICO2
+    setRouter( "Ubiquiti PicoStation 2" );
+    return ROUTER_BOARD_LS2;
+#elif HAVE_PICO2HP
+    setRouter( "Ubiquiti PicoStation 2 HP" );
+    return ROUTER_BOARD_LS2;
+#elif HAVE_PICO5
+    setRouter( "Ubiquiti PicoStation 5" );
+    return ROUTER_BOARD_LS2;
 #elif HAVE_MS2
     setRouter( "Ubiquiti MiniStation" );
     return ROUTER_BOARD_LS2;
