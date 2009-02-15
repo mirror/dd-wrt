@@ -2,6 +2,7 @@ AC_ROOT		= ..
 LIBPCAP		=
 include $(AC_ROOT)/common.mak
 
+TEST_DIR	= $(AC_ROOT)/test
 
 LDFLAGS		+= -L$(TOP)/openssl -L$(TOP)/zlib
 CFLAGS		+= -Iinclude -I$(TOP)/openssl/include -I$(TOP)/zlib
@@ -12,21 +13,30 @@ iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
-		  ivstools$(EXE) kstats$(EXE) buddy-ng$(EXE) makeivs-ng$(EXE)
+		  ivstools$(EXE) kstats$(EXE) buddy-ng$(EXE) makeivs-ng$(EXE) \
+		  airdecloak-ng$(EXE)
+
 ifeq ($(SQLITE), true)
-BINFILES	+= airolib-ng$(EXE)
-else ifeq ($(sqlite), true)
-BINFILES        += airolib-ng$(EXE)
-else ifeq ($(SQLITE), TRUE)
-BINFILES        += airolib-ng$(EXE)
-else ifeq ($(sqlite), TRUE)
-BINFILES        += airolib-ng$(EXE)
+	BINFILES	+= airolib-ng$(EXE)
+else
+	ifeq ($(sqlite), true)
+		BINFILES        += airolib-ng$(EXE)
+	else
+		ifeq ($(SQLITE), TRUE)
+			BINFILES        += airolib-ng$(EXE)
+		else
+			ifeq ($(sqlite), TRUE)
+				BINFILES        += airolib-ng$(EXE)
+			endif
+		endif
+	endif
 endif
 
 LIBPCAP		=
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE) airbase-ng$(EXE)
+		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE) airbase-ng$(EXE) \
+		  tkiptun-ng$(EXE)
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
 
@@ -34,6 +44,7 @@ SRC_PTW		= aircrack-ptw-lib.c
 SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
 OBJS_PTW	= aircrack-ptw-lib.o
 OBJS_AC		= aircrack-ng.o crypto.o common.o uniqueiv.o $(OBJS_PTW)
+ASM_AC		= sha1-sse2.S
 
 OBJS_AD		= airdecap-ng.o crypto.o common.o
 OBJS_PF		= packetforge-ng.o common.o crypto.o
@@ -48,6 +59,8 @@ OBJS_ES		= easside-ng.o common.o
 OBJS_BUDDY	= buddy-ng.o common.o
 OBJS_MI		= makeivs-ng.o common.o uniqueiv.o
 OBJS_AB		= airbase-ng.o common.o crypto.o
+OBJS_AU		= airdecloak-ng.o common.o
+OBJS_TT		= tkiptun-ng.o common.o crypto.o
 
 
 OSD		= osdep
@@ -60,15 +73,20 @@ LIBOSD		= $(OSD)/lib$(OSD).a
 LIBSSL		= $(LDFLAGS) -lssl -lcrypto 
 LIBSQL		=
 ifeq ($(SQLITE), true)
-LIBSQL		= -L/usr/local/lib -lsqlite3
-else ifeq ($(sqlite), true)
-LIBSQL          = -L/usr/local/lib -lsqlite3
-else ifeq ($(SQLITE), TRUE)
-LIBSQL          = -L/usr/local/lib -lsqlite3
-else ifeq ($(sqlite), TRUE)
-LIBSQL          = -L/usr/local/lib -lsqlite3
+	LIBSQL		= -L/usr/local/lib -lsqlite3
+else
+	ifeq ($(sqlite), true)
+		LIBSQL          = -L/usr/local/lib -lsqlite3
+	else
+		ifeq ($(SQLITE), TRUE)
+			LIBSQL          = -L/usr/local/lib -lsqlite3
+		else
+			ifeq ($(sqlite), TRUE)
+				LIBSQL          = -L/usr/local/lib -lsqlite3
+			endif
+		endif
+	endif
 endif
-
 
 all: osd userland $(SBINFILES)
 
@@ -81,22 +99,22 @@ $(LIBOSD):
 	$(MAKE) -C $(OSD)
 
 aircrack-ng-opt: $(SRC_AC)
-	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) $(SRC_AC) $(LIBSSL) \
+	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) $(SRC_AC) $(ASM_AC) $(LIBSSL) \
 	uniqueiv.o -o aircrack-ng-opt -lpthread $(LIBSQL)
 
 aircrack-ng-opt-prof_gen: $(SRC_AC)
 	mkdir -p prof
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_genx -DDO_PGO_DUMP \
-	-prof_dir$(PROF_DIR) $(SRC_AC) $(LIBSSL) uniqueiv.o -o \
+	-prof_dir$(PROF_DIR) $(SRC_AC) $(ASM_AC) $(LIBSSL) uniqueiv.o -o \
 	aircrack-ng-opt-prof_gen -lpthread $(LIBSQL)
 
 aircrack-ng-opt-prof_use: $(SRC_AC)
 	$(iCC) $(iCFLAGS) $(iOPTFLAGS) $(REVFLAGS) -prof_use \
-	-prof_dir$(PROF_DIR) $(SRC_AC) $(LIBSSL) uniqueiv.o -o \
+	-prof_dir$(PROF_DIR) $(SRC_AC) $(ASM_AC) $(LIBSSL) uniqueiv.o -o \
 	aircrack-ng-opt-prof -lpthread $(LIBSQL)
 
 aircrack-ng$(EXE): $(OBJS_AC)
-	$(CC) $(CFLAGS) $(OBJS_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL)
+	$(CC) $(CFLAGS) $(OBJS_AC) $(ASM_AC) -o $(@) -lpthread $(LIBSSL) $(LIBSQL)
 
 airdecap-ng$(EXE): $(OBJS_AD)
 	$(CC) $(CFLAGS) $(OBJS_AD) -o $(@) $(LIBSSL)
@@ -140,6 +158,12 @@ airolib-ng$(EXE): $(OBJS_AL)
 airbase-ng$(EXE): $(OBJS_AB) $(LIBOSD)
 	$(CC) $(CFLAGS) $(OBJS_AB) -o $(@) $(LIBS) $(LIBSSL) -lpthread
 
+airdecloak-ng$(EXE): $(OBJS_AU)
+	$(CC) $(CFLAGS) $(OBJS_AU) -o $(@)
+
+tkiptun-ng$(EXE): $(OBJS_TT) $(LIBOSD)
+	$(CC) $(CFLAGS) $(OBJS_TT) -o $(@) $(LIBS) $(LIBSSL)
+
 strip: $(BINFILES) $(SBINFILES)
 	strip $(BINFILES) $(SBINFILES)
 
@@ -172,3 +196,9 @@ uninstall:
 	-rm -f $(DESTDIR)$(sbindir)/wesside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/easside-ng$(EXE)
 	-rm -f $(DESTDIR)$(sbindir)/airbase-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/airuncloak-ng$(EXE)
+	-rm -f $(DESTDIR)$(sbindir)/tkiptun-ng$(EXE)
+
+check: aircrack-ng$(EXE)
+	./aircrack-ng$(EXE) -w $(TEST_DIR)/password.lst -a 2 -e Harkonen -q $(TEST_DIR)/wpa2.eapol.cap | grep 'KEY FOUND! \[ 12345678 \]' 
+	./aircrack-ng$(EXE) -w $(TEST_DIR)/password.lst -a 2 -e test -q $(TEST_DIR)/wpa.cap | grep 'KEY FOUND! \[ biscotte \]'

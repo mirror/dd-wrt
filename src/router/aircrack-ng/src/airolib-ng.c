@@ -1,7 +1,7 @@
 /*
  *  A tool to compute and manage PBKDF2 values as used in WPA-PSK and WPA2-PSK
  *
- *  Copyright (C) 2007 ebfe
+ *  Copyright (C) 2007; 2008, 2009 ebfe
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ extern char * getVersion(char * progname, int maj, int min, int submin, int svnr
 
 void print_help(const char * msg) {
 	printf("\n"
-		"  %s - (C) 2007 ebfe\n"
+		"  %s - (C) 2007, 2008, 2009 ebfe\n"
 		"  http://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: airolib-ng <database> <operation> [options]\n"
@@ -198,7 +198,7 @@ int stmt_stdout(sqlite3_stmt* stmt, int* rowcount) {
 
 	int i = 0;
 	do {
-		printf(sqlite3_column_name(stmt,i++));
+		printf("%s", sqlite3_column_name(stmt,i++));
 		if (i < ccount) printf("\t");
 	} while (i < ccount);
 	printf("\n");
@@ -207,7 +207,7 @@ int stmt_stdout(sqlite3_stmt* stmt, int* rowcount) {
 		i = 0;
 		rcount++;
 		do {
-			printf((char *)sqlite3_column_text(stmt,i++));
+			printf("%s", (char *)sqlite3_column_text(stmt,i++));
 			if (i < ccount) printf("\t");
 		} while (i < ccount);
 		printf("\n");

@@ -1,7 +1,7 @@
  /*
   * Server for osdep network driver.  Uses osdep itself!  [ph33r teh recursion]
   *
-  *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+  *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
   *  Copyright (C) 2004, 2005 Christophe Devine
   *
   *  This program is free software; you can redistribute it and/or modify
@@ -39,7 +39,7 @@ extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac
 char usage[] =
 
 "\n"
-"  %s - (C) 2006,2007,2008 Thomas d\'Otreppe\n"
+"  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -79,7 +79,7 @@ int main( int argc, char *argv[] )
     float errorrate=0, dupe=0;
     unsigned char bssid[6];
     int seed=time(NULL), z;
-    int maxivs=0xFFFFFF;
+    int maxivs=0x1000000;
     unsigned char byte;
     unsigned char **uiv_root;
 
@@ -159,9 +159,9 @@ int main( int argc, char *argv[] )
             case 'c':
 
 				paramUsed = 1;
-                if (atoi(optarg) < 1 || atoi(optarg) > 0xFFFFFF) {
+                if (atoi(optarg) < 1 || atoi(optarg) > 0x1000000) {
 					printf( usage, getVersion("makeivs-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
-                    printf( "Specified number of IVs is invalid. [1-65535]" );
+                    printf( "Specified number of IVs is invalid. [1-16777216]" );
                     return( 1 );
                 }
 

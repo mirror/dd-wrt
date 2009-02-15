@@ -2,8 +2,8 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
- *  Copyright (C) 2008 Thomas d'Otreppe
- *  Copyright (C) 2008 Martin Beck
+ *  Copyright (C) 2008, 2009 Thomas d'Otreppe
+ *  Copyright (C) 2008, 2009 Martin Beck
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -58,6 +58,7 @@
 #include <getopt.h>
 #include <sys/file.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 #include "version.h"
 #include "pcap.h"
@@ -91,6 +92,11 @@ static struct wif *_wi_in, *_wi_out;
 
 #define NB_PRB 10       /* size of probed ESSID ring buffer */
 #define MAX_CF_XMIT 100
+
+#define TI_MTU 1500
+#define WIF_MTU 1800
+
+#define MAX_FRAME_EXTENSION 100
 
 #define PCT { struct tm *lt; time_t tc = time( NULL ); \
               lt = localtime( &tc ); printf( "%02d:%02d:%02d  ", \
@@ -161,7 +167,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 char usage[] =
 "\n"
-"  %s - (C) 2008 Thomas d'Otreppe\n"
+"  %s - (C) 2008, 2009 Thomas d'Otreppe\n"
 "  Original work: Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -196,6 +202,9 @@ char usage[] =
 "      -Z type          : same as -z, but for WPA2\n"
 "      -V type          : fake EAPOL 1=MD5 2=SHA1 3=auto\n"
 "      -F prefix        : write all sent and received frames into pcap file\n"
+"      -P               : respond to all probes, even when specifying ESSIDs\n"
+"      -I interval      : sets the beacon interval value in ms\n"
+"      -C seconds       : enables beaconing of probed ESSID values (requires -P)\n"
 "\n"
 "  Filter options:\n"
 "      --bssid MAC      : BSSID to filter/use\n"
@@ -245,12 +254,15 @@ struct options
     int weplen, crypt;
 
     int f_essid;
+    int promiscuous;
+    int beacon_cache;
     int channel;
     int setWEP;
     int quiet;
     int mitm;
     int external;
     int hidden;
+    int interval;
     int forceska;
     int skalen;
     int filter;
@@ -267,6 +279,9 @@ struct options
     int cf_count;
     int cf_attack;
     int record_data;
+
+    int ti_mtu;         //MTU of tun/tap interface
+    int wif_mtu;        //MTU of wireless interface
 }
 opt;
 
@@ -311,6 +326,7 @@ struct ESSID_list
     char            *essid;
     unsigned char   len;
     pESSID_t        next;
+	time_t          expire;
 };
 
 typedef struct MAC_list* pMAC_t;
@@ -420,9 +436,11 @@ void sighandler( int signum )
         alarmed++;
 }
 
-int addESSID(char* essid, int len)
+int addESSID(char* essid, int len, int expiration)
 {
-    pESSID_t cur = rESSID;
+    pESSID_t tmp;
+	pESSID_t cur = rESSID;
+	time_t now;
 
     if(essid == NULL)
         return -1;
@@ -433,20 +451,37 @@ int addESSID(char* essid, int len)
     if(rESSID == NULL)
         return -1;
 
-    while(cur->next != NULL)
+    while(cur->next != NULL) {
+        // if it already exists, just update the expiration time
+        if(cur->len == len && ! memcmp(cur->essid, essid, len)) {
+            if(cur->expire && expiration) {
+                time(&now);
+                cur->expire = now + expiration;
+            }
+            return 0;
+        }
         cur = cur->next;
+    }
 
     //alloc mem
-    cur->next = (pESSID_t) malloc(sizeof(struct ESSID_list));
-    cur = cur->next;
+    tmp = (pESSID_t) malloc(sizeof(struct ESSID_list));
 
     //set essid
-    cur->essid = (char*) malloc(len+1);
-    memcpy(cur->essid, essid, len);
-    cur->essid[len] = 0x00;
-    cur->len = len;
+    tmp->essid = (char*) malloc(len+1);
+    memcpy(tmp->essid, essid, len);
+    tmp->essid[len] = 0x00;
+    tmp->len = len;
 
-    cur->next = NULL;
+    // set expiration date
+    if(expiration) {
+        time(&now);
+        tmp->expire = now + expiration;
+    } else {
+        tmp->expire = 0;
+    }
+
+    tmp->next = NULL;
+	cur->next = tmp;
 
     return 0;
 }
@@ -921,6 +956,40 @@ int delESSID(char* essid, int len)
     return -1;
 }
 
+
+void flushESSID(void)
+{
+    pESSID_t old;
+	pESSID_t cur = rESSID;
+	time_t now;
+
+    if(rESSID == NULL)
+        return;
+
+    while(cur->next != NULL)
+    {
+        old = cur->next;
+        if(old->expire)
+        {
+            time(&now);
+            if(now > old->expire)
+            {
+                //got it
+                cur->next = old->next;
+
+                free(old->essid);
+                old->essid = NULL;
+                old->next = NULL;
+                old->len = 0;
+                free(old);
+                return;
+            }
+        }
+        cur = cur->next;
+    }
+}
+
+
 int delMAC(pMAC_t pMAC, char* mac)
 {
     pMAC_t old, cur = pMAC;
@@ -1065,6 +1134,7 @@ int addESSIDfile(char* filename)
 {
     FILE *list;
     char essid[256];
+	int x;
 
     list = fopen(filename, "r");
     if(list == NULL)
@@ -1075,7 +1145,13 @@ int addESSIDfile(char* filename)
 
     while( fgets(essid, 256, list) != NULL )
     {
-        addESSID(essid, strlen(essid));
+        // trim trailing whitespace
+        x = strlen(essid) - 1;
+        while (x >= 0 && isspace(essid[x]))
+            essid[x--] = 0;
+
+        if(strlen(essid))
+            addESSID(essid, strlen(essid), 0);
     }
 
     fclose(list);
@@ -1648,6 +1724,8 @@ int intercept(uchar* packet, int length)
 int packet_xmit(uchar* packet, int length)
 {
     uchar buf[4096];
+    int fragments=1, i;
+    int newlen=0, usedlen=0, length2;
 
     if(packet == NULL)
         return 1;
@@ -1655,35 +1733,81 @@ int packet_xmit(uchar* packet, int length)
     if(length < 38)
         return 1;
 
-    memcpy(h80211, IEEE80211_LLC_SNAP, 32);
-    memcpy(h80211+32, packet+14, length-14);
-    memcpy(h80211+30, packet+12, 2);
+    if(length-14 > 16*opt.wif_mtu-MAX_FRAME_EXTENSION)
+        return 1;
 
-    h80211[1] |= 0x02;
-    memcpy(h80211+10, opt.r_bssid, 6);  //BSSID
-    memcpy(h80211+16, packet+6,    6);  //SRC_MAC
-    memcpy(h80211+4,  packet,      6);  //DST_MAC
+    if(length+MAX_FRAME_EXTENSION > opt.wif_mtu)
+        fragments=((length-14+MAX_FRAME_EXTENSION) / opt.wif_mtu) + 1;
 
-    length = length+32-14; //32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
+    if(fragments > 16)
+        return 1;
 
-    if((opt.external & EXT_OUT))
+    if(fragments > 1)
+        newlen = (length-14+MAX_FRAME_EXTENSION)/fragments;
+    else
+        newlen = length-14;
+//     printf("Sending %i fragments with size %i/%i\n", fragments, newlen, length-14);
+    for(i=0; i<fragments; i++)
     {
-        bzero(buf, 4096);
-        memcpy(buf+14, h80211, length);
-        //mark it as outgoing packet
-        buf[12] = 0xFF;
-        buf[13] = 0xFF;
-        ti_write(dev.dv_ti2, buf, length+14);
-        return 0;
+        if(i == fragments-1)
+            newlen = length-14-usedlen; //use all remaining bytes for the last fragment
+
+        if(i==0)
+        {
+            memcpy(h80211, IEEE80211_LLC_SNAP, 32);
+            memcpy(h80211+32, packet+14+usedlen, newlen);
+            memcpy(h80211+30, packet+12, 2);
+        }
+        else
+        {
+            memcpy(h80211, IEEE80211_LLC_SNAP, 24);
+            memcpy(h80211+24, packet+14+usedlen, newlen);
+//             memcpy(h80211+30, packet+12, 2);
+        }
+
+        h80211[1] |= 0x02;
+        memcpy(h80211+10, opt.r_bssid, 6);  //BSSID
+        memcpy(h80211+16, packet+6,    6);  //SRC_MAC
+        memcpy(h80211+4,  packet,      6);  //DST_MAC
+
+//    frag = frame[22] & 0x0F;
+//    seq = (frame[22] >> 4) | (frame[23] << 4);
+        h80211[22] |= i & 0x0F; //set fragment
+        h80211[1]  |= 0x04; //more frags
+
+        if(i == (fragments-1))
+        {
+            h80211[1]  &= 0xFB; //no more frags
+        }
+
+//         length = length+32-14; //32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
+        length2 = newlen+32;
+
+        if((opt.external & EXT_OUT))
+        {
+            bzero(buf, 4096);
+            memcpy(buf+14, h80211, length2);
+            //mark it as outgoing packet
+            buf[12] = 0xFF;
+            buf[13] = 0xFF;
+            ti_write(dev.dv_ti2, buf, length2+14);
+//             return 0;
+        }
+        else
+        {
+            if( opt.crypt == CRYPT_WEP || opt.prgalen > 0 )
+            {
+                if(create_wep_packet(h80211, &length2, 24) != 0) return 1;
+            }
+
+            send_packet(h80211, length2);
+        }
+
+        usedlen += newlen;
+
+        if((i+1)<fragments)
+            usleep(3000);
     }
-
-    if( opt.crypt == CRYPT_WEP || opt.prgalen > 0 )
-    {
-        if(create_wep_packet(h80211, &length, 24) != 0) return 1;
-    }
-
-    send_packet(h80211, length);
-
     return 0;
 }
 
@@ -1730,6 +1854,48 @@ int packet_xmit_external(uchar* packet, int length, struct AP_conf *apc)
 //         printf("sending packet with len: %d\n", length);
         send_packet(packet, length);
     }
+
+    return 0;
+}
+
+int remove_tag(unsigned char *flags, unsigned char type, int *length)
+{
+    int cur_type=0, cur_len=0, len=0;
+    unsigned char *pos;
+    unsigned char buffer[4096];
+
+    if(*length < 2)
+        return 1;
+
+    if(flags == NULL)
+        return 1;
+
+    pos = flags;
+
+    do
+    {
+        cur_type = pos[0];
+        cur_len = pos[1];
+//         printf("tag %d with len %d found, looking for tag %d\n", cur_type, cur_len, type);
+//         printf("gone through %d bytes from %d max\n", len+2+cur_len, *length);
+        if(len+2+cur_len > *length)
+            return 1;
+
+        if(cur_type == type)
+        {
+            if(cur_len > 0 && (pos-flags+cur_len+2) <= *length)
+            {
+                memcpy(buffer, pos+2+cur_len, *length-((pos+2+cur_len) - flags));
+                memcpy(pos, buffer, *length-((pos+2+cur_len) - flags));
+                *length = *length - 2 - cur_len;
+                return 0;
+            }
+            else
+                return 1;
+        }
+        pos += cur_len + 2;
+        len += cur_len + 2;
+    } while(len+2 <= *length);
 
     return 0;
 }
@@ -1896,6 +2062,8 @@ int set_final_ip(uchar *buf, uchar *mymac)
     memcpy(buf+4, mymac, 6); //sender mac
     buf[10] = 0xA9; //sender IP from 169.254.XXX.XXX
     buf[11] = 0xFE;
+    buf[12] = 0x57;
+    buf[13] = 0xC5; //end sender IP
 
     return 0;
 }
@@ -1962,6 +2130,26 @@ int addCF(uchar* packet, int length)
             memcpy( dmac, packet + 16, 6 );
             memcpy( smac, packet + 24, 6 );
             break;
+    }
+
+    if( is_ipv6(packet) )
+    {
+        if(opt.verbose)
+        {
+            PCT; printf("Ignored IPv6 packet.\n");
+        }
+
+        return 1;
+    }
+
+    if( is_dhcp_discover(packet, length-z-4-4) )
+    {
+        if(opt.verbose)
+        {
+            PCT; printf("Ignored DHCP Discover packet.\n");
+        }
+
+        return 1;
     }
 
     /* check if it's a potential ARP request */
@@ -2773,7 +2961,7 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
             tag = parse_tags(packet+z, 0, length-z, &len);
             if(tag != NULL && tag[0] >= 32 && tag[0] < 127 && len <= 255) //directed probe
             {
-                if( !opt.f_essid || gotESSID((char*)tag, len) == 1)
+                if( opt.promiscuous || !opt.f_essid || gotESSID((char*)tag, len) == 1)
                 {
                     bzero(essid, 256);
                     memcpy(essid, tag, len);
@@ -2783,9 +2971,13 @@ int packet_recv(uchar* packet, int length, struct AP_conf *apc, int external)
                         if( essid[i] > 0 && essid[i] < ' ' )
                             goto skip_probe;
 
-                    /* got a valid ASCII probed ESSID, check if it's
-                    already in the ring buffer */
+                    /* got a valid ASCII probed ESSID */
 
+                    /* add this to the beacon queue */
+                    if(opt.beacon_cache)
+                        addESSID(essid, len, opt.beacon_cache);
+
+                    /* check if it's already in the ring buffer */
                     for( i = 0; i < NB_PRB; i++ )
                         if( memcmp( st_cur->probes[i], essid, len ) == 0 )
                             goto skip_probe;
@@ -2873,9 +3065,9 @@ skip_probe:
 
                     send_packet(packet, length);
 
-                    send_packet(packet, length);
+                    //send_packet(packet, length);
 
-                    send_packet(packet, length);
+                    //send_packet(packet, length);
                     return 0;
                 }
             }
@@ -3130,6 +3322,10 @@ skip_probe:
             free(buffer);
             buffer = NULL;
 
+            len = length - z - 6;
+            remove_tag(packet+z+6, 0, &len);
+            length = len + z + 6;
+
             send_packet(packet, length);
             if(!opt.quiet)
             {
@@ -3271,65 +3467,12 @@ void beacon_thread( void *arg )
     unsigned char beacon[512];
     int beacon_len=0;
     int seq=0, i=0, n=0;
+    int essid_len;
+    char *essid = "";
+    pESSID_t cur_essid = rESSID;
     float f, ticks[3];
 
     memcpy(&apc, arg, sizeof(struct AP_conf));
-
-    memcpy(beacon, "\x80\x00\x00\x00", 4);  //type/subtype/framecontrol/duration
-    beacon_len+=4;
-    memcpy(beacon+beacon_len , BROADCAST, 6);        //destination
-    beacon_len+=6;
-    if(!opt.adhoc)
-        memcpy(beacon+beacon_len, apc.bssid, 6);        //source
-    else
-        memcpy(beacon+beacon_len, opt.r_smac, 6);        //source
-    beacon_len+=6;
-    memcpy(beacon+beacon_len, apc.bssid, 6);        //bssid
-    beacon_len+=6;
-    memcpy(beacon+beacon_len, "\x00\x00", 2);       //seq+frag
-    beacon_len+=2;
-
-    memcpy(beacon+beacon_len, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 12);  //fixed information
-    beacon[beacon_len+8] = (apc.interval) & 0xFF;       //beacon interval
-    beacon[beacon_len+9] = (apc.interval >> 8) & 0xFF;
-    memcpy(beacon+beacon_len+10, apc.capa, 2);          //capability
-    beacon_len+=12;
-
-    beacon[beacon_len] = 0x00; //essid tag
-    beacon[beacon_len+1] = apc.essid_len; //essid tag
-    beacon_len+=2;
-    memcpy(beacon+beacon_len, apc.essid, apc.essid_len); //actual essid
-    beacon_len+=apc.essid_len;
-
-    memcpy(beacon+beacon_len, RATES, 16); //rates+extended rates
-    beacon_len+=16;
-
-    beacon[beacon_len] = 0x03; //channel tag
-    beacon[beacon_len+1] = 0x01;
-    beacon[beacon_len+2] = wi_get_channel(_wi_in); //current channel
-    beacon_len+=3;
-
-    if( opt.allwpa )
-    {
-        memcpy(beacon+beacon_len, WPA_TAGS, 0x56);
-        beacon_len += 0x56;
-    }
-
-    if(opt.wpa2type > 0)
-    {
-        memcpy(beacon+beacon_len, WPA2_TAG, 22);
-        beacon[beacon_len+7] = opt.wpa2type;
-        beacon[beacon_len+13] = opt.wpa2type;
-        beacon_len += 22;
-    }
-
-    if(opt.wpa1type > 0)
-    {
-        memcpy(beacon+beacon_len, WPA1_TAG, 24);
-        beacon[beacon_len+11] = opt.wpa1type;
-        beacon[beacon_len+17] = opt.wpa1type;
-        beacon_len += 24;
-    }
 
     ticks[0]=0;
     ticks[1]=0;
@@ -3378,6 +3521,82 @@ void beacon_thread( void *arg )
 
 //             printf( "4 " );
             fflush(stdout);
+
+
+            if(cur_essid == NULL) cur_essid = rESSID;
+            if(cur_essid == NULL) {
+	            essid = "default";
+	            essid_len = strlen(essid);
+            } else {
+
+                /* flush expired ESSID entries */
+                flushESSID();
+
+	            essid     = cur_essid->essid;
+	            essid_len = cur_essid->len;
+	            cur_essid = cur_essid->next;
+            }
+
+            beacon_len = 0;
+
+            memcpy(beacon, "\x80\x00\x00\x00", 4);  //type/subtype/framecontrol/duration
+            beacon_len+=4;
+            memcpy(beacon+beacon_len , BROADCAST, 6);        //destination
+            beacon_len+=6;
+            if(!opt.adhoc)
+                memcpy(beacon+beacon_len, apc.bssid, 6);        //source
+            else
+                memcpy(beacon+beacon_len, opt.r_smac, 6);        //source
+            beacon_len+=6;
+            memcpy(beacon+beacon_len, apc.bssid, 6);        //bssid
+            beacon_len+=6;
+            memcpy(beacon+beacon_len, "\x00\x00", 2);       //seq+frag
+            beacon_len+=2;
+
+            memcpy(beacon+beacon_len, "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 12);  //fixed information
+
+            beacon[beacon_len+8] = (apc.interval * MAX(getESSIDcount(), 1) ) & 0xFF;       //beacon interval
+            beacon[beacon_len+9] = (apc.interval * MAX(getESSIDcount(), 1) >> 8) & 0xFF;
+            memcpy(beacon+beacon_len+10, apc.capa, 2);          //capability
+            beacon_len+=12;
+
+            beacon[beacon_len] = 0x00; //essid tag
+            beacon[beacon_len+1] = essid_len; //essid tag
+            beacon_len+=2;
+            memcpy(beacon+beacon_len, essid, essid_len); //actual essid
+            beacon_len+=essid_len;
+
+            memcpy(beacon+beacon_len, RATES, 16); //rates+extended rates
+            beacon_len+=16;
+
+            beacon[beacon_len] = 0x03; //channel tag
+            beacon[beacon_len+1] = 0x01;
+            beacon[beacon_len+2] = wi_get_channel(_wi_in); //current channel
+            beacon_len+=3;
+
+            if( opt.allwpa )
+            {
+                memcpy(beacon+beacon_len, WPA_TAGS, 0x56);
+                beacon_len += 0x56;
+            }
+
+            if(opt.wpa2type > 0)
+            {
+                memcpy(beacon+beacon_len, WPA2_TAG, 22);
+                beacon[beacon_len+7] = opt.wpa2type;
+                beacon[beacon_len+13] = opt.wpa2type;
+                beacon_len += 22;
+            }
+
+            if(opt.wpa1type > 0)
+            {
+                memcpy(beacon+beacon_len, WPA1_TAG, 24);
+                beacon[beacon_len+11] = opt.wpa1type;
+                beacon[beacon_len+17] = opt.wpa1type;
+                beacon_len += 24;
+            }
+
+
             //copy timestamp into beacon; a mod 2^64 counter incremented each microsecond
             for(i=0; i<8; i++)
             {
@@ -3389,6 +3608,7 @@ void beacon_thread( void *arg )
 
 //             printf( "5 " );
             fflush(stdout);
+
             if( send_packet( beacon, beacon_len ) < 0 )
             {
                 printf("Error sending beacon!\n");
@@ -3484,6 +3704,64 @@ int del_next_CF(pCF_t curCF)
     return 0;
 }
 
+int cfrag_fuzz(unsigned char *packet, int frags, int frag_num, int length, unsigned char rnd[2])
+{
+    int z, i;
+    uchar overlay[4096];
+    uchar *smac = NULL;
+
+    if(packet == NULL)
+        return 1;
+
+    z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+
+    if(length <= z+8)
+        return 1;
+
+    if(frags < 1)
+        return 1;
+
+    if(frag_num < 0 || frag_num > frags)
+        return 1;
+
+    if( (packet[1] & 3) <= 1 )
+        smac = packet + 10;
+    else if( (packet[1] & 3) == 2 )
+        smac = packet + 16;
+    else
+        smac = packet + 24;
+
+    bzero(overlay, 4096);
+
+    smac[4] ^= rnd[0];
+    smac[5] ^= rnd[1];
+
+    if(frags == 1 && frag_num == 1) /* ARP final */
+    {
+        overlay[z+14] = rnd[0];
+        overlay[z+15] = rnd[1];
+        overlay[z+18] = rnd[0];
+        overlay[z+19] = rnd[1];
+        add_crc32_plain(overlay+z+4, length-z-4-4);
+    }
+    else if(frags == 3 && frag_num == 3)/* IP final */
+    {
+        overlay[z+12] = rnd[0];
+        overlay[z+13] = rnd[1];
+        overlay[z+16] = rnd[0];
+        overlay[z+17] = rnd[1];
+        add_crc32_plain(overlay+z+4, length-z-4-4);
+    }
+
+    for(i=0; i<length; i++)
+    {
+        packet[i] ^= overlay[i];
+    }
+
+    return 0;
+}
+
+
 void cfrag_thread( void )
 {
     struct timeval tv, tv2;
@@ -3493,6 +3771,8 @@ void cfrag_thread( void )
     int nb_pkt_sent_1=0;
     int seq=0, i=0;
     pCF_t   curCF;
+    uchar rnd[2];
+    uchar buffer[4096];
 
     ticks[0]=0;
     ticks[1]=0;
@@ -3550,17 +3830,22 @@ void cfrag_thread( void )
                 if( nb_pkt_sent_1 == 0 )
                     ticks[0] = 0;
 
+                rnd[0] = rand() % 0xFF;
+                rnd[1] = rand() % 0xFF;
+
                 for(i=0; i<curCF->fragnum; i++ )
                 {
-                    if( send_packet( curCF->frags[i],
-                                    curCF->fraglen[i] ) < 0 )
+                    memcpy(buffer, curCF->frags[i], curCF->fraglen[i]);
+                    cfrag_fuzz(buffer, curCF->fragnum, i, curCF->fraglen[i], rnd);
+                    if( send_packet( buffer, curCF->fraglen[i] ) < 0 )
                     {
                         pthread_mutex_unlock( &mx_cf );
                         return;
                     }
                 }
-                if( send_packet( curCF->final,
-                                curCF->finallen ) < 0 )
+                memcpy(buffer, curCF->final, curCF->finallen);
+                cfrag_fuzz(buffer, curCF->fragnum, curCF->fragnum, curCF->finallen, rnd);
+                if( send_packet( buffer, curCF->finallen ) < 0 )
                 {
                     pthread_mutex_unlock( &mx_cf );
                     return;
@@ -3572,17 +3857,21 @@ void cfrag_thread( void )
 
                 if( ((double)ticks[0]/(double)RTC_RESOLUTION)*(double)opt.r_nbpps > (double)nb_pkt_sent_1  )
                 {
+                    rnd[0] = rand() % 0xFF;
+                    rnd[1] = rand() % 0xFF;
                     for(i=0; i<curCF->fragnum; i++ )
                     {
-                        if( send_packet( curCF->frags[i],
-                                        curCF->fraglen[i] ) < 0 )
+                        memcpy(buffer, curCF->frags[i], curCF->fraglen[i]);
+                        cfrag_fuzz(buffer, curCF->fragnum, i, curCF->fraglen[i], rnd);
+                        if( send_packet( buffer, curCF->fraglen[i] ) < 0 )
                         {
                             pthread_mutex_unlock( &mx_cf );
                             return;
                         }
                     }
-                    if( send_packet( curCF->final,
-                                    curCF->finallen ) < 0 )
+                    memcpy(buffer, curCF->final, curCF->finallen);
+                    cfrag_fuzz(buffer, curCF->fragnum, curCF->fragnum, curCF->finallen, rnd);
+                    if( send_packet( buffer, curCF->finallen ) < 0 )
                     {
                         pthread_mutex_unlock( &mx_cf );
                         return;
@@ -3640,6 +3929,10 @@ int main( int argc, char *argv[] )
     opt.ringbuffer  = 10;
     opt.nb_arp      = 0;
     opt.f_index     = 1;
+    opt.interval    = 0x64;
+    opt.beacon_cache = 0; /* disable by default */
+    opt.ti_mtu = TI_MTU;
+    opt.wif_mtu = WIF_MTU;
 
     srand( time( NULL ) );
 
@@ -3648,6 +3941,7 @@ int main( int argc, char *argv[] )
         int option_index = 0;
 
         static struct option long_options[] = {
+            {"beacon-cache",1, 0, 'C'},
             {"bssid",       1, 0, 'b'},
             {"bssids",      1, 0, 'B'},
             {"channel",     1, 0, 'c'},
@@ -3655,6 +3949,8 @@ int main( int argc, char *argv[] )
             {"clients",     1, 0, 'D'},
             {"essid",       1, 0, 'e'},
             {"essids",      1, 0, 'E'},
+            {"promiscuous", 0, 0, 'P'},
+            {"interval",    1, 0, 'I'},
             {"mitm",        0, 0, 'M'},
             {"hidden",      0, 0, 'X'},
             {"caffe-latte", 0, 0, 'L'},
@@ -3666,7 +3962,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "a:h:i:r:w:He:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0NF:",
+                        "a:h:i:C:I:r:w:HPe:E:c:d:D:f:W:qMY:b:B:XsS:Lx:vAz:Z:yV:0NF:",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -3753,7 +4049,7 @@ int main( int argc, char *argv[] )
 
             case 'e' :
 
-                if( addESSID(optarg, strlen(optarg)) != 0 )
+                if( addESSID(optarg, strlen(optarg), 0) != 0 )
                 {
                     printf( "Invalid ESSID, too long\n" );
                     printf("\"%s --help\" for help.\n", argv[0]);
@@ -3770,6 +4066,24 @@ int main( int argc, char *argv[] )
                     return( 1 );
 
                 opt.f_essid = 1;
+
+                break;
+
+            case 'P' :
+
+                opt.promiscuous = 1;
+
+                break;
+
+            case 'I' :
+
+                opt.interval = atoi(optarg);
+
+                break;
+
+            case 'C' :
+
+                opt.beacon_cache = atoi(optarg);
 
                 break;
 
@@ -4271,6 +4585,42 @@ usage:
         PCT; printf( "Created tap interface %s\n", ti_name(dev.dv_ti));
     }
 
+    //Set MTU on tun/tap interface to a preferred value
+    if(!opt.quiet)
+    {
+        PCT; printf( "Trying to set MTU on %s to %i\n", ti_name(dev.dv_ti), opt.ti_mtu);
+    }
+    if( ti_set_mtu(dev.dv_ti, opt.ti_mtu) != 0)
+    {
+        if(!opt.quiet)
+        {
+            printf( "error setting MTU on %s\n", ti_name(dev.dv_ti));
+        }
+            opt.ti_mtu = ti_get_mtu(dev.dv_ti);
+            if(!opt.quiet)
+            {
+                PCT; printf( "MTU on %s remains at %i\n", ti_name(dev.dv_ti), opt.ti_mtu);
+            }
+    }
+
+    //Set MTU on wireless interface to a preferred value
+    if( wi_get_mtu(_wi_out) < opt.wif_mtu )
+    {
+        if(!opt.quiet)
+        {
+            PCT; printf( "Trying to set MTU on %s to %i\n", _wi_out->wi_interface, opt.wif_mtu);
+        }
+        if( wi_set_mtu(_wi_out, opt.wif_mtu) != 0 )
+        {
+            opt.wif_mtu = wi_get_mtu(_wi_out);
+            if(!opt.quiet)
+            {
+                printf( "error setting MTU on %s\n", _wi_out->wi_interface);
+                PCT; printf( "MTU on %s remains at %i\n", _wi_out->wi_interface, opt.wif_mtu);
+            }
+        }
+    }
+
     if(opt.external)
     {
         dev.dv_ti2 = ti_open(NULL);
@@ -4324,7 +4674,7 @@ usage:
         apc.essid = "\x00";
         apc.essid_len = 1;
     }
-    apc.interval = 0x0064;
+    apc.interval = opt.interval;
     apc.capa[0] = 0x00;
     if(opt.adhoc)
         apc.capa[0] |= 0x02;
