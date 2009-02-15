@@ -24,8 +24,8 @@ struct tx_info {
 
 struct rx_info {
         uint64_t ri_mactime;
-        uint32_t ri_power;
-        uint32_t ri_noise;
+        int32_t ri_power;
+        int32_t ri_noise;
         uint32_t ri_channel;
         uint32_t ri_freq;
         uint32_t ri_rate;
@@ -52,6 +52,8 @@ struct wif {
 	int	(*wi_set_mac)(struct wif *wi, unsigned char *mac);
 	int	(*wi_set_rate)(struct wif *wi, int rate);
 	int	(*wi_get_rate)(struct wif *wi);
+	int	(*wi_set_mtu)(struct wif *wi, int mtu);
+	int	(*wi_get_mtu)(struct wif *wi);
         int     (*wi_get_monitor)(struct wif *wi);
 
         void	*wi_priv;
@@ -75,6 +77,8 @@ extern int wi_set_mac(struct wif *wi, unsigned char *mac);
 extern int wi_get_rate(struct wif *wi);
 extern int wi_set_rate(struct wif *wi, int rate);
 extern int wi_get_monitor(struct wif *wi);
+extern int wi_get_mtu(struct wif *wi);
+extern int wi_set_mtu(struct wif *wi, int mtu);
 
 /* wi_open_osdep should determine the type of card and setup the wif structure
  * appropriately.  There is one per OS.  Called by wi_open.
@@ -103,6 +107,7 @@ struct tif {
 	int	(*ti_fd)(struct tif *ti);
 	char	*(*ti_name)(struct tif *ti);
 	int	(*ti_set_mtu)(struct tif *ti, int mtu);
+	int	(*ti_get_mtu)(struct tif *ti);
 	int	(*ti_set_ip)(struct tif *ti, struct in_addr *ip);
 	int	(*ti_set_mac)(struct tif *ti, unsigned char *mac);
 	void	(*ti_close)(struct tif *ti);
@@ -119,6 +124,7 @@ extern void *ti_priv(struct tif *ti);
 /* client routines */
 extern char *ti_name(struct tif *ti);
 extern int ti_set_mtu(struct tif *ti, int mtu);
+extern int ti_get_mtu(struct tif *ti);
 extern void ti_close(struct tif *ti);
 extern int ti_fd(struct tif *ti);
 extern int ti_read(struct tif *ti, void *buf, int len);

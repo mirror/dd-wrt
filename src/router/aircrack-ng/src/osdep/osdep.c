@@ -136,6 +136,18 @@ int wi_set_rate(struct wif *wi, int rate)
 	return wi->wi_set_rate(wi, rate);
 }
 
+int wi_get_mtu(struct wif *wi)
+{
+	assert(wi->wi_get_mtu);
+	return wi->wi_get_mtu(wi);
+}
+
+int wi_set_mtu(struct wif *wi, int mtu)
+{
+	assert(wi->wi_set_mtu);
+	return wi->wi_set_mtu(wi, mtu);
+}
+
 struct wif *wi_open(char *iface)
 {
 	struct wif *wi;
@@ -164,6 +176,12 @@ int ti_set_mtu(struct tif *ti, int mtu)
 {
 	assert(ti->ti_set_mtu);
 	return ti->ti_set_mtu(ti, mtu);
+}
+
+int ti_get_mtu(struct tif *ti)
+{
+	assert(ti->ti_get_mtu);
+	return ti->ti_get_mtu(ti);
 }
 
 void ti_close(struct tif *ti)
