@@ -1,13 +1,15 @@
-.TH packetforge-ng 1 "February 2008" "Version 0.9.3"
+.TH packetforge-ng 1 "January 2009" "Version 1.0-rc2"
 
 .SH NAME
-packetforge-ng - forge packets: ARP, UDP, ICMP or custom
+packetforge-ng - forge packets: ARP, UDP, ICMP or custom packets.
 .SH SYNOPSIS
 .B packetforge-ng
 <mode> <options>
 .SH DESCRIPTION
 .BI packetforge-ng
-is a tool designed to forge ARP-request, UDP, ICMP or custom packets.
+is a tool to create encrypted packets that can subsequently be used for injection. You may create various types of packets such as arp requests, UDP, ICMP and custom packets. The most common use is to create ARP requests for subsequent injection. 
+.br
+To create an encrypted packet, you must have a PRGA (pseudo random genration algorithm) file. This is used to encrypt the packet you create. This is typically obtained from aireplay-ng chopchop or fragmentation attacks.
 .SH OPTIONS
 .PP
 .TP
@@ -79,20 +81,38 @@ Permission is granted to copy, distribute and/or modify this document under the 
 On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
 .SH SEE ALSO
 .br
-.B ivstools(1)
-.br
-.B airmon-ng(1)
-.br
-.B airdecap-ng(1)
+.B airbase-ng(1)
 .br
 .B aircrack-ng(1)
 .br
+.B airdecap-ng(1)
+.br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
 .B aireplay-ng(1)
+.br
+.B airmon-ng(1)
 .br
 .B airodump-ng(1)
 .br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
 .B airtun-ng(1)
+.br
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
+.br
+.B ivstools(1)
 .br
 .B kstats(1)
 .br
-.B makeivs(1)
+.B makeivs-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)

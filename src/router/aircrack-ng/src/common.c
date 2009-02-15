@@ -1,7 +1,7 @@
 /*
  *  Common functions for all aircrack-ng tools
  *
- *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
  *
  *  WEP decryption attack (chopchop) developped by KoreK
  *
@@ -71,6 +71,53 @@ char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int
 	return temp;
 }
 
+// Return the number of cpu. If detection fails, it will return -1;
+int get_nb_cpus()
+{
+		// Optmization for windows: use GetSystemInfo()
+        char * s, * pos;
+        FILE * f;
+        int number = -1;
+
+		// Reading /proc/cpuinfo is more reliable on current CPUs,
+		// so put it first and try the old method if this one fails
+        f = fopen("/proc/cpuinfo", "r");
+        if (f != NULL) {
+				s = (char *)calloc(1, 81);
+				if (s != NULL) {
+					// Get the latest value of "processor" element
+					// and increment it by 1 and it that value
+					// will be the number of CPU.
+					number = -2;
+					while (fgets(s, 80, f) != NULL) {
+							pos = strstr(s, "processor");
+							if (pos == s) {
+									pos = strchr(s, ':');
+									number = atoi(pos + 1);
+							}
+					}
+					++number;
+					free(s);
+				}
+				fclose(f);
+        }
+
+        #ifdef _SC_NPROCESSORS_ONLN
+        // Try the usual method if _SC_NPROCESSORS_ONLN exist
+        if (number == -1) {
+
+			number   = sysconf(_SC_NPROCESSORS_ONLN);
+			/* Fails on some archs */
+			if (number < 1) {
+				number = -1;
+			}
+        }
+        #endif
+
+        return number;
+}
+
+
 //compares two MACs
 int maccmp(unsigned char *mac1, unsigned char *mac2)
 {
@@ -85,6 +132,16 @@ int maccmp(unsigned char *mac1, unsigned char *mac2)
             return -1;
     }
     return 0;
+}
+
+// Converts a mac address in a human-readable format
+char * mac2string(unsigned char *mac_address )
+{
+	char * mac_string = (char *)malloc(sizeof(char)*18);
+	sprintf(mac_string, "%02X:%02X:%02X:%02X:%02X:%02X", *mac_address,
+						*(mac_address+1), *(mac_address+2), *(mac_address+3),
+						*(mac_address+4), *(mac_address+5));
+	return mac_string;
 }
 
 /* Return -1 if it's not an hex value and return its value when it's a hex value */
@@ -171,6 +228,33 @@ int hexCharToInt(unsigned char c)
 	}
 
 	return table[c];
+}
+
+int hexStringToHex(char* in, int length, unsigned char* out)
+{
+    int i=0;
+    int char1, char2;
+
+    char *input=in;
+    unsigned char *output=out;
+
+    if(length < 1)
+        return 1;
+
+    for(i=0; i<length; i+=2)
+    {
+        if(input[i] == '-' || input[i] == ':' || input[i] == '_' || input[i] == ' ')
+        {
+            input++;
+            length--;
+        }
+        char1 = hexCharToInt(input[i]);
+        char2 = hexCharToInt(input[i+1]);
+        if(char1 < 0 || char1 > 15)
+            return -1;
+        output[i/2] = ((char1 << 4) + char2) & 0xFF;
+    }
+    return (i/2);
 }
 
 //Return the mac address bytes (or null if it's not a mac address)

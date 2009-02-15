@@ -1,4 +1,4 @@
-.TH AIRCRACK-NG 1 "February 2008" "Version 0.9.3"
+.TH AIRCRACK-NG 1 "January 2009" "Version 1.0-rc2"
 
 .SH NAME
 aircrack-ng - a 802.11 WEP / WPA-PSK key cracker
@@ -7,7 +7,11 @@ aircrack-ng - a 802.11 WEP / WPA-PSK key cracker
 [options] <.cap / .ivs file(s)>
 .SH DESCRIPTION
 .BI aircrack-ng
-is a 802.11 WEP / WPA-PSK key cracker. It implements the so-called Fluhrer - Mantin - Shamir (FMS) attack, along with some new attacks by a talented hacker named KoreK. When enough encrypted packets have been gathered, aircrack-ng can almost instantly recover the WEP key.
+is an 802.11 WEP and WPA/WPA2-PSK key cracking program.
+.br
+It can recover the WEP key once enough encrypted packets have been captured with airodump-ng. This part of the aircrack-ng suite determines the WEP key using two fundamental methods. The first method is via the PTW approach (Pyshkin, Tews, Weinmann). The main advantage of the PTW approach is that very few data packets are required to crack the WEP key. The second method is the FMS/KoreK method. The FMS/KoreK method incorporates various statistical attacks to discover the WEP key and uses these in combination with brute forcing. 
+.br
+Additionally, the program offers a dictionary method for determining the WEP key. For cracking WPA/WPA2 pre-shared keys, only a dictionary method is used. 
 .SH OPTIONS
 .TP
 .I -H, --help
@@ -30,6 +34,9 @@ Set this option to the number of CPUs to use (only available on SMP systems). By
 .TP
 .I -q
 If set, no status information is displayed.
+.TP
+.I -C <macs>
+Merges all those APs MAC (separated by a comma) into a virtual one.
 .PP
 .TP
 .B Static WEP cracking options:
@@ -74,39 +81,74 @@ Enable last two keybytes bruteforcing.
 Disable bruteforce multithreading (SMP only).
 .TP
 .I -s
-Shows ASCII version of the key at the right of the screen
+Shows ASCII version of the key at the right of the screen.
 .TP
 .I -y  
 This is an experimental single brute-force attack which should only be used when the standard attack mode fails with more than one million IVs.
 .TP
 .I -z  
-Uses PTW (Andrei Pyshkin, Erik Tews and Ralf-Philipp Weinmann) attack.
+Uses PTW (Andrei Pyshkin, Erik Tews and Ralf-Philipp Weinmann) attack (default attack).
+.TP
+.I -P <num>
+PTW debug: 1 Disable klein, 2 PTW.
+.TP
+.I -K
+Use KoreK attacks instead of PTW.
+.TP
+.I -D
+WEP decloak mode.
+.TP
+.I -1
+Run only 1 try to crack key with PTW.
+.TP
+.I -M <num>
+Specify maximum number of IVs to use.
 .PP
 .TP
 .B WPA-PSK cracking options:
 .TP
 .I -w <words>
 Path to a dictionary file for wpa cracking. Specify "-" to use stdin.
+.I -r <database>
+Path to the airolib-ng database. Cannot be used with '-w'.
 .SH AUTHOR
 This manual page was written by Adam Cecile <gandalf@le-vert.net> for the Debian system (but may be used by others).
 Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
 On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
 .SH SEE ALSO
 .br
-.B airmon-ng(1)
+.B airbase-ng(1)
 .br
 .B airdecap-ng(1)
 .br
+.B airdecloak-ng(1)
+.br
+.B airdriver-ng(1)
+.br
 .B aireplay-ng(1)
+.br
+.B airmon-ng(1)
 .br
 .B airodump-ng(1)
 .br
+.B airolib-ng(1)
+.br
+.B airserv-ng(1)
+.br
 .B airtun-ng(1)
 .br
-.B packetforge-ng(1)
+.B buddy-ng(1)
+.br
+.B easside-ng(1)
 .br
 .B ivstools(1)
 .br
 .B kstats(1)
 .br
-.B makeivs(1)
+.B makeivs-ng(1)
+.br
+.B packetforge-ng(1)
+.br
+.B tkiptun-ng(1)
+.br
+.B wesside-ng(1)

@@ -2,8 +2,8 @@
  *  802.11 WEP network connection tunneling
  *  based on aireplay-ng
  *
- *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
- *  Copyright (C) 2006, 2007, 2008 Martin Beck
+ *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
+ *  Copyright (C) 2006, 2007, 2008, 2009 Martin Beck
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -96,7 +96,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 char usage[] =
 "\n"
-"  %s - (C) 2006,2007,2008 Thomas d'Otreppe\n"
+"  %s - (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe\n"
 "  Original work: Christophe Devine and Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -805,9 +805,21 @@ int packet_xmit(uchar* packet, int length)
     uchar K[64];
     uchar buf[4096];
 
-    memcpy(h80211, IEEE80211_LLC_SNAP, 32);
-    memcpy(h80211+32, packet+14, length-14);
-    memcpy(h80211+30, packet+12, 2);
+    if( memcmp(packet, SPANTREE, 6) == 0 )
+    {
+        memcpy(h80211, IEEE80211_LLC_SNAP, 24); //shorter LLC/SNAP - only copy IEEE80211 HEADER
+        memcpy(h80211+24, packet+14, length-14);
+//         memcpy(h80211+30, packet+12, 2);
+        length = length+24-14; //32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
+    }
+    else
+    {
+        memcpy(h80211, IEEE80211_LLC_SNAP, 32);
+        memcpy(h80211+32, packet+14, length-14);
+        memcpy(h80211+30, packet+12, 2);
+        length = length+32-14; //32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
+    }
+
 
     if(opt.tods)
     {
@@ -823,8 +835,6 @@ int packet_xmit(uchar* packet, int length)
         memcpy(h80211+16, packet+6,    6);  //SRC_MAC
         memcpy(h80211+4,  packet,      6);  //DST_MAC
     }
-
-    length = length+32-14; //32=IEEE80211+LLC/SNAP; 14=SRC_MAC+DST_MAC+TYPE
 
     if( opt.crypt == CRYPT_WEP)
     {
@@ -970,15 +980,30 @@ int packet_recv(uchar* packet, int length)
             default: break;
         }
 
-        memcpy( h80211+12, packet+z+6, 2);  //copy ether type
+        if( memcmp(dmac, SPANTREE, 6) == 0 )
+        {
+            if( length <= z+8 )
+                return 1;
 
-        if( length <= z+8 )
-            return 1;
+            memcpy( h80211+14, packet+z, length-z);
 
-        memcpy( h80211+14, packet+z+8, length-z-8);
-        length = length -z-8+14;
+            length = length-z+14;
 
-	ti_write(dev.dv_ti, h80211, length);
+            h80211[12] = ((length-14)>>8)&0xFF;
+            h80211[13] = (length-14)&0xFF;
+        }
+        else
+        {
+            memcpy( h80211+12, packet+z+6, 2);  //copy ether type
+
+            if( length <= z+8 )
+                return 1;
+
+            memcpy( h80211+14, packet+z+8, length-z-8);
+            length = length -z-8+14;
+        }
+
+        ti_write(dev.dv_ti, h80211, length);
     }
     else
     {

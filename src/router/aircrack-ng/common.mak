@@ -24,16 +24,30 @@ SQLITE		= true
 endif
 endif
 
-COMMON_CFLAGS	= 
+COMMON_CFLAGS	=
+
+ifeq ($(OSNAME), cygwin)
+COMMON_CFLAGS   += -DCYGWIN
+endif
+
+ifeq ($(OSNAME), cygwin)
+COMMON_CFLAGS   += -DCYGWIN
+endif
 
 ifeq ($(SQLITE), true)
-COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
-else ifeq ($(sqlite), true)
-COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
-else ifeq ($(SQLITE), TRUE)
-COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
-else ifeq ($(sqlite), TRUE)
-COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
+    COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
+else
+    ifeq ($(sqlite), true)
+        COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
+    else
+        ifeq ($(SQLITE), TRUE)
+            COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
+        else
+            ifeq ($(sqlite), TRUE)
+                COMMON_CFLAGS	+= -I/usr/local/include -DHAVE_SQLITE
+            endif
+        endif
+    endif
 endif
 
 ifeq ($(airpcap), true)

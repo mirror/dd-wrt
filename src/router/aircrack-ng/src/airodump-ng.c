@@ -1,7 +1,7 @@
 /*
  *  pcap-compatible 802.11 packet sniffer
  *
- *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -97,6 +97,8 @@
 #define	AUTH_PSK	0x0400
 #define	AUTH_MGT	0x0800
 
+#define STD_QOS         0x2000
+
 #define	QLT_TIME	5
 #define	QLT_COUNT	25
 
@@ -171,6 +173,7 @@ struct AP_info
     int channel;              /* AP radio channel         */
     int max_speed;            /* AP maximum speed in Mb/s */
     int avg_power;            /* averaged signal power    */
+    int best_power;           /* best signal power    */
     int power_index;          /* index in power ring buf. */
     int power_lvl[NB_PWR];    /* signal power ring buffer */
     int preamble;             /* 0 = long, 1 = short      */
@@ -178,6 +181,10 @@ struct AP_info
     int beacon_logged;        /* We need 1 beacon per AP  */
     int dict_started;         /* 1 if dict attack started */
     int ssid_length;          /* length of ssid           */
+    float gps_loc_min[5];     /* min gps coordinates      */
+    float gps_loc_max[5];     /* max gps coordinates      */
+    float gps_loc_best[5];    /* best gps coordinates     */
+
 
     unsigned long nb_bcn;     /* total number of beacons  */
     unsigned long nb_pkt;     /* total number of packets  */
@@ -251,6 +258,7 @@ struct ST_info
     int missed;              /* number of missed packets  */
     unsigned int lastseq;    /* last seen sequnce number  */
     struct WPA_hdsk wpa;     /* WPA handshake data        */
+    int qos;                 /* does it use ieee 802.11e  */
 };
 
 /* linked list of detected macs through ack, cts or rts frames */
@@ -289,6 +297,7 @@ struct globals
 
     int f_index;            /* outfiles index       */
     FILE *f_txt;            /* output csv file      */
+    FILE *f_kis;            /* output kismet csv file      */
     FILE *f_gps;            /* output gps file      */
     FILE *f_cap;            /* output cap file      */
     FILE *f_ivs;            /* output ivs file      */
@@ -533,7 +542,7 @@ int check_shared_key(unsigned char *h80211, int caplen)
 char usage[] =
 
 "\n"
-"  %s - (C) 2006,2007,2008 Thomas d\'Otreppe\n"
+"  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -719,6 +728,18 @@ int dump_initialize( char *prefix, int ivs_only )
               prefix, G.f_index );
 
     if( ( G.f_txt = fopen( ofn, "wb+" ) ) == NULL )
+    {
+        perror( "fopen failed" );
+        fprintf( stderr, "Could not create \"%s\".\n", ofn );
+        return( 1 );
+    }
+
+    /* create the output CSV & GPS files */
+
+    snprintf( ofn,  sizeof( ofn ) - 1, "%s-%02d.csv",
+              prefix, G.f_index );
+
+    if( ( G.f_kis = fopen( ofn, "wb+" ) ) == NULL )
     {
         perror( "fopen failed" );
         fprintf( stderr, "Could not create \"%s\".\n", ofn );
@@ -1112,6 +1133,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         ap_cur->tlast = time( NULL );
 
         ap_cur->avg_power   = -1;
+        ap_cur->best_power  = -1;
         ap_cur->power_index = -1;
 
         for( i = 0; i < NB_PWR; i++ )
@@ -1149,8 +1171,12 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         ap_cur->decloak_detect=G.decloak;
         ap_cur->is_decloak = 0;
         ap_cur->packets = NULL;
+
         ap_cur->data_root = NULL;
         ap_cur->EAP_detected = 0;
+        memcpy(ap_cur->gps_loc_min, G.gps_loc, sizeof(float)*5);
+        memcpy(ap_cur->gps_loc_max, G.gps_loc, sizeof(float)*5);
+        memcpy(ap_cur->gps_loc_best, G.gps_loc, sizeof(float)*5);
     }
 
     /* update the last time seen */
@@ -1180,12 +1206,32 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         }
 
         if( n > 0 )
+        {
             ap_cur->avg_power /= n;
+            if( ap_cur->avg_power > ap_cur->best_power )
+            {
+                ap_cur->best_power = ap_cur->avg_power;
+                memcpy(ap_cur->gps_loc_best, G.gps_loc, sizeof(float)*5);
+            }
+        }
         else
             ap_cur->avg_power = -1;
 
         /* every packet in here comes from the AP */
 
+        if(G.gps_loc[0] > ap_cur->gps_loc_max[0])
+            ap_cur->gps_loc_max[0] = G.gps_loc[0];
+        if(G.gps_loc[1] > ap_cur->gps_loc_max[1])
+            ap_cur->gps_loc_max[1] = G.gps_loc[1];
+        if(G.gps_loc[2] > ap_cur->gps_loc_max[2])
+            ap_cur->gps_loc_max[2] = G.gps_loc[2];
+
+        if(G.gps_loc[0] < ap_cur->gps_loc_min[0])
+            ap_cur->gps_loc_min[0] = G.gps_loc[0];
+        if(G.gps_loc[1] < ap_cur->gps_loc_min[1])
+            ap_cur->gps_loc_min[1] = G.gps_loc[1];
+        if(G.gps_loc[2] < ap_cur->gps_loc_min[2])
+            ap_cur->gps_loc_min[2] = G.gps_loc[2];
 //        printf("seqnum: %i\n", seq);
 
         if(ap_cur->fcapt == 0 && ap_cur->fmiss == 0) gettimeofday( &(ap_cur->ftimef), NULL);
@@ -1294,6 +1340,7 @@ int dump_add_packet( unsigned char *h80211, int caplen, struct rx_info *ri, int 
         st_cur->probe_index = -1;
         st_cur->missed  = 0;
         st_cur->lastseq = 0;
+        st_cur->qos = 0;
         gettimeofday( &(st_cur->ftimer), NULL);
 
         for( i = 0; i < NB_PRB; i++ )
@@ -1591,6 +1638,11 @@ skip_probe:
                 if( type == 0x30 ) p += 2;
 
             }
+            else if( (type == 0xDD && (length >= 8) && (memcmp(p+2, "\x00\x50\xF2\x02\x01\x01", 6) == 0)))
+            {
+                ap_cur->security |= STD_QOS;
+                p += length+2;
+            }
             else p += length+2;
         }
     }
@@ -1707,7 +1759,15 @@ skip_probe:
         z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
 
         /* Check if 802.11e (QoS) */
-        if( (h80211[0] & 0x80) == 0x80) z+=2;
+        if( (h80211[0] & 0x80) == 0x80)
+        {
+            z+=2;
+            if(st_cur != NULL)
+                st_cur->qos = 1;
+        }
+        else
+            if(st_cur != NULL)
+                st_cur->qos = 0;
 
         if(z==24)
         {
@@ -2599,12 +2659,12 @@ void dump_print( int ws_row, int ws_col, int if_num )
     if(G.singlechan)
     {
         memcpy( strbuf, " BSSID              PWR RXQ  Beacons"
-                        "    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSID", columns_ap );
+                        "    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID", columns_ap );
     }
     else
     {
         memcpy( strbuf, " BSSID              PWR  Beacons"
-                        "    #Data, #/s  CH  MB  ENC  CIPHER AUTH ESSID", columns_ap );
+                        "    #Data, #/s  CH  MB   ENC  CIPHER AUTH ESSID", columns_ap );
     }
 
     strbuf[ws_col - 1] = '\0';
@@ -2668,9 +2728,10 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
         len = strlen(strbuf);
 
-        snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %3d%c ",
+        snprintf( strbuf+len, sizeof(strbuf)-len, " %3d %3d%c%c ",
                  ap_cur->channel, ap_cur->max_speed,
-                 ( ap_cur->preamble ) ? '.' : ' ' );
+                 ( ap_cur->security & STD_QOS ) ? 'e' : ' ',
+                 ( ap_cur->preamble ) ? '.' : ' ');
 
         len = strlen(strbuf);
 
@@ -2709,7 +2770,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
 
         strbuf[ws_col-1] = '\0';
 
-        fprintf(stderr, strbuf);
+        fprintf(stderr, "%s", strbuf);
 
         if( ws_col > (columns_ap - 4) )
         {
@@ -2745,7 +2806,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
     fprintf( stderr, "%s\n", strbuf );
 
     memcpy( strbuf, " BSSID              STATION "
-            "           PWR   Rate  Lost  Packets  Probes", columns_sta );
+            "           PWR   Rate   Lost  Packets  Probes", columns_sta );
     strbuf[ws_col - 1] = '\0';
     fprintf( stderr, "%s\n", strbuf );
 
@@ -2811,6 +2872,7 @@ void dump_print( int ws_row, int ws_col, int if_num )
             fprintf( stderr, "  %3d", st_cur->power    );
             fprintf( stderr, "  %2d", st_cur->rate_to/1000000  );
             fprintf( stderr,  "-%2d", st_cur->rate_from/1000000);
+            fprintf( stderr,  "%c", (st_cur->qos) ? 'e' : ' ');
             fprintf( stderr, "  %4d", st_cur->missed   );
             fprintf( stderr, " %8ld", st_cur->nb_pkt   );
 
@@ -3120,8 +3182,208 @@ int dump_write_csv( void )
     return 0;
 }
 
+#define KISMET_HEADER "Network;NetType;ESSID;BSSID;Info;Channel;Cloaked;Encryption;Decrypted;MaxRate;MaxSeenRate;Beacon;LLC;Data;Crypt;Weak;Total;Carrier;Encoding;FirstTime;LastTime;BestQuality;BestSignal;BestNoise;GPSMinLat;GPSMinLon;GPSMinAlt;GPSMinSpd;GPSMaxLat;GPSMaxLon;GPSMaxAlt;GPSMaxSpd;GPSBestLat;GPSBestLon;GPSBestAlt;DataSize;IPType;IP;\n"
+
+
+int dump_write_kismet_csv( void )
+{
+    int i, k;
+//     struct tm *ltime;
+/*    char ssid_list[512];*/
+    struct AP_info *ap_cur;
+
+    if (! G.record_data)
+    	return 0;
+
+    fseek( G.f_kis, 0, SEEK_SET );
+
+    fprintf( G.f_kis, KISMET_HEADER );
+
+    ap_cur = G.ap_1st;
+
+    printf("dumping to kismet csv file\n");
+
+    k=1;
+    while( ap_cur != NULL )
+    {
+        if( memcmp( ap_cur->bssid, BROADCAST, 6 ) == 0 )
+        {
+            ap_cur = ap_cur->next;
+            continue;
+        }
+
+        if(ap_cur->security != 0 && G.f_encrypt != 0 && ((ap_cur->security & G.f_encrypt) == 0))
+        {
+            ap_cur = ap_cur->next;
+            continue;
+        }
+
+        if( ap_cur->nb_pkt < 2 )
+        {
+            ap_cur = ap_cur->next;
+            continue;
+        }
+
+        //Network
+        fprintf( G.f_kis, "%d;", k );
+
+        //NetType
+        fprintf( G.f_kis, "infrastructure;");
+
+        //ESSID
+        for(i=0; i<ap_cur->ssid_length; i++)
+        {
+            fprintf( G.f_kis, "%c", ap_cur->essid[i] );
+        }
+        fprintf( G.f_kis, ";" );
+
+        //BSSID
+        fprintf( G.f_kis, "%02X:%02X:%02X:%02X:%02X:%02X;",
+                 ap_cur->bssid[0], ap_cur->bssid[1],
+                 ap_cur->bssid[2], ap_cur->bssid[3],
+                 ap_cur->bssid[4], ap_cur->bssid[5] );
+
+        //Info
+        fprintf( G.f_kis, ";");
+
+        //Channel
+        fprintf( G.f_kis, "%d;", ap_cur->channel);
+
+        //Cloaked
+        fprintf( G.f_kis, "No;");
+
+        //Encryption
+        if( (ap_cur->security & (STD_OPN|STD_WEP|STD_WPA|STD_WPA2)) != 0)
+        {
+            if( ap_cur->security & STD_WPA2 ) fprintf( G.f_kis, "WPA2," );
+            if( ap_cur->security & STD_WPA  ) fprintf( G.f_kis, "WPA," );
+            if( ap_cur->security & STD_WEP  ) fprintf( G.f_kis, "WEP," );
+            if( ap_cur->security & STD_OPN  ) fprintf( G.f_kis, "OPN," );
+        }
+
+        if( (ap_cur->security & (ENC_WEP|ENC_TKIP|ENC_WRAP|ENC_CCMP|ENC_WEP104|ENC_WEP40)) == 0 ) fprintf( G.f_kis, "None,");
+        else
+        {
+            if( ap_cur->security & ENC_CCMP   ) fprintf( G.f_kis, "AES-CCM,");
+            if( ap_cur->security & ENC_WRAP   ) fprintf( G.f_kis, "WRAP,");
+            if( ap_cur->security & ENC_TKIP   ) fprintf( G.f_kis, "TKIP,");
+            if( ap_cur->security & ENC_WEP104 ) fprintf( G.f_kis, "WEP104,");
+            if( ap_cur->security & ENC_WEP40  ) fprintf( G.f_kis, "WEP40,");
+/*            if( ap_cur->security & ENC_WEP    ) fprintf( G.f_kis, " WEP,");*/
+        }
+
+        fseek(G.f_kis, -1, SEEK_CUR);
+        fprintf(G.f_kis, ";");
+
+        //Decrypted
+        fprintf( G.f_kis, "No;");
+
+        //MaxRate
+        fprintf( G.f_kis, "%d.0;", ap_cur->max_speed );
+
+        //MaxSeenRate
+        fprintf( G.f_kis, "0;");
+
+        //Beacon
+        fprintf( G.f_kis, "%ld;", ap_cur->nb_bcn);
+
+        //LLC
+        fprintf( G.f_kis, "0;");
+
+        //Data
+        fprintf( G.f_kis, "%ld;", ap_cur->nb_data );
+
+        //Crypt
+        fprintf( G.f_kis, "0;");
+
+        //Weak
+        fprintf( G.f_kis, "0;");
+
+        //Total
+        fprintf( G.f_kis, "%ld;", ap_cur->nb_data );
+
+        //Carrier
+        fprintf( G.f_kis, ";");
+
+        //Encoding
+        fprintf( G.f_kis, ";");
+
+        //FirstTime
+        fprintf( G.f_kis, "%s", ctime(&ap_cur->tinit) );
+        fseek(G.f_kis, -1, SEEK_CUR);
+        fprintf( G.f_kis, ";");
+
+        //LastTime
+        fprintf( G.f_kis, "%s", ctime(&ap_cur->tlast) );
+        fseek(G.f_kis, -1, SEEK_CUR);
+        fprintf( G.f_kis, ";");
+
+        //BestQuality
+        fprintf( G.f_kis, "%d;", ap_cur->avg_power );
+
+        //BestSignal
+        fprintf( G.f_kis, "0;" );
+
+        //BestNoise
+        fprintf( G.f_kis, "0;" );
+
+        //GPSMinLat
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_min[0]);
+
+        //GPSMinLon
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_min[1]);
+
+        //GPSMinAlt
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_min[2]);
+
+        //GPSMinSpd
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_min[3]);
+
+        //GPSMaxLat
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_max[0]);
+
+        //GPSMaxLon
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_max[1]);
+
+        //GPSMaxAlt
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_max[2]);
+
+        //GPSMaxSpd
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_max[3]);
+
+        //GPSBestLat
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_best[0]);
+
+        //GPSBestLon
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_best[1]);
+
+        //GPSBestAlt
+        fprintf( G.f_kis, "%.6f;", ap_cur->gps_loc_best[2]);
+
+        //DataSize
+        fprintf( G.f_kis, "0;" );
+
+        //IPType
+        fprintf( G.f_kis, "0;" );
+
+        //IP
+        fprintf( G.f_kis, "%d.%d.%d.%d;",
+                 ap_cur->lanip[0], ap_cur->lanip[1],
+                 ap_cur->lanip[2], ap_cur->lanip[3] );
+
+        fprintf( G.f_kis, "\r\n");
+
+        ap_cur = ap_cur->next;
+        k++;
+    }
+
+    fflush( G.f_kis );
+    return 0;
+}
+
 void gps_tracker( void )
 {
+	ssize_t unused;
     int gpsd_sock;
     char line[256], *p;
     struct sockaddr_in gpsd_addr;
@@ -3187,28 +3449,29 @@ void gps_tracker( void )
 
         G.save_gps = 1;
 
-        write( G.gc_pipe[1], G.gps_loc, sizeof( float ) * 5 );
+        unused = write( G.gc_pipe[1], G.gps_loc, sizeof( float ) * 5 );
         kill( getppid(), SIGUSR2 );
     }
 }
 
 void sighandler( int signum)
 {
+	ssize_t unused;
     int card=0;
 
     signal( signum, sighandler );
 
     if( signum == SIGUSR1 )
     {
-	read( G.cd_pipe[0], &card, sizeof(int) );
+		unused = read( G.cd_pipe[0], &card, sizeof(int) );
         if(G.freqoption)
-            read( G.ch_pipe[0], &(G.frequency[card]), sizeof( int ) );
+            unused = read( G.ch_pipe[0], &(G.frequency[card]), sizeof( int ) );
         else
-            read( G.ch_pipe[0], &(G.channel[card]), sizeof( int ) );
+            unused = read( G.ch_pipe[0], &(G.channel[card]), sizeof( int ) );
     }
 
     if( signum == SIGUSR2 )
-        read( G.gc_pipe[0], &G.gps_loc, sizeof( float ) * 5 );
+        unused = read( G.gc_pipe[0], &G.gps_loc, sizeof( float ) * 5 );
 
     if( signum == SIGINT || signum == SIGTERM )
     {
@@ -3276,6 +3539,7 @@ int getfreqcount(int valid)
 
 void channel_hopper(struct wif *wi[], int if_num, int chan_count )
 {
+	ssize_t unused;
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
     int dropped=0;
 
@@ -3324,8 +3588,8 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
                 {
                     ch = wi_get_channel(wi[card]);
                     G.channel[card] = ch;
-                    write( G.cd_pipe[1], &card, sizeof(int) );
-                    write( G.ch_pipe[1], &ch, sizeof( int ) );
+                    unused = write( G.cd_pipe[1], &card, sizeof(int) );
+                    unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
                     kill( getppid(), SIGUSR1 );
                     usleep(1000);
                 }
@@ -3339,8 +3603,8 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
             if(wi_set_channel(wi[card], ch ) == 0 )
             {
                 G.channel[card] = ch;
-                write( G.cd_pipe[1], &card, sizeof(int) );
-                write( G.ch_pipe[1], &ch, sizeof( int ) );
+                unused = write( G.cd_pipe[1], &card, sizeof(int) );
+                unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
                 kill( getppid(), SIGUSR1 );
                 usleep(1000);
             }
@@ -3371,6 +3635,7 @@ void channel_hopper(struct wif *wi[], int if_num, int chan_count )
 
 void frequency_hopper(struct wif *wi[], int if_num, int chan_count )
 {
+	ssize_t unused;
     int ch, ch_idx = 0, card=0, chi=0, cai=0, j=0, k=0, first=1, again=1;
     int dropped=0;
 
@@ -3419,8 +3684,8 @@ void frequency_hopper(struct wif *wi[], int if_num, int chan_count )
                 {
                     ch = wi_get_freq(wi[card]);
                     G.frequency[card] = ch;
-                    write( G.cd_pipe[1], &card, sizeof(int) );
-                    write( G.ch_pipe[1], &ch, sizeof( int ) );
+                    unused = write( G.cd_pipe[1], &card, sizeof(int) );
+                    unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
                     kill( getppid(), SIGUSR1 );
                     usleep(1000);
                 }
@@ -3434,8 +3699,8 @@ void frequency_hopper(struct wif *wi[], int if_num, int chan_count )
             if(wi_set_freq(wi[card], ch ) == 0 )
             {
                 G.frequency[card] = ch;
-                write( G.cd_pipe[1], &card, sizeof(int) );
-                write( G.ch_pipe[1], &ch, sizeof( int ) );
+                unused = write( G.cd_pipe[1], &card, sizeof(int) );
+                unused = write( G.ch_pipe[1], &ch, sizeof( int ) );
                 kill( getppid(), SIGUSR1 );
                 usleep(1000);
             }
@@ -3900,7 +4165,7 @@ int check_frequency(struct wif *wi[], int cards)
 
 int detect_frequencies(struct wif *wi)
 {
-    int start_freq = 2312;
+    int start_freq = 2192;
     int end_freq = 2732;
     int max_freq_num = 2048; //should be enough to keep all available channels
     int freq=0, i=0;
@@ -3930,8 +4195,8 @@ int detect_frequencies(struct wif *wi)
     }
 
     //again for 5GHz channels
-    start_freq=4920;
-    end_freq=6100;
+    start_freq=4800;
+    end_freq=6000;
     for(freq=start_freq; freq<=end_freq; freq+=5)
     {
         if(wi_set_freq(wi, freq) == 0)
@@ -4009,7 +4274,7 @@ int rearrange_frequencies()
 int main( int argc, char *argv[] )
 {
     long time_slept, cycle_time;
-    int caplen=0, i, j, cards, fdh, fd_is_set, chan_count, freq_count;
+    int caplen=0, i, j, cards, fdh, fd_is_set, chan_count, freq_count, unused;
     int fd_raw[MAX_CARDS], arptype[MAX_CARDS];
     int ivs_only, found;
     int valid_channel;
@@ -4096,6 +4361,7 @@ int main( int argc, char *argv[] )
     G.f_cap        =  NULL;
     G.f_ivs        =  NULL;
     G.f_txt        =  NULL;
+    G.f_kis        =  NULL;
     G.f_gps        =  NULL;
     G.keyout       =  NULL;
     G.f_xor        =  NULL;
@@ -4515,8 +4781,8 @@ usage:
 
             if( G.frequency[0] == 0 )
             {
-                pipe( G.ch_pipe );
-                pipe( G.cd_pipe );
+                unused = pipe( G.ch_pipe );
+                unused = pipe( G.cd_pipe );
 
                 signal( SIGUSR1, sighandler );
 
@@ -4563,8 +4829,8 @@ usage:
 
             if( G.channel[0] == 0 )
             {
-                pipe( G.ch_pipe );
-                pipe( G.cd_pipe );
+                unused = pipe( G.ch_pipe );
+                unused = pipe( G.cd_pipe );
 
                 signal( SIGUSR1, sighandler );
 
@@ -4662,7 +4928,7 @@ usage:
 
     if (G.usegpsd)
     {
-        pipe( G.gc_pipe );
+        unused = pipe( G.gc_pipe );
         signal( SIGUSR2, sighandler );
 
         if( ! fork() )
@@ -4701,6 +4967,7 @@ usage:
 
             tt1 = time( NULL );
             dump_write_csv();
+            dump_write_kismet_csv();
 
             /* sort the APs by power */
 
@@ -4957,8 +5224,10 @@ usage:
 
     if (G.record_data) {
         dump_write_csv();
+        dump_write_kismet_csv();
 
         if( G.f_txt != NULL ) fclose( G.f_txt );
+        if( G.f_kis != NULL ) fclose( G.f_kis );
         if( G.f_gps != NULL ) fclose( G.f_gps );
         if( G.f_cap != NULL ) fclose( G.f_cap );
         if( G.f_ivs != NULL ) fclose( G.f_ivs );

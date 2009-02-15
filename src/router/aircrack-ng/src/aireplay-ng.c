@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP replay & injection attacks
  *
- *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  WEP decryption attack (chopchop) developed by KoreK
@@ -147,7 +147,7 @@ extern const unsigned char crc_chop_tbl[256][4];
 char usage[] =
 
 "\n"
-"  %s - (C) 2006,2007,2008 Thomas d\'Otreppe\n"
+"  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -203,12 +203,16 @@ char usage[] =
 "      -z        : Ghosting\n"
 "\n"
 */
-"  source options:\n"
+"  Source options:\n"
 "\n"
 "      -i iface  : capture packets from this interface\n"
 "      -r file   : extract packets from this pcap file\n"
 "\n"
-"  attack modes (Numbers can still be used):\n"
+"  Miscellaneous options:\n"
+"\n"
+"      -R        : disable /dev/rtc usage\n"
+"\n"
+"  Attack modes (numbers can still be used):\n"
 "\n"
 "      --deauth      count : deauthenticate 1 or all stations (-0)\n"
 "      --fakeauth    delay : fake authentication with AP (-1)\n"
@@ -273,6 +277,7 @@ struct options
     int bittest;
 
     int nodetect;
+    int rtc;
 }
 opt;
 
@@ -1198,7 +1203,7 @@ void send_fragments(uchar *packet, int packet_len, uchar *iv, uchar *keystream, 
         }
 //        frag[23] = 0;
 
-    //Calculate packet lenght
+    //Calculate packet length
         if(fragsize <= packet_len-(header_size+t-fragsize))
             pack_size = header_size + 4 + fragsize;
         else
@@ -1298,17 +1303,17 @@ int do_attack_deauth( void )
                     if( ! FD_ISSET( dev.fd_in, &rfds ) )
                         break;
 
-                    caplen = read_packet( h80211, sizeof( h80211 ), NULL );
+                    caplen = read_packet( tmpbuf, sizeof( tmpbuf ), NULL );
 
                     if(caplen <= 0 ) break;
                     if(caplen != 10) continue;
-                    if( h80211[0] == 0xD4)
+                    if( tmpbuf[0] == 0xD4)
                     {
-                        if( memcmp(h80211+4, opt.r_dmac, 6) == 0 )
+                        if( memcmp(tmpbuf+4, opt.r_dmac, 6) == 0 )
                         {
                             aacks++;
                         }
-                        if( memcmp(h80211+4, opt.r_bssid, 6) == 0 )
+                        if( memcmp(tmpbuf+4, opt.r_bssid, 6) == 0 )
                         {
                             sacks++;
                         }
@@ -4005,9 +4010,10 @@ int make_arp_request(uchar *h80211, uchar *bssid, uchar *src_mac, uchar *dst_mac
 void save_prga(char *filename, uchar *iv, uchar *prga, int prgalen)
 {
     FILE *xorfile;
+    size_t unused;
     xorfile = fopen(filename, "wb");
-    fwrite (iv, 1, 4, xorfile);
-    fwrite (prga, 1, prgalen, xorfile);
+    unused = fwrite (iv, 1, 4, xorfile);
+    unused = fwrite (prga, 1, prgalen, xorfile);
     fclose (xorfile);
 }
 
@@ -4095,7 +4101,7 @@ int do_attack_fragment()
         {
             packet2[z+4] = ((packet2[z+4] ^ 0x42) ^ 0xAA);  //0x42 instead of 0xAA
             packet2[z+5] = ((packet2[z+5] ^ 0x42) ^ 0xAA);  //0x42 instead of 0xAA
-            packet2[z+6] = ((packet2[z+6] ^ 0x00) ^ 0x08);  //0x00 instead of 0x08
+            packet2[z+10] = ((packet2[z+10] ^ 0x00) ^ 0x08);  //0x00 instead of 0x08
         }
 
         prga_len = 7;
@@ -5653,6 +5659,7 @@ int main( int argc, char *argv[] )
     opt.delay     = 15; opt.bittest     =  0;
     opt.fast      =  0; opt.r_smac_set  =  0;
     opt.npackets  =  1; opt.nodetect    =  0;
+    opt.rtc       =  1;
 
 /* XXX */
 #if 0
@@ -5691,7 +5698,7 @@ int main( int argc, char *argv[] )
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345679HFBD",
+                        "b:d:s:m:n:u:v:t:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:0:1:2345679HFBDR",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -6116,6 +6123,11 @@ int main( int argc, char *argv[] )
                 printf( usage, getVersion("Aireplay-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC)  );
                 return( 1 );
 
+            case 'R' :
+
+                opt.rtc = 0;
+                break;
+
             default : goto usage;
         }
     }
@@ -6175,7 +6187,10 @@ usage:
         {
             dev.fd_rtc = 0;
         }
-
+        if(opt.rtc == 0)
+        {
+            dev.fd_rtc = -1;
+        }
         if(dev.fd_rtc > 0)
         {
             if( ioctl( dev.fd_rtc, RTC_IRQP_SET, RTC_RESOLUTION ) < 0 )
