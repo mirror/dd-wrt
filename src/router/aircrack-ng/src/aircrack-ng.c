@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP / WPA-PSK Key Cracker
  *
- *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  Advanced WEP attacks developed by KoreK
@@ -37,6 +37,8 @@
  *  files in the program, then also delete it here.
  */
 
+#define _GNU_SOURCE
+
 #include <sys/types.h>
 #include <sys/termios.h>
 #include <sys/ioctl.h>
@@ -64,11 +66,14 @@
 #include "pcap.h"
 #include "uniqueiv.h"
 #include "aircrack-ng.h"
+#include "sha1-sse2.h"
 
 #ifdef HAVE_SQLITE
 #include <sqlite3.h>
 sqlite3 *db;
 #endif
+
+extern int get_nb_cpus();
 
 static uchar ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -102,6 +107,11 @@ int wepkey_crack_success = 0;
 int close_aircrack = 0;
 int id=0;
 pthread_t tid[MAX_THREADS];
+struct WPA_data wpa_data[MAX_THREADS];
+int wpa_wordlists_done = 0;
+static pthread_mutex_t mx_nb = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t mx_wpastats = PTHREAD_MUTEX_INITIALIZER;
+
 
 #define	GOT_IV	0x00000001
 #define	USE_IV	0x00000002
@@ -136,8 +146,8 @@ typedef struct
 	void *buf1;
 	void *buf2;
 }
-
 read_buf;
+
 
 int K_COEFF[N_ATTACKS] =
 {
@@ -168,7 +178,7 @@ const uchar R[256] =
 
 char usage[] =
 "\n"
-"  %s - (C) 2006,2007,2008 Thomas d\'Otreppe\n"
+"  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
 "  Original work: Christophe Devine\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
@@ -178,39 +188,37 @@ char usage[] =
 "\n"
 "      -a <amode> : force attack mode (1/WEP, 2/WPA-PSK)\n"
 "      -e <essid> : target selection: network identifier\n"
-"      -b <bssid> : target selection: access point's MAC"
-"%s"
+"      -b <bssid> : target selection: access point's MAC\n"
+"      -p <nbcpu> : # of CPU to use  (default: all CPUs)\n"
 "      -q         : enable quiet mode (no status output)\n"
-"      -C <macs>  : merges all those APs into a virtual one\n"
+"      -C <macs>  : merge the given APs to a virtual one\n"
 "\n"
 "  Static WEP cracking options:\n"
 "\n"
 "      -c         : search alpha-numeric characters only\n"
 "      -t         : search binary coded decimal chr only\n"
 "      -h         : search the numeric key for Fritz!BOX\n"
-"      -d <mask>  : debug - specify mask of the key (A1:XX:CF:YY)\n"
+"      -d <mask>  : use masking of the key (A1:XX:CF:YY)\n"
 "      -m <maddr> : MAC address to filter usable packets\n"
 "      -n <nbits> : WEP key length :  64/128/152/256/512\n"
 "      -i <index> : WEP key index (1 to 4), default: any\n"
 "      -f <fudge> : bruteforce fudge factor,  default: 2\n"
 "      -k <korek> : disable one attack method  (1 to 17)\n"
-"      -x or -x0  : disable last keybytes bruteforce\n"
-"      -x1        : enable last keybyte bruteforcing (default)\n"
-"      -x2        : enable last two keybytes bruteforcing"
+"      -x or -x0  : disable bruteforce for last keybytes\n"
+"      -x1        : last keybyte bruteforcing  (default)\n"
+"      -x2        : enable last  2 keybytes bruteforcing"
 "%s"
-"      -y         : experimental single bruteforce mode\n"
-"      -K         : KoreK attacks (pre-PTW)\n"
-"      -s         : show ASCII version of the key\n"
-"      -M <num>   : maximum number of IVs to use\n"
-"      -D         : WEP decloak mode\n"
-"      -P <num>   : PTW debug: 1 disable Klein, 2 PTW\n"
-"      -1         : try PTW attack only once\n"
+"      -y         : experimental  single bruteforce mode\n"
+"      -K         : use only old KoreK attacks (pre-PTW)\n"
+"      -s         : show the key in ASCII while cracking\n"
+"      -M <num>   : specify maximum number of IVs to use\n"
+"      -D         : WEP decloak, skips broken keystreams\n"
+"      -P <num>   : PTW debug:  1: disable Klein, 2: PTW\n"
+"      -1         : run only 1 try to crack key with PTW\n"
 "\n"
 "  WEP and WPA-PSK cracking options:\n"
 "\n"
-"      -w <words> : path to a dictionary file (multiple\n"
-"                    dictionnaries can be specified.\n"
-"                    See manpage for more information)\n"
+"      -w <words> : path to wordlist(s) filename(s)\n"
 #ifdef HAVE_SQLITE
 "      -r <DB>    : path to airolib-ng database\n"
 "                   (Cannot be used with -w)\n"
@@ -231,6 +239,7 @@ void clean_exit(int ret)
 	struct AP_info *ap_next;
 	int i=0;
 // 	int j=0, k=0, attack=0;
+	int child_pid;
 
 	char tmpbuf[128];
 	bzero(tmpbuf, 128);
@@ -244,16 +253,25 @@ void clean_exit(int ret)
 
 	for( i = 0; i < opt.nbcpu; i++ )
 	{
+            #ifdef CYGWIN
+            close( mc_pipe[i][1] );
+            close( bf_pipe[i][1] );
+            #else
             safe_write( mc_pipe[i][1], (void *) "EXIT\r", 5 );
             safe_write( bf_pipe[i][1], (void *) tmpbuf, 64 );
+            #endif
         }
 
-	for(i=0; i<id; i++)
+	if( opt.amode != 2 )
 	{
-		if(pthread_join(tid[i], NULL) != 0)
+		for(i=0; i<id; i++)
 		{
-// 			printf("Can't join thread %d\n", i);
+			if(pthread_join(tid[i], NULL) != 0)
+			{
+//	 			printf("Can't join thread %d\n", i);
+			}
 		}
+
 	}
 
 	if(wep.ivbuf != NULL)
@@ -330,6 +348,19 @@ void clean_exit(int ret)
 // 	printf("%d unused IVs\n", j);
 // 	printf("%d used IVs for %d\n", k, attack);
 
+	child_pid=fork();
+
+	if(child_pid==-1)
+	{
+	  /* do error stuff here */
+	}
+	if(child_pid!=0)
+	{
+	  /* The parent process exits here. */
+
+	  exit(0);
+	}
+
 	_exit(ret);
 }
 
@@ -380,6 +411,56 @@ void eof_wait( int *eof_notified )
 	}
 
 	usleep( 100000 );
+}
+
+
+inline int wpa_send_passphrase(char *key, struct WPA_data* data, int lock)
+{
+	pthread_mutex_lock(&data->mutex);
+
+	if ((data->back+1) % data->nkeys == data->front)
+	{
+		if (lock != 0)
+		{
+			// wait until there's room in the queue
+			pthread_cond_wait(&data->cond, &data->mutex);
+		}
+		else
+		{
+			pthread_mutex_unlock(&data->mutex);
+			return 0; // full queue!
+		}
+	}
+
+	// put one key in the buffer:
+	memcpy(data->key_buffer + data->back*128, key, 128);
+	data->back = (data->back+1) % data->nkeys;
+
+	pthread_mutex_unlock(&data->mutex);
+
+	return 1;
+}
+
+
+inline int wpa_receive_passphrase(char *key, struct WPA_data* data)
+{
+	pthread_mutex_lock(&data->mutex);
+
+	if (data->front==data->back)
+	{
+		pthread_mutex_unlock(&data->mutex);
+		return 0; // empty queue!
+	}
+
+	// get one key from the buffer:
+	memcpy(key, data->key_buffer + data->front*128, 128);
+	data->front = (data->front+1) % data->nkeys;
+
+	// signal that there's now room in the queue for more keys
+	pthread_cond_signal(&data->cond);
+	pthread_mutex_unlock(&data->mutex);
+
+	return 1;
 }
 
 int checkbssids(char *bssidlist)
@@ -2798,7 +2879,7 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 		printf( "%02X:", wepkey[i] );
 	printf( "%02X ] ",   wepkey[i] );
 
-	if( 100 * nb_ascii > 75 * keylen )
+	if( nb_ascii == keylen )
 	{
 		printf( "(ASCII: " );
 
@@ -3597,75 +3678,6 @@ int inner_bruteforcer_thread(void *arg)
 
 }
 
-/* each thread computes two pairwise master keys at a time */
-
-int crack_wpa_thread( void *arg )
-{
-	char  essid[36];
-	char  key1[128], key2[128];
-	uchar pmk1[128], pmk2[128];
-        int len1, len2;
-	int ret=0;
-
-	int slen, cid = (long) arg;
-
-	/* receive the essid */
-
-	memset( essid, 0, sizeof( essid ) );
-
-	if( safe_read( mc_pipe[cid][0], (void *) essid, 32 ) != 32 )
-	{
-		perror( "read failed" );
-		kill( 0, SIGTERM );
-		_exit( FAILURE );
-	}
-
-	slen = strlen( essid ) + 4;
-
-	while( 1 )
-	{
-		/* receive two passphrases */
-
-		memset( key1, 0, sizeof( key1 ) );
-		memset( key2, 0, sizeof( key2 ) );
-
-		if( safe_read( mc_pipe[cid][0], (void *) key1, 128 ) != 128 ||
-			safe_read( mc_pipe[cid][0], (void *) key2, 128 ) != 128 )
-		{
-			perror( "read passphrase failed" );
-			kill( 0, SIGTERM );
-			_exit( FAILURE );
-		}
-
-		key1[127] = '\0';
-		key2[127] = '\0';
-
-                len1 = strlen( key1 );
-                len2 = strlen( key1 );
-                if(len1 > 64 ) len1 = 64;
-                if(len2 > 64 ) len2 = 64;
-
-                if(len1 < 8) len1 = 8;
-                if(len2 < 8) len2 = 8;
-
-		calc_pmk( key1, essid, pmk1 );
-		calc_pmk( key2, essid, pmk2 );
-
-		/* send the passphrase & master keys */
-
-		if( safe_write( cm_pipe[cid][1], (void *) key1, 128 ) != 128 ||
-			safe_write( cm_pipe[cid][1], (void *) key2, 128 ) != 128 ||
-			safe_write( cm_pipe[cid][1], (void *) pmk1,  32 ) !=  32 ||
-			safe_write( cm_pipe[cid][1], (void *) pmk2,  32 ) !=  32 )
-		{
-			perror( "write pmk failed" );
-			kill( 0, SIGTERM );
-			_exit( FAILURE );
-		}
-		if(close_aircrack)
-			pthread_exit(&ret);
-	}
-}
 
 /* display the current wpa key info, matrix-like */
 
@@ -3676,12 +3688,14 @@ uchar mic[16], int force )
 	int i, et_h, et_m, et_s;
 	char tmpbuf[28];
 
-	#ifdef __i386__
-	__asm__( "emms" );			 /* clean up the fp regs */
-	#endif
-
-	if( chrono( &t_stats, 0 ) < 0.08 && force == 0 )
+	if (chrono( &t_stats, 0 ) < 0.15 && force == 0)
 		return;
+
+	if (force != 0)
+		pthread_mutex_lock(&mx_wpastats);  // if forced, wait until we can lock
+	else
+		if (pthread_mutex_trylock(&mx_wpastats) != 0)  // if not forced, just try
+			return;
 
 	chrono( &t_stats, 1 );
 
@@ -3693,14 +3707,19 @@ uchar mic[16], int force )
 
 	if( ( delta = chrono( &t_kprev, 0 ) ) >= 6 )
 	{
+		int delta0;
+		delta0 = delta;
+
 		t_kprev.tv_sec += 3;
-		nb_kprev /= 2;
+		delta = chrono( &t_kprev, 0 );
+		nb_kprev *= delta / delta0;
+
 	}
 
 	if( opt.l33t ) printf( "\33[33;1m" );
 	printf( "\33[5;20H[%02d:%02d:%02d] %lld keys tested "
 		"(%2.2f k/s)", et_h, et_m, et_s,
-		nb_tried, (float) nb_kprev / delta );
+		nb_tried, (float) nb_kprev / delta);
 
 	memset( tmpbuf, ' ', sizeof( tmpbuf ) );
 	memcpy( tmpbuf, key, keylen > 27 ? 27 : keylen );
@@ -3720,7 +3739,7 @@ uchar mic[16], int force )
 	}
 
 	if( opt.l33t ) printf( "\33[32;22m" );
-	printf( "\33[14;7HTranscient Key : " );
+	printf( "\33[14;7HTransient Key  : " );
 
 	if( opt.l33t ) printf( "\33[32;1m" );
 	for( i = 0; i < 64; i++ )
@@ -3737,7 +3756,175 @@ uchar mic[16], int force )
 		printf( "%02X ", mic[i] );
 
 	printf( "\n" );
+
+	pthread_mutex_unlock(&mx_wpastats);
 }
+
+
+int crack_wpa_thread( void *arg )
+{
+	char  essid[36];
+	char  key[4][128];
+	uchar pmk[4][128];
+
+	uchar pke[100];
+	uchar ptk[4][80];
+	uchar mic[4][20];
+
+	struct WPA_data* data;
+	struct AP_info* ap;
+	int thread;
+	int ret=0;
+	int i, j, len;
+	int nparallel = 1;
+
+#if defined(__i386__) || defined(__x86_64__)
+	// Check for SSE2, with SSE2 the algorithm works with 4 keys
+	if (shasse2_cpuid()>=2)
+		nparallel = 4;
+#endif
+
+	data = (struct WPA_data*)arg;
+	ap = data->ap;
+	thread = data->thread;
+	strncpy(essid, ap->essid, 36);
+
+	/* pre-compute the key expansion buffer */
+	memcpy( pke, "Pairwise key expansion", 23 );
+	if( memcmp( ap->wpa.stmac, ap->bssid, 6 ) < 0 )	{
+		memcpy( pke + 23, ap->wpa.stmac, 6 );
+		memcpy( pke + 29, ap->bssid, 6 );
+	} else {
+		memcpy( pke + 23, ap->bssid, 6 );
+		memcpy( pke + 29, ap->wpa.stmac, 6 );
+	}
+	if( memcmp( ap->wpa.snonce, ap->wpa.anonce, 32 ) < 0 ) {
+		memcpy( pke + 35, ap->wpa.snonce, 32 );
+		memcpy( pke + 67, ap->wpa.anonce, 32 );
+	} else {
+		memcpy( pke + 35, ap->wpa.anonce, 32 );
+		memcpy( pke + 67, ap->wpa.snonce, 32 );
+	}
+
+	int slen;
+
+	/* receive the essid */
+
+	slen = strlen(essid) + 4;
+
+	while( 1 )
+	{
+		if (close_aircrack)
+			pthread_exit(&ret);
+
+		/* receive passphrases */
+
+		for(j=0; j<nparallel; ++j)
+		{
+			key[j][0]=0;
+
+			while(wpa_receive_passphrase(key[j], data)==0)
+			{
+				if (wpa_wordlists_done==1) // if no more words will arrive and...
+				{
+					if (j==0) // ...this is the first key in this loop: there's nothing else to do
+						return 0;
+					else	  // ...we have some key pending in this loop: keep working
+						break;
+				}
+
+				sched_yield(); // yield the processor until there are keys available
+				// this only happens when the queue is empty (when beginning and ending the wordlist)
+			}
+
+			key[j][127]=0;
+		}
+
+
+		// PMK calculation
+		if (nparallel==4)
+			calc_4pmk(key[0], key[1], key[2], key[3], essid, pmk[0], pmk[1], pmk[2], pmk[3]);
+		else
+			for(j=0; j<nparallel; ++j)
+				calc_pmk( key[j], essid, pmk[j] );
+
+		for(j=0; j<nparallel; ++j)
+		{
+			/* compute the pairwise transient key and the frame MIC */
+
+			for (i = 0; i < 4; i++)
+			{
+				pke[99] = i;
+				HMAC(EVP_sha1(), pmk[j], 32, pke, 100, ptk[j] + i * 20, NULL);
+			}
+
+			if (ap->wpa.keyver == 1)
+				HMAC(EVP_md5(), ptk[j], 16, ap->wpa.eapol, ap->wpa.eapol_size, mic[j], NULL);
+			else
+				HMAC(EVP_sha1(), ptk[j], 16, ap->wpa.eapol, ap->wpa.eapol_size, mic[j], NULL);
+
+			if (memcmp( mic[j], ap->wpa.keymic, 16 ) == 0)
+			{
+				// to stop do_wpa_crack, we close the dictionary
+				if(opt.dict != NULL)
+				{
+					if (!opt.stdin_dict) fclose(opt.dict);
+					opt.dict = NULL;
+				}
+
+				for( i = 0; i < opt.nbcpu; i++ )
+				{
+					// we make sure do_wpa_crack doesn't block before exiting,
+					// now that we're not consuming passphrases here any longer
+					pthread_mutex_lock(&wpa_data[i].mutex);
+					pthread_cond_signal(&wpa_data[i].cond);
+					pthread_mutex_unlock(&wpa_data[i].mutex);
+				}
+
+				memcpy(data->key, key[j], sizeof(data->key));
+
+				if (opt.is_quiet)
+					return SUCCESS;
+
+				pthread_mutex_lock(&mx_nb);
+				nb_tried += 4;
+				nb_kprev += 4;
+				pthread_mutex_unlock(&mx_nb);
+
+				len = strlen(key[j]);
+				if (len > 64 ) len = 64;
+				if (len < 8) len = 8;
+				show_wpa_stats( key[j], len, pmk[j], ptk[j], mic[j], 1 );
+
+				if (opt.l33t)
+					printf( "\33[31;1m" );
+
+				printf("\33[8;%dH\33[2KKEY FOUND! [ %s ]\33[11B\n",
+					( 80 - 15 - (int) len ) / 2, key[j] );
+
+				if (opt.l33t)
+					printf( "\33[32;22m" );
+
+				return SUCCESS;
+			}
+		}
+
+		pthread_mutex_lock(&mx_nb);
+		nb_tried += 4;
+		nb_kprev += 4;
+		pthread_mutex_unlock(&mx_nb);
+
+		if (!opt.is_quiet)
+		{
+			len = strlen(key[0]);
+			if (len > 64 ) len = 64;
+			if (len < 8) len = 8;
+
+			show_wpa_stats(key[0], len, pmk[0], ptk[0], mic[0], 0);
+		}
+	}
+}
+
 
 int next_dict(int nb)
 {
@@ -3781,7 +3968,7 @@ int next_dict(int nb)
 			{
 				fclose( opt.dict );
 				opt.dict = NULL;
-				printf( "Empty dictionnary\n" );
+				printf( "Empty dictionary\n" );
 				opt.nbdict++;
 				continue;
 			}
@@ -3796,6 +3983,7 @@ int next_dict(int nb)
 
 	return( 0 );
 }
+
 #ifdef HAVE_SQLITE
 int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 	struct AP_info *ap = (struct AP_info*)arg;
@@ -3840,60 +4028,19 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 	return 0;
 }
 #endif
-int do_wpa_crack( struct AP_info *ap )
+
+
+
+int do_wpa_crack()
 {
-	int i, j, cid, len1, len2, num_cpus;
-	char key1[128], key2[128];
+	int i, j, cid, num_cpus, res;
+	char key1[128];
 
-	uchar pke[100];
-	uchar pmk1[40], ptk1[80];
-	uchar pmk2[40], ptk2[80];
-	uchar mic1[20], mic2[20];
-
-        i=0;
-
+    i = 0;
+	res = 0;
+	opt.amode = 2;
 	num_cpus = opt.nbcpu;
 
-	/* send the ESSID to each thread */
-
-	for( cid = 0; cid < num_cpus; cid++ )
-	{
-		if( safe_write( mc_pipe[cid][1], (void *) ap->essid, 32 ) != 32 )
-		{
-			perror( "write essid failed" );
-			kill( 0, SIGTERM );
-			_exit( FAILURE );
-		}
-	}
-
-	/* pre-compute the key expansion buffer */
-
-	memcpy( pke, "Pairwise key expansion", 23 );
-
-	if( memcmp( ap->wpa.stmac, ap->bssid, 6 ) < 0 )
-	{
-		memcpy( pke + 23, ap->wpa.stmac, 6 );
-		memcpy( pke + 29, ap->bssid, 6 );
-	}
-	else
-	{
-		memcpy( pke + 23, ap->bssid, 6 );
-		memcpy( pke + 29, ap->wpa.stmac, 6 );
-	}
-
-	if( memcmp( ap->wpa.snonce, ap->wpa.anonce, 32 ) < 0 )
-	{
-		memcpy( pke + 35, ap->wpa.snonce, 32 );
-		memcpy( pke + 67, ap->wpa.anonce, 32 );
-	}
-	else
-	{
-		memcpy( pke + 35, ap->wpa.anonce, 32 );
-		memcpy( pke + 67, ap->wpa.snonce, 32 );
-	}
-
-	memset( key1, 0, sizeof( key1 ) );
-	memset( key2, 0, sizeof( key1 ) );
 
 	if( ! opt.is_quiet )
 	{
@@ -3908,175 +4055,66 @@ int do_wpa_crack( struct AP_info *ap )
 		printf("\33[2;34H%s",progname);
 	}
 
+	cid = 0;
 	while( num_cpus > 0 )
 	{
-		for( cid = 0; cid < num_cpus; cid++ )
+		/* read a couple of keys (skip those < 8 chars) */
+
+		if(opt.dict == NULL)
+			return( FAILURE );
+
+		do
 		{
-			/* read a couple of keys (skip those < 8 chars) */
-
-			if(opt.dict == NULL)
+			memset(key1, 0, sizeof(key1));
+			if (fgets(key1, sizeof(key1), opt.dict) == NULL)
 			{
-				printf( "\nPassphrase not in dictionnary \n" );
-				return( FAILURE );
-			}
-
-			do
-			{
-				if( fgets( key1, sizeof( key1 ), opt.dict ) == NULL )
-				{
-					if( opt.l33t )
-						printf( "\33[32;22m" );
-
-					/* printf( "\nPassphrase not in dictionnary %s \n", opt.dicts[opt.nbdict] );*/
-					if(next_dict(opt.nbdict+1) != 0)
-					{
-						/* no more words, but we still have to collect results from words sent to previous cpus */
-						num_cpus = cid;
-						goto collect_and_test;
-						/* return( FAILURE ); */
-					}
-					else
-					{
-						continue;
-					}
-				}
-
-				i = strlen( key1 );
-                                if( i < 8 ) continue;
-                                if( i > 64 ) i = 64;
-
-				if( key1[i - 1] == '\n' ) key1[--i] = '\0';
-				if( key1[i - 1] == '\r' ) key1[--i] = '\0';
-				if( key1[i - 1] == '\n' ) key1[--i] = '\0';
-				if( key1[i - 1] == '\r' ) key1[--i] = '\0';
-
-                                for(j=0; j<i; j++)
-                                    if(!isascii(key1[j]) || key1[j] < 32) i=0;
-			}
-			while( i < 8 );
-
-			do
-			{
-				if( fgets( key2, sizeof( key2 ), opt.dict ) == NULL )
-				{
-					if(next_dict(opt.nbdict+1) != 0)
-					{
-						break;
-					}
-					else
-					{
-						continue;
-					}
-				}
-
-				i = strlen( key2 );
-
-                                if( i < 8 ) continue;
-                                if( i > 64 ) i = 64;
-
-				if( key2[i - 1] == '\n' ) key2[--i] = '\0';
-				if( key2[i - 1] == '\r' ) key2[--i] = '\0';
-				if( key2[i - 1] == '\n' ) key2[--i] = '\0';
-				if( key2[i - 1] == '\r' ) key2[--i] = '\0';
-
-                                for(j=0; j<i; j++)
-                                    if(!isascii(key2[j]) || key2[j] < 32 ) i=0;
-			}
-			while( i < 8 );
-
-			/* send the keys */
-
-			if( safe_write( mc_pipe[cid][1], (void *) key1, 128 ) != 128 ||
-				safe_write( mc_pipe[cid][1], (void *) key2, 128 ) != 128 )
-			{
-				perror( "write passphrase failed" );
-				return( FAILURE );
-			}
-		}
-
-collect_and_test:
-
-		for( cid = 0; cid < num_cpus; cid++ )
-		{
-			/* collect and test the master keys */
-
-			if( safe_read( cm_pipe[cid][0], (void *) key1, 128 ) != 128 ||
-				safe_read( cm_pipe[cid][0], (void *) key2, 128 ) != 128 ||
-				safe_read( cm_pipe[cid][0], (void *) pmk1,  32 ) !=  32 ||
-				safe_read( cm_pipe[cid][0], (void *) pmk2,  32 ) !=  32 )
-			{
-				perror( "read pmk failed" );
-				return( FAILURE );
-			}
-
-			len1 = strlen( key1 );
-			len2 = strlen( key2 );
-
-                        if( len1 < 8 ) len1=8;
-                        if( len1 > 64 ) len1 = 64;
-
-                        if( len2 < 8 ) len2=8;
-                        if( len2 > 64 ) len2 = 64;
-
-			/* compute the pairwise transient key and the frame MIC */
-
-			for( i = 0; i < 4; i++ )
-			{
-				pke[99] = i;
-				HMAC(EVP_sha1(), pmk1, 32, pke, 100, ptk1 + i * 20, NULL);
-				HMAC(EVP_sha1(), pmk2, 32, pke, 100, ptk2 + i * 20, NULL);
-			}
-
-			if( ap->wpa.keyver == 1 )
-			{
-				HMAC(EVP_md5(), ptk1, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic1, NULL);
-				HMAC(EVP_md5(), ptk2, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic2, NULL);
-			}
-			else
-			{
-				HMAC(EVP_sha1(), ptk1, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic1, NULL);
-				HMAC(EVP_sha1(), ptk2, 16, ap->wpa.eapol, ap->wpa.eapol_size, mic2, NULL);
-			}
-
-			if( memcmp( mic1, ap->wpa.keymic, 16 ) == 0 )
-			{
-				memcpy( key2, key1, 128 );
-				memcpy( pmk2, pmk1,  32 );
-				memcpy( ptk2, ptk1,  64 );
-				memcpy( mic2, mic1,  16 );
-			}
-
-			if( memcmp( mic2, ap->wpa.keymic, 16 ) == 0 )
-			{
-				if( opt.is_quiet )
-				{
-					printf( "KEY FOUND! [ %s ]\n", key2 );
-					return( SUCCESS );
-				}
-
-				show_wpa_stats( key2, len1, pmk2, ptk2, mic2, 1 );
-
-				if( opt.l33t )
-					printf( "\33[31;1m" );
-
-				printf( "\33[8;%dH\33[2KKEY FOUND! [ %s ]\33[11B\n",
-					( 80 - 15 - (int) len1 ) / 2, key2 );
-
 				if( opt.l33t )
 					printf( "\33[32;22m" );
 
-				return( SUCCESS );
+				/* printf( "\nPassphrase not in dictionary %s \n", opt.dicts[opt.nbdict] );*/
+				if(next_dict(opt.nbdict+1) != 0)
+				{
+					/* no more words, but we still have to wait for the cracking threads */
+					num_cpus = cid;
+					//goto collect_and_test;
+					return( FAILURE );
+				}
+				else
+					continue;
 			}
 
-			nb_tried += 2;
-			nb_kprev += 2;
+			i = strlen( key1 );
+			if( i < 8 ) continue;
+			if( i > 64 ) i = 64;
 
-			if( ! opt.is_quiet )
-				show_wpa_stats( key1, len1, pmk1, ptk1, mic1, 0 );
+			while(i>0 && (key1[i-1]=='\r' || key1[i-1]=='\n')) i--;
+			if (i==0) continue;
+			key1[i] = '\0';
+
+			for(j=0; j<i; j++)
+				if(!isascii(key1[j]) || key1[j] < 32) i=0;
+
+		}
+		while( i < 8 );
+
+		/* send the keys */
+
+		for(i=0; i<opt.nbcpu; ++i)
+		{
+			res = wpa_send_passphrase(key1, &(wpa_data[cid]), 0/*don't block*/);
+			if (res != 0)
+				break;
+			cid = (cid+1) % opt.nbcpu;
+		}
+
+		if (res==0) // if all queues are full, we block until there's room
+		{
+			wpa_send_passphrase(key1, &(wpa_data[cid]), 1/*block*/);
+			cid = (cid+1) % opt.nbcpu;
 		}
 	}
 
-	printf( "\nPassphrase not in dictionnary \n" );
+	//printf( "\nPassphrase not in dictionary \n" );
 	return( FAILURE );
 }
 
@@ -4095,7 +4133,7 @@ int next_key( char **key, int keysize )
 		tmp = tmp2;
 		if(opt.dict == NULL)
 		{
-			printf( "\nPassphrase not in dictionnary \n" );
+			//printf( "\nPassphrase not in dictionary \n" );
 			free(tmp);
 			tmp = NULL;
 			return( FAILURE );
@@ -4108,7 +4146,7 @@ int next_key( char **key, int keysize )
 				if( opt.l33t )
 					printf( "\33[32;22m" );
 
-//				printf( "\nPassphrase not in dictionnary \"%s\" \n", opt.dicts[opt.nbdict] );
+//				printf( "\nPassphrase not in dictionary \"%s\" \n", opt.dicts[opt.nbdict] );
 				if(next_dict(opt.nbdict+1) != 0)
 				{
 					free(tmp);
@@ -4162,7 +4200,7 @@ int next_key( char **key, int keysize )
 				if( opt.l33t )
 					printf( "\33[32;22m" );
 
-//				printf( "\nPassphrase not in dictionnary \"%s\" \n", opt.dicts[opt.nbdict] );
+//				printf( "\nPassphrase not in dictionary \"%s\" \n", opt.dicts[opt.nbdict] );
 				if(next_dict(opt.nbdict+1) != 0)
 				{
 					free(tmp);
@@ -4391,8 +4429,8 @@ static int crack_wep_ptw(struct AP_info *ap_cur)
 
 int main( int argc, char *argv[] )
 {
-	int i, n, ret, max_cpu, option, j, ret1, nbMergeBSSID;
-	int cpudetectfailed, showhelp, z, zz, forceptw;
+	int i, n, ret, option, j, ret1, nbMergeBSSID, unused;
+	int cpu_count, showhelp, z, zz, forceptw;
 	char *s, buf[128];
 	struct AP_info *ap_cur;
 	int old=0;
@@ -4409,7 +4447,6 @@ int main( int argc, char *argv[] )
 #endif
 
 	ret = FAILURE;
-	cpudetectfailed = 0;
 	showhelp = 0;
 
 	// Start a new process group, we are perhaps going to call kill(0, ...) later
@@ -4421,36 +4458,30 @@ int main( int argc, char *argv[] )
 
 	srand( time( NULL ) );
 
-	#ifdef _SC_NPROCESSORS_ONLN
+	// Get number of CPU (return -1 if failed).
+	cpu_count = get_nb_cpus();
+	opt.nbcpu = 1;
+	if (cpu_count > 1) {
+		opt.nbcpu = cpu_count;
+	}
 
-	max_cpu   = sysconf(_SC_NPROCESSORS_ONLN);
-	/* Fails on some archs */
-	cpudetectfailed = ( max_cpu < 1 );
-	if (cpudetectfailed)
-		max_cpu = 1;
-	opt.nbcpu = max_cpu;
-
-	#else
-
-	cpudetectfailed = 1;
-	max_cpu   = 255;
-	opt.nbcpu =   1;
-	#endif
 	j=0;
 	/* check the arguments */
 
+	opt.nbdict		= 0;
+	opt.amode		= 0;
 	opt.do_brute    = 1;
 	opt.do_mt_brute = 1;
 	opt.showASCII   = 0;
 	opt.probability = 51;
-        opt.next_ptw_try= 0;
-	opt.do_ptw = 1;
-	opt.max_ivs = INT_MAX;
+	opt.next_ptw_try= 0;
+	opt.do_ptw		= 1;
+	opt.max_ivs		= INT_MAX;
 	opt.visual_inspection = 0;
-	opt.firstbssid = NULL;
+	opt.firstbssid	= NULL;
 	opt.bssid_list_1st = NULL;
-	opt.bssidmerge = NULL;
-	opt.oneshot = 0;
+	opt.bssidmerge	= NULL;
+	opt.oneshot		= 0;
 
 	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
 	bzero(all_ivs, (256*256*256)*sizeof(used_iv));
@@ -4471,14 +4502,11 @@ int main( int argc, char *argv[] )
             {"ptw-debug",         0, 0, 'P'},
             {"visual-inspection", 0, 0, 'V'},
             {"oneshot",           0, 0, '1'},
+            {"cpu-detect",        0, 0, 'u'},
             {0,                   0, 0,  0 }
         };
 
-		if ( max_cpu == 1 )
-			option = getopt_long( argc, argv, "r:a:e:b:qcthd:m:n:i:f:k:x::ysw:0HKC:M:DP:zV1",
-                        long_options, &option_index );
-		else
-			option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
+		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -4495,6 +4523,21 @@ int main( int argc, char *argv[] )
 
 				printf("\"%s --help\" for help.\n", argv[0]);
 				return( 1 );
+
+			case 'u' :
+				printf("Nb CPU detected: %d ", cpu_count);
+#if defined(__i386__) || defined(__x86_64__)
+				unused = shasse2_cpuid();
+
+				if (unused == 1) {
+					printf(" (MMX available)");
+				}
+				if (unused >= 2) {
+					printf(" (SSE2 available)");
+				}
+#endif
+				printf("\n");
+				return( 0 );
 
 			case 'V' :
 				if (forceptw)
@@ -4525,6 +4568,11 @@ int main( int argc, char *argv[] )
 					return( FAILURE );
 				}
 
+				if (opt.amode == 1 && opt.nbdict > 0)
+				{
+					opt.do_ptw = 0;
+				}
+
 				break;
 
 			case 'e' :
@@ -4547,10 +4595,9 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'p' :
-				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 ||
-					opt.nbcpu < 1 || opt.nbcpu > max_cpu )
+				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 || opt.nbcpu < 1 )
 				{
-					printf( "Invalid number of processes. [1-%d]\n", max_cpu );
+					printf( "Invalid number of processes (recommended: %d)\n", cpu_count );
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return( FAILURE );
 				}
@@ -4764,16 +4811,25 @@ int main( int argc, char *argv[] )
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
 				}
+				else if (opt.amode == 1 && opt.nbdict > 0)
+				{
+					opt.do_ptw = 0;
+				}
 				break;
-#ifdef HAVE_SQLITE
+
 			case 'r' :
+#ifdef HAVE_SQLITE
 				if(sqlite3_open(optarg, &db)) {
 					fprintf(stderr, "Database error: %s\n", sqlite3_errmsg(db));
 					sqlite3_close(db);
 					return FAILURE;
 				}
-				break;
+#else
+				fprintf(stderr, "Error: Aircrack-ng wasn't compiled with sqlite support\n");
+				return FAILURE;
 #endif
+				break;
+
 			case '0' :
 
 				opt.l33t = 1;
@@ -4811,6 +4867,11 @@ int main( int argc, char *argv[] )
 					return FAILURE;
 				}
 
+				if (opt.amode == 1 && opt.nbdict > 0)
+				{
+					opt.do_ptw = 0;
+				}
+
 				forceptw = 1;
 
 				break;
@@ -4825,11 +4886,14 @@ int main( int argc, char *argv[] )
 		{
 usage:
 			printf (usage, progname,
-				( max_cpu == 1 && cpudetectfailed == 0) ? "\n" : "\n      -p <nbcpu> : # of CPU to use (by default, all CPUs)\n",
-				( max_cpu == 1 && cpudetectfailed == 0) ? "\n" : "\n      -X         : disable bruteforce multithreading (SMP only)\n");
+				( cpu_count > 1 || cpu_count == -1) ? "\n      -X         : disable  bruteforce   multithreading\n" : "\n");
+
+			// If the user requested help, exit directly.
 			if (showhelp == 1)
 				exit(0);
 		}
+
+		// Missing parameters
 		if( argc - optind == 0)
 	    {
 	    	printf("No file to crack specified.\n");
@@ -4846,6 +4910,11 @@ usage:
 		nodict:
 		printf( "Please specify a dictionary (option -w).\n" );
 		goto exit_main;
+	}
+
+	if (opt.amode == 1 && opt.nbdict > 0)
+	{
+		opt.do_ptw = 0;
 	}
 
 	if( (! opt.essid_set && ! opt.bssid_set) && ( opt.is_quiet || opt.no_stdin ) )
@@ -5119,12 +5188,12 @@ usage:
 
 	for( i = 0; i < opt.nbcpu; i++ )
 	{
-		pipe( mc_pipe[i] );
-		pipe( cm_pipe[i] );
+		unused = pipe( mc_pipe[i] );
+		unused = pipe( cm_pipe[i] );
 
 		if (opt.amode<=1 && opt.nbcpu>1 && opt.do_brute && opt.do_mt_brute)
 		{
-			pipe(bf_pipe[i]);
+			unused = pipe(bf_pipe[i]);
 			bf_nkeys[i] = 0;
 		}
 	}
@@ -5149,6 +5218,11 @@ usage:
 	if( ap_cur->crypt == 2 )
 	{
 		crack_wep:
+
+		if (opt.nbdict > 0)
+		{
+			opt.do_ptw = 0;
+		}
 
 		if( opt.keylen == 0 )
 			opt.keylen = 13;
@@ -5337,19 +5411,77 @@ usage:
 #ifdef HAVE_SQLITE
 		if (db == NULL) {
 #endif
+
 			for( i = 0; i < opt.nbcpu; i++ )
 			{
 				/* start one thread per cpu */
+				wpa_data[i].ap = ap_cur;
+				wpa_data[i].thread = i;
+				wpa_data[i].nkeys = 17;
+				wpa_data[i].key_buffer = (char*) malloc(wpa_data[i].nkeys * 128);
+				wpa_data[i].front = 0;
+				wpa_data[i].back = 0;
+				memset(wpa_data[i].key, 0, sizeof(wpa_data[i].key));
+				pthread_cond_init(&wpa_data[i].cond, NULL);
+				pthread_mutex_init(&wpa_data[i].mutex, NULL);
 
 				if( pthread_create( &(tid[id]), NULL, (void *) crack_wpa_thread,
-					(void *) (long) i ) != 0 )
+					(void *) &(wpa_data[i]) ) != 0 )
 				{
 					perror( "pthread_create failed" );
 					goto exit_main;
 				}
+
+#ifdef pthread_setaffinity_np
+				// set affinity to one processor
+				cpu_set_t cpuset;
+				CPU_ZERO(&cpuset);
+				CPU_SET(i, &cpuset);
+				pthread_setaffinity_np(tid[id], sizeof(cpu_set_t), &cpuset);
+#endif
+
 				id++;
 			}
-		ret = do_wpa_crack( ap_cur );
+
+			ret = do_wpa_crack();	// we feed keys to the cracking threads
+			wpa_wordlists_done = 1; // we tell the threads that they shouldn't expect more words (don't wait for parallel crack)
+
+			for( i = 0; i < opt.nbcpu; i++ ) // we wait for the cracking threads to end
+				pthread_join(tid[--id], NULL);
+
+			for( i = 0; i < opt.nbcpu; i++ )
+			{
+				if (wpa_data[i].key[0] != 0)
+				{
+					ret = SUCCESS;
+					break;
+				}
+			}
+
+			if (ret==SUCCESS)
+			{
+				if( opt.is_quiet )
+				{
+					printf( "KEY FOUND! [ %s ]\n", wpa_data[i].key );
+					return( SUCCESS );
+				}
+
+				if( opt.l33t )
+					printf( "\33[31;1m" );
+
+				printf( "\33[8;%dH\33[2KKEY FOUND! [ %s ]\33[11B\n",
+					( 80 - 15 - (int) strlen(wpa_data[i].key) ) / 2, wpa_data[i].key );
+
+				if( opt.l33t )
+					printf( "\33[32;22m" );
+
+				return( SUCCESS );
+			}
+			else
+				printf( "\nPassphrase not in dictionary \n" );
+
+			printf("\n");
+
 #ifdef HAVE_SQLITE
 		} else {
 			if( ! opt.is_quiet ) {
