@@ -4216,8 +4216,13 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     showRadio( wp, "wl_basic.radar", wl_doth );
     show_chanshift( wp, prefix );
 #endif
+#ifdef HAVE_RT2880
+    if( nvram_match( wl_mode, "ap" ) || nvram_match( wl_mode, "wdsap" )
+	|| nvram_match( wl_mode, "infra" ) || nvram_match( wl_mode, "apsta" ) )
+#else
     if( nvram_match( wl_mode, "ap" ) || nvram_match( wl_mode, "wdsap" )
 	|| nvram_match( wl_mode, "infra" ) )
+#endif
     {
 
 	if( has_mimo( prefix )
