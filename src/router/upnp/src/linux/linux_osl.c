@@ -754,6 +754,8 @@ upnp_osl_nat_config(UPNP_PORTMAP *map)
 	else if (strcasecmp(Proto, "UDP") == 0) {
 		entry->match.ipproto = IPPROTO_UDP;
 	}
+	
+	strncpy(entry->desc, map->description, sizeof(entry->desc));
 
 	/* set to NAT kernel */
 	if (map->enable) {
