@@ -40,8 +40,8 @@
  */
 extern bool valid_forward_port( const netconf_nat_t * nat );
 extern bool get_forward_port( int which, netconf_nat_t * nat );
-extern bool set_forward_port( int which, const netconf_nat_t * nat );
-extern bool del_forward_port( int which );
+extern bool set_forward_port( const netconf_nat_t * nat );
+extern bool del_forward_port( const netconf_nat_t * nat );
 
 /*
  * Client filters are described by two netconf_filter_t structures that
