@@ -31,6 +31,8 @@ void stop_upnp( void );
 
 void start_upnp( void )
 {
+    if (nvram_match( "wan_proto","disabled"))
+	return;
     char *wan_ifname = get_wan_face(  );
     int ret;
 
