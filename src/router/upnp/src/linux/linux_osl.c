@@ -35,12 +35,17 @@
 #include <linux/ethtool.h>
 
 #include "shutils.h"
+#include "utils.h"
+#include "nvparse.h"
 #include "netconf.h"
 #include "upnp.h"
 #include <InternetGatewayDevice.h>
 #include <wlutils.h>
 
 #define _PATH_PROCNET_DEV           "/proc/net/dev"
+
+static int get_lan_mac(unsigned char *mac);
+
 
 extern char g_wandevs[];
 
@@ -657,7 +662,7 @@ add_nat_entry(netconf_nat_t *entry)
 	/* Accept connection */
 	filter.target = target;
 	filter.dir = dir;
-
+	set_forward_port(&nat);
 	/* Do it */
 	netconf_add_nat(&nat);
 	netconf_add_filter(&filter);
@@ -695,6 +700,7 @@ delete_nat_entry(netconf_nat_t *entry)
 	filter.target = target;
 	filter.dir = dir;
 
+	del_forward_port(&nat);
 	/* Do it */
 	errno = netconf_del_nat(&nat);
 	if (errno)
@@ -781,7 +787,7 @@ upnp_osl_update_wfa_subc_num(int if_instance, int num)
 	return;
 }
 
-int
+static int
 get_lan_mac(unsigned char *mac)
 {
 	unsigned char *lanmac_str = nvram_get("lan_hwaddr");
