@@ -28,8 +28,8 @@ endif
 all: upnp
 
 install: all
-	install -d $(INSTALLDIR)/usr/sbin
-	install -m 755 bcmupnp $(INSTALLDIR)/usr/sbin/upnp
+	install -d $(INSTALLDIR)/upnp/usr/sbin
+	install -m 755 bcmupnp $(INSTALLDIR)/upnp/usr/sbin/upnp
 
 clean:
 	$(MAKE) -C $(UPNP) clean
