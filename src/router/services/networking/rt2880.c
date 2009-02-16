@@ -395,6 +395,8 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 
     rmmod( "rt2860v2_ap" );
     rmmod( "rt2860v2_sta" );
+    if (nvram_match("wl0_net_mode","disabled"))
+	return;
 
     FILE *fp = fopen( "/tmp/RT2860.dat", "wb" );	// config file for driver (don't ask me, its really the worst config thing i have seen)
 
