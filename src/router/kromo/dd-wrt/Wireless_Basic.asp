@@ -293,7 +293,7 @@ addEvent(window, "load", function() {
 	}
 	var wl0_net_mode = "<% nvram_get("wl0_net_mode"); %>";
 	SelWL0(wl0_net_mode,document.wireless);
-	var wl1_mode = "<% nvram_get("wl_mode"); %>";
+	var wl1_mode = "<% nvram_get("wl1_mode"); %>";
 	   if (wl1_mode=="ap" || wl1_mode=="infra")
 	{
 	    if (wl1_phytype == 'n')
