@@ -2809,7 +2809,8 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 #else
     if( nvram_match( wl_mode, "ap" ) || nvram_match( wl_mode, "wdsap" )
 	|| nvram_match( wl_mode, "infra" ) )
-#endif    {
+#endif    
+	{
 	char wl_channel[16];
 
 	sprintf( wl_channel, "%s_channel", prefix );
