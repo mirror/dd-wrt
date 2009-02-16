@@ -945,7 +945,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     else
 	fprintf( fp, "TxRate=0\n" );
 
-    if( isSTA(  ) && !nvram_match( "wl0_mode", "infra" ) )
+    if( isSTA(  ) && !nvram_match( "wl0_mode", "infra" ) && !nvram_match("wl0_mode","apsta"))
 	fprintf( fp, "Channel=0\n" );
     else
 	fprintf( fp, "Channel=%s\n", nvram_safe_get( "wl0_channel" ) );
