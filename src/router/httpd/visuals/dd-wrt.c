@@ -3930,13 +3930,13 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 		       nvram_match( wl_mode,
 				    "apsta" ) ? "selected=\\\"selected\\\"" :
 		       "" );
-#ifndef HAVE_RT2880
+//#ifndef HAVE_RT2880
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"apstawet\\\" %s >\" + wl_basic.repeaterbridge + \"</option>\");\n",
 		       nvram_match( wl_mode,
 				    "apstawet" ) ? "selected=\\\"selected\\\""
 		       : "" );
-#endif
+//#endif
 #else
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n",
