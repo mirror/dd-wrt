@@ -19,7 +19,7 @@ endif
 CFG_BCMIGD ?= 1
 
 UPNP	:= $(TOP)/upnp/src/linux
-CFLAGS += -Os
+CFLAGS += -Os -s
 ifeq ($(strip $(CFG_BCMIGD)),1)
 CFLAGS  += -D__BCMIGD__
 endif

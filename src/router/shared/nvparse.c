@@ -514,7 +514,7 @@ bool get_forward_port( int which, netconf_nat_t * nat )
     return valid_forward_port( nat );
 }
 
-bool set_forward_port( int which, const netconf_nat_t * nat )
+bool set_forward_port(const netconf_nat_t * nat )
 {
     char name[] = "forward_portXXXXXXXXXX", value[1000], *cur = value;
     int len;
@@ -522,6 +522,8 @@ bool set_forward_port( int which, const netconf_nat_t * nat )
     if( !valid_forward_port( nat ) )
 	return FALSE;
 
+    int which=atoi(nvram_default_get("forward_cur","0"));
+    
     /*
      * Set
      * wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc 
@@ -586,73 +588,93 @@ bool set_forward_port( int which, const netconf_nat_t * nat )
      */
     if( nvram_set( name, value ) )
 	return FALSE;
-
+    which++;
+    char val[32];
+    sprintf(val,"%d",which);
+    nvram_set("forward_cur",val);
     return TRUE;
 }
 
-bool del_forward_port( int which )
+bool del_forward_port(const netconf_nat_t * nat)
 {
-    char name[] = "forward_portXXXXXXXXXX";
+    char name[] = "forward_portXXXXXXXXXX", value[1000], *cur = value;
+    int len;
 
+    if( !valid_forward_port( nat ) )
+	return FALSE;
+
+    int which=atoi(nvram_default_get("forward_cur","0"));
+    
+    /*
+     * Set
+     * wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc 
+     */
     snprintf( name, sizeof( name ), "forward_port%d", which );
+    len = sizeof( value );
 
-    ct_logger( LOG_INFO, "upnp[%d]: Del \"%s\" from \"%s\"", getpid(  ),
-	       nvram_safe_get( name ), name );
+    /*
+     * Set WAN destination port range 
+     */
+    cur = safe_snprintf( cur, &len, "%d", ntohs( nat->match.dst.ports[0] ) );
+    cur = safe_snprintf( cur, &len, "-" );
+    cur = safe_snprintf( cur, &len, "%d", ntohs( nat->match.dst.ports[1] ) );
 
-    return ( nvram_unset( name ) == 0 ) ? TRUE : FALSE;
-}
+    /*
+     * Set LAN IP address 
+     */
+    cur = safe_snprintf( cur, &len, ">" );
+    char client[32];
+    cur = safe_snprintf( cur, &len, inet_ntop(AF_INET, &nat->ipaddr,client,16));
 
-static void convert_forward_proto( const char *name, int ipproto )
-{
-    char var[1000], *next;
-    char *wan_port0, *wan_port1, *lan_ipaddr, *lan_port0, *lan_port1;
-    netconf_nat_t nat, unused;
-    bool valid;
-    int i;
+    /*
+     * Set LAN destination port range 
+     */
+    cur = safe_snprintf( cur, &len, ":" );
+    cur = safe_snprintf( cur, &len, "%d", ntohs( nat->ports[0] ) );
+    cur = safe_snprintf( cur, &len, "-" );
+    cur = safe_snprintf( cur, &len, "%d", ntohs( nat->ports[1] ) );
 
-    foreach( var, nvram_safe_get( name ), next )
+    /*
+     * Set protocol 
+     */
+    cur = safe_snprintf( cur, &len, "," );
+    if( nat->match.ipproto == IPPROTO_TCP )
+	cur = safe_snprintf( cur, &len, "tcp" );
+    else if( nat->match.ipproto == IPPROTO_UDP )
+	cur = safe_snprintf( cur, &len, "udp" );
+
+    /*
+     * Set enable 
+     */
+    cur = safe_snprintf( cur, &len, "," );
+    if( nat->match.flags & NETCONF_DISABLED )
+	cur = safe_snprintf( cur, &len, "off" );
+    else
+	cur = safe_snprintf( cur, &len, "on" );
+
+    /*
+     * Set description 
+     */
+    if( *nat->desc )
     {
-	/*
-	 * Parse wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1 
-	 */
-	lan_ipaddr = var;
-	wan_port0 = strsep( &lan_ipaddr, ">" );
-	if( !lan_ipaddr )
-	    continue;
-	lan_port0 = lan_ipaddr;
-	lan_ipaddr = strsep( &lan_port0, ":" );
-	if( !lan_port0 )
-	    continue;
-	wan_port1 = wan_port0;
-	wan_port0 = strsep( &wan_port1, "-" );
-	if( !wan_port1 )
-	    wan_port1 = wan_port0;
-	lan_port1 = lan_port0;
-	lan_port0 = strsep( &lan_port1, "-" );
-	if( !lan_port1 )
-	    lan_port1 = lan_port0;
-
-	/*
-	 * Set up parameters 
-	 */
-	memset( &nat, 0, sizeof( netconf_nat_t ) );
-	nat.match.ipproto = ipproto;
-	nat.match.dst.ports[0] = htons( atoi( wan_port0 ) );
-	nat.match.dst.ports[1] = htons( atoi( wan_port1 ) );
-	( void )inet_aton( lan_ipaddr, &nat.ipaddr );
-	nat.ports[0] = htons( atoi( lan_port0 ) );
-	nat.ports[1] = htons( atoi( lan_port1 ) );
-
-	/*
-	 * Replace an unused or invalid entry 
-	 */
-	for( i = 0; get_forward_port( i, &unused ); i++ );
-	valid = set_forward_port( i, &nat );
-	assert( valid );
+	cur = safe_snprintf( cur, &len, "," );
+	cur = safe_snprintf( cur, &len, nat->desc );
     }
 
-    nvram_unset( name );
+	
+    int i;
+    for (i=0;i<which;i++)
+	{
+	char val[32];
+	sprintf(val,"forward_port%d",i);
+	if (nvram_match(val,value))
+	    {
+	    nvram_unset(val);
+	    }
+	}
+    return TRUE;
 }
+
 
 #endif /* __CONFIG_NAT__ */
 
