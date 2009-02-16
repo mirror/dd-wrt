@@ -135,3 +135,4 @@ int wl_get_dev_type( char *name, void *buf, int len )
     close( s );
     return ret;
 }
+

@@ -2493,6 +2493,8 @@ int getIfList( char *buffer, const char *ifprefix )
 	    {
 		if( !strncmp( ifname, "wifi", 4 ) )
 		    skip = 1;
+		if( !strncmp( ifname, "ifb", 3 ) )
+		    skip = 1;
 		if( !strncmp( ifname, "imq", 3 ) )
 		    skip = 1;
 		if( !strncmp( ifname, "etherip", 7 ) )
