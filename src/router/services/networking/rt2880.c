@@ -1117,6 +1117,8 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 		sysprintf( "ifconfig ra0 0.0.0.0 up" );
 		sysprintf( "ifconfig %s 0.0.0.0 up", "apcli0" );
 		br_add_interface( getBridge( "ra0" ), "ra0" );
+		if (getWET())
+		    br_add_interface( getBridge( "ra0" ), "apcli0");
 	    }
 	    else
 	    {
