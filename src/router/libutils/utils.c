@@ -2186,10 +2186,13 @@ char *getWET(  )
 
     for( i = 0; i < c; i++ )
     {
-	if( nvram_nmatch( "wet", "wl%d_mode", i ) ||  nvram_nmatch( "apstawet", "wl%d_mode", i ) ||  )
+	if( nvram_nmatch( "wet", "wl%d_mode", i ) ||  nvram_nmatch( "apstawet", "wl%d_mode", i ))
 	{
-	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
+	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) && nvram_nmatch( "wet", "wl%d_mode", i ))
 		return "ra0";
+		
+	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) && nvram_nmatch( "apstawet", "wl%d_mode", i ))
+		return "apcli0";
 
 	}
 
