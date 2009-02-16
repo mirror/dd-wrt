@@ -120,15 +120,15 @@ function SelBW0(num,F) {
 			
 		choose_enable(F.wl0_channel);
 		if(F.wl0_wchannel)
-			create_wchannel0_auto(F)
+			create_wchannel0_auto(F);
 	}
-	else if (num == 20) {
+	else if (num == 10 || num == 20) {
 		if(F.wl0_wchannel)
 			choose_disable(F.wl0_wchannel);
 		
 		choose_enable(F.wl0_schannel);
 		if(F.wl0_wchannel)
-			create_wchannel0(F)
+			create_wchannel0(F);
 	}
 	else {
 		if(F.wl0_wchannel)
@@ -147,15 +147,15 @@ function SelBW1(num,F) {
 			
 		choose_enable(F.wl1_channel);
 		if(F.wl1_wchannel)
-			create_wchannel1_auto(F)
+			create_wchannel1_auto(F);
 	}
-	else if (num == 20) {
+	else if (num == 10 || num == 20) {
 		if(F.wl1_wchannel)
 			choose_disable(F.wl1_wchannel);
 		
 		choose_enable(F.wl1_schannel);
 		if(F.wl1_wchannel)
-			create_wchannel1(F)
+			create_wchannel1(F);
 	}
 	else {
 		if(F.wl1_wchannel)
@@ -168,15 +168,17 @@ function SelBW1(num,F) {
 }
 
 function wl0_enable_disable(F,I) {
-	if (F.wl0_ssid && F.wl0_channel){
+	if (F.wl0_ssid){
 		if( I == "0"){
 			choose_disable(F.wl0_ssid);
 			choose_disable(F.wl0_channel);
+			choose_disable(F.wl0_distance);
 			<% nvram_match("wl0_mode", "ap", "choose_disable(F.wl0_closed[0]);"); %>
 			<% nvram_match("wl0_mode", "ap", "choose_disable(F.wl0_closed[1]);"); %>
 		} else {
 			choose_enable(F.wl0_ssid);
 			choose_enable(F.wl0_channel);
+			choose_enable(F.wl0_distance);
 			<% nvram_match("wl0_mode", "ap", "choose_enable(F.wl0_closed[0]);"); %>
 			<% nvram_match("wl0_mode", "ap", "choose_enable(F.wl0_closed[1]);"); %>
 		}
@@ -184,18 +186,20 @@ function wl0_enable_disable(F,I) {
 }
 
 function wl1_enable_disable(F,I) {
-	if (F.wl1_ssid && F.wl1_channel){
+	if (F.wl1_ssid){
 		if( I == "0"){
 			choose_disable(F.wl1_ssid);
 			choose_disable(F.wl1_channel);
+			choose_disable(F.wl1_distance);
 			<% nvram_match("wl1_mode", "ap", "choose_disable(F.wl1_closed[0]);"); %>
 			<% nvram_match("wl1_mode", "ap", "choose_disable(F.wl1_closed[1]);"); %>
 		} else {
 			choose_enable(F.wl1_ssid);
 			choose_enable(F.wl1_channel);
+			choose_enable(F.wl1_distance);
 			<% nvram_match("wl1_mode", "ap", "choose_enable(F.wl1_closed[0]);"); %>
 			<% nvram_match("wl1_mode", "ap", "choose_enable(F.wl1_closed[1]);"); %>
-		}0
+		}
 	}
 }
 
@@ -229,6 +233,10 @@ function submitcheck(F) {
 	if(F.wl0_nbw.value == 0) { // Auto
 		F.wl0_channel.value = 0;
 	}
+	else if(F.wl0_nbw.value == 10) { // 10MHz
+		F.wl0_nctrlsb.value = "none";
+		F.wl0_nbw.value = 10;
+	}
 	else if(F.wl0_nbw.value == 20) { // 20MHz
 		F.wl0_nctrlsb.value = "none";
 		F.wl0_nbw.value = 20;
@@ -247,6 +255,10 @@ function submitcheck(F) {
 	{
 	if(F.wl1_nbw.value == 0) { // Auto
 		F.wl1_channel.value = 0;
+	}
+	else if(F.wl1_nbw.value == 10) { // 10MHz
+		F.wl1_nctrlsb.value = "none";
+		F.wl1_nbw.value = 10;
 	}
 	else if(F.wl1_nbw.value == 20) { // 20MHz
 		F.wl1_nctrlsb.value = "none";
@@ -284,23 +296,21 @@ var update;
 
 addEvent(window, "load", function() {
 	wl0_enable_disable(document.wireless,'<% nvram_else_match("wl0_gmode","-1","0","1"); %>');
+	wl0_enable_disable(document.wireless,'<% nvram_else_match("wl0_net_mode","disabled","0","1"); %>');
 	wl1_enable_disable(document.wireless,'<% nvram_else_match("wl1_gmode","-1","0","1"); %>');
+	wl1_enable_disable(document.wireless,'<% nvram_else_match("wl1_net_mode","disabled","0","1"); %>');
 	var wl0_mode = "<% nvram_get("wl0_mode"); %>";
 	   if (wl0_mode=="ap" || wl0_mode=="infra")
 	{
 	    if (wl0_phytype == 'n')
 		InitBW0('<% nvram_get("wl0_nbw"); %>' ,document.wireless);
 	}
-	var wl0_net_mode = "<% nvram_get("wl0_net_mode"); %>";
-	SelWL0(wl0_net_mode,document.wireless);
 	var wl1_mode = "<% nvram_get("wl1_mode"); %>";
 	   if (wl1_mode=="ap" || wl1_mode=="infra")
 	{
 	    if (wl1_phytype == 'n')
 		InitBW1('<% nvram_get("wl1_nbw"); %>' ,document.wireless);
 	}
-	var wl1_net_mode = "<% nvram_get("wl1_net_mode"); %>";
-	SelWL1(wl1_net_mode,document.wireless);
 		
 	update = new StatusbarUpdate();
 	update.start();
