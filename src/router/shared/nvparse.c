@@ -647,9 +647,9 @@ bool del_forward_port(const netconf_nat_t * nat)
      * Set enable 
      */
     cur = safe_snprintf( cur, &len, "," );
-    if( nat->match.flags & NETCONF_DISABLED )
-	cur = safe_snprintf( cur, &len, "off" );
-    else
+//    if( nat->match.flags & NETCONF_DISABLED )
+//	cur = safe_snprintf( cur, &len, "off" );
+//    else
 	cur = safe_snprintf( cur, &len, "on" );
 
     /*
