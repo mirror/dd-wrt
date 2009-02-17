@@ -672,6 +672,12 @@ bool del_forward_port(const netconf_nat_t * nat)
 	    nvram_unset(val);
 	    }
 	}
+    if (which>0 && i==which)
+	which--;
+    char val[32];
+    sprintf(val,"%d",which);
+    nvram_set("forward_cur",val);
+	
     return TRUE;
 }
 
