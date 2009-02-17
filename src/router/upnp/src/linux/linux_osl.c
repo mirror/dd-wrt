@@ -572,60 +572,52 @@ upnp_osl_wan_max_bitrates(unsigned long *rx, unsigned long *tx)
 int
 upnp_osl_wan_ip(struct in_addr *inaddr)
 {
-	char tmp[32];
-	int status = 0;
-
 	inaddr->s_addr = 0;
-
-	if (strcasecmp(nvram_safe_get(igd_pri_wan_var(tmp, sizeof(tmp), "proto")),
-		"disabled") != 0) {
-		if (upnp_osl_ifaddr(nvram_safe_get(igd_pri_wan_var(tmp,
-			sizeof(tmp), "ifname")), inaddr) == 0) {
-			if (inaddr->s_addr != 0) {
-				status = 1;
-			}
+	char *wanface = get_wan_face();
+	int status = 0;
+	if (upnp_osl_ifaddr(wanface, inaddr) == 0) {
+		if (inaddr->s_addr != 0) {
+			status = 1;
 		}
 	}
-
 	return status;
 }
 
 int
 upnp_osl_wan_isup()
 {
-	struct in_addr inaddr = {0};
 	int  status = 0;
-	char tmp[100];
-
-	if (strcasecmp(nvram_safe_get(igd_pri_wan_var(tmp, sizeof(tmp), "proto")),
-		"disabled") != 0) {
-		if (upnp_osl_ifaddr(nvram_safe_get(igd_pri_wan_var(tmp,
-			sizeof(tmp), "ifname")), &inaddr) == 0) {
-			if (inaddr.s_addr != 0) {
-				status = 1;
-			}
-		}
-	}
-
+	int link =  check_wan_link(0);
+	if (link)
+	    status=1;
 	return status;
 }
 
 int
 upnp_osl_wan_uptime()
 {
-	FILE *fp;
-	long int second1, second2;
-
-	fp = fopen("/proc/uptime", "r");
-	if (!fp) {
-		fprintf(stderr, "can't open \"uptime\" !\n");
-		return -1;
-	}
-
-	fscanf(fp, "%ld.%ld", &second1, &second2);
-	fclose(fp);
-
-	return second1;
+    FILE *fp;
+    if( nvram_match( "wan_proto", "disabled" ) )
+	return -1;
+    if( nvram_match( "wan_ipaddr", "0.0.0.0" ) )
+    {
+	return -1;
+    }
+    if( !( fp = fopen( "/tmp/.wanuptime", "r" ) ) )
+    {
+	return -1;
+    }
+    float uptime;
+    if( !feof( fp ) && fscanf( fp, "%f", &uptime ) == 1 )
+    {
+	float sys_uptime;
+	FILE *fp2 = fopen( "/proc/uptime", "r" );
+	fscanf( fp2, "%f", &sys_uptime );
+	fclose( fp2 );
+	uptime = sys_uptime - uptime;
+	return (int)uptime;
+    }
+    return -1;
 }
 
 /*
@@ -649,6 +641,20 @@ add_nat_entry(netconf_nat_t *entry)
 		nat.ipaddr.s_addr |= (0xffffffff & ~netmask.s_addr);
 	}
 
+	/* We want to match destination ip address */
+	if(nvram_match("wan_proto","pptp"))
+	{
+	    inet_aton(nvram_safe_get("pptp_get_ip"), &nat.match.dst.ipaddr);
+	}
+	else if(nvram_match("wan_proto","l2tp"))
+	{
+	    inet_aton(nvram_safe_get("l2tp_get_ip"), &nat.match.dst.ipaddr);
+	}
+	else
+	{
+	    inet_aton(nvram_safe_get("wan_ipaddr"), &nat.match.dst.ipaddr);
+	}
+	nat.match.dst.netmask.s_addr = htonl(0xffffffff);
 	/* Set up LAN side match */
 	memset(&filter, 0, sizeof(filter));
 	filter.match.ipproto = nat.match.ipproto;
@@ -685,6 +691,7 @@ delete_nat_entry(netconf_nat_t *entry)
 		nat.ipaddr.s_addr &= netmask.s_addr;
 		nat.ipaddr.s_addr |= (0xffffffff & ~netmask.s_addr);
 	}
+
 
 	/* Set up LAN side match */
 	memset(&filter, 0, sizeof(filter));
