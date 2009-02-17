@@ -620,6 +620,7 @@ upnp_osl_wan_uptime()
     return -1;
 }
 
+static void delete_nat_entry(netconf_nat_t *entry);
 /*
  * UPnP portmapping --
  * Add port forward and a matching ACCEPT rule to the FORWARD table
@@ -633,7 +634,6 @@ add_nat_entry(netconf_nat_t *entry)
 	netconf_filter_t filter;
 	struct in_addr netmask = { 0xffffffff };
 	netconf_nat_t nat = *entry;
-
 	if (entry->ipaddr.s_addr == 0xffffffff) {
 		inet_aton(nvram_safe_get("lan_ipaddr"), &nat.ipaddr);
 		inet_aton(nvram_safe_get("lan_netmask"), &netmask);
@@ -668,6 +668,12 @@ add_nat_entry(netconf_nat_t *entry)
 	/* Accept connection */
 	filter.target = target;
 	filter.dir = dir;
+	 /*
+	  * make sure to delete it before. this is a workaround for Teredo in Windows 7, 
+	  * since Windows 7 Teredo protocol requests the same port every 30 seconds continuesly without releasing it at one point
+	  * this will fill up the nat and filter table with bogus values
+	 */
+	delete_nat_entry(entry);		
 	set_forward_port(&nat);
 	/* Do it */
 	netconf_add_nat(&nat);
