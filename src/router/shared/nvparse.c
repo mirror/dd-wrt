@@ -669,11 +669,17 @@ bool del_forward_port(const netconf_nat_t * nat)
 	sprintf(val,"forward_port%d",i);
 	if (nvram_match(val,value))
 	    {
+	    int a;
 	    nvram_unset(val);
+	    for (a=i+1;a<which;a++)
+		{
+		nvram_nset(nvram_nget("forward_port%d",a),"forward_port%d",a-1);
+		}
+	    which--;
 	    }
 	}
-    if (which>0 && i==which)
-	which--;
+    if (which<0)
+	which=0;
     char val[32];
     sprintf(val,"%d",which);
     nvram_set("forward_cur",val);
