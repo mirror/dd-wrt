@@ -673,7 +673,8 @@ add_nat_entry(netconf_nat_t *entry)
 	  * since Windows 7 Teredo protocol requests the same port every 30 seconds continuesly without releasing it at one point
 	  * this will fill up the nat and filter table with bogus values
 	 */
-	delete_nat_entry(entry);		
+	delete_nat_entry(&nat);		
+
 	set_forward_port(&nat);
 	/* Do it */
 	netconf_add_nat(&nat);
