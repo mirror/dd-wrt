@@ -2867,6 +2867,7 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 
 	if( !strcmp( prefix, "wl1" ) )
 	    instance = 1;
+#if 0
 	if( type == 1 && !nvram_match( wl_net_mode, "g-only" )
 	    && !nvram_match( wl_net_mode, "a-only" )
 	    && !nvram_match( wl_net_mode, "na-only" )
@@ -2881,7 +2882,14 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 	    websWrite( wp,
 		       "var freq = new Array(\"Auto\",\"2.412\",\"2.417\",\"2.422\",\"2.427\",\"2.432\",\"2.437\",\"2.442\",\"2.447\",\"2.452\",\"2.457\",\"2.462\",\"2.467\",\"2.472\",\"2.484\");\n" );
 	    char *sel = "";
-
+	    
+	    if( ch == 0 )  //wchannel = Auto
+	    {
+		websWrite( wp,
+		       " document.write(\"<option value=\\\"0\\\" selected=\\\"selected\\\">\"+ share.auto +\"</option>\");\n");	
+		}
+		else
+		{
 	    if( nvram_nmatch( "lower", "wl%d_nctrlsb", instance ) )
 		sel = "selected=\\\"selected\\\"";
 
@@ -2894,9 +2902,11 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 	    websWrite( wp,
 		       " document.write(\"<option value=\\\"%d\\\" %s>%d - \"+freq[%d]+\" GHz</option>\");\n",
 		       ch + 2, sel, ch + 2, ch + 2 );
+	    }
 
 	}
 	else
+#endif
 	{
 
 	    unsigned int chanlist[128];
@@ -2908,8 +2918,12 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 //          websWrite( wp, "var offset = %d;\n", chanlist[0] );
 //          websWrite( wp, "var buf = \"\";\n" );
 //      websWrite( wp, "var freq = new Array(\"Auto\"" );
-	    int i;
+	    int i,j;
 
+	    // supported 5GHz channels for IEEE 802.11n 40Mhz
+	    int na_upper[16] = {40, 48, 56, 64, 104, 112, 120, 128, 136, 153, 161, 0, 0, 0, 0, 0};
+	    int na_lower[16] = {36, 44, 52, 60, 100, 108, 116, 124, 132, 149, 157, 0, 0, 0, 0, 0};
+	    
 	    websWrite( wp,
 		       "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
 		       nvram_nmatch( "0", "%s_channel",
@@ -2928,8 +2942,74 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 		    ofs = 2.484f;	// fix: ch 14 is 2.484, not 2.477 GHz
 //              websWrite( wp, ", \"%0.3f\"", ofs );
 		char channelstring[32];
+		
+		int showit = 1;
+		
+		if( nvram_match( wl_net_mode, "a-only" ) || nvram_match( wl_net_mode, "na-only" ) )
+		{
+			if( chanlist[i] < 25 )
+			  showit = 0;
+		}
+		else
+		{
+			if( chanlist[i] > 25 )
+			  showit = 0;
+		}		
+		
+		if( nvram_match( wl_net_mode, "na-only" ) && nvram_match( wl_nbw, "40" ) )
+		{
+			showit = 0;
+			j = 0;
+			if( nvram_nmatch( "upper", "%s_nctrlsb", prefix ) )
+			{
+			while ( na_upper[j] ) 
+			{
+			if( chanlist[i] == na_upper[j] )
+			{
+				showit = 1;
+				break;
+			}
+			j++;
+			}
+			}
+			else if( nvram_nmatch( "lower", "%s_nctrlsb", prefix ) )
+			{
+			while ( na_lower[j] ) 
+			{
+			if( chanlist[i] == na_lower[j] )
+			{
+				showit = 1;
+				break;
+			}
+			j++;
+			}
+			}
+		}
+		
+		if( ( nvram_match( wl_net_mode, "n-only" ) || nvram_match( wl_net_mode, "mixed" ) ) && nvram_match( wl_nbw, "40" ) )
+		{
+			showit = 0;
+			if( nvram_nmatch( "upper", "%s_nctrlsb", prefix ) )
+			{
+			if( chanlist[i] >= 3 && chanlist[i] <= 13 )
+			{
+				showit = 1;
+			}
+			}
+			else if( nvram_nmatch( "lower", "%s_nctrlsb", prefix ) )
+			{
+			if( chanlist[i] <= 9 )
+			{
+				showit = 1;
+			}
+			}
+		}
+		
+				
 
 		sprintf( channelstring, "%d", chanlist[i] );
+		if( showit )
+		{
 		websWrite( wp,
 			   "document.write(\"<option value=\\\"%d\\\" %s>%d - %0.3f GHz</option>\");\n",
 			   chanlist[i], nvram_nmatch( channelstring,
@@ -2937,6 +3017,7 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 						      prefix ) ?
 			   "selected=\\\"selected\\\"" : "", chanlist[i],
 			   ofs );
+		}
 	    }
 //          websWrite( wp, ");\n" );
 //          websWrite( wp, "for(i=0; i<=max_channel ; i++) {\n" );
@@ -3149,15 +3230,13 @@ void show_rates( webs_t wp, char *prefix, int maxrate )
 static void show_netmode( webs_t wp, char *prefix )
 {
     char wl_net_mode[16];
-	char index[2];
-	substring (strlen (prefix)-1, strlen (prefix), prefix, index);
     
     sprintf( wl_net_mode, "%s_net_mode", prefix );
 
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label2)</script></div><select name=\"%s\" onchange=\"SelWL%s(this.form.%s.selectedIndex,this.form)\">\n",
-	       wl_net_mode, index, wl_net_mode );
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label2)</script></div><select name=\"%s\">\n",
+	       wl_net_mode );
     websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
     websWrite( wp,
 	       "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n",
@@ -4235,6 +4314,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 		 || nvram_nmatch( "mixed", "%s_net_mode", prefix )
 		 || nvram_nmatch( "na-only", "%s_net_mode", prefix ) ) )
 	{
+	    show_channel( wp, prefix, prefix, 1 );
 
 	    websWrite( wp, "<div class=\"setting\">\n" );
 	    websWrite( wp,
@@ -4256,15 +4336,15 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 		       nvram_nmatch( "0", "%s_nbw",
 				     prefix ) ? "selected=\\\"selected\\\"" :
 		       "" );
-	    websWrite( wp, "<option value=\"10\" %s>10 MHz</option>",
+	    websWrite( wp, "<option value=\"10\" %s>10 MHz</option>\n",
 		       nvram_nmatch( "10", "%s_nbw",
 				     prefix ) ? "selected=\\\"selected\\\"" :
 		       "" );
-	    websWrite( wp, "<option value=\"20\" %s>20 MHz</option>",
+	    websWrite( wp, "<option value=\"20\" %s>20 MHz</option>\n",
 		       nvram_nmatch( "20", "%s_nbw",
 				     prefix ) ? "selected=\\\"selected\\\"" :
 		       "" );
-	    websWrite( wp, "<option value=\"40\" %s>40 MHz</option>",
+	    websWrite( wp, "<option value=\"40\" %s>40 MHz</option>\n",
 		       nvram_nmatch( "40", "%s_nbw",
 				     prefix ) ? "selected=\\\"selected\\\"" :
 		       "" );
@@ -4272,13 +4352,31 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	    websWrite( wp, "</select>\n" );
 	    websWrite( wp, "</div>\n" );
 
+	    if( nvram_nmatch( "40", "%s_nbw", prefix ) )
+	    {
 	    websWrite( wp, "<div class=\"setting\">\n" );
+//	    websWrite( wp,
+//		       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n" );
+//	    websWrite( wp, "<select name=\"%s_wchannel\" ></select>\n",
+//		       prefix );
+
+////////////////////////
 	    websWrite( wp,
 		       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n" );
-	    websWrite( wp, "<select name=\"%s_wchannel\" ></select>\n",
-		       prefix );
+	    websWrite( wp, "<select name=\"%s_nctrlsb\" >\n", prefix );
+	    websWrite( wp, "<option value=\"upper\" %s>upper</option>\n",
+		       nvram_nmatch( "upper", "%s_nctrlsb",
+				     prefix ) ? "selected=\\\"selected\\\"" :
+		       "" );
+	    websWrite( wp, "<option value=\"lower\" %s>lower</option>\n",
+		       nvram_nmatch( "lower", "%s_nctrlsb",
+				     prefix ) ? "selected=\\\"selected\\\"" :
+			   "" );
+	    websWrite( wp, "</select>\n" );
+////////////////////////
+
 	    websWrite( wp, "</div>\n" );
-	    show_channel( wp, prefix, prefix, 1 );
+    	}
 	}
 	else
 
