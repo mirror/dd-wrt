@@ -43,6 +43,7 @@ extern char *( *websGetVar ) ( webs_t wp, char *var, char *d );
 void wan_proto( webs_t wp )
 {
     char *enable;
+
     enable = websGetVar( wp, "wan_proto", NULL );
     nvram_set( "wan_proto", enable );
 }
@@ -295,9 +296,9 @@ void save_policy( webs_t wp )
     f_id = websGetVar( wp, "f_id", NULL );
     f_name = websGetVar( wp, "f_name", NULL );
     f_status = websGetVar( wp, "f_status", NULL );	// 0=>Disable /
-							// 1,2=>Enable
+    // 1,2=>Enable
     f_status2 = websGetVar( wp, "f_status2", NULL );	// deny=>Deny /
-							// allow=>Allow
+    // allow=>Allow
     if( !f_id || !f_name || !f_status || !f_status2 )
     {
 	D( "invalid" );
@@ -536,9 +537,10 @@ void addDeletion( char *word )
 
 void delete_static_route( webs_t wp )
 {
-    addAction("routing");
+    addAction( "routing" );
     char *buf = malloc( 1000 );
     char *buf_name = malloc( 1000 );
+
     memset( buf, 0, 1000 );
     memset( buf_name, 0, 1000 );
     char *cur = buf;
@@ -1067,8 +1069,8 @@ void ping_wol( webs_t wp )
 
     // use Wol.asp as a debugging console
 #ifdef HAVE_REGISTER
-if (!isregistered_real())
-    return;
+    if( !isregistered_real(  ) )
+	return;
 #endif
     sysprintf( "%s > %s 2>&1 &", wol_cmd, PING_TMP );
 
@@ -1086,8 +1088,8 @@ void diag_ping_start( webs_t wp )
 
     setenv( "PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1 );
 #ifdef HAVE_REGISTER
-if (!isregistered_real())
-    return;
+    if( !isregistered_real(  ) )
+	return;
 #endif
     sysprintf( "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,
 	       PING_TMP );
@@ -2057,7 +2059,7 @@ void save_networking( webs_t wp )
 
     for( i = 0; i < bridgescount; i++ )
     {
-	char *ifname, *tag, *prio,*mtu;
+	char *ifname, *tag, *prio, *mtu;
 	char var[32];
 	char ipaddr[32];
 	char netmask[32];
@@ -2086,7 +2088,6 @@ void save_networking( webs_t wp )
 	    mtu = "1500";
 	if( strlen( prio ) == 0 )
 	    mtu = "1500";
-
 
 	sprintf( n, "%s_ipaddr", ifname );
 	if( get_merge_ipaddr( wp, n, ipaddr ) )
@@ -2482,6 +2483,7 @@ void add_bridgeif( webs_t wp )
 static void save_prefix( webs_t wp, char *prefix )
 {
     char n[80];
+
 #ifdef HAVE_MADWIFI
     char sifs[80];
     char turbo[80];
@@ -2496,13 +2498,13 @@ static void save_prefix( webs_t wp, char *prefix )
 	char *wl = websGetVar( wp, n, NULL );
 
 	cprintf( "copy value %s which is [%s] to nvram\n", n, wl );
-	if ( wl )
+	if( wl )
 	{
-	if( !strcmp( prefix, "wl0" ) )
-	    nvram_set( "wl_ssid", wl );
-	else
-	    nvram_set( "wl1_ssid", wl );
-    }
+	    if( !strcmp( prefix, "wl0" ) )
+		nvram_set( "wl_ssid", wl );
+	    else
+		nvram_set( "wl1_ssid", wl );
+	}
     }
     copytonv( wp, "%s_distance", prefix );
 #ifdef HAVE_MADWIFI
@@ -2553,6 +2555,7 @@ static void save_prefix( webs_t wp, char *prefix )
     {
 	sprintf( turbo, "%s_rtsvalue", prefix );
 	char *tw = websGetVar( wp, turbo, NULL );
+
 	if( tw )
 	{
 	    if( atoi( tw ) < 1 )
@@ -2567,11 +2570,11 @@ static void save_prefix( webs_t wp, char *prefix )
     copytonv( wp, "%s_maxrate", prefix );
     copytonv( wp, "%s_xr", prefix );
     copytonv( wp, "%s_outdoor", prefix );
-//    copytonv( wp, "%s_compression", prefix );	// Atheros SuperG header
-						// compression
+//    copytonv( wp, "%s_compression", prefix ); // Atheros SuperG header
+    // compression
     copytonv( wp, "%s_ff", prefix );	// ff = 0, Atheros SuperG fast
-					// framing disabled, 1 fast framing
-					// enabled
+    // framing disabled, 1 fast framing
+    // enabled
     copytonv( wp, "%s_diversity", prefix );
     copytonv( wp, "%s_preamble", prefix );
     copytonv( wp, "%s_wmm", prefix );
@@ -2584,7 +2587,7 @@ static void save_prefix( webs_t wp, char *prefix )
 
     copytonv( wp, "%s_chanshift", prefix );
     copytonv( wp, "%s_doth", prefix );
-    copytonv( wp, "%s_maxassoc", prefix);
+    copytonv( wp, "%s_maxassoc", prefix );
 
     sprintf( chanbw, "%s_channelbw", prefix );
     char *cbw = websGetVar( wp, chanbw, NULL );
@@ -2616,7 +2619,7 @@ static void save_prefix( webs_t wp, char *prefix )
     else
 	ifname = prefix;
 #else
-    ifname = getRADev(prefix);
+    ifname = getRADev( prefix );
 #endif
     copytonv( wp, "%s_multicast", ifname );
     copytonv( wp, "%s_bridged", ifname );
@@ -2653,15 +2656,17 @@ static void save_prefix( webs_t wp, char *prefix )
 
     copytonv( wp, "%s_ap_isolate", prefix );
     sprintf( n, "%s_mode", prefix );
-    if (nvram_match(n,"sta"))
-	{
+    if( nvram_match( n, "sta" ) )
+    {
 	char *wl = websGetVar( wp, n, NULL );
-	if (wl)
-	if (!strcmp(wl,"ap") || !strcmp(wl,"wdsap") || !strcmp(wl,"infra") || !strcmp(wl,"wdssta"))
+
+	if( wl )
+	    if( !strcmp( wl, "ap" ) || !strcmp( wl, "wdsap" )
+		|| !strcmp( wl, "infra" ) || !strcmp( wl, "wdssta" ) )
 	    {
-	    nvram_set("wan_proto","disabled");
+		nvram_set( "wan_proto", "disabled" );
 	    }
-	}
+    }
     copytonv( wp, n );
     if( !strcmp( prefix, "wl0" ) || !strcmp( prefix, "wl1" ) )
     {
@@ -2679,6 +2684,7 @@ static void save_prefix( webs_t wp, char *prefix )
 #endif
     }
     int chanchanged = 0;
+
 #ifdef HAVE_RT2880
     copytonv( wp, "%s_greenfield", prefix );
 #endif
@@ -2700,7 +2706,7 @@ static void save_prefix( webs_t wp, char *prefix )
 	}
     }
 #ifdef HAVE_MADWIFI
-    if( cbwchanged || chanchanged)
+    if( cbwchanged || chanchanged )
     {
 	if( nvram_match( chanbw, "40" ) )
 	{
@@ -2736,7 +2742,7 @@ static void save_prefix( webs_t wp, char *prefix )
 	cprintf( "copy value %s which is [%s] to nvram\n", n, wl );
 	if( wl && !strcmp( prefix, "wl0" ) )
 	    nvram_set( "wl_channel", wl );
-	else if (wl)
+	else if( wl )
 	    nvram_set( "wl1_channel", wl );
     }
     copytonv( wp, n );
@@ -2749,7 +2755,7 @@ static void save_prefix( webs_t wp, char *prefix )
 	cprintf( "copy value %s which is [%s] to nvram\n", n, wl );
 	if( wl && !strcmp( prefix, "wl0" ) )
 	    nvram_set( "wl_wchannel", wl );
-	else if (wl)
+	else if( wl )
 	    nvram_set( "wl1_wchannel", wl );
 
     }
@@ -2832,27 +2838,29 @@ void set_wiviz( webs_t wp )
 
 void ttraff_erase( webs_t wp )
 {
-	char line[2048];
-	char *name = NULL;
-	system2( "nvram show | grep traff- > /tmp/.ttraff" );	
-	FILE *fp = fopen( "/tmp/.ttraff", "r" );
-	if( fp == NULL )
+    char line[2048];
+    char *name = NULL;
+
+    system2( "nvram show | grep traff- > /tmp/.ttraff" );
+    FILE *fp = fopen( "/tmp/.ttraff", "r" );
+
+    if( fp == NULL )
+    {
+	return;
+    }
+    while( fgets( line, sizeof( line ), fp ) != NULL )
+    {
+	if( startswith( line, "traff-" ) )
 	{
-	  return;
-	}
-	while( fgets( line, sizeof( line ), fp ) != NULL )
-	{
-		if (startswith (line, "traff-"))
+	    name = strtok( line, "=" );
+	    if( strlen( name ) == 13 )	//only unset ttraf-XX-XXXX
 	    {
-		 name = strtok (line, "=");
-		 if (strlen (name) == 13)  //only unset ttraf-XX-XXXX
-		 {
-		   nvram_unset (name);
-	     } 
+		nvram_unset( name );
 	    }
 	}
-	nvram_commit ( );
-	unlink( "/tmp/.ttraff" );
+    }
+    nvram_commit(  );
+    unlink( "/tmp/.ttraff" );
 }
 
 void changepass( webs_t wp )
@@ -3667,6 +3675,27 @@ void tf_upnp( webs_t wp )
 	}
 	else
 	{
+	    int which = atoi( nvram_default_get( "forward_cur", "0" ) );
+	    int i = atoi( v );
+	    char val[32];
+
+	    sprintf( val, "forward_port%d", i );
+	    int a;
+
+	    nvram_unset( val );
+	    for( a = i + 1; a < which; a++ )
+	    {
+		nvram_nset( nvram_nget( "forward_port%d", a ),
+			    "forward_port%d", a - 1 );
+	    }
+	    which--;
+	    sprintf( val, "forward_port%d", which );
+	    nvram_unset( val );
+	    if( which < 0 )
+		which = 0;
+	    sprintf( val, "%d", which );
+	    nvram_set( "forward_cur", val );
+
 	    sprintf( s, "forward_port%s", v );
 	    nvram_unset( s );
 	}
