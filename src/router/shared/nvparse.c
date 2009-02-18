@@ -676,6 +676,8 @@ bool del_forward_port(const netconf_nat_t * nat)
 		nvram_nset(nvram_nget("forward_port%d",a),"forward_port%d",a-1);
 		}
 	    which--;
+	    sprintf(val,"forward_port%d",which);
+	    nvram_unset(val);
 	    }
 	}
     if (which<0)
