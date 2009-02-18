@@ -1404,6 +1404,16 @@ static const sromvar_t pci_sromvars[] = {
   {"txchain", 0xffffff00, SRFL_NOFFS, SROM8_TXRXC, SROM4_TXCHAIN_MASK},
   {"rxchain", 0xffffff00, SRFL_NOFFS, SROM8_TXRXC, SROM4_RXCHAIN_MASK},
   {"antswitch", 0xffffff00, SRFL_NOFFS, SROM8_TXRXC, SROM4_SWITCH_MASK},
+	{"tssipos2g",	0xffffff00,	0,		SROM8_FEM2G,	SROM8_FEM_TSSIPOS_MASK},
+	{"extpagain2g",	0xffffff00,	0,		SROM8_FEM2G,	SROM8_FEM_EXTPA_GAIN_MASK},
+	{"pdetrange2g",	0xffffff00,	0,		SROM8_FEM2G,	SROM8_FEM_PDET_RANGE_MASK},
+	{"triso2g",	0xffffff00,	0,		SROM8_FEM2G,	SROM8_FEM_TR_ISO_MASK},
+	{"antswctl2g",	0xffffff00,	0,		SROM8_FEM2G,	SROM8_FEM_ANTSWLUT_MASK},
+	{"tssipos5g",	0xffffff00,	0,		SROM8_FEM5G,	SROM8_FEM_TSSIPOS_MASK},
+	{"extpagain5g",	0xffffff00,	0,		SROM8_FEM5G,	SROM8_FEM_EXTPA_GAIN_MASK},
+	{"pdetrange5g",	0xffffff00,	0,		SROM8_FEM5G,	SROM8_FEM_PDET_RANGE_MASK},
+	{"triso5g",	0xffffff00,	0,		SROM8_FEM5G,	SROM8_FEM_TR_ISO_MASK},
+	{"antswctl5g",	0xffffff00,	0,		SROM8_FEM5G,	SROM8_FEM_ANTSWLUT_MASK},
   {"txpid2ga0", 0x000000f0, 0, SROM4_TXPID2G, 0xff},
   {"txpid2ga1", 0x000000f0, 0, SROM4_TXPID2G, 0xff00},
   {"txpid2ga2", 0x000000f0, 0, SROM4_TXPID2G + 1, 0xff},
@@ -1782,7 +1792,7 @@ initvars_srom_pci (sb_t * sbh, void *curmap, char **vars, uint * count)
 		    0, srom, SROM_WORDS, TRUE);
 
   if ((srom[SROM4_SIGN] == SROM4_SIGNATURE) ||
-      ((sbh->buscoretype == SB_PCIE) && (sbh->buscorerev >= 6)))
+      (((sbh->buscoretype == SB_PCIE) && (sbh->buscorerev >= 6)) || ((sbh->buscoretype == SB_PCI) && (sbh->buscorerev >= 0xe))))
     {
       /* sromrev >= 4, read more */
       err =
