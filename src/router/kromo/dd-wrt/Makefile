@@ -348,6 +348,9 @@ ifneq ($(CONFIG_MSSID),y)
 	cp Wireless_Basic.v23 $(INSTALLDIR)/www/Wireless_Basic.asp
 	cp Wireless_Advanced.v23 $(INSTALLDIR)/www/Wireless_Advanced.asp
 endif
+ifeq ($(CONFIG_MADWIFI),y)
+	rm -f $(INSTALLDIR)/www/Wireless_Advanced.asp
+endif
 
 
 ifeq ($(CONFIG_SKYTRON),y)
