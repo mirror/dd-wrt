@@ -105,8 +105,7 @@ function deleteForward(x) {
 }
 
 function setUPnP(val) {
-	setElementsActive("upnpcas", "upnpmnp", val == "1");
-	setElementActive("upnpmnp", val == "1");
+	setElementActive("upnpcas", val == "1");
 }
 
 function to_submit(F) {
@@ -194,11 +193,6 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("upnp.clear"); %></div>
 									<input class="spaceradio" type="radio" name="upnpcas" value="1" <% nvram_checked("upnpcas","1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" name="upnpcas" value="0" <% nvram_checked("upnpcas","0"); %> /><% tran("share.disable"); %>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("upnp.url"); %></div>
-									<input class="spaceradio" type="radio" name="upnpmnp" value="1" <% nvram_checked("upnpmnp","1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="upnpmnp" value="0" <% nvram_checked("upnpmnp","0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />
 							
