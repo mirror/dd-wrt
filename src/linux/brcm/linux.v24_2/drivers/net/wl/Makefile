@@ -16,8 +16,14 @@ EXTRA_CFLAGS += -I$(TOPDIR)/arch/mips/bcm947xx/include -DBCMDRIVER=1 -DBCMDMA64=
 
 O_TARGET	:= wl.o
 
+ifdef CONFIG_V25
+obj-$(CONFIG_APSTA)		:= wl_apsta.v25.o_save
+obj-$(CONFIG_APSTAMIMO)		:= wl_apsta_mimo.v25.o_save
+else
 obj-$(CONFIG_APSTA)		:= wl_apsta.o_save
 obj-$(CONFIG_APSTAMIMO)		:= wl_apsta_mimo.o_save
+endif
+
 obj-y		+= hnddma.o 
 ifeq ($(CONFIG_WL),m)
 obj-m		:= $(O_TARGET)
