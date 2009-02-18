@@ -139,7 +139,7 @@ void start_sysinit( void )
 	insmod( "ath_ahb" );
     }
 
-#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_ECB3500)
+#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_ECB3500) || defined(HAVE_EOC1650)
     system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
     system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
 #endif

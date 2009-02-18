@@ -113,6 +113,76 @@ static struct site_survey_list
     unsigned char dtim_period;	/* DTIM period */
 } site_survey_lists[SITE_SURVEY_NUM];
 
+#define LE_READ_4(p)					\
+	((u_int32_t)					\
+	 ((((const u_int8_t *)(p))[0]      ) |		\
+	  (((const u_int8_t *)(p))[1] <<  8) |		\
+	  (((const u_int8_t *)(p))[2] << 16) |		\
+	  (((const u_int8_t *)(p))[3] << 24)))
+
+
+static __inline int
+iswpaoui(const unsigned char *frm)
+{
+	return frm[1] > 3 && LE_READ_4(frm + 2) == ((WPA_OUI_TYPE << 24) | WPA_OUI);
+}
+
+static __inline int
+iswmeoui(const unsigned char *frm)
+{
+	return frm[1] > 3 && LE_READ_4(frm + 2) == ((WME_OUI_TYPE << 24) | WME_OUI);
+}
+
+static __inline int
+isatherosoui(const unsigned char *frm)
+{
+	return frm[1] > 3 && LE_READ_4(frm + 2) == ((ATH_OUI_TYPE << 24) | ATH_OUI);
+}
+
+static int __inline
+ismtikoui(const unsigned char *frm)
+{
+	return frm[1] > 3 && LE_READ_4(frm+2) == MTIK_OUI;
+}
+
+static __inline int
+istdmaoui(const unsigned char *frm)
+{
+	return frm[1] > 3 && LE_READ_4(frm+2) == ((TDMA_OUI_TYPE<<24)|TDMA_OUI);
+}
+
+
+static void fillenc(char *encinfo,unsigned char *vp, int ielen)
+{
+memset(encinfo,0,128);
+	while (ielen > 0) {
+		switch (vp[0]) {
+		case IEEE80211_ELEMID_VENDOR:	
+			if (iswpaoui(vp))
+				strcat(encinfo,"WPA ");
+			else if (iswmeoui(vp))
+				strcat(encinfo,"WME ");
+			else if (isatherosoui(vp))
+				strcat(encinfo,"ATH ");
+			else if (ismtikoui(vp))
+				strcat(encinfo,"MTIK ");
+			else if (istdmaoui(vp))
+				strcat(encinfo,"TDMA ");
+			break;
+		case IEEE80211_ELEMID_RSN:
+			strcat(encinfo,"WPA2 ");
+			break;
+		default:
+			break;
+		}
+		ielen -= 2 + vp[1];
+		vp += 2 + vp[1];
+	}
+if (strlen(encinfo)>0)
+    encinfo[strlen(encinfo)-1]=0;
+
+
+}
 static const char *ieee80211_ntoa( const uint8_t mac[IEEE80211_ADDR_LEN] )
 {
     static char a[18];
@@ -180,6 +250,7 @@ int site_survey_main( int argc, char *argv[] )
 	site_survey_lists[i].capability = sr->isr_capinfo;
 	// site_survey_lists[i].athcaps = sr->isr_athflags;
 	site_survey_lists[i].rate_count = sr->isr_nrates;
+	fillenc(site_survey_lists[i].ENCINFO,(unsigned char*)(vp + sr->isr_ssid_len),sr->isr_ie_len);
 	cp += sr->isr_len, len -= sr->isr_len;
 	i++;
     }
@@ -193,14 +264,15 @@ int site_survey_main( int argc, char *argv[] )
     {
 
 	fprintf( stderr,
-		 "[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d]\n",
+		 "[%2d] SSID[%20s] BSSID[%s] channel[%2d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 		 i, site_survey_lists[i].SSID, site_survey_lists[i].BSSID,
 		 site_survey_lists[i].channel, site_survey_lists[i].RSSI,
 		 site_survey_lists[i].phy_noise,
 		 site_survey_lists[i].beacon_period,
 		 site_survey_lists[i].capability,
 		 site_survey_lists[i].dtim_period,
-		 site_survey_lists[i].rate_count );
+		 site_survey_lists[i].rate_count,
+		 site_survey_lists[i].ENCINFO );
     }
 
     return 0;
