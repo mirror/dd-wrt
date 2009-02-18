@@ -799,7 +799,11 @@ int wifi_gettxpower( char *ifname )
 
 #ifdef HAVE_ALPHA
     poweroffset = 10;
+#elif HAVE_EOC1650
+    poweroffset = 0;
 #elif HAVE_EAP3660
+    poweroffset = 7;
+#elif HAVE_EOC2610
     poweroffset = 7;
 #elif HAVE_NS2
     poweroffset = 10;
@@ -889,7 +893,11 @@ int wifi_gettxpoweroffset( char *ifname )
 
 #ifdef HAVE_ALPHA
     poweroffset = 10;
+#elif HAVE_EOC1650
+    poweroffset = 0;
 #elif HAVE_EAP3660
+    poweroffset = 7;
+#elif HAVE_EOC2610
     poweroffset = 7;
 #elif HAVE_NS2
     poweroffset = 10;

@@ -96,7 +96,7 @@ int getbuttonstate(  )
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5) || defined(HAVE_WP54G) || defined(HAVE_NP28G)
 int getbuttonstate(  )
 {
-#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610)
+#if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_EOC1650)
     int ret = get_gpio( 5 );
     return 1-ret;
 #elif HAVE_WP54G
