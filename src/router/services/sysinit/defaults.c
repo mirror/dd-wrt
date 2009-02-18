@@ -114,7 +114,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"upnp_internet_dis", "0", 0},	/* Allow Users to Disable Internet Access. 0:Disable 1:Enable */
     {"upnp_ssdp_interval", "60", 0},	/* SSDP interval */
     {"upnp_max_age", "180", 0},	/* MAX age time */
-    {"upnpmnp", "0", 0},	/* UPnP URL */
     {"upnpcas", "0", 0},	/* UPnP clear at startup */
 #endif
 
