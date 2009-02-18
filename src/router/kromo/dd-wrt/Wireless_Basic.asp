@@ -13,22 +13,6 @@ var wl1_nbw = '<% nvram_get("wl1_nbw"); %>';
 var wl1_phytype = '<% nvram_get("wl1_phytype"); %>';
 var wl1_40m_disable = '<% nvram_get("wl1_40m_disable"); %>';
 
-function SelWL0(num,F) {
-  if ( num == 0)
-    I = "0";
-  else
-    I = "1";
-  wl0_enable_disable(F,I);
-}
-
-function SelWL1(num,F) {
-  if ( num == 0)
-    I = "0";
-  else
-    I = "1";
-  wl1_enable_disable(F,I);
-}
-
 function create_wchannel0_auto(F) {
 	F.wl0_wchannel.length = 1;
 	
@@ -167,41 +151,8 @@ function SelBW1(num,F) {
 	}
 }
 
-function wl0_enable_disable(F,I) {
-	if (F.wl0_ssid){
-		if( I == "0"){
-			choose_disable(F.wl0_ssid);
-			choose_disable(F.wl0_channel);
-			choose_disable(F.wl0_distance);
-			<% nvram_match("wl0_mode", "ap", "choose_disable(F.wl0_closed[0]);"); %>
-			<% nvram_match("wl0_mode", "ap", "choose_disable(F.wl0_closed[1]);"); %>
-		} else {
-			choose_enable(F.wl0_ssid);
-			choose_enable(F.wl0_channel);
-			choose_enable(F.wl0_distance);
-			<% nvram_match("wl0_mode", "ap", "choose_enable(F.wl0_closed[0]);"); %>
-			<% nvram_match("wl0_mode", "ap", "choose_enable(F.wl0_closed[1]);"); %>
-		}
-	}
-}
 
-function wl1_enable_disable(F,I) {
-	if (F.wl1_ssid){
-		if( I == "0"){
-			choose_disable(F.wl1_ssid);
-			choose_disable(F.wl1_channel);
-			choose_disable(F.wl1_distance);
-			<% nvram_match("wl1_mode", "ap", "choose_disable(F.wl1_closed[0]);"); %>
-			<% nvram_match("wl1_mode", "ap", "choose_disable(F.wl1_closed[1]);"); %>
-		} else {
-			choose_enable(F.wl1_ssid);
-			choose_enable(F.wl1_channel);
-			choose_enable(F.wl1_distance);
-			<% nvram_match("wl1_mode", "ap", "choose_enable(F.wl1_closed[0]);"); %>
-			<% nvram_match("wl1_mode", "ap", "choose_enable(F.wl1_closed[1]);"); %>
-		}
-	}
-}
+
 
 function vifs_add_submit(F,I) {
 	F.iface.value = I;
@@ -243,10 +194,10 @@ function submitcheck(F) {
 	}
 	else { // 40MHz
 		if(F.wl0_channel.selectedIndex == 0) {
-			F.wl0_nctrlsb.value = "lower";
+		F.wl0_nctrlsb.value = "lower";
 		}
 		else {
-			F.wl0_nctrlsb.value = "upper";
+		F.wl0_nctrlsb.value = "upper";
 		}
 		F.wl0_nbw.value = 40;
 	}
@@ -295,10 +246,7 @@ if (submitcheck(F))
 var update;
 
 addEvent(window, "load", function() {
-	wl0_enable_disable(document.wireless,'<% nvram_else_match("wl0_gmode","-1","0","1"); %>');
-	wl0_enable_disable(document.wireless,'<% nvram_else_match("wl0_net_mode","disabled","0","1"); %>');
-	wl1_enable_disable(document.wireless,'<% nvram_else_match("wl1_gmode","-1","0","1"); %>');
-	wl1_enable_disable(document.wireless,'<% nvram_else_match("wl1_net_mode","disabled","0","1"); %>');
+
 	var wl0_mode = "<% nvram_get("wl0_mode"); %>";
 	   if (wl0_mode=="ap" || wl0_mode=="infra")
 	{
@@ -343,9 +291,9 @@ addEvent(window, "unload", function() {
 				  	<input type="hidden" name="action" value="Apply" />
 				  	<input type="hidden" name="change_action" value="gozila_cgi" />
 				  	<input type="hidden" name="submit_type" value="save" />
-				  	
+
 				  	<input type="hidden" name="wl0_nctrlsb" />
-				  	<input type="hidden" name="wl1_nctrlsb" />
+				  	<input type="hidden" name="wl1_nctrlsb" /> 
 				  	<input type="hidden" name="iface" />
 				  	
 				  	<% show_wireless(); %>
