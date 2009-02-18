@@ -1662,7 +1662,7 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
 		    j++;
 		if( !wifi && !strncmp( menu[i][j], "Wireless_MAC.asp", 8 ) )
 		    j++;
-		if( !wifi && !strncmp( menu[i][j], "Wireless_Advanced", 17 ) )
+		if( !strncmp( menu[i][j], "Wireless_Advanced", 17 ) )
 		    j++;
 		if( !wifi && !strncmp( menu[i][j], "Wireless_WDS", 12 ) )
 		    j++;
