@@ -142,6 +142,11 @@ ifeq ($(CONFIG_EOP_TUNNEL),y)
 else
 	echo "# CONFIG_NET_ETHERIP" is not set >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_V25),y)
+	echo CONFIG_V25=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_V25" is not set >> $(LINUXDIR)/.config
+endif
 #ifeq ($(CONFIG_REGISTER),y)
 #	cp $(LINUXDIR)/.config_register $(LINUXDIR)/.config
 #endif
@@ -264,7 +269,11 @@ ifeq ($(CONFIG_MSSID),y)
 #ifneq ($(CONFIG_BCM5354),y)
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
+ifeq ($(CONFIG_V25),y)
+	cp bcm57xx/bcm57xx.o.v25 $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xxlsys.o
+else
 	cp bcm57xx/bcm57xx.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xxlsys.o
+endif
 #	cp bcm57xx/bcm57xx300.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xx300.o
 endif
 endif
@@ -381,7 +390,14 @@ ifeq ($(CONFIG_KAID),y)
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	cp $(LINUXDIR)/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinux
+
+#	./tools/kernelopt/kernelopt.sh $(LINUXDIR) $(ARCH)-uclibc/target $(ARCH)-linux-uclibc-
+#	make -C $(LINUXDIR) vmlinux_optimize
+	
+#	objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux_opt mipsel-uclibc/vmlinux
+#	objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S $(LINUXDIR)/vmlinux mipsel-uclibc/vmlinux2
 	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux mipsel-uclibc/vmlinuz
+#	../../opt/loader-0.02/lzma e -lc2 -lp2 -pb2 -d21 mipsel-uclibc/vmlinux2 mipsel-uclibc/vmlinuz2
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/target.squashfs -noappend -root-owned -le
 #endif
 #
