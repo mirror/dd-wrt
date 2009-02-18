@@ -823,6 +823,11 @@ static void handle_wireless( void )
 #endif
 #endif
     handle = start_service_nofree( "radio_timer", handle );
+    //restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
+    handle = startstop_nofree( "udhcpd", handle );
+#ifdef HAVE_DNSMASQ
+    handle = startstop_nofree( "dnsmasq", handle );
+#endif
     startstop( "httpd" );	// httpd will not accept connection anymore
     // on wan/lan ip changes changes
     if( handle )
