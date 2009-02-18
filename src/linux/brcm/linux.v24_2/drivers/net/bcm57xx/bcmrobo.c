@@ -781,7 +781,6 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 			nvram_set("switch_type", "BCM53115S");
 		else
 			nvram_set("switch_type", "unknown");						
-	char *boothwmodel=nvram_get("boot_hw_model");
 	if (boothwmodel && !strcmp(boothwmodel,"WRT610N"))
 		iswrt610n=1;
 
