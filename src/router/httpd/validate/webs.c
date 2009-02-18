@@ -3695,9 +3695,6 @@ void tf_upnp( webs_t wp )
 		which = 0;
 	    sprintf( val, "%d", which );
 	    nvram_set( "forward_cur", val );
-
-	    sprintf( s, "forward_port%s", v );
-	    nvram_unset( s );
 	}
 	eval( "stopservice", "firewall" );
 	eval( "startservice", "firewall" );  //restart firewall
