@@ -4320,14 +4320,45 @@ STATIC int bcm5700_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 		if (mm_copy_from_user(&args, rq->ifr_data, sizeof(args)))
 			return -EFAULT;
 
-		if (robo->ops->read_reg(robo, (args[0] >> 16) & 0xffff, args[0] & 0xffff, &value, 2))
-			return -EIO;
+	//add by michael to read the maclist at 20080918
+		if(args[0] != 0x00050060 && args[0]!= 0x00050068)
+		{
+			if (robo->ops->read_reg(robo, (args[0] >> 16) & 0xffff, args[0] & 0xffff, &value, 2))
+				return -EIO;
 
-		args[1] = value & 0xffff;
-		if (mm_copy_to_user(rq->ifr_data, &args, sizeof(args)))
-			return -EFAULT;
+			args[1] = value & 0xffff;
+			if (mm_copy_to_user(rq->ifr_data, &args, sizeof(args)))
+				return -EFAULT;
+ 
+			return 0;
+		}
+		else if(args[0] == 0x00050068)
+		{
+			if (robo->ops->read_reg(robo, (args[0] >> 16) & 0xffff, args[0] & 0xffff, &value, 4))
+				return -EIO;
 
-		return 0;
+			args[1] = value;
+			if (mm_copy_to_user(rq->ifr_data, &args, sizeof(args)))
+				return -EFAULT;
+
+			return 0;
+		}
+		else
+		{
+			unsigned int args_tmp[3] = {0,0,0};
+			unsigned char val[8]={0};
+			if (robo->ops->read_reg(robo, (args[0] >> 16) & 0xffff, args[0] & 0xffff, &val, 8))
+				return -EIO;
+			printk("the macaddress is: [%02x][%02x][%02x][%02x][%02x][%02x]\n",val[5],val[4],val[3],val[2],val[1],val[0]);
+			args_tmp[1] = ( ((val[5] << 24) & 0xffffffff) | ((val[4] << 16) & 0xffffff) | ((val[3] << 8) & 0xffff)| val[2]& 0xff );
+			args_tmp[2] = ( ((val[1] << 24) & 0xffffffff) | ((val[0] << 16) & 0xffffff) );
+			//memcpy(args_tmp+1, val, sizeof(val));
+			//printk("the args_tmp is: [%04x][%04x]\n",args_tmp[1],args_tmp[2]);
+			if (mm_copy_to_user(rq->ifr_data, &args_tmp, sizeof(args_tmp)))
+				return -EFAULT;
+
+			return 0;
+		}
 	}
 
 	case SIOCSETCROBOWR:		/* Write the specified ROBO register. */

@@ -188,6 +188,7 @@
 #define REG_CTRL_PORT5	0x05	/* Port 5 traffic control register */
 #define REG_CTRL_PORT6	0x06	/* Port 6 traffic control register */
 #define REG_CTRL_PORT7	0x07	/* Port 7 traffic control register */
+#define REG_CTRL_IMP	0x08	/* IMP Port traffic control register */
 #define REG_CTRL_MODE	0x0B	/* Switch Mode register */
 #define REG_CTRL_MIIPO	0x0E	/* 5325: MII Port Override register */
 #define REG_CTRL_SRST	0x79	/* Software reset control register */
@@ -666,7 +667,10 @@ static dev_ops_t mdcmdio = {
 	"MII (MDC/MDIO)"
 };
 
-int iswrt610n=0;
+
+
+
+static int iswrt610n=0;
 
 /* High level switch configuration functions. */
 
@@ -682,6 +686,10 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 		ET_ERROR(("robo_attach: out of memory, malloced %d bytes", MALLOCED(sb_osh(sbh))));
 		return NULL;
 	}
+
+
+
+
 	bzero(robo, sizeof(robo_info_t));
 
 	robo->h = h;
@@ -690,7 +698,7 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 	robo->miird = miird;
 	robo->miiwr = miiwr;
 	robo->page = -1;
-	
+	robo->ops = &mdcmdio;
 	char *boothwmodel = nvram_get("boot_hw_model");
 	if (boothwmodel==NULL || strcmp(boothwmodel,"WRT300N"))rreset = GPIO_PIN_NOTDEFINED;
 
@@ -733,6 +741,16 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 
 		/* Read the PHY ID */
 		tmp = miird(h, PSEUDO_PHYAD, 2);
+
+		/* WAR: Enable mdc/mdio access to the switch registers. Unless
+		 * a write to bit 0 of pseudo phy register 16 is done we are
+		 * unable to talk to the switch on a customer ref design.
+		 */
+		if (tmp == 0xffff) {
+			miiwr(h, PSEUDO_PHYAD, 16, 1);
+			tmp = miird(h, PSEUDO_PHYAD, 2);
+		}
+
 		if (tmp != 0xffff) {
 //			do {
 				rc = mii_rreg(robo, PAGE_MMR, REG_DEVICE_ID, \
@@ -763,22 +781,21 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 			nvram_set("switch_type", "BCM53115S");
 		else
 			nvram_set("switch_type", "unknown");						
+	char *boothwmodel=nvram_get("boot_hw_model");
+	if (boothwmodel && !strcmp(boothwmodel,"WRT610N"))
+		iswrt610n=1;
 
 	if ((robo->devid == DEVID5395) ||
 	    (robo->devid == DEVID5397) ||
-	    (robo->devid == DEVID5398) ||
-	    (robo->devid == DEVID53115)) { /*-- wuzh add for Chip 53115S 2008-3-21 --*/ 
+	    (robo->devid == DEVID5398) || 
+	    (robo->devid == DEVID53115) && !iswrt610n) { /*-- wuzh add for Chip 53115S 2008-3-21 --*/ 
 		uint8 srst_ctrl;
 
 		/* If it is a 539x switch, use the soft reset register */
 		printk("%s: Resetting 539x robo switch\n", __FUNCTION__);
 
 		/* Reset the 539x switch core and register file */
-		char *boothwmodel=nvram_get("boot_hw_model");
-		if (boothwmodel && !strcmp(boothwmodel,"WRT610N"))
-		    iswrt610n=1;
 		    
-
 
 		srst_ctrl = 0x83;
 		mii_wreg(robo, PAGE_CTRL, REG_CTRL_SRST, &srst_ctrl, sizeof(uint8));
@@ -955,28 +972,19 @@ bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr)
 
 	/* setup global vlan configuration */
 	/* VLAN Control 0 Register (Page 0x34, Address 0) */
-	val8 = 0;
-if (iswrt610n)
-	{
-	robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
-	}
-	val8 |= ((1 << 7) |		/* enable 802.1Q VLAN */
+	val8= ((1 << 7) |		/* enable 802.1Q VLAN */
 	        (3 << 5));		/* individual VLAN learning mode */
 	robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL0, &val8, sizeof(val8));
 
-// +++ Gemtek, Fix Bridge Looping issue
-
-//if (iswrt610n)
-	robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL1, &val8, sizeof(val8));		
-// --- Gemtek, Fix Bridge Looping issue
-
+	
 	/* VLAN Control 1 Register (Page 0x34, Address 1) */
-// +++ Gemtek, Fix Bridge Looping issue
-//	val8 = ((1 << 2) |		/* enable RSV multicast V Fwdmap */
-//		(1 << 3));		/* enable RSV multicast V Untagmap */
+
+if (iswrt610n)
 	val8 |= ((1 << 2) |		/* enable RSV multicast V Fwdmap */
 		(1 << 3));		/* enable RSV multicast V Untagmap */		
-// --- Gemtek, Fix Bridge Looping issue
+else
+	val8 = ((1 << 2) |		/* enable RSV multicast V Fwdmap */
+		(1 << 3));		/* enable RSV multicast V Untagmap */		
 
 	if (robo->devid == DEVID5325)
 		val8 |= (1 << 1);	/* enable RSV multicast V Tagging */
@@ -1006,17 +1014,12 @@ if (iswrt610n)
 				     arl_entry, ETHER_ADDR_LEN);
 
 		/* VLAN Control 4 Register (Page 0x34, Address 4) */
-		val8 = 0;
-if (iswrt610n)
-		robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL4, &val8, sizeof(val8));
-		val8 |= (1 << 6);		/* drop frame with VID violation */
+		val8 = (1 << 6);		/* drop frame with VID violation */
+
+
 		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL4, &val8, sizeof(val8));
 
-		/* VLAN Control 5 Register (Page 0x34, Address 5) */
-		val8 = 0;
-if (iswrt610n)
-		robo->ops->read_reg(robo, PAGE_VLAN, REG_VLAN_CTRL5, &val8, sizeof(val8));
-		val8 |= (1 << 3);		/* drop frame when miss V table */
+		val8 = (1 << 3);		/* drop frame when miss V table */
 		robo->ops->write_reg(robo, PAGE_VLAN, REG_VLAN_CTRL5, &val8, sizeof(val8));
 
 		pdesc = pdesc25;
@@ -1294,6 +1297,9 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		for (i = REG_CTRL_PORT0; i <= max_port_ind; i++) {
 			robo->ops->write_reg(robo, PAGE_CTRL, i, &val8, sizeof(val8));
 		}
+
+		/* No spanning tree on IMP port too */
+		robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_IMP, &val8, sizeof(val8));
 	}
 
 char *boardnum=nvram_get("boardnum");
@@ -1302,15 +1308,13 @@ char *cardbus=nvram_get("cardbus");
 char *boot=nvram_get("boot_hw_model");
 
 if (boardnum!=NULL && boardtype!=NULL && cardbus!=NULL)
-if (!strcmp(boardnum,"42") && !strcmp(boardtype,"0x478") && !strcmp(cardbus,"1") && (!boot || strcmp(boot, "WRT300N")))
+if (!strcmp(boardnum,"42") && !strcmp(boardtype,"0x478") && !strcmp(cardbus,"1") && (!boot || (strcmp(boot, "WRT300N") && strcmp(boot, "WRT610N"))))
     {
         printk(KERN_EMERG "Enable WRT350 LED fix\n");
 	/* WAN port LED */
 	mode16 = 0x1f;
 	robo->ops->write_reg(robo, PAGE_CTRL, 0x16, &mode16, 2);    
     }
-
-
 	/* Disable management interface access */
 	if (robo->ops->disable_mgmtif)
 		robo->ops->disable_mgmtif(robo);
