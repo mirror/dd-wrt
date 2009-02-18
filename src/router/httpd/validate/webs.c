@@ -3670,6 +3670,8 @@ void tf_upnp( webs_t wp )
 	    sprintf( s, "forward_port%s", v );
 	    nvram_unset( s );
 	}
+	eval( "stopservice", "firewall" );
+	eval( "startservice", "firewall" );  //restart firewall
     }
-    // firewall + upnp service is restarted after this
+
 }
