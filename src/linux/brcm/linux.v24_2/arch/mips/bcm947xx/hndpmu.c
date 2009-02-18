@@ -47,6 +47,13 @@ static uint32 sb_pmu1_cpuclk0 (sb_t * sbh, osl_t * osh, chipcregs_t * cc);
 static uint32 sb_pmu1_alpclk0 (sb_t * sbh, osl_t * osh, chipcregs_t * cc);
 #endif
 
+void
+sb_pmu_chipcontrol(sb_t *sih, uint reg, uint32 mask, uint32 val)
+{
+	sb_corereg(sih, SB_CC_IDX, OFFSETOF(chipcregs_t, chipcontrol_addr), ~0, reg);
+	sb_corereg(sih, SB_CC_IDX, OFFSETOF(chipcregs_t, chipcontrol_data), mask, val);
+}
+
 /* Setup switcher voltage */
 void
 BCMINITFN (sb_pmu_set_switcher_voltage) (sb_t * sbh, osl_t * osh,
@@ -178,29 +185,24 @@ sb_pmu_paref_ldo_enable (sb_t * sbh, osl_t * osh, bool enable)
 	      PMURES_BIT (ldo), enable ? PMURES_BIT (ldo) : 0);
 }
 
-uint16 BCMINITFN (sb_pmu_fast_pwrup_delay) (sb_t * sbh, osl_t * osh)
+uint16
+BCMINITFN(sb_pmu_fast_pwrup_delay)(sb_t *sbh, osl_t *osh)
 {
-  uint16 delay = PMU_MAX_TRANSITION_DLY;
+	uint16 delay = PMU_MAX_TRANSITION_DLY;
 
-  ASSERT (sbh->cccaps & CC_CAP_PMU);
+	ASSERT(sbh->cccaps & CC_CAP_PMU);
 
-  switch (sbh->chip)
-    {
+	switch (sbh->chip) {
 #if defined(BCM4328)
-    case BCM4328_CHIP_ID:
-      delay = 7000;
-      break;
-#endif /* BCM4328 */
-
-#if defined(BCM4325)
-    case BCM4325_CHIP_ID:
-#ifdef BCMQT
-      delay = 70;
-#else
-      delay = 2800;
+	case BCM4328_CHIP_ID:
+		delay = 7000;
+		break;
 #endif
-      break;
-#endif /* BCM4325 || BCM4312 */
+#if defined(BCM4325)
+	case BCM4325_CHIP_ID:
+		delay = ISSIM_ENAB(sbh) ? 70 : 3000;
+		break;
+#endif /* BCM4325 */
 #if defined(BCMPMU)
 	case BCM4312_CHIP_ID:
 		delay = 7000;
@@ -210,14 +212,14 @@ uint16 BCMINITFN (sb_pmu_fast_pwrup_delay) (sb_t * sbh, osl_t * osh)
 		break;
 #endif /* BCMPMU */
 
-    default:
-      PMU_MSG (("No PMU fast power up delay specified "
-		"for chip %x rev %d, using default %d us\n",
-		sbh->chip, sbh->chiprev, delay));
-      break;
-    }
+	default:
+		PMU_MSG(("No PMU fast power up delay specified "
+			"for chip %x rev %d, using default %d us\n",
+			sbh->chip, sbh->chiprev, delay));
+		break;
+	}
 
-  return delay;
+	return delay;
 }
 
 uint32 BCMINITFN (sb_pmu_force_ilp) (sb_t * sbh, osl_t * osh, bool force)

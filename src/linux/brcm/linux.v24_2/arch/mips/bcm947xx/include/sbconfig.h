@@ -246,6 +246,10 @@ typedef volatile struct _sbconfig {
 #define	SBTMCL_IM_MASK		0x3000000	/* interrupt mode */
 #define	SBTMCL_IM_SHIFT		24
 
+#define	SBTML_SICF_SHIFT	16		/* Shift to locate the SI control flags in sbtml */
+#define	SBTMH_SISF_SHIFT	16		/* Shift to locate the SI status flags in sbtmh */
+
+
 /* sbtmconfighigh */
 #define	SBTMCH_BM_MASK		0x3		/* busy mode */
 #define	SBTMCH_RM_MASK		0x3		/* retry mode */

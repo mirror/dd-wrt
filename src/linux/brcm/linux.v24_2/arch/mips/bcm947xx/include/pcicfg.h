@@ -465,6 +465,7 @@ typedef struct _pcie_enhanced_caphdr {
 #define PCI_TO_SB_MB		0x98	/* signal backplane interrupts */
 #define PCI_BACKPLANE_ADDR	0xA0	/* address an arbitrary location on the system backplane */
 #define PCI_BACKPLANE_DATA	0xA4	/* data at the location specified by above address */
+#define	PCI_CLK_CTL_ST		0xa8	/* pci config space clock control/status (>=rev14) */
 #define	PCI_GPIO_IN		0xb0	/* pci config space gpio input (>=rev3) */
 #define	PCI_GPIO_OUT		0xb4	/* pci config space gpio output (>=rev3) */
 #define	PCI_GPIO_OUTEN		0xb8	/* pci config space gpio output enable (>=rev3) */
