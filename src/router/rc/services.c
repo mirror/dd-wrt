@@ -658,12 +658,12 @@ static void handle_forward( void )
     handle = stop_service_nofree( "wland", handle );
     handle = stop_service_nofree( "wshaper", handle );
 #ifdef HAVE_UPNP
-    handle = stop_service_nofree( "upnp", handle );
+//    handle = stop_service_nofree( "upnp", handle );
 #endif
     handle = stop_service_nofree( "firewall", handle );
     handle = start_service_nofree( "firewall", handle );
 #ifdef HAVE_UPNP
-    handle = start_service_nofree( "upnp", handle );
+//    handle = start_service_nofree( "upnp", handle );
 #endif
     handle = start_service_nofree( "wshaper", handle );
     handle = start_service_nofree( "wland", handle );
