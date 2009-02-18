@@ -101,7 +101,7 @@ function deleteForward(x) {
 	fupnp.save_button.disabled = true;
 	fupnp.delete_button.disabled = true;
 	update.stop();
-	applytake(fupnp);
+	apply(fupnp);
 }
 
 function setUPnP(val) {
