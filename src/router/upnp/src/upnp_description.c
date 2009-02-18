@@ -14,6 +14,9 @@
 
 #include <upnp.h>
 
+#include <stdlib.h>
+#include <bcmnvram.h>
+
 /*
  * Change PresentationURL to specific interface IP address.
  */
@@ -61,9 +64,17 @@ set_url(UPNP_CONTEXT *context, UPNP_DESCRIPTION *descr, char *data_buf, int *dat
 	tail_len = strlen(p);
 
 	/* Get new presentationURL length */
-	upnp_host_addr(myaddr, ifp->ipaddr, 80);
-
-	buf_len = sprintf(buf, "http://%s", myaddr);
+	
+	if( nvram_match( "https_enable", "1" ) && !nvram_match( "http_enable", "1" ) )
+		{
+		upnp_host_addr(myaddr, ifp->ipaddr, 80);
+		buf_len = sprintf(buf, "https://%s", myaddr );
+		}
+	else
+		{
+		upnp_host_addr(myaddr, ifp->ipaddr, atoi( nvram_safe_get( "http_lanport" ) ) );
+		buf_len = sprintf(buf, "http://%s", myaddr);
+		}
 
 	/* Pull up tail, including the null end */
 	memmove(s + buf_len, p, tail_len+1);
