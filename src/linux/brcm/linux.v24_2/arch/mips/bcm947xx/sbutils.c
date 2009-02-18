@@ -104,7 +104,7 @@ static uint sb_chip2numcores (uint chip);
 static bool sb_ispcie (sb_info_t * si);
 static uint8 sb_find_pci_capability (sb_info_t * si, uint8 req_cap_id,
 				     uchar * buf, uint32 * buflen);
-static int sb_pci_fixcfg (sb_info_t * si);
+int sb_pci_fixcfg (sb_info_t * si);
 /* routines to access mdio slave device registers */
 static int sb_pcie_mdiowrite (sb_info_t * si, uint physmedia, uint readdr,
 			      uint val);
@@ -4291,7 +4291,7 @@ static char *BCMINITFN (sb_devpathvar) (sb_t * sbh, char *var, int len,
  * Fixup SROMless PCI device's configuration.
  * The current core may be changed upon return.
  */
-static int
+int
 sb_pci_fixcfg (sb_info_t * si)
 {
   uint origidx, pciidx;
@@ -4518,4 +4518,304 @@ uint32 BCMINITFN (sb_socram_size) (sb_t * sbh)
 done:
   INTR_RESTORE (si, intr_val);
   return memsize;
+}
+
+
+void
+sb_pcie_war_ovr_disable(sb_t *sih)
+{
+}
+
+void
+sb_core_cflags_wo(sb_t *sih, uint32 mask, uint32 val)
+{
+	sb_info_t *sii;
+	sbconfig_t *sb;
+	uint32 w;
+
+	sii = SB_INFO(sih);
+	sb = REGS2SB(sii->curmap);
+
+	ASSERT((val & ~mask) == 0);
+
+	/* mask and set */
+	w = (R_SBREG(sii, &sb->sbtmstatelow) & ~(mask << SBTML_SICF_SHIFT)) |
+	        (val << SBTML_SICF_SHIFT);
+	W_SBREG(sii, &sb->sbtmstatelow, w);
+}
+
+/* set/clear core-specific control flags */
+uint32
+sb_core_cflags(sb_t *sih, uint32 mask, uint32 val)
+{
+	sb_info_t *sii;
+	sbconfig_t *sb;
+	uint32 w;
+
+	sii = SB_INFO(sih);
+	sb = REGS2SB(sii->curmap);
+
+	ASSERT((val & ~mask) == 0);
+
+	/* mask and set */
+	if (mask || val) {
+		w = (R_SBREG(sii, &sb->sbtmstatelow) & ~(mask << SBTML_SICF_SHIFT)) |
+		        (val << SBTML_SICF_SHIFT);
+		W_SBREG(sii, &sb->sbtmstatelow, w);
+	}
+
+	/* return the new value
+	 * for write operation, the following readback ensures the completion of write opration.
+	 */
+	return (R_SBREG(sii, &sb->sbtmstatelow) >> SBTML_SICF_SHIFT);
+}
+
+/* set/clear core-specific status flags */
+uint32
+sb_core_sflags(sb_t *sih, uint32 mask, uint32 val)
+{
+	sb_info_t *sii;
+	sbconfig_t *sb;
+	uint32 w;
+
+	sii = SB_INFO(sih);
+	sb = REGS2SB(sii->curmap);
+
+	ASSERT((val & ~mask) == 0);
+	ASSERT((mask & ~SISF_CORE_BITS) == 0);
+
+	/* mask and set */
+	if (mask || val) {
+		w = (R_SBREG(sii, &sb->sbtmstatehigh) & ~(mask << SBTMH_SISF_SHIFT)) |
+		        (val << SBTMH_SISF_SHIFT);
+		W_SBREG(sii, &sb->sbtmstatehigh, w);
+	}
+
+	/* return the new value */
+	return (R_SBREG(sii, &sb->sbtmstatehigh) >> SBTMH_SISF_SHIFT);
+}
+void
+sb_pmu_spuravoid(sb_t *sbh, osl_t *osh, bool spuravoid)
+{
+	chipcregs_t *cc;
+	uint origidx;
+	uint32 tmp;
+
+	/* Remember original core before switch to chipc */
+	origidx = sb_coreidx(sbh);
+	cc = sb_setcore(sbh, SB_CC, 0);
+	ASSERT(cc);
+
+	W_REG(osh, &cc->pllcontrol_addr, PMU1_PLL0_PLLCTL0);
+	W_REG(osh, &cc->pllcontrol_data, 0x11100070);
+	W_REG(osh, &cc->pllcontrol_addr, PMU1_PLL0_PLLCTL1);
+	W_REG(osh, &cc->pllcontrol_data, 0x1014140a);
+	W_REG(osh, &cc->pllcontrol_addr, PMU1_PLL0_PLLCTL5);
+	W_REG(osh, &cc->pllcontrol_data, 0x88888854);
+
+	if (spuravoid) { /* spur_avoid ON, enable 41/82/164Mhz clock mode */
+		W_REG(osh, &cc->pllcontrol_addr, PMU1_PLL0_PLLCTL2);
+		W_REG(osh, &cc->pllcontrol_data, 0x05201828);
+	} else { /* enable 40/80/160Mhz clock mode */
+		W_REG(osh, &cc->pllcontrol_addr, PMU1_PLL0_PLLCTL2);
+		W_REG(osh, &cc->pllcontrol_data, 0x05001828);
+	}
+
+	tmp = R_REG(osh, &cc->pmucontrol);
+	W_REG(osh, &cc->pmucontrol, tmp | (1 << 10));  
+
+	/* Return to original core */
+	sb_setcoreidx(sbh, origidx);
+}
+
+
+void
+sb_4329_tweak(sb_t *sih, uint32 mask, uint32 val)
+{
+	sb_info_t *sii;
+	chipcregs_t *cc;
+	uint origidx;
+	uint32 temp;
+
+	sii = SB_INFO(sih);
+
+	origidx = sii->curidx;
+	ASSERT(GOODIDX(origidx));
+
+	cc = (chipcregs_t *)sb_setcore(sih, SB_CC, 0);
+
+	W_REG(sii->osh, &cc->chipcontrol_addr, 0);
+	temp = R_REG(sii->osh, &cc->chipcontrol_data);
+	temp = temp & ~mask;
+	temp = temp | val;
+	W_REG(sii->osh, &cc->chipcontrol_data, temp);
+
+	sb_setcoreidx(sih, origidx);
+}
+
+void
+sb_4329_pmu_voltage(sb_t *sih)
+{
+	sb_info_t *sii;
+	chipcregs_t *cc;
+	uint origidx;
+	uint32 temp;
+	/* Function For CHANGING CBUCK,CLDO,LNLDO1 Voltages To Same As BT */
+	sii = SB_INFO(sih);
+	origidx = sii->curidx;
+	ASSERT(GOODIDX(origidx));
+	cc = (chipcregs_t *)sb_setcore(sih, SB_CC, 0);
+
+	W_REG(sii->osh, &cc->regcontrol_addr, 3);
+	temp = R_REG(sii->osh, &cc->regcontrol_data);
+	temp = temp | 0x04200000;
+	W_REG(sii->osh, &cc->regcontrol_data, temp);
+
+	W_REG(sii->osh, &cc->regcontrol_addr, 5);
+	temp = R_REG(sii->osh, &cc->regcontrol_data);
+	temp = temp | 0x0003fe00;
+	W_REG(sii->osh, &cc->regcontrol_data, temp);
+	sb_setcoreidx(sih, origidx);
+}
+
+void
+sb_4329_vbatmeas_on(sb_t *sih, uint32 *save_reg0, uint32 *save_reg5)
+{
+	sb_info_t *sii;
+	chipcregs_t *cc;
+	uint origidx;
+	uint32 temp;
+
+	return;
+
+	sii = SB_INFO(sih);
+
+	origidx = sii->curidx;
+	ASSERT(GOODIDX(origidx));
+
+	cc = (chipcregs_t *)sb_setcore(sih, SB_CC, 0);
+
+	W_REG(sii->osh, &cc->regcontrol_addr, 0);
+	temp = R_REG(sii->osh, &cc->regcontrol_data);
+	*save_reg0 = temp;
+	temp = temp | 0x00000001;
+	W_REG(sii->osh, &cc->regcontrol_data, temp);
+
+	W_REG(sii->osh, &cc->regcontrol_addr, 5);
+	temp = R_REG(sii->osh, &cc->regcontrol_data);
+	*save_reg5 = temp;
+	temp = temp | 0x80000000;
+	W_REG(sii->osh, &cc->regcontrol_data, temp);
+
+	sb_setcoreidx(sih, origidx);
+}
+
+void
+sb_4329_vbatmeas_off(sb_t *sih, uint32 save_reg0, uint32 save_reg5)
+{
+	sb_info_t *sii;
+	chipcregs_t *cc;
+	uint origidx;
+
+	return;
+
+	sii = SB_INFO(sih);
+
+	origidx = sii->curidx;
+	ASSERT(GOODIDX(origidx));
+
+	cc = (chipcregs_t *)sb_setcore(sih, SB_CC, 0);
+
+	W_REG(sii->osh, &cc->regcontrol_addr, 0);
+	W_REG(sii->osh, &cc->regcontrol_data, save_reg0);
+
+	W_REG(sii->osh, &cc->regcontrol_addr, 5);
+	W_REG(sii->osh, &cc->regcontrol_data, save_reg5);
+
+	sb_setcoreidx(sih, origidx);
+}
+bool
+sb_ldo_war(sb_t *sih, uint devid)
+{
+	sb_info_t *sii = SB_INFO(sih);
+	uint32 w;
+	chipcregs_t *cc;
+	void *regs = sii->curmap;
+	uint32 rev_id, ccst;
+
+	rev_id = OSL_PCI_READ_CONFIG(sii->osh, PCI_CFG_REV, sizeof(uint32));
+	rev_id &= 0xff;
+	if (!(((devid == BCM4322_CHIP_ID) ||
+	      (devid == BCM4322_D11N_ID) ||
+	      (devid == BCM4322_D11N2G_ID) ||
+	      (devid == BCM4322_D11N5G_ID)) &&
+	      (rev_id == 0)))
+		return TRUE;
+
+
+	/* switch to chipcommon */
+	w = OSL_PCI_READ_CONFIG(sii->osh, PCI_BAR0_WIN, sizeof(uint32));
+	OSL_PCI_WRITE_CONFIG(sii->osh, PCI_BAR0_WIN, sizeof(uint32), SB_ENUM_BASE);
+	cc = (chipcregs_t *)regs;
+
+	/* clear bit 7 to fix LDO
+	 * write to register *blindly* WITHOUT read since read may timeout
+	 *  because the default clock is 32k ILP
+	 */
+	W_REG(sii->osh, &cc->regcontrol_addr, 0);
+	/* AND_REG(sii->osh, &cc->regcontrol_data, ~0x80); */
+	W_REG(sii->osh, &cc->regcontrol_data, 0x3001);
+
+	OSL_DELAY(5000);
+
+	/* request ALP_AVAIL through PMU to move sb out of ILP */
+	W_REG(sii->osh, &cc->min_res_mask, 0x0d);
+
+	SPINWAIT(((ccst = OSL_PCI_READ_CONFIG(sii->osh, PCI_CLK_CTL_ST, 4)) & CCS_ALPAVAIL)
+		 == 0, PMU_MAX_TRANSITION_DLY);
+
+	if ((ccst & CCS_ALPAVAIL) == 0) {
+		SB_ERROR(("ALP never came up clk_ctl_st: 0x%x\n", ccst));
+		return FALSE;
+	}
+
+	OSL_PCI_WRITE_CONFIG(sii->osh, PCI_BAR0_WIN, sizeof(uint32), w);
+
+	return TRUE;
+}
+
+bool
+BCMINITFN(sb_pci_war16165)(sb_t *sih)
+{
+	sb_info_t *sii;
+
+	sii = SB_INFO(sih);
+
+	return (PCI(sii) && (sih->buscorerev <= 10));
+}
+
+uint32 sb_pcieserdesreg(sb_t *sih, uint32 mdioslave, uint32 offset, uint32 mask, uint32 val)
+{
+
+}
+
+#define PCI_FORCEHT(si)	\
+	(((PCIE(si)) && (si->sb.chip == BCM4311_CHIP_ID) && ((si->sb.chiprev <= 1))) || \
+	((PCI(si) || PCIE(si)) && (si->sb.chip == BCM4321_CHIP_ID)) || \
+	(PCIE(si)))
+
+bool sb_clkctl_cc(sb_t *sih, uint mode)
+{
+	sb_info_t *sii;
+
+	sii = SB_INFO(sih);
+
+	/* chipcommon cores prior to rev6 don't support dynamic clock control */
+	if (sih->ccrev < 6)
+		return FALSE;
+
+	if (PCI_FORCEHT(sii))
+		return (mode == CLK_FAST);
+
+	return sb_clkctl_clk(sii, mode);
 }

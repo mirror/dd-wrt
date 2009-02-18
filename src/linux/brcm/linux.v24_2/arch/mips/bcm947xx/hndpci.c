@@ -194,7 +194,7 @@ extpci_read_config (sb_t * sbh, uint bus, uint dev, uint func, uint off,
    */
   if (pci_disabled)
     val = 0xffffffff;
-  else if (bus == 1 && dev == pci_hbslot && func == 0 &&
+  else if (bus == 1 && dev == pci_hbslot && (func == 0 || func == 1) &&
 	   sb_pcihb_read_config (sbh, bus, dev, func, off, &reg, &val))
     ;
   else if (((addr = config_cmd (sbh, bus, dev, func, off)) == 0) ||
@@ -243,7 +243,7 @@ extpci_write_config (sb_t * sbh, uint bus, uint dev, uint func, uint off,
    */
   if (pci_disabled)
     return 0;
-  else if (bus == 1 && dev == pci_hbslot && func == 0 &&
+  else if (bus == 1 && dev == pci_hbslot && (func == 0 || func == 1) &&
 	   sb_pcihb_read_config (sbh, bus, dev, func, off, &reg, &val))
     ;
   else if (((addr = config_cmd (sbh, bus, dev, func, off)) == 0) ||

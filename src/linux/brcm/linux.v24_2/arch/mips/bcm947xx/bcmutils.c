@@ -45,6 +45,18 @@
 static char *nvram_vars = NULL;
 static int vars_len = -1;
 
+/* count segments of a chained packet */
+uint
+pktsegcnt(osl_t *osh, void *p)
+{
+	uint cnt;
+
+	for (cnt = 0; p; p = PKTNEXT(osh, p))
+		cnt++;
+
+	return cnt;
+}
+
 /* copy a pkt buffer chain into a buffer */
 uint
 pktcopy (osl_t * osh, void *p, uint offset, int len, uchar * buf)
