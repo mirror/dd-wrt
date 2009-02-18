@@ -663,6 +663,9 @@ return 0;
 #elif HAVE_WBD500
     setRouter( "Wiligear WBD-500" );
     return ROUTER_BOARD_FONERA;
+#elif HAVE_EOC1650
+    setRouter( "Senao EOC-1650" );
+    return ROUTER_BOARD_FONERA;
 #elif HAVE_EOC2610
 #ifdef HAVE_TRIMAX
     setRouter( "TMAX-1200" );
