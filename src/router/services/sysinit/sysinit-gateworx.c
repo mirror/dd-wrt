@@ -160,6 +160,7 @@ void start_sysinit( void )
      */
     mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
     mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
+    mount( "devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL );
     /*
      * eval("mount","/etc/www.fs","/www","-t","squashfs","-o","loop");
      * eval("mount","/etc/modules.fs","/lib/modules","-t","squashfs","-o","loop");
