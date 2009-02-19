@@ -166,7 +166,7 @@ void add_userip( char *ip, int idx, char *upstream, char *downstream )
 void add_usermac( char *mac, int idx, char *upstream, char *downstream )
 {
     unsigned char octet[6];
-    
+
     ether_atoe( mac, octet );
     int base = 120 + idx;
     char up[32];
@@ -224,7 +224,7 @@ void add_usermac( char *mac, int idx, char *upstream, char *downstream )
 	    /*
 	     * use root class of br0 interface which was created by the wshaper 
 	     */
-            // br0 -> imq0 changed, in lan-briding, we need to use IMQ
+	    // br0 -> imq0 changed, in lan-briding, we need to use IMQ
 	    sysprintf
 		( "tc class add dev imq0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
 		  base + 1, downstream, downstream );
@@ -270,7 +270,7 @@ void add_usermac( char *mac, int idx, char *upstream, char *downstream )
 	    /*
 	     * use root class of br0 interface which was created by the wshaper 
 	     */
-            // br0 -> imq0 changed, in lan-briding, we need to use IMQ
+	    // br0 -> imq0 changed, in lan-briding, we need to use IMQ
 	    sysprintf
 		( "tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
 		  base + 1, downstream, downstream );
@@ -450,6 +450,7 @@ int internal_getRouterBrand(  )
 {
 #ifdef HAVE_ALLNETWRT
     uint boardnum = strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
+
     if( boardnum == 8 &&
 	nvram_match( "boardtype", "0x048e" )
 	&& nvram_match( "boardrev", "0x11" ) )
@@ -458,8 +459,8 @@ int internal_getRouterBrand(  )
 	setRouter( "ALLNET EUROWRT 54" );
 	return ROUTER_ALLNET01;
     }
-eval( "event", "3", "1", "15" );
-return 0;
+    eval( "event", "3", "1", "15" );
+    return 0;
 #else
 #ifdef HAVE_NP28G
     setRouter( "Compex NP28G" );
@@ -501,7 +502,7 @@ return 0;
 	fseek( file, 32, SEEK_SET );
 	char gwid[7];
 
- 	gwid[6] = 0;
+	gwid[6] = 0;
 	int ret = fread( gwid, 6, 1, file );
 
 	if( ret < 1 )
@@ -510,46 +511,46 @@ return 0;
 	    goto old_way;
 	}
 	fclose( file );
-	if( !strncmp( gwid, "GW2347",6 ) )
+	if( !strncmp( gwid, "GW2347", 6 ) )
 	{
 	    setRouter( "Avila GW2347" );
 	    return ROUTER_BOARD_GATEWORX_SWAP;
 	}
-	if( !strncmp( gwid, "GW2357",6 ) )
+	if( !strncmp( gwid, "GW2357", 6 ) )
 	{
 	    setRouter( "Avila GW2357" );
 	    return ROUTER_BOARD_GATEWORX_SWAP;
 	}
-	if( !strncmp( gwid, "GW2353",6 ) )
+	if( !strncmp( gwid, "GW2353", 6 ) )
 	{
 	    setRouter( "Avila GW2343" );
 	    return ROUTER_BOARD_GATEWORX;
 	}
-	if( !strncmp( gwid, "GW2348",6 ) )
+	if( !strncmp( gwid, "GW2348", 6 ) )
 	{
 #if HAVE_ALFA_BRANDING
-	setRouter( "WLAN base-station" );
+	    setRouter( "WLAN base-station" );
 #else
 	    setRouter( "Avila GW2348-4/2" );
 #endif
 	    return ROUTER_BOARD_GATEWORX;
 	}
-	if( !strncmp( gwid, "GW2358",6 ) )
+	if( !strncmp( gwid, "GW2358", 6 ) )
 	{
 	    setRouter( "Cambria GW2358-4" );
 	    return ROUTER_BOARD_GATEWORX;
 	}
-	if( !strncmp( gwid, "GW2350",6 ) )
+	if( !strncmp( gwid, "GW2350", 6 ) )
 	{
 	    setRouter( "Cambria GW2350" );
 	    return ROUTER_BOARD_GATEWORX;
 	}
-	if( !strncmp( gwid, "GW2355",6 ) )
+	if( !strncmp( gwid, "GW2355", 6 ) )
 	{
 	    setRouter( "Avila GW2355" );
 	    return ROUTER_BOARD_GATEWORX_GW2345;
 	}
-	if( !strncmp( gwid, "GW2345",6 ) )
+	if( !strncmp( gwid, "GW2345", 6 ) )
 	{
 	    setRouter( "Avila GW2345" );
 	    return ROUTER_BOARD_GATEWORX_GW2345;
@@ -879,17 +880,17 @@ return 0;
     {
 	char *hwver0 = nvram_safe_get( "hardware_version" );
 
-	if (startswith( hwver0, "WL320G" ))
+	if( startswith( hwver0, "WL320G" ) )
 	{
-	cprintf( "router is Asus WL-320gE/gP\n" );
-	setRouter( "Asus WL-320gE/gP" );
-	return ROUTER_ASUS_WL550GE;
+	    cprintf( "router is Asus WL-320gE/gP\n" );
+	    setRouter( "Asus WL-320gE/gP" );
+	    return ROUTER_ASUS_WL550GE;
 	}
 	else
 	{
-	cprintf( "router is Asus WL-550gE\n" );
-	setRouter( "Asus WL-550gE" );
-	return ROUTER_ASUS_WL550GE;
+	    cprintf( "router is Asus WL-550gE\n" );
+	    setRouter( "Asus WL-550gE" );
+	    return ROUTER_ASUS_WL550GE;
 	}
     }
 #endif
@@ -942,7 +943,7 @@ return 0;
     {
 	cprintf( "router is Buffalo WCA-G\n" );
 	setRouter( "Buffalo WCA-G" );
-	return ROUTER_BUFFALO_WCAG; //vlan1 is lan, vlan0 is unused, implementation not done. will me made after return to germany
+	return ROUTER_BUFFALO_WCAG;	//vlan1 is lan, vlan0 is unused, implementation not done. will me made after return to germany
     }
 
     if( nvram_match( "boardnum", "00" ) && nvram_match( "boardrev", "0x11" )
@@ -1042,7 +1043,8 @@ return 0;
 	    setRouter( "Buffalo WVR-G54-NF" );
 	    return ROUTER_BUFFALO_WZRRSG54;
 	}
-	if( nvram_match( "product_name", "WZR-G108" ) || melco_id == 31095 || melco_id == 30153)
+	if( nvram_match( "product_name", "WZR-G108" ) || melco_id == 31095
+	    || melco_id == 30153 )
 	{
 	    cprintf( "router is Buffalo WZR-G108\n" );
 	    setRouter( "Buffalo WZR-G108" );
@@ -1083,6 +1085,18 @@ return 0;
 	cprintf( "router is Asus WL-500g Premium\n" );
 	setRouter( "Asus WL-500g Premium" );
 	return ROUTER_ASUS_WL500G_PRE;
+    }
+    if( nvram_match( "boardtype", "0x042f" )
+	&& nvram_match( "boardrev", "0x10" ) )
+    {
+	char *hwver = nvram_safe_get( "hardware_version" );
+
+	if( startswith( hwver, "WL500gp" ) )
+	{
+	    cprintf( "router is Asus WL-500g Premium\n" );
+	    setRouter( "Asus WL-500g Premium" );
+	    return ROUTER_ASUS_WL500G_PRE;
+	}
     }
 
     char *et0 = nvram_safe_get( "et0macaddr" );
@@ -1320,19 +1334,19 @@ return 0;
 	nvram_match( "boardtype", "0x0472" )
 	&& nvram_match( "boardrev", "0x23" ) )
     {
-	  if (nvram_match( "cardbus", "1" ) )
-	  {
-	  cprintf( "router is Netgear WNR834B v2\n" );
-	  setRouter( "Netgear WNR834B v2" );
-	  return ROUTER_NETGEAR_WNR834BV2;
-      }
-	  else
-	  {
-	  cprintf( "router is Netgear WNDR-3300\n" );
-	  setRouter( "Netgear WNDR3300" );
-	  return ROUTER_NETGEAR_WNDR3300;
-      }
+	if( nvram_match( "cardbus", "1" ) )
+	{
+	    cprintf( "router is Netgear WNR834B v2\n" );
+	    setRouter( "Netgear WNR834B v2" );
+	    return ROUTER_NETGEAR_WNR834BV2;
 	}
+	else
+	{
+	    cprintf( "router is Netgear WNDR-3300\n" );
+	    setRouter( "Netgear WNDR3300" );
+	    return ROUTER_NETGEAR_WNDR3300;
+	}
+    }
 
     if( boardnum == 42 )	// Get Linksys N models
     {
@@ -1460,7 +1474,7 @@ return 0;
 	setRouter( "U.S.Robotics USR5451" );
 	return ROUTER_USR_5461;	// should work in the same way
     }
-    
+
     if( boardnum == 10512 && nvram_match( "boardtype", "0x456" ) )
     {
 	cprintf( "router is U.S. Robotics USR5441\n" );
@@ -1591,7 +1605,8 @@ return 0;
     if( boardnum == 01 &&
 	nvram_match( "boardtype", "0x048e" )
 	&& nvram_match( "boardrev", "0x11" )
-	&& ( nvram_match( "boardflags", "0x650" ) || nvram_match( "boardflags", "0x0458" ) ) )
+	&& ( nvram_match( "boardflags", "0x650" )
+	     || nvram_match( "boardflags", "0x0458" ) ) )
     {
 	cprintf( "router is Netgear WG602 v4\n" );
 	setRouter( "Netgear WG602 v4" );
@@ -1645,12 +1660,12 @@ return 0;
 	    setRouter( "Asus WL-500G Premium V2" );
 	    return ROUTER_ASUS_WL500G_PRE_V2;
 	}
-	else if( startswith (hwver, "WL330GE" ) )
+	else if( startswith( hwver, "WL330GE" ) )
 	{
 	    cprintf( "router is Asus WL-330GE\n" );
 	    setRouter( "Asus WL-330GE" );
 	    return ROUTER_ASUS_330GE;
-	}	
+	}
 	else
 	{
 	    cprintf( "router is Asus WL-520GU/GC\n" );
@@ -1658,25 +1673,39 @@ return 0;
 	    return ROUTER_ASUS_WL520GUGC;
 	}
     }
-    
-	if ( (boardnum == 83258 || boardnum == 01)  //or 001 or 0x01
-	&& (nvram_match( "boardtype", "0x048e" ) || nvram_match( "boardtype", "0x48E" ))
-	&& (nvram_match( "boardrev", "0x11" ) || nvram_match( "boardrev", "0x10" ))
-	&& (nvram_match( "boardflags", "0x750" ) || nvram_match( "boardflags", "0x0750" )) )
+    if( nvram_match( "boardtype", "0x48E" )
+	&& nvram_match( "boardrev", "0x10" ) )
+    {
+	char *hwver = nvram_safe_get( "hardware_version" );
+
+	if( startswith( hwver, "WL500gp" ) )
 	{
-		if (nvram_match ("sdram_init", "0x000A") )  //16 MB ram
-	    {
-		cprintf( "router is Netgear WGR614v8/L/WW\n" );
-		setRouter( "Netgear WGR614v8/L/WW" );
-		return ROUTER_NETGEAR_WGR614L;
-	    }
-		else if (nvram_match ("sdram_init", "0x0002") )  //8 MB ram
-	    {
-		cprintf( "router is Netgear WGR614v9\n" );
-		setRouter( "Netgear WGR614v9" );
-		return ROUTER_NETGEAR_WGR614L;
-	    }
-	}						
+	    cprintf( "router is Asus WL-520GU/GC\n" );
+	    setRouter( "Asus WL-520GU" );
+	    return ROUTER_ASUS_WL520GUGC;
+	}
+    }
+    if( ( boardnum == 83258 || boardnum == 01 )	//or 001 or 0x01
+	&& ( nvram_match( "boardtype", "0x048e" )
+	     || nvram_match( "boardtype", "0x48E" ) )
+	&& ( nvram_match( "boardrev", "0x11" )
+	     || nvram_match( "boardrev", "0x10" ) )
+	&& ( nvram_match( "boardflags", "0x750" )
+	     || nvram_match( "boardflags", "0x0750" ) ) )
+    {
+	if( nvram_match( "sdram_init", "0x000A" ) )	//16 MB ram
+	{
+	    cprintf( "router is Netgear WGR614v8/L/WW\n" );
+	    setRouter( "Netgear WGR614v8/L/WW" );
+	    return ROUTER_NETGEAR_WGR614L;
+	}
+	else if( nvram_match( "sdram_init", "0x0002" ) )	//8 MB ram
+	{
+	    cprintf( "router is Netgear WGR614v9\n" );
+	    setRouter( "Netgear WGR614v9" );
+	    return ROUTER_NETGEAR_WGR614L;
+	}
+    }
 
     if( boardnum == 56 &&
 	nvram_match( "boardtype", "0x456" )
@@ -2062,15 +2091,18 @@ static char *stalist[] = {
     "ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"
 };
 
-char *getWifi(char *ifname)
+char *getWifi( char *ifname )
 {
-if (!strcmp(ifname,"ath0"))return "wifi0";
-if (!strcmp(ifname,"ath1"))return "wifi1";
-if (!strcmp(ifname,"ath2"))return "wifi2";
-if (!strcmp(ifname,"ath3"))return "wifi3";
-return NULL;
+    if( !strcmp( ifname, "ath0" ) )
+	return "wifi0";
+    if( !strcmp( ifname, "ath1" ) )
+	return "wifi1";
+    if( !strcmp( ifname, "ath2" ) )
+	return "wifi2";
+    if( !strcmp( ifname, "ath3" ) )
+	return "wifi3";
+    return NULL;
 }
-
 
 char *getWDSSTA( void )
 {
@@ -2094,8 +2126,6 @@ char *getWDSSTA( void )
     }
     return NULL;
 }
-
-
 
 char *getSTA( void )
 {
@@ -2150,7 +2180,6 @@ char *getWET( void )
     return NULL;
 }
 
-
 #elif HAVE_RT2880
 
 char *getSTA(  )
@@ -2160,12 +2189,12 @@ char *getSTA(  )
 
     for( i = 0; i < c; i++ )
     {
-	if( nvram_nmatch( "sta", "wl%d_mode", i ))
+	if( nvram_nmatch( "sta", "wl%d_mode", i ) )
 	{
 	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
 		return "ra0";
 	}
-	
+
 	if( nvram_nmatch( "apsta", "wl%d_mode", i ) )
 	{
 	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
@@ -2183,16 +2212,17 @@ char *getWET(  )
 
     for( i = 0; i < c; i++ )
     {
-	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) && nvram_nmatch( "wet", "wl%d_mode", i ))
-		return "ra0";
-		
-	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) && nvram_nmatch( "apstawet", "wl%d_mode", i ))
-		return "apcli0";
+	if( !nvram_nmatch( "disabled", "wl%d_net_mode", i )
+	    && nvram_nmatch( "wet", "wl%d_mode", i ) )
+	    return "ra0";
+
+	if( !nvram_nmatch( "disabled", "wl%d_net_mode", i )
+	    && nvram_nmatch( "apstawet", "wl%d_mode", i ) )
+	    return "apcli0";
 
     }
     return NULL;
 }
-
 
 #else
 char *getSTA(  )
@@ -2203,7 +2233,7 @@ char *getSTA(  )
     for( i = 0; i < c; i++ )
     {
 	if( nvram_nmatch( "sta", "wl%d_mode", i )
-	    || nvram_nmatch( "apsta", "wl%d_mode", i ))
+	    || nvram_nmatch( "apsta", "wl%d_mode", i ) )
 	{
 	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
 		return get_wl_instance_name( i );
@@ -2434,17 +2464,17 @@ void strtrim_right( char *p, int c )
     char *end;
     int len;
 
-    len = strlen( p);
-    while ( *p && len)
+    len = strlen( p );
+    while( *p && len )
     {
-        end = p + len-1;
-        if( c == *end)
-            *end = 0;
-        else
-            break;
-        len = strlen( p);
+	end = p + len - 1;
+	if( c == *end )
+	    *end = 0;
+	else
+	    break;
+	len = strlen( p );
     }
-	return;
+    return;
 }
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
@@ -2696,7 +2726,7 @@ int led_control( int type, int act )
 	case ROUTER_BOARD_WHRG300N:
 	    diag_gpio = 0x17;
 	    connected_gpio = 0x19;
-	    ses_gpio =0x1e;
+	    ses_gpio = 0x1e;
 	    break;
 	case ROUTER_BUFFALO_WBR54G:
 	    diag_gpio = 0x17;
@@ -2906,19 +2936,18 @@ int led_control( int type, int act )
 	    usb_gpio = 0x01;
 	    break;
 	case ROUTER_NETGEAR_WGR614L:
-	    // power_gpio = 0x17;	// don't use - resets router
+	    // power_gpio = 0x17;       // don't use - resets router
 	    diag_gpio = 0x06;
 	    connected_gpio = 0x14;
 	    break;
 	case ROUTER_NETGEAR_WG602_V4:
-	    power_gpio = 0x11;  // trick: make lan led green for 100Mbps
+	    power_gpio = 0x11;	// trick: make lan led green for 100Mbps
 	    break;
 	case ROUTER_BELKIN_F5D7231_V2000:
-		connected_gpio = 0x14;
-		diag_gpio = 0x01; // power led blink /off to indicate factory defaults
-		break;
-		
-		
+	    connected_gpio = 0x14;
+	    diag_gpio = 0x01;	// power led blink /off to indicate factory defaults
+	    break;
+
 #endif
     }
     if( type == LED_DIAG && v1func == 1 )
@@ -3038,10 +3067,9 @@ void rmmod( char *module )
 
 #include "revision.h"
 
-
-char *getSoftwareRevision(void)
+char *getSoftwareRevision( void )
 {
-return "" SVN_REVISION "";
+    return "" SVN_REVISION "";
 }
 
 #ifdef HAVE_OLED
@@ -3052,14 +3080,13 @@ void initlcd(  )
 
 void lcdmessage( char *message )
 {
-eval("oled-print","DD-WRT v24 sp2","build:" SVN_REVISION,"3G/UMTS Router",message);
+    eval( "oled-print", "DD-WRT v24 sp2", "build:" SVN_REVISION,
+	  "3G/UMTS Router", message );
 }
 void lcdmessaged( char *dual, char *message )
 {
 
 }
-
-
 
 #endif
 
