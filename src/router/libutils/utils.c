@@ -1640,7 +1640,7 @@ int internal_getRouterBrand(  )
 	return ROUTER_ASUS_WL520G;
     }
 
-    if( bvram_match( "boardtype", "0x48E" )
+    if( nvram_match( "boardtype", "0x48E" )
 	&& nvram_match( "boardrev", "0x10" ) )
     {
 	char *hwver = nvram_safe_get( "hardware_version" );
