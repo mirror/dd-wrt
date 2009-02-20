@@ -269,11 +269,7 @@ ifeq ($(CONFIG_MSSID),y)
 #ifneq ($(CONFIG_BCM5354),y)
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-ifeq ($(CONFIG_V25),y)
-	cp bcm57xx/bcm57xx.o.v25 $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xxlsys.o
-else
 	cp bcm57xx/bcm57xx.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xxlsys.o
-endif
 #	cp bcm57xx/bcm57xx300.o $(TARGETDIR)/lib/modules/$(LINUXVER)/bcm57xx300.o
 endif
 endif
