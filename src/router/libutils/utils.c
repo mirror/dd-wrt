@@ -1078,20 +1078,12 @@ int internal_getRouterBrand(  )
 	return ROUTER_WRT54G3G;
     }
 
-    if( boardnum == 45 &&
-	nvram_match( "boardtype", "0x042f" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is Asus WL-500g Premium\n" );
-	setRouter( "Asus WL-500g Premium" );
-	return ROUTER_ASUS_WL500G_PRE;
-    }
     if( nvram_match( "boardtype", "0x042f" )
 	&& nvram_match( "boardrev", "0x10" ) )
     {
 	char *hwver = nvram_safe_get( "hardware_version" );
 
-	if( startswith( hwver, "WL500gp" ) )
+	if( boardnum == 45 || startswith( hwver, "WL500gp" ) )
 	{
 	    cprintf( "router is Asus WL-500g Premium\n" );
 	    setRouter( "Asus WL-500g Premium" );
@@ -1648,43 +1640,31 @@ int internal_getRouterBrand(  )
 	return ROUTER_ASUS_WL520G;
     }
 
-    if( boardnum == 45 &&
-	nvram_match( "boardtype", "0x48E" )
+    if( bvram_match( "boardtype", "0x48E" )
 	&& nvram_match( "boardrev", "0x10" ) )
     {
 	char *hwver = nvram_safe_get( "hardware_version" );
 
-	if( startswith( hwver, "WL500GPV2" ) )
+	if( boardnum == 45 && startswith( hwver, "WL500GPV2" ) )
 	{
 	    cprintf( "router is Asus WL-500G Premium V2\n" );
 	    setRouter( "Asus WL-500G Premium V2" );
 	    return ROUTER_ASUS_WL500G_PRE_V2;
 	}
-	else if( startswith( hwver, "WL330GE" ) )
+	else if( boardnum == 45 && startswith( hwver, "WL330GE" ) )
 	{
 	    cprintf( "router is Asus WL-330GE\n" );
 	    setRouter( "Asus WL-330GE" );
 	    return ROUTER_ASUS_330GE;
 	}
-	else
+	else if( boardnum == 45 || startswith( hwver, "WL500GU" ) || startswith( hwver, "WL500GC" ) )
 	{
 	    cprintf( "router is Asus WL-520GU/GC\n" );
 	    setRouter( "Asus WL-520GU/GC" );
 	    return ROUTER_ASUS_WL520GUGC;
 	}
     }
-    if( nvram_match( "boardtype", "0x48E" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	char *hwver = nvram_safe_get( "hardware_version" );
 
-	if( startswith( hwver, "WL500gp" ) )
-	{
-	    cprintf( "router is Asus WL-520GU/GC\n" );
-	    setRouter( "Asus WL-520GU" );
-	    return ROUTER_ASUS_WL520GUGC;
-	}
-    }
     if( ( boardnum == 83258 || boardnum == 01 )	//or 001 or 0x01
 	&& ( nvram_match( "boardtype", "0x048e" )
 	     || nvram_match( "boardtype", "0x48E" ) )
