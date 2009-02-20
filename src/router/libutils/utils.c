@@ -1083,7 +1083,7 @@ int internal_getRouterBrand(  )
     {
 	char *hwver = nvram_safe_get( "hardware_version" );
 
-	if( boardnum == 45 || startswith( hwver, "WL500gp" ) )
+	if( boardnum == 45 || startswith( hwver, "WL500gp" ) || startswith( hwver, "WL500gH" ) )
 	{
 	    cprintf( "router is Asus WL-500g Premium\n" );
 	    setRouter( "Asus WL-500g Premium" );
