@@ -129,6 +129,11 @@ int hfsplus_find_cat(struct super_block *sb, unsigned long cnid,
 		return -EIO;
 	}
 
+	if (be16_to_cpu(tmp.thread.nodeName.length) > 255) {
+		printk(KERN_ERR "hfs: catalog name length corrupted\n");
+		return -EIO;
+	}
+
 	hfsplus_fill_cat_key_uni(fd->search_key, be32_to_cpu(tmp.thread.parentID),
 				 &tmp.thread.nodeName);
 	return hfsplus_btree_find(fd);
