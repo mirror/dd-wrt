@@ -76,6 +76,7 @@ static int ext3_readdir(struct file * filp,
 	struct super_block * sb;
 	int err;
 	struct inode *inode = filp->f_dentry->d_inode;
+	int dir_has_error = 0;
 
 	sb = inode->i_sb;
 
@@ -87,9 +88,12 @@ static int ext3_readdir(struct file * filp,
 		blk = (filp->f_pos) >> EXT3_BLOCK_SIZE_BITS(sb);
 		bh = ext3_bread (0, inode, blk, 0, &err);
 		if (!bh) {
-			ext3_error (sb, "ext3_readdir",
-				"directory #%lu contains a hole at offset %lu",
-				inode->i_ino, (unsigned long)filp->f_pos);
+			if (!dir_has_error) {
+				ext3_error (sb, __func__, "directory #%lu "
+					    "contains a hole at offset %lld",
+					    inode->i_ino, filp->f_pos);
+				dir_has_error = 1;
+			}
 			filp->f_pos += sb->s_blocksize - offset;
 			continue;
 		}
