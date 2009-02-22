@@ -1447,9 +1447,14 @@ void ej_show_bandwidth( webs_t wp, int argc, char_t ** argv )
 
 #else
     char name[32];
+    int cnt = get_wl_instances(  );
+    int c;
 
-    sprintf( name, "%s", live_translate( "share.wireless" ) );
-    show_bwif( wp, get_wdev(  ), name );
+    for( c = 0; c < cnt; c++ )
+    {
+    sprintf( name, "%s (wl%d)", live_translate( "share.wireless" ), c );
+    show_bwif( wp, get_wl_instance_name( c ), name );
+	}
 #endif
 #ifdef HAVE_WAVESAT
     char name[32];
