@@ -745,9 +745,12 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 		 * a write to bit 0 of pseudo phy register 16 is done we are
 		 * unable to talk to the switch on a customer ref design.
 		 */
+		if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N"))
+		{
 		if (tmp == 0xffff) {
 			miiwr(h, PSEUDO_PHYAD, 16, 1);
 			tmp = miird(h, PSEUDO_PHYAD, 2);
+		}
 		}
 
 		if (tmp != 0xffff) {
