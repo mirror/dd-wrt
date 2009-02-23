@@ -698,7 +698,6 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 	robo->miird = miird;
 	robo->miiwr = miiwr;
 	robo->page = -1;
-	robo->ops = &mdcmdio;
 	char *boothwmodel = nvram_get("boot_hw_model");
 	if (boothwmodel==NULL || strcmp(boothwmodel,"WRT300N"))rreset = GPIO_PIN_NOTDEFINED;
 
@@ -784,10 +783,11 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 	if (boothwmodel && !strcmp(boothwmodel,"WRT610N"))
 		iswrt610n=1;
 
+	if (!iswrt610n)
 	if ((robo->devid == DEVID5395) ||
 	    (robo->devid == DEVID5397) ||
 	    (robo->devid == DEVID5398) || 
-	    (robo->devid == DEVID53115) && !iswrt610n) { /*-- wuzh add for Chip 53115S 2008-3-21 --*/ 
+	    (robo->devid == DEVID53115)) { /*-- wuzh add for Chip 53115S 2008-3-21 --*/ 
 		uint8 srst_ctrl;
 
 		/* If it is a 539x switch, use the soft reset register */
@@ -1261,6 +1261,7 @@ bcm_robo_enable_switch(robo_info_t *robo)
 	int i, max_port_ind, ret = 0;
 	uint8 val8;
 	uint16 mode16;
+	char *boot=nvram_get("boot_hw_model");
 
 	/* 5397 power mode setting */
 	if (robo->devid != DEVID5325)
@@ -1298,13 +1299,13 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		}
 
 		/* No spanning tree on IMP port too */
-		robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_IMP, &val8, sizeof(val8));
+		if (boot && !strcmp(boot,"WRT610N"))
+		    robo->ops->write_reg(robo, PAGE_CTRL, REG_CTRL_IMP, &val8, sizeof(val8));
 	}
 
 char *boardnum=nvram_get("boardnum");
 char *boardtype=nvram_get("boardtype");
 char *cardbus=nvram_get("cardbus");
-char *boot=nvram_get("boot_hw_model");
 
 if (boardnum!=NULL && boardtype!=NULL && cardbus!=NULL)
 if (!strcmp(boardnum,"42") && !strcmp(boardtype,"0x478") && !strcmp(cardbus,"1") && (!boot || (strcmp(boot, "WRT300N") && strcmp(boot, "WRT610N"))))
