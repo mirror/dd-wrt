@@ -7680,19 +7680,8 @@ void ej_portsetup( webs_t wp, int argc, char_t ** argv )
 
 static void show_macfilter_if( webs_t wp, char *ifname )
 {
-    char rifname[32];
-
-#ifdef HAVE_RT2880
-    strcpy( rifname, ifname );
-#else
-    strcpy( rifname, ifname );
-    if( !strcmp( ifname, "wl" ) )
-	strcpy( rifname, nvram_safe_get( "wl0_ifname" ) );
-    if( !strcmp( ifname, "wl0" ) )
-	strcpy( rifname, nvram_safe_get( "wl0_ifname" ) );
-#endif
     websWrite( wp, "<fieldset>\n" );
-    websWrite( wp, "<legend>%s - %s</legend>\n", IFMAP( rifname ),
+    websWrite( wp, "<legend>%s - %s</legend>\n", IFMAP( ifname ),
 	       live_translate( "wl_mac.legend" ) );
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp, "<div class=\"label\">%s</div>\n",
