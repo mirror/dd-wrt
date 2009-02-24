@@ -35,7 +35,7 @@
 
 #include "magic.h"
 
-#if !HAVE_STRUCT_ETHER_ADDR_ETHER_ADDR_OCTET && !HAVE_STRUCT_ETHER_ADDR_OCTET
+#if 0
 
 struct
 ether_addr
@@ -46,6 +46,8 @@ ether_addr
 #define ETHER_ADDR_OCTET ether_addr_octet
 
 #else /* HAVE_STRUCT_ETHER_ADDR_ETHER_ADDR_OCTET || HAVE_STRUCT_ETHER_ADDR_OCTET */
+
+#define ETHER_ADDR_OCTET ether_addr_octet
 
 #if HAVE_STRUCT_ETHER_ADDR_OCTET
 #define ETHER_ADDR_OCTET octet
