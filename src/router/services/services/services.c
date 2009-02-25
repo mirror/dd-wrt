@@ -659,7 +659,7 @@ static void create_pptp_config( char *servername, char *username )
     // server addresses
     fprintf( fp, "pty 'pptp %s --nolaunchpppd", servername );
 
-    if( nvram_match( "pptp_reorder", "0" ) )
+    if( nvram_match( "pptp_reorder", "1" ) )
 	fprintf( fp, " --nobuffer");
 
     // PPTP client also supports synchronous mode.
