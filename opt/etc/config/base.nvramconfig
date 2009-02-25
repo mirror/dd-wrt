@@ -93,6 +93,7 @@
  "pptp_server_name" "PPTP" "NULL" "FALSE" "0"
  "pptp_use_dhcp"  "PPTP use DHCP" "CHOICE" "2" "0" "1" "FALSE" "0"
  "pptp_encrypt"  "PPTP"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
+ "pptp_reorder"  "PPTP"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "resetbutton_enable"  "Resetbuttond"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "telnetd_enable"  "Telnetd"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "sshd_enable"  "SSHD"  "CHOICE" "2" "0"  "1"  "FALSE" "0"
