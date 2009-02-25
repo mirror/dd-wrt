@@ -1251,7 +1251,7 @@ void opengt(void) {
     printf("Trying list of devices\n");
     do{
         strcpy(device,GTdevice[dcount]);
-        if ((comfd = open(device, O_RDWR|O_EXCL|O_NONBLOCK|O_NOCTTY)) >= 0)break;
+        if ((comfd = open(device, O_RDWR)) >= 0)break;
         dcount++;
         }while(strlen(GTdevice[dcount]));
         if (comfd < 0){
@@ -1260,7 +1260,7 @@ void opengt(void) {
         }
     }
   else {
-    if ((comfd = open(device, O_RDWR|O_EXCL|O_NONBLOCK|O_NOCTTY)) <0) { //O_NONBLOCK|O_NOCTTY)) <0) {//
+    if ((comfd = open(device, O_RDWR)) <0) { //O_NONBLOCK|O_NOCTTY)) <0) {//
       sprintf(msg,"Can't open device %s.\n",device);
       printf(msg);
       ext(1);
@@ -1295,7 +1295,7 @@ void opengt(void) {
 void opendevice(void) {
 
   if(strcmp(device,"-")!=0) {
-    if ((comfd = open(device, O_RDWR|O_EXCL|O_NONBLOCK|O_NOCTTY)) <0) { //O_NONBLOCK|O_NOCTTY)) <0) {//
+    if ((comfd = open(device, O_RDWR)) <0) { //O_NONBLOCK|O_NOCTTY)) <0) {//
       sprintf(msg,"Can't open device %s.\n",device);
       printf(msg);
       ext(1);

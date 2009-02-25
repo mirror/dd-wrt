@@ -33,7 +33,7 @@ SCRIPTSRC = ./scripts/
 BIN     = $(CPROG) 
 MANP	= comgt.1 sigmon.1
 
-CFLAGS  = -c
+CFLAGS  = -c -DNEED_PRINTF
 LDFLAGS =
 
 all: $(BIN)
