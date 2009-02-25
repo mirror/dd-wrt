@@ -2692,8 +2692,11 @@ int led_control( int type, int act )
 	    break;
 	case ROUTER_WRT600N:
 	    connected_gpio = 0x13;
-	    // power_gpio = 0x01;
-	    ses2_gpio = 0x18;	// ses orange 
+	    power_gpio = 0x02;
+	    diag_gpio = 0x02;
+	    usb_gpio = 0x13;
+	    ses_gpio = 0x18;
+	    ses2_gpio = 0x1a;
 	    break;
 	case ROUTER_LINKSYS_WRT55AG:
 	    connected_gpio = 0x13;
