@@ -5077,6 +5077,26 @@ void show_wep( webs_t wp, char *prefix )
     char *bit;
 
     cprintf( "show wep\n" );
+#ifdef HAVE_MADWIFI
+    	char wl_authmode[16];
+
+	sprintf( wl_authmode, "%s_authmode", prefix );
+	nvram_default_get(wl_authmode,"open");
+	websWrite( wp, "<div class=\"setting\">\n" );
+	websWrite( wp,
+		   "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label)</script></div>\n" );
+	websWrite( wp,
+		   "<input class=\"spaceradio\" type=\"radio\" value=\"open\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.openn)</script></input>&nbsp;\n",
+		   wl_authmode, nvram_match( wl_authmode,
+					   "open" ) ? "checked=\"checked\"" :
+		   "" );
+	websWrite( wp,
+		   "<input class=\"spaceradio\" type=\"radio\" value=\"shared\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.share_key)</script></input>\n",
+		   wl_authmode, nvram_match( wl_authmode,
+					   "shared" ) ? "checked=\"checked\"" :
+		   "" );
+	websWrite( wp, "</div>\n" );
+#endif
     websWrite( wp,
 	       "<div><div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wep.defkey)</script></div>" );
     websWrite( wp, "<input type=\"hidden\" name=\"%s_WEP_key\" />", prefix );
