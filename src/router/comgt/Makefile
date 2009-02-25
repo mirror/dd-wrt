@@ -73,7 +73,11 @@ clean:
 
 comgt: comgt.o
 	$(CC) comgt.o $(LDFLAGS) -o comgt
+#	$(CC) usb_modeswitch.o $(LDFLAGS) -o usb_modeswitch
 
 comgt.o: comgt.c comgt.h
 	$(CC) $(COPTS) comgt.c $(CFLAGS) 
+
+usb_modeswitch.o: usb_modeswitch.c usb_modeswitch.h
+	$(CC) $(COPTS) usb_modeswitch.c $(CFLAGS) 
 
