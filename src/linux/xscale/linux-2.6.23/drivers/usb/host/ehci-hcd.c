@@ -960,7 +960,7 @@ MODULE_LICENSE ("GPL");
 #define	PLATFORM_DRIVER		ehci_ppc_soc_driver
 #endif
 
-#ifdef CONFIG_ARCH_IXP4XX
+#ifdef  CONFIG_CPU_IXP43X
 #include "ehci-ixp4xx.c"
 #define	PLATFORM_DRIVER		ixp4xx_ehci_driver
 #endif
