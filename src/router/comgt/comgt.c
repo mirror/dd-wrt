@@ -243,7 +243,6 @@ int getonebyte(void) {
   res=select(comfd+1,&rfds,NULL,NULL,&timeout);
   if(res) {
     res=read(comfd,&ch,1);
-    usleep(100);
     if(res==1) {
       if(comecho) {
         if(ch=='\n') lastcharnl=1;
