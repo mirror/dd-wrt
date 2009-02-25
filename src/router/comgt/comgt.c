@@ -217,14 +217,16 @@ void writecom(char *text) {
   int res;
   unsigned int a;
   char ch;
-  for(a=0;a<strlen(text);a++) {
-    ch=text[a];
-    res=write(comfd,&ch,1);
-    if(senddelay) dormir(senddelay);
-    if(res!=1) {
-      serror("Could not write to COM device",1);
-    }
-  }
+ write(comfd,text,strlen(text));
+//    if(res!=strlen(text)) {
+//      serror("Could not write to COM device",1);
+//    }
+  
+//  for(a=0;a<strlen(text);a++) {
+//    ch=text[a];
+//    res=write(comfd,&ch,1);
+//    if(senddelay) dormir(senddelay);
+//  }
 }
 
 /* Gets a single byte from comm. device.  Return -1 if none avail. */
@@ -241,6 +243,7 @@ int getonebyte(void) {
   res=select(comfd+1,&rfds,NULL,NULL,&timeout);
   if(res) {
     res=read(comfd,&ch,1);
+    usleep(100);
     if(res==1) {
       if(comecho) {
         if(ch=='\n') lastcharnl=1;
@@ -1174,6 +1177,7 @@ void doget(void) {
   resultcode=0;
   while(goahead && htime()<timeout) {
     c=getonebyte();
+    if (c==0xa)c=0xd;
     if(c!= -1) {
       for(a=0;a<strlen(terminators);a++) {
         if(c==terminators[a]) goahead=0;
@@ -1251,7 +1255,7 @@ void opengt(void) {
     printf("Trying list of devices\n");
     do{
         strcpy(device,GTdevice[dcount]);
-        if ((comfd = open(device, O_RDWR)) >= 0)break;
+        if ((comfd = open(device, O_RDWR|O_NOCTTY)) >= 0)break;
         dcount++;
         }while(strlen(GTdevice[dcount]));
         if (comfd < 0){
@@ -1260,7 +1264,7 @@ void opengt(void) {
         }
     }
   else {
-    if ((comfd = open(device, O_RDWR)) <0) { //O_NONBLOCK|O_NOCTTY)) <0) {//
+    if ((comfd = open(device, O_RDWR|O_NOCTTY)) <0) { //O_NONBLOCK|O_NOCTTY)) <0) {//
       sprintf(msg,"Can't open device %s.\n",device);
       printf(msg);
       ext(1);
@@ -1295,7 +1299,7 @@ void opengt(void) {
 void opendevice(void) {
 
   if(strcmp(device,"-")!=0) {
-    if ((comfd = open(device, O_RDWR)) <0) { //O_NONBLOCK|O_NOCTTY)) <0) {//
+    if ((comfd = open(device, O_RDWR|O_NOCTTY)) <0) { //O_NONBLOCK|O_NOCTTY)) <0) {//
       sprintf(msg,"Can't open device %s.\n",device);
       printf(msg);
       ext(1);
