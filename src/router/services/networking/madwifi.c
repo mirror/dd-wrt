@@ -205,7 +205,7 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	int cnt = 1;
 	int i;
 	char bul[8];
-
+	char *authmode = nvram_nget("%s_authmode",prefix);
 	for( i = 1; i < 5; i++ )
 	{
 	    char *athkey = nvram_nget( "%s_key%d", prefix, i );
@@ -217,6 +217,10 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	}
 	sysprintf( "iwconfig %s key [%s]", prefix,
 		   nvram_nget( "%s_key", prefix ) );
+	if (!strcmp(authmode,"shared"))
+	    sysprintf( "iwpriv %s authmode 2",prefix);
+	else
+	    sysprintf( "iwpriv %s authmode 1",prefix);
     }
     else if( nvram_match( akm, "psk" ) ||
 	     nvram_match( akm, "psk2" ) || nvram_match( akm, "psk psk2" ) )
@@ -507,6 +511,7 @@ void setupHostAP( char *prefix, int iswan )
 	int cnt = 1;
 	int i;
 	char bul[8];
+	char *authmode = nvram_nget("%s_authmode",prefix);
 
 	for( i = 1; i < 5; i++ )
 	{
@@ -520,6 +525,11 @@ void setupHostAP( char *prefix, int iswan )
 	}
 	sprintf( bul, "[%s]", nvram_nget( "%s_key", prefix ) );
 	sysprintf( "iwconfig %s key %s", prefix, bul );
+
+	if (!strcmp(authmode,"shared"))
+	    sysprintf( "iwpriv %s authmode 2",prefix);
+	else
+	    sysprintf( "iwpriv %s authmode 1",prefix);
     }
     else if( nvram_match( akm, "psk" ) ||
 	     nvram_match( akm, "psk2" ) ||
