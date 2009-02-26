@@ -1,19 +1,3 @@
-/*
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. See README and COPYING for
- * more details.
-
-	Module Name:
-	ieee802_1x.c
-
-	Revision History:
-	Who 		When		  What
-	--------	----------	  ----------------------------------------------
-	Jan, Lee	Dec --2003	  modified
-
-*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -80,7 +64,7 @@ static void ieee802_1x_send(rtapd *rtapd, struct sta_info *sta, u8 type, u8 *dat
 	//If (ethertype==ETH_P_PRE_AUTH), this means the packet is to or from ehternet socket(WPA2, pre-auth)
 	if (sta->ethertype == ETH_P_PRE_AUTH)
 	{
-		if (send(rtapd->eth_sock, buf, len, 0) < 0)
+		if (send(sta->SockNum/*rtapd->eth_sock*/, buf, len, 0) < 0)
 			perror("send[WPA2 pre-auth]");
 		DBGPRINT(RT_DEBUG_INFO,"ieee802_1x_send::WPA2, pre-auth, len=%d\n", len);
 	}
@@ -571,7 +555,14 @@ static void handle_eap(struct sta_info *sta, u8 *buf, size_t len)
 }
 
 /* called from handle_read(). Process the EAPOL frames from the Supplicant */
-void ieee802_1x_receive(rtapd *rtapd, u8 *sa, u8 *apidx, u8 *buf, size_t len, u16 ethertype)
+void ieee802_1x_receive(
+		rtapd *rtapd, 
+		u8 *sa, 
+		u8 *apidx, 
+		u8 *buf, 
+		size_t len, 
+		u16 ethertype,
+		int	SockNum)
 {
 	struct sta_info *sta;
 	struct ieee802_1x_hdr *hdr;
@@ -585,7 +576,7 @@ void ieee802_1x_receive(rtapd *rtapd, u8 *sa, u8 *apidx, u8 *buf, size_t len, u1
 	if (len == sizeof(RalinkIe) && RTMPCompareMemory(buf, RalinkIe, sizeof(RalinkIe)) == 0)
 		bStop = 1;
 	
-	sta = Ap_get_sta(rtapd, sa, apidx, ethertype, bStop);
+	sta = Ap_get_sta(rtapd, sa, apidx, ethertype, bStop, SockNum);
 	if (!sta)
 	{
 		return;
@@ -990,6 +981,7 @@ ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg 
 			/* draft-congdon-radius-8021x-22.txt, Ch. 3.17 */
 			if (session_timeout_set && termination_action == RADIUS_TERMINATION_ACTION_RADIUS_REQUEST)
 			{
+				DBGPRINT(RT_DEBUG_TRACE,"AP_REAUTH_TIMEOUT %d seconds \n", session_timeout);
 				sta->eapol_sm->reauth_timer.reAuthPeriod =	session_timeout;
 			}
 			else if (session_timeout_set && (rtapd->conf->session_timeout_set == 1))   // 1 1 

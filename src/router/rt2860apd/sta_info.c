@@ -1,19 +1,4 @@
-/*
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. See README and COPYING for
- * more details.
 
-	Module Name:
-	sta_info.c
-
-	Revision History:
-	Who 		When		  What
-	--------	----------	  ----------------------------------------------
-	Jan, Lee	Dec --2003	  modified
-
-*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -31,7 +16,7 @@
 #include "ieee802_1x.h"
 #include "radius.h"
 
-struct sta_info* Ap_get_sta(rtapd *apd, u8 *sa, u8 *apidx, u16 ethertype, int stop)
+struct sta_info* Ap_get_sta(rtapd *apd, u8 *sa, u8 *apidx, u16 ethertype, int stop, int sock)
 {
 	struct sta_info *s;
 
@@ -72,6 +57,7 @@ struct sta_info* Ap_get_sta(rtapd *apd, u8 *sa, u8 *apidx, u16 ethertype, int st
 
 		DBGPRINT(RT_DEBUG_TRACE,"Create a new STA(in %s%d)\n", apd->prefix_wlan_name, s->ApIdx);
 
+		s->SockNum = sock;
 		memcpy(s->addr, sa, ETH_ALEN);
 		s->next = apd->sta_list;
 		apd->sta_list = s;
