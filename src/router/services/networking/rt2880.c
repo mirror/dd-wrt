@@ -497,6 +497,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     char radius_port[256] = { 0 };
     char radius_key[1024] = { 0 };
     char x80211[32] = { 0 };
+    char eapifname[64] = { 0 };
 
     fprintf( fp, "own_ip_addr=%s\n", nvram_safe_get( "lan_ipaddr" ) );
 
@@ -504,7 +505,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	strcat( keyidstr, "1" );
     else
 	strcat( keyidstr, nvram_safe_get( "wl0_key" ) );
-
+    strcat (eapifname, getBridge("ra0"));
     if( nvram_match( "wl0_akm", "wep" ) )
     {
 	strcat( authmode, "OPEN" );
@@ -673,12 +674,13 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	strcat( x80211, "1" );
 	strcat( encryptype, "WEP" );
     }
-
     count = 2;
     vifs = nvram_get( "wl0_vifs" );
     if( vifs != NULL )
 	foreach( var, vifs, next )
     {
+	strcat( eapifname, ";");
+	strcat( eapifname, getBridge(getRADev( var )));
 	strcat( keyidstr, ";" );
 	if( nvram_nmatch( "", "%s_key", var ) )
 	    strcat( keyidstr, "1" );
@@ -841,6 +843,12 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "RADIUS_Port=%s\n", radius_port );
     fprintf( fp, "RADIUS_Key=%s\n", radius_key );
     fprintf( fp, "IEEE8021X=%s\n", x80211 );
+
+    fprintf( fp, "EAPifname=%s" ,eapifname);
+    fprintf( fp, "PreAuthifname=%s",eapifname );
+
+
+
 //wds entries
     char wdsentries[128] = { 0 };
     int wdscount = 0;
@@ -1060,8 +1068,6 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "AccessControlList2=\n" );
     fprintf( fp, "AccessPolicy3=0\n" );
     fprintf( fp, "AccessControlList3=\n" );
-    fprintf( fp, "EAPifname=br0\n" );
-    fprintf( fp, "PreAuthifname=br0\n" );
     fprintf( fp, "HT_HTC=0\n" );
     fprintf( fp, "HT_RDG=1\n" );
     fprintf( fp, "HT_LinkAdapt=0\n" );
