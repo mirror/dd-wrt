@@ -1,19 +1,4 @@
-/*
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. See README and COPYING for
- * more details.
 
-	Module Name:
-	rt2860apd.c
-
-	Revision History:
-	Who         When          What
-	--------    ----------    ----------------------------------------------
-	Jan, Lee    Dec --2003    modified
-
-*/
 
 #include <net/if_arp.h>
 #include <netpacket/packet.h>
@@ -175,9 +160,11 @@ static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
 		        break;
 		    }
 		}
+		
 		if(i >= rtapd->conf->SsidNum)
 		{
-	        DBGPRINT(RT_DEBUG_WARN,"sock not found (sock=%d) in %sX!!!\n", sock, rtapd->prefix_wlan_name);
+	        DBGPRINT(RT_DEBUG_WARN, "Receive unexpected DA (%02x:%02x:%02x:%02x:%02x:%02x)\n",
+										MAC2STR(da));
 		    return;
 		}
 
@@ -204,15 +191,8 @@ static void Handle_read(int sock, void *eloop_ctx, void *sock_ctx)
     	pos += 4;
     	left -= 4;
 	}
-	if (len < 52 )
-    {
-		DBGPRINT(RT_DEBUG_INFO,"Handle_read :: handle_short_frame: (len=%d, left=%d)\n", len,left);
-        for(i = 0; i < left; i++)
-		DBGPRINT(RT_DEBUG_INFO," %x", *(pos+i));
-		DBGPRINT(RT_DEBUG_INFO,"\n");
-	}
     
-    ieee802_1x_receive(rtapd, sa, &apidx, pos, left, ethertype);
+    ieee802_1x_receive(rtapd, sa, &apidx, pos, left, ethertype, sock);
 }
 
 int Apd_init_sockets(rtapd *rtapd)
@@ -222,59 +202,65 @@ int Apd_init_sockets(rtapd *rtapd)
     int i;
 
 	// 1. init ethernet interface socket for pre-auth
-	rtapd->eth_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PRE_AUTH));
-    if (rtapd->eth_sock < 0)
-    {
-        perror("socket[PF_PACKET,SOCK_RAW](eth_sock)");
-		return -1;
-    }
+	for (i = 0; i < rtapd->conf->num_preauth_if; i++)
+	{
+		rtapd->eth_sock[i] = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PRE_AUTH));
+	    if (rtapd->eth_sock[i] < 0)
+    	{
+    	    perror("socket[PF_PACKET,SOCK_RAW](eth_sock)");
+			return -1;
+    	}
 
-    if (eloop_register_read_sock(rtapd->eth_sock, Handle_read, rtapd, NULL))
-    {
-        DBGPRINT(RT_DEBUG_ERROR,"Could not register read socket(eth_sock)\n");
-		return -1;
-    }
+	    if (eloop_register_read_sock(rtapd->eth_sock[i], Handle_read, rtapd, NULL))
+    	{
+    	    DBGPRINT(RT_DEBUG_ERROR,"Could not register read socket(eth_sock)\n");
+			return -1;
+    	}
 	
-    memset(&ifr, 0, sizeof(ifr));
-    memcpy(ifr.ifr_name, rtapd->conf->PreAuthifname, strlen(rtapd->conf->PreAuthifname));
-    DBGPRINT(RT_DEBUG_TRACE,"Register pre-auth interface as (%s)\n", ifr.ifr_name);
+    	memset(&ifr, 0, sizeof(ifr));
+	    strcpy(ifr.ifr_name, rtapd->conf->preauth_if_name[i]);
+    	DBGPRINT(RT_DEBUG_TRACE,"Register pre-auth interface as (%s)\n", ifr.ifr_name);
 
-    if (ioctl(rtapd->eth_sock, SIOCGIFINDEX, &ifr) != 0)
-    {
-        perror("ioctl(SIOCGIFHWADDR)(eth_sock)");
-        return -1;
-    }
+	    if (ioctl(rtapd->eth_sock[i], SIOCGIFINDEX, &ifr) != 0)
+    	{
+    	    perror("ioctl(SIOCGIFHWADDR)(eth_sock)");
+    	    return -1;
+    	}
 
-    memset(&addr, 0, sizeof(addr));
-	addr.sll_family = AF_PACKET;
-	addr.sll_ifindex = ifr.ifr_ifindex;
-	if (bind(rtapd->eth_sock, (struct sockaddr *) &addr, sizeof(addr)) < 0)
-    {
-		perror("bind");
-		return -1;
+    	memset(&addr, 0, sizeof(addr));
+		addr.sll_family = AF_PACKET;
+		addr.sll_ifindex = ifr.ifr_ifindex;
+		if (bind(rtapd->eth_sock[i], (struct sockaddr *) &addr, sizeof(addr)) < 0)
+    	{
+			perror("bind");
+			return -1;
+		}
+	    DBGPRINT(RT_DEBUG_TRACE,"Pre-auth raw packet socket binding on %s(socknum=%d,ifindex=%d)\n", 
+									ifr.ifr_name, rtapd->eth_sock[i], addr.sll_ifindex);
 	}
-    DBGPRINT(RT_DEBUG_TRACE,"Opening pre-auth raw packet socket with %s(socknum=%d,ifindex=%d)\n", ifr.ifr_name, rtapd->eth_sock, addr.sll_ifindex);
 
 	// 2. init wireless interface socket for EAP negotiation      		
-    rtapd->wlan_sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
+	for (i = 0; i < rtapd->conf->num_eap_if; i++)
+	{
+		rtapd->wlan_sock[i] = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_PAE));
         
-    if (rtapd->wlan_sock < 0)
+	    if (rtapd->wlan_sock[i] < 0)
         {
             perror("socket[PF_PACKET,SOCK_RAW]");
     		return -1;
         }
 
-    if (eloop_register_read_sock(rtapd->wlan_sock, Handle_read, rtapd, NULL))
+	    if (eloop_register_read_sock(rtapd->wlan_sock[i], Handle_read, rtapd, NULL))
         {
             DBGPRINT(RT_DEBUG_ERROR,"Could not register read socket\n");
     		return -1;
         }
 	
         memset(&ifr, 0, sizeof(ifr));
-	strcpy(ifr.ifr_name, rtapd->conf->EAPifname);
-	DBGPRINT(RT_DEBUG_TRACE,"Register EAP interface as (%s)\n", ifr.ifr_name);
+		strcpy(ifr.ifr_name, rtapd->conf->eap_if_name[i]);
+		DBGPRINT(RT_DEBUG_TRACE,"Register EAP interface as (%s)\n", ifr.ifr_name);
 
-    if (ioctl(rtapd->wlan_sock, SIOCGIFINDEX, &ifr) != 0)
+	    if (ioctl(rtapd->wlan_sock[i], SIOCGIFINDEX, &ifr) != 0)
         {
             perror("ioctl(SIOCGIFHWADDR)");
             return -1;
@@ -283,12 +269,15 @@ int Apd_init_sockets(rtapd *rtapd)
         memset(&addr, 0, sizeof(addr));
     	addr.sll_family = AF_PACKET;
     	addr.sll_ifindex = ifr.ifr_ifindex;
-    if (bind(rtapd->wlan_sock, (struct sockaddr *) &addr, sizeof(addr)) < 0)
+	    if (bind(rtapd->wlan_sock[i], (struct sockaddr *) &addr, sizeof(addr)) < 0)
         {
     		perror("bind");
     		return -1;
     	}
-    DBGPRINT(RT_DEBUG_TRACE, "Opening EAP raw packet socket with br0 (socknum=%d,ifindex=%d)\n", rtapd->wlan_sock, addr.sll_ifindex);
+	    DBGPRINT(RT_DEBUG_TRACE, "EAP raw packet socket binding on %s (socknum=%d,ifindex=%d)\n", 
+									ifr.ifr_name, rtapd->wlan_sock[i], addr.sll_ifindex);
+	}
+
     
 	// 3. Get wireless interface MAC address
     for(i = 0; i < rtapd->conf->SsidNum; i++)
@@ -335,13 +324,17 @@ int Apd_init_sockets(rtapd *rtapd)
 
 static void Apd_cleanup(rtapd *rtapd)
 {
+	int i;
 
-	if (rtapd->wlan_sock >= 0)
-		close(rtapd->wlan_sock);	
+	for (i = 0; i < MAX_MBSSID_NUM; i++)
+	{
+		if (rtapd->wlan_sock[i] >= 0)
+			close(rtapd->wlan_sock[i]);
+		if (rtapd->eth_sock[i] >= 0)
+			close(rtapd->eth_sock[i]);	
+	}	
 	if (rtapd->ioctl_sock >= 0)
 		close(rtapd->ioctl_sock);
-	if (rtapd->eth_sock >= 0)
-		close(rtapd->eth_sock);
     
 	Radius_client_deinit(rtapd);
 
@@ -394,6 +387,7 @@ static void usage(void)
 static rtapd * Apd_init(const char *prefix_name)
 {
 	rtapd *rtapd;
+	int		i;
 
 	rtapd = malloc(sizeof(*rtapd));
 	if (rtapd == NULL)
@@ -426,8 +420,11 @@ static rtapd * Apd_init(const char *prefix_name)
 		goto fail;
 	}
 
-	rtapd->wlan_sock = -1;
-	rtapd->eth_sock = -1;
+	for (i = 0; i < MAX_MBSSID_NUM; i++)
+	{
+		rtapd->wlan_sock[i] = -1;
+		rtapd->eth_sock[i] = -1;
+	}
 
 	return rtapd;
 

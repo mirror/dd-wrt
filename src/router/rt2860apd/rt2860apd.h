@@ -4,6 +4,8 @@
 #include "common.h"
 #include "ap.h"
 
+
+#define MAC_ADDR_LEN				6
 #define MAX_MBSSID_NUM              8
 #define WEP8021X_KEY_LEN            13
 
@@ -18,7 +20,7 @@
 #endif
 
 #include "config.h"
-#define NIC_DBG_STRING      (" ")
+#define NIC_DBG_STRING      ("[DOT1X] ")
 
 #define RT_DEBUG_OFF		0
 #define RT_DEBUG_ERROR		1
@@ -81,10 +83,10 @@ typedef struct apd_data {
 	struct rtapd_config *conf;
 	char *prefix_wlan_name;		/* the prefix name of wireless interface */
 
-	int wlan_sock;				/* raw packet socket for wireless interface access */		
-	int eth_sock; /* raw packet socket for ethernet interface access */
+	int wlan_sock[MAX_MBSSID_NUM];		/* raw packet socket for wireless interface access */		
+	int eth_sock[MAX_MBSSID_NUM]; 		/* raw packet socket for ethernet interface access */
 	int ioctl_sock; /* socket for ioctl() use */
-	u8 own_addr[MAX_MBSSID_NUM][6];
+	u8 own_addr[MAX_MBSSID_NUM][MAC_ADDR_LEN];		/* indicate the wireless MAC address */
 
 	int num_sta; /* number of entries in sta_list */
 	struct sta_info *sta_list; /* STA info list head */
@@ -107,7 +109,7 @@ typedef struct recv_from_ra {
     u8 xframe[1];    
 } __attribute__ ((packed)) priv_rec;
 
-void ieee802_1x_receive(rtapd *apd, u8 *sa, u8 *apidx, u8 *buf, size_t len, u16 ethertype);
+void ieee802_1x_receive(rtapd *apd, u8 *sa, u8 *apidx, u8 *buf, size_t len, u16 ethertype, int	SockNum);
 u16	RTMPCompareMemory(void *pSrc1,void *pSrc2, u16 Length);
 void Handle_term(int sig, void *eloop_ctx, void *signal_ctx);
 int RT_ioctl(int sid, int param, char  *data, int data_len, char *prefix_name, unsigned char apidx, int flags);

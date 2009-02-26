@@ -39,8 +39,11 @@ struct rtapd_config {
 	int num_auth_servers;
 #endif
 	
-	char EAPifname[IFNAMSIZ];
-	char PreAuthifname[IFNAMSIZ];
+	int	 num_eap_if;
+	char eap_if_name[MAX_MBSSID_NUM][IFNAMSIZ];
+
+	int	 num_preauth_if;
+	char preauth_if_name[MAX_MBSSID_NUM][IFNAMSIZ];
 
 	int radius_retry_primary_interval;
 
