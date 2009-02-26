@@ -15,6 +15,15 @@ install:
 	install -d $(INSTALLDIR)/usr/lib/firmware	
 	install -d $(INSTALLDIR)/lib
 	install services $(INSTALLDIR)/etc
+ifdef CONFIG_RT3052
+	install -d $(INSTALLDIR)/etc/wlan
+	install rt2880/RT30*.bin $(INSTALLDIR)/etc/wlan
+else
+ifdef CONFIG_RT2880
+	install -d $(INSTALLDIR)/etc/wlan
+	install rt2880/RT28*.bin $(INSTALLDIR)/etc/wlan
+endif
+endif
 ifdef CONFIG_X86
 	install -d $(INSTALLDIR)/boot
 endif
@@ -48,7 +57,11 @@ endif
 endif
 ifdef CONFIG_SNMP
 ifndef CONFIG_MADWIFI
+ifndef CONFIG_RT2880
 	install wl_snmpd.sh $(INSTALLDIR)/etc/wl_snmpd.sh
+else
+	install wl_snmpd_rt2880.sh $(INSTALLDIR)/etc/wl_snmpd.sh
+endif
 else
 	install wl_snmpd_ath.sh $(INSTALLDIR)/etc/wl_snmpd.sh
 endif
