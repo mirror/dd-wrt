@@ -1,19 +1,3 @@
-/*
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. See README and COPYING for
- * more details.
-
-    Module Name:
-    config.c
-
-    Revision History:
-    Who         When          What
-    --------    ----------    ----------------------------------------------
-    Jan, Lee    Dec --2003    modified
-
-*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -145,6 +129,7 @@ BOOLEAN Query_config_from_driver(int ioctl_sock, char *prefix_name, struct rtapd
 	int 	len;	
     int		i, idx, m_num; 
 	int		radius_count = 0, radius_port_count = 0, radius_key_count = 0;    
+	int		num_eap_if = 0, num_preauth_if = 0; 
 	PRADIUS_CONF pRadiusConf;
 
 	*flag = 0;
@@ -204,43 +189,43 @@ BOOLEAN Query_config_from_driver(int ioctl_sock, char *prefix_name, struct rtapd
 		{			
 #if MULTIPLE_RADIUS  	
 			// RADIUS_Server ip address
-		if (!Config_read_radius_addr(
-            &conf->mbss_auth_servers[i],
+			if (!Config_read_radius_addr(
+        	    &conf->mbss_auth_servers[i],
 	            &conf->mbss_num_auth_servers[i], 
 	            pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_ip, 
 	            1812,
-            &conf->mbss_auth_server[i]))
-    	{        	
-            radius_count++;
+            	&conf->mbss_auth_server[i]))
+    		{        	
+        	    radius_count++;
 				DBGPRINT(RT_DEBUG_TRACE, "(no.%d) Radius ip address: '%s'(%x) for %s%d\n", conf->mbss_num_auth_servers[i],
 										inet_ntoa(conf->mbss_auth_server[i]->addr), 
 										conf->mbss_auth_server[i]->addr.s_addr, prefix_name, i);
-	}				
+   			}	
 
-	// RADIUS_Port and RADIUS_Key      
-		if (conf->mbss_auth_server[i] && conf->mbss_auth_server[i]->addr.s_addr != 0)
-		{					
+			// RADIUS_Port and RADIUS_Key      
+			if (conf->mbss_auth_server[i] && conf->mbss_auth_server[i]->addr.s_addr != 0)
+			{					
 				if (pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_port > 0)
-			{
-				radius_port_count++;
+				{
+					radius_port_count++;
 					conf->mbss_auth_server[i]->port = pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_port;           					
 					DBGPRINT(RT_DEBUG_TRACE, "(no.%d) Radius port: '%d' for %s%d\n", conf->mbss_num_auth_servers[i], conf->mbss_auth_server[i]->port, prefix_name, i);
-			}
-			else
+				}
+				else
 					DBGPRINT(RT_DEBUG_ERROR, "(no.%d) Radius port is invalid for %s%d\n", conf->mbss_num_auth_servers[i], prefix_name, i);
 
 				if (pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_keylen > 0)
-			{
-				radius_key_count++;
+				{
+					radius_key_count++;
 					conf->mbss_auth_server[i]->shared_secret = (u8 *)strdup((const char *)pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_key);            
 	    	        conf->mbss_auth_server[i]->shared_secret_len = pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_keylen;
 					DBGPRINT(RT_DEBUG_TRACE,"(no.%d) Radius key: '%s', key_len: %d for %s%d \n", 
 						conf->mbss_num_auth_servers[i], conf->mbss_auth_server[i]->shared_secret, conf->mbss_auth_server[i]->shared_secret_len, prefix_name, i);	
-			}
-			else
+				}
+				else
 					DBGPRINT(RT_DEBUG_ERROR, "(no.%d) Radius key is invalid for %s%d\n", conf->mbss_num_auth_servers[i], prefix_name, i);
 			
-		}
+			}
 #else
 			// RADIUS_Server ip address
 			if (!Config_read_radius_addr(
@@ -251,36 +236,36 @@ BOOLEAN Query_config_from_driver(int ioctl_sock, char *prefix_name, struct rtapd
 	            &conf->auth_server))
 		    {        	
 		            radius_count++;
-	}	
+			}	
 		    DBGPRINT(RT_DEBUG_TRACE, "(no.%d) Radius ip address: '%s'(%x)\n", 
 												conf->num_auth_servers,
 												inet_ntoa(conf->auth_server->addr), 
 												conf->auth_server->addr.s_addr);
 
 			// RADIUS_Port and RADIUS_Key  
-	if (conf->auth_server && conf->auth_server->addr.s_addr != 0)
-	{
+			if (conf->auth_server && conf->auth_server->addr.s_addr != 0)
+			{
 				if (pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_port > 0)
-		{
-			radius_port_count++;
+				{
+					radius_port_count++;
 		    		conf->auth_server->port = pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_port;
 					DBGPRINT(RT_DEBUG_TRACE,"(no.%d) Radius port: '%d'\n", conf->num_auth_servers, conf->auth_server->port);
-		}
-		else
+				}
+				else
 					DBGPRINT(RT_DEBUG_ERROR, "(no.%d) Radius port is invalid\n", conf->num_auth_servers);
 
 				if (pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_keylen > 0)
-		{
-			radius_key_count++;
+				{
+					radius_key_count++;
 					conf->auth_server->shared_secret = (u8 *)strdup((const char *)pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_key);            
 		        	conf->auth_server->shared_secret_len = pRadiusConf->RadiusInfo[i].radius_srv_info[idx].radius_keylen;
 					DBGPRINT(RT_DEBUG_TRACE,"(no.%d) Radius key: '%s', key_len: %d \n", conf->num_auth_servers, 
 					conf->auth_server->shared_secret, conf->auth_server->shared_secret_len);	
-		} 
-		else
+				} 
+				else
 					DBGPRINT(RT_DEBUG_ERROR, "(no.%d) Radius key is invalid\n", conf->num_auth_servers);
 		
-	}       
+			}       
 #endif			
 		}			
 	}				
@@ -333,27 +318,11 @@ BOOLEAN Query_config_from_driver(int ioctl_sock, char *prefix_name, struct rtapd
     }
     DBGPRINT(RT_DEBUG_TRACE,"session_timeout policy is %s \n", conf->session_timeout_set ? "enabled" : "disabled");
 
-	// EAPifname
-	if (pRadiusConf->EAPifname_len > 0)
-	{
-		memset(conf->EAPifname, 0, IFNAMSIZ);	
-		memcpy(conf->EAPifname, pRadiusConf->EAPifname, pRadiusConf->EAPifname_len);	 
-		DBGPRINT(RT_DEBUG_TRACE,"EAPifname: %s \n", conf->EAPifname);
-	}
-
-	// PreAuthifname
-	if (pRadiusConf->PreAuthifname_len > 0)
-	{
-		memset(conf->PreAuthifname, 0, IFNAMSIZ);	
-		memcpy(conf->PreAuthifname, pRadiusConf->PreAuthifname, pRadiusConf->PreAuthifname_len);	 
-		DBGPRINT(RT_DEBUG_TRACE,"PreAuthifname: %s \n", conf->PreAuthifname);
-	}
-
-	// DefaultKeyID		
 	for (i = 0; i < conf->SsidNum; i++)
 	{
 		int	g_key_len = 0;
 
+		// DefaultKeyID	
 		if (pRadiusConf->RadiusInfo[i].ieee8021xWEP)
 		{
 			// set group key index
@@ -379,7 +348,33 @@ BOOLEAN Query_config_from_driver(int ioctl_sock, char *prefix_name, struct rtapd
 											conf->DefaultKeyID[i]+1, g_key_len, prefix_name, i);			
 			}
 		}
+
+		// EAPifname
+		if (pRadiusConf->EAPifname_len[i] > 0)
+		{
+			memset(conf->eap_if_name[num_eap_if], 0, IFNAMSIZ);	
+			memcpy(conf->eap_if_name[num_eap_if], pRadiusConf->EAPifname[i], pRadiusConf->EAPifname_len[i]);	 
+			
+			DBGPRINT(RT_DEBUG_TRACE, "(no.%d) EAPifname: %s \n", num_eap_if + 1, conf->eap_if_name[num_eap_if]);
+			num_eap_if ++;
+		}
+
+		// PreAuthifname
+		if (pRadiusConf->PreAuthifname_len[i] > 0)
+		{
+			memset(conf->preauth_if_name[num_preauth_if], 0, IFNAMSIZ);	
+			memcpy(conf->preauth_if_name[num_preauth_if], pRadiusConf->PreAuthifname[i], pRadiusConf->PreAuthifname_len[i]);	 
+
+			DBGPRINT(RT_DEBUG_TRACE,"(no.%d) PreAuthifname: %s \n", num_preauth_if + 1, conf->preauth_if_name[num_preauth_if]);
+			num_preauth_if ++;
+		}
+
 	}
+
+	if (num_eap_if > 0)
+		conf->num_eap_if = num_eap_if;
+	if (num_preauth_if > 0)
+		conf->num_preauth_if = num_preauth_if;
 
 	free(buf);
 
@@ -415,8 +410,10 @@ struct rtapd_config * Config_read(int ioctl_sock, char *prefix_name)
   	}
   
 	// initial default EAP IF name and Pre-Auth IF name	as "br0"
-	strcpy(conf->EAPifname, "br0");
-	strcpy(conf->PreAuthifname, "br0");
+	conf->num_eap_if = 1;	
+	conf->num_preauth_if = 1;	
+	strcpy(conf->eap_if_name[0], "br0");	
+	strcpy(conf->preauth_if_name[0], "br0");
 
 	// Get parameters from deiver through IOCTL cmd
 	if(!Query_config_from_driver(ioctl_sock, prefix_name, conf, &errors, &flag))

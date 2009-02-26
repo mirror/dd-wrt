@@ -12,7 +12,6 @@ struct ieee802_1x_hdr {
 } __attribute__ ((packed));
 
 #define LENGTH_8021X_HDR        4
-#define MAC_ADDR_LEN			6
 
 #define EAPOL_VERSION		1
 #define EAPOL_VERSION_2		2    //for WPA2(pre-auth)
@@ -118,10 +117,10 @@ typedef struct PACKED _RADIUS_CONF
 	unsigned int		own_ip_addr;	
 	unsigned int		retry_interval;
 	unsigned int		session_timeout_interval;
-	unsigned char		EAPifname[IFNAMSIZ];
-	unsigned char		EAPifname_len;
-	unsigned char 		PreAuthifname[IFNAMSIZ];
-	unsigned char		PreAuthifname_len;
+	unsigned char		EAPifname[MAX_MBSSID_NUM][IFNAMSIZ];
+	unsigned char		EAPifname_len[MAX_MBSSID_NUM];
+	unsigned char 		PreAuthifname[MAX_MBSSID_NUM][IFNAMSIZ];
+	unsigned char		PreAuthifname_len[MAX_MBSSID_NUM];
 	RADIUS_KEY_INFO		RadiusInfo[MAX_MBSSID_NUM];
 } RADIUS_CONF, *PRADIUS_CONF;
 
