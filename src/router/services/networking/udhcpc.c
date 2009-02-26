@@ -160,8 +160,10 @@ static int update_value( void )
     if( changed )
     {
 	set_host_domain_name(  );
+#ifdef HAVE_UDHCPD
 	stop_udhcpd(  );
 	start_udhcpd(  );
+#endif
     }
     return 0;
 }
