@@ -785,6 +785,7 @@ _8021xprv
 #endif
 
     copytonv( wp, "%s_radmactype", prefix );
+    copytonv( wp, "%s_authmode", prefix );
     sprintf( n, "%s_key1", prefix );
     char *key1 = websGetVar( wp, n, "" );
 
