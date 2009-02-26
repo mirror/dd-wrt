@@ -807,6 +807,8 @@ int stricmp( char *a, char *b )
 extern void add_usermac( char *mac, int idx, char *upstream,
 			 char *downstream );
 
+extern char *nvram_safe_get(const char *name);
+
 int addrule( char *mac, char *upstream, char *downstream )
 {
     char *qos_mac = nvram_safe_get( "svqos_macs" );
