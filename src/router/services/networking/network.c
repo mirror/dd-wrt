@@ -3447,8 +3447,10 @@ void start_wan_done( char *wan_ifname )
     /*
      * Restart DHCP server 
      */
+#ifdef HAVE_UDHCPD
     stop_udhcpd(  );
     start_udhcpd(  );
+#endif
     cprintf( "restart dns proxy\n" );
     /*
      * Restart DNS proxy stop_dnsmasq (); start_dnsmasq (); 
