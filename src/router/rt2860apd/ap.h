@@ -57,6 +57,9 @@ struct sta_info {
 	// Multiple SSID interface
 	u8						ApIdx;
 	u16						ethertype;
+
+	// From which raw socket
+	int						SockNum;
 };
 
 #define MAX_STA_COUNT           1024
