@@ -505,7 +505,11 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	strcat( keyidstr, "1" );
     else
 	strcat( keyidstr, nvram_safe_get( "wl0_key" ) );
-    strcat (eapifname, getBridge("ra0"));
+
+    if (nvram_match("ra0_bridged","0"))
+	strcat (eapifname, "ra0");
+    else
+	strcat (eapifname, getBridge("ra0"));
     if( nvram_match( "wl0_akm", "wep" ) )
     {
 	strcat( authmode, "OPEN" );
@@ -680,7 +684,10 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	foreach( var, vifs, next )
     {
 	strcat( eapifname, ";");
-	strcat( eapifname, getBridge(getRADev( var )));
+	if (nvram_nmatch("0","%s_bridged",getRADev( var )))
+	    strcat( eapifname, getRADev( var ));
+	else	
+	    strcat( eapifname, getBridge(getRADev( var )));
 	strcat( keyidstr, ";" );
 	if( nvram_nmatch( "", "%s_key", var ) )
 	    strcat( keyidstr, "1" );
