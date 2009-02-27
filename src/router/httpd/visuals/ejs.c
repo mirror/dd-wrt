@@ -1300,6 +1300,15 @@ void ej_show_modules( webs_t wp, int argc, char_t ** argv )
     return;
 }
 
+void ej_get_sysmodel( webs_t wp, int argc, char_t ** argv )
+{
+#ifdef HAVE_XIOCOM
+    websWrite(wp,"XWR");
+#else
+    websWrite(wp,"%s",nvram_safe_get("DD_BOARD"));
+#endif
+}
+
 void ej_get_totaltraff( webs_t wp, int argc, char_t ** argv )
 {
     char *type;

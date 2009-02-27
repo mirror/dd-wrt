@@ -88,7 +88,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_model"); %></div>
-									<% nvram_get("DD_BOARD"); %>
+									<% get_sysmodel(); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_firmver"); %></div>
