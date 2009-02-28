@@ -851,8 +851,8 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     fprintf( fp, "RADIUS_Key=%s\n", radius_key );
     fprintf( fp, "IEEE8021X=%s\n", x80211 );
 
-    fprintf( fp, "EAPifname=%s" ,eapifname);
-    fprintf( fp, "PreAuthifname=%s",eapifname );
+    fprintf( fp, "EAPifname=%s\n" ,eapifname);
+    fprintf( fp, "PreAuthifname=%s\n",eapifname );
 
 
 
