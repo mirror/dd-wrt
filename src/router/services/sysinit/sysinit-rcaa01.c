@@ -165,9 +165,9 @@ void start_sysinit( void )
 	    ioctl( s, SIOCSIFHWADDR, &ifr );
 	    close( s );
 	}
-	system2( "echo 4 >/proc/sys/dev/wifi0/ledpin" );
+	system2( "echo 5 >/proc/sys/dev/wifi0/ledpin" );
 	system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
-	system2( "echo 5 >/proc/sys/dev/wifi1/ledpin" );
+	system2( "echo 6 >/proc/sys/dev/wifi1/ledpin" );
 	system2( "echo 1 >/proc/sys/dev/wifi1/softled" );
     }
 
