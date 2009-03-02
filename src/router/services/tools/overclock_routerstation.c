@@ -106,6 +106,10 @@ if (!ret)
     eval( "mtd", "-f", "write", "/tmp/boot", "RedBoot" );
     fprintf(stderr,"board now clocked to %sMhz\n",nvram_safe_get("cpuclk"));
     }
+if (ret==1)
+    {
+    fprintf(stderr,"no clock defined, please adjust the \"cpuclk\" nvram parameter. in example \"nvram set cpuclk=800\"");
+    }
 }
 
 
