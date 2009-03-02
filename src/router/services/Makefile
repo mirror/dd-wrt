@@ -466,6 +466,7 @@ CFLAGS += -DHAVE_LSX
 endif
 ifeq ($(CONFIG_RS),y)
 CFLAGS += -DHAVE_RS
+OBJS += overclock_routerstation.o
 endif
 ifeq ($(CONFIG_DANUBE),y)
 CFLAGS += -DHAVE_DANUBE
