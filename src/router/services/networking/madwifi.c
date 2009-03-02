@@ -950,8 +950,7 @@ void setMacFilter( char *iface )
 	{
 	    sysprintf( "iwpriv %s addmac %s", iface, var );
 	}
-    }
-    if( nvram_match( nvvar, "allow" ) )
+    }else if( nvram_match( nvvar, "allow" ) )
     {
 	sysprintf( "iwpriv %s maccmd 1", iface );
 	sysprintf( "ifconfig %s up", iface );
@@ -964,7 +963,8 @@ void setMacFilter( char *iface )
 	{
 	    sysprintf( "iwpriv %s addmac %s", iface, var );
 	}
-    }
+    }else //undefined condition
+	sysprintf( "ifconfig %s up", iface );
 
 }
 
