@@ -58,16 +58,25 @@ void start_overclock( void )	// hidden feature. must be called with
     fseek(in,0,SEEK_END);
     len = ftell(in);
     rewind(in);
-    fseek(in,0xc0,SEEK_SET);
     char check[8];
+    char check2[8];
     char values[8]={0x24,0x08,0x00,0xaa,0x15,0x09,0x00,0x04};
+    fseek(in,0xc0,SEEK_SET);
     fread(check,1,8,in);
-    if (memcmp(check,values,8))
+    fseek(in,0xc4,SEEK_SET);
+    fread(check2,1,8,in);
+    int ret1=0xff;
+    int ret2=0xff;
+    if ((ret1=memcmp(check,values,8)) && (ret2=memcmp(check2,values,8)))
 	{
 	fprintf(stderr,"no compatible routerstation bootloader found\n");
 	fclose(in);
 	return;
 	}
+    if (!ret1)
+	fprintf(stderr,"bootloader rev1 found\n");
+    if (!ret2)
+	fprintf(stderr,"bootloader rev2 found\n");
     FILE *out = fopen( "/tmp/boot", "w+b" );
     rewind(in);
     for (i=0;i<len;i++)
@@ -100,5 +109,6 @@ if (!ret)
 }
 
 
-// int main (int argc, char *argv[]) { start_overclock (); } 
+int main (int argc, char *argv[]) { start_overclock (); } 
+
 
