@@ -113,6 +113,6 @@ if (ret==1)
 }
 
 
-int main (int argc, char *argv[]) { start_overclock (); } 
+// int main (int argc, char *argv[]) { start_overclock (); } 
 
 
