@@ -19,5 +19,11 @@ dnsmasq-install:
 	install -D dnsmasq/contrib/wrt/dhcp_release $(INSTALLDIR)/dnsmasq/usr/sbin/dhcp_release
 	install -D dnsmasq/contrib/wrt/dhcp_lease_time $(INSTALLDIR)/dnsmasq/usr/sbin/dhcp_lease_time
 	install -D dnsmasq/src/dnsmasq $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq
+ifeq ($(CONFIG_BUFFALO),y)
+	install -D udhcpd/config/dhcpd.webservices.buffalo $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.webservices
+else
+	install -D udhcpd/config/dhcpd.webservices $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.webservices
+endif
+	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.startup
 
 
