@@ -213,7 +213,7 @@ char *boothwmodel = nvram_get("boot_hw_model");
 char *boothwver = nvram_get("boot_hw_ver");
 if (boardtype==NULL || strcmp(boardtype,"0x478"))iswrt350n=0;
 if (boothwmodel==NULL || strcmp(boothwmodel,"WRT300N"))iswrt300n11=0;
-if (boothwmodel==NULL || strcmp(boothwmodel,"WRT610N"))
+if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N"))
     {
     iswrt300n11=0;
     iswrt350n=0;
