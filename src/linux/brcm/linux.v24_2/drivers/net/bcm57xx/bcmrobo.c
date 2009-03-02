@@ -754,20 +754,20 @@ bcm_robo_attach(sb_t *sbh, void *h, char *name, char *vars, miird_f miird, miiwr
 		}
 
 		if (tmp != 0xffff) {
-//			do {
+			do {
 				rc = mii_rreg(robo, PAGE_MMR, REG_DEVICE_ID, \
 							  &robo->devid, sizeof(uint16));
-//				if (rc != 0)
-//					break;
-//				retry_count++;
-//			} while ((robo->devid == 0) && (retry_count < 10));
+				if (rc != 0)
+					break;
+				retry_count++;
+			} while ((robo->devid == 0) && (retry_count < 10));
 
-//			printk(KERN_EMERG "%s: devid read %ssuccesfully via mii: 0x%x\n", __FUNCTION__, \
-//			        rc ? "un" : "", robo->devid);
-//			printk(KERN_EMERG "%s: mii access to switch works\n", __FUNCTION__);
+			printk(KERN_EMERG "%s: devid read %ssuccesfully via mii: 0x%x\n", __FUNCTION__, \
+			        rc ? "un" : "", robo->devid);
+			printk(KERN_EMERG "%s: mii access to switch works\n", __FUNCTION__);
 			robo->ops = &mdcmdio;
 			if ((rc != 0) || (robo->devid == 0)) {
-//				printk(KERN_EMERG "%s: error reading devid, assuming 5325e\n", __FUNCTION__);
+				printk(KERN_EMERG "%s: error reading devid, assuming 5325e\n", __FUNCTION__);
 				robo->devid = DEVID5325;
 			}
 //			printk(KERN_EMERG "%s: devid: 0x%x\n", __FUNCTION__, robo->devid);
