@@ -21,7 +21,7 @@
  * nvram set cpuclk=800
  * startservice overclock
  * 
- * valid cpuclk values are 680, 720, 800
+ * valid cpuclk values are 200, 300 ,333, 400, 600, 680, 720, 800
  */
 #include <unistd.h>
 #include <sys/types.h>
@@ -103,7 +103,7 @@ fclose(out);
 if (!ret)
     {
     fprintf(stderr,"write new bootloader\n");
-//    eval( "mtd", "-f", "write", "/tmp/boot", "RedBoot" );
+    eval( "mtd", "-f", "write", "/tmp/boot", "RedBoot" );
     fprintf(stderr,"board now clocked to %sMhz\n",nvram_safe_get("cpuclk"));
     }
 }
