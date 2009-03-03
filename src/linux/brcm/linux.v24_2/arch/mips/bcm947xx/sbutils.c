@@ -3950,6 +3950,7 @@ BCMINITFN (sb_corepciid) (sb_t * sbh, uint func, uint16 * pcivendor,
       header = PCI_HEADER_BRIDGE;
       break;
     case SB_MIPS:
+    case SB_MIPS74:
     case SB_MIPS33:
       class = PCI_CLASS_CPU;
       subclass = PCI_CPU_MIPS;
@@ -4796,7 +4797,7 @@ BCMINITFN(sb_pci_war16165)(sb_t *sih)
 
 uint32 sb_pcieserdesreg(sb_t *sih, uint32 mdioslave, uint32 offset, uint32 mask, uint32 val)
 {
-
+return 0;
 }
 
 #define PCI_FORCEHT(si)	\
@@ -4817,5 +4818,5 @@ bool sb_clkctl_cc(sb_t *sih, uint mode)
 	if (PCI_FORCEHT(sii))
 		return (mode == CLK_FAST);
 
-	return sb_clkctl_clk(sii, mode);
+	return sb_clkctl_clk(sih, mode);
 }
