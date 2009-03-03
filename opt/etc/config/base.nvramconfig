@@ -10,7 +10,7 @@
  "wan_proto"  "WAN Protocol"  "CHOICE" "7" "disabled"  "dhcp"  "static"  "pppoe"  "pptp"  "l2tp"  "heartbeat"  "FALSE" "3"
  "ntp_server"  "NTP Server" "NULL" "TRUE" "0"  //not use
  "ntp_mode"  "NTP Mode"  "CHOICE"  "2" "manual" "auto"  "TRUE" "0"
- "daylight_time"  "Daylight"  "CHOICE"  "8" "1"  "2"  "3"  "4"  "5"  "6"  "7"  "8" "TRUE" "0"
+ "daylight_time"  "Daylight"  "CHOICE"  "8" "1"  "2"  "3"  "4"  "5"  "6"  "7"  "8" "9" "TRUE" "0"
  "time_zone"  "Time Zone"  "NULL" "TRUE" "0"
  "ppp_username"  "Username"  "NAME"  "63"  "FALSE" "0"
  "ppp_passwd"  "Password"  "PASSWORD2"  "63"  "TRUE" "0"
