@@ -431,6 +431,7 @@ addEvent(window, "unload", function() {
 										document.write("<option value=\"6\" <% nvram_selected_js("daylight_time", "6"); %>>" + idx.summt_opt6 + "</option>");
 										document.write("<option value=\"7\" <% nvram_selected_js("daylight_time", "7"); %>>" + idx.summt_opt7 + "</option>");
 										document.write("<option value=\"8\" <% nvram_selected_js("daylight_time", "8"); %>>" + idx.summt_opt8 + "</option>");									
+										document.write("<option value=\"9\" <% nvram_selected_js("daylight_time", "9"); %>>" + idx.summt_opt9 + "</option>");									
 										//]]>
 									</script>
 									</select>
