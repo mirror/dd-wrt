@@ -23,6 +23,9 @@
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <asm/bootinfo.h>
+#include <asm/processor.h>
+#include <typedefs.h>
+#include <mips74k_core.h>
 
 void __init prom_init(int argc, char **argv, char **envp, int *prom_vec)
 {
@@ -54,6 +57,15 @@ void __init prom_init(int argc, char **argv, char **envp, int *prom_vec)
 			mem -= before;
 			break;
 		}
+
+	/* Ignoring the last page when ddr size is 128M. Cached
+	 * accesses to last page is causing the processor to prefetch
+	 * using address above 128M stepping out of the ddr address
+	 * space.
+	 */
+	if (MIPS74K(current_cpu_data.processor_id) && (mem == 0x8000000))
+		mem -= 0x1000;
+
 	add_memory_region(0, mem, BOOT_MEM_RAM);
 }
 

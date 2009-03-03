@@ -272,6 +272,7 @@ pcibios_enable_device(struct pci_dev *dev, int mask)
 	/* These cores come out of reset enabled */
 	if (dev->device == SB_MIPS ||
 	    dev->device == SB_MIPS33 ||
+	    dev->device == SB_MIPS74 ||
 	    dev->device == SB_EXTIF ||
 	    dev->device == SB_CC)
 		return 0;

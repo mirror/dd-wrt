@@ -345,6 +345,7 @@ typedef volatile struct _sbconfig {
 #define	SB_ARM7S		0x825		/* ARM7tdmi-s core */
 #define SB_SDIOD		0x829		/* SDIO device core */
 #define SB_ARMCM3		0x82a		/* ARM Cortex M3 core */
+#define	SB_MIPS74		0x82c		/* mips 74k core */
 #define SB_OCP			0x830		/* OCP2OCP bridge core */
 #define SB_SC			0x831		/* shared common core */
 #define SB_AHB			0x832		/* OCP2AHB bridge core */
