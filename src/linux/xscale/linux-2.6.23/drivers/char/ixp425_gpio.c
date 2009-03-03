@@ -124,7 +124,7 @@ eeprom_putb(unsigned char b)
 }
 
 static int
-eeprom_getb()
+eeprom_getb(void)
 {
     int i, j;
 
@@ -155,9 +155,25 @@ pld_read_gpio_b(int bit)
   spin_unlock(&gpio_lock);
   return (i >> bit) & 0x1;
 }
+unsigned int
+pld_read_gpio_b2(int bit)
+{
+  unsigned int i;
+  spin_lock(&gpio_lock);
+    eeprom_start(0xaf);
+    i = eeprom_getb();
+    DATA_LO();
+    CLK_HI();
+    DATA_HI();
+    CLK_LO();
+    CLK_HI();
+  spin_unlock(&gpio_lock);
+  return (i >> bit) & 0x1;
+}
+
 
 unsigned int
-pld_read_gpio()
+pld_read_gpio(void)
 {
   unsigned int i;
   spin_lock(&gpio_lock);
@@ -173,23 +189,7 @@ pld_read_gpio()
 }
 
 unsigned int
-pld_read_switch_b()
-{
-  unsigned int i;
-  spin_lock(&gpio_lock);
-    eeprom_start(0xaf);
-    i = eeprom_getb();
-    DATA_LO();
-    CLK_HI();
-    DATA_HI();
-    CLK_LO();
-    CLK_HI();
-  spin_unlock(&gpio_lock);
-  return (i >> 1) & 0x1;
-}
-
-unsigned int
-pld_read_switch()
+pld_read_gpio2(void)
 {
   unsigned int i;
   spin_lock(&gpio_lock);
@@ -203,6 +203,7 @@ pld_read_switch()
   spin_unlock(&gpio_lock);
   return i;
 }
+
 
 void
 pld_write_gpio(int byte)
@@ -221,12 +222,12 @@ pld_write_gpio(int byte)
 }
 
 void
-pld_write_switch(int byte)
+pld_write_gpio2(int byte)
 {
   //printk(KERN_INFO "%s: Enabling LED\n", driver_name);
 
   spin_lock(&gpio_lock);
-    eeprom_start(0xac);
+    eeprom_start(0xae);
     eeprom_putb(byte);
     DATA_LO();
     CLK_HI();
@@ -235,6 +236,7 @@ pld_write_switch(int byte)
     CLK_HI();
   spin_unlock(&gpio_lock);
 }
+
 
 struct gpio_bit {
   unsigned char bit;
@@ -301,9 +303,9 @@ else if (bit.bit < 24)
 {
 	bit.state = pld_read_gpio_b(bit.bit - 16);
 }
-else if (bit.bit == 24)
+else if (bit.bit < 32)
 {
-	bit.state = pld_read_switch_b();
+	bit.state = pld_read_gpio_b2(bit.bit - 24);
 }
 		return copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
         case GPIO_SET_BIT:
@@ -324,6 +326,15 @@ else if (bit.bit < 24)
 		temp &= ~(0x1 << (bit.bit - 16));
 	pld_write_gpio(temp);
 }
+else if (bit.bit < 32)
+{
+	temp = pld_read_gpio();
+	if (bit.state == 1)
+		temp |= (0x1 << (bit.bit - 24));
+	else
+		temp &= ~(0x1 << (bit.bit - 24));
+	pld_write_gpio2(temp);
+}
 		return OK;
 	case GPIO_GET_CONFIG:
 if (bit.bit < 16)
@@ -336,6 +347,10 @@ if (bit.bit < 16)
 else if (bit.bit < 24)
 {
 	bit.state = pld_read_gpio_b(bit.bit - 16);
+}
+else if (bit.bit < 32)
+{
+	bit.state = pld_read_gpio_b2(bit.bit - 24);
 }
 		return copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
 	case GPIO_SET_CONFIG:
@@ -354,6 +369,15 @@ else if (bit.bit < 24)
 	{
 		temp |= (0x1 << (bit.bit - 16));
 		pld_write_gpio(temp);
+	}
+}
+else if (bit.bit < 32)
+{
+	temp = pld_read_gpio2();
+	if (bit.state == 2)
+	{
+		temp |= (0x1 << (bit.bit - 24));
+		pld_write_gpio2(temp);
 	}
 }
 		return OK;
