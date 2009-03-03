@@ -110,7 +110,7 @@ int do_ntp( void )		// called from ntp_main and
     tv.tv_sec += ( int )( fofs * 3600 );	// <-- cast it or this will
     // be off (?)
 
-    if( ( dst >= 1 ) && ( dst <= 8 ) )
+    if( ( dst >= 1 ) && ( dst <= 9 ) )
     {
 	struct tm *tm = localtime( &tv.tv_sec );
 	int mon = tm->tm_mon + 1;
@@ -126,18 +126,6 @@ int do_ntp( void )		// called from ntp_main and
 	    ( ( mbeg < mend ) && ( mon > mbeg ) && ( mon < mend ) ) ||
 	    ( ( mbeg > mend ) && ( ( mon > mbeg ) || ( mon < mend ) ) ) )
 	{
-
-	    // ...in dst...
-
-	    // if this is the end day, don't undo dst until we're past 1am to 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // avoid the day from going back to yesterday
 	    if( ( mon != mend ) || ( day != dend ) || ( tm->tm_hour <= 1 ) )
 		tv.tv_sec += dstEntry[dst].dstBias;
 	}
