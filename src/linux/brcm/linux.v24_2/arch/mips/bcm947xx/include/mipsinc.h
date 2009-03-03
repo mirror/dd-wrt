@@ -395,6 +395,7 @@ symbol:		.frame	sp, 0, ra
 #define PRID_IMP_BCM4710	0x4000
 #define PRID_IMP_BCM3302	0x9000
 #define PRID_IMP_BCM3303	0x9100
+#define PRID_IMP_74K            0x9700
 
 #define PRID_IMP_UNKNOWN	0xff00
 
@@ -403,6 +404,10 @@ symbol:		.frame	sp, 0, ra
 		 (PRID_COMP_BROADCOM | PRID_IMP_BCM3302)) || \
 		((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == \
 		 (PRID_COMP_BROADCOM | PRID_IMP_BCM3303)))
+
+#define MIPS74K(id) \
+		(((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == \
+		 (PRID_COMP_MIPS | PRID_IMP_74K)))
 
 /* Bits in C0_BROADCOM */
 #define BRCM_PFC_AVAIL		0x20000000	/* PFC is available */

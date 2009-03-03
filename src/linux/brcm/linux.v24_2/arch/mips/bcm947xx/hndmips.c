@@ -26,6 +26,7 @@
 #include <sbhndmips.h>
 #include <hndcpu.h>
 #include <hndmips.h>
+#include <mips74k_core.h>
 
 /* sbipsflag register format, indexed by irq. */
 static const uint32 sbips_int_mask[] = {
@@ -87,7 +88,16 @@ sb_irq(sb_t *sbh)
 
 	idx = sb_coreidx(sbh);
 
-	if ((regs = sb_setcore(sbh, SB_MIPS, 0)) ||
+	if ((regs = sb_setcore(sbh, SB_MIPS74, 0)) != NULL) {
+		/* IntMask1,2,3,4 regs are configured to enable propagation of
+		 * backplane interrupts 0,1,2,3 to mips hw interrupts 1,2,3,4.
+		 */
+		for (irq = 1; irq <= 4; irq++) {
+			if (R_REG(osh, &((mips74kregs_t *)regs)->intmask[irq]) &
+			          (1 << flag))
+				break;
+		}
+	} else 	if ((regs = sb_setcore(sbh, SB_MIPS, 0)) ||
 	    (regs = sb_setcore(sbh, SB_MIPS33, 0))) {
 		sb = (sbconfig_t *)((ulong) regs + SBCONFIGOFF);
 
@@ -97,9 +107,9 @@ sb_irq(sb_t *sbh)
 			if (((sbipsflag & sbips_int_mask[irq]) >> sbips_int_shift[irq]) == flag)
 				break;
 		}
+	}
 		if (irq == 5)
 			irq = 0;
-	}
 
 	sb_setcoreidx(sbh, idx);
 
@@ -115,16 +125,19 @@ static void BCMINITFN (sb_clearirq) (sb_t * sbh, uint irq)
 
   osh = sb_osh (sbh);
 
-
+	if ((regs = sb_setcore(sbh, SB_MIPS74, 0)) != NULL) {
+		W_REG(osh, &((mips74kregs_t *)regs)->intmask[irq], 0);
+	} else 
+	{
 	if (!(regs = sb_setcore(sbh, SB_MIPS, 0)) &&
 	    !(regs = sb_setcore(sbh, SB_MIPS33, 0)))
 		ASSERT(regs);
-  sb = (sbconfig_t *) ((ulong) regs + SBCONFIGOFF);
-
-  if (irq == 0)
-    W_REG (osh, &sb->sbintvec, 0);
-  else
-    OR_REG (osh, &sb->sbipsflag, sbips_int_mask[irq]);
+	sb = (sbconfig_t *) ((ulong) regs + SBCONFIGOFF);
+	if (irq == 0)
+	W_REG (osh, &sb->sbintvec, 0);
+	    else
+	OR_REG (osh, &sb->sbipsflag, sbips_int_mask[irq]);
+	}
 }
 
 /*
@@ -151,6 +164,19 @@ BCMINITFN (sb_setirq) (sb_t * sbh, uint irq, uint coreid, uint coreunit)
   if (oldirq)
     sb_clearirq (sbh, oldirq);
 
+
+	if ((regs = sb_setcore(sbh, SB_MIPS74, 0)) != NULL) {
+		if (!oldirq)
+			AND_REG(osh, &((mips74kregs_t *)regs)->intmask[0], ~(1 << flag));
+
+		if (irq == 0)
+			OR_REG(osh, &((mips74kregs_t *)regs)->intmask[0], 1 << flag);
+		else {
+			W_REG(osh, &((mips74kregs_t *)regs)->intmask[irq], 1 << flag);
+		}
+	}else{
+
+
 	if (!(regs = sb_setcore(sbh, SB_MIPS, 0)) &&
 	    !(regs = sb_setcore(sbh, SB_MIPS33, 0)))
 		ASSERT(regs);
@@ -167,6 +193,7 @@ BCMINITFN (sb_setirq) (sb_t * sbh, uint irq, uint coreid, uint coreunit)
       ASSERT (!(flag & ~sbips_int_mask[irq]));
       flag |= R_REG (osh, &sb->sbipsflag) & ~sbips_int_mask[irq];
       W_REG (osh, &sb->sbipsflag, flag);
+    }
     }
 }
 
