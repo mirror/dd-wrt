@@ -380,7 +380,12 @@ char *num_to_protocol( int num )
 
 void validate_services_port( webs_t wp )
 {
-    char buf[8192] = "", services[8192] = "", *cur = buf, *svcs = NULL;
+    char *buf = (char*)malloc(8192);
+    char *services = (char*)malloc(8192);
+    memset(buf,0,8192);
+    memset(services,0,8192);
+    char *cur = buf, *svcs = NULL;
+    
     char *services_array = websGetVar( wp, "services_array0", NULL );
 
     // char *services_length = websGetVar (wp, "services_length0", NULL);
@@ -424,7 +429,7 @@ void validate_services_port( webs_t wp )
     // fprintf (stderr, "cur=%s\n", cur);
 
     memcpy( word, cur, 1024 );
-    word[1025] = 0;
+    word[1024] = 0;
     nvram_set( "filter_services", word );
     cur += 1024;
 
@@ -432,7 +437,8 @@ void validate_services_port( webs_t wp )
     {
 	nvram_set( "filter_services_1", cur );
     }
-
+    free(services);
+    free(buf);
     // nvram_set ("filter_services", cur);
     D( "okay" );
 }
