@@ -48,6 +48,7 @@
 #include <utils.h>
 #include <unistd.h>
 #include <linux/if.h>
+#include <services.h>
 
 #ifdef HAVE_VLANTAGGING
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)

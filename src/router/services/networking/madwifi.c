@@ -55,8 +55,9 @@
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 #include <iwlib.h>
+#include <services.h>
 
-extern int br_add_interface( const char *br, const char *dev );
+
 
 static int setsysctrl( const char *dev, const char *control, u_long value )
 {
@@ -1156,7 +1157,7 @@ static void configure_single( int count )
     }
     else
     {
-	setsysctrl( wif, "acktimeout", "350" );
+	setsysctrl( wif, "acktimeout", 350 );
 	setsysctrl( wif, "dynack_count", 20 );
     }
     char wl_intmit[32];
