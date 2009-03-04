@@ -25,11 +25,6 @@
 #include <utils.h>
 #include <syslog.h>
 #ifdef HAVE_MICRO
-extern int br_add_bridge( const char *brname );
-extern int br_del_bridge( const char *brname );
-extern int br_add_interface( const char *br, const char *dev );
-extern int br_del_interface( const char *br, const char *dev );
-extern int br_set_stp_state( const char *br, int stp_state );
 
 int brctl_main( int argc, char **argv )
 {

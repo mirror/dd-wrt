@@ -35,6 +35,7 @@
 #include <net/if_arp.h>
 #include <linux/sockios.h>
 #include <wlutils.h>
+#include <services.h>
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 

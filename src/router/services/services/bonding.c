@@ -25,6 +25,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <syslog.h>
+#include <services.h>
 void stop_bonding( void )
 {
     int i;
