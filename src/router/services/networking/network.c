@@ -2836,7 +2836,7 @@ void start_wan( int status )
 #ifdef HAVE_PPPOE
     if( nvram_match( "wan_proto", "pppoe" ) )
     {
-	ifr.ifr_mtu = getMTU(wan_ifname);	// default ethernet frame size
+	ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
     }
     else
 #endif
