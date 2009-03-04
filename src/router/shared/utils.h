@@ -576,7 +576,6 @@ struct detect_wans
 
 #define PING_TMP	"/tmp/ping.log"
 // #define TRACEROUTE_TMP "/tmp/traceroute.log"
-#define MAX_BUF_LEN	254
 
 #define RESOLV_FILE	"/tmp/resolv.conf"
 #define RESOLV_FORW	"/tmp/resolv.dnsmasq"
