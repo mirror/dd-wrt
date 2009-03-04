@@ -41,5 +41,5 @@ int pptpd_main( int argc, char **argv )
 	fprintf( stderr, "usage: poptop [start|stop|restart]\n" );
 	return EINVAL;
     }
-
+return 0;
 }
