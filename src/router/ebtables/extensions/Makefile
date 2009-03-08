@@ -2,7 +2,7 @@
 
 EXT_FUNC+=802_3 nat arp arpreply ip standard log redirect vlan mark_m mark \
           pkttype stp among limit ulog
-EXT_TABLES+=filter nat broute madwifi
+EXT_TABLES+=filter nat broute
 EXT_OBJS+=$(foreach T,$(EXT_FUNC), extensions/ebt_$(T).o)
 EXT_OBJS+=$(foreach T,$(EXT_TABLES), extensions/ebtable_$(T).o)
 EXT_LIBS+=$(foreach T,$(EXT_FUNC), extensions/libebt_$(T).so)
