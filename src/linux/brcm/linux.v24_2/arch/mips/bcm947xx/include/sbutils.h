@@ -23,6 +23,7 @@
 */
 
 struct sb_pub {
+	uint	socitype;		/* SOCI_SB, SOCI_AI */
 
 	uint	bustype;		/* SB_BUS, PCI_BUS  */
 	uint	buscoretype;		/* SB_PCI, SB_PCMCIA, SB_PCIE */
@@ -213,5 +214,10 @@ extern void sb_pci_pmeen(sb_t *sbh);
 
 /* device path */
 #define SB_DEVPATH_BUFSZ	16		/* min buffer size in bytes */
+
+/* SOC Interconnect types (aka chip types) */
+#define	SOCI_SB			0
+#define	SOCI_AI			1
+
 
 #endif	/* _sbutils_h_ */
