@@ -1044,7 +1044,6 @@ BCMINITFN (sb_mips_setclock) (sb_t * sbh, uint32 mipsclock, uint32 sbclock,
 
   if (sb_chip(sbh) == BCM5354_CHIP_ID)
     {
-	printk(KERN_EMERG "BCM5354 init\n");
 	return TRUE;
     }
 
