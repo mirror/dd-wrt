@@ -43,10 +43,7 @@
 typedef struct
 {
   int n;
-  uint size0;
-  uint size1;
-  uint size2;
-  uint size3;
+  uint	size[PCI_BAR_MAX];
 } sb_bar_cfg_t;
 static pci_config_regs sb_config_regs[SB_MAXCORES];
 static sb_bar_cfg_t sb_bar_cfg[SB_MAXCORES];
@@ -444,13 +441,13 @@ sb_write_config (sb_t * sbh, uint bus, uint dev, uint func, uint off,
 	  bar = sb_pci_cfg[dev][func].bar;
 	  /* Highest numbered address match register */
 	  if (off == OFFSETOF (pci_config_regs, base[0]))
-	    cfg->base[0] = ~(bar->size0 - 1);
+	    cfg->base[0] = ~(bar->size[0] - 1);
 	  else if (off == OFFSETOF (pci_config_regs, base[1]) && bar->n >= 1)
-	    cfg->base[1] = ~(bar->size1 - 1);
+	    cfg->base[1] = ~(bar->size[1] - 1);
 	  else if (off == OFFSETOF (pci_config_regs, base[2]) && bar->n >= 2)
-	    cfg->base[2] = ~(bar->size2 - 1);
+	    cfg->base[2] = ~(bar->size[2] - 1);
 	  else if (off == OFFSETOF (pci_config_regs, base[3]) && bar->n >= 3)
-	    cfg->base[3] = ~(bar->size3 - 1);
+	    cfg->base[3] = ~(bar->size[3] - 1);
 	}
       sb_setcoreidx (sbh, coreidx);
     }
@@ -767,48 +764,39 @@ static void __init
 sbpci_init_regions (sb_t * sbh, uint func, pci_config_regs * cfg,
 		    sb_bar_cfg_t * bar)
 {
-  osl_t *osh;
-  uint16 coreid;
-  void *regs;
-  sbconfig_t *sb;
-  uint32 base;
+	bool issb = sbh->socitype == SOCI_SB;
+	uint i, n;
 
-  osh = sb_osh (sbh);
-  coreid = sb_coreid (sbh);
-  regs = sb_coreregs (sbh);
-  sb = (sbconfig_t *) ((ulong) regs + SBCONFIGOFF);
+	if (sb_coreid(sbh) == SB_USB20H) {
+		uint32 base, base1;
 
-  switch (coreid)
-    {
-    case SB_USB20H:
-      base = htol32 (sb_base (R_REG (osh, &sb->sbadmatch0)));
+		base = htol32(sb_addrspace(sbh, 0));
+		if (issb) {
+			base1 = base + 0x800;	/* OHCI/EHCI */
+		} else {
+			/* In AI chips EHCI is addrspace 0, OHCI is 1 */
+			base1 = base;
+			base = htol32(sb_addrspace(sbh, 1));
+		}
 
-      cfg->base[0] = func == 0 ? base : base + 0x800;	/* OHCI/EHCI */
-      cfg->base[1] = 0;
-      cfg->base[2] = 0;
-      cfg->base[3] = 0;
-      cfg->base[4] = 0;
-      cfg->base[5] = 0;
-      bar->n = 1;
-      bar->size0 = func == 0 ? 0x200 : 0x100;	/* OHCI/EHCI */
-      bar->size1 = 0;
-      bar->size2 = 0;
-      bar->size3 = 0;
-      break;
-    default:
-      cfg->base[0] = htol32 (sb_base (R_REG (osh, &sb->sbadmatch0)));
-      cfg->base[1] = htol32 (sb_base (R_REG (osh, &sb->sbadmatch1)));
-      cfg->base[2] = htol32 (sb_base (R_REG (osh, &sb->sbadmatch2)));
-      cfg->base[3] = htol32 (sb_base (R_REG (osh, &sb->sbadmatch3)));
-      cfg->base[4] = 0;
-      cfg->base[5] = 0;
-      bar->n = (R_REG (osh, &sb->sbidlow) & SBIDL_AR_MASK) >> SBIDL_AR_SHIFT;
-      bar->size0 = sb_size (R_REG (osh, &sb->sbadmatch0));
-      bar->size1 = sb_size (R_REG (osh, &sb->sbadmatch1));
-      bar->size2 = sb_size (R_REG (osh, &sb->sbadmatch2));
-      bar->size3 = sb_size (R_REG (osh, &sb->sbadmatch3));
-      break;
-    }
+		i = bar->n = 1;
+		cfg->base[0] = func == 0 ? base : base1;
+		bar->size[0] = issb ? 0x800 : 0x1000;
+	} else {
+		bar->n = n = sb_numaddrspaces(sbh);
+		for (i = 0; i < n; i++) {
+			int size = sb_addrspacesize(sbh, i);
+
+			if (size) {
+				cfg->base[i] = htol32(sb_addrspace(sbh, i));
+				bar->size[i] = size;
+			}
+		}
+	}
+	for (; i < PCI_BAR_MAX; i++) {
+		cfg->base[i] = 0;
+		bar->size[i] = 0;
+	}
 }
 
 /*
