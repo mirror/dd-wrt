@@ -219,5 +219,10 @@ extern void sb_pci_pmeen(sb_t *sbh);
 #define	SOCI_SB			0
 #define	SOCI_AI			1
 
+#if defined(BCMQT)
+#define	ISSIM_ENAB(sih)	((sih)->issim)
+#else
+#define	ISSIM_ENAB(sih)	0
+#endif
 
 #endif	/* _sbutils_h_ */
