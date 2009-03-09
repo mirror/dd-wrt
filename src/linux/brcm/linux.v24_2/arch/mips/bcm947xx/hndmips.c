@@ -348,8 +348,9 @@ uint32 BCMINITFN (sb_cpu_clock) (sb_t * sbh)
 
 	/* get index of the current core */
 	if (sbh->cccaps & CC_CAP_PMU)
-		return sb_pmu_cpu_clock(sbh, osh);
-
+	    {
+	    	return sb_pmu_cpu_clock(sbh, osh);
+	    }
 	idx = sb_coreidx(sbh);
 	pll_type = PLL_TYPE1;
 
@@ -1042,8 +1043,10 @@ BCMINITFN (sb_mips_setclock) (sb_t * sbh, uint32 mipsclock, uint32 sbclock,
   volatile uint32 *dll_r2 = (volatile uint32 *) 0xff400018;
 
   if (sb_chip(sbh) == BCM5354_CHIP_ID)
+    {
+	printk(KERN_EMERG "BCM5354 init\n");
 	return TRUE;
-
+    }
 
   if (sbh->cccaps & CC_CAP_PMU) {
 	return mips_pmu_setclock(sbh, mipsclock, sbclock, pciclock);
