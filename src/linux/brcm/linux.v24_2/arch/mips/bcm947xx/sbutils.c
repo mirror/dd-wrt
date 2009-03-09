@@ -4827,3 +4827,72 @@ bool sb_clkctl_cc(sb_t *sih, uint mode)
 
 	return sb_clkctl_clk(sih, mode);
 }
+
+static volatile uint32 *
+sb_admatch(sb_info_t *sii, uint asidx)
+{
+	sbconfig_t *sb;
+	volatile uint32 *addrm;
+
+	sb = REGS2SB(sii->curmap);
+
+	switch (asidx) {
+	case 0:
+		addrm =  &sb->sbadmatch0;
+		break;
+
+	case 1:
+		addrm =  &sb->sbadmatch1;
+		break;
+
+	case 2:
+		addrm =  &sb->sbadmatch2;
+		break;
+
+	case 3:
+		addrm =  &sb->sbadmatch3;
+		break;
+
+	default:
+		return 0;
+	}
+
+	return (addrm);
+}
+
+
+/* Return the number of address spaces in current core */
+int
+sb_numaddrspaces(sb_t *sih)
+{
+	sb_info_t *sii;
+	sbconfig_t *sb;
+
+	sii = SB_INFO(sih);
+	sb = REGS2SB(sii->curmap);
+
+	/* + 1 because of enumeration space */
+	return ((R_SBREG(sii, &sb->sbidlow) & SBIDL_AR_MASK) >> SBIDL_AR_SHIFT) + 1;
+}
+
+/* Return the address of the nth address space in the current core */
+uint32
+sb_addrspace(sb_t *sih, uint asidx)
+{
+	sb_info_t *sii;
+
+	sii = SB_INFO(sih);
+
+	return (sb_base(R_SBREG(sii, sb_admatch(sii, asidx))));
+}
+
+/* Return the size of the nth address space in the current core */
+uint32
+sb_addrspacesize(sb_t *sih, uint asidx)
+{
+	sb_info_t *sii;
+
+	sii = SB_INFO(sih);
+
+	return (sb_size(R_SBREG(sii, sb_admatch(sii, asidx))));
+}
