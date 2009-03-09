@@ -430,6 +430,12 @@ typedef struct _pciconfig_cap_pcie {
 	unsigned int link_cap;
 	unsigned short link_ctrl;
 	unsigned short link_status;
+	unsigned int slot_cap;
+	unsigned short slot_ctrl;
+	unsigned short slot_status;
+	unsigned short root_ctrl;
+	unsigned short root_cap;
+	unsigned int root_status;
 } pciconfig_cap_pcie;
 
 /* PCIE Enhanced CAPABILITY DEFINES */
@@ -438,6 +444,16 @@ typedef struct _pciconfig_cap_pcie {
 #define PCIE_VC_CAPID		0x0002
 #define PCIE_DEVSNUM_CAPID	0x0003
 #define PCIE_PWRBUDGET_CAPID	0x0004
+
+/* PCIE Root Control Register bits (Host mode only) */
+#define	PCIE_RC_CORR_SERR_EN		0x0001
+#define	PCIE_RC_NONFATAL_SERR_EN	0x0002
+#define	PCIE_RC_FATAL_SERR_EN		0x0004
+#define	PCIE_RC_PME_INT_EN		0x0008
+#define	PCIE_RC_CRS_EN			0x0010
+
+/* PCIE Root Capability Register bits (Host mode only) */
+#define	PCIE_RC_CRS_VISIBILITY		0x0001
 
 /* Header to define the PCIE specific capabilities in the extended config space */
 typedef struct _pcie_enhanced_caphdr {

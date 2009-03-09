@@ -20,6 +20,7 @@
 #include <bcmutils.h>
 #include <sbutils.h>
 #include <sbpci.h>
+#include <sbpcie.h>
 #include <bcmendian.h>
 #include <bcmnvram.h>
 #include <hndcpu.h>
@@ -507,6 +508,7 @@ sbpci_init_pci (sb_t * sbh)
   uint chip, chiprev, chippkg, host;
   uint32 boardflags;
   sbpciregs_t *pci;
+  sbpcieregs_t *pcie = NULL;
   sbconfig_t *sb;
   uint32 val;
   int ret = 0;
@@ -519,12 +521,17 @@ sbpci_init_pci (sb_t * sbh)
 
   osh = sb_osh (sbh);
 
-  if (!(pci = (sbpciregs_t *) sb_setcore (sbh, SB_PCI, 0)))
-    {
-      printf ("PCI: no core\n");
-      pci_disabled = TRUE;
-      return -1;
-    }
+
+	pci = (sbpciregs_t *)sb_setcore(sbh, SB_PCI, 0);
+	if (pci == NULL) {
+	    pcie = (sbpcieregs_t *)sb_setcore(sbh, SB_PCIE, 0);
+	    if (pcie == NULL) {
+		printf("PCI: no core\n");
+		pci_disabled = TRUE;
+		return -1;
+	    }
+	}
+
 	if ((chip == 0x4310) && (chiprev == 0))
 		pci_disabled = TRUE;
   sb = (sbconfig_t *) ((ulong) pci + SBCONFIGOFF);
@@ -579,16 +586,25 @@ sbpci_init_pci (sb_t * sbh)
 	  sb_commit (sbh);
 	}
 
-      /* Reset the external PCI bus and enable the clock */
-      W_REG (osh, &pci->control, 0x5);	/* enable the tristate drivers */
-      W_REG (osh, &pci->control, 0xd);	/* enable the PCI clock */
-      OSL_DELAY (150);		/* delay > 100 us */
-      W_REG (osh, &pci->control, 0xf);	/* deassert PCI reset */
-      /* Use internal arbiter and park REQ/GRNT at external master 0
-       * We will set it later after the bus has been probed
-       */
-      W_REG (osh, &pci->arbcontrol, PCI_INT_ARB);
-      OSL_DELAY (1);		/* delay 1 us */
+
+		if (pci) {
+			/* Reset the external PCI bus and enable the clock */
+			W_REG(osh, &pci->control, 0x5);	/* enable tristate drivers */
+			W_REG(osh, &pci->control, 0xd);	/* enable the PCI clock */
+			OSL_DELAY(150);			/* delay > 100 us */
+			W_REG(osh, &pci->control, 0xf);	/* deassert PCI reset */
+			/* Use internal arbiter and park REQ/GRNT at external master 0
+			 * We will set it later after the bus has been probed
+			 */
+			W_REG(osh, &pci->arbcontrol, PCI_INT_ARB);
+			OSL_DELAY(1);			/* delay 1 us */
+		} else {
+			printf("PCI: Reset RC\n");
+			OSL_DELAY(3000);
+			W_REG(osh, &pcie->control, PCIE_RST_OE);
+			OSL_DELAY(1000);		/* delay 1 ms */
+			W_REG(osh, &pcie->control, PCIE_RST | PCIE_RST_OE);
+		}
 
       /* Enable CardBusMode */
       cardbus = getintvar (NULL, "cardbus") == 1;
@@ -601,12 +617,6 @@ sbpci_init_pci (sb_t * sbh)
 	  W_REG (osh, &pci->sprom[0], R_REG (osh, &pci->sprom[0]) | 0x400);
 	}
 
-      /* 64 MB I/O access window */
-      W_REG (osh, &pci->sbtopci0, SBTOPCI_IO);
-      /* 64 MB configuration access window */
-      W_REG (osh, &pci->sbtopci1, SBTOPCI_CFG0);
-      /* 1 GB memory access window */
-      W_REG (osh, &pci->sbtopci2, SBTOPCI_MEM | SB_PCI_DMA);
 
       /* Host bridge slot # nvram overwrite */
       if ((hbslot = nvram_get ("pcihbslot")))
@@ -615,13 +625,92 @@ sbpci_init_pci (sb_t * sbh)
 	  ASSERT (pci_hbslot < PCI_MAX_DEVICES);
 	}
 
+		if (pci) {
+			/* 64 MB I/O access window */
+			W_REG(osh, &pci->sbtopci0, SBTOPCI_IO);
+			/* 64 MB configuration access window */
+			W_REG(osh, &pci->sbtopci1, SBTOPCI_CFG0);
+			/* 1 GB memory access window */
+			W_REG(osh, &pci->sbtopci2, SBTOPCI_MEM | SB_PCI_DMA);
+		} else {
+			uint8 cap_ptr, root_ctrl, root_cap, dev;
+			uint16 val16;
+
+			/* 64 MB I/O access window. On 4716, use
+			 * sbtopcie0 to access the device registers. We
+			 * can't use address match 2 (1 GB window) region
+			 * as mips can't generate 64-bit address on the
+			 * backplane.
+			 */
+			if (chip == BCM4716_CHIP_ID)
+				W_REG(osh, &pcie->sbtopcie0, SBTOPCIE_MEM | SB_PCI_MEM);
+			else
+				W_REG(osh, &pcie->sbtopcie0, SBTOPCIE_IO);
+
+			/* 64 MB configuration access window */
+			W_REG(osh, &pcie->sbtopcie1, SBTOPCIE_CFG0);
+
+			/* 1 GB memory access window */
+			W_REG(osh, &pcie->sbtopcie2, SBTOPCIE_MEM | SB_PCI_DMA);
+
+			/* As per PCI Express Base Spec 1.1 we need to wait for
+			 * at least 100 ms from the end of a reset (cold/warm/hot)
+			 * before issuing configuration requests to PCI Express
+			 * devices.
+			 */
+			OSL_DELAY(100000);
+
+			/* If the root port is capable of returning Config Request
+			 * Retry Status (CRS) Completion Status to software then
+			 * enable the feature.
+			 */
+			cap_ptr = sb_find_pci_capability(sbh, 1, pci_hbslot, 0,
+			                                     PCI_CAP_PCIECAP_ID, NULL, NULL);
+			ASSERT(cap_ptr);
+
+			root_cap = cap_ptr + OFFSETOF(pciconfig_cap_pcie, root_cap);
+			sbpci_read_config(sbh, 1, pci_hbslot, 0, root_cap,
+			                   &val16, sizeof(uint16));
+			if (val16 & PCIE_RC_CRS_VISIBILITY) {
+				/* Enable CRS software visibility */
+				root_ctrl = cap_ptr + OFFSETOF(pciconfig_cap_pcie, root_ctrl);
+				val16 = PCIE_RC_CRS_EN;
+				sbpci_write_config(sbh, 1, pci_hbslot, 0, root_ctrl,
+				                    &val16, sizeof(uint16));
+
+				/* Initiate a configuration request to read the vendor id
+				 * field of the device function's config space header after
+				 * 100 ms wait time from the end of Reset. If the device is
+				 * not done with its internal initialization, it must at
+				 * least return a completion TLP, with a completion status
+				 * of "Configuration Request Retry Status (CRS)". The root
+				 * complex must complete the request to the host by returning
+				 * a read-data value of 0001h for the Vendor ID field and
+				 * all 1s for any additional bytes included in the request.
+				 * Poll using the config reads for max wait time of 1 sec or
+				 * until we receive the successful completion status. Repeat
+				 * the procedure for all the devices.
+				 */
+				for (dev = pci_hbslot + 1; dev < PCI_MAX_DEVICES; dev++) {
+					SPINWAIT((sbpci_read_config(sbh, 1, dev, 0,
+					         PCI_CFG_VID, &val16, sizeof(val16)),
+					         (val16 == 0x1)), 1000000);
+					if (val16 == 0x1)
+						printf("PCI: Broken device in slot %d\n", dev);
+				}
+			}
+		}
+
       /* Enable PCI bridge BAR0 prefetch and burst */
       val = 6;
       sbpci_write_config (sbh, 1, pci_hbslot, 0, PCI_CFG_CMD, &val,
 			  sizeof (val));
 
-      /* Enable PCI interrupts */
-      W_REG (osh, &pci->intmask, PCI_INTA);
+		/* Enable PCI interrupts */
+		if (pci)
+			W_REG(osh, &pci->intmask, PCI_INTA);
+		else
+			W_REG(osh, &pcie->intmask, PCI_INTA);
     }
 
   return ret;
