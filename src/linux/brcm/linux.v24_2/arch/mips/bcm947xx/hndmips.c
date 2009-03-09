@@ -1041,6 +1041,9 @@ BCMINITFN (sb_mips_setclock) (sb_t * sbh, uint32 mipsclock, uint32 sbclock,
   volatile uint32 *dll_r1 = (volatile uint32 *) 0xff400010;
   volatile uint32 *dll_r2 = (volatile uint32 *) 0xff400018;
 
+  if (sb_chip(sbh) == BCM5354_CHIP_ID)
+	return TRUE;
+
 
   if (sbh->cccaps & CC_CAP_PMU) {
 	return mips_pmu_setclock(sbh, mipsclock, sbclock, pciclock);
