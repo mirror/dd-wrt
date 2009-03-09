@@ -21,7 +21,7 @@ CC		:= mipsel-linux-uclibc-gcc
 CROSS_COMPILE 	:= mipsel-linux-uclibc-
 LD		:= mipsel-linux-uclibc-ld
 TEXT_START	:= 0x80001000
-BZ_TEXT_START	:= 0x80300000
+BZ_TEXT_START	:= 0x80500000
 
 OBJCOPY		:= $(CROSS_COMPILE)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
 
@@ -47,7 +47,7 @@ install:
 
 loader.gz: loader
 	gzip -nc9 $< > $@
-	echo "DD-WRT v24-sp1 (c) 2004 - 2008 Sebastian Gottschall / NewMedia-NET GmbH" >> loader.gz
+	echo "DD-WRT v24-sp1 (c) 2004 - 2009 Sebastian Gottschall / NewMedia-NET GmbH" >> loader.gz
 
 loader: loader.o
 	$(OBJCOPY) $< $@
