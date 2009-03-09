@@ -765,8 +765,8 @@ sbpci_init_regions (sb_t * sbh, uint func, pci_config_regs * cfg,
 		    sb_bar_cfg_t * bar)
 {
 	bool issb = sbh->socitype == SOCI_SB;
+	
 	uint i, n;
-
 	if (sb_coreid(sbh) == SB_USB20H) {
 		uint32 base, base1;
 
