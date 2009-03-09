@@ -439,6 +439,7 @@ static sb_info_t *BCMINITFN (sb_doattach) (sb_info_t * si, uint devid,
 	/* determine chip id and rev */
 	if (cc) {
 		/* chip common core found! */
+		si->sb.socitype = (w & CID_TYPE_MASK) >> CID_TYPE_SHIFT;
 		si->sb.chip = R_REG(si->osh, &cc->chipid) & CID_ID_MASK;
 		si->sb.chiprev = (R_REG(si->osh, &cc->chipid) & CID_REV_MASK) >> CID_REV_SHIFT;
 		si->sb.chippkg = (R_REG(si->osh, &cc->chipid) & CID_PKG_MASK) >> CID_PKG_SHIFT;

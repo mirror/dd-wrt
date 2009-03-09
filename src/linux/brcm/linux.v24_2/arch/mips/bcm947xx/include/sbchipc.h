@@ -306,6 +306,8 @@ typedef volatile struct {
 #define	CID_PKG_SHIFT		20		/* Package Option shift */
 #define	CID_CC_MASK		0x0f000000	/* CoreCount (corerev >= 4) */
 #define CID_CC_SHIFT		24
+#define	CID_TYPE_MASK		0xf0000000	/* Chip Type */
+#define CID_TYPE_SHIFT		28
 
 /* capabilities */
 #define	CC_CAP_UARTS_MASK	0x00000003	/* Number of uarts */
