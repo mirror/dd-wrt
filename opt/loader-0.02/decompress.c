@@ -128,7 +128,7 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 	unsigned int lp; /* literal pos state bits */
 	unsigned int pb; /* pos state bits */
 	unsigned int osize; /* uncompressed size */
-	unsigned char SIGN[]="DD-WRT v24-sp1 (c) 2004 - 2008 Sebastian Gottschall / NewMedia-NET GmbH";
+	unsigned char SIGN[]="DD-WRT v24-sp1 (c) 2004 - 2009 Sebastian Gottschall / NewMedia-NET GmbH";
 
 	
 	/* look for trx header, 32-bit data access */
