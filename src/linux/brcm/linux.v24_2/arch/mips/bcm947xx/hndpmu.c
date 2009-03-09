@@ -1150,16 +1150,21 @@ uint32 BCMINITFN (sb_pmu_alp_clock) (sb_t * sbh, osl_t * osh)
       clock = sb_pmu1_alpclk0 (sbh, osh, cc);
       break;
 #endif
-#if defined(BCMPMU)
 	case BCM4312_CHIP_ID:
-		/* always 20Mhz */
-		clock = 20000 * 1000;
-		break;
 	case BCM4322_CHIP_ID:
+	case BCM43221_CHIP_ID:
+	case BCM43231_CHIP_ID:
+	case BCM43222_CHIP_ID:
+	case BCM43224_CHIP_ID:
+	case BCM4716_CHIP_ID:
+	case BCM47162_CHIP_ID:
 		/* always 20Mhz */
 		clock = 20000 * 1000;
 		break;
-#endif /* BCMPMU */
+	case BCM5356_CHIP_ID:
+		/* always 25Mhz */
+		clock = 25000 * 1000;
+		break;
     default:
       PMU_MSG (("No ALP clock specified "
 		"for chip %x rev %d pmurev %d, using default %d Hz\n",
@@ -1172,7 +1177,57 @@ uint32 BCMINITFN (sb_pmu_alp_clock) (sb_t * sbh, osl_t * osh)
   return clock;
 }
 
-uint BCMINITFN (sb_pmu_cpu_clock) (sb_t * sbh, osl_t * osh)
+
+
+/* Find the output of the "m" pll divider given pll controls that start with
+ * pllreg "pll0" i.e. 12 for main 6 for phy, 0 for misc.
+ */
+static uint32
+BCMINITFN(sb_pmu5_clock)(sb_t *sbh, osl_t *osh, chipcregs_t *cc, uint pll0, uint m)
+{
+	uint32 tmp, div, ndiv, p1, p2, fc;
+
+	if ((pll0 & 3) || (pll0 > PMU4716_MAINPLL_PLL0)) {
+		PMU_ERROR(("%s: Bad pll0: %d\n", __FUNCTION__, pll0));
+		return 0;
+	}
+
+	/* Strictly there is an m5 divider, but I'm not sure we use it */
+	if ((m == 0) || (m > 4)) {
+		PMU_ERROR(("%s: Bad m divider: %d\n", __FUNCTION__, m));
+		return 0;
+	}
+
+	W_REG(osh, &cc->pllcontrol_addr, pll0 + PMU5_PLL_P1P2_OFF);
+	(void)R_REG(osh, &cc->pllcontrol_addr);
+	tmp = R_REG(osh, &cc->pllcontrol_data);
+	p1 = (tmp & PMU5_PLL_P1_MASK) >> PMU5_PLL_P1_SHIFT;
+	p2 = (tmp & PMU5_PLL_P2_MASK) >> PMU5_PLL_P2_SHIFT;
+
+	W_REG(osh, &cc->pllcontrol_addr, pll0 + PMU5_PLL_M14_OFF);
+	(void)R_REG(osh, &cc->pllcontrol_addr);
+	tmp = R_REG(osh, &cc->pllcontrol_data);
+	div = (tmp >> ((m - 1) * PMU5_PLL_MDIV_WIDTH)) & PMU5_PLL_MDIV_MASK;
+
+	W_REG(osh, &cc->pllcontrol_addr, pll0 + PMU5_PLL_NM5_OFF);
+	(void)R_REG(osh, &cc->pllcontrol_addr);
+	tmp = R_REG(osh, &cc->pllcontrol_data);
+	ndiv = (tmp & PMU5_PLL_NDIV_MASK) >> PMU5_PLL_NDIV_SHIFT;
+
+	/* Do calculation in Mhz */
+	fc = sb_pmu_alp_clock(sbh, osh) / 1000000;
+	fc = (p1 * ndiv * fc) / p2;
+
+//	PMU_NONE(("%s: p1=%d, p2=%d, ndiv=%d(0x%x), m%d=%d; fc=%d, clock=%d\n",
+//	          __FUNCTION__, p1, p2, ndiv, ndiv, m, div, fc, fc / div));
+
+	/* Return clock in Hertz */
+	return ((fc / div) * 1000000);
+}
+
+
+
+uint BCMINITFN (sb_pmu_sb_clock) (sb_t * sbh, osl_t * osh)
 {
   chipcregs_t *cc;
   uint origidx;
@@ -1207,12 +1262,22 @@ uint BCMINITFN (sb_pmu_cpu_clock) (sb_t * sbh, osl_t * osh)
       clock = sb_pmu1_cpuclk0 (sbh, osh, cc);
       break;
 #endif
-#if defined(BCMPMU)
 	case BCM4322_CHIP_ID:
+	case BCM43221_CHIP_ID:
+	case BCM43231_CHIP_ID:
+	case BCM43222_CHIP_ID:
+	case BCM43224_CHIP_ID:
+
 		/* 96MHz backplane clock */
 		clock = 96000 * 1000;
 		break;
-#endif /* BCMPMU */
+	case BCM4716_CHIP_ID:
+	case BCM47162_CHIP_ID:
+		clock = sb_pmu5_clock(sbh, osh, cc, PMU4716_MAINPLL_PLL0, PMU5_MAINPLL_SI);
+		break;
+	case BCM5356_CHIP_ID:
+		clock = sb_pmu5_clock(sbh, osh, cc, PMU5356_MAINPLL_PLL0, PMU5_MAINPLL_SI);
+		break;
     default:
       PMU_MSG (("No CPU clock specified "
 		"for chip %x rev %d pmurev %d, using default %d Hz\n",
@@ -1224,6 +1289,70 @@ uint BCMINITFN (sb_pmu_cpu_clock) (sb_t * sbh, osl_t * osh)
   sb_setcoreidx (sbh, origidx);
   return clock;
 }
+
+/* query CPU clock frequency */
+uint32
+BCMINITFN(sb_pmu_cpu_clock)(sb_t *sbh, osl_t *osh)
+{
+	chipcregs_t *cc;
+	uint origidx;
+	uint32 clock;
+
+	ASSERT(sih->cccaps & CC_CAP_PMU);
+
+	/* 5354 chip uses a non programmable PLL of frequency 240MHz */
+	if (sb_chip(sbh) == BCM5354_CHIP_ID)
+		return 240000000;
+
+	if ((sbh->pmurev == 5) || (sbh->pmurev == 6) ||
+		(sbh->pmurev == 7)) {
+		uint pll = (sb_chip(sbh) == BCM5356_CHIP_ID) ?
+		        PMU5356_MAINPLL_PLL0 : PMU4716_MAINPLL_PLL0;
+
+		/* Remember original core before switch to chipc */
+		origidx = sb_coreidx(sbh);
+		cc = sb_setcoreidx(sbh, SB_CC_IDX);
+		ASSERT(cc != NULL);
+
+		clock = sb_pmu5_clock(sbh, osh, cc, pll, PMU5_MAINPLL_CPU);
+
+		/* Return to original core */
+		sb_setcoreidx(sbh, origidx);
+	} else
+		clock = sb_pmu_sb_clock(sbh, osh);
+
+	return clock;
+}
+
+uint32
+BCMINITFN(sb_pmu_mem_clock)(sb_t *sbh, osl_t *osh)
+{
+	chipcregs_t *cc;
+	uint origidx;
+	uint32 clock;
+
+	ASSERT(sbh->cccaps & CC_CAP_PMU);
+
+	if ((sbh->pmurev == 5) || (sbh->pmurev == 6) ||
+		(sbh->pmurev == 7)) {
+		uint pll = (sb_chip(sbh) == BCM5356_CHIP_ID) ?
+		        PMU5356_MAINPLL_PLL0 : PMU4716_MAINPLL_PLL0;
+
+		/* Remember original core before switch to chipc */
+		origidx = sb_coreidx(sbh);
+		cc = sb_setcoreidx(sbh, SB_CC_IDX);
+		ASSERT(cc != NULL);
+
+		clock = sb_pmu5_clock(sbh, osh, cc, pll, PMU5_MAINPLL_MEM);
+
+		/* Return to original core */
+		sb_setcoreidx(sbh, origidx);
+	} else
+		clock = sb_pmu_sb_clock(sbh, osh);
+
+	return clock;
+}
+
 
 void BCMINITFN (sb_pmu_init) (sb_t * sbh, osl_t * osh)
 {
