@@ -337,13 +337,19 @@ hnd_cpu_jumpto (void *addr)
 
 uint32 BCMINITFN (sb_cpu_clock) (sb_t * sbh)
 {
+	osl_t *osh;
 	extifregs_t *eir;
 	chipcregs_t *cc;
 	uint32 n, m;
 	uint idx;
 	uint32 pll_type, rate = 0;
 
+	osh = sb_osh(sbh);
+
 	/* get index of the current core */
+	if (sbh->cccaps & CC_CAP_PMU)
+		return sb_pmu_cpu_clock(sbh, osh);
+
 	idx = sb_coreidx(sbh);
 	pll_type = PLL_TYPE1;
 
@@ -396,6 +402,20 @@ out:
 	sb_setcoreidx(sbh, idx);
 
 	return rate;
+}
+
+
+uint32
+BCMINITFN(sb_mem_clock)(sb_t *sbh)
+{
+	osl_t *osh;
+
+	osh = sb_osh(sbh);
+
+	if (sbh->cccaps & CC_CAP_PMU)
+		return sb_pmu_mem_clock(sbh, osh);
+
+	return sb_clock(sbh);
 }
 
 /*
