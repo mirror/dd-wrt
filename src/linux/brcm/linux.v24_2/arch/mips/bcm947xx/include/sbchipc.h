@@ -917,6 +917,44 @@ typedef volatile struct {
 #define PMU2_PHY_PLL_PLLCTL		4
 #define PMU2_SB_PLL_PLLCTL		10
 
+/* PMU rev 5 (& 6) */
+#define	PMU5_PLL_P1P2_OFF		0
+#define	PMU5_PLL_P1_MASK		0x0f000000
+#define	PMU5_PLL_P1_SHIFT		24
+#define	PMU5_PLL_P2_MASK		0x00f00000
+#define	PMU5_PLL_P2_SHIFT		20
+#define	PMU5_PLL_M14_OFF		1
+#define	PMU5_PLL_MDIV_MASK		0x000000ff
+#define	PMU5_PLL_MDIV_WIDTH		8
+#define	PMU5_PLL_NM5_OFF		2
+#define	PMU5_PLL_NDIV_MASK		0xfff00000
+#define	PMU5_PLL_NDIV_SHIFT		20
+#define	PMU5_PLL_FMAB_OFF		3
+#define	PMU5_PLL_MRAT_MASK		0xf0000000
+#define	PMU5_PLL_MRAT_SHIFT		28
+#define	PMU5_PLL_ABRAT_MASK		0x08000000
+#define	PMU5_PLL_ABRAT_SHIFT		27
+#define	PMU5_PLL_FDIV_MASK		0x07ffffff
+#define	PMU5_PLL_PLLCTL_OFF		4
+#define	PMU5_PLL_PCHI_OFF		5
+#define	PMU5_PLL_PCHI_MASK		0x0000003f
+
+/* Divider allocation in 4716/47162/5356 */
+#define	PMU5_MAINPLL_CPU		1
+#define	PMU5_MAINPLL_MEM		2
+#define	PMU5_MAINPLL_SI			3
+
+/* PLL usage in 4716/47162 */
+#define	PMU4716_MAINPLL_PLL0		12
+
+/* 4716/162 resources */
+#define RES4716_PROC_PLL_ON		0x00000040
+#define RES4716_PROC_HT_AVAIL		0x00000080
+
+/* PLL usage in 5356 */
+#define	PMU5356_MAINPLL_PLL0		0
+
+
 #if defined(BCM4325)
 #define RES4325_BUCK_BOOST_BURST	0	/* 0x00000001 */
 #define RES4325_CBUCK_BURST		1	/* 0x00000002 */

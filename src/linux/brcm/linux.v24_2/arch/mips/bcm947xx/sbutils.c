@@ -102,7 +102,7 @@ static uint _sb_coreidx (sb_info_t * si);
 static uint sb_pcidev2chip(uint pcidev);
 static uint sb_chip2numcores (uint chip);
 static bool sb_ispcie (sb_info_t * si);
-static uint8 sb_find_pci_capability (sb_info_t * si, uint8 req_cap_id,
+uint8 sb_find_pci_capability (sb_info_t * si, uint8 req_cap_id,
 				     uchar * buf, uint32 * buflen);
 int sb_pci_fixcfg (sb_info_t * si);
 /* routines to access mdio slave device registers */
@@ -1081,7 +1081,7 @@ uint sb_corereg(sb_t *sbh, uint coreidx, uint regoff, uint mask, uint val)
 
 
 /* return cap_offset if requested capability exists in the PCI config space */
-static uint8
+uint8
 sb_find_pci_capability (sb_info_t * si, uint8 req_cap_id, uchar * buf,
 			uint32 * buflen)
 {
@@ -3936,8 +3936,15 @@ BCMINITFN (sb_corepciid) (sb_t * sbh, uint func, uint16 * pcivendor,
       subclass = PCI_NET_ETHER;
       device = BCM47XX_GIGETH_ID;
       break;
+    case SB_GMAC:
+      class = PCI_CLASS_NET;
+      subclass = PCI_NET_ETHER;
+      device = BCM47XX_GMAC_ID;
+      break;
     case SB_SDRAM:
     case SB_MEMC:
+    case SB_DMEMC:
+    case SB_SOCRAM:
       class = PCI_CLASS_MEMORY;
       subclass = PCI_MEMORY_RAM;
       device = (uint16) core;

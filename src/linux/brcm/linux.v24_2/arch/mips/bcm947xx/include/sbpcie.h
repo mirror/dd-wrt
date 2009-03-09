@@ -44,17 +44,20 @@
 
 /* SB side: PCIE core and host control registers */
 typedef struct sbpcieregs {
-	uint32 PAD[3];
+	uint32 control;		/* host mode only */
+	uint32 PAD[2];
 	uint32 biststatus;	/* bist Status: 0x00C */
 	uint32 gpiosel;		/* PCIE gpio sel: 0x010 */
 	uint32 gpioouten;	/* PCIE gpio outen: 0x14 */
-	uint32 PAD[4];
+	uint32 PAD[2];
+	uint32 intstatus;	/* Interrupt status: 0x20 */
+	uint32 intmask;		/* Interrupt mask: 0x24 */
 	uint32 sbtopcimailbox;	/* sb to pcie mailbox: 0x028 */
-	uint32 PAD[54];
+	uint32 PAD[53];
 	uint32 sbtopcie0;	/* sb to pcie translation 0: 0x100 */
 	uint32 sbtopcie1;	/* sb to pcie translation 1: 0x104 */
 	uint32 sbtopcie2;	/* sb to pcie translation 2: 0x108 */
-	uint32 PAD[4];
+	uint32 PAD[5];
 
 	/* pcie core supports in direct access to config space */
 	uint32 configaddr;	/* pcie config space access: Address field: 0x120 */
@@ -69,8 +72,9 @@ typedef struct sbpcieregs {
 	uint32 pcieinddata;	/* Data to/from the internal regsiter: 0x134 */
 
 	uint32 clkreqenctrl;	/* >= rev 6, Clkreq rdma control : 0x138 */
-	uint32 PAD[433];
-	uint16 sprom[36];	/* SPROM shadow Area */
+	uint32 PAD[177];
+	uint32 pciecfg[4][64];	/* 0x400 - 0x7FF, PCIE Cfg Space */
+	uint16 sprom[64];	/* SPROM shadow Area */
 } sbpcieregs_t;
 
 /* SB to PCIE translation masks */
@@ -233,5 +237,10 @@ typedef struct sbpcieregs {
 
 /* Status reg PCIE_PLP_STATUSREG */
 #define PCIE_PLP_POLARITYINV_STAT	0x10
+
+/* PCI control */
+#define PCIE_RST_OE	0x01	/* When set, drives PCI_RESET out to pin */
+#define PCIE_RST	0x02	/* Value driven out to pin */
+
 
 #endif	/* _SBPCIE_H */

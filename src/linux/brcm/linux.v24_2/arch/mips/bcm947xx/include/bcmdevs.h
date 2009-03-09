@@ -92,6 +92,7 @@
 #define	BCM47XX_ENET_ID		0x4713		/* 47xx enet */
 #define	BCM47XX_EXT_ID		0x4714		/* 47xx external i/f */
 #define	BCM47XX_USB_ID		0x4715		/* 47xx usb */
+#define	BCM47XX_GMAC_ID		0x4715		/* 47xx Unimac based GbE */
 #define	BCM47XX_USBH_ID		0x4716		/* 47xx usb host */
 #define	BCM47XX_USBD_ID		0x4717		/* 47xx usb device */
 #define	BCM47XX_IPSEC_ID	0x4718		/* 47xx ipsec */
@@ -120,17 +121,25 @@
 #define	BCM4320_CHIP_ID		0x4320		/* 4320 chipcommon chipid */
 #define	BCM4321_CHIP_ID		0x4321		/* 4321 chip common chipid */
 #define	BCM4322_CHIP_ID		0x4322		/* 4322 chip common chipid */
+#define	BCM43221_CHIP_ID	43221		/* 43221 chipcommon chipid (OTP chipid) */
+#define	BCM43231_CHIP_ID	43231		/* 43231 chipcommon chipid (OTP chipid) */
+#define	BCM43222_CHIP_ID	43222		/* 43222 chipcommon chipid */
+#define	BCM43224_CHIP_ID	43224		/* 43224 chipcommon chipid */
 #define	BCM4325_CHIP_ID		0x4325		/* 4325 chip common chipid */
 #define	BCM4328_CHIP_ID		0x4328		/* 4328 chip common chipid */
 #define	BCM4402_CHIP_ID		0x4402		/* 4402 chipid */
 #define	BCM4704_CHIP_ID		0x4704		/* 4704 chipcommon chipid */
 #define	BCM4710_CHIP_ID		0x4710		/* 4710 chipid */
 #define	BCM4712_CHIP_ID		0x4712		/* 4712 chipcommon chipid */
+#define	BCM4716_CHIP_ID		0x4716		/* 4716 chipcommon chipid */
+#define	BCM47162_CHIP_ID	47162		/* 47162 chipcommon chipid */
 #define BCM4785_CHIP_ID		0x4785		/* 4785 chipcommon chipid */
 #define BCM5365_CHIP_ID		0x5365          /* 5365 chipcommon chipid */
 #define	BCM5350_CHIP_ID		0x5350		/* 5350 chipcommon chipid */
 #define	BCM5352_CHIP_ID		0x5352		/* 5352 chipcommon chipid */
 #define	BCM5354_CHIP_ID		0x5354		/* 5354 chipcommon chipid */
+#define BCM5365_CHIP_ID		0x5365		/* 5365 chipcommon chipid */
+#define	BCM5356_CHIP_ID		0x5356		/* 5356 chipcommon chipid */
 
 /* Package ID's */
 #define	BCM4303_PKG_ID		2		/* 4303 package id */
