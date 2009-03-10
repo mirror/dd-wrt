@@ -246,7 +246,8 @@ __init void cpu_report(void)
 {
 	struct cpuinfo_mips *c = &current_cpu_data;
 
-	printk("CPU revision is: %08x\n", c->processor_id);
+	printk("CPU ProcId is: 0x%08x, options: 0x%08x\n",
+	       c->processor_id, c->options);
 	if (c->options & MIPS_CPU_FPU)
 		printk("FPU revision is: %08x\n", c->fpu_id);
 }

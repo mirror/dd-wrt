@@ -352,8 +352,17 @@ asmlinkage void do_be(struct pt_regs *regs)
 	int data = regs->cp0_cause & 4;
 	int action = MIPS_BE_FATAL;
 
-	if (data && !user_mode(regs))
-		fixup = search_dbe_table(exception_epc(regs));
+//	if (data && !user_mode(regs))
+//		fixup = search_dbe_table(exception_epc(regs));
+	if (data && !user_mode(regs)) {
+		unsigned long epc = exception_epc(regs);
+
+		fixup = search_dbe_table(epc);
+		if (!fixup)
+			fixup = search_dbe_table(epc - 4);
+		if (!fixup)
+			fixup = search_dbe_table(epc - 8);
+	}
 
 	if (fixup)
 		action = MIPS_BE_FIXUP;
