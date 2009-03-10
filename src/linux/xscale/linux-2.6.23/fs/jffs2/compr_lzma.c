@@ -111,7 +111,7 @@ int lzma_decompress(unsigned char *data_in, unsigned char *cpage_out,
 	if (srclen < LZMA_PROPS_SIZE)
 		return -1;
 	
-	ret = LzmaDecode( cpage_out, &data_out_size, data_in+LZMA_PROPS_SIZE, &data_in_size, 
+	ret = LzmaDecode2( cpage_out, &data_out_size, data_in+LZMA_PROPS_SIZE, &data_in_size, 
 		data_in, LZMA_PROPS_SIZE, LZMA_FINISH_ANY, &status, &xalloc);
 	
 	if (ret != SZ_OK)
