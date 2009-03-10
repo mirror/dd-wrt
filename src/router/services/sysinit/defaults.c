@@ -596,6 +596,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_ssid", "changeme", 0},	/* Service set ID (network name) */
 #elif HAVE_MAKSAT
     {"wl_ssid", "maksat", 0},	/* Service set ID (network name) */
+#elif HAVE_TMK
+    {"wl_ssid", "KMT", 0},	/* Service set ID (network name) */
 #elif HAVE_34TELECOM
     {"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
 #elif HAVE_FON
@@ -631,6 +633,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_DDLAN)
     {"wl0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
     {"ath0_ssid", "www.ddlan.de", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_TMK)
+    {"wl0_ssid", "KMT", 0},	/* Service set ID (network name) */
+    {"ath0_ssid", "KMT", 0},	/* Service set ID (network name) */
 #else
     {"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
     {"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
@@ -1149,6 +1154,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"router_name", "TRIMAX", 0},
 #elif  HAVE_DDLAN
     {"router_name", "WDSL-Modem XXX", 0},
+#elif  HAVE_TMK
+    {"router_name", "KMT-WRT", 0},
 #else
     {"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif
@@ -1578,6 +1585,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_NEWMEDIA
     {"sshd_enable", "1", 0},
 #elif HAVE_MAKSAT
+    {"sshd_enable", "1", 0},
+#elif HAVE_TMK
     {"sshd_enable", "1", 0},
 #else
     {"sshd_enable", "0", 0},
