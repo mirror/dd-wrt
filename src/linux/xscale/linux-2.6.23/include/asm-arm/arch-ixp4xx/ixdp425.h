@@ -22,7 +22,7 @@
 /*
  * IXDP425 PCI IRQs
  */
-#define AVILA_PCI_MAX_DEV	4
+#define AVILA_PCI_MAX_DEV	6
 #define LOFT_PCI_MAX_DEV    6
 #define AVILA_PCI_IRQ_LINES	4
 
