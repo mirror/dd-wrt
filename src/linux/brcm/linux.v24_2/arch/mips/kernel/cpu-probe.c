@@ -209,6 +209,20 @@ static inline void cpu_probe_broadcom(struct cpuinfo_mips *c)
 								MIPS_CPU_4KTLB | MIPS_CPU_COUNTER;
 			c->scache.flags = MIPS_CACHE_NOT_PRESENT;
 			break;
+	case PRID_IMP_74K:
+			/* The 74k is a mips32r2, but the 2.4 kernel is not really
+			 * ready to do r2 stuff. In particular it does not know
+			 * how to do the r2 vectored interrupts, so we'll turn off
+			 * the DIVEC flag from options.
+			 */
+			c->cputype = CPU_74K;
+			c->options &= ~MIPS_CPU_DIVEC;
+			c->isa_level = MIPS_CPU_ISA_M32;
+			/* Set the IHB bit in config7 so we don't need to add
+			 * ehb instructions all over.
+			 */
+			write_c0_config7(read_c0_config7() | (1 << 29));
+			break;
 	default:
 			c->cputype = CPU_UNKNOWN;
 			break;
