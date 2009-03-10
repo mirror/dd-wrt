@@ -31,7 +31,6 @@
 #include <linux/types.h>
 #include <linux/memory.h>
 #include <linux/leds.h>
-#include <linux/spi/spi_gpio.h>
 
 #include <asm/setup.h>
 #include <asm/irq.h>
@@ -166,47 +165,8 @@ static struct platform_device mi424wr_flash = {
 	.resource	= &mi424wr_flash_resource,
 };
 
-static int mi424wr_spi_boardinfo_setup(struct spi_board_info *bi,
-		struct spi_master *master, void *data)
-{
 
-	strlcpy(bi->modalias, "spi-ks8995", sizeof(bi->modalias));
 
-	bi->max_speed_hz = 5000000 /* Hz */;
-	bi->bus_num = master->bus_num;
-	bi->mode = SPI_MODE_0;
-
-	return 0;
-}
-
-static struct spi_gpio_platform_data mi424wr_spi_bus_data = {
-	.pin_cs			= MI424WR_KSSPI_SELECT,
-	.pin_clk		= MI424WR_KSSPI_CLOCK,
-	.pin_miso		= MI424WR_KSSPI_RXD,
-	.pin_mosi		= MI424WR_KSSPI_TXD,
-	.cs_activelow		= 1,
-	.no_spi_delay		= 1,
-	.boardinfo_setup	= mi424wr_spi_boardinfo_setup,
-};
-
-static struct gpio_led mi424wr_gpio_led[] = {
-	{
-		.name		= "moca-wan",	/* green led */
-		.gpio		= MI424WR_MOCA_WAN_LED,
-		.active_low	= 0,
-	}
-};
-
-static struct gpio_led_platform_data mi424wr_gpio_leds_data = {
-	.num_leds	= 1,
-	.leds		= mi424wr_gpio_led,
-};
-
-static struct platform_device mi424wr_gpio_leds = {
-	.name		= "leds-gpio",
-	.id		= -1,
-	.dev.platform_data = &mi424wr_gpio_leds_data,
-};
 
 static uint16_t latch_value = MI424WR_LATCH_DEFAULT;
 static uint16_t __iomem *iobase;
@@ -223,89 +183,11 @@ static void mi424wr_latch_set_led(u8 bit, enum led_brightness value)
 
 }
 
-static struct latch_led mi424wr_latch_led[] = {
-	{
-		.name	= "power-alarm",
-		.bit	= MI424WR_LATCH_ALARM_LED,
-	},
-	{
-		.name	= "power-ok",
-		.bit	= MI424WR_LATCH_POWER_LED,
-	},
-	{
-		.name	= "wireless",	/* green led */
-		.bit	= MI424WR_LATCH_WIRELESS_LED,
-	},
-	{
-		.name	= "inet-down",	/* red led */
-		.bit	= MI424WR_LATCH_INET_DOWN_LED,
-	},
-	{
-		.name	= "inet-up",	/* green led */
-		.bit	= MI424WR_LATCH_INET_OK_LED,
-	},
-	{
-		.name	= "moca-lan",	/* green led */
-		.bit	= MI424WR_LATCH_MOCA_LAN_LED,
-	},
-	{
-		.name	= "wan-alarm",	/* red led */
-		.bit	= MI424WR_LATCH_WAN_ALARM_LED,
-	}
-};
 
-static struct latch_led_platform_data mi424wr_latch_leds_data = {
-	.num_leds	= ARRAY_SIZE(mi424wr_latch_led),
-	.mem		= 0x51000000,
-	.leds		= mi424wr_latch_led,
-	.set_led        = mi424wr_latch_set_led,
-};
-
-static struct platform_device mi424wr_latch_leds = {
-	.name		= "leds-latch",
-	.id		= -1,
-	.dev.platform_data = &mi424wr_latch_leds_data,
-};
-
-static struct platform_device mi424wr_spi_bus = {
-	.name		= "spi-gpio",
-	.id		= 0,
-	.dev.platform_data = &mi424wr_spi_bus_data,
-};
-
-static struct eth_plat_info mi424wr_npeb_data = {
-	.phy		= 17,	/* KS8721 */
-	.rxq		= 3,
-	.txreadyq	= 20,
-};
-
-static struct eth_plat_info mi424wr_npec_data = {
-	.phy		= IXP4XX_ETH_PHY_MAX_ADDR,
-	.phy_mask	= 0x1e, /* ports 1-4 of the KS8995 switch */
-	.rxq		= 4,
-	.txreadyq	= 21,
-};
-
-static struct platform_device mi424wr_npe_devices[] = {
-	{
-		.name			= "ixp4xx_eth",
-		.id			= IXP4XX_ETH_NPEC,
-		.dev.platform_data	= &mi424wr_npec_data,
-	}, {
-		.name			= "ixp4xx_eth",
-		.id			= IXP4XX_ETH_NPEB,
-		.dev.platform_data	= &mi424wr_npeb_data,
-	}
-};
 
 static struct platform_device *mi424wr_devices[] __initdata = {
 	&mi424wr_uart_device,
 	&mi424wr_flash,
-	&mi424wr_gpio_leds,
-	&mi424wr_latch_leds,
-	&mi424wr_spi_bus,
-	&mi424wr_npe_devices[0],
-	&mi424wr_npe_devices[1],
 };
 
 static void __init mi424wr_init(void)
