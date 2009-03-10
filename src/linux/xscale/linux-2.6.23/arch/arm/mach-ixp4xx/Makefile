@@ -42,5 +42,6 @@ obj-$(CONFIG_MACH_DSMG600)      += dsmg600-setup.o dsmg600-power.o
 obj-$(CONFIG_MACH_GATEWAY7001)	+= gateway7001-setup.o
 obj-$(CONFIG_MACH_WG302V1)	+= wg302v1-setup.o
 obj-$(CONFIG_MACH_WG302V2)	+= wg302v2-setup.o
+obj-$(CONFIG_MACH_MI424WR)	+= mi424wr-setup.o
 
 obj-$(CONFIG_PCI)		+= $(obj-pci-$(CONFIG_PCI)) common-pci.o
