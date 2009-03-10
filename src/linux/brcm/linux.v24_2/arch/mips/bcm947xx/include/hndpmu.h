@@ -26,8 +26,7 @@ extern void sb_pmu_res_init(sb_t *sbh, osl_t *osh);
 extern uint32 sb_pmu_force_ilp(sb_t *sbh, osl_t *osh, bool force);
 extern uint32 sb_pmu_cpu_clock(sb_t *sbh, osl_t *osh);
 extern uint32 sb_pmu_alp_clock(sb_t *sbh, osl_t *osh);
-extern uint32 sb_pmu_sb_clock(sb_t *sih, osl_t *osh);
-extern uint32 sb_pmu_sb_clock(sb_t *sih, osl_t *osh);
+extern uint32 sb_pmu_sb_clock(sb_t *sbh, osl_t *osh);
 
 extern void sb_pmu_set_switcher_voltage(sb_t *sbh, osl_t *osh, uint8 bb_voltage, uint8 rf_voltage);
 extern void sb_pmu_set_ldo_voltage(sb_t *sbh, osl_t *osh, uint8 ldo, uint8 voltage);
