@@ -433,6 +433,10 @@ void setRouter( char *name )
     if( name )
 	nvram_set( "DD_BOARD2", name );
     nvram_set( NVROUTER, "MAKSAT" );
+#elif HAVE_TMK
+    if( name )
+	nvram_set( "DD_BOARD2", name );
+    nvram_set( NVROUTER, "KMT-WRT" );
 #else
     if( name )
 	nvram_set( NVROUTER, name );
