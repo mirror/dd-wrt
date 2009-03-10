@@ -80,6 +80,7 @@ static const char *cpu_name[] = {
 	[CPU_AU1200]	"Au1200",
 	[CPU_BCM4710]   "BCM4710",
 	[CPU_BCM3302]   "BCM3302",
+	[CPU_74K]	"MIPS 74K",
 };
 
 static int show_cpuinfo(struct seq_file *m, void *v)
