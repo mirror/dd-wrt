@@ -190,7 +190,7 @@
 #define CPU_BCM4710		60
 #define CPU_BCM3302		61
 #define CPU_74K			62
-#define CPU_LAST		62
+#define CPU_LAST		63
 
 /*
  * ISA Level encodings
