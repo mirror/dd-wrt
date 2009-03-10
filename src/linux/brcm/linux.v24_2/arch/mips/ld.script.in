@@ -16,6 +16,12 @@ SECTIONS
     /* .gnu.warning sections are handled specially by elf32.em.  */
     *(.gnu.warning)
   } =0
+
+  . = ALIGN(32);
+  __fastpath_begin = .;
+  .text.fastpath : { *(.text.fastpath) }
+  __fastpath_end = .;
+
   .kstrtab : { *(.kstrtab) }
 
   . = ALIGN(16);		/* Exception table */
