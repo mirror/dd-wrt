@@ -5,7 +5,7 @@
 #
 
 HEAD	= head.o
-OBJS	= misc_lzma.o print.o _umodsi3.o _udivsi3.o
+OBJS	= misc_lzma.o print.o lib1funcs.o
 FONTC	= $(srctree)/drivers/video/console/font_acorn_8x8.c
 
 #
