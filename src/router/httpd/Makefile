@@ -163,6 +163,9 @@ endif
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS += -DHAVE_VILIM
 endif
+ifeq ($(CONFIG_TMK),y)
+CFLAGS += -DHAVE_TMK
+endif
 ifeq ($(CONFIG_RSTATS),y)
 CFLAGS += -DHAVE_RSTATS
 endif
