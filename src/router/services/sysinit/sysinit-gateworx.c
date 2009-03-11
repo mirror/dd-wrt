@@ -196,7 +196,8 @@ void start_sysinit( void )
     mkdir( "/var/run", 0777 );
     mkdir( "/var/tmp", 0777 );
 
-    eval( "watchdog" );		// system watchdog
+    if (!nvram_match("disable_watchdog","1"))
+	eval( "watchdog" );		// system watchdog
 
     cprintf( "sysinit() setup console\n" );
 
