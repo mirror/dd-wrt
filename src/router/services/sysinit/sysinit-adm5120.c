@@ -424,6 +424,7 @@ void start_sysinit( void )
 	insmod( "ath_pci" );
     }
 
+    if (!nvram_match("disable_watchdog","1"))
     eval( "watchdog" );
     /*
      * Set a sane date 
