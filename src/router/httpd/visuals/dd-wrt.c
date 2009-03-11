@@ -5731,6 +5731,26 @@ void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
 }
 
 #endif
+
+static char *UPTIME(int uptime)
+{
+int days,minutes;
+static char str[64]={0};
+memset(str,0,64);
+	days = uptime / ( 60 * 60 * 24 );
+	if( days )
+	    sprintf(str,"%d day%s, ", days, ( days == 1 ? "" : "s" ) );
+	minutes = uptime / 60;
+	if (strlen(str)>0)
+	    sprintf(str,"%s %d:%02d:%02d",str, ( minutes / 60 ) % 24, minutes % 60,
+		   uptime % 60 );
+	else
+	    sprintf(str,"%d:%02d:%02d",( minutes / 60 ) % 24, minutes % 60,
+		   uptime % 60 );
+return str;
+}
+
+
 #ifdef HAVE_MADWIFI
 #include <sys/types.h>
 #include <sys/file.h>
@@ -5842,8 +5862,8 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 	    && ( ( si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL ) !=
 		 0 ) )
 	{
-	    websWrite( wp, "'%s','%s','%3dM','%3dM','%d','%d','%d'",
-		       mac, ifname,
+	    websWrite( wp, "'%s','%s','%s','%3dM','%3dM','%d','%d','%d'",
+		       mac, UPTIME(si->isi_uptime),ifname,
 		       ( ( si->
 			   isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL ) /
 			 2 ) * turbo,
@@ -5854,7 +5874,7 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 	}
 	else
 	{
-	    websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac,
+	    websWrite( wp, "'%s','%s','%s','N/A','N/A','%d','%d','%d'", mac, UPTIME(si->isi_uptime),
 		       ifname,si->isi_noise + si->isi_rssi, si->isi_noise,
 		       si->isi_rssi );
 	}
@@ -6093,7 +6113,7 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 	    else
 #endif
 	    {
-		websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac,
+		websWrite( wp, "'%s','N/A','%s','N/A','N/A','%d','%d','%d'", mac,
 			   ifname, table.Entry[i].AvgRssi0, -95,
 			   ( table.Entry[i].AvgRssi0 - ( -95 ) ) );
 	    }
@@ -6105,7 +6125,7 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 	char mac[32];
 
 	strcpy( mac, ieee80211_ntoa( sta->mac ) );
-	websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac,
+	websWrite( wp, "'%s','N/A','%s','N/A','N/A','%d','%d','%d'", mac,
 		   sta->ifname, sta->rssi, sta->noise,
 		   ( sta->rssi - ( sta->noise ) ) );
 	free( sta );
@@ -6350,7 +6370,7 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 	 * if (!strcmp (mode, "ap")) { noise = getNoise(iface,NULL); // null
 	 * only for broadcom }
 	 */
-	websWrite( wp, "'%s','%s','N/A','N/A','%d','%d','%d'", mac, iface,
+	websWrite( wp, "'%s','N/A','%s','N/A','N/A','%d','%d','%d'", mac, iface,
 		   rssi, noise, rssi - noise );
     }
     unlink( RSSI_TMP );
