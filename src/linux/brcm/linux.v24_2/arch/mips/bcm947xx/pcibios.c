@@ -128,11 +128,20 @@ static struct pci_ops pcibios_ops = {
 	sbpci_write_config_dword
 };
 
+static u32 pci_iobase = 0x100;
+static u32 pci_membase = SB_PCI_DMA;
+static u32 pcmcia_membase = 0x40004000;
 
 void __init
 pcibios_init(void)
 {
 	ulong flags;
+
+	if (sbh->chip == BCM4716_CHIP_ID) {
+		printk("PCI: Using membase %x\n", SB_PCI_MEM);
+		pci_membase = SB_PCI_MEM;
+	}
+
     	if (!(sbh = sb_kattach(SB_OSH)))
 		panic("sb_kattach failed");
 	spin_lock_init(&sbh_lock);
@@ -158,9 +167,6 @@ pcibios_setup(char *str)
 	return (str);
 }
 
-static u32 pci_iobase = 0x100;
-static u32 pci_membase = SB_PCI_DMA;
-static u32 pcmcia_membase = 0x40004000;
 
 void __init
 pcibios_fixup_bus(struct pci_bus *b)
