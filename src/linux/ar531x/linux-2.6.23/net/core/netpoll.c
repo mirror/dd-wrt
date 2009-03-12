@@ -116,24 +116,49 @@ static __sum16 checksum_udp(struct sk_buff *skb, struct udphdr *uh,
  * network adapter, forcing superfluous retries and possibly timeouts.
  * Thus, we set our budget to greater than 1.
  */
-static void poll_napi(struct netpoll *np)
+static int poll_one_napi(struct netpoll_info *npinfo,
+			 struct napi_struct *napi, int budget)
 {
-	struct netpoll_info *npinfo = np->dev->npinfo;
+	int work;
+
+	/* net_rx_action's ->poll() invocations and our's are
+	 * synchronized by this test which is only made while
+	 * holding the napi->poll_lock.
+	 */
+	if (!test_bit(NAPI_STATE_SCHED, &napi->state))
+		return budget;
+
+	npinfo->rx_flags |= NETPOLL_RX_DROP;
+	atomic_inc(&trapped);
+	set_bit(NAPI_STATE_NPSVC, &napi->state);
+
+	work = napi->poll(napi, budget);
+
+	clear_bit(NAPI_STATE_NPSVC, &napi->state);
+	atomic_dec(&trapped);
+	npinfo->rx_flags &= ~NETPOLL_RX_DROP;
+
+	return budget - work;
+}
+
+static void poll_napi(struct net_device *dev)
+{
+	struct napi_struct *napi;
 	int budget = 16;
 
-	if (test_bit(__LINK_STATE_RX_SCHED, &np->dev->state) &&
-	    npinfo->poll_owner != smp_processor_id() &&
-	    spin_trylock(&npinfo->poll_lock)) {
-		npinfo->rx_flags |= NETPOLL_RX_DROP;
-		atomic_inc(&trapped);
+	list_for_each_entry(napi, &dev->napi_list, dev_list) {
+		if (napi->poll_owner != smp_processor_id() &&
+		    spin_trylock(&napi->poll_lock)) {
+			budget = poll_one_napi(dev->npinfo, napi, budget);
+			spin_unlock(&napi->poll_lock);
 
-		np->dev->poll(np->dev, &budget);
-
-		atomic_dec(&trapped);
-		npinfo->rx_flags &= ~NETPOLL_RX_DROP;
-		spin_unlock(&npinfo->poll_lock);
+			if (!budget)
+				break;
+		}
 	}
 }
+
+
 
 static void service_arp_queue(struct netpoll_info *npi)
 {
@@ -157,7 +182,7 @@ void netpoll_poll(struct netpoll *np)
 
 	/* Process pending work on NIC */
 	np->dev->poll_controller(np->dev);
-	if (np->dev->poll)
+	if (!list_empty(&np->dev->napi_list))
 		poll_napi(np);
 
 	service_arp_queue(np->dev->npinfo);
@@ -233,6 +258,17 @@ repeat:
 	return skb;
 }
 
+static int netpoll_owner_active(struct net_device *dev)
+{
+	struct napi_struct *napi;
+
+	list_for_each_entry(napi, &dev->napi_list, dev_list) {
+		if (napi->poll_owner == smp_processor_id())
+			return 1;
+	}
+	return 0;
+}
+
 static void netpoll_send_skb(struct netpoll *np, struct sk_buff *skb)
 {
 	int status = NETDEV_TX_BUSY;
@@ -246,8 +282,7 @@ static void netpoll_send_skb(struct netpoll *np, struct sk_buff *skb)
 	}
 
 	/* don't get messages out of order, and no recursion */
-	if (skb_queue_len(&npinfo->txq) == 0 &&
-		    npinfo->poll_owner != smp_processor_id()) {
+	if (skb_queue_len(&npinfo->txq) == 0 && !netpoll_owner_active(dev)) {
 		unsigned long flags;
 
 		local_irq_save(flags);
@@ -652,8 +687,6 @@ int netpoll_setup(struct netpoll *np)
 
 		npinfo->rx_flags = 0;
 		npinfo->rx_np = NULL;
-		spin_lock_init(&npinfo->poll_lock);
-		npinfo->poll_owner = -1;
 
 		spin_lock_init(&npinfo->rx_lock);
 		skb_queue_head_init(&npinfo->arp_tx);
