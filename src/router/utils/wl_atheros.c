@@ -187,7 +187,7 @@ main (int argc, char *argv[])
 		    {
 		      foreach (var, vifs, next)
 		      {
-		        uptime = getNoise(var, rmac);
+		        uptime = getUptime(var, rmac);
 		        if (uptime!=0 && uptime!=-1)
 			    {
 			    fprintf (stdout, "uptime is %d\n", uptime);
