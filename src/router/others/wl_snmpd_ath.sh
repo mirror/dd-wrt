@@ -57,7 +57,7 @@ refresh() {
     eval getnext_1361412021255354133211${lastid}="$place.3.54.1.3.32.1.4.1"
     eval getnext_1361412021255354133214${lastid}="$place.3.54.1.3.32.1.13.1"
     eval getnext_13614120212553541332113${lastid}="$place.3.54.1.3.32.1.26.1"
-    eval getnext_13614120212553541332126${lastid}="NONE"
+    eval getnext_13614120212553541332126${lastid}="$place.3.54.1.3.32.1.27.1"
     eval getnext_13614120212553541332127${lastid}="NONE"
   fi
 } 
