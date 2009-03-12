@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <malloc.h>
 #include <wlutils.h>
 #include <shutils.h>
+#include <bcmnvram.h>
 
 
 void
@@ -154,6 +156,48 @@ main (int argc, char *argv[])
 		}
 	    }
 	  fprintf (stdout, "noise is %d\n", rssi);
+	}
+      if (!strcmp (argv[i], "uptime"))
+	{
+	  unsigned char rmac[6];
+	  ether_atoe (argv[++i], rmac);
+	    int ifcount = getifcount ("wifi");
+	  int uptime=-1;
+	  if (strcmp (argv[1], "-i") == 0)
+	    uptime = getUptime (ifname, rmac);
+	  else
+	    {
+	      int c = 0;
+	      for (c = 0; c < ifcount; c++)
+		{
+		  char interface[32];
+		  sprintf (interface, "ath%d", c);
+		  
+		        uptime = getUptime(interface, rmac);
+		        if (uptime!=0 && uptime!=-1)
+			    {
+			    fprintf (stdout, "uptime is %d\n", uptime);
+			    return 0;
+			    }
+		  char vif[32];
+		  sprintf (vif, "%s_vifs", interface);
+		  char var[80], *next;
+		  char *vifs = nvram_safe_get (vif);
+		  if (vifs != NULL)
+		    {
+		      foreach (var, vifs, next)
+		      {
+		        uptime = getNoise(var, rmac);
+		        if (uptime!=0 && uptime!=-1)
+			    {
+			    fprintf (stdout, "uptime is %d\n", uptime);
+			    return 0;
+			    }
+		      }
+		    }
+		}
+	    }
+	  fprintf (stdout, "uptime is %d\n", uptime);
 	}
     }
 }
