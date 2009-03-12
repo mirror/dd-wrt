@@ -350,6 +350,7 @@ void __init ar5315_prom_init(void)
 
 	/* Detect the hardware based on the device ID */
 	devid = sysRegRead(AR5315_SREV) & AR5315_REV_CHIP;
+	printk(KERN_INFO "mips devid = %X\n",devid);
 	switch(devid) {
 		case 0x90:
 		case 0x91:
