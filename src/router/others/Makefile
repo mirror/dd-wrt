@@ -44,6 +44,7 @@ ifdef CONFIG_XSCALE
 	install convert $(INSTALLDIR)/etc
 	install kendin $(INSTALLDIR)/etc
 	cp firmware/*.dat $(INSTALLDIR)/usr/lib/firmware
+ifndef CONFIG_WP18
 ifndef CONFIG_NOP8670
 ifndef CONFIG_CAMBRIA
 	cp firmware/redboot.tg7 $(INSTALLDIR)/usr/lib/firmware
@@ -52,6 +53,7 @@ else
 endif
 ifdef CONFIG_WRT300NV2
 	rm -f $(INSTALLDIR)/usr/lib/firmware/*.tg7
+endif
 endif
 endif
 endif
