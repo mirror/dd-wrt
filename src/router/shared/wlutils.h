@@ -69,7 +69,8 @@ extern int wl_probe( char *name );
 int getchannels( unsigned int *list, char *ifname );
 int getassoclist( char *name, unsigned char *list );
 int getwdslist( char *name, unsigned char *list );
-int getNoise( char *ifname, unsigned char *name );
+int getNoise( char *ifname, unsigned char *mac );
+int getUptime( char *ifname, unsigned char *mac );
 int getRssi( char *ifname, unsigned char *mac );
 
 #ifdef HAVE_MADWIFI

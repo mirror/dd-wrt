@@ -503,6 +503,11 @@ int getNoise( char *ifname, unsigned char *mac )
 
 }
 
+int getUptime( char *ifname, unsigned char *mac )
+{
+    return 0;
+}
+
 #else
 int getchannels( unsigned int *list, char *ifname )
 {
@@ -617,6 +622,11 @@ int getNoise( char *ifname, unsigned char *macname )
      */
     return noise;
 }
+int getUptime( char *ifname, unsigned char *mac )
+{
+    return 0;
+}
+
 #endif
 /*
  * struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
@@ -1384,6 +1394,67 @@ int getRssi( char *ifname, unsigned char *mac )
     free( buf );
     return 0;
 }
+
+
+int getUptime( char *ifname, unsigned char *mac )
+{
+    unsigned char *buf = malloc( 24 * 1024 );
+
+    memset( buf, 0, 24 * 1024 );
+    unsigned char *cp;
+    int len;
+    struct iwreq iwr;
+    int s;
+
+    s = socket( AF_INET, SOCK_DGRAM, 0 );
+    if( s < 0 )
+    {
+	fprintf( stderr, "socket(SOCK_DRAGM)\n" );
+	free( buf );
+	return 0;
+    }
+    ( void )memset( &iwr, 0, sizeof( iwr ) );
+    ( void )strncpy( iwr.ifr_name, ifname, sizeof( iwr.ifr_name ) );
+    iwr.u.data.pointer = ( void * )buf;
+    iwr.u.data.length = 24 * 1024;
+    if( ioctl( s, IEEE80211_IOCTL_STA_INFO, &iwr ) < 0 )
+    {
+	close( s );
+	free( buf );
+	return 0;
+    }
+    len = iwr.u.data.length;
+    if( len < sizeof( struct ieee80211req_sta_info ) )
+	return -1;
+
+    cp = buf;
+    char maccmp[6];
+
+    memset( maccmp, 0, 6 );
+    do
+    {
+	struct ieee80211req_sta_info *si;
+
+	si = ( struct ieee80211req_sta_info * )cp;
+	if( !memcmp( &si->isi_macaddr[0], mac, 6 ) )
+	{
+	    close( s );
+	    int uptime = si->isi_uptime;
+
+	    free( buf );
+	    return uptime;
+	}
+	if( !memcmp( &si->isi_macaddr[0], mac, 6 ) )
+	    break;
+	cp += si->isi_len;
+	len -= si->isi_len;
+    }
+    while( len >= sizeof( struct ieee80211req_sta_info ) );
+    close( s );
+    free( buf );
+    return 0;
+}
+
 
 int getNoise( char *ifname, unsigned char *mac )
 {
