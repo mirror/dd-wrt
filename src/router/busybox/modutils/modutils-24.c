@@ -424,11 +424,8 @@ enum {
 
 int init_module(const char *name, const struct new_module *);
 int query_module(const char *name attribute_unused, int which attribute_unused,
-				 void *buf attribute_unused, size_t bufsize attribute_unused, size_t * ret attribute_unused)
-{
-	__set_errno(ENOSYS);
-	return -1;
-}
+				 void *buf attribute_unused, size_t bufsize attribute_unused, size_t * ret attribute_unused);
+				 
 /* Values for query_module's which.  */
 enum {
 	QM_MODULES = 1,
