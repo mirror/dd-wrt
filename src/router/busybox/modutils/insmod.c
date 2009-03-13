@@ -436,10 +436,7 @@ enum {
 };
 
 int init_module(const char *name, const struct new_module *);
-int query_module(const char *name, int which,void *buf, size_t bufsize, size_t * ret)
-{
-	return -1;
-}
+int query_module(const char *name, int which,void *buf, size_t bufsize, size_t * ret);
 
 /* Values for query_module's which.  */
 enum {
