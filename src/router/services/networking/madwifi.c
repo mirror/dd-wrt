@@ -1346,6 +1346,9 @@ static void configure_single( int count )
 #elif defined(HAVE_TRIMAX)
 	sysprintf( "iwconfig %s essid \"%s\"", var,
 		   nvram_default_get( ssid, "trimax_vap" ) );
+#elif defined(HAVE_TMK)
+	sysprintf( "iwconfig %s essid \"%s\"", var,
+		   nvram_default_get( ssid, "KMT_vap" ) );
 #else
 #ifdef HAVE_REGISTER
 	if( !isregistered(  ) )
@@ -1409,6 +1412,9 @@ static void configure_single( int count )
 #elif defined(HAVE_TRIMAX)
     sysprintf( "iwconfig %s essid \"%s\"", dev,
 	       nvram_default_get( ssid, "trimax" ) );
+#elif defined(HAVE_TMK)
+    sysprintf( "iwconfig %s essid \"%s\"", dev,
+	       nvram_default_get( ssid, "KMT" ) );
 #else
 #ifdef HAVE_REGISTER
     if( !isregistered(  ) )
