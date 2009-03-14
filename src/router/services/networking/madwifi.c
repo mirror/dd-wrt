@@ -1450,6 +1450,9 @@ static void configure_single( int count )
 #elif defined(HAVE_TRIMAX)
 	sysprintf( "iwconfig %s essid \"%s\"", dev,
 		   nvram_default_get( ssid, "trimax" ) );
+#elif defined(HAVE_TMK)
+	sysprintf( "iwconfig %s essid \"%s\"", dev,
+		   nvram_default_get( ssid, "KMT" ) );
 #else
 	sysprintf( "iwconfig %s essid \"%s\"", dev,
 		   nvram_default_get( ssid, "dd-wrt" ) );
