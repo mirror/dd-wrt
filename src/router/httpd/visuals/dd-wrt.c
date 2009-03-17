@@ -4193,8 +4193,41 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     websWrite( wp, "//]]>\n</script>\n" );
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );
+#if defined(HAVE_EOC2610)
+    websWrite( wp,
+	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label24)</script></div><select name=\"%s\" >\n",
+	       wl_txantenna );
+    websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.internal + \"</option>\");\n",
+	       nvram_match( wl_txantenna,
+			    "1" ) ? "selected=\\\"selected\\\"" : "" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.external + \"</option>\");\n",
+	       nvram_match( wl_txantenna,
+			    "2" ) ? "selected=\\\"selected\\\"" : "" );
+    websWrite( wp, "//]]>\n</script>\n" );
 
-#if defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
+    websWrite( wp, "</select>\n" );
+    websWrite( wp, "</div>\n" );
+#elif defined(HAVE_EOC1650)
+    websWrite( wp,
+	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label24)</script></div><select name=\"%s\" >\n",
+	       wl_txantenna );
+    websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"2\\\" %s >\" + wl_basic.internal + \"</option>\");\n",
+	       nvram_match( wl_txantenna,
+			    "2" ) ? "selected=\\\"selected\\\"" : "" );
+    websWrite( wp,
+	       "document.write(\"<option value=\\\"1\\\" %s >\" + wl_basic.external + \"</option>\");\n",
+	       nvram_match( wl_txantenna,
+			    "1" ) ? "selected=\\\"selected\\\"" : "" );
+    websWrite( wp, "//]]>\n</script>\n" );
+
+    websWrite( wp, "</select>\n" );
+    websWrite( wp, "</div>\n" );
+#elif defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
 
     websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label24)</script></div><select name=\"%s\" >\n",

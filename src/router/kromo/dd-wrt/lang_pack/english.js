@@ -1850,6 +1850,7 @@ wl_basic.secondary="Secondary";
 wl_basic.vertical="Vertical";
 wl_basic.horizontal="Horizontal";
 wl_basic.adaptive="Adaptive";
+wl_basic.internal="Internal";
 wl_basic.external="External";
 wl_basic.network="Network Configuration";
 wl_basic.unbridged="Unbridged";
