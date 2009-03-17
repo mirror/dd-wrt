@@ -1228,8 +1228,14 @@ static void configure_single( int count )
     }
 #else
 
+#ifdef HAVE_EOC1650
+    int rx = atoi( nvram_default_get( rxantenna, "2" ) ); // secondary antenna output is the internal antenna and should be used as default value
+    int tx = atoi( nvram_default_get( txantenna, "2" ) );
+#else
     int rx = atoi( nvram_default_get( rxantenna, "1" ) );
     int tx = atoi( nvram_default_get( txantenna, "1" ) );
+#endif
+
     int diva = atoi( nvram_default_get( diversity, "0" ) );
 
     setsysctrl( wif, "diversity", diva );
