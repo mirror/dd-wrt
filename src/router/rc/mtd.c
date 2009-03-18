@@ -451,17 +451,20 @@ int mtd_write( const char *path, const char *mtd )
 			 "Writing image to flash, waiting a moment...\n" );
 	    }
 	}
-	erase_info.length = ROUNDUP( count, mtd_info.erasesize );
-	/* 
-	 * Do it 
-	 */
-	( void )ioctl( mtd_fd, MEMUNLOCK, &erase_info );
-	if( ioctl( mtd_fd, MEMERASE, &erase_info ) != 0 ||
-	    write( mtd_fd, buf, count ) != count )
-	{
-	    perror( mtd );
-	    goto fail;
-	}
+	erase_info.length = mtd_info.erasesize;
+	
+	int length = ROUNDUP( count, mtd_info.erasesize );
+	for (i=0;i<(length/mtd_info.erasesize);i++)
+	    {
+    	    fprintf( stderr, "write block [%ld]         \n", i*mtd_info.erasesize );
+	    erase_info.start = i * mtd_info.erasesize;
+	    ( void )ioctl( mtd_fd, MEMUNLOCK, &erase_info );
+	    if( ioctl( mtd_fd, MEMERASE, &erase_info ) != 0 || write( mtd_fd, buf+(i*mtd_info.erasesize), mtd_info.erasesize ) != mtd_info.erasesize )
+		{
+		    perror( mtd );
+		    goto fail;
+		}
+	    }
     }
 	/* 
 	 * Netgear WGR614v8_L: Write len and checksum at the end of mtd1 
