@@ -28,7 +28,7 @@
 #endif
 
 #define WINDOW_ADDR 0xbe000000
-#define WINDOW_SIZE CONFIG_MTD_AR531X_SIZE
+#define WINDOW_SIZE 0x00800000
 
 
 /* These ought to be somewhere common... */
@@ -65,29 +65,33 @@ struct img_info {
 
 static struct mtd_partition ar531x_partitions[] = {
         {
-                name:           "bdata",
-                size:           0x10000,		/* 64KB */
+                name:           "RedBoot",
+                size:           0x30000,		/* 64KB */
                 offset:         0,
         }, {
-                name:           "boot",
-                size:           0x40000,		/* 256KB */
-                offset:         MTDPART_OFS_APPEND,
-        }, {
                 name:           "linux",
-                size:           0x0,	
-                offset:         MTDPART_OFS_APPEND,
+                size:           0x7A0000,	
+                offset:         0x30000,
         }, {
                 name:           "rootfs",
                 size:           0x0,	
                 offset:         MTDPART_OFS_APPEND,
         }, {
+                name:           "ddwrt",
+                size:           0x0,	
+                offset:         MTDPART_OFS_APPEND,
+        }, {
                 name:           "nvram",
                 size:           0x10000,	
-                offset:         0x3e0000,
+                offset:         0x7D0000,
+        }, {
+                name:           "FIS directory",
+                size:           0x10000,	
+                offset:         0x7E0000,
         }, {
                 name:           "board_config",
                 size:           0x10000,		/* 64KB */
-                offset:         0x3f0000,
+                offset:         0x7F0000,
         }
 
 };
@@ -106,7 +110,8 @@ int __init init_ar531x(void)
 	size_t	retlen;
 	int ret;
 	struct img_info *image_info;
-		
+	struct squashfs_super_block *sb;
+	int len;		
 
 	/* This is nasty, but needed as the new AR2312-01 parts only
 	 * have an 8 bit bus to the flash; others have 16
@@ -149,47 +154,31 @@ int __init init_ar531x(void)
 	}
 	if (mymtd) {
 		mymtd->owner = THIS_MODULE;
-		add_mtd_device(mymtd);
+//		add_mtd_device(mymtd);
        		printk(KERN_NOTICE "AR531x Flash device initialized: size 0x%x at 0x%x bankwidth 0x%x\n",
 	    	    mymtd->size, WINDOW_ADDR, ar531x_map.bankwidth);
 
 #ifdef CONFIG_MTD_PARTITIONS
-		mtd_parts_nb = parse_mtd_partitions(mymtd, probes, &mtd_parts,0);
-		if (mtd_parts_nb > 0)
-		{
-			printk(KERN_NOTICE 
-			       "Using command line partition definition\n");
-			add_mtd_partitions (mymtd, mtd_parts, mtd_parts_nb);
-		}
-
-		else {
-		
-/*	Pokus o identifikaci openwrt firmware a jeho rozlozeni  */
-
-		    buf=vmalloc(mymtd->erasesize);
 			if (buf) {
-			    ret=mymtd->read(mymtd,0,mymtd->erasesize, &retlen, buf);
-			    vfree(buf);
-			    if (ret) 
-				goto out;
-			    if (retlen != mymtd->erasesize) 
-				goto out;
-	
-			    if (strstr(buf+0x10,"CA804.SOB") || strstr(buf+0x10,"CE801.SOB") || strstr(buf+0x10,"OVISCA401") || strstr(buf+0x10,"OVISCE401") || strstr(buf+0x10,"RCAAO1") || strstr((char*)(0xbfc00010),"RDAT81.SOB")) {
-				image_info = buf+0x56;
-			    ar531x_partitions[2].size = mymtd->size - 0x70000;	/* Velikost kernelu */
 			    int offset = 0x0;
-			    vfree(buf);
-			    char *buf = 0xbfc00000;
+			    char *buf = (char*)0xbfc00000;
 			    while((offset+mymtd->erasesize)<mymtd->size)
 			    {
 			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
 				    {
 				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
-					ar531x_partitions[3].offset=offset;					
-					ar531x_partitions[3].size = ar531x_partitions[2].size-(offset-0x50000);					
-					ar531x_partitions[5].offset=mymtd->size-mymtd->erasesize; 
-					ar531x_partitions[4].offset=mymtd->size-(mymtd->erasesize*2); 
+					sb = (struct squashfs_super_block *) buf;
+		
+					ar531x_partitions[2].offset=offset;					
+					len = sb->bytes_used;
+					len +=  (mymtd->erasesize - 1);
+					len &= ~(mymtd->erasesize - 1);
+					ar531x_partitions[2].size = len;					
+					ar531x_partitions[3].offset=offset+ar531x_partitions[2].size;					
+					ar531x_partitions[3].size = ar531x_partitions[1].size-(ar531x_partitions[3].offset-0x30000);					
+					ar531x_partitions[6].offset=mymtd->size-mymtd->erasesize; 
+					ar531x_partitions[5].offset=mymtd->size-(mymtd->erasesize*2); 
+					ar531x_partitions[4].offset=mymtd->size-(mymtd->erasesize*3); 
 					break;
 				    } 
 			    offset+=mymtd->erasesize;
@@ -202,9 +191,6 @@ int __init init_ar531x(void)
 				}
 
 	    		    }
-out:	
-			}
-		}
 #endif
 
 		return 0;
