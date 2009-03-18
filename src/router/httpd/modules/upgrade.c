@@ -86,7 +86,9 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
     {
 	write_argv[0] = "write";
 	write_argv[1] = upload_fifo;
-#ifdef HAVE_DIR400
+#ifdef HAVE_EOC5610
+	write_argv[2] = "linux";
+#elif HAVE_DIR400
 	write_argv[2] = "linux";
 #elif HAVE_DIR300
 	write_argv[2] = "linux";
@@ -115,7 +117,11 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
 #endif
 	write_argv[3] = NULL;
     }
-#ifdef HAVE_DIR400
+#ifdef HAVE_EOC5610
+    eval( "fischecksum" );
+    if( url )
+	return eval( "write", url, "linux" );
+#elif HAVE_DIR400
     eval( "fischecksum" );
     if( url )
 	return eval( "write", url, "linux" );
