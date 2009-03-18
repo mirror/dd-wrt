@@ -734,6 +734,9 @@ int internal_getRouterBrand(  )
 #elif HAVE_NS2
     setRouter( "Ubiquiti Nanostation 2" );
     return ROUTER_BOARD_LS2;
+#elif HAVE_EOC5610
+    setRouter( "Senao EOC-5610" );
+    return ROUTER_BOARD_LS2;
 #elif HAVE_NS5
     setRouter( "Ubiquiti Nanostation 5" );
     return ROUTER_BOARD_LS2;

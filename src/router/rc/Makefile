@@ -229,6 +229,9 @@ endif
 ifeq ($(CONFIG_EOC2610),y)
   CFLAGS += -DHAVE_EOC2610
 endif
+ifeq ($(CONFIG_EOC5610),y)
+  CFLAGS += -DHAVE_EOC5610
+endif
 ifeq ($(CONFIG_EOC1650),y)
   CFLAGS += -DHAVE_EOC1650
 endif
