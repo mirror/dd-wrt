@@ -99,6 +99,9 @@ int getbuttonstate(  )
 #if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_EOC1650)
     int ret = get_gpio( 5 );
     return 1-ret;
+#elif defined(HAVE_EOC5610)
+    int ret = get_gpio( 6 );
+    return 1-ret;
 #elif HAVE_WP54G
     int ret = get_gpio( 4 );
     return ret;
