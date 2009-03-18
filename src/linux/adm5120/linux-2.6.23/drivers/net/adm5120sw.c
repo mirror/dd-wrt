@@ -58,7 +58,7 @@
 #define SW_ERR(f, a...)		printk(KERN_ERR "%s: " f, DRV_NAME , ## a)
 #define SW_INFO(f, a...)	printk(KERN_INFO "%s: " f, DRV_NAME , ## a)
 
-#define SWITCH_NUM_PORTS	2
+#define SWITCH_NUM_PORTS	6
 #define ETH_CSUM_LEN		4
 
 #define RX_MAX_PKTLEN	1550
@@ -93,8 +93,12 @@
 /* ------------------------------------------------------------------------ */
 
 struct adm5120_if_priv {
+	struct net_device *dev;
 	unsigned int	vlan_no;
 	unsigned int	port_mask;
+#ifdef CONFIG_ADM5120_SWITCH_NAPI
+	struct napi_struct napi;
+#endif
 };
 
 struct dma_desc {
@@ -495,9 +499,11 @@ static void adm5120_switch_tx(void)
 }
 
 #ifdef CONFIG_ADM5120_SWITCH_NAPI
-static int adm5120_if_poll(struct net_device *dev, int *budget)
+static int adm5120_if_poll(struct napi_struct *napi, int limit)
 {
-	int limit = min(dev->quota, *budget);
+	struct adm5120_if_priv *priv = container_of(napi,
+				struct adm5120_if_priv, napi);
+	struct net_device *dev = priv->dev;
 	int done;
 	u32 status;
 
@@ -509,13 +515,10 @@ static int adm5120_if_poll(struct net_device *dev, int *budget)
 	SW_DBG("%s: processing RX ring\n", dev->name);
 	done = adm5120_switch_rx(limit);
 
-	*budget -= done;
-	dev->quota -= done;
-
 	status = sw_int_status() & SWITCH_INTS_POLL;
 	if ((done < limit) && (!status)) {
 		SW_DBG("disable polling mode for %s\n", dev->name);
-		netif_rx_complete(dev);
+		netif_rx_complete(dev, napi);
 		sw_int_unmask(SWITCH_INTS_POLL);
 		return 0;
 	}
@@ -541,10 +544,11 @@ static irqreturn_t adm5120_switch_irq(int irq, void *dev_id)
 
 	if (status & SWITCH_INTS_POLL) {
 		struct net_device *dev = dev_id;
+		struct adm5120_if_priv *priv = netdev_priv(dev);
 		sw_dump_intr_mask("poll ints", status);
 		SW_DBG("enable polling mode for %s\n", dev->name);
 		sw_int_mask(SWITCH_INTS_POLL);
-		netif_rx_schedule(dev);
+		netif_rx_schedule(dev, &priv->napi);
 	}
 #else
 	sw_int_ack(status);
@@ -777,6 +781,23 @@ static void adm5120_switch_set_vlan_ports(unsigned int vlan, u32 ports)
 	sw_write_reg(reg, t);
 }
 
+#ifdef CONFIG_ADM5120_SWITCH_NAPI
+static inline void adm5120_if_napi_enable(struct net_device *dev)
+{
+	struct adm5120_if_priv *priv = netdev_priv(dev);
+	napi_enable(&priv->napi);
+}
+
+static inline void adm5120_if_napi_disable(struct net_device *dev)
+{
+	struct adm5120_if_priv *priv = netdev_priv(dev);
+	napi_disable(&priv->napi);
+}
+#else
+static inline void adm5120_if_napi_enable(struct net_device *dev) {}
+static inline void adm5120_if_napi_disable(struct net_device *dev) {}
+#endif /* CONFIG_ADM5120_SWITCH_NAPI */
+
 /* ------------------------------------------------------------------------ */
 
 static int adm5120_if_open(struct net_device *dev)
@@ -784,6 +805,8 @@ static int adm5120_if_open(struct net_device *dev)
 	u32 t;
 	int err;
 	int i;
+
+	adm5120_if_napi_enable(dev);
 
 	err = request_irq(dev->irq, adm5120_switch_irq,
 		(IRQF_SHARED | IRQF_DISABLED), dev->name, dev);
@@ -809,6 +832,7 @@ static int adm5120_if_open(struct net_device *dev)
 	return 0;
 
 err:
+	adm5120_if_napi_disable(dev);
 	return err;
 }
 
@@ -818,6 +842,7 @@ static int adm5120_if_stop(struct net_device *dev)
 	int i;
 
 	netif_stop_queue(dev);
+	adm5120_if_napi_disable(dev);
 
 	/* disable port if not assigned to other devices */
 	t = sw_read_reg(SWITCH_REG_PORT_CONF0);
@@ -843,6 +868,7 @@ static int adm5120_if_hard_start_xmit(struct sk_buff *skb,
 	struct adm5120_if_priv *priv = netdev_priv(dev);
 	unsigned int entry;
 	unsigned long data;
+	int i;
 
 	/* lock switch irq */
 	spin_lock_irq(&tx_lock);
@@ -875,8 +901,11 @@ static int adm5120_if_hard_start_xmit(struct sk_buff *skb,
 
 	cur_txl++;
 	if (cur_txl == dirty_txl + TX_QUEUE_LEN) {
-		/* FIXME: stop queue for all devices */
-		netif_stop_queue(dev);
+		for (i = 0; i < SWITCH_NUM_PORTS; i++) {
+			if (!adm5120_devs[i])
+				continue;
+			netif_stop_queue(adm5120_devs[i]);
+		}
 	}
 
 	dev->trans_start = jiffies;
@@ -997,6 +1026,9 @@ static struct net_device *adm5120_if_alloc(void)
 	if (!dev)
 		return NULL;
 
+	priv = netdev_priv(dev);
+	priv->dev = dev;
+
 	dev->irq		= ADM5120_IRQ_SWITCH;
 	dev->open		= adm5120_if_open;
 	dev->hard_start_xmit 	= adm5120_if_hard_start_xmit;
@@ -1007,8 +1039,7 @@ static struct net_device *adm5120_if_alloc(void)
 	dev->watchdog_timeo 	= TX_TIMEOUT;
 	dev->set_mac_address 	= adm5120_if_set_mac_address;
 #ifdef CONFIG_ADM5120_SWITCH_NAPI
-	dev->poll		= adm5120_if_poll;
-	dev->weight		= 64;
+	netif_napi_add(dev, &priv->napi, adm5120_if_poll, 64);
 #endif
 
 	SET_MODULE_OWNER(dev);
@@ -1061,7 +1092,7 @@ static int __init adm5120_switch_probe(struct platform_device *pdev)
 		(SWITCH_PORTS_PHY << PHY_CNTL2_PHYR_SHIFT) |
 		(SWITCH_PORTS_PHY << PHY_CNTL2_AMDIX_SHIFT) |
 		PHY_CNTL2_RMAE;
-	SW_WRITE_REG(PHY_CNTL2, t);
+	sw_write_reg(SWITCH_REG_PHY_CNTL2, t);
 
 	t = sw_read_reg(SWITCH_REG_PHY_CNTL3);
 	t |= PHY_CNTL3_RNT;
