@@ -271,7 +271,8 @@ static RAW_NOTIFIER_HEAD(netdev_chain);
  *	Device drivers call our routines to queue packets here. We empty the
  *	queue in the local softnet handler.
  */
-DEFINE_PER_CPU(struct softnet_data, softnet_data) = { NULL };
+
+DEFINE_PER_CPU(struct softnet_data, softnet_data);
 
 #ifdef CONFIG_SYSFS
 extern int netdev_sysfs_init(void);
@@ -1069,16 +1070,12 @@ int dev_close(struct net_device *dev)
 	clear_bit(__LINK_STATE_START, &dev->state);
 
 	/* Synchronize to scheduled poll. We cannot touch poll list,
-	 * it can be even on different cpu. So just clear netif_running(),
-	 * and wait when poll really will happen. Actually, the best place
-	 * for this is inside dev->stop() after device stopped its irq
-	 * engine, but this requires more changes in devices. */
-
+	 * it can be even on different cpu. So just clear netif_running().
+	 *
+	 * dev->stop() will invoke napi_disable() on all of it's
+	 * napi_struct instances on this device.
+	 */
 	smp_mb__after_clear_bit(); /* Commit netif_running(). */
-	while (test_bit(__LINK_STATE_RX_SCHED, &dev->state)) {
-		/* No hurry. */
-		msleep(1);
-	}
 
 	/*
 	 *	Call the device specific close. This cannot fail.
@@ -1284,21 +1281,21 @@ void __netif_schedule(struct net_device *dev)
 }
 EXPORT_SYMBOL(__netif_schedule);
 
-void __netif_rx_schedule(struct net_device *dev)
+void dev_kfree_skb_irq(struct sk_buff *skb)
 {
-	unsigned long flags;
+	if (atomic_dec_and_test(&skb->users)) {
+		struct softnet_data *sd;
+		unsigned long flags;
 
-	local_irq_save(flags);
-	dev_hold(dev);
-	list_add_tail(&dev->poll_list, &__get_cpu_var(softnet_data).poll_list);
-	if (dev->quota < 0)
-		dev->quota += dev->weight;
-	else
-		dev->quota = dev->weight;
-	__raise_softirq_irqoff(NET_RX_SOFTIRQ);
-	local_irq_restore(flags);
+		local_irq_save(flags);
+		sd = &__get_cpu_var(softnet_data);
+		skb->next = sd->completion_queue;
+		sd->completion_queue = skb;
+		raise_softirq_irqoff(NET_TX_SOFTIRQ);
+		local_irq_restore(flags);
+	}
 }
-EXPORT_SYMBOL(__netif_rx_schedule);
+EXPORT_SYMBOL(dev_kfree_skb_irq);
 
 void dev_kfree_skb_any(struct sk_buff *skb)
 {
@@ -1310,7 +1307,12 @@ void dev_kfree_skb_any(struct sk_buff *skb)
 EXPORT_SYMBOL(dev_kfree_skb_any);
 
 
-/* Hot-plugging. */
+/**
+ * netif_device_detach - mark device as removed
+ * @dev: network device
+ *
+ * Mark device as removed from system and therefore no longer available.
+ */
 void netif_device_detach(struct net_device *dev)
 {
 	if (test_and_clear_bit(__LINK_STATE_PRESENT, &dev->state) &&
@@ -1320,6 +1322,12 @@ void netif_device_detach(struct net_device *dev)
 }
 EXPORT_SYMBOL(netif_device_detach);
 
+/**
+ * netif_device_attach - mark device as attached
+ * @dev: network device
+ *
+ * Mark device as attached from system and restart if needed.
+ */
 void netif_device_attach(struct net_device *dev)
 {
 	if (!test_and_set_bit(__LINK_STATE_PRESENT, &dev->state) &&
@@ -1802,7 +1810,7 @@ enqueue:
 			return NET_RX_SUCCESS;
 		}
 
-		netif_rx_schedule(&queue->backlog_dev);
+		napi_schedule(&queue->backlog);
 		goto enqueue;
 	}
 
@@ -1842,6 +1850,7 @@ static inline struct net_device *skb_bond(struct sk_buff *skb)
 
 	return dev;
 }
+
 
 static void net_tx_action(struct softirq_action *h)
 {
@@ -2005,7 +2014,7 @@ int netif_receive_skb(struct sk_buff *skb)
 #endif /* CONFIG_RING */
 
 	/* if we've gotten here through NAPI, check netpoll */
-	if (skb->dev->poll && netpoll_rx(skb))
+	if (netpoll_receive_skb(skb))
 		return NET_RX_DROP;
 
 	if (!skb->tstamp.tv64)
@@ -2095,22 +2104,25 @@ out:
 	return ret;
 }
 
-static int process_backlog(struct net_device *backlog_dev, int *budget)
+static int process_backlog(struct napi_struct *napi, int quota)
 {
 	int work = 0;
-	int quota = min(backlog_dev->quota, *budget);
 	struct softnet_data *queue = &__get_cpu_var(softnet_data);
 	unsigned long start_time = jiffies;
 
-	backlog_dev->weight = weight_p;
-	for (;;) {
+	napi->weight = weight_p;
+	do {
 		struct sk_buff *skb;
 		struct net_device *dev;
 
 		local_irq_disable();
 		skb = __skb_dequeue(&queue->input_pkt_queue);
-		if (!skb)
-			goto job_done;
+		if (!skb) {
+			__napi_complete(napi);
+			local_irq_enable();
+			break;
+		}
+
 		local_irq_enable();
 
 		dev = skb->dev;
@@ -2118,66 +2130,143 @@ static int process_backlog(struct net_device *backlog_dev, int *budget)
 		netif_receive_skb(skb);
 
 		dev_put(dev);
+	} while (++work < quota && jiffies == start_time);
 
-		work++;
-
-		if (work >= quota || jiffies - start_time > 1)
-			break;
-
-	}
-
-	backlog_dev->quota -= work;
-	*budget -= work;
-	return -1;
-
-job_done:
-	backlog_dev->quota -= work;
-	*budget -= work;
-
-	list_del(&backlog_dev->poll_list);
-	smp_mb__before_clear_bit();
-	netif_poll_enable(backlog_dev);
-
-	local_irq_enable();
-	return 0;
+	return work;
 }
+
+/**
+ * __napi_schedule - schedule for receive
+ * @napi: entry to schedule
+ *
+ * The entry's receive function will be scheduled to run
+ */
+void fastcall __napi_schedule(struct napi_struct *n)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+	list_add_tail(&n->poll_list, &__get_cpu_var(softnet_data).poll_list);
+	__raise_softirq_irqoff(NET_RX_SOFTIRQ);
+	local_irq_restore(flags);
+}
+EXPORT_SYMBOL(__napi_schedule);
+
+
+/**
+ *	napi_complete - NAPI processing complete
+ *	@n: napi context
+ *
+ * Mark NAPI processing as complete.
+ */
+void __napi_complete(struct napi_struct *n)
+{
+	BUG_ON(!test_bit(NAPI_STATE_SCHED, &n->state));
+	list_del(&n->poll_list);
+	smp_mb__before_clear_bit();
+	clear_bit(NAPI_STATE_SCHED, &n->state);
+}
+EXPORT_SYMBOL(__napi_complete);
+
+void napi_complete(struct napi_struct *n)
+{
+	unsigned long flags;
+
+	/*
+	 * don't let napi dequeue from the cpu poll list
+	 * just in case its running on a different cpu
+	 */
+	if (unlikely(test_bit(NAPI_STATE_NPSVC, &n->state)))
+		return;
+	local_irq_save(flags);
+	__napi_complete(n);
+	local_irq_restore(flags);
+}
+EXPORT_SYMBOL(napi_complete);
+
+
+void netif_napi_add(struct net_device *dev,
+				  struct napi_struct *napi,
+				  int (*poll)(struct napi_struct *, int),
+				  int weight)
+{
+	INIT_LIST_HEAD(&napi->poll_list);
+	napi->poll = poll;
+	napi->weight = weight;
+#ifdef CONFIG_NETPOLL
+	napi->dev = dev;
+	list_add(&napi->dev_list, &dev->napi_list);
+	spin_lock_init(&napi->poll_lock);
+	napi->poll_owner = -1;
+#endif
+	set_bit(NAPI_STATE_SCHED, &napi->state);
+}
+EXPORT_SYMBOL(netif_napi_add);
+
+
 
 static void net_rx_action(struct softirq_action *h)
 {
-	struct softnet_data *queue = &__get_cpu_var(softnet_data);
-	unsigned long start_time = jiffies;
-	int budget = netdev_budget;
-	void *have;
-
-	local_irq_disable();
-
-	while (!list_empty(&queue->poll_list)) {
-		struct net_device *dev;
-
-		if (budget <= 0 || jiffies - start_time > 1)
-			goto softnet_break;
-
-		local_irq_enable();
-
-		dev = list_entry(queue->poll_list.next,
-				 struct net_device, poll_list);
-		have = netpoll_poll_lock(dev);
-
-		if (dev->quota <= 0 || dev->poll(dev, &budget)) {
-			netpoll_poll_unlock(have);
-			local_irq_disable();
-			list_move_tail(&dev->poll_list, &queue->poll_list);
-			if (dev->quota < 0)
-				dev->quota += dev->weight;
+ 	struct list_head *list = &__get_cpu_var(softnet_data).poll_list;
+  	unsigned long start_time = jiffies;
+  	int budget = netdev_budget;
+  	void *have;
+  
+  	local_irq_disable();
+  
+ 	while (!list_empty(list)) {
+ 		struct napi_struct *n;
+ 		int work, weight;
+  
+ 		/* If softirq window is exhuasted then punt.
+ 		 *
+ 		 * Note that this is a slight policy change from the
+ 		 * previous NAPI code, which would allow up to 2
+ 		 * jiffies to pass before breaking out.  The test
+ 		 * used to be "jiffies - start_time > 1".
+ 		 */
+ 		if (unlikely(budget <= 0 || jiffies != start_time))
+  			goto softnet_break;
+  
+  		local_irq_enable();
+  
+ 		/* Even though interrupts have been re-enabled, this
+ 		 * access is safe because interrupts can only add new
+ 		 * entries to the tail of this list, and only ->poll()
+ 		 * calls can remove this head entry from the list.
+ 		 */
+ 		n = list_entry(list->next, struct napi_struct, poll_list);
+  
+ 		have = netpoll_poll_lock(n);
+ 
+ 		weight = n->weight;
+ 
+		work = 0;
+		if (test_bit(NAPI_STATE_SCHED, &n->state))
+			work = n->poll(n, weight);
+ 
+ 		WARN_ON_ONCE(work > weight);
+ 
+ 		budget -= work;
+ 
+ 		local_irq_disable();
+ 
+ 		/* Drivers must not modify the NAPI state if they
+ 		 * consume the entire weight.  In such cases this code
+ 		 * still "owns" the NAPI instance and therefore can
+ 		 * move the instance around on the list at-will.
+ 		 */
+		if (unlikely(work == weight)) {
+			if (unlikely(napi_disable_pending(n)))
+				__napi_complete(n);
 			else
-				dev->quota = dev->weight;
-		} else {
-			netpoll_poll_unlock(have);
-			dev_put(dev);
-			local_irq_disable();
+				list_move_tail(&n->poll_list, list);
 		}
+ 
+ 		netpoll_poll_unlock(have);
 	}
 out:
+
 	local_irq_enable();
 #ifdef CONFIG_NET_DMA
 	/*
@@ -2193,6 +2282,7 @@ out:
 		}
 	}
 #endif
+
 	return;
 
 softnet_break:
@@ -3784,6 +3874,7 @@ struct net_device *alloc_netdev_mq(int sizeof_priv, const char *name,
 	dev->egress_subqueue_count = queue_count;
 
 	dev->get_stats = internal_stats;
+	netpoll_netdev_init(dev);
 	setup(dev);
 	strcpy(dev->name, name);
 	return dev;
@@ -4156,10 +4247,9 @@ static int __init net_dev_init(void)
 		skb_queue_head_init(&queue->input_pkt_queue);
 		queue->completion_queue = NULL;
 		INIT_LIST_HEAD(&queue->poll_list);
-		set_bit(__LINK_STATE_START, &queue->backlog_dev.state);
-		queue->backlog_dev.weight = weight_p;
-		queue->backlog_dev.poll = process_backlog;
-		atomic_set(&queue->backlog_dev.refcnt, 1);
+
+		queue->backlog.poll = process_backlog;
+		queue->backlog.weight = weight_p;
 	}
 
 	netdev_dma_register();
