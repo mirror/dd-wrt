@@ -472,7 +472,7 @@ ifneq ($(CONFIG_WOL),y)
 	rm -f $(INSTALLDIR)/www/Wol.asp
 	rm -f $(INSTALLDIR)/www/help/HWol.asp
 endif
-ifneq ($(CONFIG_PPTP),y)
+ifneq ($(CONFIG_PPTPD),y)
 	rm -f $(INSTALLDIR)/www/PPTP.asp
 	rm -f $(INSTALLDIR)/www/help/HPPTP.asp
 endif
