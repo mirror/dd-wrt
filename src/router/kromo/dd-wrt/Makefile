@@ -472,6 +472,13 @@ ifneq ($(CONFIG_WOL),y)
 	rm -f $(INSTALLDIR)/www/Wol.asp
 	rm -f $(INSTALLDIR)/www/help/HWol.asp
 endif
+ifneq ($(CONFIG_PPTP),y)
+	rm -f $(INSTALLDIR)/www/PPTP.asp
+	rm -f $(INSTALLDIR)/www/help/HPPTP.asp
+endif
+ifneq ($(CONFIG_L2TP),y)
+	rm -f $(INSTALLDIR)/www/index_l2tp.asp
+endif
 
 ifneq ($(CONFIG_NOCAT),y)
 	rm -f $(INSTALLDIR)/www/splash.html
