@@ -179,7 +179,6 @@ int __init init_ar531x(void)
 				image_info = buf+0x56;
 			    ar531x_partitions[2].size = mymtd->size - 0x70000;	/* Velikost kernelu */
 			    int offset = 0x0;
-			    vfree(buf);
 			    char *buf = 0xbfc00000;
 			    while((offset+mymtd->erasesize)<mymtd->size)
 			    {
@@ -202,7 +201,7 @@ int __init init_ar531x(void)
 				}
 
 	    		    }
-out:	
+out:;	
 			}
 		}
 #endif
