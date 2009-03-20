@@ -36,7 +36,7 @@ char _default_code[] =
     send \"AT+CPIN?^m\"\n\
     waitfor 30 \"SIM PUK\",\"SIM PIN\",\"READY\",\"ERROR\",\"ERR\"\n\
     if % = -1 goto error\n\
-    if % = 0 goto ready\n\
+    if % = 0 goto pukerror\n\
     if % = 1 goto getpin\n\
     if % = 2 goto ready\n\
     if % = 3 goto error\n\
@@ -45,6 +45,48 @@ char _default_code[] =
     print $s,\" ***SIM ERROR***\n\"\n\
     print \"Check device port configuration.\nCheck SIM is inserted\nTest SIM in a mobile phone?\n\"\n\
     exit 1\n\
+  :pukerror\n\
+    print $s,\"SIM PUK\n\"\n\
+    goto setpuk\n\
+    exit 2\n\
+  :setpuk\n\
+    print \"\nEnter PUK number: \"\n\
+    input $x\n\
+    let a=len($x)\n\
+    if a=0 goto setpuk\n\
+    if a>0 goto getnewpin\n\
+  :nopuk\n\
+    print \"Please set COMGTPUK\\n\"\n\
+    exit 2\n\
+  :getnewpin\n\
+    #handle case where original Vodafone 3G generates wrong response\n\
+    waitfor 1 \"2\"\n\
+    if % = 0 goto ready\n\
+    print \"\nEnter NEW PIN number: \"\n\
+    input $y\n\
+    let a=len($y)\n\
+    if a<>5 goto getnewpin\n\
+    goto enterpuk\n\
+    let c=0\n\
+  :enterpuk\n\
+    print \"\\nSetting PUK \"\n\
+    print $x\n\
+    print \"\\n\"\n\
+    print \"\\nSetting NEWPIN \"\n\
+    print $y\n\
+    print \"\\n\"\n\
+    send \"AT+CPIN=\"\n\
+    send \"\\\"\"\n\
+    send $x\n\
+    send \"\\\",\\\"\"\n\
+    send $y\n\
+    send \"\\\"\"\n\
+    send \"^m\"\n\
+    exit 0\n\
+    send $x\n\
+    send \"^m\"\n\
+    print \"\\nPlease check with comgt PIN\\n\"\n\
+    exit 0\n\
   :getpin\n\
     #handle case where original Vodafone 3G generates wrong response\n\
     waitfor 1 \"2\"\n\
@@ -65,6 +107,9 @@ char _default_code[] =
     if a>9999 goto getpin\n\
     let $c=$left($x,4)\n\
   :enterpin\n\
+    print \"Entering PIN code: \"\n\
+    print $c\n\
+    print \"\n\"\n\
     send \"AT+CPIN=\\\"\"\n\
     send $c\n\
     send \"\\\"^m\"\n\
@@ -410,7 +455,7 @@ char _SETPIN_code[]=
     send \"AT+CPIN?^m\"\n\
     waitfor 30 \"SIM PUK\",\"SIM PIN\",\"READY\",\"ERROR\",\"ERR\"\n\
     if % = -1 goto error\n\
-    if % = 0 goto ready\n\
+    if % = 0 goto pukerror\n\
     if % = 1 goto getpin\n\
     if % = 2 goto ready\n\
     if % = 3 goto error\n\
@@ -419,6 +464,44 @@ char _SETPIN_code[]=
     print $s,\" ***SIM ERROR***\n\"\n\
     print \"Check device port configuration.\nCheck SIM is inserted\nTest SIM in a mobile phone?\n\"\n\
     exit 1\n\
+  :pukerror\n\
+    print $s,\"SIM PUK\\n\"\n\
+    goto setpuk\n\
+  :setpuk\n\
+    let $x=$env(\"COMGTPUK\")\n\
+    let a=len($x)\n\
+    if a=0 goto nopuk\n\
+    if a>0 goto checknewpin\n\
+  :nopuk\n\
+    print \"Please set COMGTPUK\\n\"\n\
+    exit 2\n\
+  :checknewpin\n\
+    let $y=$env(\"COMGTPIN\")\n\
+    let a=len($y)\n\
+    if a=0 goto nonewpin\n\
+    if a>0 goto enterpuk\n\
+  :nonewpin\n\
+    print \"Please set new PIN ENV COMGTPIN\\n\"\n\
+    exit 1\n\
+  :enterpuk\n\
+    print \"\\nSetting PUK \"\n\
+    print $x\n\
+    print \"\\n\"\n\
+    print \"\\nSetting NEWPIN \"\n\
+    print $y\n\
+    print \"\\n\"\n\
+    send \"AT+CPIN=\"\n\
+    send \"\\\"\"\n\
+    send $x\n\
+    send \"\\\",\\\"\"\n\
+    send $y\n\
+    send \"\\\"\"\n\
+    send \"^m\"\n\
+    exit 0\n\
+    send $x\n\
+    send \"^m\"\n\
+    print \"\\nPlease check with comgt PIN\\n\"\n\
+    exit 0\n\
   :getpin\n\
     #handle case where original Vodafone 3G generates wrong response\n\
     let $x=$env(\"COMGTPIN\")\n\
@@ -525,6 +608,50 @@ char _help_code[]  =\
     print \"to actual device or use -d switch). Unless you use the '-s' switch comgt will\n\"\n\
     print \"run the internal 'default' script first before running an external script file.\n\"\n" ;
 
+char _DIAL_code[]  =
+  "opengt\n\
+  set senddelay 0.05\n\
+  waitquiet 1 0.2\n\
+  let $x=$env(\"COMGTINIT\")\n\
+  let a=len($x)\n\
+  if a=0 goto dial\n\
+  if a>0 goto init\n\
+ :init\n\
+  print \"\nInit modem with: \"\n\
+  print $x\n\
+  print \"\n\"\n\
+  send $x\n\
+  send \"^m\"\n\
+  goto checkdial\n\
+  :checkdial\n\
+  let $x=$env(\"COMGTDIAL\")\n\
+  let a=len($x)\n\
+  if a=0 goto dial\n\
+  if a>0 goto dial_str\n\
+ :dial_str\n\
+  print \"\nDialling with custom string:\"\n\
+  print $x\n\
+  print \"\n\"\n\
+  send $x\n\
+  send \"^m\"\n\
+  waitfor 15 \"OK\", \"CONNECT\"\n\
+  if % = -1 goto finito_error\n\
+  if % = 0 goto finito\n\
+  if % = 1 goto finito\n\
+ :dial\n\
+  print \"\nDialling with normal string\"\n\
+  send \"ATD*99***1#^m\"\n\
+  waitfor 15 \"OK\", \"CONNECT\"\n\
+  if % = -1 goto finito_error\n\
+  if % = 0 goto finito\n\
+  if % = 1 goto finito\n\
+ :finito\n\
+  print \"\nFINITO\n\"\n\
+  exit 0\n\
+ :finito_error\n\
+  print \"\nNo Connect\n\"\n\
+  exit 1\n";
+
 
 
 
@@ -543,6 +670,7 @@ char *get_code(char* name){
   if (strcmp(name,"3G2G")==0) return (_3G2G_mode_code);
   if (strcmp(name,"PIN")==0) return (_SETPIN_code);
   if (strcmp(name,"APN")==0) return (_SETAPN_code);
+  if (strcmp(name,"DIAL")==0) return (_DIAL_code);
   return(NULL);
 }
 
