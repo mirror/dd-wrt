@@ -169,16 +169,22 @@ int __init init_ar531x(void)
 		    buf=vmalloc(mymtd->erasesize);
 			if (buf) {
 			    ret=mymtd->read(mymtd,0,mymtd->erasesize, &retlen, buf);
-			    vfree(buf);
 			    if (ret) 
+				{
+				vfree(buf);
 				goto out;
+				}
 			    if (retlen != mymtd->erasesize) 
+				{
+				vfree(buf);
 				goto out;
+				}
 	
 			    if (strstr(buf+0x10,"CA804.SOB") || strstr(buf+0x10,"CE801.SOB") || strstr(buf+0x10,"OVISCA401") || strstr(buf+0x10,"OVISCE401") || strstr(buf+0x10,"RCAAO1") || strstr((char*)(0xbfc00010),"RDAT81.SOB")) {
 				image_info = buf+0x56;
 			    ar531x_partitions[2].size = mymtd->size - 0x70000;	/* Velikost kernelu */
 			    int offset = 0x0;
+			    vfree(buf);
 			    char *buf = 0xbfc00000;
 			    while((offset+mymtd->erasesize)<mymtd->size)
 			    {
