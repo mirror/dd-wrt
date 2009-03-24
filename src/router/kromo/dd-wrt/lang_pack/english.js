@@ -7,6 +7,8 @@ var lang_charset = new Object();
 lang_charset.set="iso-8859-1";
 
 var share = new Object();
+share.apn="APN";
+share.pin="PIN";
 share.firmware="Firmware";
 share.time="Time";
 share.interipaddr="WAN IP Address";
