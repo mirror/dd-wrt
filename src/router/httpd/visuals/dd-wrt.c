@@ -234,6 +234,12 @@ void ej_show_connectiontype( webs_t wp, int argc, char_t ** argv )
 	       nvram_selmatch( wp, "wan_proto",
 			       "heartbeat" ) ? "selected=\"selected\"" : "" );
 #endif
+#ifdef HAVE_3G
+    websWrite( wp,
+	       "<option value=\"3g\" %s >3G/UMTS</option>\n",
+	       nvram_selmatch( wp, "wan_proto",
+			       "3g" ) ? "selected=\"selected\"" : "" );
+#endif
 
     return;
 }

@@ -106,6 +106,9 @@ endif
 ifeq ($(CONFIG_WPA_SUPPLICANT2),y)
 CFLAGS += -DHAVE_WPA_SUPPLICANT
 endif
+ifeq ($(CONFIG_NOTRIAL),y)
+CFLAGS += -DHAVE_NOTRIAL
+endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
 endif
