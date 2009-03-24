@@ -17,14 +17,26 @@ void ej_show_index_setting( webs_t wp, int argc, char_t ** argv )
 	type=nvram_safe_get("wan_proto");
     if( !strcmp( type, "static" ) )
 	do_ej(NULL, "index_static.asp", wp, NULL );
+#ifdef HAVE_PPPOE
     else if( !strcmp( type, "pppoe" ) )
 	do_ej(NULL, "index_pppoe.asp", wp, NULL );
+#endif
+#ifdef HAVE_PPTP
     else if( !strcmp( type, "pptp" ) )
 	do_ej(NULL, "index_pptp.asp", wp, NULL );
+#endif
+#ifdef HAVE_L2TP
     else if( !strcmp( type, "l2tp" ) )
 	do_ej(NULL, "index_l2tp.asp", wp, NULL );
+#endif
+#ifdef HAVE_HEARTBEAT
     else if( !strcmp( type, "heartbeat" ) )
 	do_ej(NULL, "index_heartbeat.asp", wp, NULL );
+#endif
+#ifdef HAVE_3G
+    else if( !strcmp( type, "3g" ) )
+	do_ej(NULL, "index_3g.asp", wp, NULL );
+#endif
 }
 
 void ej_get_wl_max_channel( webs_t wp, int argc, char_t ** argv )
