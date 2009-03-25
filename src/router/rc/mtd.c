@@ -324,21 +324,7 @@ int mtd_write( const char *path, const char *mtd )
 	 */
 	// if(check_action() == ACT_WEBS_UPGRADE || check_action() ==
 	// ACT_WEB_UPGRADE)
-#if defined(HAVE_EOC2610) || defined(HAVE_EAP3660) || defined(HAVE_ECB3500) || defined(HAVE_LSX) || defined(HAVE_EOC1650)
-	erase_info.length = mtd_info.erasesize; 
-#else
 	erase_info.length = ROUNDUP( trx.len, mtd_info.erasesize );
-#endif
-#ifdef HAVE_MAKSAT
-    if( nvram_match( "DD_BOARD2", "ADI Engineering Pronghorn Metro" ) )
-#else
-    if( nvram_match( "DD_BOARD", "ADI Engineering Pronghorn Metro" ) )
-#endif
-    {
-	erase_info.length = mtd_info.erasesize;     
-    }
-	// else
-	// erase_info.length = mtd_info.erasesize; 
     }
     else
     {
@@ -454,10 +440,11 @@ int mtd_write( const char *path, const char *mtd )
 	erase_info.length = mtd_info.erasesize;
 	
 	int length = ROUNDUP( count, mtd_info.erasesize );
+	int base = erase_info.start;
 	for (i=0;i<(length/mtd_info.erasesize);i++)
 	    {
-    	    fprintf( stderr, "write block [%ld]         \n", i*mtd_info.erasesize );
-	    erase_info.start = i * mtd_info.erasesize;
+    	    fprintf( stderr, "write block [%ld] at [0x%08X]        \n", i*mtd_info.erasesize,base + (i * mtd_info.erasesize) );
+	    erase_info.start = base + (i * mtd_info.erasesize);
 	    ( void )ioctl( mtd_fd, MEMUNLOCK, &erase_info );
 	    if( ioctl( mtd_fd, MEMERASE, &erase_info ) != 0 || write( mtd_fd, buf+(i*mtd_info.erasesize), mtd_info.erasesize ) != mtd_info.erasesize )
 		{
