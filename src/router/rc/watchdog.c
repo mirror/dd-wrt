@@ -26,16 +26,22 @@ static void watchdog( void )
 	fsync( fd );
 
 #ifdef HAVE_REGISTER
+    if (!nvram_match("flash_active","1"))
+    {
 	if (registered==-1)
 	    registered = isregistered_real();
 	if (!registered)
 	    isregistered(); //to poll
+    }
 #endif
 	/* 
 	 * software wlan led control 
 	 */
 #ifdef HAVE_MADWIFI
+    if (!nvram_match("flash_active","1"))
+    {
 	radiostate = get_radiostate( "ath0" );
+    }
 #else
 	wl_ioctl( get_wdev(  ), WLC_GET_RADIO, &radiostate, sizeof( int ) );
 #endif

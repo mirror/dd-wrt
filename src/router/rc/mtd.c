@@ -362,6 +362,7 @@ int mtd_write( const char *path, const char *mtd )
 #ifndef WGR614_FAKE
     calculate_checksum (0, NULL, 0); // init
 #endif
+    nvram_set("flash_active","1");
     /* 
      * Write file or URL to MTD device 
      */
@@ -596,6 +597,7 @@ int mtd_write( const char *path, const char *mtd )
     ret = 0;
 
   fail:
+    nvram_set("flash_active","0");
     if( buf )
     {
 	/* 
