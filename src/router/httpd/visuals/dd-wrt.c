@@ -4234,7 +4234,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     websWrite( wp, "</select>\n" );
     websWrite( wp, "</div>\n" );
 #elif defined(HAVE_EOC1650)
-    websWrite( wp,
+/*    websWrite( wp,
 	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label25)</script></div><select name=\"%s\" >\n",
 	       wl_txantenna );
     websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
@@ -4249,7 +4249,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
     websWrite( wp, "//]]>\n</script>\n" );
 
     websWrite( wp, "</select>\n" );
-    websWrite( wp, "</div>\n" );
+    websWrite( wp, "</div>\n" );*/
 #elif defined(HAVE_NS2) || defined(HAVE_NS5) || defined(HAVE_LC2) || defined(HAVE_LC5) || defined(HAVE_NS3)
 
     websWrite( wp,
