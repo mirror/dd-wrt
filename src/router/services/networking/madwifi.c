@@ -1232,8 +1232,10 @@ static void configure_single( int count )
     int rx = atoi( nvram_default_get( txantenna, "1" ) ); 
     int tx = atoi( nvram_default_get( txantenna, "1" ) );
 #elif HAVE_EOC1650
-    int rx = atoi( nvram_default_get( txantenna, "2" ) ); // secondary antenna output is the internal antenna and should be used as default value
-    int tx = atoi( nvram_default_get( txantenna, "2" ) );
+//    int rx = atoi( nvram_default_get( txantenna, "2" ) ); // secondary antenna output is the internal antenna and should be used as default value
+//    int tx = atoi( nvram_default_get( txantenna, "2" ) );
+    int rx = 2;
+    int tx = 2; // fix to internal path, since both antennas use the same connector. so only the switch matters
 #else
     int rx = atoi( nvram_default_get( rxantenna, "1" ) );
     int tx = atoi( nvram_default_get( txantenna, "1" ) );
