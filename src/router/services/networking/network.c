@@ -1315,8 +1315,16 @@ void start_lan( void )
 #endif
 	}
     }
+#ifdef HAVE_WG302
+    strncpy( ifr.ifr_name, "ixp0", IFNAMSIZ );
+#else
     strncpy( ifr.ifr_name, "ixp1", IFNAMSIZ );
-    ioctl( s, SIOCGIFHWADDR, &ifr );
+#endif
+    if (ioctl( s, SIOCGIFHWADDR, &ifr )!=0)
+	{
+	strncpy( ifr.ifr_name, "ixp0", IFNAMSIZ );
+	ioctl( s, SIOCGIFHWADDR, &ifr );
+	}
     nvram_set( "et0macaddr", ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
     /*
      * strncpy (ifr.ifr_name, "ixp1", IFNAMSIZ); ioctl (s, SIOCGIFHWADDR,
