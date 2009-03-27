@@ -213,6 +213,7 @@ int mtd_write( const char *path, const char *mtd )
 	fclose (fp);
 	}
     nvram_set("flash_active","1");
+    sleep(1);
     
     
     /* 
