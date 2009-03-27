@@ -72,7 +72,7 @@ int ipup_main( int argc, char **argv )
      * interface-name tty-device speed local-IP-address remote-IP-address
      * ipparam 
      */
-    nvram_set( "wan_iface", wan_ifname );
+
     /*
      * Touch connection file 
      */
