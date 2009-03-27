@@ -1229,15 +1229,15 @@ static void configure_single( int count )
 #else
 
 #if defined(HAVE_EOC2610) || defined(HAVE_EOC5610)
-    int rx = 1; //atoi( nvram_default_get( txantenna, "1" ) ); 
-    int tx = 0; //atoi( nvram_default_get( txantenna, "1" ) );
-    int diva = 1; //atoi( nvram_default_get( diversity, "0" ) );
+    int rx = atoi( nvram_default_get( txantenna, "1" ) ); 
+    int tx = atoi( nvram_default_get( txantenna, "1" ) );
+    int diva = 0; //atoi( nvram_default_get( diversity, "0" ) );
 #elif HAVE_EOC1650
-//    int rx = atoi( nvram_default_get( txantenna, "2" ) ); // secondary antenna output is the internal antenna and should be used as default value
-//    int tx = atoi( nvram_default_get( txantenna, "2" ) );
-    int rx = 1;
-    int tx = 0; // fix to internal path, since both antennas use the same connector. so only the switch matters
-    int diva = 1;// atoi( nvram_default_get( diversity, "0" ) );
+    int rx = atoi( nvram_default_get( txantenna, "2" ) ); // secondary antenna output is the internal antenna and should be used as default value
+    int tx = atoi( nvram_default_get( txantenna, "2" ) );
+//    int rx = 1;
+//    int tx = 0; // fix to internal path, since both antennas use the same connector. so only the switch matters
+    int diva = 0;//1;// atoi( nvram_default_get( diversity, "0" ) );
 #else
     int rx = atoi( nvram_default_get( rxantenna, "1" ) );
     int tx = atoi( nvram_default_get( txantenna, "1" ) );
