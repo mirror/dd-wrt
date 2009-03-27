@@ -3618,9 +3618,7 @@ void start_wan_done( char *wan_ifname )
     fclose( up );
 
     cprintf( "done\n" );
-    char *wani = nvram_safe_get( "wan_iface" );
 
-    if( strlen( wani ) == 0 )
 	nvram_set( "wan_iface", nvram_safe_get( "wan_ifname" ) );
 
 #ifdef HAVE_OPENVPN
