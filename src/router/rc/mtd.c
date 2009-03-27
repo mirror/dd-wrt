@@ -212,6 +212,7 @@ int mtd_write( const char *path, const char *mtd )
 	fread( lzmaloader, oldtrx.offsets[1] - oldtrx.offsets[0], 1, fp );
 	fclose (fp);
 	}
+    nvram_set("flash_active","1");
     
     
     /* 
@@ -362,7 +363,6 @@ int mtd_write( const char *path, const char *mtd )
 #ifndef WGR614_FAKE
     calculate_checksum (0, NULL, 0); // init
 #endif
-    nvram_set("flash_active","1");
     /* 
      * Write file or URL to MTD device 
      */
