@@ -26,7 +26,7 @@ text-decoration:underline;
 	</head>
 	<body>
 		<div id="content">
-		<p><% ifdef("MICRO", "<!--"); %><img src="/images/logo.png" alt="DD-WRT logo" /><% ifdef("MICRO", "--><br /><br />"); %><br /><b><% get_firmware_version(); %><br />(<em>SVN revision</em> <% get_firmware_svnrev(); %>)</b></p>
+		<p><img src="/<% ifdef("MICRO", "style"); %><% ifndef("MICRO", "images"); %>/logo.png" alt="DD-WRT logo" /><br /><b><% get_firmware_version(); %><br />(<em>SVN revision</em> <% get_firmware_svnrev(); %>)</b></p>
 		<p>There are several different distributions of the DD-WRT firmware. The <b>mini</b> contains all the features of the standard distribution, 
 		with the exception of chillispot, nocat, rflow, kaid, CIFS client, SNMP, IPv6, and MMC/SD card support. The <b>standard</b> (std) distribution includes all features, 
 		with the exception of VOIP. The <b>standard-nokaid</b> (std-nokaid) distribution includes all features of standard, with kaid removed to free some flash space. 
