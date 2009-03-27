@@ -138,6 +138,13 @@ void start_sysinit( void )
 	insmod( "ath_ahb" );
     }
     // eval ("ifconfig", "wifi0", "up");
+    if( getRouterBrand(  ) == ROUTER_BOARD_RDAT81 )
+    {
+	system2( "echo 7 >/proc/sys/dev/wifi0/ledpin" );
+	system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
+	system2( "echo 5 >/proc/sys/dev/wifi1/ledpin" );
+	system2( "echo 1 >/proc/sys/dev/wifi1/softled" );
+    }
     if( getRouterBrand(  ) == ROUTER_BOARD_RCAA01 )
     {
 	insmod( "mvswitch" );
