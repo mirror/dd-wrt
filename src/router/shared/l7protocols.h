@@ -4,13 +4,18 @@
     /*
      * 2007-11-22 
      */ 
-    typedef struct _l7filters	// l7 and p2p filters
+    
+typedef struct _l7filters	// l7 and p2p filters
 {
-    char *name;
-     char *protocol;
- } l7filters;
+    
+char *name;
+     
+char *protocol;
+ 
+} l7filters;
 
-l7filters filters_list[] =
+
+l7filters filters_list[] =
 {
     
     {
@@ -354,9 +359,6 @@
     "thecircle", "p2p"},	// The Circle - P2P application -
 				// http://thecircle.org.au
     {
-    "tls", "l7"},		// SSL and TLS - Secure Socket Layer /
-				// Transport Layer Security - RFC 2246
-    {
     "tor", "l7"},		// Tor - The Onion Router - used for
 				// anonymization - http://tor.eff.org
     {
@@ -396,6 +398,7 @@
     "zmaap", "l7"},		// ZMAAP - Zeroconf Multicast Address
 				// Allocation Protocol
     {
-0, 0} };
+0, 0} 
+};
 
 
