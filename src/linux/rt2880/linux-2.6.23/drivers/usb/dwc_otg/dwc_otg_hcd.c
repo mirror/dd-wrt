@@ -92,9 +92,10 @@ static const struct hc_driver dwc_otg_hc_driver = {
  * Work queue function for starting the HCD when A-Cable is connected.
  * The dwc_otg_hcd_start() must be called in a process context.
  */
-static void hcd_start_func(void *_vp)
+static void hcd_start_func(struct work_struct *work)
 {
-        struct usb_hcd *usb_hcd = (struct usb_hcd *)_vp;
+	dwc_otg_hcd_t *priv = container_of(work, dwc_otg_hcd_t, start_work);
+        struct usb_hcd *usb_hcd = dwc_otg_hcd_to_hcd(priv);
         DWC_DEBUGPL(DBG_HCDV, "%s() %p\n", __func__, usb_hcd);
         if (usb_hcd) {
                 dwc_otg_hcd_start(usb_hcd);

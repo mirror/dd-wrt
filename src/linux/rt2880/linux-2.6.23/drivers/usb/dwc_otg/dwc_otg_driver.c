@@ -580,7 +580,7 @@ static int check_parameters(dwc_otg_core_if_t *core_if)
  * This function is the top level interrupt handler for the Common
  * (Device and host modes) interrupts.
  */
-static irqreturn_t dwc_otg_common_irq(int _irq, void *_dev, struct pt_regs *_r)
+static irqreturn_t dwc_otg_common_irq(int _irq, void *_dev)
 {
 	dwc_otg_device_t *otg_dev = _dev;
 	int32_t retval = IRQ_NONE;
@@ -755,8 +755,7 @@ static int dwc_otg_driver_probe(struct lm_device *_lmdev)
 	 */
 	DWC_DEBUGPL( DBG_CIL, "registering (common) handler for irq%d\n", 
 			 _lmdev->irq);
-	retval = request_irq(_lmdev->irq, dwc_otg_common_irq,
-				 SA_SHIRQ, "dwc_otg", dwc_otg_device );
+	retval = request_irq(_lmdev->irq, dwc_otg_common_irq,SA_SHIRQ, "dwc_otg", dwc_otg_device );
 	if (retval != 0) 
 	{
 		DWC_ERROR("request of irq%d failed\n", _lmdev->irq);
@@ -852,6 +851,8 @@ static int __init dwc_otg_driver_init(void)
 	int retval = 0;
 	struct lm_device *lmdev;
 
+	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0x0; //Enable USB Port
+
 	lmdev = kzalloc(sizeof(struct lm_device), GFP_KERNEL);
 
 	if (!lmdev)
@@ -896,6 +897,7 @@ static void __exit dwc_otg_driver_cleanup(void)
 
 	lm_driver_unregister(&dwc_otg_driver);
 
+	*(unsigned long *)(KSEG1ADDR(RALINK_USB_OTG_BASE+0xE00)) = 0xF; //Disable USB Port
 	printk(KERN_INFO "%s module removed\n", dwc_driver_name);
 }
 module_exit(dwc_otg_driver_cleanup);
