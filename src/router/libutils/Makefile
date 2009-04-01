@@ -192,8 +192,14 @@ endif
 ifeq ($(CONFIG_LS2),y)
   CFLAGS += -DHAVE_LS2
 endif
+ifeq ($(CONFIG_BWRG1000),y)
+  CFLAGS += -DHAVE_BWRG1000
+endif
 ifeq ($(CONFIG_WHA5500CPE),y)
   CFLAGS += -DHAVE_WHA5500CPE
+endif
+ifeq ($(CONFIG_AIRMAX5),y)
+  CFLAGS += -DHAVE_AIRMAX5
 endif
 ifeq ($(CONFIG_ECB3500),y)
   CFLAGS += -DHAVE_ECB3500
