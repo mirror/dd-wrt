@@ -130,14 +130,22 @@ void start_sysinit( void )
     {
 	insmod( "ath_ahb" );
     }
-
+#ifdef HAVE_BWRG1000
+    eval( "ifconfig", "eth0", "up" );	// wan
+    vlan_init( 0xff );		// 1 lan + 1 wan, but only first one is used
+#else
 #ifdef HAVE_LS2
 #if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) && !defined(HAVE_BS2HP) && !defined(HAVE_MS2) && !defined(HAVE_PICO2) && !defined(HAVE_PICO2HP)
     eval( "ifconfig", "eth0", "up" );	// wan
     vlan_init( 0x31 );		// 1 lan + 1 wan, but only first one is used
 #endif
 #endif
+#endif
 #if defined(HAVE_MS2)
+    system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
+#endif
+#if defined(HAVE_BWRG1000)
     system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
     system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
 #endif

@@ -436,6 +436,11 @@ endif
 endif
 endif
 endif
+
+ifeq ($(CONFIG_BWRG1000),y)
+  CFLAGS += -DHAVE_BWRG1000
+endif
+
 ifeq ($(CONFIG_NS5),y)
 CFLAGS += -DHAVE_NS5
 endif

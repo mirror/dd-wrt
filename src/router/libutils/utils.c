@@ -731,6 +731,9 @@ int internal_getRouterBrand(  )
 #elif defined(HAVE_CORENET) && defined(HAVE_NS2)
     setRouter( "CORENET UNS2" );
     return ROUTER_BOARD_LS2;
+#elif HAVE_BWRG1000
+    setRouter( "Bountiful BWRG-1000" );
+    return ROUTER_BOARD_LS2;
 #elif HAVE_NS2
     setRouter( "Ubiquiti Nanostation 2" );
     return ROUTER_BOARD_LS2;
@@ -821,6 +824,8 @@ int internal_getRouterBrand(  )
 #elif HAVE_CA8
 #ifdef HAVE_WHA5500CPE
     setRouter( "Airlive WHA-5500CPE" );
+#elif HAVE_AIRMAX5
+    setRouter( "Airlive AirMax 5" );
 #else
     setRouter( "Airlive WLA-5000AP" );
 #endif
@@ -2609,7 +2614,7 @@ int led_control( int type, int act )
  * LED_SES, LED_SES2, LED_WLAN act: LED_ON, LED_OFF, LED_FLASH 
  */
 {
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5)  && !defined(HAVE_DIR300) && !defined(HAVE_DIR400)
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5)  && !defined(HAVE_DIR300) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000)
     return 0;
 #else
 
@@ -2768,6 +2773,11 @@ int led_control( int type, int act )
 	    diag_gpio = 0x03;
 	    bridge_gpio = 0x04;
 	    ses_gpio = 0x01;
+	    break;
+#endif
+#ifdef HAVE_BWRG1000
+	case ROUTER_BOARD_LS2:
+	    diag_gpio = 0x07;
 	    break;
 #endif
 #ifdef HAVE_DIR400

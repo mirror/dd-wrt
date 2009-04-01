@@ -1083,8 +1083,13 @@ void start_lan( void )
 	PORTSETUPWAN( "eth0" );
 #else
 	nvram_set( "lan_ifname", "br0" );
+#ifdef HAVE_BWRG1000
+	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
+	PORTSETUPWAN( "vlan2" );
+#else
 	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
 	PORTSETUPWAN( "vlan0" );
+#endif
 #endif
     }
 
@@ -2594,6 +2599,10 @@ void start_wan( int status )
 					     "" ) ?
 	nvram_safe_get( "pppoe_wan_ifname" ) : "eth0";
 #elif HAVE_DIR300
+    char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
+					     "" ) ?
+	nvram_safe_get( "pppoe_wan_ifname" ) : "vlan2";
+#elif HAVE_BWRG1000
     char *pppoe_wan_ifname = nvram_invmatch( "pppoe_wan_ifname",
 					     "" ) ?
 	nvram_safe_get( "pppoe_wan_ifname" ) : "vlan2";
