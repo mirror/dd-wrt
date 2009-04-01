@@ -116,6 +116,12 @@ u8 *find_radio_config(char *flash_limit, char *bconfig)
 {
 	int dataFound;
 	u32 rconfig;
+    if (!strncmp(bconfig+8,"Atheros AR5001AP Bountiful Wifi",31))
+	{
+	    printk( "Found Bountiful Wifi Router\n");
+	    return bconfig-0x2000;
+	}
+	
 	if (fake_config)
 	    bconfig = flash_limit-0x10000;
 	/* 
