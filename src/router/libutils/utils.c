@@ -2614,10 +2614,9 @@ int led_control( int type, int act )
  * LED_SES, LED_SES2, LED_WLAN act: LED_ON, LED_OFF, LED_FLASH 
  */
 {
-#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5)  && !defined(HAVE_DIR300) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000)
+#if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5))  && (!defined(HAVE_DIR300) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
     return 0;
 #else
-
     int use_gpio = 0x0f;
     int gpio_value;
     int enable;
