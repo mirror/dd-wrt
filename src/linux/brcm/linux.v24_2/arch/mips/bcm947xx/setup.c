@@ -211,7 +211,9 @@ iswrt300n11=1;
 char *boardtype = nvram_get("boardtype");
 char *boothwmodel = nvram_get("boot_hw_model");
 char *boothwver = nvram_get("boot_hw_ver");
+char *cardbus = nvram_get("cardbus");
 if (boardtype==NULL || strcmp(boardtype,"0x478"))iswrt350n=0;
+if (cardbus!=NULL && !strcmp(cardbus, "0") && boardtype!=NULL && !strcmp(boardtype,"0x478"))iswrt350n=0;
 if (boothwmodel==NULL || strcmp(boothwmodel,"WRT300N"))iswrt300n11=0;
 if (boothwmodel!=NULL && !strcmp(boothwmodel,"WRT610N"))
     {
