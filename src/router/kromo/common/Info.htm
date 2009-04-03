@@ -252,7 +252,7 @@ function refresh(F)
 									<% ifndef("HASWIFI", "-->"); %>
 									<div class="setting">
 										<div class="label">WAN IP</div>
-										<% nvram_match("wl0_mode","wet","<script type="text/javascript">Capture(share.disabled)</script><!--"); %><% nvram_match("wl0_mode","apstawet","<script type="text/javascript">Capture(share.disabled)</script><!--"); %><% nvram_match("wan_proto","disabled","<script type="text/javascript">Capture(share.disabled)</script><!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl0_mode","apstawet","-->"); %><% nvram_match("wl0_mode","wet","-->"); %>&nbsp;
+										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label">LAN IP</div>
