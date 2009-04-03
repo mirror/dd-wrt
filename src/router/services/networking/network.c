@@ -2999,7 +2999,7 @@ void start_wan( int status )
 	    start_wan_done( "ppp0" );
 
 	    // if user press Connect" button from web, we must force to dial
-	    if( nvram_match( "action_service", "start_pppoe" ) )
+	    if( nvram_match( "action_service", "start_3g" ) )
 	    {
 		sleep( 3 );
 		start_force_to_dial(  );
