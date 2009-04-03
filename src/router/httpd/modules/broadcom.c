@@ -864,8 +864,8 @@ static struct gozila_action gozila_actions[] = {
     {"Status_Internet", "renew", "", 3, REFRESH, "dhcp_renew"},	// for cisco
     {"Status_Internet", "Disconnect", "stop_pppoe", 2, SERVICE_RESTART, "stop_ppp"},	// for 
 #ifdef HAVE_3G
-    {"Status_Internet", "Connect_pppoe", "start_3g", 1, RESTART, NULL},	// for 
-    {"Status_Internet", "Disconnect_pppoe", "stop_3g", 2, SERVICE_RESTART, "stop_ppp"},	// for 
+    {"Status_Internet", "Connect_3g", "start_3g", 1, RESTART, NULL},	// for 
+    {"Status_Internet", "Disconnect_3g", "stop_3g", 2, SERVICE_RESTART, "stop_ppp"},	// for 
 #endif
     {"Status_Internet", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},	// for 
     {"Status_Internet", "Disconnect_pppoe", "stop_pppoe", 2, SERVICE_RESTART, "stop_ppp"},	// for 
