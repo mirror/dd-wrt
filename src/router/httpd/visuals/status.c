@@ -100,7 +100,7 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
     int wan_link = check_wan_link( 0 );
     int trans=0;
 #ifdef FASTWEB
-    ejArgs( argc, argv, "%s %d", &type,&trans );
+    ejArgs( argc, argv, "%s %d", &type, &trans );
 #else
     if( ejArgs( argc, argv, "%s %d", &type, &trans ) < 2 )
     {
@@ -108,7 +108,7 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
 	return;
     }
 #endif
-    if( nvram_match( "wan_proto", "pptp" ) )
+    if( !strcmp( wan_proto, "pptp" ) )
     {
 	wan_ipaddr =
 	    wan_link ? nvram_safe_get( "pptp_get_ip" ) :
@@ -120,13 +120,13 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
 	    wan_link ? nvram_safe_get( "wan_gateway" ) :
 	    nvram_safe_get( "pptp_server_ip" );
     }
-    else if( !strcmp( nvram_safe_get( "wan_proto" ), "pppoe" ) )
+    else if( !strcmp( wan_proto, "pppoe" ) )
     {
 	wan_ipaddr = wan_link ? nvram_safe_get( "wan_ipaddr" ) : "0.0.0.0";
 	wan_netmask = wan_link ? nvram_safe_get( "wan_netmask" ) : "0.0.0.0";
 	wan_gateway = wan_link ? nvram_safe_get( "wan_gateway" ) : "0.0.0.0";
     }
-    else if( nvram_match( "wan_proto", "l2tp" ) )
+    else if( !strcmp( wan_proto, "l2tp" ) )
     {
 	wan_ipaddr =
 	    wan_link ? nvram_safe_get( "l2tp_get_ip" ) :
@@ -198,6 +198,13 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
 
     if( !strcmp( type, "wan_ipaddr" ) )
     {
+    if( nvram_match( "wl0_mode", "wet" )
+	|| nvram_match( "wl0_mode", "apstawet" )
+	|| !strcmp( wan_proto, "disabled" ) )
+    {
+	websWrite( wp, "%s", live_translate( "share.disabled" ) );
+    }
+    else
 	websWrite( wp, "%s", wan_ipaddr );
     }
     else if( !strcmp( type, "wan_netmask" ) )
