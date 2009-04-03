@@ -574,6 +574,21 @@ void start_ipv6( void )
 }
 #endif
 
+#ifdef HAVE_3G
+void stop_3g(void)
+{
+    int ret;
+
+    unlink( "/tmp/ppp/link" );
+    if( pidof( "pppd" ) > 0 )
+	dd_syslog( LOG_INFO, "3g/umts process successfully stopped\n" );
+    ret = killall( "pppd", SIGTERM );
+
+    cprintf( "done\n" );
+}
+
+#endif
+
 #ifdef HAVE_PPPOE
 void stop_pppoe( void )
 {
