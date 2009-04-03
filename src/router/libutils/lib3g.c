@@ -33,5 +33,11 @@ char *get3GControlDevice(void)
 	    fprintf(stderr,"HUAWEI/Option E172 detected\n");
 	    ttsdevice="/dev/usb/tts/0";
 	    }
+	if (idVendor==0x0af0 && idProduct==0x7011)
+	    {
+	    //huawei
+	    fprintf(stderr,"HUAWEI/Option E301 HSUPA detected\n");
+	    ttsdevice="/dev/usb/tts/0";
+	    }
 return ttsdevice;
 }
