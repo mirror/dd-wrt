@@ -1759,6 +1759,7 @@ int check_wan_link( int num )
     if( nvram_match( "wan_proto", "pptp" )
 	|| nvram_match( "wan_proto", "l2tp" )
 	|| nvram_match( "wan_proto", "pppoe" )
+	|| nvram_match( "wan_proto", "3g" )
 	|| nvram_match( "wan_proto", "heartbeat" ) )
     {
 	FILE *fp;
@@ -2298,6 +2299,7 @@ char *get_wan_face( void )
      */
     if( nvram_match( "wan_proto", "pptp" )
 	|| nvram_match( "wan_proto", "l2tp" )
+	|| nvram_match( "wan_proto", "3g" )
 	|| nvram_match( "wan_proto", "pppoe" ) )
     {
 	if( nvram_match( "pppd_pppifname", "" ) )

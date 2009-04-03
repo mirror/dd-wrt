@@ -95,9 +95,6 @@ int ipup_main( int argc, char **argv )
 	if( nvram_match( "wan_proto", "pppoe" ) )
 	{
 	    nvram_set( "wan_ipaddr_buf", nvram_safe_get( "wan_ipaddr" ) );	// Store 
-	    // last 
-	    // ip 
-	    // address
 	    nvram_set( "wan_ipaddr", value );
 	    nvram_set( "wan_netmask", "255.255.255.255" );
 	}
@@ -119,6 +116,14 @@ int ipup_main( int argc, char **argv )
 	    // address
 	    nvram_set( "l2tp_get_ip", value );
 	}
+#ifdef HAVE_3G
+	else if( nvram_match( "wan_proto", "3g" ) )
+	{
+	    nvram_set( "wan_ipaddr_buf", nvram_safe_get( "wan_ipaddr" ) );	// Store 
+	    nvram_set( "wan_ipaddr", value );
+	    nvram_set( "wan_netmask", "255.255.255.255" );
+	}
+#endif
     }
 
     if( ( value = getenv( "IPREMOTE" ) ) )
