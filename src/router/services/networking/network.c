@@ -2909,6 +2909,113 @@ void start_wan( int status )
     /*
      * Configure WAN interface 
      */
+#ifdef HAVE_3G
+    if( ( strcmp( wan_proto, "3g" ) == 0 ) )
+	{
+	char *ttsdevice="/dev/usb/tts/0";
+
+	mkdir( "/tmp/ppp", 0777 );
+	int timeout = 5;
+	
+	/* init PIN */
+	system("export COMGTPIN=%s;comgt PIN\n");
+	system("export COMGTAPN=\"%s\";comgt APN\n");
+	// Lets open option file and enter all the parameters.
+	fp = fopen( "/tmp/ppp/options.pppoe", "w" );
+	fprintf(fp,"defaultroute\n");
+	fprintf(fp,"usepeerdns\n");
+	fprintf(fp,"lcp-echo-interval 10\n");
+	fprintf(fp,"lcp-echo-failure 3\n");
+	fprintf(fp,"crtscts\n");
+	fprintf(fp,"460800\n");
+	fprintf(fp,"connect \"NUMBER='*99***1#' /usr/sbin/comgt -s /etc/comgt/dial.comgt -d %s\"\n",ttsdevice);
+//#IDLEOPTIONS#
+	fprintf(fp,"user internet\n");
+	fprintf(fp,"password internet\n");
+	fprintf(fp,"%s\n",ttsdevice);
+	
+	fclose(fp);
+
+	symlink( "/sbin/rc", "/tmp/ppp/ip-up" );
+	symlink( "/sbin/rc", "/tmp/ppp/ip-down" );
+	unlink( "/tmp/ppp/log" );
+
+	// Clean pppoe linksys client files - Added by ice-man (Wed Jun 1)
+	unlink( "/tmp/ppp/connect-log" );
+	unlink( "/tmp/ppp/set-pppoepid" );
+
+	stop_dhcpc(  );
+#ifdef HAVE_PPTP
+	stop_pptp(  );
+#endif
+	eval( "pppd", "file", "/tmp/ppp/options.pppoe" );
+
+	/*
+	 * Pretend that the WAN interface is up 
+	 */
+	if( nvram_match( "ppp_demand", "1" ) )
+	{
+	    /*
+	     * Wait for ppp0 to be created 
+	     */
+	    while( ifconfig( "ppp0", IFUP, NULL, NULL ) && timeout-- )
+		sleep( 1 );
+	    strncpy( ifr.ifr_name, "ppp0", IFNAMSIZ );
+
+	    /*
+	     * Set temporary IP address 
+	     */
+	    timeout = 3;
+	    while( ioctl( s, SIOCGIFADDR, &ifr ) && timeout-- )
+	    {
+		perror( "ppp0" );
+		printf( "Wait ppp inteface to init (1) ...\n" );
+		sleep( 1 );
+	    };
+	    char client[32];
+
+	    nvram_set( "wan_ipaddr",
+		       inet_ntop( AF_INET, &sin_addr( &ifr.ifr_addr ), client,
+				  16 ) );
+	    nvram_set( "wan_netmask", "255.255.255.255" );
+
+	    /*
+	     * Set temporary P-t-P address 
+	     */
+	    timeout = 3;
+	    while( ioctl( s, SIOCGIFDSTADDR, &ifr ) && timeout-- )
+	    {
+		perror( "ppp0" );
+		printf( "Wait ppp inteface to init (2) ...\n" );
+		sleep( 1 );
+	    }
+	    char *peer =
+		inet_ntop( AF_INET, &sin_addr( &ifr.ifr_dstaddr ), client,
+			   16 );
+
+	    nvram_set( "wan_gateway", peer );
+
+	    start_wan_done( "ppp0" );
+
+	    // if user press Connect" button from web, we must force to dial
+	    if( nvram_match( "action_service", "start_pppoe" ) )
+	    {
+		sleep( 3 );
+		start_force_to_dial(  );
+		nvram_unset( "action_service" );
+	    }
+	}
+	else
+	{
+	    if( status != REDIAL )
+	    {
+		start_redial(  );
+	    }
+	}
+	
+    }
+    else
+#endif
 #ifdef HAVE_PPPOE
     if( ( strcmp( wan_proto, "pppoe" ) == 0 ) )
     {
@@ -3486,7 +3593,8 @@ void start_wan_done( char *wan_ifname )
     cprintf( "routes done\n" );
     if( nvram_match( "wan_proto", "pppoe" )
 	|| nvram_match( "wan_proto", "pptp" )
-	|| nvram_match( "wan_proto", "l2tp" ) )
+	|| nvram_match( "wan_proto", "l2tp" ) 
+	|| nvram_match( "wan_proto", "3g" ) )
     {
 	if( nvram_match( "ppp_demand", "1" ) )
 	{			// ntp and ddns will trigger DOD, so we must
