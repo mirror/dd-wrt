@@ -1,0 +1,26 @@
+# dial given number
+opengt
+ set com 115200n81
+ set senddelay 0.02
+ waitquiet 1 0.2
+ flash 0.1
+
+:start
+ print "Dialing '"+$env("NUMBER")+"'\n"
+ send "ATDT"+$env("NUMBER")+"^m"
+
+ waitfor 15 "CONNECT" "OK","ERR","ERROR"
+ if % = 0 goto continue
+ if % = 1 goto continue
+ if % = 2 goto senderror
+ if % = 3 goto senderror
+
+ print "Timeout dialing '"+$env("NUMBER")+"'\n"
+ exit 1
+
+:senderror
+ print "Error dialing '"+$env("NUMBER")+"'\n"
+ exit 1
+
+:continue
+ exit 0
