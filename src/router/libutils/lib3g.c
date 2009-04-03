@@ -12,22 +12,26 @@ char *get3GControlDevice(void)
 	FILE *modem =fopen("/sys/bus/usb/devices/1-1/idProduct","rb");
 	if (!modem)
 	    return ttsdevice;
-	char product[32];
-	fscanf(modem,"%s",product);
+	int idProduct;
+	int idVendor;
+	fscanf(modem,"%X",&idProduct);
 	fclose(modem);    
 	modem =fopen("/sys/bus/usb/devices/1-1/idVendor","rb");
 	if (!modem)
 	    return ttsdevice;
-	char vendor[32];
-	fscanf(modem,"%s",vendor);
+	fscanf(modem,"%X",&idVendor);
 	fclose(modem);    
-	int idVendor=atoi(vendor);
-	int idProduct=atoi(product);
-	if (idVendor==1199 && idProduct==6880)
+	if (idVendor==0x1199 && idProduct==0x6880)
 	    {
 	    //sierra wireless 
 	    fprintf(stderr,"Sierra Wireless Compass 885 deteted\n");
 	    ttsdevice="/dev/usb/tts/3";
+	    }
+	if (idVendor==0x12d1 && idProduct==0x1003)
+	    {
+	    //huawei
+	    fprintf(stderr,"HUAWEI/Option E172 detected\n");
+	    ttsdevice="/dev/usb/tts/0";
 	    }
 return ttsdevice;
 }
