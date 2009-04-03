@@ -65,6 +65,9 @@ endif
 ifeq ($(CONFIG_ALLNETWRT),y)
   CFLAGS += -DHAVE_ALLNETWRT
 endif
+ifeq ($(CONFIG_ALLNET11N),y)
+  CFLAGS += -DHAVE_ALLNET11N
+endif
 ifeq ($(CONFIG_BUFFALO),y)
   CFLAGS += -DHAVE_BUFFALO
 endif
@@ -140,8 +143,14 @@ endif
 ifeq ($(CONFIG_WHRG300N),y)
   CFLAGS += -DHAVE_WHRG300N
 endif
+ifeq ($(CONFIG_ESR6650),y)
+  CFLAGS += -DHAVE_ESR6650
+endif
 ifeq ($(CONFIG_X86),y)
   CFLAGS += -DHAVE_X86
+endif
+ifeq ($(CONFIG_3G),y)
+  CFLAGS += -DHAVE_3G
 endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX

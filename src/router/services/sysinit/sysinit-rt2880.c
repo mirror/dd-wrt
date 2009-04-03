@@ -147,10 +147,17 @@ void start_sysinit( void )
 	sysprintf( "switch reg w 50 2001" );
 	sysprintf( "switch reg w 98 7f3f" );
 	sysprintf( "switch reg w e4 3f" );
+#ifdef HAVE_ALLNET11N
+	sysprintf( "switch reg w 40 1002" );
+	sysprintf( "switch reg w 44 1001" );
+	sysprintf( "switch reg w 48 1001" );
+	sysprintf( "switch reg w 70 ffff417e" );
+#else
 	sysprintf( "switch reg w 40 1001" );
 	sysprintf( "switch reg w 44 1001" );
 	sysprintf( "switch reg w 48 1002" );
 	sysprintf( "switch reg w 70 ffff506f" );
+#endif
     }
 
 /*
@@ -207,10 +214,17 @@ char *enable_dtag_vlan( int enable )
 	    sysprintf( "switch reg w 50 7001" );
 	    sysprintf( "switch reg w 98 7f2f" );
 	    sysprintf( "switch reg w e4 2f" );
+#ifdef HAVE_ALLNET11N
+	    sysprintf( "switch reg w 40 1007" );
+	    sysprintf( "switch reg w 44 1001" );
+	    sysprintf( "switch reg w 48 1001" );
+	    sysprintf( "switch reg w 70 ffff417e" );
+#else
 	    sysprintf( "switch reg w 40 1001" );
 	    sysprintf( "switch reg w 44 1001" );
 	    sysprintf( "switch reg w 48 1007" );
 	    sysprintf( "switch reg w 70 ffff506f" );
+#endif
 	    // now we got vlan7, how do we trunk now. lets find out
 	    return "eth2";
 	}
@@ -220,10 +234,17 @@ char *enable_dtag_vlan( int enable )
 	    sysprintf( "switch reg w 50 2001" );
 	    sysprintf( "switch reg w 98 7f3f" );
 	    sysprintf( "switch reg w e4 3f" );
-	    sysprintf( "switch reg w 40 1001" );
-	    sysprintf( "switch reg w 44 1001" );
-	    sysprintf( "switch reg w 48 1002" );
-	    sysprintf( "switch reg w 70 ffff506f" );
+#ifdef HAVE_ALLNET11N
+	sysprintf( "switch reg w 40 1002" );
+	sysprintf( "switch reg w 44 1001" );
+	sysprintf( "switch reg w 48 1001" );
+	sysprintf( "switch reg w 70 ffff417e" );
+#else
+	sysprintf( "switch reg w 40 1001" );
+	sysprintf( "switch reg w 44 1001" );
+	sysprintf( "switch reg w 48 1002" );
+	sysprintf( "switch reg w 70 ffff506f" );
+#endif
 	    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
 	    eval( "vconfig", "add", "eth2", "2" );	//WAN
 	    return "eth2";
