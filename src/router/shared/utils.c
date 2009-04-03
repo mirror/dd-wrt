@@ -380,7 +380,8 @@ int dns_to_resolv( void )
     if( dns_list->num_servers == 0 &&
 	( nvram_match( "wan_proto", "pppoe" )
 	  || nvram_match( "wan_proto", "pptp" )
-	  || nvram_match( "wan_proto", "l2tp" ) )
+	  || nvram_match( "wan_proto", "l2tp" ) 
+	  || nvram_match( "wan_proto", "3g" )  )
 	&& nvram_match( "ppp_demand", "1" ) )
 	fprintf( fp_w, "nameserver 1.1.1.1\n" );
 
@@ -1055,6 +1056,8 @@ struct mtu_lists mtu_list[] = {
      "static", "576", "10000"},
     {
      "heartbeat", "576", "1500"},
+    {
+     "3g", "576", "1500"},
     {
      "default", "576", "10000"},	// The value must be at last
 };
