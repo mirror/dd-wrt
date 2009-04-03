@@ -1998,6 +1998,10 @@ void ej_show_wanipinfo( webs_t wp, int argc, char_t ** argv )	// Eko
     {
 	wan_ipaddr = wan_link ? nvram_safe_get( "wan_ipaddr" ) : "0.0.0.0";
     }
+    else if( !strcmp( nvram_safe_get( "wan_proto" ), "3g" ) )
+    {
+	wan_ipaddr = wan_link ? nvram_safe_get( "wan_ipaddr" ) : "0.0.0.0";
+    }
     else if( nvram_match( "wan_proto", "l2tp" ) )
     {
 	wan_ipaddr =

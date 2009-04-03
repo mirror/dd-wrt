@@ -126,6 +126,14 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
 	wan_netmask = wan_link ? nvram_safe_get( "wan_netmask" ) : "0.0.0.0";
 	wan_gateway = wan_link ? nvram_safe_get( "wan_gateway" ) : "0.0.0.0";
     }
+#ifdef HAVE_3G
+    else if( !strcmp( wan_proto, "3g" ) )
+    {
+	wan_ipaddr = wan_link ? nvram_safe_get( "wan_ipaddr" ) : "0.0.0.0";
+	wan_netmask = wan_link ? nvram_safe_get( "wan_netmask" ) : "0.0.0.0";
+	wan_gateway = wan_link ? nvram_safe_get( "wan_gateway" ) : "0.0.0.0";
+    }
+#endif
     else if( !strcmp( wan_proto, "l2tp" ) )
     {
 	wan_ipaddr =
@@ -147,7 +155,7 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
 
     dns_list = get_dns_list(  );
 
-    if( !strcmp( wan_proto, "pppoe" ) || !strcmp( wan_proto, "pptp" )
+    if( !strcmp( wan_proto, "pppoe" ) || !strcmp( wan_proto, "pptp" ) || !strcmp( wan_proto, "3g" )
 	|| !strcmp( wan_proto, "l2tp" ) || !strcmp( wan_proto, "heartbeat" ) )
     {
 	hidden1 = "";
@@ -255,7 +263,7 @@ void ej_show_status( webs_t wp, int argc, char_t ** argv )
     int wan_link = 0;
     char buf[254];
 
-    if( !strcmp( wan_proto, "pppoe" ) || !strcmp( wan_proto, "pptp" )
+    if( !strcmp( wan_proto, "pppoe" ) || !strcmp( wan_proto, "pptp" ) || !strcmp( wan_proto, "3g" )
 	|| !strcmp( wan_proto, "l2tp" ) || !strcmp( wan_proto, "heartbeat" ) )
     {
 
