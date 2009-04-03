@@ -2933,7 +2933,7 @@ void start_wan( int status )
 //	fprintf(fp,"connect \"NUMBER='*99***1#' /usr/sbin/comgt -s /etc/comgt/dial.comgt -d %s\"\n",ttsdevice);
 	fprintf(fp,"user internet\n");
 	fprintf(fp,"password internet\n");
-	fprintf(fp,"%s\n",ttsdevice);
+	fprintf(fp,"%s\n",controldevice);
 	
 	fclose(fp);
 
