@@ -2912,14 +2912,15 @@ void start_wan( int status )
 #ifdef HAVE_3G
     if( ( strcmp( wan_proto, "3g" ) == 0 ) )
 	{
-	char *ttsdevice="/dev/usb/tts/0";
+	char *controldevice=get3GControlDevice();
+	
 
 	mkdir( "/tmp/ppp", 0777 );
 	int timeout = 5;
 	
 	/* init PIN */
-	sysprintf("export COMGTPIN=%s;comgt PIN -d %s\n",nvram_safe_get("wan_pin"),ttsdevice);
-	sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s\n",nvram_safe_get("wan_apn"),ttsdevice);
+	sysprintf("export COMGTPIN=%s;comgt PIN -d %s\n",nvram_safe_get("wan_pin"),controldevice);
+	sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s\n",nvram_safe_get("wan_apn"),controldevice);
 	// Lets open option file and enter all the parameters.
 	fp = fopen( "/tmp/ppp/options.pppoe", "w" );
 	fprintf(fp,"defaultroute\n");
@@ -2928,7 +2929,7 @@ void start_wan( int status )
 	fprintf(fp,"lcp-echo-failure 3\n");
 	fprintf(fp,"crtscts\n");
 	fprintf(fp,"460800\n");
-	fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",ttsdevice);
+	fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
 //	fprintf(fp,"connect \"NUMBER='*99***1#' /usr/sbin/comgt -s /etc/comgt/dial.comgt -d %s\"\n",ttsdevice);
 	fprintf(fp,"user internet\n");
 	fprintf(fp,"password internet\n");

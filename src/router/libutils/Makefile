@@ -151,6 +151,7 @@ ifeq ($(CONFIG_X86),y)
 endif
 ifeq ($(CONFIG_3G),y)
   CFLAGS += -DHAVE_3G
+  OBJS += lib3g.o
 endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX
