@@ -150,7 +150,7 @@ int redial_main( int argc, char **argv )
 		    }
 #endif
 #ifdef HAVE_3G
-		    else if( nvram_match( "wan_proto", "pppoe" ) )
+		    else if( nvram_match( "wan_proto", "3g" ) )
 		    {
 			sleep( 1 );
 			start_service( "wan_redial" );

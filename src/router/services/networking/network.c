@@ -2918,8 +2918,8 @@ void start_wan( int status )
 	int timeout = 5;
 	
 	/* init PIN */
-	system("export COMGTPIN=%s;comgt PIN\n");
-	system("export COMGTAPN=\"%s\";comgt APN\n");
+	sysprintf("export COMGTPIN=%s;comgt PIN -d %s\n",nvram_safe_get("wan_pin"),ttsdevice);
+	sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s\n",nvram_safe_get("wan_apn"),ttsdevice);
 	// Lets open option file and enter all the parameters.
 	fp = fopen( "/tmp/ppp/options.pppoe", "w" );
 	fprintf(fp,"defaultroute\n");
@@ -2928,8 +2928,8 @@ void start_wan( int status )
 	fprintf(fp,"lcp-echo-failure 3\n");
 	fprintf(fp,"crtscts\n");
 	fprintf(fp,"460800\n");
-	fprintf(fp,"connect \"NUMBER='*99***1#' /usr/sbin/comgt -s /etc/comgt/dial.comgt -d %s\"\n",ttsdevice);
-//#IDLEOPTIONS#
+	fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",ttsdevice);
+//	fprintf(fp,"connect \"NUMBER='*99***1#' /usr/sbin/comgt -s /etc/comgt/dial.comgt -d %s\"\n",ttsdevice);
 	fprintf(fp,"user internet\n");
 	fprintf(fp,"password internet\n");
 	fprintf(fp,"%s\n",ttsdevice);
