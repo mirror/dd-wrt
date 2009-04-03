@@ -72,11 +72,17 @@ endif
 ifeq ($(CONFIG_CORENET),y)
   CFLAGS += -DHAVE_CORENET
 endif
+ifeq ($(CONFIG_3G),y)
+  CFLAGS += -DHAVE_3G
+endif
 ifeq ($(CONFIG_XIOCOM),y)
   CFLAGS += -DHAVE_XIOCOM
 endif
 ifeq ($(CONFIG_WHRG300N),y)
   CFLAGS += -DHAVE_WHRG300N
+endif
+ifeq ($(CONFIG_ESR6650),y)
+  CFLAGS += -DHAVE_ESR6650
 endif
 ifeq ($(CONFIG_GEMTEK),y)
   CFLAGS += -DHAVE_GEMTEK
