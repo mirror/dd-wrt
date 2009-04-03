@@ -943,6 +943,10 @@ static struct SERVICES services_def[] = {
     {"nassrv", handle_nassrv},
 #endif   
     {"management", handle_management},
+#ifdef HAVE_3G
+    {"start_3g", handle_pppoe},
+    {"stop_3g", handle_spppoe}, 
+#endif
     {"start_pppoe", handle_pppoe},
     {"start_pptp", handle_pppoe},
 #ifdef HAVE_L2TP
