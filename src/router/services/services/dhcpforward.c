@@ -99,6 +99,12 @@ void start_dhcpfwd( void )
 	{
 	    fprintf( fp, "if	%s	false	true	true\n", wan_ifname );
 	}
+#ifdef HAVE_3G
+	else if( strcmp( wan_proto, "3g" ) == 0 )
+	{
+	    fprintf( fp, "if	ppp0	false	true	true\n" );
+	}
+#endif
 #ifdef HAVE_PPTP
 	else if( strcmp( wan_proto, "pptp" ) == 0 )
 	{
