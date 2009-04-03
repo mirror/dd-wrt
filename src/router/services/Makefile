@@ -147,6 +147,9 @@ endif
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO
 endif
+ifeq ($(CONFIG_3G),y)
+CFLAGS += -DHAVE_3G
+endif
 
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
@@ -731,6 +734,10 @@ CFLAGS += -DHAVE_MILKFISH
 OBJS += milkfish.o
 endif
 
+ifeq ($(CONFIG_ALLNET11N),y)
+CFLAGS += -DHAVE_ALLNET11N
+endif
+
 ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
 OBJS += sputnik.o
@@ -741,6 +748,9 @@ ifeq ($(CONFIG_RT2880),y)
 endif
 ifeq ($(CONFIG_WHRG300N),y)
   CFLAGS += -DHAVE_WHRG300N
+endif
+ifeq ($(CONFIG_ESR6650),y)
+  CFLAGS += -DHAVE_ESR6650
 endif
 ifeq ($(CONFIG_NAS),y)
   CFLAGS += -DHAVE_NAS

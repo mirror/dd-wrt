@@ -452,7 +452,7 @@ char *getRouter(  )
 
 int internal_getRouterBrand(  )
 {
-#ifdef HAVE_ALLNETWRT
+#if defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
     uint boardnum = strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
 
     if( boardnum == 8 &&
@@ -626,8 +626,18 @@ int internal_getRouterBrand(  )
     }
 #elif HAVE_RT2880
 #ifdef HAVE_ECB9750
+#ifdef HAVE_ALLNETWRT    
+    setRouter( "Allnet 802.11n Router" );
+#else
     setRouter( "Senao ECB-9750" );
+#endif
     return ROUTER_BOARD_ECB9750;
+#elif HAVE_ALLNET11N
+    setRouter( "Allnet 802.11n Router" );
+    return ROUTER_BOARD_WHRG300N;
+#elif HAVE_ESR6650
+    setRouter( "Senao ESR6650" );
+    return ROUTER_BOARD_ESR6650;
 #elif HAVE_WHRG300N
     setRouter( "Buffalo WHR-G300N" );
     return ROUTER_BOARD_WHRG300N;
