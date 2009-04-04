@@ -765,30 +765,10 @@ void start_pptp( int status )
 #endif
     stop_vpn_modules(  );
 
-    if( nvram_match( "aol_block_traffic", "0" ) )
-    {
 	snprintf( username, sizeof( username ), "%s",
 		  nvram_safe_get( "ppp_username" ) );
 	snprintf( passwd, sizeof( passwd ), "%s",
 		  nvram_safe_get( "ppp_passwd" ) );
-    }
-    else
-    {
-	if( !strcmp( nvram_safe_get( "aol_username" ), "" ) )
-	{
-	    snprintf( username, sizeof( username ), "%s",
-		      nvram_safe_get( "ppp_username" ) );
-	    snprintf( passwd, sizeof( passwd ), "%s",
-		      nvram_safe_get( "ppp_passwd" ) );
-	}
-	else
-	{
-	    snprintf( username, sizeof( username ), "%s",
-		      nvram_safe_get( "aol_username" ) );
-	    snprintf( passwd, sizeof( passwd ), "%s",
-		      nvram_safe_get( "aol_passwd" ) );
-	}
-    }
 
     if( status != REDIAL )
     {
@@ -1000,31 +980,10 @@ void start_pppoe( int pppoe_num )
     snprintf( retry_num, sizeof( retry_num ), "%d",
 	      ( atoi( nvram_safe_get( "ppp_redialperiod" ) ) / 5 ) - 1 );
 
-    if( nvram_match( "aol_block_traffic", "1" ) && pppoe_num == PPPOE0 )
-    {
-	if( !strcmp( nvram_safe_get( "aol_username" ), "" ) )
-	{
-	    snprintf( username, sizeof( username ), "%s",
-		      nvram_safe_get( "ppp_username" ) );
-	    snprintf( passwd, sizeof( passwd ), "%s",
-		      nvram_safe_get( "ppp_passwd" ) );
-	}
-	else
-	{
-	    snprintf( username, sizeof( username ), "%s",
-		      nvram_safe_get( "aol_username" ) );
-	    snprintf( passwd, sizeof( passwd ), "%s",
-		      nvram_safe_get( "aol_passwd" ) );
-	}
-
-    }
-    else
-    {
-	snprintf( username, sizeof( username ), "%s",
+    snprintf( username, sizeof( username ), "%s",
 		  nvram_safe_get( ppp_username[pppoe_num] ) );
-	snprintf( passwd, sizeof( passwd ), "%s",
+    snprintf( passwd, sizeof( passwd ), "%s",
 		  nvram_safe_get( ppp_passwd[pppoe_num] ) );
-    }
     sprintf( param, "%d", pppoe_num );
     /*
      * add here 
@@ -1218,30 +1177,10 @@ void start_l2tp( int status )
     stop_pptp(  );
 #endif
 
-    if( nvram_match( "aol_block_traffic", "0" ) )
-    {
 	snprintf( username, sizeof( username ), "%s",
 		  nvram_safe_get( "ppp_username" ) );
 	snprintf( passwd, sizeof( passwd ), "%s",
 		  nvram_safe_get( "ppp_passwd" ) );
-    }
-    else
-    {
-	if( !strcmp( nvram_safe_get( "aol_username" ), "" ) )
-	{
-	    snprintf( username, sizeof( username ), "%s",
-		      nvram_safe_get( "ppp_username" ) );
-	    snprintf( passwd, sizeof( passwd ), "%s",
-		      nvram_safe_get( "ppp_passwd" ) );
-	}
-	else
-	{
-	    snprintf( username, sizeof( username ), "%s",
-		      nvram_safe_get( "aol_username" ) );
-	    snprintf( passwd, sizeof( passwd ), "%s",
-		      nvram_safe_get( "aol_passwd" ) );
-	}
-    }
 
     if( status != REDIAL )
     {
