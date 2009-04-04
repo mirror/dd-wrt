@@ -8,7 +8,7 @@ comment "may also be needed; see USB_STORAGE Help for more information"
 
 config USB_STORAGE
 	tristate "USB Mass Storage support"
-	depends on USB && SCSI
+	depends on USB
 	---help---
 	  Say Y here if you want to connect USB mass storage devices to your
 	  computer's USB port. This is the driver you need for USB
