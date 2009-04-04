@@ -11,6 +11,14 @@
  * Some are available on 2.4 kernels; several are available, but not
  * yet pushed in the 2.6 mainline tree.
  */
+
+#if 1 //def DWC_OTG_DEVICE_ONLY
+#define gadget_is_dwc_otg(g)	!strcmp("dwc_otg_pcd", (g)->name)
+#else
+#define gadget_is_dwc_otg(g)	0
+#endif
+
+
 #ifdef CONFIG_USB_GADGET_NET2280
 #define	gadget_is_net2280(g)	!strcmp("net2280", (g)->name)
 #else
