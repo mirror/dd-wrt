@@ -814,7 +814,7 @@ int wifi_gettxpower( char *ifname )
 #elif HAVE_BWRG1000
     poweroffset = 12;  //?? guess
 #elif HAVE_EAP3660
-    poweroffset = 10;
+    poweroffset = 8;
 #elif HAVE_EOC2610
     poweroffset = 10;
 #elif HAVE_EOC5610
@@ -912,7 +912,7 @@ int wifi_gettxpoweroffset( char *ifname )
 #elif HAVE_BWRG1000
     poweroffset = 12;  //?? guess
 #elif HAVE_EAP3660
-    poweroffset = 10;
+    poweroffset = 8;
 #elif HAVE_EOC2610
     poweroffset = 8;
 #elif HAVE_EOC5610
