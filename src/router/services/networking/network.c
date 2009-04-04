@@ -768,6 +768,11 @@ void set_fullswitch( void )
 
     return;
 }
+#ifdef HAVE_3G
+#define CANBRIDGE() (nvram_match( "wan_proto", "disabled" ) ||  nvram_match( "wan_proto", "3g" ))
+#else
+#define CANBRIDGE() nvram_match( "wan_proto", "disabled" )
+#endif
 
 void start_lan( void )
 {
@@ -793,7 +798,7 @@ void start_lan( void )
 	return;
 
 #ifdef HAVE_RB500
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames",
@@ -814,7 +819,7 @@ void start_lan( void )
 #endif
 
 #ifdef HAVE_MAGICBOX
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 eth1 ath0" );
@@ -840,8 +845,7 @@ void start_lan( void )
 #if defined(HAVE_FONERA) && !defined(HAVE_DIR300) && !defined(HAVE_MR3202A)
     if( getRouterBrand(  ) == ROUTER_BOARD_FONERA2200 )
     {
-	if( getSTA(  ) || getWET(  )
-	    || nvram_match( "wan_proto", "disabled" ) )
+	if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
 	{
 	    nvram_set( "lan_ifname", "br0" );
 	    nvram_set( "lan_ifnames", "vlan0 vlan1 ath0" );
@@ -857,7 +861,7 @@ void start_lan( void )
     else
     {
 	if( getSTA(  ) || getWET(  )
-	    || nvram_match( "wan_proto", "disabled" ) )
+	    || CANBRIDGE() )
 	{
 	    nvram_set( "lan_ifname", "br0" );
 	    nvram_set( "lan_ifnames", "eth0 ath0" );
@@ -876,7 +880,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_DIR300
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
@@ -894,7 +898,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_RS
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 eth1 ath0 ath1 ath2" );
@@ -911,7 +915,7 @@ void start_lan( void )
     nvram_set( "et0macaddr", ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #elif HAVE_LSX
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 ath0" );
@@ -929,7 +933,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_DANUBE
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 ath0" );
@@ -950,7 +954,7 @@ void start_lan( void )
     if( getRouterBrand(  ) == ROUTER_BOARD_ECB9750 )	// lets load
     {
 	if( getSTA(  ) || getWET(  )
-	    || nvram_match( "wan_proto", "disabled" ) )
+	    || CANBRIDGE() )
 	{
 	    nvram_set( "lan_ifname", "br0" );
 	    nvram_set( "lan_ifnames", "eth2 ra0" );
@@ -966,7 +970,7 @@ void start_lan( void )
     else
     {
 	if( getSTA(  ) || getWET(  )
-	    || nvram_match( "wan_proto", "disabled" ) )
+	    || CANBRIDGE() )
 	{
 	    nvram_set( "lan_ifname", "br0" );
 	    nvram_set( "lan_ifnames", "vlan1 vlan2 ra0" );
@@ -985,7 +989,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_STORM
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 ath0" );
@@ -1008,7 +1012,7 @@ void start_lan( void )
 	|| getRouterBrand(  ) == ROUTER_BOARD_NP28G )
     {
 	if( getSTA(  ) || getWET(  )
-	    || nvram_match( "wan_proto", "disabled" ) )
+	    || CANBRIDGE() )
 	{
 	    nvram_set( "lan_ifname", "br0" );
 	    nvram_set( "lan_ifnames", "eth0 eth1 ath0" );
@@ -1025,7 +1029,7 @@ void start_lan( void )
     {
 
 	if( getSTA(  ) || getWET(  )
-	    || nvram_match( "wan_proto", "disabled" ) )
+	    || CANBRIDGE() )
 	{
 	    nvram_set( "lan_ifname", "br0" );
 	    nvram_set( "lan_ifnames", "eth0 ath0" );
@@ -1045,7 +1049,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_MR3202A
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "vlan1 vlan2 ath0" );
@@ -1063,7 +1067,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_LS2
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 #if defined(HAVE_NS2) || defined(HAVE_BS2) || defined(HAVE_LC2) || defined(HAVE_BS2HP) || defined(HAVE_MS2) || defined(HAVE_PICO2) || defined(HAVE_PICO2HP)
 	nvram_set( "lan_ifname", "br0" );
@@ -1099,7 +1103,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_LS5
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 ath0" );
@@ -1118,7 +1122,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_TW6600
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 ath0 ath1" );
@@ -1137,7 +1141,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_PB42
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 eth1 ath0 ath1" );
@@ -1156,7 +1160,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_WHRAG108
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 	nvram_set( "lan_ifnames", "eth0 eth1 ath0 ath1" );
@@ -1175,7 +1179,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_CA8
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	if( getRouterBrand(  ) == ROUTER_BOARD_CA8PRO )
 	{
@@ -1236,7 +1240,7 @@ void start_lan( void )
     strcpy( mac, nvram_safe_get( "et0macaddr" ) );
 #endif
 #ifdef HAVE_GATEWORX
-    if( getSTA(  ) || getWET(  ) || nvram_match( "wan_proto", "disabled" ) )
+    if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	if( getRouterBrand(  ) == ROUTER_BOARD_GATEWORX_SWAP )
 	{
@@ -1358,7 +1362,7 @@ void start_lan( void )
 #endif
 	PORTSETUPWAN( "" );
     }
-    else if( nvram_match( "wan_proto", "disabled" ) )
+    else if( CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
 #ifdef HAVE_NOWIFI
@@ -1924,7 +1928,7 @@ void start_lan( void )
 	if( nvram_match( "ath0_mode", "sta" )
 	    || nvram_match( "ath0_mode", "wdssta" )
 	    || nvram_match( "ath0_mode", "wet" )
-	    || nvram_match( "wan_proto", "disabled" ) )
+	    || CANBRIDGE() )
 	{
 #endif
 
@@ -2773,7 +2777,7 @@ void start_wan( int status )
 	if( !nvram_match( "ath0_mode", "sta" )
 	    && !nvram_match( "ath0_mode", "wdssta" )
 	    && !nvram_match( "ath0_mode", "wet" )
-	    && !nvram_match( "wan_proto", "disabled" ) )
+	    && !CANBRIDGE() )
 	{
 	    eval( "ifconfig", "br0:0", "down" );
 	    eval( "ifconfig", staticlan, "169.254.255.1", "netmask",
@@ -2931,8 +2935,8 @@ void start_wan( int status )
 	fprintf(fp,"460800\n");
 	fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
 //	fprintf(fp,"connect \"NUMBER='*99***1#' /usr/sbin/comgt -s /etc/comgt/dial.comgt -d %s\"\n",ttsdevice);
-	fprintf(fp,"user internet\n");
-	fprintf(fp,"password internet\n");
+	fprintf(fp,"user %s\n",nvram_safe_get("ppp_username"));
+	fprintf(fp,"password %s\n",nvram_safe_get("ppp_passwd"));
 	fprintf(fp,"%s\n",controldevice);
 	
 	fclose(fp);
