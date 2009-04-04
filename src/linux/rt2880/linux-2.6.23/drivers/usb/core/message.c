@@ -1008,13 +1008,20 @@ void usb_disable_endpoint(struct usb_device *dev, unsigned int epaddr)
 
 	if (usb_endpoint_out(epaddr)) {
 		ep = dev->ep_out[epnum];
-		dev->ep_out[epnum] = NULL;
+//		dev->ep_out[epnum] = NULL;
 	} else {
 		ep = dev->ep_in[epnum];
-		dev->ep_in[epnum] = NULL;
+//		dev->ep_in[epnum] = NULL;
 	}
 	if (ep && dev->bus)
 		usb_hcd_endpoint_disable(dev, ep);
+
+    if (usb_endpoint_out(epaddr)) {
+        dev->ep_out[epnum] = NULL;
+    } else {
+        dev->ep_in[epnum] = NULL;
+    }
+
 }
 
 /**
