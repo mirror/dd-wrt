@@ -1509,11 +1509,6 @@ void start_nvram( void )
 
     // nvram_set("wl_country","Worldwide"); // The country always Worldwide
 
-#ifndef AOL_SUPPORT
-    nvram_set( "aol_block_traffic", "0" );
-    nvram_set( "aol_block_traffic1", "0" );
-    nvram_set( "aol_block_traffic2", "0" );
-#endif
     nvram_set( "ping_ip", "" );
     nvram_set( "ping_times", "" );
     // nvram_set ("traceroute_ip", "");
