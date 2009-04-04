@@ -3069,6 +3069,16 @@ void start_wan( int status )
 	    {
 		char *ifn = enable_dtag_vlan( 1 );
 
+		if (nvram_match("dtag_vlan8","1"))
+		{
+		    sprintf( vlannic, "%s.0008", ifn );
+		    if( !ifexists( vlannic ) )
+			{
+			eval( "vconfig", "set_name_type", "DEV_PLUS_VID" );
+			eval( "vconfig", "add", ifn, "8" );
+			eval( "ifconfig", vlannic, "up" );
+			}
+		}
 		sprintf( vlannic, "%s.0007", ifn );
 		if( !ifexists( vlannic ) )
 		{
@@ -3076,6 +3086,7 @@ void start_wan( int status )
 		    eval( "vconfig", "add", ifn, "7" );
 		    eval( "ifconfig", vlannic, "up" );
 		}
+
 		fprintf( fp, "nic-%s\n", vlannic );
 	    }
 	    else
@@ -3085,16 +3096,29 @@ void start_wan( int status )
 		sprintf( vlannic, "%s.0007", ifn );
 		if( ifexists( vlannic ) )
 		    eval( "vconfig", "rem", vlannic );
+		sprintf( vlannic, "%s.0008", ifn );
+		if( ifexists( vlannic ) )
+		    eval( "vconfig", "rem", vlannic );
 		fprintf( fp, "nic-%s\n", pppoe_wan_ifname );
 	    }
 
 	}
 	else
 	{
-	    sprintf( vlannic, "%s.0007", pppoe_wan_ifname );
 	    if( nvram_match( "wan_vdsl", "1" ) )	// Deutsche Telekom
 		// VDSL2 Vlan 7 Tag
 	    {
+	    if (nvram_match("dtag_vlan8","1"))
+		{
+		sprintf( vlannic, "%s.0008", pppoe_wan_ifname );
+		if( !ifexists( vlannic ) )
+		    {
+			eval( "vconfig", "set_name_type", "DEV_PLUS_VID" );
+			eval( "vconfig", "add", pppoe_wan_ifname, "8" );
+			eval( "ifconfig", vlannic, "up" );
+		    }
+		}
+		sprintf( vlannic, "%s.0007", pppoe_wan_ifname );
 		if( !ifexists( vlannic ) )
 		{
 		    eval( "vconfig", "set_name_type", "DEV_PLUS_VID" );
@@ -3105,6 +3129,10 @@ void start_wan( int status )
 	    }
 	    else
 	    {
+		sprintf( vlannic, "%s.0008", pppoe_wan_ifname );
+		if( ifexists( vlannic ) )
+		    eval( "vconfig", "rem", vlannic );
+		sprintf( vlannic, "%s.0007", pppoe_wan_ifname );
 		if( ifexists( vlannic ) )
 		    eval( "vconfig", "rem", vlannic );
 		fprintf( fp, "nic-%s\n", pppoe_wan_ifname );

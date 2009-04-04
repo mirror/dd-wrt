@@ -1922,6 +1922,8 @@ char *enable_dtag_vlan( int enable )
 	    else
 		nvram_set( "vlan2ports", "" );
 	    nvram_set( "vlan7ports", vlan7ports );
+	    if (nvram_match("dtag_vlan8","1"))
+		nvram_set( "vlan8ports", vlan7ports );
 	}
 	stop_lan(  );
 	eval( "ifconfig", eth, "down" );
@@ -1937,6 +1939,7 @@ char *enable_dtag_vlan( int enable )
 	    else
 		nvram_set( "vlan2ports", save_ports2 );
 	    nvram_set( "vlan7ports", "" );
+	    nvram_set( "vlan8ports", "" );
 	}
 	nvram_set( "fromvdsl", "0" );
 	return eth;
@@ -1965,6 +1968,8 @@ char *enable_dtag_vlan( int enable )
 	{
 	    nvram_set( "vlan1ports", "" );
 	    nvram_set( "vlan7ports", vlan7ports );
+	    if (nvram_match("dtag_vlan8","1"))
+		nvram_set( "vlan8ports", vlan7ports );
 	}
 	stop_lan(  );
 	eval( "ifconfig", eth, "down" );
@@ -1977,6 +1982,7 @@ char *enable_dtag_vlan( int enable )
 	{
 	    nvram_set( "vlan1ports", save_ports2 );
 	    nvram_set( "vlan7ports", "" );
+	    nvram_set( "vlan8ports", "" );
 	}
 	nvram_set( "fromvdsl", "0" );
 	return eth;
@@ -2036,12 +2042,16 @@ char *enable_dtag_vlan( int enable )
 		       eth );
 	    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/7/ports",
 		       vlan7ports, eth );
+	    if (nvram_match("dtag_vlan8","1"))
+		sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/8/ports",vlan7ports, eth );
 	}
 	else
 	{
 	    fprintf( stderr, "disable vlan port mapping %s/%s\n",
 		     nvram_safe_get( "vlan0ports" ),
 		     nvram_safe_get( "vlan1ports" ) );
+	    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/8/ports", "",
+		       eth );
 	    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/7/ports", "",
 		       eth );
 	    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/0/ports",
