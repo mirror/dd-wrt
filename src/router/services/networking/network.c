@@ -2931,6 +2931,15 @@ void start_wan( int status )
 	fprintf(fp,"usepeerdns\n");
 	fprintf(fp,"lcp-echo-interval 10\n");
 	fprintf(fp,"lcp-echo-failure 3\n");
+	if( nvram_match( "mtu_enable", "1" ) )
+	{
+	    if( atoi( nvram_safe_get( "wan_mtu" ) ) > 0 )
+	    {
+		fprintf( fp, "mtu %s\n", nvram_safe_get( "wan_mtu" ) );
+		fprintf( fp, "mru %s\n", nvram_safe_get( "wan_mtu" ) );
+	    }
+
+	}
 	fprintf(fp,"crtscts\n");
 	fprintf(fp,"460800\n");
 	fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
