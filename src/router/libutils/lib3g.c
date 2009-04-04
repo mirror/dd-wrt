@@ -63,5 +63,11 @@ char *get3GControlDevice(void)
 	    fprintf(stderr,"HUAWEI/Option E301 HSUPA detected\n");
 	    return "/dev/usb/tts/0";
 	    }
+	if (scanFor(0x12d1,0x1001))
+	    {
+	    //huawei
+	    fprintf(stderr,"HUAWEI/Option E600 detected\n");
+	    return "/dev/usb/tts/0";
+	    }
 return ttsdevice;
 }
