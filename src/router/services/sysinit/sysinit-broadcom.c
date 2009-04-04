@@ -1956,7 +1956,6 @@ char *enable_dtag_vlan( int enable )
 	char *eth = "eth1";
 #endif
 	vlan7ports = "0t 5";
-	int vlanswap = 0;
 	char *save_ports2 = nvram_safe_get( "vlan1ports" );
 
 	if( donothing )
