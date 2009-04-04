@@ -1385,14 +1385,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"ddns_cache", "", 0},	/* DDNS cache */
     {"ddns_time", "", 0},	/* DDNS time */
 
-    /*
-     * for AOL 
-     */
-    {"aol_block_traffic", "0", 0},	/* 0:Disable 1:Enable for global */
-    {"aol_block_traffic1", "0", 0},	/* 0:Disable 1:Enable for
-					 * "ppp_username" */
-    {"aol_block_traffic2", "0", 0},	/* 0:Disable 1:Enable for "Parental
-					 * control" */
     {"skip_amd_check", "0", 0},	/* 0:Disable 1:Enable */
     {"skip_intel_check", "0", 0},	/* 0:Disable 1:Enable */
 

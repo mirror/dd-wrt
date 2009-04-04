@@ -132,7 +132,7 @@ localityName_value		= Dresden
 #1.organizationName_default	= World Wide Web Pty Ltd
 
 organizationalUnitName		= Organizational Unit Name (eg, section)
-organizationalUnitName_value	= Division
+organizationalUnitName_value	= DD-WRT
 
 commonName			= Common Name (eg, your name or your server\'s hostname)
 commonName_max			= 64

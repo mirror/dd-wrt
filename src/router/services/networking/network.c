@@ -3032,30 +3032,10 @@ void start_wan( int status )
 	snprintf( retry_num, sizeof( retry_num ), "%d",
 		  ( atoi( nvram_safe_get( "ppp_redialperiod" ) ) / 5 ) - 1 );
 
-	if( nvram_match( "aol_block_traffic", "0" ) )
-	{
-	    snprintf( username, sizeof( username ), "%s",
+	snprintf( username, sizeof( username ), "%s",
 		      nvram_safe_get( "ppp_username" ) );
-	    snprintf( passwd, sizeof( passwd ), "%s",
+	snprintf( passwd, sizeof( passwd ), "%s",
 		      nvram_safe_get( "ppp_passwd" ) );
-	}
-	else
-	{
-	    if( !strcmp( nvram_safe_get( "aol_username" ), "" ) )
-	    {
-		snprintf( username, sizeof( username ), "%s",
-			  nvram_safe_get( "ppp_username" ) );
-		snprintf( passwd, sizeof( passwd ), "%s",
-			  nvram_safe_get( "ppp_passwd" ) );
-	    }
-	    else
-	    {
-		snprintf( username, sizeof( username ), "%s",
-			  nvram_safe_get( "aol_username" ) );
-		snprintf( passwd, sizeof( passwd ), "%s",
-			  nvram_safe_get( "aol_passwd" ) );
-	    }
-	}
 
 	mkdir( "/tmp/ppp", 0777 );
 	int timeout = 5;

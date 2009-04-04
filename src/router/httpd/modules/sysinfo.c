@@ -191,8 +191,6 @@ void ej_show_miscinfo( webs_t wp, int argc, char_t ** argv )
     websWrite( wp, "Write Mac Address = %s\n",
 	       nvram_safe_get( "et0macaddr" ) );
 
-    websWrite( wp, "SWAOLstatus = %s\n",
-	       nvram_safe_get( "aol_block_traffic" ) );
     websWrite( wp, "SWAT&Tstatus = 0\n" );
 
     if( nvram_match( "wan_proto", "dhcp" ) )
