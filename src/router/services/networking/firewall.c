@@ -1821,6 +1821,11 @@ static void filter_input( void )
      * most of what was here has been moved to the end 
      */
     save2file( "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n" );
+    if (nvram_match("dtag_vlan8","1"))
+	{
+	    save2file( "-A INPUT -i %s -j ACCEPT\n", nvram_safe_get("tvnicfrom"));
+//	    save2file( "-A INPUT -i %s -j ACCEPT\n", nvram_safe_get("tvnicto"));
+	}
 
 #ifdef HAVE_PPTP
     if( nvram_match( "pptpd_enable", "1" )
@@ -2044,6 +2049,13 @@ static void filter_forward( void )
     char var[80];
 
     char vifs[256];		// 
+    if (nvram_match("dtag_vlan8","1"))
+	{
+	    save2file( "-A FORWARD -i %s -j ACCEPT\n", nvram_safe_get("tvnicfrom"));
+//	    save2file( "-A FORWARD -i %s -j ACCEPT\n", nvram_safe_get("tvnicto"));
+	    save2file( "-A FORWARD -o %s -j ACCEPT\n", nvram_safe_get("tvnicfrom"));
+//	    save2file( "-A FORWARD -o %s -j ACCEPT\n", nvram_safe_get("tvnicto"));
+	}
 
     getIfLists( vifs, 256 );
     // = nvram_safe_get ("lan_ifnames");
