@@ -3106,6 +3106,7 @@ void start_wan( int status )
 		char *ifn = enable_dtag_vlan( 0 );
 		sysprintf("brctl delif tvbridge %s.0008",ifn);
 		sysprintf("brctl delif tvbridge %s.0003",ifn);
+		eval("ifconfig","tvbridge","down");
 		eval("brctl","delbr","tvbridge");
 
 		sprintf( vlannic, "%s.0007", ifn );
