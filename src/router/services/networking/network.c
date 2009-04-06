@@ -3079,17 +3079,9 @@ void start_wan( int status )
 			eval( "vconfig", "add", ifn, "8" );
 			eval( "ifconfig", vlannic, "up" );
 			}
-		    sprintf( tvnic, "%s.0003", ifn );
-		    if( !ifexists( tvnic ) )
-			{
-			eval( "vconfig", "set_name_type", "DEV_PLUS_VID" );
-			eval( "vconfig", "add", ifn, "3" );
-			eval( "ifconfig", tvnic, "up" );
-			eval( "brctl","addbr","tvbridge");
-			eval( "ifconfig","tvbridge","up");
-			eval( "brctl","addif","tvbridge",tvnic);
-			eval( "brctl","addif","tvbridge",vlannic);
-			}
+			nvram_set("tvnicfrom",vlannic);
+			symlink( "/sbin/rc", "/tmp/udhcpc_tv" );
+			eval("udhcpc","-i",vlannic,"-s","/tmp/udhcpc_tv","-q");
 		}
 		sprintf( vlannic, "%s.0007", ifn );
 		if( !ifexists( vlannic ) )
@@ -3104,18 +3096,11 @@ void start_wan( int status )
 	    else
 	    {
 		char *ifn = enable_dtag_vlan( 0 );
-		sysprintf("brctl delif tvbridge %s.0008",ifn);
-		sysprintf("brctl delif tvbridge %s.0003",ifn);
-		eval("ifconfig","tvbridge","down");
-		eval("brctl","delbr","tvbridge");
 
 		sprintf( vlannic, "%s.0007", ifn );
 		if( ifexists( vlannic ) )
 		    eval( "vconfig", "rem", vlannic );
 		sprintf( vlannic, "%s.0008", ifn );
-		if( ifexists( vlannic ) )
-		    eval( "vconfig", "rem", vlannic );
-		sprintf( vlannic, "%s.0003", ifn );
 		if( ifexists( vlannic ) )
 		    eval( "vconfig", "rem", vlannic );
 		fprintf( fp, "nic-%s\n", pppoe_wan_ifname );
