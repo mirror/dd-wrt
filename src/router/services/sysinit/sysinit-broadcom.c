@@ -1931,12 +1931,16 @@ char *enable_dtag_vlan( int enable )
 	{
 	    if (nvram_match("dtag_vlan8","1"))
 		{
-		nvram_set( "vlan1ports", "" );
-		nvram_set( "vlan2ports", "" );
+//		nvram_set( "vlan1ports", "" );
+//		nvram_set( "vlan2ports", "" );
+//		if( vlanswap )	
+//		    nvram_set( "vlan2ports", vlanswitch );
+//		else
+//		    nvram_set( "vlan1ports", vlanswitch );
 		if( vlanswap )	
-		    nvram_set( "vlan2ports", vlanswitch );
+		    nvram_set( "vlan1ports", "" );
 		else
-		    nvram_set( "vlan1ports", vlanswitch );
+		    nvram_set( "vlan2ports", "" );
 		}else{	    
 		if( vlanswap )	
 		    nvram_set( "vlan1ports", "" );
@@ -1946,7 +1950,7 @@ char *enable_dtag_vlan( int enable )
 	    nvram_set( "vlan7ports", vlan7ports );
 	    if (nvram_match("dtag_vlan8","1"))
 		{
-		nvram_set ("vlan3ports", vlantvport);
+//		nvram_set ("vlan3ports", vlantvport);
 		nvram_set( "vlan8ports", vlan7ports );
 		}
 	}
@@ -1962,7 +1966,7 @@ char *enable_dtag_vlan( int enable )
 	    nvram_set( "vlan1ports", save_ports1 );
 	    nvram_set( "vlan2ports", save_ports2 );
 	    nvram_set( "vlan7ports", "" );
-	    nvram_set( "vlan3ports", "" );
+//	    nvram_set( "vlan3ports", "" );
 	    nvram_set( "vlan8ports", "" );
 	}
 	nvram_set( "fromvdsl", "0" );
@@ -1996,8 +2000,7 @@ char *enable_dtag_vlan( int enable )
 	    nvram_set( "vlan7ports", vlan7ports );
 	    if (nvram_match("dtag_vlan8","1"))
 		{
-		nvram_set( "vlan0ports", vlanswitch);
-		nvram_set( "vlan3ports", vlantvport);
+//		nvram_set( "vlan0ports", vlanswitch);
 		nvram_set( "vlan8ports", vlan7ports );
 		}
 	}
@@ -2013,7 +2016,6 @@ char *enable_dtag_vlan( int enable )
 	    nvram_set( "vlan0ports", save_ports1 );
 	    nvram_set( "vlan1ports", save_ports2 );
 	    nvram_set( "vlan7ports", "" );
-	    nvram_set( "vlan3ports", "" );
 	    nvram_set( "vlan8ports", "" );
 	}
 	nvram_set( "fromvdsl", "0" );
@@ -2076,9 +2078,8 @@ char *enable_dtag_vlan( int enable )
 		}else{
 		if (nvram_match("dtag_vlan8","1"))
 		    {
-		    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/0/ports",vlanswitch, eth );
+		    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/0/ports",nvram_safe_get( "vlan0ports" ), eth );
 		    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/1/ports", "",eth );
-		    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/3/ports",vlantvport, eth );
 		    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/7/ports",vlan7ports, eth );
 		    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/8/ports",vlan7ports, eth );
 		    }
@@ -2090,8 +2091,6 @@ char *enable_dtag_vlan( int enable )
 		     nvram_safe_get( "vlan0ports" ),
 		     nvram_safe_get( "vlan1ports" ) );
 	    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/8/ports", "",
-		       eth );
-	    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/3/ports", "",
 		       eth );
 	    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/7/ports", "",
 		       eth );
