@@ -18,8 +18,15 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.vdsl"); %></div>
-	<input class="spaceradio" type="radio" name="wan_vdsl" value="1" <% nvram_checked("wan_vdsl","1"); %> /><% tran("share.enable"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="wan_vdsl" value="0" <% nvram_checked("wan_vdsl","0"); %> /><% tran("share.disable"); %> 
+	<input class="spaceradio" type="radio" name="wan_vdsl" value="1" <% nvram_checked("wan_vdsl","1"); %> onclick="show_layer_ext(this, 'idvlan8', true)" /><% tran("share.enable"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="wan_vdsl" value="0" <% nvram_checked("wan_vdsl","0"); %> onclick="show_layer_ext(this, 'idvlan8', false)" /><% tran("share.disable"); %> 
+	<div id="idreconnect">
+		<div class="setting">
+		    <div class="label"><% tran("share.vdslvlan8"); %></div>
+		    <input class="spaceradio" type="radio" name="dtag_vlan8" value="1" <% nvram_checked("dtag_vlan8","1"); %> onclick="show_layer_ext(this, 'idvlan8', true)" /><% tran("share.enable"); %>&nbsp;
+		    <input class="spaceradio" type="radio" name="dtag_vlan8" value="0" <% nvram_checked("dtag_vlan8","0"); %> onclick="show_layer_ext(this, 'idvlan8', false)" /><% tran("share.disable"); %> 
+		</div>
+	</div>
 </div>
 <div class="setting">
 	<div class="label"><% tran("service.pptpd_encry"); %></div>
