@@ -18,6 +18,7 @@ share.disabled="Ausgeschaltet";
 share.usrname="Nutzername";
 share.passwd="Passwort";
 share.hostname="Hostname";
+share.vdslvlan8="VLAN 8 unterstützung (TV an Port1)";
 share.domainname="Domainname";
 share.wandomainname="WAN Domain Name";
 share.landomainname="LAN Domain Name";
