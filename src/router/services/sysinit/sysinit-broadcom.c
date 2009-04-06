@@ -1880,13 +1880,13 @@ char *enable_dtag_vlan( int enable )
     {
 	vlan7ports = "0t 5";
 	vlantvport = "1 5";
-	vlanswitch = "0 1 2 5";
+	vlanswitch = "4 3 2 5";
     }
     if( nvram_match( "vlan1ports", "1 5" ) )
     {
 	vlan7ports = "1t 5";
 	vlantvport = "2 5";
-	vlanswitch = "0 3 4 5";
+	vlanswitch = "4 3 0 5";
     }
     if( nvram_match( "vlan2ports", "0 8" ) || nvram_match( "vlan2ports", "0 8*" ) || nvram_match( "vlan2ports", "0 8t" ) || nvram_match( "vlan1ports", "4 8" ) )	// special 
 	// 
@@ -1981,7 +1981,7 @@ char *enable_dtag_vlan( int enable )
 #endif
 	vlan7ports = "0t 5";
 	vlantvport = "1 5";
-	vlanswitch = "2 3 4 5";
+	vlanswitch = "4 3 2 5";
 	char *save_ports2 = nvram_safe_get( "vlan1ports" );
 	char *save_ports1 = nvram_safe_get( "vlan0ports" );
 
