@@ -38,11 +38,26 @@ void start_igmp_proxy( void )
     stop_igmp_proxy(  );
     int ifcount = 0;
 
+    if (nvram_match("dtag_vlan8","1"))
+	{
+	FILE *fp = fopen( "/tmp/igmpproxy_tv.conf", "wb" );
+	fprintf( fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",nvram_safe_get( "tvnicfrom" ) );
+	fprintf( fp, "phyint %s downstream  ratelimit 0  threshold 1\n",nvram_safe_get( "lan_ifname")); 
+//	fprintf( fp, "phyint %s disabled\nphyint %s:0 disabled\n", nvram_safe_get( "lan_ifname" ),nvram_safe_get( "lan_ifname" ) );
+	char ifnames[256];
+	getIfLists( ifnames, 256 );
+	foreach( name, ifnames, next )
+	{
+	    fprintf( fp, "phyint %s disabled\n", name );
+	}
+	fprintf( fp, "phyint lo disabled\n" );
+	fclose(fp);
+	eval("igmprt","-c","/tmp/igmpproxy_tv.conf");
+	return;
+	}
     FILE *fp = fopen( "/tmp/igmpproxy.conf", "wb" );
 
-    fprintf( fp, "quickleave\n"
-	     "phyint %s upstream  ratelimit 0  threshold 1\n",
-	     nvram_safe_get( "wan_iface" ) );
+    fprintf( fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",nvram_safe_get( "wan_iface" ) );
     if( nvram_match( "block_multicast", "0" ) )
     {
 	fprintf( fp, "phyint %s downstream  ratelimit 0  threshold 1\n",
