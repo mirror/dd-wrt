@@ -6,6 +6,7 @@
  "wan_domain"  "WAN Domain Name"  "NAME"  "255"  "TRUE" "3"
  "wan_ipaddr"  "WAN IP Address"  "WANIPADDR"  "FALSE" "3"
  "wan_vdsl" "DTAG VDSL VLAN Tagging" "CHOICE" "2" "0" "1" "FALSE" "0"
+ "dtag_vlan8" "DTAG VDSL VLAN 8 support" "CHOICE" "2" "0" "1" "FALSE" "0"
  "wan_vlantag" "Vlan Tag ID" "RANGE" "1" "4096" "FALSE" "0"
  "wan_proto"  "WAN Protocol"  "CHOICE" "7" "disabled"  "dhcp"  "static"  "pppoe"  "pptp"  "l2tp"  "heartbeat"  "FALSE" "3"
  "wan_apn" "apn name" "NULL" "TRUE" "0"
