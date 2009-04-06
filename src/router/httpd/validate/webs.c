@@ -415,7 +415,7 @@ void validate_services_port( webs_t wp )
 	    continue;
 
 	cur +=
-	    snprintf( cur, buf + sizeof( buf ) - cur,
+	    snprintf( cur, buf + sizeof( 8192 ) - cur,
 		      "%s$NAME:%03d:%s$PROT:%03d:%s$PORT:%03d:%d:%d",
 		      cur == buf ? "" : "<&nbsp;>", strlen( name ), name,
 		      strlen( num_to_protocol( proto ) ),
@@ -429,7 +429,7 @@ void validate_services_port( webs_t wp )
     // fprintf (stderr, "cur=%s\n", cur);
 
     memcpy( word, cur, 1024 );
-    word[1024] = 0;
+    word[1025] = 0;
     nvram_set( "filter_services", word );
     cur += 1024;
 
