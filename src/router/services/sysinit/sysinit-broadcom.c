@@ -2067,7 +2067,8 @@ char *enable_dtag_vlan( int enable )
 	{
 	    fprintf( stderr, "enable vlan port mapping %s/%s\n",
 		     nvram_safe_get( "vlan0ports" ), vlan7ports );
-	    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/0/ports",nvram_safe_get( "vlan0ports" ), eth );
+	    if (!nvram_match("dtag_vlan8","1"))
+		sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/0/ports",nvram_safe_get( "vlan0ports" ), eth );
 	    start_setup_vlans(  );
 	    sysprintf( "echo \"%s\" > /proc/switch/%s/vlan/1/ports", "",
 		       eth );
