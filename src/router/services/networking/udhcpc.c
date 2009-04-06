@@ -422,3 +422,36 @@ int udhcpc_main( int argc, char **argv )
     else
 	return EINVAL;
 }
+
+static int bound_tv(void)
+{
+char *ifname = safe_getenv( "interface" );
+char *ip = safe_getenv( "ip" );
+char *net = safe_getenv( "subnet" );
+char *gw = safe_getenv( "router" );
+fprintf(stderr,"gateway %s\n",gw);
+if (ip && net && ifname)
+    {
+    eval("ifconfig",ifname,ip,"netmask",net);
+    }
+return 0;
+}
+
+int udhcpc_tv_main( int argc, char **argv )
+{
+    if( check_action(  ) != ACT_IDLE )
+	return -1;
+
+    if( !argv[1] )
+	return EINVAL;
+    else if( strstr( argv[1], "deconfig" ) )
+	return 0;
+    else if( strstr( argv[1], "bound" ) )
+	return bound_tv(  );
+    else if( strstr( argv[1], "renew" ) )
+	return bound_tv(  );
+    else if( strstr( argv[1], "update" ) )
+	return bound_tv(  );
+    else
+	return EINVAL;
+}
