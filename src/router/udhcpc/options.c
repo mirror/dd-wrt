@@ -32,6 +32,7 @@ struct dhcp_option dhcp_options[] = {
 	{"ipttl",	OPTION_U8,				0x17},
 	{"mtu",		OPTION_U16,				0x1a},
 	{"broadcast",	OPTION_IP | OPTION_REQ,			0x1c},
+	{"static_routes",OPTION_IP | OPTION_LIST,		0x21},
 	{"nisdomain",	OPTION_STRING | OPTION_REQ,		0x28},
 	{"nissrv",	OPTION_IP | OPTION_LIST | OPTION_REQ,	0x29},
 	{"ntpsrv",	OPTION_IP | OPTION_LIST | OPTION_REQ,	0x2a},
@@ -41,8 +42,14 @@ struct dhcp_option dhcp_options[] = {
 	{"dhcptype",	OPTION_U8,				0x35},
 	{"serverid",	OPTION_IP,				0x36},
 	{"message",	OPTION_STRING,				0x38},
+	{"vendorclass",	OPTION_STRING,				0x3C},
+	{"clientid",	OPTION_STRING,				0x3D},
 	{"tftp",	OPTION_STRING,				0x42},
 	{"bootfile",	OPTION_STRING,				0x43},
+	{"userclass",	OPTION_STRING,				0x4D},
+//	{"search",	OPTION_STR1035 | OPTION_LIST,		0x77},
+	{"cidrroute",	OPTION_U8 | OPTION_LIST | OPTION_REQ,	0x79},
+	{"wpad",	OPTION_STRING,				0xfc},
 	{"",		0x00,				0x00}
 };
 
@@ -52,6 +59,7 @@ int option_lengths[] = {
 	[OPTION_IP_PAIR] =	8,
 	[OPTION_BOOLEAN] =	1,
 	[OPTION_STRING] =	1,
+	[OPTION_STR1035] = 	1,
 	[OPTION_U8] =		1,
 	[OPTION_U16] =		2,
 	[OPTION_S16] =		2,
@@ -111,6 +119,7 @@ uint8_t *get_option(struct dhcpMessage *packet, int code)
 			i += optionptr[OPT_LEN + i] + 2;
 		}
 	}
+//	fprintf(stderr,"option 0x%X not found\n",code);
 	return NULL;
 }
 
