@@ -8,6 +8,14 @@
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
+	<div class="label"><% tran("share.dial"); %></div>
+	<select name="wan_dial" >
+		<option value="0" <% nvram_selmatch("wan_dial", "0", "selected"); %> >*99***1#</option>
+		<option value="1" <% nvram_selmatch("wan_dial", "1", "selected"); %> >*99#</option>
+		<option value="2" <% nvram_selmatch("wan_dial", "2", "selected"); %> >#777</option>
+	</select>
+</div>
+<div class="setting">
 	<div class="label"><% tran("share.apn"); %></div>
 	<input name="wan_apn" size="40" maxlength="63" onblur="valid_name(this,share.apn)" value="<% nvram_get("wan_apn"); %>" />
 </div>
