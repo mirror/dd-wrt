@@ -43,7 +43,6 @@ void start_igmp_proxy( void )
 	FILE *fp = fopen( "/tmp/igmpproxy_tv.conf", "wb" );
 	fprintf( fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",nvram_safe_get( "tvnicfrom" ) );
 	fprintf( fp, "phyint %s downstream  ratelimit 0  threshold 1\n",nvram_safe_get( "lan_ifname")); 
-//	fprintf( fp, "phyint %s disabled\nphyint %s:0 disabled\n", nvram_safe_get( "lan_ifname" ),nvram_safe_get( "lan_ifname" ) );
 	char ifnames[256];
 	getIfLists( ifnames, 256 );
 	foreach( name, ifnames, next )
