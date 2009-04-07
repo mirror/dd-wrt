@@ -20,4 +20,5 @@ endif
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
 endif
 	install -D udhcpc/udhcpc $(INSTALLDIR)/udhcpd/usr/sbin/udhcpc
+	install -m 777 -D udhcpc/scripts/cidrroute.sh $(INSTALLDIR)/udhcpd/etc/cidrroute.sh
 
