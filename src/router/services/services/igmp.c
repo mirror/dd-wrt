@@ -48,7 +48,8 @@ void start_igmp_proxy( void )
 	getIfLists( ifnames, 256 );
 	foreach( name, ifnames, next )
 	{
-	    fprintf( fp, "phyint %s disabled\n", name );
+	    if (!nvram_match("tvnicfrom",name) && !nvram_match("lan_ifname",name))
+		fprintf( fp, "phyint %s disabled\n", name );
 	}
 	fprintf( fp, "phyint lo disabled\n" );
 	fclose(fp);
