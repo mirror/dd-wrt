@@ -453,7 +453,7 @@ char _SETPIN_code[]=
   :start\n\
     flash 0.1\n\
     send \"AT+CPIN?^m\"\n\
-    waitfor 5 \"SIM PUK\",\"SIM PIN\",\"READY\",\"ERROR\",\"ERR\"\,\"COMMAND\"n\
+    waitfor 5 \"SIM PUK\",\"SIM PIN\",\"READY\",\"ERROR\",\"ERR\",\"COMMAND\"n\
     if % = -1 goto error\n\
     if % = 0 goto pukerror\n\
     if % = 1 goto getpin\n\
@@ -463,7 +463,7 @@ char _SETPIN_code[]=
     if % = 5 goto nosup\n\
   :nosup\n\
     print $s,\" ***NO PIN SUPPORT\n\"\n\
-    exit 1\n\    
+    exit 1\n\
   :error\n\
     print $s,\" ***SIM ERROR***\n\"\n\
     print \"Check device port configuration.\nCheck SIM is inserted\nTest SIM in a mobile phone?\n\"\n\
