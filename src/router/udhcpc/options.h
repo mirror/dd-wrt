@@ -10,6 +10,7 @@ enum {
 	OPTION_IP=1,
 	OPTION_IP_PAIR,
 	OPTION_STRING,
+	OPTION_STR1035,	/* RFC1035 compressed domain name list */
 	OPTION_BOOLEAN,
 	OPTION_U8,
 	OPTION_U16,
