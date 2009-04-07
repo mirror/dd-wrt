@@ -1949,8 +1949,14 @@ static void filter_input( void )
     /*
      * IGMP query from WAN interface 
      */
-    save2file( "-A INPUT -p igmp -j %s\n",
+    if (nvram_match("dtag_vlan8","1"))
+	{
+	save2file( "-A INPUT -p igmp -j %s\n",TARG_PASS );
+	}else{
+	save2file( "-A INPUT -p igmp -j %s\n",
 	       doMultiCast(  ) == 0 ? log_drop : TARG_PASS );
+	
+	}
 
 #ifdef HAVE_TFTP
     /*
@@ -2235,10 +2241,15 @@ static void filter_forward( void )
     /*
      * ACCEPT packets for Multicast pass through 
      */
+    if (nvram_match("dtag_vlan8","1"))
+	{
+	save2file( "-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
+		   nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept );	
+	}else{	
     if( doMultiCast(  ) > 0 )
 	save2file( "-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
 		   wanface, IP_MULTICAST, log_accept );
-
+	}
     /*
      * port-forwarding accepting rules 
      */

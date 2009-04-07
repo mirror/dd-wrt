@@ -2942,8 +2942,15 @@ void start_wan( int status )
 	}
 	fprintf(fp,"crtscts\n");
 	fprintf(fp,"460800\n");
-	fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
-//	fprintf(fp,"connect \"NUMBER='*99***1#' /usr/sbin/comgt -s /etc/comgt/dial.comgt -d %s\"\n",ttsdevice);
+//	fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
+	char *dial="*99***1#";
+	if (nvram_match("wan_dial","0"))
+	    dial="*99***1#";
+	if (nvram_match("wan_dial","1"))
+	    dial="*99#";
+	if (nvram_match("wan_dial","2"))
+	    dial="#777";
+	fprintf(fp,"connect \"COMGTDIAL='ATD%s' /usr/sbin/comgt DIAL -d %s\"\n",dial,controldevice);
 	fprintf(fp,"user %s\n",nvram_safe_get("ppp_username"));
 	fprintf(fp,"password %s\n",nvram_safe_get("ppp_passwd"));
 	fprintf(fp,"%s\n",controldevice);
