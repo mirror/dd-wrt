@@ -215,7 +215,7 @@ struct nvram_tuple srouter_defaults[] = {
     /*
      * WAN H/W parameters 
      */
-
+    {"wan_dial","0",0},
     {"wan_ifname", "", 0},	/* WAN interface name */
     {"wan_ifname2", "", 0},	/* WAN interface name (clone) */
     {"wan_ifnames", "", 0},	/* WAN interface names */

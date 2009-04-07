@@ -9,6 +9,7 @@ lang_charset.set="iso-8859-1";
 var share = new Object();
 share.apn="APN";
 share.pin="PIN";
+share.dial="Dial String";
 share.firmware="Firmware";
 share.time="Time";
 share.interipaddr="WAN IP Address";
