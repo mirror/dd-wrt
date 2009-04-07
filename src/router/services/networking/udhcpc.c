@@ -428,7 +428,6 @@ static int bound_tv(void)
 char *ifname = safe_getenv( "interface" );
 char *ip = safe_getenv( "ip" );
 char *net = safe_getenv( "subnet" );
-char *gw = safe_getenv( "router" );
 char *cidr = safe_getenv( "cidrroute" );
 if (ip && net && ifname)
     {
@@ -439,7 +438,10 @@ if (ip && net && ifname)
     }
 if (cidr && ifname)
     {
-    sysprintf("export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",cidr,ifname);
+    char *callbuffer=malloc(strlen(cidr)+128);
+    sprintf(callbuffer,"export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",cidr,ifname);
+    system(callbuffer);
+    free(callbuffer);
     }
 return 0;
 }
