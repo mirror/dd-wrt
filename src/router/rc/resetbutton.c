@@ -490,6 +490,7 @@ if (brand==ROUTER_BOARD_WHRG300N)
 	    break;
 	case ROUTER_WRT54G_V81:
 	case ROUTER_DLINK_DIR320:
+	case ROUTER_WRT600N:
 	    sesgpio = 0x16;	// gpio 6, inversed
 	    break;
 	
