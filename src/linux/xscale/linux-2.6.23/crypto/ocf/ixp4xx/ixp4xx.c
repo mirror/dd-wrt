@@ -70,6 +70,8 @@ struct ixp_q {
 	struct cryptodesc	*ixp_q_ccrd;
 	struct cryptodesc	*ixp_q_acrd;
 	IX_MBUF				 ixp_q_mbuf;
+	UINT8				*ixp_hash_dest; /* Location for hash in client buffer */
+	UINT8				*ixp_hash_src; /* Location of hash in internal buffer */
 	unsigned char		 ixp_q_iv_data[IX_CRYPTO_ACC_MAX_CIPHER_IV_LENGTH];
 	unsigned char		*ixp_q_iv;
 };
@@ -82,6 +84,7 @@ struct ixp_data {
 	int					 ixp_auth_alg;
 
 	UINT32				 ixp_ctx_id;
+	UINT32				 ixp_hash_key_id;	/* used when hashing */
 	IxCryptoAccCtx		 ixp_ctx;
 	IX_MBUF				 ixp_pri_mbuf;
 	IX_MBUF				 ixp_sec_mbuf;
@@ -130,7 +133,11 @@ static int ixp_freesession(device_t, u_int64_t);
 static int ixp_kprocess(device_t, struct cryptkop *krp, int hint);
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,20)
+static kmem_cache_t *qcache;
+#else
 static struct kmem_cache *qcache;
+#endif
 
 #define debug ixp_debug
 static int ixp_debug = 0;
@@ -177,7 +184,7 @@ ixp_newsession(device_t dev, u_int32_t *sid, struct cryptoini *cri)
 #define AUTH_LEN(cri, def) \
 	(cri->cri_mlen ? cri->cri_mlen : (def))
 
-	dprintk("%s()\n", __FUNCTION__);
+	dprintk("%s():alg %d\n", __FUNCTION__,cri->cri_alg);
 	if (sid == NULL || cri == NULL) {
 		dprintk("%s,%d - EINVAL\n", __FILE__, __LINE__);
 		return EINVAL;
@@ -284,12 +291,20 @@ ixp_newsession(device_t dev, u_int32_t *sid, struct cryptoini *cri)
 			ixp->ixp_ctx.authCtx.authAlgo = IX_CRYPTO_ACC_AUTH_MD5;
 			ixp->ixp_ctx.authCtx.authDigestLen = AUTH_LEN(cri, MD5_HASH_LEN);
 			ixp->ixp_ctx.authCtx.aadLen = 0;
-			ixp->ixp_ctx.authCtx.authKeyLen = (cri->cri_klen + 7) / 8;
-			if (ixp->ixp_ctx.authCtx.authKeyLen != IX_CRYPTO_ACC_MD5_KEY_128)
-				printk("ixp4xx: Invalid key length for MD5 - %d\n",
-						cri->cri_klen);
-			memcpy(ixp->ixp_ctx.authCtx.key.authKey,
-					cri->cri_key, (cri->cri_klen + 7) / 8);
+			/* Only MD5_HMAC needs a key */
+			if (cri->cri_alg == CRYPTO_MD5_HMAC) {
+				ixp->ixp_ctx.authCtx.authKeyLen = (cri->cri_klen + 7) / 8;
+				if (ixp->ixp_ctx.authCtx.authKeyLen >
+						sizeof(ixp->ixp_ctx.authCtx.key.authKey)) {
+					printk(
+						"ixp4xx: Invalid key length for MD5_HMAC - %d bits\n",
+							cri->cri_klen);
+					ixp_freesession(NULL, i);
+					return EINVAL;
+				}
+				memcpy(ixp->ixp_ctx.authCtx.key.authKey,
+						cri->cri_key, (cri->cri_klen + 7) / 8);
+			}
 			break;
 
 		case CRYPTO_SHA1:
@@ -298,12 +313,20 @@ ixp_newsession(device_t dev, u_int32_t *sid, struct cryptoini *cri)
 			ixp->ixp_ctx.authCtx.authAlgo = IX_CRYPTO_ACC_AUTH_SHA1;
 			ixp->ixp_ctx.authCtx.authDigestLen = AUTH_LEN(cri, SHA1_HASH_LEN);
 			ixp->ixp_ctx.authCtx.aadLen = 0;
-			ixp->ixp_ctx.authCtx.authKeyLen = (cri->cri_klen + 7) / 8;
-			if (ixp->ixp_ctx.authCtx.authKeyLen != IX_CRYPTO_ACC_SHA1_KEY_160)
-				printk("ixp4xx: Invalid key length for SHA1 - %d\n",
-						cri->cri_klen);
-			memcpy(ixp->ixp_ctx.authCtx.key.authKey,
-					cri->cri_key, (cri->cri_klen + 7) / 8);
+			/* Only SHA1_HMAC needs a key */
+			if (cri->cri_alg == CRYPTO_SHA1_HMAC) {
+				ixp->ixp_ctx.authCtx.authKeyLen = (cri->cri_klen + 7) / 8;
+				if (ixp->ixp_ctx.authCtx.authKeyLen >
+						sizeof(ixp->ixp_ctx.authCtx.key.authKey)) {
+					printk(
+						"ixp4xx: Invalid key length for SHA1_HMAC - %d bits\n",
+							cri->cri_klen);
+					ixp_freesession(NULL, i);
+					return EINVAL;
+				}
+				memcpy(ixp->ixp_ctx.authCtx.key.authKey,
+						cri->cri_key, (cri->cri_klen + 7) / 8);
+			}
 			break;
 
 		default:
@@ -365,6 +388,49 @@ ixp_freesession(device_t dev, u_int64_t tid)
 
 
 /*
+ * callback for when hash processing is complete
+ */
+
+static void
+ixp_hash_perform_cb(
+	UINT32 hash_key_id,
+	IX_MBUF *bufp,
+	IxCryptoAccStatus status)
+{
+	struct ixp_q *q;
+
+	dprintk("%s(%u, %p, 0x%x)\n", __FUNCTION__, hash_key_id, bufp, status);
+
+	if (bufp == NULL) {
+		printk("ixp: NULL buf in %s\n", __FUNCTION__);
+		return;
+	}
+
+	q = IX_MBUF_PRIV(bufp);
+	if (q == NULL) {
+		printk("ixp: NULL priv in %s\n", __FUNCTION__);
+		return;
+	}
+
+	if (status == IX_CRYPTO_ACC_STATUS_SUCCESS) {
+		/* On success, need to copy hash back into original client buffer */
+		memcpy(q->ixp_hash_dest, q->ixp_hash_src,
+				(q->ixp_q_data->ixp_auth_alg == CRYPTO_SHA1) ?
+					SHA1_HASH_LEN : MD5_HASH_LEN);
+	}
+	else {
+		printk("ixp: hash perform failed status=%d\n", status);
+		q->ixp_q_crp->crp_etype = EINVAL;
+	}
+
+	/* Free internal buffer used for hashing */
+	kfree(IX_MBUF_MDATA(&q->ixp_q_mbuf));
+
+	crypto_done(q->ixp_q_crp);
+	kmem_cache_free(qcache, q);
+}
+
+/*
  * setup a request and perform it
  */
 static void
@@ -377,6 +443,7 @@ ixp_q_process(struct ixp_q *q)
 	int crypt_off = 0;
 	int crypt_len = 0;
 	int icv_off = 0;
+	char *crypt_func;
 
 	dprintk("%s(%p)\n", __FUNCTION__, q);
 
@@ -443,9 +510,46 @@ ixp_q_process(struct ixp_q *q)
 
 	IX_MBUF_PRIV(&q->ixp_q_mbuf) = q;
 
-	status = ixCryptoAccAuthCryptPerform(ixp->ixp_ctx_id, &q->ixp_q_mbuf,
+	if (ixp->ixp_auth_alg == CRYPTO_SHA1 || ixp->ixp_auth_alg == CRYPTO_MD5) {
+		/*
+		 * For SHA1 and MD5 hash, need to create an internal buffer that is big
+		 * enough to hold the original data + the appropriate padding for the
+		 * hash algorithm.
+		 */
+		UINT8 *tbuf = NULL;
+
+		IX_MBUF_MLEN(&q->ixp_q_mbuf) = IX_MBUF_PKT_LEN(&q->ixp_q_mbuf) =
+			((IX_MBUF_MLEN(&q->ixp_q_mbuf) * 8) + 72 + 511) / 8;
+		tbuf = kmalloc(IX_MBUF_MLEN(&q->ixp_q_mbuf), SLAB_ATOMIC);
+		
+		if (IX_MBUF_MDATA(&q->ixp_q_mbuf) == NULL) {
+			printk("ixp: kmalloc(%u, SLAB_ATOMIC) failed\n",
+					IX_MBUF_MLEN(&q->ixp_q_mbuf));
+			q->ixp_q_crp->crp_etype = ENOMEM;
+			goto done;
+		}
+		memcpy(tbuf, &(IX_MBUF_MDATA(&q->ixp_q_mbuf))[auth_off], auth_len);
+
+		/* Set location in client buffer to copy hash into */
+		q->ixp_hash_dest =
+			&(IX_MBUF_MDATA(&q->ixp_q_mbuf))[auth_off + auth_len];
+
+		IX_MBUF_MDATA(&q->ixp_q_mbuf) = tbuf;
+
+		/* Set location in internal buffer for where hash starts */
+		q->ixp_hash_src = &(IX_MBUF_MDATA(&q->ixp_q_mbuf))[auth_len];
+
+		crypt_func = "ixCryptoAccHashPerform";
+		status = ixCryptoAccHashPerform(ixp->ixp_ctx.authCtx.authAlgo,
+				&q->ixp_q_mbuf, ixp_hash_perform_cb, 0, auth_len, auth_len,
+				&ixp->ixp_hash_key_id);
+	}
+	else {
+		crypt_func = "ixCryptoAccAuthCryptPerform";
+		status = ixCryptoAccAuthCryptPerform(ixp->ixp_ctx_id, &q->ixp_q_mbuf,
 			NULL, auth_off, auth_len, crypt_off, crypt_len, icv_off,
 			q->ixp_q_iv);
+	}
 
 	if (IX_CRYPTO_ACC_STATUS_SUCCESS == status)
 		return;
@@ -455,7 +559,7 @@ ixp_q_process(struct ixp_q *q)
 		goto done;
 	}
 
-	printk("ixp: ixCryptoAccAuthCryptPerform failed 0x%x\n", status);
+	printk("ixp: %s failed %u\n", crypt_func, status);
 	q->ixp_q_crp->crp_etype = EINVAL;
 
 done:
@@ -491,7 +595,8 @@ ixp_process_pending(void *arg)
 static void
 ixp_process_pending_wq(struct work_struct *work)
 {
-	struct ixp_data *ixp = container_of(work, struct ixp_data, ixp_pending_work);
+	struct ixp_data *ixp = container_of(work, struct ixp_data,
+								ixp_pending_work);
 	ixp_process_pending(ixp);
 }
 #endif
@@ -607,7 +712,7 @@ ixp_registration(void *arg)
 	struct ixp_data *ixp = arg;
 	struct ixp_q *q = NULL;
 	IX_MBUF *pri = NULL, *sec = NULL;
-	int status;
+	int status = IX_CRYPTO_ACC_STATUS_SUCCESS;
 
 	if (!ixp) {
 		printk("ixp: ixp_registration with no arg\n");
@@ -637,12 +742,20 @@ ixp_registration(void *arg)
 		IX_MBUF_MDATA(sec) = (unsigned char *) kmalloc(128, SLAB_ATOMIC);
 	}
 
-	status = ixCryptoAccCtxRegister(
+	/* Only need to register if a crypt op or HMAC op */
+	if (!(ixp->ixp_auth_alg == CRYPTO_SHA1 ||
+				ixp->ixp_auth_alg == CRYPTO_MD5)) {
+		status = ixCryptoAccCtxRegister(
 					&ixp->ixp_ctx,
 					pri, sec,
 					ixp_register_cb,
 					ixp_perform_cb,
 					&ixp->ixp_ctx_id);
+	}
+	else {
+		/* Otherwise we start processing pending q */
+		schedule_work(&ixp->ixp_pending_work);
+	}
 
 	if (IX_CRYPTO_ACC_STATUS_SUCCESS == status)
 		return;
@@ -673,7 +786,8 @@ ixp_registration(void *arg)
 static void
 ixp_registration_wq(struct work_struct *work)
 {
-	struct ixp_data *ixp = container_of(work, struct ixp_data, ixp_registration_work);
+	struct ixp_data *ixp = container_of(work, struct ixp_data,
+								ixp_registration_work);
 	ixp_registration(ixp);
 }
 #endif
@@ -1146,7 +1260,11 @@ ixp_init(void)
 		printk("ixCryptoAccInit failed, assuming already initialised!\n");
 
 	qcache = kmem_cache_create("ixp4xx_q", sizeof(struct ixp_q), 0,
-				SLAB_HWCACHE_ALIGN, NULL);
+				SLAB_HWCACHE_ALIGN, NULL
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,23)
+				, NULL
+#endif
+				  );
 	if (!qcache) {
 		printk("failed to create Qcache\n");
 		return -ENOENT;
@@ -1155,17 +1273,21 @@ ixp_init(void)
 	memset(&ixpdev, 0, sizeof(ixpdev));
 	softc_device_init(&ixpdev, "ixp4xx", 0, ixp_methods);
 
-	ixp_id = crypto_get_driverid(softc_get_device(&ixpdev),CRYPTOCAP_F_HARDWARE);
+	ixp_id = crypto_get_driverid(softc_get_device(&ixpdev),
+				CRYPTOCAP_F_HARDWARE);
 	if (ixp_id < 0)
 		panic("IXP/OCF crypto device cannot initialize!");
 
 #define	REGISTER(alg) \
 	crypto_register(ixp_id,alg,0,0)
+
 	REGISTER(CRYPTO_DES_CBC);
 	REGISTER(CRYPTO_3DES_CBC);
 	REGISTER(CRYPTO_RIJNDAEL128_CBC);
+#ifdef CONFIG_OCF_IXP4XX_SHA1_MD5
 	REGISTER(CRYPTO_MD5);
 	REGISTER(CRYPTO_SHA1);
+#endif
 	REGISTER(CRYPTO_MD5_HMAC);
 	REGISTER(CRYPTO_SHA1_HMAC);
 #undef REGISTER

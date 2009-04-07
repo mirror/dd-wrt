@@ -125,6 +125,10 @@
 #include <linux/platform_device.h>
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
+#include <linux/of_platform.h>
+#endif
+
 #include <cryptodev.h>
 #include <uio.h>
 
@@ -132,13 +136,6 @@
 
 #include "talitos_dev.h"
 #include "talitos_soft.h"
-
-static device_method_t talitos_methods = {
-	/* crypto device methods */
-	DEVMETHOD(cryptodev_newsession,	talitos_newsession),
-	DEVMETHOD(cryptodev_freesession,talitos_freesession),
-	DEVMETHOD(cryptodev_process,	talitos_process),
-};
 
 #define read_random(p,l) get_random_bytes(p,l)
 
@@ -157,12 +154,24 @@ static void talitos_init_device(struct talitos_softc *sc);
 static void talitos_reset_device_master(struct talitos_softc *sc);
 static void talitos_reset_device(struct talitos_softc *sc);
 static void talitos_errorprocessing(struct talitos_softc *sc);
+#ifdef CONFIG_PPC_MERGE
+static int talitos_probe(struct of_device *ofdev, const struct of_device_id *match);
+static int talitos_remove(struct of_device *ofdev);
+#else
 static int talitos_probe(struct platform_device *pdev);
 static int talitos_remove(struct platform_device *pdev);
+#endif
 #ifdef CONFIG_OCF_RANDOMHARVEST
 static int talitos_read_random(void *arg, u_int32_t *buf, int maxwords);
 static void talitos_rng_init(struct talitos_softc *sc);
 #endif
+
+static device_method_t talitos_methods = {
+	/* crypto device methods */
+	DEVMETHOD(cryptodev_newsession,	talitos_newsession),
+	DEVMETHOD(cryptodev_freesession,talitos_freesession),
+	DEVMETHOD(cryptodev_process,	talitos_process),
+};
 
 #define debug talitos_debug
 int talitos_debug = 0;
@@ -683,17 +692,11 @@ talitos_process(device_t dev, struct cryptop *crp, int hint)
 		td->ptr[in_fifo].ptr = dma_map_single(NULL,
 			uiop->uio_iov->iov_base, crp->crp_ilen, DMA_TO_DEVICE);
 		td->ptr[in_fifo].len = crp->crp_ilen;
-		if (crp->crp_mac) {
-			td->ptr[out_fifo].ptr = dma_map_single(NULL,
-				crp->crp_mac, ses->ses_klen, DMA_TO_DEVICE);
-			td->ptr[out_fifo].len = ses->ses_klen;
-		} else {
-			/* crp_olen is never set; always use crp_ilen */
-			td->ptr[out_fifo].ptr = dma_map_single(NULL,
-				uiop->uio_iov->iov_base,
-				crp->crp_ilen, DMA_TO_DEVICE);
-			td->ptr[out_fifo].len = crp->crp_ilen;
-		}
+		/* crp_olen is never set; always use crp_ilen */
+		td->ptr[out_fifo].ptr = dma_map_single(NULL,
+			uiop->uio_iov->iov_base,
+			crp->crp_ilen, DMA_TO_DEVICE);
+		td->ptr[out_fifo].len = crp->crp_ilen;
 	} else {
 		/* using contig buffers */
 		td->ptr[in_fifo].ptr = dma_map_single(NULL,
@@ -757,12 +760,12 @@ talitos_process(device_t dev, struct cryptop *crp, int hint)
 		} else {
 			td->hdr |= TALITOS_DIR_INBOUND; 
 			if (enccrd->crd_flags & CRD_F_IV_EXPLICIT) {
-				bcopy(enccrd->crd_iv,
-					re->re_sastate.sa_saved_iv, ivsize);
+				iv = enccrd->crd_iv;
+				bcopy(enccrd->crd_iv, iv, ivsize);
 			} else {
+				iv = (caddr_t) ses->ses_iv;
 				crypto_copydata(crp->crp_flags, crp->crp_buf,
-				    enccrd->crd_inject, ivsize,
-				    (caddr_t)re->re_sastate.sa_saved_iv);
+				    enccrd->crd_inject, ivsize, iv);
 			}
 		}
 		td->ptr[cipher_iv].ptr = dma_map_single(NULL, iv, ivsize, 
@@ -778,7 +781,6 @@ talitos_process(device_t dev, struct cryptop *crp, int hint)
 		td->ptr[cipher_iv_out].len = 0;
 	}
 	if (enccrd && maccrd) {
-		int bypass, coffset, oplen;
 		/* this is ipsec only for now */
 		td->hdr |= TALITOS_SEL1_MDEU
 			|  TALITOS_MODE1_MDEU_INIT
@@ -859,8 +861,7 @@ talitos_process(device_t dev, struct cryptop *crp, int hint)
 		}
 
 		if (crp->crp_flags & CRYPTO_F_IOV)
-			if (!crp->crp_mac)
-				td->ptr[out_fifo].ptr += maccrd->crd_inject;
+			td->ptr[out_fifo].ptr += maccrd->crd_inject;
 
 		if ((maccrd->crd_alg == CRYPTO_MD5_HMAC) ||
 		   (maccrd->crd_alg == CRYPTO_SHA1_HMAC)) {
@@ -934,8 +935,10 @@ static void talitos_errorprocessing(struct talitos_softc *sc)
 	/* reset and initialize the SEC h/w device */
 	talitos_reset_device(sc);
 	talitos_init_device(sc);
+#ifdef CONFIG_OCF_RANDOMHARVEST
 	if (sc->sc_exec_units & TALITOS_HAS_EU_RNG)
 		talitos_rng_init(sc);
+#endif
 
 	/* Okay. Stand by. */
 	spin_unlock_irqrestore(&sc->sc_chnfifolock[sc->sc_num_channels], flags);
@@ -1094,6 +1097,8 @@ static int talitos_probe(struct platform_device *pdev)
 	struct device *device = &ofdev->dev;
 	struct device_node *np = ofdev->node;
 	const unsigned int *prop;
+	int err;
+	struct resource res;
 #endif
 	static int num_chips = 0;
 	int rc;
@@ -1110,17 +1115,15 @@ static int talitos_probe(struct platform_device *pdev)
 
 	sc->sc_irq = -1;
 	sc->sc_cid = -1;
-#ifdef CONFIG_PPC_MERGE
+#ifndef CONFIG_PPC_MERGE
 	sc->sc_dev = pdev;
-#else
-	sc->sc_dev = device;
 #endif
 	sc->sc_num = num_chips++;
 
 #ifdef CONFIG_PPC_MERGE
-	platform_set_drvdata(sc->sc_dev, sc);
-#else
 	dev_set_drvdata(device, sc);
+#else
+	platform_set_drvdata(sc->sc_dev, sc);
 #endif
 
 	/* get the irq line */
@@ -1128,11 +1131,12 @@ static int talitos_probe(struct platform_device *pdev)
 	err = of_address_to_resource(np, 0, &res);
 	if (err)
 		return -EINVAL;
+	r = &res;
 
 	sc->sc_irq = irq_of_parse_and_map(np, 0);
 #else
 	/* get a pointer to the register memory */
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 
 	sc->sc_irq = platform_get_irq(pdev, 0);
 #endif
@@ -1219,7 +1223,7 @@ static int talitos_probe(struct platform_device *pdev)
 	talitos_reset_device(sc);
 	talitos_init_device(sc);
 
-	sc->sc_cid = crypto_get_driverid(0);
+	sc->sc_cid = crypto_get_driverid(softc_get_device(sc),CRYPTOCAP_F_HARDWARE);
 	if (sc->sc_cid < 0) {
 		printk(KERN_ERR "%s: could not get crypto driver id\n",
 				device_get_nameunit(sc->sc_cdev));
@@ -1265,9 +1269,17 @@ out:
 	return -ENOMEM;
 }
 
+#ifdef CONFIG_PPC_MERGE
+static int talitos_remove(struct of_device *ofdev)
+#else
 static int talitos_remove(struct platform_device *pdev)
+#endif
 {
+#ifdef CONFIG_PPC_MERGE
+	struct talitos_softc *sc = dev_get_drvdata(&ofdev->dev);
+#else
 	struct talitos_softc *sc = platform_get_drvdata(pdev);
+#endif
 	int i;
 
 	DPRINTF("%s()\n", __FUNCTION__);
@@ -1311,12 +1323,12 @@ static struct of_platform_driver talitos_driver = {
 
 static int __init talitos_init(void)
 {
-	return of_platform_driver_register(&talitos_driver);
+	return of_register_platform_driver(&talitos_driver);
 }
 
 static void __exit talitos_exit(void)
 {
-	of_platform_driver_unregister(&talitos_driver);
+	of_unregister_platform_driver(&talitos_driver);
 }
 #else
 /* Structure for a platform device driver */
