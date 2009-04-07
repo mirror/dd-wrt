@@ -429,13 +429,17 @@ char *ifname = safe_getenv( "interface" );
 char *ip = safe_getenv( "ip" );
 char *net = safe_getenv( "subnet" );
 char *gw = safe_getenv( "router" );
-fprintf(stderr,"gateway %s\n",gw);
+char *cidr = safe_getenv( "cidrroute" );
 if (ip && net && ifname)
     {
     char bcast[32];
     strcpy(bcast,ip);
     get_broadcast(bcast,net);
     eval("ifconfig",ifname,ip,"netmask",net,"broadcast",bcast,"multi");
+    }
+if (cidr && ifname)
+    {
+    sysprintf("export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",cidr,ifname);
     }
 return 0;
 }
