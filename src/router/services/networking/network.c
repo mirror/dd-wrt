@@ -3130,6 +3130,9 @@ void start_wan( int status )
 			eval( "vconfig", "set_name_type", "DEV_PLUS_VID" );
 			eval( "vconfig", "add", pppoe_wan_ifname, "8" );
 			eval( "ifconfig", vlannic, "up" );
+			nvram_set("tvnicfrom",vlannic);
+			symlink( "/sbin/rc", "/tmp/udhcpc_tv" );
+			eval("udhcpc","-i",vlannic,"-s","/tmp/udhcpc_tv","-q");
 		    }
 		}
 		sprintf( vlannic, "%s.0007", pppoe_wan_ifname );
