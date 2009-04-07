@@ -38,6 +38,7 @@ void start_igmp_proxy( void )
     stop_igmp_proxy(  );
     int ifcount = 0;
 
+/*
     if (nvram_match("dtag_vlan8","1"))
 	{
 	FILE *fp = fopen( "/tmp/igmpproxy_tv.conf", "wb" );
@@ -54,10 +55,17 @@ void start_igmp_proxy( void )
 	fclose(fp);
 	eval("igmprt","-c","/tmp/igmpproxy_tv.conf");
 	return;
-	}
+	}*/
     FILE *fp = fopen( "/tmp/igmpproxy.conf", "wb" );
 
-    fprintf( fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",nvram_safe_get( "wan_iface" ) );
+    if (nvram_match("dtag_vlan8","1"))
+	{
+	fprintf( fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",nvram_safe_get( "tvnicfrom" ) );
+	}
+	else
+	{
+        fprintf( fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",nvram_safe_get( "wan_iface" ) );
+	}
     if( nvram_match( "block_multicast", "0" ) )
     {
 	fprintf( fp, "phyint %s downstream  ratelimit 0  threshold 1\n",
