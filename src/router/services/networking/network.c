@@ -2931,6 +2931,7 @@ void start_wan( int status )
 	fprintf(fp,"defaultroute\n");
 	fprintf(fp,"usepeerdns\n");
 	fprintf(fp,"noipdefault\n");
+	fprintf(fp,"noauth\n");
 	fprintf(fp,"lcp-echo-interval 10\n");
 	fprintf(fp,"lcp-echo-failure 3\n");
 	if( nvram_match( "mtu_enable", "1" ) )
