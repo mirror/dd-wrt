@@ -415,7 +415,7 @@ void validate_services_port( webs_t wp )
 	    continue;
 
 	cur +=
-	    snprintf( cur, buf + sizeof( 8192 ) - cur,
+	    snprintf( cur, buf + 8192 - cur,
 		      "%s$NAME:%03d:%s$PROT:%03d:%s$PORT:%03d:%d:%d",
 		      cur == buf ? "" : "<&nbsp;>", strlen( name ), name,
 		      strlen( num_to_protocol( proto ) ),
