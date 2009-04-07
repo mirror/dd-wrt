@@ -1605,18 +1605,6 @@ e1000_link_test(struct e1000_adapter *adapter, uint64_t *data)
 	return *data;
 }
 
-static int
-e1000_get_sset_count(struct net_device *netdev, int sset)
-{
-	switch (sset) {
-	case ETH_SS_TEST:
-		return E1000_TEST_LEN;
-	case ETH_SS_STATS:
-		return E1000_STATS_LEN;
-	default:
-		return -EOPNOTSUPP;
-	}
-}
 
 static void
 e1000_diag_test(struct net_device *netdev,
@@ -1965,7 +1953,6 @@ static const struct ethtool_ops e1000_ethtool_ops = {
 	.get_strings            = e1000_get_strings,
 	.phys_id                = e1000_phys_id,
 	.get_ethtool_stats      = e1000_get_ethtool_stats,
-	.get_sset_count		= e1000_get_sset_count,
 };
 
 void e1000_set_ethtool_ops(struct net_device *netdev)
