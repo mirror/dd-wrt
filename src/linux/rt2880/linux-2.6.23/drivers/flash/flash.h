@@ -52,7 +52,7 @@
 #define MAX_FLSH_TBL		(sizeof(flsh_tbl) / sizeof(struct flsh_dev))
 
 #if defined (CONFIG_RT2880_FLASH_8M)
-#define FL_BASE                 CONFIG_MTD_PHYSMAP_START - 0x400000
+#define FL_BASE                 CONFIG_MTD_PHYSMAP_START // - 0x400000
 #elif defined (CONFIG_RT2880_FLASH_16M)
 #define FL_BASE                 (CONFIG_MTD_PHYSMAP_START - 0xC00000)
 #else
