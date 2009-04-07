@@ -1756,6 +1756,7 @@ hifn_crypto(
 		}
 #endif
 		hifnstats.hst_nomem_cr++;
+		sc->sc_needwakeup |= CRYPTO_SYMQ;
 		HIFN_UNLOCK(sc);
 		return (ERESTART);
 	}
@@ -2670,9 +2671,7 @@ hifn_process(device_t dev, struct cryptop *crp, int hint)
 		if (hifn_debug)
 			device_printf(sc->sc_dev, "requeue request\n");
 #endif
-printk("KFREE start\n");
 		kfree(cmd);
-printk("KFREE done\n");
 		sc->sc_needwakeup |= CRYPTO_SYMQ;
 		return (err);
 	}
@@ -2933,6 +2932,7 @@ static struct pci_device_id hifn_pci_tbl[] = {
 	 */
 	{ PCI_VENDOR_HIFN, PCI_PRODUCT_HIFN_7751,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, },
+	{ 0, 0, 0, 0, 0, 0, }
 };
 MODULE_DEVICE_TABLE(pci, hifn_pci_tbl);
 

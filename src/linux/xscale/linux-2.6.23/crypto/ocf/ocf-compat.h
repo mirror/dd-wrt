@@ -123,11 +123,14 @@ struct ocf_device {
 
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,26)
+#include <linux/fdtable.h>
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 #define files_fdtable(files)	(files)
 #endif
 
 #ifdef MODULE_PARM
+#undef module_param	/* just in case */
 #define	module_param(a,b,c)		MODULE_PARM(a,"i")
 #endif
 
@@ -240,6 +243,25 @@ struct ocf_device {
 #define pci_register_driver_compat(driver,rc) ((rc) = (rc) < 0 ? (rc) : 0)
 #else
 #define pci_register_driver_compat(driver,rc)
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,24)
+
+#include <asm/scatterlist.h>
+
+static inline void sg_set_page(struct scatterlist *sg,  struct page *page,
+			       unsigned int len, unsigned int offset)
+{
+	sg->page = page;
+	sg->offset = offset;
+	sg->length = len;
+}
+
+static inline void *sg_virt(struct scatterlist *sg)
+{
+	return page_address(sg->page) + sg->offset;
+}
+
 #endif
 
 #endif /* __KERNEL__ */

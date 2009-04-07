@@ -51,7 +51,7 @@
 #include <linux/random.h>
 #include <cryptodev.h>
 
-#ifdef FIPS_TEST_RNG
+#ifdef CONFIG_OCF_FIPS
 #include "rndtest.h"
 #endif
 
@@ -188,6 +188,8 @@ random_proc(void *arg)
 	int n;
 	int wantcnt;
 	int bufcnt = 0;
+	int retval = 0;
+	int *buf = NULL;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	daemonize();
@@ -204,11 +206,22 @@ random_proc(void *arg)
 	(void) get_fs();
 	set_fs(get_ds());
 
-#ifdef FIPS_TEST_RNG
+#ifdef CONFIG_OCF_FIPS
 #define NUM_INT (RNDTEST_NBYTES/sizeof(int))
 #else
 #define NUM_INT 32
 #endif
+
+	/*
+	 * some devices can transferr their RNG data direct into memory,
+	 * so make sure it is device friendly
+	 */
+	buf = kmalloc(NUM_INT * sizeof(int), GFP_DMA);
+	if (NULL == buf) {
+		printk("crypto: RNG could not allocate memory\n");
+		retval = -ENOMEM;
+		goto bad_alloc;
+	}
 
 	wantcnt = NUM_INT;   /* start by adding some entropy */
 
@@ -218,10 +231,9 @@ random_proc(void *arg)
 	 * doing nothing
 	 */
 	while (!list_empty(&random_ops)) {
-		static int			buf[NUM_INT];
 		struct random_op	*rops, *tmp;
 
-#ifdef FIPS_TEST_RNG
+#ifdef CONFIG_OCF_FIPS
 		if (wantcnt)
 			wantcnt = NUM_INT; /* FIPs mode can do 20000 bits or none */
 #endif
@@ -249,7 +261,7 @@ random_proc(void *arg)
 		}
 
 
-#ifdef FIPS_TEST_RNG
+#ifdef CONFIG_OCF_FIPS
 		if (bufcnt > 0 && rndtest_buf((unsigned char *) &buf[0])) {
 			dprintk("crypto: buffer had fips errors, discarding\n");
 			bufcnt = 0;
@@ -291,12 +303,15 @@ random_proc(void *arg)
 #endif
 		}
 	}
+	
+	kfree(buf);
 
+bad_alloc:
 	spin_lock_irq(&random_lock);
 	randomproc = (pid_t) -1;
 	started = 0;
 	spin_unlock_irq(&random_lock);
 
-	return 0;
+	return retval;
 }
 

@@ -158,35 +158,35 @@ struct crypto_details
  *
  * IMPORTANT: The index to the array IS CRYPTO_xxx.
  */
-static struct crypto_details
-		crypto_details[CRYPTO_ALGORITHM_MAX + 1] = {
-			{ NULL, 0, 0 }, /* CRYPTO_xxx index starts at 1 */
-			{ cbc(des), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
-			{ cbc(des3_ede), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
-			{ cbc(blowfish), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
-			{ cbc(cast5), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
-			{ cbc(skipjack), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
-			{ hmac(md5), 0, SW_TYPE_HMAC },
-			{ hmac(sha1), 0, SW_TYPE_HMAC },
-			{ hmac(ripemd160), 0, SW_TYPE_HMAC },
-			{ "md5-kpdk??", 0, SW_TYPE_HASH },
-			{ "sha1-kpdk??", 0, SW_TYPE_HASH },
-			{ cbc(aes), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
-			{ ecb(arc4), CRYPTO_TFM_MODE_ECB, SW_TYPE_BLKCIPHER },
-			{ "md5", 0, SW_TYPE_HASH },
-			{ "sha1", 0, SW_TYPE_HASH },
-			{ hmac(digest_null), 0, SW_TYPE_HMAC },
-			{ cbc(cipher_null), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
-			{ "deflate", 0, SW_TYPE_COMP },
-			{ hmac(sha256), 0, SW_TYPE_HMAC },
-			{ hmac(sha384), 0, SW_TYPE_HMAC },
-			{ hmac(sha512), 0, SW_TYPE_HMAC },
-			{ cbc(camellia), CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
-			{ "sha256", 0, SW_TYPE_HASH },
-			{ "sha384", 0, SW_TYPE_HASH },
-			{ "sha512", 0, SW_TYPE_HASH },
-			{ "ripemd160", 0, SW_TYPE_HASH },
-		};			
+static struct crypto_details crypto_details[CRYPTO_ALGORITHM_MAX + 1] = {
+	{ NULL,              0,                   0 },
+	/* CRYPTO_xxx index starts at 1 */
+	{ cbc(des),          CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+	{ cbc(des3_ede),     CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+	{ cbc(blowfish),     CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+	{ cbc(cast5),        CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+	{ cbc(skipjack),     CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+	{ hmac(md5),         0,                   SW_TYPE_HMAC },
+	{ hmac(sha1),        0,                   SW_TYPE_HMAC },
+	{ hmac(ripemd160),   0,                   SW_TYPE_HMAC },
+	{ "md5-kpdk??",      0,                   SW_TYPE_HASH },
+	{ "sha1-kpdk??",     0,                   SW_TYPE_HASH },
+	{ cbc(aes),          CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+	{ ecb(arc4),         CRYPTO_TFM_MODE_ECB, SW_TYPE_BLKCIPHER },
+	{ "md5",             0,                   SW_TYPE_HASH },
+	{ "sha1",            0,                   SW_TYPE_HASH },
+	{ hmac(digest_null), 0,                   SW_TYPE_HMAC },
+	{ cbc(cipher_null),  CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+	{ "deflate",         0,                   SW_TYPE_COMP },
+	{ hmac(sha256),      0,                   SW_TYPE_HMAC },
+	{ hmac(sha384),      0,                   SW_TYPE_HMAC },
+	{ hmac(sha512),      0,                   SW_TYPE_HMAC },
+	{ cbc(camellia),     CRYPTO_TFM_MODE_CBC, SW_TYPE_BLKCIPHER },
+	{ "sha256",          0,                   SW_TYPE_HASH },
+	{ "sha384",          0,                   SW_TYPE_HASH },
+	{ "sha512",          0,                   SW_TYPE_HASH },
+	{ "ripemd160",       0,                   SW_TYPE_HASH },
+};
 
 int32_t swcr_id = -1;
 module_param(swcr_id, int, 0444);
@@ -530,13 +530,13 @@ swcr_process(device_t dev, struct cryptop *crp, int hint)
 			sg_len = 0;
 
 			if (skip < skb_headlen(skb)) {
-				sg[sg_num].page   = virt_to_page(skb->data + skip);
-				sg[sg_num].offset = offset_in_page(skb->data + skip);
 				len = skb_headlen(skb) - skip;
 				if (len + sg_len > crd->crd_len)
 					len = crd->crd_len - sg_len;
-				sg[sg_num].length = len;
-				sg_len += sg[sg_num].length;
+				sg_set_page(&sg[sg_num],
+					virt_to_page(skb->data + skip), len,
+					offset_in_page(skb->data + skip));
+				sg_len += len;
 				sg_num++;
 				skip = 0;
 			} else
@@ -546,14 +546,14 @@ swcr_process(device_t dev, struct cryptop *crp, int hint)
 						i < skb_shinfo(skb)->nr_frags &&
 						sg_num < SCATTERLIST_MAX; i++) {
 				if (skip < skb_shinfo(skb)->frags[i].size) {
-					sg[sg_num].page   = skb_shinfo(skb)->frags[i].page;
-					sg[sg_num].offset = skb_shinfo(skb)->frags[i].page_offset +
-							skip;
 					len = skb_shinfo(skb)->frags[i].size - skip;
 					if (len + sg_len > crd->crd_len)
 						len = crd->crd_len - sg_len;
-					sg[sg_num].length = len;
-					sg_len += sg[sg_num].length;
+					sg_set_page(&sg[sg_num],
+						skb_shinfo(skb)->frags[i].page,
+						len,
+						skb_shinfo(skb)->frags[i].page_offset + skip);
+					sg_len += len;
 					sg_num++;
 					skip = 0;
 				} else
@@ -567,26 +567,24 @@ swcr_process(device_t dev, struct cryptop *crp, int hint)
 					sg_num < uiop->uio_iovcnt &&
 					sg_num < SCATTERLIST_MAX; sg_num++) {
 				if (skip <= uiop->uio_iov[sg_num].iov_len) {
-					sg[sg_num].page   =
-							virt_to_page(uiop->uio_iov[sg_num].iov_base+skip);
-					sg[sg_num].offset =
-							offset_in_page(uiop->uio_iov[sg_num].iov_base+skip);
 					len = uiop->uio_iov[sg_num].iov_len - skip;
 					if (len + sg_len > crd->crd_len)
 						len = crd->crd_len - sg_len;
-					sg[sg_num].length = len;
-					sg_len += sg[sg_num].length;
+					sg_set_page(&sg[sg_num],
+						virt_to_page(uiop->uio_iov[sg_num].iov_base+skip),
+						len,
+						offset_in_page(uiop->uio_iov[sg_num].iov_base+skip));
+					sg_len += len;
 					skip = 0;
 				} else 
 					skip -= uiop->uio_iov[sg_num].iov_len;
 			}
 		} else {
-			sg[0].page   = virt_to_page(crp->crp_buf + skip);
-			sg[0].offset = offset_in_page(crp->crp_buf + skip);
 			sg_len = (crp->crp_ilen - skip);
 			if (sg_len > crd->crd_len)
 				sg_len = crd->crd_len;
-			sg[0].length = sg_len;
+			sg_set_page(&sg[0], virt_to_page(crp->crp_buf + skip),
+				sg_len, offset_in_page(crp->crp_buf + skip));
 			sg_num = 1;
 		}
 
@@ -725,13 +723,13 @@ swcr_process(device_t dev, struct cryptop *crp, int hint)
 
 				ibuf = obuf;
 				for (blk = 0; blk < sg_num; blk++) {
-					memcpy(obuf, page_address(sg[blk].page) + sg[blk].offset,
+					memcpy(obuf, sg_virt(&sg[blk]),
 							sg[blk].length);
 					obuf += sg[blk].length;
 				}
 				olen -= sg_len;
 			} else
-				ibuf = page_address(sg[0].page) + sg[0].offset;
+				ibuf = sg_virt(&sg[0]);
 
 			if (crd->crd_flags & CRD_F_ENCRYPT) { /* compress */
 				ret = crypto_comp_compress(crypto_comp_cast(sw->sw_tfm),

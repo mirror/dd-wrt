@@ -1,4 +1,4 @@
-README - ocf-linux-20070727
+README - ocf-linux-20071215
 ---------------------------
 
 This README provides instructions for getting ocf-linux compiled and
@@ -19,12 +19,12 @@ Adding OCF to linux
     * to add OCF to your kernel source,  you have two options.  Apply
       the kernel specific patch:
 
-          cd linux-2.4; gunzip < ocf-linux-24-XXXXXXXX.patch.gz | patch -p1
-          cd linux-2.6; gunzip < ocf-linux-26-XXXXXXXX.patch.gz | patch -p1
+          cd linux-2.4*; gunzip < ocf-linux-24-XXXXXXXX.patch.gz | patch -p1
+          cd linux-2.6*; gunzip < ocf-linux-26-XXXXXXXX.patch.gz | patch -p1
     
       if you do one of the above,  then you can proceed to the next step,
       or you can do the above process by hand with using the patches against
-      linux-2.4.35 and 2.6.22 to include the ocf code under crypto/ocf.
+      linux-2.4.35 and 2.6.23 to include the ocf code under crypto/ocf.
       Here's how to add it:
 
       for 2.4.35 (and later)
@@ -34,12 +34,13 @@ Adding OCF to linux
           cd ..
           patch -p1 < crypto/ocf/patches/linux-2.4.35-ocf.patch
 
-      for 2.6.22 (and later)
+      for 2.6.23 (and later),  find the kernel patch specific (or nearest)
+      to your kernel versions and then:
 
-          cd linux-2.6.22/crypto
+          cd linux-2.6.NN/crypto
           tar xvzf ocf-linux.tar.gz
           cd ..
-          patch -p1 < crypto/ocf/patches/linux-2.6.22-ocf.patch
+          patch -p1 < crypto/ocf/patches/linux-2.6.NN-ocf.patch
 
       It should be easy to take this patch and apply it to other more
       recent versions of the kernels.  The same patches should also work
@@ -64,16 +65,16 @@ Adding OCF to linux
 
               /usr/include/crypto/cryptodev.h
 
-    * patch your openssl code with ssl.patch (NOTE: there is no longer a
-      need to patch ssh). The patch is against:
-
+    * patch your openssl-0.9.8i code with the openssl-0.9.8i.patch.
+      (NOTE: there is no longer a need to patch ssh). The patch is against:
       openssl-0_9_8e
 
       If you need a patch for an older version of openssl,  you should look
       to older OCF releases.  This patch is unlikely to work on older
       openssl versions.
 
-      ssl.patch - enables --with-cryptodev for non BSD systems
+      openssl-0.9.8i.patch
+                - enables --with-cryptodev for non BSD systems
                 - adds -cpu option to openssl speed for calculating CPU load
                   under linux
                 - fixes null pointer in openssl speed multi thread output.

@@ -629,7 +629,7 @@ cryptodev_ioctl(
 	int feat, fd, error = 0, crid;
 	mm_segment_t fs;
 
-	dprintk("%s()\n", __FUNCTION__);
+	dprintk("%s(cmd=%x arg=%lx)\n", __FUNCTION__, cmd, arg);
 
 	switch (cmd) {
 
@@ -769,7 +769,8 @@ cryptodev_ioctl(
 		if (info.blocksize) {
 			crie.cri_alg = sop.cipher;
 			crie.cri_klen = sop.keylen * 8;
-			if (sop.keylen > info.maxkey || sop.keylen < info.minkey) {
+			if ((info.maxkey && sop.keylen > info.maxkey) ||
+				   	sop.keylen < info.minkey) {
 				dprintk("%s(%s) - bad key\n", __FUNCTION__, CIOCGSESSSTR);
 				error = EINVAL;
 				goto bail;
@@ -789,8 +790,8 @@ cryptodev_ioctl(
 		if (info.authsize) {
 			cria.cri_alg = sop.mac;
 			cria.cri_klen = sop.mackeylen * 8;
-			if (info.maxkey &&
-					(sop.mackeylen > info.maxkey || sop.keylen < info.minkey)) {
+			if ((info.maxkey && sop.mackeylen > info.maxkey) ||
+					sop.keylen < info.minkey) {
 				dprintk("%s(%s) - mackeylen %d\n", __FUNCTION__, CIOCGSESSSTR,
 						sop.mackeylen);
 				error = EINVAL;
@@ -946,6 +947,17 @@ bail:
 	return(-error);
 }
 
+#ifdef HAVE_UNLOCKED_IOCTL
+static long
+cryptodev_unlocked_ioctl(
+	struct file *filp,
+	unsigned int cmd,
+	unsigned long arg)
+{
+	return cryptodev_ioctl(NULL, filp, cmd, arg);
+}
+#endif
+
 static int
 cryptodev_open(struct inode *inode, struct file *filp)
 {
@@ -995,6 +1007,9 @@ static struct file_operations cryptodev_fops = {
 	.open = cryptodev_open,
 	.release = cryptodev_release,
 	.ioctl = cryptodev_ioctl,
+#ifdef HAVE_UNLOCKED_IOCTL
+	.unlocked_ioctl = cryptodev_unlocked_ioctl,
+#endif
 };
 
 static struct miscdevice cryptodev = {
