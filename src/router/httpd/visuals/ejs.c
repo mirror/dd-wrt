@@ -1410,6 +1410,9 @@ void ej_show_bandwidth( webs_t wp, int argc, char_t ** argv )
 		show_bwif( wp, nvram_safe_get( "wan_ifname" ), "WAN" );
 	    }
 	}
+	if (nvram_match("dtag_vlan8","1"))
+	    show_bwif( wp, "eth0.0008", "IPTV" );
+	
     }
 #ifdef HAVE_MADWIFI
     char var[80];
