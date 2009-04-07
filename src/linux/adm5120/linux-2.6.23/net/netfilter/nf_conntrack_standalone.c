@@ -316,7 +316,7 @@ static const struct file_operations ct_cpu_seq_fops = {
 
 /* Sysctl support */
 
-int nf_conntrack_checksum __read_mostly = 1;
+int nf_conntrack_checksum __read_mostly = 0;
 EXPORT_SYMBOL_GPL(nf_conntrack_checksum);
 
 #ifdef CONFIG_SYSCTL
