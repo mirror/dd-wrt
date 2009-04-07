@@ -1824,7 +1824,6 @@ static void filter_input( void )
     if (nvram_match("dtag_vlan8","1"))
 	{
 	    save2file( "-A INPUT -i %s -j ACCEPT\n", nvram_safe_get("tvnicfrom"));
-//	    save2file( "-A INPUT -i %s -j ACCEPT\n", nvram_safe_get("tvnicto"));
 	}
 
 #ifdef HAVE_PPTP
@@ -1949,14 +1948,8 @@ static void filter_input( void )
     /*
      * IGMP query from WAN interface 
      */
-    if (nvram_match("dtag_vlan8","1"))
-	{
-	save2file( "-A INPUT -p igmp -j %s\n",TARG_PASS );
-	}else{
 	save2file( "-A INPUT -p igmp -j %s\n",
 	       doMultiCast(  ) == 0 ? log_drop : TARG_PASS );
-	
-	}
 
 #ifdef HAVE_TFTP
     /*
@@ -2058,9 +2051,7 @@ static void filter_forward( void )
     if (nvram_match("dtag_vlan8","1"))
 	{
 	    save2file( "-A FORWARD -i %s -j ACCEPT\n", nvram_safe_get("tvnicfrom"));
-//	    save2file( "-A FORWARD -i %s -j ACCEPT\n", nvram_safe_get("tvnicto"));
 	    save2file( "-A FORWARD -o %s -j ACCEPT\n", nvram_safe_get("tvnicfrom"));
-//	    save2file( "-A FORWARD -o %s -j ACCEPT\n", nvram_safe_get("tvnicto"));
 	}
 
     getIfLists( vifs, 256 );
@@ -2243,11 +2234,12 @@ static void filter_forward( void )
      */
     if (nvram_match("dtag_vlan8","1"))
 	{
-	save2file( "-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
+	if( doMultiCast(  ) > 0 )
+	    save2file( "-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
 		   nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept );	
 	}else{	
-    if( doMultiCast(  ) > 0 )
-	save2file( "-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
+	if( doMultiCast(  ) > 0 )
+	    save2file( "-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
 		   wanface, IP_MULTICAST, log_accept );
 	}
     /*
