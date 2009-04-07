@@ -2924,6 +2924,7 @@ void start_wan( int status )
 	
 	/* init PIN */
 	sysprintf("export COMGTPIN=%s;comgt PIN -d %s\n",nvram_safe_get("wan_pin"),controldevice);
+	if (!nvram_match("wan_dial","2"))
 	sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s\n",nvram_safe_get("wan_apn"),controldevice);
 	// Lets open option file and enter all the parameters.
 	fp = fopen( "/tmp/ppp/options.pppoe", "w" );
@@ -2945,12 +2946,12 @@ void start_wan( int status )
 //	fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
 	char *dial="*99***1#";
 	if (nvram_match("wan_dial","0"))
-	    dial="*99***1#";
+	    dial="ATD*99***1#";
 	if (nvram_match("wan_dial","1"))
-	    dial="*99#";
+	    dial="ATD*99#";
 	if (nvram_match("wan_dial","2"))
-	    dial="#777";
-	fprintf(fp,"connect \"COMGTDIAL='ATD%s' /usr/sbin/comgt DIAL -d %s\"\n",dial,controldevice);
+	    dial="ATDT#777";
+	fprintf(fp,"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s\"\n",dial,controldevice);
 	fprintf(fp,"user %s\n",nvram_safe_get("ppp_username"));
 	fprintf(fp,"password %s\n",nvram_safe_get("ppp_passwd"));
 	fprintf(fp,"%s\n",controldevice);
