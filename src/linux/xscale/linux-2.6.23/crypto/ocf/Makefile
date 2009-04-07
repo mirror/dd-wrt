@@ -4,12 +4,18 @@
 OCF_OBJS = crypto.o criov.o
 
 ifdef CONFIG_OCF_RANDOMHARVEST
-OCF_OBJS += random.o
+	OCF_OBJS += random.o
 endif
 
 ifdef CONFIG_OCF_FIPS
-OCF_OBJS += rndtest.o
-EXTRA_CFLAGS += -DFIPS_TEST_RNG=1
+	OCF_OBJS += rndtest.o
+endif
+
+# Add in autoconf.h to get #defines for CONFIG_xxx
+AUTOCONF_H=$(ROOTDIR)/modules/autoconf.h
+ifeq ($(AUTOCONF_H), $(wildcard $(AUTOCONF_H)))
+	EXTRA_CFLAGS += -include $(AUTOCONF_H)
+	export EXTRA_CFLAGS
 endif
 
 ifndef obj
@@ -18,8 +24,10 @@ ifndef obj
 	mod-subdirs := safe hifn ixp4xx talitos ocfnull
 	export-objs += crypto.o criov.o random.o
 	list-multi += ocf.o
+	_slash :=
 else
 	_obj = obj
+	_slash := /
 endif
 
 EXTRA_CFLAGS += -I$(obj)/.
@@ -29,11 +37,13 @@ obj-$(CONFIG_OCF_CRYPTODEV)   += cryptodev.o
 obj-$(CONFIG_OCF_CRYPTOSOFT)  += cryptosoft.o
 obj-$(CONFIG_OCF_BENCH)       += ocf-bench.o
 
-$(_obj)-$(CONFIG_OCF_SAFE)    += safe/
-$(_obj)-$(CONFIG_OCF_HIFN)    += hifn/
-$(_obj)-$(CONFIG_OCF_IXP4XX)  += ixp4xx/
-$(_obj)-$(CONFIG_OCF_TALITOS) += talitos/
-$(_obj)-$(CONFIG_OCF_OCFNULL) += ocfnull/
+$(_obj)-$(CONFIG_OCF_SAFE)    += safe$(_slash)
+$(_obj)-$(CONFIG_OCF_HIFN)    += hifn$(_slash)
+$(_obj)-$(CONFIG_OCF_IXP4XX)  += ixp4xx$(_slash)
+$(_obj)-$(CONFIG_OCF_TALITOS) += talitos$(_slash)
+$(_obj)-$(CONFIG_OCF_PASEMI)  += pasemi$(_slash)
+$(_obj)-$(CONFIG_OCF_EP80579) += ep80579$(_slash)
+$(_obj)-$(CONFIG_OCF_OCFNULL) += ocfnull$(_slash)
 
 ocf-objs := $(OCF_OBJS)
 
@@ -69,7 +79,7 @@ patch:
 			diff -Nau /dev/null $$t | sed 's?^+++ \./?+++ linux/crypto/ocf/?'; \
 		done > $$patch; \
 		cat patches/linux-2.4.35-ocf.patch $$patch > $$patch24; \
-		cat patches/linux-2.6.22-ocf.patch $$patch > $$patch26
+		cat patches/linux-2.6.26-ocf.patch $$patch > $$patch26
 
 .PHONY: tarball
 tarball:
@@ -78,7 +88,7 @@ tarball:
 		rm -rf /tmp/ocf-linux-$$REL*; \
 		mkdir -p $$RELDIR/tools; \
 		cp README* $$RELDIR; \
-		cp patches/ss?.patch $$RELDIR; \
+		cp patches/openss*.patch $$RELDIR; \
 		cp patches/crypto-tools.patch $$RELDIR; \
 		cp tools/[!C]* $$RELDIR/tools; \
 		cd ..; \
@@ -90,7 +100,7 @@ tarball:
 					--exclude=*.mod.* \
 					--exclude=README* \
 					--exclude=ocf-*.patch \
-					--exclude=ocf/patches/ss?.patch \
+					--exclude=ocf/patches/openss*.patch \
 					--exclude=ocf/patches/crypto-tools.patch \
 					--exclude=ocf/tools \
 					ocf; \
@@ -103,3 +113,9 @@ tarball:
 		tar cvf /tmp/crypto-tools-$$REL.tar \
 					--exclude=CVS \
 					--exclude=.* \
+					--exclude=*.o \
+					--exclude=cryptotest \
+					--exclude=cryptokeytest \
+					crypto-tools; \
+		gzip -9 /tmp/crypto-tools-$$REL.tar
+

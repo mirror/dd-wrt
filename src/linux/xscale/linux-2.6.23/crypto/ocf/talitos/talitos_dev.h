@@ -268,10 +268,10 @@ struct talitos_desc {
 
 #define TALITOS_HDR_DONE_BITS	0xff000000
 
-#define	DPRINTF(a)	do { \
+#define	DPRINTF(a...)	do { \
 						if (debug) { \
 							printk("%s: ", sc ? \
-								device_get_nameunit(sc->sc_dev) : "safe"); \
-							printk a; \
+								device_get_nameunit(sc->sc_cdev) : "talitos"); \
+							printk(a); \
 						} \
 					} while (0)

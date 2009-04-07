@@ -539,7 +539,7 @@ static int ixp4xx_set_next_event(unsigned long evt,
 static void ixp4xx_set_mode(enum clock_event_mode mode,
 			    struct clock_event_device *evt)
 {
-	unsigned long opts, osrt = *IXP4XX_OSRT1 & ~IXP4XX_OST_RELOAD_MASK;
+	unsigned long opts=0, osrt = *IXP4XX_OSRT1 & ~IXP4XX_OST_RELOAD_MASK;
 
 	switch (mode) {
 	case CLOCK_EVT_MODE_PERIODIC:
