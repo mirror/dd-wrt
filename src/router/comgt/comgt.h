@@ -612,18 +612,6 @@ char _DIAL_code[]  =
   "opengt\n\
   set senddelay 0.05\n\
   waitquiet 1 0.2\n\
-  let $x=$env(\"COMGTINIT\")\n\
-  let a=len($x)\n\
-  if a=0 goto dial\n\
-  if a>0 goto init\n\
- :init\n\
-  print \"\nInit modem with: \"\n\
-  print $x\n\
-  print \"\n\"\n\
-  send $x\n\
-  send \"^m\"\n\
-  goto checkdial\n\
-  :checkdial\n\
   let $x=$env(\"COMGTDIAL\")\n\
   let a=len($x)\n\
   if a=0 goto dial\n\
