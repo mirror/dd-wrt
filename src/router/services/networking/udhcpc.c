@@ -432,7 +432,10 @@ char *gw = safe_getenv( "router" );
 fprintf(stderr,"gateway %s\n",gw);
 if (ip && net && ifname)
     {
-    eval("ifconfig",ifname,ip,"netmask",net);
+    char bcast[32];
+    strcpy(bcast,ip);
+    get_broadcast(bcast,net);
+    eval("ifconfig",ifname,ip,"netmask",net,"broadcast",bcast,"multi");
     }
 return 0;
 }
