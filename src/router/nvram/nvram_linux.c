@@ -244,6 +244,11 @@ nvram_unset (const char *name)
 int
 nvram_commit (void)
 {
+if (nvram_match("flash_active","1"))
+    {
+    fprintf(stderr,"not allowed, flash process in progress");
+    exit(1);
+    }
 system("/sbin/ledtool 1");
 //fprintf(stderr,"nvram_commit \n");
   lock ();
