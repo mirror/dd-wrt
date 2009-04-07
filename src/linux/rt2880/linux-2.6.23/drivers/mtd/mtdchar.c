@@ -19,6 +19,10 @@
 #include <linux/mtd/compatmac.h>
 
 #include <asm/uaccess.h>
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+extern void Flash_SetModeRead(void);
+#endif
 
 #ifdef CONFIG_DEVFS_FS
 #include <linux/devfs_fs_kernel.h>
@@ -195,6 +199,10 @@ static ssize_t mtd_read(struct file *file, char __user *buf, size_t count,loff_t
 	int ret=0;
 	int len;
 	char *kbuf;
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
 
 	DEBUG(MTD_DEBUG_LEVEL0,"MTD_read\n");
 

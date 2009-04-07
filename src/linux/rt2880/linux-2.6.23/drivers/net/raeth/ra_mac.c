@@ -69,6 +69,155 @@ void enable_auto_negotiate(void)
 
 }
 
+int phyregread(unsigned int phy_register, unsigned int* value)
+{
+	unsigned long mdio_reg = sysRegRead(MDIO_ACCESS);
+	unsigned long timer = jiffies;
+
+	for (;;)
+	{
+		if ( !(mdio_reg & RT2880_BIT(31) ) )
+			break;
+		else if ((jiffies - timer) > (5*HZ))
+		{
+			printk(KERN_ERR "rt2880 MDIO read Failed...\n");
+			return -1;
+		}
+	}
+	sysRegWrite(MDIO_ACCESS, 0);
+
+	mdio_reg = (0x1f << 24) | (phy_register << 16);
+	sysRegWrite(MDIO_ACCESS, mdio_reg);
+	mdio_reg |= RT2880_BIT(31);
+	sysRegWrite(MDIO_ACCESS, mdio_reg);
+
+	timer = jiffies;
+
+        for (;;)
+        {
+		mdio_reg = sysRegRead(MDIO_ACCESS);
+
+                if ( !(mdio_reg & RT2880_BIT(31) )) {
+			mdio_reg = sysRegRead(MDIO_ACCESS);
+			*value = (unsigned long)(mdio_reg & 0x0000ffff);
+                        break;
+		} else if ((jiffies - timer) > (5*HZ))
+                {
+                        printk(KERN_ERR "rt2880 MDIO read Failed!\n");
+                        return -2;
+                }
+        }
+
+	return 1;
+}
+
+int phyregwrite(unsigned int phy_register, unsigned int value)
+{
+        unsigned long mdio_reg = sysRegRead(MDIO_ACCESS);
+        unsigned long timer = jiffies;
+
+        for (;;)
+        {
+                if ( !(mdio_reg & RT2880_BIT(31) ) )
+                        break;
+                else if ((jiffies - timer) > (5*HZ))
+                {
+                        printk(KERN_ERR "rt2880 MDIO Write Failed...\n");
+                        return -1;
+                }
+        }
+
+        sysRegWrite(MDIO_ACCESS, 0);
+	mdio_reg = (0x1f << 24) | (phy_register << 16) | RT2880_BIT(30) | value;
+        sysRegWrite(MDIO_ACCESS, mdio_reg);
+
+	mdio_reg |= RT2880_BIT(31);
+	sysRegWrite(MDIO_ACCESS, mdio_reg);
+
+	timer = jiffies;
+
+        mdio_reg = sysRegRead(MDIO_ACCESS);
+        for (;;)
+        {
+                if ( !(mdio_reg & RT2880_BIT(31) )) {
+                        break;
+                } else if ((jiffies - timer) > (5*HZ))
+                {
+                        printk(KERN_ERR "rt2880 MDIO Write Failed!\n");
+                        return -2;
+                }
+        	mdio_reg = sysRegRead(MDIO_ACCESS);
+        }
+	return 1;
+
+}
+#define LINKUP_RETRY_MAX 10
+void wait_linkup(void)
+{
+	u32 regValue;
+	int retry=0;
+	while(retry < LINKUP_RETRY_MAX){
+		regValue = sysRegRead(MDIO_CFG);
+		if(! (regValue & RT2880_GP1_LNK_DWN)){
+			printk("raeth: link up.\n");
+            return;
+		}
+		msleep(50);
+		retry++;
+	}
+	printk("raeth: give up to wait for linkup\n");
+	return;
+}
+
+#define AN_RETRY_MAX 30
+void wait_an_completed(void)
+{
+	u32 regValue;
+	int retry=0;
+	while(retry < AN_RETRY_MAX){
+		regValue = sysRegRead(MDIO_CFG);
+		if((regValue & RT2880_GP1_AN_FAIL)){
+			printk("raeth: AN completed.\n");
+			break;
+		}
+		msleep(100);
+		retry++;
+	}
+	printk("raeth: timeout for AN\n");
+	return;
+}
+
+void rt2880_mdio_cfg(unsigned int addr, unsigned int offset, unsigned int value)
+{
+	unsigned int phy_register;
+	int ret;
+	if (offset > 32) {
+		printk("offset input failed");
+		return;
+	}
+
+	ret = phyregread(addr, &phy_register);
+	if (ret < 0) {
+		printk("PHY config read failed!");
+		return;
+	} else
+		printk("mdio.wb addr[%08X] value[0x%08X]\n", addr, phy_register);
+
+	if(phy_register)
+	{
+		phy_register |= RT2880_BIT(offset);
+	} else {
+		phy_register &= ~(RT2880_BIT(offset));
+	}
+
+	ret = phyregwrite(addr, phy_register);
+ 
+	if ( ret < 0)
+		printk("PHY config write failed!");
+	else
+		printk("mdio.wb addr[0x%X] value[0x%X]\n", addr, phy_register);
+}
+
 #endif
 void ra2880stop(END_DEVICE *ei_local)
 {

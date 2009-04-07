@@ -20,6 +20,10 @@
 #include <linux/mtd/blktrans.h>
 #include <linux/mutex.h>
 
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+extern void Flash_SetModeRead(void);
+#endif
 
 static struct mtdblk_dev {
 	struct mtd_info *mtd;
@@ -206,6 +210,10 @@ static int do_cached_read (struct mtdblk_dev *mtdblk, unsigned long pos,
 	DEBUG(MTD_DEBUG_LEVEL2, "mtdblock: read on \"%s\" at 0x%lx, size 0x%x\n",
 			mtd->name, pos, len);
 
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
 	if (!sect_size)
 		return mtd->read(mtd, pos, len, &retlen, buf);
 

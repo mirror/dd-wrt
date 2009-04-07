@@ -1730,7 +1730,7 @@ out:
 			Receiver routines
   =======================================================================*/
 
-int netdev_max_backlog __read_mostly = 1000;
+int netdev_max_backlog __read_mostly = 30;
 int netdev_budget __read_mostly = 300;
 int weight_p __read_mostly = 64;            /* old backlog weight */
 
@@ -1782,17 +1782,6 @@ int netif_rx(struct sk_buff *skb)
 
 	__get_cpu_var(netdev_rx_stat).total++;
 
-#ifdef CONFIG_BRIDGE
-	/* Optimisation for framebursting (allow interleaving of pkts by
-	 * immediately processing the rx pkt instead of Qing the pkt and deferring
-	 * the processing). Only optimise for bridging and guard against non
-	 * TASKLET based netif_rx calls.
-	 */
-	if (!in_irq() && (skb->dev->br_port != NULL) && br_handle_frame_hook != NULL) {
-		local_irq_restore(flags);
-		return netif_receive_skb(skb);
-	}
-#endif		
 
 #ifdef CONFIG_BRIDGE
 	/* Optimisation for framebursting (allow interleaving of pkts by

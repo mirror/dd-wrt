@@ -1761,14 +1761,32 @@ int __init ra2882eth_init(void)
 #if defined (CONFIG_GIGAPHY) 
         unsigned int regValue = 0;
 
+
         if (isMarvellGigaPHY2()) {
         mii_mgr_read(0x14,0, &regValue);
         regValue &= ~(1<<11); //power up
         mii_mgr_write(0x14,0, regValue);
+
+	u32 regValue = sysRegRead(MDIO_CFG);
+        u32 addr = 0x14;
+        regValue &= 0xe0ff7fff;                 // clear auto polling related field:
+                                                // (MD_PHY1ADDR & GP1_FRC_EN).
+        regValue |= 0x20000000;                 // force to enable MDC/MDIO auto polling.
+        regValue |= (addr << 24);               // setup PHY address for auto polling.
+        
+	sysRegWrite(MDIO_CFG, regValue);
+
+    	wait_linkup();
+    	wait_an_completed();
+	rt2880_mdio_cfg(0,15,1);
+	mii_mgr_write(0x14,22,0x0003);
+	mii_mgr_write(0x14,16,0x1011);
+	mii_mgr_write(0x14,22,0x0000);
+	
 	}
 
-        enable_auto_negotiate();
         if (isMarvellGigaPHY()) {
+    		enable_auto_negotiate();
                 printk("\n Reset MARVELL phy\n");
                 mii_mgr_read(31,20, &regValue);
                 regValue |= 1<<7; //Add delay to RX_CLK for RXD Outputs

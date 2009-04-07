@@ -158,12 +158,6 @@ int fe_qos_packet_send(struct net_device *dev, struct sk_buff* skb, unsigned int
 	tx_desc[tx_cpu_owner_idx].txd_info4.PN = pn;
 	tx_desc[tx_cpu_owner_idx].txd_info4.QN = qn;
 
-#ifdef CONFIG_RAETH_CHECKSUM_OFFLOAD
-	ei_local->tx_ring0[tx_cpu_owner_idx].txd_info4.TCO = 1; 
-	ei_local->tx_ring0[tx_cpu_owner_idx].txd_info4.UCO = 1; 
-	ei_local->tx_ring0[tx_cpu_owner_idx].txd_info4.ICO = 1; 
-#endif
-
 #if defined (CONFIG_RA_HW_NAT) || defined (CONFIG_RA_HW_NAT_MODULE) 
 	if(FOE_MAGIC_TAG(skb) == FOE_MAGIC_PPE) {
 	    tx_desc[tx_cpu_owner_idx].txd_info4.PN = 6; /* PPE */
