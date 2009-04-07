@@ -113,10 +113,12 @@ uint32_t max_flash_size=0;
 uint32_t logic2phy(uint32_t addr)
 {
 #if defined (CONFIG_RT2880_FLASH_8M)
-	if (addr >= 0x400000)
-		return (FL_BASE - 0x400000 + addr);
-	else
-		return (FL_BASE + 0x400000 + addr);
+	return FL_BASE + addr;
+	
+//	if (addr >= 0x400000)
+//		return (FL_BASE - 0x400000 + addr);
+//	else
+//		return (FL_BASE + 0x400000 + addr);
 #elif defined (CONFIG_RT2880_FLASH_16M)
 	if (addr >= 0x400000)
 		return (FL_BASE - 0x400000 + addr);

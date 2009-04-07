@@ -298,6 +298,7 @@ static inline int map_word_bitsset(struct map_info *map, map_word val1, map_word
 	}
 	return 0;
 }
+
 static inline map_word map_word_load(struct map_info *map, const void *ptr)
 {
 	map_word r;
@@ -317,6 +318,7 @@ static inline map_word map_word_load(struct map_info *map, const void *ptr)
 
 	return r;
 }
+
 static inline map_word map_word_load_partial(struct map_info *map, map_word orig, const unsigned char *buf, int start, int len)
 {
 	int i;
@@ -339,7 +341,6 @@ static inline map_word map_word_load_partial(struct map_info *map, map_word orig
 	return orig;
 }
 
-
 #if BITS_PER_LONG < 64
 #define MAP_FF_LIMIT 4
 #else
@@ -361,43 +362,6 @@ static inline map_word map_word_ff(struct map_info *map)
 	return r;
 }
 
-#ifdef CONFIG_FLASH_ST_M29W640
-static inline map_word inline_map_read(struct map_info *map, unsigned long ofs)
-{
-	map_word r;
-if (ofs>0x3fffff)
-    ofs-=0x400000;
-else
-    ofs+=0x400000;
-
-	if (map_bankwidth_is_1(map))
-		r.x[0] = __raw_readb(map->virt + ofs);
-	else if (map_bankwidth_is_2(map))
-		r.x[0] = __raw_readw(map->virt + ofs);
-	else if (map_bankwidth_is_4(map))
-		r.x[0] = __raw_readl(map->virt + ofs);
-#if BITS_PER_LONG >= 64
-	else if (map_bankwidth_is_8(map))
-		r.x[0] = __raw_readq(map->virt + ofs);
-#endif
-	else if (map_bankwidth_is_large(map))
-		memcpy_fromio(r.x, map->virt+ofs, map->bankwidth);
-/*
-//printk(KERN_EMERG "map read %d done\n",ofs);
-	    char *src = (char*)map->virt;
-	    char *dst = (char*)r.x;
-	    unsigned long i;
-	for (i=ofs;i<(ofs+map->bankwidth);i++)
-	    {
-		if (i>0x3fffff)
-		    dst[i-ofs] = src[i-0x400000]; 
-		else
-		    dst[i-ofs] = src[i+0x400000]; 
-	    }
-*/
-	return r;
-}
-#else
 static inline map_word inline_map_read(struct map_info *map, unsigned long ofs)
 {
 	map_word r;
@@ -418,57 +382,6 @@ static inline map_word inline_map_read(struct map_info *map, unsigned long ofs)
 	return r;
 }
 
-
-
-#endif
-#ifdef CONFIG_FLASH_ST_M29W640
-static inline void inline_map_write(struct map_info *map, const map_word datum, unsigned long ofs)
-{
-if (ofs>0x3fffff)
-    ofs-=0x400000;
-else
-    ofs+=0x400000;
-
-	if (map_bankwidth_is_1(map))
-		__raw_writeb(datum.x[0], map->virt + ofs);
-	else if (map_bankwidth_is_2(map))
-		__raw_writew(datum.x[0], map->virt + ofs);
-	else if (map_bankwidth_is_4(map))
-		__raw_writel(datum.x[0], map->virt + ofs);
-#if BITS_PER_LONG >= 64
-	else if (map_bankwidth_is_8(map))
-		__raw_writeq(datum.x[0], map->virt + ofs);
-#endif
-	else if (map_bankwidth_is_large(map))
-		memcpy_toio(map->virt+ofs, datum.x, map->bankwidth);
-	mb();
-
-
-/*	if (map_bankwidth_is_1(map))
-		__raw_writeb(datum.x[0], map->virt + ofs);
-	else if (map_bankwidth_is_2(map))
-		__raw_writew(datum.x[0], map->virt + ofs);
-	else if (map_bankwidth_is_4(map))
-		__raw_writel(datum.x[0], map->virt + ofs);
-#if BITS_PER_LONG >= 64
-	else if (map_bankwidth_is_8(map))
-		__raw_writeq(datum.x[0], map->virt + ofs);
-#endif
-	else if (map_bankwidth_is_large(map))
-	    char *dst = (char*)map->virt;
-	    char *src = (char*)datum.x;
-	    unsigned long i;
-	for (i=ofs;i<(ofs+map->bankwidth);i++)
-	    {
-		if (i>0x3fffff)
-		    dst[i-0x400000] = src[i-ofs]; 
-		else
-		    dst[i+0x400000] = src[i-ofs]; 
-	    }*/
-//	mb();
-}
-#else
-
 static inline void inline_map_write(struct map_info *map, const map_word datum, unsigned long ofs)
 {
 	if (map_bankwidth_is_1(map))
@@ -486,34 +399,6 @@ static inline void inline_map_write(struct map_info *map, const map_word datum, 
 	mb();
 }
 
-
-#endif
-#ifdef CONFIG_FLASH_ST_M29W640
-static inline void inline_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
-{
-unsigned long i;
-char *dst,*src;
-	if (map->cached)
-		memcpy(to, (char *)map->cached + from, len);
-	else
-	    {
-		dst = (char*)to;
-		src = (char*)(map->virt);	
-//		printk(KERN_EMERG "copy from 0x%p to 0x%p len =%ld, from=0x%08lX\n",src,dst,len,from);
-		
-	    	for (i=from;i<(from+len);i++)
-	    	    {
-	    	    if (i>0x3FFFFF)
-	    	    *dst = src[i-0x400000];
-	    	    else
-	    	    *dst = src[i+0x400000];
-	    	    dst++;
-	    	    }    
-//		printk(KERN_EMERG "copy from %p to %p len =%ld done\n",src,dst,len);
-	    
-	    }
-}
-#else
 static inline void inline_map_copy_from(struct map_info *map, void *to, unsigned long from, ssize_t len)
 {
 	if (map->cached)
@@ -521,29 +406,11 @@ static inline void inline_map_copy_from(struct map_info *map, void *to, unsigned
 	else
 		memcpy_fromio(to, map->virt + from, len);
 }
-#endif
-#ifdef CONFIG_FLASH_ST_M29W640
-static inline void inline_map_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_t len)
-{
-unsigned long i;
-char *dst,*src;
-		src = (char*)from;
-		dst = (char*)(map->virt);	
-	    	for (i=to;i<(to+len);i++)
-	    	    {
-	    	    if (i>0x3FFFFF)
-	    		dst[i-0x400000] = *src;
-	    	    else
-	    		dst[i+0x400000] = *src;
-	    	    src++;
-	    	    }    
-}
-#else
+
 static inline void inline_map_copy_to(struct map_info *map, unsigned long to, const void *from, ssize_t len)
 {
 	memcpy_toio(map->virt + to, from, len);
 }
-#endif
 
 #ifdef CONFIG_MTD_COMPLEX_MAPPINGS
 #define map_read(map, ofs) (map)->read(map, ofs)

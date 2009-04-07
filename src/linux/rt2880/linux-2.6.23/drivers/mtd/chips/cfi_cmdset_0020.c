@@ -38,6 +38,7 @@
 #include <linux/mtd/compatmac.h>
 
 
+
 static int cfi_staa_read(struct mtd_info *, loff_t, size_t, size_t *, u_char *);
 static int cfi_staa_write_buffers(struct mtd_info *, loff_t, size_t, size_t *, const u_char *);
 static int cfi_staa_writev(struct mtd_info *mtd, const struct kvec *vecs,

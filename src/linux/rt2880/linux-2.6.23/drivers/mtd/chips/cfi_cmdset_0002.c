@@ -45,6 +45,7 @@
 #define MAX_WORD_RETRIES 3
 
 #define MANUFACTURER_AMD	0x0001
+#define MANUFACTURER_MACRONIX	0x00C2
 #define MANUFACTURER_ATMEL	0x001F
 #define MANUFACTURER_SST	0x00BF
 #define SST49LF004B	        0x0060
@@ -216,9 +217,32 @@ static void fixup_use_atmel_lock(struct mtd_info *mtd, void *param)
 	mtd->flags |= MTD_STUPID_LOCK;
 }
 
+static void fixup_s29gl064n_sectors(struct mtd_info *mtd, void *param)
+{
+	struct map_info *map = mtd->priv;
+	struct cfi_private *cfi = map->fldrv_priv;
+
+	if ((cfi->cfiq->EraseRegionInfo[0] & 0xffff) == 0x003f) {
+		cfi->cfiq->EraseRegionInfo[0] |= 0x0040;
+		printk(KERN_EMERG "%s: Bad S29GL064N CFI data, adjust from 64 to 128 sectors\n", mtd->name);
+	}
+}
+
+static void fixup_s29gl032n_sectors(struct mtd_info *mtd, void *param)
+{
+	struct map_info *map = mtd->priv;
+	struct cfi_private *cfi = map->fldrv_priv;
+
+	if ((cfi->cfiq->EraseRegionInfo[1] & 0xffff) == 0x007e) {
+		cfi->cfiq->EraseRegionInfo[1] &= ~0x0040;
+		printk(KERN_EMERG "%s: Bad S29GL032N CFI data, adjust from 127 to 63 sectors\n", mtd->name);
+	}
+}
+
 static struct cfi_fixup cfi_fixup_table[] = {
 #ifdef AMD_BOOTLOC_BUG
 	{ CFI_MFR_AMD, CFI_ID_ANY, fixup_amd_bootblock, NULL },
+	{ MANUFACTURER_MACRONIX, CFI_ID_ANY, fixup_amd_bootblock, NULL },
 #endif
 	{ CFI_MFR_AMD, 0x0050, fixup_use_secsi, NULL, },
 	{ CFI_MFR_AMD, 0x0053, fixup_use_secsi, NULL, },
@@ -226,6 +250,10 @@ static struct cfi_fixup cfi_fixup_table[] = {
 	{ CFI_MFR_AMD, 0x0056, fixup_use_secsi, NULL, },
 	{ CFI_MFR_AMD, 0x005C, fixup_use_secsi, NULL, },
 	{ CFI_MFR_AMD, 0x005F, fixup_use_secsi, NULL, },
+	{ CFI_MFR_AMD, 0x0c01, fixup_s29gl064n_sectors, NULL, },
+	{ CFI_MFR_AMD, 0x1301, fixup_s29gl064n_sectors, NULL, },
+	{ CFI_MFR_AMD, 0x1a00, fixup_s29gl032n_sectors, NULL, },
+	{ CFI_MFR_AMD, 0x1a01, fixup_s29gl032n_sectors, NULL, },
 #if !FORCE_WORD_WRITE
 	{ CFI_MFR_ANY, CFI_ID_ANY, fixup_use_write_buffers, NULL, },
 #endif
@@ -249,9 +277,11 @@ static struct cfi_fixup fixup_table[] = {
 	{ CFI_MFR_ATMEL, AT49BV6416, fixup_use_atmel_lock, NULL },
 	{ 0, 0, NULL, NULL }
 };
-#ifdef CONFIG_FLASH_ST_M29W640
+
+
+#ifdef CONFIG_RT2880_FLASH_8M
 /* marklin 20080605 ; for ST M29W640 */
-static void Flash_SetModeRead(void)
+void Flash_SetModeRead(void)
 {
 	volatile unsigned int delay;
 
@@ -341,6 +371,33 @@ struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 				cfi->cfiq->EraseRegionInfo[j] = swap;
 			}
 		}
+#if 0// CONFIG_RT2880_FLASH_8M
+
+		switch (cfi->device_type) {
+		case CFI_DEVICETYPE_X8:
+			cfi->addr_unlock1 = 0x555; 
+			cfi->addr_unlock2 = 0x2aa; 
+			break;
+		case CFI_DEVICETYPE_X16:
+			cfi->addr_unlock1 = 0xaaa;
+			if (map->bankwidth == cfi->interleave) {
+				/* X16 chip(s) in X8 mode */
+				cfi->addr_unlock2 = 0x555;
+			} else {
+				cfi->addr_unlock2 = 0x554;
+			}
+			break;
+		case CFI_DEVICETYPE_X32:
+			cfi->addr_unlock1 = 0x1555; 
+			cfi->addr_unlock2 = 0xaaa; 
+			break;
+		default:
+			printk(KERN_NOTICE "Eep. Unknown cfi_cmdset_0002 device type %d\n", cfi->device_type);
+			return NULL;
+		}
+
+
+#else
 		/* Set the default CFI lock/unlock addresses */
 		cfi->addr_unlock1 = 0x555;
 		cfi->addr_unlock2 = 0x2aa;
@@ -355,7 +412,7 @@ struct mtd_info *cfi_cmdset_0002(struct map_info *map, int primary)
 		cfi->addr_unlock1 = 0xaaa;
 		cfi->addr_unlock2 = 0x555;
 		}
-
+#endif
 	} /* CFI mode */
 	else if (cfi->cfi_mode == CFI_MODE_JEDEC) {
 		/* Apply jedec specific fixups */
@@ -829,6 +886,7 @@ static inline int do_read_onechip(struct map_info *map, struct flchip *chip, lof
 	struct cfi_private *cfi = map->fldrv_priv;
 	int ret;
 
+
 	adr += chip->start;
 
 	/* Ensure cmd read/writes are aligned. */
@@ -864,7 +922,7 @@ static int cfi_amdstd_read (struct mtd_info *mtd, loff_t from, size_t len, size_
 	int ret = 0;
 	/* ofs: offset within the first chip that the first read should start */
 
-#ifdef CONFIG_FLASH_ST_M29W640
+#ifdef CONFIG_RT2880_FLASH_8M
         /* marklin 20080605 : return read mode for ST */
         Flash_SetModeRead();
 #endif

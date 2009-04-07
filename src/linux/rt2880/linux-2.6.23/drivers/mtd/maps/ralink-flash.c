@@ -19,7 +19,14 @@
 #include <linux/mtd/partitions.h>
 #include <linux/vmalloc.h>
 #include <linux/squashfs_fs.h>
+#include <linux/err.h>
 
+
+
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+extern void Flash_SetModeRead(void);
+#endif
 
 #ifndef CONFIG_RT2880_FLASH_32M 
 #define WINDOW_ADDR		CONFIG_MTD_PHYSMAP_START
@@ -45,7 +52,7 @@ static struct map_info ralink_map[] = {
 	.name = "Ralink SoC physically mapped flash bank 1",
 	.bankwidth = BUSWIDTH,
 	.size = CONFIG_MTD_PHYSMAP_LEN,
-	.phys = (CONFIG_MTD_PHYSMAP_START-(CONFIG_MTD_PHYSMAP_LEN/2))
+	.phys = CONFIG_MTD_PHYSMAP_START
 	},
 };
 
@@ -115,6 +122,37 @@ static struct mtd_partition rt2880_partitions[] = {
                 mask_flags:     MTD_WRITEABLE  /* force read-only */
         }
 };
+#elif CONFIG_RT2880_FLASH_8M 
+static struct mtd_partition rt2880_partitions[] = {
+        {
+                name:           "uboot",  /* mtdblock0 */
+                size:           0x30000,  /* 192K */
+                offset:         0x400000,
+        }, {
+                name:           "uboot-config", /* mtdblock1 */
+                size:           0x10000,  /* 64K */
+                offset:         MTDPART_OFS_APPEND,
+                mask_flags:     0x400000  /* force read-only */
+        }, {
+                name:           "factory-defaults", /* mtdblock2 */
+                size:           0x10000,  /* 64K */
+                offset:         MTDPART_OFS_APPEND,
+                mask_flags:     0x400000  /* force read-only */
+        }, {
+                name:           "linux", /* mtdblock3 */
+                size:           CONFIG_MTD_KERNEL_PART_SIZ,
+                offset:         0x450000,
+        }, {
+                name:           "rootfs", /* mtdblock4 */
+                size:           MTDPART_SIZ_FULL,
+                offset:         MTDPART_OFS_APPEND,
+        }, {
+                name:           "nvram", /* mtdblock4 */
+                size:           0x10000,
+                offset:         0x7e0000,
+        }};
+
+
 #else //not 32M flash
 static struct mtd_partition rt2880_partitions[] = {
         {
@@ -188,14 +226,19 @@ int __init rt2880_mtd_init(void)
 		ret = add_mtd_partitions(merged_mtd, rt2880_partitions,
 				ARRAY_SIZE(rt2880_partitions));
 #else
-
-#ifdef CONFIG_RT2880_FLASH_8M 
+#ifdef CONFIG_MTD_ESR6650 
 int nvramsize = ralink_mtd[0]->erasesize*2;
+		int offset = 0;
+#elif CONFIG_RT2880_FLASH_8M 
+/* marklin 20080605 : return read mode for ST */
+Flash_SetModeRead();
+int nvramsize = ralink_mtd[0]->erasesize*2;
+		int offset = 0x400000;
 #else
 int nvramsize = ralink_mtd[0]->erasesize;
+		int offset = 0;
 #endif
 		char *buf = vmalloc(4096);
-		int offset = 0;
 			    while((offset+ralink_mtd[0]->erasesize)<ralink_mtd[0]->size)
 			    {
 			    int retlen;
@@ -204,9 +247,15 @@ int nvramsize = ralink_mtd[0]->erasesize;
 			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
 				    {
 				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
-					rt2880_partitions[3].size=((ralink_mtd[0]->size-nvramsize)-0x50000);					
+#ifdef CONFIG_RT2880_FLASH_8M 
+					rt2880_partitions[3].size=(((ralink_mtd[0]->size)-nvramsize)-0x450000);					
+					rt2880_partitions[4].offset=offset;					
+					rt2880_partitions[4].size = rt2880_partitions[3].size-(offset-0x450000);					
+#else
+					rt2880_partitions[3].size=(((ralink_mtd[0]->size)-nvramsize)-0x50000);					
 					rt2880_partitions[4].offset=offset;					
 					rt2880_partitions[4].size = rt2880_partitions[3].size-(offset-0x50000);					
+#endif
 					rt2880_partitions[5].offset=ralink_mtd[0]->size-nvramsize;					
 					rt2880_partitions[5].size = ralink_mtd[0]->erasesize;					
 					break;
@@ -253,3 +302,101 @@ module_exit(rt2880_mtd_cleanup);
 MODULE_AUTHOR("Steven Liu <steven_liu@ralinktech.com.tw>");
 MODULE_DESCRIPTION("Ralink APSoC Flash Map");
 MODULE_LICENSE("GPL");
+
+
+/*
+ * Flash API: ra_mtd_read, ra_mtd_write
+ * Arguments:
+ *   - num: specific the mtd number
+ *   - to/from: the offset to read from or written to
+ *   - len: length
+ *   - buf: data to be read/written
+ * Returns:
+ *   - return -errno if failed
+ *   - return the number of bytes read/written if successed
+ */
+int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf)
+{
+	int ret = -1;
+	size_t rdlen, wrlen;
+	struct mtd_info *mtd;
+	struct erase_info ei;
+	u_char *bak = NULL;
+//	printk(KERN_EMERG "writing to partition %d, offset %d, len %d\n",num,to,len);
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
+
+	mtd = get_mtd_device(NULL, num);
+	if (IS_ERR(mtd))
+		return (int)mtd;
+	if (len > mtd->erasesize) {
+		put_mtd_device(mtd);
+		return -E2BIG;
+	}
+
+	bak = kmalloc(mtd->erasesize, GFP_KERNEL);
+	if (bak == NULL) {
+		put_mtd_device(mtd);
+		return -ENOMEM;
+	}
+
+	ret = mtd->read(mtd, 0, mtd->erasesize, &rdlen, bak);
+	if (ret != 0) {
+		put_mtd_device(mtd);
+		kfree(bak);
+		return ret;
+	}
+	if (rdlen != mtd->erasesize)
+		printk(KERN_EMERG "warning: ra_mtd_write: rdlen is not equal to erasesize\n");
+
+	memcpy(bak + to, buf, len);
+
+	ei.mtd = mtd;
+	ei.callback = NULL;
+	ei.addr = 0;
+	ei.len = mtd->erasesize;
+	ei.priv = 0;
+	ret = mtd->erase(mtd, &ei);
+	if (ret != 0) {
+		put_mtd_device(mtd);
+		kfree(bak);
+		return ret;
+	}
+
+	ret = mtd->write(mtd, 0, mtd->erasesize, &wrlen, bak);
+
+	put_mtd_device(mtd);
+	kfree(bak);
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
+	return ret;
+}
+
+int ra_mtd_read(int num, loff_t from, size_t len, u_char *buf)
+{
+	int ret;
+	size_t rdlen;
+	struct mtd_info *mtd;
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
+//	printk(KERN_EMERG "reading from partition %d, offset %d, len %d\n",num,from,len);
+	mtd = get_mtd_device(NULL, num);
+	if (IS_ERR(mtd))
+		return (int)mtd;
+
+	ret = mtd->read(mtd, from, len, &rdlen, buf);
+	if (rdlen != len)
+		printk(KERN_EMERG "warning: ra_mtd_read: rdlen is not equal to len\n");
+
+	put_mtd_device(mtd);
+	return ret;
+}
+
+EXPORT_SYMBOL(ra_mtd_write);
+EXPORT_SYMBOL(ra_mtd_read);

@@ -22,8 +22,9 @@ unsigned long readreg(unsigned long addr);
 void writereg(unsigned long value, unsigned long addr);
 
 void enable_auto_negotiate(void);
-int wait_linkup(void);
-int wait_an_completed(void);
+void wait_linkup(void);
+void wait_an_completed(void);
+void rt2880_mdio_cfg(unsigned int address, unsigned int offset, unsigned int value);
 
 void rt2880_gmac_hard_reset(void);
 
