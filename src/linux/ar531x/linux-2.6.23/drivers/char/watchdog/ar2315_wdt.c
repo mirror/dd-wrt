@@ -74,7 +74,7 @@ typedef u_int32_t AR531X_REG;
 #define CYCLES_TO_S(x) ((x) / CLOCK_RATE)
 
 static unsigned long wdt_is_open;
-static int heartbeat = 20;
+static int heartbeat = 60;
 static int started = 0;
 extern const char *get_arch_type (void);
 
@@ -266,7 +266,7 @@ ar2315_wdt_init(void)
 	int ret = 0;
 
 	if (ar2315_wdt_set_heartbeat(heartbeat)) {
-		ar2315_wdt_set_heartbeat(5);
+		ar2315_wdt_set_heartbeat(60);
 		printk(KERN_INFO "%s: heartbeat value must be 0<heartbeat<90, using %d\n",
 		       __func__, 5);
 	}
