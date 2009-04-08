@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-//		Traducción Española del archivo de referencia - DD-WRT V23 SP1 por SuperWebon 25/05/2006	//
+//    Traducción Española del archivo de referencia - DD-WRT V23 SP1 por SuperWebon 25/05/2006      //
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
@@ -11,7 +11,7 @@ share.time="Hora";
 share.interipaddr="Direc. IP de Internet";
 share.more="Más...";
 share.help="Ayuda";
-share.enable="Enable";
+share.enable="Activar";
 share.enabled="Activado";
 share.disable="Desactivar";
 share.disabled="Desactivado";
@@ -61,7 +61,7 @@ share.sat_s1="S";
 share.expires="Expira";
 share.yes="Sí";
 share.no="No";
-share.filter="Filter";
+share.filter="Filtro";
 share.deny="Denegar";
 share.range="Rango";
 share.use="Uso";
@@ -126,14 +126,14 @@ share.dhcp="DHCP";
 share.styl="Estilo";
 share.err="error";
 share.errs="errores";
-share.meters="meters";
+share.meters="metros";
 share.full="Full (20 Mhz)";
 share.half="Half (10 Mhz)";
 share.quarter="Quarter (5 Mhz)";
-share.seealso="See also";
-share.never="never";
-share.unknown="unknown";
-share.expired="expired";
+share.seealso="Ver también";
+share.never="nunca";
+share.unknown="desconocido";
+share.expired="caducado";
 share.standard="Estándar";
 
 
@@ -195,7 +195,7 @@ errmsg.err5="La longitud de la dirección MAC no es correcta.";
 errmsg.err6="Debes introducir una Clave.";
 errmsg.err7="Debes introducir un Nombre de Host.";
 errmsg.err8="Debes introducir una dirección IP o un Nombre de Dominio.";
-errmsg.err9="Dirección IP Ilegal en DMZ (DeMilitared Zone).";
+errmsg.err9="Dirección IP Ilegal en DMZ (Zona desmilizarizada).";
 errmsg.err10="La clave confirmada no coincide con la Clave introducida. Por favor, reintroduce la Clave.";
 errmsg.err11="No están permitidos los espacios en la Clave";
 errmsg.err12="Debes introducir un comando a ejecutar.";
@@ -287,14 +287,14 @@ errmsg.err61="Archivo de imagen incorrecto.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 
-bmenu.setup="Setup";
-bmenu.setupbasic="Setup Básico";
+bmenu.setup="Configuración";
+bmenu.setupbasic="Config Básica";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="Clonar Dirección MAC";
 bmenu.setuprouting="Ruteo Avanzado";
 bmenu.setupvlan="VLANs";
 bmenu.setupeop="EoIP Tunnel";
-bmenu.networking="Networking";
+bmenu.networking="Redes";
 
 bmenu.wireless="Inalámbrico";
 bmenu.wirelessBasic="Config Básica";
@@ -347,7 +347,7 @@ bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agente Sputnik";
 bmenu.statuWLAN="Inalámbrico";
 bmenu.statuVPN="OpenVPN";
-bmenu.statuSysInfo="Info-Stma";
+bmenu.statuSysInfo="Info-Sys";
 
 
 // ******************************************* Alive.asp *******************************************//
@@ -487,7 +487,7 @@ filter.polname="Nombre de Política";
 filter.pcs="PCs";
 filter.polallow="Acceso internet durante los días y horas elegidos.";
 filter.legend2="Días";
-filter.time="Times";
+filter.time="Horas";
 filter.h24="24 Horas";
 filter.legend3="Servicios Bloquedos";
 filter.catchall="Capturar todos los protocolos P2P";
@@ -594,7 +594,7 @@ hotspot.dhcp="Interfaz DHCP";
 hotspot.radnas="ID del Radius NAS";
 hotspot.uam="UAM Secreto";
 hotspot.uamdns="UAM cualquier DNS";
-hotspot.allowuam="UAM Allowed";
+hotspot.allowuam="UAM Permitido";
 hotspot.macauth="Autorización MAC";
 hotspot.option="Opciones de Chillispot Adicionales";
 hotspot.fon_chilli="Administración Local del Usuario de Chillispot";
@@ -638,7 +638,7 @@ info.titl="Información";
 info.h2="Información de Sistema";
 info.wlanmac="MAC Inalámbrica";
 info.srv="Servicios";
-info.ap="Access Point";
+info.ap="Punto Acceso";
 
 
 
@@ -680,16 +680,16 @@ idx_static.dns="DNS Estática";
 
 // ******************************************* index.asp *******************************************//
 
-idx.titl="Setup";
-idx.h2="Setup Internet";
-idx.h22="Setup Inalámbrico";
+idx.titl="Configuración";
+idx.h2="Config Internet";
+idx.h22="Config Inalámbrico";
 idx.legend="Tipo de Conexion a Internet";
 idx.conn_type="Tipo de Conexión";
 idx.stp="STP";
 idx.stp_mess="(Deshabilitar para COMCAST ISP)";
 idx.optional="Config Opcional";
 idx.mtu="MTU";
-idx.h23="Setup de RED";
+idx.h23="Config de RED";
 idx.routerip="IP del Router";
 idx.lanip="IP Local (LAN)";
 idx.legend2="Puerto WAN";
@@ -710,11 +710,11 @@ idx.dhcp_lease="Lease Time del Cliente";
 idx.dhcp_dnsmasq="Usar DNSMasq para DHCP";
 idx.dns_dnsmasq="Usar DNSMasq para DNS";
 idx.auth_dnsmasq="DHCP-Autorizativo";
-idx.summt_opt1="none";
-idx.summt_opt2="first Sun Apr - last Sun Oct";
-idx.summt_opt3="last Sun Mar - last Sun Oct";
-idx.summt_opt4="last Sun Oct - last Sun Mar";
-idx.summt_opt5="2nd Sun Mar - first Sun Nov";
+idx.summt_opt1="nada";
+idx.summt_opt2="Primer Dom Abr - último Dom Oct";
+idx.summt_opt3="Último Dom Mar - último Dom Oct";
+idx.summt_opt4="Último Dom Oct - último Dom Mar";
+idx.summt_opt5="2º Dom Mar - 1er Dom Nov";
 idx.ntp_client="Cliente NTP";
 
 //help container
@@ -734,7 +734,7 @@ hidx.right18="Elegir la zona horaria en la que se encuentra tu horario de Verano
 // ******************************************* Join.asp *******************************************//
 
 //sshd.webservices
-join.titl="Join";
+join.titl="Unirse";
 join.mess1="Unido con éxito a la siguiente red como cliente: ";
 
 
@@ -838,8 +838,8 @@ management.lang_brazilian="Brasileño";
 management.lang_slovenian="Esloveno";
 management.lang_spanish="Español";
 management.lang_swedish="Sueco";
-management.lang_polish="polish";
-management.lang_japanese="japanese";
+management.lang_polish="Polish";
+management.lang_japanese="Japanese";
 
 management.net_legend="Config Filtro IP (Ajustar para P2P)";
 management.net_port="Max Puertos";
@@ -974,7 +974,7 @@ service.kaid_locdevnum="Number of Local Devices";
 //DHCPd
 service.dhcp_legend="Cliente DHCP";
 service.dhcp_vendor="Establecer Vendorclass";
-service.dhcp_reqip="Request IP";
+service.dhcp_reqip="Solicitar IP";
 service.dhcp_legend2="Servidor DHCP";
 service.dhcp_srv="Demonio DHCP";
 service.dhcp_jffs2="Usar JFFS2 para client lease DB";
@@ -1068,7 +1068,7 @@ status_lan.legend="Estado LAN";
 status_lan.h22="Protocolo de Configuración de Host Dinámico";
 status_lan.legend2="Estado DHCP";
 status_lan.legend3="Clientes DHCP";
-status_lan.legend4="Active Clients";
+status_lan.legend4="Clientes Activos";
 
 //help container
 
@@ -1104,7 +1104,7 @@ status_router.mem_inactive="Inactivo";
 status_router.legend4="RED";
 status_router.net_maxports="Max Puertos Filtro IP";
 status_router.net_conntrack="Conexiones IP Activas";
-status_router.notavail="Not available";
+status_router.notavail="No disponible";
 
 //help container
 
@@ -1117,24 +1117,24 @@ hstatus_router.right12="Esto viene a ser 3 números que representan la carga de s
 
 // ** Status_Internet.asp **//
 
-status_inet.titl="WAN Status";
+status_inet.titl="WAN Estado";
 status_inet.h11="WAN";
 status_inet.conft="Tipo de Configuración";
 status_inet.www_loginstatus="Estado de Login";
 status_inet.wanuptime="Connection Uptime";
 status_inet.leasetime="Remaining Lease Time";
-status_inet.traff_tot="Total Traffic";
-status_inet.traff_mon="Traffic by Month";
-status_inet.traffin="Incoming";
-status_inet.traffout="Outgoing";
-status_inet.previous="Previous Month";
-status_inet.next="Next Month";
+status_inet.traff_tot="Tráfico Total";
+status_inet.traff_mon="Tráfico por mes";
+status_inet.traffin="Entrada";
+status_inet.traffout="Salida";
+status_inet.previous="Mes Anterior";
+status_inet.next="Mes Siguiente";
 
 //help container
 
 hstatus_inet.right2=hstatus_router.right14="Esto muestra la información requerida por tu ISP para la conexión a internet. \
 			Esta información fue introducida en la Pestaña Setup. Puedes <em>Conectar</em> ó <em>desconectar</em> tu conexión aquí haciendo click en ese botón.";
-hstatus_inet.right4="This shows your router's Internet traffic.";
+hstatus_inet.right4="Esto muestra el tráfico de Internet en tu router.";
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
@@ -1433,9 +1433,9 @@ wl_adv.row2="Mejor Esfuerzo";
 wl_adv.row3="Video";
 wl_adv.row4="Voz";
 wl_adv.table2="EDCA STA Parameters (Cliente a AP)";
-wl_adv.lng="Largo"; 					//************* don't use .long ! *************
-wl_adv.shrt="Corto"; 				//************* don't use .short ! **************
-
+wl_adv.lng="Largo";				     //************* don't use .long ! *************
+wl_adv.shrt="Corto";			    //************* don't use .short ! **************
+    
 //help container
 
 hwl_adv.right2="Deberías escoger entre <em>Auto</em> ó <em>Clave Compartida</em>. La autenticación por clave compartida es más segura, pero todos los dispositivos en tu red deberán soportar <em>Autenticación por Clave Compartida</em>.";
@@ -1493,7 +1493,7 @@ success.alert1="Por favor comprueba lo siguiente antes de conectar de nuevo:";
 success.alert2="Si has cambiado la IP de tu router, por favor asegúrate de que pides/renuevas tu(s) dirección(es) en la red.";
 success.alert3="Si estás conectado via WLAN, por favor, únete a la red y haz click en <em>Continuar</em>.";
 
-// *****************************************************		OLD PAGES 		************************************************************************//
+// *****************************************************		OLD PAGES	       ************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
 dhcp.titl="Tabla IP Activa en DHCP";
