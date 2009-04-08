@@ -1,9 +1,6 @@
 #ifdef USE_JHASH2
 #include <linux/jhash2.h>
 #else
-#ifdef USE_JHASH2
-#include <linux/jhash2.h>
-#else
 #ifndef _LINUX_JHASH_H
 #define _LINUX_JHASH_H
 
@@ -161,5 +158,4 @@ static inline u32 jhash_1word(u32 a, u32 initval)
 }
 
 #endif /* _LINUX_JHASH_H */
-#endif
 #endif
