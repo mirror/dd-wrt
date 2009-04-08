@@ -1,3 +1,4 @@
+#define USE_JHASH2 1
 /*
  *	IPv6 fragment reassembly
  *	Linux INET6 implementation
@@ -41,7 +42,7 @@
 #include <linux/ipv6.h>
 #include <linux/icmpv6.h>
 #include <linux/random.h>
-#include <linux/jhash.h>
+#include <linux/jhash2.h>
 
 #include <net/sock.h>
 #include <net/snmp.h>
