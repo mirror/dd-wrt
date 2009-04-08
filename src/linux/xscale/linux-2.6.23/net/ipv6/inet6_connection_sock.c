@@ -1,3 +1,4 @@
+#define USE_JHASH2
 /*
  * INET        An implementation of the TCP/IP protocol suite for the LINUX
  *             operating system.  INET is implemented using the  BSD Socket
@@ -16,7 +17,7 @@
 #include <linux/module.h>
 #include <linux/in6.h>
 #include <linux/ipv6.h>
-#include <linux/jhash.h>
+#include <linux/jhash2.h>
 
 #include <net/addrconf.h>
 #include <net/inet_connection_sock.h>
