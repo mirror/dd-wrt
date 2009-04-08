@@ -27,7 +27,7 @@
 #include <linux/ipv6.h>
 #include <linux/icmpv6.h>
 #include <linux/random.h>
-#include <linux/jhash.h>
+#include <linux/jhash2.h>
 
 #include <net/sock.h>
 #include <net/snmp.h>
