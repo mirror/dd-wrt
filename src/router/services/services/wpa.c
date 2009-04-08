@@ -497,6 +497,22 @@ void start_nas_single( char *type, char *prefix )
 
 	sec_mode = getSecMode( prefix );
 	auth_mode = getAuthMode( prefix );
+
+	if( !strcmp( prefix, "wl0" ) )
+	{
+		if( !strcmp( sec_mode, "0") )
+			led_control( LED_SEC0, LED_OFF );
+		else
+			led_control( LED_SEC0, LED_ON );
+	}
+	if( !strcmp( prefix, "wl1" ) )
+	{
+		if( !strcmp( sec_mode, "0") )
+			led_control( LED_SEC1, LED_OFF );
+		else
+			led_control( LED_SEC1, LED_ON );
+	}
+
 	if( auth_mode == NULL )
 	    return;		// no nas required
 	if( strcmp( nvram_safe_get( apmode ), "sta" )
