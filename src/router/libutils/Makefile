@@ -196,6 +196,9 @@ endif
 ifeq ($(CONFIG_TRIMAX),y)
   CFLAGS += -DHAVE_TRIMAX
 endif
+ifeq ($(CONFIG_WGT624),y)
+  CFLAGS += -DHAVE_WGT624
+endif
 ifeq ($(CONFIG_MERAKI),y)
   CFLAGS += -DHAVE_MERAKI
 endif

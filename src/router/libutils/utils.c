@@ -660,6 +660,9 @@ int internal_getRouterBrand(  )
 #elif HAVE_WRK54G
     setRouter( "Linksys WRK54G v3" );
     return ROUTER_BOARD_FONERA;
+#elif HAVE_WGT624
+    setRouter( "Netgear WGT624 v4" );
+    return ROUTER_BOARD_FONERA;
 #elif HAVE_MR3202A
     setRouter( "MR3202A" );
     return ROUTER_BOARD_FONERA;
