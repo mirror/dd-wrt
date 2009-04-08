@@ -86,8 +86,7 @@ ar7100_check_error(int verbose)
         ar7100_local_read_config(PCI_STATUS, 2, &status);
 
         if (verbose) {
-            printk("AHB error %d at AHB address 0x%x status %#x\n", 
-                   ar7100_reg_rd(AR7100_PCI_AHB_ERROR_ADDRESS), status);
+            printk("AHB error %d at AHB status %#x\n", ar7100_reg_rd(AR7100_PCI_AHB_ERROR_ADDRESS), status);
         }
 
         ar7100_reg_wr(AR7100_PCI_AHB_ERROR, error);
