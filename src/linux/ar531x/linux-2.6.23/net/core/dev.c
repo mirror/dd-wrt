@@ -1738,7 +1738,7 @@ out:
 			Receiver routines
   =======================================================================*/
 
-int netdev_max_backlog __read_mostly = 1000;
+int netdev_max_backlog __read_mostly = 30;
 int netdev_budget __read_mostly = 300;
 int weight_p __read_mostly = 64;            /* old backlog weight */
 
