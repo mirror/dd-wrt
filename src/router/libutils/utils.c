@@ -2641,13 +2641,11 @@ int led_control( int type, int act )
     int bridge_gpio = 0x0f;
     int vpn_gpio = 0x0f;
     int ses_gpio = 0x0f;	// use for SES1 (Linksys), AOSS (Buffalo)
-
-    // ....
     int ses2_gpio = 0x0f;
-    int wlan_gpio = 0x0f;	// use this only if wlan led is not
-
-    // controlled by hardware!
+    int wlan_gpio = 0x0f;	// use this only if wlan led is not controlled by hardware!
     int usb_gpio = 0x0f;
+    int sec0_gpio = 0x0f;	// security leds, wrt600n
+    int sec1_gpio = 0x0f;
     int v1func = 0;
 
     switch ( getRouterBrand(  ) )	// gpio definitions here: 0xYZ,
@@ -2714,12 +2712,11 @@ int led_control( int type, int act )
 	    // usb_gpio = 0x04; 
 	    break;
 	case ROUTER_WRT600N:
-	    // connected_gpio = 0x13;
 	    power_gpio = 0x12;
 	    diag_gpio = 0x02;
 	    usb_gpio = 0x13;
-	    //ses_gpio = 0x18;
-	    //ses2_gpio = 0x1a;
+	    sec0_gpio = 0x19;
+	    sec1_gpio = 0x1b;
 	    break;
 	case ROUTER_LINKSYS_WRT55AG:
 	    connected_gpio = 0x13;
@@ -3000,6 +2997,12 @@ int led_control( int type, int act )
 	    break;
 	case LED_USB:
 	    use_gpio = usb_gpio;
+	    break;
+	case LED_SEC0:
+	    use_gpio = sec0_gpio;
+	    break;
+	case LED_SEC1:
+	    use_gpio = sec1_gpio;
 	    break;
     }
     if( ( use_gpio & 0x0f ) != 0x0f )
