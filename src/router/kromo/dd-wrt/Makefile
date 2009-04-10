@@ -332,6 +332,15 @@ endif
 ifneq ($(CONFIG_WAVESAT),y)
 	rm -f $(INSTALLDIR)/www/WiMAX.asp 
 endif
+ifeq ($(CONFIG_ERC),y)
+	mkdir $(INSTALLDIR)/www/style/erc-machinery
+	cp erc/erc-machinery/style.css $(INSTALLDIR)/www/style/erc-machinery
+	cp erc/common.css $(INSTALLDIR)/www/style
+#	cp erc/images/logo.png $(INSTALLDIR)/www/style
+	cp erc/images/* $(INSTALLDIR)/www/images
+	cp erc/logo-help.png $(INSTALLDIR)/www/help
+	
+endif
 
 ifeq ($(CONFIG_MAKSAT_CORAL),y)
 	cp -f maksat/logo-coral.png $(INSTALLDIR)/www/style/logo-coral.png
@@ -478,6 +487,9 @@ ifneq ($(CONFIG_PPTPD),y)
 endif
 ifneq ($(CONFIG_L2TP),y)
 	rm -f $(INSTALLDIR)/www/index_l2tp.asp
+endif
+ifneq ($(CONFIG_3G),y)
+	rm -f $(INSTALLDIR)/www/index_3g.asp
 endif
 
 ifneq ($(CONFIG_NOCAT),y)
