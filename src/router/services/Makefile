@@ -340,6 +340,9 @@ endif
 ifeq ($(CONFIG_TFTP),y)
 CFLAGS += -DHAVE_TFTP
 endif
+ifeq ($(CONFIG_ERC),y)
+CFLAGS += -DHAVE_ERC
+endif
 
 ifeq ($(CONFIG_FTP),y)
 CFLAGS += -DHAVE_FTP
