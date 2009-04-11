@@ -208,6 +208,9 @@ endif
 ifeq ($(CONFIG_BWRG1000),y)
   CFLAGS += -DHAVE_BWRG1000
 endif
+ifeq ($(CONFIG_ERC),y)
+CFLAGS += -DHAVE_ERC
+endif
 ifeq ($(CONFIG_WHA5500CPE),y)
   CFLAGS += -DHAVE_WHA5500CPE
 endif
