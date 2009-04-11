@@ -502,6 +502,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"http_username", "$1$9wWnpX1Q$1fobI1HcfeXewVtWCnhxh.", 0},	/* Password */
 #elif HAVE_DDLAN
     {"http_passwd", "4DC5smu4lEiiQ", 0},	/* Password */
+#elif HAVE_ERC
+    {"http_passwd", "$1$mayB28Aa$pV0QnPSLwtuyNwtlfavvT0", 0},
 #else
     {"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
 #endif

