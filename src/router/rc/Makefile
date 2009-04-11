@@ -138,6 +138,10 @@ endif
 ifeq ($(CONFIG_MAKSAT),y)
 CFLAGS += -DHAVE_MAKSAT
 endif
+ifeq ($(CONFIG_ERC),y)
+CFLAGS += -DHAVE_ERC
+endif
+
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS += -DHAVE_VILIM
 endif
