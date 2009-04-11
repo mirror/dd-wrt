@@ -75,6 +75,9 @@ endif
 ifeq ($(CONFIG_3G),y)
   CFLAGS += -DHAVE_3G
 endif
+ifeq ($(CONFIG_ERC),y)
+CFLAGS += -DHAVE_ERC
+endif
 ifeq ($(CONFIG_XIOCOM),y)
   CFLAGS += -DHAVE_XIOCOM
 endif
