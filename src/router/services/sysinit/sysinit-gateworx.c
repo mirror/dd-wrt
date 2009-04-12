@@ -493,6 +493,18 @@ void start_sysinit( void )
     }
 #endif
 
+#ifdef HAVE_CAMBRIA
+    system2( "echo 0 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
+    system2( "echo 1 >/proc/sys/dev/wifi1/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi1/softled" );
+    system2( "echo 2 >/proc/sys/dev/wifi2/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi2/softled" );
+    system2( "echo 3 >/proc/sys/dev/wifi3/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi3/softled" );
+
+#endif
+
     /*
      * Set a sane date 
      */

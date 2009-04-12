@@ -2953,7 +2953,7 @@ void start_wan( int status )
 	    dial="ATD*99#";
 	if (nvram_match("wan_dial","2"))
 	    dial="ATDT#777";
-	fprintf(fp,"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s\"\n",dial,controldevice);
+	fprintf(fp,"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n",dial,controldevice);
 	fprintf(fp,"user %s\n",nvram_safe_get("ppp_username"));
 	fprintf(fp,"password %s\n",nvram_safe_get("ppp_passwd"));
 	fprintf(fp,"%s\n",controldevice);
