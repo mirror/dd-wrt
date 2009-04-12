@@ -328,7 +328,7 @@ else if (bit.bit < 24)
 }
 else if (bit.bit < 32)
 {
-	temp = pld_read_gpio();
+	temp = pld_read_gpio2();
 	if (bit.state == 1)
 		temp |= (0x1 << (bit.bit - 24));
 	else
