@@ -494,6 +494,8 @@ void start_sysinit( void )
 #endif
 
 #ifdef HAVE_CAMBRIA
+if (nvram_match("DD_BOARD","Cambria GW2358-4") || nvram_match("DD_BOARD2","Cambria GW2358-4"))
+    {
     system2( "echo 0 >/proc/sys/dev/wifi0/ledpin" );
     system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
     system2( "echo 1 >/proc/sys/dev/wifi1/ledpin" );
@@ -502,7 +504,7 @@ void start_sysinit( void )
     system2( "echo 1 >/proc/sys/dev/wifi2/softled" );
     system2( "echo 3 >/proc/sys/dev/wifi3/ledpin" );
     system2( "echo 1 >/proc/sys/dev/wifi3/softled" );
-
+    }
 #endif
 
     /*
