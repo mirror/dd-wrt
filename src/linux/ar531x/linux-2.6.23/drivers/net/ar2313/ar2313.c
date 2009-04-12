@@ -931,8 +931,7 @@ static int ar2313_rx_int(struct net_device *dev)
 		printk("RX descr  %08x\n", rxdesc->descr);
 #endif
 
-		if ((status & (DMA_RX_ERROR | DMA_RX_ERR_LENGTH)) &&
-			(!(status & DMA_RX_LONG))) {
+		if ((status & DMA_RX_ERROR)){
 #if DEBUG_RX
 			printk("%s: rx ERROR %08x\n", __FUNCTION__, status);
 #endif
