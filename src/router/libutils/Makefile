@@ -106,6 +106,9 @@ endif
 ifeq ($(CONFIG_XSCALE),y)
   CFLAGS += -DHAVE_XSCALE
 endif
+ifeq ($(CONFIG_CAMBRIA),y)
+  CFLAGS += -DHAVE_CAMBRIA
+endif
 ifeq ($(CONFIG_GATEWORX),y)
   CFLAGS += -DHAVE_GATEWORX
 endif
