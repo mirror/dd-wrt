@@ -29,6 +29,7 @@
 //#include <asm-arm/arch-ixp4xx/gpio.h>
 
 //#include <linux/ixp425-gpio.h>
+#include <asm/io.h>
 
 #include <asm-arm/hardware.h>
 #include <asm-arm/arch-ixp4xx/ixp4xx-regs.h>
@@ -238,6 +239,21 @@ pld_write_gpio2(int byte)
 }
 
 
+
+unsigned char *iobase;
+
+void setLED(int led, int status)
+{
+static unsigned int staticb=0xff;
+
+#ifdef CONFIG_MACH_CAMBRIA
+if (!status)
+    staticb|=1<<led;
+else
+    staticb&=~(1<<led);
+writeb(staticb,iobase);
+#endif
+}
 struct gpio_bit {
   unsigned char bit;
   unsigned char state;
@@ -335,6 +351,15 @@ else if (bit.bit < 32)
 		temp &= ~(0x1 << (bit.bit - 24));
 	pld_write_gpio2(temp);
 }
+#ifdef CONFIG_MACH_CAMBRIA
+else if (bit.bit < 40)
+{
+	if (bit.state == 1)
+	    setLED(bit.bit-32,1);
+	else
+	    setLED(bit.bit-32,0);
+}
+#endif
 		return OK;
 	case GPIO_GET_CONFIG:
 if (bit.bit < 16)
@@ -483,7 +508,9 @@ static int __init gpio_init_module(void)
 	retval = register_chrdev(GPIO_MAJOR, DEVICE_NAME, &gpio_fops);
         if(retval < 0)
                 return retval;
-
+#ifdef CONFIG_MACH_CAMBRIA
+	iobase = ioremap_nocache(0x53F40000, 0x1000);
+#endif
 #ifdef CONFIG_PROC_FS
 	struct proc_dir_entry *res;
 	dir = proc_mkdir("driver/gpio", NULL);
