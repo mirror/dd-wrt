@@ -1016,6 +1016,8 @@ static void handle_request( void )
 	{
 	    if( endswith( file, ".asp" ) )
 		file = "register.asp";
+	    if( endswith( file, "About.htm" ) )
+		file = "register.asp";
 	    else if( endswith( file, ".htm" ) )
 		file = "register.asp";
 	    else if( endswith( file, ".html" ) )
