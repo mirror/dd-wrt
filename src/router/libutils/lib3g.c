@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <shutils.h>
 
 
 
@@ -77,12 +78,27 @@ char *get3GControlDevice(void)
 	    fprintf(stderr,"HUAWEI/Option EC168 detected\n");
 	    return "/dev/usb/tts/0";
 	    }
-	if (scanFor(0x6832,0x1199))
+	if (scanFor(0x1199,0x6832))
 	    { 
 	    //sierra wireless mc 8780
+	    #ifdef HAVE_CAMBRIA
+	    eval("gpio","enable","26");
+	    eval("gpio","enable","27");
+	    #endif
 	    fprintf(stderr,"Sierra Wireless MC 8780 detected\nreset card\n");
 	    eval("comgt","-d","/dev/usb/tts/2","-s","/etc/comgt/reset.comgt");
-	    sleep(10);
+	    FILE *check=NULL;
+	    int count=0;
+	    sleep(1);
+	    while (!(check=fopen("/dev/usb/tts/2","rb")) && count<10)
+		{
+		sleep(1);
+		count++;
+		}
+	    if (check)
+		fclose(check);
+	    else
+		fprintf(stderr,"reset error\n");
 	    fprintf(stderr,"wakeup card\n");
 	    eval("comgt","-d","/dev/usb/tts/2","-s","/etc/comgt/wakeup.comgt");
 	    return "/dev/usb/tts/2";
