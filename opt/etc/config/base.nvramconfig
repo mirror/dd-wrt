@@ -16,7 +16,7 @@
  "ntp_mode"  "NTP Mode"  "CHOICE"  "2" "manual" "auto"  "TRUE" "0"
  "daylight_time"  "Daylight"  "CHOICE"  "9" "1"  "2"  "3"  "4"  "5"  "6"  "7"  "8" "9" "TRUE" "0"
  "time_zone"  "Time Zone"  "NULL" "TRUE" "0"
- "ppp_username"  "Username"  "NAME"  "63"  "FALSE" "0"
+ "ppp_username"  "Username"  "NAME"  "63"  "TRUE" "0"
  "ppp_passwd"  "Password"  "PASSWORD2"  "63"  "TRUE" "0"
  "ppp_keepalive"  "Keep Alive"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "ppp_demand"  "Connect on Demand"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
