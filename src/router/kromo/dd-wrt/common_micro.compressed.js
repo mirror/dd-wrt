@@ -639,7 +639,7 @@ var win=window.open("http://www.dd-wrt.com/help/english/"+url,"DDWRT_Help","top=
 win.focus();
 };
 function openAboutWindow(){
-var _80=500;
+var _80=750;
 var _81=650;
 var top=Math.floor((screen.availHeight-_81-10)/2);
 var _83=Math.floor((screen.availWidth-_80)/2);
