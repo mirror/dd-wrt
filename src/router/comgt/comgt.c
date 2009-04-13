@@ -1582,6 +1582,10 @@ int main(int argc,char **argv) {
         break;
       case 'd':
         strcpy(device,optarg);
+        char buf[128];
+        sprintf(buf,"stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon <%s",device);
+        system(buf);
+
         //opendevice();
         break;
       case 'e':
