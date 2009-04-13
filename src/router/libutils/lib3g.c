@@ -45,6 +45,7 @@ while (1)
 char *get3GControlDevice(void)
 {
 	char *ttsdevice="/dev/usb/tts/0";
+	nvram_set("3gdata","/dev/usb/tts/0");
 	if (scanFor(0x1199,0x6880))
 	    {
 	    //sierra wireless 
@@ -56,28 +57,24 @@ char *get3GControlDevice(void)
 	    {
 	    //huawei
 	    fprintf(stderr,"HUAWEI/Option E172 detected\n");
-	    nvram_set("3gdata","/dev/usb/tts/0");
 	    return "/dev/usb/tts/0";
 	    }
 	if (scanFor(0x0af0,0x7011))
 	    {
 	    //huawei
 	    fprintf(stderr,"HUAWEI/Option E301 HSUPA detected\n");
-	    nvram_set("3gdata","/dev/usb/tts/0");
 	    return "/dev/usb/tts/0";
 	    }
 	if (scanFor(0x12d1,0x1001))
 	    {
 	    //huawei
 	    fprintf(stderr,"HUAWEI/Option E600 detected\n");
-	    nvram_set("3gdata","/dev/usb/tts/0");
 	    return "/dev/usb/tts/0";
 	    }
 	if (scanFor(0x12d1,0x1412))
 	    {
 	    //huawei
 	    fprintf(stderr,"HUAWEI/Option EC168 detected\n");
-	    nvram_set("3gdata","/dev/usb/tts/0");
 	    return "/dev/usb/tts/0";
 	    }
 	if (scanFor(0x6832,0x1199))
@@ -88,7 +85,6 @@ char *get3GControlDevice(void)
 	    sleep(10);
 	    fprintf(stderr,"wakeup card\n");
 	    eval("comgt","-d","/dev/usb/tts/2","-s","/etc/comgt/wakeup.comgt");
-	    nvram_set("3gdata","/dev/usb/tts/0");
 	    return "/dev/usb/tts/2";
 	    }
 return ttsdevice;
