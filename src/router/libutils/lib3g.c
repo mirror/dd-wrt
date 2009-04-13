@@ -84,8 +84,25 @@ char *get3GControlDevice(void)
 	    #ifdef HAVE_CAMBRIA
 	    eval("gpio","enable","26");
 	    eval("gpio","enable","27");
+	    if (nvram_match("wan_select","1"))
+		{
+		eval("gpio","enable","26");
+		eval("gpio","disable","27");
+		}
+	    if (nvram_match("wan_select","2"))
+		{
+		eval("gpio","disable","26");
+		eval("gpio","enable","27");
+		}
+	    if (nvram_match("wan_select","3"))
+		{
+		eval("gpio","enable","26");
+		eval("gpio","enable","27");
+		}
 	    #endif
 	    fprintf(stderr,"Sierra Wireless MC 8780 detected\nreset card\n");
+	    system("stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon </dev/usb/tts/0");
+	    system("stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon </dev/usb/tts/2");
 	    eval("comgt","-d","/dev/usb/tts/2","-s","/etc/comgt/reset.comgt");
 	    FILE *check=NULL;
 	    int count=0;
@@ -99,6 +116,8 @@ char *get3GControlDevice(void)
 		fclose(check);
 	    else
 		fprintf(stderr,"reset error\n");
+	    system("stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon </dev/usb/tts/0");
+	    system("stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon </dev/usb/tts/2");
 	    fprintf(stderr,"wakeup card\n");
 	    eval("comgt","-d","/dev/usb/tts/2","-s","/etc/comgt/wakeup.comgt");
 	    sleep(5);//give extra delay for registering
