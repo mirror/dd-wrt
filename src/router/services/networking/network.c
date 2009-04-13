@@ -2956,7 +2956,7 @@ void start_wan( int status )
 	fprintf(fp,"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n",dial,controldevice);
 	fprintf(fp,"user %s\n",nvram_safe_get("ppp_username"));
 	fprintf(fp,"password %s\n",nvram_safe_get("ppp_passwd"));
-	fprintf(fp,"%s\n",controldevice);
+	fprintf(fp,"%s\n",nvram_get("3gdata"));
 	
 	fclose(fp);
 

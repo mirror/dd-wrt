@@ -49,31 +49,47 @@ char *get3GControlDevice(void)
 	    {
 	    //sierra wireless 
 	    fprintf(stderr,"Sierra Wireless Compass 885 deteted\n");
+	    nvram_set("3gdata","/dev/usb/tts/3");
 	    return "/dev/usb/tts/3";
 	    }
 	if (scanFor(0x12d1,0x1003))
 	    {
 	    //huawei
 	    fprintf(stderr,"HUAWEI/Option E172 detected\n");
+	    nvram_set("3gdata","/dev/usb/tts/0");
 	    return "/dev/usb/tts/0";
 	    }
 	if (scanFor(0x0af0,0x7011))
 	    {
 	    //huawei
 	    fprintf(stderr,"HUAWEI/Option E301 HSUPA detected\n");
+	    nvram_set("3gdata","/dev/usb/tts/0");
 	    return "/dev/usb/tts/0";
 	    }
 	if (scanFor(0x12d1,0x1001))
 	    {
 	    //huawei
 	    fprintf(stderr,"HUAWEI/Option E600 detected\n");
+	    nvram_set("3gdata","/dev/usb/tts/0");
 	    return "/dev/usb/tts/0";
 	    }
 	if (scanFor(0x12d1,0x1412))
 	    {
 	    //huawei
 	    fprintf(stderr,"HUAWEI/Option EC168 detected\n");
+	    nvram_set("3gdata","/dev/usb/tts/0");
 	    return "/dev/usb/tts/0";
+	    }
+	if (scanFor(0x6832,0x1199))
+	    { 
+	    //sierra wireless mc 8780
+	    fprintf(stderr,"Sierra Wireless MC 8780 detected\nreset card\n");
+	    eval("comgt","-d","/dev/usb/tts/2","-s","/etc/comgt/reset.comgt");
+	    sleep(10);
+	    fprintf(stderr,"wakeup card\n");
+	    eval("comgt","-d","/dev/usb/tts/2","-s","/etc/comgt/wakeup.comgt");
+	    nvram_set("3gdata","/dev/usb/tts/0");
+	    return "/dev/usb/tts/2";
 	    }
 return ttsdevice;
 }
