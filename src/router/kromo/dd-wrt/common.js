@@ -693,7 +693,7 @@ function openHelpWindowExt(url) {
 }
 
 function openAboutWindow() {
-	var width = 500;
+	var width = 750;
 	var height = 650;
 	var top = Math.floor((screen.availHeight - height - 10) / 2);
 	var left = Math.floor((screen.availWidth - width) / 2);
