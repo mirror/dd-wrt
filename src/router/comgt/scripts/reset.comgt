@@ -1,5 +1,5 @@
 opengt
 set com 115200n81
 set senddelay 0.05
-send \"at!RESET^m\"
+send "at!GRESET^m"
 

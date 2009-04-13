@@ -1,6 +1,6 @@
 opengt
 set com 115200n81
 set senddelay 0.05
-send \"AT+CFUN=1^m\"
+send "AT+CFUN=1^m"
 waitquiet 1 0.2
 
