@@ -2924,10 +2924,10 @@ void start_wan( int status )
 	
 	/* init PIN */
 	if (strlen(nvram_safe_get("wan_pin")))
-	sysprintf("export COMGTPIN=%s;comgt PIN -d %s\n",nvram_safe_get("wan_pin"),controldevice);
+	    sysprintf("export COMGTPIN=%s;comgt PIN -d %s\n",nvram_safe_get("wan_pin"),controldevice);
 	if (strlen(nvram_safe_get("wan_apn")))
-	if (!nvram_match("wan_dial","2"))
-	sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s\n",nvram_safe_get("wan_apn"),controldevice);
+	    if (!nvram_match("wan_dial","2"))
+		sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s\n",nvram_safe_get("wan_apn"),controldevice);
 	// Lets open option file and enter all the parameters.
 	fp = fopen( "/tmp/ppp/options.pppoe", "w" );
 	fprintf(fp,"defaultroute\n");
@@ -2956,8 +2956,10 @@ void start_wan( int status )
 	if (nvram_match("wan_dial","2"))
 	    dial="ATDT#777";
 	fprintf(fp,"connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n",dial,nvram_safe_get("3gdata"));
-	fprintf(fp,"user %s\n",nvram_safe_get("ppp_username"));
-	fprintf(fp,"password %s\n",nvram_safe_get("ppp_passwd"));
+	if (strlen(nvram_safe_get("ppp_username")))
+	    fprintf(fp,"user %s\n",nvram_safe_get("ppp_username"));
+	if (strlen(nvram_safe_get("ppp_passwd")))
+	    fprintf(fp,"password %s\n",nvram_safe_get("ppp_passwd"));
 	fprintf(fp,"%s\n",nvram_get("3gdata"));
 	
 	fclose(fp);
