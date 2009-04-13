@@ -1012,11 +1012,14 @@ static void handle_request( void )
 	int changepassword = 0;
 
 #ifdef HAVE_REGISTER
+	if( !registered_real)
+	{
+	    if( endswith( file, "About.htm" ) )
+		file = "register.asp";	
+	}
 	if( !registered )
 	{
 	    if( endswith( file, ".asp" ) )
-		file = "register.asp";
-	    if( endswith( file, "About.htm" ) )
 		file = "register.asp";
 	    else if( endswith( file, ".htm" ) )
 		file = "register.asp";
