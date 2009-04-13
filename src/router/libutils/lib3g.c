@@ -83,7 +83,7 @@ char *get3GControlDevice(void)
 	    //sierra wireless mc 8780
 	    #ifdef HAVE_CAMBRIA
 	    eval("gpio","enable","26");
-	    eval("gpio","enable","27");
+	    eval("gpio","disable","27");
 	    if (nvram_match("wan_select","1"))
 		{
 		eval("gpio","enable","26");
