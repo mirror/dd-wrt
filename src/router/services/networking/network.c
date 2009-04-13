@@ -2923,7 +2923,9 @@ void start_wan( int status )
 	int timeout = 5;
 	
 	/* init PIN */
+	if (strlen(nvram_safe_get("wan_pin")))
 	sysprintf("export COMGTPIN=%s;comgt PIN -d %s\n",nvram_safe_get("wan_pin"),controldevice);
+	if (strlen(nvram_safe_get("wan_apn")))
 	if (!nvram_match("wan_dial","2"))
 	sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s\n",nvram_safe_get("wan_apn"),controldevice);
 	// Lets open option file and enter all the parameters.
