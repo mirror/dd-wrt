@@ -43,8 +43,7 @@ void ej_get_firmware_version( webs_t wp, int argc, char_t ** argv )
 #ifdef HAVE_REGISTER
 if (isregistered() && !isregistered_real())
     {
-    websWrite( wp, "%s%s %s%s %d Hour Trial", CYBERTAN_VERSION, MINOR_VERSION,
-	       nvram_safe_get( "dist_type" ), DIST_OPT, getTrialCount());        
+    websWrite( wp, "Click here to ACTIVATE %d Hour Trial", getTrialCount());        
     }else
     {
     websWrite( wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION,
