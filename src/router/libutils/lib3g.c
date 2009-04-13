@@ -101,6 +101,7 @@ char *get3GControlDevice(void)
 		fprintf(stderr,"reset error\n");
 	    fprintf(stderr,"wakeup card\n");
 	    eval("comgt","-d","/dev/usb/tts/2","-s","/etc/comgt/wakeup.comgt");
+	    sleep(5);//give extra delay for registering
 	    return "/dev/usb/tts/2";
 	    }
 return ttsdevice;
