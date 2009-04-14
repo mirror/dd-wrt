@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Changing the CLI Prompt</TITLE>
+<META NAME="description" CONTENT="Changing the CLI Prompt">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node29.html">
+<LINK REL="up" HREF="node29.html">
+<LINK REL="next" HREF="node31.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html993"
+  HREF="node31.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html989"
+  HREF="node29.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html985"
+  HREF="node29.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html991"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html994"
+  HREF="node31.html">Extensions</A>
+<B> Up:</B> <A NAME="tex2html990"
+  HREF="node29.html">CLI Prompt</A>
+<B> Previous:</B> <A NAME="tex2html986"
+  HREF="node29.html">CLI Prompt</A>
+ &nbsp; <B>  <A NAME="tex2html992"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H3><A NAME="SECTION00313100000000000000">
+Changing the CLI Prompt</A>
+</H3>
+
+<P>
+The CLI prompt is set with the ASTERISK_PROMPT UNIX environment variable that
+you set from the Unix shell before starting Asterisk
+
+<P>
+You may include the following variables, that will be replaced by
+the current value by Asterisk:
+
+<P>
+
+<UL>
+<LI>%d - Date (year-month-date)
+</LI>
+<LI>%s - Asterisk system name (from asterisk.conf)
+</LI>
+<LI>%h - Full hostname
+</LI>
+<LI>%H - Short hostname
+</LI>
+<LI>%t - Time
+</LI>
+<LI>%% - Percent sign
+</LI>
+<LI>%# - '#' if Asterisk is run in console mode, '<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN>' if running as remote console
+</LI>
+<LI>%Cn[;n] - Change terminal foreground (and optional background) color to specified
+    A full list of colors may be found in include/asterisk/term.h
+</LI>
+</UL>
+
+<P>
+On Linux systems, you may also use:
+
+<P>
+
+<UL>
+<LI>%l1 - Load average over past minute
+</LI>
+<LI>%l2 - Load average over past 5 minutes
+</LI>
+<LI>%l3 - Load average over past 15 minutes
+</LI>
+<LI>%l4 - Process fraction (processes running / total processes)
+</LI>
+<LI>%l5 - The most recently allocated pid
+</LI>
+</UL>
+    <BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

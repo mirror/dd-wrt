@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>General Notes about Syntax</TITLE>
+<META NAME="description" CONTENT="General Notes about Syntax">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node117.html">
+<LINK REL="previous" HREF="node115.html">
+<LINK REL="up" HREF="node106.html">
+<LINK REL="next" HREF="node117.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html2139"
+  HREF="node117.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2135"
+  HREF="node106.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2129"
+  HREF="node115.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2137"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2140"
+  HREF="node117.html">Keywords</A>
+<B> Up:</B> <A NAME="tex2html2136"
+  HREF="node106.html">AEL: Asterisk Extension Language</A>
+<B> Previous:</B> <A NAME="tex2html2130"
+  HREF="node115.html">About "aelparse"</A>
+ &nbsp; <B>  <A NAME="tex2html2138"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00560000000000000000">
+General Notes about Syntax</A>
+</H1>
+
+<P>
+Note that the syntax and style are now a little more free-form. The
+opening '' (curly-braces) do not have to be on the same line as the
+keyword that precedes them. Statements can be split across lines, as
+long as tokens are not broken by doing so. More than one statement can
+be included on a single line. Whatever you think is best!
+
+<P>
+You can just as easily say,
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+if(${x}=1) { NoOp(hello!); goto s,3; } else { NoOp(Goodbye!); goto s,12; }
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>as you can say:
+</B></SMALL>
+<UL>
+<LI><PRE>
+if(${x}=1)
+{
+       NoOp(hello!);
+   goto s,3;
+}
+else
+{
+       NoOp(Goodbye!);
+       goto s,12;
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+or:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+if(${x}=1) {
+       NoOp(hello!);
+   goto s,3;
+} else {
+       NoOp(Goodbye!);
+       goto s,12;
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+or:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+if (${x}=1) {
+       NoOp(hello!); goto s,3;
+} else {
+       NoOp(Goodbye!); goto s,12;
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

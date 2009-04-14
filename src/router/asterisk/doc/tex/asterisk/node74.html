@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Variables</TITLE>
+<META NAME="description" CONTENT="Variables">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node75.html">
+<LINK REL="previous" HREF="node73.html">
+<LINK REL="up" HREF="node71.html">
+<LINK REL="next" HREF="node75.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html1581"
+  HREF="node75.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1577"
+  HREF="node71.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1571"
+  HREF="node73.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1579"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1582"
+  HREF="node75.html">Variable Inheritance</A>
+<B> Up:</B> <A NAME="tex2html1578"
+  HREF="node71.html">Channel Variables</A>
+<B> Previous:</B> <A NAME="tex2html1572"
+  HREF="node73.html">Parameter Quoting</A>
+ &nbsp; <B>  <A NAME="tex2html1580"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00430000000000000000">
+Variables</A>
+</H1>
+
+<P>
+Parameter strings can include variables. Variable names are arbitrary strings.
+They are stored in the respective channel structure.
+
+<P>
+To set a variable to a particular value, do:
+</B></SMALL>
+<UL>
+<LI><PRE>
+    exten =&gt; 1,2,Set(varname=value)
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>You can substitute the value of a variable everywhere using ${variablename}.
+For example, to stringwise append $lala to $blabla and store result in $koko,
+do:
+</B></SMALL>
+<UL>
+<LI><PRE>
+   exten =&gt; 1,2,Set(koko=${blabla}${lala})
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+There are two reference modes - reference by value and reference by name.
+To refer to a variable with its name (as an argument to a function that
+requires a variable), just write the name. To refer to the variable's value,
+enclose it inside ${}. For example, Set takes as the first argument
+(before the =) a variable name, so:
+</B></SMALL>
+<UL>
+<LI><PRE>
+  exten =&gt; 1,2,Set(koko=lala)
+  exten =&gt; 1,3,Set(${koko}=blabla)
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>stores to the variable "koko" the value "lala" and to variable "lala" the
+value "blabla".
+
+<P>
+In fact, everything contained ${here} is just replaced with the value of
+the variable "here".
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

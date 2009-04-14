@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Floating Point Numbers</TITLE>
+<META NAME="description" CONTENT="Floating Point Numbers">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node82.html">
+<LINK REL="previous" HREF="node80.html">
+<LINK REL="up" HREF="node78.html">
+<LINK REL="next" HREF="node82.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html1676"
+  HREF="node82.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1672"
+  HREF="node78.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1666"
+  HREF="node80.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1674"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1677"
+  HREF="node82.html">Functions</A>
+<B> Up:</B> <A NAME="tex2html1673"
+  HREF="node78.html">Expressions</A>
+<B> Previous:</B> <A NAME="tex2html1667"
+  HREF="node80.html">Operators</A>
+ &nbsp; <B>  <A NAME="tex2html1675"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00463000000000000000">
+Floating Point Numbers</A>
+</H2>
+
+<P>
+In 1.6 and above, we shifted the $[...] expressions to be calculated
+via floating point numbers instead of integers. We use 'long double' numbers
+when possible, which provide around 16 digits of precision with 12 byte numbers.
+
+<P>
+To specify a floating point constant, the number has to have this format: D.D, where D is
+a string of base 10 digits. So, you can say 0.10, but you can't say .10 or 20.- we hope
+this is not an excessive restriction!
+
+<P>
+Floating point numbers are turned into strings via the '%g'/'%Lg' format of the printf
+function set. This allows numbers to still 'look' like integers to those counting
+on integer behavior. If you were counting on 1/4 evaluating to 0, you need to now say
+TRUNC(1/4). For a list of all the truncation/rounding capabilities, see the next section.
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

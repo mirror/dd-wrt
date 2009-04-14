@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Variable Inheritance</TITLE>
+<META NAME="description" CONTENT="Variable Inheritance">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node77.html">
+<LINK REL="previous" HREF="node74.html">
+<LINK REL="up" HREF="node71.html">
+<LINK REL="next" HREF="node76.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html1593"
+  HREF="node76.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1589"
+  HREF="node71.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1583"
+  HREF="node74.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1591"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1594"
+  HREF="node76.html">Example</A>
+<B> Up:</B> <A NAME="tex2html1590"
+  HREF="node71.html">Channel Variables</A>
+<B> Previous:</B> <A NAME="tex2html1584"
+  HREF="node74.html">Variables</A>
+ &nbsp; <B>  <A NAME="tex2html1592"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00440000000000000000">
+Variable Inheritance</A>
+</H1>
+
+<P>
+Variable names which are prefixed by "_" will be inherited to channels
+that are created in the process of servicing the original channel in
+which the variable was set.  When the inheritance takes place, the
+prefix will be removed in the channel inheriting the variable.  If the
+name is prefixed by "__" in the channel, then the variable is
+inherited and the "__" will remain intact in the new channel.
+
+<P>
+In the dialplan, all references to these variables refer to the same
+variable, regardless of having a prefix or not.  Note that setting any
+version of the variable removes any other version of the variable,
+regardless of prefix.
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL CLASS="ChildLinks">
+<LI><A NAME="tex2html1595"
+  HREF="node76.html">Example</A>
+</UL>
+<!--End of Table of Child-Links-->
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

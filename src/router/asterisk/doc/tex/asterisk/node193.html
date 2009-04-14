@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>The ENUMLOOKUP dialplan function</TITLE>
+<META NAME="description" CONTENT="The ENUMLOOKUP dialplan function">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node192.html">
+<LINK REL="up" HREF="node192.html">
+<LINK REL="next" HREF="node194.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3151"
+  HREF="node194.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3147"
+  HREF="node192.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3143"
+  HREF="node192.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3149"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3152"
+  HREF="node194.html">Arguments</A>
+<B> Up:</B> <A NAME="tex2html3148"
+  HREF="node192.html">ENUM</A>
+<B> Previous:</B> <A NAME="tex2html3144"
+  HREF="node192.html">ENUM</A>
+ &nbsp; <B>  <A NAME="tex2html3150"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00910000000000000000">
+The ENUMLOOKUP dialplan function</A>
+</H1>
+
+<P>
+The ENUMLOOKUP function is more complex than it first may appear, and
+this guide is to give a general overview and set of examples that may
+be well-suited for the advanced user to evaluate in their
+consideration of ENUM or ENUM-like lookup strategies.  This document
+assumes a familiarity with ENUM (RFC3761) or ENUM-like methods, as
+well as familiarity with NAPTR DNS records (RFC2915, RFC3401-3404).
+For an overview of NAPTR records, and the use of NAPTRs in the ENUM
+global phone-number-to-DNS mapping scheme, please see
+<TT><A NAME="tex2html23"
+  HREF="http://www.voip-info.org/tiki-index.php?page=ENUM">http://www.voip-info.org/tiki-index.php?page=ENUM</A></TT> for more detail.
+
+<P>
+Using ENUM within Asterisk can be simple or complex, depending on how
+many failover methods and redundancy procedures you wish to utilize.
+Implementation of ENUM paths is supposedly defined by the person
+creating the NAPTR records, but the local administrator may choose to
+ignore certain NAPTR response methods (URI types) or prefer some over
+others, which is in contradiction to the RFC.  The ENUMLOOKUP method
+simply provides administrators a method for determining NAPTR results
+in either the globally unique ENUM (e164.arpa) DNS tree, or in other
+ENUM-like DNS trees which are not globally unique.  The methods to
+actually create channels ("dial") results given by the ENUMLOOKUP
+function is then up to the administrator to implement in a way that
+best suits their environment.
+
+<P>
+<PRE>
+Function: ENUMLOOKUP(number[,Method-type[,options[,record#[,zone-suffix]]]])
+</PRE>
+
+<P>
+Performs an ENUM tree lookup on the specified number, method type, and
+  ordinal record offset, and returns one of four different values:
+
+<P>
+
+<OL>
+<LI>post-parsed NAPTR of one method (URI) type
+</LI>
+<LI>count of elements of one method (URI) type
+</LI>
+<LI>count of all method types
+</LI>
+<LI>full URI of method at a particular point in the list of all possible methods
+</LI>
+</OL>
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL CLASS="ChildLinks">
+<LI><A NAME="tex2html3153"
+  HREF="node194.html">Arguments</A>
+<LI><A NAME="tex2html3154"
+  HREF="node195.html">Examples</A>
+<LI><A NAME="tex2html3155"
+  HREF="node196.html">Usage notes and subtle features</A>
+<LI><A NAME="tex2html3156"
+  HREF="node197.html">Some more Examples</A>
+</UL>
+<!--End of Table of Child-Links-->
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html3151"
+  HREF="node194.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3147"
+  HREF="node192.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3143"
+  HREF="node192.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3149"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3152"
+  HREF="node194.html">Arguments</A>
+<B> Up:</B> <A NAME="tex2html3148"
+  HREF="node192.html">ENUM</A>
+<B> Previous:</B> <A NAME="tex2html3144"
+  HREF="node192.html">ENUM</A>
+ &nbsp; <B>  <A NAME="tex2html3150"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>
