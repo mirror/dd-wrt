@@ -1,7 +1,7 @@
 AC_ROOT		= .
 include		$(AC_ROOT)/common.mak
 
-SCRIPTS         = airmon-ng airdriver-ng patchchk scan scantidy
+SCRIPTS         = scan scantidy
 DOCFILES        = ChangeLog INSTALLING README LICENSE AUTHORS VERSION
 
 
@@ -19,6 +19,7 @@ aircrack-ng-opt-prof_use:
 
 install:
 	$(MAKE) -C src $(@)
+	$(MAKE) -C scripts $(@)
 	install -m 755 $(SCRIPTS) $(INSTALLDIR)$(sbindir)
 
 uninstall:
