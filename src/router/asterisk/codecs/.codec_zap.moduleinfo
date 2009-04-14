@@ -1,0 +1,4 @@
+<member name="codec_zap" displayname="Generic Zaptel Transcoder Codec Translator" remove_on_change="codecs/codec_zap.o codecs/codec_zap.so">
+	<depend>zaptel_transcode</depend>
+	<depend>zaptel</depend>
+</member>

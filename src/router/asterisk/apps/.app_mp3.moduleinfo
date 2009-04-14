@@ -1,0 +1,2 @@
+<member name="app_mp3" displayname="Silly MP3 Application" remove_on_change="apps/app_mp3.o apps/app_mp3.so">
+</member>

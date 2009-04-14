@@ -1,0 +1,2 @@
+<member name="app_privacy" displayname="Require phone number to be entered, if no CallerID sent" remove_on_change="apps/app_privacy.o apps/app_privacy.so">
+</member>

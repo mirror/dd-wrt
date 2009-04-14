@@ -1,0 +1,3 @@
+<member name="chan_agent" displayname="Agent Proxy Channel" remove_on_change="channels/chan_agent.o channels/chan_agent.so">
+        <depend>chan_local</depend>
+</member>

@@ -1,0 +1,2 @@
+<member name="func_logic" displayname="Logical dialplan functions" remove_on_change="funcs/func_logic.o funcs/func_logic.so">
+</member>

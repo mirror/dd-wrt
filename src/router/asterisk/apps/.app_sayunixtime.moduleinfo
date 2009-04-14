@@ -1,0 +1,2 @@
+<member name="app_sayunixtime" displayname="Say time" remove_on_change="apps/app_sayunixtime.o apps/app_sayunixtime.so">
+</member>

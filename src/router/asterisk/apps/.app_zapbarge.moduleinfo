@@ -1,0 +1,3 @@
+<member name="app_zapbarge" displayname="Barge in on Zap channel application" remove_on_change="apps/app_zapbarge.o apps/app_zapbarge.so">
+	<depend>zaptel</depend>
+</member>

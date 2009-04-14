@@ -1,0 +1,3 @@
+<member name="app_rxfax" displayname="Trivial FAX Receive Application" remove_on_change="apps/app_rxfax.o apps/app_rxfax.so">
+         <depend>spandsp</depend>
+</member>

@@ -1,0 +1,18 @@
+# NOTE: Names of _INCLUDE and _LIB entries in this file must be
+#       the exact uppercase equivalents of the names used for
+#       dependencies in menuselect for the same package.
+
+CC=gcc
+
+OSARCH=linux-gnu
+
+# The frontend can use curses, ncurses or gtk2
+
+CURSES_INCLUDE=
+CURSES_LIB=
+
+GTK2_INCLUDE=
+GTK2_LIB=
+
+NCURSES_INCLUDE=
+NCURSES_LIB=

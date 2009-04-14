@@ -1,0 +1,2 @@
+<member name="func_cut" displayname="Cut out information from a string" remove_on_change="funcs/func_cut.o funcs/func_cut.so">
+</member>
