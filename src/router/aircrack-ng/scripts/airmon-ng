@@ -8,7 +8,7 @@ IFACE_FOUND="false"
 MADWIFI=0
 MAC80211=0
 USE_IW=0
-IW_SOURCE="http://wireless.kernel.org/download/iw/iw-0.9.7.tar.bz2"
+IW_SOURCE="http://wireless.kernel.org/download/iw/iw-0.9.11.tar.bz2"
 IW_ERROR=""
 
 if [ -f "`which iw 2>&1`" ]
@@ -21,7 +21,8 @@ then
 MON_PREFIX="mon"
 fi
 
-PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon|wlassistant"
+PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox"
+PS_ERROR="invalid"
 
 usage() {
 	printf "usage: `basename $0` <start|stop|check> <interface> [channel or frequency]\n"
@@ -131,6 +132,12 @@ checkProcessesIface() {
     if [ x"$1" = x ]
     then
         return
+    fi
+
+    match2=`ps -o comm= -p 1 2>&1 | grep $PS_ERROR | grep -v grep | wc -l`
+    if [ $match2 -gt 0 ]
+    then
+	return
     fi
 
     for i in `ps auxw | grep $1 | grep -v "grep" | grep -v "airmon-ng" | awk '{print $2}'`
