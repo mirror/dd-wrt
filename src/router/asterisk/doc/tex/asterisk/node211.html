@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Fields of the CDR in Asterisk</TITLE>
+<META NAME="description" CONTENT="Fields of the CDR in Asterisk">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node212.html">
+<LINK REL="previous" HREF="node210.html">
+<LINK REL="up" HREF="node209.html">
+<LINK REL="next" HREF="node212.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3396"
+  HREF="node212.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3392"
+  HREF="node209.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3386"
+  HREF="node210.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3394"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3397"
+  HREF="node212.html">CDR Variables</A>
+<B> Up:</B> <A NAME="tex2html3393"
+  HREF="node209.html">CDR: Call Detail Records</A>
+<B> Previous:</B> <A NAME="tex2html3387"
+  HREF="node210.html">Applications</A>
+ &nbsp; <B>  <A NAME="tex2html3395"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION001120000000000000000">
+Fields of the CDR in Asterisk</A>
+</H1>
+
+<P>
+
+<UL>
+<LI>accountcode:  What account number to use, (string, 20 characters)
+</LI>
+<LI>src:  Caller*ID number (string, 80 characters)
+</LI>
+<LI>dst:  Destination extension (string, 80 characters)
+</LI>
+<LI>dcontext:  Destination context (string, 80 characters)
+</LI>
+<LI>clid:  Caller*ID with text (80 characters)
+</LI>
+<LI>channel:  Channel used (80 characters)
+</LI>
+<LI>dstchannel:  Destination channel if appropriate (80 characters)
+</LI>
+<LI>lastapp:  Last application if appropriate (80 characters)
+</LI>
+<LI>lastdata:  Last application data (arguments) (80 characters)
+</LI>
+<LI>start:  Start of call (date/time)
+</LI>
+<LI>answer:  Answer of call (date/time)
+</LI>
+<LI>end:  End of call (date/time)
+</LI>
+<LI>duration:  Total time in system, in seconds (integer), from dial to hangup
+</LI>
+<LI>billsec:  Total time call is up, in seconds (integer), from answer to hangup
+</LI>
+<LI>disposition:  What happened to the call: ANSWERED, NO ANSWER, BUSY
+</LI>
+<LI>amaflags:  What flags to use: DOCUMENTATION, BILL, IGNORE etc,
+            specified on a per channel basis like accountcode.
+</LI>
+<LI>user field:  A user-defined field, maximum 255 characters
+</LI>
+</UL>
+
+<P>
+In some cases, uniqueid is appended:
+
+<P>
+
+<UL>
+<LI>uniqueid:  Unique Channel Identifier (32 characters)
+      This needs to be enabled in the source code at compile time
+</LI>
+</UL>
+
+<P>
+NOTE: If you use IAX2 channels for your calls, and allow 'full' transfers
+(not media-only transfers), then when the calls is transferred the server
+in the middle will no longer be involved in the signaling path, and thus
+will not generate accurate CDRs for that call. If you can, use media-only
+transfers with IAX2 to avoid this problem, or turn off transfers completely
+(although this can result in a media latency increase since the media packets
+have to traverse the middle server(s) in the call).
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html3396"
+  HREF="node212.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3392"
+  HREF="node209.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3386"
+  HREF="node210.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3394"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3397"
+  HREF="node212.html">CDR Variables</A>
+<B> Up:</B> <A NAME="tex2html3393"
+  HREF="node209.html">CDR: Call Detail Records</A>
+<B> Previous:</B> <A NAME="tex2html3387"
+  HREF="node210.html">Applications</A>
+ &nbsp; <B>  <A NAME="tex2html3395"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

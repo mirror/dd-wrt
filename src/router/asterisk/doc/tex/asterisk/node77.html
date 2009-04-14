@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Selecting Characters from Variables</TITLE>
+<META NAME="description" CONTENT="Selecting Characters from Variables">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node78.html">
+<LINK REL="previous" HREF="node75.html">
+<LINK REL="up" HREF="node71.html">
+<LINK REL="next" HREF="node78.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html1616"
+  HREF="node78.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1612"
+  HREF="node71.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1606"
+  HREF="node76.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1614"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1617"
+  HREF="node78.html">Expressions</A>
+<B> Up:</B> <A NAME="tex2html1613"
+  HREF="node71.html">Channel Variables</A>
+<B> Previous:</B> <A NAME="tex2html1607"
+  HREF="node76.html">Example</A>
+ &nbsp; <B>  <A NAME="tex2html1615"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00450000000000000000">
+Selecting Characters from Variables</A>
+</H1>
+
+<P>
+The format for selecting characters from a variable can be expressed as:
+</B></SMALL>
+<UL>
+<LI><PRE>
+  ${variable_name[:offset[:length]]}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>If you want to select the first N characters from the string assigned
+to a variable, simply append a colon and the number of characters to
+skip from the beginning of the string to the variable name.
+</B></SMALL>
+<UL>
+<LI><PRE>
+  ; Remove the first character of extension, save in "number" variable
+  exten =&gt; _9X.,1,Set(number=${EXTEN:1})
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>Assuming we've dialed 918005551234, the value saved to the 'number' variable
+would be 18005551234. This is useful in situations when we require users to
+dial a number to access an outside line, but do not wish to pass the first
+digit.
+
+<P>
+If you use a negative offset number, Asterisk starts counting from the end
+of the string and then selects everything after the new position. The following
+example will save the numbers 1234 to the 'number' variable, still assuming
+we've dialed 918005551234.
+</B></SMALL>
+<UL>
+<LI><PRE>
+  ; Remove everything before the last four digits of the dialed string
+  exten =&gt; _9X.,1,Set(number=${EXTEN:-4})
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>We can also limit the number of characters from our offset position that we
+wish to use. This is done by appending a second colon and length value to the
+variable name. The following example will save the numbers 555 to the 'number'
+variable.
+</B></SMALL>
+<UL>
+<LI><PRE>
+  ; Only save the middle numbers 555 from the string 918005551234
+  exten =&gt; _9X.,1,Set(number=${EXTEN:5:3})
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>The length value can also be used in conjunction with a negative offset. This
+may be useful if the length of the string is unknown, but the trailing digits
+are. The following example will save the numbers 555 to the 'number' variable,
+even if the string starts with more characters than expected (unlike the
+previous example).
+</B></SMALL>
+<UL>
+<LI><PRE>
+  ; Save the numbers 555 to the 'number' variable
+  exten =&gt; _9X.,1,Set(number=${EXTEN:-7:3})
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>If a negative length value is entered, Asterisk will remove that many characters
+from the end of the string.
+</B></SMALL>
+<UL>
+<LI><PRE>
+  ; Set pin to everything but the trailing #.
+  exten =&gt; _XXXX#,1,Set(pin=${EXTEN:0:-1})
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html1616"
+  HREF="node78.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1612"
+  HREF="node71.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1606"
+  HREF="node76.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1614"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1617"
+  HREF="node78.html">Expressions</A>
+<B> Up:</B> <A NAME="tex2html1613"
+  HREF="node71.html">Channel Variables</A>
+<B> Previous:</B> <A NAME="tex2html1607"
+  HREF="node76.html">Example</A>
+ &nbsp; <B>  <A NAME="tex2html1615"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Putting it all together</TITLE>
+<META NAME="description" CONTENT="Putting it all together">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node274.html">
+<LINK REL="up" HREF="node266.html">
+<LINK REL="next" HREF="node276.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html4223"
+  HREF="node276.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html4219"
+  HREF="node266.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html4215"
+  HREF="node274.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html4221"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html4224"
+  HREF="node276.html">Development</A>
+<B> Up:</B> <A NAME="tex2html4220"
+  HREF="node266.html">Phone Provisioning</A>
+<B> Previous:</B> <A NAME="tex2html4216"
+  HREF="node274.html">Templates</A>
+ &nbsp; <B>  <A NAME="tex2html4222"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION001550000000000000000">
+Putting it all together</A>
+</H1>
+
+<P>
+Make sure that manager.conf has:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+[general]
+enabled = yes
+webenabled = yes
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+and that http.conf has:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+[general]
+enabled = yes
+bindaddr = 192.168.1.1 ; Your IP here ;-)
+bindport = 8088 ; Or port 80 if it is the only http server running on the machine
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+With phoneprov.conf and users.conf in place, start Astersik. From the CLI, 
+type "http show status". An example output:
+</B></SMALL>
+<UL>
+<LI><PRE>
+HTTP Server Status:
+Prefix: /asterisk
+Server Enabled and Bound to 192.168.1.1:8088
+
+Enabled URI's:
+/asterisk/httpstatus =&gt; Asterisk HTTP General Status
+/asterisk/phoneprov/... =&gt; Asterisk HTTP Phone Provisioning Tool
+/asterisk/manager =&gt; HTML Manager Event Interface
+/asterisk/rawman =&gt; Raw HTTP Manager Event Interface
+/asterisk/static/... =&gt; Asterisk HTTP Static Delivery
+/asterisk/mxml =&gt; XML Manager Event Interface
+
+Enabled Redirects:
+  None.
+
+POST mappings:
+None.
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+There should be a phoneprov URI listed. Next, from the CLI, type "phoneprov show routes" 
+and verify that the information there is correct. An example output for Polycom phones 
+woud look like:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+Static routes
+
+Relative URI                              Physical location             
+sip.ver                                   configs/sip.ver               
+sip.ld                                    configs/sip.ld                
+bootrom.ver                               configs/bootrom.ver           
+sip.cfg                                   configs/sip.cfg               
+bootrom.ld                                configs/bootrom.ld            
+custom.cfg                                configs/custom.cfg            
+
+Dynamic routes
+
+Relative URI                              Template                      
+deadbeef4dad.cfg                          000000000000.cfg              
+deadbeef4dad-directory.xml                000000000000-directory.xml    
+deadbeef4dad-phone.cfg                    000000000000-phone.cfg        
+config/deadbeef4dad                       polycom.xml
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+With the above examples, the phones would be pointed to 
+<TT><A NAME="tex2html31"
+  HREF="http://192.168.1.1:8080/asterisk/phoneprov">http://192.168.1.1:8080/asterisk/phoneprov</A></TT> for pulling config files. Templates 
+would all be placed in AST_DATA_DIR/phoneprov and static files would be placed in 
+AST_DATA_DIR/phoneprov/configs. Examples of valid URIs would be:
+
+<P>
+
+<UL>
+<LI>http://192.168.1.1:8080/asterisk/phoneprov/sip.cfg
+</LI>
+<LI>http://192.168.1.1:8080/asterisk/phoneprov/deadbeef4dad.cfg
+</LI>
+<LI>http://192.168.1.1:8080/asterisk/phoneprov/config/deadbeef4dad
+</LI>
+</UL>
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

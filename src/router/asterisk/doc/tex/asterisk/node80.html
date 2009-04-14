@@ -1,0 +1,227 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Operators</TITLE>
+<META NAME="description" CONTENT="Operators">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node81.html">
+<LINK REL="previous" HREF="node79.html">
+<LINK REL="up" HREF="node78.html">
+<LINK REL="next" HREF="node81.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html1664"
+  HREF="node81.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1660"
+  HREF="node78.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1654"
+  HREF="node79.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1662"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1665"
+  HREF="node81.html">Floating Point Numbers</A>
+<B> Up:</B> <A NAME="tex2html1661"
+  HREF="node78.html">Expressions</A>
+<B> Previous:</B> <A NAME="tex2html1655"
+  HREF="node79.html">Spaces Inside Variables Values</A>
+ &nbsp; <B>  <A NAME="tex2html1663"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00462000000000000000">
+Operators</A>
+</H2>
+
+<P>
+Operators are listed below in order of increasing precedence.  Operators
+with equal precedence are grouped within { } symbols.
+
+<P>
+
+<UL>
+<LI><code>expr1 | expr2</code>
+
+<P>
+Return the evaluation of expr1 if it is neither an empty string
+       nor zero; otherwise, returns the evaluation of expr2.
+
+<P>
+</LI>
+<LI><code>expr1 &amp; expr2</code>
+
+<P>
+Return the evaluation of expr1 if neither expression evaluates to
+       an empty string or zero; otherwise, returns zero.
+
+<P>
+</LI>
+<LI><code>expr1 {=, &gt;, &gt;=, &lt;, &lt;=, !=} expr2</code>
+
+<P>
+Return the results of floating point comparison if both arguments are
+       numbers; otherwise, returns the results of string comparison
+       using the locale-specific collation sequence.  The result of each
+       comparison is 1 if the specified relation is true, or 0 if the
+       relation is false.
+
+<P>
+</LI>
+<LI><code>expr1 {+, -} expr2</code>
+
+<P>
+Return the results of addition or subtraction of floating point-valued
+       arguments.
+
+<P>
+</LI>
+<LI><code>expr1 {*, /, %} expr2</code>
+
+<P>
+Return the results of multiplication, floating point division, or
+       remainder of arguments.
+
+<P>
+</LI>
+<LI><code>- expr1</code>
+
+<P>
+Return the result of subtracting expr1 from 0.
+       This, the unary minus operator, is right associative, and
+       has the same precedence as the ! operator.
+
+<P>
+</LI>
+<LI><code>! expr1</code>
+
+<P>
+Return the result of a logical complement of expr1.
+       In other words, if expr1 is null, 0, an empty string,
+       or the string "0", return a 1. Otherwise, return a 0.
+       It has the same precedence as the unary minus operator, and
+       is also right associative.
+
+<P>
+</LI>
+<LI><code>expr1 : expr2</code>
+
+<P>
+The `:' operator matches expr1 against expr2, which must be a
+       regular expression.  The regular expression is anchored to the
+       beginning of  the string with an implicit `'.
+
+<P>
+If the match succeeds and the pattern contains at least one regular
+       expression subexpression `<SPAN CLASS="MATH"><IMG
+ WIDTH="20" HEIGHT="19" ALIGN="BOTTOM" BORDER="0"
+ SRC="img3.png"
+ ALT="\(...\)"></SPAN>', the string corresponing
+       to `&#92;1' is returned; otherwise the matching operator
+       returns the number of characters matched.  If the match fails and
+       the pattern contains a regular expression subexpression the null
+       string is returned; otherwise 0.
+
+<P>
+Normally, the double quotes wrapping a string are left as part
+       of the string. This is disastrous to the : operator. Therefore,
+       before the regex match is made, beginning and ending double quote
+       characters are stripped from both the pattern and the string.
+
+<P>
+</LI>
+<LI><code>expr1 =~ expr2</code>
+
+<P>
+Exactly the same as the ':' operator, except that the match is
+       not anchored to the beginning of the string. Pardon any similarity
+       to seemingly similar operators in other programming languages!
+       The ":" and "=" operators share the same precedence.
+
+<P>
+</LI>
+<LI><code>expr1 ? expr2 :: expr3</code>
+
+<P>
+Traditional Conditional operator. If expr1 is a number
+       that evaluates to 0 (false), expr3 is result of the this
+       expression evaluation.  Otherwise, expr2 is the result.
+       If expr1 is a string, and evaluates to an empty string,
+       or the two characters (""), then expr3 is the
+       result. Otherwise, expr2 is the result.  In Asterisk, all
+       3 exprs will be "evaluated"; if expr1 is "true", expr2
+       will be the result of the "evaluation" of this
+       expression.  expr3 will be the result otherwise. This
+       operator has the lowest precedence.
+</LI>
+</UL>
+
+<P>
+Parentheses are used for grouping in the usual manner.
+
+<P>
+Operator precedence is applied as one would expect in any of the C
+or C derived languages.
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html1664"
+  HREF="node81.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1660"
+  HREF="node78.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1654"
+  HREF="node79.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1662"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1665"
+  HREF="node81.html">Floating Point Numbers</A>
+<B> Up:</B> <A NAME="tex2html1661"
+  HREF="node78.html">Expressions</A>
+<B> Previous:</B> <A NAME="tex2html1655"
+  HREF="node79.html">Spaces Inside Variables Values</A>
+ &nbsp; <B>  <A NAME="tex2html1663"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

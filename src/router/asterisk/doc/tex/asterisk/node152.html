@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Station goes off hook (not ringing)</TITLE>
+<META NAME="description" CONTENT="Station goes off hook (not ringing)">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node153.html">
+<LINK REL="previous" HREF="node151.html">
+<LINK REL="up" HREF="node150.html">
+<LINK REL="next" HREF="node153.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html2598"
+  HREF="node153.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2594"
+  HREF="node150.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2588"
+  HREF="node151.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2596"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2599"
+  HREF="node153.html">Station goes off hook</A>
+<B> Up:</B> <A NAME="tex2html2595"
+  HREF="node150.html">Call Handling</A>
+<B> Previous:</B> <A NAME="tex2html2589"
+  HREF="node151.html">Summary</A>
+ &nbsp; <B>  <A NAME="tex2html2597"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00642000000000000000">
+Station goes off hook (not ringing)</A>
+</H2>
+
+<P>
+When a station goes off hook, it should initiate a call to Asterisk with the
+extension that indicates that the phone went off hook without specifying a
+specific line.  In the examples in this document, for the station named
+"station1", this extension is simply named, "station1".
+
+<P>
+Asterisk will attempt to connect this station to the first available trunk
+that is not in use.  Asterisk will check the trunks in the order that they
+were specified in the station entry in sla.conf.  If all trunks are in use,
+the call will be denied.
+
+<P>
+If Asterisk is able to acquire an idle trunk for this station, then trunk
+is connected to the station and the station will hear dialtone.  The station
+can then proceed to dial a number to call.  As soon as a trunk is acquired,
+all appearances of this line on stations will show that the line is in use.
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

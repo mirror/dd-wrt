@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Syntax</TITLE>
+<META NAME="description" CONTENT="Syntax">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node185.html">
+<LINK REL="previous" HREF="node183.html">
+<LINK REL="up" HREF="node182.html">
+<LINK REL="next" HREF="node185.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3041"
+  HREF="node185.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3037"
+  HREF="node182.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3031"
+  HREF="node183.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3039"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3042"
+  HREF="node185.html">Purpose</A>
+<B> Up:</B> <A NAME="tex2html3038"
+  HREF="node182.html">Local</A>
+<B> Previous:</B> <A NAME="tex2html3032"
+  HREF="node183.html">Introduction</A>
+ &nbsp; <B>  <A NAME="tex2html3040"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00732000000000000000">
+Syntax</A>
+</H2>
+<PRE>
+ Local/extension@context[/{n|j}]
+</PRE>
+
+<P>
+Adding "/n" at the end of the string will make the Local channel not do a
+native transfer (the "n" stands for "n"o release) upon the remote end answering
+the line. This is an esoteric, but important feature if you expect the Local
+channel to handle calls exactly like a normal channel. If you do not have the
+"no release" feature set, then as soon as the destination (inside of the Local
+channel) answers the line and one audio frame passes, the variables and dial plan
+will revert back to that of the original call, and the Local channel will become a
+zombie and be removed from the active channels list. This is desirable in some
+circumstances, but can result in unexpected dialplan behavior if you are doing
+fancy things with variables in your call handling.
+
+<P>
+There is another option that can be used with local channels, which is the "j"
+option.  The "j" option must be used with the "n" option to make sure that the
+local channel does not get optimized out of the call.  This option will enable
+a jitterbuffer on the local channel.  The jitterbuffer will be used to de-jitter
+audio that it receives from the channel that called the local channel.  This is
+especially in the case of putting chan_local in between an incoming SIP call
+and Asterisk applications, so that the incoming audio will be de-jittered.
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html3041"
+  HREF="node185.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3037"
+  HREF="node182.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3031"
+  HREF="node183.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3039"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3042"
+  HREF="node185.html">Purpose</A>
+<B> Up:</B> <A NAME="tex2html3038"
+  HREF="node182.html">Local</A>
+<B> Previous:</B> <A NAME="tex2html3032"
+  HREF="node183.html">Introduction</A>
+ &nbsp; <B>  <A NAME="tex2html3040"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

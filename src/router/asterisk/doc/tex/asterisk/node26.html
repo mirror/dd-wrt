@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Additional Examples</TITLE>
+<META NAME="description" CONTENT="Additional Examples">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node25.html">
+<LINK REL="up" HREF="node18.html">
+<LINK REL="next" HREF="node27.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html947"
+  HREF="node27.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html943"
+  HREF="node18.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html939"
+  HREF="node25.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html945"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html948"
+  HREF="node27.html">Asterisk.conf</A>
+<B> Up:</B> <A NAME="tex2html944"
+  HREF="node18.html">Configuration Parser</A>
+<B> Previous:</B> <A NAME="tex2html940"
+  HREF="node25.html">Using templates (or other</A>
+ &nbsp; <B>  <A NAME="tex2html946"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H3><A NAME="SECTION00311800000000000000">
+Additional Examples</A>
+</H3>
+
+<P>
+(in top-level sip.conf)
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+[defaults](!)
+type=friend
+nat=yes
+qualify=on
+dtmfmode=rfc2833
+disallow=all
+allow=alaw
+
+#include accounts/*/sip.conf
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+(in accounts/customer1/sip.conf)
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+[def-customer1](!,defaults)
+secret=this_is_not_secret
+context=from-customer1
+callerid=Customer 1 &lt;300&gt;
+accountcode=0001
+
+[phone1](def-customer1)
+mailbox=phone1@customer1
+
+[phone2](def-customer1)
+mailbox=phone2@customer1
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+This example defines two phones - phone1 and phone2 with settings
+inherited from "def-customer1".  The "def-customer1" is a template that
+inherits from "defaults", which also is a template.
+    <BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

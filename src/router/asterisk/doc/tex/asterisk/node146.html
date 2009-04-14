@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Stations</TITLE>
+<META NAME="description" CONTENT="Stations">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node145.html">
+<LINK REL="up" HREF="node142.html">
+<LINK REL="next" HREF="node147.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html2524"
+  HREF="node147.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2520"
+  HREF="node142.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2516"
+  HREF="node145.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2522"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2525"
+  HREF="node147.html">Configuration Examples</A>
+<B> Up:</B> <A NAME="tex2html2521"
+  HREF="node142.html">Configuration</A>
+<B> Previous:</B> <A NAME="tex2html2517"
+  HREF="node145.html">Trunks</A>
+ &nbsp; <B>  <A NAME="tex2html2523"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00624000000000000000">
+Stations</A>
+</H2>
+
+<P>
+An SLA station is a mapping between a virtual station and a real Asterisk device.
+Currently, the only channel driver that has all of the features necessary to
+support an SLA environment is chan_sip.  So, to configure a SIP phone to use
+as a station, you must configure sla.conf and sip.conf.
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+[station1]
+type=station
+device=SIP/station1
+trunk=line1
+trunk=line2
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+Here are some hints on configuring a SIP phone for use with SLA:
+
+<P>
+
+<OL>
+<LI>Add the SIP channel as a [station] in sla.conf.
+
+<P>
+</LI>
+<LI>Configure the phone in sip.conf.  If automatic dialplan configuration was
+   used by enabling the "autocontext" option in sla.conf, then this entry in
+   sip.conf should have the same context setting.
+
+<P>
+</LI>
+<LI>On the phone itself, there are various things that must be configured to
+   make everything work correctly:
+
+<P>
+Let's say this phone is called "station1" in sla.conf, and it uses trunks
+   named "line1" and line2".
+   
+<OL>
+<LI>Two line buttons must be configured to subscribe to the state of the
+      following extensions:
+        - station1_line1
+        - station1_line2
+
+<P>
+</LI>
+<LI>The line appearance buttons should be configured to dial the extensions
+      that they are subscribed to when they are pressed.
+
+<P>
+</LI>
+<LI>If you would like the phone to automatically connect to a trunk when it
+      is taken off hook, then the phone should be automatically configured to
+      dial "station1" when it is taken off hook.
+
+<P>
+</LI>
+</OL>
+</LI>
+</OL>
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html2524"
+  HREF="node147.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2520"
+  HREF="node142.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2516"
+  HREF="node145.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2522"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2525"
+  HREF="node147.html">Configuration Examples</A>
+<B> Up:</B> <A NAME="tex2html2521"
+  HREF="node142.html">Configuration</A>
+<B> Previous:</B> <A NAME="tex2html2517"
+  HREF="node145.html">Trunks</A>
+ &nbsp; <B>  <A NAME="tex2html2523"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

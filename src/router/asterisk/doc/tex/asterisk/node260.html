@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Assigning agents to Queues</TITLE>
+<META NAME="description" CONTENT="Assigning agents to Queues">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node262.html">
+<LINK REL="previous" HREF="node257.html">
+<LINK REL="up" HREF="node255.html">
+<LINK REL="next" HREF="node261.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html4041"
+  HREF="node261.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html4037"
+  HREF="node255.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html4031"
+  HREF="node259.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html4039"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html4042"
+  HREF="node261.html">Agents Log In and</A>
+<B> Up:</B> <A NAME="tex2html4038"
+  HREF="node255.html">Configuring Call Queues</A>
+<B> Previous:</B> <A NAME="tex2html4032"
+  HREF="node259.html">The Contexts referenced from</A>
+ &nbsp; <B>  <A NAME="tex2html4040"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION001423000000000000000">
+Assigning agents to Queues</A>
+</H2>
+
+<P>
+In this example dialplan, we want to be able to add and remove agents to
+handle incoming calls, as they feel they are available. As they log in,
+they are added to the queue's agent list, and as they log out, they are
+removed. If no agents are available, the queue command will terminate, and
+it is the duty of the dialplan to do something appropriate, be it sending
+the incoming caller to voicemail, or trying the queue again with a higher
+QUEUE_MAX_PENALTY.
+
+<P>
+Because a single agent can make themselves available to more than one queue,
+the process of joining multiple queues can be handled automatically by the
+dialplan.
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL CLASS="ChildLinks">
+<LI><A NAME="tex2html4043"
+  HREF="node261.html">Agents Log In and Out</A>
+</UL>
+<!--End of Table of Child-Links-->
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

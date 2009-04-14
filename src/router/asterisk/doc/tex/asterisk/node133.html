@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>goto, jump, and labels</TITLE>
+<META NAME="description" CONTENT="goto, jump, and labels">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node134.html">
+<LINK REL="previous" HREF="node132.html">
+<LINK REL="up" HREF="node120.html">
+<LINK REL="next" HREF="node134.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html2356"
+  HREF="node134.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2352"
+  HREF="node120.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2346"
+  HREF="node132.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2354"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2357"
+  HREF="node134.html">Macros</A>
+<B> Up:</B> <A NAME="tex2html2353"
+  HREF="node120.html">AEL Example USAGE</A>
+<B> Previous:</B> <A NAME="tex2html2347"
+  HREF="node132.html">Break, Continue, and Return</A>
+ &nbsp; <B>  <A NAME="tex2html2355"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION005913000000000000000">
+goto, jump, and labels</A>
+</H2>
+
+<P>
+This is an example of how to do a goto in AEL.
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+context gotoexample {
+    s =&gt; {
+begin:
+         NoOp(Infinite Loop!  yay!);
+         Wait(1);
+         goto begin;    // go to label in same extension
+    }
+    3 =&gt; {
+            goto s,begin;   // go to label in different extension
+     }
+     4 =&gt; {
+            goto gotoexample,s,begin;  // overkill go to label in same context
+     }
+}
+
+context gotoexample2 {
+     s =&gt;  {
+   end:
+           goto gotoexample,s,begin;   // go to label in different context
+     }
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+You can use the special label of "1" in the goto and jump
+statements. It means the "first" statement in the extension. I would
+not advise trying to use numeric labels other than "1" in goto's or
+jumps, nor would I advise declaring a "1" label anywhere! As a matter
+of fact, it would be bad form to declare a numeric label, and it might
+conflict with the priority numbers used internally by asterisk.
+
+<P>
+The syntax of the jump statement is: jump
+extension[,priority][@context] If priority is absent, it defaults to
+"1". If context is not present, it is assumed to be the same as that
+which contains the "jump".
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+context gotoexample {
+    s =&gt; {
+begin:
+         NoOp(Infinite Loop!  yay!);
+         Wait(1);
+         jump s;    // go to first extension in same extension
+    }
+    3 =&gt; {
+            jump s,begin;   // go to label in different extension
+     }
+     4 =&gt; {
+            jump s,begin@gotoexample;  // overkill go to label in same context
+     }
+}
+
+context gotoexample2 {
+     s =&gt;  {
+   end:
+           jump s@gotoexample;   // go to label in different context
+     }
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+NOTE: goto labels follow the same requirements as the Goto()
+      application, except the last value has to be a label. If the
+      label does not exist, you will have run-time errors. If the
+      label exists, but in a different extension, you have to specify
+      both the extension name and label in the goto, as in: goto s,z;
+      if the label is in a different context, you specify
+      context,extension,label. There is a note about using goto's in a
+      switch statement below...
+
+<P>
+NOTE  AEL introduces the special label "1", which is the beginning
+      context number for most extensions.
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html2356"
+  HREF="node134.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2352"
+  HREF="node120.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2346"
+  HREF="node132.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2354"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2357"
+  HREF="node134.html">Macros</A>
+<B> Up:</B> <A NAME="tex2html2353"
+  HREF="node120.html">AEL Example USAGE</A>
+<B> Previous:</B> <A NAME="tex2html2347"
+  HREF="node132.html">Break, Continue, and Return</A>
+ &nbsp; <B>  <A NAME="tex2html2355"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Loops</TITLE>
+<META NAME="description" CONTENT="Loops">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node131.html">
+<LINK REL="previous" HREF="node129.html">
+<LINK REL="up" HREF="node120.html">
+<LINK REL="next" HREF="node131.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html2320"
+  HREF="node131.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2316"
+  HREF="node120.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2310"
+  HREF="node129.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2318"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2321"
+  HREF="node131.html">Conditionals</A>
+<B> Up:</B> <A NAME="tex2html2317"
+  HREF="node120.html">AEL Example USAGE</A>
+<B> Previous:</B> <A NAME="tex2html2311"
+  HREF="node129.html">Local Variables</A>
+ &nbsp; <B>  <A NAME="tex2html2319"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION005910000000000000000">
+Loops</A>
+</H2>
+
+<P>
+AEL has implementations of 'for' and 'while' loops.
+</B></SMALL>
+<UL>
+<LI><PRE>
+context loops {
+    1 =&gt; {
+         for (x=0; ${x} &lt; 3; x=${x} + 1) {
+              Verbose(x is ${x} !);
+         }
+    }
+    2 =&gt; {
+         y=10;
+         while (${y} &gt;= 0) {
+              Verbose(y is ${y} !);
+              y=${y}-1;
+         }
+    }
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+NOTE: The conditional expression (the "${y} <SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN>= 0" above) is wrapped in
+      $[ ] so it can be evaluated.  NOTE: The for loop test expression
+      (the "$x <SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN> 3" above) is wrapped in $[ ] so it can be evaluated.
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

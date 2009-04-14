@@ -1,0 +1,219 @@
+\BOOKMARK [0][-]{chapter.1}{Introduction}{}
+\BOOKMARK [1][-]{section.1.1}{License Information}{chapter.1}
+\BOOKMARK [2][-]{subsection.1.1.1}{Hold Music}{section.1.1}
+\BOOKMARK [1][-]{section.1.2}{Security}{chapter.1}
+\BOOKMARK [2][-]{subsection.1.2.1}{Introduction}{section.1.2}
+\BOOKMARK [2][-]{subsection.1.2.2}{Network Security}{section.1.2}
+\BOOKMARK [2][-]{subsection.1.2.3}{Dialplan Security}{section.1.2}
+\BOOKMARK [2][-]{subsection.1.2.4}{Log Security}{section.1.2}
+\BOOKMARK [1][-]{section.1.3}{Hardware}{chapter.1}
+\BOOKMARK [2][-]{subsection.1.3.1}{Introduction}{section.1.3}
+\BOOKMARK [2][-]{subsection.1.3.2}{DAHDI compatible hardware}{section.1.3}
+\BOOKMARK [2][-]{subsection.1.3.3}{Non-DAHDI compatible hardware}{section.1.3}
+\BOOKMARK [2][-]{subsection.1.3.4}{mISDN compatible hardware}{section.1.3}
+\BOOKMARK [2][-]{subsection.1.3.5}{Miscellaneous other interfaces}{section.1.3}
+\BOOKMARK [0][-]{chapter.2}{Configuration}{}
+\BOOKMARK [1][-]{section.2.1}{General Configuration Information}{chapter.2}
+\BOOKMARK [2][-]{subsection.2.1.1}{Configuration Parser}{section.2.1}
+\BOOKMARK [2][-]{subsection.2.1.2}{Asterisk.conf}{section.2.1}
+\BOOKMARK [2][-]{subsection.2.1.3}{CLI Prompt}{section.2.1}
+\BOOKMARK [2][-]{subsection.2.1.4}{Extensions}{section.2.1}
+\BOOKMARK [2][-]{subsection.2.1.5}{IP Quality of Service}{section.2.1}
+\BOOKMARK [2][-]{subsection.2.1.6}{MP3 Support}{section.2.1}
+\BOOKMARK [2][-]{subsection.2.1.7}{ICES}{section.2.1}
+\BOOKMARK [1][-]{section.2.2}{Database Support}{chapter.2}
+\BOOKMARK [2][-]{subsection.2.2.1}{Realtime Database Configuration}{section.2.2}
+\BOOKMARK [2][-]{subsection.2.2.2}{FreeTDS}{section.2.2}
+\BOOKMARK [1][-]{section.2.3}{Privacy}{chapter.2}
+\BOOKMARK [2][-]{subsection.2.3.1}{First of all}{section.2.3}
+\BOOKMARK [2][-]{subsection.2.3.2}{Next, Fight against autodialers!!}{section.2.3}
+\BOOKMARK [2][-]{subsection.2.3.3}{Next, Fight against the empty CALLERID!}{section.2.3}
+\BOOKMARK [2][-]{subsection.2.3.4}{Next, use a WELCOME MENU !}{section.2.3}
+\BOOKMARK [2][-]{subsection.2.3.5}{Next: Torture Them!}{section.2.3}
+\BOOKMARK [2][-]{subsection.2.3.6}{Using Call Screening}{section.2.3}
+\BOOKMARK [2][-]{subsection.2.3.7}{The 'N' and 'n' options}{section.2.3}
+\BOOKMARK [2][-]{subsection.2.3.8}{Recorded Introductions}{section.2.3}
+\BOOKMARK [0][-]{chapter.3}{Channel Variables}{}
+\BOOKMARK [1][-]{section.3.1}{Introduction}{chapter.3}
+\BOOKMARK [1][-]{section.3.2}{Parameter Quoting}{chapter.3}
+\BOOKMARK [1][-]{section.3.3}{Variables}{chapter.3}
+\BOOKMARK [1][-]{section.3.4}{Variable Inheritance}{chapter.3}
+\BOOKMARK [2][-]{subsection.3.4.1}{Example}{section.3.4}
+\BOOKMARK [1][-]{section.3.5}{Selecting Characters from Variables}{chapter.3}
+\BOOKMARK [1][-]{section.3.6}{Expressions}{chapter.3}
+\BOOKMARK [2][-]{subsection.3.6.1}{Spaces Inside Variables Values}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.2}{Operators}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.3}{Floating Point Numbers}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.4}{Functions}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.5}{Examples}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.6}{Numbers Vs. Strings}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.7}{Conditionals}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.8}{Parse Errors}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.9}{NULL Strings}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.10}{Warning}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.11}{Incompatabilities}{section.3.6}
+\BOOKMARK [2][-]{subsection.3.6.12}{Debugging Hints}{section.3.6}
+\BOOKMARK [1][-]{section.3.7}{Asterisk standard channel variables}{chapter.3}
+\BOOKMARK [2][-]{subsection.3.7.1}{Application return values}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.2}{Various application variables}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.3}{The MeetMe Conference Bridge}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.4}{The VoiceMail\(\) application}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.5}{The VMAuthenticate\(\) application}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.6}{DUNDiLookup\(\)}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.7}{chan\137dahdi}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.8}{chan\137sip}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.9}{chan\137agent}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.10}{The Dial\(\) application}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.11}{The chanisavail\(\) application}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.12}{Dialplan Macros}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.13}{The ChanSpy\(\) application}{section.3.7}
+\BOOKMARK [2][-]{subsection.3.7.14}{OSP}{section.3.7}
+\BOOKMARK [0][-]{chapter.4}{AEL: Asterisk Extension Language}{}
+\BOOKMARK [1][-]{section.4.1}{Introduction}{chapter.4}
+\BOOKMARK [1][-]{section.4.2}{Asterisk in a Nutshell}{chapter.4}
+\BOOKMARK [2][-]{subsection.4.2.1}{Contexts}{section.4.2}
+\BOOKMARK [2][-]{subsection.4.2.2}{Extensions and priorities}{section.4.2}
+\BOOKMARK [2][-]{subsection.4.2.3}{Macros}{section.4.2}
+\BOOKMARK [2][-]{subsection.4.2.4}{Applications}{section.4.2}
+\BOOKMARK [1][-]{section.4.3}{Getting Started}{chapter.4}
+\BOOKMARK [1][-]{section.4.4}{Debugging}{chapter.4}
+\BOOKMARK [1][-]{section.4.5}{About "aelparse"}{chapter.4}
+\BOOKMARK [1][-]{section.4.6}{General Notes about Syntax}{chapter.4}
+\BOOKMARK [1][-]{section.4.7}{Keywords}{chapter.4}
+\BOOKMARK [1][-]{section.4.8}{Procedural Interface and Internals}{chapter.4}
+\BOOKMARK [2][-]{subsection.4.8.1}{AEL version 2 BNF}{section.4.8}
+\BOOKMARK [1][-]{section.4.9}{AEL Example USAGE}{chapter.4}
+\BOOKMARK [2][-]{subsection.4.9.1}{Comments}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.2}{Context}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.3}{Extensions}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.4}{Includes}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.5}{\043include}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.6}{Dialplan Switches}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.7}{Ignorepat}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.8}{Variables}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.9}{Local Variables}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.10}{Loops}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.11}{Conditionals}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.12}{Break, Continue, and Return}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.13}{goto, jump, and labels}{section.4.9}
+\BOOKMARK [2][-]{subsection.4.9.14}{Macros}{section.4.9}
+\BOOKMARK [1][-]{section.4.10}{Examples}{chapter.4}
+\BOOKMARK [1][-]{section.4.11}{Semantic Checks}{chapter.4}
+\BOOKMARK [1][-]{section.4.12}{Differences with the original version of AEL}{chapter.4}
+\BOOKMARK [1][-]{section.4.13}{Hints and Bugs}{chapter.4}
+\BOOKMARK [1][-]{section.4.14}{The Full Power of AEL}{chapter.4}
+\BOOKMARK [0][-]{chapter.5}{SLA: Shared Line Appearances}{}
+\BOOKMARK [1][-]{section.5.1}{Introduction}{chapter.5}
+\BOOKMARK [1][-]{section.5.2}{Configuration}{chapter.5}
+\BOOKMARK [2][-]{subsection.5.2.1}{Summary}{section.5.2}
+\BOOKMARK [2][-]{subsection.5.2.2}{Dialplan}{section.5.2}
+\BOOKMARK [2][-]{subsection.5.2.3}{Trunks}{section.5.2}
+\BOOKMARK [2][-]{subsection.5.2.4}{Stations}{section.5.2}
+\BOOKMARK [1][-]{section.5.3}{Configuration Examples}{chapter.5}
+\BOOKMARK [2][-]{subsection.5.3.1}{Basic SLA}{section.5.3}
+\BOOKMARK [2][-]{subsection.5.3.2}{SLA and Voicemail}{section.5.3}
+\BOOKMARK [1][-]{section.5.4}{Call Handling}{chapter.5}
+\BOOKMARK [2][-]{subsection.5.4.1}{Summary}{section.5.4}
+\BOOKMARK [2][-]{subsection.5.4.2}{Station goes off hook \(not ringing\)}{section.5.4}
+\BOOKMARK [2][-]{subsection.5.4.3}{Station goes off hook \(ringing\)}{section.5.4}
+\BOOKMARK [2][-]{subsection.5.4.4}{Line button on a station is pressed}{section.5.4}
+\BOOKMARK [0][-]{chapter.6}{Channel Drivers}{}
+\BOOKMARK [1][-]{section.6.1}{IAX2}{chapter.6}
+\BOOKMARK [2][-]{subsection.6.1.1}{Introduction}{section.6.1}
+\BOOKMARK [2][-]{subsection.6.1.2}{Why IAX2?}{section.6.1}
+\BOOKMARK [2][-]{subsection.6.1.3}{Configuration}{section.6.1}
+\BOOKMARK [2][-]{subsection.6.1.4}{IAX2 Jitterbuffer}{section.6.1}
+\BOOKMARK [1][-]{section.6.2}{mISDN}{chapter.6}
+\BOOKMARK [2][-]{subsection.6.2.1}{Introduction}{section.6.2}
+\BOOKMARK [2][-]{subsection.6.2.2}{Features}{section.6.2}
+\BOOKMARK [2][-]{subsection.6.2.3}{Fast Installation Guide}{section.6.2}
+\BOOKMARK [2][-]{subsection.6.2.4}{Pre-Requisites}{section.6.2}
+\BOOKMARK [2][-]{subsection.6.2.5}{Configuration}{section.6.2}
+\BOOKMARK [2][-]{subsection.6.2.6}{mISDN CLI commands}{section.6.2}
+\BOOKMARK [2][-]{subsection.6.2.7}{mISDN Variables}{section.6.2}
+\BOOKMARK [2][-]{subsection.6.2.8}{Debugging and sending bug reports}{section.6.2}
+\BOOKMARK [2][-]{subsection.6.2.9}{Examples}{section.6.2}
+\BOOKMARK [2][-]{subsection.6.2.10}{Known Problems}{section.6.2}
+\BOOKMARK [1][-]{section.6.3}{Local}{chapter.6}
+\BOOKMARK [2][-]{subsection.6.3.1}{Introduction}{section.6.3}
+\BOOKMARK [2][-]{subsection.6.3.2}{Syntax}{section.6.3}
+\BOOKMARK [2][-]{subsection.6.3.3}{Purpose}{section.6.3}
+\BOOKMARK [2][-]{subsection.6.3.4}{Examples}{section.6.3}
+\BOOKMARK [2][-]{subsection.6.3.5}{Caveats}{section.6.3}
+\BOOKMARK [0][-]{chapter.7}{Distributed Universal Number Discovery \(DUNDi\)}{}
+\BOOKMARK [1][-]{section.7.1}{Introduction}{chapter.7}
+\BOOKMARK [1][-]{section.7.2}{DUNDIQUERY and DUNDIRESULT}{chapter.7}
+\BOOKMARK [1][-]{section.7.3}{Peering Agreement}{chapter.7}
+\BOOKMARK [0][-]{chapter.8}{ENUM}{}
+\BOOKMARK [1][-]{section.8.1}{The ENUMLOOKUP dialplan function}{chapter.8}
+\BOOKMARK [2][-]{subsection.8.1.1}{Arguments}{section.8.1}
+\BOOKMARK [2][-]{subsection.8.1.2}{Examples}{section.8.1}
+\BOOKMARK [2][-]{subsection.8.1.3}{Usage notes and subtle features}{section.8.1}
+\BOOKMARK [2][-]{subsection.8.1.4}{Some more Examples}{section.8.1}
+\BOOKMARK [0][-]{chapter.9}{AMI: Asterisk Manager Interface}{}
+\BOOKMARK [1][-]{section.9.1}{The Asterisk Manager TCP/IP API}{chapter.9}
+\BOOKMARK [1][-]{section.9.2}{Device status reports}{chapter.9}
+\BOOKMARK [1][-]{section.9.3}{Command Syntax}{chapter.9}
+\BOOKMARK [1][-]{section.9.4}{Manager commands}{chapter.9}
+\BOOKMARK [1][-]{section.9.5}{Examples}{chapter.9}
+\BOOKMARK [1][-]{section.9.6}{Some standard AMI headers}{chapter.9}
+\BOOKMARK [1][-]{section.9.7}{Asynchronous Javascript Asterisk Manger \(AJAM\)}{chapter.9}
+\BOOKMARK [2][-]{subsection.9.7.1}{Setup the Asterisk HTTP server}{section.9.7}
+\BOOKMARK [2][-]{subsection.9.7.2}{Allow Manager Access via HTTP}{section.9.7}
+\BOOKMARK [2][-]{subsection.9.7.3}{Integration with other web servers}{section.9.7}
+\BOOKMARK [0][-]{chapter.10}{CDR: Call Detail Records}{}
+\BOOKMARK [1][-]{section.10.1}{Applications}{chapter.10}
+\BOOKMARK [1][-]{section.10.2}{Fields of the CDR in Asterisk}{chapter.10}
+\BOOKMARK [1][-]{section.10.3}{CDR Variables}{chapter.10}
+\BOOKMARK [1][-]{section.10.4}{MSSQL}{chapter.10}
+\BOOKMARK [2][-]{subsection.10.4.1}{ODBC using cdr\137odbc}{section.10.4}
+\BOOKMARK [2][-]{subsection.10.4.2}{TDS, using cdr\137tds}{section.10.4}
+\BOOKMARK [1][-]{section.10.5}{MYSQL}{chapter.10}
+\BOOKMARK [1][-]{section.10.6}{PGSQL}{chapter.10}
+\BOOKMARK [1][-]{section.10.7}{SQLLITE}{chapter.10}
+\BOOKMARK [1][-]{section.10.8}{RADIUS}{chapter.10}
+\BOOKMARK [2][-]{subsection.10.8.1}{What is needed}{section.10.8}
+\BOOKMARK [2][-]{subsection.10.8.2}{Steps to follow in order to have RADIUS support}{section.10.8}
+\BOOKMARK [1][-]{section.10.9}{Logged Values}{chapter.10}
+\BOOKMARK [0][-]{chapter.11}{Voicemail}{}
+\BOOKMARK [1][-]{section.11.1}{ODBC Storage}{chapter.11}
+\BOOKMARK [1][-]{section.11.2}{IMAP Storage}{chapter.11}
+\BOOKMARK [2][-]{subsection.11.2.1}{Installation Notes}{section.11.2}
+\BOOKMARK [2][-]{subsection.11.2.2}{Modify voicemail.conf}{section.11.2}
+\BOOKMARK [2][-]{subsection.11.2.3}{IMAP Folders}{section.11.2}
+\BOOKMARK [2][-]{subsection.11.2.4}{Separate vs. Shared Email Accounts}{section.11.2}
+\BOOKMARK [2][-]{subsection.11.2.5}{IMAP Server Implementations}{section.11.2}
+\BOOKMARK [2][-]{subsection.11.2.6}{Quota Support}{section.11.2}
+\BOOKMARK [2][-]{subsection.11.2.7}{Application Notes}{section.11.2}
+\BOOKMARK [0][-]{chapter.12}{SMS}{}
+\BOOKMARK [1][-]{section.12.1}{Introduction}{chapter.12}
+\BOOKMARK [1][-]{section.12.2}{Background}{chapter.12}
+\BOOKMARK [1][-]{section.12.3}{Typical use with Asterisk}{chapter.12}
+\BOOKMARK [1][-]{section.12.4}{Terminology}{chapter.12}
+\BOOKMARK [1][-]{section.12.5}{Sub address}{chapter.12}
+\BOOKMARK [1][-]{section.12.6}{extensions.conf}{chapter.12}
+\BOOKMARK [1][-]{section.12.7}{Using smsq}{chapter.12}
+\BOOKMARK [1][-]{section.12.8}{File formats}{chapter.12}
+\BOOKMARK [1][-]{section.12.9}{Delivery reports}{chapter.12}
+\BOOKMARK [0][-]{chapter.13}{Queues}{}
+\BOOKMARK [1][-]{section.13.1}{Introduction}{chapter.13}
+\BOOKMARK [1][-]{section.13.2}{Configuring Call Queues}{chapter.13}
+\BOOKMARK [2][-]{subsection.13.2.1}{queues.conf}{section.13.2}
+\BOOKMARK [2][-]{subsection.13.2.2}{Routing incoming Calls to Queues}{section.13.2}
+\BOOKMARK [2][-]{subsection.13.2.3}{Assigning agents to Queues}{section.13.2}
+\BOOKMARK [2][-]{subsection.13.2.4}{Controlling The Way Queues Call the Agents}{section.13.2}
+\BOOKMARK [2][-]{subsection.13.2.5}{Pre Acknowledgement Message}{section.13.2}
+\BOOKMARK [2][-]{subsection.13.2.6}{Caveats}{section.13.2}
+\BOOKMARK [1][-]{section.13.3}{Queue Logs}{chapter.13}
+\BOOKMARK [0][-]{chapter.14}{Phone Provisioning}{}
+\BOOKMARK [1][-]{section.14.1}{Introduction}{chapter.14}
+\BOOKMARK [1][-]{section.14.2}{Configuration of phoneprov.conf}{chapter.14}
+\BOOKMARK [2][-]{subsection.14.2.1}{The [general] section}{section.14.2}
+\BOOKMARK [2][-]{subsection.14.2.2}{Creating phone profiles}{section.14.2}
+\BOOKMARK [1][-]{section.14.3}{Configuration of users.conf}{chapter.14}
+\BOOKMARK [2][-]{subsection.14.3.1}{The [general] section}{section.14.3}
+\BOOKMARK [2][-]{subsection.14.3.2}{Invdividual Users}{section.14.3}
+\BOOKMARK [1][-]{section.14.4}{Templates}{chapter.14}
+\BOOKMARK [1][-]{section.14.5}{Putting it all together}{chapter.14}
+\BOOKMARK [0][-]{chapter.15}{Development}{}
+\BOOKMARK [1][-]{section.15.1}{Backtrace}{chapter.15}

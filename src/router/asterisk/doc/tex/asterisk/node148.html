@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Basic SLA</TITLE>
+<META NAME="description" CONTENT="Basic SLA">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node149.html">
+<LINK REL="previous" HREF="node147.html">
+<LINK REL="up" HREF="node147.html">
+<LINK REL="next" HREF="node149.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html2550"
+  HREF="node149.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2546"
+  HREF="node147.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2540"
+  HREF="node147.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2548"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2551"
+  HREF="node149.html">SLA and Voicemail</A>
+<B> Up:</B> <A NAME="tex2html2547"
+  HREF="node147.html">Configuration Examples</A>
+<B> Previous:</B> <A NAME="tex2html2541"
+  HREF="node147.html">Configuration Examples</A>
+ &nbsp; <B>  <A NAME="tex2html2549"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00631000000000000000">
+Basic SLA</A>
+</H2>
+
+<P>
+This is an example of the most basic SLA setup.  It uses the automatic
+dialplan generation so the configuration is minimal.
+
+<P>
+sla.conf:
+</B></SMALL>
+<UL>
+<LI><PRE>
+[line1]
+type=trunk
+device=DAHDI/1
+autocontext=line1
+
+[line2]
+type=trunk
+device=DAHDI/2
+autocontext=line2
+
+[station](!)
+type=station
+trunk=line1
+trunk=line2
+autocontext=sla_stations
+
+[station1](station)
+device=SIP/station1
+
+[station2](station)
+device=SIP/station2
+
+[station3](station)
+device=SIP/station3
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+With this configuration, the dialplan is generated automatically.  The first
+DAHDI channel should have its context set to "line1" and the second should be
+set to "line2" in dahdi.conf.  In sip.conf, station1, station2, and station3
+should all have their context set to "sla_stations".
+
+<P>
+For reference, here is the automatically generated dialplan for this situation:
+</B></SMALL>
+<UL>
+<LI><PRE>
+[line1]
+exten =&gt; s,1,SLATrunk(line1)
+
+[line2]
+exten =&gt; s,2,SLATrunk(line2)
+
+[sla_stations]
+exten =&gt; station1,1,SLAStation(station1)
+exten =&gt; station1_line1,hint,SLA:station1_line1
+exten =&gt; station1_line1,1,SLAStation(station1_line1)
+exten =&gt; station1_line2,hint,SLA:station1_line2
+exten =&gt; station1_line2,1,SLAStation(station1_line2)
+
+exten =&gt; station2,1,SLAStation(station2)
+exten =&gt; station2_line1,hint,SLA:station2_line1
+exten =&gt; station2_line1,1,SLAStation(station2_line1)
+exten =&gt; station2_line2,hint,SLA:station2_line2
+exten =&gt; station2_line2,1,SLAStation(station2_line2)
+
+exten =&gt; station3,1,SLAStation(station3)
+exten =&gt; station3_line1,hint,SLA:station3_line1
+exten =&gt; station3_line1,1,SLAStation(station3_line1)
+exten =&gt; station3_line2,hint,SLA:station3_line2
+exten =&gt; station3_line2,1,SLAStation(station3_line2)
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

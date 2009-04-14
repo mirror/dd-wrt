@@ -1,0 +1,250 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Agents Log In and Out</TITLE>
+<META NAME="description" CONTENT="Agents Log In and Out">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node260.html">
+<LINK REL="up" HREF="node260.html">
+<LINK REL="next" HREF="node262.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html4052"
+  HREF="node262.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html4048"
+  HREF="node260.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html4044"
+  HREF="node260.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html4050"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html4053"
+  HREF="node262.html">Controlling The Way Queues</A>
+<B> Up:</B> <A NAME="tex2html4049"
+  HREF="node260.html">Assigning agents to Queues</A>
+<B> Previous:</B> <A NAME="tex2html4045"
+  HREF="node260.html">Assigning agents to Queues</A>
+ &nbsp; <B>  <A NAME="tex2html4051"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H3><A NAME="SECTION001423100000000000000">
+Agents Log In and Out</A>
+</H3>
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+context queues-loginout
+{
+        6092 =&gt; {
+                        Answer();
+                        Read(AGENT_NUMBER,agent-enternum);
+                        VMAuthenticate(${AGENT_NUMBER}@default,s);
+                        Set(queue-announce-success=1);
+                        goto queues-manip,I${AGENT_NUMBER},1;
+                }
+
+        6093 =&gt; {
+                        Answer();
+                        Read(AGENT_NUMBER,agent-enternum);
+                        Set(queue-announce-success=1);
+                        goto queues-manip,O${AGENT_NUMBER},1;
+                }
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+In the above contexts, the agents dial 6092 to log into their queues,
+and they dial 6093 to log out of their queues. The agent is prompted
+for their agent number, and if they are logging in, their passcode,
+and then they are transferred to the proper extension in the
+queues-manip context.  The queues-manip context does all the
+actual work:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+context queues-manip {
+
+        // Raquel Squelch
+        _[IO]6121 =&gt; {
+                &amp;queue-addremove(dispatch,10,${EXTEN});
+                &amp;queue-success(${EXTEN});
+        }
+
+        // Brittanica Spears
+        _[IO]6165 =&gt; {
+                &amp;queue-addremove(dispatch,20,${EXTEN});
+                &amp;queue-success(${EXTEN});
+        }
+
+        // Rock Hudson
+        _[IO]6170 =&gt; {
+                &amp;queue-addremove(sales-general,10,${EXTEN});
+                &amp;queue-addremove(customerservice,20,${EXTEN});
+                &amp;queue-addremove(dispatch,30,${EXTEN});
+                &amp;queue-success(${EXTEN});
+        }
+
+        // Saline Dye-on
+        _[IO]6070 =&gt; {
+                &amp;queue-addremove(sales-general,20,${EXTEN});
+                &amp;queue-addremove(customerservice,30,${EXTEN});
+                &amp;queue-addremove(dispatch,30,${EXTEN});
+                &amp;queue-success(${EXTEN});
+        }
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+In the above extensions, note that the queue-addremove macro is used
+to actually add or remove the agent from the applicable queue,
+with the applicable priority level. Note that agents with a
+priority level of 10 will be called before agents with levels
+of 20 or 30.
+
+<P>
+In the above example, Raquel will be dialed first in the dispatch
+queue, if she has logged in. If she is not, then the second call of
+Queue() with priority of 20 will dial Brittanica if she is present,
+otherwise the third call of Queue() with MAX_PENALTY of 0 will
+dial Rock and Saline simultaneously.
+
+<P>
+Also note that Rock will be among the first to be called in the sales-general
+queue, and among the last in the dispatch queue. As you can see in
+main menu, the callerID is set in the main menu so they can tell
+which queue incoming calls are coming from.
+
+<P>
+The call to queue-success() gives some feedback to the agent
+as they log in and out, that the process has completed.
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+macro queue-success(exten)
+{
+        if( ${queue-announce-success} &gt; 0 )
+        {
+                switch(${exten:0:1})
+                {
+                case I:
+                        Playback(agent-loginok);
+                        Hangup();
+                        break;
+                case O:
+                        Playback(agent-loggedoff);
+                        Hangup();
+                        break;
+                }
+        }
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+The queue-addremove macro is defined in this manner:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+macro queue-addremove(queuename,penalty,exten)
+{
+        switch(${exten:0:1})
+        {
+        case I:  // Login
+                 AddQueueMember(${queuename},Local/${exten:1}@agents,${penalty});
+		 break;
+        case O:  // Logout
+                 RemoveQueueMember(${queuename},Local/${exten:1}@agents);
+		 break;
+        case P:  // Pause
+                 PauseQueueMember(${queuename},Local/${exten:1}@agents);
+		 break;
+        case U:  // Unpause
+                 UnpauseQueueMember(${queuename},Local/${exten:1}@agents);
+		 break;
+        default: // Invalid
+                 Playback(invalid);
+                 break;
+        }
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+Basically, it uses the first character of the exten variable, to determine the
+proper actions to take. In the above dial plan code, only the cases I or O are used,
+which correspond to the Login and Logout actions.
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html4052"
+  HREF="node262.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html4048"
+  HREF="node260.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html4044"
+  HREF="node260.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html4050"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html4053"
+  HREF="node262.html">Controlling The Way Queues</A>
+<B> Up:</B> <A NAME="tex2html4049"
+  HREF="node260.html">Assigning agents to Queues</A>
+<B> Previous:</B> <A NAME="tex2html4045"
+  HREF="node260.html">Assigning agents to Queues</A>
+ &nbsp; <B>  <A NAME="tex2html4051"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>
