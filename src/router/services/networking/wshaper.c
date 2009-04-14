@@ -277,6 +277,8 @@ int svqos_iptables( void )
     char name[32], type[32], data[32], level[32], level2[32];;
     int ilevel, ilevel2;
     char *dev = get_wshaper_dev(  );
+    static char word[256];
+    char *next, *wordlist;
 
     system2( "iptables -t mangle -F SVQOS_OUT" );
     system2( "iptables -t mangle -X SVQOS_OUT" );
@@ -332,6 +334,34 @@ int svqos_iptables( void )
 	sysprintf
 	    ( "iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
 	      "br0" );
+    //add other bridges too
+    wordlist = nvram_safe_get( "bridges" );
+    foreach( word, wordlist, next )
+    {
+	char *stp = word;
+	char *bridge = strsep( &stp, ">" );
+	char *prio = stp;
+
+	stp = strsep( &prio, ">" );
+	char *mtu = prio;
+
+	prio = strsep( &mtu, ">" );
+	if( !prio )
+	{
+	    prio = mtu;
+	    mtu = NULL;
+	}
+	if( !bridge || !stp )
+	    break;
+	sysprintf
+	    ( "iptables -t mangle -D PREROUTING -i %s -j IMQ --todev 0",
+	      bridge );
+	sysprintf
+	    ( "iptables -t mangle -I PREROUTING -i %s -j IMQ --todev 0",
+	      bridge );
+    }
+
+
     }
     sysprintf( "iptables -t mangle -D POSTROUTING -o %s -j SVQOS_OUT", dev );
     sysprintf( "iptables -t mangle -I POSTROUTING -o %s -j SVQOS_OUT", dev );
