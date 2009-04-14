@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Using templates (or other configuration sections)</TITLE>
+<META NAME="description" CONTENT="Using templates (or other configuration sections)">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node26.html">
+<LINK REL="previous" HREF="node24.html">
+<LINK REL="up" HREF="node18.html">
+<LINK REL="next" HREF="node26.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html937"
+  HREF="node26.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html933"
+  HREF="node18.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html927"
+  HREF="node24.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html935"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html938"
+  HREF="node26.html">Additional Examples</A>
+<B> Up:</B> <A NAME="tex2html934"
+  HREF="node18.html">Configuration Parser</A>
+<B> Previous:</B> <A NAME="tex2html928"
+  HREF="node24.html">Defining a template-only section</A>
+ &nbsp; <B>  <A NAME="tex2html936"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H3><A NAME="SECTION00311700000000000000">
+Using templates (or other configuration sections)</A>
+</H3>
+</B></SMALL>
+<UL>
+<LI><PRE>
+	[section](name[,name])
+	label = value
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+The name within the parenthesis refers to other sections, either
+templates or standard sections. The referred sections are included
+before the configuration engine parses the local settings within the
+section as though their entire contents (and anything they were
+previously based upon) were included in the new section.  For example
+consider the following:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+[foo]
+permit=192.168.0.2
+host=asdf
+deny=192.168.0.1
+
+[bar]
+permit=192.168.1.2
+host=jkl
+deny=192.168.1.1
+
+[baz](foo,bar)
+permit=192.168.3.1
+host=bnm
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+The [baz] section will be processed as though it had been written in the
+following way:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+[baz]
+permit=192.168.0.2
+host=asdf
+deny=192.168.0.1
+permit=192.168.1.2
+host=jkl
+deny=192.168.1.1
+permit=192.168.3.1
+host=bnm
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

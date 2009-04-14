@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>ODBC Storage</TITLE>
+<META NAME="description" CONTENT="ODBC Storage">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node230.html">
+<LINK REL="previous" HREF="node228.html">
+<LINK REL="up" HREF="node228.html">
+<LINK REL="next" HREF="node230.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3632"
+  HREF="node230.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3628"
+  HREF="node228.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3622"
+  HREF="node228.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3630"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3633"
+  HREF="node230.html">IMAP Storage</A>
+<B> Up:</B> <A NAME="tex2html3629"
+  HREF="node228.html">Voicemail</A>
+<B> Previous:</B> <A NAME="tex2html3623"
+  HREF="node228.html">Voicemail</A>
+ &nbsp; <B>  <A NAME="tex2html3631"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION001210000000000000000"></A>
+  <A NAME="odbcstorage"></A>
+<BR>
+ODBC Storage
+</H1>
+  
+<P>
+ODBC Storage allows you to store voicemail messages within a database 
+instead of using a file.  This is <SPAN  CLASS="textbf">not</SPAN> a full realtime engine and 
+<SPAN  CLASS="textbf">only</SPAN> supports ODBC.  The table description for the "voicemessages" 
+table is as follows:
+
+<P>
+<PRE>
++----------------+-------------+------+-----+---------+-------+
+| Field          | Type        | Null | Key | Default | Extra |
++----------------+-------------+------+-----+---------+-------+
+| msgnum         | int(11)     | YES  |     | NULL    |       |
+| dir            | varchar(80) | YES  | MUL | NULL    |       |
+| context        | varchar(80) | YES  |     | NULL    |       |
+| macrocontext   | varchar(80) | YES  |     | NULL    |       |
+| callerid       | varchar(40) | YES  |     | NULL    |       |
+| origtime       | varchar(40) | YES  |     | NULL    |       |
+| duration       | varchar(20) | YES  |     | NULL    |       |
+| mailboxuser    | varchar(80) | YES  |     | NULL    |       |
+| mailboxcontext | varchar(80) | YES  |     | NULL    |       |
+| recording      | longblob    | YES  |     | NULL    |       |
++----------------+-------------+------+-----+---------+-------+
+</PRE>
+
+<P>
+The database name (from /etc/asterisk/res_odbc.conf) is in the 
+"odbcstorage" variable in the general section of voicemail.conf.
+
+<P>
+You may modify the voicemessages table name by using 
+odbctable=??? in voicemail.conf.
+
+<P>
+  <BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

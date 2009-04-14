@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Configuration of the Radiusclient library</TITLE>
+<META NAME="description" CONTENT="Configuration of the Radiusclient library">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node224.html">
+<LINK REL="previous" HREF="node222.html">
+<LINK REL="up" HREF="node221.html">
+<LINK REL="next" HREF="node224.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3550"
+  HREF="node224.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3546"
+  HREF="node221.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3540"
+  HREF="node222.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3548"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3551"
+  HREF="node224.html">Install FreeRADIUS Server (Version</A>
+<B> Up:</B> <A NAME="tex2html3547"
+  HREF="node221.html">Steps to follow in</A>
+<B> Previous:</B> <A NAME="tex2html3541"
+  HREF="node222.html">Installation of the Radiusclient</A>
+ &nbsp; <B>  <A NAME="tex2html3549"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H3><A NAME="SECTION001182200000000000000">
+Configuration of the Radiusclient library</A>
+</H3>
+
+<P>
+By default all the configuration files of the radiusclient library will
+	be in /usr/local/etc/radiusclient-ng directory.
+
+<P>
+File "radiusclient.conf"
+		Open the file and find lines containing the following:
+
+<P>
+authserver      localhost
+
+<P>
+This is the hostname or IP address of the RADIUS server used for
+	authentication. You will have to change this unless the server is
+	running on the same host as your Asterisk PBX.
+
+<P>
+acctserver      localhost
+
+<P>
+This is the hostname or IP address of the RADIUS server used for
+	accounting. You will have to change this unless the server is running
+	on the same host as your Asterisk PBX.
+
+<P>
+<SPAN  CLASS="textbf">File "servers"</SPAN>
+
+<P>
+RADIUS protocol uses simple access control mechanism based on shared
+	secrets that allows RADIUS servers to limit access from RADIUS clients.
+
+<P>
+A RADIUS server is configured with a secret string and only RADIUS
+	clients that have the same secret will be accepted.
+
+<P>
+You need to configure a shared secret for each server you have
+	configured in radiusclient.conf file in the previous step. The shared
+	secrets are stored in /usr/local/etc/radiusclient-ng/servers file.
+
+<P>
+Each line contains hostname of a RADIUS server and shared secret
+	used in communication with that server. The two values are separated
+	by white spaces. Configure shared secrets for every RADIUS server you
+	are going to use.
+
+<P>
+<SPAN  CLASS="textbf">File "dictionary"</SPAN>
+
+<P>
+Asterisk uses some attributes that are not included in the
+	dictionary of radiusclient library, therefore it is necessary to add
+	them. A file called dictionary.digium (kept in the contrib dir)
+	was created to list all new attributes used by Asterisk.
+	Add to the end of the main dictionary file
+	/usr/local/etc/radiusclient-ng/dictionary the line:
+
+<P>
+$INCLUDE /path/to/dictionary.digium
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html3550"
+  HREF="node224.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3546"
+  HREF="node221.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3540"
+  HREF="node222.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3548"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3551"
+  HREF="node224.html">Install FreeRADIUS Server (Version</A>
+<B> Up:</B> <A NAME="tex2html3547"
+  HREF="node221.html">Steps to follow in</A>
+<B> Previous:</B> <A NAME="tex2html3541"
+  HREF="node222.html">Installation of the Radiusclient</A>
+ &nbsp; <B>  <A NAME="tex2html3549"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

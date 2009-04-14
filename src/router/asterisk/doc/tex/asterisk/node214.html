@@ -1,0 +1,217 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>ODBC using cdr_odbc</TITLE>
+<META NAME="description" CONTENT="ODBC using cdr_odbc">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node215.html">
+<LINK REL="previous" HREF="node213.html">
+<LINK REL="up" HREF="node213.html">
+<LINK REL="next" HREF="node215.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3434"
+  HREF="node215.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3430"
+  HREF="node213.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3424"
+  HREF="node213.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3432"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3435"
+  HREF="node215.html">TDS, using cdr_tds</A>
+<B> Up:</B> <A NAME="tex2html3431"
+  HREF="node213.html">MSSQL</A>
+<B> Previous:</B> <A NAME="tex2html3425"
+  HREF="node213.html">MSSQL</A>
+ &nbsp; <B>  <A NAME="tex2html3433"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION001141000000000000000">
+ODBC using cdr_odbc</A>
+</H2>
+	Compile, configure, and install the latest unixODBC package:
+</B></SMALL>
+<UL>
+<LI><PRE>
+	tar -zxvf unixODBC-2.2.9.tar.gz &amp;&amp;
+	cd unixODBC-2.2.9 &amp;&amp;
+	./configure --sysconfdir=/etc --prefix=/usr --disable-gui &amp;&amp;
+	make &amp;&amp;
+	make install
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+Compile, configure, and install the latest FreeTDS package:
+</B></SMALL>
+<UL>
+<LI><PRE>
+	tar -zxvf freetds-0.62.4.tar.gz &amp;&amp;
+	cd freetds-0.62.4 &amp;&amp;
+	./configure --prefix=/usr --with-tdsver=7.0 \
+                 --with-unixodbc=/usr/lib &amp;&amp;
+	make &amp;&amp; make install
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+Compile, or recompile, asterisk so that it will now add support
+	for cdr_odbc.
+</B></SMALL>
+<UL>
+<LI><PRE>
+	make clean &amp;&amp; ./configure --with-odbc &amp;&amp;
+	make update &amp;&amp;
+	make &amp;&amp;
+	make install
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+Setup odbc configuration files.  These are working examples
+	from my system.  You will need to modify for your setup.
+	You are not required to store usernames or passwords here.
+</B></SMALL>
+<UL>
+<LI><PRE>
+	/etc/odbcinst.ini
+	   [FreeTDS]
+	   Description    = FreeTDS ODBC driver for MSSQL
+	   Driver         = /usr/lib/libtdsodbc.so
+	   Setup          = /usr/lib/libtdsS.so
+	   FileUsage      = 1
+
+	/etc/odbc.ini
+	   [MSSQL-asterisk]
+	   description         = Asterisk ODBC for MSSQL
+	   driver              = FreeTDS
+	   server              = 192.168.1.25
+	   port                = 1433
+	   database            = voipdb
+	   tds_version         = 7.0
+	   language            = us_english
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+Only install one database connector.  Do not confuse asterisk
+		by using both ODBC (cdr_odbc) and FreeTDS (cdr_tds).
+		This command will erase the contents of cdr_tds.conf
+</B></SMALL>
+<UL>
+<LI><PRE>
+		[ -f /etc/asterisk/cdr_tds.conf ] &gt; /etc/asterisk/cdr_tds.conf
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>		NOTE:  unixODBC requires the freeTDS package, but asterisk does
+		not call freeTDS directly.
+
+<P>
+Now set up cdr_odbc configuration files.  These are working samples
+		from my system.  You will need to modify for your setup. Define
+		your usernames and passwords here, secure file as well.
+</B></SMALL>
+<UL>
+<LI><PRE>
+		/etc/asterisk/cdr_odbc.conf
+		   [global]
+		   dsn=MSSQL-asterisk
+		   username=voipdbuser
+		   password=voipdbpass
+		   loguniqueid=yes
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>		And finally, create the 'cdr' table in your mssql database.
+</B></SMALL>
+<UL>
+<LI><PRE>
+		CREATE TABLE cdr (
+		        [calldate]      [datetime]              NOT NULL ,
+		        [clid]          [varchar] (80)          NOT NULL ,
+		        [src]           [varchar] (80)          NOT NULL ,
+		        [dst]           [varchar] (80)          NOT NULL ,
+		        [dcontext]      [varchar] (80)          NOT NULL ,
+		        [channel]       [varchar] (80)          NOT NULL ,
+		        [dstchannel]    [varchar] (80)          NOT NULL ,
+		        [lastapp]       [varchar] (80)          NOT NULL ,
+		        [lastdata]      [varchar] (80)          NOT NULL ,
+		        [duration]      [int]                   NOT NULL ,
+		        [billsec]       [int]                   NOT NULL ,
+		        [disposition]   [varchar] (45)          NOT NULL ,
+		        [amaflags]      [int]                   NOT NULL ,
+		        [accountcode]   [varchar] (20)          NOT NULL ,
+		        [uniqueid]      [varchar] (32)          NOT NULL ,
+		        [userfield]     [varchar] (255)         NOT NULL
+		)
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>		Start asterisk in verbose mode, you should see that asterisk
+		logs a connection to the database and will now record every
+		call to the database when it's complete.
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html3434"
+  HREF="node215.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3430"
+  HREF="node213.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3424"
+  HREF="node213.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3432"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3435"
+  HREF="node215.html">TDS, using cdr_tds</A>
+<B> Up:</B> <A NAME="tex2html3431"
+  HREF="node213.html">MSSQL</A>
+<B> Previous:</B> <A NAME="tex2html3425"
+  HREF="node213.html">MSSQL</A>
+ &nbsp; <B>  <A NAME="tex2html3433"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

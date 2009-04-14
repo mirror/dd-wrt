@@ -1,0 +1,128 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Sub address</TITLE>
+<META NAME="description" CONTENT="Sub address">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node249.html">
+<LINK REL="previous" HREF="node247.html">
+<LINK REL="up" HREF="node243.html">
+<LINK REL="next" HREF="node249.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3878"
+  HREF="node249.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3874"
+  HREF="node243.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3868"
+  HREF="node247.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3876"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3879"
+  HREF="node249.html">extensions.conf</A>
+<B> Up:</B> <A NAME="tex2html3875"
+  HREF="node243.html">SMS</A>
+<B> Previous:</B> <A NAME="tex2html3869"
+  HREF="node247.html">Terminology</A>
+ &nbsp; <B>  <A NAME="tex2html3877"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION001350000000000000000">
+Sub address</A>
+</H1>
+
+<P>
+When sending a message to a landline, you simply send to the landline
+   number. In the UK, all of the mobile operators (bar one) understand
+   sending messages to landlines and pass the messages to the BTText
+   system for delivery to the landline.
+
+<P>
+The specification for landline SMS allows for the possibility of more
+   than one device on a single landline. These can be configured with Sub
+   addresses which are a single digit. To send a message to a specific
+   device the message is sent to the landline number with an extra digit
+   appended to the end. The telco can define a default sub address (9 in
+   the UK) which is used when the extra digit is not appended to the end.
+   When the call comes in, part of the calling line ID is the sub
+   address, so that only one device on the line answers the call and
+   receives the message.
+
+<P>
+Sub addresses also work for outgoing messages. Part of the number
+   called by the device to send a message is its sub address. Sending
+   from the default sub address (9 in the UK) means the message is
+   delivered with the sender being the normal landline number. Sending
+   from any other sub address makes the sender the landline number with
+   an extra digit on the end.
+
+<P>
+Using Asterisk, you can make use of the sub addresses for sending and
+   receiving messages. Using DDI (DID, i.e. multiple numbers on the line
+   on ISDN) you can also make use of many different numbers for SMS.
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html3878"
+  HREF="node249.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3874"
+  HREF="node243.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3868"
+  HREF="node247.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3876"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3879"
+  HREF="node249.html">extensions.conf</A>
+<B> Up:</B> <A NAME="tex2html3875"
+  HREF="node243.html">SMS</A>
+<B> Previous:</B> <A NAME="tex2html3869"
+  HREF="node247.html">Terminology</A>
+ &nbsp; <B>  <A NAME="tex2html3877"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

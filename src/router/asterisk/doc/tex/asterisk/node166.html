@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Reporting problems</TITLE>
+<META NAME="description" CONTENT="Reporting problems">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node165.html">
+<LINK REL="up" HREF="node160.html">
+<LINK REL="next" HREF="node167.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html2808"
+  HREF="node167.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2804"
+  HREF="node160.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2800"
+  HREF="node165.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2806"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2809"
+  HREF="node167.html">mISDN</A>
+<B> Up:</B> <A NAME="tex2html2805"
+  HREF="node160.html">IAX2 Jitterbuffer</A>
+<B> Previous:</B> <A NAME="tex2html2801"
+  HREF="node165.html">Testing and monitoring</A>
+ &nbsp; <B>  <A NAME="tex2html2807"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H3><A NAME="SECTION00714600000000000000">
+Reporting problems</A>
+</H3>
+
+<P>
+There's a couple of things that can make calls sound bad using the jitterbuffer:
+
+<P>
+
+<OL>
+<LI>The JB and PLC can make your calls sound better, but they can't fix everything.
+If you lost 10 frames in a row, it can't possibly fix that.  It really can't help much
+more than one or two consecutive frames.
+
+<P>
+</LI>
+<LI>Bad timestamps:  If whatever is generating timestamps to be sent to you generates
+nonsensical timestamps, it can confuse the jitterbuffer.  In particular, discontinuities
+in timestamps will really upset it:  Things like timestamps sequences which go 0, 20, 40,
+60, 80,  34000, 34020, 34040, 34060...   It's going to think you've got about 34 seconds
+of jitter in this case, etc..
+The right solution to this is to find out what's causing the sender to send us such nonsense,
+and fix that.  But we should also figure out how to make the receiver more robust in
+cases like this.
+
+<P>
+chan_iax2 will actually help fix this a bit if it's more than 3 seconds or so, but at
+some point we should try to think of a better way to detect this kind of thing and
+resynchronize.
+
+<P>
+Different clock rates are handled very gracefully though; it will actually deal with a
+sender sending 20% faster or slower than you expect just fine.
+
+<P>
+</LI>
+<LI>Really strange network delays:  If your network "pauses" for like 5 seconds, and then
+when it restarts, you are sent some packets that are 5 seconds old, we are going to see
+that as a lot of jitter.   We already throw away up to the worst 20 frames like this,
+though, and the "maxjitterbuffer" parameter should put a limit on what we do in this case.
+
+<P>
+</LI>
+</OL>
+  
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html2808"
+  HREF="node167.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2804"
+  HREF="node160.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2800"
+  HREF="node165.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2806"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2809"
+  HREF="node167.html">mISDN</A>
+<B> Up:</B> <A NAME="tex2html2805"
+  HREF="node160.html">IAX2 Jitterbuffer</A>
+<B> Previous:</B> <A NAME="tex2html2801"
+  HREF="node165.html">Testing and monitoring</A>
+ &nbsp; <B>  <A NAME="tex2html2807"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

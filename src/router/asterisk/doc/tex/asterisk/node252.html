@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Delivery reports</TITLE>
+<META NAME="description" CONTENT="Delivery reports">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node251.html">
+<LINK REL="up" HREF="node243.html">
+<LINK REL="next" HREF="node253.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3924"
+  HREF="node253.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3920"
+  HREF="node243.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3916"
+  HREF="node251.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3922"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3925"
+  HREF="node253.html">Queues</A>
+<B> Up:</B> <A NAME="tex2html3921"
+  HREF="node243.html">SMS</A>
+<B> Previous:</B> <A NAME="tex2html3917"
+  HREF="node251.html">File formats</A>
+ &nbsp; <B>  <A NAME="tex2html3923"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION001390000000000000000">
+Delivery reports</A>
+</H1>
+
+<P>
+The SMS specification allows for delivery reports. These are requested
+   using the srr bit. However, as these do not work in the UK yet they
+   are not fully implemented in this application. If anyone has a telco
+   that does implement these, please let me know. BT in the UK have a non
+   standard way to do this by starting the message with *0#, and so this
+   application may have a UK specific bodge in the near future to handle
+   these.
+
+<P>
+The main changes that are proposed for delivery report handling are :
+
+<P>
+
+<UL>
+<LI>New queues for sent messages, one file for each destination
+       address and message reference.
+
+<P>
+</LI>
+<LI>New field in message format, user reference, allowing applications
+       to tie up their original message with a report.
+
+<P>
+</LI>
+<LI>Handling of the delivery confirmation/rejection and connecting to
+       the outgoing message - the received message file would then have
+       fields for the original outgoing message and user reference
+       allowing applications to handle confirmations better.
+</LI>
+</UL>
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

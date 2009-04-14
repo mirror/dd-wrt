@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Some more Examples</TITLE>
+<META NAME="description" CONTENT="Some more Examples">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node196.html">
+<LINK REL="up" HREF="node193.html">
+<LINK REL="next" HREF="node198.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3201"
+  HREF="node198.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3197"
+  HREF="node193.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3193"
+  HREF="node196.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3199"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3202"
+  HREF="node198.html">AMI: Asterisk Manager Interface</A>
+<B> Up:</B> <A NAME="tex2html3198"
+  HREF="node193.html">The ENUMLOOKUP dialplan function</A>
+<B> Previous:</B> <A NAME="tex2html3194"
+  HREF="node196.html">Usage notes and subtle</A>
+ &nbsp; <B>  <A NAME="tex2html3200"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00914000000000000000">
+Some more Examples</A>
+</H2>
+
+<P>
+All examples below except where noted use "e164.arpa" as the
+referenced domain, which is the default domain name for ENUMLOOKUP.
+All numbers are assumed to not have a leading "+" as dialed by the
+inbound channel, so that character is added where necessary during
+ENUMLOOKUP function calls.
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+; example 1
+;
+; Assumes North American international dialing (011) prefix.
+; Look up the first SIP result and send the call there, otherwise
+;  send the call out a PRI.  This is the most simple possible
+;  ENUM example, but only uses the first SIP reply in the list of
+;  NAPTR(s).
+;
+exten =&gt; _011.,1,Set(enumresult=${ENUMLOOKUP(+${EXTEN:3})})
+exten =&gt; _011.,n,Dial(SIP/${enumresult})
+exten =&gt; _011.,n,Dial(DAHDI/g1/${EXTEN})
+;
+; end example 1
+
+; example 2
+;
+; Assumes North American international dialing (011) prefix.
+; Check to see if there are multiple SIP NAPTRs returned by
+;  the lookup, and dial each in order.  If none work (or none
+;  exist) then send the call out a PRI, group 1.
+;
+exten =&gt; _011.,1,Set(sipcount=${ENUMLOOKUP(${EXTEN:3},sip,c)}|counter=0)
+exten =&gt; _011.,n,While($["${counter}"&lt;"${sipcount}"])
+exten =&gt; _011.,n,Set(counter=$[${counter}+1])
+exten =&gt; _011.,n,Dial(SIP/${ENUMLOOKUP(+${EXTEN:3},sip,,${counter})})
+exten =&gt; _011.,n,EndWhile
+exten =&gt; _011.,n,Dial(DAHDI/g1/${EXTEN})
+;
+; end example 2
+
+; example 3
+;
+; This example expects an ${EXTEN} that is an e.164 number (like
+;  14102241145 or 437203001721)
+; Search through e164.arpa and then also search through e164.org
+;  to see if there are any valid SIP or IAX termination capabilities.
+;  If none, send call out via DAHDI channel 1.
+;
+; Start first with e164.arpa zone...
+;
+exten =&gt; _X.,1,Set(sipcount=${ENUMLOOKUP(+${EXTEN},sip,c)}|counter=0)
+exten =&gt; _X.,2,GotoIf($["${counter}"&lt;"${sipcount}"]?3:6)
+exten =&gt; _X.,3,Set(counter=$[${counter}+1])
+exten =&gt; _X.,4,Dial(SIP/${ENUMLOOKUP(+${EXTEN},sip,,${counter})})
+exten =&gt; _X.,5,GotoIf($["${counter}"&lt;"${sipcount}"]?3:6)
+;
+exten =&gt; _X.,6,Set(iaxcount=${ENUMLOOKUP(+${EXTEN},iax2,c)}|counter=0)
+exten =&gt; _X.,7,GotoIf($["${counter}"&lt;"${iaxcount}"]?8:11)
+exten =&gt; _X.,8,Set(counter=$[${counter}+1])
+exten =&gt; _X.,9,Dial(IAX2/${ENUMLOOKUP(+${EXTEN},iax2,,${counter})})
+exten =&gt; _X.,10,GotoIf($["${counter}"&lt;"${iaxcount}"]?8:11)
+;
+exten =&gt; _X.,11,NoOp("No valid entries in e164.arpa for ${EXTEN} - checking in e164.org")
+;
+; ...then also try e164.org, and look for SIP and IAX NAPTRs...
+;
+exten =&gt; _X.,12,Set(sipcount=${ENUMLOOKUP(+${EXTEN},sip,c,,e164.org)}|counter=0)
+exten =&gt; _X.,13,GotoIf($["${counter}"&lt;"${sipcount}"]?14:17)
+exten =&gt; _X.,14,Set(counter=$[${counter}+1])
+exten =&gt; _X.,15,Dial(SIP/${ENUMLOOKUP(+${EXTEN},sip,,${counter},e164.org)})
+exten =&gt; _X.,16,GotoIf($["${counter}"&lt;"${sipcount}"]?14:17)
+;
+exten =&gt; _X.,17,Set(iaxcount=${ENUMLOOKUP(+${EXTEN},iax2,c,,e164.org)}|counter=0)
+exten =&gt; _X.,18,GotoIf($["${counter}"&lt;"${iaxcount}"]?19:22)
+exten =&gt; _X.,19,Set(counter=$[${counter}+1])
+exten =&gt; _X.,20,Dial(IAX2/${ENUMLOOKUP(+${EXTEN},iax2,,${counter},e164.org)})
+exten =&gt; _X.,21,GotoIf($["${counter}"&lt;"${iaxcount}"]?19:22)
+;
+; ...then send out PRI.
+;
+exten =&gt; _X.,22,NoOp("No valid entries in e164.org for ${EXTEN} - sending out via DAHDI")
+exten =&gt; _X.,23,Dial(DAHDI/g1/${EXTEN})
+;
+; end example 3
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

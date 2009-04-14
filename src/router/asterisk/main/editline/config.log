@@ -1,0 +1,248 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:534: checking for gcc
+configure:647: checking whether the C compiler (gcc  ) works
+configure:663: gcc -o conftest    conftest.c  1>&5
+configure:689: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:694: checking whether we are using GNU C
+configure:703: gcc -E conftest.c
+configure:722: checking whether gcc accepts -g
+configure:764: checking how to run the C preprocessor
+configure:785: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:870: checking host system type
+configure:949: checking for a BSD compatible install
+configure:1004: checking for ranlib
+configure:1034: checking for ar
+configure:1068: checking for tgetent in -ltermcap
+configure:1087: gcc -o conftest -Wall -pipe -g3   conftest.c -ltermcap   1>&5
+/usr/lib64/gcc/x86_64-suse-linux/4.1.2/../../../../x86_64-suse-linux/bin/ld: cannot find -ltermcap
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1076 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char tgetent();
+
+int main() {
+tgetent()
+; return 0; }
+configure:1114: checking for tgetent in -ltinfo
+configure:1133: gcc -o conftest -Wall -pipe -g3   conftest.c -ltinfo   1>&5
+/usr/lib64/gcc/x86_64-suse-linux/4.1.2/../../../../x86_64-suse-linux/bin/ld: cannot find -ltinfo
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1122 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char tgetent();
+
+int main() {
+tgetent()
+; return 0; }
+configure:1160: checking for tgetent in -lcurses
+configure:1179: gcc -o conftest -Wall -pipe -g3   conftest.c -lcurses   1>&5
+/usr/lib64/gcc/x86_64-suse-linux/4.1.2/../../../../x86_64-suse-linux/bin/ld: cannot find -lcurses
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1168 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char tgetent();
+
+int main() {
+tgetent()
+; return 0; }
+configure:1206: checking for tgetent in -lncurses
+configure:1225: gcc -o conftest -Wall -pipe -g3   conftest.c -lncurses   1>&5
+configure:1265: checking for termcap.h
+configure:1275: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1432: checking for sys/cdefs.h
+configure:1442: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1432: checking for vis.h
+configure:1442: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1438:17: error: vis.h: No such file or directory
+configure: failed program was:
+#line 1437 "configure"
+#include "confdefs.h"
+#include <vis.h>
+configure:1472: checking for issetugid
+configure:1500: gcc -o conftest -Wall -pipe -g3   conftest.c -lncurses  1>&5
+/tmp/ccU0ZaCY.o: In function `main':
+/home/seg/DEV/xscale/src/router/asterisk/main/editline/configure:1494: undefined reference to `issetugid'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1477 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char issetugid(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char issetugid();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_issetugid) || defined (__stub___issetugid)
+choke me
+#else
+issetugid();
+#endif
+
+; return 0; }
+configure:1527: checking for strlcat
+configure:1555: gcc -o conftest -Wall -pipe -g3   conftest.c -lncurses  1>&5
+/tmp/ccjPcBs3.o: In function `main':
+/home/seg/DEV/xscale/src/router/asterisk/main/editline/configure:1549: undefined reference to `strlcat'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1532 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char strlcat(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char strlcat();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_strlcat) || defined (__stub___strlcat)
+choke me
+#else
+strlcat();
+#endif
+
+; return 0; }
+configure:1583: checking for strlcpy
+configure:1611: gcc -o conftest -Wall -pipe -g3   conftest.c -lncurses  1>&5
+/tmp/ccgbWYi8.o: In function `main':
+/home/seg/DEV/xscale/src/router/asterisk/main/editline/configure:1605: undefined reference to `strlcpy'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1588 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char strlcpy(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char strlcpy();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_strlcpy) || defined (__stub___strlcpy)
+choke me
+#else
+strlcpy();
+#endif
+
+; return 0; }
+configure:1639: checking for fgetln
+configure:1667: gcc -o conftest -Wall -pipe -g3   conftest.c -lncurses  1>&5
+/tmp/ccJ9Cq6c.o: In function `main':
+/home/seg/DEV/xscale/src/router/asterisk/main/editline/configure:1661: undefined reference to `fgetln'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1644 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char fgetln(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char fgetln();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_fgetln) || defined (__stub___fgetln)
+choke me
+#else
+fgetln();
+#endif
+
+; return 0; }
+configure:1695: checking for strvis
+configure:1723: gcc -o conftest -Wall -pipe -g3   conftest.c -lncurses  1>&5
+/tmp/ccsQ8a8h.o: In function `main':
+/home/seg/DEV/xscale/src/router/asterisk/main/editline/configure:1717: undefined reference to `strvis'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1700 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char strvis(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char strvis();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_strvis) || defined (__stub___strvis)
+choke me
+#else
+strvis();
+#endif
+
+; return 0; }
+configure:1751: checking for strunvis
+configure:1779: gcc -o conftest -Wall -pipe -g3   conftest.c -lncurses  1>&5
+/tmp/ccEix78a.o: In function `main':
+/home/seg/DEV/xscale/src/router/asterisk/main/editline/configure:1773: undefined reference to `strunvis'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1756 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char strunvis(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char strunvis();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_strunvis) || defined (__stub___strunvis)
+choke me
+#else
+strunvis();
+#endif
+
+; return 0; }
+gcc: '-D__RCSID(x)=': No such file or directory
+gcc: '-D__RCSID(x)=': No such file or directory
+gcc: '-D__COPYRIGHT(x)=': No such file or directory
+gcc: '-D__RCSID(x)=': No such file or directory
+gcc: '-D__COPYRIGHT(x)=': No such file or directory
+gcc: '-D__RENAME(x)=': No such file or directory

@@ -1,0 +1,119 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Introduction</TITLE>
+<META NAME="description" CONTENT="Introduction">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node37.html">
+<LINK REL="previous" HREF="node35.html">
+<LINK REL="up" HREF="node35.html">
+<LINK REL="next" HREF="node37.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html1074"
+  HREF="node37.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1070"
+  HREF="node35.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1064"
+  HREF="node35.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1072"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1075"
+  HREF="node37.html">IP TOS values</A>
+<B> Up:</B> <A NAME="tex2html1071"
+  HREF="node35.html">IP Quality of Service</A>
+<B> Previous:</B> <A NAME="tex2html1065"
+  HREF="node35.html">IP Quality of Service</A>
+ &nbsp; <B>  <A NAME="tex2html1073"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H3><A NAME="SECTION00315100000000000000">
+Introduction</A>
+</H3>
+
+<P>
+Asterisk support different QoS settings on application level on various protocol
+on any of signaling and media. Type of Service (TOS) byte can be set on
+outgoing IP packets for various protocols. The TOS byte is used by the network
+to provide some level of Quality of Service (QoS) even if the network is
+congested with other traffic.
+
+<P>
+Also asterisk running on Linux can set 802.1p CoS marks in VLAN packets for all
+used VoIP protocols. It is useful when you are working in switched environment.
+In fact asterisk only set priority for Linux socket. For mapping this priority
+and VLAN CoS mark you need to use this command:
+
+<P>
+<PRE>
+vconfig set_egress_map [vlan-device] [skb-priority] [vlan-qos]
+</PRE>
+
+<P>
+In table behind shown all voice channels and other modules of asterisk, that
+support QoS settings for network traffic and type of traffic which can have
+QoS settings.
+
+<P>
+<PRE>
+ Channel Drivers
++==============+===========+=====+=====+=====+
+|              | Signaling |Audio|Video| Text|
++==============+===========+=====+=====+=====+
+|chan_sip      |     +     |  +  |  +  |  +  |
+|--------------+-----------+-----+-----+-----+
+|chan_skinny   |     +     |  +  |  +  |     |
+|--------------+-----------+-----+-----+-----+
+|chan_mgcp     |     +     |  +  |     |     |
+|--------------+-----------+-----+-----+-----+
+|chan_unistim  |     +     |  +  |     |     |
+|--------------+-----------+-----+-----+-----+
+|chan_h323     |           |  +  |     |     |
+|--------------+-----------+-----+-----+-----+
+|chan_iax2     |            +                |
++==============+=============================+
+ Other
++==============+=============================+
+| dundi.conf   |     + (tos setting)         |
+|--------------+-----------------------------+
+| iaxprov.conf |     + (tos setting)         |
++==============+=============================+
+</PRE>
+
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

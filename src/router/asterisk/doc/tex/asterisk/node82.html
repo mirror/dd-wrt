@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Functions</TITLE>
+<META NAME="description" CONTENT="Functions">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node83.html">
+<LINK REL="previous" HREF="node81.html">
+<LINK REL="up" HREF="node78.html">
+<LINK REL="next" HREF="node83.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html1688"
+  HREF="node83.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1684"
+  HREF="node78.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1678"
+  HREF="node81.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1686"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1689"
+  HREF="node83.html">Examples</A>
+<B> Up:</B> <A NAME="tex2html1685"
+  HREF="node78.html">Expressions</A>
+<B> Previous:</B> <A NAME="tex2html1679"
+  HREF="node81.html">Floating Point Numbers</A>
+ &nbsp; <B>  <A NAME="tex2html1687"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00464000000000000000">
+Functions</A>
+</H2>
+
+<P>
+In 1.6 and above, we upgraded the $[] expressions to handle floating point numbers.
+Because of this, folks counting on integer behavior would be disrupted. To make
+the same results possible, some rounding and integer truncation functions have been
+added to the core of the Expr2 parser. Indeed, dialplan functions can be called from
+$[..] expressions without the ${...} operators. The only trouble might be in the fact that
+the arguments to these functions must be specified with a comma. If you try to call
+the MATH function, for example, and try to say 3 + MATH(7*8), the expression parser will
+evaluate 7*8 for you into 56, and the MATH function will most likely complain that its
+input doesn't make any sense.
+
+<P>
+We also provide access to most of the floating point functions in the C library. (but not all of them).
+
+<P>
+While we don't expect someone to want to do Fourier analysis in the dialplan, we
+don't want to preclude it, either.
+
+<P>
+Here is a list of the 'builtin' functions in Expr2. All other dialplan functions
+are available by simply calling them (read-only). In other words, you don't need to
+surround function calls in $[...] expressions with ${...}. Don't jump to conclusions,
+though! - you still need to wrap variable names in curly braces!
+
+<P>
+
+<OL>
+<LI>COS(x) x is in radians. Results vary from -1 to 1.
+</LI>
+<LI>SIN(x) x is in radians. Results vary from -1 to 1.
+</LI>
+<LI>TAN(x) x is in radians.
+</LI>
+<LI>ACOS(x) x should be a value between -1 and 1.
+</LI>
+<LI>ASIN(x) x should be a value between -1 and 1.
+</LI>
+<LI>ATAN(x) returns the arc tangent in radians; between -PI/2 and PI/2.
+</LI>
+<LI>ATAN2(x,y) returns a result resembling y/x, except that the signs of both args are used to determine the quadrant of the result. Its result is in radians, between -PI and PI.
+</LI>
+<LI>POW(x,y) returns the value of x raised to the power of y.
+</LI>
+<LI>SQRT(x) returns the square root of x.
+</LI>
+<LI>FLOOR(x) rounds x down to the nearest integer.
+</LI>
+<LI>CEIL(x) rounds x up to the nearest integer.
+</LI>
+<LI>ROUND(x) rounds x to the nearest integer, but round halfway cases away from zero.
+</LI>
+<LI>RINT(x) rounds x to the nearest integer, rounding halfway cases to the nearest even integer.
+</LI>
+<LI>TRUNC(x) rounds x to the nearest integer not larger in absolute value.
+</LI>
+<LI>REMAINDER(x,y) computes the remainder of dividing x by y. The return value is x - n*y, where n is the value x/y, rounded to the nearest integer. If this quotient is 1/2, it is rounded to the nearest even number.
+</LI>
+<LI>EXP(x) returns e to the x power.
+</LI>
+<LI>EXP2(x) returns 2 to the x power.
+</LI>
+<LI>LOG(x) returns the natural logarithm of x.
+</LI>
+<LI>LOG2(x) returns the base 2 log of x.
+</LI>
+<LI>LOG10(x) returns the base 10 log of x.
+</LI>
+</OL>
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html1688"
+  HREF="node83.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1684"
+  HREF="node78.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1678"
+  HREF="node81.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1686"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1689"
+  HREF="node83.html">Examples</A>
+<B> Up:</B> <A NAME="tex2html1685"
+  HREF="node78.html">Expressions</A>
+<B> Previous:</B> <A NAME="tex2html1679"
+  HREF="node81.html">Floating Point Numbers</A>
+ &nbsp; <B>  <A NAME="tex2html1687"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Asterisk standard channel variables</TITLE>
+<META NAME="description" CONTENT="Asterisk standard channel variables">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node78.html">
+<LINK REL="up" HREF="node71.html">
+<LINK REL="next" HREF="node92.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html1792"
+  HREF="node92.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html1788"
+  HREF="node71.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html1784"
+  HREF="node90.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html1790"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html1793"
+  HREF="node92.html">Application return values</A>
+<B> Up:</B> <A NAME="tex2html1789"
+  HREF="node71.html">Channel Variables</A>
+<B> Previous:</B> <A NAME="tex2html1785"
+  HREF="node90.html">Debugging Hints</A>
+ &nbsp; <B>  <A NAME="tex2html1791"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION00470000000000000000">
+Asterisk standard channel variables</A>
+</H1>
+
+<P>
+There are a number of variables that are defined or read
+by Asterisk. Here is a list of them. More information is
+available in each application's help text. All these variables
+are in UPPER CASE only.
+
+<P>
+Variables marked with a * are builtin functions and can't be set,
+only read in the dialplan.  Writes to such variables are silently
+ignored.
+
+<P>
+<PRE>
+${CDR(accountcode)}    * Account code (if specified)
+${BLINDTRANSFER}         The name of the channel on the other side of a blind transfer
+${BRIDGEPEER}            Bridged peer
+${BRIDGEPVTCALLID}       Bridged peer PVT call ID (SIP Call ID if a SIP call)
+${CALLERID(ani)}       * Caller ANI (PRI channels)
+${CALLERID(ani2)}      * ANI2 (Info digits) also called Originating line information or OLI
+${CALLERID(all)}       * Caller ID
+${CALLERID(dnid)}      * Dialed Number Identifier
+${CALLERID(name)}      * Caller ID Name only
+${CALLERID(num)}       * Caller ID Number only
+${CALLERID(rdnis)}     * Redirected Dial Number ID Service
+${CALLINGANI2}         * Caller ANI2 (PRI channels)
+${CALLINGPRES}         * Caller ID presentation for incoming calls (PRI channels)
+${CALLINGTNS}          * Transit Network Selector (PRI channels)
+${CALLINGTON}          * Caller Type of Number (PRI channels)
+${CHANNEL}             * Current channel name
+${CONTEXT}             * Current context
+${DATETIME}            * Current date time in the format: DDMMYYYY-HH:MM:SS
+                         (Deprecated; use ${STRFTIME(${EPOCH},,%d%m%Y-%H:%M:%S)})
+${DB_RESULT}             Result value of DB_EXISTS() dial plan function
+${EPOCH}               * Current unix style epoch
+${EXTEN}               * Current extension
+${ENV(VAR)}              Environmental variable VAR
+${GOTO_ON_BLINDXFR}      Transfer to the specified context/extension/priority
+                         after a blind transfer (use ^ characters in place of
+                         | to separate context/extension/priority when setting
+                         this variable from the dialplan)
+${HANGUPCAUSE}         * Asterisk cause of hangup (inbound/outbound)
+${HINT}                * Channel hints for this extension
+${HINTNAME}            * Suggested Caller*ID name for this extension
+${INVALID_EXTEN}         The invalid called extension (used in the "i" extension)
+${LANGUAGE}            * Current language (Deprecated; use ${LANGUAGE()})
+${LEN(VAR)}            * String length of VAR (integer)
+${PRIORITY}            * Current priority in the dialplan
+${PRIREDIRECTREASON}     Reason for redirect on PRI, if a call was directed
+${TIMESTAMP}           * Current date time in the format: YYYYMMDD-HHMMSS
+                         (Deprecated; use ${STRFTIME(${EPOCH},,%Y%m%d-%H%M%S)})
+${TRANSFER_CONTEXT}      Context for transferred calls
+${FORWARD_CONTEXT}       Context for forwarded calls
+${UNIQUEID}            * Current call unique identifier
+${SYSTEMNAME}          * value of the systemname option of asterisk.conf
+</PRE>
+
+<P>
+<BR><HR>
+<!--Table of Child-Links-->
+<A NAME="CHILD_LINKS"><STRONG>Subsections</STRONG></A>
+
+<UL CLASS="ChildLinks">
+<LI><A NAME="tex2html1794"
+  HREF="node92.html">Application return values</A>
+<LI><A NAME="tex2html1795"
+  HREF="node93.html">Various application variables</A>
+<LI><A NAME="tex2html1796"
+  HREF="node94.html">The MeetMe Conference Bridge</A>
+<LI><A NAME="tex2html1797"
+  HREF="node95.html">The VoiceMail() application</A>
+<LI><A NAME="tex2html1798"
+  HREF="node96.html">The VMAuthenticate() application</A>
+<LI><A NAME="tex2html1799"
+  HREF="node97.html">DUNDiLookup()</A>
+<LI><A NAME="tex2html1800"
+  HREF="node98.html">chan_dahdi</A>
+<LI><A NAME="tex2html1801"
+  HREF="node99.html">chan_sip</A>
+<LI><A NAME="tex2html1802"
+  HREF="node100.html">chan_agent</A>
+<LI><A NAME="tex2html1803"
+  HREF="node101.html">The Dial() application</A>
+<LI><A NAME="tex2html1804"
+  HREF="node102.html">The chanisavail() application</A>
+<LI><A NAME="tex2html1805"
+  HREF="node103.html">Dialplan Macros</A>
+<LI><A NAME="tex2html1806"
+  HREF="node104.html">The ChanSpy() application</A>
+<LI><A NAME="tex2html1807"
+  HREF="node105.html">OSP</A>
+</UL>
+<!--End of Table of Child-Links-->
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

@@ -1,0 +1,278 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Differences with the original version of AEL</TITLE>
+<META NAME="description" CONTENT="Differences with the original version of AEL">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node138.html">
+<LINK REL="previous" HREF="node136.html">
+<LINK REL="up" HREF="node106.html">
+<LINK REL="next" HREF="node138.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html2402"
+  HREF="node138.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2398"
+  HREF="node106.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2392"
+  HREF="node136.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2400"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2403"
+  HREF="node138.html">Hints and Bugs</A>
+<B> Up:</B> <A NAME="tex2html2399"
+  HREF="node106.html">AEL: Asterisk Extension Language</A>
+<B> Previous:</B> <A NAME="tex2html2393"
+  HREF="node136.html">Semantic Checks</A>
+ &nbsp; <B>  <A NAME="tex2html2401"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H1><A NAME="SECTION005120000000000000000">
+Differences with the original version of AEL</A>
+</H1>
+
+<P>
+
+<OL>
+<LI>The $[...] expressions have been enhanced to include the ==, <SPAN CLASS="MATH"><IMG
+ WIDTH="10" HEIGHT="37" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$\vert$"></SPAN><SPAN CLASS="MATH"><IMG
+ WIDTH="10" HEIGHT="37" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$\vert$"></SPAN>,
+      and &amp;&amp; operators. These operators are exactly equivalent to the
+      =, <SPAN CLASS="MATH"><IMG
+ WIDTH="10" HEIGHT="37" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$\vert$"></SPAN>, and &amp; operators, respectively. Why? So the C, Java, C++
+      hackers feel at home here.
+</LI>
+<LI>It is more free-form. The newline character means very little,
+      and is pulled out of the white-space only for line numbers in
+      error messages.
+</LI>
+<LI>It generates more error messages - by this I mean that any
+      difference between the input and the grammar are reported, by
+      file, line number, and column.
+</LI>
+<LI>It checks the contents of $[ ] expressions (or what will end up
+      being $[ ] expressions!) for syntax errors. It also does
+      matching paren/bracket counts.
+</LI>
+<LI>It runs several semantic checks after the parsing is over, but
+      before the compiling begins, see the list above.
+</LI>
+<LI>It handles #include "filepath" directives. - ALMOST
+      anywhere, in fact. You could easily include a file in a context,
+      in an extension, or at the root level. Files can be included in
+      files that are included in files, down to 50 levels of hierarchy...
+</LI>
+<LI>Local Goto's inside Switch statements automatically have the
+      extension of the location of the switch statement appended to them.
+</LI>
+<LI>A pretty printer function is available within pbx_ael.so.
+</LI>
+<LI>In the utils directory, two standalone programs are supplied for
+      debugging AEL files. One is called "aelparse", and it reads in
+      the /etc/asterisk/extensions.ael file, and shows the results of
+      syntax and semantic checking on stdout, and also shows the
+      results of compilation to stdout. The other is "aelparse1",
+      which uses the original ael compiler to do the same work,
+      reading in "/etc/asterisk/extensions.ael", using the original
+      'pbx_ael.so' instead.
+</LI>
+<LI>AEL supports the "jump" statement, and the "pattern" statement
+      in switch constructs. Hopefully these will be documented in the
+      AEL README.
+</LI>
+<LI>Added the "return" keyword, which will jump to the end of an
+      extension/Macro.
+</LI>
+<LI>Added the ifTime (<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN>time range<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN><SPAN CLASS="MATH"><IMG
+ WIDTH="10" HEIGHT="37" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$\vert$"></SPAN><SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN>days of week<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN><SPAN CLASS="MATH"><IMG
+ WIDTH="10" HEIGHT="37" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$\vert$"></SPAN><SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN>days of
+      month<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN><SPAN CLASS="MATH"><IMG
+ WIDTH="10" HEIGHT="37" ALIGN="MIDDLE" BORDER="0"
+ SRC="img4.png"
+ ALT="$\vert$"></SPAN><SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN>months<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN> )  [else ] construct, which executes much
+      like an if () statement, but the decision is based on the
+      current time, and the time spec provided in the ifTime. See the
+      example above. (Note: all the other time-dependent Applications
+      can be used via ifTime)
+</LI>
+<LI>Added the optional time spec to the contexts in the includes
+      construct. See examples above.
+</LI>
+<LI>You don't have to wrap a single "true" statement in curly
+      braces, as in the original AEL. An "else" is attached to the
+      closest if. As usual, be careful about nested if statements!
+      When in doubt, use curlies!
+</LI>
+<LI>Added the syntax [regexten] [hint(channel)] to precede an
+      extension declaration. See examples above, under
+      "Extension". The regexten keyword will cause the priorities in
+      the extension to begin with 2 instead of 1. The hint keyword
+      will cause its arguments to be inserted in the extension under
+      the hint priority. They are both optional, of course, but the
+      order is fixed at the moment- the regexten must come before the
+      hint, if they are both present.
+</LI>
+<LI>Empty case/default/pattern statements will "fall thru" as
+      expected. (0.6)
+</LI>
+<LI>A trailing label in an extension, will automatically have a
+      NoOp() added, to make sure the label exists in the extension on
+      Asterisk. (0.6)
+</LI>
+<LI>(0.9) the semicolon is no longer required after a closing brace!
+      (i.e. "];" ===<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN> "}". You can have them there if you like, but
+      they are not necessary. Someday they may be rejected as a syntax
+      error, maybe.
+</LI>
+<LI>(0.9) the // comments are not recognized and removed in the
+      spots where expressions are gathered, nor in application call
+      arguments. You may have to move a comment if you get errors in
+      existing files.
+</LI>
+<LI>(0.10) the random statement has been added. Syntax: random (
+      <SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN>expr<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN> ) <SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN>lucky-statement<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN> [ else <SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN>unlucky-statement<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN> ]. The
+      probability of the lucky-statement getting executed is <SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN>expr<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN>,
+      which should evaluate to an integer between 0 and 100. If the
+      <SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN>lucky-statement<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN> isn't so lucky this time around, then the
+      <SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img2.png"
+ ALT="$&lt;$"></SPAN>unlucky-statement<SPAN CLASS="MATH"><IMG
+ WIDTH="19" HEIGHT="33" ALIGN="MIDDLE" BORDER="0"
+ SRC="img1.png"
+ ALT="$&gt;$"></SPAN> gets executed, if it is present.
+</LI>
+</OL>
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html2402"
+  HREF="node138.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2398"
+  HREF="node106.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2392"
+  HREF="node136.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2400"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2403"
+  HREF="node138.html">Hints and Bugs</A>
+<B> Up:</B> <A NAME="tex2html2399"
+  HREF="node106.html">AEL: Asterisk Extension Language</A>
+<B> Previous:</B> <A NAME="tex2html2393"
+  HREF="node136.html">Semantic Checks</A>
+ &nbsp; <B>  <A NAME="tex2html2401"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>
