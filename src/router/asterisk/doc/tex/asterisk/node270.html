@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Creating phone profiles</TITLE>
+<META NAME="description" CONTENT="Creating phone profiles">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node269.html">
+<LINK REL="up" HREF="node268.html">
+<LINK REL="next" HREF="node271.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html4165"
+  HREF="node271.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html4161"
+  HREF="node268.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html4157"
+  HREF="node269.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html4163"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html4166"
+  HREF="node271.html">Configuration of users.conf</A>
+<B> Up:</B> <A NAME="tex2html4162"
+  HREF="node268.html">Configuration of phoneprov.conf</A>
+<B> Previous:</B> <A NAME="tex2html4158"
+  HREF="node269.html">The [general] section</A>
+ &nbsp; <B>  <A NAME="tex2html4164"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION001522000000000000000">
+Creating phone profiles</A>
+</H2>
+
+<P>
+A phone profile is basically a list of files that a particular group of phones needs to 
+function.  For most phone types there are files that are identical for all phones 
+(firmware, for instance) as well as a configuration file that is specific to individual 
+phones.  res_phoneprov breaks these two groups of files into static files and dynamic 
+files, respectively. A sample profile:
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+[polycom]
+staticdir =&gt; configs/
+mime_type =&gt; text/xml
+setvar =&gt; CUSTOM_CONFIG=/var/lib/asterisk/phoneprov/configs/custom.cfg
+static_file =&gt; bootrom.ld,application/octet-stream
+static_file =&gt; bootrom.ver,plain/text
+static_file =&gt; sip.ld,application/octet-stream
+static_file =&gt; sip.ver,plain/text
+static_file =&gt; sip.cfg
+static_file =&gt; custom.cfg
+${TOLOWER(${MAC})}.cfg =&gt; 000000000000.cfg
+${TOLOWER(${MAC})}-phone.cfg =&gt; 000000000000-phone.cfg
+config/${TOLOWER(${MAC})} =&gt; polycom.xml
+${TOLOWER(${MAC})}-directory.xml =&gt; 000000000000-directory.xml
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+A <SPAN  CLASS="textbf">static_file</SPAN> is set by specifying the file name, relative to 
+AST_DATA_DIR/phoneprov.  The mime-type of the file can optionally be specified 
+after a comma.  If <SPAN  CLASS="textbf">staticdir</SPAN> is set, all static files will be relative to the 
+subdirectory of AST_DATA_DIR/phoneprov specified.
+
+<P>
+Since phone-specific config files generally have file names based on phone-specifc data, 
+dynamic filenames in res_phoneprov can be defined with Asterisk dialplan function and 
+variable substitution. In the above example, ${TOLOWER(${MAC})}.cfg <SPAN CLASS="MATH"><IMG
+ WIDTH="24" HEIGHT="19" ALIGN="BOTTOM" BORDER="0"
+ SRC="img5.png"
+ ALT="$\Rightarrow$"></SPAN> 
+000000000000.cfg would define a relative URI to be served that matches the format of 
+MACADDRESS.cfg, all lower case. A request for that file would then point to the template 
+found at AST_DATA_DIR/phoneprov/000000000000.cfg. The template can be followed by a 
+comma and mime-type. Notice that the dynamic filename (URI) can contain contain 
+directories. Since these files are dynamically generated, the config file itself does not 
+reside on the filesystem-only the template. To view the generated config file, open it 
+in a web browser. If the config file is XML, Firefox should display it. Some browsers 
+will require viewing the source of the page requested.
+
+<P>
+A default mime-type for the profile can be defined by setting <SPAN  CLASS="textbf">mime-type</SPAN>.  If a 
+custom variable is required for a template, it can be specified with <SPAN  CLASS="textbf">setvar</SPAN>. 
+Variable substitution on this value is done while building the route list, so 
+${USERNAME} would expand to the username of the users.conf user that registers the 
+dynamic filename.
+
+<P>
+NOTE: Any dialplan function that is used for generation of dynamic file names MUST be 
+loaded before res_phoneprov. Add "preload <SPAN CLASS="MATH"><IMG
+ WIDTH="24" HEIGHT="19" ALIGN="BOTTOM" BORDER="0"
+ SRC="img5.png"
+ ALT="$\Rightarrow$"></SPAN> modulename.so" to 
+modules.conf for required functions. In the example above, "preload <SPAN CLASS="MATH"><IMG
+ WIDTH="24" HEIGHT="19" ALIGN="BOTTOM" BORDER="0"
+ SRC="img5.png"
+ ALT="$\Rightarrow$"></SPAN> 
+func_strings.so" would be required.
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html4165"
+  HREF="node271.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html4161"
+  HREF="node268.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html4157"
+  HREF="node269.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html4163"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html4166"
+  HREF="node271.html">Configuration of users.conf</A>
+<B> Up:</B> <A NAME="tex2html4162"
+  HREF="node268.html">Configuration of phoneprov.conf</A>
+<B> Previous:</B> <A NAME="tex2html4158"
+  HREF="node269.html">The [general] section</A>
+ &nbsp; <B>  <A NAME="tex2html4164"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

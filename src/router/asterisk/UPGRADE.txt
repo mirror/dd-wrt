@@ -1,0 +1,38 @@
+===========================================================
+===
+=== Information for upgrading between Asterisk 1.6 versions
+===
+=== These files document all the changes that MUST be taken
+=== into account when upgrading between the Asterisk
+=== versions listed below. These changes may require that
+=== you modify your configuration files, dialplan or (in
+=== some cases) source code if you have your own Asterisk
+=== modules or patches. These files also includes advance
+=== notice of any functionality that has been marked as
+=== 'deprecated' and may be removed in a future release,
+=== along with the suggested replacement functionality.
+===
+=== UPGRADE-1.2.txt -- Upgrade info for 1.0 to 1.2
+=== UPGRADE-1.4.txt -- Upgrade info for 1.2 to 1.4
+=== UPGRADE-1.6.txt -- Upgrade info for 1.4 to 1.6
+===
+===========================================================
+
+From 1.6.0.1 to 1.6.0.2:
+
+* The ast_agi_register_multiple() and ast_agi_unregister_multiple()
+  API calls were added in 1.6.0, so that modules that provide multiple
+  AGI commands could register/unregister them all with a single
+  step. However, these API calls were not implemented properly, and did
+  not allow the caller to know whether registration or unregistration
+  succeeded or failed. They have been redefined to now return success
+  or failure, but this means any code using these functions will need
+  be recompiled after upgrading to a version of Asterisk containing
+  these changes. In addition, the source code using these functions
+  should be reviewed to ensure it can properly react to failure
+  of registration or unregistration of its API commands.
+
+* The ast_agi_fdprintf() API call has been renamed to ast_agi_send()
+  to better match what it really does, and the argument order has been
+  changed to be consistent with other API calls that perform similar
+  operations.

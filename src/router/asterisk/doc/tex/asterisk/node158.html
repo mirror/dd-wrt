@@ -1,0 +1,211 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Why IAX2?</TITLE>
+<META NAME="description" CONTENT="Why IAX2?">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node159.html">
+<LINK REL="previous" HREF="node157.html">
+<LINK REL="up" HREF="node156.html">
+<LINK REL="next" HREF="node159.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html2710"
+  HREF="node159.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2706"
+  HREF="node156.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2700"
+  HREF="node157.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2708"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2711"
+  HREF="node159.html">Configuration</A>
+<B> Up:</B> <A NAME="tex2html2707"
+  HREF="node156.html">IAX2</A>
+<B> Previous:</B> <A NAME="tex2html2701"
+  HREF="node157.html">Introduction</A>
+ &nbsp; <B>  <A NAME="tex2html2709"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION00712000000000000000">
+Why IAX2?</A>
+</H2>
+
+<P>
+The first question most people are thinking at this point is "Why do you 
+need another VoIP protocol?  Why didn't you just use SIP or H.323?"
+
+<P>
+Well, the answer is a fairly complicated one, but in a nutshell it's like
+this...  Asterisk is intended as a very flexible and powerful
+communications tool.  As such, the primary feature we need from a VoIP
+protocol is the ability to meet our own goals with Asterisk, and one with
+enough flexibility that we could use it as a kind of laboratory for
+inventing and implementing new concepts in the field.  Neither H.323 or
+SIP fit the roles we needed, so we developed our own protocol, which,
+while not standards based, provides a number of advantages over both SIP
+and H.323, some of which are:
+
+<P>
+
+<UL>
+<LI>Interoperability with NAT/PAT/Masquerade firewalls
+	
+<UL>
+<LI>IAX seamlessly interoperates through all sorts of NAT and PAT
+             and other firewalls, including the ability to place and 
+             receive calls, and transfer calls to other stations.
+	
+</LI>
+</UL>
+</LI>
+<LI>High performance, low overhead protocol
+	
+<UL>
+<LI>When running on low-bandwidth connections, or when running 
+	     large numbers of calls, optimized bandwidth utilization is 
+	     imperative.  IAX uses only 4 bytes of overhead
+	
+</LI>
+</UL>
+</LI>
+<LI>Internationalization support
+	
+<UL>
+<LI>IAX transmits language information, so that remote PBX 
+	     content can be delivered in the native language of the
+	     calling party.
+	
+</LI>
+</UL>
+</LI>
+<LI>Remote dialplan polling
+	
+<UL>
+<LI>IAX allows a PBX or IP phone to poll the availability of a 
+	     number from a remote server.  This allows PBX dialplans to 
+	     be centralized.
+	
+</LI>
+</UL>
+</LI>
+<LI>Flexible authentication
+	
+<UL>
+<LI>IAX supports cleartext, md5, and RSA authentication, 
+	     providing flexible security models for outgoing calls and 
+	     registration services.
+	
+</LI>
+</UL>	
+</LI>
+<LI>Multimedia protocol
+	
+<UL>
+<LI>IAX supports the transmission of voice, video, images, text, 
+	     HTML, DTMF, and URL's.  Voice menus can be presented in both
+	     audibly and visually.
+	
+</LI>
+</UL>
+</LI>
+<LI>Call statistic gathering
+	
+<UL>
+<LI>IAX gathers statistics about network performance (including 
+	     latency and jitter, as well as providing end-to-end latency
+	     measurement.
+	
+</LI>
+</UL>
+</LI>
+<LI>Call parameter communication
+	
+<UL>
+<LI>Caller*ID, requested extension, requested context, etc are
+	     all communicated through the call.
+	
+</LI>
+</UL>
+</LI>
+<LI>Single socket design
+	
+<UL>
+<LI>IAX's single socket design allows up to 32768 calls to be 
+	     multiplexed.
+	
+</LI>
+</UL>
+</LI>
+</UL>
+
+<P>
+While we value the importance of standards based (i.e. SIP) call handling, 
+hopefully this will provide a reasonable explanation of why we developed 
+IAX rather than starting with SIP.
+
+<P>
+
+<DIV CLASS="navigation"><HR>
+<!--Navigation Panel-->
+<A NAME="tex2html2710"
+  HREF="node159.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html2706"
+  HREF="node156.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html2700"
+  HREF="node157.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html2708"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html2711"
+  HREF="node159.html">Configuration</A>
+<B> Up:</B> <A NAME="tex2html2707"
+  HREF="node156.html">IAX2</A>
+<B> Previous:</B> <A NAME="tex2html2701"
+  HREF="node157.html">Introduction</A>
+ &nbsp; <B>  <A NAME="tex2html2709"
+  HREF="node1.html">Contents</A></B> </DIV>
+<!--End of Navigation Panel-->
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>The Main Menu</TITLE>
+<META NAME="description" CONTENT="The Main Menu">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="next" HREF="node259.html">
+<LINK REL="previous" HREF="node257.html">
+<LINK REL="up" HREF="node257.html">
+<LINK REL="next" HREF="node259.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html4019"
+  HREF="node259.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html4015"
+  HREF="node257.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html4009"
+  HREF="node257.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html4017"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html4020"
+  HREF="node259.html">The Contexts referenced from</A>
+<B> Up:</B> <A NAME="tex2html4016"
+  HREF="node257.html">Routing incoming Calls to</A>
+<B> Previous:</B> <A NAME="tex2html4010"
+  HREF="node257.html">Routing incoming Calls to</A>
+ &nbsp; <B>  <A NAME="tex2html4018"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H3><A NAME="SECTION001422100000000000000">
+The Main Menu</A>
+</H3>
+
+<P>
+At Digium, incoming callers are sent to the "mainmenu" context, where they
+are greeted, and directed to the numbers they choose...
+
+<P>
+</B></SMALL>
+<UL>
+<LI><PRE>
+context mainmenu {
+
+	includes {
+		digium;
+		queues-loginout;
+	}
+
+        0 =&gt; goto dispatch,s,1;
+        2 =&gt; goto sales,s,1;
+        3 =&gt; goto customerservice,s,1;
+        4 =&gt; goto dispatch,s,1;
+
+        s =&gt; {
+                Ringing();
+                Wait(1);
+                Set(attempts=0);
+                Answer();
+                Wait(1);
+                Background(digium/ThankYouForCallingDigium);
+                Background(digium/YourOpenSourceTelecommunicationsSupplier);
+                WaitExten(0.3);
+        repeat:
+                Set(attempts=$[${attempts} + 1]);
+                Background(digium/IfYouKnowYourPartysExtensionYouMayDialItAtAnyTime);
+                WaitExten(0.1);
+                Background(digium/Otherwise);
+                WaitExten(0.1);
+                Background(digium/ForSalesPleasePress2);
+                WaitExten(0.2);
+                Background(digium/ForCustomerServicePleasePress3);
+                WaitExten(0.2);
+                Background(digium/ForAllOtherDepartmentsPleasePress4);
+                WaitExten(0.2);
+                Background(digium/ToSpeakWithAnOperatorPleasePress0AtAnyTime);
+                if( ${attempts} &lt; 2 ) {
+                        WaitExten(0.3);
+                        Background(digium/ToHearTheseOptionsRepeatedPleaseHold);
+                }
+                WaitExten(5);
+                if( ${attempts} &lt; 2 ) goto repeat;
+                Background(digium/YouHaveMadeNoSelection);
+                Background(digium/ThisCallWillBeEnded);
+                Background(goodbye);
+                Hangup();
+        }
+}
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

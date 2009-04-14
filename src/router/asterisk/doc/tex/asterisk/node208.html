@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+
+<!--Converted with LaTeX2HTML 2002-2-1 (1.71)
+original version by:  Nikos Drakos, CBLU, University of Leeds
+* revised and updated by:  Marcus Hennecke, Ross Moore, Herb Swan
+* with significant contributions from:
+  Jens Lippmann, Marek Rouchal, Martin Wilck and others -->
+<HTML>
+<HEAD>
+<TITLE>Integration with other web servers</TITLE>
+<META NAME="description" CONTENT="Integration with other web servers">
+<META NAME="keywords" CONTENT="asterisk">
+<META NAME="resource-type" CONTENT="document">
+<META NAME="distribution" CONTENT="global">
+
+<META NAME="Generator" CONTENT="LaTeX2HTML v2002-2-1">
+<META HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
+
+<LINK REL="STYLESHEET" HREF="asterisk.css">
+
+<LINK REL="previous" HREF="node207.html">
+<LINK REL="up" HREF="node205.html">
+<LINK REL="next" HREF="node209.html">
+</HEAD>
+
+<BODY >
+
+<DIV CLASS="navigation"><!--Navigation Panel-->
+<A NAME="tex2html3342"
+  HREF="node209.html">
+<IMG WIDTH="37" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="next"
+ SRC="/usr/share/latex2html/icons/next.png"></A> 
+<A NAME="tex2html3338"
+  HREF="node205.html">
+<IMG WIDTH="26" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="up"
+ SRC="/usr/share/latex2html/icons/up.png"></A> 
+<A NAME="tex2html3334"
+  HREF="node207.html">
+<IMG WIDTH="63" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="previous"
+ SRC="/usr/share/latex2html/icons/prev.png"></A> 
+<A NAME="tex2html3340"
+  HREF="node1.html">
+<IMG WIDTH="65" HEIGHT="24" ALIGN="BOTTOM" BORDER="0" ALT="contents"
+ SRC="/usr/share/latex2html/icons/contents.png"></A>  
+<BR>
+<B> Next:</B> <A NAME="tex2html3343"
+  HREF="node209.html">CDR: Call Detail Records</A>
+<B> Up:</B> <A NAME="tex2html3339"
+  HREF="node205.html">Asynchronous Javascript Asterisk Manger</A>
+<B> Previous:</B> <A NAME="tex2html3335"
+  HREF="node207.html">Allow Manager Access via</A>
+ &nbsp; <B>  <A NAME="tex2html3341"
+  HREF="node1.html">Contents</A></B> 
+<BR>
+<BR></DIV>
+<!--End of Navigation Panel-->
+
+<H2><A NAME="SECTION001073000000000000000">
+Integration with other web servers</A>
+</H2>
+
+<P>
+Asterisk's micro HTTP server is *not* designed to replace a general
+purpose web server and it is intentionally created to provide only the
+minimal interfaces required.  Even without the addition of an external
+web server, one can use Asterisk's interfaces to implement screen pops
+and similar tools pulling data from other web servers using iframes,
+div's etc.  If you want to integrate CGI's, databases, PHP, etc.  you
+will likely need to use a more traditional web server like Apache and
+link in your Asterisk micro HTTP server with something like this:
+</B></SMALL>
+<UL>
+<LI><PRE>
+ProxyPass /asterisk http://localhost:8088/asterisk
+</PRE><SMALL CLASS="SCRIPTSIZE"><B>
+</LI>
+</UL>
+<P>
+<BR><HR>
+<ADDRESS>
+lmadsen
+2009-04-06
+</ADDRESS>
+</BODY>
+</HTML>

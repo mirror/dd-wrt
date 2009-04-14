@@ -1,0 +1,3593 @@
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2009.1.16)  6 APR 2009 12:04
+entering extended mode
+ %&-line parsing enabled.
+**\nonstopmode \input{"/home/lmadsen/RELEASES/asterisk_working/asterisk_release
+/asterisk-1.6.0.9/doc/tex/asterisk.tex"}
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/asterisk.tex (/usr/share/texmf-texlive/tex/latex/base/report.cls
+Document Class: report 2005/09/16 v1.4f Standard LaTeX document class
+(/usr/share/texmf-texlive/tex/latex/base/size12.clo
+File: size12.clo 2005/09/16 v1.4f Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@chapter=\count80
+\c@section=\count81
+\c@subsection=\count82
+\c@subsubsection=\count83
+\c@paragraph=\count84
+\c@subparagraph=\count85
+\c@figure=\count86
+\c@table=\count87
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/share/texmf-texlive/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2007/02/07 v6.75r Hypertext links for LaTeX
+
+(/usr/share/texmf-texlive/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+\@linkdim=\dimen103
+\Hy@linkcounter=\count88
+\Hy@pagecounter=\count89
+
+(/usr/share/texmf-texlive/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2007/02/07 v6.75r Hyperref: PDFDocEncoding definition (HO)
+)
+(/etc/texmf/tex/latex/config/hyperref.cfg
+File: hyperref.cfg 2002/06/06 v1.2 hyperref configuration of TeXLive
+)
+(/usr/share/texmf-texlive/tex/latex/oberdiek/kvoptions.sty
+Package: kvoptions 2006/08/22 v2.4 Connects package keyval with LaTeX options (
+HO)
+)
+Package hyperref Info: Hyper figures OFF on input line 2288.
+Package hyperref Info: Link nesting OFF on input line 2293.
+Package hyperref Info: Hyper index ON on input line 2296.
+Package hyperref Info: Plain pages OFF on input line 2303.
+Package hyperref Info: Backreferencing OFF on input line 2308.
+
+Implicit mode ON; LaTeX internals redefined
+Package hyperref Info: Bookmarks ON on input line 2444.
+(/usr/share/texmf-texlive/tex/latex/ltxmisc/url.sty
+\Urlmuskip=\muskip10
+Package: url 2005/06/27  ver 3.2  Verb mode for urls, etc.
+)
+LaTeX Info: Redefining \url on input line 2599.
+\Fld@menulength=\count90
+\Field@Width=\dimen104
+\Fld@charsize=\dimen105
+\Choice@toks=\toks15
+\Field@toks=\toks16
+Package hyperref Info: Hyper figures OFF on input line 3102.
+Package hyperref Info: Link nesting OFF on input line 3107.
+Package hyperref Info: Hyper index ON on input line 3110.
+Package hyperref Info: backreferencing OFF on input line 3117.
+Package hyperref Info: Link coloring OFF on input line 3122.
+\Hy@abspage=\count91
+\c@Item=\count92
+\c@Hfootnote=\count93
+)
+*hyperref using default driver hpdftex*
+(/usr/share/texmf-texlive/tex/latex/hyperref/hpdftex.def
+File: hpdftex.def 2007/02/07 v6.75r Hyperref driver for pdfTeX
+\Fld@listcount=\count94
+)
+(/usr/share/texmf-texlive/tex/latex/tocloft/tocloft.sty
+Package: tocloft 2003/09/26 v2.3c parameterised ToC, etc., typesetting
+
+
+Package tocloft Note: The document has chapter divisions.
+
+\cftparskip=\skip43
+\cftbeforetoctitleskip=\skip44
+\cftaftertoctitleskip=\skip45
+\cftbeforepartskip=\skip46
+\cftpartnumwidth=\skip47
+\cftpartindent=\skip48
+\cftbeforechapskip=\skip49
+\cftchapindent=\skip50
+\cftchapnumwidth=\skip51
+\cftbeforesecskip=\skip52
+\cftsecindent=\skip53
+\cftsecnumwidth=\skip54
+\cftbeforesubsecskip=\skip55
+\cftsubsecindent=\skip56
+\cftsubsecnumwidth=\skip57
+\cftbeforesubsubsecskip=\skip58
+\cftsubsubsecindent=\skip59
+\cftsubsubsecnumwidth=\skip60
+\cftbeforeparaskip=\skip61
+\cftparaindent=\skip62
+\cftparanumwidth=\skip63
+\cftbeforesubparaskip=\skip64
+\cftsubparaindent=\skip65
+\cftsubparanumwidth=\skip66
+\cftbeforeloftitleskip=\skip67
+\cftafterloftitleskip=\skip68
+\cftbeforefigskip=\skip69
+\cftfigindent=\skip70
+\cftfignumwidth=\skip71
+\c@lofdepth=\count95
+\c@lotdepth=\count96
+\cftbeforelottitleskip=\skip72
+\cftafterlottitleskip=\skip73
+\cftbeforetabskip=\skip74
+\cfttabindent=\skip75
+\cfttabnumwidth=\skip76
+) (/usr/share/texmf-texlive/tex/latex/sectsty/sectsty.sty
+Package: sectsty 2002/02/25 v2.0.2 Commands to change all sectional heading sty
+les
+)
+(/usr/share/texmf-texlive/tex/latex/fncychap/fncychap.sty
+Package: fncychap 2004/09/21 v1.33 LaTeX package (Revised chapters)
+\RW=\skip77
+\mylen=\skip78
+\myhi=\skip79
+\px=\skip80
+\py=\skip81
+\pyy=\skip82
+\pxx=\skip83
+)
+
+LaTeX Warning: Unused global option(s):
+    [a4].
+
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/asterisk.aux)
+\openout1 = `asterisk.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+Package hyperref Info: Link coloring OFF on input line 37.
+ (/usr/share/texmf-texlive/tex/latex/hyperref/nameref.sty
+Package: nameref 2006/12/27 v2.28 Cross-referencing by name of section
+
+(/usr/share/texmf-texlive/tex/latex/oberdiek/refcount.sty
+Package: refcount 2006/02/20 v3.0 Data extraction from references (HO)
+)
+\c@section@level=\count97
+)
+LaTeX Info: Redefining \ref on input line 37.
+LaTeX Info: Redefining \pageref on input line 37.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/asterisk.out)
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/asterisk.out)
+\@outlinefile=\write3
+\openout3 = `asterisk.out'.
+
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <14.4> on input line 39.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 39.
+ [1
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/asterisk.toc
+LaTeX Font Info:    Try loading font information for OT1+phv on input line 1.
+ (/usr/share/texmf-texlive/tex/latex/psnfss/ot1phv.fd
+File: ot1phv.fd 2001/06/04 scalable font definitions for OT1/phv.
+)
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 1.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 1.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 1.
+pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
+been already used, duplicate ignored
+<to be read again> 
+                   \relax 
+l.57 ...line {2.2.2}FreeTDS}{31}{subsection.2.2.2}
+                                                   [1
+
+] [2] [3] [4]
+Overfull \hbox (2.03766pt too wide) detected at line 187
+ \OT1/cmr/bx/n/12 107
+ []
+
+
+Overfull \hbox (2.03766pt too wide) detected at line 191
+ \OT1/cmr/bx/n/12 122
+ []
+
+
+Overfull \hbox (2.03766pt too wide) detected at line 197
+ \OT1/cmr/bx/n/12 130
+ []
+
+
+Overfull \hbox (2.03766pt too wide) detected at line 208
+ \OT1/cmr/bx/n/12 139
+ []
+
+[5]
+Overfull \hbox (2.03766pt too wide) detected at line 227
+ \OT1/cmr/bx/n/12 151
+ []
+
+
+Overfull \hbox (2.03766pt too wide) detected at line 242
+ \OT1/cmr/bx/n/12 157
+ []
+
+
+Overfull \hbox (2.03766pt too wide) detected at line 252
+ \OT1/cmr/bx/n/12 169
+ []
+
+[6]
+Overfull \hbox (2.03766pt too wide) detected at line 265
+ \OT1/cmr/bx/n/12 182
+ []
+
+
+Overfull \hbox (2.03766pt too wide) detected at line 275
+ \OT1/cmr/bx/n/12 189
+ []
+
+)
+\tf@toc=\write4
+\openout4 = `asterisk.toc'.
+
+ [7]
+Chapter 1.
+LaTeX Font Info:    Try loading font information for OT1+ptm on input line 42.
+(/usr/share/texmf-texlive/tex/latex/psnfss/ot1ptm.fd
+File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
+) (../../LICENSE [8
+
+]
+Overfull \hbox (13.63054pt too wide) in paragraph at lines 34--36
+[]\OT1/cmr/m/n/12 Specific per-mis-sion is also granted to link As-ter-isk with
+ OpenSSL, OpenH323
+ []
+
+)
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/security.tex
+Overfull \hbox (2.28671pt too wide) in paragraph at lines 3--6
+\OT1/cmr/m/n/12 IN-FOR-MA-TION. IM-PROPER CON-FIG-U-RA-TION OF AS-TER-ISK COULD
+
+ []
+
+[9] [10])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/hardware.tex
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 15.
+ (/usr/share/texmf-texlive/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <12> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 15.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <10.95> on input line 16.
+ [11]
+Overfull \hbox (2.3603pt too wide) in paragraph at lines 21--22
+[]\OT1/cmr/m/n/12 TDM800P - The TDM800P is a half-length PCI 2.2-compliant,
+ []
+
+
+Overfull \hbox (8.23524pt too wide) in paragraph at lines 22--23
+[]\OT1/cmr/m/n/12 TDM2400P - The TDM2400P is a full-length PCI 2.2-compliant
+ []
+
+[12]
+Overfull \hbox (12.9837pt too wide) in paragraph at lines 35--36
+[]\OT1/cmr/m/n/12 TE110P - The TE110P brings a high-performance, cost-effective
+,
+ []
+
+
+Overfull \hbox (4.21211pt too wide) in paragraph at lines 58--60
+[]\OT1/cmr/m/n/12 Any adapter with an mISDN driver should be com-pat-i-ble with
+ chan[]misdn.
+ []
+
+[13]
+Overfull \hbox (14.60577pt too wide) in paragraph at lines 86--87
+[]\OT1/cmr/m/n/12 TC400B - The TC400B is a half-length, low-profile PCI 2.2-com
+pliant
+ []
+
+) [14]
+Chapter 2.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/configuration.tex [15
+
+] [16] [17])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/asterisk-conf.tex [18] [19] [20])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/cliprompt.tex [21])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/extensions.tex [22]) [23]
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/qos.tex [24] [25]
+Overfull \hbox (7.51901pt too wide) in paragraph at lines 96--101
+\OT1/cmr/m/n/12 In sip.conf, there are three pa-ram-e-ters that con-trol the TO
+S set-tings: "tos[]sip",
+ []
+
+[26])
+Overfull \hbox (14.78897pt too wide) in paragraph at lines 132--72
+\OT1/cmr/m/n/12 Cisco at: []$\OT1/cmtt/m/n/10.95 http : / / www . cisco . com /
+ application / pdf / en / us / guest / netsol / ns432 /
+ []
+
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/mp3.tex)
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/ices.tex)
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/realtime.tex [27]
+Overfull \hbox (10.58061pt too wide) in paragraph at lines 22--25
+[]\OT1/cmr/m/n/12 ODBC: Sup-port for UnixODBC, in-te-grated into As-ter-isk The
+ UnixODBC
+ []
+
+
+Overfull \hbox (11.57538pt too wide) in paragraph at lines 22--25
+\OT1/cmr/m/n/12 sub-sys-tem sup-ports many dif-fer-ent databases, please check 
+[]$\OT1/cmtt/m/n/10.95 www . unixodbc .
+ []
+
+[28] [29])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/freetds.tex [30])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/privacy.tex [31]
+Overfull \hbox (148.75745pt too wide) in paragraph at lines 88--88
+ []\OT1/cmtt/m/n/8 exten => s,6,GotoIf($[ "${CALLERID(num)}"  = "7773334444" & 
+"${CALLERID(name)}" : "Privacy Manager" ]?callerid-liar,s,1:s,7)[] 
+ []
+
+[32] [33] [34] [35] [36]
+Overfull \hbox (29.75574pt too wide) in paragraph at lines 351--351
+ []     \OT1/cmtt/m/n/8 ;; If you are calling from a business, you might pronou
+nce a more sedate introduction,like,[] 
+ []
+
+[37]) [38]
+Chapter 3.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/channelvariables.tex [39
+
+] [40] [41] [42] [43] [44] [45] [46]
+Overfull \hbox (21.25562pt too wide) in paragraph at lines 458--458
+ []   \OT1/cmtt/m/n/8 returns 6. (because of operator precedence; the division 
+is done first, then the addition).[] 
+ []
+
+[47] [48]
+Overfull \hbox (161.50763pt too wide) in paragraph at lines 516--516
+ []\OT1/cmtt/m/n/8 exten => s,6,GotoIf($[ "${CALLERID(num)}"  = "3071234567" & 
+&  "${CALLERID(name)}" : "Privacy Manager" ]?callerid-liar,s,1:s,7)[] 
+ []
+
+
+Overfull \hbox (238.00873pt too wide) in paragraph at lines 525--525
+ []\OT1/cmtt/m/n/8 Jul 15 21:27:49 WARNING[1251240752]: ast_yyerror(): syntax e
+rror: parse error, unexpected TOK_AND, expecting TOK_MINUS or TOK_LP or TOKEN; 
+Input:[] 
+ []
+
+[49] [50] [51] [52]
+Overfull \hbox (25.50568pt too wide) in paragraph at lines 691--691
+ [] \OT1/cmtt/m/n/8 check_expr /etc/asterisk/extensions.conf CALLERID(num)=3075
+551212 DIALSTATUS=TORTURE EXTEN=121[] 
+ []
+
+
+Overfull \hbox (2.25307pt too wide) in paragraph at lines 693--699
+\OT1/cmr/m/n/12 will sub-sti-tute any $\OMS/cmsy/m/n/12 f\OT1/cmr/m/n/12 CALLER
+ID(num)\OMS/cmsy/m/n/12 g \OT1/cmr/m/n/12 vari-able ref-er-ences with 307555121
+2,
+ []
+
+
+Overfull \hbox (21.27805pt too wide) in paragraph at lines 693--699
+\OT1/cmr/m/n/12 any $\OMS/cmsy/m/n/12 f\OT1/cmr/m/n/12 DIALSTATUS\OMS/cmsy/m/n/
+12 g \OT1/cmr/m/n/12 vari-able ref-er-ences with 'TOR-TURE', and any $\OMS/cmsy
+/m/n/12 f\OT1/cmr/m/n/12 EXTEN\OMS/cmsy/m/n/12 g
+ []
+
+
+Overfull \hbox (34.0058pt too wide) in paragraph at lines 702--702
+ [] \OT1/cmtt/m/n/8 check_expr /etc/asterisk/extensions.conf CALLERID(num)=3075
+551212 DIALSTATUS=TORTURE EXTEN:2=121[] 
+ []
+
+
+Overfull \hbox (141.05026pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${BLINDTRANSFER}         The name of the channel on the othe
+r side of a blind transfer[] 
+ []
+
+[53]
+Overfull \hbox (85.47523pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${BRIDGEPVTCALLID}       Bridged peer PVT call ID (SIP Call 
+ID if a SIP call)[] 
+ []
+
+
+Overfull \hbox (171.92528pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${CALLERID(ani2)}      * ANI2 (Info digits) also called Orig
+inating line information or OLI[] 
+ []
+
+
+Overfull \hbox (110.17525pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${CALLINGPRES}         * Caller ID presentation for incoming
+ calls (PRI channels)[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${CALLINGTNS}          * Transit Network Selector (PRI chann
+els)[] 
+ []
+
+
+Overfull \hbox (73.12523pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${DATETIME}            * Current date time in the format: DD
+MMYYYY-HH:MM:SS[] 
+ []
+
+
+Overfull \hbox (110.17525pt too wide) in paragraph at lines 777--777
+[]                         \OT1/cmtt/m/n/12 (Deprecated; use ${STRFTIME(${EPOCH
+},,%d%m%Y-%H:%M:%S)})[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${DB_RESULT}             Result value of DB_EXISTS() dial pl
+an function[] 
+ []
+
+
+Overfull \hbox (85.47523pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${GOTO_ON_BLINDXFR}      Transfer to the specified context/e
+xtension/priority[] 
+ []
+
+
+Overfull \hbox (85.47523pt too wide) in paragraph at lines 777--777
+[]                         \OT1/cmtt/m/n/12 after a blind transfer (use ^ chara
+cters in place of[] 
+ []
+
+
+Overfull \hbox (91.65024pt too wide) in paragraph at lines 777--777
+[]                         \OT1/cmtt/m/n/12 | to separate context/extension/pri
+ority when setting[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${HANGUPCAUSE}         * Asterisk cause of hangup (inbound/o
+utbound)[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${HINTNAME}            * Suggested Caller*ID name for this e
+xtension[] 
+ []
+
+
+Overfull \hbox (110.17525pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${INVALID_EXTEN}         The invalid called extension (used 
+in the "i" extension)[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${LANGUAGE}            * Current language (Deprecated; use $
+{LANGUAGE()})[] 
+ []
+
+
+Overfull \hbox (73.12523pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${PRIREDIRECTREASON}     Reason for redirect on PRI, if a ca
+ll was directed[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${TIMESTAMP}           * Current date time in the format: YY
+YYMMDD-HHMMSS[] 
+ []
+
+
+Overfull \hbox (97.82524pt too wide) in paragraph at lines 777--777
+[]                         \OT1/cmtt/m/n/12 (Deprecated; use ${STRFTIME(${EPOCH
+},,%Y%m%d-%H%M%S)})[] 
+ []
+
+[54]
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 777--777
+[]\OT1/cmtt/m/n/12 ${SYSTEMNAME}          * value of the systemname option of a
+sterisk.conf[] 
+ []
+
+[55]
+Overfull \hbox (73.12523pt too wide) in paragraph at lines 842--842
+[]\OT1/cmtt/m/n/12 ${EXITCONTEXT}            Context to exit to in IVR menu (ap
+p background())[] 
+ []
+
+
+Overfull \hbox (178.10028pt too wide) in paragraph at lines 842--842
+[]\OT1/cmtt/m/n/12 ${MONITOR}              * Set to "TRUE" if the channel is/ha
+s been monitored (app monitor())[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 842--842
+[]\OT1/cmtt/m/n/12 ${MONITOR_EXEC}           Application to execute after monit
+oring a call[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 842--842
+[]\OT1/cmtt/m/n/12 ${MONITOR_FILENAME}       File for monitoring (recording) ca
+lls in queue[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 842--842
+[]\OT1/cmtt/m/n/12 ${QUEUE_MAX_PENALTY}      Maximum member penalty allowed to 
+answer caller[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 842--842
+[]\OT1/cmtt/m/n/12 ${QUEUE_MIN_PENALTY}      Minimum member penalty allowed to 
+answer caller[] 
+ []
+
+
+Overfull \hbox (202.8003pt too wide) in paragraph at lines 842--842
+[]                          \OT1/cmtt/m/n/12 (TIMEOUT | FULL | JOINEMPTY | LEAV
+EEMPTY | JOINUNAVAIL | LEAVEUNAVAIL)[] 
+ []
+
+
+Overfull \hbox (122.52525pt too wide) in paragraph at lines 842--842
+[]\OT1/cmtt/m/n/12 ${TOUCH_MONITOR}          The filename base to use with Touc
+h Monitor (auto record)[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 842--842
+[]\OT1/cmtt/m/n/12 ${TOUCH_MONITOR_PREF}   * The prefix for automonitor recordi
+ng filenames.[] 
+ []
+
+
+Overfull \hbox (116.35025pt too wide) in paragraph at lines 842--842
+[]\OT1/cmtt/m/n/12 ${TOUCH_MONITOR_FORMAT}   The audio format to use with Touch
+ Monitor (auto record)[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 842--842
+[]\OT1/cmtt/m/n/12 ${TOUCH_MONITOR_OUTPUT} * Recorded file from Touch Monitor (
+auto record)[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 855--855
+[]\OT1/cmtt/m/n/12 ${MEETME_RECORDINGFILE}      Name of file for recording a co
+nference with[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 855--855
+[]\OT1/cmtt/m/n/12 ${MEETME_EXIT_CONTEXT}       Context for exit out of meetme 
+meeting[] 
+ []
+
+
+Overfull \hbox (159.57527pt too wide) in paragraph at lines 855--855
+[]\OT1/cmtt/m/n/12 ${MEETMESECS}              * Number of seconds a user partic
+ipated in a MeetMe conference[] 
+ []
+
+
+Overfull \hbox (134.87526pt too wide) in paragraph at lines 855--855
+[]\OT1/cmtt/m/n/12 ${CONF_LIMIT_TIMEOUT_FILE}   File to play when time is up.  
+Used with the L() option.[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 855--855
+[]\OT1/cmtt/m/n/12 ${CONF_LIMIT_WARNING_FILE}   File to play as warning if 'y' 
+is defined.[] 
+ []
+
+
+Overfull \hbox (208.9753pt too wide) in paragraph at lines 855--855
+[]                             \OT1/cmtt/m/n/12 The default is to say the time 
+remaining.  Used with the L() option.[] 
+ []
+
+[56]
+Overfull \hbox (85.47523pt too wide) in paragraph at lines 880--880
+[]\OT1/cmtt/m/n/12 ${DUNDTECH}       * The Technology of the result from a call
+ to DUNDiLookup()[] 
+ []
+
+
+Overfull \hbox (91.65024pt too wide) in paragraph at lines 880--880
+[]\OT1/cmtt/m/n/12 ${DUNDDEST}       * The Destination of the result from a cal
+l to DUNDiLookup()[] 
+ []
+
+
+Overfull \hbox (122.52525pt too wide) in paragraph at lines 895--895
+[]\OT1/cmtt/m/n/12 ${ANI2}               * The ANI2 Code provided by the networ
+k on the incoming call.[] 
+ []
+
+
+Overfull \hbox (85.47523pt too wide) in paragraph at lines 895--895
+[]                        \OT1/cmtt/m/n/12 (ie, Code 29 identifies call as a Pr
+ison/Inmate Call)[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 895--895
+[]\OT1/cmtt/m/n/12 ${CALLEDTON}          * Type of number for incoming PRI exte
+nsion[] 
+ []
+
+
+Overfull \hbox (128.70026pt too wide) in paragraph at lines 895--895
+[]                        \OT1/cmtt/m/n/12 i.e. 0=unknown, 1=international, 2=d
+omestic, 3=net_specific,[] 
+ []
+
+
+Overfull \hbox (85.47523pt too wide) in paragraph at lines 895--895
+[]\OT1/cmtt/m/n/12 ${FAXEXTEN}           * The extension called before being re
+directed to "fax"[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 895--895
+[]\OT1/cmtt/m/n/12 ${PRIREDIRECTREASON}  * Reason for redirect, if a call was d
+irected[] 
+ []
+
+
+Overfull \hbox (110.17525pt too wide) in paragraph at lines 895--895
+[]\OT1/cmtt/m/n/12 ${SMDI_VM_TYPE}       * When an call is received with an SMD
+I message, the 'type'[] 
+ []
+
+
+Overfull \hbox (110.17525pt too wide) in paragraph at lines 907--907
+[]\OT1/cmtt/m/n/12 ${SIPCALLID}         * SIP Call-ID: header verbatim (for log
+ging or CDR matching)[] 
+ []
+
+[57]
+Overfull \hbox (110.17525pt too wide) in paragraph at lines 907--907
+[]\OT1/cmtt/m/n/12 ${SIPDOMAIN}         * SIP destination domain of an inbound 
+call (if appropriate)[] 
+ []
+
+
+Overfull \hbox (104.00024pt too wide) in paragraph at lines 907--907
+[]\OT1/cmtt/m/n/12 ${SIP_URI_OPTIONS}   * additional options to add to the URI 
+for an outgoing call[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 907--907
+[]\OT1/cmtt/m/n/12 ${RTPAUDIOQOS}         RTCP QoS report for the audio of this
+ call[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 907--907
+[]\OT1/cmtt/m/n/12 ${RTPVIDEOQOS}         RTCP QoS report for the video of this
+ call[] 
+ []
+
+
+Overfull \hbox (97.82524pt too wide) in paragraph at lines 920--920
+[]\OT1/cmtt/m/n/12 ${AGENTUPDATECDR}      Whether to update the CDR record with
+ Agent channel data[] 
+ []
+
+
+Overfull \hbox (73.12523pt too wide) in paragraph at lines 920--920
+[]\OT1/cmtt/m/n/12 ${AGENTGOODBYE}        Sound file to use for "Good Bye" when
+ agent logs out[] 
+ []
+
+
+Overfull \hbox (85.47523pt too wide) in paragraph at lines 920--920
+[]\OT1/cmtt/m/n/12 ${AGENTACKCALL}        Whether the agent should acknowledge 
+the incoming call[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 920--920
+[]\OT1/cmtt/m/n/12 ${AGENTWRAPUPTIME}     Setting the time for wrapup between i
+ncoming calls[] 
+ []
+
+
+Overfull \hbox (141.05026pt too wide) in paragraph at lines 942--942
+[]\OT1/cmtt/m/n/12 ${DIALEDTIME}         * Time for the call (seconds). Is only
+ set if call was answered.[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 942--942
+[]                        \OT1/cmtt/m/n/12 (CHANUNAVAIL | CONGESTION | BUSY | N
+OANSWER[] 
+ []
+
+
+Overfull \hbox (116.35025pt too wide) in paragraph at lines 942--942
+[]\OT1/cmtt/m/n/12 ${DYNAMIC_FEATURES}   * The list of features (from the [appl
+icationmap] section of[] 
+ []
+
+
+Overfull \hbox (104.00024pt too wide) in paragraph at lines 942--942
+[]                        \OT1/cmtt/m/n/12 features.conf) to activate during th
+e call, with feature[] 
+ []
+
+[58]
+Overfull \hbox (79.30023pt too wide) in paragraph at lines 942--942
+[]\OT1/cmtt/m/n/12 ${OUTBOUND_GROUP}          Default groups for peer channels 
+(as in SetGroup)[] 
+ []
+
+
+Overfull \hbox (85.47523pt too wide) in paragraph at lines 942--942
+[]                           \OT1/cmtt/m/n/12 * See "show application dial" for
+ more information[] 
+ []
+
+
+Overfull \hbox (66.95023pt too wide) in paragraph at lines 949--949
+[]\OT1/cmtt/m/n/12 ${AVAILCHAN}          * the name of the available channel if
+ one was found[] 
+ []
+
+
+Overfull \hbox (141.05026pt too wide) in paragraph at lines 949--949
+[]\OT1/cmtt/m/n/12 ${AVAILORIGCHAN}      * the canonical channel name that was 
+used to create the channel[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 957--957
+[]\OT1/cmtt/m/n/12 ${MACRO_OFFSET}         Offset to add to priority at return 
+from macro[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 963--963
+[]\OT1/cmtt/m/n/12 ${SPYGROUP}           * A ':' (colon) separated list of grou
+p names.[] 
+ []
+
+
+Overfull \hbox (184.27528pt too wide) in paragraph at lines 963--963
+[]                        \OT1/cmtt/m/n/12 (To be set on spied on channel and m
+atched against the g(grp) option)[] 
+ []
+
+) [59]
+Chapter 4.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/ael.tex [60
+
+] [61] [62] [63] [64] [65] [66]
+Overfull \hbox (221.00848pt too wide) in paragraph at lines 502--502
+ []\OT1/cmtt/m/n/8 <word>    a lexical token consisting of characters matching 
+this pattern: [-a-zA-Z0-9"_/.\<\>\*\+!$#\[\]][-a-zA-Z0-9"_/.!\*\+\<\>\{\}$#\[\]
+]*[] 
+ []
+
+
+Overfull \hbox (106.25684pt too wide) in paragraph at lines 502--502
+ []\OT1/cmtt/m/n/8 <collected-word>  all characters encountered until the chara
+cter that follows the <collected-word> in the grammar.[] 
+ []
+
+[67]
+Overfull \hbox (182.75793pt too wide) in paragraph at lines 502--502
+ []\OT1/cmtt/m/n/8 <ifTime_head> :== 'ifTime' '(' <word3-list> ':' <word3-list>
+ ':' <word3-list> '|' <word3-list> '|' <word3-list> '|' <word3-list> ')'[] 
+ []
+
+
+Overfull \hbox (42.50592pt too wide) in paragraph at lines 502--502
+ []                       \OT1/cmtt/m/n/8 | 'ifTime' '(' <word> '|' <word3-list
+> '|' <word3-list> '|' <word3-list> ')'[] 
+ []
+
+[68]
+Overfull \hbox (25.50568pt too wide) in paragraph at lines 502--502
+ []       \OT1/cmtt/m/n/8 | 'for' '('  <collected-word> ';'  <collected-word> '
+;' <collected-word> ')' <statement>[] 
+ []
+
+[69]
+Overfull \hbox (170.00775pt too wide) in paragraph at lines 502--502
+ []       \OT1/cmtt/m/n/8 | <includedname> '|' <word3-list> ':' <word3-list> ':
+' <word3-list> '|' <word3-list> '|' <word3-list> '|' <word3-list> ';'[] 
+ []
+
+
+Overfull \hbox (233.75867pt too wide) in paragraph at lines 502--502
+ []       \OT1/cmtt/m/n/8 | <includeslist> <includedname> '|' <word3-list> ':' 
+<word3-list> ':' <word3-list> '|' <word3-list> '|' <word3-list> '|' <word3-list
+> ';'[] 
+ []
+
+
+Overfull \hbox (63.75623pt too wide) in paragraph at lines 502--502
+ []       \OT1/cmtt/m/n/8 | <includeslist> <includedname> '|' <word> '|' <word3
+-list> '|' <word3-list> '|' <word3-list> ';'[] 
+ []
+
+[70] [71] [72] [73] [74]
+Overfull \hbox (17.00555pt too wide) in paragraph at lines 784--784
+ []  \OT1/cmtt/m/n/8 NoOp(Myvar is set to ${Myvar}, and firstarg is ${firstarg}
+, and secondarg is ${secondarg});[] 
+ []
+
+
+Overfull \hbox (17.00555pt too wide) in paragraph at lines 798--798
+ []  \OT1/cmtt/m/n/8 NoOp(Myvar is set to ${Myvar}, and firstarg is ${firstarg}
+, and secondarg is ${secondarg});[] 
+ []
+
+[75]
+Overfull \hbox (22.5459pt too wide) in paragraph at lines 895--898
+[]\OT1/cmr/m/n/12 NOTE: The con-di-tional ex-pres-sion in if() state-ments (the
+ "$\OMS/cmsy/m/n/12 f\OT1/cmr/m/n/12 DIALSTATUS\OMS/cmsy/m/n/12 g\OT1/cmr/m/n/1
+2 "
+ []
+
+[76]
+Overfull \hbox (3.13437pt too wide) in paragraph at lines 919--922
+\OT1/cmr/m/n/12 "Ran-dom()" ap-pli-ca-tion, which has been dep-re-cated. It now
+ uses the RAND()
+ []
+
+[77] [78] [79]
+Overfull \hbox (4.39177pt too wide) in paragraph at lines 1128--1131
+[]\OT1/cmr/m/n/12 application calls to "Go-toIf", "Go-toIf-Time", "while", "end
+-while", "Ran-
+ []
+
+[80] [81] [82]
+Overfull \hbox (42.53453pt too wide) in paragraph at lines 1214--1220
+[]\OT1/cmr/m/n/12 Added the if-Time ($\OML/cmm/m/it/12 <$\OT1/cmr/m/n/12 time r
+ange$\OML/cmm/m/it/12 >$$\OMS/cmsy/m/n/12 j$$\OML/cmm/m/it/12 <$\OT1/cmr/m/n/12
+ days of week$\OML/cmm/m/it/12 >$$\OMS/cmsy/m/n/12 j$$\OML/cmm/m/it/12 <$\OT1/c
+mr/m/n/12 days of month$\OML/cmm/m/it/12 >$$\OMS/cmsy/m/n/12 j$$\OML/cmm/m/it/1
+2 <$\OT1/cmr/m/n/12 months$\OML/cmm/m/it/12 >$
+ []
+
+[83] [84]) [85]
+Chapter 5.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/sla.tex [86
+
+] [87] [88] [89]
+Overfull \hbox (23.31058pt too wide) in paragraph at lines 243--246
+\OT1/cmr/m/n/12 trunks are DAHDI/1 and DAHDI/2. The sta-tions are SIP/station1,
+ SIP/station2,
+ []
+
+
+Overfull \hbox (9.23058pt too wide) in paragraph at lines 247--248
+[]\OT1/cmr/m/n/12 In dahdi.conf, chan-nel 1 has con-text=line1 and chan-nel 2 h
+as con-text=line2. 
+ []
+
+[90] [91] [92]) [93]
+Chapter 6.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/chaniax.tex [94
+
+]
+Overfull \hbox (5.26123pt too wide) in paragraph at lines 55--58
+[]\OT1/cmr/m/n/12 IAX sup-ports the trans-mis-sion of voice, video, im-ages, te
+xt, HTML,
+ []
+
+[95])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/jitterbuffer.tex [96] [97])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/misdn.tex [98] [99] [100] [101] [102]
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 229--229
+[]\OT1/cmtt/m/n/12 - MISDN_ADDRESS_COMPLETE :  Is either set to 1 from the Prov
+ider, or you[] 
+ []
+
+[103])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/localchannel.tex [104] [105]) [106]
+Chapter 7.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/dundi.tex [107
+
+]) (../PEERING
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[] \OT1/cmtt/m/n/12 Everyone is permitted to copy and distribute complete verba
+tim copies[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[] \OT1/cmtt/m/n/12 of this General Peering Agreement provided it is not modifi
+ed in any[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 For most of the history of telecommunications, the power o
+f being able[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 to locate and communicate with another person in a system, b
+e it across[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 a hall or around the world, has always centered around a cen
+tralized[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 authority -- from a local PBX administrator to regional and 
+national[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 RBOCs, generally requiring fees, taxes or regulation.  By co
+ntrast,[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 communicate with each other without the necessity of any cen
+tralized[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 authority.  This General Peering Agreement ("GPA") is used b
+y individual[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 parties (each, a "Participant") to allow them to build the E
+164 trust[] 
+ []
+
+[108]
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 To protect the usefulness of the E164 trust group for thos
+e who use[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 it, while keeping the system wholly decentralized, it is nec
+essary to[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 replace many of the responsibilities generally afforded to a
+ company or[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 government agency, with a set of responsibilities implemente
+d by the[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 parties who use the system, themselves.  It is the goal of t
+his document[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 to provide all the protections necessary to keep the DUNDi E
+164 trust[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 The Participants wish to protect competition, promote inno
+vation and[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 value added services and make this service valuable both com
+mercially[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 and non-commercially.  To that end, this GPA provides specia
+l terms and[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 conditions outlining some permissible and non-permissible re
+venue[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 This GPA is independent of any software license or other l
+icense[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 agreement for a program or technology employing the DUNDi pr
+otocol.  For[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 example, the implementation of DUNDi used by Asterisk is cov
+ered under a[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 separate license.  Each Participant is responsible for compl
+iance with[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 any licenses or other agreements governing use of such progr
+am or[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 You do not have to execute this GPA to use a program or te
+chnology[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 employing the DUNDi protocol, however if you do not execute 
+this GPA,[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 you will not be able to peer using DUNDi and the E164 contex
+t with[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 anyone who is a member of the trust group by virtue of their
+ having[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 0. DEFINITIONS.  As used herein, certain terms shall be de
+fined as[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (a) The term "DUNDi" means the DUNDi protocol as publish
+ed by[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Digium, Inc. or its successor in interest with respe
+ct to the[] 
+ []
+
+[109]
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (b) The terms "E.164" and "E164" mean ITU-T specificatio
+n E.164 as[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 published by the International Telecommunications Un
+ion (ITU) in[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (c) The term "Service" refers to any communication facil
+ity (e.g.,[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 telephone, fax, modem, etc.), identified by an E.164
+-compatible[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 number, and assigned by the appropriate authority in
+ that[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (d) The term "Egress Gateway" refers an Internet facilit
+y that[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 provides a communications path to a Service or Servi
+ces that may[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (e) The term "Route" refers to an Internet address, poli
+cies, and[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 associated with the Service, or the Egress Gateway w
+hich[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (f) The term "Propagate" means to accept or transmit Ser
+vice and/or[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Egress Gateway Routes only using the DUNDi protocol 
+and the[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 DUNDi context "e164" without regard to case, and doe
+s not apply[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 to the exchange of information using any other proto
+col or[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (g) The term "Peering System" means the network of syste
+ms that[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (h) The term "Subscriber" means the owner of, or someone
+ who[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 contracts to receive, the services identified by an 
+E.164[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (i) The term "Authorizing Individual" means the Subscrib
+er to a[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 number who has authorized a Participant to provide R
+outes[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (j) The term "Route Authority" refers to a Participant t
+hat provides[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 an original source of said Route within the Peering 
+System.[] 
+ []
+
+[110]
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Routes are propagated from the Route Authorities thr
+ough the[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Peering System and may be cached at intermediate poi
+nts.  There[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (k) The term "Participant" (introduced above) refers to 
+any member[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (l) The term "Service Provider" refers to the carrier (e
+.g.,[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 exchange carrier, Internet Telephony Service Provide
+r, or other[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 particular Service to a Subscriber, Customer or othe
+r End User.[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (m) The term "Weight" refers to a numeric quality assign
+ed to a[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Route as per the DUNDi protocol specification.  The 
+current[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 1. PEERING. The undersigned Participants agree to Propagat
+e Routes[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 with each other and any other member of the Peering System a
+nd further[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 agree not to Propagate DUNDi Routes with a third party unles
+s they have[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 first have executed this GPA (in its unmodified form) with s
+uch third[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 party.  The Participants further agree only to Propagate Rou
+tes with[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 Participants whom they reasonably believe to be honoring the
+ terms of[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 the GPA.  Participants may not insert, remove, amend, or oth
+erwise[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 2. ACCEPTABLE USE POLICY.  The DUNDi protocol contains inf
+ormation[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 that reflect a Subscriber's or Egress Gateway's decisions to
+ receive[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 calls.  In addition to the terms and conditions set forth in
+ this GPA,[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 the Participants agree to honor the intent of restrictions e
+ncoded in[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 the DUNDi protocol.  To that end, Participants agree to the 
+following:[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (a) A Participant may not utilize or permit the utilizat
+ion of[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Routes for which the Subscriber or Egress Gateway pr
+ovider has[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 indicated that they do not wish to receive "Unsolici
+ted Calls"[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 for the purpose of making an unsolicited phone call 
+on behalf of[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (b) A Participant may not utilize or permit the utilizat
+ion of[] 
+ []
+
+[111]
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Routes which have indicated that they do not wish to
+ receive[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 "Unsolicited Commercial Calls" for the purpose of ma
+king an[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 unsolicited phone call on behalf of a commercial org
+anization.[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (c) A Participant may never utilize or permit the utiliz
+ation of any[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 DUNDi route for the purpose of making harassing phon
+e calls.[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (d) A Party may not utilize or permit the utilization of
+ DUNDi[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 provided Routes for any systematic or random calling
+ of numbers[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 (e.g., for the purpose of locating facsimile, modem 
+services, or[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (e) Initial control signaling for all communication sess
+ions that[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 utilize Routes obtained from the Peering System must
+ be sent[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 from a member of the Peering System to the Service o
+r Egress[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Gateway identified in the selected Route.  For examp
+le, 'SIP[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (f) A Participant may not disclose any specific Route, S
+ervice or[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Participant contact information obtained from the Pe
+ering System[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 by-product of facilitating communication in accordan
+ce with[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 section 2e (e.g., phone books or other databases may
+ not be[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 published, but the Internet addresses of the Egress 
+Gateway or[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (g) The DUNDi Protocol requires that each Participant in
+clude valid[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 contact information about itself (including informat
+ion about[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 nodes connected to each Participant).  Participants 
+may use or[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 disclose the contact information only to ensure enfo
+rcement of[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 3. ROUTES. The Participants shall only propagate valid Rou
+tes, as[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 defined herein, through the Peering System, regardless of th
+e original[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 source.  The Participants may only provide Routes as set for
+th below,[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 and then only if such Participant has no good faith reason t
+o believe[] 
+ []
+
+[112]
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (a) A Participant may provide Routes if each Route has a
+s its[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 original source another member of the Peering System
+ who has[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 duly executed the GPA and such Routes are provided i
+n accordance[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 with this Agreement; provided that the Routes are no
+t modified[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 (e.g., with regards to existence, destination, techn
+ology or[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (b) A Participant may provide Routes for Services with a
+ny Weight[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (c) A Participant may provide Routes for those Services 
+whose[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Subscriber has authorized the Participant to do so, 
+provided[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 that the Participant is able to confirm that the Aut
+horizing[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]            \OT1/cmtt/m/n/12 i. a written statement of ownership from the Aut
+horizing[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]               \OT1/cmtt/m/n/12 Individual, which the Participant believes in
+ good faith[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]               \OT1/cmtt/m/n/12 to be accurate (e.g., a phone bill with the n
+ame of the[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]               \OT1/cmtt/m/n/12 Authorizing Individual and the number in ques
+tion); or[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]           \OT1/cmtt/m/n/12 ii. the Participant's own direct personal knowled
+ge that the[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (d) A Participant may provide Routes for Services, with 
+Weight in[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 accordance with the Current DUNDi Specification, if 
+it can in[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 good faith provide an Egress Gateway to that Service
+ on the[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 traditional telephone network without cost to the ca
+lling party.[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 4. REVOCATION. A Participant must provide a free, easily a
+ccessible[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 mechanism by which a Subscriber may revoke permission to act
+ as a Route[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 Authority for his Service.  A Participant must stop acting a
+s a Route[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (b) receiving other notice that the Service is no longer
+ valid; or[] 
+ []
+
+[113]
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (c) determination that the Subscriber's information is n
+o longer[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 accurate (including that the Subscriber is no longer
+ the service[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 5. SERVICE FEES. A Participant may charge a fee to act as 
+a Route[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 Authority for a Service, with any Weight, provided that no P
+articipant[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 may charge a fee to propagate the Route received through the
+ Peering[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 6. TOLL SERVICES. No Participant may provide Routes for an
+y Services[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 that require payment from the calling party or their custome
+r for[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 communication with the Service.  Nothing in this section sha
+ll prohibit[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 a Participant from providing routes for Services where the c
+alling party[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 may later enter into a financial transaction with the called
+ party[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 (e.g., a Participant may provide Routes for calling cards se
+rvices).[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 7. QUALITY. A Participant may not intentionally impair com
+munication[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 using a Route provided to the Peering System (e.g. by adding
+ delay,[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 advertisements, reduced quality).  If for any reason a Parti
+cipant is[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 unable to deliver a call via a Route provided to the Peering
+ System,[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 notification (e.g. "503 Service Unavailable" with SIP protoc
+ol or[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 8. PROTOCOL COMPLIANCE.  Participants agree to Propagate R
+outes in[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 9. ADMINISTRATIVE FEES. A Participant may charge (but is n
+ot required[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 to charge) another Participant a reasonable fee to cover adm
+inistrative[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 expenses incurred in the execution of this Agreement.  A Par
+ticipant may[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 not charge any fee to continue the relationship or to provid
+e Routes to[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 10. CALLER IDENTIFICATION. A Participant will make a good 
+faith effort[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 identification that it transmits via any Route obtained from
+ the Peering[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 System. Caller identification shall at least be provided as 
+a valid[] 
+ []
+
+[114]
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 11. COMPLIANCE WITH LAWS.  The Participants are solely res
+ponsible for[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 determining to what extent, if any, the obligations set fort
+h in this[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 GPA conflict with any laws or regulations their region.  A P
+articipant[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 may not provide any service or otherwise use DUNDi under thi
+s GPA if[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 doing so is prohibited by law or regulation, or if any law o
+r regulation[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 imposes requirements on the Participant that are inconsisten
+t with the[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 12. WARRANTY. EACH PARTICIPANT WARRANTS TO THE OTHER PARTI
+CIPANTS THAT[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 IT MADE, AND WILL CONTINUE TO MAKE, A GOOD FAITH EFFORT TO A
+UTHENTICATE[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 OTHERS IN THE PEERING SYSTEM AND TO PROVIDE ACCURATE INFORMA
+TION IN[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 ACCORDANCE WITH THE TERMS OF THIS GPA.  THIS WARRANTY IS MAD
+E BETWEEN[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 THE PARTICIPANTS, AND THE PARTICIPANTS MAY NOT EXTEND THIS W
+ARRANTY TO[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 13. DISCLAIMER OF WARRANTIES. THE PARTICIPANTS UNDERSTAND 
+AND AGREE[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 THAT ANY SERVICE PROVIDED AS A RESULT OF THIS GPA IS "AS IS.
+" EXCEPT FOR[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 THOSE WARRANTIES OTHERWISE EXPRESSLY SET FORTH HEREIN, THE P
+ARTICIPANTS[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 DISCLAIM ANY REPRESENTATIONS OR WARRANTIES OF ANY KIND OR NA
+TURE,[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 EXPRESS OR IMPLIED, AS TO THE CONDITION, VALUE OR QUALITIES 
+OF THE[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 REPRESENTATION OR WARRANTY OF MERCHANTABILITY, SUITABILITY O
+R FITNESS[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 FOR A PARTICULAR PURPOSE OR AS TO THE CONDITION OR WORKMANSH
+IP THEREOF,[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 OR THE ABSENCE OF ANY DEFECTS THEREIN, WHETHER LATENT OR PAT
+ENT,[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 INCLUDING ANY WARRANTIES ARISING FROM A COURSE OF DEALING, U
+SAGE OR[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 TRADE PRACTICE.  EXCEPT AS EXPRESSLY PROVIDED HEREIN, THE PA
+RTICIPANTS[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 EXPRESSLY DISCLAIM ANY REPRESENTATIONS OR WARRANTIES THAT TH
+E PEERING[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 SERVICE WILL BE CONTINUOUS, UNINTERRUPTED OR ERROR-FREE, THA
+T ANY DATA[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 SHARED OR OTHERWISE MADE AVAILABLE WILL BE ACCURATE OR COMPL
+ETE OR[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 14. LIMITATION OF LIABILITIES.  NO PARTICIPANT SHALL BE LI
+ABLE TO ANY[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 OTHER PARTICIPANT FOR INCIDENTAL, INDIRECT, CONSEQUENTIAL, S
+PECIAL,[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 PUNITIVE OR EXEMPLARY DAMAGES OF ANY KIND (INCLUDING LOST RE
+VENUES OR[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 PROFITS, LOSS OF BUSINESS OR LOSS OF DATA) IN ANY WAY RELATE
+D TO THIS[] 
+ []
+
+[115]
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 15. END-USER AGREEMENTS.  The Participants may independent
+ly enter[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 into agreements with end-users to provide certain services (
+e.g., fees[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 to a Subscriber to originate Routes for that Service).  To t
+he extent[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 that provision of these services employs the Peering System,
+ the Parties[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 conditions consistent with the terms of this GPA with respec
+t to the[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 exclusion of warranties, limitation of liability and Accepta
+ble Use[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 Policy.  In no event may a Participant extend the warranty d
+escribed in[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 16. INDEMNIFICATION.  Each Participant agrees to defend, i
+ndemnify and[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 hold harmless the other Participant or third-party beneficia
+ries to this[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 GPA (including their affiliates, successors, assigns, agents
+ and[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 representatives and their respective officers, directors and
+ employees)[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 investigations, demands, claims, judgments, liabilities, obl
+igations,[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 liens, losses, damages, expenses (including, without limitat
+ion,[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 attorneys' fees) and any other fees arising out of or relati
+ng to (i)[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 personal injury or property damage caused by that Participan
+t, its[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 employees, agents, servants, or other representatives; (ii) 
+any act or[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 omission by the Participant, its employees, agents, servants
+ or other[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 representations or warranties made by the Participant; or (i
+ii) any[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 breach by the Participant of any of the terms or conditions 
+of this GPA.[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 17. THIRD PARTY BENEFICIARIES. This GPA is intended to ben
+efit those[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 Participants who have executed the GPA and who are in the Pe
+ering[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 System. It is the intent of the Parties to this GPA to give 
+to those[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 Participants who are in the Peering System standing to bring
+ any[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 18. TERMINATION. Any Participant may terminate this GPA at
+ any time,[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 with or without cause.  A Participant that terminates must i
+mmediately[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 19. CHOICE OF LAW. This GPA and the rights and duties of t
+he Parties[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 hereto shall be construed and determined in accordance with 
+the internal[] 
+ []
+
+[116]
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 laws of the State of New York, United States of America, wit
+hout regard[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 to its conflict of laws principles and without application o
+f the United[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 Nations Convention on Contracts for the International Sale o
+f Goods.[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 20. DISPUTE RESOLUTION. Unless otherwise agreed in writing
+, the[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 exclusive procedure for handling disputes shall be as set fo
+rth herein.[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 Notwithstanding such procedures, any Participant may, at any
+ time, seek[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (a) Prior to mediation or arbitration the disputing Part
+icipants[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 shall seek informal resolution of disputes. The proc
+ess shall be[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 initiated with written notice of one Participant to 
+the other[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 describing the dispute with reasonable particularity
+ followed[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 with a written response within ten (10) days of rece
+ipt of[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 notice. Each Participant shall promptly designate an
+ executive[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 with requisite authority to resolve the dispute.  Th
+e informal[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 procedure shall commence within ten (10) days of the
+ date of[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 response. All reasonable requests for non-privileged
+ information[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 reasonably related to the dispute shall be honored. 
+If the[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 dispute is not resolved within thirty (30) days of c
+ommencement[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 of the procedure either Participant may proceed to m
+ediation or[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 arbitration pursuant to the rules set forth in (b) o
+r (c) below.[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (b) If the dispute has not been resolved pursuant to (a)
+ above or,[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 if the disputing Participants fail to commence infor
+mal dispute[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 resolution pursuant to (a) above, either Participant
+ may, in[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 writing and within twenty (20) days of the response 
+date noted[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 in (a) above, ask the other Participant to participa
+te in a one[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 (1) day mediation with an impartial mediator, and th
+e other[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Participant shall do so. Each Participant will bear 
+its own[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 expenses and an equal share of the fees of the media
+tor.  If the[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 mediation is not successful the Participants may pro
+ceed with[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]    \OT1/cmtt/m/n/12 (c) If the dispute has not been resolved pursuant to (a)
+ or (b)[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 above, the dispute shall be promptly referred, no la
+ter than one[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 (1) year from the date of original notice and subjec
+t to[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 applicable statute of limitations, to binding arbitr
+ation in[] 
+ []
+
+[117]
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 accordance with the UNCITRAL Arbitration Rules in ef
+fect on the[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 date of this contract.  The appointing authority sha
+ll be the[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 International Centre for Dispute Resolution. The cas
+e shall be[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 administered by the International Centre for Dispute
+ Resolution[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 under its Procedures for Cases under the UNCITRAL Ar
+bitration[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Rules.  Each Participant shall bear its own expenses
+ and shall[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 share equally in fees of the arbitrator. All arbitra
+tors shall[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 have substantial experience in information technolog
+y and/or in[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 the telecommunications business and shall be selecte
+d by the[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 disputing participants in accordance with UNCITRAL A
+rbitration[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Rules. If any arbitrator, once selected is unable or
+ unwilling[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 to continue for any reason, replacement shall be fil
+led via the[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 process described above and a re-hearing shall be co
+nducted. The[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 requested documents and records reasonably related t
+o the[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 inconvenience of both parties. Discovery will not in
+clude[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 depositions or interrogatories except as the arbitra
+tors[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 expressly allow upon a showing of need. If disputes 
+arise[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 concerning discovery requests, the arbitrators shall
+ have sole[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 and complete discretion to resolve the disputes. The
+ parties and[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 arbitrator shall be guided in resolving discovery di
+sputes by[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 the Federal Rules of Civil Procedure. The Participan
+ts agree[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 that time of the essence principles shall guide the 
+hearing and[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 that the arbitrator shall have the right and authori
+ty to issue[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 monetary sanctions in the event of unreasonable dela
+y. The[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 arbitrator shall deliver a written opinion setting f
+orth[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 findings of fact and the rationale for the award wit
+hin thirty[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 (30) days following conclusion of the hearing. The a
+ward of the[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 arbitrator, which may include legal and equitable re
+lief, but[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 which may not include punitive damages, will be fina
+l and[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 binding upon the disputing Participants, and judgmen
+t may be[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 entered upon it in accordance with applicable law in
+ any court[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 arbitrator shall have the discretion to award the pr
+evailing[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 Participant all or part of its attorneys' fees and c
+osts,[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 including fees associated with arbitrator, if the ar
+bitrator[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 determines that the positions taken by the other Par
+ticipant on[] 
+ []
+
+[118]
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 foundation. Any conflict between the UNCITRAL Arbitr
+ation Rules[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]        \OT1/cmtt/m/n/12 and the provisions of this GPA shall be controlled b
+y this GPA.[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 integrated agreement between the parties concerning the subj
+ect matter[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 hereof.  All prior and contemporaneous agreements, understan
+dings,[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 negotiations or representations, whether oral or in writing,
+ relating to[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 the subject matter of this GPA are superseded and canceled i
+n their[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 22. WAIVER. No waiver of any of the provisions of this GPA
+ shall be[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 deemed or shall constitute a waiver of any other provision o
+f this GPA,[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 whether or not similar, nor shall such waiver constitute a c
+ontinuing[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 waiver unless otherwise expressly so provided in writing.  T
+he failure[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 of either party to enforce at any time any of the provisions
+ of this[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 GPA, or the failure to require at any time performance by ei
+ther party[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 of any of the provisions of this GPA, shall in no way be con
+strued to be[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 a present or future waiver of such provisions, nor in any wa
+y affect the[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 ability of a Participant to enforce each and every such prov
+ision[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 23. INDEPENDENT CONTRACTORS. Nothing in this GPA shall mak
+e the[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 Parties partners, joint venturers, or otherwise associated i
+n or with[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 the business of the other.  Parties are, and shall always re
+main,[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 independent contractors.  No Participant shall be liable for
+ any debts,[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 accounts, obligations, or other liabilities of the other Par
+ticipant,[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 its agents or employees.  No party is authorized to incur de
+bts or other[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 obligations of any kind on the part of or as agent for the o
+ther.  This[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 GPA is not a franchise agreement and does not create a franc
+hise[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 relationship between the parties, and if any provision of th
+is GPA is[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 deemed to create a franchise between the parties, then this 
+GPA shall[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 24. CAPTIONS AND HEADINGS. The captions and headings used 
+in this GPA[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 are used for convenience only and are not to be given any le
+gal effect.[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]  \OT1/cmtt/m/n/12 25. EXECUTION. This GPA may be executed in counterparts, e
+ach of which[] 
+ []
+
+[119]
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 so executed will be deemed to be an original and such counte
+rparts[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 together will constitute one and the same Agreement.  The Pa
+rties shall[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 transmit to each other a signed copy of the GPA by any means
+ that[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 faithfully reproduces the GPA along with the Signature.  For
+ purposes of[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 this GPA, the term "signature" shall include digital signatu
+res as[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 0-99                    May only be used under authorization
+ of Owner[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 200-299                 Reserved -- do not use for e164 cont
+ext.[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 300-399                 May only be used by the owner of the
+ code under[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 400-499                 May be used by any entity providing 
+access via[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]                        \OT1/cmtt/m/n/12 direct connectivity to the Public Sw
+itched[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 500-599                 May be used by any entity providing 
+access via[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]                        \OT1/cmtt/m/n/12 indirect connectivity to the Public 
+Switched[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]                        \OT1/cmtt/m/n/12 Telephone Network (e.g. Via another 
+VoIP[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 503--503
+[]                 \OT1/cmtt/m/n/12 Participant                         Partici
+pant[] 
+ []
+
+[120]
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 503--503
+[]          \OT1/cmtt/m/n/12 _________________________           ______________
+___________[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 503--503
+[]          \OT1/cmtt/m/n/12 Authorized Signature                Authorized Sig
+nature[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 How to Peer using this GPA If you wish to exchange routing i
+nformation[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 with parties using the e164 DUNDi context, all you must do i
+s execute[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 this GPA with any member of the Peering System and you will 
+become a[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 503--503
+[]\OT1/cmtt/m/n/12 member of the Peering System and be able to make Routes avai
+lable in[] 
+ []
+
+) [121]
+Chapter 8.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/enum.tex
+Overfull \hbox (42.4658pt too wide) in paragraph at lines 3--12
+\OT1/cmr/m/n/12 number-to-DNS map-ping scheme, please see []$\OT1/cmtt/m/n/10.9
+5 http : / / www . voip-[]info . org / tiki-[]index .
+ []
+
+
+Overfull \hbox (79.30023pt too wide) in paragraph at lines 28--28
+[]\OT1/cmtt/m/n/12 Function: ENUMLOOKUP(number[,Method-type[,options[,record#[,
+zone-suffix]]]])[] 
+ []
+
+[122
+
+] [123]
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 118--118
+[]     \OT1/cmtt/m/n/12 "E2U+sip" "!^\\+13015611020$!sip:1234@sip-2.fox-den.com
+!" .[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 118--118
+[]     \OT1/cmtt/m/n/12 "E2U+mailto" "!^\\+13015611020$!mailto:jtodd@fox-den.co
+m!" .[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 125--125
+[]\OT1/cmtt/m/n/12 exten => 100,1,Set(foo=${ENUMLOOKUP(+13015611020,,,,loligo.c
+om)})[] 
+ []
+
+[124]
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 133--133
+[]\OT1/cmtt/m/n/12 exten => 100,1,Set(foo=${ENUMLOOKUP(+13015611020,tel,,,lolig
+o.com)})[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 139--139
+[]\OT1/cmtt/m/n/12 exten => 100,1,Set(foo=${ENUMLOOKUP(+13015611020,sip,c,,loli
+go.com)})[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 146--146
+[]\OT1/cmtt/m/n/12 exten => 100,1,Set(foo=${ENUMLOOKUP(+13015611020,tel,,2,loli
+go.com)})[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 152--152
+[]\OT1/cmtt/m/n/12 exten => 100,1,Set(foo=${ENUMLOOKUP(+13015611020,ALL,c,,loli
+go.com)})[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 158--158
+[]\OT1/cmtt/m/n/12 exten => 100,1,Set(foo=${ENUMLOOKUP(+13015611020,ALL,,2,loli
+go.com)})[] 
+ []
+
+
+Overfull \hbox (79.30023pt too wide) in paragraph at lines 158--158
+[]  \OT1/cmtt/m/n/12 returns: ${foo}="tel:+14155551212"  [note the "tel:" prefi
+x in the string][] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 165--165
+[]  \OT1/cmtt/m/n/12 returns: ${foo}="enum-test@sip.nemox.net"  [note: this res
+ult is[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 165--165
+[]  \OT1/cmtt/m/n/12 subject to change as it is "live" DNS and not under my con
+trol][] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 172--172
+[]  \OT1/cmtt/m/n/12 returns: ${foo}="1234@204.91.156.10"  [note: this result i
+s subject[] 
+ []
+
+
+Overfull \hbox (91.65024pt too wide) in paragraph at lines 179--179
+[]\OT1/cmtt/m/n/12 exten => 100,1,Set(foo=${ENUMLOOKUP(1234567890,sip,,1,enum.y
+oyodynelabs.com)})[] 
+ []
+
+[125] [126]
+Overfull \hbox (72.6188pt too wide) in paragraph at lines 232--237
+\OT1/cmr/m/n/12 a search string of "+4372030blah01721" will turn into 1.2.7.1.0
+.0.3.0.2.7.3.4.e164.arpa.
+ []
+
+[127] [128]) [129]
+Chapter 9.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/manager.tex [130
+
+] [131]
+Overfull \hbox (73.12523pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Action: <action>         -- Request or notification of a pa
+rticular action[] 
+ []
+
+[132]
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 AuthType:                -- Authentication type (for login 
+or challenge)[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 BillableSeconds:         -- Billable seconds for call (cdr_
+manager)[] 
+ []
+
+
+Overfull \hbox (122.52525pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 CallerID:                -- Caller id (name and number in O
+riginate & cdr_manager)[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 254--254
+[]                             \OT1/cmtt/m/n/12 (should change to "<unknown>" i
+n app_queue)[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 254--254
+[]                             \OT1/cmtt/m/n/12 (should change to "<unknown>" i
+n app_queue)[] 
+ []
+
+
+Overfull \hbox (66.95023pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Channel: <tech/[peer/username]> -- Channel in Registry even
+ts (SIP, IAX2)[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Channel: <tech>          -- Technology (SIP/IAX2 etc) in Re
+gistry events[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 CodecOrder:              -- Codec order, separated with com
+ma ","[] 
+ []
+
+[133]
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Default-addr-IP:         -- IP address to use before regist
+ration[] 
+ []
+
+
+Overfull \hbox (79.30023pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Default-Username:        -- Username part of URI to use bef
+ore registration[] 
+ []
+
+
+Overfull \hbox (122.52525pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Destination:             -- Destination for call (Dialstrin
+g ) (dial, cdr_manager)[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 DestUniqueID:            -- UniqueID of destination (dial e
+vent)[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Endtime:                 -- End time stamp of call (cdr_man
+ager)[] 
+ []
+
+
+Overfull \hbox (122.52525pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 EventList: <flag>        -- Flag being "Start", "End", "Can
+celled" or "ListObject"[] 
+ []
+
+
+Overfull \hbox (128.70026pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Events: <eventmask>      -- Eventmask filter ("on", "off", 
+"system", "call", "log")[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 LastApplication:         -- Last application executed (cdr_
+manager)[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 LastData:                -- Data for last application (cdr_
+manager)[] 
+ []
+
+
+Overfull \hbox (171.92528pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 ListItems: <number>      -- Number of items in Eventlist (O
+ptionally sent in "end" packet)[] 
+ []
+
+
+Overfull \hbox (153.40027pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Location:                -- Interface (whatever that is -ma
+ybe tech/name in app_queue )[] 
+ []
+
+
+Overfull \hbox (128.70026pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Mailbox:                 -- VM Mailbox (id@vmcontext) (mail
+boxstatus, mailboxcount)[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 MD5SecretExist: <Y | N>  -- Whether secret exists in MD5 fo
+rmat[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Membership: <string>     -- "Dynamic" or "static" member in
+ queue[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Message: <text>          -- Text message in ACKs, errors (e
+xplanation)[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 NewMessages: <count>     -- Count of new Mailbox messages (
+mailboxcount)[] 
+ []
+
+[134]
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 OldMessages: <count>     -- Count of old mailbox messages (
+mailboxcount)[] 
+ []
+
+
+Overfull \hbox (91.65024pt too wide) in paragraph at lines 254--254
+[]                           \OT1/cmtt/m/n/12 "Unregistered", "Registered", "La
+gged", "Reachable"[] 
+ []
+
+
+Overfull \hbox (246.02531pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Privilege: <privilege>   -- AMI authorization class (system
+, call, log, verbose, command, agent, user)[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Source:                  -- Source of call (dial event, cdr
+_manager)[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Status:                  -- Registration status (Registry e
+vents SIP)[] 
+ []
+
+
+Overfull \hbox (97.82524pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Status:                  -- Peer status (if monitored)  ** 
+Will change name **[] 
+ []
+
+[135]
+Overfull \hbox (196.62529pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Variable:                -- Variable AND value to set (mult
+iple separated with | in Originate)[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 254--254
+[] \OT1/cmtt/m/n/12 Waiting:                 -- Count of mailbox messages (mail
+boxstatus)[] 
+ []
+
+)
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/ajam.tex [136] [137]) [138]
+Chapter 10.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/billing.tex [139
+
+] [140])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/cdrdriver.tex
+Overfull \hbox (44.21495pt too wide) in paragraph at lines 83--2
+[]\OT1/cmr/m/n/12 In ad-di-tion, you can set your own ex-tra vari-ables by us-i
+ng Set(CDR(name)=value).
+ []
+
+
+Overfull \hbox (3.86351pt too wide) in paragraph at lines 83--2
+\OT1/cmr/m/n/12 These vari-ables can be out-put into a text-format CDR by us-in
+g the cdr[]custom
+ []
+
+[141]
+Overfull \hbox (6.67587pt too wide) in paragraph at lines 38--40
+[]\OT1/cmr/m/n/12 Compile, or re-com-pile, as-ter-isk so that it will now add s
+up-port for cdr[]odbc. 
+ []
+
+[142] [143] [144]
+Overfull \hbox (1.13736pt too wide) in paragraph at lines 200--201
+\OT1/cmr/m/n/12 Using MySQL for CDR records is sup-ported by us-ing ODBC and th
+e cdr[]odbc
+ []
+
+[145]
+Overfull \hbox (53.53319pt too wide) in paragraph at lines 280--282
+\OT1/cmr/m/n/12 Download the sources from []$\OT1/cmtt/m/n/10.95 http : / / dev
+eloper . berlios . de / projects / radiusclient-[]ng/$[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 287--287
+[]\OT1/cmtt/m/n/12 root@localhost:/usr/local/src# tar xvfz radiusclient-ng-0.5.
+2.tar.gz[] 
+ []
+
+[146]
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 296--296
+[]\OT1/cmtt/m/n/12 root@localhost:/usr/local/src/radiusclient-ng-0.5.2# ./confi
+gure[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 296--296
+[]\OT1/cmtt/m/n/12 root@localhost:/usr/local/src/radiusclient-ng-0.5.2# make in
+stall[] 
+ []
+
+[147]
+Overfull \hbox (27.78189pt too wide) in paragraph at lines 362--364
+[]\OT1/cmr/m/n/12 All the con-fig-u-ra-tion files of FreeRA-DIUS server will be
+ in /usr/local/etc/raddb
+ []
+
+[148]
+Overfull \hbox (17.0576pt too wide) in paragraph at lines 399--404
+[]\OT1/cmr/m/n/12 File $\OT1/cmtt/m/n/12 /usr / local / etc / raddb / dictionar
+y$ \OT1/cmr/m/n/12 con-tains the dic-tio-nary of FreeRA-
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 459--459
+[]  \OT1/cmtt/m/n/12 "Asterisk-Acc-Code",          The account name of detail r
+ecords[] 
+ []
+
+[149]
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 459--459
+[]  \OT1/cmtt/m/n/12 "Asterisk-Last-App",        Last application run on the ch
+annel[] 
+ []
+
+
+Overfull \hbox (79.30023pt too wide) in paragraph at lines 459--459
+[]  \OT1/cmtt/m/n/12 "Asterisk-Duration",          Duration is the whole length
+ that the entire[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 459--459
+[]                                \OT1/cmtt/m/n/12 call lasted. ie. call rx'd t
+o hangup[] 
+ []
+
+
+Overfull \hbox (73.12523pt too wide) in paragraph at lines 459--459
+[]  \OT1/cmtt/m/n/12 "Asterisk-Bill-Sec",          The duration that a call was
+ up after other[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 459--459
+[]                                \OT1/cmtt/m/n/12 end answered which will be <
+= to duration[] 
+ []
+
+
+Overfull \hbox (79.30023pt too wide) in paragraph at lines 459--459
+[]  \OT1/cmtt/m/n/12 "Asterisk-AMA-Flags",        DOCUMENTATION, BILL, IGNORE e
+tc, specified on[] 
+ []
+
+
+Overfull \hbox (36.07521pt too wide) in paragraph at lines 459--459
+[]                                \OT1/cmtt/m/n/12 a per channel basis like acc
+ountcode.[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 459--459
+[]  \OT1/cmtt/m/n/12 "Asterisk-User-Field"         User field set via SetCDRUse
+rField[] 
+ []
+
+) [150]
+Chapter 11.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/odbcstorage.tex
+Overfull \hbox (9.5685pt too wide) in paragraph at lines 25--27
+[]\OT1/cmr/m/n/12 The database name (from $\OT1/cmtt/m/n/12 /etc / asterisk / r
+es _ odbc . conf$\OT1/cmr/m/n/12 ) is in the "odbc-
+ []
+
+)
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/imapstorage.tex [151
+
+] [152] [153] [154]
+Overfull \hbox (1.05716pt too wide) in paragraph at lines 151--153
+[]\OT1/cmr/m/n/12 By im-ple-ment-ing sep-a-rate IMAP mail-boxes for voice-mail 
+and email, voice-
+ []
+
+
+Overfull \hbox (0.53506pt too wide) in paragraph at lines 163--166
+\OT1/cmr/m/n/12 UIDPLUS is cur-rently NOT sup-ported on these ver-sions of UW-I
+MAP. Please
+ []
+
+[155]) [156]
+Chapter 12.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/app-sms.tex [157
+
+] [158] [159] [160]
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 This also implies that we are generating a mobile termina
+ted message[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 A blank filename (e.g. --ud-file= on its own) means read 
+stdin. Very[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 useful when using via ssh where command line parsing coul
+d mess up the[] 
+ []
+
+[161]
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 Sets environment variables for every possible variable, a
+nd also ud,[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 ud8 (USC-1 hex), and ud16 (USC-2 hex) for each call. Remo
+ves files.[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 May contain X to use sub address based on queue name or m
+ay be full[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 May include X to use sub address based on queue name or m
+ay be full[] 
+ []
+
+[162]
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 The default sub address assumed (e.g. for X in CLI and di
+alled numbers[] 
+ []
+
+
+Overfull \hbox (23.7252pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 This could have a small window where a message is queued 
+but not[] 
+ []
+
+
+Overfull \hbox (42.25021pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 sent, so regular calls to smsq should be done to pick up 
+any missed[] 
+ []
+
+
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 Specific hex string of user data header specified (not in
+cluding the[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 321--321
+[]   \OT1/cmtt/m/n/12 May be a blank string to indicate header is included in t
+he user data[] 
+ []
+
+[163] [164]
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 406--406
+[]   \OT1/cmtt/m/n/12 User data, UTF-8 encoding, including any control characte
+rs, but with[] 
+ []
+
+
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 406--406
+[]   \OT1/cmtt/m/n/12 Useful for the content of emails, for example, as it incl
+udes any[] 
+ []
+
+
+Overfull \hbox (17.5502pt too wide) in paragraph at lines 406--406
+[]   \OT1/cmtt/m/n/12 User data, escaped UTF-8, including all characters, but c
+ontrol[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 406--406
+[]   \OT1/cmtt/m/n/12 Useful guaranteed one line printable text, so useful in S
+ubject lines[] 
+ []
+
+[165]
+Overfull \hbox (48.42522pt too wide) in paragraph at lines 406--406
+[]   \OT1/cmtt/m/n/12 Other fields set using their field name, e.g. mr, pid, dc
+s, etc. udh[] 
+ []
+
+
+Overfull \hbox (60.77522pt too wide) in paragraph at lines 471--471
+[]   \OT1/cmtt/m/n/12 Present on mobile terminated messages and is the CLI for 
+morx messages[] 
+ []
+
+[166]
+Overfull \hbox (29.9002pt too wide) in paragraph at lines 471--471
+[]   \OT1/cmtt/m/n/12 Present on mobile originated messages, added by default i
+f absent[] 
+ []
+
+
+Overfull \hbox (5.2002pt too wide) in paragraph at lines 471--471
+[]   \OT1/cmtt/m/n/12 Hex string of user data header prepended to the SMS conte
+nts,[] 
+ []
+
+
+Overfull \hbox (11.3752pt too wide) in paragraph at lines 471--471
+[]   \OT1/cmtt/m/n/12 Consistent with ud, this is specified as udh# rather than
+ udh=[] 
+ []
+
+
+Overfull \hbox (54.60022pt too wide) in paragraph at lines 471--471
+[]   \OT1/cmtt/m/n/12 If blank, this means that the udhi flag will be set but a
+ny user data[] 
+ []
+
+[167]) [168]
+Chapter 13.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/queues-with-callback-members.tex [169
+
+] [170] [171]
+Overfull \hbox (80.75647pt too wide) in paragraph at lines 166--166
+ []                \OT1/cmtt/m/n/8 Background(digium/PleaseHoldAndYourCallWillB
+eAnsweredByOurNextAvailableSalesRepresentative);[] 
+ []
+
+
+Overfull \hbox (29.75574pt too wide) in paragraph at lines 166--166
+ []                \OT1/cmtt/m/n/8 Background(digium/AtAnyTimeYouMayPress0ToSpe
+akWithAnOperatorOr8ToLeaveAMessage);[] 
+ []
+
+
+Overfull \hbox (21.25562pt too wide) in paragraph at lines 205--205
+ []                \OT1/cmtt/m/n/8 Background(digium/PleaseWaitForTheNextAvaila
+bleCustomerServiceRepresentative);[] 
+ []
+
+
+Overfull \hbox (29.75574pt too wide) in paragraph at lines 205--205
+ []                \OT1/cmtt/m/n/8 Background(digium/AtAnyTimeYouMayPress0ToSpe
+akWithAnOperatorOr8ToLeaveAMessage);[] 
+ []
+
+
+Overfull \hbox (4.25537pt too wide) in paragraph at lines 205--205
+ []                \OT1/cmtt/m/n/8 Background(digium/NoCustomerServiceRepresent
+ativesAreAvailableAtThisTime);[] 
+ []
+
+[172]
+Overfull \hbox (36.51265pt too wide) in paragraph at lines 245--247
+[]\OT1/cmr/m/n/12 First, you set QUEUE[]MAX[]PENALTY to a value, then you call 
+Queue($\OML/cmm/m/it/12 <$\OT1/cmr/m/n/12 queue-
+ []
+
+
+Overfull \hbox (62.72478pt too wide) in paragraph at lines 258--260
+[]\OT1/cmr/m/n/12 The fi-nal at-tempt to queue in most of our ex-am-ples sets t
+he QUEUE[]MAX[]PENALTY
+ []
+
+[173] [174] [175] [176] [177])
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/queuelog.tex [178]
+Overfull \hbox (4.60255pt too wide) in paragraph at lines 34--35
+[]\OT1/cmr/bx/n/12 AGENTCALLBACKLOGOFF(exten@context$\OMS/cmsy/m/n/12 j$\OT1/cm
+r/bx/n/12 logintime$\OMS/cmsy/m/n/12 j$\OT1/cmr/bx/n/12 reason) 
+ []
+
+[179] [180]) [181]
+Chapter 14.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/phoneprov.tex
+Overfull \hbox (0.79677pt too wide) in paragraph at lines 3--9
+\OT1/cmr/m/n/12 Asterisk in-cludes ba-sic phone pro-vi-sion-ing sup-port throug
+h the res[]phoneprov
+ []
+
+[182
+
+] [183] [184] [185]
+Overfull \hbox (25.50568pt too wide) in paragraph at lines 215--215
+ []    \OT1/cmtt/m/n/8 ${PP_EACH_USER(<item><fn>%{DISPLAY_NAME}</fn><ct>%{CALLE
+RID}</ct><bw>1</bw></item>|${MAC})}[] 
+ []
+
+[186] [187]) [188]
+Chapter 15.
+
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/backtrace.tex
+Overfull \hbox (29.75574pt too wide) in paragraph at lines 24--24
+ []\OT1/cmtt/m/n/8 root     17832  0.0  1.2   2348   788 pts/1    S    Aug12   
+0:00 /bin/sh /usr/sbin/safe_asterisk[] 
+ []
+
+[189
+
+] [190]
+Overfull \hbox (148.75745pt too wide) in paragraph at lines 120--120
+ []\OT1/cmtt/m/n/8 #13 0x407513c3 in confcall_careful_stream (conf=0x8180bf8, f
+ilename=0x8181de8 "DAHDI/pseudo-1324221520") at app_meetme.c:262[] 
+ []
+
+
+Overfull \hbox (148.75745pt too wide) in paragraph at lines 167--167
+ []\OT1/cmtt/m/n/8 #13 0x407513c3 in confcall_careful_stream (conf=0x8180bf8, f
+ilename=0x8181de8 "DAHDI/pseudo-1324221520") at app_meetme.c:262[] 
+ []
+
+[191]
+Overfull \hbox (148.75745pt too wide) in paragraph at lines 203--203
+ []\OT1/cmtt/m/n/8 #13 0x407513c3 in confcall_careful_stream (conf=0x8180bf8, f
+ilename=0x8181de8 "DAHDI/pseudo-1324221520") at app_meetme.c:262[] 
+ []
+
+) [192]
+(/home/lmadsen/RELEASES/asterisk_working/asterisk_release/asterisk-1.6.0.9/doc/
+tex/asterisk.aux) )
+(\end occurred inside a group at level 1)
+
+### simple group (level 1) entered at line 198 ({)
+### bottom level 
+Here is how much of TeX's memory you used:
+ 3587 strings out of 95086
+ 55056 string characters out of 1183255
+ 108452 words of memory out of 1500000
+ 6108 multiletter control sequences out of 10000+50000
+ 21025 words of font info for 52 fonts, out of 1200000 for 2000
+ 28 hyphenation exceptions out of 8191
+ 27i,6n,36p,399b,589s stack positions out of 5000i,500n,6000p,200000b,5000s
+{/usr/share/texmf-texlive/fonts/enc/dvips/base/8r.enc}</usr/sha
+re/texmf-texlive/fonts/type1/bluesky/cm/cmbx12.pfb></usr/share/texmf-texlive/fo
+nts/type1/bluesky/cm/cmmi12.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/c
+m/cmr12.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmr17.pfb></usr/sh
+are/texmf-texlive/fonts/type1/bluesky/cm/cmr8.pfb></usr/share/texmf-texlive/fon
+ts/type1/bluesky/cm/cmsy10.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm
+/cmtt10.pfb></usr/share/texmf-texlive/fonts/type1/bluesky/cm/cmtt12.pfb></usr/s
+hare/texmf-texlive/fonts/type1/bluesky/cm/cmtt8.pfb></usr/share/texmf-texlive/f
+onts/type1/urw/helvetic/uhvb8ac.pfb></usr/share/texmf-texlive/fonts/type1/urw/h
+elvetic/uhvr8a.pfb></usr/share/texmf-texlive/fonts/type1/urw/times/utmr8a.pfb>
+Output written on asterisk.pdf (193 pages, 644429 bytes).
+PDF statistics:
+ 2260 PDF objects out of 2487 (max. 8388607)
+ 547 named destinations out of 1000 (max. 131072)
+ 1769 words of extra memory for PDF output out of 10000 (max. 10000000)
+
