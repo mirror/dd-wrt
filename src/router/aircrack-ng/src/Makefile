@@ -13,7 +13,7 @@ iOPTFLAGS       = -O3 -ip -ipo -D_FILE_OFFSET_BITS=64
 PROF_DIR	= $(PWD)/prof
 
 BINFILES        = aircrack-ng$(EXE) airdecap-ng$(EXE) packetforge-ng$(EXE) \
-		  ivstools$(EXE) kstats$(EXE) buddy-ng$(EXE) makeivs-ng$(EXE) \
+		  ivstools$(EXE) kstats$(EXE) makeivs-ng$(EXE) \
 		  airdecloak-ng$(EXE)
 
 ifeq ($(SQLITE), true)
@@ -32,13 +32,37 @@ else
 	endif
 endif
 
+
 LIBPCAP		=
 
 SBINFILES       = aireplay-ng$(EXE) airodump-ng$(EXE) airserv-ng$(EXE) \
-		  airtun-ng$(EXE) wesside-ng$(EXE) easside-ng$(EXE) airbase-ng$(EXE) \
-		  tkiptun-ng$(EXE)
+		  airtun-ng$(EXE) airbase-ng$(EXE)
+		  
 OPTFILES	= aircrack-ng-opt-prof_gen aircrack-ng-opt \
 		  aircrack-ng-opt-prof prof/*
+
+
+
+ifeq ($(UNSTABLE), true)
+	SBINFILES	+= wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
+	BINFILES	+= buddy-ng$(EXE)
+else
+	ifeq ($(unstable), true)
+		SBINFILES       += wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
+		BINFILES	+= buddy-ng$(EXE)
+	else
+		ifeq ($(UNSTABLE), TRUE)
+			SBINFILES       += wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
+			BINFILES	+= buddy-ng$(EXE)
+		else
+			ifeq ($(unstable), TRUE)
+				SBINFILES       += wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE)
+				BINFILES	+= buddy-ng$(EXE)
+			endif
+		endif
+	endif
+endif
+
 
 SRC_PTW		= aircrack-ptw-lib.c
 SRC_AC		= aircrack-ng.c crypto.c common.c $(SRC_PTW)
@@ -50,6 +74,12 @@ OBJS_AD		= airdecap-ng.o crypto.o common.o
 OBJS_PF		= packetforge-ng.o common.o crypto.o
 OBJS_AR		= aireplay-ng.o common.o crypto.o
 OBJS_ADU	= airodump-ng.o common.o crypto.o uniqueiv.o
+ifeq ($(OSNAME), cygwin)
+	OBJS_ADU	+= osdep/common.o
+endif
+ifeq ($(OSNAME), Darwin)
+	OBJS_ADU	+= osdep/common.o
+endif
 OBJS_AT		= airtun-ng.o common.o crypto.o
 OBJS_IV		= ivstools.o common.o crypto.o uniqueiv.o
 OBJS_AS		= airserv-ng.o common.o
@@ -169,7 +199,7 @@ strip: $(BINFILES) $(SBINFILES)
 
 clean:
 	$(MAKE) -C $(OSD) clean
-	-rm -f $(SBINFILES) $(BINFILES) $(OPTFILES) airolib-ng$(EXE) *.o
+	-rm -f $(SBINFILES) $(BINFILES) $(OPTFILES) airolib-ng$(EXE) *.o wesside-ng$(EXE) tkiptun-ng$(EXE) easside-ng$(EXE) buddy-ng$(EXE)
 
 distclean: clean
 

@@ -21,6 +21,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <assert.h>
+#include <pthread.h>
 #include "crypto.h"
 #include "crctable.h"
 #include "aircrack-ng.h"
@@ -433,6 +434,26 @@ int is_arp(void *wh, int len)
 
         if (len == arpsize || len == 54)
             return 1;
+
+        return 0;
+}
+
+int is_qos_arp_tkip(void *wh, int len)
+{
+        unsigned char *packet = (unsigned char*) wh;
+        int qosarpsize = (24 + 2) + 8 + (8 + (8 + 10*2)) + 8 + 4; //82 in total
+
+        if((packet[1] & 3) == 1) //to ds
+        {
+            if (len == qosarpsize) //always wireless
+                return 1;
+        }
+
+        if((packet[1] & 3) == 2) //from ds
+        {
+            if (len == qosarpsize || len == qosarpsize + 18) //wireless or padded wired
+                return 1;
+        }
 
         return 0;
 }

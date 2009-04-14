@@ -133,11 +133,13 @@ static pthread_mutex_t mx_wpastats = PTHREAD_MUTEX_INITIALIZER;
 #define K16_IV	0x00080000
 #define K17_IV	0x00100000
 
+/*
 typedef struct
 {
 	unsigned int used;
 }used_iv;
 used_iv* all_ivs;
+*/
 
 typedef struct
 {
@@ -192,6 +194,7 @@ char usage[] =
 "      -p <nbcpu> : # of CPU to use  (default: all CPUs)\n"
 "      -q         : enable quiet mode (no status output)\n"
 "      -C <macs>  : merge the given APs to a virtual one\n"
+"      -l <file>  : write key to file\n"
 "\n"
 "  Static WEP cracking options:\n"
 "\n"
@@ -2844,8 +2847,9 @@ void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_
 
 static void key_found(unsigned char *wepkey, int keylen, int B)
 {
-	int nb_ascii = 0;
+	FILE * keyFile;
 	int i, n;
+	int nb_ascii = 0;
 
 	for( i = 0; i < keylen; i++ )
 		if( wepkey[i] == 0 ||
@@ -2895,6 +2899,17 @@ static void key_found(unsigned char *wepkey, int keylen, int B)
 
 	printf( "\n\tDecrypted correctly: %d%%\n", opt.probability );
 	printf( "\n" );
+
+	// Write the key to a file
+	if (opt.logKeyToFile != NULL) {
+		keyFile = fopen(opt.logKeyToFile, "w");
+		if (keyFile != NULL)
+		{
+			for( i = 0; i < keylen; i++ )
+				fprintf(keyFile, "%02X", wepkey[i]);
+			fclose(keyFile);
+		}
+	}
 }
 
 /* test if the current WEP key is valid */
@@ -3763,6 +3778,7 @@ uchar mic[16], int force )
 
 int crack_wpa_thread( void *arg )
 {
+	FILE * keyFile;
 	char  essid[36];
 	char  key[4][128];
 	uchar pmk[4][128];
@@ -3775,7 +3791,7 @@ int crack_wpa_thread( void *arg )
 	struct AP_info* ap;
 	int thread;
 	int ret=0;
-	int i, j, len;
+	int i, j, len, slen;
 	int nparallel = 1;
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -3805,8 +3821,6 @@ int crack_wpa_thread( void *arg )
 		memcpy( pke + 35, ap->wpa.anonce, 32 );
 		memcpy( pke + 67, ap->wpa.snonce, 32 );
 	}
-
-	int slen;
 
 	/* receive the essid */
 
@@ -3905,6 +3919,16 @@ int crack_wpa_thread( void *arg )
 				if (opt.l33t)
 					printf( "\33[32;22m" );
 
+				// Write the key to a file
+				if (opt.logKeyToFile != NULL) {
+					keyFile = fopen(opt.logKeyToFile, "w");
+					if (keyFile != NULL)
+					{
+						fprintf(keyFile, "%s", key[j]);
+						fclose(keyFile);
+					}
+				}
+
 				return SUCCESS;
 			}
 		}
@@ -3925,7 +3949,11 @@ int crack_wpa_thread( void *arg )
 	}
 }
 
-
+/**
+ * Open a specific dictionnary
+ * nb: index of the dictionnary
+ * return 0 on success and FAILURE if it failed
+ */
 int next_dict(int nb)
 {
 	if(opt.dict != NULL)
@@ -3990,6 +4018,7 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 
 	unsigned char ptk[80];
 	unsigned char mic[20];
+	FILE * keyFile;
 
 	if(ccount) {} //XXX
 	if(columnnames) {} //XXX
@@ -3998,6 +4027,16 @@ int sql_wpacallback(void* arg, int ccount, char** values, char** columnnames ) {
 
 	if( memcmp( mic, ap->wpa.keymic, 16 ) == 0 )
 	{
+		// Write the key to a file
+		if (opt.logKeyToFile != NULL) {
+			keyFile = fopen(opt.logKeyToFile, "w");
+			if (keyFile != NULL)
+			{
+				fprintf(keyFile, "%s", values[1]);
+				fclose(keyFile);
+			}
+		}
+
 		if( opt.is_quiet )
 		{
 			printf( "KEY FOUND! [ %s ]\n", values[1] );
@@ -4291,7 +4330,7 @@ int crack_wep_dict()
 
 	if(wep.nb_ivs < TEST_MIN_IVS)
 	{
-		printf( "\nYou need to capture at least %d IVs!\n", TEST_MIN_IVS );
+		printf( "\n%ld IVs is below the minimum required for a dictionnary attack (%d IVs min.)!\n", wep.nb_ivs, TEST_MIN_IVS);
 		return( FAILURE );
 	}
 
@@ -4482,9 +4521,12 @@ int main( int argc, char *argv[] )
 	opt.bssid_list_1st = NULL;
 	opt.bssidmerge	= NULL;
 	opt.oneshot		= 0;
+	opt.logKeyToFile = NULL;
 
+	/*
 	all_ivs = malloc( (256*256*256) * sizeof(used_iv));
 	bzero(all_ivs, (256*256*256)*sizeof(used_iv));
+	*/
 
 	forceptw = 0;
 
@@ -4506,7 +4548,7 @@ int main( int argc, char *argv[] )
             {0,                   0, 0,  0 }
         };
 
-		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
+		option = getopt_long( argc, argv, "r:a:e:b:p:qcthd:l:m:n:i:f:k:x::Xysw:0HKC:M:DP:zV1",
                         long_options, &option_index );
 
 		if( option < 0 ) break;
@@ -4568,11 +4610,6 @@ int main( int argc, char *argv[] )
 					return( FAILURE );
 				}
 
-				if (opt.amode == 1 && opt.nbdict > 0)
-				{
-					opt.do_ptw = 0;
-				}
-
 				break;
 
 			case 'e' :
@@ -4595,7 +4632,7 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'p' :
-				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 || opt.nbcpu < 1 )
+				if( sscanf( optarg, "%d", &opt.nbcpu ) != 1 || opt.nbcpu < 1 || opt.nbcpu > MAX_THREADS)
 				{
 					printf( "Invalid number of processes (recommended: %d)\n", cpu_count );
 					printf("\"%s --help\" for help.\n", argv[0]);
@@ -4746,6 +4783,17 @@ int main( int argc, char *argv[] )
 
 				break;
 
+			case 'l' :
+				opt.logKeyToFile = (char *)malloc(strlen(optarg) + 1);
+				if (opt.logKeyToFile == NULL)
+				{
+					printf("Error allocating memory\n");
+					return( FAILURE );
+				}
+
+				strcpy(opt.logKeyToFile, optarg);
+				break;
+
 			case 'M' :
 
 				if( sscanf( optarg, "%d", &opt.max_ivs) != 1 || opt.max_ivs < 1)
@@ -4811,10 +4859,6 @@ int main( int argc, char *argv[] )
 					printf("\"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
 				}
-				else if (opt.amode == 1 && opt.nbdict > 0)
-				{
-					opt.do_ptw = 0;
-				}
 				break;
 
 			case 'r' :
@@ -4859,17 +4903,12 @@ int main( int argc, char *argv[] )
 				break;
 
 			case 'z' :
-				/* only for backwards compatibility - ptw used by default */
+				/* only for backwards compatibility - PTW used by default */
 				if (opt.visual_inspection)
 				{
 					printf("Visual inspection can only be used with KoreK\n");
 					printf("Use \"%s --help\" for help.\n", argv[0]);
 					return FAILURE;
-				}
-
-				if (opt.amode == 1 && opt.nbdict > 0)
-				{
-					opt.do_ptw = 0;
 				}
 
 				forceptw = 1;
@@ -4912,19 +4951,11 @@ usage:
 		goto exit_main;
 	}
 
-	if (opt.amode == 1 && opt.nbdict > 0)
-	{
-		opt.do_ptw = 0;
-	}
-
 	if( (! opt.essid_set && ! opt.bssid_set) && ( opt.is_quiet || opt.no_stdin ) )
 	{
 		printf( "Please specify an ESSID or BSSID.\n" );
 		goto exit_main;
 	}
-
-        if( opt.keylen == 0 )
-                opt.keylen = 13;
 
 	/* start one thread per input file */
 
@@ -5073,7 +5104,6 @@ usage:
 			else
 			{
 				printf( "Choosing first network as target.\n" );
-// 				sleep( 2 );
 				ap_cur = ap_1st;
 			}
 
@@ -5081,6 +5111,12 @@ usage:
 
 			memcpy( opt.bssid, ap_cur->bssid,  6 );
 			opt.bssid_set = 1;
+
+			/* Disable PTW if dictionnary used in WEP */
+			if (ap_cur->crypt == 2 && opt.dict != NULL)
+			{
+				opt.do_ptw = 0;
+			}
 		}
 
 		ap_1st = NULL;
@@ -5219,17 +5255,13 @@ usage:
 	{
 		crack_wep:
 
-		if (opt.nbdict > 0)
-		{
-			opt.do_ptw = 0;
-		}
-
+		/* Default key length: 128 bits */
 		if( opt.keylen == 0 )
 			opt.keylen = 13;
 
 		if(j + opt.do_brute > 4)
 		{
-			printf( "Specified more then 4 bytes to bruteforce!" );
+			printf( "Bruteforcing more then 4 bytes will take too long, aborting!" );
 			goto exit_main;
 		}
 
