@@ -1174,7 +1174,7 @@ int l2 = strlen(b);
 if (l2>l1)
     return -1;
 int i;
-int i2;
+int i2=0;
 for (i=0;i<l2;i++)
     {
     if (i2==strlen(b))
@@ -1187,6 +1187,7 @@ for (i=0;i<l2;i++)
     if (b[i2]==' ')
 	{
 	i2++;
+	i--;
 	continue;
 	}
     if (toupper(a[i])!=toupper(b[i2]))
@@ -1214,15 +1215,17 @@ int addrule(char *mac, char *upstream, char *downstream)
 	    break;
 	if (!stricmp(data,mac) && !strcmp(level,upstream) && !strcmp(level2,downstream))
 	    {
-	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd");	    
+	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
 	    ret |=1;
-	    }else
+	    }
+	    else
 	    {
 	    if (!stricmp(data,mac))
 	    {
 	    ret |=2;
 	    }
-	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
+	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd");	    
+//	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
 	    }
     }
     while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
