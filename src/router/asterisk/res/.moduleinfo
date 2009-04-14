@@ -1,0 +1,47 @@
+<category name="MENUSELECT_RES" displayname="Resource Modules" remove_on_change="res/modules.link">
+<member name="res_adsi" displayname="ADSI Resource" remove_on_change="res/res_adsi.o res/res_adsi.so">
+</member>
+<member name="res_agi" displayname="Asterisk Gateway Interface (AGI)" remove_on_change="res/res_agi.o res/res_agi.so">
+</member>
+<member name="res_clioriginate" displayname="Call origination from the CLI" remove_on_change="res/res_clioriginate.o res/res_clioriginate.so">
+</member>
+<member name="res_config_odbc" displayname="ODBC Configuration" remove_on_change="res/res_config_odbc.o res/res_config_odbc.so">
+	<depend>unixodbc</depend>
+	<depend>ltdl</depend>
+	<depend>res_odbc</depend>
+</member>
+<member name="res_config_pgsql" displayname="PostgreSQL RealTime Configuration Driver" remove_on_change="res/res_config_pgsql.o res/res_config_pgsql.so">
+	<depend>pgsql</depend>
+</member>
+<member name="res_convert" displayname="File format conversion CLI command" remove_on_change="res/res_convert.o res/res_convert.so">
+</member>
+<member name="res_crypto" displayname="Cryptographic Digital Signatures" remove_on_change="res/res_crypto.o res/res_crypto.so">
+	<depend>ssl</depend>
+</member>
+<member name="res_features" displayname="Call Features Resource" remove_on_change="res/res_features.o res/res_features.so">
+        <depend>chan_local</depend>
+</member>
+<member name="res_indications" displayname="Indications Resource" remove_on_change="res/res_indications.o res/res_indications.so">
+</member>
+<member name="res_jabber" displayname="AJI - Asterisk Jabber Interface" remove_on_change="res/res_jabber.o res/res_jabber.so">
+	<depend>iksemel</depend>
+	<use>gnutls</use>
+</member>
+<member name="res_monitor" displayname="Call Monitoring Resource" remove_on_change="res/res_monitor.o res/res_monitor.so">
+</member>
+<member name="res_musiconhold" displayname="Music On Hold Resource" remove_on_change="res/res_musiconhold.o res/res_musiconhold.so">
+	<conflict>win32</conflict>
+	<use>zaptel</use>
+</member>
+<member name="res_odbc" displayname="ODBC Resource" remove_on_change="res/res_odbc.o res/res_odbc.so">
+	<depend>unixodbc</depend>
+	<depend>ltdl</depend>
+</member>
+<member name="res_smdi" displayname="Simplified Message Desk Interface (SMDI) Resource" remove_on_change="res/res_smdi.o res/res_smdi.so">
+</member>
+<member name="res_snmp" displayname="SNMP [Sub]Agent for Asterisk" remove_on_change="res/res_snmp.o res/res_snmp.so">
+	<depend>netsnmp</depend>
+</member>
+<member name="res_speech" displayname="Generic Speech Recognition API" remove_on_change="res/res_speech.o res/res_speech.so">
+</member>
+</category>

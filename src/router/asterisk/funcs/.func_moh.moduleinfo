@@ -1,0 +1,2 @@
+<member name="func_moh" displayname="Music-on-hold dialplan function" remove_on_change="funcs/func_moh.o funcs/func_moh.so">
+</member>

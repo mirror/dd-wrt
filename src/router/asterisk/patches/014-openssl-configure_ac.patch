@@ -1,0 +1,11 @@
+--- asterisk-1.4.5.org/configure.ac	2007-06-04 18:02:31.000000000 +0200
++++ asterisk-1.4.5/configure.ac	2007-06-22 08:47:51.000000000 +0200
+@@ -900,7 +900,7 @@
+ 
+ AST_EXT_LIB_CHECK([SQLITE], [sqlite], [sqlite_exec], [sqlite.h])
+ 
+-AST_EXT_LIB_CHECK([OPENSSL], [ssl], [ssl2_connect], [openssl/ssl.h], [-lcrypto])
++AST_EXT_LIB_CHECK([OPENSSL], [ssl], [ssl23_connect], [openssl/ssl.h], [-lcrypto])
+ if test "$PBX_OPENSSL" = "1";
+ then
+     AST_EXT_LIB_CHECK([OSPTK], [osptk], [OSPPCryptoDecrypt], [osp/osp.h], [-lcrypto -lssl])

@@ -1,0 +1,193 @@
+# NOTE: Names of _INCLUDE and _LIB entries in this file must be
+#       the exact uppercase equivalents of the names used for
+#       dependencies in menuselect for the same package.
+
+CC=mips-linux-uclibc-gcc
+HOST_CC=cc
+CXX=mips-linux-uclibc-g++
+
+INSTALL=/usr/bin/install -c
+AWK=/usr/bin/awk
+GREP=/usr/bin/grep
+AR=/xfs/toolchains/staging_dir_mips/bin//mips-linux-uclibc-ar
+RANLIB=mips-linux-uclibc-ranlib
+FIND=/usr/bin/find
+COMPRESS=:
+BASENAME=/usr/bin/basename
+ID=/usr/bin/id
+SHELL=/bin/sh
+LN=/bin/ln
+DOT=:
+STRIP=/xfs/toolchains/staging_dir_mips/bin//mips-linux-uclibc-strip
+WGET=/usr/bin/wget
+FETCH=
+DOWNLOAD=/usr/bin/wget
+
+BUILD_PLATFORM=x86_64-unknown-linux-gnu
+BUILD_CPU=x86_64
+BUILD_VENDOR=unknown
+BUILD_OS=linux-gnu
+
+HOST_PLATFORM=mips-unknown-linux-uclibc
+HOST_CPU=mips
+HOST_VENDOR=unknown
+HOST_OS=linux-uclibc
+
+PROC=mips
+OSARCH=linux-uclibc
+OSREV=2.6.27.7-9-default
+
+GC_CFLAGS=-ffunction-sections
+GC_LDFLAGS=-Wl,--gc-sections
+
+PTHREAD_CFLAGS=-pthread
+PTHREAD_LIBS=
+
+prefix = /usr
+exec_prefix = ${prefix}
+
+bindir = ${exec_prefix}/bin
+datarootdir = ${prefix}/share
+datadir = ${datarootdir}
+includedir = ${prefix}/include
+infodir = ${datarootdir}/info
+libdir = ${exec_prefix}/lib
+libexecdir = ${exec_prefix}/libexec
+localstatedir = /var
+mandir = ${datarootdir}/man
+sbindir = ${exec_prefix}/sbin
+sharedstatedir = ${prefix}/com
+sysconfdir = /etc
+
+AST_DEVMODE=
+
+AST_DECLARATION_AFTER_STATEMENT=-Wdeclaration-after-statement
+
+ASOUND_INCLUDE=
+ASOUND_LIB=
+
+CURL_INCLUDE=
+CURL_LIB=
+
+CURSES_INCLUDE=
+CURSES_LIB=
+CURSES_DIR=
+
+EDITLINE_LIB=-L/home/seg/DEV/ar531x/src/router/ncurses/lib -lncurses 
+
+FREETDS_INCLUDE=
+FREETDS_LIB=
+
+GSM_INTERNAL=yes
+GSM_INCLUDE=
+GSM_LIB=
+
+GTK_INCLUDE=
+GTK_LIB=
+
+GTK2_INCLUDE=
+GTK2_LIB=
+
+IKSEMEL_INCLUDE=
+IKSEMEL_LIB=
+
+GNUTLS_INCLUDE=
+GNUTLS_LIB=
+
+IMAP_TK_INCLUDE=
+IMAP_TK_LIB=
+
+KDEDIR=
+KDE_INCLUDE=
+KDE_LIB=
+
+NBS_INCLUDE=
+NBS_LIB=
+
+NCURSES_INCLUDE=-I/home/seg/DEV/ar531x/src/router/ncurses/include
+NCURSES_LIB=-L/home/seg/DEV/ar531x/src/router/ncurses/lib -lncurses 
+NCURSES_DIR=/home/seg/DEV/ar531x/src/router/ncurses
+
+NETSNMP_LIB=
+
+NEWT_INCLUDE=
+NEWT_LIB=
+
+OGG_INCLUDE=
+OGG_LIB=
+
+OSPTK_INCLUDE=
+OSPTK_LIB=
+
+OSSAUDIO_INCLUDE=
+OSSAUDIO_LIB=
+
+PGSQL_INCLUDE=
+PGSQL_LIB=
+
+POPT_INCLUDE=
+POPT_LIB=
+
+PRI_INCLUDE=
+PRI_LIB=
+
+PWLIB_INCLUDE=
+PWLIB_LIB=
+
+RADIUS_INCLUDE=
+RADIUS_LIB=
+
+SPANDSP_INCLUDE=@SPANDSP_INCLUDE@
+SPANDSP_LIB=@SPANDSP_LIB@
+
+SPEEX_INCLUDE=
+SPEEX_LIB=
+
+SPEEXDSP_INCLUDE=
+SPEEXDSP_LIB=
+
+SQLITE_INCLUDE=
+SQLITE_LIB=
+
+SSL_INCLUDE=
+SSL_LIB=
+
+TONEZONE_INCLUDE=
+TONEZONE_LIB=
+
+USB_INCLUDE=
+USB_LIB=
+
+UNIXODBC_INCLUDE=
+UNIXODBC_LIB=
+
+VORBIS_INCLUDE=
+VORBIS_LIB=
+
+VPBAPI_INCLUDE=
+VPBAPI_LIB=
+
+ZAPTEL_INCLUDE=
+
+ZLIB_INCLUDE=
+ZLIB_LIB=
+
+ISDNNET_INCLUDE=
+ISDNNET_LIB=
+
+MISDN_INCLUDE=
+MISDN_LIB=
+
+SUPPSERV_INCLUDE=
+SUPPSERV_LIB=
+
+CAP_LIB=
+CAP_INCLUDE=
+
+TERMCAP_INCLUDE=
+TERMCAP_LIB=
+TERMCAP_DIR=
+
+TINFO_INCLUDE=
+TINFO_LIB=
+TINFO_DIR=

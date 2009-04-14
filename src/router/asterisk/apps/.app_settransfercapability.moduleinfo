@@ -1,0 +1,2 @@
+<member name="app_settransfercapability" displayname="Set ISDN Transfer Capability" remove_on_change="apps/app_settransfercapability.o apps/app_settransfercapability.so">
+</member>

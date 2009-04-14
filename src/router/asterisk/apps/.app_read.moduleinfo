@@ -1,0 +1,2 @@
+<member name="app_read" displayname="Read Variable Application" remove_on_change="apps/app_read.o apps/app_read.so">
+</member>

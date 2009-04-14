@@ -1,0 +1,21 @@
+/* Automatically generated file, do not edit */
+#define protected static
+#define SCCSID
+#include "common.c"
+#include "emacs.c"
+#include "vi.c"
+#include "chared.c"
+#include "el.c"
+#include "hist.c"
+#include "key.c"
+#include "map.c"
+#include "parse.c"
+#include "prompt.c"
+#include "read.c"
+#include "refresh.c"
+#include "search.c"
+#include "sig.c"
+#include "term.c"
+#include "tty.c"
+#include "fcns.c"
+#include "help.c"

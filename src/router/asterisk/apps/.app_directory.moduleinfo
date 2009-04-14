@@ -1,0 +1,2 @@
+<member name="app_directory" displayname="Extension Directory" remove_on_change="apps/app_directory.o apps/app_directory.so">
+</member>

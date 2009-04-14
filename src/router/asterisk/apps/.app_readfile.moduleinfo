@@ -1,0 +1,2 @@
+<member name="app_readfile" displayname="Stores output of file into a variable" remove_on_change="apps/app_readfile.o apps/app_readfile.so">
+</member>
