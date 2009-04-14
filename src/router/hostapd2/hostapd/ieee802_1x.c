@@ -1171,13 +1171,27 @@ int stricmp(char *a,char *b)
 {
 int l1 = strlen(a);
 int l2 = strlen(b);
-if (l1!=l2)
+if (l2>l1)
     return -1;
 int i;
-for (i=0;i<l1;i++)
+int i2;
+for (i=0;i<l2;i++)
     {
-    if (toupper(a[i])!=toupper(b[i]))
+    if (i2==strlen(b))
+	{
 	return -1;
+	break;
+	}
+    if (a[i]==' ')
+	continue;
+    if (b[i2]==' ')
+	{
+	i2++;
+	continue;
+	}
+    if (toupper(a[i])!=toupper(b[i2]))
+	return -1;
+    i2++;
     }
 return 0;
 }
@@ -1191,7 +1205,7 @@ int addrule(char *mac, char *upstream, char *downstream)
     if (strlen(qos_mac)>0)
     {
     char *newqos = malloc(strlen(qos_mac)*2);
-    memset(newqos,0,strlen(qos_mac));
+    memset(newqos,0,strlen(qos_mac)*2);
     char level[32], level2[32], data[32], type[32];
     do
     {
@@ -1200,12 +1214,12 @@ int addrule(char *mac, char *upstream, char *downstream)
 	if (!stricmp(data,mac) && !strcmp(level,upstream) && !strcmp(level2,downstream))
 	    {
 	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd");	    
-	    ret |=2;
+	    ret |=1;
 	    }else
 	    {
 	    if (!stricmp(data,mac))
 	    {
-	    ret |=1;
+	    ret |=2;
 	    }
 	    sprintf(newqos,"%s %s %s %s %s |",newqos,data,level,level2,type);	    
 	    }
@@ -1335,9 +1349,11 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 			qosidx+=2;
 			if (qosidx>500)
 			    qosidx=0;
+			wpa_printf(MSG_DEBUG, "bandwidth rule is new, no flush required!\n");			
 			add_usermac(mac, qosidx, uplevel,downlevel );
 			}else if (ret>1)
 			{
+			wpa_printf(MSG_DEBUG, "bandwidth rule change detected, flush table and reset it to new values! (status %d)\n",ret);			
 			system("stopservice wshaper");
 			system("startservice wshaper");
 			}	    
