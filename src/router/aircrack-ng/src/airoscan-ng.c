@@ -1,4 +1,4 @@
-/*
+ /*
  *  pcap-compatible 802.11 packet sniffer
  *
  *  Copyright (C) 2006 Thomas d'Otreppe
