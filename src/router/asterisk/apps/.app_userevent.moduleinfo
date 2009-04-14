@@ -1,0 +1,2 @@
+<member name="app_userevent" displayname="Custom User Event Application" remove_on_change="apps/app_userevent.o apps/app_userevent.so">
+</member>

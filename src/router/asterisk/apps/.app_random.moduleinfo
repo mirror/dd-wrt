@@ -1,0 +1,2 @@
+<member name="app_random" displayname="Random goto" remove_on_change="apps/app_random.o apps/app_random.so">
+</member>

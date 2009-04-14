@@ -1,0 +1,2 @@
+<member name="cdr_custom" displayname="Customizable Comma Separated Values CDR Backend" remove_on_change="cdr/cdr_custom.o cdr/cdr_custom.so">
+</member>

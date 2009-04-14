@@ -1,0 +1,24 @@
+<category name="MENUSELECT_CDR" displayname="Call Detail Recording" remove_on_change="cdr/modules.link">
+<member name="cdr_csv" displayname="Comma Separated Values CDR Backend" remove_on_change="cdr/cdr_csv.o cdr/cdr_csv.so">
+</member>
+<member name="cdr_custom" displayname="Customizable Comma Separated Values CDR Backend" remove_on_change="cdr/cdr_custom.o cdr/cdr_custom.so">
+</member>
+<member name="cdr_manager" displayname="Asterisk Manager Interface CDR Backend" remove_on_change="cdr/cdr_manager.o cdr/cdr_manager.so">
+</member>
+<member name="cdr_odbc" displayname="ODBC CDR Backend" remove_on_change="cdr/cdr_odbc.o cdr/cdr_odbc.so">
+	<depend>unixodbc</depend>
+	<depend>ltdl</depend>
+</member>
+<member name="cdr_pgsql" displayname="PostgreSQL CDR Backend" remove_on_change="cdr/cdr_pgsql.o cdr/cdr_pgsql.so">
+	<depend>pgsql</depend>
+</member>
+<member name="cdr_radius" displayname="RADIUS CDR Backend" remove_on_change="cdr/cdr_radius.o cdr/cdr_radius.so">
+	<depend>radius</depend>
+</member>
+<member name="cdr_sqlite" displayname="SQLite CDR Backend" remove_on_change="cdr/cdr_sqlite.o cdr/cdr_sqlite.so">
+	<depend>sqlite</depend>
+</member>
+<member name="cdr_tds" displayname="MSSQL CDR Backend" remove_on_change="cdr/cdr_tds.o cdr/cdr_tds.so">
+	<depend>freetds</depend>
+</member>
+</category>

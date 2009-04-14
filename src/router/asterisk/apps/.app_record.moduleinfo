@@ -1,0 +1,2 @@
+<member name="app_record" displayname="Trivial Record Application" remove_on_change="apps/app_record.o apps/app_record.so">
+</member>

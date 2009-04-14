@@ -1,0 +1,2 @@
+<member name="app_directed_pickup" displayname="Directed Call Pickup Application" remove_on_change="apps/app_directed_pickup.o apps/app_directed_pickup.so">
+</member>

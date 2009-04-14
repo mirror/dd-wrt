@@ -1,0 +1,2 @@
+<member name="app_chanisavail" displayname="Check channel availability" remove_on_change="apps/app_chanisavail.o apps/app_chanisavail.so">
+</member>

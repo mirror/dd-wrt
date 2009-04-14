@@ -1,0 +1,2 @@
+<member name="app_cdr" displayname="Tell Asterisk to not maintain a CDR for the current call" remove_on_change="apps/app_cdr.o apps/app_cdr.so">
+</member>

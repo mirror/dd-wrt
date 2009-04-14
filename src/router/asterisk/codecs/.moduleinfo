@@ -1,0 +1,27 @@
+<category name="MENUSELECT_CODECS" displayname="Codec Translators" remove_on_change="codecs/modules.link">
+<member name="codec_a_mu" displayname="A-law and Mulaw direct Coder/Decoder" remove_on_change="codecs/codec_a_mu.o codecs/codec_a_mu.so">
+</member>
+<member name="codec_adpcm" displayname="Adaptive Differential PCM Coder/Decoder" remove_on_change="codecs/codec_adpcm.o codecs/codec_adpcm.so">
+</member>
+<member name="codec_alaw" displayname="A-law Coder/Decoder" remove_on_change="codecs/codec_alaw.o codecs/codec_alaw.so">
+</member>
+<member name="codec_g726" displayname="ITU G.726-32kbps G726 Transcoder" remove_on_change="codecs/codec_g726.o codecs/codec_g726.so">
+</member>
+<member name="codec_gsm" displayname="GSM Coder/Decoder" remove_on_change="codecs/codec_gsm.o codecs/codec_gsm.so">
+	<depend>gsm</depend>
+</member>
+<member name="codec_ilbc" displayname="iLBC Coder/Decoder" remove_on_change="codecs/codec_ilbc.o codecs/codec_ilbc.so">
+</member>
+<member name="codec_lpc10" displayname="LPC10 2.4kbps Coder/Decoder" remove_on_change="codecs/codec_lpc10.o codecs/codec_lpc10.so">
+</member>
+<member name="codec_speex" displayname="Speex Coder/Decoder" remove_on_change="codecs/codec_speex.o codecs/codec_speex.so">
+	<depend>speex</depend>
+	<use>speexdsp</use>
+</member>
+<member name="codec_ulaw" displayname="mu-Law Coder/Decoder" remove_on_change="codecs/codec_ulaw.o codecs/codec_ulaw.so">
+</member>
+<member name="codec_zap" displayname="Generic Zaptel Transcoder Codec Translator" remove_on_change="codecs/codec_zap.o codecs/codec_zap.so">
+	<depend>zaptel_transcode</depend>
+	<depend>zaptel</depend>
+</member>
+</category>
