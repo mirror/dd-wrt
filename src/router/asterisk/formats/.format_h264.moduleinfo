@@ -1,0 +1,2 @@
+<member name="format_h264" displayname="Raw H.264 data" remove_on_change="formats/format_h264.o formats/format_h264.so">
+</member>

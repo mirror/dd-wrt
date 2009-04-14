@@ -1,0 +1,2 @@
+<member name="format_h263" displayname="Raw H.263 data" remove_on_change="formats/format_h263.o formats/format_h263.so">
+</member>

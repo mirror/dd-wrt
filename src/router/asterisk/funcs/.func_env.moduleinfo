@@ -1,0 +1,2 @@
+<member name="func_env" displayname="Environment/filesystem dialplan functions" remove_on_change="funcs/func_env.o funcs/func_env.so">
+</member>

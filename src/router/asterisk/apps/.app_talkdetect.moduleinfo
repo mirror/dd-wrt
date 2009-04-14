@@ -1,0 +1,2 @@
+<member name="app_talkdetect" displayname="Playback with Talk Detection" remove_on_change="apps/app_talkdetect.o apps/app_talkdetect.so">
+</member>

@@ -1,0 +1,4 @@
+<member name="codec_speex" displayname="Speex Coder/Decoder" remove_on_change="codecs/codec_speex.o codecs/codec_speex.so">
+	<depend>speex</depend>
+	<use>speexdsp</use>
+</member>

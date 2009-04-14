@@ -1,0 +1,2 @@
+<member name="codec_lpc10" displayname="LPC10 2.4kbps Coder/Decoder" remove_on_change="codecs/codec_lpc10.o codecs/codec_lpc10.so">
+</member>

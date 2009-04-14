@@ -1,0 +1,2 @@
+<member name="app_lookupblacklist" displayname="Look up Caller*ID name/number from blacklist database" remove_on_change="apps/app_lookupblacklist.o apps/app_lookupblacklist.so">
+</member>

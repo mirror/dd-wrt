@@ -1,0 +1,2 @@
+<member name="res_adsi" displayname="ADSI Resource" remove_on_change="res/res_adsi.o res/res_adsi.so">
+</member>

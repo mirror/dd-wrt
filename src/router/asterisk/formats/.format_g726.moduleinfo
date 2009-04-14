@@ -1,0 +1,2 @@
+<member name="format_g726" displayname="Raw G.726 (16/24/32/40kbps) data" remove_on_change="formats/format_g726.o formats/format_g726.so">
+</member>

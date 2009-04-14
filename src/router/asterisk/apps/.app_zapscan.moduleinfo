@@ -1,0 +1,3 @@
+<member name="app_zapscan" displayname="Scan Zap channels application" remove_on_change="apps/app_zapscan.o apps/app_zapscan.so">
+	<depend>zaptel</depend>
+</member>

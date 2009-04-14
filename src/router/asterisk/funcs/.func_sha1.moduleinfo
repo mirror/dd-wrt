@@ -1,0 +1,2 @@
+<member name="func_sha1" displayname="SHA-1 computation dialplan function" remove_on_change="funcs/func_sha1.o funcs/func_sha1.so">
+</member>

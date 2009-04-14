@@ -1,0 +1,2 @@
+<member name="app_hasnewvoicemail" displayname="Indicator for whether a voice mailbox has messages in a given folder." remove_on_change="apps/app_hasnewvoicemail.o apps/app_hasnewvoicemail.so">
+</member>

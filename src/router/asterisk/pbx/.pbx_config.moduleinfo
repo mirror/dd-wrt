@@ -1,0 +1,2 @@
+<member name="pbx_config" displayname="Text Extension Configuration" remove_on_change="pbx/pbx_config.o pbx/pbx_config.so">
+</member>

@@ -1,0 +1,2 @@
+<member name="app_dictate" displayname="Virtual Dictation Machine" remove_on_change="apps/app_dictate.o apps/app_dictate.so">
+</member>

@@ -1,0 +1,3 @@
+<member name="app_zapras" displayname="Zap RAS Application" remove_on_change="apps/app_zapras.o apps/app_zapras.so">
+	<depend>zaptel</depend>
+</member>

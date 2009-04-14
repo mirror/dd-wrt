@@ -1,0 +1,3 @@
+<member name="res_config_pgsql" displayname="PostgreSQL RealTime Configuration Driver" remove_on_change="res/res_config_pgsql.o res/res_config_pgsql.so">
+	<depend>pgsql</depend>
+</member>

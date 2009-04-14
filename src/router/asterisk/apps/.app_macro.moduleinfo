@@ -1,0 +1,2 @@
+<member name="app_macro" displayname="Extension Macros" remove_on_change="apps/app_macro.o apps/app_macro.so">
+</member>
