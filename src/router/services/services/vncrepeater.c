@@ -42,7 +42,7 @@ void start_vncrepeater( void )
     FILE *fp = fopen("/tmp/vncrepeater.ini","wb");
     fprintf(fp,"[general]\n");
     fprintf(fp,"viewerport=5900\n");
-    fprintf(fp,"serverport=5900\n");
+    fprintf(fp,"serverport=5500\n");
     fprintf(fp,"ownipaddress=0.0.0.0\n");
     fprintf(fp,"maxsessions=100\n");
     fprintf(fp,"runasuser=root\n");

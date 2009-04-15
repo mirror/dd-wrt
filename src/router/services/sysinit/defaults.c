@@ -2666,6 +2666,9 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_SAMBA_SRV
     {"sambasrv_enable", "0", 0},
 #endif
+#ifdef HAVE_VNCREPEATER
+    {"vncr_enable", "0", 0},
+#endif
     {0, 0, 0}
 };
 
