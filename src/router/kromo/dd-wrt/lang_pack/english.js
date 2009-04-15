@@ -1250,6 +1250,9 @@ service.vpn_clicert="Public Client Cert";
 service.vpn_certtype="nsCertType";
 service.vpn_clikey="Private Client Key";
 
+service.vncrepeater_legend="VNC";
+service.vncrepeater="VNC Repeater";
+
 //sshd.webservices
 service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
