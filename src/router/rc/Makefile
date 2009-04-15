@@ -78,6 +78,9 @@ endif
 ifeq ($(CONFIG_JFFS2),y)
 CFLAGS += -DHAVE_JFFS2
 endif
+ifeq ($(CONFIG_VNCREPEATER),y)
+CFLAGS += -DHAVE_VNCREPEATER
+endif
 ifeq ($(CONFIG_3G),y)
 CFLAGS += -DHAVE_3G
 endif
