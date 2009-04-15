@@ -30,7 +30,7 @@ clean:
 install:
 	mkdir -p $(INSTALLDIR)/usr/sbin
 	mkdir -p $(INSTALLDIR)/etc/config
-	cp -R repeater $(INSTALLDIR)/usr/sbin/uvncrepeatersvc
+	cp -R repeater $(INSTALLDIR)/usr/sbin
 	cp -R config/* $(INSTALLDIR)/etc/config
 #	cp -R start-stop-daemon $(INSTALLDIR)/usr/sbin/start-stop-daemon
 #	cp -R uvncrepeater /etc/init.d/uvncrepeater
