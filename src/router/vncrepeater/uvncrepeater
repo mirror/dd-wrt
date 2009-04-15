@@ -1,0 +1,43 @@
+#!/bin/sh
+
+PATH=/sbin:/bin
+UVNCREPPID=/var/run/uvncrepeater.pid
+UVNCREPLOG=/var/log/uvncrepeater.log
+UVNCREPRUN=/usr/sbin/uvncrepeater-log
+UVNCREPSVC=/usr/sbin/uvncrepeatersvc
+UVNCREPINI=/etc/uvnc/uvncrepeater.ini
+
+#if service file does not exist then exit the script
+
+if test ! -x $UVNCREPSVC ; then 
+  echo $UVNCREPSVC file was not found.
+  echo Exiting...
+  exit 2
+fi
+
+#Create the file to start the service if it does not exist
+
+if test ! -x $UVNCREPRUN ; then
+  echo '#!/bin/sh' > $UVNCREPRUN
+#    echo 'exec' $UVNCREPSVC '2>>' $UVNCREPLOG  >> $UVNCREPRUN
+  echo 'exec' $UVNCREPSVC $UVNCREPINI '2>>' $UVNCREPLOG  >> $UVNCREPRUN
+  chmod +x $UVNCREPRUN 
+fi
+
+case "$1" in
+start)
+  echo -n "Running UltraVNC Repeater..."
+  /usr/sbin/start-stop-daemon --start -b -m -p $UVNCREPPID --exec $UVNCREPRUN -- $UVNCREPLOG
+  echo "."
+  ;;
+stop)
+  echo  "Stopping UltraVNC Repeater..."
+  /usr/sbin/start-stop-daemon --stop -p $UVNCREPPID
+  rm $UVNCREPPID
+  ;;
+*)
+  echo "Usage: $0 {start|stop}"
+  exit 1
+esac
+exit 0
+

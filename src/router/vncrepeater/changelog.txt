@@ -1,0 +1,99 @@
+ver 0.01-0.03: One has to start from somewhere. Release early, release buggy ;)
+
+ver 0.04: This looks like it will be almost usable. Almost ;-)
+-no pthreads requirement anymore, uses fork() and tracks child processes via a table and SIGCHLD signal handler.
+-much cleaner, almost readable code now
+-UpdateServerViewerInfo: This function could be used to update changes in Servers[]/Viewers[] tables to external database/html page/email/whatever
+
+ver 0.05: 
+-Now uses a simple Makefile, so build with command Make
+-added peer ip address (in ASCII form) to RepeaterInfo structure (Simon A. F. Lund needed this)
+
+ver 0.06:
+-strcpy() replaced with OpenBsd strlcpy()
+-strcat() replaced with strlcat() 
+-sprintf() replaced with snprintf()
+
+ver 0.07:
+-Vince Di Piazza found a bug in command-line parameter handling (Viewer port worked only when given without server port). Dennis Pejcha e-mailed me about this bug and suggested a bugfix. Thanks, Vince & Dennis !
+-MAX_SESSIONS (Maximum number of active server/viewer connections) is now 100 (was 20 previously).
+-Cleans inactive server/viewer connections after 10 minutes (was 5 minutes before).
+
+ver 0.08:
+-Mode 1 support ! Mode 1 connections show in servers[]/viewers[] tables as active connections that have 
+IdCode < 0 (Repeater "invents" unique IdCode number for Mode 1 connections)
+-Timestamped STDERR entries (to know what it is doing when it hangs ;-)
+-Further code cleanups (it is lot more consistently javaStyleNow :)
+-Signal handling changed: cleanup of doRepeater child processes is now done in routeConnections() (function cleanUpAfterRepeaterProcs) to avoid running lots of code in SIG_CHLD signal handler.
+-Tries to get automatic restart of interrupted system calls (using flag SA_RESTART).
+ 
+ver 0.09 (Tue Mar 7, 2006):
+-Changed debug() / error() / fatal() so that their message is printed on one line
+-Changed writeExact() / readExact() to be non-blocking (Tries to avoid long delay in acceptConnection() causing 
+repeater not accepting other connections). Eloi Granado pointed this out. Thanks for very detailed and to-the-point bug report, Eloi !
+
+ver 0.10 (Fri Mar 10, 2006):
+-Repeater settings are now stored in repeater.ini (ini-file handling uses iniparser library. Thanks to Nicolas Devillard !!).
+-Added (optional) support for Mode 1 allowed server addresses / address ranges in repeater.ini (max 50 servers / ranges)
+-Added (optional) support for Mode 1 denied server addresses / address ranges in repeater.ini (max 50 servers / ranges)
+-Added (optional) ID codes list feature: Allowed ID codes can now be listed in repeater.ini (max 100 allowed ID codes)
+-Mode 1 / Mode 2 / Both connection support can now be selected in repeater.ini
+-Allowed Mode 1 server port (0=All) can now be selected in repeater.ini
+-Listen ports are of course now in repeater.ini
+-Initialization values are now listed when repeater starts (to help detect possible problems with allow/deny address ranges, listen ports etc) 
+-Linux repeater is now (finally) able to detect situations where connected server/viewer is killed with ctrl+alt+del, before repeater session starts. 
+-Much cleaner inactive connection handling code (functions isConnectionTooOld(), isExistingConnectionInactive(), connectionRemover(), removeOldOrInactiveConnections()).
+-Mode 1 connection to server now uses select() and timeouts after 10 seconds. Previous version could block for minutes if given non-existant host address. Timeout code is borrowed from unix sockets faq. Not pretty, but works.
+-Rule "only one active session with same ID" is now better enforced (trying to connect twice with same ID fails on 2nd try)
+-Refactored common code of debug()/error()/fatal() to logLineStart()
+-Refactored repetitive repeater forking code from acceptConnection() to forkRepeater()
+ 
+ver 0.11 (Sun Mar 12, 2006):
+-Added one optional command-line parameter: inifilepathandname. 
+-This is to make use in startup scripts easier (I had not thought about it. Thanks, Harro !). 
+-If inifile is not given in command-line, uses /etc/uvncrepeater.ini as default.
+-As noted from previous line, default ini file name is now uvncrepeater.ini (repeater.ini was too generic).
+
+ver 0.12 (Thu Mar 30, 2006):
+-Works with server/viewer that run with dsm plugins
+-Listener ip address can now be configured via ini file, for servers with many ip addresses 
+-Can now be started as root and then drops privileges (after bind() to ports lower than 1024). For this,
+you need to create normal user / group, e.g. repuser / repgroup) and then set ini file setting runasuser = repuser 
+-Logging level can be selected (ini file setting) from 0=almost nothing to 3=very verbose
+-Function acceptConnection() has no blocking functions left. Hopefully it won't hang anymore. Don't count on it ;-)
+-MaxSessions (simultaneous active connections) is now configurable (ini file setting) from 1 to 1000 (Allan M. needed this).
+-Detects situation where maxSessions is reached, refuses further connections until session tables have free slots again
+
+ver 0.13 (Fri Apr 14, 2006):
+-Has a new "events" interface. With this, repeater is able to connect to a "event-listener" machine somewehere in network and
+send information about various events. These are:
+ -VIEWER_CONNECT / VIEWER DISCONNECT: Viewer has connected to / broken connection to repeater
+ -SERVER_CONNECT / SERVER DISCONNECT: Server has connected to / broken connection to repeater
+ -VIEWER_SERVER_SESSION_START / VIEWER_SERVER_SESSION_END: Vnc session between viewer/server has started/ended
+ -REPEATER_STARTUP: Repeater has just started
+ -REPEATER_SHUTDOWN: Repeater has just closed down
+ -REPEATER_HEARTBEAT: Repeater sends this every 90 seconds to signal "I'm alive and all is well"
+-Has a reference implementation of "event listener" made with Java, runs (at least) in Windows / Linux. Look directory "eventlistener". compile with: "javac EventListener.java", run with "java EventListener".
+-Event interface message format can be seen in file repeaterevents.cpp
+-ini- file has new [eventinterface] section for settings events hostname/address, port etc. and if "events" interface
+ is used
+-ini- file setting "listeneripaddress" is renamed to "ownipaddress"
+
+ver 0.14 (Sat Oct 21, 2006):
+-Has new "usehttp"- boolean setting for events interface. If true, sends event info in format 
+suitable (?) for an php event listener program running in web server. An anonymous user wanted this.
+Example event string (look into repeaterevents.cpp for details):
+Normal string: "EvMsgVer:%d,EvNum:%d,Time:%ld,Pid:%d,MaxSessions:%d\n"
+Http string: "GET /? EvMsgVer=%d&EvNum=%d&Time=%ld&Pid=%d&MaxSessions=%d HTTP/1.0\n"
+
+
+ 
+ 
+
+
+
+
+
+
+
+
