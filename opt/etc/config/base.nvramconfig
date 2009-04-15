@@ -299,3 +299,4 @@
  "portsetup" "portsetup" "PORTSETUP" "FALSE" "0"
  "wan_ifname" "portsetup" "PORTSETUP" "FALSE" "0"
  "pppoe_ver" "rp-pppoe" "NULL" "FALSE" "0"
+ "vncr_enable" "vnc repeater" "CHOICE" "2" "0" "1" "FALSE" "0"
