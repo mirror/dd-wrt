@@ -206,9 +206,15 @@
  * 
  * The phy switch settings in the mvPhyInfo table are set accordingly.
  */
-#define ADM_WAN_PORT          0
-#define ADM_IS_LAN_PORT(port) ((port) > 0 && (port)<5)
+#ifdef HAVE_WGT624
+#define ADM_WAN_PORT          4
+#define ADM_IS_LAN_PORT(port) ((port) >= 0 && (port) < 4)
 #define ADM_IS_WAN_PORT(port) ((port) == ADM_WAN_PORT)
+#else
+#define ADM_WAN_PORT          0
+#define ADM_IS_LAN_PORT(port) ((port) > 0 && (port) < 5)
+#define ADM_IS_WAN_PORT(port) ((port) == ADM_WAN_PORT)
+#endif
 
 #define ENET_UNIT_DEFAULT 0
 
@@ -235,18 +241,54 @@ typedef struct
 /*
  * Per-PHY information, indexed by PHY unit number.
  */
+#ifdef HAVE_WGT624
 admPhyInfo_t admPhyInfo[] = {
-    /*
-     * On AP30/AR5312, all PHYs are associated with MAC0.
-     * AP30/AR5312's MAC1 isn't used for anything.
-     * CONFIG_VENETDEV==1 (router) configuration:
-     *    Ports 0,1,2, and 3 are "LAN ports"
-     *    Port 4 is a WAN port
-     *    Port 5 connects to MAC0 in the AR5312
-     * CONFIG_VENETDEV==0 (bridge) configuration:
-     *    Ports 0,1,2,3,4 are "LAN ports"
-     *    Port 5 connects to the MAC0 in the AR5312
-     */
+    {TRUE,			/* phy port 0 -- LAN port */
+     FALSE,
+     ENET_UNIT_DEFAULT,
+     ADM_PHY0_ADDR,
+     ADM_SW_PHY_PORT0_REG,
+     ADM_LAN_PORT_VLAN		/* LAN port */
+     },
+
+    {TRUE,			/* phy port 1 -- NC */
+     FALSE,
+     ENET_UNIT_DEFAULT,
+     ADM_PHY1_ADDR,
+     ADM_SW_PHY_PORT1_REG,
+     ADM_LAN_PORT_VLAN},
+
+    {TRUE,			/* phy port 2 -- NC */
+     FALSE,
+     ENET_UNIT_DEFAULT,
+     ADM_PHY2_ADDR,
+     ADM_SW_PHY_PORT2_REG,
+     ADM_LAN_PORT_VLAN},
+
+    {TRUE,			/* phy port 3 -- NC */
+     FALSE,
+     ENET_UNIT_DEFAULT,
+     ADM_PHY3_ADDR,
+     ADM_SW_PHY_PORT3_REG,
+     ADM_LAN_PORT_VLAN},
+
+    {TRUE,			/* phy port 4 -- WAN port */
+     FALSE,
+     ENET_UNIT_DEFAULT,
+     ADM_PHY4_ADDR,
+     ADM_SW_PHY_PORT4_REG,
+     ADM_WAN_PORT_VLAN},
+
+    {FALSE,			/* phy port 5 -- CPU port (no RJ45 connector) 
+				 */
+     TRUE,
+     ENET_UNIT_DEFAULT,
+     0x00,
+     ADM_SW_PHY_PORT5_REG,
+     ADM_WAN_PORT_VLAN},
+};
+#else
+admPhyInfo_t admPhyInfo[] = {
     {TRUE,			/* phy port 0 -- WAN port */
      FALSE,
      ENET_UNIT_DEFAULT,
@@ -292,6 +334,7 @@ admPhyInfo_t admPhyInfo[] = {
      ADM_WAN_PORT_VLAN},
 };
 
+#endif
 #define ADM_GLOBALREGBASE    ((UINT32) (PHYS_TO_K1(AR5315_ENET0)))
 
 #define ADM_PHY_MAX (sizeof(admPhyInfo) / sizeof(admPhyInfo[0]))
@@ -398,15 +441,11 @@ void config_vlan( void )
     /*
      * Set up the port memberships for the VLAN Groups 1 and 2 
      */
-    phyAddr =
-	( ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN ) / ADM_PHY_BASE_REG_NUM;
-    setPhy( phyAddr, ( ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN ),
-	    ADM_SW_LAN_MAP_TAB );
+    phyAddr =( ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN ) / ADM_PHY_BASE_REG_NUM;
+    setPhy( phyAddr, ( ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN ),ADM_SW_LAN_MAP_TAB );
 
-    phyAddr =
-	( ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN ) / ADM_PHY_BASE_REG_NUM;
-    setPhy( phyAddr, ( ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN ),
-	    ADM_SW_WAN_MAP_TAB );
+    phyAddr = ( ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN ) / ADM_PHY_BASE_REG_NUM;
+    setPhy( phyAddr, ( ADM_SW_VLAN_MAP_REG + ADM_WAN_PORT_VLAN ),ADM_SW_WAN_MAP_TAB );
 
     /*
      * Put the chip in 802.1q mode 
@@ -480,22 +519,27 @@ void vlan_init( int numports )
     reg = getPhy( phyAddr, ADM_SW_PHY_PORT0_REG );
     reg |= ADM_SW_AUTO_MDIX_EN;
     setPhy( phyAddr, ADM_SW_PHY_PORT0_REG, reg );
+
     phyAddr = ADM_SW_PHY_PORT1_REG / ADM_PHY_BASE_REG_NUM;
     reg = getPhy( phyAddr, ADM_SW_PHY_PORT1_REG );
     reg |= ADM_SW_AUTO_MDIX_EN;
     setPhy( phyAddr, ADM_SW_PHY_PORT1_REG, reg );
+
     phyAddr = ADM_SW_PHY_PORT2_REG / ADM_PHY_BASE_REG_NUM;
     getPhy( phyAddr, ADM_SW_PHY_PORT2_REG );
     reg |= ADM_SW_AUTO_MDIX_EN;
     setPhy( phyAddr, ADM_SW_PHY_PORT2_REG, reg );
+
     phyAddr = ADM_SW_PHY_PORT3_REG / ADM_PHY_BASE_REG_NUM;
     reg = getPhy( phyAddr, ADM_SW_PHY_PORT3_REG );
     reg |= ADM_SW_AUTO_MDIX_EN;
     setPhy( phyAddr, ADM_SW_PHY_PORT3_REG, reg );
+
     phyAddr = ADM_SW_PHY_PORT4_REG / ADM_PHY_BASE_REG_NUM;
     reg = getPhy( phyAddr, ADM_SW_PHY_PORT4_REG );
     reg |= ADM_SW_AUTO_MDIX_EN;
     setPhy( phyAddr, ADM_SW_PHY_PORT4_REG, reg );
+
     phyAddr = ADM_SW_PHY_PORT5_REG / ADM_PHY_BASE_REG_NUM;
     reg = getPhy( phyAddr, ADM_SW_PHY_PORT5_REG );
     reg |= ADM_SW_AUTO_MDIX_EN;

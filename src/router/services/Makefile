@@ -144,6 +144,9 @@ ifeq ($(CONFIG_JFFS2),y)
 CFLAGS += -DHAVE_JFFS2
 OBJS += jffs.o
 endif
+ifeq ($(CONFIG_WGT624),y)
+  CFLAGS += -DHAVE_WGT624
+endif
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO
 endif
