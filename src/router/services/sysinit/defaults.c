@@ -481,6 +481,8 @@ struct nvram_tuple srouter_defaults[] = {
      */
 #ifdef HAVE_POWERNOC
     {"http_username", "bJz7PcC1rCRJQ", 0},	/* Username */
+#elif HAVE_ERC
+    {"http_username", "$1$OIw4f9TB$/dcveO2p0zs7eH0gHgsyw0",0 },
 #else
     {"http_username", "bJ/GddyoJuiU2", 0},	/* Username */
 #endif
