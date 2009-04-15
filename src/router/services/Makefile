@@ -518,6 +518,10 @@ endif
 ifeq ($(CONFIG_CAMBRIA),y)
 CFLAGS += -DHAVE_CAMBRIA
 endif
+ifeq ($(CONFIG_VNCREPEATER),y)
+CFLAGS += -DHAVE_VNCREPEATER
+OBJS += vncrepeater.o
+endif
 ifeq ($(CONFIG_WAVESAT),y)
 CFLAGS += -DHAVE_WAVESAT
 OBJS += wavesat.o

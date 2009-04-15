@@ -1,0 +1,639 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <title>UltraVnc Repeater Linux port</title>
+</head>
+
+
+<body>
+
+
+
+
+
+
+
+
+
+<h1>Repeater Linux port (version 0.12)</h1>
+
+
+
+
+
+
+
+
+<br>
+
+
+
+
+
+
+
+
+
+<h2>Compiling</h2>
+
+
+
+
+
+
+
+
+
+Just type "make" in directory where you unpacked the zip file. It
+should compile and link an executable "repeater".&nbsp;<br>
+
+
+
+
+
+
+
+
+
+<br>
+
+
+
+
+
+
+
+
+
+<h2>Usage / Hints</h2>
+
+
+
+
+
+
+
+
+
+<ul>
+
+
+
+
+
+
+
+
+
+  <li><span class="postbody">Runs in terminal window in Linux (no GUI
+whatsoever)&nbsp;</span></li>
+
+
+
+
+
+
+
+
+
+  <li>Start command: ./repeater&nbsp;optionalinifilepathandname</li>
+
+
+
+
+
+
+
+
+
+  <li>Command-line options:&nbsp;optionalinifilepathandname&nbsp; (all other settings are stored in uvncrepeater.ini file)</li>
+
+
+
+
+
+
+  <li>If ini file path and name is not given, by default /etc/uvncrepeater.ini is used (needs to be readable by repeater process).</li>
+
+
+
+
+
+
+  
+  
+
+
+
+  <li>uvncrepeater.ini: A normal Windows- style INI file, (kind of) well commented.</li>
+
+
+
+
+
+
+
+
+
+  <li><span class="postbody">All versions support mode II (the mode
+where both viewer and
+server make an outgoing connection&nbsp;to repeater) <br>
+
+
+
+
+
+
+
+
+
+    </span></li>
+
+
+
+
+
+
+
+
+
+  <li><span class="postbody">Starting from version 0.08, supports mode
+I (the
+mode where viewer connects repeater which then connects server).<br>
+
+
+
+
+
+
+
+
+
+    </span></li>
+
+
+
+
+
+
+
+
+
+  <li><span class="postbody">By default, listens to port viewer_port
+= 5900 for viewers (can be overridden via uvncrepeater.ini)&nbsp;</span></li>
+
+
+
+
+
+
+
+
+
+  <li><span class="postbody">By default, listens to port server_port
+= 5500 for servers (can be overridden via uvncrepeater.ini)&nbsp;</span></li>
+
+
+
+
+
+
+
+
+
+  <li><span class="postbody">After start, program should report it has
+opened both ports and is waiting for connection&nbsp;</span></li>
+
+
+
+
+
+
+
+
+
+  <li><span class="postbody">You can use standard viewer/server on
+other 2 boxes (I just used 3
+vmware windows, server and viewer running nt4 and repeater running
+Ubuntu Hoary, any Linux/BSD should work though)&nbsp;</span></li>
+
+
+
+
+
+
+
+
+
+  <li><span class="postbody">Example (Mode 2):&nbsp;</span></li>
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <ul>
+
+
+
+
+
+
+
+
+
+    <li><span class="postbody">Repeater is on ip address
+192.168.137.131, listening on
+port 5500 for servers and 5900 for viewers. If you need lower ports,
+note that usually only root can open ports under 1024 on Linux. Running
+as root is obviously dangerous. This danger can be decreased via
+setting "runasuser" that allows repeater start as root, then drop root
+privileges after binding ports and running as normal user after that.</span></li>
+
+
+
+
+
+
+
+
+
+    <li><span class="postbody">On UltraVnc server,&nbsp;choose "Add New
+connection" from menu and give "host name"
+192.168.137.131:5500 and "id code" ID:5555. Repeater should now show
+lots of info about new connection, including "addServerList(): Server added to list 5555"&nbsp;</span></li>
+
+
+
+
+
+
+
+
+
+    <li><span class="postbody">On UltraVnc viewer,&nbsp;write "ID:5555"
+on field "VNC Server". Also
+mark "Proxy/Repeater" and write "192.168.137.131:5900" on that
+line.&nbsp;</span></li>
+
+
+
+
+
+
+
+
+
+    <li><span class="postbody">Press "Connect"- button. Ultravnc viewer
+should start to show Ultravnc server screen and
+Repeater should show lots of info, including "addViewerList(): viewer added to
+list 5555".&nbsp;</span></li>
+
+
+
+
+
+
+
+
+
+    <li><span class="postbody">You can stop repeater with ctrl+c on
+terminal window <br>
+
+
+
+
+
+
+
+
+
+      </span></li>
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  </ul>
+
+
+
+
+
+
+
+
+
+  <li>Example (Mode 1):</li>
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <ul>
+
+
+
+
+
+
+
+
+
+    <li><span class="postbody">Repeater is on ip address
+192.168.137.131, listening on
+port 5500 for servers and 5900 for viewers.</span></li>
+
+
+
+
+
+
+
+
+
+    <li><span class="postbody">UltraVnc server is on address
+192.168.137.132, listening on port 5900</span></li>
+
+
+
+
+
+
+
+
+
+    <li><span class="postbody">On UltraVnc viewer, write
+"192.168.137.132:5900" on field "VNC Server". </span><span class="postbody">Also
+mark "Proxy/Repeater" and write "192.168.137.131:5900" on that line. <br>
+
+
+
+
+
+
+
+
+
+      </span></li>
+
+
+
+
+
+
+
+
+
+    <li><span class="postbody">Press "Connect"- button. Ultravnc viewer
+should start to show "VNC Authentication" dialog and ask for password.
+Repeater should show something like "addViewerList(): viewer added to
+list -1".</span></li>
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  </ul>
+
+
+
+
+
+
+
+
+
+  <li>Maximum number of active session (server/viewer pair connected):
+1000, can be changed via ini file setting &nbsp;maxSessions<span class="postbody"></span></li>
+
+
+
+
+
+
+
+
+
+  <li><span class="postbody">Cleans up inactive (server/viewer pair
+"match" not found) connections after 600 seconds, can be changed in
+repeater.cpp:&nbsp;</span></li>
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <ul>
+
+
+
+
+
+
+
+
+
+    <li><span class="postbody"></span><span class="postbody">&nbsp;#define
+MAX_IDLE_CONNECTION_TIME 1200&nbsp; //Seconds</span></li>
+
+
+
+
+
+
+
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  </ul>
+
+
+
+
+
+
+
+
+
+</ul>
+
+
+
+
+
+
+
+
+
+<br>
+
+
+
+
+
+
+
+
+
+<h2>Download&nbsp;</h2>
+
+
+
+
+
+
+
+
+
+<ul>
+
+
+
+
+
+
+
+
+
+  <li>From mbnet: <a href="http://koti.mbnet.fi/jtko/uvncrepeater/">http://koti.mbnet.fi/jtko/uvncrepeater/&nbsp;</a></li>
+
+
+
+
+
+
+
+
+
+</ul>
+
+
+
+
+
+
+
+
+
+<h2>Got a feature request, bug report, bugfix ?</h2>
+
+
+
+
+
+
+
+
+
+<a href="mailto:jarit1.korhonen@dnainternet.net">My email</a>
+</body>
+</html>
