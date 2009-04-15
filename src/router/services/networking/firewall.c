@@ -495,10 +495,16 @@ static void parse_upnp_forward(  )
 	 * -A PREROUTING -p tcp -m tcp --dport 823 -j DNAT --to-destination
 	 * 192.168.1.88:23 
 	 */
+	char *wan = wanface;
+	if (!strlen(wan))
+	{
+	    wan = "br0";
+	}
+	
 	if( !strcmp( proto, "tcp" ) || !strcmp( proto, "both" ) )
 	{
 	    save2file( "-A PREROUTING -i %s -p tcp -m tcp -d %s --dport %s "
-		       "-j DNAT --to-destination %s%d:%s\n", wanface, wanaddr,
+		       "-j DNAT --to-destination %s%d:%s\n", wan, wanaddr,
 		       wan_port0, lan_cclass, get_single_ip( lan_ipaddr, 3 ),
 		       lan_port0 );
 
@@ -513,7 +519,7 @@ static void parse_upnp_forward(  )
 	if( !strcmp( proto, "udp" ) || !strcmp( proto, "both" ) )
 	{
 	    save2file( "-A PREROUTING -i %s -p udp -m udp -d %s --dport %s "
-		       "-j DNAT --to-destination %s%d:%s\n", wanface, wanaddr,
+		       "-j DNAT --to-destination %s%d:%s\n", wan, wanaddr,
 		       wan_port0, lan_cclass, get_single_ip( lan_ipaddr, 3 ),
 		       lan_port0 );
 
@@ -1770,7 +1776,7 @@ static void add_bridges( char *chain, int forward )
 {
     static char word[256];
     char *next, *wordlist;
-
+    char *wan = get_wan_face();
     wordlist = nvram_safe_get( "bridges" );
     foreach( word, wordlist, next )
     {
@@ -1793,9 +1799,9 @@ static void add_bridges( char *chain, int forward )
 	{
 	    eval( "ifconfig", tag, nvram_safe_get( ipaddr ), "netmask",
 		  nvram_safe_get( netmask ), "up" );
-	    if( forward )
+	    if( forward && wan && strlen(wan))
 		save2file( "-A FORWARD -i %s -o %s -j ACCEPT\n", tag,
-			   get_wan_face(  ) );
+			   wan );
 	    else
 	    {
 		if( !strcmp( chain, "OUTPUT" ) )
@@ -1941,7 +1947,7 @@ static void filter_input( void )
     /*
      * ICMP request from WAN interface 
      */
-    if( !nvram_match( "wan_proto", "disabled" ) )
+    if( !nvram_match( "wan_proto", "disabled" ))
 	save2file( "-A INPUT -i %s -p icmp -j %s\n", wanface,
 		   nvram_match( "block_wan", "1" ) ? log_drop : TARG_PASS );
 
@@ -1961,6 +1967,7 @@ static void filter_input( void )
 #endif
 
 #ifdef HAVE_MILKFISH
+if (strlen(wanface))
     save2file( "-A INPUT -p udp -i %s --dport 5060 -j ACCEPT\n", wanface );
     // save2file ("-A INPUT -m udp -p udp -i %s --dport 35000 36000 -j
     // ACCEPT\n", wanface);
@@ -2106,7 +2113,7 @@ static void filter_forward( void )
     // save2file ("-A FORWARD -i %s -o %s -p tcp -m tcp --dport %d "
     // "-m webstr --content %d -j %s\n",
     // lanface, wanface, HTTP_PORT, webfilter, log_reject);
-    if( webfilter )
+    if( webfilter && strlen(wanface))
     {
 	insmod( "ipt_webstr" );
 	save2file( "-A FORWARD -i %s -o %s -p tcp -m tcp "
@@ -2180,7 +2187,9 @@ static void filter_forward( void )
 	else
 	    save2file( "-A FORWARD -i br1 -o br0 -j ACCEPT\n" );
 
-	save2file( "-A FORWARD -i br1 -o %s -j ACCEPT\n", get_wan_face(  ) );
+	char *wan = get_wan_face();
+	if (wan && strlen(wan))
+	    save2file( "-A FORWARD -i br1 -o %s -j ACCEPT\n", wan);
 
     }
 #ifdef HAVE_VLANTAGGING
@@ -2189,7 +2198,7 @@ static void filter_forward( void )
     stop_vpn_modules(  );
     // unload_vpn_modules ();
 
-    if( nvram_invmatch( "filter", "off" ) )
+    if( nvram_invmatch( "filter", "off" ) && strlen(wanface))
     {
 
 	/*
@@ -2220,6 +2229,8 @@ static void filter_forward( void )
     {
 	if( nvram_match( "pptp_pass", "1" ) )
 	{
+	if (strlen(wanface))
+	    {
 	    save2file
 		( "-I FORWARD -o %s -s %s/%d -p tcp --dport %d -j ACCEPT\n",
 		  wanface, nvram_safe_get( "lan_ipaddr" ),
@@ -2227,6 +2238,7 @@ static void filter_forward( void )
 	    save2file( "-I FORWARD -o %s -s %s/%d -p gre -j ACCEPT\n",
 		       wanface, nvram_safe_get( "lan_ipaddr" ),
 		       getmask( nvram_safe_get( "lan_netmask" ) ) );
+	    }
 	}
     }
     /*
@@ -2238,7 +2250,7 @@ static void filter_forward( void )
 	    save2file( "-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
 		   nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept );	
 	}else{	
-	if( doMultiCast(  ) > 0 )
+	if( doMultiCast(  ) > 0 && strlen(wanface))
 	    save2file( "-A FORWARD -i %s -p udp -m udp --destination %s -j %s\n",
 		   wanface, IP_MULTICAST, log_accept );
 	}
@@ -2254,7 +2266,7 @@ static void filter_forward( void )
     /*
      * Incoming connection will be accepted, if it match the port-ranges. 
      */
-    if (strlen(wanface)>0)
+    if (strlen(wanface))
     {
     save2file( "-A FORWARD -i %s -o %s -j TRIGGER --trigger-type in\n",
 	       wanface, lanface );
@@ -2363,7 +2375,7 @@ static void filter_table( void )
 	/*
 	 * Make sure remote management ports are filtered if it is disabled 
 	 */
-	if( !remotemanage )
+	if( !remotemanage && strlen(wanface))
 	{
 	    save2file( "-A INPUT -p tcp -i %s --dport %s -j DROP\n", wanface,
 		       nvram_safe_get( "http_wanport" ) );
