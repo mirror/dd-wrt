@@ -108,7 +108,7 @@ static int full_duplex[MAX_UNITS];
 #define TX_TIMEOUT  (2*HZ)
 
 #define NATSEMI_HW_TIMEOUT	400
-#define NATSEMI_TIMER_FREQ	3*HZ
+#define NATSEMI_TIMER_FREQ	5*HZ
 #define NATSEMI_PG0_NREGS	64
 #define NATSEMI_RFDR_NREGS	8
 #define NATSEMI_PG1_NREGS	4
@@ -127,7 +127,7 @@ static int full_duplex[MAX_UNITS];
 #define NATSEMI_RX_LIMIT	2046	/* maximum supported by hardware */
 
 /* These identify the driver base version and may not be removed. */
-static const char version[] __devinitdata =
+static char version[] __devinitdata =
   KERN_INFO DRV_NAME " dp8381x driver, version "
       DRV_VERSION ", " DRV_RELDATE "\n"
   KERN_INFO "  originally by Donald Becker <becker@scyld.com>\n"
@@ -203,22 +203,8 @@ skbuff at an offset of "+2", 16-byte aligning the IP header.
 IIId. Synchronization
 
 Most operations are synchronized on the np->lock irq spinlock, except the
-performance critical codepaths:
-
-The rx process only runs in the interrupt handler. Access from outside
-the interrupt handler is only permitted after disable_irq().
-
-The rx process usually runs under the netif_tx_lock. If np->intr_tx_reap
-is set, then access is permitted under spin_lock_irq(&np->lock).
-
-Thus configuration functions that want to access everything must call
-	disable_irq(dev->irq);
-	netif_tx_lock_bh(dev);
-	spin_lock_irq(&np->lock);
-
-IV. Notes
-
-NatSemi PCI network controllers are very uncommon.
+recieve and transmit paths which are synchronised using a combination of
+hardware descriptor ownership, disabling interrupts and NAPI poll scheduling.
 
 IVb. References
 
@@ -252,7 +238,7 @@ enum {
 };
 
 /* array of board data directly indexed by pci_tbl[x].driver_data */
-static const struct {
+static struct {
 	const char *name;
 	unsigned long flags;
 	unsigned int eeprom_size;
@@ -261,7 +247,7 @@ static const struct {
 	{ "NatSemi DP8381[56]", 0, 24 },
 };
 
-static const struct pci_device_id natsemi_pci_tbl[] __devinitdata = {
+static struct pci_device_id natsemi_pci_tbl[] __devinitdata = {
 	{ PCI_VENDOR_ID_NS, 0x0020, 0x12d9,     0x000c,     0, 0, 0 },
 	{ PCI_VENDOR_ID_NS, 0x0020, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 1 },
 	{ }	/* terminate list */
@@ -525,10 +511,10 @@ enum PhyCtrl_bits {
 /* Note that using only 32 bit fields simplifies conversion to big-endian
    architectures. */
 struct netdev_desc {
-	u32 next_desc;
-	s32 cmd_status;
-	u32 addr;
-	u32 software_use;
+	__le32 next_desc;
+	__le32 cmd_status;
+	__le32 addr;
+	__le32 software_use;
 };
 
 /* Bits in network_desc.status */
@@ -626,7 +612,7 @@ static void undo_cable_magic(struct net_device *dev);
 static void check_link(struct net_device *dev);
 static void netdev_timer(unsigned long data);
 static void dump_ring(struct net_device *dev);
-static void tx_timeout(struct net_device *dev);
+static void ns_tx_timeout(struct net_device *dev);
 static int alloc_ring(struct net_device *dev);
 static void refill_rx(struct net_device *dev);
 static void init_ring(struct net_device *dev);
@@ -678,7 +664,7 @@ static ssize_t natsemi_show_##_name(struct device *dev, \
 NATSEMI_ATTR(dspcfg_workaround);
 
 static ssize_t natsemi_show_dspcfg_workaround(struct device *dev,
-				  	      struct device_attribute *attr, 
+				  	      struct device_attribute *attr,
 					      char *buf)
 {
 	struct netdev_private *np = netdev_priv(to_net_dev(dev));
@@ -701,7 +687,7 @@ static ssize_t natsemi_set_dspcfg_workaround(struct device *dev,
                  || !strncmp("0", buf, count - 1))
 		new_setting = 0;
 	else
-                 return count; 
+                 return count;
 
 	spin_lock_irqsave(&np->lock, flags);
 
@@ -800,11 +786,13 @@ static int __devinit natsemi_probe1 (struct pci_dev *pdev,
 	struct netdev_private *np;
 	int i, option, irq, chip_idx = ent->driver_data;
 	static int find_cnt = -1;
-	unsigned long iostart, iosize;
+	resource_size_t iostart;
+	unsigned long iosize;
 	void __iomem *ioaddr;
 	const int pcibar = 1; /* PCI base address register */
 	int prev_eedata;
 	u32 tmp;
+	DECLARE_MAC_BUF(mac);
 
 /* when built into the kernel, we only print version if device is found */
 #ifndef MODULE
@@ -837,7 +825,6 @@ static int __devinit natsemi_probe1 (struct pci_dev *pdev,
 	dev = alloc_etherdev(sizeof (struct netdev_private));
 	if (!dev)
 		return -ENOMEM;
-	SET_MODULE_OWNER(dev);
 	SET_NETDEV_DEV(dev, &pdev->dev);
 
 	i = pci_request_regions(pdev, DRV_NAME);
@@ -864,6 +851,7 @@ static int __devinit natsemi_probe1 (struct pci_dev *pdev,
 
 	np = netdev_priv(dev);
 	netif_napi_add(dev, &np->napi, natsemi_poll, 64);
+	np->dev = dev;
 
 	np->pci_dev = pdev;
 	pci_set_drvdata(pdev, dev);
@@ -932,7 +920,7 @@ static int __devinit natsemi_probe1 (struct pci_dev *pdev,
 	dev->set_multicast_list = &set_rx_mode;
 	dev->change_mtu = &natsemi_change_mtu;
 	dev->do_ioctl = &netdev_ioctl;
-	dev->tx_timeout = &tx_timeout;
+	dev->tx_timeout = &ns_tx_timeout;
 	dev->watchdog_timeo = TX_TIMEOUT;
 
 #ifdef CONFIG_NET_POLL_CONTROLLER
@@ -959,12 +947,11 @@ static int __devinit natsemi_probe1 (struct pci_dev *pdev,
 		goto err_create_file;
 
 	if (netif_msg_drv(np)) {
-		printk(KERN_INFO "natsemi %s: %s at %#08lx (%s), ",
-			dev->name, natsemi_pci_info[chip_idx].name, iostart,
-			pci_name(np->pci_dev));
-		for (i = 0; i < ETH_ALEN-1; i++)
-				printk("%02x:", dev->dev_addr[i]);
-		printk("%02x, IRQ %d", dev->dev_addr[i], irq);
+		printk(KERN_INFO "natsemi %s: %s at %#08llx "
+		       "(%s), %s, IRQ %d",
+		       dev->name, natsemi_pci_info[chip_idx].name,
+		       (unsigned long long)iostart, pci_name(np->pci_dev),
+		       print_mac(mac, dev->dev_addr), irq);
 		if (dev->if_port == PORT_TP)
 			printk(", port TP.\n");
 		else if (np->ignore_phy)
@@ -998,7 +985,7 @@ static int __devinit natsemi_probe1 (struct pci_dev *pdev,
    a delay.  Note that pre-2.0.34 kernels had a cache-alignment bug that
    made udelay() unreliable.
    The old method of using an ISA access as a delay, __SLOW_DOWN_IO__, is
-   depricated.
+   deprecated.
 */
 #define eeprom_delay(ee_addr)	readl(ee_addr)
 
@@ -1578,7 +1565,7 @@ static int netdev_open(struct net_device *dev)
 
 	/* Set the timer to check for link beat. */
 	init_timer(&np->timer);
-	np->timer.expires = jiffies + NATSEMI_TIMER_FREQ;
+	np->timer.expires = round_jiffies(jiffies + NATSEMI_TIMER_FREQ);
 	np->timer.data = (unsigned long)dev;
 	np->timer.function = &netdev_timer; /* timer handler */
 	add_timer(&np->timer);
@@ -1617,7 +1604,7 @@ static void do_cable_magic(struct net_device *dev)
 		 * (these values all come from National)
 		 */
 		if (!(data & 0x80) || ((data >= 0xd8) && (data <= 0xff))) {
-			struct netdev_private *np = netdev_priv(dev);
+			np = netdev_priv(dev);
 
 			/* the bug has been triggered - fix the coefficient */
 			writew(TSTDAT_FIXED, ioaddr + TSTDAT);
@@ -1800,7 +1787,7 @@ static void netdev_timer(unsigned long data)
 	struct net_device *dev = (struct net_device *)data;
 	struct netdev_private *np = netdev_priv(dev);
 	void __iomem * ioaddr = ns_ioaddr(dev);
-	int next_tick = 5*HZ;
+	int next_tick = NATSEMI_TIMER_FREQ;
 
 	if (netif_msg_timer(np)) {
 		/* DO NOT read the IntrStatus register,
@@ -1858,7 +1845,11 @@ static void netdev_timer(unsigned long data)
 			next_tick = 1;
 		}
 	}
-	mod_timer(&np->timer, jiffies + next_tick);
+
+	if (next_tick > 1)
+		mod_timer(&np->timer, round_jiffies(jiffies + next_tick));
+	else
+		mod_timer(&np->timer, jiffies + next_tick);
 }
 
 static void dump_ring(struct net_device *dev)
@@ -1884,7 +1875,7 @@ static void dump_ring(struct net_device *dev)
 	}
 }
 
-static void tx_timeout(struct net_device *dev)
+static void ns_tx_timeout(struct net_device *dev)
 {
 	struct netdev_private *np = netdev_priv(dev);
 	void __iomem * ioaddr = ns_ioaddr(dev);
@@ -2029,7 +2020,7 @@ static void drain_rx(struct net_device *dev)
 	/* Free all the skbuffs in the Rx queue. */
 	for (i = 0; i < RX_RING_SIZE; i++) {
 		np->rx_ring[i].cmd_status = 0;
-		np->rx_ring[i].addr = 0xBADF00D0; /* An invalid address. */
+		np->rx_ring[i].addr = cpu_to_le32(0xBADF00D0); /* An invalid address. */
 		if (np->rx_skbuff[i]) {
 			pci_unmap_single(np->pci_dev,
 				np->rx_dma[i], buflen,
@@ -2263,7 +2254,7 @@ static int natsemi_poll(struct napi_struct *napi, int budget)
 	/* Reenable interrupts providing nothing is trying to shut
 	 * the chip down. */
 	spin_lock(&np->lock);
-	if (!np->hands_off && netif_running(dev))
+	if (!np->hands_off)
 		natsemi_irq_enable(dev);
 	spin_unlock(&np->lock);
 
@@ -2504,8 +2495,8 @@ static void __set_rx_mode(struct net_device *dev)
 		memset(mc_filter, 0, sizeof(mc_filter));
 		for (i = 0, mclist = dev->mc_list; mclist && i < dev->mc_count;
 			 i++, mclist = mclist->next) {
-			int i = (ether_crc(ETH_ALEN, mclist->dmi_addr) >> 23) & 0x1ff;
-			mc_filter[i/8] |= (1 << (i & 0x07));
+			int b = (ether_crc(ETH_ALEN, mclist->dmi_addr) >> 23) & 0x1ff;
+			mc_filter[b/8] |= (1 << (b & 0x07));
 		}
 		rx_mode = RxFilterEnable | AcceptBroadcast
 			| AcceptMulticast | AcceptMyPhys;
@@ -3241,7 +3232,7 @@ static void __devexit natsemi_remove1 (struct pci_dev *pdev)
  * suspend/resume synchronization:
  * entry points:
  *   netdev_open, netdev_close, netdev_ioctl, set_rx_mode, intr_handler,
- *   start_tx, tx_timeout
+ *   start_tx, ns_tx_timeout
  *
  * No function accesses the hardware without checking np->hands_off.
  *	the check occurs under spin_lock_irq(&np->lock);
@@ -3312,13 +3303,19 @@ static int natsemi_resume (struct pci_dev *pdev)
 {
 	struct net_device *dev = pci_get_drvdata (pdev);
 	struct netdev_private *np = netdev_priv(dev);
+	int ret = 0;
 
 	rtnl_lock();
 	if (netif_device_present(dev))
 		goto out;
 	if (netif_running(dev)) {
 		BUG_ON(!np->hands_off);
-		pci_enable_device(pdev);
+		ret = pci_enable_device(pdev);
+		if (ret < 0) {
+			dev_err(&pdev->dev,
+				"pci_enable_device() failed: %d\n", ret);
+			goto out;
+		}
 	/*	pci_power_on(pdev); */
 
 		napi_enable(&np->napi);
@@ -3333,12 +3330,12 @@ static int natsemi_resume (struct pci_dev *pdev)
 		spin_unlock_irq(&np->lock);
 		enable_irq(dev->irq);
 
-		mod_timer(&np->timer, jiffies + 1*HZ);
+		mod_timer(&np->timer, round_jiffies(jiffies + 1*HZ));
 	}
 	netif_device_attach(dev);
 out:
 	rtnl_unlock();
-	return 0;
+	return ret;
 }
 
 #endif /* CONFIG_PM */
