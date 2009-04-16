@@ -166,10 +166,17 @@
 				       /*
 				        * PORT: 5 4 3 x 2 x 1 x 0 
 				        */
+#ifdef HAVE_WGT624
+#define ADM_SW_LAN_MAP_TAB      0x0155	/* 1 1 1 0 1 0 1 0 0 */
+#define ADM_SW_WAN_MAP_TAB      0x0180	/* 1 0 0 0 0 0 0 0 1 */
+#define ADM_SW_ALLPORT_MAP_TAB  0x01D5	/* 1 1 1 0 1 0 1 0 1 */
+
+#else
 #define ADM_SW_LAN_MAP_TAB      0x01d4	/* 1 1 1 0 1 0 1 0 0 */
 #define ADM_SW_WAN_MAP_TAB      0x0101	/* 1 0 0 0 0 0 0 0 1 */
 #define ADM_SW_ALLPORT_MAP_TAB  0x01D5	/* 1 1 1 0 1 0 1 0 1 */
 
+#endif
 #define ADM_SW_LAN_PORT_CONFIG  (ADM_SW_AUTO_MDIX_EN | ADM_SW_PORT_VLAN_ID_1 | \
                              ADM_SW_FULL_DUP_EN | ADM_SW_100M_SPEED_EN | \
                              ADM_SW_AUTO_NEGO_EN | ADM_SW_FLOW_CTRL_EN)
@@ -441,6 +448,7 @@ void config_vlan( void )
     /*
      * Set up the port memberships for the VLAN Groups 1 and 2 
      */
+
     phyAddr =( ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN ) / ADM_PHY_BASE_REG_NUM;
     setPhy( phyAddr, ( ADM_SW_VLAN_MAP_REG + ADM_LAN_PORT_VLAN ),ADM_SW_LAN_MAP_TAB );
 
