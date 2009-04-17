@@ -802,7 +802,36 @@ int iw_mwatt2dbm( int in )
     }
     return ( res );
 }
+int isEMP(char *ifname) //checks if its usually a emp card (no concrete detection possible)
+{
+    int vendor;
+    int product;
+    int devcount;
+    char readid[64];
 
+    strcpy( readid, ifname );
+    sscanf( readid, "ath%d", &devcount );
+    sprintf( readid, "/proc/sys/dev/wifi%d/vendor", devcount );
+    FILE *in = fopen( readid, "rb" );
+    vendor = 0;
+    if( in )
+    {
+	fscanf(in,"%d",&vendor);
+	fclose( in );
+    }
+    sprintf( readid, "/proc/sys/dev/wifi%d/product", devcount );
+    in = fopen( readid, "rb" );
+    product = 0;
+    if( in )
+    {
+	fscanf(in,"%d",&product);
+	fclose( in );
+    }
+    if (vendor==0x168c && product==0x2062)
+	return 1;
+return 0;
+
+}
 int wifi_gettxpower( char *ifname )
 {
     int poweroffset = 0;
