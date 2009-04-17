@@ -1074,6 +1074,11 @@ static int __init adm5120_switch_probe(struct platform_device *pdev)
 	int i, err;
 
 	adm5120_nrdevs = adm5120_eth_num_ports;
+	sw_write_reg(SWITCH_REG_PORT0_LED, 0x9);
+	sw_write_reg(SWITCH_REG_PORT1_LED, 0x9);
+	sw_write_reg(SWITCH_REG_PORT2_LED, 0x9);
+	sw_write_reg(SWITCH_REG_PORT3_LED, 0x9);
+	sw_write_reg(SWITCH_REG_PORT4_LED, 0x9);
 
 	t = CPUP_CONF_DCPUP | CPUP_CONF_CRCP |
 		SWITCH_PORTS_NOCPU << CPUP_CONF_DUNP_SHIFT |
