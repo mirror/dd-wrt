@@ -196,6 +196,18 @@ void setupSupplicant( char *prefix, char *ssidoverride )
     char akm[16];
     char bridged[32];
     char wmode[16];
+    char *background="-B";
+    char *debug;
+    debug = nvram_nget( "%s_wpa_debug", prefix ); 
+    if (debug != NULL)
+    {
+	if (!strcmp(debug,"1"))
+    		background = "-Bd";
+	else if (!strcmp(debug,"2"))
+    		background = "-Bdd";
+	else if (!strcmp(debug,"3"))
+    		background = "-Bddd";
+    }
 
     sprintf( akm, "%s_akm", prefix );
     sprintf( wmode, "%s_mode", prefix );
@@ -228,6 +240,7 @@ void setupSupplicant( char *prefix, char *ssidoverride )
     {
 	char fstr[32];
 	char psk[16];
+
 
 	sprintf( fstr, "/tmp/%s_wpa_supplicant.conf", prefix );
 	FILE *fp = fopen( fstr, "wb" );
@@ -280,10 +293,10 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	sprintf( psk, "-i%s", prefix );
 	if( ( nvram_match( wmode, "wdssta" ) || nvram_match( wmode, "wet" ) )
 	    && nvram_match( bridged, "1" ) )
-	    eval( "wpa_supplicant", "-b", getBridge( prefix ), "-B",
+	    eval( "wpa_supplicant", "-b", getBridge( prefix ), background,
 		  "-Dmadwifi", psk, "-c", fstr );
 	else
-	    eval( "wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr );
+	    eval( "wpa_supplicant", background, "-Dmadwifi", psk, "-c", fstr );
     }
     else if( nvram_match( akm, "8021X" ) )
     {
@@ -438,9 +451,9 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    && ( nvram_match( wmode, "wdssta" )
 		 || nvram_match( wmode, "wet" ) ) )
 	    eval( "wpa_supplicant", "-b", nvram_safe_get( "lan_ifname" ),
-		  "-B", "-Dmadwifi", psk, "-c", fstr );
+		  background, "-Dmadwifi", psk, "-c", fstr );
 	else
-	    eval( "wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr );
+	    eval( "wpa_supplicant", background, "-Dmadwifi", psk, "-c", fstr );
     }
     else
     {
@@ -455,6 +468,7 @@ void supplicant_main( int argc, char *argv[] )
 static void do_hostapd( char *fstr, char *prefix )
 {
     char fname[32];
+    char *debug;
     FILE *fp;
     int pid;
 
@@ -469,7 +483,19 @@ static void do_hostapd( char *fstr, char *prefix )
 	    kill( pid, SIGTERM );
     }
 
-    char *argv[] = { "hostapd", "-B", fstr, NULL };
+    char *argv[] = { "hostapd", "-B", NULL, NULL, NULL };
+    int argc=2;
+    debug = nvram_nget( "%s_wpa_debug", prefix ); 
+    if (debug != NULL)
+	{
+	if (!strcmp(debug,"1"))
+    		argv[argc++] = "-d";
+	else if (!strcmp(debug,"2"))
+    		argv[argc++] = "-dd";
+	else if (!strcmp(debug,"3"))
+    		argv[argc++] = "-ddd";
+	}
+    argv[argc++] = fstr;
     _evalpid( argv, NULL, 0, &pid );
 //      eval( "hostapd", "-B", fstr );
     fp = fopen( fname, "wb" );
