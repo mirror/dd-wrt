@@ -1177,6 +1177,15 @@ static void configure_single( int count )
     setsysctrl( wif, "ofdm_weak_det",
 		atoi( nvram_default_get( wl_ofdm_weak_det, "1" ) ) );
 
+    if (isEMP(dev)) //check this only if the current installed card is usually a emp card. this is made to prevent card destruction
+	{
+	    if (nvram_nmatch("1","%s_cardtype",dev))
+		{
+		setsysctrl( wif, "powerfix", 7 );//increase outputpower by 7 dbm, we will do this in future for a and b band separate
+		}
+	
+	}
+
     char *enable = "enable";
     char *disable = "disable";
 
