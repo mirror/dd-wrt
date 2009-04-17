@@ -811,7 +811,7 @@ int isEMP(char *ifname) //checks if its usually a emp card (no concrete detectio
 
     strcpy( readid, ifname );
     sscanf( readid, "ath%d", &devcount );
-    sprintf( readid, "/proc/sys/dev/wifi%d/vendor", devcount );
+    sprintf( readid, "/proc/sys/dev/wifi%d/idvendor", devcount );
     FILE *in = fopen( readid, "rb" );
     vendor = 0;
     if( in )
@@ -819,7 +819,7 @@ int isEMP(char *ifname) //checks if its usually a emp card (no concrete detectio
 	fscanf(in,"%d",&vendor);
 	fclose( in );
     }
-    sprintf( readid, "/proc/sys/dev/wifi%d/product", devcount );
+    sprintf( readid, "/proc/sys/dev/wifi%d/idproduct", devcount );
     in = fopen( readid, "rb" );
     product = 0;
     if( in )
