@@ -875,6 +875,14 @@ int wifi_gettxpower( char *ifname )
 #elif HAVE_LS5
     poweroffset = 5;
 #else
+
+    if (isEMP(ifname))
+    {
+    if (nvram_nmatch("2","%s_cardtype",ifname))
+	poweroffset = 8;
+    if (nvram_nmatch("3","%s_cardtype",ifname))
+	poweroffset = 8;
+    }else{
     int vendor;
     int devcount;
     char readid[64];
@@ -894,6 +902,7 @@ int wifi_gettxpower( char *ifname )
     poweroffset = vendor;
     if (poweroffset<0 || poweroffset>20)
 	poweroffset = 0;
+    }
 #endif
     struct iwreq wrq;
 
@@ -973,6 +982,13 @@ int wifi_gettxpoweroffset( char *ifname )
 #elif HAVE_LS5
     poweroffset = 5;
 #else
+    if (isEMP(ifname))
+	{
+	if (nvram_nmatch("2","%s_cardtype",ifname))
+	    return 8;
+	if (nvram_nmatch("3","%s_cardtype",ifname))
+	    return 8;
+	}
     int vendor;
     int devcount;
     char readid[64];
