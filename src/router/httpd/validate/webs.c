@@ -2612,6 +2612,7 @@ static void save_prefix( webs_t wp, char *prefix )
     copytonv( wp, "%s_sifstime", prefix );
     copytonv( wp, "%s_preambletime", prefix );
     copytonv( wp, "%s_mtikie", prefix );
+    copytonv (wp, "%s_cardtype", prefix);
 
 #endif
     copytonv( wp, "%s_closed", prefix );
