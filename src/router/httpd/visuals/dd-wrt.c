@@ -3920,6 +3920,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	websWrite( wp,"document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",nvram_default_match( wl_cardtype, "0","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp,"document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n",nvram_default_match( wl_cardtype, "1","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp,"document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n",nvram_default_match( wl_cardtype, "2","0" ) ? "selected=\\\"selected\\\"" : "" );
+	websWrite( wp,"document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n",nvram_default_match( wl_cardtype, "3","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp, "//]]>\n</script>\n</select>\n</div>\n" );	
 	}
     char wl_regdomain[16];
