@@ -426,6 +426,11 @@ void start_sysinit( void )
 
     if (!nvram_match("disable_watchdog","1"))
     eval( "watchdog" );
+
+#ifdef HAVE_WP54G
+    system2( "echo 6 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
+#endif
     /*
      * Set a sane date 
      */
