@@ -3910,6 +3910,18 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 
     // char maxpower[16];
 #ifdef HAVE_MADWIFI
+    if (isEMP(prefix))
+	{
+	char wl_cardtype[32];
+	sprintf(wl_cardtype,"%s_cardtype",prefix);
+	websWrite( wp, "<div class=\"setting\">\n" );
+	websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cardtype)</script></div>\n<select name=\"%s\">\n",wl_cardtype );
+	websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
+	websWrite( wp,"document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",nvram_default_match( wl_cardtype, "0","0" ) ? "selected=\\\"selected\\\"" : "" );
+	websWrite( wp,"document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n",nvram_default_match( wl_cardtype, "1","0" ) ? "selected=\\\"selected\\\"" : "" );
+	websWrite( wp,"document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n",nvram_default_match( wl_cardtype, "2","0" ) ? "selected=\\\"selected\\\"" : "" );
+	websWrite( wp, "//]]>\n</script>\n</select>\n</div>\n" );	
+	}
     char wl_regdomain[16];
 
     sprintf( wl_regdomain, "%s_regdomain", prefix );

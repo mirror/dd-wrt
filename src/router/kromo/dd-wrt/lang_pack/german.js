@@ -1656,6 +1656,7 @@ hwl_adv.right2="Sie können Auto oder Shared Key wählen. Die Shared Key Authentif
 wl_basic.titl="WLAN";
 wl_basic.h2="WLAN";
 wl_basic.legend="Basis-Einstellungen";
+wl_basic.cardtype="Karten Typ";
 wl_basic.label="WLAN-Modus";
 wl_basic.label2="WLAN-Netzwerk-Modus";
 wl_basic.label3="WLAN-Netzwerk-Name (SSID)";
