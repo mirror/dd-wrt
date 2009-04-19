@@ -112,9 +112,29 @@ PlParam "name-change-script" "/path/to/script"
         table. Useful for executing a script that uses the hosts file
         to keep a website or a database updated.
 
+PlParam "service" "http://me.olsr:80|tcp|my little homepage"
+        Add a new service announcement to be spreaded in the mesh.
+
+PlParam "services-file" "/path/to/services_file"
+	File to write (default: /var/run/services_olsr)
+
 PlParam "services-change-script" "/path/to/script"
         Similar to the previous parameter. Script to execute when there
         is a change in the services list propagated by the nameserver
+        plugin. Useful for executing a script that uses the services file
+        to keep a website or a database updated.
+
+PlParam "mac" "xx:xx:xx:xx:xx:xx[,0-255]"
+        Add a new MAC addr to be spreaded in the mesh. This MAC addr
+        may be used to fine control nerve-wreck-page solutions based
+        on MAC adresses. The optional dec. number designates a class.
+
+PlParam "macs-file" "/path/to/macs_file"
+	File to write (default: /var/run/macs_olsr)
+
+PlParam "macs-change-script" "/path/to/script"
+        Similar to the previous parameter. Script to execute when there
+        is a change in the macs list propagated by the nameserver
         plugin. Useful for executing a script that uses the services file
         to keep a website or a database updated.
 

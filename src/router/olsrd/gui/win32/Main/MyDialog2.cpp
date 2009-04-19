@@ -80,16 +80,16 @@ void MyDialog2::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(MyDialog2)
+	DDX_Control(pDX, IDC_COMBO3, m_LqAlgo);
 	DDX_Control(pDX, IDC_COMBO1, m_TcRed);
 	DDX_Control(pDX, IDC_EDIT15, m_MprCov);
 	DDX_Control(pDX, IDC_RADIO2, m_EtxRadio2);
 	DDX_Control(pDX, IDC_RADIO1, m_EtxRadio1);
-//	DDX_Control(pDX, IDC_EDIT14, m_EtxWindowSize);
-	DDX_Control(pDX, IDC_CHECK5, m_FishEyeCheck);
 	DDX_Control(pDX, IDC_CHECK4, m_EtxCheck);
 	DDX_Control(pDX, IDC_CHECK3, m_Ipv6Check);
 	DDX_Control(pDX, IDC_CHECK2, m_InternetCheck);
 	DDX_Control(pDX, IDC_CHECK1, m_HystCheck);
+	DDX_Control(pDX, IDC_CHECK5, m_FishEyeCheck);
 	DDX_Control(pDX, IDC_EDIT13, m_HystThresholdHigh);
 	DDX_Control(pDX, IDC_EDIT12, m_HystThresholdLow);
 	DDX_Control(pDX, IDC_EDIT11, m_HystScaling);
@@ -120,7 +120,6 @@ BEGIN_MESSAGE_MAP(MyDialog2, CDialog)
 	ON_BN_CLICKED(IDC_RADIO2, OnEtxRadio2)
 	ON_BN_CLICKED(IDOK, OnOK)
 	ON_BN_CLICKED(IDCANCEL, OnCancel)
-//	ON_EN_KILLFOCUS(IDC_EDIT14, OnKillfocusEtxWinSize)
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -215,9 +214,6 @@ void MyDialog2::OnEtxCheckWorker()
 {
 	BOOL EnaDis = m_EtxCheck.GetCheck();
 
-#if 0
-	m_EtxWindowSize.EnableWindow(EnaDis);
-#endif
 	m_EtxRadio1.EnableWindow(EnaDis);
 	m_EtxRadio2.EnableWindow(EnaDis);
 	m_FishEyeCheck.EnableWindow(EnaDis);
@@ -309,6 +305,8 @@ int MyDialog2::OpenConfigFile(CString PathName)
 
 	m_TcRed.SetCurSel(Conf->tc_redundancy);
 
+	m_LqAlgo.SetCurSel(m_LqAlgo.FindStringExact(-1, Conf->lq_algorithm));
+
 	m_HystCheck.SetCheck(Conf->use_hysteresis);
 
 	Conv.Format("%.2f", Conf->hysteresis_param.scaling);
@@ -394,7 +392,7 @@ static struct olsr_if *AddInterface(struct olsrd_config **Conf, CString Name)
 	::lstrcpy(Int->name, Name);
 
 	Int->config = NULL;
-	Int->configured = OLSR_FALSE;
+	Int->configured = false;
 	Int->interf = NULL;
 
 	Int->cnf = get_default_if_config();
@@ -513,10 +511,19 @@ int MyDialog2::SaveConfigFile(CString PathName, int Real)
 
 	Conf->tc_redundancy = (unsigned char)m_TcRed.GetCurSel();
 
+	i = m_LqAlgo.GetCurSel();
+	Conf->lq_algorithm = NULL;
+	if (0 <= i)
+	{
+		CString str;
+		m_LqAlgo.GetLBText(i, str);
+		Conf->lq_algorithm = strdup((LPCTSTR)str);
+	}
+
 	m_MprCov.GetWindowText(Conv);
 	Conf->mpr_coverage = (unsigned char)atoi(Conv);
 
-	Conf->use_hysteresis = m_HystCheck.GetCheck() ? OLSR_TRUE : OLSR_FALSE;
+	Conf->use_hysteresis = m_HystCheck.GetCheck() ? true : false;
 
 	m_HystScaling.GetWindowText(Conv);
 	Conf->hysteresis_param.scaling = (float)atof(Conv);
@@ -541,11 +548,6 @@ int MyDialog2::SaveConfigFile(CString PathName, int Real)
 
 	else
 		Conf->lq_fish = 1;
-
-#if 0
-	m_EtxWindowSize.GetWindowText(Conv);
-	Conf->lq_wsize = atoi(Conv);
-#endif
 
 	PrevHna = NULL;
 
@@ -617,7 +619,7 @@ int MyDialog2::SaveConfigFile(CString PathName, int Real)
 		}
 
 		IpcHost->net.prefix = Local;
-		IpcHost->net.prefix_len = (olsr_u8_t)Conf->ipsize;
+		IpcHost->net.prefix_len = (uint8_t)Conf->ipsize;
 
 		IpcHost->next = Conf->ipc_nets;
 		Conf->ipc_nets = IpcHost;
@@ -693,23 +695,3 @@ void MyDialog2::OnEtxRadio2()
 {
 	m_EtxRadio1.SetCheck(FALSE);
 }
-
-#if 0
-void MyDialog2::OnKillfocusEtxWinSize() 
-{
-	CString Conv;
-	int WinSize;
-
-	m_EtxWindowSize.GetWindowText(Conv);
-	WinSize = atoi(Conv);
-
-	if (WinSize < 3)
-		WinSize = 3;
-
-	else if (WinSize > 128)
-		WinSize = 128;
-
-	Conv.Format("%d", WinSize);
-	m_EtxWindowSize.SetWindowText(Conv);
-}
-#endif

@@ -108,9 +108,12 @@ LinkQualityLevel	0
 
 LinkQualityFishEye	0
 
-# Link quality window size
+# Link quality algorithm (if LinkQualityLevel > 0)
+# etx_fpm (hello loss, fixed point math)
+# etx_float (hello loss, floating point)
+# etx_ff (packet loss for freifunk compat)
 
-LinkQualityWinSize	12
+LinkQualityAlgorithm    "etx_fpm"
 
 # Clear screen when printing debug output?
 

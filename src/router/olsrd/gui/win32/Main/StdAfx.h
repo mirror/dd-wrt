@@ -10,13 +10,13 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#define VC_EXTRALEAN		// Selten verwendete Teile der Windows-Header nicht einbinden
+#define VC_EXTRALEAN            // Selten verwendete Teile der Windows-Header nicht einbinden
 
-#include <afxwin.h>         // MFC-Kern- und -Standardkomponenten
-#include <afxext.h>         // MFC-Erweiterungen
-#include <afxdtctl.h>		// MFC-Unterstützung für allgemeine Steuerelemente von Internet Explorer 4
+#include <afxwin.h>             // MFC-Kern- und -Standardkomponenten
+#include <afxext.h>             // MFC-Erweiterungen
+#include <afxdtctl.h>           // MFC-Unterstützung für allgemeine Steuerelemente von Internet Explorer 4
 #ifndef _AFX_NO_AFXCMN_SUPPORT
-#include <afxcmn.h>			// MFC-Unterstützung für gängige Windows-Steuerelemente
+#include <afxcmn.h>             // MFC-Unterstützung für gängige Windows-Steuerelemente
 #endif // _AFX_NO_AFXCMN_SUPPORT
 
 #include <afxmt.h>
@@ -28,3 +28,10 @@
 // Microsoft Visual C++ fügt unmittelbar vor der vorhergehenden Zeile zusätzliche Deklarationen ein.
 
 #endif // !defined(AFX_STDAFX_H__D43BD17B_AEC0_43A5_9F3B_1DAA99152E38__INCLUDED_)
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -1,7 +1,7 @@
 
 
 Secure OLSR 0.4 implementation notes
-(c)Andreas Tønnesen 2004
+(c)Andreas Tonnesen 2004
 
 This document contains information on how to
 use the secure OLSR plugin with the UniK olsr daemon.

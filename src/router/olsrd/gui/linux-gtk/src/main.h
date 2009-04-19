@@ -1,6 +1,7 @@
+
 /*
  * OLSR ad-hoc routing table management protocol GUI front-end
- * Copyright (C) 2003 Andreas Tønnesen (andreto@ifi.uio.no)
+ * Copyright (C) 2003 Andreas Tonnesen (andreto@ifi.uio.no)
  *
  * This file is part of olsr.org.
  *
@@ -24,14 +25,15 @@
 
 int timeouts;
 
+int add_timeouts();
 
-int
-add_timeouts();
+gint ipc_timeout(gpointer);
 
+void shutdown_(int);
 
-gint
-ipc_timeout(gpointer);
-
-
-void
-shutdown_(int);
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

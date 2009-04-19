@@ -1,6 +1,7 @@
+
 /*
  * OLSR ad-hoc routing table management protocol GUI front-end
- * Copyright (C) 2003 Andreas Tønnesen (andreto@ifi.uio.no)
+ * Copyright (C) 2003 Andreas Tonnesen (andreto@ifi.uio.no)
  *
  * This file is part of olsr.org.
  *
@@ -21,7 +22,7 @@
  */
 
 /*
- *Andreas Tønmnesen
+ *Andreas Tonnesen
  */
 
 #ifndef _OLSRD_FORNTEND_COMMON
@@ -33,21 +34,16 @@
 #include <stdio.h>
 #include <string.h>
 
-//#include "interface.h"
-#include "callbacks.h"
-//#include "types.h"
 #include "olsr_protocol.h"
 
-#define olsrd_version "olsr.org GUI 0.2.7" 
-#define IPC_INTERVAL 500 //interval for IPC read timeout
+#define olsrd_version "olsr.org GUI 0.2.7"
+#define IPC_INTERVAL 500        //interval for IPC read timeout
 #define MAXPACKS 20
 #define BUFFSIZE 512
-
 
 extern int connected;
 extern struct timeval hold_time_nodes; /* Timeout for all nodes */
 extern struct timeval now;
-
 
 /* Our address */
 union olsr_ip_addr main_addr;
@@ -55,7 +51,7 @@ union olsr_ip_addr null_addr;
 
 int ipversion;
 int ipsize;
-char ipv6_buf[100];      /* buffer for IPv6 inet_htop */
+char ipv6_buf[100];                    /* buffer for IPv6 inet_htop */
 
 int nodes_timeout;
 
@@ -67,33 +63,27 @@ extern int timeouts;
  *Node info
  */
 
-
-struct mid
-{
+struct mid {
   union olsr_ip_addr alias;
   struct mid *next;
   struct mid *prev;
 };
 
-struct hna
-{
+struct hna {
   union olsr_ip_addr net;
   union olsr_ip_addr mask;
   struct hna *next;
   struct hna *prev;
 };
 
-struct mpr
-{
+struct mpr {
   union olsr_ip_addr addr;
   struct timeval timer;
   struct mpr *next;
   struct mpr *prev;
 };
 
-
-struct node
-{
+struct node {
   union olsr_ip_addr addr;
   union olsr_ip_addr gw_addr;
   int hopcount;
@@ -107,123 +97,84 @@ struct node
   struct node *prev;
 };
 
-
-
-
-
-
 /*
  *Interface public
  */
 
+GtkWidget *create_main_window(void);
 
-GtkWidget * 
-create_main_window (void);
+void packet_list_add(char *, char *, char *);
 
+void route_list_add(char *, char *, char *, char *);
 
-void
-packet_list_add(char *, char *, char *);
+int route_list_del(char *);
 
-void
-route_list_add(char *, char *, char *, char *);
+void route_list_update(char *);
 
-int
-route_list_del(char *);
+void set_net_info(gchar *, int);
 
-void
-route_list_update(char *);
+void set_net_info_offline();
 
+void update_nodes_list(struct node *);
 
-void
-set_net_info(gchar *, int);
-
-void
-set_net_info_offline();
-
-void
-update_nodes_list(struct node *);
-
-int
-remove_nodes_list(union olsr_ip_addr *);
+int remove_nodes_list(union olsr_ip_addr *);
 
 /*
  *IPC public
  */
-int
-ipc_connect();
+int ipc_connect();
 
-int
-ipc_close();
+int ipc_close();
 
-int
-ipc_read();
+int ipc_read();
 
-int
-ipc_send();
+int ipc_send();
 
+char *ip_to_string(union olsr_ip_addr *);
 
-char *
-ip_to_string(union olsr_ip_addr *);
-
-int
-gui_itoa(int, char *);
-
+int gui_itoa(int, char *);
 
 /*
  *Packet.c public
  */
 
-int
-add_packet_to_buffer(union olsr_message *, int);
+int add_packet_to_buffer(union olsr_message *, int);
 
-
-union olsr_message *
-get_packet(int);
-
-
+union olsr_message *get_packet(int);
 
 /*
  *Nodes.c public
  */
 
+void init_nodes();
 
+struct node *find_node(char *);
 
-void
-init_nodes();
+struct node *find_node_t(union olsr_ip_addr *);
 
-struct node *
-find_node(char *);
+int update_timer_node(union olsr_ip_addr *, olsr_u8_t);
 
-struct node *
-find_node_t(union olsr_ip_addr *);
+int add_hna_node(union olsr_ip_addr *, union olsr_ip_addr *, union olsr_ip_addr *, olsr_u8_t);
 
-int
-update_timer_node(union olsr_ip_addr *, olsr_u8_t);
+int add_mid_node(union olsr_ip_addr *, union olsr_ip_addr *, olsr_u8_t);
 
-int
-add_hna_node(union olsr_ip_addr *, union olsr_ip_addr *, union olsr_ip_addr *, olsr_u8_t);
+void init_timer(olsr_u32_t, struct timeval *);
 
-int
-add_mid_node(union olsr_ip_addr *, union olsr_ip_addr *, olsr_u8_t);
+gint time_out_nodes(gpointer);
 
-void
-init_timer(olsr_u32_t, struct timeval *);
+int add_node(union olsr_ip_addr *, olsr_u8_t);
 
-gint
-time_out_nodes(gpointer);
+int add_mpr(union olsr_ip_addr *, union olsr_ip_addr *, struct timeval *);
 
-int
-add_node(union olsr_ip_addr *, olsr_u8_t);
+int update_timer_mpr(union olsr_ip_addr *, union olsr_ip_addr *, olsr_u8_t);
 
-int
-add_mpr(union olsr_ip_addr *, union olsr_ip_addr *, struct timeval *);
-
-int
-update_timer_mpr(union olsr_ip_addr *, union olsr_ip_addr *, olsr_u8_t);
-
-int
-time_out_mprs(union olsr_ip_addr *);
-
-
+int time_out_mprs(union olsr_ip_addr *);
 
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

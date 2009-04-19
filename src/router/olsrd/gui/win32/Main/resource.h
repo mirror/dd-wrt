@@ -42,13 +42,13 @@
 #define IDC_EDIT12                      1023
 #define IDC_EDIT13                      1024
 #define IDC_LIST4                       1025
-#define IDC_EDIT14                      1025
 #define IDC_LIST5                       1026
 #define IDC_EDIT15                      1026
 #define IDC_LIST6                       1027
 #define IDC_RADIO1                      1029
 #define IDC_RADIO2                      1030
 #define IDC_COMBO1                      1031
+#define IDC_COMBO3                      1035
 #define IDM_START                       32773
 #define IDM_STOP                        32774
 #define IDM_WINDOW                      32775
@@ -57,12 +57,19 @@
 #define IDM_EXIT                        32778
 
 // Next default values for new objects
-// 
+//
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        143
 #define _APS_NEXT_COMMAND_VALUE         32779
-#define _APS_NEXT_CONTROL_VALUE         1032
+#define _APS_NEXT_CONTROL_VALUE         1036
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

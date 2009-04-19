@@ -1,34 +1,35 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  *                     includes code by Bruno Randolf
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -71,21 +72,20 @@ static int ipc_port;
 static int ipc_socket;
 static int ipc_connection;
 
-void my_init(void) __attribute__((constructor));
+void my_init(void) __attribute__ ((constructor));
 
-void my_fini(void) __attribute__((destructor));
+void my_fini(void) __attribute__ ((destructor));
 
 /*
  * Defines the version of the plugin interface that is used
  * THIS IS NOT THE VERSION OF YOUR PLUGIN!
  * Do not alter unless you know what you are doing!
  */
-int 
+int
 olsrd_plugin_interface_version(void)
 {
-   return PLUGIN_INTERFACE_VERSION;
+  return PLUGIN_INTERFACE_VERSION;
 }
-
 
 /**
  *Constructor
@@ -113,11 +113,11 @@ my_init(void)
 void
 my_fini(void)
 {
-  if(ipc_socket >= 0) {
+  if (ipc_socket >= 0) {
     close(ipc_socket);
     ipc_socket = -1;
   }
-  if(ipc_connection >= 0) {
+  if (ipc_connection >= 0) {
     close(ipc_connection);
     ipc_connection = -1;
   }
@@ -125,14 +125,15 @@ my_fini(void)
 }
 
 static const struct olsrd_plugin_parameters plugin_parameters[] = {
-    { .name = "port",   .set_plugin_parameter = &set_plugin_port,      .data = &ipc_port },
-    { .name = "accept", .set_plugin_parameter = &set_plugin_ipaddress, .data = &ipc_accept_ip },
+  {.name = "port",.set_plugin_parameter = &set_plugin_port,.data = &ipc_port},
+  {.name = "accept",.set_plugin_parameter = &set_plugin_ipaddress,.data = &ipc_accept_ip},
 };
 
-void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
+void
+olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
 {
-    *params = plugin_parameters;
-    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
+  *params = plugin_parameters;
+  *size = sizeof(plugin_parameters) / sizeof(*plugin_parameters);
 }
 
 /* Event function to register with the sceduler */
@@ -150,8 +151,8 @@ static void ipc_print_neigh_link(struct neighbor_entry *);
 
 static int plugin_ipc_init(void);
 
-
-static void ipc_print_neigh_link(struct neighbor_entry *neighbor)
+static void
+ipc_print_neigh_link(struct neighbor_entry *neighbor)
 {
   char buf[256];
   int len;
@@ -160,36 +161,35 @@ static void ipc_print_neigh_link(struct neighbor_entry *neighbor)
 //  char* style = "solid";
 //  struct link_entry* link;
 
-  len = sprintf(buf,
-                "add link %s %s\n",
-                olsr_ip_to_string(&main_adr, &olsr_cnf->main_addr),
-                olsr_ip_to_string(&adr, &neighbor->neighbor_main_addr));
+  len =
+    sprintf(buf, "add link %s %s\n", olsr_ip_to_string(&main_adr, &olsr_cnf->main_addr),
+            olsr_ip_to_string(&adr, &neighbor->neighbor_main_addr));
   ipc_send(buf, len);
-  
+
 //  if (neighbor->status == 0) { // non SYM
-//  	style = "dashed";
+//      style = "dashed";
 //  }
 //  else {
-    /* find best link to neighbor for the ETX */
-    //? why cant i just get it one time at fetch_olsrd_data??? (br1)
+  /* find best link to neighbor for the ETX */
+  //? why cant i just get it one time at fetch_olsrd_data??? (br1)
 //    if(olsr_plugin_io(GETD__LINK_SET, &link, sizeof(link)) && link)
 //    {
-//      link_set = link; // for olsr_neighbor_best_link    
+//      link_set = link; // for olsr_neighbor_best_link
 //      link = olsr_neighbor_best_link(&neighbor->neighbor_main_addr);
 //      if (link) {
 //        etx = olsr_calc_etx(link);
 //      }
 //    }
 //  }
-    
+
   //len = sprintf( buf, "\"%s\"[label=\"%.2f\", style=%s];\n", adr, etx, style );
   //len = sprintf( buf, "%s\n", adr );
   //ipc_send(buf, len);
-  
-   //if (neighbor->is_mpr) {
-   //	len = sprintf( buf, "\"%s\"[shape=box];\n", adr );
-   //	ipc_send(buf, len);
-   //}
+
+  //if (neighbor->is_mpr) {
+  //   len = sprintf( buf, "\"%s\"[shape=box];\n", adr );
+  //   ipc_send(buf, len);
+  //}
 }
 
 /**
@@ -198,7 +198,8 @@ static void ipc_print_neigh_link(struct neighbor_entry *neighbor)
  *This function is called by the my_init
  *function in uolsrd_plugin.c
  */
-int olsrd_plugin_init(void)
+int
+olsrd_plugin_init(void)
 {
 
   /* Initial IPC value */
@@ -210,82 +211,73 @@ int olsrd_plugin_init(void)
   return 1;
 }
 
-static int plugin_ipc_init(void)
+static int
+plugin_ipc_init(void)
 {
   struct sockaddr_in sin;
-  olsr_u32_t yes = 1;
+  uint32_t yes = 1;
 
   /* Init ipc socket */
-  if ((ipc_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) 
-    {
-      olsr_printf(1, "(DOT DRAW)IPC socket %s\n", strerror(errno));
+  if ((ipc_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+    olsr_printf(1, "(DOT DRAW)IPC socket %s\n", strerror(errno));
+    return 0;
+  } else {
+    if (setsockopt(ipc_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof(yes)) < 0) {
+      perror("SO_REUSEADDR failed");
       return 0;
     }
-  else
-    {
-      if (setsockopt(ipc_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof(yes)) < 0) 
-      {
-	perror("SO_REUSEADDR failed");
-	return 0;
-      }
-
 #ifdef __FreeBSD__
-      if (setsockopt(ipc_socket, SOL_SOCKET, SO_NOSIGPIPE, (char *)&yes, sizeof(yes)) < 0) 
-      {
-	perror("SO_NOSIGPIPE failed");
-	return 0;
-      }
+    if (setsockopt(ipc_socket, SOL_SOCKET, SO_NOSIGPIPE, (char *)&yes, sizeof(yes)) < 0) {
+      perror("SO_NOSIGPIPE failed");
+      return 0;
+    }
 #endif
 
-      /* Bind the socket */
-      
-      /* complete the socket structure */
-      memset(&sin, 0, sizeof(sin));
-      sin.sin_family = AF_INET;
-      sin.sin_addr.s_addr = INADDR_ANY;
-      sin.sin_port = htons(ipc_port);
-      
-      /* bind the socket to the port number */
-      if (bind(ipc_socket, (struct sockaddr *) &sin, sizeof(sin)) == -1) 
-	{
-	  olsr_printf(1, "(DOT DRAW)IPC bind %s\n", strerror(errno));
-	  return 0;
-	}
-      
-      /* show that we are willing to listen */
-      if (listen(ipc_socket, 1) == -1) 
-	{
-	  olsr_printf(1, "(DOT DRAW)IPC listen %s\n", strerror(errno));
-	  return 0;
-	}
+    /* Bind the socket */
 
+    /* complete the socket structure */
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = INADDR_ANY;
+    sin.sin_port = htons(ipc_port);
 
-      /* Register with olsrd */
-      add_olsr_socket(ipc_socket, &ipc_action);
+    /* bind the socket to the port number */
+    if (bind(ipc_socket, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
+      olsr_printf(1, "(DOT DRAW)IPC bind %s\n", strerror(errno));
+      return 0;
     }
+
+    /* show that we are willing to listen */
+    if (listen(ipc_socket, 1) == -1) {
+      olsr_printf(1, "(DOT DRAW)IPC listen %s\n", strerror(errno));
+      return 0;
+    }
+
+    /* Register with olsrd */
+    add_olsr_socket(ipc_socket, &ipc_action);
+  }
 
   return 1;
 }
 
-static void ipc_action(int fd __attribute__((unused)))
+static void
+ipc_action(int fd __attribute__ ((unused)))
 {
   struct sockaddr_in pin;
   socklen_t addrlen;
-  char *addr;  
-  char buf[256] ;
-  int len ;
-   
+  char *addr;
+  char buf[256];
+  int len;
+
   addrlen = sizeof(struct sockaddr_in);
 
-  if ((ipc_connection = accept(ipc_socket, (struct sockaddr *)  &pin, &addrlen)) == -1)
-    {
-      olsr_printf(1, "(DOT DRAW)IPC accept: %s\n", strerror(errno));
-      exit(1);
-    }
-  else
-    {
-      struct ipaddr_str main_addr;
-      addr = inet_ntoa(pin.sin_addr);
+  if ((ipc_connection = accept(ipc_socket, (struct sockaddr *)&pin, &addrlen)) == -1) {
+    olsr_printf(1, "(DOT DRAW)IPC accept: %s\n", strerror(errno));
+    exit(1);
+  } else {
+    struct ipaddr_str main_addr;
+    addr = inet_ntoa(pin.sin_addr);
+
 /*
       if(ntohl(pin.sin_addr.s_addr) != ntohl(ipc_accept_ip.s_addr))
 	{
@@ -296,21 +288,20 @@ static void ipc_action(int fd __attribute__((unused)))
       else
 	{
 */
-	  olsr_printf(1, "(DOT DRAW)IPC: Connection from %s\n",addr);
-          len = sprintf(buf, "add node %s\n", olsr_ip_to_string(&main_addr, &olsr_cnf->main_addr));
-  	  ipc_send(buf, len);
-	  pcf_event(1, 1, 1);
-//	}
-    }
+    olsr_printf(1, "(DOT DRAW)IPC: Connection from %s\n", addr);
+    len = sprintf(buf, "add node %s\n", olsr_ip_to_string(&main_addr, &olsr_cnf->main_addr));
+    ipc_send(buf, len);
+    pcf_event(1, 1, 1);
+//      }
+  }
 
 }
 
 /**
  *Scheduled event
  */
-static int pcf_event(int changes_neighborhood,
-                     int changes_topology,
-                     int changes_hna __attribute__((unused)))
+static int
+pcf_event(int changes_neighborhood, int changes_topology, int changes_hna __attribute__ ((unused)))
 {
   int res;
   struct neighbor_entry *neighbor_table_tmp;
@@ -326,39 +317,42 @@ static int pcf_event(int changes_neighborhood,
 
     /* Neighbors */
     OLSR_FOR_ALL_NBR_ENTRIES(neighbor_table_tmp) {
-      ipc_print_neigh_link( neighbor_table_tmp );
-    } OLSR_FOR_ALL_NBR_ENTRIES_END(neighbor_table_tmp);
+      ipc_print_neigh_link(neighbor_table_tmp);
+    }
+    OLSR_FOR_ALL_NBR_ENTRIES_END(neighbor_table_tmp);
 
-    /* Topology */  
+    /* Topology */
     OLSR_FOR_ALL_TC_ENTRIES(tc) {
       OLSR_FOR_ALL_TC_EDGE_ENTRIES(tc, tc_edge) {
         ipc_print_tc_link(tc, tc_edge);
-      } OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
-    } OLSR_FOR_ALL_TC_ENTRIES_END(tc);
+      }
+      OLSR_FOR_ALL_TC_EDGE_ENTRIES_END(tc, tc_edge);
+    }
+    OLSR_FOR_ALL_TC_ENTRIES_END(tc);
 
     ipc_send(" end ", strlen(" end "));
 
     /* HNA entries */
 //      for(index=0;index<HASHSIZE;index++)
-//	{
-//	  tmp_hna = hna_set[index].next;
-//	  /* Check all entrys */
-//	  while(tmp_hna != &hna_set[index])
-//	    {
-//	      /* Check all networks */
-//	      tmp_net = tmp_hna->networks.next;
-//	      
-//	      while(tmp_net != &tmp_hna->networks)
-//		{
-//		  ipc_print_net(&tmp_hna->A_gateway_addr, 
-//				&tmp_net->A_network_addr, 
-//				&tmp_net->A_netmask);
-//		  tmp_net = tmp_net->next;
-//		}
-//	      
-//	      tmp_hna = tmp_hna->next;
-//	    }
-//	}
+//      {
+//        tmp_hna = hna_set[index].next;
+//        /* Check all entrys */
+//        while(tmp_hna != &hna_set[index])
+//          {
+//            /* Check all networks */
+//            tmp_net = tmp_hna->networks.next;
+//
+//            while(tmp_net != &tmp_hna->networks)
+//              {
+//                ipc_print_net(&tmp_hna->A_gateway_addr,
+//                              &tmp_net->A_network_addr,
+//                              &tmp_net->A_netmask);
+//                tmp_net = tmp_net->next;
+//              }
+//
+//            tmp_hna = tmp_hna->next;
+//          }
+//      }
 
 //      ipc_send("}\n\n", strlen("}\n\n"));
 
@@ -372,36 +366,36 @@ static int pcf_event(int changes_neighborhood,
   return res;
 }
 
-static void ipc_print_tc_link(struct tc_entry *entry, struct tc_edge_entry *dst_entry)
+static void
+ipc_print_tc_link(struct tc_entry *entry, struct tc_edge_entry *dst_entry)
 {
   char buf[256];
   int len;
   struct ipaddr_str main_adr, adr;
 //  double etx = olsr_calc_tc_etx(dst_entry);
 
-  len = sprintf( buf, "add link %s %s\n",
-                 olsr_ip_to_string(&main_adr, &entry->addr),
-                 olsr_ip_to_string(&adr, &dst_entry->T_dest_addr));
+  len =
+    sprintf(buf, "add link %s %s\n", olsr_ip_to_string(&main_adr, &entry->addr), olsr_ip_to_string(&adr, &dst_entry->T_dest_addr));
   ipc_send(buf, len);
 }
 
-static int ipc_send(const char *data, int size)
+static int
+ipc_send(const char *data, int size)
 {
-  if(ipc_connection == -1)
+  if (ipc_connection == -1)
     return 0;
 
-#if defined __FreeBSD__ || defined __MacOSX__
+#if defined __FreeBSD__ || defined __MacOSX__ || __OpenBSD__
 #define FLAG 0
 #else
 #define FLAG MSG_NOSIGNAL
 #endif
-  if (send(ipc_connection, data, size, FLAG) < 0) 
-    {
-      olsr_printf(1, "(DOT DRAW)IPC connection lost!\n");
-      close(ipc_connection);
-      ipc_connection = -1;
-      return -1;
-    }
+  if (send(ipc_connection, data, size, FLAG) < 0) {
+    olsr_printf(1, "(DOT DRAW)IPC connection lost!\n");
+    close(ipc_connection);
+    ipc_connection = -1;
+    return -1;
+  }
 
   return 1;
 }
@@ -409,5 +403,6 @@ static int ipc_send(const char *data, int size)
 /*
  * Local Variables:
  * c-basic-offset: 2
+ * indent-tabs-mode: nil
  * End:
  */

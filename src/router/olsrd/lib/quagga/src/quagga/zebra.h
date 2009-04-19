@@ -1,3 +1,4 @@
+
 /* Zebra common header.
    Copyright (C) 1997, 1998, 1999, 2000, 2001, 2002 Kunihiro Ishiguro
 
@@ -28,9 +29,9 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #ifdef SUNOS_5
 #define _XPG4_2
 #define __EXTENSIONS__
-typedef unsigned int    u_int32_t;
-typedef unsigned short  u_int16_t;
-typedef unsigned char   u_int8_t;
+typedef unsigned int u_int32_t;
+typedef unsigned short u_int16_t;
+typedef unsigned char u_int8_t;
 #endif /* SUNOS_5 */
 
 #ifndef HAVE_SOCKLEN_T
@@ -96,12 +97,14 @@ typedef int socklen_t;
 /* misc include group */
 #include <stdarg.h>
 #if !(defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L)
+
 /* Not C99; do we need to define va_copy? */
 #ifndef va_copy
 #ifdef __va_copy
 #define va_copy(DST,SRC) __va_copy(DST,SRC)
 #else
-/* Now we are desperate; this should work on many typical platforms. 
+
+/* Now we are desperate; this should work on many typical platforms.
    But this is slightly dangerous, because the standard does not require
    va_copy to be a macro. */
 #define va_copy(DST,SRC) memcpy(&(DST), &(SRC), sizeof(va_list))
@@ -109,7 +112,6 @@ typedef int socklen_t;
 #endif /* __va_copy */
 #endif /* !va_copy */
 #endif /* !C99 */
-
 
 #ifdef HAVE_LCAPS
 #include <sys/capability.h>
@@ -183,7 +185,6 @@ typedef int socklen_t;
 #include <netinet6/in.h>
 #endif /* HAVE_NETINET6_IN_H */
 
-
 #ifdef HAVE_NETINET6_IP6_H
 #include <netinet6/ip6.h>
 #endif /* HAVE_NETINET6_IP6_H */
@@ -224,14 +225,14 @@ typedef int socklen_t;
 #endif /* BSDI_NRL */
 
 /* Local includes: */
-#if !(defined(__GNUC__) || defined(VTYSH_EXTRACT_PL)) 
+#if !(defined(__GNUC__) || defined(VTYSH_EXTRACT_PL))
 #define __attribute__(x)
-#endif  /* !__GNUC__ || VTYSH_EXTRACT_PL */
+#endif /* !__GNUC__ || VTYSH_EXTRACT_PL */
 
 #include "zassert.h"
 
-
 #ifdef HAVE_BROKEN_CMSG_FIRSTHDR
+
 /* This bug is present in Solaris 8 and pre-patch Solaris 9 <sys/socket.h>;
    please refer to http://bugzilla.quagga.net/show_bug.cgi?id=142 */
 
@@ -246,9 +247,7 @@ typedef int socklen_t;
 #define ZCMSG_FIRSTHDR(M) CMSG_FIRSTHDR(M)
 #endif /* HAVE_BROKEN_CMSG_FIRSTHDR */
 
-
-
-/* 
+/*
  * RFC 3542 defines several macros for using struct cmsghdr.
  * Here, we define those that are not present
  */
@@ -273,27 +272,24 @@ typedef int socklen_t;
 #define CMSG_SPACE(l)       (_CMSG_DATA_ALIGN(sizeof(struct cmsghdr)) + \
                               _CMSG_HDR_ALIGN(l))
 #warning "assuming 4-byte alignment for CMSG_SPACE"
-#endif  /* CMSG_SPACE */
-
+#endif /* CMSG_SPACE */
 
 #ifndef CMSG_LEN
 #define CMSG_LEN(l)         (_CMSG_DATA_ALIGN(sizeof(struct cmsghdr)) + (l))
 #warning "assuming 4-byte alignment for CMSG_LEN"
 #endif /* CMSG_LEN */
 
-
 /*  The definition of struct in_pktinfo is missing in old version of
     GLIBC 2.1 (Redhat 6.1).  */
 #if defined (GNU_LINUX) && ! defined (HAVE_INPKTINFO)
-struct in_pktinfo
-{
+struct in_pktinfo {
   int ipi_ifindex;
   struct in_addr ipi_spec_dst;
   struct in_addr ipi_addr;
 };
 #endif
 
-/* 
+/*
  * OSPF Fragmentation / fragmented writes
  *
  * ospfd can support writing fragmented packets, for cases where
@@ -313,13 +309,13 @@ struct in_pktinfo
 #define WANT_OSPF_WRITE_FRAGMENT
 #endif
 
-/* 
+/*
  * IP_HDRINCL / struct ip byte order
  *
  * Linux: network byte order
  * *BSD: network, except for length and offset. (cf Stevens)
  * SunOS: nominally as per BSD. but bug: network order on LE.
- * OpenBSD: network byte order, apart from older versions which are as per 
+ * OpenBSD: network byte order, apart from older versions which are as per
  *          *BSD
  */
 #if defined(__NetBSD__) || defined(__FreeBSD__) \
@@ -331,7 +327,7 @@ struct in_pktinfo
 /* MAX / MIN are not commonly defined, but useful */
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif 
+#endif
 #ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
@@ -414,7 +410,7 @@ struct in_pktinfo
 #define ZEBRA_NEXTHOP_BLACKHOLE          9
 
 #ifndef INADDR_LOOPBACK
-#define	INADDR_LOOPBACK	0x7f000001	/* Internet address 127.0.0.1.  */
+#define	INADDR_LOOPBACK	0x7f000001      /* Internet address 127.0.0.1.  */
 #endif
 
 /* Address family numbers from RFC1700. */
@@ -460,8 +456,7 @@ typedef u_int16_t zebra_size_t;
 typedef u_int8_t zebra_command_t;
 
 /* FIFO -- first in first out structure and macros.  */
-struct fifo
-{
+struct fifo {
   struct fifo *next;
   struct fifo *prev;
 };
@@ -499,3 +494,10 @@ struct fifo
   (FIFO_EMPTY(F) ? NULL : ((struct fifo *)(F))->next)
 
 #endif /* _ZEBRA_H */
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */
