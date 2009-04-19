@@ -1,3 +1,4 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2008 Henning Rogge <rogge@fgan.de>
@@ -53,17 +54,17 @@
 struct dup_entry {
   struct avl_node avl;
   union olsr_ip_addr ip;
-  olsr_u16_t seqnr;
-  olsr_u16_t too_low_counter;
-  olsr_u32_t array;
-  clock_t    valid_until;
+  uint16_t seqnr;
+  uint16_t too_low_counter;
+  uint32_t array;
+  clock_t valid_until;
 };
 
-AVLNODE2STRUCT(duptree2dupentry, struct dup_entry , avl);
+AVLNODE2STRUCT(duptree2dupentry, struct dup_entry, avl);
 
 void olsr_init_duplicate_set(void);
-struct dup_entry *olsr_create_duplicate_entry(void *ip, olsr_u16_t seqnr);
-int olsr_shall_process_message(void *ip, olsr_u16_t seqnr);
+struct dup_entry *olsr_create_duplicate_entry(void *ip, uint16_t seqnr);
+int olsr_message_is_duplicate(union olsr_message *m);
 void olsr_print_duplicate_table(void);
 
 #define OLSR_FOR_ALL_DUP_ENTRIES(dup) \
@@ -75,10 +76,11 @@ void olsr_print_duplicate_table(void);
     dup = duptree2dupentry(dup_tree_node);
 #define OLSR_FOR_ALL_DUP_ENTRIES_END(dup) }}
 
-#endif /*DUPLICATE_SET_2_H_*/
+#endif /*DUPLICATE_SET_2_H_ */
 
 /*
  * Local Variables:
  * c-basic-offset: 2
+ * indent-tabs-mode: nil
  * End:
  */

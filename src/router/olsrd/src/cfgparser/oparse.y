@@ -2,7 +2,7 @@
 
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas T�nnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -104,7 +104,7 @@ static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg)
     }
 
     mult->addr = addr;
-    mult->value = (olsr_u32_t)(mult_arg->floating * LINK_LOSS_MULTIPLIER);
+    mult->value = (uint32_t)(mult_arg->floating * LINK_LOSS_MULTIPLIER);
 
     mult->next = walker->cnf->lq_mult;
     walker->cnf->lq_mult = mult;
@@ -174,6 +174,8 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_NOINT
 %token TOK_TOS
 %token TOK_RTTABLE
+%token TOK_OLSRPORT
+%token TOK_RTPROTO
 %token TOK_RTTABLE_DEFAULT
 %token TOK_WILLINGNESS
 %token TOK_IPCCON
@@ -202,6 +204,7 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_MAXIPC
 
 %token TOK_IP4BROADCAST
+%token TOK_IFMODE
 %token TOK_IP6ADDRTYPE
 %token TOK_IP6MULTISITE
 %token TOK_IP6MULTIGLOBAL
@@ -234,7 +237,9 @@ stmt:       idebug
           | fibmetric
           | bnoint
           | atos
+          | aolsrport
           | arttable
+          | artproto
           | arttable_default
           | awillingness
           | busehyst
@@ -310,6 +315,7 @@ ifstmts:   | ifstmts ifstmt
 ifstmt:      vcomment
              | iifweight
              | isetip4br
+             | isetifmode
              | isetip6addrt
              | isetip6mults
              | isetip6multg
@@ -415,7 +421,7 @@ iifweight:       TOK_IFWEIGHT TOK_INTEGER
 
   while (ifcnt) {
     ifs->cnf->weight.value = $2->integer;
-    ifs->cnf->weight.fixed = OLSR_TRUE;
+    ifs->cnf->weight.fixed = true;
 
     ifs = ifs->next;
     ifcnt--;
@@ -449,6 +455,25 @@ isetip4br: TOK_IP4BROADCAST TOK_IP4_ADDR
   free($2);
 }
 ;
+
+isetifmode: TOK_IFMODE TOK_STRING
+{
+  int ifcnt = ifs_in_curr_cfg;
+  struct olsr_if *ifs = olsr_cnf->interfaces;
+
+  PARSER_DEBUG_PRINTF("\tMode: %d\n", $2->string);
+    while (ifcnt) {
+      ifs->cnf->mode = (strcmp($2->string, "ether") == 0)?IF_MODE_ETHER:IF_MODE_MESH;
+
+      ifs = ifs->next;
+      ifcnt--;
+    }
+
+  free($2->string);
+  free($2);
+}
+;
+
 
 isetip6addrt: TOK_IP6ADDRTYPE TOK_IP6TYPE
 {
@@ -873,10 +898,27 @@ atos: TOK_TOS TOK_INTEGER
 }
 ;
 
+aolsrport: TOK_OLSRPORT TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("OlsrPort: %d\n", $2->integer);
+  if ($2->integer>=1000) olsr_cnf->olsrport = $2->integer;
+  else olsr_cnf->olsrport = DEF_OLSRPORT;
+  free($2);
+}
+;
+
 arttable: TOK_RTTABLE TOK_INTEGER
 {
   PARSER_DEBUG_PRINTF("RtTable: %d\n", $2->integer);
   olsr_cnf->rttable = $2->integer;
+  free($2);
+}
+;
+
+artproto: TOK_RTPROTO TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("RtProto: %d\n", $2->integer);
+  olsr_cnf->rtproto = $2->integer;
   free($2);
 }
 ;
@@ -892,7 +934,7 @@ arttable_default: TOK_RTTABLE_DEFAULT TOK_INTEGER
 awillingness: TOK_WILLINGNESS TOK_INTEGER
 {
   PARSER_DEBUG_PRINTF("Willingness: %d\n", $2->integer);
-  olsr_cnf->willingness_auto = OLSR_FALSE;
+  olsr_cnf->willingness_auto = false;
   olsr_cnf->willingness = $2->integer;
   free($2);
 }

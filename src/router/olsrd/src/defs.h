@@ -1,33 +1,34 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas T�nnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -37,7 +38,6 @@
  * the copyright holders.
  *
  */
-
 
 #ifndef _OLSR_DEFS
 #define _OLSR_DEFS
@@ -58,7 +58,7 @@
 #include "olsr_cfg.h"
 
 extern const char olsrd_version[];
-extern const char build_date[]; 
+extern const char build_date[];
 extern const char build_host[];
 
 #ifndef OLSRD_GLOBAL_CONF_FILE
@@ -66,11 +66,11 @@ extern const char build_host[];
 #define OLSRD_GLOBAL_CONF_FILE	"/tmp/" OLSRD_CONF_FILE_NAME
 #endif
 
-#define	MAXMESSAGESIZE		1500	/* max broadcast size */
+#define	MAXMESSAGESIZE		1500    /* max broadcast size */
 #define UDP_IPV4_HDRSIZE        28
 #define UDP_IPV6_HDRSIZE        62
 
-#define MIN_PACKET_SIZE(ver)	((int)(sizeof(olsr_u8_t) * (((ver) == AF_INET) ? 4 : 7)))
+#define MIN_PACKET_SIZE(ver)	((int)(sizeof(uint8_t) * (((ver) == AF_INET) ? 4 : 7)))
 
 /* Debug helper macro */
 #ifdef DEBUG
@@ -103,7 +103,6 @@ extern FILE *debug_handle;
 /* Returns TRUE if a timestamp is expired */
 #define TIMED_OUT(s1)	((int)((s1) - now_times) < 0)
 
-
 #define ARRAYSIZE(x)	(sizeof(x)/sizeof(*(x)))
 #ifndef MAX
 #define MAX(x,y)	((x) > (y) ? (x) : (y))
@@ -119,28 +118,34 @@ extern FILE *debug_handle;
  * BSD/Solaris strlcpy()/strlcat() differ in implementation, while
  * the BSD compiler prints out a warning if you use plain strcpy().
  */
- 
-static INLINE char *strscpy(char *dest, const char *src, size_t size)
+
+static INLINE char *
+strscpy(char *dest, const char *src, size_t size)
 {
-	register size_t l = 0;
+  register size_t l = 0;
 #if !defined(NODEBUG) && defined(DEBUG)
-	if (sizeof(dest) == size) fprintf(stderr, "Warning: probably sizeof(pointer) in strscpy(%p, %s, %d)!\n", dest, src, size);
-	if (NULL == dest) fprintf(stderr, "Warning: dest is NULL in strscpy!\n");
-	if (NULL == src) fprintf(stderr, "Warning: src is NULL in strscpy!\n");
+  if (sizeof(dest) == size)
+    fprintf(stderr, "Warning: probably sizeof(pointer) in strscpy(%p, %s, %d)!\n", dest, src, size);
+  if (NULL == dest)
+    fprintf(stderr, "Warning: dest is NULL in strscpy!\n");
+  if (NULL == src)
+    fprintf(stderr, "Warning: src is NULL in strscpy!\n");
 #endif
-	if (NULL != dest && NULL != src)
-	{
-		/* src does not need to be null terminated */
-		if (0 < size--) while(l < size && 0 != src[l]) l++;
-		dest[l] = 0;
-	}
-	return strncpy(dest, src, l);
+  if (NULL != dest && NULL != src) {
+    /* src does not need to be null terminated */
+    if (0 < size--)
+      while (l < size && 0 != src[l])
+        l++;
+    dest[l] = 0;
+  }
+  return strncpy(dest, src, l);
 }
 
-static INLINE char *strscat(char *dest, const char *src, size_t size)
+static INLINE char *
+strscat(char *dest, const char *src, size_t size)
 {
-	register size_t l = strlen(dest);
-	return strscpy(dest + l, src, size > l ? size - l : 0);
+  register size_t l = strlen(dest);
+  return strscpy(dest + l, src, size > l ? size - l : 0);
 }
 
 /*
@@ -161,7 +166,6 @@ static INLINE char *strscat(char *dest, const char *src, size_t size)
     (elem)->next->prev = (elem)->prev;     \
   } while (0)
 
-
 #define CLOSE(fd)  do { close(fd); (fd) = -1; } while (0)
 
 /*
@@ -170,11 +174,11 @@ static INLINE char *strscat(char *dest, const char *src, size_t size)
 extern struct olsrd_config *olsr_cnf;
 
 /* Timer data */
-extern clock_t now_times; /* current idea of times(2) reported uptime */
+extern clock_t now_times;              /* current idea of times(2) reported uptime */
 
 #if defined WIN32
-extern olsr_bool olsr_win32_end_request;
-extern olsr_bool olsr_win32_end_flag;
+extern bool olsr_win32_end_request;
+extern bool olsr_win32_end_flag;
 #endif
 
 /*
@@ -184,7 +188,7 @@ extern olsr_bool olsr_win32_end_flag;
  * the underlying kernel calls the smallest accountable time unit) are
  * inherently "unsigned" (and always incremented).
  */
-unsigned long olsr_times(void);
+clock_t olsr_times(void);
 
 /*
  *IPC functions
@@ -192,18 +196,21 @@ unsigned long olsr_times(void);
  * soon... duh!
  */
 
-int
-ipc_init(void);
+int ipc_init(void);
 
 #if 0
-int
-ipc_input(int);
+int ipc_input(int);
 #endif
 
-int
-shutdown_ipc(void);
+int shutdown_ipc(void);
 
-int
-ipc_output(struct olsr *);
+int ipc_output(struct olsr *);
 
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -1,33 +1,34 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -54,17 +55,19 @@
  *
  *@return a 8-bit mantissa/exponent product
  */
-olsr_u8_t reltime_to_me(const olsr_reltime interval) {
-  olsr_u8_t a, b;
-  
+uint8_t
+reltime_to_me(const olsr_reltime interval)
+{
+  uint8_t a, b;
+
   /* It is sufficent to compare the integer part since we test on >=.
    * So we have now only a floating point division and the rest of the loop
    * are only integer operations.
-   * 
+   *
    * const unsigned int unscaled_interval = interval / VTIME_SCALE_FACTOR;
-   * 
+   *
    * VTIME_SCALE_FACTOR = 1/16
-   * 
+   *
    * => unscaled_interval = interval(ms) / 1000 * 16
    *                      = interval(ms) / 125 * 2
    */
@@ -73,7 +76,7 @@ olsr_u8_t reltime_to_me(const olsr_reltime interval) {
   while (unscaled_interval >= (1U << b)) {
     b++;
   }
-  
+
   if (b == 0) {
     a = 1;
     b = 0;
@@ -93,36 +96,35 @@ olsr_u8_t reltime_to_me(const olsr_reltime interval) {
        *    a = (int)(16.0 * interval / VTIME_SCALE_FACTOR / (double)(1 << b)) - 16
        * and we loose an unnecessary cast
        *    a = (int)(16.0 * interval / VTIME_SCALE_FACTOR / (1 << b)) - 16
-       * 
+       *
        * VTIME_SCALE_FACTOR = 1/16
-       * 
+       *
        * => a = (16 * interval(ms) / 1000 * 16 / (1 << b)) - 16
        *      = (interval(ms) * 256 / 1000 / (1 << b)) - 16
        *      = (interval(ms) * 32 / 125 / (1<<b)) - 16
        *      = (interval(ms) - 16/32*125*(1<<b)) * 32 / 125 / (1<<b)
        *      = (interval(ms) - 125*(1<<(b-1))) * 32 / 125 / (1<<b)
-       * 
+       *
        * 1. case: b >= 5
        *      = (interval(ms) - (125 << (b-1))) / 125 / (1 << (b-5))
        *      = (interval(ms) - (125 << (b-1))) / (125  << (b-5))
-       * 
+       *
        * 2. case: b <= 5
        *      = (interval(ms) - (125 << (b-1))) / 125 * (1 << (5-b))
        *      = (interval(ms) - (125 << (b-1))) * (1 << (5-b)) / 125
        */
 
       if (b >= 5) {
-        a = (interval - (125 << (b-1))) / (125 << (b-5));
+        a = (interval - (125 << (b - 1))) / (125 << (b - 5));
+      } else {
+        a = (interval - (125 << (b - 1))) * (1 << (5 - b)) / 125;
       }
-      else {
-        a = (interval - (125 << (b-1))) * (1 << (5-b)) / 125;
-      }
-      
+
       b += a >> 4;
       a &= 0x0f;
     }
   }
-  
+
   return (a << 4) | (b & 0x0F);
 }
 
@@ -150,23 +152,32 @@ olsr_u8_t reltime_to_me(const olsr_reltime interval) {
  *     value = C * ((16 + a) << b) / 16
  * and sionce C and 16 are constants
  *     value = ((16 + a) << b) * C / 16
- * 
+ *
  * VTIME_SCALE_FACTOR = 1/16
- * 
+ *
  * =>  value(ms) = ((16 + a) << b) / 256 * 1000
- * 
+ *
  * 1. case: b >= 8
  *           = ((16 + a) << (b-8)) * 1000
- * 
+ *
  * 2. case: b <= 8
  *           = ((16 + a) * 1000) >> (8-b)
  */
-olsr_reltime me_to_reltime(const olsr_u8_t me) {
-  const olsr_u8_t a = me >> 4;
-  const olsr_u8_t b = me & 0x0F;
-  
+olsr_reltime
+me_to_reltime(const uint8_t me)
+{
+  const uint8_t a = me >> 4;
+  const uint8_t b = me & 0x0F;
+
   if (b >= 8) {
-    return ((16 + a) << (b-8)) * 1000;
+    return ((16 + a) << (b - 8)) * 1000;
   }
-  return ((16 + a) * 1000) >> (8-b);
+  return ((16 + a) * 1000) >> (8 - b);
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */
