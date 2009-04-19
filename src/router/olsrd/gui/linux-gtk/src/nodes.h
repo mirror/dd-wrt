@@ -1,6 +1,7 @@
+
 /*
  * OLSR ad-hoc routing table management protocol GUI front-end
- * Copyright (C) 2003 Andreas Tønnesen (andreto@ifi.uio.no)
+ * Copyright (C) 2003 Andreas Tonnesen (andreto@ifi.uio.no)
  *
  * This file is part of olsr.org.
  *
@@ -21,7 +22,7 @@
  */
 
 /*
- *Andreas Tønnesen (andreto@ifi.uio.no)
+ *Andreas Tonnesen (andreto@ifi.uio.no)
  *
  *Node information
  */
@@ -29,24 +30,23 @@
 #include <sys/time.h>
 //#include <time.h>
 
-
 struct timeval now;
-struct timeval hold_time_nodes; /* Timeout for all nodes */
+struct timeval hold_time_nodes;        /* Timeout for all nodes */
 
 /* The node list */
 struct node nodes;
 
+struct node *insert_node(struct node *, olsr_u8_t);
 
-struct node *
-insert_node(struct node *, olsr_u8_t);
+int remove_node(struct node *);
 
+int remove_node_addr(union olsr_ip_addr *);
 
-int
-remove_node(struct node *);
+double me_to_double(olsr_u8_t);
 
-int
-remove_node_addr(union olsr_ip_addr *);
-
-double
-me_to_double(olsr_u8_t);
-
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

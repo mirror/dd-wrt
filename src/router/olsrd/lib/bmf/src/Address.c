@@ -1,56 +1,57 @@
+
 /*
  * OLSR Basic Multicast Forwarding (BMF) plugin.
  * Copyright (c) 2005 - 2007, Thales Communications, Huizen, The Netherlands.
  * Written by Erik Tromp.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of Thales, BMF nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of Thales, BMF nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
- * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY 
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
- * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 /* -------------------------------------------------------------------------
  * File       : Address.c
  * Description: IP packet characterization functions
  * Created    : 29 Jun 2006
  *
  * ------------------------------------------------------------------------- */
- 
+
 #include "Address.h"
 
 /* System includes */
-#include <stddef.h> /* NULL */
-#include <assert.h> /* assert() */
-#include <netinet/ip.h> /* struct ip */
-#include <netinet/udp.h> /* struct udphdr */
+#include <stddef.h>             /* NULL */
+#include <assert.h>             /* assert() */
+#include <netinet/ip.h>         /* struct ip */
+#include <netinet/udp.h>        /* struct udphdr */
 
 /* OLSRD includes */
-#include "defs.h" /* ipequal */
+#include "defs.h"               /* ipequal */
 
 /* Plugin includes */
-#include "Bmf.h" /* BMF_ENCAP_PORT */
-#include "NetworkInterfaces.h" /* TBmfInterface */
+#include "Bmf.h"                /* BMF_ENCAP_PORT */
+#include "NetworkInterfaces.h"  /* TBmfInterface */
 
 /* Whether or not to flood local broadcast packets (e.g. packets with IP
  * destination 192.168.1.255). May be overruled by setting the plugin
@@ -68,18 +69,13 @@ int EnableLocalBroadcast = 1;
  * Return     : success (0) or fail (1)
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-int DoLocalBroadcast(
-  const char* enable,
-  void* data __attribute__((unused)),
-  set_plugin_parameter_addon addon __attribute__((unused)))
+int
+DoLocalBroadcast(const char *enable, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
-  if (strcmp(enable, "yes") == 0)
-  {
+  if (strcmp(enable, "yes") == 0) {
     EnableLocalBroadcast = 1;
     return 0;
-  }
-  else if (strcmp(enable, "no") == 0)
-  {
+  } else if (strcmp(enable, "no") == 0) {
     EnableLocalBroadcast = 0;
     return 0;
   }
@@ -96,7 +92,8 @@ int DoLocalBroadcast(
  * Return     : true (1) or false (0)
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-int IsMulticast(union olsr_ip_addr* ipAddress)
+int
+IsMulticast(union olsr_ip_addr *ipAddress)
 {
   assert(ipAddress != NULL);
 
@@ -111,11 +108,12 @@ int IsMulticast(union olsr_ip_addr* ipAddress)
  * Return     : true (1) or false (0)
  * Data Used  : none
  * ------------------------------------------------------------------------- */
-int IsOlsrOrBmfPacket(unsigned char* ipPacket)
+int
+IsOlsrOrBmfPacket(unsigned char *ipPacket)
 {
-  struct ip* ipHeader;
+  struct ip *ipHeader;
   unsigned int ipHeaderLen;
-  struct udphdr* udpHeader;
+  struct udphdr *udpHeader;
   u_int16_t destPort;
 
   assert(ipPacket != NULL);
@@ -125,30 +123,35 @@ int IsOlsrOrBmfPacket(unsigned char* ipPacket)
    * OLSR-Autodetect probe packets are UDP - port 51698 */
 
   /* Check if UDP */
-  ipHeader = (struct ip*) ipPacket;
-  if (ipHeader->ip_p != SOL_UDP)
-  {
+  ipHeader = (struct ip *)ipPacket;
+  if (ipHeader->ip_p != SOL_UDP) {
     /* Not UDP */
     return 0;
   }
 
   /* The total length must be at least large enough to store the UDP header */
   ipHeaderLen = GetIpHeaderLength(ipPacket);
-  if (GetIpTotalLength(ipPacket) < ipHeaderLen + sizeof(struct udphdr))
-  {
+  if (GetIpTotalLength(ipPacket) < ipHeaderLen + sizeof(struct udphdr)) {
     /* Not long enough */
     return 0;
   }
 
   /* Go into the UDP header and check port number */
-  udpHeader = (struct udphdr*) (ipPacket + ipHeaderLen);
+  udpHeader = (struct udphdr *)(ipPacket + ipHeaderLen);
   destPort = ntohs(udpHeader->dest);
 
-  if (destPort == OLSRPORT || destPort == BMF_ENCAP_PORT || destPort == 51698)
-      /* TODO: #define for 51698 */
+  if (destPort == olsr_cnf->olsrport || destPort == BMF_ENCAP_PORT || destPort == 51698)
+    /* TODO: #define for 51698 */
   {
     return 1;
   }
 
   return 0;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

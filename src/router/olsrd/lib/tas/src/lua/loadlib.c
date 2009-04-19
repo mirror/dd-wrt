@@ -1,3 +1,4 @@
+
 /*
 ** Dynamic library loader for Lua
 ** See Copyright Notice in lua.h
@@ -29,12 +30,11 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
-
 #undef LOADLIB
-
 
 #ifdef USE_DLOPEN
 #define LOADLIB
+
 /*
 * This is an implementation of loadlib based on the dlfcn interface.
 * The dlfcn interface is available in Linux, SunOS, Solaris, IRIX, FreeBSD,
@@ -44,32 +44,30 @@
 
 #include <dlfcn.h>
 
-static int loadlib(lua_State *L)
+static int
+loadlib(lua_State * L)
 {
- const char *path=luaL_checkstring(L,1);
- const char *init=luaL_checkstring(L,2);
- void *lib=dlopen(path,RTLD_NOW);
- if (lib!=NULL)
- {
-  lua_CFunction f=(lua_CFunction) dlsym(lib,init);
-  if (f!=NULL)
-  {
-   lua_pushlightuserdata(L,lib);
-   lua_pushcclosure(L,f,1);
-   return 1;
+  const char *path = luaL_checkstring(L, 1);
+  const char *init = luaL_checkstring(L, 2);
+  void *lib = dlopen(path, RTLD_NOW);
+  if (lib != NULL) {
+    lua_CFunction f = (lua_CFunction) dlsym(lib, init);
+    if (f != NULL) {
+      lua_pushlightuserdata(L, lib);
+      lua_pushcclosure(L, f, 1);
+      return 1;
+    }
   }
- }
- /* else return appropriate error messages */
- lua_pushnil(L);
- lua_pushstring(L,dlerror());
- lua_pushstring(L,(lib!=NULL) ? "init" : "open");
- if (lib!=NULL) dlclose(lib);
- return 3;
+  /* else return appropriate error messages */
+  lua_pushnil(L);
+  lua_pushstring(L, dlerror());
+  lua_pushstring(L, (lib != NULL) ? "init" : "open");
+  if (lib != NULL)
+    dlclose(lib);
+  return 3;
 }
 
 #endif
-
-
 
 /*
 ** In Windows, default is to use dll; otherwise, default is not to use dll
@@ -82,53 +80,52 @@ static int loadlib(lua_State *L)
 #endif
 #endif
 
-
 #if USE_DLL
 #define LOADLIB
+
 /*
 * This is an implementation of loadlib for Windows using native functions.
 */
 
 #include <windows.h>
 
-static void pusherror(lua_State *L)
+static void
+pusherror(lua_State * L)
 {
- int error=GetLastError();
- char buffer[128];
- if (FormatMessage(FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM,
-	0, error, 0, buffer, sizeof(buffer), 0))
-  lua_pushstring(L,buffer);
- else
-  lua_pushfstring(L,"system error %d\n",error);
+  int error = GetLastError();
+  char buffer[128];
+  if (FormatMessage(FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM, 0, error, 0, buffer, sizeof(buffer), 0))
+    lua_pushstring(L, buffer);
+  else
+    lua_pushfstring(L, "system error %d\n", error);
 }
 
-static int loadlib(lua_State *L)
+static int
+loadlib(lua_State * L)
 {
- const char *path=luaL_checkstring(L,1);
- const char *init=luaL_checkstring(L,2);
- HINSTANCE lib=LoadLibrary(path);
- if (lib!=NULL)
- {
-  lua_CFunction f=(lua_CFunction) GetProcAddress(lib,init);
-  if (f!=NULL)
-  {
-   lua_pushlightuserdata(L,lib);
-   lua_pushcclosure(L,f,1);
-   return 1;
+  const char *path = luaL_checkstring(L, 1);
+  const char *init = luaL_checkstring(L, 2);
+  HINSTANCE lib = LoadLibrary(path);
+  if (lib != NULL) {
+    lua_CFunction f = (lua_CFunction) GetProcAddress(lib, init);
+    if (f != NULL) {
+      lua_pushlightuserdata(L, lib);
+      lua_pushcclosure(L, f, 1);
+      return 1;
+    }
   }
- }
- lua_pushnil(L);
- pusherror(L);
- lua_pushstring(L,(lib!=NULL) ? "init" : "open");
- if (lib!=NULL) FreeLibrary(lib);
- return 3;
+  lua_pushnil(L);
+  pusherror(L);
+  lua_pushstring(L, (lib != NULL) ? "init" : "open");
+  if (lib != NULL)
+    FreeLibrary(lib);
+  return 3;
 }
 
 #endif
 
-
-
 #ifndef LOADLIB
+
 /* Fallback for other systems */
 
 /*
@@ -162,19 +159,21 @@ static int loadlib(lua_State *L)
 #define LOADLIB	"`loadlib' not supported"
 #endif
 
-static int loadlib(lua_State *L)
+static int
+loadlib(lua_State * L)
 {
- lua_pushnil(L);
- lua_pushliteral(L,LOADLIB);
- lua_pushliteral(L,"absent");
- return 3;
+  lua_pushnil(L);
+  lua_pushliteral(L, LOADLIB);
+  lua_pushliteral(L, "absent");
+  return 3;
 }
 #endif
 
-LUALIB_API int luaopen_loadlib (lua_State *L)
+LUALIB_API int
+luaopen_loadlib(lua_State * L)
 {
- lua_register(L,"loadlib",loadlib);
- return 0;
+  lua_register(L, "loadlib", loadlib);
+  return 0;
 }
 
 /*
@@ -187,7 +186,7 @@ LUALIB_API int luaopen_loadlib (lua_State *L)
 * There is also an emulation package available.
 * http://www.faqs.org/faqs/aix-faq/part4/section-21.html
 *
-* HPUX 
+* HPUX
 * HPUX 11 has dlfcn. For HPUX 10 use shl_*.
 * http://www.geda.seul.org/mailinglist/geda-dev37/msg00094.html
 * http://www.stat.umn.edu/~luke/xls/projects/dlbasics/dlbasics.html
@@ -202,3 +201,10 @@ LUALIB_API int luaopen_loadlib (lua_State *L)
 * http://cvs.gnome.org/lxr/source/glib/gmodule/
 *
 */
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

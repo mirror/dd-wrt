@@ -1,6 +1,7 @@
+
 /*
  * OLSR ad-hoc routing table management protocol GUI front-end
- * Copyright (C) 2003 Andreas Tønnesen (andreto@ifi.uio.no)
+ * Copyright (C) 2003 Andreas Tonnesen (andreto@ifi.uio.no)
  *
  * This file is part of olsr.org.
  *
@@ -21,7 +22,7 @@
  */
 
 /*
- *Andreas Tønnesen (andreto@ifi.uio.no)
+ *Andreas Tonnesen (andreto@ifi.uio.no)
  *
  *The list of cached packets
  *
@@ -30,47 +31,40 @@
 #ifndef _PACKET_H
 #define _PACKET_H
 
-struct packnode
-{
+struct packnode {
   union olsr_message *packet;
   struct packnode *next;
 };
-
-
 
 /*
  * Unions for IPv4 <-> IPv6 compability
  */
 
-union hello_message
-{
+union hello_message {
   struct hellomsg v4;
   struct hellomsg6 v6;
 };
 
-
-union tc_message
-{
+union tc_message {
   struct olsr_tcmsg v4;
   struct olsr_tcmsg6 v6;
 };
 
-
-union mid_message
-{
+union mid_message {
   struct midmsg v4;
   struct midmsg6 v6;
 };
 
-
-
-union hna_message
-{
+union hna_message {
   struct hnamsg v4;
   struct hnamsg6 v6;
 };
 
-
-
-
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

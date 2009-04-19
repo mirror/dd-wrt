@@ -1,6 +1,7 @@
+
 /*
  * OLSR ad-hoc routing table management protocol GUI front-end
- * Copyright (C) 2003 Andreas Tønnesen (andreto@ifi.uio.no)
+ * Copyright (C) 2003 Andreas Tonnesen (andreto@ifi.uio.no)
  *
  * This file is part of olsr.org.
  *
@@ -25,7 +26,7 @@
 #include "ipc.h"
 
 int
-main (int argc, char *argv[])
+main(int argc, char *argv[])
 {
   struct hostent *hp;
   struct in_addr in;
@@ -37,31 +38,28 @@ main (int argc, char *argv[])
   GtkWidget *main_window;
 
 #ifdef WIN32
-  if (WSAStartup(0x0202, &WsaData))
-    {
-      fprintf(stderr, "Could not initialize WinSock.\n");
-      exit(1);
-    }
+  if (WSAStartup(0x0202, &WsaData)) {
+    fprintf(stderr, "Could not initialize WinSock.\n");
+    exit(1);
+  }
 #endif
 
-  
   /* Get IP */
-  if ((hp = gethostbyname(argc > 1 ? argv[1] : "localhost")) == 0) 
-    {
-      fprintf(stderr, "Not a valid host \"%s\"\n", argv[1]);
-      exit(1);
-    }
-  
-  in.s_addr=((struct in_addr *)(hp->h_addr))->s_addr;
+  if ((hp = gethostbyname(argc > 1 ? argv[1] : "localhost")) == 0) {
+    fprintf(stderr, "Not a valid host \"%s\"\n", argv[1]);
+    exit(1);
+  }
+
+  in.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
   printf("Address: %s\n", inet_ntoa(in));
-  
+
   /* fill in the socket structure with host information */
   memset(&pin, 0, sizeof(pin));
   pin.sin_family = AF_INET;
   pin.sin_addr.s_addr = ((struct in_addr *)(hp->h_addr))->s_addr;
   pin.sin_port = htons(IPC_PORT);
-  
-  gtk_init (&argc, &argv);
+
+  gtk_init(&argc, &argv);
 
   init_nodes();
 
@@ -72,8 +70,8 @@ main (int argc, char *argv[])
   ipversion = AF_INET;
   ipsize = sizeof(struct in_addr);
 
-  main_window = create_main_window ();
-  gtk_widget_show (main_window);
+  main_window = create_main_window();
+  gtk_widget_show(main_window);
 
   printf("Done building GUI\n");
 
@@ -81,7 +79,7 @@ main (int argc, char *argv[])
   memset(&null_addr, 0, sizeof(union olsr_ip_addr));
 
   /* Terminate signal */
-  signal(SIGINT, shutdown_);  
+  signal(SIGINT, shutdown_);
 
   /* Init node timeout */
   nodes_timeout = NEIGHB_HOLD_TIME_NW;
@@ -91,11 +89,9 @@ main (int argc, char *argv[])
 
   add_timeouts();
 
-  gtk_main ();
+  gtk_main();
   return 0;
 }
-
-
 
 /*
  *Timeouts
@@ -111,36 +107,38 @@ add_timeouts()
    */
   gtk_timeout_add(IPC_INTERVAL, ipc_timeout, NULL);
 
-
   /*
    *Time out nodes
    */
-  timeouts = 5; /* Wait 5 times befor starting timing out nodes */
+  timeouts = 5;                 /* Wait 5 times befor starting timing out nodes */
   gtk_timeout_add(TOP_HOLD_TIME, time_out_nodes, NULL);
 
-
- return 1;
+  return 1;
 }
 
-
-
-gint ipc_timeout(gpointer data)
+gint
+ipc_timeout(gpointer data)
 {
 
   ipc_read();
   return 1;
 }
 
-
-
 void
 shutdown_(int signal)
 {
   printf("Cleaning up...\n");
 
-  if(ipc_close() < 0)
+  if (ipc_close() < 0)
     printf("Could not close socket!\n");
 
   printf("BYE-BYE!\n");
   exit(signal);
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */
