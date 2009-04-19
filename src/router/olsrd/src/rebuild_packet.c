@@ -1,33 +1,34 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -68,149 +69,100 @@ mid_chgestruct(struct mid_message *mmsg, const union olsr_message *m)
 
   alias = NULL;
 
-  if(olsr_cnf->ip_version == AF_INET)
-    {
-      /* IPv4 */
-      const struct midaddr *maddr = m->v4.message.mid.mid_addr;
-      /*
-       * How many aliases?
-       * nextmsg contains size of
-       * the addresses + 12 bytes(nextmessage, from address and the header)
-       */
-      no_aliases =  ((ntohs(m->v4.olsr_msgsize) - 12) / 4);
+  if (olsr_cnf->ip_version == AF_INET) {
+    /* IPv4 */
+    const struct midaddr *maddr = m->v4.message.mid.mid_addr;
+    /*
+     * How many aliases?
+     * nextmsg contains size of
+     * the addresses + 12 bytes(nextmessage, from address and the header)
+     */
+    no_aliases = ((ntohs(m->v4.olsr_msgsize) - 12) / 4);
 
-      /*printf("Aliases: %d\n", no_aliases); */
-      mmsg->mid_origaddr.v4.s_addr = m->v4.originator;
-      mmsg->addr.v4.s_addr = m->v4.originator;
-      /*seq number*/
-      mmsg->mid_seqno = ntohs(m->v4.seqno);
-      mmsg->mid_addr = NULL;
+    /*printf("Aliases: %d\n", no_aliases); */
+    mmsg->mid_origaddr.v4.s_addr = m->v4.originator;
+    mmsg->addr.v4.s_addr = m->v4.originator;
+    /*seq number */
+    mmsg->mid_seqno = ntohs(m->v4.seqno);
+    mmsg->mid_addr = NULL;
 
-      /* Get vtime */
-      mmsg->vtime = me_to_reltime(m->v4.olsr_vtime);
+    /* Get vtime */
+    mmsg->vtime = me_to_reltime(m->v4.olsr_vtime);
 
-      /*printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno); */
+    /*printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno); */
 
+    for (i = 0; i < no_aliases; i++) {
+      alias = olsr_malloc(sizeof(struct mid_alias), "MID chgestruct");
 
-      for(i = 0; i < no_aliases; i++)
-	{
-	  alias = olsr_malloc(sizeof(struct mid_alias), "MID chgestruct");
-	  
-          alias->alias_addr.v4.s_addr = maddr->addr;
-	  alias->next = mmsg->mid_addr;
-	  mmsg->mid_addr = alias;
-	  maddr++;
-	}
-      
-      
-      if(olsr_cnf->debug_level > 1)
-	{
-          struct ipaddr_str buf;
-	  OLSR_PRINTF(3, "Alias list for %s: ", olsr_ip_to_string(&buf, &mmsg->mid_origaddr));
-	  OLSR_PRINTF(3, "%s", olsr_ip_to_string(&buf, &mmsg->addr));
-	  alias_tmp = mmsg->mid_addr;
-	  while(alias_tmp)
-	    {
-	      OLSR_PRINTF(3, " - %s", olsr_ip_to_string(&buf, &alias_tmp->alias_addr));
-	      alias_tmp = alias_tmp->next;
-	    }
-	  OLSR_PRINTF(3, "\n");
-	}
+      alias->alias_addr.v4.s_addr = maddr->addr;
+      alias->next = mmsg->mid_addr;
+      mmsg->mid_addr = alias;
+      maddr++;
     }
-  else
-    {
-      /* IPv6 */
-      const struct midaddr6 *maddr6 = m->v6.message.mid.mid_addr;
-      /*
-       * How many aliases?
-       * nextmsg contains size of
-       * the addresses + 12 bytes(nextmessage, from address and the header)
-       */
-      no_aliases =  ((ntohs(m->v6.olsr_msgsize) - 12) / 16); /* NB 16 */
 
-      /*printf("Aliases: %d\n", no_aliases); */
-      mmsg->mid_origaddr.v6 = m->v6.originator;
-      mmsg->addr.v6 = m->v6.originator;
-      /*seq number*/
-      mmsg->mid_seqno = ntohs(m->v6.seqno);
-      mmsg->mid_addr = NULL;
-
-      /* Get vtime */
-      mmsg->vtime = me_to_reltime(m->v6.olsr_vtime);
-
-      /*printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno); */
-
-      for(i = 0; i < no_aliases; i++)
-	{
-	  alias = olsr_malloc(sizeof(struct mid_alias), "MID chgestruct 2");
-	  
-	  /*printf("Adding alias: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&maddr6->addr));*/
-	  alias->alias_addr.v6 = maddr6->addr;
-	  alias->next = mmsg->mid_addr;
-	  mmsg->mid_addr = alias;
-	   
-	  maddr6++;
-	}
-
-
-      if(olsr_cnf->debug_level > 1)
-	{
-          struct ipaddr_str buf;
-	  OLSR_PRINTF(3, "Alias list for %s", ip6_to_string(&buf, &mmsg->mid_origaddr.v6));
-	  OLSR_PRINTF(3, "%s", ip6_to_string(&buf, &mmsg->addr.v6));
-
-	  alias_tmp = mmsg->mid_addr;
-	  while(alias_tmp)
-	    {
-	      OLSR_PRINTF(3, " - %s", ip6_to_string(&buf, &alias_tmp->alias_addr.v6));
-	      alias_tmp = alias_tmp->next;
-	    }
-	  OLSR_PRINTF(3, "\n");
-	}
+    if (olsr_cnf->debug_level > 1) {
+      struct ipaddr_str buf;
+      OLSR_PRINTF(3, "Alias list for %s: ", olsr_ip_to_string(&buf, &mmsg->mid_origaddr));
+      OLSR_PRINTF(3, "%s", olsr_ip_to_string(&buf, &mmsg->addr));
+      alias_tmp = mmsg->mid_addr;
+      while (alias_tmp) {
+        OLSR_PRINTF(3, " - %s", olsr_ip_to_string(&buf, &alias_tmp->alias_addr));
+        alias_tmp = alias_tmp->next;
+      }
+      OLSR_PRINTF(3, "\n");
     }
+  } else {
+    /* IPv6 */
+    const struct midaddr6 *maddr6 = m->v6.message.mid.mid_addr;
+    /*
+     * How many aliases?
+     * nextmsg contains size of
+     * the addresses + 12 bytes(nextmessage, from address and the header)
+     */
+    no_aliases = ((ntohs(m->v6.olsr_msgsize) - 12) / 16);       /* NB 16 */
+
+    /*printf("Aliases: %d\n", no_aliases); */
+    mmsg->mid_origaddr.v6 = m->v6.originator;
+    mmsg->addr.v6 = m->v6.originator;
+    /*seq number */
+    mmsg->mid_seqno = ntohs(m->v6.seqno);
+    mmsg->mid_addr = NULL;
+
+    /* Get vtime */
+    mmsg->vtime = me_to_reltime(m->v6.olsr_vtime);
+
+    /*printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno); */
+
+    for (i = 0; i < no_aliases; i++) {
+      alias = olsr_malloc(sizeof(struct mid_alias), "MID chgestruct 2");
+
+      /*printf("Adding alias: %s\n", olsr_ip_to_string(&buf, (union olsr_ip_addr *)&maddr6->addr)); */
+      alias->alias_addr.v6 = maddr6->addr;
+      alias->next = mmsg->mid_addr;
+      mmsg->mid_addr = alias;
+
+      maddr6++;
+    }
+
+    if (olsr_cnf->debug_level > 1) {
+      struct ipaddr_str buf;
+      OLSR_PRINTF(3, "Alias list for %s", ip6_to_string(&buf, &mmsg->mid_origaddr.v6));
+      OLSR_PRINTF(3, "%s", ip6_to_string(&buf, &mmsg->addr.v6));
+
+      alias_tmp = mmsg->mid_addr;
+      while (alias_tmp) {
+        OLSR_PRINTF(3, " - %s", ip6_to_string(&buf, &alias_tmp->alias_addr.v6));
+        alias_tmp = alias_tmp->next;
+      }
+      OLSR_PRINTF(3, "\n");
+    }
+  }
 
 }
 
-
-
-
-/**
- *Process/rebuild a message of unknown type. Converts the OLSR
- *packet to the internal unknown_message format.
- *@param umsg the unknown_message struct in wich infomation
- *is to be put.
- *@param m the entire OLSR message revieved.
- *@return negative on error
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
  */
-
-void
-unk_chgestruct(struct unknown_message *umsg, const union olsr_message *m)
-{
-
-  /* Checking if everything is ok */
-  if (!m)
-    return;
-
-
-  if(olsr_cnf->ip_version == AF_INET)
-    {
-      /* IPv4 */
-      /* address */
-      umsg->originator.v4.s_addr = m->v4.originator;
-      /*seq number*/
-      umsg->seqno = ntohs(m->v4.seqno);
-      /* type */
-      umsg->type = m->v4.olsr_msgtype;
-    }
-  else
-    {
-      /* IPv6 */
-      /* address */
-      umsg->originator.v6 = m->v6.originator;
-      /*seq number*/
-      umsg->seqno = ntohs(m->v6.seqno);
-      /* type */
-      umsg->type = m->v4.olsr_msgtype;
-    }
-  
-}

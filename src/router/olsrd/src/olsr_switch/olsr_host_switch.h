@@ -1,33 +1,34 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2005, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2005, Andreas Tonnesen(andreto@olsr.org)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -53,30 +54,28 @@
 
 #ifdef WIN32
 #define close(x) closesocket(x)
-int __stdcall ohs_close(unsigned long signal) __attribute__((noreturn));
+int __stdcall ohs_close(unsigned long signal) __attribute__ ((noreturn));
 #else
-void ohs_close(int) __attribute__((noreturn));
+void ohs_close(int) __attribute__ ((noreturn));
 #endif
 
-struct ohs_ip_link
-{
-  union olsr_ip_addr   dst;
-  olsr_u8_t            quality; /* 0 - 100 */
-  struct ohs_ip_link   *next;
+struct ohs_ip_link {
+  union olsr_ip_addr dst;
+  uint8_t quality;                     /* 0 - 100 */
+  struct ohs_ip_link *next;
 };
 
-struct ohs_connection
-{
-  union olsr_ip_addr     ip_addr;
-  int                    socket;
-  olsr_u32_t             rx;
-  olsr_u32_t             tx;
-  olsr_u32_t             linkcnt;
-  struct ohs_ip_link     *links;
-  struct ohs_connection  *next;
+struct ohs_connection {
+  union olsr_ip_addr ip_addr;
+  int socket;
+  uint32_t rx;
+  uint32_t tx;
+  uint32_t linkcnt;
+  struct ohs_ip_link *links;
+  struct ohs_connection *next;
 };
 
-extern olsr_u32_t logbits;
+extern uint32_t logbits;
 
 extern struct ohs_connection *ohs_conns;
 
@@ -86,17 +85,20 @@ extern struct ohs_connection *ohs_conns;
 #define LOG_LINK    0x4
 
 #ifdef WIN32
-int __stdcall
-SignalHandler(unsigned long);
+int __stdcall SignalHandler(unsigned long);
 #else
-void
-ohs_close(int);
+void ohs_close(int);
 #endif
 
-struct ohs_connection *
-get_client_by_addr(const union olsr_ip_addr *);
+struct ohs_connection *get_client_by_addr(const union olsr_ip_addr *);
 
-int
-ohs_delete_connection(struct ohs_connection *);
+int ohs_delete_connection(struct ohs_connection *);
 
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

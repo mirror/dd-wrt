@@ -1,33 +1,34 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -68,32 +69,37 @@
 void PError(char *Str);
 void WinSockPError(char *Str);
 
-void sleep(unsigned int Sec)
+void
+sleep(unsigned int Sec)
 {
   Sleep(Sec * 1000);
 }
 
 static unsigned int RandState;
 
-void srandom(unsigned int Seed)
+void
+srandom(unsigned int Seed)
 {
   RandState = Seed;
 }
 
-unsigned int random(void)
+unsigned int
+random(void)
 {
   RandState = RandState * 1103515245 + 12345;
 
   return (RandState ^ (RandState >> 16)) & RAND_MAX;
 }
 
-int getpid(void)
+int
+getpid(void)
 {
   HANDLE h = GetCurrentThread();
   return (int)h;
 }
 
-int nanosleep(struct timespec *Req, struct timespec *Rem)
+int
+nanosleep(struct timespec *Req, struct timespec *Rem)
 {
   Sleep(Req->tv_sec * 1000 + Req->tv_nsec / 1000000);
 
@@ -103,7 +109,8 @@ int nanosleep(struct timespec *Req, struct timespec *Rem)
   return 0;
 }
 
-void gettimeofday(struct timeval *TVal, void *TZone __attribute__((unused)))
+void
+gettimeofday(struct timeval *TVal, void *TZone __attribute__ ((unused)))
 {
   SYSTEMTIME SysTime;
   FILETIME FileTime;
@@ -112,8 +119,7 @@ void gettimeofday(struct timeval *TVal, void *TZone __attribute__((unused)))
   GetSystemTime(&SysTime);
   SystemTimeToFileTime(&SysTime, &FileTime);
 
-  Ticks = ((__int64)FileTime.dwHighDateTime << 32) |
-    (__int64)FileTime.dwLowDateTime;
+  Ticks = ((__int64) FileTime.dwHighDateTime << 32) | (__int64) FileTime.dwLowDateTime;
 
   Ticks -= 116444736000000000LL;
 
@@ -121,84 +127,89 @@ void gettimeofday(struct timeval *TVal, void *TZone __attribute__((unused)))
   TVal->tv_usec = (unsigned int)(Ticks % 10000000) / 10;
 }
 
-long times(struct tms *Dummy __attribute__((unused)))
+long
+times(struct tms *Dummy __attribute__ ((unused)))
 {
   return (long)GetTickCount();
 }
 
-int inet_aton(const char *AddrStr, struct in_addr *Addr)
+int
+inet_aton(const char *AddrStr, struct in_addr *Addr)
 {
   Addr->s_addr = inet_addr(AddrStr);
 
   return 1;
 }
 
-char *StrError(unsigned int ErrNo)
+char *
+StrError(unsigned int ErrNo)
 {
   static char Msg[1000];
 
 #if !defined WINCE
-  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, ErrNo,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), Msg,
-                sizeof (Msg), NULL);
+  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, ErrNo, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), Msg, sizeof(Msg), NULL);
 #else
   short WideMsg[1000];
 
-  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, ErrNo,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), WideMsg,
-                sizeof (WideMsg) / 2, NULL);
+  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, ErrNo, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), WideMsg, sizeof(WideMsg) / 2,
+                NULL);
 
-  if (WideCharToMultiByte(CP_ACP, 0, WideMsg, -1, Msg, sizeof (Msg),
-                          NULL, NULL) == 0)
-  strscpy(Msg, "[cannot convert string]", sizeof(Msg));
+  if (WideCharToMultiByte(CP_ACP, 0, WideMsg, -1, Msg, sizeof(Msg), NULL, NULL) == 0)
+    strscpy(Msg, "[cannot convert string]", sizeof(Msg));
 #endif
 
   return Msg;
 }
 
-void PError(char *Str)
+void
+PError(char *Str)
 {
   fprintf(stderr, "ERROR - %s: %s", Str, StrError(GetLastError()));
 }
 
-void WinSockPError(char *Str)
+void
+WinSockPError(char *Str)
 {
   fprintf(stderr, "ERROR - %s: %s", Str, StrError(WSAGetLastError()));
 }
 
 // XXX - not thread-safe, which is okay for our purposes
- 
-void *dlopen(char *Name, int Flags __attribute__((unused)))
+
+void *
+dlopen(char *Name, int Flags __attribute__ ((unused)))
 {
 #if !defined WINCE
   return (void *)LoadLibrary(Name);
 #else
   short WideName[1000];
 
-  MultiByteToWideChar(CP_ACP, 0, Name, -1, WideName, sizeof (WideName));
+  MultiByteToWideChar(CP_ACP, 0, Name, -1, WideName, sizeof(WideName));
   return (void *)LoadLibrary(WideName);
 #endif
 }
 
-int dlclose(void *Handle)
+int
+dlclose(void *Handle)
 {
-  FreeLibrary((HMODULE)Handle);
+  FreeLibrary((HMODULE) Handle);
   return 0;
 }
 
-void *dlsym(void *Handle, const char *Name)
+void *
+dlsym(void *Handle, const char *Name)
 {
 #if !defined WINCE
-  return GetProcAddress((HMODULE)Handle, Name);
+  return GetProcAddress((HMODULE) Handle, Name);
 #else
   short WideName[1000];
 
-  MultiByteToWideChar(CP_ACP, 0, Name, -1, WideName, sizeof (WideName));
-  return GetProcAddress((HMODULE)Handle, WideName);
+  MultiByteToWideChar(CP_ACP, 0, Name, -1, WideName, sizeof(WideName));
+  return GetProcAddress((HMODULE) Handle, WideName);
 #endif
 }
 
-char *dlerror(void)
+char *
+dlerror(void)
 {
   return StrError(GetLastError());
 }
@@ -207,7 +218,8 @@ char *dlerror(void)
 #define NS_IN6ADDRSZ 16
 #define NS_INT16SZ 2
 
-static int inet_pton4(const char *src, unsigned char *dst)
+static int
+inet_pton4(const char *src, unsigned char *dst)
 {
   int saw_digit, octets, ch;
   u_char tmp[NS_INADDRSZ], *tp;
@@ -216,8 +228,7 @@ static int inet_pton4(const char *src, unsigned char *dst)
   octets = 0;
   *(tp = tmp) = 0;
 
-  while ((ch = *src++) != '\0')
-  {
+  while ((ch = *src++) != '\0') {
     if (ch >= '0' && ch <= '9') {
       unsigned int new = *tp * 10 + (ch - '0');
 
@@ -226,8 +237,7 @@ static int inet_pton4(const char *src, unsigned char *dst)
 
       *tp = new;
 
-      if (!saw_digit)
-      {
+      if (!saw_digit) {
         if (++octets > 4)
           return (0);
 
@@ -235,8 +245,7 @@ static int inet_pton4(const char *src, unsigned char *dst)
       }
     }
 
-    else if (ch == '.' && saw_digit)
-    {
+    else if (ch == '.' && saw_digit) {
       if (octets == 4)
         return (0);
 
@@ -256,7 +265,8 @@ static int inet_pton4(const char *src, unsigned char *dst)
   return (1);
 }
 
-static int inet_pton6(const char *src, unsigned char *dst)
+static int
+inet_pton6(const char *src, unsigned char *dst)
 {
   static const char xdigits[] = "0123456789abcdef";
   u_char tmp[NS_IN6ADDRSZ], *tp, *endp, *colonp;
@@ -276,14 +286,12 @@ static int inet_pton6(const char *src, unsigned char *dst)
   saw_xdigit = 0;
   val = 0;
 
-  while ((ch = tolower (*src++)) != '\0')
-  {
+  while ((ch = tolower(*src++)) != '\0') {
     const char *pch;
 
     pch = strchr(xdigits, ch);
 
-    if (pch != NULL)
-    {
+    if (pch != NULL) {
       val <<= 4;
       val |= (pch - xdigits);
 
@@ -294,12 +302,10 @@ static int inet_pton6(const char *src, unsigned char *dst)
       continue;
     }
 
-    if (ch == ':')
-    {
+    if (ch == ':') {
       curtok = src;
 
-      if (!saw_xdigit)
-      {
+      if (!saw_xdigit) {
         if (colonp)
           return (0);
 
@@ -307,8 +313,7 @@ static int inet_pton6(const char *src, unsigned char *dst)
         continue;
       }
 
-      else if (*src == '\0')
-      {
+      else if (*src == '\0') {
         return (0);
       }
 
@@ -322,9 +327,7 @@ static int inet_pton6(const char *src, unsigned char *dst)
       continue;
     }
 
-    if (ch == '.' && ((tp + NS_INADDRSZ) <= endp) &&
-        inet_pton4(curtok, tp) > 0)
-    {
+    if (ch == '.' && ((tp + NS_INADDRSZ) <= endp) && inet_pton4(curtok, tp) > 0) {
       tp += NS_INADDRSZ;
       saw_xdigit = 0;
       break;
@@ -333,8 +336,7 @@ static int inet_pton6(const char *src, unsigned char *dst)
     return (0);
   }
 
-  if (saw_xdigit)
-  {
+  if (saw_xdigit) {
     if (tp + NS_INT16SZ > endp)
       return (0);
 
@@ -342,17 +344,15 @@ static int inet_pton6(const char *src, unsigned char *dst)
     *tp++ = (u_char) val & 0xff;
   }
 
-  if (colonp != NULL)
-  {
+  if (colonp != NULL) {
     const int n = tp - colonp;
     int i;
 
     if (tp == endp)
       return (0);
 
-    for (i = 1; i <= n; i++)
-    {
-      endp[- i] = colonp[n - i];
+    for (i = 1; i <= n; i++) {
+      endp[-i] = colonp[n - i];
       colonp[n - i] = 0;
     }
 
@@ -366,10 +366,10 @@ static int inet_pton6(const char *src, unsigned char *dst)
   return (1);
 }
 
-int inet_pton(int af, const char *src, void *dst)
+int
+inet_pton(int af, const char *src, void *dst)
 {
-  switch (af)
-  {
+  switch (af) {
   case AF_INET:
     return (inet_pton4(src, dst));
 
@@ -381,7 +381,8 @@ int inet_pton(int af, const char *src, void *dst)
   }
 }
 
-static char *inet_ntop4(const unsigned char *src, char *dst, int size)
+static char *
+inet_ntop4(const unsigned char *src, char *dst, int size)
 {
   static const char fmt[] = "%u.%u.%u.%u";
   char tmp[sizeof "255.255.255.255"];
@@ -392,10 +393,13 @@ static char *inet_ntop4(const unsigned char *src, char *dst, int size)
   return strscpy(dst, tmp, size);
 }
 
-static char *inet_ntop6(const unsigned char *src, char *dst, int size)
+static char *
+inet_ntop6(const unsigned char *src, char *dst, int size)
 {
   char tmp[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"], *tp;
-  struct { int base, len; } best, cur;
+  struct {
+    int base, len;
+  } best, cur;
   u_int words[NS_IN6ADDRSZ / NS_INT16SZ];
   int i;
 
@@ -407,10 +411,8 @@ static char *inet_ntop6(const unsigned char *src, char *dst, int size)
   best.base = -1;
   cur.base = -1;
 
-  for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++)
-  {
-    if (words[i] == 0)
-    {
+  for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++) {
+    if (words[i] == 0) {
       if (cur.base == -1)
         cur.base = i, cur.len = 1;
 
@@ -418,10 +420,8 @@ static char *inet_ntop6(const unsigned char *src, char *dst, int size)
         cur.len++;
     }
 
-    else
-    {
-      if (cur.base != -1)
-      {
+    else {
+      if (cur.base != -1) {
         if (best.base == -1 || cur.len > best.len)
           best = cur;
 
@@ -430,8 +430,7 @@ static char *inet_ntop6(const unsigned char *src, char *dst, int size)
     }
   }
 
-  if (cur.base != -1)
-  {
+  if (cur.base != -1) {
     if (best.base == -1 || cur.len > best.len)
       best = cur;
   }
@@ -441,10 +440,8 @@ static char *inet_ntop6(const unsigned char *src, char *dst, int size)
 
   tp = tmp;
 
-  for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++)
-  {
-    if (best.base != -1 && i >= best.base && i < (best.base + best.len))
-    {
+  for (i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++) {
+    if (best.base != -1 && i >= best.base && i < (best.base + best.len)) {
       if (i == best.base)
         *tp++ = ':';
 
@@ -454,11 +451,8 @@ static char *inet_ntop6(const unsigned char *src, char *dst, int size)
     if (i != 0)
       *tp++ = ':';
 
-    
-    if (i == 6 && best.base == 0 &&
-        (best.len == 6 || (best.len == 5 && words[5] == 0xffff)))
-    {
-      if (!inet_ntop4(src+12, tp, sizeof tmp - (tp - tmp)))
+    if (i == 6 && best.base == 0 && (best.len == 6 || (best.len == 5 && words[5] == 0xffff))) {
+      if (!inet_ntop4(src + 12, tp, sizeof tmp - (tp - tmp)))
         return (NULL);
 
       tp += strlen(tp);
@@ -480,10 +474,10 @@ static char *inet_ntop6(const unsigned char *src, char *dst, int size)
   return strscpy(dst, tmp, size);
 }
 
-char *inet_ntop(int af, const void *src, char *dst, int size)
+char *
+inet_ntop(int af, const void *src, char *dst, int size)
 {
-  switch (af)
-  {
+  switch (af) {
   case AF_INET:
     return (inet_ntop4(src, dst, size));
 
@@ -495,27 +489,25 @@ char *inet_ntop(int af, const void *src, char *dst, int size)
   }
 }
 
-int isatty(int fd)
+int
+isatty(int fd)
 {
 #if !defined WINCE
   HANDLE Hand;
   CONSOLE_SCREEN_BUFFER_INFO Info;
   unsigned long Events;
 
-  if (fd == 0)
-  {
+  if (fd == 0) {
     Hand = GetStdHandle(STD_INPUT_HANDLE);
     return GetNumberOfConsoleInputEvents(Hand, &Events);
   }
 
-  else if (fd == 1)
-  {
+  else if (fd == 1) {
     Hand = GetStdHandle(STD_OUTPUT_HANDLE);
     return GetConsoleScreenBufferInfo(Hand, &Info);
   }
 
-  else if (fd == 2)
-  {
+  else if (fd == 2) {
     Hand = GetStdHandle(STD_ERROR_HANDLE);
     return GetConsoleScreenBufferInfo(Hand, &Info);
   }
@@ -529,11 +521,13 @@ int isatty(int fd)
 #define CHUNK_SIZE 512
 
 /* and we emulate a real write(2) syscall using send() */
-int write(int fd, const void *buf, unsigned int count)
+int
+write(int fd, const void *buf, unsigned int count)
 {
   size_t written = 0;
   while (written < count) {
-    ssize_t rc = send(fd, (const unsigned char*)buf+written, min(count-written, CHUNK_SIZE), 0);
+    ssize_t rc = send(fd, (const unsigned char *)buf + written,
+                      min(count - written, CHUNK_SIZE), 0);
     if (rc <= 0) {
       break;
     }
@@ -541,3 +535,10 @@ int write(int fd, const void *buf, unsigned int count)
   }
   return written;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

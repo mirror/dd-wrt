@@ -1,37 +1,38 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  * RIB implementation (c) 2007, Hannes Gredler (hannes@gredler.at)
  * All rights reserved.
  *
- * export_route_entry interface added by Immo 'FaUl Wehrenberg 
+ * export_route_entry interface added by Immo 'FaUl Wehrenberg
  * <immo@chaostreff-dortmund.de> and reworked by sven-ola 2007
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -61,18 +62,17 @@ static struct list_node add_kernel_list;
 static struct list_node chg_kernel_list;
 static struct list_node del_kernel_list;
 
-
 /**
  *
  * Calculate the kernel route flags.
  * Called before enqueuing a change/delete operation
  *
  */
-olsr_u8_t
+uint8_t
 olsr_rt_flags(const struct rt_entry *rt)
 {
   const struct rt_nexthop *nh;
-  olsr_u8_t flags = RTF_UP;
+  uint8_t flags = RTF_UP;
 
   /* destination is host */
   if (rt->rt_dst.prefix_len == olsr_cnf->maxplen) {
@@ -81,21 +81,19 @@ olsr_rt_flags(const struct rt_entry *rt)
 
   nh = olsr_get_nh(rt);
 
-  if(!ipequal(&rt->rt_dst.prefix, &nh->gateway)) {
+  if (!ipequal(&rt->rt_dst.prefix, &nh->gateway)) {
     flags |= RTF_GATEWAY;
   }
 
   return flags;
 }
 
-
 export_route_function olsr_addroute_function;
 export_route_function olsr_addroute6_function;
 export_route_function olsr_delroute_function;
 export_route_function olsr_delroute6_function;
 
-
-void 
+void
 olsr_init_export_route(void)
 {
   /* the add/chg/del kernel queues */
@@ -119,7 +117,7 @@ olsr_init_export_route(void)
  */
 void
 olsr_delete_all_kernel_routes(void)
-{ 
+{
   OLSR_PRINTF(1, "Deleting all routes...\n");
 
   olsr_bump_routingtree_version();
@@ -161,13 +159,12 @@ olsr_enqueue_rt(struct list_node *head_node, struct rt_entry *rt)
 static void
 olsr_delete_kernel_route(struct rt_entry *rt)
 {
-  if(!olsr_cnf->host_emul) {
-    olsr_16_t error = olsr_cnf->ip_version == AF_INET ?
-      olsr_delroute_function(rt) : olsr_delroute6_function(rt);
+  if (!olsr_cnf->host_emul) {
+    int16_t error = olsr_cnf->ip_version == AF_INET ? olsr_delroute_function(rt) : olsr_delroute6_function(rt);
 
-    if(error < 0) {
-      const char * const err_msg = strerror(errno);
-      const char * const routestr = olsr_rt_to_string(rt);
+    if (error < 0) {
+      const char *const err_msg = strerror(errno);
+      const char *const routestr = olsr_rt_to_string(rt);
       OLSR_PRINTF(1, "KERN: ERROR deleting %s: %s\n", routestr, err_msg);
 
       olsr_syslog(OLSR_LOG_ERR, "Delete route %s: %s", routestr, err_msg);
@@ -184,13 +181,12 @@ static void
 olsr_add_kernel_route(struct rt_entry *rt)
 {
 
-  if(!olsr_cnf->host_emul) {
-    olsr_16_t error = (olsr_cnf->ip_version == AF_INET) ?
-      olsr_addroute_function(rt) : olsr_addroute6_function(rt);
+  if (!olsr_cnf->host_emul) {
+    int16_t error = (olsr_cnf->ip_version == AF_INET) ? olsr_addroute_function(rt) : olsr_addroute6_function(rt);
 
-    if(error < 0) {
-      const char * const err_msg = strerror(errno);
-      const char * const routestr = olsr_rtp_to_string(rt->rt_best);
+    if (error < 0) {
+      const char *const err_msg = strerror(errno);
+      const char *const routestr = olsr_rtp_to_string(rt->rt_best);
       OLSR_PRINTF(1, "KERN: ERROR adding %s: %s\n", routestr, err_msg);
 
       olsr_syslog(OLSR_LOG_ERR, "Add route %s: %s", routestr, err_msg);
@@ -298,9 +294,7 @@ olsr_delete_outdated_routes(struct rt_entry *rt)
   struct rt_path *rtp;
   struct avl_node *rtp_tree_node, *next_rtp_tree_node;
 
-  for (rtp_tree_node = avl_walk_first(&rt->rt_path_tree);
-       rtp_tree_node != NULL;
-       rtp_tree_node = next_rtp_tree_node) {
+  for (rtp_tree_node = avl_walk_first(&rt->rt_path_tree); rtp_tree_node != NULL; rtp_tree_node = next_rtp_tree_node) {
 
     /*
      * pre-fetch the next node before loosing context.
@@ -358,21 +352,21 @@ olsr_update_rib_routes(void)
     olsr_rt_best(rt);
 
     /* nexthop or hopcount change ? */
-    if (olsr_nh_change(&rt->rt_best->rtp_nexthop, &rt->rt_nexthop) ||
-        (FIBM_CORRECT == olsr_cnf->fib_metric &&
-         olsr_hopcount_change(&rt->rt_best->rtp_metric, &rt->rt_metric))) {
+    if (olsr_nh_change(&rt->rt_best->rtp_nexthop, &rt->rt_nexthop)
+        || (FIBM_CORRECT == olsr_cnf->fib_metric && olsr_hopcount_change(&rt->rt_best->rtp_metric, &rt->rt_metric))) {
 
       if (0 > rt->rt_nexthop.iif_index) {
 
         /* fresh routes do have an interface index of -1. */
         olsr_enqueue_rt(&add_kernel_list, rt);
-      } else { 
+      } else {
 
         /* this is a route change. */
         olsr_enqueue_rt(&chg_kernel_list, rt);
       }
     }
-  } OLSR_FOR_ALL_RT_ENTRIES_END(rt);
+  }
+  OLSR_FOR_ALL_RT_ENTRIES_END(rt);
 }
 
 /**
@@ -399,5 +393,6 @@ olsr_update_kernel_routes(void)
 /*
  * Local Variables:
  * c-basic-offset: 2
+ * indent-tabs-mode: nil
  * End:
  */

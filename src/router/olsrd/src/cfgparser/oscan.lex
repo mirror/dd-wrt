@@ -2,7 +2,7 @@
 
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas T�nnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -73,7 +73,7 @@ static struct conf_token *get_conf_token(void);
 static struct conf_token *get_string_token(const char * const s, const size_t n);
 static struct conf_token *get_integer_token(const char * const s);
 static struct conf_token *get_floating_token(const char * const s);
-static struct conf_token *get_boolean_token(const olsr_bool b);
+static struct conf_token *get_boolean_token(const bool b);
 
 static struct conf_token *get_conf_token(void)
 {
@@ -119,7 +119,7 @@ static struct conf_token *get_floating_token(const char * const s)
     return rv;
 }
 
-static struct conf_token *get_boolean_token(const olsr_bool b)
+static struct conf_token *get_boolean_token(const bool b)
 {
     struct conf_token *rv = get_conf_token();
     if (rv != NULL) {
@@ -224,22 +224,22 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
 
 
 "yes" {
-    yylval = get_boolean_token(OLSR_TRUE);
+    yylval = get_boolean_token(true);
     return TOK_BOOLEAN;
 }
 
 "no" {
-    yylval = get_boolean_token(OLSR_FALSE);
+    yylval = get_boolean_token(false);
     return TOK_BOOLEAN;
 }
 
 "site-local" {
-    yylval = get_boolean_token(OLSR_TRUE);
+    yylval = get_boolean_token(true);
     return TOK_IP6TYPE;
 }
 
 "global" {
-    yylval = get_boolean_token(OLSR_FALSE);
+    yylval = get_boolean_token(false);
     return TOK_IP6TYPE;
 }
 
@@ -308,9 +308,20 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
     return TOK_TOS;
 }
 
+
+"OlsrPort" {
+  yylval = NULL;
+  return TOK_OLSRPORT;
+}
+
 "RtTable" {
   yylval = NULL;
   return TOK_RTTABLE;
+}
+
+"RtProto" {
+  yylval = NULL;
+  return TOK_RTPROTO;
 }
 
 "RtTableDefault" {
@@ -422,6 +433,10 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
 "Ip4Broadcast" {
     yylval = NULL;
     return TOK_IP4BROADCAST;
+}
+"Mode" {
+    yylval = NULL;
+    return TOK_IFMODE;
 }
 "Ip6AddrType" {
     yylval = NULL;
