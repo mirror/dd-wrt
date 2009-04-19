@@ -1,34 +1,35 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  *
  * Copyright (c) 2004, Thomas Lopatic (thomas@olsr.org)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -78,8 +79,7 @@ static int confQuantum;
 static int confMessTime;
 static int confMessLimit;
 
-static struct
-{
+static struct {
   unsigned int sessId;
   unsigned char key[16];
 } cookieStruct;
@@ -89,8 +89,7 @@ static struct
 static int numConn;
 static struct connInfo *conn[MAX_CONN];
 
-struct sessInfo
-{
+struct sessInfo {
   unsigned int id;
   void *data;
   struct timeStamp time;
@@ -101,25 +100,22 @@ struct sessInfo
 static int numSess;
 static struct sessInfo *sess[MAX_SESS];
 
-static struct extMap
-{
+static struct extMap {
   const char *ext;
   const char *type;
   int state;
-}
-extMap[] =
-{
-  { ".png", "image/png", STATE_FILE },
-  { ".gif", "image/gif", STATE_FILE },
-  { ".jpg", "image/jpg", STATE_FILE },
-  { ".lsp", "text/html; charset=iso-8859-1", STATE_LSP },
-  { ".html", "text/html; charset=iso-8859-1", STATE_FILE },
-  { ".htm", "text/html; charset=iso-8859-1", STATE_FILE },
-  { NULL, NULL, 0 }
+} extMap[] = {
+  {
+  ".png", "image/png", STATE_FILE}, {
+  ".gif", "image/gif", STATE_FILE}, {
+  ".jpg", "image/jpg", STATE_FILE}, {
+  ".lsp", "text/html; charset=iso-8859-1", STATE_LSP}, {
+  ".html", "text/html; charset=iso-8859-1", STATE_FILE}, {
+  ".htm", "text/html; charset=iso-8859-1", STATE_FILE}, {
+  NULL, NULL, 0}
 };
 
-struct tasMessage
-{
+struct tasMessage {
   struct tasMessage *next;
 
   struct timeStamp time;
@@ -132,46 +128,46 @@ struct tasMessage
 static struct tasMessage *firstTasMsg, *lastTasMsg;
 static int numTasMsg;
 
-static void rc4(unsigned char *buff, int len, unsigned char *key, int keyLen)
+static void
+rc4(unsigned char *buff, int len, unsigned char *key, int keyLen)
 {
   int i, m, n;
   unsigned char state[256];
   unsigned char aux;
-	
+
   for (i = 0; i < 256; i++)
     state[i] = (unsigned char)i;
-	
+
   m = 0;
   n = 0;
-	
-  for (i = 0; i < 256; i++)
-  {
+
+  for (i = 0; i < 256; i++) {
     m = (m + key[n] + state[i]) & 255;
-		
+
     aux = state[i];
     state[i] = state[m];
     state[m] = aux;
 
     n = (n + 1) % keyLen;
   }
-	
+
   m = 0;
   n = 0;
-	
-  for (i = 0; i < len; i++)
-  {
+
+  for (i = 0; i < len; i++) {
     n = (n + 1) & 255;
     m = (m + state[n]) & 255;
-		
+
     aux = state[n];
     state[n] = state[m];
     state[m] = aux;
-		
+
     buff[i] ^= state[(state[m] + state[n]) & 255];
   }
 }
 
-static int mapHexDigit(int digit)
+static int
+mapHexDigit(int digit)
 {
   if (digit >= 'A' && digit <= 'F')
     return digit + 10 - 'A';
@@ -185,7 +181,8 @@ static int mapHexDigit(int digit)
   return -1;
 }
 
-static int addHexDigit(int *val, int digit)
+static int
+addHexDigit(int *val, int digit)
 {
   digit = mapHexDigit(digit);
 
@@ -197,12 +194,12 @@ static int addHexDigit(int *val, int digit)
   return 0;
 }
 
-static void encHexString(char *hexString, unsigned char *hex, int len)
+static void
+encHexString(char *hexString, unsigned char *hex, int len)
 {
   static const char map[] = "0123456789ABCDEF";
 
-  while (len-- > 0)
-  {
+  while (len-- > 0) {
     *hexString++ = map[*hex >> 4];
     *hexString++ = map[*hex++ & 15];
   }
@@ -210,16 +207,15 @@ static void encHexString(char *hexString, unsigned char *hex, int len)
   *hexString = 0;
 }
 
-static int decHexString(unsigned char *hex, char *hexString, int len)
+static int
+decHexString(unsigned char *hex, char *hexString, int len)
 {
   int val;
 
-  while (len-- > 0)
-  {
+  while (len-- > 0) {
     val = 0;
 
-    if (addHexDigit(&val, *hexString++) < 0 ||
-        addHexDigit(&val, *hexString++) < 0)
+    if (addHexDigit(&val, *hexString++) < 0 || addHexDigit(&val, *hexString++) < 0)
       return -1;
 
     *hex++ = (unsigned char)val;
@@ -228,15 +224,15 @@ static int decHexString(unsigned char *hex, char *hexString, int len)
   return 0;
 }
 
-static int decBase64(unsigned char *out, char *in)
+static int
+decBase64(unsigned char *out, char *in)
 {
-  static int map[256] =
-  {
+  static int map[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
     52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1,
-    -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+    -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
     15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
     -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
     41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
@@ -256,8 +252,7 @@ static int decBase64(unsigned char *out, char *in)
   val = 0;
   state = 0;
 
-  while (*in != 0 && *in != '=')
-  {
+  while (*in != 0 && *in != '=') {
     digit = map[(unsigned char)*in++];
 
     if (digit < 0)
@@ -280,7 +275,8 @@ static int decBase64(unsigned char *out, char *in)
   return 0;
 }
 
-static void initInOutBuff(struct inOutBuff *buff)
+static void
+initInOutBuff(struct inOutBuff *buff)
 {
   buff->off = 0;
   buff->len = 0;
@@ -290,9 +286,10 @@ static void initInOutBuff(struct inOutBuff *buff)
   buff->last = NULL;
 }
 
-static struct connInfo *newConnInfo(struct fileId *sockId, struct ipAddr *addr)
+static struct connInfo *
+newConnInfo(struct fileId *sockId, struct ipAddr *addr)
 {
-  struct connInfo *info = allocMem(sizeof (struct connInfo));
+  struct connInfo *info = allocMem(sizeof(struct connInfo));
 
   info->sockId = sockId;
   info->addr = addr;
@@ -333,30 +330,31 @@ static struct connInfo *newConnInfo(struct fileId *sockId, struct ipAddr *addr)
   return info;
 }
 
-static void freeInOutBuff(struct inOutBuff *buff)
+static void
+freeInOutBuff(struct inOutBuff *buff)
 {
   struct chunk *walker, *next;
 
-  for (walker = buff->first; walker != NULL; walker = next)
-  {
+  for (walker = buff->first; walker != NULL; walker = next) {
     next = walker->next;
     freeMem(walker);
   }
 }
 
-static void freeWorkBuff(struct workBuff *buff)
+static void
+freeWorkBuff(struct workBuff *buff)
 {
   struct workBuff *next;
 
-  while (buff != NULL)
-  {
+  while (buff != NULL) {
     next = buff->next;
     freeMem(buff);
     buff = next;
   }
 }
 
-static void freeConnInfo(struct connInfo *info)
+static void
+freeConnInfo(struct connInfo *info)
 {
   freeMem(info->sockId);
   freeMem(info->addr);
@@ -371,12 +369,13 @@ static void freeConnInfo(struct connInfo *info)
   freeMem(info);
 }
 
-static struct sessInfo *newSessInfo(void)
+static struct sessInfo *
+newSessInfo(void)
 {
   static unsigned int sessId = 0;
   struct sessInfo *info;
 
-  info = allocMem(sizeof (struct sessInfo));
+  info = allocMem(sizeof(struct sessInfo));
 
   info->id = sessId++;
   info->data = NULL;
@@ -388,7 +387,8 @@ static struct sessInfo *newSessInfo(void)
   return info;
 }
 
-void *allocBuff(struct connInfo *info, int len)
+void *
+allocBuff(struct connInfo *info, int len)
 {
   struct workBuff *buff;
   unsigned char *res;
@@ -396,21 +396,19 @@ void *allocBuff(struct connInfo *info, int len)
   debug(DEBUG_CONNECTION, "%d bytes of buffer space requested\n", len);
 
   if (info->buff != NULL)
-    debug(DEBUG_CONNECTION,
-          "existing buffer, size = %d bytes, used = %d bytes, remaining = %d bytes\n",
-          info->buffTotal, info->buffUsed, info->buffTotal - info->buffUsed);
+    debug(DEBUG_CONNECTION, "existing buffer, size = %d bytes, used = %d bytes, remaining = %d bytes\n", info->buffTotal,
+          info->buffUsed, info->buffTotal - info->buffUsed);
 
   else
     debug(DEBUG_CONNECTION, "no existing buffer\n");
 
-  if (info->buff == NULL || len > info->buffTotal - info->buffUsed)
-  {
+  if (info->buff == NULL || len > info->buffTotal - info->buffUsed) {
     info->buffTotal = (len > BUFF_SIZE) ? len : BUFF_SIZE;
     info->buffUsed = 0;
 
     debug(DEBUG_CONNECTION, "new buffer of %d bytes\n", info->buffTotal);
 
-    buff = allocMem(sizeof (struct workBuff) + info->buffTotal);
+    buff = allocMem(sizeof(struct workBuff) + info->buffTotal);
 
     buff->data = (unsigned char *)(buff + 1);
 
@@ -422,13 +420,13 @@ void *allocBuff(struct connInfo *info, int len)
 
   info->buffUsed += len;
 
-  debug(DEBUG_CONNECTION, "used = %d bytes, remaining = %d bytes\n",
-        info->buffUsed, info->buffTotal - info->buffUsed);
+  debug(DEBUG_CONNECTION, "used = %d bytes, remaining = %d bytes\n", info->buffUsed, info->buffTotal - info->buffUsed);
 
   return res;
 }
 
-void httpInit(void)
+void
+httpInit(void)
 {
   parseIpAddr(&confAddr, DEF_CONFIG_ADDR);
   confPort = DEF_CONFIG_PORT;
@@ -446,10 +444,10 @@ void httpInit(void)
   getRandomBytes(cookieStruct.key, 16);
 }
 
-int httpSetAddress(const char *addrStr, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetAddress(const char *addrStr, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
-  if (parseIpAddr(&confAddr, addrStr) < 0)
-  {
+  if (parseIpAddr(&confAddr, addrStr) < 0) {
     error("invalid IP address: %s\n", addrStr);
     return -1;
   }
@@ -457,18 +455,17 @@ int httpSetAddress(const char *addrStr, void *data __attribute__((unused)), set_
   return 0;
 }
 
-int httpSetPort(const char *portStr, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetPort(const char *portStr, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
   unsigned int port;
 
-  if (stringToInt(&port, portStr) < 0)
-  {
+  if (stringToInt(&port, portStr) < 0) {
     error("invalid port number: %s\n", portStr);
     return -1;
   }
 
-  if (port > 65535)
-  {
+  if (port > 65535) {
     error("invalid port number: %u\n", port);
     return -1;
   }
@@ -478,10 +475,10 @@ int httpSetPort(const char *portStr, void *data __attribute__((unused)), set_plu
   return 0;
 }
 
-int httpSetRootDir(const char *rootDir, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetRootDir(const char *rootDir, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
-  if (checkAbsPath(rootDir) < 0)
-  {
+  if (checkAbsPath(rootDir) < 0) {
     error("root directory (%s) requires an absolute path\n", rootDir);
     return -1;
   }
@@ -490,10 +487,10 @@ int httpSetRootDir(const char *rootDir, void *data __attribute__((unused)), set_
   return 0;
 }
 
-int httpSetWorkDir(const char *workDir, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetWorkDir(const char *workDir, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
-  if (checkAbsPath(workDir) < 0)
-  {
+  if (checkAbsPath(workDir) < 0) {
     error("work directory (%s) requires an absolute path\n", workDir);
     return -1;
   }
@@ -502,36 +499,40 @@ int httpSetWorkDir(const char *workDir, void *data __attribute__((unused)), set_
   return 0;
 }
 
-int httpSetIndexFile(const char *indexFile, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetIndexFile(const char *indexFile, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon
+                 __attribute__ ((unused)))
 {
   confIndexFile = myStrdup(indexFile);
   return 0;
 }
 
-int httpSetUser(const char *user, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetUser(const char *user, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
   confUser = myStrdup(user);
   return 0;
 }
 
-int httpSetPassword(const char *password, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetPassword(const char *password, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon
+                __attribute__ ((unused)))
 {
   confPassword = myStrdup(password);
   return 0;
 }
 
-int httpSetSessTime(const char *timeStr, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetSessTime(const char *timeStr, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
   unsigned int time;
 
-  if (stringToInt(&time, timeStr) < 0)
-  {
+  if (stringToInt(&time, timeStr) < 0) {
     error("invalid timeout: %s\n", timeStr);
     return -1;
   }
 
-  if (time > 86400)
-  {
+  if (time > 86400) {
     error("invalid timeout: %u\n", time);
     return -1;
   }
@@ -541,24 +542,25 @@ int httpSetSessTime(const char *timeStr, void *data __attribute__((unused)), set
   return 0;
 }
 
-int httpSetPubDir(const char *pubDir, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetPubDir(const char *pubDir, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
   confPubDir = myStrdup(pubDir);
   return 0;
 }
 
-int httpSetQuantum(const char *quantumStr, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetQuantum(const char *quantumStr, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon
+               __attribute__ ((unused)))
 {
   unsigned int quantum;
 
-  if (stringToInt(&quantum, quantumStr) < 0)
-  {
+  if (stringToInt(&quantum, quantumStr) < 0) {
     error("invalid quantum: %s\n", quantumStr);
     return -1;
   }
 
-  if (quantum > 100)
-  {
+  if (quantum > 100) {
     error("invalid quantum: %u\n", quantum);
     return -1;
   }
@@ -568,18 +570,17 @@ int httpSetQuantum(const char *quantumStr, void *data __attribute__((unused)), s
   return 0;
 }
 
-int httpSetMessTime(const char *timeStr, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetMessTime(const char *timeStr, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
   unsigned int time;
 
-  if (stringToInt(&time, timeStr) < 0)
-  {
+  if (stringToInt(&time, timeStr) < 0) {
     error("invalid timeout: %s\n", timeStr);
     return -1;
   }
 
-  if (time > 365 * 86400)
-  {
+  if (time > 365 * 86400) {
     error("invalid timeout: %u\n", time);
     return -1;
   }
@@ -589,18 +590,18 @@ int httpSetMessTime(const char *timeStr, void *data __attribute__((unused)), set
   return 0;
 }
 
-int httpSetMessLimit(const char *limitStr, void *data __attribute__((unused)), set_plugin_parameter_addon addon __attribute__((unused)))
+int
+httpSetMessLimit(const char *limitStr, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon
+                 __attribute__ ((unused)))
 {
   unsigned int limit;
 
-  if (stringToInt(&limit, limitStr) < 0)
-  {
+  if (stringToInt(&limit, limitStr) < 0) {
     error("invalid limit: %s\n", limitStr);
     return -1;
   }
 
-  if (limit > 1000000)
-  {
+  if (limit > 1000000) {
     error("invalid limit: %u\n", limit);
     return -1;
   }
@@ -610,12 +611,12 @@ int httpSetMessLimit(const char *limitStr, void *data __attribute__((unused)), s
   return 0;
 }
 
-int httpSetup(void)
+int
+httpSetup(void)
 {
   int i;
 
-  if (createMainSocket(&confAddr, confPort) < 0)
-  {
+  if (createMainSocket(&confAddr, confPort) < 0) {
     error("cannot create main socket\n");
     return -1;
   }
@@ -638,17 +639,16 @@ int httpSetup(void)
   return 0;
 }
 
-static int readConn(struct connInfo *info)
+static int
+readConn(struct connInfo *info)
 {
   struct inOutBuff *read = &info->read;
   int readLen;
   struct chunk *chunk;
 
-  for (;;)
-  {
-    if (read->last == NULL || read->len == CHUNK_SIZE)
-    {
-      chunk = allocMem(sizeof (struct chunk));
+  for (;;) {
+    if (read->last == NULL || read->len == CHUNK_SIZE) {
+      chunk = allocMem(sizeof(struct chunk));
 
       chunk->next = NULL;
 
@@ -663,11 +663,9 @@ static int readConn(struct connInfo *info)
       read->len = 0;
     }
 
-    readLen = readFileOs(info->sockId, &read->last->data[read->len],
-                         CHUNK_SIZE - read->len);
+    readLen = readFileOs(info->sockId, &read->last->data[read->len], CHUNK_SIZE - read->len);
 
-    if (readLen < 0)
-    {
+    if (readLen < 0) {
       error("cannot read from network connection\n");
       return -1;
     }
@@ -682,16 +680,15 @@ static int readConn(struct connInfo *info)
   }
 }
 
-void writeBuff(struct inOutBuff *write, const unsigned char *data, int dataLen)
+void
+writeBuff(struct inOutBuff *write, const unsigned char *data, int dataLen)
 {
   int writeLen;
   struct chunk *chunk;
 
-  while (dataLen > 0)
-  {
-    if (write->last == NULL || write->len == CHUNK_SIZE)
-    {
-      chunk = allocMem(sizeof (struct chunk));
+  while (dataLen > 0) {
+    if (write->last == NULL || write->len == CHUNK_SIZE) {
+      chunk = allocMem(sizeof(struct chunk));
 
       chunk->next = NULL;
 
@@ -721,7 +718,8 @@ void writeBuff(struct inOutBuff *write, const unsigned char *data, int dataLen)
   }
 }
 
-static int lineLength(const struct inOutBuff *read)
+static int
+lineLength(const struct inOutBuff *read)
 {
   struct chunk *chunk;
   int idx, len, off;
@@ -729,13 +727,11 @@ static int lineLength(const struct inOutBuff *read)
 
   count = 0;
 
-  for (chunk = read->first; chunk != NULL; chunk = chunk->next)
-  {
+  for (chunk = read->first; chunk != NULL; chunk = chunk->next) {
     len = (chunk == read->last) ? read->len : CHUNK_SIZE;
     off = (chunk == read->first) ? read->off : 0;
 
-    for (idx = off; idx < len; idx++)
-    {
+    for (idx = off; idx < len; idx++) {
       count++;
 
       if (chunk->data[idx] == 10)
@@ -746,14 +742,14 @@ static int lineLength(const struct inOutBuff *read)
   return -1;
 }
 
-static int readBuff(struct inOutBuff *read, unsigned char *data, int dataLen)
+static int
+readBuff(struct inOutBuff *read, unsigned char *data, int dataLen)
 {
   int readLen;
   struct chunk *chunk;
   int len;
 
-  while (dataLen > 0)
-  {
+  while (dataLen > 0) {
     if (read->first == NULL)
       return -1;
 
@@ -772,8 +768,7 @@ static int readBuff(struct inOutBuff *read, unsigned char *data, int dataLen)
     dataLen -= readLen;
     data += readLen;
 
-    if (read->off == len)
-    {
+    if (read->off == len) {
       chunk = read->first;
 
       read->first = chunk->next;
@@ -790,25 +785,23 @@ static int readBuff(struct inOutBuff *read, unsigned char *data, int dataLen)
   return 0;
 }
 
-static int writeConn(struct connInfo *info)
+static int
+writeConn(struct connInfo *info)
 {
   struct inOutBuff *write = &info->write[info->which];
   int writeLen;
   struct chunk *chunk;
   int len;
 
-  for (;;)
-  {
+  for (;;) {
     if (write->first == NULL)
       return 0;
 
     len = (write->first == write->last) ? write->len : CHUNK_SIZE;
 
-    writeLen = writeFileOs(info->sockId, &write->first->data[write->off],
-                           len - write->off);
+    writeLen = writeFileOs(info->sockId, &write->first->data[write->off], len - write->off);
 
-    if (writeLen < 0)
-    {
+    if (writeLen < 0) {
       error("cannot write to network connection\n");
       return -1;
     }
@@ -821,8 +814,7 @@ static int writeConn(struct connInfo *info)
     write->off += writeLen;
     write->cont -= writeLen;
 
-    if (write->off == len)
-    {
+    if (write->off == len) {
       chunk = write->first;
 
       write->first = chunk->next;
@@ -837,7 +829,8 @@ static int writeConn(struct connInfo *info)
   }
 }
 
-static char *getToken(char **point)
+static char *
+getToken(char **point)
 {
   char *localPoint = *point;
   char *start;
@@ -861,35 +854,34 @@ static char *getToken(char **point)
   return start;
 }
 
-static void writeBuffString(struct inOutBuff *write, const char *string)
+static void
+writeBuffString(struct inOutBuff *write, const char *string)
 {
   writeBuff(write, (const unsigned char *)string, strlen(string));
 }
 
-static int cookieToSession(unsigned int *sessId, char *cookie)
+static int
+cookieToSession(unsigned int *sessId, char *cookie)
 {
   unsigned char mac1[16];
   unsigned char mac2[16];
 
   debug(DEBUG_SESSION, "cookie = %s\n", cookie);
 
-  if (decHexString((unsigned char *)&cookieStruct.sessId, cookie, 4) < 0)
-  {
+  if (decHexString((unsigned char *)&cookieStruct.sessId, cookie, 4) < 0) {
     debug(DEBUG_SESSION, "cannot decode session id\n");
     return -1;
   }
 
-  if (decHexString(mac1, cookie + 8, 16) < 0)
-  {
+  if (decHexString(mac1, cookie + 8, 16) < 0) {
     debug(DEBUG_SESSION, "cannot decode authenticator\n");
     return -1;
   }
 
   memset(mac2, 0, 16);
-  rc4(mac2, 16, (unsigned char *)&cookieStruct, sizeof (cookieStruct));
+  rc4(mac2, 16, (unsigned char *)&cookieStruct, sizeof(cookieStruct));
 
-  if (memcmp(mac1, mac2, 16) != 0)
-  {
+  if (memcmp(mac1, mac2, 16) != 0) {
     debug(DEBUG_SESSION, "invalid authenticator\n");
     return -1;
   }
@@ -901,7 +893,8 @@ static int cookieToSession(unsigned int *sessId, char *cookie)
   return 0;
 }
 
-static char *sessionToCookie(unsigned int sessId)
+static char *
+sessionToCookie(unsigned int sessId)
 {
   unsigned char mac[16];
   static char buff[41];
@@ -911,7 +904,7 @@ static char *sessionToCookie(unsigned int sessId)
   cookieStruct.sessId = sessId;
 
   memset(mac, 0, 16);
-  rc4(mac, 16, (unsigned char *)&cookieStruct, sizeof (cookieStruct));
+  rc4(mac, 16, (unsigned char *)&cookieStruct, sizeof(cookieStruct));
 
   encHexString(buff, (unsigned char *)&cookieStruct.sessId, 4);
   encHexString(buff + 8, mac, 16);
@@ -921,14 +914,16 @@ static char *sessionToCookie(unsigned int sessId)
   return buff;
 }
 
-static void writeBuffInt(struct inOutBuff *write, unsigned int val)
+static void
+writeBuffInt(struct inOutBuff *write, unsigned int val)
 {
   char buff[10];
 
   writeBuffString(write, intToString(buff, val));
 }
 
-static void printBuff(struct inOutBuff *buff, const char *form, ...)
+static void
+printBuff(struct inOutBuff *buff, const char *form, ...)
 {
   int i = 0;
   int start = 0;
@@ -939,8 +934,7 @@ static void printBuff(struct inOutBuff *buff, const char *form, ...)
 
   va_start(args, form);
 
-  for (;;)
-  {
+  for (;;) {
     start = i;
 
     while (form[i] != '%' && form[i] != 0)
@@ -955,14 +949,12 @@ static void printBuff(struct inOutBuff *buff, const char *form, ...)
     if (form[i + 1] == '%')
       writeBuff(buff, (const unsigned char *)"%", 1);
 
-    else if (form[i + 1] == 's')
-    {
+    else if (form[i + 1] == 's') {
       strVal = va_arg(args, char *);
       writeBuffString(buff, strVal);
     }
 
-    else if (form[i + 1] == 'd')
-    {
+    else if (form[i + 1] == 'd') {
       intVal = va_arg(args, int);
       writeBuffInt(buff, intVal);
     }
@@ -973,10 +965,10 @@ static void printBuff(struct inOutBuff *buff, const char *form, ...)
   va_end(args);
 }
 
-static const char *errNoToErrStr(int errNo)
+static const char *
+errNoToErrStr(int errNo)
 {
-  switch (errNo)
-  {
+  switch (errNo) {
   case 200:
     return "OK";
 
@@ -1003,10 +995,10 @@ static const char *errNoToErrStr(int errNo)
   }
 }
 
-static int writeHeaders(struct connInfo *info, int errNo)
+static int
+writeHeaders(struct connInfo *info, int errNo)
 {
-  printBuff(&info->write[0], "HTTP/1.1 %d %s\r\n", errNo,
-            errNoToErrStr(errNo));
+  printBuff(&info->write[0], "HTTP/1.1 %d %s\r\n", errNo, errNoToErrStr(errNo));
 
   printBuff(&info->write[0], "Server: TAS/0.1\r\n");
 
@@ -1034,15 +1026,13 @@ static int writeHeaders(struct connInfo *info, int errNo)
   return 0;
 }
 
-static void writeErrorMsg(struct connInfo *info, int errNo, char *errMsg)
+static void
+writeErrorMsg(struct connInfo *info, int errNo, char *errMsg)
 {
-  if (info->verb == NULL || strcmp(info->verb, "HEAD") != 0)
-  {
+  if (info->verb == NULL || strcmp(info->verb, "HEAD") != 0) {
     printBuff(&info->write[2], "<html>\r\n");
-    printBuff(&info->write[2], "<head><title>Error %d: %s</title></head>\r\n",
-              errNo, errNoToErrStr(errNo));
-    printBuff(&info->write[2], "<body>Error %d: %s (%s)</body>\r\n", errNo,
-              errNoToErrStr(errNo),
+    printBuff(&info->write[2], "<head><title>Error %d: %s</title></head>\r\n", errNo, errNoToErrStr(errNo));
+    printBuff(&info->write[2], "<body>Error %d: %s (%s)</body>\r\n", errNo, errNoToErrStr(errNo),
               (errMsg == NULL) ? "Unknown Reason" : errMsg);
     printBuff(&info->write[2], "</html>\r\n");
 
@@ -1054,15 +1044,16 @@ static void writeErrorMsg(struct connInfo *info, int errNo, char *errMsg)
   info->state = STATE_DRAIN;
 }
 
-static void writeError(struct connInfo *info, int errNo)
+static void
+writeError(struct connInfo *info, int errNo)
 {
   writeErrorMsg(info, errNo, NULL);
 }
 
-static void toLower(char *string)
+static void
+toLower(char *string)
 {
-  while (*string != 0)
-  {
+  while (*string != 0) {
     if (*string >= 'A' && *string <= 'Z')
       *string += 32;
 
@@ -1070,7 +1061,8 @@ static void toLower(char *string)
   }
 }
 
-static void unescape(char *string)
+static void
+unescape(char *string)
 {
   int i, k, val;
 
@@ -1078,15 +1070,11 @@ static void unescape(char *string)
 
   k = 0;
 
-  for (i = 0; string[i] != 0; i++)
-  {
-    if (string[i] == '%' && string[i + 1] != 0 && string[i + 2] != 0)
-    {
+  for (i = 0; string[i] != 0; i++) {
+    if (string[i] == '%' && string[i + 1] != 0 && string[i + 2] != 0) {
       val = 0;
 
-      if (addHexDigit(&val, string[i + 1]) >= 0 &&
-          addHexDigit(&val, string[i + 2]) >= 0)
-      {
+      if (addHexDigit(&val, string[i + 1]) >= 0 && addHexDigit(&val, string[i + 2]) >= 0) {
         string[k++] = (char)val;
         i += 2;
         continue;
@@ -1101,7 +1089,8 @@ static void unescape(char *string)
   debug(DEBUG_REQUEST | DEBUG_LUA, "escaped string = %s\n", string);
 }
 
-static int serviceConn(struct connInfo *info)
+static int
+serviceConn(struct connInfo *info)
 {
   int i, k, len, len2;
   char *line, *tmp, *tmp2;
@@ -1113,8 +1102,7 @@ static int serviceConn(struct connInfo *info)
   struct sessInfo *currSess;
   int pub;
 
-  switch (info->state)
-  {
+  switch (info->state) {
   case STATE_REQUEST:
     debug(DEBUG_CONNECTION, "connection state is STATE_REQUEST\n");
 
@@ -1134,37 +1122,29 @@ static int serviceConn(struct connInfo *info)
     tmp = getToken(&line);
     info->proto = getToken(&line);
 
-    debug(DEBUG_REQUEST, "verb = %s, uri = %s, protocol = %s\n",
-          (info->verb == NULL) ? "none" : info->verb,
-          (tmp == NULL) ? "none" : tmp,
-          (info->proto == NULL) ? "none" : info->proto);
+    debug(DEBUG_REQUEST, "verb = %s, uri = %s, protocol = %s\n", (info->verb == NULL) ? "none" : info->verb,
+          (tmp == NULL) ? "none" : tmp, (info->proto == NULL) ? "none" : info->proto);
 
-    if (info->verb == NULL || tmp == NULL || info->proto == NULL)
-    {
-      error("request without verb (%s), URI (%s), or protocol (%s)\n",
-            (info->verb == NULL) ? "none" : info->verb,
-            (tmp == NULL) ? "none" : tmp,
-            (info->proto == NULL) ? "none" : info->proto);
+    if (info->verb == NULL || tmp == NULL || info->proto == NULL) {
+      error("request without verb (%s), URI (%s), or protocol (%s)\n", (info->verb == NULL) ? "none" : info->verb,
+            (tmp == NULL) ? "none" : tmp, (info->proto == NULL) ? "none" : info->proto);
       writeError(info, 400);
       return 0;
     }
 
-    if (strcmp(info->verb, "GET") != 0 && strcmp(info->verb, "HEAD") != 0)
-    {
+    if (strcmp(info->verb, "GET") != 0 && strcmp(info->verb, "HEAD") != 0) {
       error("unsupported verb: %s\n", info->verb);
       writeError(info, 501);
       return 0;
     }
 
-    if (strcmp(info->proto, "HTTP/1.1") != 0)
-    {
+    if (strcmp(info->proto, "HTTP/1.1") != 0) {
       error("unsupported protocol version: %s\n", info->proto);
       writeError(info, 505);
       return 0;
     }
 
-    if (strncmp(tmp, "http://", 7) == 0)
-    {
+    if (strncmp(tmp, "http://", 7) == 0) {
       tmp += 7;
 
       info->host = tmp;
@@ -1172,22 +1152,19 @@ static int serviceConn(struct connInfo *info)
       while (*tmp != ':' && *tmp != '/' && *tmp != 0)
         tmp++;
 
-      if (*tmp == 0)
-      {
+      if (*tmp == 0) {
         error("URI host part does not end in ':' or '/'\n");
         writeError(info, 400);
         return 0;
       }
 
-      if (*tmp == ':')
-      {
+      if (*tmp == ':') {
         *tmp++ = 0;
 
         while (*tmp != '/' && *tmp != 0)
           tmp++;
 
-        if (*tmp == 0)
-        {
+        if (*tmp == 0) {
           error("URI port part does not end in '/'\n");
           writeError(info, 400);
           return 0;
@@ -1207,17 +1184,14 @@ static int serviceConn(struct connInfo *info)
     else if (tmp[0] == '/')
       info->path = ++tmp;
 
-    else
-    {
+    else {
       error("URI path part is not an absolute path\n");
       writeError(info, 400);
       return 0;
     }
 
-    while (*tmp != '?' && *tmp != 0)
-    {
-      if (tmp[0] == '.' && tmp[1] == '.')
-      {
+    while (*tmp != '?' && *tmp != 0) {
+      if (tmp[0] == '.' && tmp[1] == '.') {
         error("URI path part contains '..'\n");
         writeError(info, 400);
         return 0;
@@ -1226,14 +1200,12 @@ static int serviceConn(struct connInfo *info)
       tmp++;
     }
 
-    if (*tmp == '?')
-    {
+    if (*tmp == '?') {
       *tmp++ = 0;
       info->para = tmp;
     }
 
-    debug(DEBUG_REQUEST, "path = %s, parameters = %s\n", info->path,
-          (info->para == NULL) ? "none" : info->para);
+    debug(DEBUG_REQUEST, "path = %s, parameters = %s\n", info->path, (info->para == NULL) ? "none" : info->para);
 
     info->state = STATE_HEADERS;
     return 0;
@@ -1253,26 +1225,22 @@ static int serviceConn(struct connInfo *info)
 
     debug(DEBUG_REQUEST, "header line is '%s'\n", line);
 
-    if (*line == 0)
-    {
+    if (*line == 0) {
       if (info->host == NULL)
         for (head = info->firstHead; head != NULL; head = head->next)
           if (strcmp(head->name, "host") == 0)
             info->host = head->value;
 
-      debug(DEBUG_REQUEST, "last header line, host = %s\n",
-            (info->host == NULL) ? "none" : info->host);
+      debug(DEBUG_REQUEST, "last header line, host = %s\n", (info->host == NULL) ? "none" : info->host);
 
       info->state = STATE_RESPONSE;
       return 0;
     }
 
-    if (*line == 9 || *line == 32)
-    {
+    if (*line == 9 || *line == 32) {
       debug(DEBUG_REQUEST, "continued header line\n");
-      
-      if (info->lastHead == NULL)
-      {
+
+      if (info->lastHead == NULL) {
         error("no previous header to continue\n");
         writeError(info, 400);
         return 0;
@@ -1287,16 +1255,13 @@ static int serviceConn(struct connInfo *info)
 
       info->lastHead->value = tmp;
 
-      debug(DEBUG_REQUEST, "updated header, name = %s, value = '%s'\n",
-            info->lastHead->name, info->lastHead->value);
+      debug(DEBUG_REQUEST, "updated header, name = %s, value = '%s'\n", info->lastHead->name, info->lastHead->value);
     }
 
-    else
-    {
+    else {
       tmp = getToken(&line);
 
-      if (tmp == NULL)
-      {
+      if (tmp == NULL) {
         error("header without name\n");
         writeError(info, 400);
         return 0;
@@ -1304,8 +1269,7 @@ static int serviceConn(struct connInfo *info)
 
       for (i = 0; tmp[i] != ':' && tmp[i] != 0; i++);
 
-      if (tmp[i] != ':' || tmp[i + 1] != 0)
-      {
+      if (tmp[i] != ':' || tmp[i + 1] != 0) {
         error("header name does not end in ':'\n");
         writeError(info, 400);
         return 0;
@@ -1315,7 +1279,7 @@ static int serviceConn(struct connInfo *info)
 
       toLower(tmp);
 
-      head = allocBuff(info, sizeof (struct httpHeader));
+      head = allocBuff(info, sizeof(struct httpHeader));
 
       head->next = NULL;
       head->name = tmp;
@@ -1329,8 +1293,7 @@ static int serviceConn(struct connInfo *info)
 
       info->lastHead = head;
 
-      debug(DEBUG_REQUEST, "new header, name = %s, value = '%s'\n",
-            info->lastHead->name, info->lastHead->value);
+      debug(DEBUG_REQUEST, "new header, name = %s, value = '%s'\n", info->lastHead->name, info->lastHead->value);
     }
 
     return 0;
@@ -1342,21 +1305,18 @@ static int serviceConn(struct connInfo *info)
 
     len = strlen(confPubDir);
 
-    pub = (len > 0 && strncmp(info->path, confPubDir, len) == 0 &&
-           (info->path[len] == 0 || info->path[len] == '/'));
+    pub = (len > 0 && strncmp(info->path, confPubDir, len) == 0 && (info->path[len] == 0 || info->path[len] == '/'));
 
     debug(DEBUG_REQUEST, "%s path\n", (pub == 0) ? "protected" : "public");
 
-    if (pub == 0 && (confUser != NULL || confPassword != NULL))
-    {
+    if (pub == 0 && (confUser != NULL || confPassword != NULL)) {
       debug(DEBUG_REQUEST, "authentication required\n");
 
       for (head = info->firstHead; head != NULL; head = head->next)
         if (memcmp(head->name, "authorization", 14) == 0)
           break;
 
-      if (head == NULL)
-      {
+      if (head == NULL) {
         debug(DEBUG_REQUEST, "no authorization header present\n");
 
         writeError(info, 401);
@@ -1365,8 +1325,7 @@ static int serviceConn(struct connInfo *info)
 
       tmp = getToken(&head->value);
 
-      if (tmp == NULL || strcmp(tmp, "Basic") != 0)
-      {
+      if (tmp == NULL || strcmp(tmp, "Basic") != 0) {
         error("\"Basic\" authorization info expected\n");
         writeError(info, 401);
         return 0;
@@ -1374,8 +1333,7 @@ static int serviceConn(struct connInfo *info)
 
       tmp = getToken(&head->value);
 
-      if (tmp == NULL)
-      {
+      if (tmp == NULL) {
         error("authorization info lacks base-64 encoded data\n");
         writeError(info, 401);
         return 0;
@@ -1383,8 +1341,7 @@ static int serviceConn(struct connInfo *info)
 
       tmp2 = allocBuff(info, strlen(tmp) * 3 / 4 + 1);
 
-      if (decBase64((unsigned char *)tmp2, tmp) < 0)
-      {
+      if (decBase64((unsigned char *)tmp2, tmp) < 0) {
         error("base-64 decode failed\n");
         writeError(info, 401);
         return 0;
@@ -1392,8 +1349,7 @@ static int serviceConn(struct connInfo *info)
 
       for (i = 0; tmp2[i] != ':' && tmp2[i] != 0; i++);
 
-      if (tmp2[i] == 0)
-      {
+      if (tmp2[i] == 0) {
         error("authorization info lacks ':'\n");
         writeError(info, 401);
         return 0;
@@ -1403,17 +1359,14 @@ static int serviceConn(struct connInfo *info)
 
       debug(DEBUG_REQUEST, "user = %s, password = %s\n", tmp2, tmp2 + i);
 
-      if ((confUser != NULL && strcmp(confUser, tmp2) != 0) ||
-          (confPassword != NULL && strcmp(confPassword, tmp2 + i) != 0))
-      {
+      if ((confUser != NULL && strcmp(confUser, tmp2) != 0) || (confPassword != NULL && strcmp(confPassword, tmp2 + i) != 0)) {
         error("user authentication failed\n");
         writeError(info, 401);
         return 0;
-      }     
+      }
     }
 
-    if (isDirectory(confRootDir, info->path) > 0)
-    {
+    if (isDirectory(confRootDir, info->path) > 0) {
       debug(DEBUG_REQUEST, "path is a directory\n");
 
       tmp = fullPath(info->path, confIndexFile);
@@ -1426,39 +1379,31 @@ static int serviceConn(struct connInfo *info)
       freeMem(tmp);
     }
 
-    if (openFile(&info->fileId, confRootDir, info->path) < 0)
-    {
-      error("cannot find resource %s in root directory %s\n", info->path,
-            confRootDir);
+    if (openFile(&info->fileId, confRootDir, info->path) < 0) {
+      error("cannot find resource %s in root directory %s\n", info->path, confRootDir);
       writeError(info, 404);
       return 0;
     }
 
-    for (i = 0; extMap[i].ext != NULL; i++)
-    {
+    for (i = 0; extMap[i].ext != NULL; i++) {
       len = strlen(extMap[i].ext);
       len2 = strlen(info->path);
 
-      if (len2 >= len &&
-          memcmp(info->path + len2 - len, extMap[i].ext, len) == 0)
-        break;      
+      if (len2 >= len && memcmp(info->path + len2 - len, extMap[i].ext, len) == 0)
+        break;
     }
 
-    if (extMap[i].ext != NULL)
-    {
+    if (extMap[i].ext != NULL) {
       info->state = extMap[i].state;
       info->contType = extMap[i].type;
 
-      debug(DEBUG_REQUEST,
-            "extension recognized, next state = %d, content type = %s\n",
-            info->state, info->contType);
+      debug(DEBUG_REQUEST, "extension recognized, next state = %d, content type = %s\n", info->state, info->contType);
     }
 
     else
       info->state = STATE_FILE;
 
-    if (strcmp(info->verb, "HEAD") == 0)
-    {
+    if (strcmp(info->verb, "HEAD") == 0) {
       closeFile(&info->fileId);
 
       writeHeaders(info, 200);
@@ -1471,16 +1416,13 @@ static int serviceConn(struct connInfo *info)
   case STATE_FILE:
     debug(DEBUG_CONNECTION, "connection state is STATE_FILE\n");
 
-    for (;;)
-    {
-      len = readFileOs(&info->fileId, fileBuff, sizeof (fileBuff));
+    for (;;) {
+      len = readFileOs(&info->fileId, fileBuff, sizeof(fileBuff));
 
       debug(DEBUG_CONNECTION, "read %d bytes from file\n", len);
 
-      if (len <= 0)
-      {
-        if (len < 0)
-        {
+      if (len <= 0) {
+        if (len < 0) {
           closeFile(&info->fileId);
 
           info->contLen = info->write[2].cont;
@@ -1494,7 +1436,7 @@ static int serviceConn(struct connInfo *info)
 
       writeBuff(&info->write[2], fileBuff, len);
     }
-    
+
     return 0;
 
   case STATE_LSP:
@@ -1505,8 +1447,7 @@ static int serviceConn(struct connInfo *info)
 
     debug(DEBUG_LUA, "lua file name = %s\n", tmp);
 
-    if (lspToLua(confRootDir, info->path, confWorkDir, tmp) < 0)
-    {
+    if (lspToLua(confRootDir, info->path, confWorkDir, tmp) < 0) {
       error("cannot transform %s into %s\n", info->path, tmp);
       writeError(info, 500);
       return 0;
@@ -1517,8 +1458,7 @@ static int serviceConn(struct connInfo *info)
 
     debug(DEBUG_LUA, "lex file name = %s\n", tmp2);
 
-    if (luaToLex(&errMsg, confWorkDir, tmp, tmp2) < 0)
-    {
+    if (luaToLex(&errMsg, confWorkDir, tmp, tmp2) < 0) {
       error("cannot transform %s into %s\n", tmp, tmp2);
       writeErrorMsg(info, 500, errMsg);
 
@@ -1530,17 +1470,15 @@ static int serviceConn(struct connInfo *info)
 
     tmp = info->para;
 
-    if (tmp != NULL)
-    {
-      len = 3 * sizeof (char *);
+    if (tmp != NULL) {
+      len = 3 * sizeof(char *);
 
-      for (i = 0; tmp[i] != 0; i++)
-      {
+      for (i = 0; tmp[i] != 0; i++) {
         if (tmp[i] == '+')
           tmp[i] = ' ';
 
         if (tmp[i] == '=' || tmp[i] == '&')
-          len += sizeof (char *);
+          len += sizeof(char *);
       }
 
       argList = allocBuff(info, len);
@@ -1548,15 +1486,13 @@ static int serviceConn(struct connInfo *info)
       i = 0;
       k = 0;
 
-      while (tmp[i] != 0)
-      {
+      while (tmp[i] != 0) {
         argList[k++] = tmp + i;
 
         while (tmp[i] != 0 && tmp[i] != '=')
           i++;
 
-        if (tmp[i] == 0)
-        {
+        if (tmp[i] == 0) {
           error("end of parameters while looking for '='\n");
           writeError(info, 400);
           return 0;
@@ -1590,18 +1526,15 @@ static int serviceConn(struct connInfo *info)
     currSess = NULL;
 
     for (head = info->firstHead; head != NULL; head = head->next)
-      if (memcmp(head->name, "cookie", 7) == 0 &&
-          cookieToSession(&sessId, head->value) >= 0)
+      if (memcmp(head->name, "cookie", 7) == 0 && cookieToSession(&sessId, head->value) >= 0)
         break;
 
-    if (head != NULL)
-    {
+    if (head != NULL) {
       debug(DEBUG_SESSION, "looking for existing session\n");
 
       for (i = 0; i < numSess && sess[i]->id != sessId; i++);
 
-      if (i < numSess)
-      {
+      if (i < numSess) {
         debug(DEBUG_SESSION, "existing session found\n");
 
         currSess = sess[i];
@@ -1610,26 +1543,22 @@ static int serviceConn(struct connInfo *info)
       }
     }
 
-    if (currSess == NULL)
-    {
+    if (currSess == NULL) {
       debug(DEBUG_SESSION, "no existing session\n");
 
       info->newSess = newSessInfo();
       currSess = info->newSess;
     }
 
-    if (runLua(&errMsg, info, confWorkDir, tmp2, argList, &currSess->data) < 0)
-    {
+    if (runLua(&errMsg, info, confWorkDir, tmp2, argList, &currSess->data) < 0) {
       error("cannot run %s\n", tmp2);
 
-      if (info->newSess != NULL)
-      {
+      if (info->newSess != NULL) {
         debug(DEBUG_SESSION, "cleaning up newly created session\n");
 
-        if (info->newSess->data != NULL)
-        {
+        if (info->newSess->data != NULL) {
           debug(DEBUG_SESSION, "freeing lua context\n");
-        
+
           freeLuaSession(info->newSess->data);
         }
 
@@ -1638,7 +1567,7 @@ static int serviceConn(struct connInfo *info)
       }
 
       debug(DEBUG_SESSION, "purging io buffer\n");
-        
+
       freeInOutBuff(&info->write[1]);
       freeInOutBuff(&info->write[2]);
 
@@ -1655,22 +1584,17 @@ static int serviceConn(struct connInfo *info)
 
     debug(DEBUG_SESSION, "lua code successfully executed\n");
 
-    if (info->newSess != NULL)
-    {
-      if (info->newSess->data == NULL)
-      {
+    if (info->newSess != NULL) {
+      if (info->newSess->data == NULL) {
         debug(DEBUG_SESSION, "no session required\n");
 
         freeMem(info->newSess);
         info->newSess = NULL;
       }
 
-      else
-      {
-        if (numSess == MAX_SESS)
-        {
-          error("session limit reached, deleting least recently used session %d\n",
-                sess[0]->id);
+      else {
+        if (numSess == MAX_SESS) {
+          error("session limit reached, deleting least recently used session %d\n", sess[0]->id);
           freeLuaSession(sess[0]->data);
           freeMem(sess[0]);
 
@@ -1686,20 +1610,17 @@ static int serviceConn(struct connInfo *info)
       }
     }
 
-    else
-    {
+    else {
       debug(DEBUG_SESSION, "aging sessions\n");
 
       for (i = 0; sess[i]->id != currSess->id; i++);
 
-      while (i < numSess - 1)
-      {
+      while (i < numSess - 1) {
         sess[i] = sess[i + 1];
         i++;
       }
 
-      if (currSess->data == NULL)
-      {
+      if (currSess->data == NULL) {
         debug(DEBUG_SESSION, "session not required any longer\n");
 
         sess[i] = NULL;
@@ -1708,8 +1629,7 @@ static int serviceConn(struct connInfo *info)
         numSess--;
       }
 
-      else
-      {
+      else {
         debug(DEBUG_SESSION, "session stored\n");
 
         sess[i] = currSess;
@@ -1738,7 +1658,8 @@ static int serviceConn(struct connInfo *info)
   return 0;
 }
 
-int httpService(int freq)
+int
+httpService(int freq)
 {
   struct fileId *sockId;
   struct ipAddr *addr;
@@ -1753,8 +1674,7 @@ int httpService(int freq)
   micro = getMicro();
 
 #ifdef TAS_BLOCK
-  for (i = 0; i < numConn; i++)
-  {
+  for (i = 0; i < numConn; i++) {
     waitIds[i] = conn[i]->sockId;
     waitFlags[i] = &conn[i]->flags;
 
@@ -1768,8 +1688,7 @@ int httpService(int freq)
     return 0;
 #endif
 
-  while (numConn < MAX_CONN)
-  {
+  while (numConn < MAX_CONN) {
     if (acceptConn(&sockId, &addr) < 0)
       break;
 
@@ -1778,12 +1697,9 @@ int httpService(int freq)
 
   i = 0;
 
-  while (i < numConn)
-  {
-    if (((conn[i]->flags & FLAG_READ) != 0 && readConn(conn[i]) < 0) ||
-        ((conn[i]->flags & FLAG_WRITE) != 0 && writeConn(conn[i]) < 0) ||
-        serviceConn(conn[i]) < 0)
-    {
+  while (i < numConn) {
+    if (((conn[i]->flags & FLAG_READ) != 0 && readConn(conn[i]) < 0)
+        || ((conn[i]->flags & FLAG_WRITE) != 0 && writeConn(conn[i]) < 0) || serviceConn(conn[i]) < 0) {
       closeFile(conn[i]->sockId);
 
       freeConnInfo(conn[i]);
@@ -1800,9 +1716,7 @@ int httpService(int freq)
       i++;
   }
 
-  while (numSess > 0 && confSessTime > 0 &&
-         timedOut(&sess[0]->time, confSessTime) >= 0)
-  {
+  while (numSess > 0 && confSessTime > 0 && timedOut(&sess[0]->time, confSessTime) >= 0) {
     error("session %d timed out\n", sess[0]->id);
 
     freeLuaSession(sess[0]->data);
@@ -1817,15 +1731,12 @@ int httpService(int freq)
     debug(DEBUG_SESSION, "%d sessions left\n", numSess);
   }
 
-  while (numTasMsg > 0 && confMessTime > 0 &&
-         timedOut(&firstTasMsg->time, confMessTime) >= 0)
-  {
+  while (numTasMsg > 0 && confMessTime > 0 && timedOut(&firstTasMsg->time, confMessTime) >= 0) {
     tasMsg = firstTasMsg;
 
-    debug(DEBUG_MESSAGE,
-          "message timed out, service ='%s', string = '%s', from = %s\n",
-          tasMsg->service, tasMsg->string, tasMsg->from);
-    
+    debug(DEBUG_MESSAGE, "message timed out, service ='%s', string = '%s', from = %s\n", tasMsg->service, tasMsg->string,
+          tasMsg->from);
+
     firstTasMsg = firstTasMsg->next;
 
     if (lastTasMsg == tasMsg)
@@ -1844,30 +1755,28 @@ int httpService(int freq)
   micro = getMicro() - micro;
   microLimit = (10000 * confQuantum) / freq;
 
-  debug(DEBUG_QUANTUM, "service time = %u us, limit = %u us\n",
-        micro, microLimit);
+  debug(DEBUG_QUANTUM, "service time = %u us, limit = %u us\n", micro, microLimit);
 
   if (microLimit > 0 && micro > microLimit)
-    error("service took longer than expected (%u us, limit is %u us)\n",
-          micro, microLimit);
+    error("service took longer than expected (%u us, limit is %u us)\n", micro, microLimit);
 
   return 0;
 }
 
-void httpShutdown(void)
+void
+httpShutdown(void)
 {
   closeMainSocket();
 }
 
-void httpAddTasMessage(const char *service, const char *string,
-                       const char *from)
+void
+httpAddTasMessage(const char *service, const char *string, const char *from)
 {
   struct tasMessage *msg;
 
-  debug(DEBUG_MESSAGE, "adding message, service = %s, string = %s, from = %s\n",
-        service, string, from);
+  debug(DEBUG_MESSAGE, "adding message, service = %s, string = %s, from = %s\n", service, string, from);
 
-  msg = allocMem(sizeof (struct tasMessage));
+  msg = allocMem(sizeof(struct tasMessage));
 
   msg->next = NULL;
 
@@ -1876,7 +1785,7 @@ void httpAddTasMessage(const char *service, const char *string,
   msg->service = myStrdup(service);
   msg->string = myStrdup(string);
   msg->from = myStrdup(from);
-  
+
   if (lastTasMsg != NULL)
     lastTasMsg->next = msg;
 
@@ -1890,14 +1799,11 @@ void httpAddTasMessage(const char *service, const char *string,
   debug(DEBUG_MESSAGE, "new number of messages: %d\n", numTasMsg);
   debug(DEBUG_MESSAGE, "limiting message queue length\n");
 
-  while (confMessLimit > 0 && numTasMsg > confMessLimit)
-  {
+  while (confMessLimit > 0 && numTasMsg > confMessLimit) {
     msg = firstTasMsg;
 
-    debug(DEBUG_MESSAGE,
-          "message removed, service ='%s', string = '%s', from = %s\n",
-          msg->service, msg->string, msg->from);
-    
+    debug(DEBUG_MESSAGE, "message removed, service ='%s', string = '%s', from = %s\n", msg->service, msg->string, msg->from);
+
     firstTasMsg = firstTasMsg->next;
 
     if (lastTasMsg == msg)
@@ -1914,7 +1820,8 @@ void httpAddTasMessage(const char *service, const char *string,
   debug(DEBUG_MESSAGE, "%d messages left\n", numTasMsg);
 }
 
-int httpGetTasMessage(const char *service, char **string, char **from)
+int
+httpGetTasMessage(const char *service, char **string, char **from)
 {
   struct tasMessage *msg, *prevMsg;
 
@@ -1924,10 +1831,8 @@ int httpGetTasMessage(const char *service, char **string, char **from)
 
   debug(DEBUG_MESSAGE, "walking through message queue\n");
 
-  for (msg = firstTasMsg; msg != NULL; msg = msg->next)
-  {
-    debug(DEBUG_MESSAGE, "  service = %s, string = %s\n",
-          msg->service, msg->string);
+  for (msg = firstTasMsg; msg != NULL; msg = msg->next) {
+    debug(DEBUG_MESSAGE, "  service = %s, string = %s\n", msg->service, msg->string);
 
     if (strcmp(msg->service, service) == 0)
       break;
@@ -1937,8 +1842,7 @@ int httpGetTasMessage(const char *service, char **string, char **from)
 
   debug(DEBUG_MESSAGE, "walk finished\n");
 
-  if (msg == NULL)
-  {
+  if (msg == NULL) {
     debug(DEBUG_MESSAGE, "no message found\n");
 
     return -1;
@@ -1966,3 +1870,10 @@ int httpGetTasMessage(const char *service, char **string, char **from)
 
   return 0;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

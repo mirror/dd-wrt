@@ -1,9 +1,7 @@
 #
-# olsr.org OLSR daemon config file
+# OLSR.org routing daemon config file
 #
 # Lines starting with a # are discarded
-#
-# This file was shipped with olsrd 0.X.X
 #
 
 # Debug level(0-9)
@@ -16,6 +14,7 @@ DebugLevel	1
 IpVersion	4
 
 # FIBMetric ("flat", "correct", or "approx")
+# Just use "flat", the others don't work very well
 
 FIBMetric "flat"
 
@@ -30,23 +29,65 @@ ClearScreen     yes
 
 Hna4
 {
-#   Internet gateway:
-#   0.0.0.0      0.0.0.0
-#   more entries can be added:
-#   192.168.1.0  255.255.255.0
+# Internet gateway
+#    0.0.0.0   0.0.0.0
+
+# specific small networks reachable through this node
+#    15.15.0.0 255.255.255.0
+#    15.16.0.0 255.255.255.0
 }
 
 # HNA IPv6 routes
 # syntax: netaddr prefix
 # Example Internet gateway:
-Hna6
-{
-#   Internet gateway:
-#   ::              0
-#   more entries can be added:
-#   fec0:2200:106:: 48
-}
+#Hna6
+#{
+# Internet gateway
+#     ::              0
 
+# specific small networks reachable through this node
+#    fec0:2200:106:0:0:0:0:0 48
+#}
+
+# Specify the routing Table olsr uses
+# currently only implemented in linux versions, (bsd planned)
+# useful for policyrouting, to ensure that olsr can use 
+# the table a policy rule with priority 65536 is auto-installed
+# by olsrd if an value < 253 ist specified!
+# value defaults to 253 (main table)
+# valid values are 1 .. 254
+# (freifunkfirmware uses 111 for its policy routing)
+
+# RtTable 111
+
+#you may specify another table for the default route only
+#if used no policy route will get auto-installed for this table, 
+#but the default route gets also inserted into table 254 
+#(the last table used in default linux policy routing)
+#valid tables are the same as for RtTable
+
+# RtTableDefault 112
+
+# Specify the proto tag to be used for routes olsr inserts into kernel
+# currently only implemented for linux, defaults to 0 which gets replaced
+# by an OS-specific default value under linux 3 (BOOT) gets used as default
+# (for backward compatibility)
+# valid values under linux are 1 .. 254
+# 1 gets remapped by olsrd to 0 UNSPECIFIED (1 is reserved for ICMP redirects)
+# 2 KERNEL routes (not very wise to use)
+# 3 BOOT (should in fact not be used by routing daemons)
+# 4 STATIC 
+# 8 .. 15 various routing daemons (gated, zebra, bird, & co)
+
+# RtProto 111
+
+# For testing purposes it may be nice to use another port for olsrd
+# for using another port than the IANA assigned one 
+# for a production network, there should be a good reason!!
+# defaults to 698 (IANA assigned olsr-port)
+# valid values are 698 or > 1000
+
+# OlsrPort 698
 
 # Should olsrd keep on running even if there are
 # no interfaces available? This is a good idea
@@ -63,8 +104,7 @@ AllowNoInt	yes
 
 # The fixed willingness to use(0-7)
 # If not set willingness will be calculated
-# dynamically based on battery/power status
-# if such information is available
+# dynammically based on battery/power status
 
 #Willingness    	4
 
@@ -84,16 +124,39 @@ IpcConnect
      # be added
 
      Host            127.0.0.1
-     #Host            10.0.0.5
+     # Host            10.0.0.5
 
-     # You can also specify entire net-ranges 
-     # that are allowed to connect. Multiple
-     # entries are allowed
+     # Specify entire net-ranges that are 
+     # allowed to connect
 
-     #Net             192.168.1.0 255.255.255.0     
+     # Net             192.168.1.0 255.255.255.0     
 }
 
-# Whether to use hysteresis or not
+# Link quality level
+# 0 = do not use link quality
+# 1 = use link quality for MPR selection
+# 2 = use link quality for MPR selection and routing
+# Defaults to 2
+
+LinkQualityLevel	0
+
+# Link quality algorithm (only for lq level 1 or 2)
+# Defaults to "etx_fpm" for fixpoint based etx algorithm
+
+# LinkQualityAlgorithm    "etx_fpm"
+
+# Link quality aging factor
+# Defaults to 0.05, smaller values mean larger LQ window size
+# Link quality aging does only apply to lq level 1 and 2
+
+# LinkQualityAging 0.1 
+
+# Fisheye mechanism for TC messages 0=off, 1=on
+# default is 0
+
+# LinkQualityFishEye	0
+
+# Wether to use hysteresis or not
 # Hysteresis adds more robustness to the
 # link sensing but delays neighbor registration.
 # Used by default. 'yes' or 'no'
@@ -107,34 +170,23 @@ UseHysteresis	yes
 # values are floating point values
 # in the interval 0,1
 # THR_LOW must always be lower than
-# THR_HIGH.
+# THR_HIGH!!
 
-HystScaling	0.50
-HystThrHigh	0.80
-HystThrLow	0.30
+#HystScaling	0.50
+#HystThrHigh	0.80
+#HystThrLow	0.30
 
-
-# Link quality level
-# 0 = do not use link quality
-# 1 = use link quality for MPR selection
-# 2 = use link quality for MPR selection and routing
-# Defaults to 0
-
-#LinkQualityLevel	0
-
-# Link quality aging factor
-# Defaults to 0.05, smaller values mean larger LQ window size
-# LinkQualityAging 0.1 
 
 # Polling rate in seconds(float). 
 # Default value 0.05 sec
 
-Pollrate	0.05
+# Pollrate	0.05
 
 # Interval to poll network interfaces for configuration 
 # changes. Defaults to 2.5 seconds
 
 NicChgsPollInt  3.0
+
 
 # TC redundancy
 # Specifies how much neighbor info should
@@ -146,8 +198,20 @@ NicChgsPollInt  3.0
 #
 # defaults to 0
 
-#TcRedundancy	0
+# TcRedundancy	0
 
+#
+# NatThreshold 
+#
+# (currently this is only in the freifunk firmware)
+# If the NAT-Endpoint (the preferred 0/0 HNA 
+# emitting node) is to be changed, the ETX value of the current 0/0 is 
+# compared to the new one. If the ETX difference is too small, the default 
+# route isn't changed. defaults to 1.0
+# The configured route gets multiplied by the treshhold, 
+# before comparing which route is better
+
+# NatThreshold  0.9
 
 #
 # MPR coverage
@@ -158,7 +222,7 @@ NicChgsPollInt  3.0
 #
 # defaults to 1
 
-#MprCoverage	1
+MprCoverage	1
 
 
 # Olsrd plugins to load
@@ -168,10 +232,46 @@ NicChgsPollInt  3.0
 #   environment variable.
 # - The list of libraries cached in /etc/ld.so.cache
 # - /lib, followed by /usr/lib
+#
+# the examples in this list are for linux, so check if the plugin is
+# available if you use windows/BSD.
+# For windows try the "dll" versions of LoadPlugin examples
 
-# Example plugin entry with parameters:
+# LoadPlugin "olsrd_httpinfo.dll"
+LoadPlugin "olsrd_httpinfo.so.0.1"
+{
+    # port number the txtinfo plugin will be listening
+    PlParam     "port"   "8000"
+    
+    # ip address that can access the plugin, use "0.0.0.0"
+    # to allow everyone
+#   PlParam     "Host"   "127.0.0.1"
+#   PlParam     "Host"   "80.23.53.22"
+    
+    # networks that can access the plugin (ip/netmask)
+    PlParam     "Net"    "0.0.0.0 0.0.0.0"
+#   PlParam     "Net"    "192.168.0.0 255.255.0.0"
+}
 
-#LoadPlugin "olsrd_dyn_gw.so.0.3"
+# LoadPlugin "olsrd_txtinfo.dll"
+LoadPlugin "olsrd_txtinfo.so.0.1"
+{
+    # port number the txtinfo plugin will be listening
+    PlParam     "port"   "81"
+    # ip address that can access the plugin, use "0.0.0.0"
+    # to allow everyone
+    PlParam     "Accept"   "127.0.0.1"
+}
+
+#LoadPlugin "olsrd_secure.so.0.3"
+#{
+    # define source of keyfile for secure plugin
+    # see lib/secure/README_SECURE for more information
+    
+#   PlParam     "Keyfile"   "/etc/olsr-keyfile.txt"
+#}
+
+#LoadPlugin "olsrd_dyn_gw.so.0.1"
 #{
     # Here parameters are set to be sent to the
     # plugin. Theese are on the form "key" "value".
@@ -194,35 +294,33 @@ NicChgsPollInt  3.0
 #   PlParam     "Ping"       "194.25.2.129"
 #}
 
+# olsrd_dyn_gw_plain.so.0.4
+# {
+# }
 
 
 # Interfaces and their rules
 # Omitted options will be set to the
-# default values. Multiple interfaces
-# can be specified in the same block
-# and multiple blocks can be set.
-
-# !!CHANGE THE INTERFACE LABEL(s) TO MATCH YOUR INTERFACE(s)!!
-# (eg. wlan0 or eth1):
-
-Interface "XXX" "YYY"
+# default values.
+# multiple interfaces can be speicified
+Interface "eth0" "ath0"
 {
-    # Olsrd can autodetect changes in NIC
-    # configurations(IP address changes etc.). 
-    # This is Enabled by default and the interval
-    # to poll for changes on is defined by 
-    # NicChgsPollInt.
-    # This polling can be disabled pr. NIC by setting
-    # AutoDetectChanges to no.
-
-    # AutoDetectChanges            yes
 
     # IPv4 broadcast address to use. The
     # one usefull example would be 255.255.255.255
     # If not defined the broadcastaddress
     # every card is configured with is used
+    # The second useful value would be to
+    # specify the peer adress of an ptp-tunnel
+ 
+    # Ip4Broadcast      255.255.255.255
 
-    # Ip4Broadcast		255.255.255.255
+    # Interface Mode is used to prevent unnecessary
+    # packet forwarding on switched ethernet interfaces
+    # valid Modes are "mesh" and "ether"
+    # The default value is mesh!
+
+    # Mode "mesh"
 
     # IPv6 address scope to use.
     # Must be 'site-local' or 'global'
@@ -233,7 +331,7 @@ Interface "XXX" "YYY"
     # using site-local addresses.
     # If not defined, ff05::15 is used
 
-    # Ip6MulticastSite		ff05::11
+    # Ip6MulticastSite	ff05::11
 
     # IPv6 multicast address to use when
     # using global addresses
@@ -269,8 +367,7 @@ Interface "XXX" "YYY"
 
     # HNA validity time
     # HnaValidityTime 	15.0
-
-
+    
     # When multiple links exist between hosts
     # the weight of interface is used to determine
     # the link to use. Normally the weight is
@@ -301,6 +398,24 @@ Interface "XXX" "YYY"
 
     # This multiplier applies to all other nodes 
     # LinkQualityMult default 0.8
-
 }
 
+# another Interface (with different configs)
+Interface "eth1"
+{
+    # IPv4 broadcast address to use. 
+    # One usefull example would be 255.255.255.255
+    # If not defined the broadcastaddress of
+    # every interface which has one configured gets used
+    # The second useful value would be to 
+    # specify the peer adress of an ptp-tunnel
+
+    Ip4Broadcast	192.168.255.255
+
+    # Interface Mode is used to prevent unnecessary
+    # packet forwardin on switched ethernet interfaces
+    # valid Modes are "mesh" and "ether"
+    # The default value is mesh!
+
+    Mode "ether"
+}

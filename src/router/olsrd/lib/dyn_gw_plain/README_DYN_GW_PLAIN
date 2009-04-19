@@ -1,5 +1,5 @@
 DYNAMIC INTERNET GATEWAY PLAIN PLUGIN FOR olsr.org olsrd
-by Andreas Tønnesen(andreto@olsr.org)
+by Andreas Tonnesen(andreto@olsr.org)
 additions by Sven-Ola Tuecke
 
 This plugin is without Ping/libthread. It is the plain dyn_gw!

@@ -247,5 +247,9 @@ SOURCE=.\res\Tray1.ico
 SOURCE=.\res\Tray2.ico
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\trustInfo.manifest
+# End Source File
 # End Target
 # End Project

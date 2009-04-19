@@ -1,33 +1,34 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -53,83 +54,82 @@
 
 #pragma pack(push, BeforeIpcMessages, 1)
 
-struct OlsrHeader
-{
-	unsigned char Type;
-	unsigned char VTime;
-	unsigned short Size;
-	unsigned int Orig;
-	unsigned char Ttl;
-	unsigned char Hops;
-	unsigned short SeqNo;
+struct OlsrHeader {
+  unsigned char Type;
+  unsigned char VTime;
+  unsigned short Size;
+  unsigned int Orig;
+  unsigned char Ttl;
+  unsigned char Hops;
+  unsigned short SeqNo;
 };
 
-struct OlsrHello
-{
-	struct OlsrHeader Header;
+struct OlsrHello {
+  struct OlsrHeader Header;
 
-	unsigned short Reserved;
-	unsigned char HTime;
-	unsigned char Will;
+  unsigned short Reserved;
+  unsigned char HTime;
+  unsigned char Will;
 };
 
-struct OlsrHelloLink
-{
-	unsigned char LinkCode;
-	unsigned char Reserved;
-	unsigned short Size;
+struct OlsrHelloLink {
+  unsigned char LinkCode;
+  unsigned char Reserved;
+  unsigned short Size;
 };
 
-struct OlsrTc
-{
-	struct OlsrHeader Header;
+struct OlsrTc {
+  struct OlsrHeader Header;
 
-	unsigned short Ansn;
-	unsigned short Reserved;
+  unsigned short Ansn;
+  unsigned short Reserved;
 };
 
-union IpcIpAddr
-{
-	unsigned int v4;
-	unsigned char v6[16];
+union IpcIpAddr {
+  unsigned int v4;
+  unsigned char v6[16];
 };
 
-struct IpcHeader
-{
-	unsigned char Type;
-	unsigned char Reserved;
-	unsigned short Size;
+struct IpcHeader {
+  unsigned char Type;
+  unsigned char Reserved;
+  unsigned short Size;
 };
 
-struct IpcRoute
-{
-	struct IpcHeader Header;
-	
-	unsigned char Metric;
-	unsigned char Add;
-	unsigned char Reserved[2];
-	union IpcIpAddr Dest;
-	union IpcIpAddr Gate;
-	char Int[4];
+struct IpcRoute {
+  struct IpcHeader Header;
+
+  unsigned char Metric;
+  unsigned char Add;
+  unsigned char Reserved[2];
+  union IpcIpAddr Dest;
+  union IpcIpAddr Gate;
+  char Int[4];
 };
 
-struct IpcConfig
-{
-	struct IpcHeader Header;
+struct IpcConfig {
+  struct IpcHeader Header;
 
-	unsigned char NumMid;
-	unsigned char NumHna;
-	unsigned char Reserved1[2];
-	unsigned short HelloInt;
-	unsigned short WiredHelloInt;
-	unsigned short TcInt;
-	unsigned short HelloHold;
-	unsigned short TcHold;
-	unsigned char Ipv6;
-	unsigned char Reserved2;
-	IpcIpAddr MainAddr;
+  unsigned char NumMid;
+  unsigned char NumHna;
+  unsigned char Reserved1[2];
+  unsigned short HelloInt;
+  unsigned short WiredHelloInt;
+  unsigned short TcInt;
+  unsigned short HelloHold;
+  unsigned short TcHold;
+  unsigned char Ipv6;
+  unsigned char Reserved2;
+  IpcIpAddr MainAddr;
 };
 
 #pragma pack (pop, BeforeIpcMessages)
 
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

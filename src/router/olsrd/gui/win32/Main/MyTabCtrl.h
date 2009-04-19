@@ -1,33 +1,34 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -50,36 +51,41 @@
 #include "MyDialog3.h"
 #include "MyDialog4.h"
 
-class MyTabCtrl : public CTabCtrl
-{
+class MyTabCtrl:public CTabCtrl {
 public:
-	MyTabCtrl();
+  MyTabCtrl();
 
-	class MyDialog1 m_Dialog1;
-	class MyDialog2 m_Dialog2;
-	class MyDialog3 m_Dialog3;
-	class MyDialog4 m_Dialog4;
+  class MyDialog1 m_Dialog1;
+  class MyDialog2 m_Dialog2;
+  class MyDialog3 m_Dialog3;
+  class MyDialog4 m_Dialog4;
 
-	void InitTabDialogs(CStringArray *, CStringArray *, CStringArray *);
-	void DisplayTabDialog(void);
+  void InitTabDialogs(CStringArray *, CStringArray *, CStringArray *);
+  void DisplayTabDialog(void);
 
-	//{{AFX_VIRTUAL(MyTabCtrl)
-	//}}AFX_VIRTUAL
+  //{{AFX_VIRTUAL(MyTabCtrl)
+  //}}AFX_VIRTUAL
 
-	virtual ~MyTabCtrl();
+    virtual ~ MyTabCtrl();
 
 protected:
-	CDialog *Dialogs[4];
+    CDialog * Dialogs[4];
 
-	int Sel;
+  int Sel;
 
-	//{{AFX_MSG(MyTabCtrl)
-	afx_msg void OnSelchange(NMHDR* pNMHDR, LRESULT* pResult);
-	//}}AFX_MSG
+  //{{AFX_MSG(MyTabCtrl)
+  afx_msg void OnSelchange(NMHDR * pNMHDR, LRESULT * pResult);
+  //}}AFX_MSG
 
-	DECLARE_MESSAGE_MAP()
-};
+  DECLARE_MESSAGE_MAP()};
 
 //{{AFX_INSERT_LOCATION}}
 
 #endif
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

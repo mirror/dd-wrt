@@ -1,50 +1,48 @@
+
 /*
  * Secure OLSR plugin
  * http://www.olsr.org
  *
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or 
- * without modification, are permitted provided that the following 
+ * Redistribution and use in source and binary forms, with or
+ * without modification, are permitted provided that the following
  * conditions are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsrd, olsr.org nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsrd, olsr.org nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
-
 
 #include "olsrd_plugin.h"
 #include "olsrd_secure.h"
 #include <stdio.h>
 #include <string.h>
 
-
 #define PLUGIN_NAME    "OLSRD signature plugin"
 #define PLUGIN_VERSION "0.5"
-#define PLUGIN_AUTHOR   "Andreas Tønnesen"
+#define PLUGIN_AUTHOR   "Andreas Tonnesen"
 #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
 #define PLUGIN_INTERFACE_VERSION 5
 
@@ -56,27 +54,29 @@ static void my_fini(void) __attribute__ ((destructor));
  * THIS IS NOT THE VERSION OF YOUR PLUGIN!
  * Do not alter unless you know what you are doing!
  */
-int olsrd_plugin_interface_version(void)
+int
+olsrd_plugin_interface_version(void)
 {
   return PLUGIN_INTERFACE_VERSION;
 }
 
-
 /**
  *Constructor
  */
-static void my_init(void)
+static void
+my_init(void)
 {
   /* Print plugin info to stdout */
   /* We cannot use olsr_printf yet! */
   printf("%s\n", MOD_DESC);
-  printf("[ENC]Accepted parameter pairs: (\"Keyfile\" <FILENAME>)\n"); 
+  printf("[ENC]Accepted parameter pairs: (\"Keyfile\" <FILENAME>)\n");
 }
 
 /**
  *Destructor
  */
-static void my_fini(void)
+static void
+my_fini(void)
 {
 
   /* Calls the destruction function
@@ -88,42 +88,50 @@ static void my_fini(void)
   secure_plugin_exit();
 }
 
-static int store_string(const char *value, void *data, set_plugin_parameter_addon addon __attribute__((unused)))
+static int
+store_string(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
   char *str = data;
-  snprintf(str, FILENAME_MAX+1, "%s", value);
+  snprintf(str, FILENAME_MAX + 1, "%s", value);
   return 0;
 }
 
-
 static const struct olsrd_plugin_parameters plugin_parameters[] = {
-    { .name = "keyfile", .set_plugin_parameter = &store_string, .data = keyfile },
+  {.name = "keyfile",.set_plugin_parameter = &store_string,.data = keyfile},
 };
 
-void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
+void
+olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
 {
-    *params = plugin_parameters;
-    *size = sizeof(plugin_parameters)/sizeof(*plugin_parameters);
+  *params = plugin_parameters;
+  *size = sizeof(plugin_parameters) / sizeof(*plugin_parameters);
 }
 
-int olsrd_plugin_init(void) {
+int
+olsrd_plugin_init(void)
+{
   /* Calls the initialization function
    * olsr_plugin_init()
    * This function should be present in your
    * sourcefile and all data initialization
    * should happen there - NOT HERE!
    */
-  if(!secure_plugin_init())
-    {
-      fprintf(stderr, "Could not initialize plugin!\n");
-      return 0;
-    }
+  if (!secure_plugin_init()) {
+    fprintf(stderr, "Could not initialize plugin!\n");
+    return 0;
+  }
 
-  if(!plugin_ipc_init())
-    {
-      fprintf(stderr, "Could not initialize plugin IPC!\n");
-      return 0;
-    }
+  if (!plugin_ipc_init()) {
+    fprintf(stderr, "Could not initialize plugin IPC!\n");
+    return 0;
+  }
   return 1;
 
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

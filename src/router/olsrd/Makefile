@@ -1,5 +1,5 @@
 # The olsr.org Optimized Link-State Routing daemon(olsrd)
-# Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+# Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without 
@@ -39,7 +39,7 @@
 # Please also write a new version to:
 # gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
 # gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
-VERS =		0.5.6-r2
+VERS =		0.5.6-r4
 
 TOPDIR = .
 include Makefile.inc
@@ -223,6 +223,11 @@ txtinfo:
 		$(MAKECMD) -C lib/txtinfo clean
 		$(MAKECMD) -C lib/txtinfo 
 		$(MAKECMD) -C lib/txtinfo DESTDIR=$(DESTDIR) install 
+
+arprefresh:
+		$(MAKECMD) -C lib/arprefresh clean
+		$(MAKECMD) -C lib/arprefresh
+		$(MAKECMD) -C lib/arprefresh DESTDIR=$(DESTDIR) install
 
 build_all:	all switch libs
 install_all:	install install_libs
