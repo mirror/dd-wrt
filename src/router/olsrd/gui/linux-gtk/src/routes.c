@@ -1,6 +1,7 @@
+
 /*
  * OLSR ad-hoc routing table management protocol GUI front-end
- * Copyright (C) 2003 Andreas Tønnesen (andreto@ifi.uio.no)
+ * Copyright (C) 2003 Andreas Tonnesen (andreto@ifi.uio.no)
  *
  * This file is part of olsr.org.
  *
@@ -20,7 +21,6 @@
  *
  */
 
-
 /*
  * Route entries are registered
  * separatly from the node set
@@ -30,7 +30,6 @@
  */
 
 #include "routes.h"
-
 
 int
 init_route_entries()
@@ -43,17 +42,15 @@ init_route_entries()
   return 1;
 }
 
-
 int
 add_route_entry(struct route_entry *entry)
 {
   struct route_entry *new_entry;
 
-  if((new_entry = malloc(sizeof(struct route_entry))) == 0)
-    {
-      fprintf(stderr, "OUT OF MEMORY!\n");
-      exit(1);
-    }
+  if ((new_entry = malloc(sizeof(struct route_entry))) == 0) {
+    fprintf(stderr, "OUT OF MEMORY!\n");
+    exit(1);
+  }
 
   /* queue */
   new_entry->next = route_set.next;
@@ -75,3 +72,10 @@ del_route_entry(struct route_entry *entry)
 
   return 1;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

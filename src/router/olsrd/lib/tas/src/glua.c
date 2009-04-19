@@ -1,34 +1,35 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  *
  * Copyright (c) 2004, Thomas Lopatic (thomas@olsr.org)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -57,9 +58,9 @@
 static const char infoKey;
 static const char keepFlagKey;
 static const char argListKey;
-    
-int lspToLua(const char *rootDir, const char *lspFileName,
-             const char *workDir, const char *luaFileName)
+
+int
+lspToLua(const char *rootDir, const char *lspFileName, const char *workDir, const char *luaFileName)
 {
   FILE *file;
   int lspLen;
@@ -68,8 +69,7 @@ int lspToLua(const char *rootDir, const char *lspFileName,
   char *lspPath = fullPath(rootDir, lspFileName);
   char *luaPath = fullPath(workDir, luaFileName);
 
-  if (fileIsNewer(lspPath, luaPath) == 0)
-  {
+  if (fileIsNewer(lspPath, luaPath) == 0) {
     freeMem(lspPath);
     freeMem(luaPath);
     return 0;
@@ -77,16 +77,14 @@ int lspToLua(const char *rootDir, const char *lspFileName,
 
   file = fopen(lspPath, "r");
 
-  if (file == NULL)
-  {
+  if (file == NULL) {
     error("cannot open %s\n", lspPath);
     freeMem(lspPath);
     freeMem(luaPath);
     return -1;
   }
 
-  if (fseek(file, 0, SEEK_END) < 0)
-  {
+  if (fseek(file, 0, SEEK_END) < 0) {
     error("cannot seek to end of %s\n", lspPath);
     fclose(file);
     freeMem(lspPath);
@@ -96,8 +94,7 @@ int lspToLua(const char *rootDir, const char *lspFileName,
 
   lspLen = ftell(file);
 
-  if (lspLen < 0)
-  {
+  if (lspLen < 0) {
     error("cannot determine length of %s\n", lspPath);
     fclose(file);
     freeMem(lspPath);
@@ -105,8 +102,7 @@ int lspToLua(const char *rootDir, const char *lspFileName,
     return -1;
   }
 
-  if (fseek(file, 0, SEEK_SET) < 0)
-  {
+  if (fseek(file, 0, SEEK_SET) < 0) {
     error("cannot seek to beginning of %s\n", lspPath);
     fclose(file);
     freeMem(lspPath);
@@ -116,8 +112,7 @@ int lspToLua(const char *rootDir, const char *lspFileName,
 
   buff = allocMem(lspLen);
 
-  if (fread(buff, lspLen, 1, file) != 1)
-  {
+  if (fread(buff, lspLen, 1, file) != 1) {
     error("cannot read %s\n", lspPath);
     fclose(file);
     freeMem(lspPath);
@@ -128,10 +123,8 @@ int lspToLua(const char *rootDir, const char *lspFileName,
 
   fclose(file);
 
-  if (createAllDirs(luaPath) < 0)
-  {
-    error("cannot create required directories for %s\n",
-          luaPath);
+  if (createAllDirs(luaPath) < 0) {
+    error("cannot create required directories for %s\n", luaPath);
     freeMem(lspPath);
     freeMem(luaPath);
     freeMem(buff);
@@ -140,8 +133,7 @@ int lspToLua(const char *rootDir, const char *lspFileName,
 
   file = fopen(luaPath, "w");
 
-  if (file == NULL)
-  {
+  if (file == NULL) {
     error("cannot open %s\n", luaPath);
     freeMem(lspPath);
     freeMem(luaPath);
@@ -154,14 +146,11 @@ int lspToLua(const char *rootDir, const char *lspFileName,
 
   i = 0;
 
-  for (;;)
-  {
-    if (code == 0 && (i == lspLen || strncmp((char *)(buff + i), "<?lua", 5) == 0))
-    {
+  for (;;) {
+    if (code == 0 && (i == lspLen || strncmp((char *)(buff + i), "<?lua", 5) == 0)) {
       fprintf(file, "tas.write(\"");
 
-      for (k = start; k < i; k++)
-      {
+      for (k = start; k < i; k++) {
         if (buff[k] == 13)
           continue;
 
@@ -176,14 +165,12 @@ int lspToLua(const char *rootDir, const char *lspFileName,
       if (i == lspLen)
         break;
 
-      if (buff[i + 5] == '=')
-      {
+      if (buff[i + 5] == '=') {
         i += 6;
         code = 2;
       }
 
-      else
-      {
+      else {
         i += 5;
         code = 1;
       }
@@ -193,8 +180,7 @@ int lspToLua(const char *rootDir, const char *lspFileName,
       continue;
     }
 
-    if (code > 0 && (i == lspLen || strncmp((char *)(buff + i), "?>", 2) == 0))
-    {
+    if (code > 0 && (i == lspLen || strncmp((char *)(buff + i), "?>", 2) == 0)) {
       if (code > 1)
         fprintf(file, "tas.write(");
 
@@ -228,13 +214,14 @@ int lspToLua(const char *rootDir, const char *lspFileName,
   return 0;
 }
 
-static int luaWriter(lua_State *lua __attribute__((unused)), const void *buff, int len, FILE *file)
+static int
+luaWriter(lua_State * lua __attribute__ ((unused)), const void *buff, int len, FILE * file)
 {
   return fwrite(buff, len, 1, file) == 1;
 }
 
-int luaToLex(char **errMsg, const char *workDir, const char *luaFileName,
-             const char *lexFileName)
+int
+luaToLex(char **errMsg, const char *workDir, const char *luaFileName, const char *lexFileName)
 {
   lua_State *lua;
   int res;
@@ -244,8 +231,7 @@ int luaToLex(char **errMsg, const char *workDir, const char *luaFileName,
 
   *errMsg = NULL;
 
-  if (fileIsNewer(luaPath, lexPath) == 0)
-  {
+  if (fileIsNewer(luaPath, lexPath) == 0) {
     freeMem(luaPath);
     freeMem(lexPath);
     return 0;
@@ -255,8 +241,7 @@ int luaToLex(char **errMsg, const char *workDir, const char *luaFileName,
 
   res = luaL_loadfile(lua, luaPath);
 
-  if (res != 0)
-  {
+  if (res != 0) {
     *errMsg = myStrdup(lua_tostring(lua, -1));
     error("cannot load %s: %s\n", luaPath, *errMsg);
     lua_close(lua);
@@ -267,8 +252,7 @@ int luaToLex(char **errMsg, const char *workDir, const char *luaFileName,
 
   file = fopen(lexPath, "wb");
 
-  if (file == NULL)
-  {
+  if (file == NULL) {
     error("cannot open %s\n", lexPath);
     lua_close(lua);
     freeMem(luaPath);
@@ -276,7 +260,7 @@ int luaToLex(char **errMsg, const char *workDir, const char *luaFileName,
     return -1;
   }
 
-  lua_dump(lua, (lua_Chunkwriter)luaWriter, file);
+  lua_dump(lua, (lua_Chunkwriter) luaWriter, file);
 
   fclose(file);
 
@@ -286,7 +270,8 @@ int luaToLex(char **errMsg, const char *workDir, const char *luaFileName,
   return 0;
 }
 
-static int tasWrite(lua_State *lua)
+static int
+tasWrite(lua_State * lua)
 {
   int numArg = lua_gettop(lua);
   const char *strConv;
@@ -300,8 +285,7 @@ static int tasWrite(lua_State *lua)
 
   lua_getglobal(lua, "tostring");
 
-  for (i = 1; i <= numArg; i++)
-  {
+  for (i = 1; i <= numArg; i++) {
     lua_pushvalue(lua, -1);
     lua_pushvalue(lua, i);
 
@@ -320,7 +304,8 @@ static int tasWrite(lua_State *lua)
   return 0;
 }
 
-static int tasAddHeaderLine(lua_State *lua)
+static int
+tasAddHeaderLine(lua_State * lua)
 {
   struct connInfo *info;
   char *line;
@@ -342,7 +327,8 @@ static int tasAddHeaderLine(lua_State *lua)
   return 0;
 }
 
-static int tasSetContentType(lua_State *lua)
+static int
+tasSetContentType(lua_State * lua)
 {
   struct connInfo *info;
   const char *contType;
@@ -361,7 +347,8 @@ static int tasSetContentType(lua_State *lua)
   return 0;
 }
 
-static int tasKeepState(lua_State *lua)
+static int
+tasKeepState(lua_State * lua)
 {
   int *keepFlag;
 
@@ -375,7 +362,8 @@ static int tasKeepState(lua_State *lua)
   return 0;
 }
 
-static int tasGetParameters(lua_State *lua)
+static int
+tasGetParameters(lua_State * lua)
 {
   int i;
   char **argList;
@@ -389,9 +377,8 @@ static int tasGetParameters(lua_State *lua)
 
   if (argList == NULL)
     return 1;
-  
-  for (i = 0; argList[i] != NULL; i += 2)
-  {
+
+  for (i = 0; argList[i] != NULL; i += 2) {
     lua_pushstring(lua, argList[i]);
     lua_pushstring(lua, argList[i + 1]);
     lua_settable(lua, -3);
@@ -400,27 +387,27 @@ static int tasGetParameters(lua_State *lua)
   return 1;
 }
 
-static const struct luaL_reg tasLib[] =
-{
-  { "write", tasWrite },
-  { "set_content_type", tasSetContentType },
-  { "add_header_line", tasAddHeaderLine },
-  { "keep_state", tasKeepState },
-  { "get_parameters", tasGetParameters },
+static const struct luaL_reg tasLib[] = {
+  {"write", tasWrite},
+  {"set_content_type", tasSetContentType},
+  {"add_header_line", tasAddHeaderLine},
+  {"keep_state", tasKeepState},
+  {"get_parameters", tasGetParameters},
 #ifdef TAS_EXTRA_FUNCTIONS
   TAS_EXTRA_FUNCTIONS
 #endif
-  { NULL, NULL }
+  {NULL, NULL}
 };
 
-static int luaopen_tas(lua_State *lua)
+static int
+luaopen_tas(lua_State * lua)
 {
   luaL_openlib(lua, "tas", tasLib, 0);
   return 1;
 }
 
-int runLua(char **errMsg, struct connInfo *info, const char *workDir,
-           const char *lexFileName, char **argList, void **session)
+int
+runLua(char **errMsg, struct connInfo *info, const char *workDir, const char *lexFileName, char **argList, void **session)
 {
   lua_State *lua;
   int res;
@@ -429,8 +416,7 @@ int runLua(char **errMsg, struct connInfo *info, const char *workDir,
 
   *errMsg = NULL;
 
-  if (*session == NULL)
-  {
+  if (*session == NULL) {
     lua = lua_open();
 
     luaopen_base(lua);
@@ -450,19 +436,18 @@ int runLua(char **errMsg, struct connInfo *info, const char *workDir,
   lua_pushlightuserdata(lua, &infoKey);
   lua_pushlightuserdata(lua, info);
   lua_settable(lua, LUA_REGISTRYINDEX);
-    
+
   lua_pushlightuserdata(lua, &argListKey);
   lua_pushlightuserdata(lua, argList);
   lua_settable(lua, LUA_REGISTRYINDEX);
-    
+
   lua_pushlightuserdata(lua, &keepFlagKey);
   lua_pushlightuserdata(lua, &keepFlag);
   lua_settable(lua, LUA_REGISTRYINDEX);
 
   res = luaL_loadfile(lua, lexPath);
 
-  if (res != 0)
-  {
+  if (res != 0) {
     *errMsg = myStrdup(lua_tostring(lua, -1));
     error("cannot load %s: %s\n", lexPath, *errMsg);
     lua_close(lua);
@@ -472,8 +457,7 @@ int runLua(char **errMsg, struct connInfo *info, const char *workDir,
 
   res = lua_pcall(lua, 0, 0, 0);
 
-  if (res != 0)
-  {
+  if (res != 0) {
     *errMsg = myStrdup(lua_tostring(lua, -1));
     error("cannot run %s: %s\n", lexPath, *errMsg);
     lua_close(lua);
@@ -481,8 +465,7 @@ int runLua(char **errMsg, struct connInfo *info, const char *workDir,
     return -1;
   }
 
-  if (keepFlag == 0)
-  {
+  if (keepFlag == 0) {
     lua_close(lua);
     *session = NULL;
   }
@@ -490,12 +473,19 @@ int runLua(char **errMsg, struct connInfo *info, const char *workDir,
   else
     *session = lua;
 
-
   freeMem(lexPath);
   return 0;
 }
 
-void freeLuaSession(void *session)
+void
+freeLuaSession(void *session)
 {
   lua_close(session);
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */

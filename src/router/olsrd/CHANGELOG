@@ -2,6 +2,44 @@ This file states changes as of version 0.2.4:
 
 0.5.6 ---------------------------------------------------------------------
 
+PATCHES and BUGFIXES from Henning Rogge <rogge@fgan.de>
+- Bugfix for fragmented TC sequence numbers
+- eliminate second timer for edge garbage collection (aka border code).
+- fix SPF bug
+- fix for jitter calculation
+- refactor linkset code
+- add netsimpcap, a network simulation device
+- parser refactoring
+- fix for possible overflow in fpm plugin
+- prevent Originator-IP from changing during runtime
+- fix several compiler warnings
+- fix hanging TC entry from lost onehop neighbor
+- fix drop package with same seqno in etx_ff
+- fix segfault in parsing HNA package with bad netmask
+- fix avl_comparator for route_paths
+- fix alignment problem in packet buffers
+
+PATCH from Markus Kittenberger <Markus.Kittenberger@gmx.at>:
+- txtinfo plugin: add more http options
+- allow configuration of OLSR UDP port
+- allow configuration of proto Tag for Routes (RtProto)
+- add fallback policy rule (priority 65536) if RtTable is used,
+    to ensure that routes can be added to this table
+- resolve many error conditions while adding routes to the linux kernel
+    (Warning this will also delete any conflicting routes made by other routing daemons or admins)
+- interface modes mesh (default) and ether (no retransmit of olsr-messages back into a broadcastdomain)
+- fix olsr_times() to handle different OS implementations (Linux, BSD, OS X)
+- fix several compiler warnings
+- fix olsr_times() to handle different OS implementations (Linux, BSD, OS X)
+- workaround: generate routes to single hop neighbours on the fly when inserting routes via them
+    (active only with fib_metric=flat)
+- testing: insert routes with source-ip set to originator ip
+- testing: syslog numbering (e.g. useful to detect lost syslog messages when using remote-syslog)
+- testing: custom library path (default /usr/testlib)
+Testing features must be activated in olsr_cfg.h before compiling olsrd.
+This features are used to run a test network in Vienna parallel to the existing
+OLSR network.
+
 PATCHES from Hannes Gredler <hannes@gredler.at>:
 - add small valgrind howto
 - remove the per tc_edge timer
@@ -18,23 +56,20 @@ PATCHES from Hannes Gredler <hannes@gredler.at>:
 - fix to to always insert a HNA Net when receiving a HNA refresh
 - fix delete all routes if the last IP address is gone
 
-PATCHES and BUGFIXES from Henning Rogge <rogge@fgan.de>
-- Bugfix for fragmented TC sequence numbers
-- eliminate second timer for edge garbage collection (aka border code).
-- fix SPF bug
-- fix for jitter calculation
-- refactor linkset code
-- add netsimpcap, a network simulation device
-- parser refactoring
-- fix for possible overflow in fpm plugin
-
 PATCHES and BUGFIXES from Sven-Ola Tuecke <sven-ola@gmx.de>:
 - add a fixed-point math implementation, which saves
   a great deal of CPU on embedded devices
 - fix for Link quality dijkstra limit
+- nameservice plugin supports mac addresses
+- fix fork/restart code
+- fix olsr_times() to handle different OS implementations (Linux, BSD, OS X)
+- fix several compiler warnings
+- fix olsr_times() to handle different OS implementations (Linux, BSD, OS X)
 
 PATCHES and BUGFIXES from Aaron Kaplan <aaron@lo-res.org>:
 - fix openbsd warnings / compile errors about sprintf strcpy
+- fix string overflow in dyn_gw plugin
+- fix string overflow in pgraph plugin
 
 BUGFIX from Erik Tromp <erik_tromp@hotmail.com>:
 - update in bmf due to new flags field in tc_edge_entry
@@ -51,8 +86,8 @@ PATCH from Hagen Paul Pfeifer <hagen@jauu.net>:
 PATCH from Andres Ambrois <andresambrois@gmail.com>:
 - nameservice plugin: add parameters for SIGHUPing other daemons, or calling scripts
 
-PATCH from Markus Kittenberger <Markus.Kittenberger@gmx.at>:
-- txtinfo plugin: add more http options
+BUGFIX by John Hay <jhay@meraka.org.za>:
+- FIX: IPv6 MTU in BSD
 
 0.5.5 ---------------------------------------------------------------------
 
