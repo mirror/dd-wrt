@@ -5,31 +5,31 @@
  * IPv4 performance optimization (c) 2006, sven-ola(gmx.de)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -49,7 +49,7 @@
 #include "net_olsr.h"
 
 /*
- * default comparison pointers 
+ * default comparison pointers
  * set to the respective compare function.
  * if avl_comp_default is set to zero, a fast
  * inline ipv4 comparison will be executed.
@@ -82,7 +82,7 @@ avl_init(struct avl_tree *tree, avl_tree_comp comp)
   tree->first = NULL;
   tree->last = NULL;
   tree->count = 0;
-  
+
   tree->comp = comp == avl_comp_ipv4 ? NULL : comp;
 }
 
@@ -265,8 +265,7 @@ post_insert(struct avl_tree *tree, struct avl_node *node)
 }
 
 static void
-avl_insert_before(struct avl_tree *tree, struct avl_node *pos_node,
-		  struct avl_node *node)
+avl_insert_before(struct avl_tree *tree, struct avl_node *pos_node, struct avl_node *node)
 {
   if (pos_node->prev != NULL)
     pos_node->prev->next = node;
@@ -282,8 +281,7 @@ avl_insert_before(struct avl_tree *tree, struct avl_node *pos_node,
 }
 
 static void
-avl_insert_after(struct avl_tree *tree, struct avl_node *pos_node,
-		 struct avl_node *node)
+avl_insert_after(struct avl_tree *tree, struct avl_node *pos_node, struct avl_node *node)
 {
   if (pos_node->next != NULL)
     pos_node->next->prev = node;
@@ -500,22 +498,22 @@ avl_delete_worker(struct avl_tree *tree, struct avl_node *node)
       parent->balance++;
 
       if (parent->balance == 1)
-	return;
+        return;
 
       if (parent->balance == 0) {
-	avl_post_delete(tree, parent);
-	return;
+        avl_post_delete(tree, parent);
+        return;
       }
 
       if (parent->right->balance == 0) {
-	avl_rotate_left(tree, parent);
-	return;
+        avl_rotate_left(tree, parent);
+        return;
       }
 
       if (parent->right->balance == 1) {
-	avl_rotate_left(tree, parent);
-	avl_post_delete(tree, parent->parent);
-	return;
+        avl_rotate_left(tree, parent);
+        avl_post_delete(tree, parent->parent);
+        return;
       }
 
       avl_rotate_right(tree, parent->right);
@@ -529,22 +527,22 @@ avl_delete_worker(struct avl_tree *tree, struct avl_node *node)
       parent->balance--;
 
       if (parent->balance == -1)
-	return;
+        return;
 
       if (parent->balance == 0) {
-	avl_post_delete(tree, parent);
-	return;
+        avl_post_delete(tree, parent);
+        return;
       }
 
       if (parent->left->balance == 0) {
-	avl_rotate_right(tree, parent);
-	return;
+        avl_rotate_right(tree, parent);
+        return;
       }
 
       if (parent->left->balance == -1) {
-	avl_rotate_right(tree, parent);
-	avl_post_delete(tree, parent->parent);
-	return;
+        avl_rotate_right(tree, parent);
+        avl_post_delete(tree, parent->parent);
+        return;
       }
 
       avl_rotate_left(tree, parent->left);
@@ -644,21 +642,21 @@ avl_delete(struct avl_tree *tree, struct avl_node *node)
       next->right = right;
 
       if (parent == NULL)
-	tree->root = next;
+        tree->root = next;
 
       else {
-	if (node == parent->left)
-	  parent->left = next;
+        if (node == parent->left)
+          parent->left = next;
 
-	else
-	  parent->right = next;
+        else
+          parent->right = next;
       }
 
       if (left != NULL)
-	left->parent = next;
+        left->parent = next;
 
       if (right != NULL)
-	right->parent = next;
+        right->parent = next;
     }
 
     else
@@ -671,5 +669,6 @@ avl_delete(struct avl_tree *tree, struct avl_node *node)
 /*
  * Local Variables:
  * c-basic-offset: 2
+ * indent-tabs-mode: nil
  * End:
  */

@@ -1,34 +1,35 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+ * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
  * RIB implementation (c) 2007, Hannes Gredler (hannes@gredler.at)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -101,12 +102,12 @@ olsr_bump_routingtree_version(void)
  * -1 / +1 depending on being smaller or bigger.
  */
 int
-avl_comp_ipv4_prefix (const void *prefix1, const void *prefix2)
-{       
+avl_comp_ipv4_prefix(const void *prefix1, const void *prefix2)
+{
   const struct olsr_ip_prefix *pfx1 = prefix1;
   const struct olsr_ip_prefix *pfx2 = prefix2;
-  const olsr_u32_t addr1 = ntohl(pfx1->prefix.v4.s_addr);
-  const olsr_u32_t addr2 = ntohl(pfx2->prefix.v4.s_addr);
+  const uint32_t addr1 = ntohl(pfx1->prefix.v4.s_addr);
+  const uint32_t addr2 = ntohl(pfx2->prefix.v4.s_addr);
 
   /* prefix */
   if (addr1 < addr2) {
@@ -138,8 +139,8 @@ avl_comp_ipv4_prefix (const void *prefix1, const void *prefix2)
  * -1 / +1 depending on being smaller or bigger.
  */
 int
-avl_comp_ipv6_prefix (const void *prefix1, const void *prefix2)
-{       
+avl_comp_ipv6_prefix(const void *prefix1, const void *prefix2)
+{
   int res;
   const struct olsr_ip_prefix *pfx1 = prefix1;
   const struct olsr_ip_prefix *pfx2 = prefix2;
@@ -148,7 +149,7 @@ avl_comp_ipv6_prefix (const void *prefix1, const void *prefix2)
   res = memcmp(&pfx1->prefix.v6, &pfx2->prefix.v6, 16);
   if (res != 0) {
     return res;
-  } 
+  }
   /* prefix length */
   if (pfx1->prefix_len < pfx2->prefix_len) {
     return -1;
@@ -187,7 +188,7 @@ olsr_init_routing_table(void)
  *
  * @param dst the address of the entry
  *
- * @return a pointer to a rt_entry struct 
+ * @return a pointer to a rt_entry struct
  * representing the route entry.
  */
 struct rt_entry *
@@ -208,8 +209,7 @@ olsr_lookup_routing_table(const union olsr_ip_addr *dst)
  * Update gateway/interface/etx/hopcount and the version for a route path.
  */
 void
-olsr_update_rt_path(struct rt_path *rtp, struct tc_entry *tc,
-                    struct link_entry *link)
+olsr_update_rt_path(struct rt_path *rtp, struct tc_entry *tc, struct link_entry *link)
 {
 
   rtp->rtp_version = routingtree_version;
@@ -237,7 +237,7 @@ olsr_alloc_rt_entry(struct olsr_ip_prefix *prefix)
   }
 
   memset(rt, 0, sizeof(*rt));
-  
+
   /* Mark this entry as fresh (see process_routes.c:512) */
   rt->rt_nexthop.iif_index = -1;
 
@@ -257,8 +257,7 @@ olsr_alloc_rt_entry(struct olsr_ip_prefix *prefix)
  * Alloc and key a new rt_path.
  */
 static struct rt_path *
-olsr_alloc_rt_path(struct tc_entry *tc,
-                   struct olsr_ip_prefix *prefix, olsr_u8_t origin)
+olsr_alloc_rt_path(struct tc_entry *tc, struct olsr_ip_prefix *prefix, uint8_t origin)
 {
   struct rt_path *rtp = olsr_cookie_malloc(rtp_mem_cookie);
 
@@ -291,8 +290,7 @@ olsr_alloc_rt_path(struct tc_entry *tc,
  * insert it into the global RIB tree.
  */
 void
-olsr_insert_rt_path(struct rt_path *rtp, struct tc_entry *tc,
-                    struct link_entry *link)
+olsr_insert_rt_path(struct rt_path *rtp, struct tc_entry *tc, struct link_entry *link)
 {
   struct rt_entry *rt;
   struct avl_node *node;
@@ -328,7 +326,6 @@ olsr_insert_rt_path(struct rt_path *rtp, struct tc_entry *tc,
   } else {
     rt = rt_tree2rt(node);
   }
-
 
   /* Now insert the rt_path to the owning rt_entry tree */
   rtp->rtp_originator = tc->addr;
@@ -374,25 +371,23 @@ olsr_delete_rt_path(struct rt_path *rtp)
   olsr_cookie_free(rtp_mem_cookie, rtp);
 }
 
-
 /**
  * Check if there is an interface or gateway change.
  */
-olsr_bool
+bool
 olsr_nh_change(const struct rt_nexthop *nh1, const struct rt_nexthop *nh2)
 {
-  if (!ipequal(&nh1->gateway, &nh2->gateway) ||
-      (nh1->iif_index != nh2->iif_index)) {
-    return OLSR_TRUE;
+  if (!ipequal(&nh1->gateway, &nh2->gateway) || (nh1->iif_index != nh2->iif_index)) {
+    return true;
   }
-  return OLSR_FALSE;
+  return false;
 }
 
 /**
  * Check if there is a hopcount change.
  */
-olsr_bool
-olsr_hopcount_change(const struct rt_metric *met1, const struct rt_metric *met2)
+bool
+olsr_hopcount_change(const struct rt_metric * met1, const struct rt_metric * met2)
 {
   return (met1->hops != met2->hops);
 }
@@ -404,8 +399,8 @@ olsr_hopcount_change(const struct rt_metric *met1, const struct rt_metric *met2)
  * for deletes this is the metric of the route that got stored in the rt_entry,
  * during route installation.
  */
-olsr_u8_t
-olsr_fib_metric(const struct rt_metric *met)
+uint8_t
+olsr_fib_metric(const struct rt_metric * met)
 {
   if (FIBM_CORRECT == olsr_cnf->fib_metric) {
     return met->hops;
@@ -421,12 +416,12 @@ const struct rt_nexthop *
 olsr_get_nh(const struct rt_entry *rt)
 {
 
-  if(rt->rt_best) {
+  if (rt->rt_best) {
 
     /* this is a route add/chg - grab nexthop from the best route. */
     return &rt->rt_best->rtp_nexthop;
-  } 
-  
+  }
+
   /* this is a route deletion - all routes are gone. */
   return &rt->rt_nexthop;
 }
@@ -437,33 +432,38 @@ olsr_get_nh(const struct rt_entry *rt)
  * returns TRUE if the first path is better
  * than the second one, FALSE otherwise.
  */
-static olsr_bool
+static bool
 olsr_cmp_rtp(const struct rt_path *rtp1, const struct rt_path *rtp2, const struct rt_path *inetgw)
 {
-    olsr_linkcost etx1 = rtp1->rtp_metric.cost;
-    olsr_linkcost etx2 = rtp2->rtp_metric.cost;
-    if (inetgw == rtp1) etx1 *= olsr_cnf->lq_nat_thresh;
-    if (inetgw == rtp2) etx2 *= olsr_cnf->lq_nat_thresh;
+  olsr_linkcost etx1 = rtp1->rtp_metric.cost;
+  olsr_linkcost etx2 = rtp2->rtp_metric.cost;
+  if (inetgw == rtp1)
+    etx1 *= olsr_cnf->lq_nat_thresh;
+  if (inetgw == rtp2)
+    etx2 *= olsr_cnf->lq_nat_thresh;
 
-    /* etx comes first */
-    if (etx1 < etx2) {
-      return OLSR_TRUE;
-    }
+  /* etx comes first */
+  if (etx1 < etx2) {
+    return true;
+  }
+  if (etx1 > etx2) {
+    return false;
+  }
 
-    /* hopcount is next tie breaker */
-    if ((etx1 == etx2) &&
-        (rtp1->rtp_metric.hops < rtp2->rtp_metric.hops)) {
-      return OLSR_TRUE;
-    }
+  /* hopcount is next tie breaker */
+  if (rtp1->rtp_metric.hops < rtp2->rtp_metric.hops) {
+    return true;
+  }
+  if (rtp1->rtp_metric.hops > rtp2->rtp_metric.hops) {
+    return false;
+  }
 
-    /* originator (which is guaranteed to be unique) is final tie breaker */
-    if ((rtp1->rtp_metric.hops == rtp2->rtp_metric.hops) &&
-        (memcmp(&rtp1->rtp_originator, &rtp2->rtp_originator,
-                olsr_cnf->ipsize) == -1)) {
-      return OLSR_TRUE;
-    }
+  /* originator (which is guaranteed to be unique) is final tie breaker */
+  if (memcmp(&rtp1->rtp_originator, &rtp2->rtp_originator, olsr_cnf->ipsize) < 0) {
+    return true;
+  }
 
-    return OLSR_FALSE;
+  return false;
 }
 
 /**
@@ -472,8 +472,8 @@ olsr_cmp_rtp(const struct rt_path *rtp1, const struct rt_path *rtp2, const struc
  * returns TRUE if the first entry is better
  * than the second one, FALSE otherwise.
  */
-olsr_bool
-olsr_cmp_rt(const struct rt_entry *rt1, const struct rt_entry *rt2)
+bool
+olsr_cmp_rt(const struct rt_entry * rt1, const struct rt_entry * rt2)
 {
   return olsr_cmp_rtp(rt1->rt_best, rt2->rt_best, NULL);
 }
@@ -488,7 +488,7 @@ olsr_rt_best(struct rt_entry *rt)
   /* grab the first entry */
   struct avl_node *node = avl_walk_first(&rt->rt_path_tree);
 
-  assert(node != 0); /* should not happen */
+  assert(node != 0);            /* should not happen */
 
   rt->rt_best = rtp_tree2rtp(node);
 
@@ -521,8 +521,7 @@ olsr_rt_best(struct rt_entry *rt)
  *@return the new rt_path struct
  */
 struct rt_path *
-olsr_insert_routing_table(union olsr_ip_addr *dst, int plen,
-                          union olsr_ip_addr *originator, int origin)
+olsr_insert_routing_table(union olsr_ip_addr *dst, int plen, union olsr_ip_addr *originator, int origin)
 {
 #ifdef DEBUG
   struct ipaddr_str dstbuf, origbuf;
@@ -545,7 +544,7 @@ olsr_insert_routing_table(union olsr_ip_addr *dst, int plen,
    * be explored during SPF run.
    */
   tc = olsr_locate_tc_entry(originator);
-  
+
   /*
    * first check if there is a rt_path for the prefix.
    */
@@ -562,15 +561,13 @@ olsr_insert_routing_table(union olsr_ip_addr *dst, int plen,
     if (!rtp) {
       return NULL;
     }
-
 #ifdef DEBUG
-    OLSR_PRINTF(1, "RIB: add prefix %s/%u from %s\n",
-                olsr_ip_to_string(&dstbuf, dst), plen,
+    OLSR_PRINTF(1, "RIB: add prefix %s/%u from %s\n", olsr_ip_to_string(&dstbuf, dst), plen,
                 olsr_ip_to_string(&origbuf, originator));
 #endif
 
     /* overload the hna change bit for flagging a prefix change */
-    changes_hna = OLSR_TRUE;
+    changes_hna = true;
 
   } else {
     rtp = rtp_prefix_tree2rtp(node);
@@ -583,8 +580,7 @@ olsr_insert_routing_table(union olsr_ip_addr *dst, int plen,
  * Delete a prefix from the prefix tree hanging off a lsdb (tc) entry.
  */
 void
-olsr_delete_routing_table(union olsr_ip_addr *dst, int plen,
-                          union olsr_ip_addr *originator)
+olsr_delete_routing_table(union olsr_ip_addr *dst, int plen, union olsr_ip_addr *originator)
 {
 #ifdef DEBUG
   struct ipaddr_str dstbuf, origbuf;
@@ -620,13 +616,12 @@ olsr_delete_routing_table(union olsr_ip_addr *dst, int plen,
     olsr_delete_rt_path(rtp);
 
 #ifdef DEBUG
-    OLSR_PRINTF(1, "RIB: del prefix %s/%u from %s\n",
-                olsr_ip_to_string(&dstbuf, dst), plen,
+    OLSR_PRINTF(1, "RIB: del prefix %s/%u from %s\n", olsr_ip_to_string(&dstbuf, dst), plen,
                 olsr_ip_to_string(&origbuf, originator));
 #endif
 
     /* overload the hna change bit for flagging a prefix change */
-    changes_hna = OLSR_TRUE;
+    changes_hna = true;
   }
 }
 
@@ -639,10 +634,7 @@ olsr_rt_to_string(const struct rt_entry *rt)
   static char buff[128];
   struct ipaddr_str prefixstr, gwstr;
 
-  snprintf(buff, sizeof(buff),
-           "%s/%u via %s",
-           olsr_ip_to_string(&prefixstr, &rt->rt_dst.prefix),
-           rt->rt_dst.prefix_len,
+  snprintf(buff, sizeof(buff), "%s/%u via %s", olsr_ip_to_string(&prefixstr, &rt->rt_dst.prefix), rt->rt_dst.prefix_len,
            olsr_ip_to_string(&gwstr, &rt->rt_nexthop.gateway));
 
   return buff;
@@ -658,17 +650,12 @@ olsr_rtp_to_string(const struct rt_path *rtp)
   struct ipaddr_str prefixstr, origstr, gwstr;
   struct rt_entry *rt = rtp->rtp_rt;
   struct lqtextbuffer lqbuffer;
-  
-  snprintf(buff, sizeof(buff),
-           "%s/%u from %s via %s, "
-           "cost %s, metric %u, v %u",
-           olsr_ip_to_string(&prefixstr, &rt->rt_dst.prefix),
-           rt->rt_dst.prefix_len,
-           olsr_ip_to_string(&origstr, &rtp->rtp_originator),
-           olsr_ip_to_string(&gwstr, &rtp->rtp_nexthop.gateway),
-           get_linkcost_text(rtp->rtp_metric.cost, OLSR_TRUE, &lqbuffer),
-           rtp->rtp_metric.hops,
-           rtp->rtp_version);
+
+  snprintf(buff, sizeof(buff), "%s/%u from %s via %s, " "cost %s, metric %u, v %u",
+           olsr_ip_to_string(&prefixstr, &rt->rt_dst.prefix), rt->rt_dst.prefix_len, olsr_ip_to_string(&origstr,
+                                                                                                       &rtp->rtp_originator),
+           olsr_ip_to_string(&gwstr, &rtp->rtp_nexthop.gateway), get_linkcost_text(rtp->rtp_metric.cost, true, &lqbuffer),
+           rtp->rtp_metric.hops, rtp->rtp_version);
 
   return buff;
 }
@@ -684,43 +671,36 @@ olsr_print_routing_table(struct avl_tree *tree)
   /* The whole function makes no sense without it. */
   struct avl_node *rt_tree_node;
   struct lqtextbuffer lqbuffer;
-  
+
   OLSR_PRINTF(6, "ROUTING TABLE\n");
 
-  for (rt_tree_node = avl_walk_first(tree);
-       rt_tree_node != NULL;
-       rt_tree_node = avl_walk_next(rt_tree_node)) {
+  for (rt_tree_node = avl_walk_first(tree); rt_tree_node != NULL; rt_tree_node = avl_walk_next(rt_tree_node)) {
     struct avl_node *rtp_tree_node;
     struct ipaddr_str prefixstr, origstr, gwstr;
     struct rt_entry *rt = rt_tree2rt(rt_tree_node);
 
     /* first the route entry */
-    OLSR_PRINTF(6, "%s/%u, via %s, best-originator %s\n",
-           olsr_ip_to_string(&prefixstr, &rt->rt_dst.prefix),
-           rt->rt_dst.prefix_len,
-           olsr_ip_to_string(&origstr, &rt->rt_nexthop.gateway),
-           olsr_ip_to_string(&gwstr, &rt->rt_best->rtp_originator));
+    OLSR_PRINTF(6, "%s/%u, via %s, best-originator %s\n", olsr_ip_to_string(&prefixstr, &rt->rt_dst.prefix), rt->rt_dst.prefix_len,
+                olsr_ip_to_string(&origstr, &rt->rt_nexthop.gateway), olsr_ip_to_string(&gwstr, &rt->rt_best->rtp_originator));
 
     /* walk the per-originator path tree of routes */
-    for (rtp_tree_node = avl_walk_first(&rt->rt_path_tree);
-         rtp_tree_node != NULL;
-         rtp_tree_node = avl_walk_next(rtp_tree_node)) {
+    for (rtp_tree_node = avl_walk_first(&rt->rt_path_tree); rtp_tree_node != NULL; rtp_tree_node = avl_walk_next(rtp_tree_node)) {
       struct rt_path *rtp = rtp_tree2rtp(rtp_tree_node);
-      OLSR_PRINTF(6, "\tfrom %s, cost %s, metric %u, via %s, %s, v %u\n",
-             olsr_ip_to_string(&origstr, &rtp->rtp_originator),
-             get_linkcost_text(rtp->rtp_metric.cost, OLSR_TRUE, &lqbuffer),
-             rtp->rtp_metric.hops,
-             olsr_ip_to_string(&gwstr, &rtp->rtp_nexthop.gateway),
-             if_ifwithindex_name(rt->rt_nexthop.iif_index),
-             rtp->rtp_version);    
+      OLSR_PRINTF(6, "\tfrom %s, cost %s, metric %u, via %s, %s, v %u\n", olsr_ip_to_string(&origstr, &rtp->rtp_originator),
+                  get_linkcost_text(rtp->rtp_metric.cost, true, &lqbuffer), rtp->rtp_metric.hops, olsr_ip_to_string(&gwstr,
+                                                                                                                    &rtp->
+                                                                                                                    rtp_nexthop.
+                                                                                                                    gateway),
+                  if_ifwithindex_name(rt->rt_nexthop.iif_index), rtp->rtp_version);
     }
   }
 #endif
-  tree = NULL; /* squelch compiler warnings */
+  tree = NULL;                  /* squelch compiler warnings */
 }
 
 /*
  * Local Variables:
  * c-basic-offset: 2
+ * indent-tabs-mode: nil
  * End:
  */

@@ -1,33 +1,34 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
  * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -39,7 +40,7 @@
  */
 
 #if defined WINCE
-#include <sys/types.h> // for time_t
+#include <sys/types.h>          // for time_t
 #endif
 
 #define WIN32_LEAN_AND_MEAN
@@ -68,7 +69,6 @@ void PError(const char *);
 void DisableIcmpRedirects(void);
 int disable_ip_forwarding(int Ver);
 
-
 int
 gethemusocket(struct sockaddr_in *pin)
 {
@@ -76,81 +76,71 @@ gethemusocket(struct sockaddr_in *pin)
 
   OLSR_PRINTF(1, "       Connecting to switch daemon port 10150...");
 
-  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
-    {
-      perror("hcsocket");
-      return (-1);
-    }
+  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    perror("hcsocket");
+    return (-1);
+  }
 
   /* connect to PORT on HOST */
-  if (connect(sock,(struct sockaddr *) pin, sizeof(*pin)) < 0) 
-    {
-      printf("FAILED\n");
-      fprintf(stderr, "Error connecting %d - %s\n", errno, strerror(errno));
-      printf("connection refused\n");
-      closesocket(sock);
-      return (-1);
-    }
+  if (connect(sock, (struct sockaddr *)pin, sizeof(*pin)) < 0) {
+    printf("FAILED\n");
+    fprintf(stderr, "Error connecting %d - %s\n", errno, strerror(errno));
+    printf("connection refused\n");
+    closesocket(sock);
+    return (-1);
+  }
 
   printf("OK\n");
 
-  /* Keep TCP socket blocking */  
+  /* Keep TCP socket blocking */
   return (sock);
 }
 
-int getsocket(int BuffSize, char *Int __attribute__((unused)))
+int
+getsocket(int BuffSize, char *Int __attribute__ ((unused)))
 {
   struct sockaddr_in Addr;
   int On = 1;
   unsigned long Len;
   int Sock = socket(AF_INET, SOCK_DGRAM, 0);
-  if (Sock < 0)
-  {
+  if (Sock < 0) {
     WinSockPError("getsocket/socket()");
     return -1;
   }
 
-  if (setsockopt(Sock, SOL_SOCKET, SO_BROADCAST,
-                 (char *)&On, sizeof (On)) < 0)
-  {
+  if (setsockopt(Sock, SOL_SOCKET, SO_BROADCAST, (char *)&On, sizeof(On)) < 0) {
     WinSockPError("getsocket/setsockopt(SO_BROADCAST)");
     closesocket(Sock);
     return -1;
   }
 
-  if (setsockopt(Sock, SOL_SOCKET, SO_REUSEADDR,
-                 (char *)&On, sizeof (On)) < 0)
-  {
+  if (setsockopt(Sock, SOL_SOCKET, SO_REUSEADDR, (char *)&On, sizeof(On)) < 0) {
     WinSockPError("getsocket/setsockopt(SO_REUSEADDR)");
     closesocket(Sock);
     return -1;
   }
 
-  while (BuffSize > 8192)
-  {
-    if (setsockopt(Sock, SOL_SOCKET, SO_RCVBUF, (char *)&BuffSize,
-                   sizeof (BuffSize)) == 0)
+  while (BuffSize > 8192) {
+    if (setsockopt(Sock, SOL_SOCKET, SO_RCVBUF, (char *)&BuffSize, sizeof(BuffSize)) == 0)
       break;
 
     BuffSize -= 1024;
   }
 
-  if (BuffSize <= 8192) 
+  if (BuffSize <= 8192)
     fprintf(stderr, "Cannot set IPv4 socket receive buffer.\n");
 
-  memset(&Addr, 0, sizeof (Addr));
+  memset(&Addr, 0, sizeof(Addr));
   Addr.sin_family = AF_INET;
-  Addr.sin_port = htons(OLSRPORT);
+  Addr.sin_port = htons(olsr_cnf->olsrport);
   Addr.sin_addr.s_addr = INADDR_ANY;
-  if (bind(Sock, (struct sockaddr *)&Addr, sizeof (Addr)) < 0)
-  {
+  if (bind(Sock, (struct sockaddr *)&Addr, sizeof(Addr)) < 0) {
     WinSockPError("getsocket/bind()");
     closesocket(Sock);
     return -1;
   }
 
-  if (WSAIoctl(Sock, FIONBIO, &On, sizeof (On), NULL, 0, &Len, NULL, NULL) < 0)
-  {
+  if (WSAIoctl(Sock, FIONBIO, &On, sizeof(On), NULL, 0, &Len, NULL, NULL) < 0) {
     WinSockPError("WSAIoctl");
     closesocket(Sock);
     return -1;
@@ -159,51 +149,44 @@ int getsocket(int BuffSize, char *Int __attribute__((unused)))
   return Sock;
 }
 
-int getsocket6(int BuffSize, char *Int __attribute__((unused)))
+int
+getsocket6(int BuffSize, char *Int __attribute__ ((unused)))
 {
   struct sockaddr_in6 Addr6;
   int On = 1;
   int Sock = socket(AF_INET6, SOCK_DGRAM, 0);
-  if (Sock < 0)
-  {
+  if (Sock < 0) {
     WinSockPError("getsocket6/socket()");
     return -1;
   }
 
-  if (setsockopt(Sock, SOL_SOCKET, SO_BROADCAST,
-                 (char *)&On, sizeof (On)) < 0)
-  {
+  if (setsockopt(Sock, SOL_SOCKET, SO_BROADCAST, (char *)&On, sizeof(On)) < 0) {
     WinSockPError("getsocket6/setsockopt(SO_BROADCAST)");
     closesocket(Sock);
     return -1;
   }
 
-  if (setsockopt(Sock, SOL_SOCKET, SO_REUSEADDR,
-                 (char *)&On, sizeof (On)) < 0)
-  {
+  if (setsockopt(Sock, SOL_SOCKET, SO_REUSEADDR, (char *)&On, sizeof(On)) < 0) {
     WinSockPError("getsocket6/setsockopt(SO_REUSEADDR)");
     closesocket(Sock);
     return -1;
   }
 
-  while (BuffSize > 8192)
-  {
-    if (setsockopt(Sock, SOL_SOCKET, SO_RCVBUF, (char *)&BuffSize,
-                   sizeof (BuffSize)) == 0)
+  while (BuffSize > 8192) {
+    if (setsockopt(Sock, SOL_SOCKET, SO_RCVBUF, (char *)&BuffSize, sizeof(BuffSize)) == 0)
       break;
 
     BuffSize -= 1024;
   }
 
-  if (BuffSize <= 8192) 
+  if (BuffSize <= 8192)
     fprintf(stderr, "Cannot set IPv6 socket receive buffer.\n");
 
-  memset(&Addr6, 0, sizeof (Addr6));
+  memset(&Addr6, 0, sizeof(Addr6));
   Addr6.sin6_family = AF_INET6;
   Addr6.sin6_port = htons(OLSRPORT);
   //Addr6.sin6_addr.s_addr = IN6ADDR_ANY_INIT;
-  if (bind(Sock, (struct sockaddr *)&Addr6, sizeof (Addr6)) < 0)
-  {
+  if (bind(Sock, (struct sockaddr *)&Addr6, sizeof(Addr6)) < 0) {
     WinSockPError("getsocket6/bind()");
     closesocket(Sock);
     return -1;
@@ -214,10 +197,11 @@ int getsocket6(int BuffSize, char *Int __attribute__((unused)))
 
 static OVERLAPPED RouterOver;
 
-int enable_ip_forwarding(int Ver)
+int
+enable_ip_forwarding(int Ver)
 {
   HMODULE Lib;
-  unsigned int __stdcall (*EnableRouter)(HANDLE *Hand, OVERLAPPED *Over);
+  unsigned int __stdcall(*EnableRouter) (HANDLE * Hand, OVERLAPPED * Over);
   HANDLE Hand;
 
   Ver = Ver;
@@ -227,24 +211,21 @@ int enable_ip_forwarding(int Ver)
   if (Lib == NULL)
     return 0;
 
-  EnableRouter = (unsigned int __stdcall (*)(HANDLE *, OVERLAPPED *))
-    GetProcAddress(Lib, WIDE_STRING("EnableRouter"));
+  EnableRouter = (unsigned int __stdcall(*)(HANDLE *, OVERLAPPED *))GetProcAddress(Lib, WIDE_STRING("EnableRouter"));
 
   if (EnableRouter == NULL)
     return 0;
 
-  memset(&RouterOver, 0, sizeof (OVERLAPPED));
+  memset(&RouterOver, 0, sizeof(OVERLAPPED));
 
   RouterOver.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-  if (RouterOver.hEvent == NULL)
-  {
+  if (RouterOver.hEvent == NULL) {
     PError("CreateEvent()");
     return -1;
   }
-  
-  if (EnableRouter(&Hand, &RouterOver) != ERROR_IO_PENDING)
-  {
+
+  if (EnableRouter(&Hand, &RouterOver) != ERROR_IO_PENDING) {
     PError("EnableRouter()");
     return -1;
   }
@@ -254,28 +235,26 @@ int enable_ip_forwarding(int Ver)
   return 0;
 }
 
-int disable_ip_forwarding(int Ver)
+int
+disable_ip_forwarding(int Ver)
 {
   HMODULE Lib;
-  unsigned int  __stdcall (*UnenableRouter)(OVERLAPPED *Over,
-                                            unsigned int *Count);
+  unsigned int __stdcall(*UnenableRouter) (OVERLAPPED * Over, unsigned int *Count);
   unsigned int Count;
 
   Ver = Ver;
-  
+
   Lib = LoadLibrary(WIDE_STRING("iphlpapi.dll"));
 
   if (Lib == NULL)
     return 0;
 
-  UnenableRouter = (unsigned int __stdcall (*)(OVERLAPPED *, unsigned int *))
-    GetProcAddress(Lib, WIDE_STRING("UnenableRouter"));
+  UnenableRouter = (unsigned int __stdcall(*)(OVERLAPPED *, unsigned int *))GetProcAddress(Lib, WIDE_STRING("UnenableRouter"));
 
   if (UnenableRouter == NULL)
     return 0;
 
-  if (UnenableRouter(&RouterOver, &Count) != NO_ERROR)
-  {
+  if (UnenableRouter(&RouterOver, &Count) != NO_ERROR) {
     PError("UnenableRouter()");
     return -1;
   }
@@ -285,14 +264,16 @@ int disable_ip_forwarding(int Ver)
   return 0;
 }
 
-int restore_settings(int Ver)
+int
+restore_settings(int Ver)
 {
   disable_ip_forwarding(Ver);
 
   return 0;
 }
 
-static int SetEnableRedirKey(unsigned long New)
+static int
+SetEnableRedirKey(unsigned long New)
 {
 #if !defined WINCE
   HKEY Key;
@@ -300,21 +281,16 @@ static int SetEnableRedirKey(unsigned long New)
   unsigned long Len;
   unsigned long Old;
 
-  if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-                   "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
-                   0, KEY_READ | KEY_WRITE, &Key) != ERROR_SUCCESS)
+  if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters", 0, KEY_READ | KEY_WRITE, &Key) !=
+      ERROR_SUCCESS)
     return -1;
 
-  Len = sizeof (Old);
+  Len = sizeof(Old);
 
-  if (RegQueryValueEx(Key, "EnableICMPRedirect", NULL, &Type,
-                      (unsigned char *)&Old, &Len) != ERROR_SUCCESS ||
-      Type != REG_DWORD)
+  if (RegQueryValueEx(Key, "EnableICMPRedirect", NULL, &Type, (unsigned char *)&Old, &Len) != ERROR_SUCCESS || Type != REG_DWORD)
     Old = 1;
 
-  if (RegSetValueEx(Key, "EnableICMPRedirect", 0, REG_DWORD,
-                    (unsigned char *)&New, sizeof (New)))
-  {
+  if (RegSetValueEx(Key, "EnableICMPRedirect", 0, REG_DWORD, (unsigned char *)&New, sizeof(New))) {
     RegCloseKey(Key);
     return -1;
   }
@@ -326,7 +302,8 @@ static int SetEnableRedirKey(unsigned long New)
 #endif
 }
 
-void DisableIcmpRedirects(void)
+void
+DisableIcmpRedirects(void)
 {
   int Res;
 
@@ -338,8 +315,7 @@ void DisableIcmpRedirects(void)
   fprintf(stderr, "\n*** IMPORTANT *** IMPORTANT *** IMPORTANT *** IMPORTANT *** IMPORTANT ***\n\n");
 
 #if 0
-  if (Res < 0)
-  {
+  if (Res < 0) {
     fprintf(stderr, "Cannot disable ICMP redirect processing in the registry.\n");
     fprintf(stderr, "Please disable it manually. Continuing in 3 seconds...\n");
     Sleep(3000);
@@ -354,8 +330,8 @@ void DisableIcmpRedirects(void)
   exit(0);
 }
 
-
-int join_mcast(struct interface *Nic, int Sock)
+int
+join_mcast(struct interface *Nic, int Sock)
 {
   /* See linux/in6.h */
   struct ipaddr_str buf;
@@ -364,94 +340,54 @@ int join_mcast(struct interface *Nic, int Sock)
   McastReq.ipv6mr_multiaddr = Nic->int6_multaddr.sin6_addr;
   McastReq.ipv6mr_interface = Nic->if_index;
 
-  OLSR_PRINTF(3, "Interface %s joining multicast %s...", Nic->int_name, olsr_ip_to_string(&buf, (union olsr_ip_addr *)&Nic->int6_multaddr.sin6_addr));
+  OLSR_PRINTF(3, "Interface %s joining multicast %s...", Nic->int_name,
+              olsr_ip_to_string(&buf, (union olsr_ip_addr *)&Nic->int6_multaddr.sin6_addr));
   /* Send multicast */
-  if(setsockopt(Sock, 
-		IPPROTO_IPV6, 
-		IPV6_ADD_MEMBERSHIP, 
-		(char *)&McastReq, 
-		sizeof(struct ipv6_mreq)) 
-     < 0)
-    {
-      perror("Join multicast");
-      return -1;
-    }
+  if (setsockopt(Sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (char *)&McastReq, sizeof(struct ipv6_mreq)) < 0) {
+    perror("Join multicast");
+    return -1;
+  }
 
   /* Old libc fix */
 #ifdef IPV6_JOIN_GROUP
   /* Join reciever group */
-  if(setsockopt(Sock, 
-		IPPROTO_IPV6, 
-		IPV6_JOIN_GROUP, 
-		(char *)&McastReq, 
-		sizeof(struct ipv6_mreq)) 
-     < 0)
+  if (setsockopt(Sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, (char *)&McastReq, sizeof(struct ipv6_mreq)) < 0)
 #else
   /* Join reciever group */
-  if(setsockopt(Sock, 
-		IPPROTO_IPV6, 
-		IPV6_ADD_MEMBERSHIP, 
-		(char *)&McastReq, 
-		sizeof(struct ipv6_mreq)) 
-     < 0)
-#endif 
-    {
-      perror("Join multicast send");
-      return -1;
-    }
+  if (setsockopt(Sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, (char *)&McastReq, sizeof(struct ipv6_mreq)) < 0)
+#endif
+  {
+    perror("Join multicast send");
+    return -1;
+  }
 
-  
-  if(setsockopt(Sock, 
-		IPPROTO_IPV6, 
-		IPV6_MULTICAST_IF, 
-		(char *)&McastReq.ipv6mr_interface, 
-		sizeof(McastReq.ipv6mr_interface)) 
-     < 0)
-    {
-      perror("Set multicast if");
-      return -1;
-    }
-
+  if (setsockopt(Sock, IPPROTO_IPV6, IPV6_MULTICAST_IF, (char *)&McastReq.ipv6mr_interface, sizeof(McastReq.ipv6mr_interface)) < 0) {
+    perror("Set multicast if");
+    return -1;
+  }
 
   OLSR_PRINTF(3, "OK\n");
   return 0;
 }
-
 
 /**
  * Wrapper for sendto(2)
  */
 
 ssize_t
-olsr_sendto(int s, 
-	    const void *buf, 
-	    size_t len, 
-	    int flags, 
-	    const struct sockaddr *to, 
-	    socklen_t tolen)
+olsr_sendto(int s, const void *buf, size_t len, int flags, const struct sockaddr * to, socklen_t tolen)
 {
   return sendto(s, buf, len, flags, to, tolen);
 }
-
 
 /**
  * Wrapper for recvfrom(2)
  */
 
-ssize_t  
-olsr_recvfrom(int  s, 
-	      void *buf, 
-	      size_t len, 
-	      int flags __attribute__((unused)), 
-	      struct sockaddr *from,
-	      socklen_t *fromlen)
+ssize_t
+olsr_recvfrom(int s, void *buf, size_t len, int flags __attribute__ ((unused)), struct sockaddr * from, socklen_t * fromlen)
 {
-  return recvfrom(s, 
-		  buf, 
-		  len, 
-		  0, 
-		  from, 
-		  fromlen);
+  return recvfrom(s, buf, len, 0, from, fromlen);
 }
 
 /**
@@ -459,15 +395,14 @@ olsr_recvfrom(int  s,
  */
 
 int
-olsr_select(int nfds,
-            fd_set *readfds,
-            fd_set *writefds,
-            fd_set *exceptfds,
-            struct timeval *timeout)
+olsr_select(int nfds, fd_set * readfds, fd_set * writefds, fd_set * exceptfds, struct timeval *timeout)
 {
-  return select(nfds,
-                readfds,
-                writefds,
-                exceptfds,
-                timeout);
+  return select(nfds, readfds, writefds, exceptfds, timeout);
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */
