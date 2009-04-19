@@ -4,31 +4,31 @@
  * Copyright (c) 2008, Hannes Gredler (hannes@gredler.at)
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright 
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -67,7 +67,7 @@ olsr_alloc_cookie(const char *cookie_name, olsr_cookie_type cookie_type)
     }
   }
 
-  assert(ci_index < COOKIE_ID_MAX);	/* increase COOKIE_ID_MAX */
+  assert(ci_index < COOKIE_ID_MAX);     /* increase COOKIE_ID_MAX */
 
   ci = calloc(1, sizeof(struct olsr_cookie_info));
   cookies[ci_index] = ci;
@@ -152,13 +152,13 @@ olsr_cookie_set_memory_size(struct olsr_cookie_info *ci, size_t size)
 /*
  * Basic sanity checking for a passed-in cookie-id.
  */
-static olsr_bool
+static bool
 olsr_cookie_valid(olsr_cookie_t cookie_id)
 {
   if ((cookie_id < COOKIE_ID_MAX) && cookies[cookie_id]) {
-    return OLSR_TRUE;
+    return true;
   }
-  return OLSR_FALSE;
+  return false;
 }
 
 /*
@@ -210,7 +210,7 @@ olsr_cookie_malloc(struct olsr_cookie_info *ci)
   void *ptr;
   struct olsr_cookie_mem_brand *branding;
   struct list_node *free_list_node;
-  olsr_bool reuse = OLSR_FALSE;
+  bool reuse = false;
 
   /*
    * Check first if we have reusable memory.
@@ -239,7 +239,7 @@ olsr_cookie_malloc(struct olsr_cookie_info *ci)
     ptr = (void *)free_list_node;
     memset(ptr, 0, ci->ci_size);
     ci->ci_free_list_usage--;
-    reuse = OLSR_TRUE;
+    reuse = true;
   }
 
   /*
@@ -247,8 +247,7 @@ olsr_cookie_malloc(struct olsr_cookie_info *ci)
    * indicating presence of a cookie. This will be checked against
    * When the block is freed to detect corruption.
    */
-  branding = (struct olsr_cookie_mem_brand *)
-    ((unsigned char *)ptr + ci->ci_size);
+  branding = (struct olsr_cookie_mem_brand *)((unsigned char *)ptr + ci->ci_size);
   memcpy(&branding->cmb_sig, "cookie", 6);
   branding->cmb_id = ci->ci_id;
 
@@ -256,8 +255,7 @@ olsr_cookie_malloc(struct olsr_cookie_info *ci)
   olsr_cookie_usage_incr(ci->ci_id);
 
 #if 0
-  OLSR_PRINTF(1, "MEMORY: alloc %s, %p, %u bytes%s\n",
-	      ci->ci_name, ptr, ci->ci_size, reuse ? ", reuse" : "");
+  OLSR_PRINTF(1, "MEMORY: alloc %s, %p, %u bytes%s\n", ci->ci_name, ptr, ci->ci_size, reuse ? ", reuse" : "");
 #endif
 
   return ptr;
@@ -272,17 +270,15 @@ olsr_cookie_free(struct olsr_cookie_info *ci, void *ptr)
 {
   struct olsr_cookie_mem_brand *branding;
   struct list_node *free_list_node;
-  olsr_bool reuse = OLSR_FALSE;
+  bool reuse = false;
 
-  branding = (struct olsr_cookie_mem_brand *)
-    ((unsigned char *)ptr + ci->ci_size);
+  branding = (struct olsr_cookie_mem_brand *)((unsigned char *)ptr + ci->ci_size);
 
   /*
    * Verify if there has been a memory overrun, or
    * the wrong owner is trying to free this.
    */
-  assert(!memcmp(&branding->cmb_sig, "cookie", 6) &&
-	 branding->cmb_id == ci->ci_id);
+  assert(!memcmp(&branding->cmb_sig, "cookie", 6) && branding->cmb_id == ci->ci_id);
 
   /* Kill the brand */
   memset(branding, 0, sizeof(*branding));
@@ -292,14 +288,13 @@ olsr_cookie_free(struct olsr_cookie_info *ci, void *ptr)
    * point. Keep at least ten percent of the active used blocks or at least
    * ten blocks on the free list.
    */
-  if ((ci->ci_free_list_usage < COOKIE_FREE_LIST_THRESHOLD) ||
-      (ci->ci_free_list_usage < ci->ci_usage / COOKIE_FREE_LIST_THRESHOLD)) {
+  if ((ci->ci_free_list_usage < COOKIE_FREE_LIST_THRESHOLD) || (ci->ci_free_list_usage < ci->ci_usage / COOKIE_FREE_LIST_THRESHOLD)) {
 
     free_list_node = (struct list_node *)ptr;
     list_node_init(free_list_node);
     list_add_before(&ci->ci_free_list, free_list_node);
     ci->ci_free_list_usage++;
-    reuse = OLSR_TRUE;
+    reuse = true;
 
   } else {
 
@@ -313,8 +308,7 @@ olsr_cookie_free(struct olsr_cookie_info *ci, void *ptr)
   olsr_cookie_usage_decr(ci->ci_id);
 
 #if 0
-  OLSR_PRINTF(1, "MEMORY: free %s, %p, %u bytes%s\n",
-	      ci->ci_name, ptr, ci->ci_size, reuse ? ", reuse" : "");
+  OLSR_PRINTF(1, "MEMORY: free %s, %p, %u bytes%s\n", ci->ci_name, ptr, ci->ci_size, reuse ? ", reuse" : "");
 #endif
 
 }
@@ -322,5 +316,6 @@ olsr_cookie_free(struct olsr_cookie_info *ci, void *ptr)
 /*
  * Local Variables:
  * c-basic-offset: 2
+ * indent-tabs-mode: nil
  * End:
  */

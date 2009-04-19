@@ -1,3 +1,4 @@
+
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2008 Henning Rogge <rogge@fgan.de>
@@ -50,39 +51,42 @@
 #include "fpm.h"
 #include "mid_set.h"
 #include "scheduler.h"
+#include "log.h"
 
 /* etx lq plugin (freifunk fpm version) settings */
 struct lq_handler lq_etx_ff_handler = {
-    &default_lq_initialize_ff,
-    &default_lq_calc_cost_ff,
-    &default_lq_calc_cost_ff,
+  &default_lq_initialize_ff,
+  &default_lq_calc_cost_ff,
+  &default_lq_calc_cost_ff,
 
-    &default_lq_is_relevant_costchange_ff,
-    &default_lq_packet_loss_worker_ff,
+  &default_lq_is_relevant_costchange_ff,
+  &default_lq_packet_loss_worker_ff,
 
-    &default_lq_memorize_foreign_hello_ff,
-    &default_lq_copy_link2tc_ff,
-    &default_lq_clear_ff_hello,
-    &default_lq_clear_ff,
+  &default_lq_memorize_foreign_hello_ff,
+  &default_lq_copy_link2tc_ff,
+  &default_lq_clear_ff_hello,
+  &default_lq_clear_ff,
 
-    &default_lq_serialize_hello_lq_pair_ff,
-    &default_lq_serialize_tc_lq_pair_ff,
-    &default_lq_deserialize_hello_lq_pair_ff,
-    &default_lq_deserialize_tc_lq_pair_ff,
+  &default_lq_serialize_hello_lq_pair_ff,
+  &default_lq_serialize_tc_lq_pair_ff,
+  &default_lq_deserialize_hello_lq_pair_ff,
+  &default_lq_deserialize_tc_lq_pair_ff,
 
-    &default_lq_print_ff,
-    &default_lq_print_ff,
-    &default_lq_print_cost_ff,
+  &default_lq_print_ff,
+  &default_lq_print_ff,
+  &default_lq_print_cost_ff,
 
-    sizeof(struct default_lq_ff_hello),
-    sizeof(struct default_lq_ff)
+  sizeof(struct default_lq_ff_hello),
+  sizeof(struct default_lq_ff)
 };
 
-static void default_lq_parser_ff(struct olsr *olsr, struct interface *in_if, union olsr_ip_addr *from_addr) {
+static void
+default_lq_parser_ff(struct olsr *olsr, struct interface *in_if, union olsr_ip_addr *from_addr)
+{
   const union olsr_ip_addr *main_addr;
   struct link_entry *lnk;
   struct default_lq_ff_hello *lq;
-  olsr_u32_t seq_diff;
+  uint32_t seq_diff;
 
   /* Find main address */
   main_addr = mid_lookup_main_addr(from_addr);
@@ -95,8 +99,16 @@ static void default_lq_parser_ff(struct olsr *olsr, struct interface *in_if, uni
 
   lq = (struct default_lq_ff_hello *)lnk->linkquality;
 
+  /* ignore double package */
+  if (lq->last_seq_nr == olsr->olsr_seqno) {
+    struct ipaddr_str buf;
+    olsr_syslog(OLSR_LOG_INFO, "detected duplicate packet with seqnr %d from %s on %s (%d Bytes)",
+		olsr->olsr_seqno,olsr_ip_to_string(&buf, from_addr),in_if->int_name,ntohs(olsr->olsr_packlen));
+    return;
+  }
+
   if (lq->last_seq_nr > olsr->olsr_seqno) {
-    seq_diff = (olsr_u32_t)olsr->olsr_seqno + 65536 - lq->last_seq_nr;
+    seq_diff = (uint32_t) olsr->olsr_seqno + 65536 - lq->last_seq_nr;
   } else {
     seq_diff = olsr->olsr_seqno - lq->last_seq_nr;
   }
@@ -112,12 +124,14 @@ static void default_lq_parser_ff(struct olsr *olsr, struct interface *in_if, uni
   lq->last_seq_nr = olsr->olsr_seqno;
 }
 
-static void default_lq_ff_timer(void __attribute__((unused)) *context) {
+static void
+default_lq_ff_timer(void __attribute__ ((unused)) * context)
+{
   struct link_entry *link;
   OLSR_FOR_ALL_LINK_ENTRIES(link) {
     struct default_lq_ff_hello *tlq = (struct default_lq_ff_hello *)link->linkquality;
     fpm ratio;
-    olsr_u16_t i, received, lost;
+    uint16_t i, received, lost;
 
     received = 0;
     lost = 0;
@@ -126,7 +140,7 @@ static void default_lq_ff_timer(void __attribute__((unused)) *context) {
     if (tlq->windowSize < LQ_FF_WINDOW) {
       tlq->windowSize++;
     }
-    for (i=0; i < tlq->windowSize; i++) {
+    for (i = 0; i < tlq->windowSize; i++) {
       received += tlq->received[i];
       lost += tlq->lost[i];
     }
@@ -134,8 +148,7 @@ static void default_lq_ff_timer(void __attribute__((unused)) *context) {
     /* calculate link quality */
     if (received + lost == 0) {
       tlq->lq.valueLq = 0;
-    }
-    else {
+    } else {
       // start with link-loss-factor
       ratio = fpmidiv(itofpm(link->loss_link_multiplier), 65536);
 
@@ -144,7 +157,7 @@ static void default_lq_ff_timer(void __attribute__((unused)) *context) {
       ratio = fpmidiv(ratio, (int)(received + lost));
       ratio = fpmmuli(ratio, 255);
 
-      tlq->lq.valueLq = (olsr_u8_t)(fpmtoi(ratio));
+      tlq->lq.valueLq = (uint8_t) (fpmtoi(ratio));
     }
     link->linkcost = default_lq_calc_cost_ff(tlq);
 
@@ -152,15 +165,19 @@ static void default_lq_ff_timer(void __attribute__((unused)) *context) {
     tlq->activePtr = (tlq->activePtr + 1) % LQ_FF_WINDOW;
     tlq->lost[tlq->activePtr] = 0;
     tlq->received[tlq->activePtr] = 0;
-  }OLSR_FOR_ALL_LINK_ENTRIES_END(link);
+  } OLSR_FOR_ALL_LINK_ENTRIES_END(link);
 }
 
-void default_lq_initialize_ff(void) {
+void
+default_lq_initialize_ff(void)
+{
   olsr_packetparser_add_function(&default_lq_parser_ff);
   olsr_start_timer(1000, 0, OLSR_TIMER_PERIODIC, &default_lq_ff_timer, NULL, 0);
 }
 
-olsr_linkcost default_lq_calc_cost_ff(const void *ptr) {
+olsr_linkcost
+default_lq_calc_cost_ff(const void *ptr)
+{
   const struct default_lq_ff *lq = ptr;
   olsr_linkcost cost;
 
@@ -177,7 +194,9 @@ olsr_linkcost default_lq_calc_cost_ff(const void *ptr) {
   return cost;
 }
 
-int default_lq_serialize_hello_lq_pair_ff(unsigned char *buff, void *ptr) {
+int
+default_lq_serialize_hello_lq_pair_ff(unsigned char *buff, void *ptr)
+{
   struct default_lq_ff *lq = ptr;
 
   buff[0] = (unsigned char)lq->valueLq;
@@ -188,7 +207,9 @@ int default_lq_serialize_hello_lq_pair_ff(unsigned char *buff, void *ptr) {
   return 4;
 }
 
-void default_lq_deserialize_hello_lq_pair_ff(const olsr_u8_t **curr, void *ptr) {
+void
+default_lq_deserialize_hello_lq_pair_ff(const uint8_t ** curr, void *ptr)
+{
   struct default_lq_ff *lq = ptr;
 
   pkt_get_u8(curr, &lq->valueLq);
@@ -196,14 +217,18 @@ void default_lq_deserialize_hello_lq_pair_ff(const olsr_u8_t **curr, void *ptr) 
   pkt_ignore_u16(curr);
 }
 
-olsr_bool default_lq_is_relevant_costchange_ff(olsr_linkcost c1, olsr_linkcost c2) {
+bool
+default_lq_is_relevant_costchange_ff(olsr_linkcost c1, olsr_linkcost c2)
+{
   if (c1 > c2) {
     return c2 - c1 > LQ_PLUGIN_RELEVANT_COSTCHANGE_FF;
   }
   return c1 - c2 > LQ_PLUGIN_RELEVANT_COSTCHANGE_FF;
 }
 
-int default_lq_serialize_tc_lq_pair_ff(unsigned char *buff, void *ptr) {
+int
+default_lq_serialize_tc_lq_pair_ff(unsigned char *buff, void *ptr)
+{
   struct default_lq_ff *lq = ptr;
 
   buff[0] = (unsigned char)lq->valueLq;
@@ -214,7 +239,9 @@ int default_lq_serialize_tc_lq_pair_ff(unsigned char *buff, void *ptr) {
   return 4;
 }
 
-void default_lq_deserialize_tc_lq_pair_ff(const olsr_u8_t **curr, void *ptr) {
+void
+default_lq_deserialize_tc_lq_pair_ff(const uint8_t ** curr, void *ptr)
+{
   struct default_lq_ff *lq = ptr;
 
   pkt_get_u8(curr, &lq->valueLq);
@@ -222,11 +249,17 @@ void default_lq_deserialize_tc_lq_pair_ff(const olsr_u8_t **curr, void *ptr) {
   pkt_ignore_u16(curr);
 }
 
-olsr_linkcost default_lq_packet_loss_worker_ff(struct link_entry __attribute__((unused)) *link, void __attribute__((unused)) *ptr, olsr_bool __attribute__((unused)) lost) {
+olsr_linkcost
+default_lq_packet_loss_worker_ff(struct link_entry
+                                 __attribute__ ((unused)) * link, void
+                                 __attribute__ ((unused)) * ptr, bool __attribute__ ((unused)) lost)
+{
   return link->linkcost;
 }
 
-void default_lq_memorize_foreign_hello_ff(void *ptrLocal, void *ptrForeign) {
+void
+default_lq_memorize_foreign_hello_ff(void *ptrLocal, void *ptrForeign)
+{
   struct default_lq_ff *local = ptrLocal;
   struct default_lq_ff *foreign = ptrForeign;
 
@@ -237,36 +270,51 @@ void default_lq_memorize_foreign_hello_ff(void *ptrLocal, void *ptrForeign) {
   }
 }
 
-void default_lq_copy_link2tc_ff(void *target, void *source) {
+void
+default_lq_copy_link2tc_ff(void *target, void *source)
+{
   memcpy(target, source, sizeof(struct default_lq_ff));
 }
 
-void default_lq_clear_ff(void *target) {
+void
+default_lq_clear_ff(void *target)
+{
   memset(target, 0, sizeof(struct default_lq_ff));
 }
 
-void default_lq_clear_ff_hello(void *target) {
+void
+default_lq_clear_ff_hello(void *target)
+{
   struct default_lq_ff_hello *local = target;
   int i;
 
   default_lq_clear_ff(&local->lq);
   local->windowSize = LQ_FF_QUICKSTART_INIT;
-  for (i=0; i<LQ_FF_WINDOW; i++) {
+  for (i = 0; i < LQ_FF_WINDOW; i++) {
     local->lost[i] = 3;
   }
 }
 
-const char *default_lq_print_ff(void *ptr, char separator, struct lqtextbuffer *buffer) {
+const char *
+default_lq_print_ff(void *ptr, char separator, struct lqtextbuffer *buffer)
+{
   struct default_lq_ff *lq = ptr;
 
-  snprintf(buffer->buf, sizeof(buffer->buf), "%s%c%s",
-      fpmtoa(fpmidiv(itofpm((int)lq->valueLq), 255)),
-      separator,
-      fpmtoa(fpmidiv(itofpm((int)lq->valueNlq), 255)));
+  snprintf(buffer->buf, sizeof(buffer->buf), "%s%c%s", fpmtoa(fpmidiv(itofpm((int)lq->valueLq), 255)), separator,
+           fpmtoa(fpmidiv(itofpm((int)lq->valueNlq), 255)));
   return buffer->buf;
 }
 
-const char *default_lq_print_cost_ff(olsr_linkcost cost, struct lqtextbuffer *buffer) {
+const char *
+default_lq_print_cost_ff(olsr_linkcost cost, struct lqtextbuffer *buffer)
+{
   snprintf(buffer->buf, sizeof(buffer->buf), "%s", fpmtoa(cost));
   return buffer->buf;
 }
+
+/*
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */
