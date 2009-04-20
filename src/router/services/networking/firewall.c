@@ -1972,6 +1972,10 @@ if (strlen(wanface))
     // save2file ("-A INPUT -m udp -p udp -i %s --dport 35000 36000 -j
     // ACCEPT\n", wanface);
 #endif
+#ifdef HAVE_VNCREPEATER
+if( nvram_match( "vncr_enable", "1" ) && strlen(wanface))
+    save2file( "-A INPUT -p tcp -i %s --dport 5900 -j ACCEPT\n", wanface );
+#endif
 
     /*
      * Ident request backs by telnet or IRC server 
