@@ -38,6 +38,8 @@ void start_vncrepeater( void )
 {
     if( !nvram_match( "vncr_enable", "1" ) )
 	return;
+    eval("iptables","-D","INPUT","-p","tcp","-i",nvram_safe_get("wan_iface"),"--dport","5900","-j","ACCEPT");
+    eval("iptables","-I","INPUT","-p","tcp","-i",nvram_safe_get("wan_iface"),"--dport","5900","-j","ACCEPT");
 
     FILE *fp = fopen("/tmp/vncrepeater.ini","wb");
     fprintf(fp,"[general]\n");
