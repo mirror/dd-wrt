@@ -367,8 +367,11 @@ void setupSupplicant( char *prefix, char *ssidoverride )
 	    mkdir( psk );
 	    sprintf( psk, "/tmp/%s/ca.pem", prefix );
 	    sprintf( ath, "%s_peap8021xca", prefix );
-	    write_nvram( psk, ath );
-	    fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
+	    if (!nvram_match(ath,""))
+	    {
+		write_nvram( psk, ath );
+		fprintf( fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix );
+	    }
 	    if( strlen( nvram_nget( "%s_peap8021xphase2", prefix ) ) > 0 )
 	    {
 		fprintf( fp, "\tphase2=\"%s\"\n",
