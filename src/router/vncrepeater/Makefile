@@ -1,4 +1,4 @@
-CFLAGS=-Wall
+CFLAGS=$(COPTS) -DNEED_PRINTF
 OBJDIR=/tmp/uvnc
 repeater: repeater.o repeaterproc.o openbsd_stringfuncs.o iniparser.o readini.o repeaterutil.o repeaterevents.o
 	$(CXX) $(CFLAGS) -o repeater repeater.o repeaterproc.o openbsd_stringfuncs.o iniparser.o readini.o repeaterutil.o repeaterevents.o
