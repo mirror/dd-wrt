@@ -542,13 +542,11 @@ int internal_getRouterBrand(  )
 	if( !strncmp( gwid, "GW2358", 6 ) )
 	{
 	    setRouter( "Cambria GW2358-4" );
-	    insmod("8250_gw2358");
 	    return ROUTER_BOARD_GATEWORX;
 	}
 	if( !strncmp( gwid, "GW2350", 6 ) )
 	{
 	    setRouter( "Cambria GW2350" );
-	    insmod("8250_gw2350");
 	    return ROUTER_BOARD_GATEWORX;
 	}
 	if( !strncmp( gwid, "GW2355", 6 ) )

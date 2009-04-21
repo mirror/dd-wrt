@@ -496,6 +496,7 @@ void start_sysinit( void )
 #ifdef HAVE_CAMBRIA
 if (nvram_match("DD_BOARD","Cambria GW2358-4") || nvram_match("DD_BOARD2","Cambria GW2358-4"))
     {
+    insmod("8250_gw2358");
     system2( "echo 0 >/proc/sys/dev/wifi0/ledpin" );
     system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
     system2( "echo 1 >/proc/sys/dev/wifi1/ledpin" );
@@ -504,6 +505,10 @@ if (nvram_match("DD_BOARD","Cambria GW2358-4") || nvram_match("DD_BOARD2","Cambr
     system2( "echo 1 >/proc/sys/dev/wifi2/softled" );
     system2( "echo 3 >/proc/sys/dev/wifi3/ledpin" );
     system2( "echo 1 >/proc/sys/dev/wifi3/softled" );
+    }
+if (nvram_match("DD_BOARD","Cambria GW2350") || nvram_match("DD_BOARD2","Cambria GW2350"))
+    {
+    insmod("8250_gw2350");
     }
 #endif
 
