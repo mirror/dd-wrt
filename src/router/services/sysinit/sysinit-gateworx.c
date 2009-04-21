@@ -67,7 +67,7 @@ static int detect( char *devicename )
 #ifndef HAVE_TONZE
 #ifndef HAVE_NOP8670
 
-void checkupdate( void )
+/*void checkupdate( void )
 {
     int res, res2 = 0;
     FILE *in =
@@ -135,7 +135,7 @@ void checkupdate( void )
 	eval( "mtd", "-r", "-f", "write", fname, "RedBoot" );
     }
 }
-
+*/
 #endif
 #endif
 void start_sysinit( void )
@@ -215,7 +215,7 @@ void start_sysinit( void )
     uname( &name );
 #ifndef HAVE_TONZE
 #ifndef HAVE_NOP8670
-    checkupdate(  );
+//    checkupdate(  );
 #endif
 #endif
     nvram_set( "intel_eth", "0" );

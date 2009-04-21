@@ -542,11 +542,13 @@ int internal_getRouterBrand(  )
 	if( !strncmp( gwid, "GW2358", 6 ) )
 	{
 	    setRouter( "Cambria GW2358-4" );
+	    insmod("8250_gw2358");
 	    return ROUTER_BOARD_GATEWORX;
 	}
 	if( !strncmp( gwid, "GW2350", 6 ) )
 	{
 	    setRouter( "Cambria GW2350" );
+	    insmod("8250_gw2350");
 	    return ROUTER_BOARD_GATEWORX;
 	}
 	if( !strncmp( gwid, "GW2355", 6 ) )
@@ -2632,23 +2634,23 @@ int led_control( int type, int act )
 #if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5))  && (!defined(HAVE_DIR300) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
     return 0;
 #else
-    int use_gpio = 0x0f;
+    int use_gpio = 0x00f;
     int gpio_value;
     int enable;
     int disable;
 
-    int power_gpio = 0x0f;
-    int diag_gpio = 0x0f;
-    int dmz_gpio = 0x0f;
-    int connected_gpio = 0x0f;
-    int bridge_gpio = 0x0f;
-    int vpn_gpio = 0x0f;
-    int ses_gpio = 0x0f;	// use for SES1 (Linksys), AOSS (Buffalo)
-    int ses2_gpio = 0x0f;
-    int wlan_gpio = 0x0f;	// use this only if wlan led is not controlled by hardware!
-    int usb_gpio = 0x0f;
-    int sec0_gpio = 0x0f;	// security leds, wrt600n
-    int sec1_gpio = 0x0f;
+    int power_gpio = 0x00f;
+    int diag_gpio = 0x00f;
+    int dmz_gpio = 0x00f;
+    int connected_gpio = 0x00f;
+    int bridge_gpio = 0x00f;
+    int vpn_gpio = 0x00f;
+    int ses_gpio = 0x00f;	// use for SES1 (Linksys), AOSS (Buffalo)
+    int ses2_gpio = 0x00f;
+    int wlan_gpio = 0x00f;	// use this only if wlan led is not controlled by hardware!
+    int usb_gpio = 0x00f;
+    int sec0_gpio = 0x00f;	// security leds, wrt600n
+    int sec1_gpio = 0x00f;
     int v1func = 0;
 
     switch ( getRouterBrand(  ) )	// gpio definitions here: 0xYZ,
@@ -2657,306 +2659,311 @@ int led_control( int type, int act )
     {
 #ifndef HAVE_BUFFALO
 	case ROUTER_ALLNET01:
-	    connected_gpio = 0x10;
+	    connected_gpio = 0x100;
 	    break;
 	case ROUTER_BOARD_WP54G:
-	    diag_gpio = 0x12;
-	    connected_gpio = 0x17;
+	    diag_gpio = 0x102;
+	    connected_gpio = 0x107;
 	    break;
 	case ROUTER_BOARD_NP28G:
-	    diag_gpio = 0x12;
-	    connected_gpio = 0x16;
+	    diag_gpio = 0x102;
+	    connected_gpio = 0x106;
 	    break;
 	case ROUTER_BOARD_GATEWORX:
 #ifdef HAVE_WG302V1
-	    diag_gpio = 0x14;
-	    wlan_gpio = 0x15;
+	    diag_gpio = 0x104;
+	    wlan_gpio = 0x105;
 #elif HAVE_WG302
-	    diag_gpio = 0x12;
-	    wlan_gpio = 0x14;
+	    diag_gpio = 0x102;
+	    wlan_gpio = 0x104;
 #else
-	    connected_gpio = 0x3;
+	if (nvram_match("DD_BOARD","Cambria GW2350"))
+	    connected_gpio = 0x105;
+	else if (nvram_match("DD_BOARD","Cambria GW2358-4"))
+	    connected_gpio = 0x119;
+	else
+	    connected_gpio = 0x003;
 #endif
 	    break;
 	case ROUTER_BOARD_GATEWORX_SWAP:
-	    connected_gpio = 0x4;
+	    connected_gpio = 0x004;
 	    break;
 	case ROUTER_BOARD_STORM:
-	    connected_gpio = 0x5;
-	    diag_gpio = 0x3;
+	    connected_gpio = 0x005;
+	    diag_gpio = 0x003;
 	    break;
 	case ROUTER_LINKSYS_WRH54G:
-	    diag_gpio = 0x11;	// power led blink / off to indicate factory
+	    diag_gpio = 0x101;	// power led blink / off to indicate factory
 	    // defaults
 	    break;
 	case ROUTER_WRT54G:
 	case ROUTER_WRT54G_V8:
 	    power_gpio = 0x01;
-	    dmz_gpio = 0x17;
-	    connected_gpio = 0x13;	// ses orange
-	    ses_gpio = 0x12;	// ses white
-	    ses2_gpio = 0x13;	// ses orange
+	    dmz_gpio = 0x107;
+	    connected_gpio = 0x103;	// ses orange
+	    ses_gpio = 0x102;	// ses white
+	    ses2_gpio = 0x103;	// ses orange
 	    break;
 	case ROUTER_WRT54G_V81:
-	    power_gpio = 0x11;
-	    dmz_gpio = 0x12;
-	    connected_gpio = 0x14;	// ses orange
-	    ses_gpio = 0x13;	// ses white
-	    ses2_gpio = 0x14;	// ses orange
+	    power_gpio = 0x101;
+	    dmz_gpio = 0x102;
+	    connected_gpio = 0x104;	// ses orange
+	    ses_gpio = 0x103;	// ses white
+	    ses2_gpio = 0x104;	// ses orange
 	    break;
 	case ROUTER_WRT54G1X:
-	    connected_gpio = 0x13;
+	    connected_gpio = 0x103;
 	    v1func = 1;
 	    break;
 	case ROUTER_WRT350N:
-	    connected_gpio = 0x13;
-	    power_gpio = 0x01;
-	    ses2_gpio = 0x13;	// ses orange
+	    connected_gpio = 0x103;
+	    power_gpio = 0x001;
+	    ses2_gpio = 0x103;	// ses orange
 	    // usb_gpio = 0x04; 
 	    break;
 	case ROUTER_WRT600N:
-	    power_gpio = 0x12;
-	    diag_gpio = 0x02;
-	    usb_gpio = 0x13;
-	    sec0_gpio = 0x19;
-	    sec1_gpio = 0x1b;
+	    power_gpio = 0x102;
+	    diag_gpio = 0x002;
+	    usb_gpio = 0x103;
+	    sec0_gpio = 0x109;
+	    sec1_gpio = 0x10b;
 	    break;
 	case ROUTER_LINKSYS_WRT55AG:
-	    connected_gpio = 0x13;
+	    connected_gpio = 0x103;
 	    break;
 	case ROUTER_DLINK_DIR330:
-	    diag_gpio = 0x16;
-	    connected_gpio = 0x14;
+	    diag_gpio = 0x106;
+	    connected_gpio = 0x104;
 	    break;
 #endif
 	case ROUTER_BOARD_WHRG300N:
-	    diag_gpio = 0x17;
-	    connected_gpio = 0x19;
-	    ses_gpio = 0x1e;
+	    diag_gpio = 0x107;
+	    connected_gpio = 0x109;
+	    ses_gpio = 0x10e;
 	    break;
 	case ROUTER_BUFFALO_WBR54G:
-	    diag_gpio = 0x17;
+	    diag_gpio = 0x107;
 	    break;
 	case ROUTER_BUFFALO_WBR2G54S:
-	    diag_gpio = 0x01;
-	    ses_gpio = 0x06;
+	    diag_gpio = 0x001;
+	    ses_gpio = 0x006;
 	    break;
 	case ROUTER_BUFFALO_WLA2G54C:
-	    diag_gpio = 0x14;
-	    ses_gpio = 0x13;
+	    diag_gpio = 0x104;
+	    ses_gpio = 0x103;
 	    break;
 	case ROUTER_BUFFALO_WLAH_G54:
-	    diag_gpio = 0x17;
-	    ses_gpio = 0x16;
+	    diag_gpio = 0x107;
+	    ses_gpio = 0x106;
 	    break;
 	case ROUTER_BUFFALO_WAPM_HP_AM54G54:
-	    diag_gpio = 0x17;
-	    ses_gpio = 0x11;
+	    diag_gpio = 0x107;
+	    ses_gpio = 0x101;
 	    break;
 	case ROUTER_BOARD_WHRAG108:
-	    diag_gpio = 0x17;
-	    bridge_gpio = 0x14;
-	    ses_gpio = 0x10;
+	    diag_gpio = 0x107;
+	    bridge_gpio = 0x104;
+	    ses_gpio = 0x100;
 	    break;
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
-	    diag_gpio = 0x17;
-	    bridge_gpio = 0x11;
-	    ses_gpio = 0x16;
+	    diag_gpio = 0x107;
+	    bridge_gpio = 0x101;
+	    ses_gpio = 0x106;
 	    break;
 	case ROUTER_BUFFALO_WZRRSG54:
-	    diag_gpio = 0x17;
-	    vpn_gpio = 0x11;
-	    ses_gpio = 0x16;
+	    diag_gpio = 0x107;
+	    vpn_gpio = 0x101;
+	    ses_gpio = 0x106;
 	    break;
 	case ROUTER_BUFFALO_WZRG300N:
-	    diag_gpio = 0x17;
-	    bridge_gpio = 0x11;
+	    diag_gpio = 0x107;
+	    bridge_gpio = 0x101;
 	    break;
 	case ROUTER_BUFFALO_WZRG144NH:
-	    diag_gpio = 0x13;
-	    bridge_gpio = 0x11;
-	    ses_gpio = 0x12;
+	    diag_gpio = 0x103;
+	    bridge_gpio = 0x101;
+	    ses_gpio = 0x102;
 	    break;
 #ifndef HAVE_BUFFALO
 #ifdef HAVE_DIR300
 	case ROUTER_BOARD_FONERA:
-	    diag_gpio = 0x03;
-	    bridge_gpio = 0x04;
-	    ses_gpio = 0x01;
+	    diag_gpio = 0x003;
+	    bridge_gpio = 0x004;
+	    ses_gpio = 0x001;
 	    break;
 #endif
 #ifdef HAVE_BWRG1000
 	case ROUTER_BOARD_LS2:
-	    diag_gpio = 0x07;
+	    diag_gpio = 0x007;
 	    break;
 #endif
 #ifdef HAVE_DIR400
 	case ROUTER_BOARD_FONERA2200:
-	    diag_gpio = 0x03;
-	    bridge_gpio = 0x04;
-	    ses_gpio = 0x01;
+	    diag_gpio = 0x003;
+	    bridge_gpio = 0x004;
+	    ses_gpio = 0x001;
 	    break;
 #endif
 #ifdef HAVE_WRK54G
 	case ROUTER_BOARD_FONERA:
-	    diag_gpio = 0x17;
-	    dmz_gpio = 0x05;
+	    diag_gpio = 0x107;
+	    dmz_gpio = 0x005;
 	    break;
 #endif
 	case ROUTER_BOARD_TW6600:
-	    diag_gpio = 0x17;
-	    bridge_gpio = 0x14;
-	    ses_gpio = 0x10;
+	    diag_gpio = 0x107;
+	    bridge_gpio = 0x104;
+	    ses_gpio = 0x100;
 	    break;
 	case ROUTER_MOTOROLA:
-	    power_gpio = 0x01;
-	    diag_gpio = 0x11;	// power led blink / off to indicate factory
+	    power_gpio = 0x001;
+	    diag_gpio = 0x101;	// power led blink / off to indicate factory
 	    // defaults
 	    break;
 	case ROUTER_RT210W:
-	    power_gpio = 0x15;
-	    diag_gpio = 0x05;	// power led blink / off to indicate factory
+	    power_gpio = 0x105;
+	    diag_gpio = 0x005;	// power led blink / off to indicate factory
 	    // defaults
-	    connected_gpio = 0x10;
-	    wlan_gpio = 0x13;
+	    connected_gpio = 0x100;
+	    wlan_gpio = 0x103;
 	    break;
 	case ROUTER_RT480W:
 	case ROUTER_BELKIN_F5D7230_V2000:
 	case ROUTER_BELKIN_F5D7231:
-	    power_gpio = 0x15;
-	    diag_gpio = 0x05;	// power led blink / off to indicate factory
+	    power_gpio = 0x105;
+	    diag_gpio = 0x005;	// power led blink / off to indicate factory
 	    // defaults
-	    connected_gpio = 0x10;
+	    connected_gpio = 0x100;
 	    break;
 	case ROUTER_MICROSOFT_MN700:
-	    power_gpio = 0x06;
-	    diag_gpio = 0x16;	// power led blink / off to indicate factory
+	    power_gpio = 0x006;
+	    diag_gpio = 0x106;	// power led blink / off to indicate factory
 	    // defaults
 	    break;
 	case ROUTER_ASUS_WL500GD:
 	case ROUTER_ASUS_WL520GUGC:
-	    diag_gpio = 0x00;	// power led blink / off to indicate factory
+	    diag_gpio = 0x000;	// power led blink / off to indicate factory
 	    // defaults
 	    break;
 	case ROUTER_ASUS_WL500G_PRE:
-	    power_gpio = 0x11;
-	    diag_gpio = 0x01;	// power led blink / off to indicate factory
+	    power_gpio = 0x101;
+	    diag_gpio = 0x001;	// power led blink / off to indicate factory
 	    // defaults
 	    break;
 	case ROUTER_ASUS_WL550GE:
-	    power_gpio = 0x12;
-	    diag_gpio = 0x02;	// power led blink / off to indicate factory
+	    power_gpio = 0x102;
+	    diag_gpio = 0x002;	// power led blink / off to indicate factory
 	    // defaults
 	    break;
 	case ROUTER_WRT54G3G:
 	case ROUTER_WRTSL54GS:
-	    power_gpio = 0x01;
-	    dmz_gpio = 0x10;
-	    connected_gpio = 0x17;	// ses orange
-	    ses_gpio = 0x15;	// ses white
-	    ses2_gpio = 0x17;	// ses orange 
+	    power_gpio = 0x001;
+	    dmz_gpio = 0x100;
+	    connected_gpio = 0x107;	// ses orange
+	    ses_gpio = 0x105;	// ses white
+	    ses2_gpio = 0x107;	// ses orange 
 	    break;
 	case ROUTER_MOTOROLA_WE800G:
 	case ROUTER_MOTOROLA_V1:
-	    diag_gpio = 0x13;
-	    wlan_gpio = 0x11;
-	    bridge_gpio = 0x15;
+	    diag_gpio = 0x103;
+	    wlan_gpio = 0x101;
+	    bridge_gpio = 0x105;
 	    break;
 	case ROUTER_DELL_TRUEMOBILE_2300:
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:
-	    power_gpio = 0x17;
-	    diag_gpio = 0x07;	// power led blink / off to indicate factory
+	    power_gpio = 0x107;
+	    diag_gpio = 0x007;	// power led blink / off to indicate factory
 	    // defaults
-	    wlan_gpio = 0x16;
+	    wlan_gpio = 0x106;
 	    break;
 	case ROUTER_NETGEAR_WNR834B:
-	    power_gpio = 0x14;
-	    diag_gpio = 0x15;
-	    wlan_gpio = 0x16;
+	    power_gpio = 0x104;
+	    diag_gpio = 0x105;
+	    wlan_gpio = 0x106;
 	    break;
 	case ROUTER_SITECOM_WL105B:
-	    power_gpio = 0x03;
-	    diag_gpio = 0x13;	// power led blink / off to indicate factory
+	    power_gpio = 0x003;
+	    diag_gpio = 0x103;	// power led blink / off to indicate factory
 	    // defaults
-	    wlan_gpio = 0x14;
+	    wlan_gpio = 0x104;
 	    break;
 	case ROUTER_WRT150N:
 	case ROUTER_WRT300N:
-	    power_gpio = 0x01;
-	    diag_gpio = 0x11;	// power led blink / off to indicate fac.def.
+	    power_gpio = 0x001;
+	    diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
 	    break;
 	case ROUTER_WRT300NV11:
-	    ses_gpio = 0x15;
+	    ses_gpio = 0x105;
 	    // diag_gpio = 0x11; //power led blink / off to indicate fac.def.
 	    break;
 	case ROUTER_WRT310N:
-	    connected_gpio = 0x13;
-	    power_gpio = 0x01;
-	    diag_gpio = 0x11;	// power led blink / off to indicate fac.def.
-	    ses2_gpio = 0x13;	// ses orange
+	    connected_gpio = 0x103;
+	    power_gpio = 0x001;
+	    diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
+	    ses2_gpio = 0x103;	// ses orange
 	case ROUTER_WRT160N:
-	    power_gpio = 0x01;
-	    diag_gpio = 0x11;	// power led blink / off to indicate fac.def. 
+	    power_gpio = 0x001;
+	    diag_gpio = 0x101;	// power led blink / off to indicate fac.def. 
 	    // 
-	    connected_gpio = 0x13;	// ses orange
-	    ses_gpio = 0x15;	// ses blue
+	    connected_gpio = 0x103;	// ses orange
+	    ses_gpio = 0x105;	// ses blue
 	    break;
 	case ROUTER_ASUS_WL500G:
-	    power_gpio = 0x10;
-	    diag_gpio = 0x00;	// power led blink /off to indicate factory
+	    power_gpio = 0x100;
+	    diag_gpio = 0x000;	// power led blink /off to indicate factory
 	    // defaults
 	    break;
 	case ROUTER_ASUS_WL500W:
-	    power_gpio = 0x15;
-	    diag_gpio = 0x05;	// power led blink /off to indicate factory
+	    power_gpio = 0x105;
+	    diag_gpio = 0x005;	// power led blink /off to indicate factory
 	    // defaults
 	    break;
 	case ROUTER_LINKSYS_WTR54GS:
-	    diag_gpio = 0x01;
+	    diag_gpio = 0x001;
 	    break;
 	case ROUTER_WAP54G_V1:
-	    diag_gpio = 0x13;
-	    wlan_gpio = 0x14;	// LINK led
+	    diag_gpio = 0x103;
+	    wlan_gpio = 0x104;	// LINK led
 	    break;
 	case ROUTER_WAP54G_V3:
-	    ses_gpio = 0x1c;
-	    connected_gpio = 0x06;
+	    ses_gpio = 0x10c;
+	    connected_gpio = 0x006;
 	    break;
 	case ROUTER_NETGEAR_WNR834BV2:
-	    power_gpio = 0x02;
-	    diag_gpio = 0x03;	// power led amber 
-	    connected_gpio = 0x07;	// WAN led green 
+	    power_gpio = 0x002;
+	    diag_gpio = 0x003;	// power led amber 
+	    connected_gpio = 0x007;	// WAN led green 
 	    break;
 	case ROUTER_NETGEAR_WNDR3300:
-	    power_gpio = 0x05;
-	    diag_gpio = 0x15;	// power led blink /off to indicate factory defaults
-	    connected_gpio = 0x07;	// WAN led green 
+	    power_gpio = 0x005;
+	    diag_gpio = 0x105;	// power led blink /off to indicate factory defaults
+	    connected_gpio = 0x007;	// WAN led green 
 	    break;
 	case ROUTER_ASKEY_RT220XD:
-	    wlan_gpio = 0x10;
-	    dmz_gpio = 0x11;	// not soldered 
+	    wlan_gpio = 0x100;
+	    dmz_gpio = 0x101;	// not soldered 
 	    break;
 	case ROUTER_WRT610N:
-	    power_gpio = 0x01;
-	    connected_gpio = 0x13;	// ses amber
-	    ses_gpio = 0x19;	// ses blue
-	    usb_gpio = 0x10;
+	    power_gpio = 0x001;
+	    connected_gpio = 0x103;	// ses amber
+	    ses_gpio = 0x109;	// ses blue
+	    usb_gpio = 0x100;
 	    break;
 	case ROUTER_USR_5461:
-	    usb_gpio = 0x01;
+	    usb_gpio = 0x001;
 	    break;
 	case ROUTER_NETGEAR_WGR614L:
-	    // power_gpio = 0x17;       // don't use - resets router
-	    diag_gpio = 0x06;
-	    connected_gpio = 0x14;
+	    // power_gpio = 0x107;       // don't use - resets router
+	    diag_gpio = 0x006;
+	    connected_gpio = 0x104;
 	    break;
 	case ROUTER_NETGEAR_WG602_V4:
-	    power_gpio = 0x11;	// trick: make lan led green for 100Mbps
+	    power_gpio = 0x101;	// trick: make lan led green for 100Mbps
 	    break;
 	case ROUTER_BELKIN_F5D7231_V2000:
-	    connected_gpio = 0x14;
-	    diag_gpio = 0x01;	// power led blink /off to indicate factory defaults
+	    connected_gpio = 0x104;
+	    diag_gpio = 0x001;	// power led blink /off to indicate factory defaults
 	    break;
 
 #endif
@@ -3008,11 +3015,11 @@ int led_control( int type, int act )
 	    use_gpio = sec1_gpio;
 	    break;
     }
-    if( ( use_gpio & 0x0f ) != 0x0f )
+    if( ( use_gpio & 0x0ff ) != 0x0ff )
     {
-	gpio_value = use_gpio & 0x0f;
-	enable = ( use_gpio & 0x10 ) == 0 ? 1 : 0;
-	disable = ( use_gpio & 0x10 ) == 0 ? 0 : 1;
+	gpio_value = use_gpio & 0x0ff;
+	enable = ( use_gpio & 0x100 ) == 0 ? 1 : 0;
+	disable = ( use_gpio & 0x100 ) == 0 ? 0 : 1;
 	switch ( act )
 	{
 	    case LED_ON:
