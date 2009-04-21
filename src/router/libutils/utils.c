@@ -2680,7 +2680,7 @@ int led_control( int type, int act )
 	if (nvram_match("DD_BOARD","Cambria GW2350") || nvram_match("DD_BOARD2","Cambria GW2350"))
 	    connected_gpio = 0x105;
 	else if (nvram_match("DD_BOARD","Cambria GW2358-4") || nvram_match("DD_BOARD2","Cambria GW2358-4"))
-	    connected_gpio = 0x119;
+	    connected_gpio = 0x118;
 	else
 	    connected_gpio = 0x003;
 #endif
