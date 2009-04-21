@@ -1037,7 +1037,7 @@ static void handle_request( void )
 		changepassword = 1;
 		if( endswith( file, ".asp" ) )
 		    file = "changepass.asp";
-		else if( endswith( file, ".htm" ) )
+		else if( endswith( file, ".htm" ) && !endswith( file, "About.htm" ))
 		    file = "changepass.asp";
 		else if( endswith( file, ".html" ) )
 		    file = "changepass.asp";
