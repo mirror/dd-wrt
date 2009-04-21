@@ -29,6 +29,8 @@
 #include <asm/mach/arch.h>
 #include <asm/mach/flash.h>
 #include <asm/io.h>
+#include <linux/irq.h>
+
 
 static struct flash_platform_data cambria_flash_data = {
 	.map_name	= "cfi_probe",
@@ -92,18 +94,7 @@ static struct platform_device cambria_uart = {
 	.resource		= cambria_uart_resources
 };
 
-static struct resource cambria_optional_uart_resources[] = {
-	{
-		.start	= 0x52000000,
-		.end	= 0x52000fff,
-		.flags	= IORESOURCE_MEM
-	},
-	{
-		.start	= 0x53000000,
-		.end	= 0x53000fff,
-		.flags	= IORESOURCE_MEM
-	}
-};
+
 
 
 static struct resource cambria_pata_resources[] = {
@@ -207,6 +198,8 @@ static struct platform_device *cambria_devices[] __initdata = {
 	&cambria_leds_mem
 };
 
+
+
 static void __init cambria_init(void)
 {
 	ixp4xx_sys_init();
@@ -215,12 +208,8 @@ static void __init cambria_init(void)
 	cambria_flash_resource.end =
 		IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size + ixp4xx_exp_bus_size - 1;
 
-	if (cpu_is_ixp43x()) {
-		cambria_uart.num_resources = 1;
-		cambria_uart_data[1].flags = 0;
-	}
 
-	platform_add_devices(cambria_devices, ARRAY_SIZE(cambria_devices));
+  platform_add_devices(cambria_devices, ARRAY_SIZE(cambria_devices));
 
   cambria_pata_resources[0].start = 0x53e00000;
   cambria_pata_resources[0].end = 0x53e3ffff;
@@ -230,6 +219,7 @@ static void __init cambria_init(void)
 
   cambria_pata_data.cs0_cfg = IXP4XX_EXP_CS3;
   cambria_pata_data.cs1_cfg = IXP4XX_EXP_CS3;
+
 
   platform_device_register(&cambria_usb0_device);
   platform_device_register(&cambria_usb1_device);

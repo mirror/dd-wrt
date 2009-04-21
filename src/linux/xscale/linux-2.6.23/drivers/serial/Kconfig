@@ -251,7 +251,7 @@ config SERIAL_8250_GW2356
 		::: To be written :::
 
 config SERIAL_8250_GW2358
-	bool "GW2358 serial port support"
+	tristate "GW2358 serial port support"
 	depends on SERIAL_8250 != n && MACH_CAMBRIA
 	help
 		::: To be written :::
