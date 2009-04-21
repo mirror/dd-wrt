@@ -254,6 +254,8 @@ else
 writeb(staticb,iobase);
 #endif
 }
+EXPORT_SYMBOL(setLED);
+
 struct gpio_bit {
   unsigned char bit;
   unsigned char state;

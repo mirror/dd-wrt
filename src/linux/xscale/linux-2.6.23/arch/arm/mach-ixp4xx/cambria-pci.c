@@ -37,21 +37,15 @@ void __init cambria_pci_preinit(void)
 
 static int __init cambria_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 {
-	static int pci_irq_table[CAMBRIA_PCI_IRQ_LINES] = {
-		IRQ_CAMBRIA_PCI_INTA,
-		IRQ_CAMBRIA_PCI_INTB,
-		IRQ_CAMBRIA_PCI_INTC,
-		IRQ_CAMBRIA_PCI_INTD
-	};
-
-	int irq = -1;
-
-	if (slot >= 1 && slot <= CAMBRIA_PCI_MAX_DEV && 
-		pin >= 1 && pin <= CAMBRIA_PCI_IRQ_LINES) {
-		irq = pci_irq_table[(slot + pin - 2) % 4];
-	}
-
-	return irq;
+	if (slot == 1)
+		return IRQ_CAMBRIA_PCI_INTA;
+	else if (slot == 2)
+		return IRQ_CAMBRIA_PCI_INTB;
+	else if (slot == 3)
+		return IRQ_CAMBRIA_PCI_INTC;
+	else if (slot == 4)
+		return IRQ_CAMBRIA_PCI_INTD;
+	else return -1;
 }
 
 struct hw_pci cambria_pci __initdata = {
