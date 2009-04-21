@@ -360,6 +360,8 @@ static unsigned int serial_in(struct uart_8250_port *up, int offset)
 	case UPIO_HUB6:
 		outb(up->port.hub6 - 1 + offset, up->port.iobase);
 		return inb(up->port.iobase + 1);
+	case UPIO_MEM_DELAY:
+		udelay(up->port.rw_delay);
 
 	case UPIO_MEM:
 	case UPIO_DWAPB:
@@ -398,6 +400,8 @@ serial_out(struct uart_8250_port *up, int offset, int value)
 		outb(up->port.hub6 - 1 + offset, up->port.iobase);
 		outb(value, up->port.iobase + 1);
 		break;
+	case UPIO_MEM_DELAY:
+		udelay(up->port.rw_delay);
 
 	case UPIO_MEM:
 		writeb(value, up->port.membase + offset);
@@ -2672,6 +2676,7 @@ static int __devinit serial8250_probe(struct platform_device *dev)
 		port.flags	= p->flags;
 		port.mapbase	= p->mapbase;
 		port.hub6	= p->hub6;
+		port.rw_delay	= p->rw_delay;
 		port.dev	= &dev->dev;
 		if (share_irqs)
 			port.flags |= UPF_SHARE_IRQ;
@@ -2822,6 +2827,7 @@ int serial8250_register_port(struct uart_port *port)
 		uart->port.iotype   = port->iotype;
 		uart->port.flags    = port->flags | UPF_BOOT_AUTOCONF;
 		uart->port.mapbase  = port->mapbase;
+		uart->port.rw_delay = port->rw_delay;
 		if (port->dev)
 			uart->port.dev = port->dev;
 

@@ -47,7 +47,6 @@ static struct resource cambria_optional_uart_resources[] = {
 static struct plat_serial8250_port cambria_optional_uart_data[] = {
 	{
 		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_BUGGY_UART,
-//		.flags		= UPF_BOOT_AUTOCONF,
 		.iotype		= UPIO_MEM_DELAY,
 		.regshift	= 0,
 		.uartclk	= 1843200,
@@ -55,7 +54,6 @@ static struct plat_serial8250_port cambria_optional_uart_data[] = {
 	},
 	{
 		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_BUGGY_UART,
-//		.flags		= UPF_BOOT_AUTOCONF,
 		.iotype		= UPIO_MEM_DELAY,
 		.regshift	= 0,
 		.uartclk	= 1843200,
@@ -72,34 +70,37 @@ static struct platform_device cambria_optional_uart = {
 	.resource	= cambria_optional_uart_resources,
 };
 
-static int __init gw2358_init(void)
+static int __init gw2350_init(void)
 {
 
-	*IXP4XX_EXP_CS3 = 0xbfff0003;
+	*IXP4XX_EXP_CS2 = 0xbfff0003;
 	set_irq_type(IRQ_IXP4XX_GPIO3, IRQT_RISING);
-	cambria_optional_uart_data[0].mapbase	= 0x53FC0000;
-	cambria_optional_uart_data[0].membase	= (void __iomem *)ioremap(0x53FC0000, 0x0fff);
+	cambria_optional_uart_data[0].mapbase	= 0x52FF0000;
+	cambria_optional_uart_data[0].membase	= (void __iomem *)ioremap(0x52FF0000, 0x0fff);
 	cambria_optional_uart_data[0].irq		= IRQ_IXP4XX_GPIO3;
 
+	*IXP4XX_EXP_CS3 = 0xbfff0003;
 	set_irq_type(IRQ_IXP4XX_GPIO4, IRQT_RISING);
-	cambria_optional_uart_data[1].mapbase	= 0x53F80000;
-	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53F80000, 0x0fff);
+	cambria_optional_uart_data[1].mapbase	= 0x53FF0000;
+	cambria_optional_uart_data[1].membase	= (void __iomem *)ioremap(0x53FF0000, 0x0fff);
 	cambria_optional_uart_data[1].irq		= IRQ_IXP4XX_GPIO4;
 
 	platform_device_register(&cambria_optional_uart);
+	*IXP4XX_EXP_CS2 = 0xBFFF3C43;
+	*IXP4XX_EXP_CS3 = 0xBFFF3C43;
 
 return 0;
 }
 
 /* XXX: Yes, I know this doesn't yet work. */
-static void __exit gw2358_exit(void)
+static void __exit gw2350_exit(void)
 {
 	platform_device_unregister(&cambria_optional_uart);
 }
 
-module_init(gw2358_init);
-module_exit(gw2358_exit);
+module_init(gw2350_init);
+module_exit(gw2350_exit);
 
 MODULE_AUTHOR("Chris Lang <clang@gateworks.com>");
-MODULE_DESCRIPTION("8250 serial probe module for GW2358");
+MODULE_DESCRIPTION("8250 serial probe module for GW2350");
 MODULE_LICENSE("GPL");
