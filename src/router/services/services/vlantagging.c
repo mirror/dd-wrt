@@ -29,6 +29,15 @@
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <net/if_arp.h>
+#include <sys/sysinfo.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,7 +56,6 @@
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
-#include <linux/if.h>
 #include <services.h>
 
 #ifdef HAVE_VLANTAGGING
@@ -169,12 +177,16 @@ void start_bridgesif( void )
 	}
     }
     struct ifreq ifr;
+    int s;
     char eabuf[32];
+    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) < 0 )
+	return;
     strncpy( ifr.ifr_name, nvram_safe_get("lan_ifname"), IFNAMSIZ );
     if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
     {
 	nvram_set( "lan_hwaddr",ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
     }
+    close(s);
 }
 
 void start_bridging( void )
