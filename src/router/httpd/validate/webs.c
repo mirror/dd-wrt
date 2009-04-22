@@ -277,7 +277,14 @@ void validate_filter_tod( webs_t wp )
     D( "everything okay" );
 
 }
-
+static void applytake(char *value)
+{
+    if(value && !strcmp( value, "ApplyTake" ) )
+    {
+	nvram_commit(  );
+	service_restart(  );
+    }
+}
 void save_policy( webs_t wp )
 {
     char *f_id, *f_name, *f_status, *f_status2;
@@ -331,12 +338,7 @@ void save_policy( webs_t wp )
 	      f_name, !strcmp( f_status2, "deny" ) ? 1 : 0 );
 
     nvram_set( filter_buf, buf );
-
-    if( !strcmp( value, "ApplyTake" ) )
-    {
-	nvram_commit(  );
-	service_restart(  );
-    }
+    applytake(value);
 
     D( "okay" );
 }
@@ -389,7 +391,7 @@ void validate_services_port( webs_t wp )
     char *services_array = websGetVar( wp, "services_array0", NULL );
 
     // char *services_length = websGetVar (wp, "services_length0", NULL);
-    char word[1025], *next;
+    char word[1026], *next;
     char delim[] = "(&nbsp;)";
     char var[32] = "";
     int index = 0;
@@ -447,12 +449,7 @@ void save_services_port( webs_t wp )
 {
     validate_services_port( wp );
     char *value = websGetVar( wp, "action", "" );
-
-    if( !strcmp( value, "ApplyTake" ) )
-    {
-	nvram_commit(  );
-	service_restart(  );
-    }
+    applytake(value);
 }
 
 void delete_policy( webs_t wp, int which )
@@ -593,11 +590,7 @@ void delete_static_route( webs_t wp )
     nvram_set( "static_route_name", buf_name );
     free( buf_name );
     free( buf );
-    if( !strcmp( value, "ApplyTake" ) )
-    {
-	nvram_commit(  );
-	service_restart(  );
-    }
+    applytake(value);
     return;
 }
 extern void gen_key( char *genstr, int weptype );
@@ -905,11 +898,7 @@ void security_save( webs_t wp )
 	security_save_prefix( wp, b );
     }
 #endif
-    if( !strcmp( value, "ApplyTake" ) )
-    {
-	nvram_commit(  );
-	service_restart(  );
-    }
+    applytake(value);
 }
 
 #endif
@@ -1346,11 +1335,7 @@ void qos_save( webs_t wp )
     if( strcmp( data, "0" ) == 0 )
     {
 	addAction( "qos" );
-	if( !strcmp( value, "ApplyTake" ) )
-	{
-	    nvram_commit(  );
-	    service_restart(  );
-	}
+	applytake(value);
 	return;
     }
 
@@ -1530,11 +1515,7 @@ void qos_save( webs_t wp )
     nvram_set( "svqos_port4bw", websGetVar( wp, "svqos_port4bw", NULL ) );
 
     addAction( "qos" );
-    if( !strcmp( value, "ApplyTake" ) )
-    {
-	nvram_commit(  );
-	service_restart(  );
-    }
+    applytake(value);
 
 }
 void macro_add( char *a )
@@ -2202,11 +2183,7 @@ void save_networking( webs_t wp )
     validate_portsetup( wp, NULL, NULL );
 #endif
 
-    if( !strcmp( value, "ApplyTake" ) )
-    {
-	nvram_commit(  );
-	service_restart(  );
-    }
+    applytake(value);
 }
 
 void add_vlan( webs_t wp )
@@ -2815,11 +2792,7 @@ void wireless_save( webs_t wp )
     }
     // nvram_commit ();
 #endif
-    if( !strcmp( value, "ApplyTake" ) )
-    {
-	nvram_commit(  );
-	service_restart(  );
-    }
+    applytake(value);
 }
 
 #ifdef HAVE_WIVIZ
