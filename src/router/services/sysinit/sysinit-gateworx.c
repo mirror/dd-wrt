@@ -144,7 +144,6 @@ void start_sysinit( void )
     struct stat tmp_stat;
     time_t tm = 0;
 
-    eval( "ledtool", "1", "1" );	// blink the led 4 times
     unlink( "/etc/nvram/.lock" );
     cprintf( "sysinit() proc\n" );
     /*
@@ -168,6 +167,7 @@ void start_sysinit( void )
      */
     eval( "mkdir", "/tmp/www" );
     eval( "mknod", "/dev/gpio", "c", "127", "0" );
+    eval( "ledtool", "1", "1" );	// blink the led 4 times
     eval( "mknod", "/dev/nvram", "c", "229", "0" );
     eval( "mknod", "/dev/ppp", "c", "108", "0" );
     eval( "mknod", "/dev/rtc", "c", "254", "0" );
