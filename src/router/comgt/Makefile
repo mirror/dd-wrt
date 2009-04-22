@@ -34,6 +34,7 @@ BIN     = $(CPROG)
 MANP	= comgt.1 sigmon.1
 
 CFLAGS  = -c -DNEED_PRINTF
+CFLAGS += -DARCH_$(ARCHITECTURE)
 LDFLAGS =
 
 all: $(BIN)
