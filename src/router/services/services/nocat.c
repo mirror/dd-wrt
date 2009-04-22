@@ -194,8 +194,8 @@ int mk_nocat_conf( void )
     fprintf( fp, "HomePage\t%s\n", nvram_safe_get( "NC_HomePage" ) );
     fprintf( fp, "ForcedRedirect\t%s\n",
 	     nvram_safe_get( "NC_ForcedRedirect" ) );
-    fprintf( fp, "PeerCheckTimeout\t%s\n",
-	     nvram_safe_get( "NC_PeerChecktimeout" ) );
+//    fprintf( fp, "PeerCheckTimeout\t%s\n",
+//	     nvram_safe_get( "NC_PeerChecktimeout" ) );
     fprintf( fp, "IdleTimeout\t%s\n", nvram_safe_get( "NC_IdleTimeout" ) );
     fprintf( fp, "MaxMissedARP\t%s\n", nvram_safe_get( "NC_MaxMissedARP" ) );
     fprintf( fp, "LoginTimeout\t%s\n", nvram_safe_get( "NC_LoginTimeout" ) );
