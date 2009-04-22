@@ -137,7 +137,7 @@ void buildIfVc() {
             IfDescEp->allowednets->subnet_addr = subnet;
 
             // Set the default params for the IF...
-            IfDescEp->state         = IF_STATE_DOWNSTREAM;
+            IfDescEp->state         = IF_STATE_DISABLED;
             IfDescEp->robustness    = DEFAULT_ROBUSTNESS;
             IfDescEp->threshold     = DEFAULT_THRESHOLD;   /* ttl limit */
             IfDescEp->ratelimit     = DEFAULT_RATELIMIT; 
@@ -193,19 +193,22 @@ struct IfDesc *getIfByIx( unsigned Ix ) {
 */
 struct IfDesc *getIfByAddress( uint32 ipaddr ) {
 
-    struct IfDesc       *Dp;
+    struct IfDesc       *Dp, *_Dp = NULL;
     struct SubnetList   *currsubnet;
 
     for ( Dp = IfDescVc; Dp < IfDescEp; Dp++ ) {
         // Loop through all registered allowed nets of the VIF...
         for(currsubnet = Dp->allowednets; currsubnet != NULL; currsubnet = currsubnet->next) {
             // Check if the ip falls in under the subnet....
+            if((currsubnet->subnet_addr & currsubnet->subnet_mask) == 0) {
+                _Dp = Dp; // fallback to wildcard
+            } else
             if((ipaddr & currsubnet->subnet_mask) == currsubnet->subnet_addr) {
                 return Dp;
             }
         }
     }
-    return NULL;
+    return _Dp;
 }
 
 
