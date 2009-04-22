@@ -42,6 +42,27 @@ while (1)
 
 }
 
+void checkreset(char *tty)
+{
+#ifdef HAVE_CAMBRIA
+	eval("comgt","-d",tty,"-s","/etc/comgt/reset.comgt");
+	FILE *check=NULL;
+	int count=0;
+	sleep(1);
+	while (!(check=fopen(tty,"rb")) && count<10)
+	    {
+	    sleep(1);
+	    count++;
+	    }
+	if (check)
+	    fclose(check);
+	else
+	    fprintf(stderr,"reset error\n");
+	fprintf(stderr,"wakeup card\n");
+	eval("comgt","-d",tty,"-s","/etc/comgt/wakeup.comgt");
+	sleep(5);//give extra delay for registering
+#endif
+}
 
 char *get3GControlDevice(void)
 {
@@ -71,6 +92,7 @@ char *get3GControlDevice(void)
 	    //sierra wireless 
 	    fprintf(stderr,"Sierra Wireless Compass 885 deteted\n");
 	    nvram_set("3gdata","/dev/usb/tts/4");
+	    checkreset("/dev/usb/tts/3");
 	    return "/dev/usb/tts/3";
 	    }
 	if (scanFor(0x1199,0x683C))
@@ -78,6 +100,7 @@ char *get3GControlDevice(void)
 	    //sierra wireless 
 	    fprintf(stderr,"Sierra Wireless MC8790\n");
 	    nvram_set("3gdata","/dev/usb/tts/4");
+	    checkreset("/dev/usb/tts/3");
 	    return "/dev/usb/tts/3";
 	    }
 	if (scanFor(0x1199,0x683D))
@@ -85,6 +108,7 @@ char *get3GControlDevice(void)
 	    //sierra wireless 
 	    fprintf(stderr,"Sierra Wireless MC8790\n");
 	    nvram_set("3gdata","/dev/usb/tts/4");
+	    checkreset("/dev/usb/tts/3");
 	    return "/dev/usb/tts/3";
 	    }
 	if (scanFor(0x1199,0x683E))
@@ -92,6 +116,7 @@ char *get3GControlDevice(void)
 	    //sierra wireless 
 	    fprintf(stderr,"Sierra Wireless MC8790\n");
 	    nvram_set("3gdata","/dev/usb/tts/4");
+	    checkreset("/dev/usb/tts/3");
 	    return "/dev/usb/tts/3";
 	    }
 	if (scanFor(0x12d1,0x1003))
@@ -122,26 +147,7 @@ char *get3GControlDevice(void)
 	    { 
 	    //sierra wireless mc 8780
 	    fprintf(stderr,"Sierra Wireless MC 8780 detected\nreset card\n");
-	    system("stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon </dev/usb/tts/0");
-	    system("stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon </dev/usb/tts/2");
-	    eval("comgt","-d","/dev/usb/tts/2","-s","/etc/comgt/reset.comgt");
-	    FILE *check=NULL;
-	    int count=0;
-	    sleep(1);
-	    while (!(check=fopen("/dev/usb/tts/2","rb")) && count<10)
-		{
-		sleep(1);
-		count++;
-		}
-	    if (check)
-		fclose(check);
-	    else
-		fprintf(stderr,"reset error\n");
-	    system("stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon </dev/usb/tts/0");
-	    system("stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon </dev/usb/tts/2");
-	    fprintf(stderr,"wakeup card\n");
-	    eval("comgt","-d","/dev/usb/tts/2","-s","/etc/comgt/wakeup.comgt");
-	    sleep(5);//give extra delay for registering
+	    checkreset("/dev/usb/tts/2");
 	    return "/dev/usb/tts/2";
 	    }
 return ttsdevice;
