@@ -1583,8 +1583,10 @@ int main(int argc,char **argv) {
       case 'd':
         strcpy(device,optarg);
         char buf[128];
+#ifndef ARCH_broadcom
         sprintf(buf,"stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon <%s",device);
         system(buf);
+#endif
 
         //opendevice();
         break;
