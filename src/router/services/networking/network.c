@@ -1324,11 +1324,7 @@ void start_lan( void )
 #endif
 	}
     }
-#ifdef HAVE_WG302
     strncpy( ifr.ifr_name, "ixp0", IFNAMSIZ );
-#else
-    strncpy( ifr.ifr_name, "ixp1", IFNAMSIZ );
-#endif
     if (ioctl( s, SIOCGIFHWADDR, &ifr )!=0)
 	{
 	strncpy( ifr.ifr_name, "ixp0", IFNAMSIZ );
