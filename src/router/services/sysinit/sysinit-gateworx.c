@@ -144,7 +144,7 @@ void start_sysinit( void )
     struct stat tmp_stat;
     time_t tm = 0;
 
-    eval( "ledtool", "4", "1" );	// blink the led 4 times
+    eval( "ledtool", "1", "1" );	// blink the led 4 times
     unlink( "/etc/nvram/.lock" );
     cprintf( "sysinit() proc\n" );
     /*

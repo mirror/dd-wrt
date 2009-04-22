@@ -429,6 +429,10 @@ void setRouter( char *name )
     nvram_set( NVROUTER, "WOAP54G" );
 #elif HAVE_OMNI
     nvram_set( NVROUTER, "Omni Wifi Router" );
+#elif HAVE_ALFA_BRANDING
+    nvram_set( NVROUTER, "WLAN base-station" );
+    if( name )
+	nvram_set( "DD_BOARD2", name );
 #elif HAVE_MAKSAT
     if( name )
 	nvram_set( "DD_BOARD2", name );
@@ -532,11 +536,7 @@ int internal_getRouterBrand(  )
 	}
 	if( !strncmp( gwid, "GW2348", 6 ) )
 	{
-#if HAVE_ALFA_BRANDING
-	    setRouter( "WLAN base-station" );
-#else
 	    setRouter( "Avila GW2348-4/2" );
-#endif
 	    return ROUTER_BOARD_GATEWORX;
 	}
 	if( !strncmp( gwid, "GW2358", 6 ) )
@@ -2632,23 +2632,23 @@ int led_control( int type, int act )
 #if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5))  && (!defined(HAVE_DIR300) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
     return 0;
 #else
-    int use_gpio = 0x00f;
+    int use_gpio = 0x0ff;
     int gpio_value;
     int enable;
     int disable;
 
-    int power_gpio = 0x00f;
-    int diag_gpio = 0x00f;
-    int dmz_gpio = 0x00f;
-    int connected_gpio = 0x00f;
-    int bridge_gpio = 0x00f;
-    int vpn_gpio = 0x00f;
-    int ses_gpio = 0x00f;	// use for SES1 (Linksys), AOSS (Buffalo)
-    int ses2_gpio = 0x00f;
-    int wlan_gpio = 0x00f;	// use this only if wlan led is not controlled by hardware!
-    int usb_gpio = 0x00f;
-    int sec0_gpio = 0x00f;	// security leds, wrt600n
-    int sec1_gpio = 0x00f;
+    int power_gpio = 0x0ff;
+    int diag_gpio = 0x0ff;
+    int dmz_gpio = 0x0ff;
+    int connected_gpio = 0x0ff;
+    int bridge_gpio = 0x0ff;
+    int vpn_gpio = 0x0ff;
+    int ses_gpio = 0x0ff;	// use for SES1 (Linksys), AOSS (Buffalo)
+    int ses2_gpio = 0x0ff;
+    int wlan_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
+    int usb_gpio = 0x0ff;
+    int sec0_gpio = 0x0ff;	// security leds, wrt600n
+    int sec1_gpio = 0x0ff;
     int v1func = 0;
 
     switch ( getRouterBrand(  ) )	// gpio definitions here: 0xYZ,
