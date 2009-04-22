@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 30.Nov.2008, svn 11018	//
+//				Slovenian translation DD-WRT by Eko, last revision: 22.Apr.2009, svn 11944	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -7,6 +7,9 @@
 lang_charset.set="iso-8859-2";
 
 
+share.apn="APN";
+share.pin="PIN";
+share.dial="Klicni niz";
 share.firmware="Strojna programska oprema";
 share.time="Èas";
 share.interipaddr="WAN IP naslov";
@@ -19,7 +22,8 @@ share.disabled="Onemogo&#269;eno";
 share.usrname="Uporabni¹ko ime";
 share.passwd="Geslo";
 share.hostname="Ime gostitelja";
-share.vdsl="DTAG VDSL Vlan oznaèevanje";
+share.vdsl="T-Home VDSL 7 Vlan oznaèevanje";
+share.vdslvlan8="VLAN 8 podpora (TV na vratih 1)";
 share.wan_vlantag="ID Vlan znaèke";
 share.compression="PPP kompresija";
 share.domainname="Domensko ime";
@@ -120,6 +124,7 @@ share.port_range="Obseg vrat";
 share.priority="Prioriteta";
 share.gateway="Prehod";
 share.intrface="Vmesnik";  //don't use share.interface, Mozilla problem!!!
+share.ccq="CCQ";
 share.pintrface="Fizièni vmesnik";
 share.vintrface="Navidezni vmesniki";
 share.router="Usmerjalnik";
@@ -671,6 +676,8 @@ usb.usb_fatfs="FAT datoteèni sistem";
 usb.usb_printer="USB printer";
 usb.usb_automnt="Avtomatièni priklop diska";
 usb.usb_mntpoint="Priklopna toèka";
+usb.usb_runonmount="Run-on-mount ime skripta";
+usb.usb_diskinfo="Disk info";
 
 // ** NAS.asp **//
 
@@ -717,6 +724,7 @@ hotspot.http_net="HTTP izvorna mre¾a";
 hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Ime prehoda";
+hotspot.nocat_gatewayaddr="IP naslov prehoda";
 hotspot.nocat_home="Damaèa stran";
 hotspot.nocat_allowweb="Dovoljeni gostitelji svetovnega spleta";
 hotspot.nocat_docroot="Korenski imenik dokumenta";
@@ -830,6 +838,7 @@ idx_pptp.srv="Uporabi DHCP";
 idx_pptp.wan_ip="WAN IP naslov";
 idx_pptp.gateway="Prehod (PPTP stre¾nik)";
 idx_pptp.encrypt="PPTP ¹ifrirnje";
+idx_pptp.reorder="Onemogoèi prerazporejanje paketov";
 
 
 // ** index_static.asp **//
@@ -1241,6 +1250,9 @@ service.vpn_srvcert="Javno stre¾ni¹ko potrdilo";
 service.vpn_clicert="Javno odjemalèevo potrdilo";
 service.vpn_certtype="nsCertType";
 service.vpn_clikey="Zasebni odjemalèev kljuè";
+
+service.vncrepeater_legend="VNC";
+service.vncrepeater="VNC prenosnik";
 
 //sshd.webservices
 service.ssh_legend="Varna ukazna lupina";
@@ -1655,6 +1667,8 @@ wpa.shared_key="WPA deljeni kljuè";
 sec80211x.xsuptype="Tip XSupplicanta";
 sec80211x.servercertif="Certifikat javnega stre¾nika";
 sec80211x.clientcertif="Certifikat odjemalca";
+sec80211x.phase2="Phase2 overjanje";
+sec80211x.anon="Anonimna identiteta";
 
 //help container
 
@@ -1761,6 +1775,7 @@ wl_adv.label21="Najveèja hitrost oddajanja";
 wl_adv.label23="Najmanj¹a hitrost oddajanja";
 wl_adv.label22="Naèin koeksistenca z Bluetoothom";
 wl_adv.label24="Orientacija antene";
+wl_adv.label25="Izhod antene";
 wl_adv.table1="EDCA AP parameteri (AP do odjemalca)";
 
 wl_adv.col1="CWmin";
@@ -1797,6 +1812,7 @@ hwl_adv.right2="Izberete lahko med Avto ali Deljeni kljuè. Overovljanje z deljen
 
 wl_basic.titl="Brez¾ièno";
 wl_basic.h2="Brez¾ièno";
+wl_basic.cardtype="Tip kartice";
 wl_basic.legend="Osnovne nastavitve";
 wl_basic.label="Brez¾ièni naèin";
 wl_basic.label2="Naèin brez¾iène mre¾e";
@@ -1844,7 +1860,10 @@ wl_basic.secondary="Druga";
 wl_basic.vertical="Navpièno";
 wl_basic.horizontal="Vodoravno";
 wl_basic.adaptive="Prilagodljivo";
+wl_basic.internal="Notranja";
 wl_basic.external="Zunanja";
+wl_basic.ghz24="2.4 Ghz izhod";
+wl_basic.ghz5="5 Ghz izhod";
 wl_basic.network="Konfiguracija mre¾e";
 wl_basic.unbridged="Nepremo¹èeno";
 wl_basic.bridged="Premo¹èeno";
