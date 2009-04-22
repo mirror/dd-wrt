@@ -69,6 +69,7 @@ endif
 ifeq ($(CONFIG_IPV6),y)
 CFLAGS += -DHAVE_IPV6
 endif
+CFLAGS += -DARCH_$(ARCHITECTURE)
 ifeq ($(CONFIG_TRIMAX),y)
 CFLAGS += -DHAVE_TRIMAX
 endif

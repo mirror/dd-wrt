@@ -1,11 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <shutils.h>
+#include <bcmnvram.h>
 
 
 
 static int scanFor(int Vendor,int Product)
 {
+#ifdef ARCH_broadcom
+char grepstr[128];
+sprintf(grepstr,"grep Vendor=%x ProdID=%x /tmp/usb/devices|wc -l",Vendor,Product);
+FILE *check=popen(grepstr,"rb");
+if (check)
+    {
+    int count=0;
+    fscanf(check,"%d",&count);
+    fclose(check);
+    if (count>0)
+	{
+	eval("umount /tmp/usb");
+	return 1;
+	}
+    }
+return 0;
+#else
 int count=1;
 while (1)
     {
@@ -39,7 +57,7 @@ while (1)
 	return 1;
     count++;
     }
-
+#endif
 }
 
 void checkreset(char *tty)
@@ -66,6 +84,16 @@ void checkreset(char *tty)
 
 char *get3GControlDevice(void)
 {
+#ifdef ARCH_broadcom
+mkdir("/tmp/usb");
+eval("mount","-t","usbfs","usb","/tmp/usb");
+insmod("usbserial");
+//insmod("sierra");  //further investigation required (compass problem)
+insmod("option");
+insmod("ipw");
+insmod("pl2303");
+#endif
+
 	char *ttsdevice="/dev/usb/tts/0";
 #ifdef HAVE_CAMBRIA
 	    eval("gpio","enable","26");

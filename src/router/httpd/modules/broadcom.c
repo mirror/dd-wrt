@@ -1470,7 +1470,11 @@ int do_auth( char *userid, char *passwd, char *realm )
     strncpy( userid, nvram_safe_get( "http_username" ), AUTH_MAX );
     strncpy( passwd, nvram_safe_get( "http_passwd" ), AUTH_MAX );
     // strncpy(realm, MODEL_NAME, AUTH_MAX);
+#ifdef HAVE_ERC
+    strncpy( realm, "LOGIN", AUTH_MAX );
+#else
     strncpy( realm, nvram_safe_get( "router_name" ), AUTH_MAX );
+#endif
     return 0;
 }
 
