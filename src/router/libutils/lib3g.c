@@ -46,6 +46,25 @@ while (1)
 char *get3GControlDevice(void)
 {
 	char *ttsdevice="/dev/usb/tts/0";
+	#ifdef HAVE_CAMBRIA
+	    eval("gpio","enable","26");
+	    eval("gpio","disable","27");
+	    if (nvram_match("wan_select","1"))
+		{
+		eval("gpio","enable","26");
+		eval("gpio","disable","27");
+		}
+	    if (nvram_match("wan_select","2"))
+		{
+		eval("gpio","disable","26");
+		eval("gpio","enable","27");
+		}
+	    if (nvram_match("wan_select","3"))
+		{
+		eval("gpio","enable","26");
+		eval("gpio","enable","27");
+		}
+	#endif
 	nvram_set("3gdata","/dev/usb/tts/0");
 	if (scanFor(0x1199,0x6880))
 	    {
@@ -102,25 +121,6 @@ char *get3GControlDevice(void)
 	if (scanFor(0x1199,0x6832))
 	    { 
 	    //sierra wireless mc 8780
-	    #ifdef HAVE_CAMBRIA
-	    eval("gpio","enable","26");
-	    eval("gpio","disable","27");
-	    if (nvram_match("wan_select","1"))
-		{
-		eval("gpio","enable","26");
-		eval("gpio","disable","27");
-		}
-	    if (nvram_match("wan_select","2"))
-		{
-		eval("gpio","disable","26");
-		eval("gpio","enable","27");
-		}
-	    if (nvram_match("wan_select","3"))
-		{
-		eval("gpio","enable","26");
-		eval("gpio","enable","27");
-		}
-	    #endif
 	    fprintf(stderr,"Sierra Wireless MC 8780 detected\nreset card\n");
 	    system("stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon </dev/usb/tts/0");
 	    system("stty 115200 -echo -echoe -echok -echoctl -echoke -ignbrk -ixon </dev/usb/tts/2");
