@@ -67,7 +67,7 @@ void checkreset(char *tty)
 char *get3GControlDevice(void)
 {
 	char *ttsdevice="/dev/usb/tts/0";
-	#ifdef HAVE_CAMBRIA
+#ifdef HAVE_CAMBRIA
 	    eval("gpio","enable","26");
 	    eval("gpio","disable","27");
 	    if (nvram_match("wan_select","1"))
@@ -85,7 +85,7 @@ char *get3GControlDevice(void)
 		eval("gpio","enable","26");
 		eval("gpio","enable","27");
 		}
-	#endif
+#endif
 	nvram_set("3gdata","/dev/usb/tts/0");
 	if (scanFor(0x1199,0x6880))
 	    {
