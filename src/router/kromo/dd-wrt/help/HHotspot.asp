@@ -59,7 +59,10 @@
 				<dd>The name of the gateway. Whatever you want to call it. "Joe's Pizza Shop and free DSL Cafe" for example. Use the variable $GatewayName in your splash.html page to display this.</dd>
 				
 				<dt><% tran("hotspot.nocat_home"); %></dt>
-				<dd>Enabling the use of NoCatSplash allows you to redirect a client to a specific web page when connecting via wireless or wired.</dd>
+				<dd>Configures the Redirection URL after splash login</dd>
+
+				<dt><% tran("hotspot.nocat_redirect"); %></dt>
+				<dd>Enables the redirection to a specific Homepage after splash login, see above</dd>
 				
 				<dt><% tran("hotspot.nocat_allowweb"); %></dt>
 				<dd>Space separated list of hostnames.
