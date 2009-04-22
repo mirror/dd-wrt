@@ -173,7 +173,7 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
 #if defined(HAVE_NOP8670) || defined(HAVE_TONZE)
     eval( "fischecksum" );
 #endif
-/*#ifdef HAVE_MAKSAT
+#ifdef HAVE_MAKSAT
     if( nvram_match( "DD_BOARD2", "ADI Engineering Pronghorn Metro" ) )
 #else
     if( nvram_match( "DD_BOARD", "ADI Engineering Pronghorn Metro" ) )
@@ -182,8 +182,23 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
     if( nvram_match( "DD_BOARD", "Netgear WG302v2" ) )
 	eval( "fischecksum" );
     if( nvram_match( "DD_BOARD", "Netgear WG302v1" ) )
-*/	
-eval( "fischecksum" );
+	eval( "fischecksum" );
+    if (nvram_match( "DD_BOARD", "Avila GW2347") || nvram_match( "DD_BOARD2", "Avila GW2347")) 
+	eval( "fischecksum" );
+    if (nvram_match( "DD_BOARD", "Avila GW2357") || nvram_match( "DD_BOARD2", "Avila GW2357")) 
+	eval( "fischecksum" );
+    if (nvram_match( "DD_BOARD", "Avila GW2353") || nvram_match( "DD_BOARD2", "Avila GW2353")) 
+	eval( "fischecksum" );
+    if (nvram_match( "DD_BOARD", "Avila GW2355") || nvram_match( "DD_BOARD2", "Avila GW2355")) 
+	eval( "fischecksum" );
+    if (nvram_match( "DD_BOARD", "Avila GW2345") || nvram_match( "DD_BOARD2", "Avila GW2345")) 
+	eval( "fischecksum" );
+    if (nvram_match( "DD_BOARD", "Avila GW2348-4/2") || nvram_match( "DD_BOARD2", "Avila GW2348-4/2")) 
+	eval( "fischecksum" );
+    if (nvram_match( "DD_BOARD", "Cambria GW2358-4") || nvram_match( "DD_BOARD2", "Cambria GW2358-4")) 
+	eval( "fischecksum" );
+    if (nvram_match( "DD_BOARD", "Cambria GW2350") || nvram_match( "DD_BOARD2", "Cambria GW2350")) 
+	eval( "fischecksum" );
 
     if( url )
 	return eval( "write", url, "linux" );
