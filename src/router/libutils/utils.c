@@ -427,6 +427,8 @@ void setRouter( char *name )
     nvram_set( NVROUTER, "WORT54G" );
 #elif HAVE_POWERNOC_WOAP54G
     nvram_set( NVROUTER, "WOAP54G" );
+#elif HAVE_ERC
+    nvram_set( NVROUTER, "ServiceGate v1.0" );
 #elif HAVE_OMNI
     nvram_set( NVROUTER, "Omni Wifi Router" );
 #elif HAVE_ALFA_BRANDING
