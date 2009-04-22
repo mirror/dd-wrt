@@ -339,15 +339,16 @@ struct SubnetList *parseSubnetAddress(char *addrstr) {
     tmpStr = strtok(NULL, "/");
     if(tmpStr != NULL) {
         int bitcnt = atoi(tmpStr);
-        if(bitcnt <= 0 || bitcnt > 32) {
+        if(bitcnt < 0 || bitcnt > 32) {
             log(LOG_WARNING, 0, "The bits part of the address is invalid : %d.",tmpStr);
             return NULL;
         }
 
-        mask <<= (32 - bitcnt);
+	if (bitcnt == 0) mask = 0;
+        else mask <<= (32 - bitcnt);
     }
 
-    if(addr == -1 || addr == 0) {
+    if(addr == -1) {
         log(LOG_WARNING, 0, "Unable to parse address token '%s'.", addrstr);
         return NULL;
     }
