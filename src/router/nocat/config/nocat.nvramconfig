@@ -1,5 +1,6 @@
 "NC_enable" "Notcat Enabled" "CHOICE" "2" "0" "1" "FALSE" "0"
 "NC_GatewayName" "Nocat gateway" "NULL" "TRUE" "0"
+"NC_GatewayAddr" "Nocat gateway ip" "MERGEIPADDRS" "FALSE" "0"
 "NC_HomePage" "Nocat homepage" "NULL" "TRUE" "0"
 "NC_AllowedWebHosts" "Allowed Web hosts" "NULL" "TRUE" "0"
 "NC_DocumentRoot" "Document Root" "NULL" "TRUE" "0"
