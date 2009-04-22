@@ -8,6 +8,11 @@
 	</div>
 	<div id="idnocat">
 		<div class="setting">
+            		<div class="label"><% tran("hotspot.nocat_gatewayaddr"); %></div>
+			<input type="hidden" name="NC_GatewayAddr" value="0.0.0.0" />
+			<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("NC_GatewayAddr","0"); %>" />.<input size="3" maxlength="3" class="num" name="NC_GatewayAddr_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("NC_GatewayAddr","1"); %>" />.<input size="3" maxlength="3" class="num" name="NC_GatewayAddr_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("NC_GatewayAddr","2"); %>" />.<input size="3" maxlength="3" class="num" name="NC_GatewayAddr_3" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("NC_GatewayAddr","3"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("hotspot.nocat_gateway"); %></div>
 			<input maxlength="39" name="NC_GatewayName" size="39" value="<% nvram_get("NC_GatewayName"); %>" />
 		</div>
