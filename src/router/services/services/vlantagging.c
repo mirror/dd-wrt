@@ -168,7 +168,13 @@ void start_bridgesif( void )
 		br_set_port_prio( tag, port, prio );
 	}
     }
-
+    struct ifreq ifr;
+    char eabuf[32];
+    strncpy( ifr.ifr_name, nvram_safe_get("lan_ifname"), IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	nvram_set( "lan_hwaddr",ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
 }
 
 void start_bridging( void )
