@@ -54,6 +54,27 @@ char *get3GControlDevice(void)
 	    nvram_set("3gdata","/dev/usb/tts/3");
 	    return "/dev/usb/tts/3";
 	    }
+	if (scanFor(0x1199,0x683C))
+	    {
+	    //sierra wireless 
+	    fprintf(stderr,"Sierra Wireless MC8790\n");
+	    nvram_set("3gdata","/dev/usb/tts/4");
+	    return "/dev/usb/tts/3";
+	    }
+	if (scanFor(0x1199,0x683D))
+	    {
+	    //sierra wireless 
+	    fprintf(stderr,"Sierra Wireless MC8790\n");
+	    nvram_set("3gdata","/dev/usb/tts/4");
+	    return "/dev/usb/tts/3";
+	    }
+	if (scanFor(0x1199,0x683E))
+	    {
+	    //sierra wireless 
+	    fprintf(stderr,"Sierra Wireless MC8790\n");
+	    nvram_set("3gdata","/dev/usb/tts/4");
+	    return "/dev/usb/tts/3";
+	    }
 	if (scanFor(0x12d1,0x1003))
 	    {
 	    //huawei
