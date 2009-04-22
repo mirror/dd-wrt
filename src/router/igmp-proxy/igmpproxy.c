@@ -219,7 +219,7 @@ int igmpProxyInit() {
 
         for ( Ix = 0; Dp = getIfByIx( Ix ); Ix++ ) {
 
-            if ( Dp->InAdr.s_addr && ! (Dp->Flags & IFF_LOOPBACK) ) {
+            if ( Dp->InAdr.s_addr && ! (Dp->Flags & IFF_LOOPBACK) && Dp->state != IF_STATE_DISABLED ) {
                 if(Dp->state == IF_STATE_UPSTREAM) {
                     if(upStreamVif == -1) {
                         upStreamVif = Ix;
