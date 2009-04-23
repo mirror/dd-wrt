@@ -512,7 +512,6 @@ _nvram_commit(struct nvram_header *header)
 
 	/* End with a double NUL */
 	ptr += 2;
-
 	/* Set new length */
 	header->len = ROUNDUP(ptr - (char *) header, 4);
 
