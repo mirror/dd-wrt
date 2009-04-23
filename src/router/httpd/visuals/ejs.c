@@ -1518,26 +1518,14 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
     int wimaxwifi = 0;
 #endif
     char menu[8][11][32] =
-	{ {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp",
-	   "Networking.asp", "", "", "", "", ""},
-    {"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp",
-     "Wireless_radauth.asp", "WL_WPATable.asp",
-     "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",
-     ""},
-    {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp",
-     "Milkfish.asp", "eop-tunnel.asp", "AnchorFree.asp", "", ""},
+    { {"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp","Networking.asp", "", "", "", "", ""},
+    {"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp","Wireless_radauth.asp", "WL_WPATable.asp","Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "",""},
+    {"Services.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp","Milkfish.asp", "eop-tunnel.asp", "AnchorFree.asp", "", ""},
     {"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", ""},
     {"Filters.asp", "", "", "", "", "", "", "", "", "", ""},
-    {"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp",
-     "DMZ.asp",
-     "QoS.asp", "P2P.asp", "", "", "", ""},
-    {"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp",
-     "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", ""},
-    {"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp",
-     "Status_Wireless.asp",
-     "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp",
-     "Info.htm", "register.asp", "", ""}
-    };
+    {"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp","DMZ.asp","QoS.asp", "P2P.asp", "", "", "", ""},
+    {"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp","Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", ""},
+    {"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp","Status_Wireless.asp","Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp","Info.htm", "register.asp", "", ""}};
 
     /*
      * real name is bmenu.menuname[i][j] 
@@ -1564,7 +1552,7 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
      "statuSputnik",
      "statuVPN", "statuBand", "statuSysInfo", "statuActivate", "", ""}
     };
-
+//fprintf(stderr,"generate menu content\n");
 #ifdef HAVE_MADWIFI
     // fill up WDS
     int ifcount = getifcount( "wifi" );
@@ -1598,6 +1586,7 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
     }
     }
 #endif
+//fprintf(stderr,"generate menu header content\n");
 
     int i, j;
 
@@ -1614,6 +1603,7 @@ void ej_do_menu( webs_t wp, int argc, char_t ** argv )
 	    && !strcmp( menu[i][0], "Wireless_Basic.asp" ) )
 	    i++;
 #endif
+//fprintf(stderr,"generate menu %s\n",menu[i][0]);
 	if( !strcmp( menu[i][0], mainmenu ) )
 	{
 #ifdef HAVE_MADWIFI
