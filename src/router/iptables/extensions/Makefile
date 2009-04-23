@@ -1,11 +1,18 @@
 #! /usr/bin/make
+include $(TOP)/.config
 
 # WARNING:
 # only add extensions here that are either present in the kernel, or whose
 # header files are present in the include/linux directory of this iptables
 # package (HW)
 #
+PF_EXT_SLIB:= connmark conntrack helper icmp mark owner pkttype state tcp tcpmss ttl udp CONNMARK DNAT LOG MARK MASQUERADE MIRROR REDIRECT REJECT SNAT TCPMSS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
 PF_EXT_SLIB:= CLASSIFY ah connlimit connmark conntrack dscp ecn esp helper icmp iprange length limit mark multiport owner physdev pkttype realm standard state tcp tcpmss tos ttl udp unclean CONNMARK DNAT DSCP LOG MARK MASQUERADE MIRROR NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac ROUTE
+endif
+endif
+
 #random nth ROUTE
 
 #PF_EXT_SLIB:=ah addrtype comment connlimit connmark conntrack dscp ecn esp hashlimit helper icmp iprange length limit mac mark multiport owner physdev pkttype realm rpc sctp standard state tcp tcpmss tos ttl udp unclean CLASSIFY CONNMARK DNAT DSCP ECN LOG MARK MASQUERADE MIRROR NETMAP NFQUEUE NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG
