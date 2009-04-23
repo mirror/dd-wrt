@@ -334,12 +334,15 @@ ifneq ($(CONFIG_WAVESAT),y)
 endif
 ifeq ($(CONFIG_ERC),y)
 	mkdir $(INSTALLDIR)/www/style/erc-machinery
-	cp erc/erc-machinery/style.css $(INSTALLDIR)/www/style/erc-machinery
-	cp erc/common.css $(INSTALLDIR)/www/style
-#	cp erc/images/logo.png $(INSTALLDIR)/www/style
-	cp erc/images/* $(INSTALLDIR)/www/images
-	cp erc/logo-help.png $(INSTALLDIR)/www/help
-	
+	cp -f erc/erc-machinery/style.css $(INSTALLDIR)/www/style/erc-machinery
+	cp -f erc/common.css $(INSTALLDIR)/www/style
+#	cp - ferc/images/logo.png $(INSTALLDIR)/www/style
+	cp -f erc/images/* $(INSTALLDIR)/www/images
+	cp erc/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
+	cp erc/logo-help.png $(INSTALLDIR)/www/images/logo-help.png
+	cp -f erc/common.js $(INSTALLDIR)/www/common.js
+	cp -f erc/help/* $(INSTALLDIR)/www/help
+	cp -f etc/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
 endif
 
 ifeq ($(CONFIG_MAKSAT_CORAL),y)
