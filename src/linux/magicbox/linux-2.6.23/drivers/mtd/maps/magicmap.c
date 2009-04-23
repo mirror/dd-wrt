@@ -27,8 +27,8 @@ static struct mtd_info *flash;
 
 static struct map_info magic_map = {
 	.name =		"Magically mapped flash",
-	.phys =         0xffc00000,
-	.size =		0x400000,
+	.phys =         0xff800000,
+	.size =		0x800000,
 	.bankwidth =	2,
 };
 
@@ -36,7 +36,7 @@ static struct mtd_partition magic_partitions[] = {
 	{
 		.name =   "linux",
 		.offset = 0x0,
-		.size =   0x3b0000,
+		.size =   0x7b0000,
 	},
 	{
 		.name =   "rootfs",
@@ -45,12 +45,12 @@ static struct mtd_partition magic_partitions[] = {
 	},
 	{
 		.name =   "nvram",
-		.offset = 0x3b0000,
+		.offset = 0x7b0000,
 		.size =   0x010000,
 	},
 	{
 		.name =   "cfe",
-		.offset = 0x3c0000,
+		.offset = 0x7c0000,
 		.size =   0x040000,
 	},
 };
@@ -78,7 +78,7 @@ int __init init_magic(void)
 			len != 4)
 			return -ENXIO;
 		size += 0x40; /* header size of the uImage */
-		if ((size > 0) && (size < 0x400000)) {
+		if ((size > 0) && (size < 0x800000)) {
 			/* skip to next erase block */
 			//if (size & (flash->erasesize - 1)) {
 			//	size |= (flash->erasesize - 1);
