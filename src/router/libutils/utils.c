@@ -654,7 +654,7 @@ int internal_getRouterBrand(  )
     setRouter( "NewMedia Dual A/B/G" );
     return ROUTER_BOARD_XSCALE;
 #elif HAVE_MAGICBOX
-    setRouter( "MagicBox" );
+    setRouter( "OpenRB PowerPC Board" );
     return ROUTER_BOARD_MAGICBOX;
 #elif HAVE_WRT54GV7
     setRouter( "Linksys WRT54G v7" );
