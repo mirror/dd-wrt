@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 22.Apr.2009, svn 11944	//
+//				Slovenian translation DD-WRT by Eko, last revision: 22.Apr.2009, svn 11994	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: for live values use UTF-8 Unicode Character Set
 
@@ -725,8 +725,9 @@ hotspot.nocat_legend="NoCatSplash";
 hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Ime prehoda";
 hotspot.nocat_gatewayaddr="IP naslov prehoda";
-hotspot.nocat_home="Damaèa stran";
-hotspot.nocat_allowweb="Dovoljeni gostitelji svetovnega spleta";
+hotspot.nocat_home="Domaèa stran";
+hotspot.nocat_redirect="Preusmerjanje domaèe strani";
+hotspot.nocat_allowweb="Dovoljeni spletni gostitelji";
 hotspot.nocat_docroot="Korenski imenik dokumenta";
 hotspot.nocat_splash="Splash URL";
 hotspot.nocat_port="Izloèi vrata";
@@ -754,7 +755,7 @@ hotspot.wifidog_srv="Wifidog demon";
 hotspot.wifidog_id="ID prehoda";
 hotspot.wifidog_url="URL portala";
 hotspot.wifidog_port="Vrata";
-hotspot.wifidog_httpdname="Ime WEB stre¾nika";
+hotspot.wifidog_httpdname="Ime spletnega stre¾nika";
 hotspot.wifidog_httpdconn="Najveèje ¹t. uporabnikov";
 hotspot.wifidog_checkinter="Interval preverbe (v sek.)";
 hotspot.wifidog_checktimeout="Èasovna omejitev klienta";
