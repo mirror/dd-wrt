@@ -83,6 +83,10 @@ static ssize_t show_hello_time(struct device *d, struct device_attribute *attr,
 static void set_hello_time(struct net_bridge *br, unsigned long val)
 {
 	unsigned long t = clock_t_to_jiffies(val);
+
+	if (t < HZ)
+		return;
+
 	br->hello_time = t;
 	if (br_is_root_bridge(br))
 		br->bridge_hello_time = t;
