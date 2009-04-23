@@ -471,6 +471,9 @@ int internal_getRouterBrand(  )
     }
     eval( "event", "3", "1", "15" );
     return 0;
+#elif defined(HAVE_ALLNETWRT) && defined(HAVE_EOC5610)
+    setRouter( "Allnet Outdoor A/B/G CPE" );
+    return ROUTER_BOARD_LS2;
 #else
 #ifdef HAVE_NP28G
     setRouter( "Compex NP28G" );
