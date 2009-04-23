@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="iso-8859-1"?>
 <!--
-OpenWRT port of this file based originally on the following:
+DD-WRT port of this file based originally on the following:
 
 
 $Id: graph_cpu.php 41 2006-01-12 18:48:27Z mkasper $
