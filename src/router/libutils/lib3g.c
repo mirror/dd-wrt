@@ -164,6 +164,12 @@ insmod("pl2303");
 	    fprintf(stderr,"HUAWEI/Option E600 detected\n");
 	    return "/dev/usb/tts/0";
 	    }
+	if (scanFor(0x12d1,0x1003))
+	    {
+	    //huawei
+	    fprintf(stderr,"HUAWEI/Option EC270 detected\n");
+	    return "/dev/usb/tts/0";
+	    }
 	if (scanFor(0x12d1,0x1412))
 	    {
 	    //huawei
