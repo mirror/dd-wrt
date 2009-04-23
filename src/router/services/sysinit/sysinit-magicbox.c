@@ -38,10 +38,20 @@
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <linux/if_ether.h>
+#include <linux/mii.h>
+#include <linux/sockios.h>
+#include <net/if.h>
+
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
 
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <cymac.h>
 
 void start_sysinit( void )
 {
@@ -125,6 +135,18 @@ void start_sysinit( void )
     }
 
     insmod( "ipv6" );
+    struct ifreq ifr;
+    int s;
+
+    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+    {
+	char eabuf[32];
+
+	strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+	ioctl( s, SIOCGIFHWADDR, &ifr );
+	nvram_set( "et0macaddr_safe",ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.sa_data,eabuf ) );
+	close( s );
+    }
 
     /*
      * Set a sane date 
