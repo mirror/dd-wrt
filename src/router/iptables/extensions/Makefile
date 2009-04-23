@@ -6,10 +6,11 @@ include $(TOP)/.config
 # header files are present in the include/linux directory of this iptables
 # package (HW)
 #
-PF_EXT_SLIB:= connmark conntrack helper icmp mark owner pkttype state tcp tcpmss ttl udp CONNMARK DNAT LOG MARK MASQUERADE MIRROR REDIRECT REJECT SNAT TCPMSS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac
+#PF_EXT_SLIB:= dscp ecn esp iprange length limit multiport physdev realm standard tos  unclean DSCP NOTRACK SAME TARPIT TOS ROUTE connmark conntrack helper icmp mark owner pkttype state tcp tcpmss ttl udp CONNMARK DNAT LOG MARK MASQUERADE MIRROR REDIRECT REJECT SNAT TCPMSS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac
+PF_EXT_SLIB:=standard connmark conntrack helper icmp mark owner pkttype state tcp tcpmss ttl udp CONNMARK DNAT LOG MARK MASQUERADE MIRROR REDIRECT REJECT SNAT TCPMSS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-PF_EXT_SLIB:= CLASSIFY ah connlimit connmark conntrack dscp ecn esp helper icmp iprange length limit mark multiport owner physdev pkttype realm standard state tcp tcpmss tos ttl udp unclean CONNMARK DNAT DSCP LOG MARK MASQUERADE MIRROR NOTRACK REDIRECT REJECT SAME SNAT TARPIT TCPMSS TOS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac ROUTE
+PF_EXT_SLIB:= CLASSIFY ah connlimit dscp ecn esp iprange length limit multiport physdev realm standard tos  unclean DSCP NOTRACK SAME TARPIT TOS ROUTE connmark conntrack helper icmp mark owner pkttype state tcp tcpmss ttl udp CONNMARK DNAT LOG MARK MASQUERADE MIRROR REDIRECT REJECT SNAT TCPMSS TRACE TTL ULOG layer7 webstr IMQ TRIGGER ipp2p autofw mac
 endif
 endif
 
