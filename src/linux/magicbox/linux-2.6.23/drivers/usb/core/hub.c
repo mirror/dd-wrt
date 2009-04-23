@@ -1177,6 +1177,7 @@ void usb_disconnect(struct usb_device **pdev)
 			usb_disconnect(&udev->children[i]);
 	}
 
+
 	/* deallocate hcd/hardware state ... nuking all pending urbs and
 	 * cleaning up all state associated with the current configuration
 	 * so that the hardware is now fully quiesced.
@@ -3057,3 +3058,5 @@ int usb_reset_composite_device(struct usb_device *udev,
 	return ret;
 }
 EXPORT_SYMBOL(usb_reset_composite_device);
+
+
