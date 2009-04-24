@@ -2721,6 +2721,7 @@ void start_wan( int status )
 	nvram_safe_get( "pppoe_wan_ifname" ) : "vlan1";
 #endif
 #ifdef HAVE_MULTICAST
+if (!nvram_match("dtag_vlan8","1"))
     stop_igmp_proxy(  );
 #endif
 
@@ -3866,6 +3867,7 @@ void start_wan_done( char *wan_ifname )
 #endif
     cprintf( "start igmp proxy\n" );
 #ifdef HAVE_MULTICAST
+if (!nvram_match("dtag_vlan8","1"))
     stop_igmp_proxy(  );
     start_igmp_proxy(  );
 #endif
