@@ -17,6 +17,10 @@
 			<input maxlength="39" name="NC_GatewayName" size="39" value="<% nvram_get("NC_GatewayName"); %>" />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("hotspot.nocat_ifname"); %></div>
+			<% show_ifselect("NC_ifname"); %>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("hotspot.nocat_home"); %></div>
 			<input maxlength="100" name="NC_HomePage" size="39" value="<% nvram_get("NC_HomePage"); %>" />
 		</div>

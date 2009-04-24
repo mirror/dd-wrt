@@ -2680,9 +2680,7 @@ struct ej_handler ej_handlers[] = {
     {"exec_show_aliases", ej_exec_show_aliases},
     {"exec_show_registrations", ej_exec_show_registrations},
 #endif
-#ifdef HAVE_CHILLI
-    {"show_chilliif", ej_show_chilliif},
-#endif
+    {"show_ifselect", ej_show_ifselect},
 #ifdef HAVE_RFLOW
     {"show_rflowif", ej_show_rflowif},
 #endif

@@ -185,7 +185,7 @@ void convert_wl_gmode( char *value, char *prefix );
  */
 extern int nvram_selmatch( webs_t wp, char *name, char *match );
 extern void ej_show_wifiselect( webs_t wp, int argc, char_t ** argv );
-extern void ej_show_chilliif( webs_t wp, int argc, char_t ** argv );
+extern void ej_show_ifselect( webs_t wp, int argc, char_t ** argv );
 extern void ej_portsetup( webs_t wp, int argc, char_t ** argv );
 extern void ej_bandwidth( webs_t wp, int argc, char_t ** argv );
 extern void ej_show_paypal( webs_t wp, int argc, char_t ** argv );
