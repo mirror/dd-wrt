@@ -84,7 +84,7 @@ void start_igmp_proxy( void )
     foreach( name, ifnames, next )
     {
 	if( strcmp( get_wan_face(  ), name )
-	    && strcmp( nvram_safe_get( "lan_ifname" ), name ) )
+	    && strcmp( nvram_safe_get( "lan_ifname" ), name ) && strcmp(nvram_safe_get("tvnicfrom"),name))
 	{
 	    if( nvram_nmatch( "0", "%s_bridged", name )
 		&& nvram_nmatch( "1", "%s_multicast", name ) )
