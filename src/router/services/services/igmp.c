@@ -35,7 +35,6 @@ void start_igmp_proxy( void )
     char name[80], *next, *svbuf;
     char *argv[] = { "igmprt", NULL };
 
-    stop_igmp_proxy(  );
     int ifcount = 0;
 
 /*
@@ -110,6 +109,7 @@ void start_igmp_proxy( void )
     {
 	if( ifcount )
 	{
+	        if( pidof( "igmprt" ) == 0 )
 	    ret = _evalpid( argv, NULL, 0, &pid );
 	    dd_syslog( LOG_INFO,
 		       "igmprt : multicast daemon successfully started\n" );
