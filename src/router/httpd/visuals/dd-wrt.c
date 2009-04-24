@@ -7959,13 +7959,15 @@ void ej_show_macfilter( webs_t wp, int argc, char_t ** argv )
 #endif
 }
 
-#ifdef HAVE_CHILLI
-void ej_show_chilliif( webs_t wp, int argc, char_t ** argv )
+void ej_show_ifselect( webs_t wp, int argc, char_t ** argv )
 {
-    websWrite( wp, "<select name=\"chilli_interface\">\n" );
+    if (argc<1)
+	return;
+    char *ifname = argv[0];
+    websWrite( wp, "<select name=\"%s\">\n",ifname );
     websWrite( wp, "<option value=\"%s\" %s >LAN</option>\n",
 	       nvram_safe_get( "lan_ifname" ),
-	       nvram_match( "chilli_interface",
+	       nvram_match( ifname,
 			    nvram_safe_get( "lan_ifname" ) ) ?
 	       "selected=\"selected\"" : "" );
     char *next;
@@ -7981,13 +7983,12 @@ void ej_show_chilliif( webs_t wp, int argc, char_t ** argv )
 	if( !strcmp( nvram_safe_get( "lan_ifname" ), var ) )
 	    continue;
 	websWrite( wp, "<option value=\"%s\" %s >%s</option>\n", var,
-		   nvram_match( "chilli_interface", var ) ? "selected" : "",
+		   nvram_match( ifname, var ) ? "selected" : "",
 		   var );
     }
 
     websWrite( wp, "</select>\n" );
 }
-#endif
 
 #ifdef HAVE_RFLOW
 void ej_show_rflowif( webs_t wp, int argc, char_t ** argv )
