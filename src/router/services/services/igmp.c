@@ -64,7 +64,7 @@ void start_igmp_proxy( void )
 	}
 	else
 	{
-        fprintf( fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",nvram_safe_get( "wan_iface" ) );
+        fprintf( fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n",get_wan_face() );
 	}
     if( nvram_match( "block_multicast", "0" ) )
     {
