@@ -38,7 +38,7 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.dhcp"); %></div>
-			<% show_chilliif(); %>
+			<% show_ifselect("chilli_interface"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("hotspot.radnas"); %></div>

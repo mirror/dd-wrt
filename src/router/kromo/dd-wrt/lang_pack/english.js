@@ -726,6 +726,7 @@ hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Gateway Name";
 hotspot.nocat_gatewayaddr="Gateway IP Addr";
 hotspot.nocat_home="Home Page";
+hotspot.nocat_ifname="Interface";
 hotspot.nocat_redirect="Homepage Redirection";
 hotspot.nocat_allowweb="Allowed Web Hosts";
 hotspot.nocat_docroot="Document Root";

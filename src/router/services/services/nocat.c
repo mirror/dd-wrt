@@ -133,6 +133,7 @@ int mk_nocat_conf( void )
     fprintf( fp, "Verbosity\t%s\n", nvram_safe_get( "NC_Verbosity" ) );
     fprintf( fp, "GatewayName\t%s\n", nvram_safe_get( "NC_GatewayName" ) );
     fprintf( fp, "GatewayAddr\t%s\n", nvram_default_get( "NC_GatewayAddr" ,nvram_safe_get("lan_ipaddr")) );
+    fprintf( fp, "InternalDevice\t%s\n", nvram_default_get( "NC_ifname" ,nvram_safe_get("lan_ifname")) );
     fprintf( fp, "GatewayPort\t%s\n", nvram_safe_get( "NC_GatewayPort" ) );
     if( nvram_match( "port_swap", "1" ) )
 	fprintf( fp, "GatewayMAC\t%s\n", nvram_safe_get( "et1macaddr" ) );
