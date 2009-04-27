@@ -157,7 +157,7 @@ void smb_handler(  )
 #endif
 
 //static FILE *conn_fp;
-static webs_t conn_fp;		// jimmy, https, 8/4/2003
+static webs_t conn_fp=NULL;		// jimmy, https, 8/4/2003
 static char auth_userid[AUTH_MAX];
 static char auth_passwd[AUTH_MAX];
 char auth_realm[AUTH_MAX];
@@ -174,7 +174,7 @@ extern char *get_mac_from_ip( char *ip );
 
 /* Forwards. */
 static int initialize_listen_socket( usockaddr * usaP );
-static int auth_check( char *dirname, char *authorization );
+static int auth_check(char *user,char *pass, char *dirname, char *authorization );
 static void send_error( int status, char *title, char *extra_header,
 			char *text );
 static void send_headers( int status, char *title, char *extra_header,
@@ -223,14 +223,14 @@ static int initialize_listen_socket( usockaddr * usaP )
     return listen_fd;
 }
 
-static int auth_check( char *dirname, char *authorization )
+static int auth_check(char *user, char *pass,  char *dirname, char *authorization )
 {
     unsigned char authinfo[500];
     unsigned char *authpass;
     int l;
 
     /* Is this directory unprotected? */
-    if( !strlen( auth_passwd ) )
+    if( !strlen( pass ) )
 	/* Yes, let the request go through. */
 	return 1;
 
@@ -264,28 +264,28 @@ static int auth_check( char *dirname, char *authorization )
     char *enc1;
     char *enc2;
 
-    if( auth_userid[0] == '$' && auth_userid[1] == '1'
-	&& auth_userid[2] == '$' )
-	enc1 = md5_crypt( buf1, authinfo, ( unsigned char * )auth_userid );
+    if( user[0] == '$' && user[1] == '1'
+	&& user[2] == '$' )
+	enc1 = md5_crypt( buf1, authinfo, ( unsigned char * )user );
     else
-	enc1 = crypt( authinfo, ( unsigned char * )auth_userid );
+	enc1 = crypt( authinfo, ( unsigned char * )user );
 
-    if( strcmp( enc1, auth_userid ) )
+    if( strcmp( enc1, user ) )
     {
 	return 0;
     }
 
-    if( auth_passwd[0] == '$' && auth_passwd[1] == '1'
-	&& auth_passwd[2] == '$' )
-	enc2 = md5_crypt( buf2, authpass, ( unsigned char * )auth_passwd );
+    if( pass[0] == '$' && pass[1] == '1'
+	&& pass[2] == '$' )
+	enc2 = md5_crypt( buf2, authpass, ( unsigned char * )pass );
     else
-	enc2 = crypt( authpass, ( unsigned char * )auth_passwd );
-    if( strcmp( enc2, auth_passwd ) )
+	enc2 = crypt( authpass, ( unsigned char * )pass );
+    if( strcmp( enc2, pass ) )
     {
 	return 0;
     }
 
-    if( strcmp( enc1, auth_userid ) == 0 && strcmp( enc2, auth_passwd ) == 0 )
+    if( strcmp( enc1, user) == 0 && strcmp( enc2, pass ) == 0 )
     {
 	return 1;
     }
@@ -916,9 +916,8 @@ static void handle_request( void )
     if( containsstring( file, "cgi-bin" ) )
     {
 
-	do_auth( auth_userid, auth_passwd, auth_realm );
 	auth_fail = 0;
-	if( !auth_check( auth_realm, authorization ) )
+	if (!do_auth(conn_fp,auth_userid,auth_passwd,auth_realm,authorization,auth_check ))
 	    auth_fail = 1;
 	query = NULL;
 	if( strcasecmp( method, "post" ) == 0 )
@@ -937,24 +936,24 @@ static void handle_request( void )
 #if defined(linux)
 #ifdef HAVE_HTTPS
 	    if( !do_ssl
-		&& ( flags = fcntl( fileno( conn_fp ), F_GETFL ) ) != -1
-		&& fcntl( fileno( conn_fp ), F_SETFL,
+		&& ( flags = fcntl( fileno( conn_fp->fp ), F_GETFL ) ) != -1
+		&& fcntl( fileno( conn_fp->fp ), F_SETFL,
 			  flags | O_NONBLOCK ) != -1 )
 	    {
 		/* Read up to two more characters */
-		if( fgetc( conn_fp ) != EOF )
-		    ( void )fgetc( conn_fp );
-		fcntl( fileno( conn_fp ), F_SETFL, flags );
+		if( fgetc( conn_fp->fp ) != EOF )
+		    ( void )fgetc( conn_fp->fp );
+		fcntl( fileno( conn_fp->fp ), F_SETFL, flags );
 	    }
 #else
-	    if( ( flags = fcntl( fileno( conn_fp ), F_GETFL ) ) != -1 &&
-		fcntl( fileno( conn_fp ), F_SETFL,
+	    if( ( flags = fcntl( fileno( conn_fp->fp ), F_GETFL ) ) != -1 &&
+		fcntl( fileno( conn_fp->fp ), F_SETFL,
 		       flags | O_NONBLOCK ) != -1 )
 	    {
 		/* Read up to two more characters */
-		if( fgetc( conn_fp ) != EOF )
-		    ( void )fgetc( conn_fp );
-		fcntl( fileno( conn_fp ), F_SETFL, flags );
+		if( fgetc( conn_fp->fp ) != EOF )
+		    ( void )fgetc( conn_fp->fp );
+		fcntl( fileno( conn_fp->fp ), F_SETFL, flags );
 	    }
 #endif
 #endif
@@ -1062,26 +1061,13 @@ static void handle_request( void )
 #endif
 		    if( !changepassword && handler->auth )
 		    {
-			int result = handler->auth( auth_userid, auth_passwd,
-						    auth_realm );
+			int result = handler->auth(conn_fp, auth_userid, auth_passwd,auth_realm,authorization,auth_check );
 
-			if( result == 0 )
+			if( !result )
 			{
 			    auth_fail = 0;
-			    if( !auth_check( auth_realm, authorization ) )
-			    {
-				send_authenticate( auth_realm );
-//                        syslog(LOG_INFO,"%s fails web authentication\n",nvram_safe_get("http_client_ip"));
-//                        lcdmessaged(nvram_safe_get("http_client_ip"),"fails authentication!!!");
-				return;
-				//auth_fail = 1;
-			    }
-//                      if (last_log_ip==NULL || strcmp(nvram_safe_get("http_client_ip"),last_log_ip))
-//                        {
-//                        last_log_ip=nvram_safe_get("http_client_ip");
-//                        lcdmessaged(nvram_safe_get("http_client_ip"),"logged in!!!");
-//                        syslog(LOG_INFO,"%s successfully authenticated\n",nvram_safe_get("http_client_ip"));
-//                        }
+			    send_authenticate( auth_realm );
+			    return;
 			}
 		    }
 		post = 0;
@@ -1094,24 +1080,24 @@ static void handle_request( void )
 #if defined(linux)
 #ifdef HAVE_HTTPS
 		if( !do_ssl
-		    && ( flags = fcntl( fileno( conn_fp ), F_GETFL ) ) != -1
-		    && fcntl( fileno( conn_fp ), F_SETFL,
+		    && ( flags = fcntl( fileno( conn_fp->fp ), F_GETFL ) ) != -1
+		    && fcntl( fileno( conn_fp->fp ), F_SETFL,
 			      flags | O_NONBLOCK ) != -1 )
 		{
 		    /* Read up to two more characters */
-		    if( fgetc( conn_fp ) != EOF )
-			( void )fgetc( conn_fp );
-		    fcntl( fileno( conn_fp ), F_SETFL, flags );
+		    if( fgetc( conn_fp->fp ) != EOF )
+			( void )fgetc( conn_fp->fp );
+		    fcntl( fileno( conn_fp->fp ), F_SETFL, flags );
 		}
 #else
-		if( ( flags = fcntl( fileno( conn_fp ), F_GETFL ) ) != -1 &&
-		    fcntl( fileno( conn_fp ), F_SETFL,
+		if( ( flags = fcntl( fileno( conn_fp->fp ), F_GETFL ) ) != -1 &&
+		    fcntl( fileno( conn_fp->fp ), F_SETFL,
 			   flags | O_NONBLOCK ) != -1 )
 		{
 		    /* Read up to two more characters */
-		    if( fgetc( conn_fp ) != EOF )
-			( void )fgetc( conn_fp );
-		    fcntl( fileno( conn_fp ), F_SETFL, flags );
+		    if( fgetc( conn_fp->fp ) != EOF )
+			( void )fgetc( conn_fp->fp );
+		    fcntl( fileno( conn_fp->fp ), F_SETFL, flags );
 		}
 #endif
 #endif
@@ -1532,7 +1518,9 @@ int main( int argc, char **argv )
 	    BIO_push( ( BIO * ) conn_fp, ssl_bio );
 #elif defined(HAVE_MATRIXSSL)
 	    matrixssl_new_session( conn_fd );
-	    conn_fp = ( FILE * ) conn_fd;
+	    if (!conn_fp)
+		conn_fp=malloc(sizeof(webs));
+	    conn_fp->fp = ( FILE * ) conn_fd;
 #endif
 #ifdef HAVE_XYSSL
 	    ssl_free( &ssl );
@@ -1575,7 +1563,9 @@ int main( int argc, char **argv )
 		return -1;
 	    }
 #endif
-	    if( !( conn_fp = fdopen( conn_fd, "r+" ) ) )
+	    if (!conn_fp)
+		conn_fp=malloc(sizeof(webs));
+	    if( !( conn_fp->fp = fdopen( conn_fd, "r+" ) ) )
 	    {
 		perror( "fdopen" );
 		return errno;
@@ -1599,8 +1589,9 @@ int main( int argc, char **argv )
     return 0;
 }
 
-char *wfgets( char *buf, int len, FILE * fp )
+char *wfgets( char *buf, int len, webs_t wp )
 {
+FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
     if( do_ssl )
@@ -1620,8 +1611,9 @@ char *wfgets( char *buf, int len, FILE * fp )
 	return fgets( buf, len, fp );
 }
 
-int wfputc( char c, FILE * fp )
+int wfputc( char c, webs_t wp )
 {
+FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
     if( do_ssl )
@@ -1640,8 +1632,10 @@ int wfputc( char c, FILE * fp )
 	return fputc( c, fp );
 }
 
-int wfputs( char *buf, FILE * fp )
+int wfputs( char *buf, webs_t wp )
 {
+FILE *fp = wp->fp;
+
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
     if( do_ssl )
@@ -1661,8 +1655,10 @@ int wfputs( char *buf, FILE * fp )
 	return fputs( buf, fp );
 }
 
-int wfprintf( FILE * fp, char *fmt, ... )
+int wfprintf( webs_t wp, char *fmt, ... )
 {
+FILE *fp = wp->fp;
+
     va_list args;
     char buf[1024];
     int ret;
@@ -1696,7 +1692,7 @@ int websWrite( webs_t wp, char *fmt, ... )
     va_list args;
     char buf[2048];
     int ret;
-    FILE *fp = wp;
+    FILE *fp = wp->fp;
 
     if( !wp || !fmt )
 	return -1;
@@ -1724,8 +1720,9 @@ int websWrite( webs_t wp, char *fmt, ... )
     return ret;
 }
 
-size_t wfwrite( char *buf, int size, int n, FILE * fp )
+size_t wfwrite( char *buf, int size, int n, webs_t wp )
 {
+FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
     if( do_ssl )
@@ -1745,8 +1742,10 @@ size_t wfwrite( char *buf, int size, int n, FILE * fp )
 	return fwrite( buf, size, n, fp );
 }
 
-size_t wfread( char *buf, int size, int n, FILE * fp )
+size_t wfread( char *buf, int size, int n, webs_t wp )
 {
+FILE *fp = wp->fp;
+
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
     if( do_ssl )
@@ -1783,8 +1782,9 @@ size_t wfread( char *buf, int size, int n, FILE * fp )
 	return fread( buf, size, n, fp );
 }
 
-int wfflush( FILE * fp )
+int wfflush( webs_t wp )
 {
+FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
     if( do_ssl )
@@ -1809,8 +1809,10 @@ int wfflush( FILE * fp )
 	return fflush( fp );
 }
 
-int wfclose( FILE * fp )
+int wfclose( webs_t wp )
 {
+FILE *fp = wp->fp;
+
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
     if( do_ssl )

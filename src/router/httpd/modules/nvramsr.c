@@ -229,7 +229,7 @@ void nv_file_in( char *url, webs_t wp, int len, char *boundary )
 	}
 	else
 #endif
-	    ( void )fgetc( wp );
+	    ( void )fgetc( wp->fp );
     }
     if( nvram_ver == NULL )
     {
@@ -403,7 +403,7 @@ td_file_in( char *url, webs_t wp, int len, char *boundary )  //load and set traf
 	}
 	else
 #endif
-	    ( void )fgetc( wp );
+	    ( void )fgetc( wp->fp );
     }
 
     nvram_commit(  );
