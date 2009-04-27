@@ -729,13 +729,13 @@ extern int ( *UejArgs ) ( int argc, char_t ** argv, char_t * fmt, ... );
 extern FILE *( *UgetWebsFile ) ( char *path );
 
 #define getWebsFile UgetWebsFile
-extern int ( *Uwfflush ) ( FILE * fp );
+extern int ( *Uwfflush ) ( webs_t fp );
 
 #define wfflush Uwfflush
-extern int ( *Uwfputc ) ( char c, FILE * fp );
+extern int ( *Uwfputc ) ( char c, webs_t fp );
 
 #define wfputc Uwfputc
-extern int ( *Uwfputs ) ( char *buf, FILE * fp );
+extern int ( *Uwfputs ) ( char *buf, webs_t fp );
 
 #define wfputs Uwfputs
 extern char *( *Ulive_translate ) ( char *tran );

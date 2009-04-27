@@ -233,8 +233,8 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
     if( !do_ssl )
     {
 #endif
-	if( ( flags = fcntl( fileno( stream ), F_GETFL ) ) < 0 ||
-	    fcntl( fileno( stream ), F_SETFL, flags | O_NONBLOCK ) < 0 )
+	if( ( flags = fcntl( fileno( stream->fp ), F_GETFL ) ) < 0 ||
+	    fcntl( fileno( stream->fp ), F_SETFL, flags | O_NONBLOCK ) < 0 )
 	{
 	    ret = errno;
 	    goto err;
@@ -278,13 +278,13 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
 	else
 #endif
 	{
-	    if( waitfor( fileno( stream ), 5 ) <= 0 )
+	    if( waitfor( fileno( stream->fp ), 5 ) <= 0 )
 	    {
 		cprintf( "waitfor timeout 5 secs\n" );
 		break;
 	    }
-	    count = safe_fread( buf, 1, size, stream );
-	    if( !count && ( ferror( stream ) || feof( stream ) ) )
+	    count = safe_fread( buf, 1, size, stream->fp );
+	    if( !count && ( ferror( stream->fp ) || feof( stream->fp ) ) )
 		break;
 	}
 
@@ -380,7 +380,7 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
 	/*
 	 * Reset nonblock on the socket 
 	 */
-	if( fcntl( fileno( stream ), F_SETFL, flags ) < 0 )
+	if( fcntl( fileno( stream->fp ), F_SETFL, flags ) < 0 )
 	{
 	    ret = errno;
 	    goto err;
@@ -492,14 +492,14 @@ do_upgrade_post( char *url, webs_t stream, int len, char *boundary )	// jimmy,
 #ifdef HAVE_HTTPS
 	if( do_ssl )
 	{
-	    wfgets( buf, 1, stream );
+	    wfgets( buf, 1, stream);
 	}
 	else
 	{
-	    ( void )fgetc( stream );
+	    ( void )fgetc( stream->fp );
 	}
 #else
-	( void )fgetc( stream );
+	( void )fgetc( stream->fp );
 #endif
     }
 #endif

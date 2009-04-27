@@ -33,18 +33,26 @@ extern BIO *bio_err;
 
 #include <bcmnvram.h>
 
-typedef FILE *webs_t;
-extern char *wfgets (char *buf, int len, FILE * fp);
-extern int wfprintf (FILE * fp, char *fmt, ...);
-extern size_t wfwrite (char *buf, int size, int n, FILE * fp);
-extern size_t wfread (char *buf, int size, int n, FILE * fp);
-extern int wfclose (FILE * fp);
+//typedef FILE *webs_t;
+
+typedef struct {
+FILE *fp;
+int userid;
+} webs;
+
+typedef webs *webs_t;
+
+extern char *wfgets (char *buf, int len, webs_t fp);
+extern int wfprintf (webs_t fp, char *fmt, ...);
+extern size_t wfwrite (char *buf, int size, int n, webs_t fp);
+extern size_t wfread (char *buf, int size, int n, webs_t fp);
+extern int wfclose (webs_t fp);
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
 
-extern int wfflush (FILE * fp);
-extern int wfputc (char c, FILE * fp);
-extern int wfputs (char *buf, FILE * fp);
+extern int wfflush (webs_t fp);
+extern int wfputc (char c, webs_t fp);
+extern int wfputs (char *buf, webs_t fp);
 #endif
 #endif
 #ifdef HAVE_HTTPS
@@ -62,9 +70,9 @@ struct mime_handler
   char *pattern;
   char *mime_type;
   char *extra_header;
-  void (*input) (char *path, FILE * stream, int len, char *boundary);
-  void (*output) (struct mime_handler *handler,char *path, FILE * stream, char *query);
-  int (*auth) (char *userid, char *passwd, char *realm);
+  void (*input) (char *path, webs_t stream, int len, char *boundary);
+  void (*output) (struct mime_handler *handler,char *path, webs_t stream, char *query);
+  int (*auth) (webs_t wp, char *userid, char *passwd, char *realm ,char *authorisation, int (*auth_check)(char *userid,char *passwd,char *dirname,char *authorisation));
   unsigned char send_headers;
 };
 typedef struct
@@ -126,9 +134,9 @@ struct Webenvironment
   void (*Pdo_ej) (struct mime_handler *handler,char *path, webs_t stream, char *query);	// jimmy, https, 8/4/2003
   int (*PejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
   FILE *(*PgetWebsFile) (char *path);
-  int (*Pwfflush) (FILE * fp);
-  int (*Pwfputc) (char c, FILE * fp);
-  int (*Pwfputs) (char *buf, FILE * fp);
+  int (*Pwfflush) (webs_t fp);
+  int (*Pwfputc) (char c, webs_t fp);
+  int (*Pwfputs) (char *buf, webs_t fp);
   char *(*PGOZILA_GET)(webs_t wp,char *name);
   char *(*Plive_translate) (char *tran);
   websRomPageIndexType *PwebsRomPageIndex;
@@ -161,7 +169,7 @@ extern void do_ej_buffer (char *buffer, webs_t stream);
 extern int websWrite( webs_t wp, char *fmt, ... );
 #endif
 #endif
-int do_auth (char *userid, char *passwd, char *realm);
+int do_auth(webs_t wp, char *userid, char *passwd, char *realm ,char *authorisation, int (*auth_check)(char *userid,char *passwd,char *dirname,char *authorisation));
 void Initnvramtab (void);
 void *call_ej (char *name, void *handle, webs_t wp, int argc, char_t ** argv);
 

