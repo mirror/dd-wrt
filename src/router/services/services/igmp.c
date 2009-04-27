@@ -109,9 +109,9 @@ void start_igmp_proxy( void )
     {
 	if( ifcount )
 	{
-	        if( pidof( "igmprt" ) == 0 )
-	    ret = _evalpid( argv, NULL, 0, &pid );
-	    dd_syslog( LOG_INFO,
+	    if( pidof( "igmprt" ) < 1)
+		ret = _evalpid( argv, NULL, 0, &pid );
+		dd_syslog( LOG_INFO,
 		       "igmprt : multicast daemon successfully started\n" );
 	}
     }
