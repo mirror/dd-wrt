@@ -108,8 +108,7 @@ do
     eval echo "\$type_${oid}"
     eval echo "\$value_${oid}"
   else
-    echo string
-    echo ack... $ret $REQ
+    echo NONE
   fi
 
 done
