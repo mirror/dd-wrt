@@ -93,8 +93,6 @@ do
       fi
       ;;
   esac
- 
-  echo $ret
 
   oid=$(echo $ret | tr -d .) 
   if eval test "x\$type_${oid}" != "x"
