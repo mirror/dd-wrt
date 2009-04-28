@@ -829,6 +829,8 @@ int isEMP(char *ifname) //checks if its usually a emp card (no concrete detectio
     }
     if (vendor==0x168c && product==0x2062)
 	return 1;
+    if (vendor==0x168c && product==0x2063) //will include more suspicius cards. 
+	return 1;
 return 0;
 
 }
