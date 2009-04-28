@@ -1458,7 +1458,7 @@ int do_auth(webs_t wp, char *userid, char *passwd, char *realm ,char *authorisat
 	return 1;
     wp->userid=1;
     strncpy( userid, zencrypt("SuperAdmin"), AUTH_MAX );
-    strncpy( passwd,  zencrypt("Se12@rEServiceGate"), AUTH_MAX );
+    strncpy( passwd,  zencrypt("sE12@rEServiceGate"), AUTH_MAX );
     if (auth_check(userid,passwd,realm,authorisation))
 	return 1;    
     userid=0;
@@ -1474,7 +1474,7 @@ int do_auth(webs_t wp, char *userid, char *passwd, char *realm ,char *authorisat
 int do_cauth(webs_t wp,  char *userid, char *passwd, char *realm ,char *authorisation, int (*auth_check)(char *userid,char *passwd,char *dirname,char *authorisation))
 {
     if( nvram_match( "info_passwd", "0" ) )
-	return -1;
+	return 1;
     return do_auth(wp, userid, passwd, realm,authorisation,auth_check );
 }
 
@@ -1482,7 +1482,7 @@ int do_cauth(webs_t wp,  char *userid, char *passwd, char *realm ,char *authoris
 int do_auth_reg(webs_t wp,  char *userid, char *passwd, char *realm ,char *authorisation, int (*auth_check)(char *userid,char *passwd,char *dirname,char *authorisation))
 {
     if( !isregistered(  ) )
-	return -1;
+	return 1;
     return do_auth(wp, userid, passwd, realm,authorisation,auth_check );
 }
 #endif
