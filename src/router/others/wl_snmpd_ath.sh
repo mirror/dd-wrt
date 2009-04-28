@@ -105,6 +105,7 @@ do
   oid=$(echo $ret | tr -d .) 
   if eval test "x\$type_${oid}" != "x"
   then
+    echo $ret
     eval echo "\$type_${oid}"
     eval echo "\$value_${oid}"
   else
