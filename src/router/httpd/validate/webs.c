@@ -391,12 +391,10 @@ void validate_services_port( webs_t wp )
     char *services_array = websGetVar( wp, "services_array0", NULL );
 
     // char *services_length = websGetVar (wp, "services_length0", NULL);
-    char *word, *next;
+    char word[1026], *next;
     char delim[] = "(&nbsp;)";
     char var[32] = "";
     int index = 0;
-    word = malloc(1026);
-    memset(word,0,1026);
     do
     {
 	snprintf( var, 31, "services_array%d", index++ );
@@ -440,7 +438,6 @@ void validate_services_port( webs_t wp )
     {
 	nvram_set( "filter_services_1", cur );
     }
-    free(word);
     free(services);
     free(buf);
     // nvram_set ("filter_services", cur);
