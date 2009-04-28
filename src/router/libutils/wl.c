@@ -1018,6 +1018,11 @@ int get_wifioffset( char *ifname )
 #ifdef HAVE_NS3
 return -2000;
 #endif
+if (isEMP(ifname))
+    {
+    if (nvram_nmatch("4","%s_cardtype",ifname))
+        return -2400;
+    }
 char *var = NULL;
 if (ifname)
     {
