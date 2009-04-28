@@ -733,7 +733,7 @@ static void set_scanlist( char *dev, char *wif )
     }
 }
 
-static void set_rate( char *dev )
+static void set_rate( char *dev, char *priv )
 {
     char rate[32];
     char maxrate[32];
@@ -790,15 +790,15 @@ static void set_rate( char *dev )
 	    r = "0";
 	}
     if( !strcmp( netmode, "b-only" ) )
-	sysprintf( "iwconfig %s rate 11M auto", dev );
+	sysprintf( "iwconfig %s rate 11M auto", priv );
     else
     {
-	sysprintf( "iwconfig %s rate 54M auto", dev );
+	sysprintf( "iwconfig %s rate 54M auto", priv );
     }
     if( atol( mr ) > 0 )
-	sysprintf( "iwpriv %s maxrate %s", dev, mr );
+	sysprintf( "iwpriv %s maxrate %s", priv, mr );
     if( atoi( mr ) > 0 )
-	sysprintf( "iwpriv %s minrate %s", dev, r );
+	sysprintf( "iwpriv %s minrate %s", priv, r );
 }
 static void set_netmode( char *wif, char *dev, char *use )
 {
@@ -1523,7 +1523,7 @@ static void configure_single( int count )
     // netconfig
 
 
-    set_rate( dev );
+    set_rate( dev , dev);
 
     set_netmode( wif, dev, dev );
 
@@ -1678,6 +1678,7 @@ static void configure_single( int count )
 	if( hwaddr != NULL )
 	{
 	    sysprintf( "iwpriv %s wds_add %s", primary, hwaddr );
+	    set_rate(dev,primary);
 	}
     }
 
