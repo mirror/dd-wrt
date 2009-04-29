@@ -58,6 +58,10 @@ int brctl_main( int argc, char **argv )
 	    return -1;
 	br_del_bridge( argv[2] );
     }
+    if( !strcmp( argv[1], "show" ) )
+    {
+	br_cmd_show();
+    }
     br_shutdown(  );
 }
 #else

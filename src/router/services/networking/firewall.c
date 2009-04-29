@@ -1793,12 +1793,18 @@ static void add_bridges( char *chain, int forward )
 	char netmask[32];
 
 	sprintf( netmask, "%s_netmask", tag );
-
-	if( !nvram_match( ipaddr, "0.0.0.0" )
+	if (ifexists(tag))
+	{
+	if( nvram_get(ipaddr) && nvram_get(netmask) && !nvram_match( ipaddr, "0.0.0.0" )
 	    && !nvram_match( netmask, "0.0.0.0" ) )
 	{
 	    eval( "ifconfig", tag, nvram_safe_get( ipaddr ), "netmask",
 		  nvram_safe_get( netmask ), "up" );
+	}else
+	{
+	    eval( "ifconfig", tag, "up" );
+	
+	}
 	    if( forward && wan && strlen(wan))
 		save2file( "-A FORWARD -i %s -o %s -j ACCEPT\n", tag,
 			   wan );
@@ -3280,7 +3286,7 @@ void stop_firewall( void )
 	rmmod( "xt_mac" );
     }
     cprintf( "done\n" );
-    return 0;
+    return;
 }
 
 /*
