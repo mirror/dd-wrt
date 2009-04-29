@@ -36,6 +36,7 @@
 #define MD5_OUT_BUFSIZE 36
 char *md5_crypt( char *passwd, unsigned char *pw, unsigned char *salt );
 
+
 #define EAD_TIMEOUT	4000
 #define EAD_TIMEOUT_LONG 20000
 
@@ -159,7 +160,7 @@ handle_pong(void)
 	auth_type = ntohs(pong->auth_type);
 	if (nid == 0xffff)
 		fprintf(stdout,"%04x: %s\n", ntohs(msg->nid), pong->name);
- 	sid = msg->sid;
+	sid = msg->sid;
 	return true;
 }
 
@@ -346,7 +347,6 @@ int main(int argc, char **argv)
 			break;
 		case 'h':
 			return usage(prog);
-			break;
 		}
 	}
 	argv += optind;
