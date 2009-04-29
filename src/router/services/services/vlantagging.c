@@ -57,6 +57,7 @@
 #include <utils.h>
 #include <unistd.h>
 #include <services.h>
+#include "../networking/libbridge.h"
 
 #ifdef HAVE_VLANTAGGING
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
@@ -91,8 +92,7 @@ void start_vlantagging( void )
 	}
 	else
 	{
-	    ifconfig( vlan_name, IFUP, nvram_nget( "%s_ipaddr", vlan_name ),
-		      nvram_nget( "%s_netmask", vlan_name ) );
+	    eval( "ifconfig", vlan_name,nvram_nget( "%s_ipaddr",vlan_name),"netmask", nvram_nget( "%s_netmask", vlan_name ), "up" );
 	}
     }
     char eths[256];
@@ -193,7 +193,9 @@ void start_bridging( void )
 {
     static char word[256];
     char *next, *wordlist;
-
+#ifdef HAVE_MICRO
+    br_init(  );
+#endif
     wordlist = nvram_safe_get( "bridges" );
     foreach( word, wordlist, next )
     {
@@ -228,6 +230,10 @@ void start_bridging( void )
 
 	eval( "ifconfig", bridge, "up" );
     }
+#ifdef HAVE_MICRO
+    br_shutdown(  );
+#endif
+
     start_set_routes(  );
 }
 
@@ -337,6 +343,9 @@ void stop_bridgesif( void )
 {
     static char word[256];
     char *next, *wordlist;
+#ifdef HAVE_MICRO
+    br_init(  );
+#endif
 
     wordlist = nvram_safe_get( "bridgesif" );
     foreach( word, wordlist, next )
@@ -351,12 +360,18 @@ void stop_bridgesif( void )
 	if( ifexists( port ) )
 	    br_del_interface( tag, port );
     }
+#ifdef HAVE_MICRO
+    br_shutdown(  );
+#endif
 }
 
 void stop_bridging( void )
 {
     static char word[256];
     char *next, *wordlist;
+#ifdef HAVE_MICRO
+    br_init(  );
+#endif
 
     wordlist = nvram_safe_get( "bridges" );
     foreach( word, wordlist, next )
@@ -374,6 +389,9 @@ void stop_bridging( void )
 	    br_del_bridge( tag );
 	}
     }
+#ifdef HAVE_MICRO
+    br_shutdown(  );
+#endif
 }
 
 #else
