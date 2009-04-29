@@ -1282,6 +1282,12 @@ void ej_show_modules( webs_t wp, int argc, char_t ** argv )
 	    {
 		if( endswith( entry->d_name, argv[0] ) )
 		{
+#ifdef HAVE_ERC
+		if (strcmp(entry->d_name,"base.webconfig") && !wp->userid) //show only base.webconfig for this user and nothing else
+		    {
+			continue;
+		    }
+#endif
 		    sprintf( buf, "%s/%s", directories[idx], entry->d_name );
 		    do_ej(NULL, buf, wp, NULL );
 		}
@@ -1568,7 +1574,7 @@ static char menu[8][11][32];
 static char menuname[8][12][32];
 memcpy(menu,menu_t,8*11*32);
 memcpy(menuname,menuname_t,8*12*32);
-#ifdef HAVE_ERC)
+#ifdef HAVE_ERC
 if (!wp->userid)
     {
     memcpy(menu,menu_s,8*11*32);

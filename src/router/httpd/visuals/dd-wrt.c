@@ -2556,9 +2556,9 @@ void ej_show_bridgenames( webs_t wp, int argc, char_t ** argv )
 
 void ej_show_bridgetable( webs_t wp, int argc, char_t ** argv )
 {
-#ifdef HAVE_MICRO		// brctl N/A in micro
-    return;
-#endif
+//#ifdef HAVE_MICRO		// brctl N/A in micro
+//    return;
+//#endif
 
     FILE *f;
     char buf[128];
