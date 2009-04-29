@@ -15,13 +15,10 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/select.h>
-#include <sys/wait.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <fcntl.h>
@@ -38,13 +35,16 @@
 #include "ead.h"
 #include "ead-pcap.h"
 #include "ead-crypt.h"
+
 #include "filter.c"
 
 #ifdef linux
 #include "libbridge_init.c"
 #endif
 
-extern char *nvram_safe_get(const char *name);
+#ifdef linux
+#include <linux/if_packet.h>
+#endif
 
 #define PASSWD_FILE	"/etc/passwd"
 
@@ -112,6 +112,51 @@ struct t_confent *tce = NULL;
 static struct t_server *ts = NULL;
 static struct t_num A, *B = NULL;
 unsigned char *skey;
+
+static void
+set_recv_type(pcap_t *p, bool rx)
+{
+#ifdef PACKET_RECV_TYPE
+	struct sockaddr_ll sll;
+	struct ifreq ifr;
+	int ifindex, mask;
+	int fd, ret;
+
+	fd = pcap_get_selectable_fd(p);
+	if (fd < 0)
+		return;
+
+	if (rx)
+		mask = 1 << PACKET_BROADCAST;
+	else
+		mask = 0;
+
+	ret = setsockopt(fd, SOL_PACKET, PACKET_RECV_TYPE, &mask, sizeof(mask));
+#endif
+}
+
+
+static pcap_t *
+ead_open_pcap(const char *ifname, char *errbuf, bool rx)
+{
+	pcap_t *p;
+
+	p = pcap_create(ifname, errbuf);
+	if (p == NULL)
+		goto out;
+
+	pcap_set_snaplen(p, PCAP_MRU);
+	pcap_set_promisc(p, rx);
+	pcap_set_timeout(p, PCAP_TIMEOUT);
+#ifdef HAS_PROTO_EXTENSION
+	pcap_set_protocol(p, (rx ? htons(ETH_P_IP) : 0));
+#endif
+	pcap_set_buffer_size(p, (rx ? 10 : 1) * PCAP_MRU);
+	pcap_activate(p);
+	set_recv_type(p, rx);
+out:
+	return p;
+}
 
 static void
 get_random_bytes(void *ptr, int len)
@@ -336,18 +381,17 @@ handle_ping(struct ead_packet *pkt, int len, int *nstate)
 {
 	struct ead_msg *msg = &pktbuf->msg;
 	struct ead_msg_pong *pong = EAD_DATA(msg, pong);
- 	int slen;
- 
-	memset(pong->name,0,32);
-	snprintf(pong->name,31,"%s - %s",nvram_safe_get("lan_ipaddr"), nvram_safe_get("router_name"));
+	int slen;
+	char dev_name[64]	
+	snprintf(dev_name,63,"%s - %s",nvram_safe_get("lan_ipaddr"), nvram_safe_get("router_name"));
 
- 	slen = strlen(pong->name);
- 	if (slen > 1024)
- 		slen = 1024;
- 
- 	msg->len = htonl(sizeof(struct ead_msg_pong) + slen);
- 	pong->name[slen] = 0;
-	
+	slen = strlen(dev_name);
+	if (slen > 1024)
+		slen = 1024;
+
+	msg->len = htonl(sizeof(struct ead_msg_pong) + slen);
+	strncpy(pong->name, dev_name, slen);
+	pong->name[slen] = 0;
 	pong->auth_type = htons(EAD_AUTH_MD5);
 
 	return true;
@@ -653,14 +697,18 @@ ead_pcap_reopen(bool first)
 
 	pcap_fp_rx = NULL;
 	do {
-		pcap_fp = pcap_open_live(instance->ifname, PCAP_MRU, 1, PCAP_TIMEOUT, errbuf);
 #ifdef linux
-		if (instance->bridge[0])
-			pcap_fp_rx = pcap_open_live(instance->bridge, PCAP_MRU, 1, PCAP_TIMEOUT, errbuf);
+		if (instance->bridge[0]) {
+			pcap_fp_rx = ead_open_pcap(instance->bridge, errbuf, 1);
+			pcap_fp = ead_open_pcap(instance->ifname, errbuf, 0);
+		} else
 #endif
+		{
+			pcap_fp = ead_open_pcap(instance->ifname, errbuf, 1);
+		}
+
 		if (!pcap_fp_rx)
 			pcap_fp_rx = pcap_fp;
-		pcap_setfilter(pcap_fp_rx, &pktfilter);
 		if (first && !pcap_fp) {
 			DEBUG(1, "WARNING: unable to open interface '%s'\n", instance->ifname);
 			first = false;
@@ -668,6 +716,7 @@ ead_pcap_reopen(bool first)
 		if (!pcap_fp)
 			sleep(1);
 	} while (!pcap_fp);
+	pcap_setfilter(pcap_fp_rx, &pktfilter);
 }
 
 
@@ -793,7 +842,7 @@ static int
 check_bridge_port(const char *br, const char *port, void *arg)
 {
 	struct ead_instance *in;
-	struct list_head *p;
+	struct list_head *p, *tmp;
 
 	list_for_each(p, &instances) {
 		in = list_entry(p, struct ead_instance, list);
@@ -825,7 +874,7 @@ check_all_interfaces(void)
 {
 #ifdef linux
 	struct ead_instance *in;
-	struct list_head *p;
+	struct list_head *p, *tmp;
 
 	br_foreach_bridge(check_bridge, NULL);
 
@@ -858,7 +907,7 @@ int main(int argc, char **argv)
 		return usage(argv[0]);
 
 	INIT_LIST_HEAD(&instances);
-	while ((ch = getopt(argc, argv, "Bd:fhp:P:")) != -1) {
+	while ((ch = getopt(argc, argv, "Bd:D:fhp:P:")) != -1) {
 		switch(ch) {
 		case 'B':
 			background = true;
