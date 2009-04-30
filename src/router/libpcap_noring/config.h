@@ -61,7 +61,7 @@
 #define HAVE_LIMITS_H 1
 
 /* if tp_vlan_tci exists */
-#define HAVE_LINUX_TPACKET_AUXDATA_TP_VLAN_TCI 1
+// #define HAVE_LINUX_TPACKET_AUXDATA_TP_VLAN_TCI 1
 
 /* Define to 1 if you have the <linux/wireless.h> header file. */
 /* #undef HAVE_LINUX_WIRELESS_H */
