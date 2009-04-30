@@ -889,6 +889,7 @@ idx.summt_opt6="first Sun Oct - 3rd Sun Mar";
 idx.summt_opt7="last Sun Sep - first Sun Apr";
 idx.summt_opt8="3rd Sun Oct - 3rd Sun Mar";
 idx.summt_opt9="first Sun Oct - first Sun Apr";
+idx.summt_opt10="3rd Sun Oct - 3rd Sun Feb";
 idx.portsetup="Port Setup";
 idx.wanport="WAN Port Assignment";
 idx.ntp_client="NTP Client";
