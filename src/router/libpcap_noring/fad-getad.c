@@ -52,7 +52,7 @@ static const char rcsid[] _U_ =
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ifaddrs.h>
+#include "ifaddrs.h"
 
 #include "pcap-int.h"
 
