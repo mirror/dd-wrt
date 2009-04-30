@@ -36,9 +36,12 @@
 #define SWIMS_SET_MODE_Modem		0x0001
 
 /* per port private data */
-#define N_IN_URB	4
-#define N_OUT_URB	4
+#define N_IN_URB	8
+#define N_OUT_URB	64
 #define IN_BUFLEN	4096
+
+
+#define MAX_TRANSFER (PAGE_SIZE - 512)
 
 static int debug;
 static int nmea;
@@ -244,6 +247,8 @@ static struct usb_device_id id_table [] = {
 
 	{ USB_DEVICE(0x1199, 0x0112) }, /* Sierra Wireless AirCard 580 */
 	{ USB_DEVICE(0x0F3D, 0x0112) }, /* Airprime/Sierra PC 5220 */
+	{ USB_DEVICE(0x1199, 0x68A3) },	/* Sierra Wireless Direct IP modems */
+	{ USB_DEVICE(0x05C6, 0x6613) }, /* Onda H600/ZTE MF330 */
 
 	{ USB_DEVICE(0x1199, 0x0FFF), .driver_info = DEVICE_INSTALLER},
 	{ }
@@ -255,7 +260,6 @@ static struct usb_driver sierra_driver = {
 	.probe      = usb_serial_probe,
 	.disconnect = usb_serial_disconnect,
 	.id_table   = id_table,
-	.no_dynamic_id = 	1,
 };
 
 struct sierra_port_private {
@@ -390,7 +394,11 @@ static int sierra_write(struct usb_serial_port *port,
 	unsigned long flags;
 	unsigned char *buffer;
 	struct urb *urb;
-	int status;
+	size_t writesize = min((size_t)count, (size_t)MAX_TRANSFER);
+	int retval = 0;
+	
+	if (count==0)
+	    return 0;
 
 	portdata = usb_get_serial_port_data(port);
 
@@ -405,35 +413,34 @@ static int sierra_write(struct usb_serial_port *port,
 	portdata->outstanding_urbs++;
 	spin_unlock_irqrestore(&portdata->lock, flags);
 
-	buffer = kmalloc(count, GFP_ATOMIC);
+	buffer = kmalloc(writesize, GFP_ATOMIC);
 	if (!buffer) {
 		dev_err(&port->dev, "out of memory\n");
-		count = -ENOMEM;
+		retval = -ENOMEM;
 		goto error_no_buffer;
 	}
 
 	urb = usb_alloc_urb(0, GFP_ATOMIC);
 	if (!urb) {
 		dev_err(&port->dev, "no more free urbs\n");
-		count = -ENOMEM;
+		retval = -ENOMEM;
 		goto error_no_urb;
 	}
 
-	memcpy(buffer, buf, count);
+	memcpy(buffer, buf, writesize);
 
-	usb_serial_debug_data(debug, &port->dev, __func__, count, buffer);
+	usb_serial_debug_data(debug, &port->dev, __func__, writesize, buffer);
 
 	usb_fill_bulk_urb(urb, serial->dev,
 			  usb_sndbulkpipe(serial->dev,
 					  port->bulk_out_endpointAddress),
-			  buffer, count, sierra_outdat_callback, port);
+			  buffer, writesize, sierra_outdat_callback, port);
 
 	/* send it down the pipe */
-	status = usb_submit_urb(urb, GFP_ATOMIC);
-	if (status) {
+	retval = usb_submit_urb(urb, GFP_ATOMIC);
+	if (retval) {
 		dev_err(&port->dev, "%s - usb_submit_urb(write bulk) failed "
-			"with status = %d\n", __func__, status);
-		count = status;
+			"with status = %d\n", __func__, retval);
 		goto error;
 	}
 
@@ -441,7 +448,7 @@ static int sierra_write(struct usb_serial_port *port,
 	 * really free it when it is finished with it */
 	usb_free_urb(urb);
 
-	return count;
+	return writesize;
 error:
 	usb_free_urb(urb);
 error_no_urb:
@@ -450,7 +457,7 @@ error_no_buffer:
 	spin_lock_irqsave(&portdata->lock, flags);
 	--portdata->outstanding_urbs;
 	spin_unlock_irqrestore(&portdata->lock, flags);
-	return count;
+	return retval;
 }
 
 static void sierra_indat_callback(struct urb *urb)
