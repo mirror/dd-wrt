@@ -1506,9 +1506,9 @@ void start_lan( void )
      * Bring up bridged interface 
      */
 #ifdef HAVE_EAD
-//    char eadline[64];
+    char eadline[64];
 
-//    memset( eadline, 0, 64 );
+    memset( eadline, 0, 64 );
 #endif
 
     if( strncmp( lan_ifname, "br0", 3 ) == 0 )
@@ -1524,20 +1524,20 @@ void start_lan( void )
 	br_set_bridge_forward_delay( lan_ifname, 1 );
 #endif
 #ifdef HAVE_EAD
-//	eval( "killall", "-9", "ead" );
+	eval( "killall", "-9", "ead" );
 #endif
 	foreach( name, lan_ifnames, next )
 	{
 	    if( !ifexists( name ) )
 		continue;
-//#ifdef HAVE_EAD
-//#if defined(HAVE_RT2880) || defined(HAVE_MADWIFI)
-//	    if (strncmp(name,"ath",3) && strncmp(name,"ra",2))
-//#else
-//	    if( wl_probe( name ) )
-//#endif
-//		sprintf( eadline, "%s%s %s ", eadline, "-d", name );
-//#endif
+#ifdef HAVE_EAD
+#if defined(HAVE_RT2880) || defined(HAVE_MADWIFI)
+	    if (strncmp(name,"ath",3) && strncmp(name,"ra",2))
+#else
+	    if( wl_probe( name ) )
+#endif
+		sprintf( eadline, "%s%s %s ", eadline, "-d", name );
+#endif
 	    if( nvram_match( "wan_ifname", name ) )
 		continue;
 #if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_MAGICBOX) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880)
@@ -1810,10 +1810,10 @@ void start_lan( void )
     free( lan_ifname );
     free( wan_ifname );
     free( lan_ifnames );
-//#ifdef HAVE_EAD
-//    if (strlen(eadline)>0)
-//	sysprintf( "ead %s -B", eadline );
-//#endif
+#ifdef HAVE_EAD
+    if (strlen(eadline)>0)
+	sysprintf( "ead %s -B", eadline );
+#endif
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 #ifndef HAVE_NOWIFI
     if( nvram_match( "mac_clone_enable", "1" ) &&
