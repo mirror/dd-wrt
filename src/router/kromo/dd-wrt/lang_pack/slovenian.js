@@ -889,6 +889,7 @@ idx.summt_opt6="prva ned. okt. - 3. ned. mar.";
 idx.summt_opt7="zadnja ned. sep. - prva ned. apr.";
 idx.summt_opt8="3. ned. okt. - 3. ned. mar.";
 idx.summt_opt9="prva ned. okt. - prva ned. apr.";
+idx.summt_opt8="3. ned. okt. - 3. ned. feb.";
 idx.portsetup="Nastavitev vrat";
 idx.wanport="Dodelitev WAN vrat";
 idx.ntp_client="NTP odjemalec";

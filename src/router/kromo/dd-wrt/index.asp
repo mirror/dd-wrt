@@ -430,8 +430,9 @@ addEvent(window, "unload", function() {
 										document.write("<option value=\"5\" <% nvram_selected_js("daylight_time", "5"); %>>" + idx.summt_opt5 + "</option>");
 										document.write("<option value=\"6\" <% nvram_selected_js("daylight_time", "6"); %>>" + idx.summt_opt6 + "</option>");
 										document.write("<option value=\"7\" <% nvram_selected_js("daylight_time", "7"); %>>" + idx.summt_opt7 + "</option>");
-										document.write("<option value=\"8\" <% nvram_selected_js("daylight_time", "8"); %>>" + idx.summt_opt8 + "</option>");									
-										document.write("<option value=\"9\" <% nvram_selected_js("daylight_time", "9"); %>>" + idx.summt_opt9 + "</option>");									
+										document.write("<option value=\"8\" <% nvram_selected_js("daylight_time", "8"); %>>" + idx.summt_opt8 + "</option>");
+										document.write("<option value=\"9\" <% nvram_selected_js("daylight_time", "9"); %>>" + idx.summt_opt9 + "</option>");
+										document.write("<option value=\"10\" <% nvram_selected_js("daylight_time", "10"); %>>" + idx.summt_opt10 + "</option>");
 										//]]>
 									</script>
 									</select>
@@ -445,10 +446,10 @@ addEvent(window, "unload", function() {
 							
 							<div class="submitFooter">
 								<script type="text/javascript">
-	            	//<![CDATA[
-	            	submitFooterButton(1,1);
-	            	//]]>
-	            	</script>
+					//<![CDATA[
+					submitFooterButton(1,1);
+					//]]>
+					</script>
 							</div>
 						</form>
 					</div>
