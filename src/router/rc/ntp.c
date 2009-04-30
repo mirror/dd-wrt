@@ -110,7 +110,7 @@ int do_ntp( void )		// called from ntp_main and
     tv.tv_sec += ( int )( fofs * 3600 );	// <-- cast it or this will
     // be off (?)
 
-    if( ( dst >= 1 ) && ( dst <= 9 ) )
+    if( ( dst >= 1 ) && ( dst <= 10 ) )
     {
 	struct tm *tm = localtime( &tv.tv_sec );
 	int mon = tm->tm_mon + 1;
