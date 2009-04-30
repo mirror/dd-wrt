@@ -382,7 +382,7 @@ handle_ping(struct ead_packet *pkt, int len, int *nstate)
 	struct ead_msg *msg = &pktbuf->msg;
 	struct ead_msg_pong *pong = EAD_DATA(msg, pong);
 	int slen;
-	char dev_name[64]	
+	char dev_name[64];	
 	snprintf(dev_name,63,"%s - %s",nvram_safe_get("lan_ipaddr"), nvram_safe_get("router_name"));
 
 	slen = strlen(dev_name);

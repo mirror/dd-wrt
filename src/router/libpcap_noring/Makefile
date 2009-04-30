@@ -91,7 +91,7 @@ YACC = bison -y -p pcap_
 	$(CC) -fPIC $(CFLAGS) -c -o $@ $(srcdir)/$*.c
 
 PSRC =	pcap-linux.c 
-FSRC =  fad-getad.c
+FSRC =  fad-gifc.c
 SSRC =  
 CSRC =	pcap.c inet.c gencode.c optimize.c nametoaddr.c \
 	etherent.c savefile.c bpf_filter.c bpf_image.c bpf_dump.c
