@@ -65,6 +65,7 @@ static unsigned long calculate_checksum (int action, char *s, int size);
 #define WGR614_KERNEL_FLASH_ADDR       0xBC020000
 #define WGR614_KERNEL_LEN_ADDR         (WGR614_FLASH_BASE + WGR614_FLASH_SIZE - 0x50000 - 8)
 #define WGR614_KERNEL_CHKSUM_ADDR      (WGR614_KERNEL_LEN_ADDR + 4)
+#define WGR614_LZMA_LOADER_SIZE        0x0919 //loader+400.lzma = 2329 bytes, please change if size changes!
 /* end */
 
 /* 
@@ -183,7 +184,7 @@ int mtd_write( const char *path, const char *mtd )
     struct erase_info_user erase_info;
 
     struct sysinfo info;
-    struct trx_header trx, oldtrx;
+    struct trx_header trx;
     unsigned long crc;
     int squashfound = 0;
     unsigned int crc_data = 0;
@@ -203,13 +204,13 @@ int mtd_write( const char *path, const char *mtd )
 	if ( getRouterBrand(  ) == ROUTER_NETGEAR_WGR614L )
 	{    
     if( ( fp = fopen( "/dev/mtdblock/1", "rb" ) ) )
-	count = safe_fread( &oldtrx, 1, sizeof( struct trx_header ), fp );
+	count = safe_fread( &trx, 1, sizeof( struct trx_header ), fp );
     else
 	return -1;    
     
 	memset( lzmaloader, 0, 4096 );
-	fseek( fp, oldtrx.offsets[0], SEEK_SET );
-	fread( lzmaloader, oldtrx.offsets[1] - oldtrx.offsets[0], 1, fp );
+	fseek( fp, trx.offsets[0], SEEK_SET );
+	fread( lzmaloader, WGR614_LZMA_LOADER_SIZE, 1, fp );
 	fclose (fp);
 	}
     nvram_set("flash_active","1");
@@ -579,14 +580,19 @@ int mtd_write( const char *path, const char *mtd )
 	}
 	
 	tmp = buf + ( offset % mtd_info.erasesize );
-	if ( trx.offsets[1] - trx.offsets[0] >= oldtrx.offsets[1] - oldtrx.offsets[0] )
+	if ( trx.offsets[1] - trx.offsets[0] >= WGR614_LZMA_LOADER_SIZE )
+	{
 		memcpy( tmp, lzmaloader, trx.offsets[1] - trx.offsets[0] );	//we asume lzma loader is shorter then gz loader
+		//fprintf( stderr, "LZMA loader size OK, space=%d needed=%d\n", trx.offsets[1] - trx.offsets[0], WGR614_LZMA_LOADER_SIZE );
+	}
 	else
+	{
 		memset( buf, 0, mtd_info.erasesize );  //destroy 1st block, which puts router into tftp mode to allow recover
-	
+		//fprintf( stderr, "LZMA loader size too large, space=%d needed=%d\n", trx.offsets[1] - trx.offsets[0], WGR614_LZMA_LOADER_SIZE );
+	}
 	if ( write( mtd_fd, buf, mtd_info.erasesize ) != mtd_info.erasesize ) 
 	{
-		//fprintf( stderr, "Error writing chksum to MTD device\n" );
+		//fprintf( stderr, "Error writing LZMA loader to MTD device\n" );
 		goto fail;
 	}
 	
