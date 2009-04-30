@@ -12,8 +12,8 @@
 #include <sys/errno.h>
 #endif
 
-#include "libpcap/pcap.h"
-#include "libpcap/pcap-bpf.h"
+#include "pcap.h"
+#include "pcap-bpf.h"
 #include "PktSnifferThread.h"
 #include "Kaid.h"
 #include "KaiEngine.h"
