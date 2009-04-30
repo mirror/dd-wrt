@@ -726,6 +726,7 @@ hotspot.nocat_srv="NoCatSplash";
 hotspot.nocat_gateway="Ime prehoda";
 hotspot.nocat_gatewayaddr="IP naslov prehoda";
 hotspot.nocat_home="Domaèa stran";
+hotspot.nocat_ifname="Vmesnik";
 hotspot.nocat_redirect="Preusmerjanje domaèe strani";
 hotspot.nocat_allowweb="Dovoljeni spletni gostitelji";
 hotspot.nocat_docroot="Korenski imenik dokumenta";
