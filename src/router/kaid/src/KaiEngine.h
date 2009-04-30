@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <vector>
-#include "libpcap/pcap.h"
+#include "pcap.h"
 #include <pthreadcc.h>
 #include <socketcc.h>
 #include <sys/time.h>

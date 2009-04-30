@@ -35,8 +35,8 @@
 #include <netinet/udp.h>
 #include <netinet/tcp.h>
 
-#include "libpcap/pcap.h"
-#include "libpcap/pcap-bpf.h"
+#include "pcap.h"
+#include "pcap-bpf.h"
 #include "pthreadcc.h"
 #include "socketcc.h"
 
