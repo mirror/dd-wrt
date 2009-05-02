@@ -425,6 +425,7 @@ int main( int argc, char **argv )
     cprintf( "start service\n" );
     fprintf( stderr, "starting Architecture code for " ARCHITECTURE "\n" );
     start_service( "sysinit" );
+    start_service( "drivers" );
     cprintf( "setup signals\n" );
     /* 
      * Setup signal handlers 
