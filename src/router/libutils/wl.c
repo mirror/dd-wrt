@@ -885,7 +885,9 @@ int wifi_gettxpower( char *ifname )
     if (nvram_nmatch("3","%s_cardtype",ifname))
 	poweroffset = 8;
     if (nvram_nmatch("5","%s_cardtype",ifname))
-	poweroffset = 12;
+	poweroffset = 8;
+    if (nvram_nmatch("6","%s_cardtype",ifname))
+	poweroffset = 7;
     }else{
     int vendor;
     int devcount;
@@ -993,7 +995,9 @@ int wifi_gettxpoweroffset( char *ifname )
 	if (nvram_nmatch("3","%s_cardtype",ifname))
 	    return 8;
 	if (nvram_nmatch("5","%s_cardtype",ifname))
-	    return 13;
+	    return 8;
+	if (nvram_nmatch("6","%s_cardtype",ifname))
+	    return 7;
 	}
     int vendor;
     int devcount;

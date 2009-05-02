@@ -3918,7 +3918,8 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	websWrite( wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cardtype)</script></div>\n<select name=\"%s\">\n",wl_cardtype );
 	websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n" );
 	websWrite( wp,"document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",nvram_default_match( wl_cardtype, "0","0" ) ? "selected=\\\"selected\\\"" : "" );
-	websWrite( wp,"document.write(\"<option value=\\\"5\\\" %s >Doodle Labs DLM105</option>\");\n",nvram_default_match( wl_cardtype, "5","0" ) ? "selected=\\\"selected\\\"" : "" );
+	websWrite( wp,"document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n",nvram_default_match( wl_cardtype, "5","0" ) ? "selected=\\\"selected\\\"" : "" );
+	websWrite( wp,"document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n",nvram_default_match( wl_cardtype, "6","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp,"document.write(\"<option value=\\\"4\\\" %s >MakSat MP26</option>\");\n",nvram_default_match( wl_cardtype, "4","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp,"document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n",nvram_default_match( wl_cardtype, "1","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp,"document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n",nvram_default_match( wl_cardtype, "2","0" ) ? "selected=\\\"selected\\\"" : "" );
