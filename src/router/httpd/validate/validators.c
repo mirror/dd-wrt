@@ -818,6 +818,13 @@ void validate_portsetup( webs_t wp, char *value, struct variable *v )
 	if( multicast )
 	    nvram_set( val, multicast );
 
+
+	sprintf( val, "%s_nat", var );
+	char *masquerade = websGetVar( wp, val, NULL );
+
+	if( masquerade )
+	    nvram_set( val, masquerade );
+
 	sprintf( val, "%s_mtu", var );
 	char *mtu = websGetVar( wp, val, NULL );
 	if (mtu)
