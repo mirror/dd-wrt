@@ -842,6 +842,10 @@ static void nat_postrouting( void )
 			    save2file
 				( "-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
 				  var );
+			char nat[32];
+			sprintf(nat,"%s_nat",var);
+			nvram_default_get(nat,"1");
+			if (nvram_match(nat,"1"))
 			save2file
 			    ( "-A POSTROUTING -o %s -s %s/%d -d %s/%d -j %s\n",
 			      var, nvram_nget( "%s_ipaddr", var ),
