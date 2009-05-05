@@ -5935,7 +5935,7 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 	    && ( ( si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL ) !=
 		 0 ) )
 	{
-	    websWrite( wp, "'%s','%s','%s','%3dM','%3dM','%d','%d','%d'",
+	    websWrite( wp, "'%s','%s','%s','%3dM','%3dM','%d','%d','%d','%d'",
 		       mac,ifname, UPTIME(si->isi_uptime),
 		       ( ( si->
 			   isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL ) /
@@ -5943,13 +5943,13 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 		       ( ( si->
 			   isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL ) /
 			 2 ) * turbo, si->isi_noise + si->isi_rssi,
-		       si->isi_noise, si->isi_rssi );
+		       si->isi_noise, si->isi_rssi,si->isi_ccq );
 	}
 	else
 	{
-	    websWrite( wp, "'%s','%s','%s','N/A','N/A','%d','%d','%d'", mac,
+	    websWrite( wp, "'%s','%s','%s','N/A','N/A','%d','%d','%d','%d'", mac,
 		       ifname, UPTIME(si->isi_uptime),si->isi_noise + si->isi_rssi, si->isi_noise,
-		       si->isi_rssi );
+		       si->isi_rssi,si->isi_ccq );
 	}
 	cp += si->isi_len;
 	len -= si->isi_len;
@@ -6184,11 +6184,15 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 			   table.Entry[i].AvgRssi0 );
 	    }
 	    else
+//* 1.24 + 116
 #endif
 	    {
-		websWrite( wp, "'%s','%s','N/A','N/A','N/A','%d','%d','%d'", mac,
+		int qual = table.Entry[i].AvgRssi0 * 124 + 11600;
+		qual/=10;
+
+		websWrite( wp, "'%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'", mac,
 			   ifname, table.Entry[i].AvgRssi0, -95,
-			   ( table.Entry[i].AvgRssi0 - ( -95 ) ) );
+			   ( table.Entry[i].AvgRssi0 - ( -95 ) ),qual );
 	    }
 	}
     STAINFO *sta = getRaStaInfo( "wl0" );
@@ -6197,10 +6201,12 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
     {
 	char mac[32];
 
+		int qual = sta->rssi * 124 + 11600;
+		qual/=10;
 	strcpy( mac, ieee80211_ntoa( sta->mac ) );
-	websWrite( wp, "'%s','%s','N/A','N/A','N/A','%d','%d','%d'", mac,
+	websWrite( wp, "'%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'", mac,
 		   sta->ifname, sta->rssi, sta->noise,
-		   ( sta->rssi - ( sta->noise ) ) );
+		   ( sta->rssi - ( sta->noise ) ),qual );
 	free( sta );
 
     }
@@ -6241,118 +6247,6 @@ void ej_active_wireless( webs_t wp, int argc, char_t ** argv )
 #define RSSI_CMD	"wl rssi"
 #define NOISE_CMD	"wl noise"
 
-#ifndef HAVE_MSSID
-void ej_active_wireless( webs_t wp, int argc, char_t ** argv )
-{
-    int rssi = 0, noise = 0;
-    FILE *fp2;
-    char *mode;
-    char mac[30];
-    char list[2][30];
-    char line[80];
-    char cmd[80];
-    int macmask;
-
-#ifdef FASTWEB
-    ejArgs( argc, argv, "%d", &macmask );
-#else
-    if( ejArgs( argc, argv, "%d", &macmask ) < 1 )
-    {
-	websError( wp, 400, "Insufficient args\n" );
-	return;
-    }
-#endif
-
-    unlink( RSSI_TMP );
-    int cnt = 0;
-
-    mode = nvram_safe_get( "wl_mode" );
-    unsigned char buf[WLC_IOCTL_MAXLEN];
-
-    memset( buf, 0, WLC_IOCTL_MAXLEN );
-    char *iface = get_wdev(  );
-
-    if( !ifexists( iface ) )
-	return;
-    int r = getassoclist( iface, buf );
-
-    if( r < 0 )
-	return;
-    struct maclist *maclist = ( struct maclist * )buf;
-    int i;
-
-    for( i = 0; i < maclist->count; i++ )
-    {
-	ether_etoa( ( uint8 * ) & maclist->ea[i], mac );
-
-	rssi = 0;
-	noise = 0;
-	// get rssi value
-	if( strcmp( mode, "ap" ) && strcmp( mode, "apsta" )
-	    && strcmp( mode, "apstawet" ) )
-	    sysprintf( "%s > %s", RSSI_CMD, RSSI_TMP );
-	else
-	    sysprintf( "%s \"%s\" > %s", RSSI_CMD, mac, RSSI_TMP );
-
-	// get noise value if not ap mode
-	if( strcmp( mode, "ap" ) )
-	    sysprintf( "%s >> %s", NOISE_CMD, RSSI_TMP );
-
-	fp2 = fopen( RSSI_TMP, "r" );
-	if( fgets( line, sizeof( line ), fp2 ) != NULL )
-	{
-
-	    // get rssi
-	    // #ifdef HAVE_MSSID
-	    if( sscanf( line, "%d", &rssi ) != 1 )
-		continue;
-
-	    // noise=getNoise(iface);
-
-	    if( strcmp( mode, "ap" ) &&
-		fgets( line, sizeof( line ), fp2 ) != NULL &&
-		sscanf( line, "%d", &noise ) != 1 )
-		continue;
-	    /*
-	     * #else if (sscanf (line, "%s %s %d", list[0], list[1], &rssi)
-	     * != 3) continue; // noise=getNoise(iface); if (strcmp (mode,
-	     * "ap") && fgets (line, sizeof (line), fp2) != NULL && sscanf
-	     * (line, "%s %s %d", list[0], list[1], &noise) != 3) continue;
-	     * #endif
-	     */
-	    // get noise for client/wet mode
-
-	    fclose( fp2 );
-	}
-	if( nvram_match( "maskmac", "1" ) && macmask )
-	{
-	    mac[0] = 'x';
-	    mac[1] = 'x';
-	    mac[3] = 'x';
-	    mac[4] = 'x';
-	    mac[6] = 'x';
-	    mac[7] = 'x';
-	    mac[9] = 'x';
-	    mac[10] = 'x';
-	}
-	if( cnt )
-	    websWrite( wp, "," );
-	cnt++;
-	if( !strcmp( mode, "ap" ) )
-	{
-	    // char *ref = nvram_get ("noise_reference");
-	    noise = -98;
-	    // if (ref)
-	    // noise = atoi (ref);
-	}
-	websWrite( wp, "'%s','%d','%d','%d'", mac, rssi, noise,
-		   rssi - noise );
-    }
-    unlink( RSSI_TMP );
-
-    return;
-}
-#else
 int
 ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 		       char *iface, char *visible, int cnt )
@@ -6363,16 +6257,7 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
     char mac[30];
     char line[80];
     int macmask;
-
-#ifdef FASTWEB
-    ejArgs( argc, argv, "%d", &macmask );
-#else
-    if( ejArgs( argc, argv, "%d", &macmask ) < 1 )
-    {
-	websError( wp, 400, "Insufficient args\n" );
-	return 0;
-    }
-#endif
+    macmask=atoi(argv[0]);
     if( !ifexists( iface ) )
 	return cnt;
     unlink( RSSI_TMP );
@@ -6443,8 +6328,10 @@ ej_active_wireless_if( webs_t wp, int argc, char_t ** argv,
 	 * if (!strcmp (mode, "ap")) { noise = getNoise(iface,NULL); // null
 	 * only for broadcom }
 	 */
-	websWrite( wp, "'%s','%s','N/A','N/A','N/A','%d','%d','%d'", mac, iface,
-		   rssi, noise, rssi - noise );
+	int qual = rssi * 124 + 11600;
+	qual/=10;
+	websWrite( wp, "'%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'", mac, iface,
+		   rssi, noise, rssi - noise,qual );
     }
     unlink( RSSI_TMP );
 
@@ -6479,7 +6366,6 @@ void ej_active_wireless( webs_t wp, int argc, char_t ** argv )
     }
 }
 
-#endif
 
 #endif
 
