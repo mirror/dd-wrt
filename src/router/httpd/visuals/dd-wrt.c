@@ -3487,6 +3487,12 @@ static void showbridgesettings( webs_t wp, char *var, int mcast, int dual )
 	nvram_default_get( mcast, "0" );
 	showRadio( wp, "wl_basic.multicast", mcast );
     }
+    if (nvram_match("wk_mode","gateway"))
+	    {
+	    sprintf( mcast, "%s_nat", var );
+	    nvram_default_get( mcast, "1" );
+	    showRadio( wp, "wl_basic.masquerade", mcast );
+	    }
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n" );
