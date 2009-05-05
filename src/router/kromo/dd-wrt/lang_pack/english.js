@@ -1827,6 +1827,7 @@ wl_basic.label7="802.11n Transmission Mode";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dual Link";
 wl_basic.parent="Parent IP";
+wl_basic.masquerade="Masquerade / NAT";
 wl_basic.ap="AP";
 wl_basic.client="Client";
 wl_basic.repeater="Repeater";
