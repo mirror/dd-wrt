@@ -3481,17 +3481,18 @@ static void showbridgesettings( webs_t wp, char *var, int mcast, int dual )
     websWrite( wp, "<div id=\"%s_idnetvifs\">\n", vvar );
     if( mcast )
     {
-	char mcast[32];
+	char mcastvar[32];
 
-	sprintf( mcast, "%s_multicast", var );
-	nvram_default_get( mcast, "0" );
-	showRadio( wp, "wl_basic.multicast", mcast );
+	sprintf( mcastvar, "%s_multicast", var );
+	nvram_default_get( mcastvar, "0" );
+	showRadio( wp, "wl_basic.multicast", mcastvar );
     }
     if (nvram_match("wk_mode","gateway"))
 	    {
-	    sprintf( mcast, "%s_nat", var );
-	    nvram_default_get( mcast, "1" );
-	    showRadio( wp, "wl_basic.masquerade", mcast );
+	    char natvar[32];
+	    sprintf( natvar, "%s_nat", var );
+	    nvram_default_get( natvar, "1" );
+	    showRadio( wp, "wl_basic.masquerade", natvar );
 	    }
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
