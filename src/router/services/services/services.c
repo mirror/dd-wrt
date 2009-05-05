@@ -736,12 +736,8 @@ static void create_pptp_config( char *servername, char *username )
     // header compression
     fprintf( fp, "nobsdcomp\n" );	// Disables BSD-Compress compression
     fprintf( fp, "nodeflate\n" );	// Disables Deflate compression
-#ifdef HAVE_GGEW
     fprintf( fp, "lcp-echo-failure 6\n" );
     fprintf( fp, "lcp-echo-interval 3\n" );
-#else
-    fprintf( fp, "lcp-echo-interval 0\n" );	// Don't send an LCP
-#endif
     // echo-request frame to the
     // peer
     fprintf( fp, "noipdefault\n" );
