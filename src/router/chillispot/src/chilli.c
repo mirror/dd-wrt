@@ -3575,7 +3575,7 @@ int cb_dhcp_disconnect(struct dhcp_conn_t *conn) {
 	  conn->hismac[4], conn->hismac[5]);
         return 0;
      }
-  if (!strcmp(inet_ntoa(conn->hisip),"0.0.0.0"))
+/*  if (!strcmp(inet_ntoa(conn->hisip),"0.0.0.0"))
 	 {
         sys_err(LOG_NOTICE, __FILE__, __LINE__, 0,
 	  "DHCP addr release invalid IP, ignore=%.2X-%.2X-%.2X-%.2X-%.2X-%.2X" , 
@@ -3584,7 +3584,7 @@ int cb_dhcp_disconnect(struct dhcp_conn_t *conn) {
 	  conn->hismac[4], conn->hismac[5]);
 	 return 0;
 	 }
-  
+  */
   if (options.debug) printf("DHCP connection removed\n");
 
   if (!conn->peer) 
