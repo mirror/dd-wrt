@@ -7668,6 +7668,13 @@ void ej_portsetup( webs_t wp, int argc, char_t ** argv )
 	sprintf( mcast, "%s_multicast", var );
 	nvram_default_get( mcast, "0" );
 	showRadio( wp, "wl_basic.multicast", mcast );
+
+	if (nvram_match("wk_mode","gateway"))
+	    {
+	    sprintf( mcast, "%s_nat", var );
+	    nvram_default_get( mcast, "1" );
+	    showRadio( wp, "wl_basic.masquerade", mcast );
+	    }
 	show_ipnetmask( wp, var );
 	websWrite( wp, "</div>\n" );
 	websWrite( wp, "<script type=\"text/javascript\">\n//<![CDATA[\n " );

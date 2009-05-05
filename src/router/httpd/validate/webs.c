@@ -107,6 +107,7 @@ void delete_leases( webs_t wp )
 	else
 	    iface = nvram_safe_get( "lan_ifname" );
     }
+    //todo. detect correct interface
 
     ip = websGetVar( wp, "ip_del", NULL );
     mac = websGetVar( wp, "mac_del", NULL );
