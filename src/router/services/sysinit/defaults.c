@@ -253,6 +253,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
     {"wan_proto", "pptp", 0},	/* [static|dhcp|pppoe|disabled] */
+#elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
+    {"wan_proto", "pptp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
     {"wan_proto", "pptp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
@@ -597,9 +599,9 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_ssid", "hotspot-internet", 0},	/* Service set ID (network name) */
 #elif HAVE_CORENET
     {"wl_ssid", "corenet", 0},	/* Service set ID (network name) */
-#elif defined(HAVE_GGEW) && !defined(HAVE_NS5) && !defined(HAVE_NS2)
+#elif defined(HAVE_GGEW) && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC5610)
     {"wl_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
-#elif HAVE_NEWMEDIA  && !defined(HAVE_NS5) && !defined(HAVE_NS2)
+#elif HAVE_NEWMEDIA  && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC5610)
     {"wl_ssid", "changeme", 0},	/* Service set ID (network name) */
 #elif HAVE_MAKSAT
     {"wl_ssid", "maksat", 0},	/* Service set ID (network name) */
@@ -630,6 +632,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl0_ssid", "trimax", 0},	/* Service set ID (network name) */
     {"ath0_ssid", "trimax", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
+    {"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
+#elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
     {"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
     {"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
@@ -742,7 +746,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_SKYTRON
     {"wl_mode", "sta", 0},
     {"wl0_mode", "sta", 0},
-#elif HAVE_GGEW && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC2610)
+#elif HAVE_GGEW && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC2610) && !defined(HAVE_EOC5610)
     {"wl_mode", "sta", 0},
     {"wl0_mode", "sta", 0},
 #else
@@ -764,6 +768,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
     {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
+    {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
     {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC2610)
@@ -783,6 +789,8 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_DDLAN
     {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
+    {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+#elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
     {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS2)
     {"ath0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
