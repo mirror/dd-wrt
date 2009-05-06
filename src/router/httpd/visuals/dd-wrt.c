@@ -6451,7 +6451,7 @@ ej_active_wds_instance( webs_t wp, int argc, char_t ** argv, int instance )
 	    }
 	}
 
-	sysprintf( "%s \"%s\" > %s", RSSI_CMD, mac, RSSI_TMP );
+	sysprintf( "wl -i %s rssi \"%s\" > %s", iface, mac, RSSI_TMP );
 
 	fp2 = fopen( RSSI_TMP, "r" );
 	if( fgets( line, sizeof( line ), fp2 ) != NULL )
@@ -6479,8 +6479,8 @@ ej_active_wds_instance( webs_t wp, int argc, char_t ** argv, int instance )
 	int noise = getNoise( iface, NULL );
 
 	websWrite( wp,
-		   "\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"",
-		   mac, desc, rssi, noise, rssi - noise );
+		   "\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"",
+		   mac, iface, desc, rssi, noise, rssi - noise );
     }
 
     unlink( WDS_RSSI_TMP );
