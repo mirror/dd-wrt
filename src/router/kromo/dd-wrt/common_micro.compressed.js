@@ -664,7 +664,7 @@ function setMeterBar(id,_8d,_8e){
 if(isNaN(_8d)){
 _8d=0;
 }
-_8d=Math.max(0,Math.min(100,Math.round(_8d)))+"%";
+_8d=Math.max(0,Math.min(100.0,Math.round(_8d)))+"%";
 var _8f=(typeof id=="string"?document.getElementById(id):id);
 if(_8f.firstChild){
 _8f.firstChild.childNodes[0].style.width=_8d;
