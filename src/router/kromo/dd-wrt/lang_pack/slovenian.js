@@ -1827,6 +1827,7 @@ wl_basic.label7="Naèin oddajanja 802.11n";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dvojni link";
 wl_basic.parent="Glavni IP";
+wl_basic.masquerade="Maskiranje / NAT";
 wl_basic.ap="Dostopna toèka";
 wl_basic.client="Odjemalec";
 wl_basic.repeater="Prenosnik";
