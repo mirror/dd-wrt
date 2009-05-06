@@ -43,7 +43,7 @@ function setWDSTable() {
 		setElementVisible("wds", false);
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 5) {
+	for(var i = 0; i < val.length; i = i + 6) {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
@@ -58,7 +58,8 @@ function setWDSTable() {
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
 		row.insertCell(-1).innerHTML = val[i + 4];
-		setMeterBar(row.insertCell(-1), (val[i + 2] == "0" ? 0 : parseInt(val[i + 2]) * 1.24 + 116), "");
+		row.insertCell(-1).innerHTML = val[i + 5];
+		setMeterBar(row.insertCell(-1), (val[i + 3] == "0" ? 0 : parseInt(val[i + 3]) * 1.24 + 116), "");
 	}
 	setElementVisible("wds", true);
 }
@@ -212,14 +213,14 @@ addEvent(window, "unload", function() {
 								<legend><% getwirelessstatus(); %></legend>
 								<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
 									<tr>
-										<th width="14%"><% tran("share.mac"); %></th>
-										<th width="8%"><% tran("share.intrface"); %></th>
+										<th width="16%"><% tran("share.mac"); %></th>
+										<th width="10%"><% tran("share.intrface"); %></th>
 										<th width="10%"><% tran("status_router.sys_up"); %></th>
-										<th width="11%"><% tran("share.txrate"); %></th>
-										<th width="11%"><% tran("share.rxrate"); %></th>
+										<th width="8%"><% tran("share.txrate"); %></th>
+										<th width="8%"><% tran("share.rxrate"); %></th>
 										<th width="8%"><% tran("share.signal"); %></th>
 										<th width="8%"><% tran("share.noise"); %></th>
-										<th width="7%">SNR</th>
+										<th width="8%">SNR</th>
 										<th width="24%"><% tran("status_wireless.signal_qual"); %></th>
 									</tr>
 								</table>
@@ -230,8 +231,9 @@ addEvent(window, "unload", function() {
 									<legend><% tran("status_wireless.wds"); %></legend>
 									<table class="table center" cellspacing="5" id="wds_table" summary="wds clients table">
 										<tr>
-											<th width="28%"><% tran("share.mac"); %></th>
-											<th width="24%"><% tran("share.descr"); %></th>
+											<th width="16%"><% tran("share.mac"); %></th>
+											<th width="10%"><% tran("share.intrface"); %></th>
+											<th width="26%"><% tran("share.descr"); %></th>
 											<th width="8%"><% tran("share.signal"); %></th>
 											<th width="8%"><% tran("share.noise"); %></th>
 											<th width="8%">SNR</th>
