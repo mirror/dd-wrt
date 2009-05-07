@@ -909,6 +909,21 @@ win.close();
 });
 win.focus();
 };
+
+function openBW(iface){
+var top=30;
+var left=Math.floor(screen.availWidth*.66)-10;
+var width=555
+var height=275
+var win=window.open("graph_if.svg?"+iface,'Bandwidth','top='+top+',left='+left+',width='+width+',height='+height+",resizable=yes,scrollbars=yes,statusbar=no");
+addEvent(window,"unload",function(){
+if(!win.closed){
+win.close();
+}
+});
+win.focus();
+}
+
 function getTimeOut(clk,_cd,_ce){
 var _cf=60;
 var _d0=(_cf/5)-3;

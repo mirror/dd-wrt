@@ -999,6 +999,16 @@ function getOUIFromMAC(mac) {
 	win.focus();
 }
 
+function openBW(iface) {
+	var top = 30;
+	var left = Math.floor(screen.availWidth * .66) - 10;
+	var width = 555
+	var height = 275
+	var win = window.open("graph_if.svg?" + iface, 'Bandwidth', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	addEvent(window, "unload", function() { if(!win.closed) win.close(); });
+	win.focus();
+}
+
 /* Added by Botho 25.April.06 */
 /* write in asp file dynamicaly wait_time and scroll_count dipending of the CPU frequency */
 /* reference values (125 Mhz cpu): 90 sec for a reboot or restore config file, 120 for a reset nvram + reboot */
