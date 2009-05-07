@@ -6380,19 +6380,22 @@ void ej_active_wireless( webs_t wp, int argc, char_t ** argv )
 #endif
 
 #define WDS_RSSI_TMP	"/tmp/.rssi"
-void ej_active_wds_instance( webs_t wp, int argc, char_t ** argv,
-			     int instance );
+int ej_active_wds_instance( webs_t wp, int argc, char_t ** argv,
+			     int instance, int cnt );
 void ej_active_wds( webs_t wp, int argc, char_t ** argv )
 {
-    int cnt = get_wl_instances(  );
-    int c;
+    int cnt = 0;
+    int c = get_wl_instances(  );
+    int i;
 
-    for( c = 0; c < cnt; c++ )
-	ej_active_wds_instance( wp, argc, argv, c );
+    for( i = 0; i < c; i++ )
+    {
+	cnt = ej_active_wds_instance( wp, argc, argv, i, cnt);
+    }
 }
 
-void
-ej_active_wds_instance( webs_t wp, int argc, char_t ** argv, int instance )
+int
+ej_active_wds_instance( webs_t wp, int argc, char_t ** argv, int instance, int cnt )
 {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     int rssi = 0, i;
@@ -6404,13 +6407,12 @@ ej_active_wds_instance( webs_t wp, int argc, char_t ** argv, int instance )
     // char title[30];
     char wdsvar[30];
     char desc[30];
-    int cnt = 0;
     int macmask;
 
     if( ejArgs( argc, argv, "%d", &macmask ) < 1 )
     {
 	websError( wp, 400, "Insufficient args\n" );
-	return;
+	return cnt;
     }
 
     unlink( WDS_RSSI_TMP );
@@ -6419,16 +6421,16 @@ ej_active_wds_instance( webs_t wp, int argc, char_t ** argv, int instance )
 
     if( strcmp( mode, "ap" ) && strcmp( mode, "apsta" )
 	&& strcmp( mode, "apstawet" ) )
-	return;
+	return cnt;
     unsigned char buf[WLC_IOCTL_MAXLEN];
     char *iface = get_wl_instance_name( instance );
 
     if( !ifexists( iface ) )
-	return;
+	return cnt;
     int r = getwdslist( iface, buf );
 
     if( r < 0 )
-	return;
+	return cnt;
     struct maclist *maclist = ( struct maclist * )buf;
     int e;
 
@@ -6485,7 +6487,7 @@ ej_active_wds_instance( webs_t wp, int argc, char_t ** argv, int instance )
 
     unlink( WDS_RSSI_TMP );
 #endif
-    return;
+    return cnt;
 }
 
 void ej_get_wdsp2p( webs_t wp, int argc, char_t ** argv )
