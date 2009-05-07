@@ -24,7 +24,14 @@ function setWirelessTable() {
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		cellmac.innerHTML = mac;
 
-		row.insertCell(-1).innerHTML = val[i + 1];
+		var ifn = val[i + 1];
+		var iface = row.insertCell(-1);
+		iface.title = status_band.titl;
+		iface.style.cursor = "pointer";
+		iface.style.textDecoration = "none";
+		eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
+		iface.innerHTML = ifn;
+		
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
 		row.insertCell(-1).innerHTML = val[i + 4];
@@ -53,8 +60,15 @@ function setWDSTable() {
 		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		cellmac.innerHTML = mac;
-		
-		row.insertCell(-1).innerHTML = val[i + 1];
+
+		var ifn = val[i + 1];
+		var iface = row.insertCell(-1);
+		iface.title = status_band.titl;
+		iface.style.cursor = "pointer";
+		iface.style.textDecoration = "none";
+		eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
+		iface.innerHTML = ifn;
+			
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
 		row.insertCell(-1).innerHTML = val[i + 4];
