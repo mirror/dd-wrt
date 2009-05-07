@@ -909,7 +909,6 @@ win.close();
 });
 win.focus();
 };
-
 function openBW(iface){
 var top=30;
 var left=Math.floor(screen.availWidth*.66)-10;
@@ -923,7 +922,6 @@ win.close();
 });
 win.focus();
 }
-
 function getTimeOut(clk,_cd,_ce){
 var _cf=60;
 var _d0=(_cf/5)-3;
