@@ -23,7 +23,6 @@ endif
 
 openvpn-install:
 	install -D openvpn/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
-	install -D openvpn/openvpn $(INSTALLDIR)/openvpn/etc
 
 ifeq ($(CONFIG_AIRNET),y)
 	install -D openvpn/config-airnet/openvpncl.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpncl.nvramconfig
