@@ -62,7 +62,7 @@ function setWDSTable() {
 		  var cellmac = row.insertCell(-1);
 		  cellmac.title = share.oui;
 		  cellmac.style.cursor = "pointer";
-		  cellmac.style.textDecoration = "none";
+		  cellmac.style.textDecoration = "underline";
 		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		  cellmac.innerHTML = mac;
 		} else {
@@ -73,7 +73,7 @@ function setWDSTable() {
 		var iface = row.insertCell(-1);
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
-		iface.style.textDecoration = "underline";
+		iface.style.textDecoration = "none";
 		eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
 		iface.innerHTML = ifn;
 				
