@@ -1,0 +1,1 @@
+/bin/echo "state" | /usr/bin/nc 127.0.0.1 5001 |/bin/grep -v "^>"
