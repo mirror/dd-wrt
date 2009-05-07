@@ -473,7 +473,7 @@ static void handle_services( void )
     handle = startstop_nofree( "vncrepeater", handle );
 #endif
 #ifdef HAVE_OPENVPN
-    handle = startstop_nofree( "openvpnserversys", handle );
+    handle = startstop_nofree( "openvpnserver", handle );
 #endif
     handle = start_service_nofree( "anchorfreednat", handle );
     if( handle )
