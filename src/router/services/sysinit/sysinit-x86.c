@@ -242,34 +242,58 @@ void start_sysinit( void )
 	insmod( "eepro100" );
 
     if( detect( "PRO/1000" ) )	// Intel Gigabit 
+	{
 	insmod( "e1000" );
+	insmod( "e1000e" );
+	}
     else if( detect( "82541" ) )	// Intel Gigabit
+	{
 	insmod( "e1000" );
+	insmod( "e1000e" );
+	}
     else if( detect( "82547" ) )	// Intel Gigabit
+	{
 	insmod( "e1000" );
+	insmod( "e1000e" );
+	}
     else if( detect( "82546" ) )	// Intel Gigabit
+	{
 	insmod( "e1000" );
+	insmod( "e1000e" );
+	}
     else if( detect( "82545" ) )	// Intel Gigabit / VMWare 64 bit mode 
-	// 
-	// (nice trick to get gigabit out of
-	// it)
+	{
 	insmod( "e1000" );
+	insmod( "e1000e" );
+	}
     else if( detect( "82543" ) )	// Intel Gigabit / VMWare 64 bit mode 
-	// 
-	// (nice trick to get gigabit out of
-	// it)
+	{
 	insmod( "e1000" );
+	insmod( "e1000e" );
+	}
     else if( detect( "82572" ) )	// Intel Gigabit 
+	{
 	insmod( "e1000" );
-
+	insmod( "e1000e" );
+	}
     if( detect( "RTL-8110" ) )	// Realtek 8169 Adapter (various notebooks) 
+	insmod( "r8169" );
+    else if( detect( "RTL-8111" ) )	// Realtek 8169 Adapter (various notebooks) 
 	insmod( "r8169" );
     else if( detect( "RTL-8169" ) )	// Realtek 8169 Adapter (various
 	// notebooks) 
 	insmod( "r8169" );
+    else if (detect("Linksys Gigabit"))
+	insmod( "r8169" );
     else if( detect( "RTL8101" ) )	// Realtek 8169 Adapter (various
 	// notebooks) 
 	insmod( "r8169" );
+
+    if (detect("Happy Meal"))
+	insmod("sunhme");
+	
+	
+	
 
     if( detect( "8139" ) )	// Realtek 8139 Adapter (various notebooks) 
 	insmod( "8139too" );
