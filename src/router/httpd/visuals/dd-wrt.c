@@ -3323,7 +3323,7 @@ static void show_netmode( webs_t wp, char *prefix )
     }
 #endif
 #endif
-    if( has_mimo( prefix ) )
+    if( has_mimo( prefix ) && !nvram_nmatch( "a", "%s_bandlist", prefix ) )
     {
 	websWrite( wp,
 		   "document.write(\"<option value=\\\"n-only\\\" %s>\" + wl_basic.n + \"</option>\");\n",
