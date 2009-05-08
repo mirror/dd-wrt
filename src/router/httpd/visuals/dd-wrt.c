@@ -3917,6 +3917,7 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 
     // char maxpower[16];
 #ifdef HAVE_MADWIFI
+#ifndef HAVE_MAKSAT
     if (isEMP(prefix))
 	{
 	char wl_cardtype[32];
@@ -3927,12 +3928,13 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	websWrite( wp,"document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n",nvram_default_match( wl_cardtype, "0","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp,"document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n",nvram_default_match( wl_cardtype, "5","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp,"document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n",nvram_default_match( wl_cardtype, "6","0" ) ? "selected=\\\"selected\\\"" : "" );
-	websWrite( wp,"document.write(\"<option value=\\\"4\\\" %s >MakSat MP26</option>\");\n",nvram_default_match( wl_cardtype, "4","0" ) ? "selected=\\\"selected\\\"" : "" );
+	websWrite( wp,"document.write(\"<option value=\\\"4\\\" %s >MakSat MAK27</option>\");\n",nvram_default_match( wl_cardtype, "4","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp,"document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n",nvram_default_match( wl_cardtype, "1","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp,"document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n",nvram_default_match( wl_cardtype, "2","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp,"document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n",nvram_default_match( wl_cardtype, "3","0" ) ? "selected=\\\"selected\\\"" : "" );
 	websWrite( wp, "//]]>\n</script>\n</select>\n</div>\n" );	
 	}
+#endif // ! HAVE MAKSAT
     char wl_regdomain[16];
 
     sprintf( wl_regdomain, "%s_regdomain", prefix );
