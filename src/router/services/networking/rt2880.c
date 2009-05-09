@@ -21,6 +21,8 @@
  */
 
 #ifdef HAVE_RT2880
+#include <sys/ioctl.h>
+#include <net/if.h>
 #include <sys/mman.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -49,6 +51,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
+#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 extern int br_add_interface( const char *br, const char *dev );
 
@@ -274,7 +277,6 @@ void setMacFilter( char *iface )
 
 }
 
-#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 void start_vifs( void )
 {
