@@ -1704,10 +1704,10 @@ static void configure_single( int count )
 	    sysprintf( "ifconfig %s 0.0.0.0 up", wdsdev );
 	}
     }
+    sysprintf( "iwconfig %s txpower %ddBm", dev, newpower );
 
     setMacFilter( dev );
 
-    sysprintf( "iwconfig %s txpower %ddBm", dev, newpower );
 
 
 
