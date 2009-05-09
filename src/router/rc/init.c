@@ -29,11 +29,13 @@
 #define	_PATH_CONSOLE	"/dev/console"
 
 #define start_service(a) eval("startservice",a);
+#define start_service_f(a) eval("startservice_f",a);
 #define start_services() eval("startservices");
 #define start_single_service() eval("start_single_service");
 #define stop_service(a) eval("stopservice",a);
 #define stop_services() eval("stopservices");
 #define startstop(a) eval("startstop",a);
+#define startstop_f(a) eval("startstop_f",a);
 
 static void set_term( int fd )
 {
@@ -587,10 +589,10 @@ int main( int argc, char **argv )
 		cprintf( "USER1\n" );
 		start_single_service(  );
 #ifdef HAVE_CHILLI
-		start_service( "chilli" );
+		start_service_f( "chilli" );
 #endif
 #ifdef HAVE_WIFIDOG
-		start_service( "wifidog" );
+		start_service_f( "wifidog" );
 #endif
 
 		state = IDLE;
@@ -719,10 +721,10 @@ int main( int argc, char **argv )
 			"/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib",
 			1 );
 #ifdef HAVE_IPV6
-		start_service( "ipv6" );
+		start_service_f( "ipv6" );
 #endif
 #ifndef HAVE_RB500
-		start_service( "resetbutton" );
+		start_service_f( "resetbutton" );
 #endif
 		start_service( "setup_vlans" );
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
@@ -740,7 +742,7 @@ int main( int argc, char **argv )
 		start_service( "mkfiles" );
 #endif
 #ifdef HAVE_MADWIFI
-		start_service( "stabridge" );
+		start_service_f( "stabridge" );
 #endif
 
 		cprintf( "start services\n" );
@@ -748,7 +750,7 @@ int main( int argc, char **argv )
 
 		cprintf( "start wan boot\n" );
 		start_service( "wan_boot" );
-		start_service( "ttraff" );
+		start_service_f( "ttraff" );
 
 		cprintf( "diag STOP LED\n" );
 		diag_led( DIAG, STOP_LED );
@@ -776,23 +778,23 @@ int main( int argc, char **argv )
 #endif
 #endif
 
-		start_service( "radio_timer" );
+		start_service_f( "radio_timer" );
 
 		cprintf( "create rc file\n" );
 #ifdef HAVE_REGISTER
 		if( isregistered_real(  ) )
 #endif
 		{
-		    start_service( "create_rc_startup" );
+		    start_service_f( "create_rc_startup" );
 		    chmod( "/tmp/.rc_startup", 0700 );
 		    system( "/tmp/.rc_startup" );
 		    system( "/etc/init.d/rcS" );	// start openwrt
 		    // startup script
 		    // (siPath impl)
 		    cprintf( "start modules\n" );
-		    start_service( "modules" );
+		    start_service_f( "modules" );
 #ifdef HAVE_MILKFISH
-		    start_service( "milkfish_boot" );
+		    start_service_f( "milkfish_boot" );
 #endif
 		    if( nvram_invmatch( "rc_custom", "" ) )	// create
 			// custom
@@ -804,14 +806,14 @@ int main( int argc, char **argv )
 		}
 
 #ifdef HAVE_CHILLI
-		start_service( "chilli" );
+		start_service_f( "chilli" );
 #endif
 #ifdef HAVE_WIFIDOG
-		start_service( "wifidog" );
+		start_service_f( "wifidog" );
 #endif
 		cprintf( "start syslog\n" );
 #ifdef HAVE_SYSLOG
-		startstop( "syslog" );
+		startstop_f( "syslog" );
 #endif
 #ifdef HAVE_RSTP
 		// just experimental for playing

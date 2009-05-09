@@ -1,7 +1,7 @@
 /* 
  * DD-WRT servicemanager.c
  *
- * Copyright (C) 2005 - 2006 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
+/* Copyright (C) 2005 - 2006 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -164,7 +164,7 @@ void *start_service_nofree( char *name, void *handle )
 }
 void *start_service_nofree_f( char *name, void *handle )
 {
-    FORK(start_service_nofree(name,handle));
+    FORK(start_service(name));
 }
 int start_servicep( char *name, char *param )
 {
@@ -304,7 +304,7 @@ void *stop_service_nofree( char *name, void *handle )
 }
 void *stop_service_nofree_f( char *name, void *handle )
 {
-    FORK(stop_service_nofree(name,handle));
+    FORK(stop_service(name));
 }
 void startstop( char *name )
 {
@@ -330,6 +330,7 @@ int startstop_main( int argc, char **argv )
 
 int startstop_main_f( int argc, char **argv )
 {
+    char *name = argv[1];
     FORK(startstop_main(argc,argv));
 }
 
@@ -343,5 +344,5 @@ void *startstop_nofree( char *name, void *handle )
 
 void *startstop_nofree_f( char *name, void *handle )
 {
-    FORK(startstop_nofree_f(name,handle));
+    FORK(startstop(name));
 }

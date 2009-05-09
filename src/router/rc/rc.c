@@ -232,6 +232,7 @@ static struct MAIN maincalls[] = {
     {"stopservices", NULL, stop_services_main},
     {"startservices", NULL, start_services_main},
     {"start_single_service", NULL, start_single_service_main},
+    {"startstop_f", NULL, startstop_main_f},
     {"startstop", NULL, startstop_main},
     {"softwarerevision", NULL, softwarerevision_main},
 #if !defined(HAVE_MICRO) || defined(HAVE_ADM5120)
@@ -267,6 +268,16 @@ int main( int argc, char **argv )
 	}
     }
 
+    if( strstr( base, "startservice_f" ) )
+    {
+	if( argc < 2 )
+	{
+	    puts( "try to be professional\n" );
+	    return 0;
+	}
+	start_service_f( argv[1] );
+	return 0;
+    }
     if( strstr( base, "startservice" ) )
     {
 	if( argc < 2 )
@@ -277,6 +288,7 @@ int main( int argc, char **argv )
 	start_service( argv[1] );
 	return 0;
     }
+
     if( strstr( base, "stopservice" ) )
     {
 	if( argc < 2 )
