@@ -86,91 +86,91 @@ int start_services_main( int argc, char **argv )
 
     nvram_set( "qos_done", "0" );
 #ifdef HAVE_CPUTEMP
-    handle = start_service_nofree( "hwmon", handle );
+    handle = start_service_nofree_f( "hwmon", handle );
 #endif
 #ifdef HAVE_TELNET
-    handle = start_service_nofree( "telnetd", handle );
+    handle = start_service_nofree_f( "telnetd", handle );
 #endif
 #ifdef HAVE_FTP
-    handle = start_service_nofree( "ftpsrv", handle );
+    handle = start_service_nofree_f( "ftpsrv", handle );
 #endif
 #ifdef HAVE_SAMBA_SRV
-    handle = start_service_nofree( "sambasrv", handle );
+    handle = start_service_nofree_f( "sambasrv", handle );
 #endif
 #ifdef HAVE_SYSLOG
-    handle = start_service_nofree( "syslog", handle );
+    handle = start_service_nofree_f( "syslog", handle );
 #endif
 #ifdef HAVE_TFTP
-    handle = start_service_nofree( "tftpd", handle );
+    handle = start_service_nofree_f( "tftpd", handle );
 #endif
-    handle = start_service_nofree( "httpd", handle );
-    handle = start_service_nofree( "udhcpd", handle );
+    handle = start_service_nofree_f( "httpd", handle );
+    handle = start_service_nofree_f( "udhcpd", handle );
 #ifdef HAVE_DNSMASQ
-    handle = start_service_nofree( "dnsmasq", handle );
+    handle = start_service_nofree_f( "dnsmasq", handle );
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-    handle = start_service_nofree( "zebra", handle );
+    handle = start_service_nofree_f( "zebra", handle );
 #endif
 #ifdef HAVE_OLSRD
-    handle = start_service_nofree( "olsrd", handle );
+    handle = start_service_nofree_f( "olsrd", handle );
 #endif
 
-    handle = start_service_nofree( "wshaper", handle );
-    handle = start_service_nofree( "wland", handle );
-    handle = start_service_nofree( "cron", handle );
+    handle = start_service_nofree_f( "wshaper", handle );
+    handle = start_service_nofree_f( "wland", handle );
+    handle = start_service_nofree_f( "cron", handle );
 
 #ifdef HAVE_PPTPD
-    handle = start_service_nofree( "pptpd", handle );
+    handle = start_service_nofree_f( "pptpd", handle );
 #endif
 
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
     if( isregistered_real(  ) )
 #endif
-	handle = start_service_nofree( "sshd", handle );
+	handle = start_service_nofree_f( "sshd", handle );
 #endif
 
 #ifdef HAVE_RADVD
-    handle = start_service_nofree( "radvd", handle );
+    handle = start_service_nofree_f( "radvd", handle );
 #endif
 
 #ifdef HAVE_SNMP
-    handle = start_service_nofree( "snmp", handle );
+    handle = start_service_nofree_f( "snmp", handle );
 #endif
 
 #ifdef HAVE_PPPOESERVER
-    handle = start_service_nofree( "pppoeserver", handle );
+    handle = start_service_nofree_f( "pppoeserver", handle );
 #endif
 
 #ifdef HAVE_WOL
-    handle = start_service_nofree( "wol", handle );
+    handle = start_service_nofree_f( "wol", handle );
 #endif
 
 #ifdef HAVE_NOCAT
-    handle = start_service_nofree( "splashd", handle );
+    handle = start_service_nofree_f( "splashd", handle );
 #endif
 
 #ifdef HAVE_UPNP
-    handle = start_service_nofree( "upnp", handle );
+    handle = start_service_nofree_f( "upnp", handle );
 #endif
 
 #ifdef HAVE_OPENVPN
-    handle = start_service_nofree( "openvpnserversys", handle );
+    handle = start_service_nofree_f( "openvpnserversys", handle );
 #endif
 #ifdef HAVE_VNCREPEATER
-    handle = start_service_nofree( "vncrepeater", handle );
+    handle = start_service_nofree_f( "vncrepeater", handle );
 #endif
 #ifdef HAVE_RSTATS
-    handle = start_service_nofree( "rstats", handle );
+    handle = start_service_nofree_f( "rstats", handle );
 #endif
 #ifdef HAVE_NSTX
-    handle = start_service_nofree( "nstxd", handle );
+    handle = start_service_nofree_f( "nstxd", handle );
 #endif
 #ifdef HAVE_PPPOERELAY
-    handle = start_service_nofree( "pppoerelay", handle );
+    handle = start_service_nofree_f( "pppoerelay", handle );
 #endif
 #ifdef HAVE_MILKFISH
-    handle = start_service_nofree( "milkfish", handle );
+    handle = start_service_nofree_f( "milkfish", handle );
 #endif
     if( handle )
 	dlclose( handle );
@@ -280,7 +280,7 @@ int stop_services_main( int argc, char **argv )
 
 static void handle_dhcpd( void )
 {
-    startstop( "udhcpd" );
+    startstop_f( "udhcpd" );
 }
 
 static void handle_index( void )
@@ -320,19 +320,19 @@ static void handle_index( void )
     handle = start_service_nofree( "bonding", handle );
 #endif
     handle = start_service_nofree( "wan_boot", handle );
-    handle = start_service_nofree( "ttraff", handle );
+    handle = start_service_nofree_f( "ttraff", handle );
 #ifdef HAVE_MADWIFI
-    handle = start_service_nofree( "stabridge", handle );
+    handle = start_service_nofree_f( "stabridge", handle );
 #endif
-    handle = startstop_nofree( "udhcpd", handle );
+    handle = startstop_nofree_f( "udhcpd", handle );
 #ifdef HAVE_DNSMASQ
-    handle = startstop_nofree( "dnsmasq", handle );
+    handle = startstop_nofree_f( "dnsmasq", handle );
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-    handle = startstop_nofree( "zebra", handle );
+    handle = startstop_nofree_f( "zebra", handle );
 #endif
 #ifdef HAVE_OLSRD
-    handle = startstop_nofree( "olsrd", handle );
+    handle = startstop_nofree_f( "olsrd", handle );
 #endif
 #ifdef HAVE_VLANTAGGING
     handle = start_service_nofree( "vlantagging", handle );
@@ -344,17 +344,17 @@ static void handle_index( void )
     handle = start_service_nofree( "guest_nas", handle );
 #endif
 #endif
-    handle = start_service_nofree( "radio_timer", handle );
-    handle = startstop_nofree( "firewall", handle );
-    handle = startstop_nofree( "httpd", handle );	// httpd will not
+    handle = start_service_nofree_f( "radio_timer", handle );
+    handle = startstop_nofree_f( "firewall", handle );
+    handle = startstop_nofree_f( "httpd", handle );	// httpd will not
     // accept connection
     // anymore on wan/lan 
     // ip changes changes
-    handle = startstop_nofree( "cron", handle );	// httpd will not
+    handle = startstop_nofree_f( "cron", handle );	// httpd will not
     // accept connection
     // anymore on wan/lan 
     // ip changes changes
-    handle = start_service_nofree( "anchorfreednat", handle );
+    handle = start_service_nofree_f( "anchorfreednat", handle );
     handle = start_service_nofree( "wan_boot", handle );
     if( handle )
 	dlclose( handle );
@@ -365,10 +365,10 @@ static void handle_router( void )
     void *handle = NULL;
 
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-    handle = startstop_nofree( "zebra", handle );
+    handle = startstop_nofree_f( "zebra", handle );
 #endif
 #ifdef HAVE_OLSRD
-    handle = startstop_nofree( "olsrd", handle );
+    handle = startstop_nofree_f( "olsrd", handle );
 #endif
     if( handle )
 	dlclose( handle );
@@ -377,8 +377,8 @@ static void handle_anchorfree( void )
 {
     void *handle = NULL;
 
-    handle = startstop_nofree( "anchorfree", handle );
-    handle = start_service_nofree( "anchorfreednat", handle );
+    handle = startstop_nofree_f( "anchorfree", handle );
+    handle = start_service_nofree_f( "anchorfreednat", handle );
     if( handle )
 	dlclose( handle );
 }
@@ -388,16 +388,16 @@ static void handle_hotspot( void )
     void *handle = NULL;
 
 #ifdef HAVE_WIFIDOG
-    handle = startstop_nofree( "wifidog", handle );
+    handle = startstop_nofree_f( "wifidog", handle );
 #endif
 #ifdef HAVE_NOCAT
-    handle = startstop_nofree( "splashd", handle );
+    handle = startstop_nofree_f( "splashd", handle );
 #endif
 #ifdef HAVE_CHILLI
-    handle = startstop_nofree( "chilli", handle );
+    handle = startstop_nofree_f( "chilli", handle );
 #endif
 #ifdef HAVE_SPUTNIK_APD
-    handle = startstop_nofree( "sputnik", handle );
+    handle = startstop_nofree_f( "sputnik", handle );
 #endif
     if( handle )
 	dlclose( handle );
@@ -413,41 +413,41 @@ static void handle_services( void )
     void *handle = NULL;
 
 #ifdef HAVE_PPPOERELAY
-    handle = startstop_nofree( "pppoerelay", handle );
+    handle = startstop_nofree_f( "pppoerelay", handle );
 #endif
-    handle = startstop_nofree( "udhcpd", handle );
+    handle = startstop_nofree_f( "udhcpd", handle );
 #ifdef HAVE_SYSLOG
-    handle = startstop_nofree( "syslog", handle );
+    handle = startstop_nofree_f( "syslog", handle );
 #endif
 #ifdef HAVE_RSTATS
-    handle = startstop_nofree( "rstats", handle );
+    handle = startstop_nofree_f( "rstats", handle );
 #endif
-    handle = startstop_nofree( "ttraff", handle );
+    handle = startstop_nofree_f( "ttraff", handle );
 #ifdef HAVE_NSTX
-    handle = startstop_nofree( "nstxd", handle );
+    handle = startstop_nofree_f( "nstxd", handle );
 #endif
 #ifdef HAVE_PPPOESERVER
-    handle = startstop_nofree( "firewall", handle );
-    handle = startstop_nofree( "pppoeserver", handle );
+    handle = startstop_nofree_f( "firewall", handle );
+    handle = startstop_nofree_f( "pppoeserver", handle );
 #endif
 #ifdef HAVE_DNSMASQ
-    handle = startstop_nofree( "dnsmasq", handle );
+    handle = startstop_nofree_f( "dnsmasq", handle );
 #endif
-    handle = startstop_nofree( "udhcpd", handle );
+    handle = startstop_nofree_f( "udhcpd", handle );
 #ifdef HAVE_CPUTEMP
-    handle = start_service_nofree( "hwmon", handle );
+    handle = start_service_nofree_f( "hwmon", handle );
 #endif
 #ifdef HAVE_TELNET
-    handle = startstop_nofree( "telnetd", handle );
+    handle = startstop_nofree_f( "telnetd", handle );
 #endif
 #ifdef HAVE_SNMP
-    handle = startstop_nofree( "snmp", handle );
+    handle = startstop_nofree_f( "snmp", handle );
 #endif
 #ifdef HAVE_OPENVPN
-    handle = startstop_nofree( "openvpn", handle );
+    handle = startstop_nofree_f( "openvpn", handle );
 #endif
 #ifdef HAVE_PPTPD
-    handle = startstop_nofree( "pptpd", handle );
+    handle = startstop_nofree_f( "pptpd", handle );
 #endif
 #ifdef HAVE_PPTP
     eval( "/etc/config/pptpd_client.startup" );
@@ -462,20 +462,20 @@ static void handle_services( void )
 #ifdef HAVE_REGISTER
     if( isregistered_real(  ) )
 #endif
-	handle = startstop_nofree( "sshd", handle );
+	handle = startstop_nofree_f( "sshd", handle );
 #endif
-    handle = startstop_nofree( "firewall", handle );
-    handle = startstop_nofree( "wshaper", handle );
+    handle = startstop_nofree_f( "firewall", handle );
+    handle = startstop_nofree_f( "wshaper", handle );
 #ifdef HAVE_SYSLOG
-    handle = startstop_nofree( "syslog", handle );
+    handle = startstop_nofree_f( "syslog", handle );
 #endif
 #ifdef HAVE_VNCREPEATER
-    handle = startstop_nofree( "vncrepeater", handle );
+    handle = startstop_nofree_f( "vncrepeater", handle );
 #endif
 #ifdef HAVE_OPENVPN
-    handle = startstop_nofree( "openvpnserver", handle );
+    handle = startstop_nofree_f( "openvpnserver", handle );
 #endif
-    handle = start_service_nofree( "anchorfreednat", handle );
+    handle = start_service_nofree_f( "anchorfreednat", handle );
     if( handle )
 	dlclose( handle );
 
@@ -486,10 +486,10 @@ static void handle_nassrv( void )
     void *handle = NULL;
 
 #ifdef HAVE_FTP
-    handle = startstop_nofree( "ftpsrv", handle );
+    handle = startstop_nofree_f( "ftpsrv", handle );
 #endif
 #ifdef HAVE_SAMBA_SRV
-    handle = startstop_nofree( "sambasrv", handle );
+    handle = startstop_nofree_f( "sambasrv", handle );
 #endif
     if( handle )
 	dlclose( handle );
@@ -508,28 +508,28 @@ static void handle_management( void )
 #endif
     handle = stop_service_nofree( "cron", handle );
     handle = stop_service_nofree( "udhcpd", handle );
-    handle = start_service_nofree( "udhcpd", handle );
-    handle = start_service_nofree( "cron", handle );
+    handle = start_service_nofree_f( "udhcpd", handle );
+    handle = start_service_nofree_f( "cron", handle );
 #ifdef HAVE_IPV6
-    handle = start_service_nofree( "ipv6", handle );
+    handle = start_service_nofree_f( "ipv6", handle );
 #endif
 #ifdef HAVE_RADVD
-    handle = startstop_nofree( "radvd", handle );
+    handle = startstop_nofree_f( "radvd", handle );
 #endif
 #ifdef HAVE_PPTPD
-    handle = startstop_nofree( "pptpd", handle );
+    handle = startstop_nofree_f( "pptpd", handle );
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-    handle = start_service_nofree( "zebra", handle );
+    handle = start_service_nofree_f( "zebra", handle );
 #endif
-    handle = startstop_nofree( "firewall", handle );
+    handle = startstop_nofree_f( "firewall", handle );
     handle = stop_service_nofree( "wland", handle );
-    handle = startstop_nofree( "wshaper", handle );
-    handle = start_service_nofree( "wland", handle );
-    handle = startstop_nofree( "httpd", handle );
+    handle = startstop_nofree_f( "wshaper", handle );
+    handle = start_service_nofree_f( "wland", handle );
+    handle = startstop_nofree_f( "httpd", handle );
 
 #ifdef HAVE_WOL
-    handle = startstop_nofree( "wol", handle );
+    handle = startstop_nofree_f( "wol", handle );
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "nas", handle );
@@ -537,7 +537,7 @@ static void handle_management( void )
     handle = start_service_nofree( "guest_nas", handle );
 #endif
 #endif
-    handle = start_service_nofree( "anchorfreednat", handle );
+    handle = start_service_nofree_f( "anchorfreednat", handle );
 
     if( handle )
 	dlclose( handle );
@@ -577,9 +577,9 @@ static void handle_pppoe( void )
     handle = start_service_nofree( "bonding", handle );
 #endif
     handle = start_service_nofree( "wan_boot", handle );
-    handle = start_service_nofree( "ttraff", handle );
+    handle = start_service_nofree_f( "ttraff", handle );
 #ifdef HAVE_MADWIFI
-    handle = start_service_nofree( "stabridge", handle );
+    handle = start_service_nofree_f( "stabridge", handle );
 #endif
 #ifdef HAVE_VLANTAGGING
     handle = start_service_nofree( "vlantagging", handle );
@@ -591,33 +591,33 @@ static void handle_pppoe( void )
     handle = start_service_nofree( "guest_nas", handle );
 #endif
 #endif
-    handle = start_service_nofree( "radio_timer", handle );
+    handle = start_service_nofree_f( "radio_timer", handle );
     if( handle )
 	dlclose( handle );
 
 }
 static void handle_spppoe( void )
 {
-    stop_service( "ttraff" );
-    stop_service( "wan" );
+    stop_service_f( "ttraff" );
+    stop_service_f( "wan" );
 }
 static void handle_filters( void )
 {
     void *handle = NULL;
 
     handle = stop_service_nofree( "cron", handle );
-    handle = startstop_nofree( "firewall", handle );
+    handle = startstop_nofree_f( "firewall", handle );
 #ifdef HAVE_SYSLOG
-    handle = startstop_nofree( "syslog", handle );
+    handle = startstop_nofree_f( "syslog", handle );
 #endif
     handle = stop_service_nofree( "wland", handle );
-    handle = startstop_nofree( "wshaper", handle );
-    handle = start_service_nofree( "wland", handle );
-    handle = start_service_nofree( "cron", handle );
+    handle = startstop_nofree_f( "wshaper", handle );
+    handle = start_service_nofree_f( "wland", handle );
+    handle = start_service_nofree_f( "cron", handle );
 #ifdef HAVE_MULTICAST
-    handle = startstop_nofree( "igmp_proxy", handle );
+    handle = startstop_nofree_f( "igmp_proxy", handle );
 #endif
-    handle = start_service_nofree( "anchorfreednat", handle );
+    handle = start_service_nofree_f( "anchorfreednat", handle );
     if( handle )
 	dlclose( handle );
 }
@@ -628,15 +628,15 @@ static void handle_routing( void )
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
     handle = stop_service_nofree( "zebra", handle );
 #endif
-    handle = startstop_nofree( "firewall", handle );
-    handle = start_service_nofree( "set_routes", handle );
+    handle = startstop_nofree_f( "firewall", handle );
+    handle = start_service_nofree_f( "set_routes", handle );
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-    handle = start_service_nofree( "zebra", handle );
+    handle = start_service_nofree_f( "zebra", handle );
 #endif
 #ifdef HAVE_OLSRD
-    handle = startstop_nofree( "olsrd", handle );
+    handle = startstop_nofree_f( "olsrd", handle );
 #endif
-    handle = start_service_nofree( "anchorfreednat", handle );
+    handle = start_service_nofree_f( "anchorfreednat", handle );
     if( handle )
 	dlclose( handle );
 
@@ -655,7 +655,7 @@ static void handle_alive( void )
     eval( "/etc/config/schedulerb.startup" );
     eval( "/etc/config/proxywatchdog.startup" );
     }
-    handle = start_service_nofree( "cron", handle );
+    handle = start_service_nofree_f( "cron", handle );
     if( handle )
 	dlclose( handle );
 }
@@ -670,21 +670,21 @@ static void handle_forward( void )
 //    handle = stop_service_nofree( "upnp", handle );
 #endif
     handle = stop_service_nofree( "firewall", handle );
-    handle = start_service_nofree( "firewall", handle );
+    handle = start_service_nofree_f( "firewall", handle );
 #ifdef HAVE_UPNP
 //    handle = start_service_nofree( "upnp", handle );
 #endif
-    handle = start_service_nofree( "wshaper", handle );
-    handle = start_service_nofree( "wland", handle );
-    handle = start_service_nofree( "anchorfreednat", handle );
+    handle = start_service_nofree_f( "wshaper", handle );
+    handle = start_service_nofree_f( "wland", handle );
+    handle = start_service_nofree_f( "anchorfreednat", handle );
     if( handle )
 	dlclose( handle );
 
 }
 static void handle_qos( void )
 {
-    startstop( "wshaper" );
-    startstop( "wland" );
+    startstop_f( "wshaper" );
+    startstop_f( "wland" );
 }
 
 static void handle_forwardupnp( void )
@@ -695,14 +695,14 @@ static void handle_forwardupnp( void )
     handle = stop_service_nofree( "upnp", handle );
 #endif
     handle = stop_service_nofree( "firewall", handle );
-    handle = start_service_nofree( "firewall", handle );
+    handle = start_service_nofree_f( "firewall", handle );
 #ifdef HAVE_UPNP
-    handle = start_service_nofree( "upnp", handle );
+    handle = start_service_nofree_f( "upnp", handle );
 #endif
     handle = stop_service_nofree( "wland", handle );
-    handle = startstop_nofree( "wshaper", handle );
-    handle = start_service_nofree( "wland", handle );
-    handle = start_service_nofree( "anchorfreednat", handle );
+    handle = startstop_nofree_f( "wshaper", handle );
+    handle = start_service_nofree_f( "wland", handle );
+    handle = start_service_nofree_f( "anchorfreednat", handle );
     if( handle )
 	dlclose( handle );
 
@@ -817,9 +817,9 @@ static void handle_wireless( void )
     handle = start_service_nofree( "bonding", handle );
 #endif
     handle = start_service_nofree( "wan", handle );
-    handle = start_service_nofree( "ttraff", handle );
+    handle = start_service_nofree_f( "ttraff", handle );
 #ifdef HAVE_MADWIFI
-    handle = start_service_nofree( "stabridge", handle );
+    handle = start_service_nofree_f( "stabridge", handle );
 #endif
 #ifdef HAVE_VLANTAGGING
     handle = start_service_nofree( "vlantagging", handle );
@@ -831,13 +831,13 @@ static void handle_wireless( void )
     handle = start_service_nofree( "guest_nas", handle );
 #endif
 #endif
-    handle = start_service_nofree( "radio_timer", handle );
+    handle = start_service_nofree_f( "radio_timer", handle );
     //restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
-    handle = startstop_nofree( "udhcpd", handle );
+    handle = startstop_nofree_f( "udhcpd", handle );
 #ifdef HAVE_DNSMASQ
-    handle = startstop_nofree( "dnsmasq", handle );
+    handle = startstop_nofree_f( "dnsmasq", handle );
 #endif
-    startstop( "httpd" );	// httpd will not accept connection anymore
+    startstop_f( "httpd" );	// httpd will not accept connection anymore
     // on wan/lan ip changes changes
     if( handle )
 	dlclose( handle );
@@ -899,10 +899,10 @@ static void handle_wireless_2( void )
 	// we must use getWET as well
     {
 	handle = start_service_nofree( "wan", handle );
-	handle = start_service_nofree( "ttraff", handle );
+	handle = start_service_nofree_f( "ttraff", handle );
     }
 #ifdef HAVE_MADWIFI
-    handle = start_service_nofree( "stabridge", handle );
+    handle = start_service_nofree_f( "stabridge", handle );
 #endif
 #ifdef HAVE_VLANTAGGING
     handle = start_service_nofree( "vlantagging", handle );
@@ -914,12 +914,12 @@ static void handle_wireless_2( void )
     handle = start_service_nofree( "guest_nas", handle );
 #endif
 #endif
-    handle = start_service_nofree( "radio_timer", handle );
+    handle = start_service_nofree_f( "radio_timer", handle );
     if( getSTA(  ) || getWET(  ) )
-	startstop( "httpd" );	// httpd will not accept connection anymore
+	startstop_f( "httpd" );	// httpd will not accept connection anymore
     // on wan/lan ip changes changes
 #ifdef HAVE_MADWIFI
-    handle = start_service_nofree( "hostapdwan", handle );
+    handle = start_service_nofree_f( "hostapdwan", handle );
 #endif
     if( handle )
 	dlclose( handle );
