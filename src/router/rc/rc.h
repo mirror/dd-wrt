@@ -155,6 +155,7 @@ extern void unload_vpn_modules( void );
 extern void depend_vpn_modules( void );
 
 extern void start_service( char *name );
+extern void startstop( char *name );
 extern void stop_service( char *name );
 extern void *start_service_nofree( char *name, void *handle );
 extern void *stop_service_nofree( char *name, void *handle );
@@ -162,6 +163,18 @@ extern int startstop_main( int argc, char **argv );
 extern void *startstop_nofree( char *name, void *handle );
 extern int start_main( char *name, int argc, char **argv );
 extern void start_servicei( char *name, int param );
+
+
+
+extern void startstop_f( char *name );
+extern void start_service_f( char *name );
+extern void stop_service_f( char *name );
+extern void *start_service_nofree_f( char *name, void *handle );
+extern void *stop_service_nofree_f( char *name, void *handle );
+extern int startstop_main_f( int argc, char **argv );
+extern void *startstop_nofree_f( char *name, void *handle );
+extern int start_main_f( char *name, int argc, char **argv );
+extern void start_servicei_f( char *name, int param );
 
 extern int zebra_ospf_init( void );
 extern int zebra_ripd_init( void );

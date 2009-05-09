@@ -207,6 +207,29 @@ char *strcat_r( const char *s1, const char *s2, char *buf );
 #define dprintf(fmt, args...)
 #endif
 
+
+
+#ifndef HAVE_MICRO
+#define FORK(a) a;
+#else
+#define FORK(func) \
+{ \
+    switch ( fork(  ) ) \
+    { \
+	case -1: \
+	    return \
+	    break; \
+	case 0: \
+	    ( void )setsid(  ); \
+	    break; \
+	default: \
+	    return \
+    } \
+    func; \
+    return; \
+}			
+#endif
+
 #ifdef vxworks
 
 #include <inetLib.h>
@@ -217,6 +240,7 @@ char *strcat_r( const char *s1, const char *s2, char *buf );
 #include <bcmutils.h>
 #define ether_atoe(a, e) bcm_ether_atoe((a), (e))
 #define ether_etoa(e, a) bcm_ether_ntoa((e), (a))
+
 
 /*
  * These declarations are not available where you would expect them 
