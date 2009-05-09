@@ -578,12 +578,14 @@ ifeq ($(CONFIG_ADM5120),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc watchdog
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
+	cd $(INSTALLDIR)/sbin && ln -sf rc startservice_f
 #	cd $(INSTALLDIR)/sbin && ln -sf rc switch
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservices
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_single_service
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservices
 	cd $(INSTALLDIR)/sbin && ln -sf rc startstop
+	cd $(INSTALLDIR)/sbin && ln -sf rc startstop_f
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd
 #ifeq ($(CONFIG_BIRD),y)

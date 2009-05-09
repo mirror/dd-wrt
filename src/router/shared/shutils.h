@@ -209,7 +209,7 @@ char *strcat_r( const char *s1, const char *s2, char *buf );
 
 
 
-#ifndef HAVE_MICRO
+#ifdef HAVE_MICRO
 #define FORK(a) a;
 #else
 #define FORK(func) \
@@ -217,16 +217,16 @@ char *strcat_r( const char *s1, const char *s2, char *buf );
     switch ( fork(  ) ) \
     { \
 	case -1: \
-	    return \
+	    return; \
 	    break; \
 	case 0: \
 	    ( void )setsid(  ); \
 	    break; \
 	default: \
-	    return \
+	    return; \
     } \
     func; \
-    return; \
+    exit(0); \
 }			
 #endif
 
