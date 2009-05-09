@@ -280,6 +280,8 @@ void start_sysinit( void )
 	insmod( "r8169" );
     else if( detect( "RTL-8111" ) )	// Realtek 8169 Adapter (various notebooks) 
 	insmod( "r8169" );
+    else if( detect( "RTL8111" ) )	// Realtek 8169 Adapter (various notebooks) 
+	insmod( "r8169" );
     else if( detect( "RTL-8169" ) )	// Realtek 8169 Adapter (various
 	// notebooks) 
 	insmod( "r8169" );
