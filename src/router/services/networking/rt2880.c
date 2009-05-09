@@ -1366,6 +1366,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    }
 	}
     }
+    reset_hwaddr(nvram_safe_get("lan_ifname"));
 
 }
 

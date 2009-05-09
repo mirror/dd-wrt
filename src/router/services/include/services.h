@@ -165,3 +165,5 @@ int br_set_stp_state( const char *br, int stp_state );
 int br_set_port_prio( const char *br, char *port, char *prio );
 int br_set_bridge_forward_delay( const char *br, int sec );
 int br_set_bridge_prio( const char *br, char *prio );
+
+void reset_hwaddr(char *ifname);

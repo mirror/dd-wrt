@@ -2209,6 +2209,7 @@ if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) < 0 )
     }
 #endif
 close(s);
+    reset_hwaddr(nvram_safe_get("lan_ifname"));
 }
 
 void start_deconfigurewifi( void )
