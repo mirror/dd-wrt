@@ -768,6 +768,93 @@ void set_fullswitch( void )
 
     return;
 }
+
+void reset_hwaddr(char *ifname)
+{
+    struct ifreq ifr;
+    char eabuf[32];
+    int s;
+    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) < 0 )
+	return;
+    /*
+     * Get current LAN hardware address 
+     */
+
+    strncpy( ifr.ifr_name, ifname, IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	nvram_set( "lan_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+	if( getRouterBrand(  ) == ROUTER_DLINK_DIR320 )
+	{
+	    if( strlen( nvram_safe_get( "et0macaddr" ) ) == 12 )
+	    {
+		char wlmac[32];
+
+		strcpy( wlmac, nvram_safe_get( "wl0_hwaddr" ) );
+		MAC_SUB( wlmac );
+		nvram_set( "et0macaddr", wlmac );
+		nvram_unset( "lan_hwaddr" );
+		nvram_unset( "wan_hwaddr" );
+		// fis dlink quirk, by restarting system. utils.c will
+		// automaticly assign the et0macaddr then
+		nvram_commit(  );
+		eval( "event", "5", "1", "15" );
+	    }
+	}
+#ifdef HAVE_RB500
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_XSCALE
+#ifndef HAVE_GATEWORX
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#endif
+#ifdef HAVE_MAGICBOX
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_FONERA
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_RT2880
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_LS2
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_LS5
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_WHRAG108
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_PB42
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_LSX
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_DANUBE
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_STORM
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_ADM5120
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_TW6600
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+#ifdef HAVE_CA8
+	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
+#endif
+    }
+
+    close( s );
+
+}
+
 #ifdef HAVE_3G
 #define CANBRIDGE() (nvram_match( "wan_proto", "disabled" ) ||  nvram_match( "wan_proto", "3g" ))
 #else
@@ -1937,83 +2024,9 @@ void start_lan( void )
 	else
 	    eval( "ifconfig", staticlan, "0.0.0.0", "down" );
 #endif
-
-    /*
-     * Get current LAN hardware address 
-     */
-
-    strncpy( ifr.ifr_name, lan_ifname, IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	nvram_set( "lan_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-	if( getRouterBrand(  ) == ROUTER_DLINK_DIR320 )
-	{
-	    if( strlen( nvram_safe_get( "et0macaddr" ) ) == 12 )
-	    {
-		char wlmac[32];
-
-		strcpy( wlmac, nvram_safe_get( "wl0_hwaddr" ) );
-		MAC_SUB( wlmac );
-		nvram_set( "et0macaddr", wlmac );
-		nvram_unset( "lan_hwaddr" );
-		nvram_unset( "wan_hwaddr" );
-		// fis dlink quirk, by restarting system. utils.c will
-		// automaticly assign the et0macaddr then
-		nvram_commit(  );
-		eval( "event", "5", "1", "15" );
-	    }
-	}
-#ifdef HAVE_RB500
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_XSCALE
-#ifndef HAVE_GATEWORX
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#endif
-#ifdef HAVE_MAGICBOX
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_FONERA
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_RT2880
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_LS2
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_LS5
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_WHRAG108
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_PB42
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_LSX
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_DANUBE
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_STORM
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_ADM5120
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_TW6600
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-#ifdef HAVE_CA8
-	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
-#endif
-    }
-
-    close( s );
+    close(s);
+    reset_hwaddr(lan_ifname);
+    
     cprintf( "%s %s\n",
 	     nvram_safe_get( "lan_ipaddr" ),
 	     nvram_safe_get( "lan_netmask" ) );
