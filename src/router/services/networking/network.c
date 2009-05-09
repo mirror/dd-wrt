@@ -1906,14 +1906,12 @@ void start_lan( void )
 #endif
 
     }
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 
     /*
      * Bring up and configure LAN interface 
      */
     ifconfig( lan_ifname, IFUP, nvram_safe_get( "lan_ipaddr" ),
 	      nvram_safe_get( "lan_netmask" ) );
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 
     char staticlan[32];
 
