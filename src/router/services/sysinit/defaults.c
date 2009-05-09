@@ -1267,7 +1267,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_DDLAN
     {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_GGEW
-    {"remote_management", "1", 0},	/* Remote Management [1|0] */
+    {"remote_management", "0", 0},	/* Remote Management [1|0] */
 #elif HAVE_MAGICBOX
     {"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_XSCALE
