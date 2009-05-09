@@ -1862,15 +1862,17 @@ void start_lan( void )
 	    eval( "ifconfig", wifi, "up" );
 	}
     }
+fprintf(stderr,"%s:%d\n",__func__,__LINE__);
     FORK(configure_wifi(  ));
-
+fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 #endif
 #endif
 #ifdef HAVE_WAVESAT
-    configure_wimax(  );
+    FORK(configure_wimax(  ));
 #endif
     lan_ifname = strdup( nvram_safe_get( "lan_ifname" ) );
     lan_ifnames = strdup( nvram_safe_get( "lan_ifnames" ) );
+fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 
     /*
      * specific non-bridged lan i/f 
@@ -1907,12 +1909,14 @@ void start_lan( void )
 #endif
 
     }
+fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 
     /*
      * Bring up and configure LAN interface 
      */
     ifconfig( lan_ifname, IFUP, nvram_safe_get( "lan_ipaddr" ),
 	      nvram_safe_get( "lan_netmask" ) );
+fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 
     char staticlan[32];
 
@@ -2013,156 +2017,6 @@ void start_lan( void )
 	nvram_set( "et0macaddr", nvram_safe_get( "lan_hwaddr" ) );
 #endif
     }
-#ifdef HAVE_RB500
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_X86
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_XSCALE
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_MAGICBOX
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_FONERA
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_LS2
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_LS5
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_WHRAG108
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_PB42
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_LSX
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_DANUBE
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_STORM
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_ADM5120
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_TW6600
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
-#ifdef HAVE_CA8
-    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
-    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
-    {
-	char eabuf[32];
-
-	nvram_set( "wl0_hwaddr",
-		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
-    }
-#endif
 
     close( s );
     cprintf( "%s %s\n",
