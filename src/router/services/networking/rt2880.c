@@ -1255,6 +1255,116 @@ void configure_wifi( void )	// madwifi implementation for atheros based
     }
 
     start_radius(  );
+
+
+    int cnt = 1;
+    int c;
+
+    for( c = 0; c < cnt; c++ )
+    {
+	char br1enable[32];
+	char br1ipaddr[32];
+	char br1netmask[32];
+
+	sprintf( br1enable, "wl%d_br1_enable", c );
+	sprintf( br1ipaddr, "wl%d_br1_ipaddr", c );
+	sprintf( br1netmask, "wl%d_br1_netmask", c );
+	if( nvram_get( br1enable ) == NULL )
+	    nvram_set( br1enable, "0" );
+	if( nvram_get( br1ipaddr ) == NULL )
+	    nvram_set( br1ipaddr, "0.0.0.0" );
+	if( nvram_get( br1netmask ) == NULL )
+	    nvram_set( br1netmask, "255.255.255.0" );
+	if( nvram_match( br1enable, "1" ) )
+	{
+	    ifconfig( "br1", 0, 0, 0 );
+
+	    // eval ("ifconfig", "br1", "down");
+	    br_del_bridge( "br1" );
+	    br_add_bridge( "br1" );
+
+	    if( nvram_match( "lan_stp", "0" ) )
+		br_set_stp_state( "br1", 0 );	// eval ("brctl", "stp",
+	    // "br1", "off");
+	    else
+		br_set_stp_state( "br1", 1 );	// eval ("brctl", "stp",
+	    // "br1", "off");
+	    br_set_bridge_forward_delay( "br1", 1 );
+
+	    /*
+	     * Bring up and configure br1 interface 
+	     */
+	    if( nvram_invmatch( br1ipaddr, "0.0.0.0" ) )
+	    {
+		ifconfig( "br1", IFUP, nvram_safe_get( br1ipaddr ),
+			  nvram_safe_get( br1netmask ) );
+
+		if( nvram_match( "lan_stp", "0" ) )
+		    br_set_stp_state( "br1", 0 );	// eval ("brctl",
+		// "stp", "br1",
+		// "off");
+		else
+		    br_set_stp_state( "br1", 1 );	// eval ("brctl",
+		// "stp", "br1",
+		// "off");
+
+		sleep( 2 );
+	    }
+
+	}
+    }
+    for( c = 0; c < cnt; c++ )
+    {
+
+	for( s = 1; s <= MAX_WDS_DEVS; s++ )
+	{
+	    char wdsvarname[32] = { 0 };
+	    char wdsdevname[32] = { 0 };
+	    char *dev;
+
+	    char br1enable[32];
+
+	    sprintf( wdsvarname, "wl%d_wds%d_enable", c, s );
+	    sprintf( wdsdevname, "wl%d_wds%d_if", c, s );
+	    sprintf( br1enable, "wl%d_br1_enable", c );
+	    if( nvram_get( wdsvarname ) == NULL )
+		nvram_set( wdsvarname, "0" );
+	    dev = nvram_safe_get( wdsdevname );
+	    if( strlen( dev ) == 0 )
+		continue;
+	    dev = getWDSDev( dev );
+	    ifconfig( dev, 0, 0, 0 );
+
+	    // eval ("ifconfig", dev, "down");
+	    if( nvram_match( wdsvarname, "1" ) )
+	    {
+		char *wdsip;
+		char *wdsnm;
+		char wdsbc[32] = { 0 };
+		wdsip = nvram_nget( "wl%d_wds%d_ipaddr", c, s );
+		wdsnm = nvram_nget( "wl%d_wds%d_netmask", c, s );
+
+		snprintf( wdsbc, 31, "%s", wdsip );
+		get_broadcast( wdsbc, wdsnm );
+		eval( "ifconfig", dev, wdsip, "broadcast",
+		      wdsbc, "netmask", wdsnm, "up" );
+	    }
+	    else if( nvram_match( wdsvarname, "2" )
+		     && nvram_match( br1enable, "1" ) )
+	    {
+		eval( "ifconfig", dev, "up" );
+		sleep( 1 );
+		br_add_interface( "br1", dev );
+	    }
+	    else if( nvram_match( wdsvarname, "3" ) )
+	    {
+		ifconfig( dev, IFUP, 0, 0 );
+		sleep( 1 );
+		br_add_interface( getBridge(dev), dev );
+	    }
+	}
+    }
+
 }
 
 void start_hostapdwan( void )
