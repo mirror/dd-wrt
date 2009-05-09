@@ -971,7 +971,6 @@ void setMacFilter( char *iface )
     if( nvram_match( nvvar, "deny" ) )
     {
 	sysprintf( "iwpriv %s maccmd 2", iface );
-	sleep(1);
 	sysprintf( "ifconfig %s up", iface );
 	char nvlist[32];
 
@@ -984,7 +983,6 @@ void setMacFilter( char *iface )
     }else if( nvram_match( nvvar, "allow" ) )
     {
 	sysprintf( "iwpriv %s maccmd 1", iface );
-	sleep(1);
 	sysprintf( "ifconfig %s up", iface );
 
 	char nvlist[32];
@@ -996,7 +994,6 @@ void setMacFilter( char *iface )
 	    sysprintf( "iwpriv %s addmac %s", iface, var );
 	}
     }else{
-	sleep(1);
  //undefined condition
 	sysprintf( "ifconfig %s up", iface );
     }
