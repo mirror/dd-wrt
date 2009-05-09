@@ -971,6 +971,7 @@ void setMacFilter( char *iface )
     if( nvram_match( nvvar, "deny" ) )
     {
 	sysprintf( "iwpriv %s maccmd 2", iface );
+	sleep(1);
 	sysprintf( "ifconfig %s up", iface );
 	char nvlist[32];
 
@@ -983,6 +984,7 @@ void setMacFilter( char *iface )
     }else if( nvram_match( nvvar, "allow" ) )
     {
 	sysprintf( "iwpriv %s maccmd 1", iface );
+	sleep(1);
 	sysprintf( "ifconfig %s up", iface );
 
 	char nvlist[32];
@@ -993,8 +995,11 @@ void setMacFilter( char *iface )
 	{
 	    sysprintf( "iwpriv %s addmac %s", iface, var );
 	}
-    }else //undefined condition
+    }else{
+	sleep(1);
+ //undefined condition
 	sysprintf( "ifconfig %s up", iface );
+    }
 
 }
 
@@ -1704,14 +1709,14 @@ static void configure_single( int count )
 	    sysprintf( "ifconfig %s 0.0.0.0 up", wdsdev );
 	}
     }
+
+
+
+
+
     sysprintf( "iwconfig %s txpower %ddBm", dev, newpower );
 
     setMacFilter( dev );
-
-
-
-
-
 }
 
 void start_vifs( void )
@@ -2052,8 +2057,161 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    }
 	}
     }
+if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) < 0 )
+    return;
+    struct ifreq ifr;
 
+#ifdef HAVE_RB500
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
 
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_X86
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_XSCALE
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_MAGICBOX
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_FONERA
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_LS2
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_LS5
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_WHRAG108
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_PB42
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_LSX
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_DANUBE
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_STORM
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_ADM5120
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_TW6600
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+#ifdef HAVE_CA8
+    strncpy( ifr.ifr_name, "ath0", IFNAMSIZ );
+    if( ioctl( s, SIOCGIFHWADDR, &ifr ) == 0 )
+    {
+	char eabuf[32];
+
+	nvram_set( "wl0_hwaddr",
+		   ether_etoa( ifr.ifr_hwaddr.sa_data, eabuf ) );
+    }
+#endif
+close(s);
 }
 
 void start_deconfigurewifi( void )

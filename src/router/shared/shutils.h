@@ -217,16 +217,15 @@ char *strcat_r( const char *s1, const char *s2, char *buf );
     switch ( fork(  ) ) \
     { \
 	case -1: \
-	    return; \
 	    break; \
 	case 0: \
 	    ( void )setsid(  ); \
+	    func; \
+	    exit(0); \
 	    break; \
 	default: \
-	    return; \
+	break; \
     } \
-    func; \
-    exit(0); \
 }			
 #endif
 
