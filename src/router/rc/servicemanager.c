@@ -22,21 +22,10 @@
 
 #include <dlfcn.h>
 #include <stdio.h>
-// #include <shutils.h>
+#include <shutils.h>
 
 #define SERVICE_MODULE "/lib/services.so"
-#define cprintf(fmt, args...)
 
-#ifndef cprintf
-#define cprintf(fmt, args...) do { \
-	FILE *fp = fopen("/dev/console", "w"); \
-	if (fp) { \
-		fprintf(fp,"%s (%d):%s ",__FILE__,__LINE__,__func__); \
-		fprintf(fp, fmt, ## args); \
-		fclose(fp); \
-	} \
-} while (0)
-#endif
 
 void *load_service( char *name )
 {
@@ -96,6 +85,10 @@ int start_service( char *name )
     cprintf( "start_sevice done()\n" );
     return 0;
 }
+int start_service_f( char *name )
+{
+    FORK(start_service(name));
+}
 
 int start_service_fork( char *name )
 {
@@ -131,7 +124,10 @@ int start_service_fork( char *name )
     cprintf( "start_sevice done()\n" );
     return 0;
 }
-
+int start_service_fork_f( char *name )
+{
+    FORK(start_service_fork(name));
+}
 void *start_service_nofree( char *name, void *handle )
 {
     // lcdmessaged("Starting Service",name);
@@ -166,7 +162,10 @@ void *start_service_nofree( char *name, void *handle )
     cprintf( "start_sevice_nofree done()\n" );
     return handle;
 }
-
+void *start_service_nofree_f( char *name, void *handle )
+{
+    FORK(start_service_nofree(name,handle));
+}
 int start_servicep( char *name, char *param )
 {
     cprintf( "start_servicep\n" );
@@ -190,7 +189,10 @@ int start_servicep( char *name, char *param )
     cprintf( "start_sevicep done()\n" );
     return 0;
 }
-
+int start_servicep_f( char *name, char *param )
+{
+    FORK(start_servicep(name,param));
+}
 void start_servicei( char *name, int param )
 {
     // lcdmessaged("Starting Service",name);
@@ -215,7 +217,10 @@ void start_servicei( char *name, int param )
     cprintf( "start_sevicei done()\n" );
     return;
 }
-
+void start_servicei_f( char *name, int param )
+{
+    FORK(start_servicei(name,param));
+}
 void start_main( char *name, int argc, char **argv )
 {
     cprintf( "start_main\n" );
@@ -239,7 +244,10 @@ void start_main( char *name, int argc, char **argv )
     cprintf( "start_main done()\n" );
     return;
 }
-
+void start_main_f( char *name, int argc, char **argv )
+{
+FORK(start_main(name,argc,argv));
+}
 void stop_service( char *name )
 {
     // lcdmessaged("Stopping Service",name);
@@ -264,6 +272,10 @@ void stop_service( char *name )
     cprintf( "stop_service done()\n" );
 
     return;
+}
+void stop_service_f( char *name )
+{
+FORK(stop_service(name));
 }
 
 void *stop_service_nofree( char *name, void *handle )
@@ -290,7 +302,10 @@ void *stop_service_nofree( char *name, void *handle )
 
     return handle;
 }
-
+void *stop_service_nofree_f( char *name, void *handle )
+{
+    FORK(stop_service_nofree(name,handle));
+}
 void startstop( char *name )
 {
     void *handle = NULL;
@@ -302,10 +317,20 @@ void startstop( char *name )
 	dlclose( handle );
 }
 
+void startstop_f( char *name )
+{
+    FORK(startstop(name));
+}
+
 int startstop_main( int argc, char **argv )
 {
     startstop( argv[1] );
     return 0;
+}
+
+int startstop_main_f( int argc, char **argv )
+{
+    FORK(startstop_main(argc,argv));
 }
 
 void *startstop_nofree( char *name, void *handle )
@@ -314,4 +339,9 @@ void *startstop_nofree( char *name, void *handle )
     handle = stop_service_nofree( name, handle );
     handle = start_service_nofree( name, handle );
     return handle;
+}
+
+void *startstop_nofree_f( char *name, void *handle )
+{
+    FORK(startstop_nofree_f(name,handle));
 }
