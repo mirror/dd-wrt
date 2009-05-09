@@ -401,10 +401,10 @@ static void handle_hotspot( void )
 #endif
 //    if( handle )
 //	dlclose( handle );
-    eval( "/etc/config/http-redirect.firewall" );
-    eval( "/etc/config/smtp-redirect.firewall" );
+    FORK(eval( "/etc/config/http-redirect.firewall" ));
+    FORK(eval( "/etc/config/smtp-redirect.firewall" ));
 #ifdef HAVE_ZEROIP
-    eval( "/etc/config/shat.startup" );
+    FORK(eval( "/etc/config/shat.startup" ));
 #endif
 }
 
@@ -450,13 +450,13 @@ static void handle_services( void )
     handle = startstop_nofree_f( "pptpd", handle );
 #endif
 #ifdef HAVE_PPTP
-    eval( "/etc/config/pptpd_client.startup" );
+    FORK(eval( "/etc/config/pptpd_client.startup" ));
 #endif
 #ifdef HAVE_RFLOW
-    eval( "/etc/config/rflow.startup" );
+    FORK(eval( "/etc/config/rflow.startup" ));
 #endif
 #ifdef HAVE_KAID
-    eval( "/etc/config/kaid.startup" );
+    FORK(eval( "/etc/config/kaid.startup" ));
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
@@ -651,9 +651,9 @@ static void handle_alive( void )
     if (isregistered_real())
 #endif
     {
-    eval( "/etc/config/wdswatchdog.startup" );
-    eval( "/etc/config/schedulerb.startup" );
-    eval( "/etc/config/proxywatchdog.startup" );
+    FORK(eval( "/etc/config/wdswatchdog.startup" ));
+    FORK(eval( "/etc/config/schedulerb.startup" ));
+    FORK(eval( "/etc/config/proxywatchdog.startup" ));
     }
     handle = start_service_nofree_f( "cron", handle );
 //    if( handle )
@@ -936,8 +936,8 @@ static void handle_dhcp_release( void )
 #ifdef HAVE_EOP_TUNNEL
 static void handle_eop( void )
 {
-    eval( "/etc/config/eop-tunnel.startup" );
-    eval( "/etc/config/eop-tunnel.firewall" );
+    FORK(eval( "/etc/config/eop-tunnel.startup" ));
+    FORK(eval( "/etc/config/eop-tunnel.firewall" ));
 
 }
 #endif
