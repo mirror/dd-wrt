@@ -1862,7 +1862,7 @@ void start_lan( void )
 	    eval( "ifconfig", wifi, "up" );
 	}
     }
-    configure_wifi(  );
+    FORK(configure_wifi(  ));
 
 #endif
 #endif
@@ -2169,16 +2169,9 @@ void start_lan( void )
 	     nvram_safe_get( "lan_ipaddr" ),
 	     nvram_safe_get( "lan_netmask" ) );
 
-    /*
-     * Sveasoft - create separate WDS subnet bridge if enabled 
-     */
-#ifdef HAVE_MADWIFI
-    int cnt = getifcount( "wifi" );
-#elif HAVE_RT2880
-    int cnt = 1;
-#else
+#ifndef HAVE_MADWIFI
+#ifndef HAVE_RT2880
     int cnt = get_wl_instances(  );
-#endif
     int c;
 
     for( c = 0; c < cnt; c++ )
@@ -2327,6 +2320,8 @@ void start_lan( void )
 	    }
 	}
     }
+#endif
+#endif
 #ifdef HAVE_XSCALE
 #define HAVE_RB500
 #endif
