@@ -4165,7 +4165,10 @@ int next_key( char **key, int keysize )
 	char *hex;
 
 	tmp2 = tmp = (char*) malloc(1024);
-
+	if (!tmp2)
+	    {
+	    fprintf(stderr,"not enough memory\n");
+	    }
 	while(1)
 	{
 		rtn = 0;
@@ -4324,6 +4327,10 @@ int crack_wep_dict()
 	char *key;
 
 	key = (char*) malloc(sizeof(char) * (opt.keylen + 1));
+	if (!key)
+	    {
+	    fprintf(stderr,"not enough memory\n");
+	    }
 	keysize = opt.keylen+1;
 
 	update_ivbuf();
@@ -5451,6 +5458,10 @@ usage:
 				wpa_data[i].thread = i;
 				wpa_data[i].nkeys = 17;
 				wpa_data[i].key_buffer = (char*) malloc(wpa_data[i].nkeys * 128);
+	if (!wpa_data[i].key_buffer)
+	    {
+	    fprintf(stderr,"not enough memory\n");
+	    }
 				wpa_data[i].front = 0;
 				wpa_data[i].back = 0;
 				memset(wpa_data[i].key, 0, sizeof(wpa_data[i].key));
