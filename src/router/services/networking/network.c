@@ -1862,9 +1862,7 @@ void start_lan( void )
 	    eval( "ifconfig", wifi, "up" );
 	}
     }
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
     FORK(configure_wifi(  ));
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 #endif
 #endif
 #ifdef HAVE_WAVESAT
@@ -1872,7 +1870,6 @@ fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 #endif
     lan_ifname = strdup( nvram_safe_get( "lan_ifname" ) );
     lan_ifnames = strdup( nvram_safe_get( "lan_ifnames" ) );
-fprintf(stderr,"%s:%d\n",__func__,__LINE__);
 
     /*
      * specific non-bridged lan i/f 
