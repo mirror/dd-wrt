@@ -376,12 +376,12 @@ endif
 ifeq ($(CONFIG_DIR400),y)
 CFLAGS += -DHAVE_FONERA
 CFLAGS += -DHAVE_DIR400
-OBJS += icplus.o
+#OBJS += icplus.o
 else
 ifeq ($(CONFIG_DIR300),y)
 CFLAGS += -DHAVE_FONERA
 CFLAGS += -DHAVE_DIR300
-OBJS += icplus.o
+#OBJS += icplus.o
 endif
 endif
 ifeq ($(CONFIG_MR3202A),y)
@@ -437,7 +437,7 @@ CFLAGS += -DHAVE_LS2
 else
 ifeq ($(CONFIG_LS2),y)
 CFLAGS += -DHAVE_LS2
-OBJS += icplus.o
+#OBJS += icplus.o
 endif
 endif
 endif
