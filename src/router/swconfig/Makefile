@@ -15,4 +15,4 @@ clean:
 	rm -f swconfig *.o
 
 install: 
-	install -D swconfig $(INSTALLDIR)/usr/sbin
+	install -D swconfig $(INSTALLDIR)/usr/sbin/swconfig
