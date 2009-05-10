@@ -1999,7 +1999,6 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 		// "stp", "br1",
 		// "off");
 
-		sleep( 2 );
 	    }
 
 	}
