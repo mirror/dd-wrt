@@ -816,7 +816,7 @@ static void handle_wireless( void )
 #ifdef HAVE_BONDING
     handle = start_service_nofree( "bonding", handle );
 #endif
-    handle = start_service_nofree( "wan", handle );
+    handle = start_service_nofree_f( "wan", handle );
     handle = start_service_nofree_f( "ttraff", handle );
 #ifdef HAVE_MADWIFI
     handle = start_service_nofree_f( "stabridge", handle );
@@ -898,7 +898,7 @@ static void handle_wireless_2( void )
     if( getSTA(  ) || getWET(  ) )	// since we need to cover apstawet,
 	// we must use getWET as well
     {
-	handle = start_service_nofree( "wan", handle );
+	handle = start_service_nofree_f( "wan", handle );
 	handle = start_service_nofree_f( "ttraff", handle );
     }
 #ifdef HAVE_MADWIFI
