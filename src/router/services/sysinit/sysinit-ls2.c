@@ -137,7 +137,37 @@ void start_sysinit( void )
 #ifdef HAVE_LS2
 #if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) && !defined(HAVE_BS2HP) && !defined(HAVE_MS2) && !defined(HAVE_PICO2) && !defined(HAVE_PICO2HP)
     eval( "ifconfig", "eth0", "up" );	// wan
-    vlan_init( 0x31 );		// 1 lan + 1 wan, but only first one is used
+//	system("swconfig dev eth0 set reset 1");
+//	system("swconfig dev eth0 set enable_vlan 1");
+	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 5t\"");
+	system("swconfig dev eth0 vlan 2 set ports \"4 5t\"");
+	system("swconfig dev eth0 set apply");
+	eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
+	eval( "vconfig", "add", "eth0", "1" );
+	eval( "vconfig", "add", "eth0", "2" );
+//	set network.eth0_1.ports="0 1 2 3 5t"
+//	vlan_init( 0xff );	// 4 lan + 1 wan
+    struct ifreq ifr;
+    int s;
+
+    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+    {
+	char eabuf[32];
+
+	strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+	ioctl( s, SIOCGIFHWADDR, &ifr );
+	char macaddr[32];
+
+	strcpy( macaddr,
+		ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.sa_data,
+			    eabuf ) );
+	nvram_set( "et0macaddr", macaddr );
+	// MAC_ADD (macaddr);
+	ether_atoe( macaddr, ( unsigned char * )ifr.ifr_hwaddr.sa_data );
+	strncpy( ifr.ifr_name, "vlan2", IFNAMSIZ );
+	ioctl( s, SIOCSIFHWADDR, &ifr );
+	close( s );
+    }
 #endif
 #endif
 #endif
