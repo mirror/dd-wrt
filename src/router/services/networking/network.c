@@ -1949,11 +1949,11 @@ void start_lan( void )
 	    eval( "ifconfig", wifi, "up" );
 	}
     }
-    FORK(configure_wifi(  ));
+    configure_wifi();
 #endif
 #endif
 #ifdef HAVE_WAVESAT
-    FORK(configure_wimax(  ));
+    configure_wimax();
 #endif
     lan_ifname = strdup( nvram_safe_get( "lan_ifname" ) );
     lan_ifnames = strdup( nvram_safe_get( "lan_ifnames" ) );
