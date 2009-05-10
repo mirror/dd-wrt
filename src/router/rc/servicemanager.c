@@ -130,36 +130,7 @@ int start_service_fork_f( char *name )
 }
 void *start_service_nofree( char *name, void *handle )
 {
-    // lcdmessaged("Starting Service",name);
-    cprintf( "start_service_nofree\n" );
-    char service[64];
-
-    sprintf( service, "/etc/config/%s", name );
-    FILE *ck = fopen( service, "rb" );
-
-    if( ck != NULL )
-    {
-	fclose( ck );
-	cprintf( "found shell based service %s\n", service );
-	system( service );
-	return NULL;
-    }
-    if( !handle )
-	handle = load_service( name );
-    if( handle == NULL )
-    {
-	return NULL;
-    }
-    void ( *fptr ) ( void );
-
-    sprintf( service, "start_%s", name );
-    cprintf( "resolving %s\n", service );
-    fptr = ( void ( * )( void ) )dlsym( handle, service );
-    if( fptr )
-	( *fptr ) (  );
-    else
-	fprintf( stderr, "function %s not found \n", service );
-    cprintf( "start_sevice_nofree done()\n" );
+    start_service(name);
     return handle;
 }
 void *start_service_nofree_f( char *name, void *handle )
@@ -280,26 +251,7 @@ FORK(stop_service(name));
 
 void *stop_service_nofree( char *name, void *handle )
 {
-    // lcdmessaged("Stopping Service",name);
-    cprintf( "stop service()\n" );
-    if( !handle )
-	handle = load_service( name );
-    if( handle == NULL )
-    {
-	return NULL;
-    }
-    void ( *fptr ) ( void );
-    char service[64];
-
-    sprintf( service, "stop_%s", name );
-    cprintf( "resolving %s\n", service );
-    fptr = ( void ( * )( void ) )dlsym( handle, service );
-    if( fptr )
-	( *fptr ) (  );
-    else
-	fprintf( stderr, "function %s not found \n", service );
-    cprintf( "stop_service done()\n" );
-
+    stop_service(name);
     return handle;
 }
 void *stop_service_nofree_f( char *name, void *handle )
@@ -337,8 +289,8 @@ int startstop_main_f( int argc, char **argv )
 void *startstop_nofree( char *name, void *handle )
 {
     cprintf( "stop and start service (nofree)\n" );
-    handle = stop_service_nofree( name, handle );
-    handle = start_service_nofree( name, handle );
+    stop_service( name );
+    start_service( name );
     return handle;
 }
 
