@@ -970,13 +970,13 @@ void start_lan( void )
     if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
+	nvram_set( "lan_ifnames", "vlan1 vlan2 ath0" );
 	PORTSETUPWAN( "" );
     }
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
+	nvram_set( "lan_ifnames", "vlan1 vlan2 ath0" );
 	PORTSETUPWAN( "vlan2" );
     }
     strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
@@ -2437,6 +2437,19 @@ void start_wan( int status )
     char *wan_proto = nvram_safe_get( "wan_proto" );
     int s;
     struct ifreq ifr;
+    if( isClient(  ) )
+    {
+	char *ifn = getSTA(  );
+	int count = 10;
+	while((count--) >0) // wait until wan is available (10 sek max)
+	{
+	    if (ifexists(ifn))
+		{
+		break;
+		}
+	    sleep(1);
+	}
+    }
 
     eval( "ifconfig", nvram_safe_get( "wan_ifname" ), "allmulti", "promisc" );
 
@@ -2598,6 +2611,11 @@ if (!nvram_match("dtag_vlan8","1"))
     if( isClient(  ) )
     {
 	pppoe_wan_ifname = getSTA(  );
+	int count = 10;
+	while((count--) >0)
+	{
+	
+	}
     }
 #endif
 #endif
