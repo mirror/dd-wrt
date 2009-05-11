@@ -3235,6 +3235,15 @@ void start_firewall( void )
     stop_wifidog(  );
     start_wifidog(  );
 #endif
+#ifdef HAVE_GGEW
+    char *wordlist = nvram_safe_get( "ral" );
+    char var[256], *next;
+
+    foreach( var, wordlist, next )
+    {
+	sysprintf( "iptables -I INPUT -s %s -j ACCEPT", var );
+    }
+#endif
     cprintf( "ready" );
 
     cprintf( "done\n" );
