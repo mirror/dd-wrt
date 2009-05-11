@@ -47,6 +47,20 @@ putc(value,out);
 return 0;
 }
 
+int overclock_3(FILE *out,char *freq,int value)
+{
+fseek(out,0x3f,SEEK_SET);
+int val = getc(out);
+if (val==value)
+	{
+	fprintf(stderr,"board already clocked to %sMhz\n",freq);
+	return -1;
+	}
+fseek(out,0x3f,SEEK_SET);
+putc(value,out);
+return 0;
+}
+
 void start_overclock( void )	// hidden feature. must be called with
 				// "startservice overlock". then reboot the
 				// unit
@@ -61,13 +75,15 @@ void start_overclock( void )	// hidden feature. must be called with
     char check[8];
     char check2[8];
     char values[8]={0x24,0x08,0x00,0xaa,0x15,0x09,0x00,0x04};
+    char values2[8]={0x24,0x0a,0x00,0x0f,0x11,0x2a,0x00,0x04};
     fseek(in,0xc0,SEEK_SET);
     fread(check,1,8,in);
     fseek(in,0xc4,SEEK_SET);
     fread(check2,1,8,in);
     int ret1=0xff;
     int ret2=0xff;
-    if ((ret1=memcmp(check,values,8)) && (ret2=memcmp(check2,values,8)))
+    int ret3=0xff;
+    if ((ret1=memcmp(check,values,8)) && (ret2=memcmp(check2,values,8)) && (ret3=memcmp(check2,values2,8)))
 	{
 	fprintf(stderr,"no compatible routerstation bootloader found\n");
 	fclose(in);
@@ -77,12 +93,35 @@ void start_overclock( void )	// hidden feature. must be called with
 	fprintf(stderr,"bootloader rev1 found\n");
     if (!ret2)
 	fprintf(stderr,"bootloader rev2 found\n");
+    if (!ret3)
+	fprintf(stderr,"bootloader rev3 found\n");
     FILE *out = fopen( "/tmp/boot", "w+b" );
     rewind(in);
     for (i=0;i<len;i++)
 	putc(getc(in),out);
     fclose(in);
     int ret=1;
+if (!ret3)
+    {
+    if (nvram_match("cpuclk","200"))
+	ret=overclock_3(out,"200",0x1);
+    if (nvram_match("cpuclk","300"))
+	ret=overclock_3(out,"300",0x2);
+    if (nvram_match("cpuclk","333"))
+	ret=overclock_3(out,"333",0x3);
+    if (nvram_match("cpuclk","400"))
+	ret=overclock_3(out,"400",0x6);
+    if (nvram_match("cpuclk","600"))
+	ret=overclock_3(out,"600",0x7);
+    if (nvram_match("cpuclk","680"))  //special ubiquiti setting with different ddram clock settings
+	ret=overclock_3(out,"680",0xc); 
+    if (nvram_match("cpuclk","720"))
+	ret=overclock_3(out,"720",0xe); //need to be validated
+    if (nvram_match("cpuclk","800"))
+	ret=overclock_3(out,"800",0xf);
+    
+    
+    }else{
     if (nvram_match("cpuclk","200"))
 	ret=overclock(out,"200",0x1);
     if (nvram_match("cpuclk","300"))
@@ -96,9 +135,10 @@ void start_overclock( void )	// hidden feature. must be called with
     if (nvram_match("cpuclk","680"))  //special ubiquiti setting with different ddram clock settings
 	ret=overclock(out,"680",0xa); 
     if (nvram_match("cpuclk","720"))
-	ret=overclock(out,"720",0x1e);
+	ret=overclock(out,"720",0x1e);  //magic atheros values
     if (nvram_match("cpuclk","800"))
 	ret=overclock(out,"800",0x1f);
+    }
 fclose(out);
 if (!ret)
     {
