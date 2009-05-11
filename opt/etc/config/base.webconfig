@@ -82,7 +82,6 @@
 			</script></span>
 		</div>
 		<% ifndef("SSHD","-->"); %>
-		<% ifdef("SSHD", "<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("management.remote_telnet"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="remote_mgt_telnet" onclick="show_layer_ext(this, 'idtelnet', true);selTelnet(this.value, 0)" <% nvram_checked("remote_mgt_telnet","1"); %> /><% tran("share.enable"); %>&nbsp;
@@ -97,7 +96,6 @@
 			//]]>
 			</script></span>
 		</div>
-		<% ifdef("SSHD", "-->"); %>
 		<div class="setting">
 			<div class="label"><% tran("management.remote_allowanyip"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="remote_ip_any" onclick="show_layer_ext(this, 'idremip', false)" <% nvram_checked("remote_ip_any","1"); %> /><% tran("share.enable"); %>&nbsp;
