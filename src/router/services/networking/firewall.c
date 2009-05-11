@@ -702,7 +702,7 @@ static void nat_prerouting( void )
 		save2file
 		    ( "-A PREROUTING -p tcp -m tcp -s %s -d %s --dport %s "
 		      "-j DNAT --to-destination %s:23\n", var, wanaddr,
-		      nvram_safe_get( "sshd_wanport" ),
+		      nvram_safe_get( "telnet_wanport" ),
 		      nvram_safe_get( "lan_ipaddr" ) );
 	    }
 	}
@@ -2408,14 +2408,10 @@ static void filter_table( void )
 		       wanface, nvram_safe_get( "sshd_wanport" ) );
 	    save2file( "-A INPUT -p tcp -i %s --dport 22 -j DROP\n",
 		       wanface );
-	    save2file( "-A INPUT -p tcp -i %s --dport 23 -j DROP\n",
-		       wanface );
 	}
 #endif
 	if( !remotetelnet  && strlen(wanface)>0 )
 	{
-	    save2file( "-A INPUT -p tcp -i %s --dport 22 -j DROP\n",
-		       wanface );
 	    save2file( "-A INPUT -p tcp -i %s --dport %s -j DROP\n", wanface,
 		       nvram_safe_get( "telnet_wanport" ) );
 	    save2file( "-A INPUT -p tcp -i %s --dport 23 -j DROP\n",
