@@ -441,11 +441,16 @@ static void do_client_check( void )
 {
     FILE *fp = NULL;
     char buf[1024];
-
+    char *ifname = getSTA(  );
+	if( ifname == NULL )
+	ifname = getWET(  );
+    if( ifname == NULL )
+	return;
     // char mac[512];
     int len;
+    int instance = get_wl_instance( ifname );
 
-    system2( "wl assoc 2>&1 > /tmp/.xassocx" );
+    system2( "wl -i %s assoc 2>&1 > /tmp/.xassocx", ifname );
     if( ( fp = fopen( "/tmp/.xassocx", "r" ) ) == NULL )
 	return;
 
@@ -466,17 +471,17 @@ static void do_client_check( void )
 		   "<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>" );
 
 #endif
-	eval( "wl", "disassoc" );
+	eval( "wl", "-i", ifname, "disassoc" );
 #ifndef HAVE_MSSID
 	eval( "wl", "join", nvram_safe_get( "wl_ssid" ) );
 #else
 	if( nvram_match( "roaming_enable", "1" ) )
 	{
-	    eval( "wl", "join", nvram_safe_get( "roaming_ssid" ) );
+	    eval( "wl", "-i", ifname, "join", nvram_safe_get( "roaming_ssid" ) );
 	}
 	else
 	{
-	    eval( "wl", "join", nvram_safe_get( "wl0_ssid" ) );
+	    eval( "wl", "-i", ifname, "join", nvram_nget( "wl%d_ssid", instance ) );
 	}
 #endif
 	// join(nvram_get("wl_ssid"));
@@ -692,9 +697,7 @@ static void do_wlan_check( void )
     do_aqos_check(  );
 #endif
 #ifndef HAVE_MADWIFI
-    if( nvram_match( "wl0_mode", "sta" ) || nvram_match( "wl0_mode", "wet" )
-	|| nvram_match( "wl0_mode", "apsta" )
-	|| nvram_match( "wl0_mode", "apstawet" ) )
+    if( getSTA( ) || getWET( ) )
 	do_client_check(  );
     else
 	do_ap_check(  );
