@@ -1509,8 +1509,7 @@ void start_lan( void )
     cprintf( "%s\n", lan_ifname );
 
     // If running in client-mode, remove old WAN-configuration
-    if( nvram_match( "wl0_mode", "sta" )
-	|| nvram_match( "wl0_mode", "apsta" ) )
+    if( getSTA( ) )
     {
 	// #ifdef HAVE_SKYTRON
 	// ifconfig(wan_ifname,IFUP,"172.16.1.1","255.255.255.0");
@@ -1575,7 +1574,7 @@ void start_lan( void )
     eval( "wl", "-i", wl_face, "up" );
     start_config_macs( wl_face );
 #endif
-    if( nvram_match( "wl_mode", "sta" ) || nvram_match( "wl_mode", "apsta" ) )
+    if( getSTA( ) )
     {
 	unsigned char mac[20];
 
@@ -2421,10 +2420,9 @@ int wan_valid( char *ifname )
 	if( ifname && !strcmp( ifname, name ) )
 	return 1;
 
-    if( nvram_match( "wl_mode", "sta" ) || nvram_match( "wl_mode", "apsta" ) )
-    {
-	return nvram_match( "wl0_ifname", ifname );
-    }
+	if( getSTA( ) && !strcmp( getSTA( ), ifname ) )
+	return 1;
+
     return 0;
 }
 
