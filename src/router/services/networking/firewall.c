@@ -141,9 +141,8 @@ static int remotemanage = 0;
 
 #ifdef HAVE_SSHD
 static int remotessh = 0;	/* Botho 03-05-2006 */
-#else
-static int remotetelnet = 0;
 #endif
+static int remotetelnet = 0;
 
 static void save2file( const char *fmt, ... )
 {
@@ -679,7 +678,7 @@ static void nat_prerouting( void )
 	    }
 	}
     }
-#else
+#endif
     /*
      * Enable remote telnet management 
      */
@@ -708,7 +707,6 @@ static void nat_prerouting( void )
 	    }
 	}
     }
-#endif
 
     /*
      * ICMP packets are always redirected to INPUT chains 
@@ -1946,13 +1944,12 @@ static void filter_input( void )
 		   nvram_safe_get( "lan_ipaddr" ),
 		   nvram_safe_get( "sshd_port" ) );
     }
-#else
+#endif
     if( remotetelnet )
     {
 	save2file( "-A INPUT -p tcp -m tcp -d %s --dport 23 -j logaccept\n",
 		   nvram_safe_get( "lan_ipaddr" ) );
     }
-#endif
 
     /*
      * ICMP request from WAN interface 
@@ -2414,7 +2411,7 @@ static void filter_table( void )
 	    save2file( "-A INPUT -p tcp -i %s --dport 23 -j DROP\n",
 		       wanface );
 	}
-#else
+#endif
 	if( !remotetelnet  && strlen(wanface)>0 )
 	{
 	    save2file( "-A INPUT -p tcp -i %s --dport 22 -j DROP\n",
@@ -2424,7 +2421,6 @@ static void filter_table( void )
 	    save2file( "-A INPUT -p tcp -i %s --dport 23 -j DROP\n",
 		       wanface );
 	}
-#endif
 
 	filter_forward(  );
 
@@ -2964,7 +2960,7 @@ void start_firewall( void )
 	remotessh = 1;
     else
 	remotessh = 0;
-#else
+#endif
     /*
      * Remote telnet management 
      */
@@ -2975,7 +2971,6 @@ void start_firewall( void )
 	remotetelnet = 1;
     else
 	remotetelnet = 0;
-#endif
 
 #ifdef HAVE_HTTPS
     if( nvram_match( "remote_mgt_https", "1" ) )
