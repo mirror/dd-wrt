@@ -441,6 +441,7 @@ static void do_client_check( void )
 {
     FILE *fp = NULL;
     char buf[1024];
+    
     char *ifname = getSTA(  );
 	if( ifname == NULL )
 	ifname = getWET(  );
@@ -449,8 +450,11 @@ static void do_client_check( void )
     // char mac[512];
     int len;
     int instance = get_wl_instance( ifname );
+    
+	char com[64];
+    sprintf( com, "wl -i %s assoc 2>&1 > /tmp/.xassocx", ifname );
+    system2( com );
 
-    system2( "wl -i %s assoc 2>&1 > /tmp/.xassocx", ifname );
     if( ( fp = fopen( "/tmp/.xassocx", "r" ) ) == NULL )
 	return;
 
