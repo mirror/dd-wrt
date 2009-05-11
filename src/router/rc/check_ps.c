@@ -104,7 +104,7 @@ void checknas( void )		// for broadcom v24 only
 	// processes
     {
 	eval( "stopservice", "nas" );
-	eval( "startservice", "nas" );
+	eval( "startservice_f", "nas" );
     }
 
     return;
@@ -226,7 +226,7 @@ int do_mon( void )
 	    printf( "Maybe %s had died, we need to re-exec it\n", v->name );
 	    eval( "stopservice", v->name );
 	    killall( v->name, SIGKILL );
-	    eval( "startservice", v->name );
+	    eval( "startservice_f", v->name );
 	}
 	printf( "checking for %s done\n", v->name );
     }

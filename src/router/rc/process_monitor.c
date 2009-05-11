@@ -95,7 +95,7 @@ int main( int argc, char **argv )
 	    eval( "stopservice", "snmp" );
 	    sleep( 1 );
 	    dd_syslog( LOG_DEBUG, "Restarting snmpd\n" );
-	    eval( "startservice", "snmp" );
+	    eval( "startservice_f", "snmp" );
 
 	}
 #endif
@@ -106,7 +106,7 @@ int main( int argc, char **argv )
 	    eval( "stopservice", "wifidog" );
 	    sleep( 1 );
 	    dd_syslog( LOG_DEBUG, "Restarting Wifidog daemon\n" );
-	    eval( "startservice", "wifidog" );
+	    eval( "startservice_f", "wifidog" );
 	}
 #endif
 	// give user a chance to use resetbutton for first 4 min even if
