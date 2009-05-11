@@ -1626,10 +1626,9 @@ struct nvram_tuple srouter_defaults[] = {
     {"remote_mgt_ssh", "0", 0},
 #endif
     {"sshd_wanport", "22", 0},	/* Botho 03-05-2006 : WAN port to listen on */
-#else /* micro build - use telnet remote mgmt */
+#endif /* micro build - use telnet remote mgmt */
     {"remote_mgt_telnet", "0", 0},
     {"telnet_wanport", "23", 0},	/* WAN port to listen on */
-#endif
     {"syslogd_enable", "0", 0},
     {"syslogd_rem_ip", "", 0},
 #ifndef HAVE_MADWIFI
