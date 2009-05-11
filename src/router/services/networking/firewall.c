@@ -2900,8 +2900,11 @@ void start_firewall( void )
     strncpy( wanface, get_wan_face(  ), IFNAMSIZ );
 
     if( nvram_match( "wan_proto", "pptp" ) )
-	strncpy( wanaddr, nvram_safe_get( "pptp_get_ip" ),
-		 sizeof( wanaddr ) );
+	{
+	strncpy( wanaddr, nvram_safe_get( "pptp_get_ip" ),sizeof( wanaddr ) );
+	if (strlen(wanaddr)==0) // for initial dhcp ip
+	    strncpy( wanaddr, nvram_safe_get( "wan_ipaddr"),sizeof( wanaddr ) );
+	}
     else if( nvram_match( "wan_proto", "l2tp" ) )
 	strncpy( wanaddr, nvram_safe_get( "l2tp_get_ip" ),
 		 sizeof( wanaddr ) );
