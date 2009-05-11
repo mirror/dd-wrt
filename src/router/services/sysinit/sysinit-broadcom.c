@@ -829,7 +829,7 @@ void start_sysinit( void )
 		{"ledbh3", "11", 0},
 		{"ledbh4", "11", 0},
 		{"ledbh5", "5", 0},
-		{"ledbh6", "8", 0},
+		{"ledbh6", "7", 0},
 		{"ledbh7", "11", 0},
 		{"mcs2gpo0", "0x6666", 0},
 		{"mcs2gpo1", "0x6666", 0},
