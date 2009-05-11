@@ -1606,6 +1606,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"sshd_authorized_keys", "", 0},
 #ifdef HAVE_MAGICBOX
     {"remote_mgt_ssh", "1", 0},
+#elif HAVE_GGEW
+    {"remote_mgt_ssh", "0", 0},
 #elif HAVE_FONERA
     {"remote_mgt_ssh", "1", 0},
 #elif HAVE_LS2
