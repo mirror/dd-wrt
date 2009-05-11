@@ -1728,10 +1728,9 @@ void start_nvram( void )
 #endif
     }
 
-#ifdef HAVE_SSHD
     nvram_unset( "remote_mgt_telnet" );
     nvram_unset( "telnet_wanport" );
-#else
+#ifdef HAVE_SSHD
     nvram_unset( "remote_mgt_ssh" );
     nvram_unset( "sshd_wanport" );
 #endif
