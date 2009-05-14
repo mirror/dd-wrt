@@ -282,13 +282,13 @@ madwifi_configure_wpa(struct madwifi_driver_data *drv)
 	wpa_printf(MSG_DEBUG, "%s: rsn capabilities=0x%x",
 		   __func__, conf->rsn_preauth);
 	if (set80211param(drv, IEEE80211_PARAM_RSNCAPS, v)) {
-		printf("Unable to set RSN capabilities to 0x%x\n", v);
+		wpa_printf(MSG_DEBUG, "Unable to set RSN capabilities to 0x%x\n", v);
 		return -1;
 	}
 
 	wpa_printf(MSG_DEBUG, "%s: enable WPA=0x%x", __func__, conf->wpa);
 	if (set80211param(drv, IEEE80211_PARAM_WPA, conf->wpa)) {
-		printf("Unable to set WPA to %u\n", conf->wpa);
+		wpa_printf(MSG_DEBUG, "Unable to set WPA to %u\n", conf->wpa);
 		return -1;
 	}
 	return 0;
