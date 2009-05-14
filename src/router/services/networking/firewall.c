@@ -2111,6 +2111,7 @@ static void filter_forward( void )
     /*
      * Sveasoft add - log invalid packets 
      */
+    if (nvram_invmatch("wk_mode","gateway"))
     save2file( "-A FORWARD -m state --state INVALID -j logdrop\n" );
 
     /*
@@ -2460,6 +2461,8 @@ static void filter_table( void )
     /*
      * logdrop chain 
      */
+    if (nvram_match("wk_mode","gateway"))
+    {
     if( ( nvram_match( "log_enable", "1" ) )
 	&& ( nvram_match( "log_dropped", "1" ) ) )
 	save2file
@@ -2467,6 +2470,14 @@ static void filter_table( void )
 	      "--log-tcp-sequence --log-tcp-options --log-ip-options\n"
 	      "-A logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" "
 	      "--log-tcp-sequence --log-tcp-options --log-ip-options\n" );
+    }else
+    {
+    if( ( nvram_match( "log_enable", "1" ) )
+	&& ( nvram_match( "log_dropped", "1" ) ) )
+	save2file
+	    ( "-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" "
+	      "--log-tcp-sequence --log-tcp-options --log-ip-options\n" );    
+    }
     save2file( "-A logdrop -j DROP\n" );
 
     /*
