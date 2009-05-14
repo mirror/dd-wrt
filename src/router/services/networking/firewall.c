@@ -895,9 +895,12 @@ static void nat_postrouting( void )
 #endif
 	}
     }
-    else if( strlen( wanface ) > 0 )
+    else{
+      eval("iptables","-t","raw","-A","PREROUTING","-j","NOTRACK"); //this speeds up networking alot on slow systems 
+     if( strlen( wanface ) > 0 )
 	if( nvram_match( "wl_br1_enable", "1" ) )
 	    save2file( "-A POSTROUTING -o %s -j MASQUERADE\n", wanface );
+    }
 }
 
 static void parse_port_filter( char *wordlist )
