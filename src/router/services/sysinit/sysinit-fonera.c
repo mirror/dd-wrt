@@ -144,7 +144,10 @@ void start_sysinit( void )
     system2( "echo 2 >/proc/sys/dev/wifi0/ledpin" );
     system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
 #endif
-
+#ifdef HAVE_GWMF54G2
+    system2( "echo 4 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
+#endif
     // eval ("ifconfig", "wifi0", "up");
 #ifdef HAVE_LS2
     eval( "ifconfig", "eth0", "up" );	// wan
