@@ -659,6 +659,9 @@ int internal_getRouterBrand(  )
 #elif HAVE_MAGICBOX
     setRouter( "OpenRB PowerPC Board" );
     return ROUTER_BOARD_MAGICBOX;
+#elif HAVE_GWMF54G2
+    setRouter( "Planex GW-MF54G2" );
+    return ROUTER_BOARD_FONERA;
 #elif HAVE_WRT54GV7
     setRouter( "Linksys WRT54G v7" );
     return ROUTER_BOARD_FONERA;
