@@ -1095,7 +1095,12 @@ u_int ieee80211_mhz2ieee( u_int freq )
     if( freq == 2484 + OFFSET )
 	return 14;
     if( freq < 2484 + OFFSET )
-	return ( freq - ( 2407 + OFFSET ) ) / 5;
+	{
+	int chan = ( freq - ( 2407 + OFFSET ) ) / 5;
+	if (chan < 0)
+	    chan += 256;
+	return chan;
+	}
     if( freq < 4990 && freq > 4940 )
 	return ( ( freq * 10 ) + ( ( ( freq % 5 ) == 2 ) ? 5 : 0 ) -
 		 49400 ) / 5;
