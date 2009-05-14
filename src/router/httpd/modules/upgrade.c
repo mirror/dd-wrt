@@ -110,6 +110,8 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
 	write_argv[2] = "linux";
 #elif HAVE_FONERA2200
 	write_argv[2] = "linux";
+#elif HAVE_GWMF54G2
+	write_argv[2] = "linux";
 #elif defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5)
 	write_argv[2] = "rootfs";
 #else
@@ -148,6 +150,10 @@ sys_upgrade( char *url, webs_t stream, int *total, int type )	// jimmy,
     if( url )
 	return eval( "write", url, "linux" );
 #elif HAVE_CA8
+    if( url )
+	return eval( "write", url, "linux" );
+#elif HAVE_GWMF54G2
+    eval( "fischecksum" );
     if( url )
 	return eval( "write", url, "linux" );
 #elif HAVE_FONERA2200
