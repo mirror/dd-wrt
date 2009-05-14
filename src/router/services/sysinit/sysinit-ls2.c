@@ -132,7 +132,12 @@ void start_sysinit( void )
     }
 #ifdef HAVE_BWRG1000
     eval( "ifconfig", "eth0", "up" );	// wan
-    vlan_init( 0xff );		// 1 lan + 1 wan, but only first one is used
+    system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 5t\"");
+    system("swconfig dev eth0 vlan 2 set ports \"4 5t\"");
+    system("swconfig dev eth0 set apply");
+    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
+    eval( "vconfig", "add", "eth0", "1" );
+    eval( "vconfig", "add", "eth0", "2" );
 #else
 #ifdef HAVE_LS2
 #if !defined(HAVE_NS2) && !defined(HAVE_BS2) && !defined(HAVE_LC2) && !defined(HAVE_BS2HP) && !defined(HAVE_MS2) && !defined(HAVE_PICO2) && !defined(HAVE_PICO2HP)
