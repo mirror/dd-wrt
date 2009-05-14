@@ -1025,6 +1025,7 @@ static void configure_single( int count )
     char txantenna[32];
     char athmac[16];
     char maxassoc[32];
+    char wl_poll[32];
 
     sprintf( wif, "wifi%d", count );
     sprintf( dev, "ath%d", count );
@@ -1051,6 +1052,9 @@ static void configure_single( int count )
 
     char *apm;
     int vif = 0;
+    sprintf( wl_poll, "%s_pollingmode", dev );
+
+    setsysctrl( wif, "pollingmode", atoi( nvram_default_get( wl_poll, "0" ) ) );
 
     char *vifs = nvram_safe_get( wifivifs );
     char primary[32] = { 0 };
