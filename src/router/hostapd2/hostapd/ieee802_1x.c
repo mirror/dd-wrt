@@ -1341,8 +1341,8 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 		    sprintf(mac, MACSTR, MAC2STR(sta->addr));
 		    char uplevel[64];
 		    char downlevel[64];
-		    sprintf(uplevel,"%d",*up);
-		    sprintf(downlevel,"%d",*down);
+		    sprintf(uplevel,"%d",*up/1000);
+		    sprintf(downlevel,"%d",*down/1000);
 		    int ret = addrule(mac,uplevel,downlevel);
 		    //case 0 = does not exists, should just be added, no restart
 		    //case 1 = no change required, already added
