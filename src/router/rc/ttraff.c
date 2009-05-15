@@ -41,7 +41,7 @@ write_to_nvram( int day, int month, int year, unsigned long rcvd,
 	{
 	    strcat( sbuff, "0:0 " );
 	}
-	strtrim_right (sbuff, ' ');
+	strcat( sbuff, "[0:0]" );
 	nvram_set( tq, sbuff );
 	tdata = nvram_safe_get( tq );
     }
@@ -53,6 +53,13 @@ write_to_nvram( int day, int month, int year, unsigned long rcvd,
 	    sscanf( var, "%lu:%lu", &old_rcvd, &old_sent );
 	    sprintf( temp, "%lu:%lu ", old_rcvd + rcvd, old_sent + sent );
 	    strcat( buffer, temp );
+	}
+	else if( i == days ) //make new monthly total
+	{
+	    sscanf( var, "[%lu:%lu]", &old_rcvd, &old_sent );
+	    sprintf( temp, "[%lu:%lu] ", old_rcvd + rcvd, old_sent + sent );
+	    strcat( buffer, temp );	
+	    break;	
 	}
 	else
 	{
