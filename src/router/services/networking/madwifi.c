@@ -1146,7 +1146,10 @@ static void configure_single( int count )
     char wmm[32];
 
     sprintf( wmm, "%s_wmm", dev );
-    sysprintf( "iwpriv %s wmm %s", dev, nvram_default_get( wmm, "0" ) );
+    if (nvram_nmatch("1","%s_pollingmode",dev))
+	sysprintf( "iwpriv %s wmm 1", dev);
+    else    
+	sysprintf( "iwpriv %s wmm %s", dev, nvram_default_get( wmm, "0" ) );
     char doth[32];
 
     sprintf( doth, "%s_doth", dev );
@@ -1420,6 +1423,9 @@ static void configure_single( int count )
 	sysprintf( "iwpriv %s hide_ssid %s", var,
 		   nvram_default_get( broadcast, "0" ) );
 	sprintf( wmm, "%s_wmm", var );
+    if (nvram_nmatch("1","%s_pollingmode",var))
+	sysprintf( "iwpriv %s wmm 1", var);
+    else    
 	sysprintf( "iwpriv %s wmm %s", var, nvram_default_get( wmm, "0" ) );
 	char isolate[32];
 
