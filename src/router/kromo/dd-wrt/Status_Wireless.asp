@@ -238,6 +238,11 @@ addEvent(window, "unload", function() {
 										<th width="24%"><% tran("status_wireless.signal_qual"); %></th>
 									</tr>
 								</table>
+								<script type="text/javascript">
+								//<![CDATA[
+								var t = new SortableTable(document.getElementById('wireless_table'), 1000);
+								//]]>
+								</script>
 							</fieldset><br />
 							
 							<div id="wds" style="display:none">
@@ -254,6 +259,11 @@ addEvent(window, "unload", function() {
 											<th width="24%"><% tran("status_wireless.signal_qual"); %></th>
 										</tr>
 									</table>
+									<script type="text/javascript">
+									//<![CDATA[
+									var t = new SortableTable(document.getElementById('wds_table'), 1000);
+									//]]>
+									</script>
 								</fieldset><br />
 								
 							</div>

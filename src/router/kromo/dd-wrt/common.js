@@ -1194,3 +1194,97 @@ function submitFooterButton(sub, res, reb, autoref, ref, clo) {
 	if(clo)
 		document.write("<input class=\"button\" type=\"button\" name=\"close_button\" value=\"" + sbutton.clos + "\" onclick=\"self.close();\" />");
 }
+
+/**
+*
+*  Sortable HTML table
+*  http://www.webtoolkit.info/
+*
+**/
+function SortableTable (tableEl) {
+ 
+	this.tbody = tableEl.getElementsByTagName('tbody');
+	this.thead = tableEl.getElementsByTagName('tbody');
+ 
+	this.getInnerText = function (el) {
+		if (typeof(el.textContent) != 'undefined') return el.textContent;
+		if (typeof(el.innerText) != 'undefined') return el.innerText;
+		if (typeof(el.innerHTML) == 'string') return el.innerHTML.replace(/<[^<>]+>/g,'');
+	}
+ 
+	this.getParent = function (el, pTagName) {
+		if (el == null) return null;
+		else if (el.nodeType == 1 && el.tagName.toLowerCase() == pTagName.toLowerCase())
+			return el;
+		else
+			return this.getParent(el.parentNode, pTagName);
+	}
+ 
+	this.sort = function (cell) {
+ 
+	    var column = cell.cellIndex;
+	    var itm = this.getInnerText(this.tbody[0].rows[0].cells[column]);
+		var sortfn = this.sortCaseInsensitive;
+ 
+		if (itm.replace(/^\s+|\s+$/g,"").match(/^[\d\.]+$/)) sortfn = this.sortNumeric;
+ 
+		this.sortColumnIndex = column;
+ 
+	    var newRows = new Array();
+	    for (j = 1; j < this.tbody[0].rows.length; j++) {
+			newRows[j - 1] = this.tbody[0].rows[j];
+		}
+ 
+		newRows.sort(sortfn);
+ 
+		if (cell.getAttribute("sortdir") == 'down') {
+			newRows.reverse();
+			cell.setAttribute('sortdir','up');
+		} else {
+			cell.setAttribute('sortdir','down');
+		}
+ 
+		for (i = 1; i < newRows.length; i++) {
+			this.tbody[0].appendChild(newRows[i]);
+		}
+ 
+	}
+ 
+	this.sortCaseInsensitive = function(a,b) {
+		aa = thisObject.getInnerText(a.cells[thisObject.sortColumnIndex]).toLowerCase();
+		bb = thisObject.getInnerText(b.cells[thisObject.sortColumnIndex]).toLowerCase();
+		if (aa==bb) return 0;
+		if (aa<bb) return -1;
+		return 1;
+	}
+ 
+	this.sortNumeric = function(a,b) {
+		aa = parseFloat(thisObject.getInnerText(a.cells[thisObject.sortColumnIndex]));
+		if (isNaN(aa)) aa = 0;
+		bb = parseFloat(thisObject.getInnerText(b.cells[thisObject.sortColumnIndex]));
+		if (isNaN(bb)) bb = 0;
+		return aa-bb;
+	}
+ 
+	// define variables
+	var thisObject = this;
+	var sortSection = this.thead;
+ 
+	// constructor actions
+	if (!(this.tbody && this.tbody[0].rows && this.tbody[0].rows.length > 0)) return;
+ 
+	if (sortSection && sortSection[0].rows && sortSection[0].rows.length > 0) {
+		var sortRow = sortSection[0].rows[0];
+	} else {
+		return;
+	}
+ 
+	for (var i=0; i<sortRow.cells.length; i++) {
+		sortRow.cells[i].sTable = this;
+		sortRow.cells[i].onclick = function () {
+			this.sTable.sort(this);
+			return false;
+		}
+	}
+ 
+}

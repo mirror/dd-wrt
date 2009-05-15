@@ -174,6 +174,11 @@ addEvent(window, "unload", function() {
 										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvram_get("ip_conntrack_max"); %>]</th>
 									</tr>
 								</table>
+								<script type="text/javascript">
+								//<![CDATA[
+								var t = new SortableTable(document.getElementById('active_clients_table'), 1000);
+								//]]>
+								</script>
 							</fieldset><br />
 							
 							<h2><% tran("status_lan.h22"); %></h2>
@@ -215,6 +220,11 @@ addEvent(window, "unload", function() {
 											<th><% tran("share.del"); %></th>
 										</tr>
 									</table>
+									<script type="text/javascript">
+									//<![CDATA[
+									var t = new SortableTable(document.getElementById('dhcp_leases_table'), 1000);
+									//]]>
+									</script>
 								</fieldset><br />
 							</div>
 
