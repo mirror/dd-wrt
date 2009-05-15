@@ -1134,10 +1134,10 @@ function SortableTable (tableEl) {
 	this.sort = function (cell) {
  
 	    var column = cell.cellIndex;
-	    var itm = this.getInnerText(this.tbody[0].rows[0].cells[column]);
+	    var itm = this.getInnerText(this.tbody[0].rows[1].cells[column]);
 		var sortfn = this.sortCaseInsensitive;
  
-		if (itm.replace(/^\s+|\s+$/g,"").match(/^[\d\.]+$/)) sortfn = this.sortNumeric;
+		if (itm.replace(/^\s+|\s+$/g,"").match(/^[\d]+$/)) sortfn = this.sortNumeric;
  
 		this.sortColumnIndex = column;
  
