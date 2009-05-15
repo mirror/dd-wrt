@@ -1916,6 +1916,7 @@ static void do_ttgraph( struct mime_handler *handler, char *url,
     {
 	foreach( var, tdata, next )
 	{
+		if( i == days ) break;  //skip monthly total
 	    sscanf( var, "%lu:%lu", &rcvd[i], &sent[i] );
 	    totin += rcvd[i];
 	    totout += sent[i];
