@@ -523,7 +523,7 @@ static int wlconf_up( char *name )
      * (int) value; val |= WL_TXPWR_OVERRIDE; wl_iovar_setint (name,
      * "qtxpower", val); 
      */
-    eval( "wl", "txpwr1", "-m", "-o", nvram_nget( "wl%d_txpwr", instance ) );
+    eval( "wl", "-i", name, "txpwr1", "-m", "-o", nvram_nget( "wl%d_txpwr", instance ) );
 #endif
     /*
      * Set txant 
