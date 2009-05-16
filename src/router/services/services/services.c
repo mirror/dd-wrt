@@ -1446,11 +1446,9 @@ void start_radio_timer( void )
 	return;
 #ifdef HAVE_MADWIFI
     if( nvram_match( "ath0_net_mode", "disabled" ) )
-#elif HAVE_MSSID
+#else
     if( nvram_match( "wl0_net_mode", "disabled" )
 	&& nvram_match( "wl1_net_mode", "disabled" ) )
-#else
-    if( nvram_match( "wl_net_mode", "disabled" ) )
 #endif
 	return;
 

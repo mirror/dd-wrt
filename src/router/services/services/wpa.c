@@ -194,13 +194,8 @@ static void convert_wds( int instance )
 		      mac,
 		      nvram_safe_get( "wl_crypto" ),
 		      nvram_safe_get( "security_mode" ),
-#ifndef HAVE_MSSID
-		      nvram_safe_get( "wl_ssid" ),
-		      nvram_safe_get( "wl_wpa_psk" ) );
-#else
 		      nvram_nget( "wl%d_ssid", instance ),
 		      nvram_safe_get( "wl_wpa_psk" ) );
-#endif
 	    nvram_nset( buf, "wl%d_wds%d", instance, i );
 	    i++;
 	}
@@ -213,7 +208,6 @@ static void convert_wds( int instance )
     }
 }
 
-#ifdef HAVE_MSSID
 void start_guest_nas( void )
 {
 
@@ -229,7 +223,6 @@ void start_guest_nas( void )
      */
     return;
 }
-#endif
 char *getSecMode( char *prefix )
 {
     char wep[32];
@@ -324,7 +317,6 @@ void start_nas_lan( int c )
     start_radius( wlname );	// quick fix, should be vif capable in future
     start_nas_single( "lan", wlname );
 
-#ifdef HAVE_MSSID
     char *next;
     char var[80];
     char *vifs = nvram_nget( "wl%d_vifs", c );
@@ -334,7 +326,6 @@ void start_nas_lan( int c )
     {
 	start_nas_single( "lan", var );
     }
-#endif
 }
 
 void start_nas_wan( int c )
@@ -344,7 +335,6 @@ void start_nas_wan( int c )
     sprintf( wlname, "wl%d", c );
     start_nas_single( "wan", wlname );
 
-#ifdef HAVE_MSSID
     char *next;
     char var[80];
     char vif[16];
@@ -365,7 +355,6 @@ void start_nas_wan( int c )
 	    start_nas_single( "lan", var );
 	}
     }
-#endif
 }
 
 #ifdef HAVE_WPA_SUPPLICANT
@@ -373,9 +362,7 @@ extern void setupSupplicant( char *prefix );
 #endif
 void start_nas( void )
 {
-#ifdef HAVE_MSSID
     unlink( "/tmp/.nas" );
-#endif
     int cnt = get_wl_instances(  );
 
     int c;
@@ -429,9 +416,7 @@ void start_nas( void )
 
 void start_nas_single( char *type, char *prefix )
 {
-#ifdef HAVE_MSSID
     FILE *fnas;
-#endif
 #ifdef HAVE_NASCONF
     char conffile[64];
     FILE *conf;
@@ -524,11 +509,9 @@ void start_nas_single( char *type, char *prefix )
 	    dd_syslog( LOG_INFO,
 		       "NAS : NAS lan (%s interface) successfully started\n",
 		       prefix );
-#ifdef HAVE_MSSID
 	    fnas = fopen( "/tmp/.nas", "a" );
 	    fputc( 'L', fnas );	// L as LAN
 	    fclose( fnas );
-#endif
 	}
 	else
 	{
@@ -536,11 +519,9 @@ void start_nas_single( char *type, char *prefix )
 	    dd_syslog( LOG_INFO,
 		       "NAS : NAS wan (%s interface) successfully started\n",
 		       prefix );
-#ifdef HAVE_MSSID
 	    fnas = fopen( "/tmp/.nas", "a" );
 	    fputc( 'W', fnas );	// W as WAN
 	    fclose( fnas );
-#endif
 	}
 
 	char rekey[32];
@@ -775,9 +756,7 @@ void stop_nas( void )
 {
     int ret = 0;
 
-#ifdef HAVE_MSSID
     unlink( "/tmp/.nas" );
-#endif
 
     if( pidof( "nas" ) > 0 )
 	dd_syslog( LOG_INFO, "NAS : NAS daemon successfully stopped\n" );
@@ -816,7 +795,6 @@ void stop_nas( void )
     unlink( "/tmp/nas.wl1wan.conf" );
     unlink( "/tmp/nas.wl1lan.conf" );
 #endif
-#ifdef HAVE_MSSID
     unlink( "/tmp/nas.wl0.1lan.pid" );
     unlink( "/tmp/nas.wl0.2lan.pid" );
     unlink( "/tmp/nas.wl0.3lan.pid" );
@@ -830,7 +808,6 @@ void stop_nas( void )
     unlink( "/tmp/nas.wl1.1lan.conf" );
     unlink( "/tmp/nas.wl1.2lan.conf" );
     unlink( "/tmp/nas.wl1.3lan.conf" );
-#endif
 #endif
 
     cprintf( "done\n" );
