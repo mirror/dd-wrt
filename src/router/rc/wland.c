@@ -476,9 +476,6 @@ static void do_client_check( void )
 
 #endif
 	eval( "wl", "-i", ifname, "disassoc" );
-#ifndef HAVE_MSSID
-	eval( "wl", "join", nvram_safe_get( "wl_ssid" ) );
-#else
 	if( nvram_match( "roaming_enable", "1" ) )
 	{
 	    eval( "wl", "-i", ifname, "join", nvram_safe_get( "roaming_ssid" ) );
@@ -487,7 +484,6 @@ static void do_client_check( void )
 	{
 	    eval( "wl", "-i", ifname, "join", nvram_nget( "wl%d_ssid", instance ) );
 	}
-#endif
 	// join(nvram_get("wl_ssid"));
 	fclose( fp );
     }
@@ -648,41 +644,6 @@ static void do_madwifi_check( void )
  */
 #endif
 
-#ifndef HAVE_ACK
-#ifndef HAVE_MADWIFI
-#ifndef HAVE_MSSID
-static void setACK( void )
-{
-    char *v;
-    char *name = get_wdev(  );
-
-    if( ( v = nvram_get( "wl0_distance" ) ) )
-    {
-
-	rw_reg_t reg;
-	uint32 shm;
-
-	int val = atoi( v );
-
-	if( val != 0 )
-	{
-	    val = 9 + ( val / 150 ) + ( ( val % 150 ) ? 1 : 0 );
-
-	    shm = 0x10;
-	    shm |= ( val << 16 );
-	    WL_IOCTL( name, 197, &shm, sizeof( shm ) );
-
-	    reg.byteoff = 0x684;
-	    reg.val = val + 510;
-	    reg.size = 2;
-	    WL_IOCTL( name, 102, &reg, sizeof( reg ) );
-	}
-    }
-
-}
-#endif
-#endif
-#endif
 
 /* 
  * static void setShortSlot(void) { char *shortslot = nvram_safe_get
@@ -708,13 +669,6 @@ static void do_wlan_check( void )
 #else
 
     do_madwifi_check(  );
-#endif
-#ifndef HAVE_ACK
-#ifndef HAVE_MADWIFI
-#ifndef HAVE_MSSID
-    setACK(  );
-#endif
-#endif
 #endif
 
 }
