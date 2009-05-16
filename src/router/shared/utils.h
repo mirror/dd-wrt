@@ -385,6 +385,8 @@
 // Belkin F5D7231-4 v2000 (BCM5352E cpu, fccid: Belkin K7SF5D7231B)
 #define ROUTER_BELKIN_F5D7231_V2000 0x7213
 
+#define ROUTER_BOARD_ESR6650 0x730f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith( char *source, char *cmp )
@@ -707,7 +709,7 @@ void rmmod( char *module );
 
 int do80211priv( const char *ifname, int op, void *data, size_t len );
 int getsocket( void );
-
+char *get3GControlDevice(void);
 #ifdef HAVE_RT2880
 char *getRADev(char *prefix);
 #endif

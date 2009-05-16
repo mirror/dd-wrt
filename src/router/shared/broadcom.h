@@ -359,13 +359,9 @@ extern void ej_get_wep_value( webs_t wp, int argc, char_t ** argv );
 extern void ej_get_wl_active_mac( webs_t wp, int argc, char_t ** argv );
 extern void ej_get_wl_value( webs_t wp, int argc, char_t ** argv );
 
-#ifdef HAVE_MSSID
 extern void security_save( webs_t wp );
 extern void ej_show_wpa_setting( webs_t wp, int argc, char_t ** argv,
 				 char *prefix );
-#else
-extern void ej_show_wpa_setting( webs_t wp, int argc, char_t ** argv );
-#endif
 extern void wl_unit( webs_t wp, char *value, struct variable *v );
 extern void validate_wpa_psk( webs_t wp, char *value, struct variable *v );
 extern void validate_auth_mode( webs_t wp, char *value, struct variable *v );
@@ -492,10 +488,8 @@ extern void ping_startup( webs_t wp );
 extern void ping_firewall( webs_t wp );
 extern void ping_custom( webs_t wp );
 
-#ifdef HAVE_MSSID
 extern void add_vifs( webs_t wp );
 extern void remove_vifs( webs_t wp );
-#endif
 
 // extern int ej_show_virtualssid( webs_t wp, int argc, char_t **argv);
 extern void ej_show_security( webs_t wp, int argc, char_t ** argv );
