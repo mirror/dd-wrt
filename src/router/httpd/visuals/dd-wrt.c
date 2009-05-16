@@ -1356,7 +1356,7 @@ void ej_show_default_level( webs_t wp, int argc, char_t ** argv )
 
 #ifndef HAVE_MSSID
 
-char *selmatch( char *var, char *is, char *ret )
+static char *selmatch( char *var, char *is, char *ret )
 {
     if( nvram_match( var, is ) )
 	return ret;
@@ -1368,16 +1368,10 @@ void ej_show_security( webs_t wp, int argc, char_t ** argv )
     websWrite( wp, "<div class=\"setting\">\n" );
     websWrite( wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.secmode)</script></div>\n" );
-    websWrite( wp,
-	       "<select name=\"security_mode\" onchange=\"SelMode('security_mode',this.form.security_mode.selectedIndex,this.form)\">\n" );
-    websWrite( wp,
-	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
-	       selmatch( "security_mode", "disabled",
-			 "selected=\\\"selected\\\"" ) );
-    websWrite( wp, "<option value=\"psk\" %s>WPA Personal</option>\n",
-	       selmatch( "security_mode", "psk", "selected=\"selected\"" ) );
-    websWrite( wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
-	       selmatch( "security_mode", "wpa", "selected=\"selected\"" ) );
+    websWrite( wp,"<select name=\"security_mode\" onchange=\"SelMode('security_mode',this.form.security_mode.selectedIndex,this.form)\">\n" );
+    websWrite( wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",selmatch( "security_mode", "disabled","selected=\\\"selected\\\"" ) );
+    websWrite( wp, "<option value=\"psk\" %s>WPA Personal</option>\n",selmatch( "security_mode", "psk", "selected=\"selected\"" ) );
+    websWrite( wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",selmatch( "security_mode", "wpa", "selected=\"selected\"" ) );
 #ifndef HAVE_RT2880
     if( !nvram_match( "wl0_mode", "wet" ) && nvram_match( "wl_wds1_enable", "0" ) && nvram_match( "wl_wds2_enable", "0" ) && nvram_match( "wl_wds3_enable", "0" ) && nvram_match( "wl_wds4_enable", "0" ) && nvram_match( "wl_wds5_enable", "0" ) && nvram_match( "wl_wds6_enable", "0" ) && nvram_match( "wl_wds7_enable", "0" ) && nvram_match( "wl_wds8_enable", "0" ) && nvram_match( "wl_wds9_enable", "0" ) && nvram_match( "wl_wds10_enable", "0" ) )	// botho 
 #endif
@@ -1420,7 +1414,7 @@ extern struct wifi_channels *list_channels( char *devnr );
 extern int getdevicecount( void );
 #endif
 
-char *selmatch( char *var, char *is, char *ret )
+static char *selmatch( char *var, char *is, char *ret )
 {
     if( nvram_match( var, is ) )
 	return ret;
@@ -1431,8 +1425,8 @@ static void
 show_security_prefix( webs_t wp, int argc, char_t ** argv, char *prefix,
 		      int primary )
 {
-    char var[80];
-    char sta[80];
+    static char var[80];
+    static char sta[80];
 
     // char p2[80];
     cprintf( "show security prefix\n" );
@@ -1442,29 +1436,19 @@ show_security_prefix( webs_t wp, int argc, char_t ** argv, char *prefix,
     // websWrite (wp, "<input type=\"hidden\"
     // name=\"%s_security_mode\"/>\n",p2);
     websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.secmode)</script></div>\n" );
-    websWrite( wp,
-	       "<select name=\"%s_security_mode\" onchange=\"SelMode('%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n",
-	       prefix, prefix, prefix );
-    websWrite( wp,
-	       "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
-	       selmatch( var, "disabled", "selected=\\\"selected\\\"" ) );
-    websWrite( wp, "<option value=\"psk\" %s>WPA Personal</option>\n",
-	       selmatch( var, "psk", "selected=\"selected\"" ) );
+    websWrite( wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.secmode)</script></div>\n" );
+    websWrite( wp,"<select name=\"%s_security_mode\" onchange=\"SelMode('%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n",prefix, prefix, prefix );
+    websWrite( wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",selmatch( var, "disabled", "selected=\\\"selected\\\"" ) );
+    websWrite( wp, "<option value=\"psk\" %s>WPA Personal</option>\n",selmatch( var, "psk", "selected=\"selected\"" ) );
     sprintf( sta, "%s_mode", prefix );
     if( !primary || nvram_match( sta, "ap" ) || nvram_match( sta, "wdsap" ) )
     {
-	websWrite( wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",
-		   selmatch( var, "wpa", "selected=\"selected\"" ) );
+	websWrite( wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n", selmatch( var, "wpa", "selected=\"selected\"" ) );
     }
-    websWrite( wp,
-	       "<option value=\"psk2\" %s>WPA2 Personal</option>\n",
-	       selmatch( var, "psk2", "selected=\"selected\"" ) );
+    websWrite( wp,"<option value=\"psk2\" %s>WPA2 Personal</option>\n",selmatch( var, "psk2", "selected=\"selected\"" ) );
     if( !primary || nvram_match( sta, "ap" ) || nvram_match( sta, "wdsap" ) )
     {
-	websWrite( wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
-		   selmatch( var, "wpa2", "selected=\"selected\"" ) );
+	websWrite( wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",selmatch( var, "wpa2", "selected=\"selected\"" ) );
     }
 #ifdef HAVE_RT2880
     if( !primary || nvram_match( sta, "ap" ) )
