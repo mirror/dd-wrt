@@ -371,17 +371,10 @@ static char *getEncInfo( wl_bss_info_t * bi )
     if( bi->capability & DOT11_CAP_PRIVACY )
     {
 	if( bi->ie_length )
-#ifdef HAVE_MSSID
 	    return
 		wl_dump_wpa_rsn_ies( ( uint8 * ) ( ( ( uint8 * ) bi ) +
 						   bi->ie_offset ),
 				     bi->ie_length );
-#else
-	    return
-		wl_dump_wpa_rsn_ies( ( uint8 * ) ( ( ( uint8 * ) bi ) +
-						   sizeof( wl_bss_info_t ) ),
-				     bi->ie_length );
-#endif
 	else
 	    return "WEP";
     }
@@ -428,11 +421,6 @@ int site_survey_main( int argc, char *argv[] )
     /*
      * can only scan in STA mode 
      */
-#ifndef HAVE_MSSID
-    wl_ioctl( dev, WLC_GET_AP, &oldap, sizeof( oldap ) );
-    if( oldap > 0 )
-	eval( "wl", "-i", name, "ap", "0" );
-#endif
     if( wl_ioctl( dev, WLC_SCAN, &params, 64 ) < 0 )
     {
 	fprintf( stderr, "scan failed\n" );
@@ -464,11 +452,7 @@ int site_survey_main( int argc, char *argv[] )
 	strcpy( site_survey_lists[i].BSSID,
 		ether_etoa( bss_info->BSSID.octet, mac ) );
 #ifndef HAVE_RB500
-#ifndef HAVE_MSSID
-	site_survey_lists[i].channel = bss_info->channel;
-#else
 	site_survey_lists[i].channel = bss_info->chanspec & 0xff;
-#endif
 #endif
 	site_survey_lists[i].RSSI = bss_info->RSSI;
 	site_survey_lists[i].phy_noise = bss_info->phy_noise;
@@ -498,15 +482,9 @@ int site_survey_main( int argc, char *argv[] )
     }
 
   endss:
-#ifndef HAVE_MSSID
-    if( oldap > 0 )
-	eval( "wl", "-i", name, "ap", "1" );
-#endif
 
     C_led( 0 );
-#ifdef HAVE_MSSID
     eval( "wl", "-i", name, "up" );
-#endif
     return 0;
 }
 

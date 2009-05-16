@@ -42,15 +42,7 @@
 struct nvram_tuple srouter_defaults[] = {
     // {"default_init","1",0},
     {"nvram_ver", "3", 0},
-#ifdef HAVE_FON
-
-#ifdef HAVE_MSSID
-    {"fon_revision", "913", 0},
-#else
-    {"fon_revision", "13", 0},
-#endif
-    {"router_style", "fon", 0},
-#elif HAVE_GGEW
+#ifdef HAVE_GGEW
     {"router_style", "blue", 0},
 #elif HAVE_CORENET
     {"router_style", "corenet", 0},
@@ -552,7 +544,6 @@ struct nvram_tuple srouter_defaults[] = {
      * Wireless parameters 
      */
 
-#ifdef HAVE_MSSID
     {"wl0_nbw", "20", 0},	/* N-BW */
     {"wl0_nctrlsb", "lower", 0},	/* N-CTRL SB */
     {"wl0_nband", "2", 0},	/* N-BAND */
@@ -568,7 +559,6 @@ struct nvram_tuple srouter_defaults[] = {
 				 * change it to a radio appropriate default
 				 */
     {"wl0_sta_retry_time", "5", 0},	/* 100% duty cycle for LED on router */
-#endif
 #ifdef HAVE_DDLAN
     {"wl_distance", "2000", 0},	/* ack timing, distance in meters */
 #else
@@ -609,14 +599,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_ssid", "KMT", 0},	/* Service set ID (network name) */
 #elif HAVE_34TELECOM
     {"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
-#elif HAVE_FON
-#ifdef HAVE_MSSID
-    {"wl_ssid", "FON_INIT", 0},	/* Service set ID (network name) */
 #else
-    {"wl_ssid", "FON_HotSpot", 0},	/* Service set ID (network name) */
-#endif
-#else
-#ifdef HAVE_MSSID
+
 
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_MAKSAT
@@ -692,15 +676,9 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl0.2_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
     {"wl0.3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
 #endif
-#else
-#ifdef HAVE_BUFFALO
-    {"wl_ssid", "BUFFALO", 0},	/* Service set ID (network name) */
-#else
-    {"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
-#endif
 #endif
 
-#endif
+
 #ifdef HAVE_NEWMEDIA
     {"wl_radio", "1", 0},	/* Enable (1) or disable (0) radio */
 #else
@@ -719,15 +697,11 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath5_closed", "0", 0},	/* Closed (hidden) network */
 #else
     {"wl_radio", "1", 0},	/* Enable (1) or disable (0) radio */
-#ifdef HAVE_MSSID
     {"wl0_radio", "1", 0},	/* Enable (1) or disable (0) radio */
     {"wl0_closed", "0", 0},	/* Closed (hidden) network */
     {"wl0.1_closed", "0", 0},	/* Closed (hidden) network */
     {"wl0.2_closed", "0", 0},	/* Closed (hidden) network */
     {"wl0.3_closed", "0", 0},	/* Closed (hidden) network */
-#else
-    {"wl_closed", "0", 0},	/* Closed (hidden) network */
-#endif
 
 #endif
 
@@ -751,15 +725,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl0_mode", "sta", 0},
 #else
 
-#ifdef HAVE_MSSID
-
-#ifdef HAVE_FON
-    {"wl_mode", "apsta", 0},
-    {"wl0_mode", "apsta", 0},
-    {"wl_vifs", "wl0.1", 0},
-    {"wl0_vifs", "wl0.1", 0},
-    {"wl0.1_ssid", "FON", 0},
-#else
 #ifndef HAVE_MADWIFI
     {"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
     {"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
@@ -814,10 +779,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath5_xr", "0", 0},	/* AP mode (ap|sta|wds) */
 #endif
 #endif
-#else
-    {"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
-#endif
-#endif
 #ifdef HAVE_MADWIFI
     {"ath0_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
     {"ath1_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
@@ -829,7 +790,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_wds", "", 0},		/* xx:xx:xx:xx:xx:xx ... */
     {"wl_wep", "disabled", 0},	/* Data encryption (off|wep|tkip|aes) */
 #ifndef HAVE_MADWIFI
-#ifdef HAVE_MSSID
     {"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
     {"wl_auth", "0", 0},	/* Shared key authentication optional (0) or
 				 * required (1) */
@@ -868,16 +828,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl0.3_key2", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
     {"wl0.3_key3", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
     {"wl0.3_key4", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
-#else
-    {"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
-    {"wl_auth", "0", 0},	/* Shared key authentication optional (0) or
-				 * required (1) */
-    {"wl_key", "1", 0},		/* Current WEP key */
-    {"wl_key1", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-    {"wl_key2", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-    {"wl_key3", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-    {"wl_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
-#endif
 #endif
     {"wl_macmode", "disabled", 0},	/* "allow" only, "deny" only, or
 					 * "disabled" (allow all) */
@@ -887,11 +837,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath1_channel", "0", 0},	/* Channel number */
 #else
 
-#ifdef HAVE_MSSID
     {"wl0_channel", "6", 0},	/* Channel number */
-#else
-    {"wl_channel", "6", 0},	/* Channel number */
-#endif
 
 #endif
     {"wl_reg_mode", "off", 0},	/* Regulatory: 802.11H(h)/802.11D(d)/off(off) 
@@ -940,17 +886,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl1_net_mode", "disabled", 0},
 #endif
 
-#ifndef HAVE_MSSID
-#ifdef HAVE_SAGAR
-    {"wl_gmode", XSTR( GMODE_LEGACY_B ), 0},	/* 54g mode */
-#elif HAVE_GGEW
-    {"wl_gmode", "0", 0},	/* 54g mode */
-#elif HAVE_NEWMEDIA
-    {"wl_gmode", "-1", 0},	/* 54g mode */
-#else
-    {"wl_gmode", XSTR( GMODE_AUTO ), 0},	/* 54g mode */
-#endif
-#else
 #ifdef HAVE_SAGAR
     {"wl0_gmode", XSTR( GMODE_LEGACY_B ), 0},	/* 54g mode */
 #elif HAVE_GGEW
@@ -960,17 +895,11 @@ struct nvram_tuple srouter_defaults[] = {
 #else
     {"wl0_gmode", XSTR( GMODE_AUTO ), 0},	/* 54g mode */
 #endif
-#endif
 
-#ifdef HAVE_MSSID
     {"wl_gmode_protection", "auto", 0},	/* 802.11g RTS/CTS protection
 					 * (off|auto) */
     {"wl_nmode_protection", "auto", 0},	/* 802.11g RTS/CTS protection
 					 * (off|auto) */
-#else
-    {"wl_gmode_protection", "off", 0},	/* 802.11g RTS/CTS protection
-					 * (off|auto) */
-#endif
 #ifdef HAVE_SKYTEL
     {"wl_frameburst", "on", 0},	/* BRCM Frambursting mode (off|on) */
 #elif HAVE_GGEW
@@ -1000,7 +929,6 @@ struct nvram_tuple srouter_defaults[] = {
      */
     {"security_mode_last", "", 0},	/* Save last WPA mode *//* Add */
 #ifndef HAVE_MADWIFI
-#ifdef HAVE_MSSID
     {"wl0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
 					 */
     {"wl0_akm", "disabled", 0},
@@ -1037,16 +965,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl0.3_radius_port", "1812", 0},	/* RADIUS server UDP port */
     {"wl0.3_radius_ipaddr", "", 0},	/* RADIUS server IP address */
     {"wl0.3_radius_key", "", 0},	/* RADIUS shared secret */
-#else
-    {"wl_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
-					 */
-    {"wl_akm", "disabled", 0},
-    {"wl_wpa_psk", "", 0},	/* WPA pre-shared key */
-    {"wl_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
-    {"wl_radius_port", "1812", 0},	/* RADIUS server UDP port */
-    {"wl_radius_ipaddr", "", 0},	/* RADIUS server IP address */
-    {"wl_radius_key", "", 0},	/* RADIUS shared secret */
-#endif
 
 #else
     {"ath0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
@@ -1821,7 +1739,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl1_wds8_if", "", 0},
     {"wl1_wds9_if", "", 0},
     {"wl1_wds10_if", "", 0},
-#ifdef HAVE_MSSID
 
     {"wds0.1", "", 0},
     {"wds0.2", "", 0},
@@ -1856,25 +1773,6 @@ struct nvram_tuple srouter_defaults[] = {
     {"wds1.14", "", 0},
     {"wds1.15", "", 0},
     {"wds1.16", "", 0},
-#else
-
-    {"wds0.49151", "", 0},
-    {"wds0.49152", "", 0},
-    {"wds0.49153", "", 0},
-    {"wds0.49154", "", 0},
-    {"wds0.49155", "", 0},
-    {"wds0.49156", "", 0},
-    {"wds0.49157", "", 0},
-    {"wds0.49158", "", 0},
-    {"wds0.49159", "", 0},
-    {"wds0.49160", "", 0},
-    {"wds0.49161", "", 0},
-    {"wds0.49162", "", 0},
-    {"wds0.49163", "", 0},
-    {"wds0.49164", "", 0},
-    {"wds0.49165", "", 0},
-    {"wds0.49166", "", 0},
-#endif
 #endif
     {"bird_ospf",
      "Please read the BIRD setup instructions at http://bird.network.cz/bird.html",
@@ -2128,12 +2026,8 @@ struct nvram_tuple srouter_defaults[] = {
     {"NC_MaxMissedARP", "5", 0},
     {"NC_RenewTimeout", "0", 0},
 
-#ifdef HAVE_MSSID
     {"wl_wme", "on", 0},	/* WME mode (off|on) */
     {"wl1_wme", "on", 0},	/* WME mode (off|on) */
-#else
-    {"wl_wme", "off", 0},	/* WME mode (off|on) */
-#endif
     /*
      * WME parameters 
      */
