@@ -693,15 +693,6 @@ void generate_wep_key( webs_t wp )
     return;
 }
 
-#ifndef HAVE_MSSID
-
-void set_security( webs_t wp )
-{
-    char *var = websGetVar( wp, "security_varname", "security_mode" );
-
-    nvram_set( var, websGetVar( wp, var, "disabled" ) );
-}
-#endif
 
 void copytonv( webs_t wp, const char *fmt, ... )
 {
@@ -720,7 +711,6 @@ void copytonv( webs_t wp, const char *fmt, ... )
 
 extern int get_merge_ipaddr( webs_t wp, char *name, char *ipaddr );
 
-#ifdef HAVE_MSSID
 
 static void save_secprefix( webs_t wp, char *prefix )
 {
@@ -901,7 +891,6 @@ void security_save( webs_t wp )
     applytake(value);
 }
 
-#endif
 
 extern struct wl_client_mac *wl_client_macs;
 
@@ -2755,7 +2744,6 @@ void wireless_save( webs_t wp )
 {
     char *value = websGetVar( wp, "action", "" );
 
-#ifdef HAVE_MSSID
     char *next;
     char var[80];
 
@@ -2791,7 +2779,6 @@ void wireless_save( webs_t wp )
 	}
     }
     // nvram_commit ();
-#endif
     applytake(value);
 }
 
@@ -2926,15 +2913,6 @@ void milkfish_sip_message( webs_t wp )
 }
 #endif
 
-#ifndef HAVE_MSSID
-
-void set_security( webs_t wp )
-{
-    char *var = websGetVar( wp, "security_varname", "security_mode" );
-
-    nvram_set( var, websGetVar( wp, var, "disabled" ) );
-}
-#else
 void set_security( webs_t wp )
 {
     char *var = websGetVar( wp, "security_varname", "security_mode" );
@@ -2946,7 +2924,6 @@ void set_security( webs_t wp )
     // rep(var,'X','.');
     nvram_set( var, var2 );
 }
-#endif
 typedef struct sha1_ctx_t
 {
     uint32_t count[2];

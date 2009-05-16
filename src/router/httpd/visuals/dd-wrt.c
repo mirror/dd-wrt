@@ -1354,53 +1354,6 @@ void ej_show_default_level( webs_t wp, int argc, char_t ** argv )
 }
 #endif
 
-#ifndef HAVE_MSSID
-
-static char *selmatch( char *var, char *is, char *ret )
-{
-    if( nvram_match( var, is ) )
-	return ret;
-    return "";
-}
-
-void ej_show_security( webs_t wp, int argc, char_t ** argv )
-{
-    websWrite( wp, "<div class=\"setting\">\n" );
-    websWrite( wp,
-	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.secmode)</script></div>\n" );
-    websWrite( wp,"<select name=\"security_mode\" onchange=\"SelMode('security_mode',this.form.security_mode.selectedIndex,this.form)\">\n" );
-    websWrite( wp,"<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",selmatch( "security_mode", "disabled","selected=\\\"selected\\\"" ) );
-    websWrite( wp, "<option value=\"psk\" %s>WPA Personal</option>\n",selmatch( "security_mode", "psk", "selected=\"selected\"" ) );
-    websWrite( wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n",selmatch( "security_mode", "wpa", "selected=\"selected\"" ) );
-#ifndef HAVE_RT2880
-    if( !nvram_match( "wl0_mode", "wet" ) && nvram_match( "wl_wds1_enable", "0" ) && nvram_match( "wl_wds2_enable", "0" ) && nvram_match( "wl_wds3_enable", "0" ) && nvram_match( "wl_wds4_enable", "0" ) && nvram_match( "wl_wds5_enable", "0" ) && nvram_match( "wl_wds6_enable", "0" ) && nvram_match( "wl_wds7_enable", "0" ) && nvram_match( "wl_wds8_enable", "0" ) && nvram_match( "wl_wds9_enable", "0" ) && nvram_match( "wl_wds10_enable", "0" ) )	// botho 
-#endif
-    {
-	websWrite( wp,
-		   "<option value=\"psk2\" %s>WPA2 Personal</option>\n",
-		   selmatch( "security_mode", "psk2", "selected" ) );
-	websWrite( wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n",
-		   selmatch( "security_mode", "wpa2",
-			     "selected=\"selected\"" ) );
-    }
-
-    websWrite( wp,
-	       "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n",
-	       selmatch( "security_mode", "psk psk2", "selected" ) );
-    websWrite( wp,
-	       "<option value=\"wpa wpa2\" %s>WPA2 Enterprise Mixed</option>\n",
-	       selmatch( "security_mode", "wpa wpa2",
-			 "selected=\"selected\"" ) );
-    websWrite( wp, "<option value=\"radius\" %s>RADIUS</option>\n",
-	       selmatch( "security_mode", "radius",
-			 "selected=\"selected\"" ) );
-    websWrite( wp, "<option value=\"wep\" %s>WEP</option></select>\n",
-	       selmatch( "security_mode", "wep", "selected=\"selected\"" ) );
-    websWrite( wp, "</div>\n" );
-    ej_show_wpa_setting( wp, argc, argv );
-    return;
-}
-#else
 #ifdef HAVE_MADWIFI
 struct wifi_channels
 {
@@ -1569,7 +1522,6 @@ void ej_show_security( webs_t wp, int argc, char_t ** argv )
 #endif
 }
 
-#endif
 
 void ej_show_dhcpd_settings( webs_t wp, int argc, char_t ** argv )
 {
@@ -2782,7 +2734,6 @@ showDynOption( webs_t wp, char *propname, char *nvname, char *options[],
 
 }
 #endif
-#ifdef HAVE_MSSID
 
 static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 {
@@ -3812,7 +3763,6 @@ static int show_virtualssid( webs_t wp, char *prefix )
     return 0;
 }
 
-#endif
 
 void ej_showad( webs_t wp, int argc, char_t ** argv )
 {
@@ -3850,7 +3800,6 @@ void ej_showad( webs_t wp, int argc, char_t ** argv )
     return;
 }
 
-#ifdef HAVE_MSSID
 
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel( void )
@@ -5257,7 +5206,6 @@ void show_wep( webs_t wp, char *prefix )
     websWrite( wp, "</div>\n" );
 }
 
-#endif
 
 void ej_get_wds_mac( webs_t wp, int argc, char_t ** argv )
 {

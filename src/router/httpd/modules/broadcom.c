@@ -566,23 +566,6 @@ void Initnvramtab(  )
 			}
 			tmp->argv[i] = NULL;
 		    }
-#ifndef HAVE_MSSID
-		    if( !stricmp( tmpstr, "SECURITYMODE" ) )
-		    {
-			tmp->validatename = "validate_security_mode";
-			free( tmpstr );
-			tmpstr = getFileString( in );
-			len = atoi( tmpstr );
-			tmp->argv =
-			    ( char ** )malloc( sizeof( char ** ) *
-					       ( len + 1 ) );
-			for( i = 0; i < len; i++ )
-			{
-			    tmp->argv[i] = getFileString( in );
-			}
-			tmp->argv[i] = NULL;
-		    }
-#endif
 #ifdef HAVE_PPPOESERVER
 		    if( !stricmp( tmpstr, "CHAPTABLE" ) )
 		    {
@@ -898,10 +881,8 @@ static struct gozila_action gozila_actions[] = {
     {"RouteStatic", "del", "static_route_del", 1, REFRESH,"delete_static_route"},
     {"WL_WPATable", "wep_key_generate", "", 1, REFRESH, "generate_wep_key"},
     {"WL_WPATable", "security", "", 1, REFRESH, "set_security"},
-#ifdef HAVE_MSSID
     {"WL_WPATable", "save", "wireless_2", 1, REFRESH, "security_save"},
     {"WL_WPATable", "keysize", "wireless_2", 1, REFRESH, "security_save"},
-#endif
     {"WL_ActiveTable", "add_mac", "", 1, REFRESH, "add_active_mac"},
     /*
      * Siafu addition 
@@ -933,10 +914,8 @@ static struct gozila_action gozila_actions[] = {
      */
     {"Forward", "add_forward", "", 0, REFRESH, "forward_add"},
     {"Forward", "remove_forward", "", 0, REFRESH, "forward_remove"},
-#ifdef HAVE_MSSID
     {"Wireless_Basic", "add_vifs", "", 0, REFRESH, "add_vifs"},
     {"Wireless_Basic", "remove_vifs", "", 0, REFRESH, "remove_vifs"},
-#endif
 #ifdef HAVE_BONDING
     {"Networking", "add_bond", "", 0, REFRESH, "add_bond"},
     {"Networking", "del_bond", "", 0, REFRESH, "del_bond"},
@@ -2568,9 +2547,7 @@ struct ej_handler ej_handlers[] = {
     {"show_infopage", ej_show_infopage},
     {"show_connectiontype", ej_show_connectiontype},
     {"show_routing", ej_show_routing},
-#ifdef HAVE_MSSID
     {"show_wireless", ej_show_wireless},
-#endif
 #ifdef HAVE_RADLOCAL
     {"show_iradius_check", ej_show_iradius_check},
     {"show_iradius", ej_show_iradius},
@@ -2622,11 +2599,9 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_EOP_TUNNEL
     {"show_eop_tunnels", ej_show_eop_tunnels},
 #endif
-#ifdef HAVE_MSSID
     {"getwirelessstatus", ej_getwirelessstatus},
     {"getencryptionstatus", ej_getencryptionstatus},
     {"get_txpower", ej_get_txpower},
-#endif
 #ifdef HAVE_CPUTEMP
     {"get_cputemp", ej_get_cputemp},
     {"show_cpu_temperature", ej_show_cpu_temperature},

@@ -774,7 +774,6 @@ void ej_get_wl_value( webs_t wp, int argc, char_t ** argv )
 
 }
 
-#ifdef HAVE_MSSID
 
 void ej_show_wpa_setting( webs_t wp, int argc, char_t ** argv, char *prefix )
 {
@@ -822,49 +821,6 @@ void ej_show_wpa_setting( webs_t wp, int argc, char_t ** argv, char *prefix )
 #endif
     return;
 }
-#else
-void ej_show_wpa_setting( webs_t wp, int argc, char_t ** argv )
-{
-    char *type, *security_mode;
-
-#ifdef FASTWEB
-    ejArgs( argc, argv, "%s", &type );
-#else
-    if( ejArgs( argc, argv, "%s", &type ) < 1 )
-    {
-	websError( wp, 400, "Insufficient args\n" );
-	return;
-    }
-#endif
-
-    security_mode = GOZILA_GET( wp, "security_mode" );
-
-    if (security_mode==NULL)
-	security_mode=nvram_safe_get("security_mode");
-
-    if( !strcmp( security_mode, "psk" )
-	|| !strcmp( security_mode, "psk2" )
-	|| !strcmp( security_mode, "psk psk2" ) )
-	do_ej(NULL, "WPA_Preshared.asp", wp, NULL );
-#if UI_STYLE != CISCO
-    else if( !strcmp( security_mode, "disabled" ) )
-	do_ej(NULL, "WPA_Preshared.asp", wp, NULL );
-#endif
-    else if( !strcmp( security_mode, "radius" ) )
-    {
-	do_ej(NULL, "Radius.asp", wp, NULL );
-	do_ej(NULL, "WEP.asp", wp, NULL );
-    }
-    else if( !strcmp( security_mode, "wpa" )
-	     || !strcmp( security_mode, "wpa2" )
-	     || !strcmp( security_mode, "wpa wpa2" ) )
-	do_ej(NULL, "WPA_Radius.asp", wp, NULL );
-    else if( !strcmp( security_mode, "wep" ) )
-	do_ej(NULL, "WEP.asp", wp, NULL );
-    return;
-}
-
-#endif
 
 void ej_wl_ioctl( webs_t wp, int argc, char_t ** argv )
 {
@@ -893,13 +849,8 @@ void ej_wl_ioctl( webs_t wp, int argc, char_t ** argv )
     {
 	if( strcmp( type, "int" ) == 0 )
 	{
-#ifdef HAVE_MSSID
 	    websWrite( wp, "%u",
 		       wl_iovar_getint( name, var, &val ) == 0 ? val : 0 );
-#else
-	    websWrite( wp, "%u",
-		       wl_get_int( name, var, &val ) == 0 ? val : 0 );
-#endif
 	    return;
 	}
     }

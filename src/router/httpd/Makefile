@@ -450,9 +450,6 @@ ifeq ($(CONFIG_OPENVPN),y)
 CFLAGS += -DHAVE_OPENVPN
 endif
 
-ifeq ($(CONFIG_MSSID),y)
-CFLAGS += -DHAVE_MSSID
-endif
 
 ifeq ($(CONFIG_BOESE),y)
 CFLAGS += -DBOESE=1

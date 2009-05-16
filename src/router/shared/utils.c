@@ -974,18 +974,11 @@ struct wl_assoc_mac *get_wl_assoc_mac( int *c )
     wlmac = NULL;
     count = *c = 0;
 
-#ifdef HAVE_MSSID
     char assoccmd[4][32] = {
 	"wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist",
 	"wl -i wl0.3 assoclist"
     };
     int ifcnt = 4;
-#else
-    char assoccmd[1][16] = {
-	"wl assoclist"
-    };
-    int ifcnt = 1;
-#endif
     int i;
     int gotit = 0;
 
@@ -1166,11 +1159,7 @@ int wds_dev_config( int dev, int up )
     if( ( wds = nvram_safe_get( wds_enable_var ) ) == NULL ||
 	strcmp( wds, "0" ) == 0 )
 	return -1;
-#ifdef HAVE_MSSID
     snprintf( wds_dev, 31, "wds0.%d", dev + 1 );
-#else
-    snprintf( wds_dev, 31, "wds0.491%d", 50 + dev + 1 );
-#endif
     snprintf( ifr.ifr_name, IFNAMSIZ, wds_dev );
 #ifdef WDS_DEBUG
     fprintf( fp, "opening kernelsocket\n" );
