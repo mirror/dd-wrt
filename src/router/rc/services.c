@@ -340,9 +340,7 @@ static void handle_index( void )
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "nas", handle );
-#ifdef HAVE_MSSID
     handle = start_service_nofree( "guest_nas", handle );
-#endif
 #endif
     handle = start_service_nofree_f( "radio_timer", handle );
     handle = startstop_nofree_f( "firewall", handle );
@@ -533,9 +531,7 @@ static void handle_management( void )
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "nas", handle );
-#ifdef HAVE_MSSID
     handle = start_service_nofree( "guest_nas", handle );
-#endif
 #endif
     handle = start_service_nofree_f( "anchorfreednat", handle );
 
@@ -587,9 +583,7 @@ static void handle_pppoe( void )
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "nas", handle );
-#ifdef HAVE_MSSID
     handle = start_service_nofree( "guest_nas", handle );
-#endif
 #endif
     handle = start_service_nofree_f( "radio_timer", handle );
 //    if( handle )
@@ -796,16 +790,6 @@ static void handle_wireless( void )
 #ifdef HAVE_VLANTAGGING
     handle = stop_service_nofree( "bridging", handle );
 #endif
-#ifndef HAVE_MSSID
-    if( nvram_match( "wl_akm", "wpa" ) ||
-	nvram_match( "wl_akm", "psk" ) ||
-	nvram_match( "wl_akm", "psk2" ) ||
-	nvram_match( "wl_akm", "wpa2" ) ||
-	nvram_match( "wl_akm", "psk psk2" ) ||
-	nvram_match( "wl_akm", "wpa wpa2" )
-	|| nvram_match( "wl_akm", "radius" ) )
-	sleep( 4 );
-#endif
 #ifdef HAVE_VLANTAGGING
     handle = start_service_nofree( "bridging", handle );
 #endif
@@ -825,9 +809,7 @@ static void handle_wireless( void )
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "wlconf", handle );
     handle = start_service_nofree( "nas", handle );
-#ifdef HAVE_MSSID
     handle = start_service_nofree( "guest_nas", handle );
-#endif
 #endif
     handle = start_service_nofree_f( "radio_timer", handle );
     //restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
@@ -873,16 +855,6 @@ static void handle_wireless_2( void )
 #ifdef HAVE_VLANTAGGING
     handle = stop_service_nofree( "bridging", handle );
 #endif
-#ifndef HAVE_MSSID
-    if( nvram_match( "wl_akm", "wpa" ) ||
-	nvram_match( "wl_akm", "psk" ) ||
-	nvram_match( "wl_akm", "psk2" ) ||
-	nvram_match( "wl_akm", "wpa2" ) ||
-	nvram_match( "wl_akm", "psk psk2" ) ||
-	nvram_match( "wl_akm", "wpa wpa2" )
-	|| nvram_match( "wl_akm", "radius" ) )
-	sleep( 4 );
-#endif
 #ifdef HAVE_VLANTAGGING
     handle = start_service_nofree( "bridging", handle );
 #endif
@@ -906,9 +878,7 @@ static void handle_wireless_2( void )
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     handle = start_service_nofree( "wlconf", handle );
     handle = start_service_nofree( "nas", handle );
-#ifdef HAVE_MSSID
     handle = start_service_nofree( "guest_nas", handle );
-#endif
 #endif
     handle = start_service_nofree_f( "radio_timer", handle );
     if( getSTA(  ) || getWET(  ) )

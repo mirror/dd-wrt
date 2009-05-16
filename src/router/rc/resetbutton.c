@@ -623,9 +623,7 @@ if (brand==ROUTER_BOARD_WHRG300N)
 			eval( "wl", "-i", get_wl_instance_name( ii ), "radio", "on" );
 	    }
 		eval( "startservice", "nas" );
-#ifdef HAVE_MSSID
 		eval( "startservice", "guest_nas" );
-#endif
 	    }
 #endif
 
