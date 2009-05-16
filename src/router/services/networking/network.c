@@ -28,9 +28,7 @@
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
-#ifdef HAVE_MSSID
 #include <math.h>
-#endif
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -148,7 +146,6 @@ char *getMacAddr( char *ifname, char *mac )
     return mac;
 }
 
-#ifdef HAVE_MSSID
 static unsigned long ptable[128];
 static unsigned long kmem_offset;
 static inline void wlc_get_mem_offset( void )
@@ -337,7 +334,6 @@ static int wlc_noack( int value )
     return ret;
 }
 
-#endif
 
 #ifndef HAVE_MADWIFI
 #ifndef HAVE_RT2880
@@ -397,7 +393,6 @@ void start_dhcpc( char *wan_ifname )
 
 }
 
-#ifdef HAVE_MSSID
 /*
  * Enable WET DHCP relay for ethernet clients 
  */
@@ -448,7 +443,6 @@ static int enable_dhcprelay( char *ifname )
     }
     return 0;
 }
-#endif
 
 static int wlconf_up( char *name )
 {
@@ -511,20 +505,7 @@ static int wlconf_up( char *name )
     val = atoi( nvram_nget( "wl%d_txpwr", instance ) );
     if( val < 0 || val > TXPWR_MAX )
 	val = TXPWR_DEFAULT;
-#ifndef HAVE_MSSID
-    val |= WL_TXPWR_OVERRIDE;	// set the power override bit
-
-    WL_IOCTL( name, WLC_SET_TXPWR, &val, sizeof( val ) );
-    WL_IOCTL( name, WLC_CURRENT_PWR, &val, sizeof( val ) );
-#else
-    // convert mw to qdbm and set override flag
-    /*
-     * float value = 10 * log (val) / M_LN10; value *= 4; value += 0.5; val = 
-     * (int) value; val |= WL_TXPWR_OVERRIDE; wl_iovar_setint (name,
-     * "qtxpower", val); 
-     */
     eval( "wl", "-i", name, "txpwr1", "-m", "-o", nvram_nget( "wl%d_txpwr", instance ) );
-#endif
     /*
      * Set txant 
      */
@@ -569,75 +550,30 @@ static int wlconf_up( char *name )
 	rw_reg_t reg;
 	uint32 shm;
 
-#ifndef HAVE_MSSID
-	struct stat buf;
-	int notexists = stat( "/tmp/ackdisabled", &buf );
-#endif
 
 	val = atoi( v );
 	if( val == 0 )
 	{
-#ifdef HAVE_MSSID
 #ifdef HAVE_ACK
 	    eval( "wl", "-i", name, "noack", "1" );
 #endif
 	    // wlc_noack (0);
-#else
-	    if( notexists != 0 )	// file not exists
-	    {
-		eval( "/etc/txackset.sh", "0" );	// disable ack timing
-		FILE *test = fopen( "/tmp/ackdisabled", "wb" );
-
-		fprintf( test, "yes" );
-		fclose( test );
-	    }
-#endif
 	    return 0;
 	}
 	else
 	{
-#ifdef HAVE_MSSID
 #ifdef HAVE_ACK
 	    eval( "wl", "-i", name, "noack", "0" );
 #endif
 	    // wlc_noack (1);
-#else
-	    if( notexists == 0 )	// file exists
-	    {
-		eval( "/etc/txackset.sh", "1" );	// enable ack timing
-		// (not required,
-		// enable per
-		// default)
-		unlink( "/tmp/ackdisabled" );
-	    }
-#endif
 	}
 
 	val = 9 + ( val / 150 ) + ( ( val % 150 ) ? 1 : 0 );
-#ifdef HAVE_MSSID
 #ifdef HAVE_ACK
 	char strv[32];
 
 	sprintf( strv, "%d", val );
 	eval( "wl", "-i", name, "acktiming", strv );
-#else
-	/*
-	 * shm = 0x10; shm |= (val << 16); WL_IOCTL (name, 197, &shm, sizeof
-	 * (shm));
-	 * 
-	 * reg.byteoff = 0x684; reg.val = val + 510; reg.size = 2; WL_IOCTL
-	 * (name, 102, &reg, sizeof (reg));
-	 */
-#endif
-#else
-	shm = 0x10;
-	shm |= ( val << 16 );
-	WL_IOCTL( name, 197, &shm, sizeof( shm ) );
-
-	reg.byteoff = 0x684;
-	reg.val = val + 510;
-	reg.size = 2;
-	WL_IOCTL( name, 102, &reg, sizeof( reg ) );
 #endif
     }
 
@@ -654,14 +590,12 @@ static int wlconf_up( char *name )
 	eval( "wl", "-i", name, "infra", "0" );
 	eval( "wl", "-i", name, "ssid", nvram_nget( "wl%d_ssid", instance ) );
     }
-#ifdef HAVE_MSSID
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     eval( "wl", "-i", name, "vlan_mode", "0" );
     char ifinst[32];
 
     sprintf( ifinst, "wl%d", instance );
     set_vifsmac( ifinst );
-#endif
 #endif
     return ret;
 }
@@ -676,11 +610,7 @@ int isClient( void )
 
 void start_wlconf( void )
 {
-#ifdef HAVE_MSSID
     if( nvram_invmatch( "wl0_net_mode", "disabled" ) )
-#else
-    if( nvram_invmatch( "wl_net_mode", "disabled" ) )
-#endif
 	wlconf_up( nvram_safe_get( "wl0_ifname" ) );
 	
     if( nvram_invmatch( "wl1_net_mode", "disabled" ) )	
@@ -1757,7 +1687,6 @@ void start_lan( void )
 		    // up
 		    br_add_interface( getBridge( IFMAP( name ) ), name );
 		    led_control( LED_BRIDGE, LED_ON );
-#ifdef HAVE_MSSID
 		    /* Enable host DHCP relay */
 		    if( nvram_match( "lan_dhcp", "1" ) )
 		    {
@@ -1771,7 +1700,6 @@ void start_lan( void )
 			enable_dhcprelay( lan_ifname );
 		    }
 		    do_mssid( name );
-#endif
 		}
 
 #ifdef HAVE_WAVESAT
@@ -1790,11 +1718,8 @@ void start_lan( void )
 		    do_portsetup( lan_ifname, name );
 		    // br_add_interface (getBridge (name), name); //eval
 		    // ("brctl", "addif", lan_ifname, name);
-#ifdef HAVE_MSSID
 		    do_mssid( name );
-#endif
 		}
-#ifdef HAVE_MSSID
 		if( nvram_match( wl_name, "apsta" ) )
 		{
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
@@ -1810,22 +1735,17 @@ void start_lan( void )
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		    // eval ("wl", "ap", "0");
 		    eval( "wl", "-i", name, "ap", "0" );
-#ifndef HAVE_MSSID
-		    eval( "wl", "ssid", nvram_get( "wl_ssid" ) );
-#else
 		    // eval ("wl", "ssid", nvram_get ("wl0_ssid"));
 		    eval( "wl", "-i", name, "ssid",
 			  nvram_nget( "wl%d_ssid",
 				      get_wl_instance( name ) ) );
-#endif
-#endif
 		    // eval ("brctl", "addif", lan_ifname, name);
 #ifndef HAVE_FON
 		    if( nvram_match( "fon_enable", "0" ) )
 			do_mssid( name );
 #endif
-		}
 #endif
+		}
 
 		/*
 		 * if client/wet mode, turn off ap mode et al 
@@ -1865,14 +1785,10 @@ void start_lan( void )
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		    // eval ("wl", "ap", "0");
 		    eval( "wl", "-i", name, "ap", "0" );
-#ifndef HAVE_MSSID
-		    eval( "wl", "ssid", nvram_get( "wl_ssid" ) );
-#else
 		    // eval ("wl", "ssid", nvram_get ("wl0_ssid"));
 		    eval( "wl", "-i", name, "ssid",
 			  nvram_nget( "wl%d_ssid",
 				      get_wl_instance( name ) ) );
-#endif
 #endif
 		}
 #ifdef HAVE_WAVESAT
@@ -1882,9 +1798,7 @@ void start_lan( void )
 		    do_portsetup( lan_ifname, name );
 		    // br_add_interface (getBridge (name), name); //eval
 		    // ("brctl", "addif", lan_ifname, name);
-#ifdef HAVE_MSSID
 		    do_mssid( name );
-#endif
 		}
 #endif
 
@@ -2285,10 +2199,8 @@ void start_lan( void )
 	eval( "ip", "ro", "add", "default", "via",
 	      nvram_safe_get( "lan_gateway" ), "dev", "br0" );
 
-#ifdef HAVE_MSSID
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     eval( "wl", "vlan_mode", "0" );
-#endif
 #endif
     /*
      * Bring up local host interface 
@@ -2300,10 +2212,6 @@ void start_lan( void )
      */
     start_set_routes(  );
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-#ifndef HAVE_MSSID
-    eval( "wl", "radio",
-	  nvram_invmatch( "wl_net_mode", "disabled" ) ? "on" : "off" );
-#else
     int cc = get_wl_instances(  );
     int ii;
 
@@ -2313,7 +2221,6 @@ void start_lan( void )
 	      nvram_nmatch( "disabled", "wl%d_net_mode",
 			    ii ) ? "off" : "on" );
     }
-#endif
 #endif
     /*
      * Disable wireless will cause diag led blink, so we want to stop it. 
@@ -2365,7 +2272,6 @@ void stop_lan( void )
     br_init(  );
 #endif
 
-#ifdef HAVE_MSSID
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
     br_del_interface( lan_ifname, "wl0.1" );
     ifconfig( "wl0.1", 0, NULL, NULL );
@@ -2375,7 +2281,6 @@ void stop_lan( void )
     ifconfig( "wl0.3", 0, NULL, NULL );
     br_del_interface( lan_ifname, "wl0.4" );
     ifconfig( "wl0.4", 0, NULL, NULL );
-#endif
 #endif
     /*
      * Bring down bridged interfaces 
@@ -3328,15 +3233,6 @@ if (!nvram_match("dtag_vlan8","1"))
 	while( route_del( get_wan_face(  ), 0, NULL, NULL, NULL ) == 0 );
     }
     cprintf( "wep handling\n" );
-#ifndef HAVE_MSSID
-    // if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode",
-    // "sta"))
-    // {
-    // system2 ("wl wep sw");
-    // sleep (1);
-    // system2 ("wl wep hw");
-    // }
-#endif
     cprintf( "disable stp if needed\n" );
     if( nvram_match( "lan_stp", "0" ) )
     {
@@ -3689,10 +3585,6 @@ void start_wan_done( char *wan_ifname )
     br_init(  );
 #endif
 
-#ifndef HAVE_MSSID
-    br_del_interface( nvram_safe_get( "lan_ifname" ), get_wdev(  ) );
-    ifconfig( get_wdev(  ), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL );
-#else
     if( nvram_match( "wl0_mode", "apsta" ) )
     {
 	br_del_interface( nvram_safe_get( "lan_ifname" ), "wl0.1" );
@@ -3707,16 +3599,11 @@ void start_wan_done( char *wan_ifname )
     stop_chilli(  );
     start_chilli(  );
 #endif
-#endif
 #else
     if( nvram_match( "fon_enable", "1" )
 	|| ( nvram_match( "chilli_nowifibridge", "1" )
 	     && nvram_match( "chilli_enable", "1" ) ) )
     {
-#ifndef HAVE_MSSID
-	br_del_interface( nvram_safe_get( "lan_ifname" ), get_wdev(  ) );
-	ifconfig( get_wdev(  ), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL );
-#else
 	if( nvram_match( "wl0_mode", "apsta" ) )
 	{
 	    br_del_interface( nvram_safe_get( "lan_ifname" ), "wl0.1" );
@@ -3730,7 +3617,6 @@ void start_wan_done( char *wan_ifname )
 #ifdef HAVE_CHILLI
 	stop_chilli(  );
 	start_chilli(  );
-#endif
 #endif
     }
 

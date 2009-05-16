@@ -131,7 +131,6 @@ static void loadWlModule( void )	// set wled params, get boardflags,
     char macbuf[32];
     char eaddr[32];
 
-#ifdef HAVE_MSSID		// v24
 
 #ifndef HAVE_BUFFALO
     nvram_set( "pa0maxpwr", "251" );	// force pa0maxpwr to be 251
@@ -226,44 +225,6 @@ static void loadWlModule( void )	// set wled params, get boardflags,
 	    nvram_set( "wl0gpio1", "0" );
 	    break;
     }
-#else // v23
-
-    switch ( brand )
-    {
-	case ROUTER_ASUS_WL550GE:
-	    nvram_set( "wl0gpio1", "0" );
-	    nvram_set( "wl0gpio2", "0" );
-	    break;
-	case ROUTER_BUFFALO_WZRRSG54:
-	case ROUTER_BUFFALO_WBR54G:
-	case ROUTER_BUFFALO_WBR2G54S:
-	    nvram_set( "wl0gpio0", "130" );
-	    break;
-	case ROUTER_MOTOROLA:
-	case ROUTER_WAP54G_V1:
-	case ROUTER_NETGEAR_WG602_V3:
-	case ROUTER_RT480W:
-	    nvram_set( "wl0gpio0", "2" );
-	    break;
-	case ROUTER_BUFFALO_WLA2G54C:
-	    nvram_set( "wl0gpio0", "0" );
-	    nvram_set( "wl0gpio5", "2" );
-	    break;
-	case ROUTER_WAP54G_V3:
-	    nvram_set( "wl0gpio0", "0" );
-	    nvram_set( "wl0gpio2", "255" );
-	    nvram_set( "wl0gpio3", "255" );
-	    nvram_set( "wl0gpio5", "2" );
-	    break;
-	case ROUTER_ASUS_WL500GD:
-	    nvram_unset( "wl0gpio0" );
-	    break;
-	case ROUTER_BELKIN_F5D7230_V2000:
-	    // case ROUTER_BELKIN_F5D7230_V3000:
-	    nvram_set( "wl0gpio3", "2" );
-	    break;
-    }
-#endif
 
     int boardflags;
 
@@ -1524,9 +1485,6 @@ int check_cfe_nv( void )
 	    ret += check_nv( "pa0b0", "0x1136" );
 	    ret += check_nv( "pa0b1", "0xfb93" );
 	    ret += check_nv( "pa0b2", "0xfea5" );
-#ifndef HAVE_MSSID
-	    ret += check_nv( "pa0maxpwr", "60" );
-#endif
 	    ret += check_nv( "wl0gpio2", "0" );
 	    ret += check_nv( "wl0gpio3", "0" );
 	    ret += check_nv( "cctl", "0" );
@@ -1570,9 +1528,6 @@ int check_cfe_nv( void )
 		ret += check_nv( "pa0b0", "0x15eb" );
 		ret += check_nv( "pa0b1", "0xfa82" );
 		ret += check_nv( "pa0b2", "0xfe66" );
-#ifndef HAVE_MSSID
-		ret += check_nv( "pa0maxpwr", "0x4e" );
-#endif
 	    }
 	    else if( check_hw_type(  ) == BCM5354G_CHIP )
 	    {
@@ -1596,9 +1551,6 @@ int check_cfe_nv( void )
 		ret += check_nv( "pa0b0", "0x170c" );
 		ret += check_nv( "pa0b1", "0xfa24" );
 		ret += check_nv( "pa0b2", "0xfe70" );
-#ifndef HAVE_MSSID
-		ret += check_nv( "pa0maxpwr", "0x48" );
-#endif
 	    }
 
 	    // ret += check_nv("gpio2", "adm_eecs");

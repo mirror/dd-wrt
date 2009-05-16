@@ -20,7 +20,6 @@
  * $Id:
  */
 
-#ifdef HAVE_MSSID
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
@@ -132,4 +131,3 @@ void start_vifsmac( void )
 }
 #endif
 
-#endif
