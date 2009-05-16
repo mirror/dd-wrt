@@ -311,9 +311,6 @@ ifeq ($(CONFIG_CDEBUG),y)
   CFLAGS += -DCDEBUG
 endif
 
-ifeq ($(CONFIG_MSSID),y)
-  CFLAGS += -DHAVE_MSSID
-endif
 
 ifeq ($(CONFIG_BOOT_WAIT_ON),y)
   CFLAGS += -DSET_BOOT_WAIT

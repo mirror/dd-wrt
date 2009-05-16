@@ -52,16 +52,8 @@ void show_default_info( webs_t wp )
     // #endif
 
     websWrite( wp, "RF Domain:Worldwide (channel 1~%s)\n", WL_MAX_CHANNEL );
-#ifdef HAVE_MSSID
     websWrite( wp, "RF Channel:%s\n", nvram_safe_get( "wl0_channel" ) );
-#else
-    websWrite( wp, "RF Channel:%s\n", nvram_safe_get( "wl_channel" ) );
-#endif
-#ifndef HAVE_MSSID
-    websWrite( wp, "RF SSID:%s\n", nvram_safe_get( "wl_ssid" ) );
-#else
     websWrite( wp, "RF SSID:%s\n", nvram_safe_get( "wl0_ssid" ) );
-#endif
 
     websWrite( wp, "\n-----Dynamic Information\n" );
 
@@ -214,19 +206,10 @@ void ej_show_miscinfo( webs_t wp, int argc, char_t ** argv )
     websWrite( wp, "SWpppoeUName = %s\n", nvram_safe_get( "ppp_username" ) );
 
     websWrite( wp, "\n" );
-#ifndef HAVE_MSSID
-    websWrite( wp, "SWGetRouterSSID = %s\n", nvram_safe_get( "wl_ssid" ) );
-#else
     websWrite( wp, "SWGetRouterSSID = %s\n", nvram_safe_get( "wl0_ssid" ) );
-#endif
 
-#ifdef HAVE_MSSID
     websWrite( wp, "SWGetRouterChannel = %s\n",
 	       nvram_safe_get( "wl0_channel" ) );
-#else
-    websWrite( wp, "SWGetRouterChannel = %s\n",
-	       nvram_safe_get( "wl_channel" ) );
-#endif
     websWrite( wp, "SWssidBroadcast = %s\n", nvram_safe_get( "wl_closed" ) );
 
     websWrite( wp, "\n" );

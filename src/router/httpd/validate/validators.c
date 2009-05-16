@@ -1107,113 +1107,6 @@ void validate_wl_wme_params( webs_t wp, char *value, struct variable *v )
     nvram_set( v->name, buf );
 }
 
-#ifndef HAVE_MSSID
-void validate_security_mode( webs_t wp, char *value, struct variable *v )
-{
-    char *security_mode_last = websGetVar( wp, "security_mode_last", NULL );
-    char *wl_wep_last = websGetVar( wp, "wl_wep_last", NULL );
-    int from_index_page = 0;
-    char *wl_wep = NULL;
-
-    // If you don't press "Edit Security Setting" to set some value, and
-    // direct select to enable "Wireless Security".
-    // It'll returned, due to security_mode_buf is space.
-    if( !strcmp( value, "enabled" ) )
-    {
-	if( nvram_match( "security_mode_last", "" ) )	// from index.asp and 
-	    // first time
-	    return;
-	else
-	{
-	    if( !security_mode_last )
-	    {			// from index.asp
-		from_index_page = 1;
-		value = nvram_safe_get( "security_mode_last" );
-		wl_wep = nvram_safe_get( "wl_wep_last" );
-	    }
-	    else
-	    {			// from WL_WPATable.asp page
-		value = websGetVar( wp, "security_mode_last", NULL );
-		wl_wep = nvram_safe_get( "wl_wep_last" );
-	    }
-	}
-    }
-
-    if( !valid_choice( wp, value, v ) )
-	return;
-
-    if( !strcmp( value, "disabled" ) )
-    {
-	nvram_set( "security_mode", "disabled" );
-	nvram_set( "wl_akm", "" );
-	nvram_set( "wl_auth_mode", "none" );
-	nvram_set( "wl_wep", "disabled" );
-    }
-    else if( !strcmp( value, "psk" ) )
-    {
-	nvram_set( "wl_akm", value );
-	nvram_set( "wl_auth_mode", "none" );
-	nvram_set( "wl_wep", "disabled" );
-    }
-    else if( !strcmp( value, "wpa" ) )
-    {
-	nvram_set( "wl_akm", value );
-	nvram_set( "wl_auth_mode", "none" );
-	nvram_set( "wl_wep", "disabled" );
-    }
-    else if( !strcmp( value, "radius" ) )
-    {
-	nvram_set( "security_mode", "radius" );
-	nvram_set( "wl_akm", "" );
-	nvram_set( "wl_auth_mode", "radius" );
-	nvram_set( "wl_wep", "enabled" );	// the nas need this value,
-	// the "restricted" is no
-	// longer need. (20040624 by
-	// honor)
-    }
-    else if( !strcmp( value, "wep" ) )
-    {
-	nvram_set( "wl_akm", "" );
-	nvram_set( "wl_auth_mode", "none" );
-	nvram_set( "wl_wep", "enabled" );	// the nas need this value,
-	// the "restricted" is no
-	// longer need. (20040624 by
-	// honor)
-    }
-    else if( !strcmp( value, "psk2" ) )
-    {				// WPA2 Only Mode
-	nvram_set( "wl_akm", value );
-	nvram_set( "wl_auth_mode", "none" );
-	nvram_set( "wl_wep", "disabled" );
-    }
-    else if( !strcmp( value, "wpa2" ) )
-    {				// WPA2 Only Mode
-	nvram_set( "wl_akm", value );
-	nvram_set( "wl_auth_mode", "none" );
-	nvram_set( "wl_wep", "disabled" );
-    }
-    else if( !strcmp( value, "psk psk2" ) )
-    {				// WPA2 Mixed Mode
-	nvram_set( "wl_akm", value );
-	nvram_set( "wl_auth_mode", "none" );
-	nvram_set( "wl_wep", "disabled" );
-    }
-    else if( !strcmp( value, "wpa wpa2" ) )
-    {				// WPA2 Mixed Mode
-	nvram_set( "wl_akm", value );
-	nvram_set( "wl_auth_mode", "none" );
-	nvram_set( "wl_wep", "disabled" );
-    }
-
-    if( security_mode_last )
-	nvram_set( "security_mode_last", security_mode_last );
-
-    if( wl_wep_last )
-	nvram_set( "wl_wep_last", wl_wep_last );
-
-    nvram_set( v->name, value );
-}
-#endif
 void validate_wl_key( webs_t wp, char *value, struct variable *v )
 {
     char *c;
@@ -1303,7 +1196,6 @@ void validate_wpa_psk( webs_t wp, char *value, struct variable *v )
     nvram_set( v->name, value );
 }
 
-#ifdef HAVE_MSSID
 
 void validate_wl_wep_key( webs_t wp, char *value, struct variable *v )
 {
@@ -1439,141 +1331,6 @@ void validate_wl_wep_key( webs_t wp, char *value, struct variable *v )
 
 }
 
-#else
-
-void validate_wl_wep_key( webs_t wp, char *value, struct variable *v )
-{
-    char buf[200] = "";
-    struct variable wl_wep_variables[] = {
-      {argv:ARGV( "16" )},
-      {argv:ARGV( "5", "10" )},
-	// for 64 bit
-      {argv:ARGV( "13", "26" )},
-	// for 128 bit
-      {argv:ARGV( "1", "4" )},
-    }, *which;
-    int error_value = 0;
-    char *wep_bit = "", *wep_passphrase = "", *wep_key1 = "", *wep_key2 =
-	"", *wep_key3 = "", *wep_key4 = "", *wep_tx = "";
-    char new_wep_passphrase[50] = "", new_wep_key1[30] =
-	"", new_wep_key2[30] = "", new_wep_key3[30] = "", new_wep_key4[30] =
-	"";
-    int index;
-
-    which = &wl_wep_variables[0];
-
-    wep_bit = websGetVar( wp, "wl_wep_bit", NULL );	// 64 or 128
-    if( !wep_bit )
-	return;
-    if( strcmp( wep_bit, "64" ) && strcmp( wep_bit, "128" ) )
-	return;
-
-    wep_passphrase = websGetVar( wp, "wl_passphrase", "" );
-    // if(!wep_passphrase) return ;
-
-    // strip_space(wep_passphrase);
-    if( strcmp( wep_passphrase, "" ) )
-    {
-	if( !valid_name( wp, wep_passphrase, &which[0] ) )
-	{
-	    error_value = 1;
-	}
-	else
-	{
-	    httpd_filter_name( wep_passphrase, new_wep_passphrase,
-			       sizeof( new_wep_passphrase ), SET );
-	}
-    }
-
-    wep_key1 = websGetVar( wp, "wl_key1", "" );
-    wep_key2 = websGetVar( wp, "wl_key2", "" );
-    wep_key3 = websGetVar( wp, "wl_key3", "" );
-    wep_key4 = websGetVar( wp, "wl_key4", "" );
-    wep_tx = websGetVar( wp, "wl_key", NULL );
-
-    if( !wep_tx )
-    {
-	error_value = 1;
-	return;
-    }
-
-    index = ( atoi( wep_bit ) == 64 ) ? 1 : 2;
-
-    if( strcmp( wep_key1, "" ) )
-    {
-	if( !valid_wep_key( wp, wep_key1, &which[index] ) )
-	{
-	    error_value = 1;
-	}
-	else
-	{
-	    httpd_filter_name( wep_key1, new_wep_key1, sizeof( new_wep_key1 ),
-			       SET );
-	}
-
-    }
-    if( strcmp( wep_key2, "" ) )
-    {
-	if( !valid_wep_key( wp, wep_key2, &which[index] ) )
-	{
-	    error_value = 1;
-	}
-	else
-	{
-	    httpd_filter_name( wep_key2, new_wep_key2, sizeof( new_wep_key2 ),
-			       SET );
-	}
-    }
-    if( strcmp( wep_key3, "" ) )
-    {
-	if( !valid_wep_key( wp, wep_key3, &which[index] ) )
-	{
-	    error_value = 1;
-	}
-	else
-	{
-	    httpd_filter_name( wep_key3, new_wep_key3, sizeof( new_wep_key3 ),
-			       SET );
-	}
-    }
-    if( strcmp( wep_key4, "" ) )
-    {
-	if( !valid_wep_key( wp, wep_key4, &which[index] ) )
-	{
-	    error_value = 1;
-	}
-	else
-	{
-	    httpd_filter_name( wep_key4, new_wep_key4, sizeof( new_wep_key4 ),
-			       SET );
-	}
-    }
-
-    if( !error_value )
-    {
-	snprintf( buf, sizeof( buf ), "%s:%s:%s:%s:%s:%s", new_wep_passphrase,
-		  new_wep_key1, new_wep_key2, new_wep_key3, new_wep_key4,
-		  wep_tx );
-	nvram_set( "wl_wep_bit", wep_bit );
-	nvram_set( "wl_wep_buf", buf );
-
-	nvram_set( "wl_passphrase", wep_passphrase );
-	nvram_set( "wl_key", wep_tx );
-	nvram_set( "wl_key1", wep_key1 );
-	nvram_set( "wl_key2", wep_key2 );
-	nvram_set( "wl_key3", wep_key3 );
-	nvram_set( "wl_key4", wep_key4 );
-
-	if( !strcmp( wep_key1, "" ) && !strcmp( wep_key2, "" ) && !strcmp( wep_key3, "" ) && !strcmp( wep_key4, "" ) )	// Allow 
-	    // null 
-	    // wep
-	    nvram_set( "wl_wep", "off" );
-	else
-	    nvram_set( "wl_wep", "restricted" );
-    }
-
-}
-#endif
 void validate_wl_auth( webs_t wp, char *value, struct variable *v )
 {
     if( !valid_choice( wp, value, v ) )
@@ -2139,31 +1896,19 @@ void validate_wl_gmode( webs_t wp, char *value, struct variable *v )
 
 void convert_wl_gmode( char *value, char *prefix )
 {
-#ifndef HAVE_MSSID
-	if( nvram_nmatch( value, "%s_net_mode", prefix ) )
-	{
-	    return;
-	}
-#endif
 	if( !strcmp( value, "disabled" ) )
 	{
 	    nvram_nset( value, "%s_net_mode", prefix );
 	    nvram_nset( "-1", "%s_gmode", prefix );
-#ifdef HAVE_MSSID
 	    nvram_nset( "-1", "%s_nmode", prefix );
-#endif
 	    nvram_nset( "0", "%s_nreqd", prefix );
 	    nvram_nset( "2", "%s_nband", prefix );
 	}
 	else if( !strcmp( value, "mixed" ) )
 	{
 	    nvram_nset( value, "wl_net_mode", prefix );
-#ifdef HAVE_MSSID
 	    nvram_nset( "1", "%s_gmode", prefix );
 	    nvram_nset( "-1", "%s_nmode", prefix );
-#else
-	    nvram_nset( "6", "%s_gmode", prefix );
-#endif
 	    nvram_nset( "auto", "%s_afterburner", prefix );
 	    nvram_nset( "default", "%s_rateset", prefix );
 	    nvram_nset( "on", "%s_frameburst", prefix );
@@ -2172,7 +1917,6 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "0", "%s_nreqd", prefix );
 	    nvram_nset( "2", "%s_nband", prefix );
 	}
-#ifdef HAVE_MSSID
 	else if( !strcmp( value, "bg-mixed" ) )
 	{
 	    nvram_nset( value, "%s_net_mode", prefix );
@@ -2186,13 +1930,10 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "0", "%s_nreqd", prefix );
 	    nvram_nset( "2", "%s_nband", prefix );
 	}
-#endif
 	else if( !strcmp( value, "g-only" ) )
 	{
 	    nvram_nset( value, "wl_net_mode", prefix );
-#ifdef HAVE_MSSID
 	    nvram_nset( "0", "wl_nmode", prefix );
-#endif
 	    nvram_nset( "2", "wl_gmode", prefix );
 	    if( !has_mimo( prefix ) )
 		nvram_nset( "g", "wl_phytype", prefix );
@@ -2204,9 +1945,7 @@ void convert_wl_gmode( char *value, char *prefix )
 	{
 	    nvram_nset( value, "%s_net_mode", prefix );
 	    nvram_nset( "0", "%s_gmode", prefix );
-#ifdef HAVE_MSSID
 	    nvram_nset( "0", "%s_nmode", prefix );
-#endif
 	    nvram_nset( "off", "%s_afterburner", prefix );
 	    nvram_nset( "default", "%s_rateset", prefix );
 	    nvram_nset( "on", "%s_frameburst", prefix );
@@ -2215,7 +1954,6 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "0", "%s_nreqd", prefix );
 	    nvram_nset( "2", "%s_nband", prefix );
 	}
-#ifdef HAVE_MSSID
 	else if( !strcmp( value, "n-only" ) )
 	{
 	    nvram_nset( value, "%s_net_mode", prefix );
@@ -2237,7 +1975,6 @@ void convert_wl_gmode( char *value, char *prefix )
 	    nvram_nset( "n", "%s_phytype", prefix );
 	    nvram_nset( "1", "%s_nband", prefix );
 	}
-#endif
 	else if( !strcmp( value, "a-only" ) )
 	{
 	    nvram_nset( value, "%s_net_mode", prefix );
@@ -2728,10 +2465,8 @@ void validate_wds( webs_t wp, char *value, struct variable *v )
 {
 #ifdef HAVE_MADWIFI
     int h, i, devcount = 0;	// changed from 2 to 3
-#elif HAVE_MSSID
-    int h, i, devcount = 1;	// changed from 2 to 3
 #else
-    int h, i, devcount = 3;	// changed from 2 to 3
+    int h, i, devcount = 1;	// changed from 2 to 3
 #endif
     struct variable wds_variables[] = {
       {argv:NULL},

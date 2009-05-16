@@ -444,7 +444,6 @@ static size_t sh_strrspn( const char *s, const char *accept )
     return i;
 }
 
-#ifdef HAVE_MSSID
 int get_ifname_unit( const char *ifname, int *unit, int *subunit )
 {
     const char digits[] = "0123456789";
@@ -657,7 +656,6 @@ osifname_to_nvifname( const char *osifname, char *nvifname_buf,
 
 #endif
 
-#endif
 
 int indexof( char *str, char c )
 {
