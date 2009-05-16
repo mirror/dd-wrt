@@ -115,9 +115,9 @@ u_int ieee80211_mhz2ieee( u_int freq )
 {
     if( freq == 2484 )
 	return 14;
-    if( freq < 2484 + OFFSET )
+    if( freq < 2484)
 	{
-	int chan = ( freq - ( 2407 + OFFSET ) ) / 5;
+	int chan = ( freq - ( 2407) ) / 5;
 	if (chan < 0)
 	    chan += 256;
 	return chan;
@@ -528,9 +528,6 @@ int getchannels( unsigned int *list, char *ifname )
     sprintf( exec, "wl -i %s channels", ifname );
     FILE *in = popen( exec, "r" );
 
-#ifndef HAVE_MSSID
-    while( fgetc( in ) != ':' );
-#endif
     int chan;
     int count = 0;
 

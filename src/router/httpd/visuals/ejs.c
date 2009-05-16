@@ -2319,7 +2319,6 @@ void ej_show_voltage( webs_t wp, int argc, char_t ** argv )
 }
 #endif
 
-#ifdef HAVE_MSSID
 
 static void showencstatus( webs_t wp, char *prefix )
 {
@@ -2410,7 +2409,6 @@ void ej_getwirelessstatus( webs_t wp, int argc, char_t ** argv )
 	websWrite( wp,
 		   "<script type=\"text/javascript\">Capture(status_wireless.legend3)</script>" );
 }
-#endif
 void ej_getwirelessssid( webs_t wp, int argc, char_t ** argv )
 {
     char ssid[32];
