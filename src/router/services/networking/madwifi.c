@@ -1184,6 +1184,10 @@ static void configure_single( int count )
     cprintf( "adjust sensitivity\n" );
 
     int distance = atoi( nvram_default_get( sens, "2000" ) );	// to meter
+    if (nvram_nmatch("1","%s_pollingmode",var))
+	{
+	setdistance(wif,100000,20);
+	}else{
 
     if( distance > 0 )
     {
@@ -1197,6 +1201,7 @@ static void configure_single( int count )
     {
 	setsysctrl( wif, "acktimeout", 350 );
 	setsysctrl( wif, "dynack_count", 20 );
+    }
     }
     char wl_intmit[32];
     char wl_noise_immunity[32];
