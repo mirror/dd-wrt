@@ -2684,8 +2684,12 @@ if (!nvram_match("dtag_vlan8","1"))
 	}
 	else
 	{
+	#ifdef HAVE_X86
+	    ioctl( s, SIOCGIFHWADDR, &ifr );
+	#else
 	    getWANMac( mac );
 	    ether_atoe( mac, ifr.ifr_hwaddr.sa_data );
+	#endif
 	}
     }
 
