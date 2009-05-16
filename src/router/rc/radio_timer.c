@@ -27,11 +27,9 @@ int main( int argc, char **argv )
     long radiotime0;		// 4 byte int number (24 bits from gui + 1
 
     // bit for midnight)
-#ifdef HAVE_MSSID
     long radiotime1;		// 4 byte int number (24 bits from gui + 1
 
     // bit for midnight)
-#endif
 
     int firsttime, needchange;
 
@@ -79,7 +77,6 @@ int main( int argc, char **argv )
 	    // (last 
 	    // two 
 	    // bits)
-#ifdef HAVE_MSSID
 	    radiotime1 = strtol( nvram_get( "radio1_on_time" ), NULL, 2 );	// convert 
 	    // 
 	    // 
@@ -110,7 +107,6 @@ int main( int argc, char **argv )
 	    // (last 
 	    // two 
 	    // bits)
-#endif
 
 	    if( currtime->tm_min != 0 )
 		needchange = 1;	// prevet to be executed more than once when
@@ -127,7 +123,6 @@ int main( int argc, char **argv )
 			radiotime0 = 2;	// 10
 			break;
 		}
-#ifdef HAVE_MSSID
 		switch ( radiotime1 )
 		{
 		    case 3:	// 11
@@ -137,7 +132,6 @@ int main( int argc, char **argv )
 			radiotime1 = 2;	// 10
 			break;
 		}
-#endif
 	    }
 
 	    if( nvram_match( "radio0_timer_enable", "0" ) )
@@ -171,7 +165,7 @@ int main( int argc, char **argv )
 			eval( "ifconfig", "ath0", "up" );
 #elif HAVE_RT2880
 			eval("iwpriv","ra0","set","RadioOn=1");
-#elif HAVE_MSSID
+#else
 			if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
 			{
 			    stop_service( "nas" );
@@ -180,8 +174,6 @@ int main( int argc, char **argv )
 			      "on" );
 			eval( "startservice", "nas" );
 			start_service( "guest_nas" );
-#else
-			eval( "wl", "radio", "on" );
 #endif
 			break;
 
@@ -191,19 +183,16 @@ int main( int argc, char **argv )
 			eval( "ifconfig", "ath0", "down" );
 #elif HAVE_RT2880
 			eval("iwpriv","ra0","set","RadioOn=0");
-#elif HAVE_MSSID
+#else
 			if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
 			{
 			    stop_service( "nas" );
 			}
 			eval( "wl", "-i", get_wl_instance_name( 0 ), "radio",
 			      "off" );
-#else
-			eval( "wl", "radio", "off" );
 #endif
 			break;
 		}
-#ifdef HAVE_MSSID
 		switch ( radiotime1 )
 		{
 		    case 0:
@@ -231,7 +220,6 @@ int main( int argc, char **argv )
 			      "off" );
 			break;
 		}
-#endif
 		needchange = 0;
 		firsttime = 0;
 	    }

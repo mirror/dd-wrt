@@ -43,9 +43,6 @@ struct mon mons[] = {
     {"udhcpd", 1, M_LAN},
     {"dnsmasq", 1, M_LAN, "dnsmasq_enable", "1"},
     {"dhcpfwd", 1, M_LAN, "dhcpfwd_enable", "1"},
-#ifndef HAVE_MSSID
-    {"nas", 1, M_LAN},
-#endif
 #ifdef HAVE_NOCAT
     {"splashd", 1, M_LAN, "NC_enable", "1"},
 #endif
@@ -89,7 +86,6 @@ int search_process( char *name, int count )
 void checknas( void )		// for broadcom v24 only
 {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-#ifdef HAVE_MSSID
 
     char buf[32];
     FILE *fnas = fopen( "/tmp/.nas", "r" );
@@ -109,7 +105,6 @@ void checknas( void )		// for broadcom v24 only
 
     return;
 
-#endif
 #endif
 }
 

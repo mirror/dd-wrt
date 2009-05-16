@@ -541,22 +541,6 @@ int main( int argc, char **argv )
 
 #ifndef HAVE_MAKSAT
 #ifndef HAVE_ERC
-#ifndef HAVE_MSSID
-#ifdef DIST
-    if( strlen( DIST ) > 0 )
-	fprintf( fp,
- 		 "DD-WRT v23 SP3 %s (c) 2008 NewMedia-NET GmbH\nRelease: "
-		 BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION );
-    else
-	fprintf( fp,
-		 "DD-WRT v23 SP3 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
-		 BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION );
-#else
-    fprintf( fp,
-	     "DD-WRT v23 SP3 custom (c) 2008 NewMedia-NET GmbH\nRelease: "
-	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION );
-#endif
-#else
 #ifdef DIST
     if( strlen( DIST ) > 0 )
 	fprintf( fp,
@@ -570,7 +554,6 @@ int main( int argc, char **argv )
     fprintf( fp,
 	     "DD-WRT v24-sp2 custom (c) 2009 NewMedia-NET GmbH\nRelease: "
 	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION );
-#endif
 #endif
 #endif
 #endif
@@ -605,35 +588,12 @@ int main( int argc, char **argv )
 #endif
 		cprintf( "RESET NVRAM VARS\n" );
 		nvram_set( "wl0_lazy_wds", nvram_safe_get( "wl_lazy_wds" ) );
-#ifndef HAVE_MSSID
-		nvram_set( "wl0_akm", nvram_safe_get( "wl_akm" ) );
-		if( nvram_match( "wl_wep", "tkip" ) )
-		{
-		    nvram_set( "wl_crypto", "tkip" );
-		}
-		else if( nvram_match( "wl_wep", "aes" ) )
-		{
-		    nvram_set( "wl_crypto", "aes" );
-		}
-		else if( nvram_match( "wl_wep", "tkip+aes" ) )
-		{
-		    nvram_set( "wl_crypto", "tkip+aes" );
-		}
-		if( nvram_match( "wl_wep", "restricted" ) )
-		    nvram_set( "wl_wep", "enabled" );	// the nas need this
-		// value, the
-		// "restricted" is no 
-		// longer need.
-		// (20040624 by
-		// honor)
-#endif
 
 		cprintf( "RESTART\n" );
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		eval( "wlconf", nvram_safe_get( "wl0_ifname" ), "down" );
 		eval( "wlconf", nvram_safe_get( "wl1_ifname" ), "down" );
-#ifdef HAVE_MSSID
 		char *next;
 		char var[80];
 		char *vifs = nvram_safe_get( "wl0_vifs" );
@@ -643,7 +603,6 @@ int main( int argc, char **argv )
 		{
 		    eval( "ifconfig", var, "down" );
 		}
-#endif
 #endif
 
 		/* 
@@ -711,9 +670,6 @@ int main( int argc, char **argv )
 	    case START:
 		lcdmessage( "START SERVICES" );
 		nvram_set( "wl0_lazy_wds", nvram_safe_get( "wl_lazy_wds" ) );
-#ifndef HAVE_MSSID
-		nvram_set( "wl0_akm", nvram_safe_get( "wl_akm" ) );
-#endif
 		cprintf( "START\n" );
 		setenv( "PATH",
 			"/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/sbin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/sbin",
@@ -772,9 +728,7 @@ int main( int argc, char **argv )
 		else
 #endif
 		    start_service( "nas" );
-#ifdef HAVE_MSSID
 		start_service( "guest_nas" );
-#endif
 #endif
 
 		start_service_f( "radio_timer" );
