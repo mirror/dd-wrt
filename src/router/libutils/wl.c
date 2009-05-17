@@ -917,7 +917,7 @@ int wifi_gettxpower( char *ifname )
 #ifdef HAVE_MAKSAT
     char *manpoweroffset;
     manpoweroffset = nvram_nget( "%s_poweroffset", ifname ); 
-    if (manpoweroffset != NULL)
+    if (strlen(manpoweroffset))
 	{
 	poweroffset=atoi(manpoweroffset);
 	}
@@ -1035,7 +1035,7 @@ int wifi_gettxpoweroffset( char *ifname )
 #ifdef HAVE_MAKSAT
     char *manpoweroffset;
     manpoweroffset = nvram_nget( "%s_poweroffset", ifname ); 
-    if (manpoweroffset != NULL)
+    if (strlen(manpoweroffset))
 	{
 	poweroffset=atoi(manpoweroffset);
 	}
