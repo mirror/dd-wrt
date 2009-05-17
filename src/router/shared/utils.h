@@ -709,6 +709,7 @@ void rmmod( char *module );
 
 int do80211priv( const char *ifname, int op, void *data, size_t len );
 int getsocket( void );
+int isEMP(char *ifname);
 char *get3GControlDevice(void);
 #ifdef HAVE_RT2880
 char *getRADev(char *prefix);
