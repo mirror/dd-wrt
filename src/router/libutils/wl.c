@@ -914,6 +914,14 @@ int wifi_gettxpower( char *ifname )
 	poweroffset = 0;
     }
 #endif
+#ifdef HAVE_MAKSAT
+    char *manpoweroffset;
+    manpoweroffset = nvram_nget( "%s_poweroffset", ifname ); 
+    if (manpoweroffset != NULL)
+	{
+	poweroffset=atoi(manpoweroffset);
+	}
+#endif
     struct iwreq wrq;
 
     strncpy( wrq.ifr_name, ifname, IFNAMSIZ );
@@ -1023,6 +1031,14 @@ int wifi_gettxpoweroffset( char *ifname )
     poweroffset = vendor;
     if (poweroffset<0 || poweroffset>20)
 	poweroffset = 0;
+#endif
+#ifdef HAVE_MAKSAT
+    char *manpoweroffset;
+    manpoweroffset = nvram_nget( "%s_poweroffset", ifname ); 
+    if (manpoweroffset != NULL)
+	{
+	poweroffset=atoi(manpoweroffset);
+	}
 #endif
     return poweroffset;
 }
