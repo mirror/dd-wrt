@@ -476,24 +476,19 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	/* linux (kernel and rootfs) */
 	if (cfe_size != 384 * 1024) {
 		bcm947xx_parts[1].offset = bcm947xx_parts[0].size;
-		bcm947xx_parts[1].size   = bcm947xx_parts[3].offset - 
-			bcm947xx_parts[1].offset - board_data_size;
+		bcm947xx_parts[1].size   = (bcm947xx_parts[3].offset - bcm947xx_parts[1].offset) - board_data_size;
 	} else {
 		/* do not count the elf loader, which is on one block */
 		bcm947xx_parts[1].offset = bcm947xx_parts[0].size + 
 			bcm947xx_parts[3].size + mtd->erasesize;
-		bcm947xx_parts[1].size   = size - 
-			bcm947xx_parts[0].size - 
-			(2*bcm947xx_parts[3].size) - 
-			mtd->erasesize - board_data_size;
+		bcm947xx_parts[1].size   = (((size - bcm947xx_parts[0].size) - (2*bcm947xx_parts[3].size)) - mtd->erasesize) - board_data_size;
 	}
 
 	/* find and size rootfs */
 	if (find_root(mtd,size,&bcm947xx_parts[2])==0) {
 		/* entirely jffs2 */
 		bcm947xx_parts[4].name = NULL;
-		bcm947xx_parts[2].size = size - bcm947xx_parts[2].offset - 
-				bcm947xx_parts[3].size;
+		bcm947xx_parts[2].size = (size - bcm947xx_parts[2].offset) - bcm947xx_parts[3].size;
 	} else {
 		/* legacy setup */
 		/* calculate leftover flash, and assign it to the jffs2 partition */
@@ -504,8 +499,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 				bcm947xx_parts[4].offset += mtd->erasesize - 
 					(bcm947xx_parts[4].offset % mtd->erasesize);
 			}
-			bcm947xx_parts[4].size = bcm947xx_parts[3].offset - 
-				bcm947xx_parts[4].offset - board_data_size - jffs_exclude_size;
+			bcm947xx_parts[4].size = ((bcm947xx_parts[3].offset - bcm947xx_parts[4].offset) - board_data_size) - jffs_exclude_size;
 		} else {
 			bcm947xx_parts[4].offset = bcm947xx_parts[2].offset + 
 				bcm947xx_parts[2].size;
@@ -513,8 +507,7 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 				bcm947xx_parts[4].offset += mtd->erasesize - 
 					(bcm947xx_parts[4].offset % mtd->erasesize);
 			}
-			bcm947xx_parts[4].size = size - bcm947xx_parts[3].size - 
-				bcm947xx_parts[4].offset - board_data_size - jffs_exclude_size;
+			bcm947xx_parts[4].size = (((size - bcm947xx_parts[3].size) - bcm947xx_parts[4].offset) - board_data_size) - jffs_exclude_size;
 		}
 		/* do not make zero size jffs2 partition  */
 		if (bcm947xx_parts[4].size < mtd->erasesize) {
