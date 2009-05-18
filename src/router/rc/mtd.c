@@ -457,8 +457,8 @@ int mtd_write( const char *path, const char *mtd )
 	    }
     }
 	/* 
-	 * Netgear WGR614v8_L: Write len and checksum at the end of mtd1 
-	 */    
+	 * Netgear: Write len and checksum at the end of mtd1 
+	 */ 
 	if ( getRouterBrand(  ) == ROUTER_NETGEAR_WGR614L
 		|| getRouterBrand(  ) == ROUTER_NETGEAR_WNR834B 
 		|| getRouterBrand(  ) == ROUTER_NETGEAR_WNR834BV2
@@ -468,7 +468,6 @@ int mtd_write( const char *path, const char *mtd )
 	cal_chksum = calculate_checksum ( 2, NULL, 0 );
 #endif
 	
-	int offset = NETGEAR_4M_KERNEL_LEN_ADDR - NETGEAR_4M_KERNEL_FLASH_ADDR;
 	char imageInfo[8];
 
 #ifndef NETGEAR_4M_CRC_FAKE	
@@ -481,7 +480,7 @@ int mtd_write( const char *path, const char *mtd )
 	memcpy( &imageInfo[0], (char *)&trx.len, 4 );
 	memcpy( &imageInfo[4], (char *)&cal_chksum, 4 );
 	
-	int sector_start = ( offset / mtd_info.erasesize ) * mtd_info.erasesize;
+	int sector_start = ( ( NETGEAR_4M_KERNEL_LEN_ADDR - NETGEAR_4M_KERNEL_FLASH_ADDR ) / mtd_info.erasesize ) * mtd_info.erasesize;
 	
 	if( lseek( mtd_fd, sector_start, SEEK_SET) < 0 )
 	{
@@ -522,7 +521,7 @@ int mtd_write( const char *path, const char *mtd )
 	}
 	
 	char *tmp;	
-	tmp = buf + ( offset % mtd_info.erasesize );
+	tmp = buf + ( ( NETGEAR_4M_KERNEL_LEN_ADDR - NETGEAR_4M_KERNEL_FLASH_ADDR ) % mtd_info.erasesize );
 	memcpy( tmp, imageInfo, sizeof( imageInfo ) );	
 
 	if ( write( mtd_fd, buf, mtd_info.erasesize ) != mtd_info.erasesize ) 
@@ -542,7 +541,7 @@ int mtd_write( const char *path, const char *mtd )
 	/* Write old lzma loader */
 	if ( getRouterBrand(  ) == ROUTER_NETGEAR_WGR614L )
 	{	
-	offset = trx.offsets[0];
+	int offset = trx.offsets[0];
 	sector_start = ( offset / mtd_info.erasesize ) * mtd_info.erasesize;
 	
 	if( lseek( mtd_fd, sector_start, SEEK_SET) < 0 )
