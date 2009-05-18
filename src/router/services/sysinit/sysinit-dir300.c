@@ -286,6 +286,7 @@ void start_sysinit( void )
     {
 //	system("swconfig dev eth0 set reset 1");
 //	system("swconfig dev eth0 set enable_vlan 1");
+#ifdef HAVE_SWCONFIG
 	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 5t\"");
 	system("swconfig dev eth0 vlan 2 set ports \"4 5t\"");
 	system("swconfig dev eth0 set apply");
@@ -293,7 +294,9 @@ void start_sysinit( void )
 	eval( "vconfig", "add", "eth0", "1" );
 	eval( "vconfig", "add", "eth0", "2" );
 //	set network.eth0_1.ports="0 1 2 3 5t"
-//	vlan_init( 0xff );	// 4 lan + 1 wan
+#else
+	vlan_init( 0xff );	// 4 lan + 1 wan
+#endif
     struct ifreq ifr;
     int s;
 

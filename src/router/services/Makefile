@@ -71,6 +71,9 @@ endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
 endif
+ifeq ($(CONFIG_SWCONFIG),y)
+CFLAGS += -DHAVE_SWCONFIG
+endif
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
   CFLAGS += -DBUFFALO_JP
 endif
@@ -371,12 +374,12 @@ endif
 ifeq ($(CONFIG_DIR400),y)
 CFLAGS += -DHAVE_FONERA
 CFLAGS += -DHAVE_DIR400
-#OBJS += icplus.o
+OBJS += icplus.o
 else
 ifeq ($(CONFIG_DIR300),y)
 CFLAGS += -DHAVE_FONERA
 CFLAGS += -DHAVE_DIR300
-#OBJS += icplus.o
+OBJS += icplus.o
 endif
 endif
 ifeq ($(CONFIG_MR3202A),y)
@@ -432,7 +435,7 @@ CFLAGS += -DHAVE_LS2
 else
 ifeq ($(CONFIG_LS2),y)
 CFLAGS += -DHAVE_LS2
-#OBJS += icplus.o
+OBJS += icplus.o
 endif
 endif
 endif

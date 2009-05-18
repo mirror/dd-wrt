@@ -167,6 +167,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_GGEW
 #ifdef HAVE_NS5
     {"ath0_regdomain", "GERMANY_BFWA", 0},	/* LAN IP address */
+#elif HAVE_EOC5610
+    {"ath0_regdomain", "GERMANY_BFWA", 0},	/* LAN IP address */
 #elif HAVE_NS2
     {"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
 #elif HAVE_EOC2610
