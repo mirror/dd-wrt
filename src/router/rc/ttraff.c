@@ -31,7 +31,7 @@ write_to_nvram( int day, int month, int year, unsigned long rcvd,
     unsigned long old_rcvd;
     unsigned long old_sent;
     char *tdata;
-    buffer = malloc(2048);
+    buffer = (char*)malloc(2048);
     memset(buffer,0,2048);
     sprintf( tq, "traff-%02u-%u", month, year );
     tdata = nvram_safe_get( tq );
