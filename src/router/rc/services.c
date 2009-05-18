@@ -790,6 +790,9 @@ static void handle_wireless( void )
 #ifdef HAVE_VLANTAGGING
     handle = start_service_nofree( "bridging", handle );
 #endif
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+    handle = start_service_nofree( "wlconf", handle );
+#endif
     handle = start_service_nofree( "lan", handle );
 #ifdef HAVE_BONDING
     handle = start_service_nofree( "bonding", handle );
@@ -804,7 +807,6 @@ static void handle_wireless( void )
     handle = start_service_nofree( "bridgesif", handle );
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-    handle = start_service_nofree( "wlconf", handle );
     handle = start_service_nofree( "nas", handle );
     handle = start_service_nofree( "guest_nas", handle );
 #endif
@@ -849,6 +851,9 @@ static void handle_wireless_2( void )
 #ifdef HAVE_VLANTAGGING
     handle = stop_service_nofree( "bridging", handle );
 #endif
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+    handle = start_service_nofree( "wlconf", handle );
+#endif
 #ifdef HAVE_VLANTAGGING
     handle = start_service_nofree( "bridging", handle );
 #endif
@@ -870,7 +875,6 @@ static void handle_wireless_2( void )
     handle = start_service_nofree( "bridgesif", handle );
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-    handle = start_service_nofree( "wlconf", handle );
     handle = start_service_nofree( "nas", handle );
     handle = start_service_nofree( "guest_nas", handle );
 #endif
