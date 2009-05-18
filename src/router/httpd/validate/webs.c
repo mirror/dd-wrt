@@ -709,6 +709,21 @@ void copytonv( webs_t wp, const char *fmt, ... )
 	nvram_set( varbuf, wl );
 }
 
+void copytonv2( webs_t wp, char *prefix_get, char *prefix_set, char *name )
+{
+    char tmpname[64];
+
+    sprintf( tmpname, "%s_%s", prefix_get, name );
+    
+    char *wl = websGetVar( wp, tmpname, NULL );
+
+ 	sprintf( tmpname, "%s_%s", prefix_set, name );
+        
+    if( wl )
+		nvram_set( tmpname, wl );
+}
+
+
 extern int get_merge_ipaddr( webs_t wp, char *name, char *ipaddr );
 
 
@@ -1091,6 +1106,55 @@ void diag_ping_clear( webs_t wp )
 {
     unlink( PING_TMP );
 }
+
+void save_wireless_advanced( webs_t wp )
+{
+	char set_prefix[8];
+	char prefix[8];
+    char *wlface = websGetVar( wp, "interface", NULL );
+
+    if( !strcmp( wlface, "wl0" ) )
+		sprintf( set_prefix, "%s", "wl" );
+	else
+		sprintf( set_prefix, "%s", wlface ); 
+		
+    sprintf( prefix, wlface );  
+    
+    copytonv2( wp, prefix, set_prefix, "auth" );
+    copytonv2( wp, prefix, set_prefix, "rateset" );
+    copytonv2( wp, prefix, set_prefix, "rate" );
+    copytonv2( wp, prefix, set_prefix, "gmode_protection" );
+    copytonv2( wp, prefix, set_prefix, "frameburst" );
+    copytonv2( wp, prefix, set_prefix, "bcn" );
+    copytonv2( wp, prefix, set_prefix, "dtim" );
+    copytonv2( wp, prefix, set_prefix, "frag" );
+    copytonv2( wp, prefix, set_prefix, "rts" );
+    copytonv2( wp, prefix, set_prefix, "maxassoc" );
+    copytonv2( wp, prefix, set_prefix, "ap_isolate" );
+    copytonv2( wp, prefix, set_prefix, "plcphdr" );
+    copytonv2( wp, prefix, set_prefix, "shortslot" );
+    copytonv2( wp, prefix, set_prefix, "afterburner" );
+    copytonv2( wp, prefix, set_prefix, "btcmode" );
+//    copytonv2( wp, prefix, set_prefix, "web_filter" );
+//    copytonv2( wp, prefix, set_prefix, "wme" );
+//    copytonv2( wp, prefix, set_prefix, "wme_no_ack" );
+//    copytonv2( wp, prefix, set_prefix, "wme_ap_bk" );
+//    copytonv2( wp, prefix, set_prefix, "wme_ap_be" );
+//    copytonv2( wp, prefix, set_prefix, "wme_ap_vi" );
+//    copytonv2( wp, prefix, set_prefix, "wme_ap_vo" );
+//    copytonv2( wp, prefix, set_prefix, "wme_sta_bk" );
+//    copytonv2( wp, prefix, set_prefix, "wme_sta_be" );
+//    copytonv2( wp, prefix, set_prefix, "wme_sta_vi" );
+//    copytonv2( wp, prefix, set_prefix, "wme_sta_vo" );
+//    copytonv2( wp, prefix, set_prefix, "wme_txp_bk" );
+//    copytonv2( wp, prefix, set_prefix, "wme_txp_be" );
+//    copytonv2( wp, prefix, set_prefix, "wme_txp_vi" );
+//    copytonv2( wp, prefix, set_prefix, "wme_txp_vo" );
+        
+    return;
+
+}
+
 
 void save_wds( webs_t wp )
 {

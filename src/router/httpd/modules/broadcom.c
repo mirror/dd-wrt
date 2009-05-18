@@ -893,13 +893,15 @@ static struct gozila_action gozila_actions[] = {
      */
     // {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
 #ifndef HAVE_MADWIFI
-    {"Wireless_WDS-wl0", "save", "wireless", 0, REFRESH, "save_wds"},
-    {"Wireless_WDS-wl1", "save", "wireless", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-wl0", "save", "wireless_2", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-wl1", "save", "wireless_2", 0, REFRESH, "save_wds"},
+    {"Wireless_Advanced-wl0", "save", "wireless_2", 0, REFRESH, "save_wireless_advanced"},
+    {"Wireless_Advanced-wl1", "save", "wireless_2", 0, REFRESH, "save_wireless_advanced"},
 #else
-    {"Wireless_WDS-ath0", "save", "wireless", 0, REFRESH, "save_wds"},
-    {"Wireless_WDS-ath1", "save", "wireless", 0, REFRESH, "save_wds"},
-    {"Wireless_WDS-ath2", "save", "wireless", 0, REFRESH, "save_wds"},
-    {"Wireless_WDS-ath3", "save", "wireless", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-ath0", "save", "wireless_2", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-ath1", "save", "wireless_2", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-ath2", "save", "wireless_2", 0, REFRESH, "save_wds"},
+    {"Wireless_WDS-ath3", "save", "wireless_2", 0, REFRESH, "save_wds"},
 #endif
     {"Ping", "startup", "", 1, SYS_RESTART, "ping_startup"},
     {"Ping", "shutdown", "", 1, SYS_RESTART, "ping_shutdown"},
@@ -1123,9 +1125,8 @@ struct apply_action apply_actions[] = {
     // V24 it's a 
     // gozilla
     // save
-    {"Wireless_Advanced-wl0", "wireless_2", 0, SERVICE_RESTART, NULL},
-    {"Wireless_Advanced-wl1", "wireless_2", 0, SERVICE_RESTART, NULL},
-    {"Wireless_Advanced", "wireless_2", 0, SERVICE_RESTART, NULL},
+    {"Wireless_Advanced-wl0", "wireless_2", 0, SERVICE_RESTART, "save_wireless_advanced"},
+    {"Wireless_Advanced-wl1", "wireless_2", 0, SERVICE_RESTART, "save_wireless_advanced"},
     {"Wireless_MAC", "wireless_2", 0, SERVICE_RESTART, "save_macmode"},
     {"WL_FilterTable", "macfilter", 0, SERVICE_RESTART, NULL},
     {"Wireless_WDS", "wireless_2", 0, SERVICE_RESTART, NULL},
