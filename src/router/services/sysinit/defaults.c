@@ -517,6 +517,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"web_wl_filter", "1", 0},	/* Allow/Deny Wireless Access Web */
 #else
     {"web_wl_filter", "0", 0},	/* Allow/Deny Wireless Access Web */
+    {"web_wl1_filter", "0", 0},
 #endif
     /*
      * PPPoE parameters 
@@ -575,6 +576,7 @@ struct nvram_tuple srouter_defaults[] = {
 				 * "ga") */
     {"wl_radioids", "", 0},	/* List of radio IDs */
     {"wl_shortslot", "auto", 0},
+    {"wl1_shortslot", "auto", 0},
 #ifdef HAVE_WTS
     {"wl_ssid", "www.wts.com.ve", 0},	/* Service set ID (network name) */
 #elif HAVE_DDLAN
@@ -713,6 +715,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_ap_isolate", "1", 0},	/* AP isolate mode */
 #else
     {"wl_ap_isolate", "0", 0},	/* AP isolate mode */
+    {"wl1_ap_isolate", "0", 0},
 #endif
 #ifdef HAVE_POWERNOC_WORT54G
     {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
@@ -796,6 +799,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl0_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
     {"wl0_auth", "0", 0},	/* Shared key authentication optional (0) or
 				 * required (1) */
+    {"wl1_auth", "0", 0},
     {"wl0_key", "1", 0},	/* Current WEP key */
     {"wl0_key1", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
     {"wl0_key2", "", 0},	/* 5/13 char ASCII or 10/26 char hex */
@@ -846,18 +850,25 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_dfs_postism", "60", 0},	/* 802.11H In Service Monitoring CAC
 					 * time */
     {"wl_rate", "0", 0},	/* Rate (bps, 0 for auto) */
+    {"wl1_rate", "0", 0},	/* Rate (bps, 0 for auto) */
     {"wl_mrate", "0", 0},	/* Mcast Rate (bps, 0 for auto) */
     {"wl_rateset", "default", 0},	/* "default" or "all" or "12" */
+    {"wl1_rateset", "default", 0},	/* "default" or "all" or "12" */
     {"wl_frag", "2346", 0},	/* Fragmentation threshold */
+    {"wl1_frag", "2346", 0},
 #ifdef HAVE_POWERNOC_WORT54G
     {"wl_rts", "65", 0},	/* RTS threshold */
 #else
     {"wl_rts", "2347", 0},	/* RTS threshold */
+    {"wl1_rts", "2347", 0},
 #endif
     {"wl_dtim", "1", 0},	/* DTIM period (3.11.5) *//* It is best value for WiFi test */
+    {"wl1_dtim", "1", 0},
     {"wl_bcn", "100", 0},	/* Beacon interval */
+    {"wl1_bcn", "100", 0},
     {"wl_plcphdr", "long", 0},	/* 802.11b PLCP preamble type */
-
+    {"wl1_plcphdr", "long", 0},
+    
 #ifdef HAVE_GGEW
     {"wl_net_mode", "b-only", 0},	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
@@ -898,6 +909,7 @@ struct nvram_tuple srouter_defaults[] = {
 
     {"wl_gmode_protection", "auto", 0},	/* 802.11g RTS/CTS protection
 					 * (off|auto) */
+    {"wl1_gmode_protection", "auto", 0},
     {"wl_nmode_protection", "auto", 0},	/* 802.11g RTS/CTS protection
 					 * (off|auto) */
 #ifdef HAVE_SKYTEL
@@ -906,6 +918,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_frameburst", "on", 0},	/* BRCM Frambursting mode (off|on) */
 #else
     {"wl_frameburst", "off", 0},	/* BRCM Frambursting mode (off|on) */
+    {"wl1_frameburst", "off", 0},
 #endif
 
     {"wl_infra", "1", 0},	/* Network Type (BSS/IBSS) */
@@ -1057,6 +1070,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl_afterburner", "auto", 0},	/* Afterburner/Speedbooster */
 #else
     {"wl_afterburner", "off", 0},	/* Afterburner/Speedbooster */
+    {"wl1_afterburner", "off", 0},
 #endif
     {"wl_unit", "0", 0},	/* Last configured interface */
 
