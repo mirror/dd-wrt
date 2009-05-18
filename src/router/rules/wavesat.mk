@@ -18,11 +18,12 @@ wavesat-install:
 	cp -f wavesat/config/* $(INSTALLDIR)/wavesat/etc/config
 ifeq ($(ARCHITECTURE),storm)
 	cp -rf wavesat/sub/armle/ts_2_6/uclibc/* wavesat/install
+	mv -f wavesat/install/sub/common/ssmodload_storm wavesat/install/sub/common/ssmodload
 else
 	cp -rf wavesat/sub/arm/ts_2_6/uclibc/* wavesat/install
 endif
-	mv -f wavesat/install/*.ko $(INSTALLDIR)/wavesat/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wimax
-	cp -rf wavesat/install/* $(INSTALLDIR)/wavesat/sub
+	mv -f wavesat/install/sub/*.ko $(INSTALLDIR)/wavesat/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wimax
+	cp -rf wavesat/install/sub/* $(INSTALLDIR)/wavesat/sub
 	rm -rf wavesat/install
 	rm -f $(INSTALLDIR)/wavesat/sub/*.o
 	mkdir -p $(TARGETDIR)/lib
