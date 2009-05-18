@@ -445,6 +445,7 @@ extern void ej_get_firmware_svnrev( webs_t wp, int argc, char_t ** argv );
 extern void rep( char *in, char from, char to );
 
 extern void save_wds( webs_t wp );
+extern void save_wireless_advanced( webs_t wp );
 extern void validate_iradius( webs_t wp, char *value, struct variable *v );
 extern void validate_wds( webs_t wp, char *value, struct variable *v );
 extern void ej_get_wdsp2p( webs_t wp, int argc, char_t ** argv );
