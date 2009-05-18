@@ -165,28 +165,28 @@ function create_nrate(num,F)
 }
 
 function to_submit(F) {
-	F.wl_nmode_protection.value = F.wl_gmode_protection.value;
+	F.%s_nmode_protection.value = F.%s_gmode_protection.value;
 	F.save_button.value = sbutton.saving;
 	F.radio%d_on_time.value = computeWlTimer();
 	apply(F);
 }
 function to_apply(F) {
-	F.wl_nmode_protection.value = F.wl_gmode_protection.value;
+	F.%s_nmode_protection.value = F.%s_gmode_protection.value;
 	F.save_button.value = sbutton.saving;
 	F.radio%d_on_time.value = computeWlTimer();
 	applytake(F);
 }
 
 function setWMM(val) {
-	setElementsActive("wl_wme_no_ack", "_wl_wme_sta_vo5", val == "on");
+	setElementsActive("wl_wme_no_ack", "wl_wme_txp_vo4", val == "on");
 }
 
 var update;
 
 addEvent(window, "load", function() {
 	setRadioTable();
-	setWMM("<%% nvram_get("wl_wme"); %%>");
-	show_layer_ext(document.wireless.wl_wme, 'idwl_wme', <%% nvram_else_match("wl_wme", "on", "1", "0"); %%> == 1);
+	setWMM("<%% nvram_get("%s_wme"); %%>");
+	show_layer_ext(document.wireless.wl_wme, 'idwl_wme', <%% nvram_else_match("%s_wme", "on", "1", "0"); %%> == 1);
 	show_layer_ext(document.wireless.radio%d_timer_enable, 'radio', <%% nvram_else_match("radio%d_timer_enable", "1", "1", "0"); %%> == 1);
 	initWlTimer('<%% nvram_get("radio%d_on_time"); %%>');
 	show_layer_ext(document.wireless.%s_nmcsidx, 'id%s_nmcsidx', <%% nvram_else_match("%s_phytype", "n", "1", "0"); %%> == 1);
@@ -223,19 +223,19 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="interface" value="%s" />
 							<input type="hidden" name="change_action" />
-							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="submit_type" value="save" />
 							<input type="hidden" name="commit" value="1" />
 							
 							<input type="hidden" name="radio%d_on_time" />
-							<input type="hidden" name="wl_nmode_protection" />
+							<input type="hidden" name="%s_nmode_protection" />
 							<h2><%% tran("wl_adv.h2"); %%></h2>
 							
 							<fieldset>
 								<legend><%% tran("wl_adv.legend"); %%></legend>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label"); %%></div>
-									<input class="spaceradio" type="radio" name="wl_auth" value="0" <%% nvram_checked("wl_auth", "0"); %%> /><%% tran("share.auto"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_auth" value="1" <%% nvram_checked("wl_auth", "1"); %%> /><%% tran("share.share_key"); %%>
+									<input class="spaceradio" type="radio" name="%s_auth" value="0" <%% nvram_checked("%s_auth", "0"); %%> /><%% tran("share.auto"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_auth" value="1" <%% nvram_checked("%s_auth", "1"); %%> /><%% tran("share.share_key"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.auto + ")");
@@ -244,12 +244,12 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label2"); %%></div>
-									<select name="wl_rateset">
-										<option value="12" <%% nvram_selected("wl_rateset", "12"); %%>>1-2 Mbps</option>
+									<select name="%s_rateset">
+										<option value="12" <%% nvram_selected("%s_rateset", "12"); %%>>1-2 Mbps</option>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"default\" <%% nvram_selected_js("wl_rateset", "default"); %%>>" + share.deflt + "</option>");
-										document.write("<option value=\"all\" <%% nvram_selected_js("wl_rateset", "all"); %%>>" + share.all + "</option>");
+										document.write("<option value=\"default\" <%% nvram_selected_js("%s_rateset", "default"); %%>>" + share.deflt + "</option>");
+										document.write("<option value=\"all\" <%% nvram_selected_js("%s_rateset", "all"); %%>>" + share.all + "</option>");
 										//]]>
 										</script>
 									</select>
@@ -271,24 +271,24 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label3"); %%></div>
-									<select name="wl_rate">
+									<select name="%s_rate">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <%% nvram_selected_js("wl_rate", "0"); %%>>" + share.auto + "</option>");
+										document.write("<option value=\"0\" <%% nvram_selected_js("%s_rate", "0"); %%>>" + share.auto + "</option>");
 										//]]>
 										</script>
-										<option value="1000000" <%% nvram_selected("wl_rate", "1000000"); %%>>1 Mbps</option>
-										<option value="2000000" <%% nvram_selected("wl_rate", "2000000"); %%>>2 Mbps</option>
-										<option value="5500000" <%% nvram_selected("wl_rate", "5500000"); %%>>5.5 Mbps</option>
-										<option value="6000000" <%% nvram_selected("wl_rate", "6000000"); %%>>6 Mbps</option>
-										<option value="9000000" <%% nvram_selected("wl_rate", "9000000"); %%>>9 Mbps</option>
-										<option value="11000000" <%% nvram_selected("wl_rate", "11000000"); %%>>11 Mbps</option>
-										<option value="12000000" <%% nvram_selected("wl_rate", "12000000"); %%>>12 Mbps</option>
-										<option value="18000000" <%% nvram_selected("wl_rate", "18000000"); %%>>18 Mbps</option>
-										<option value="24000000" <%% nvram_selected("wl_rate", "24000000"); %%>>24 Mbps</option>
-										<option value="36000000" <%% nvram_selected("wl_rate", "36000000"); %%>>36 Mbps</option>
-										<option value="48000000" <%% nvram_selected("wl_rate", "48000000"); %%>>48 Mbps</option>
-										<option value="54000000" <%% nvram_selected("wl_rate", "54000000"); %%>>54 Mbps</option>
+										<option value="1000000" <%% nvram_selected("%s_rate", "1000000"); %%>>1 Mbps</option>
+										<option value="2000000" <%% nvram_selected("%s_rate", "2000000"); %%>>2 Mbps</option>
+										<option value="5500000" <%% nvram_selected("%s_rate", "5500000"); %%>>5.5 Mbps</option>
+										<option value="6000000" <%% nvram_selected("%s_rate", "6000000"); %%>>6 Mbps</option>
+										<option value="9000000" <%% nvram_selected("%s_rate", "9000000"); %%>>9 Mbps</option>
+										<option value="11000000" <%% nvram_selected("%s_rate", "11000000"); %%>>11 Mbps</option>
+										<option value="12000000" <%% nvram_selected("%s_rate", "12000000"); %%>>12 Mbps</option>
+										<option value="18000000" <%% nvram_selected("%s_rate", "18000000"); %%>>18 Mbps</option>
+										<option value="24000000" <%% nvram_selected("%s_rate", "24000000"); %%>>24 Mbps</option>
+										<option value="36000000" <%% nvram_selected("%s_rate", "36000000"); %%>>36 Mbps</option>
+										<option value="48000000" <%% nvram_selected("%s_rate", "48000000"); %%>>48 Mbps</option>
+										<option value="54000000" <%% nvram_selected("%s_rate", "54000000"); %%>>54 Mbps</option>
 									</select>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
@@ -298,8 +298,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label4"); %%></div>
-									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="auto" <%% nvram_checked("wl_gmode_protection", "auto"); %%> /><%% tran("share.auto"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="off" <%% nvram_checked("wl_gmode_protection", "off"); %%> /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" name="%s_gmode_protection" value="auto" <%% nvram_checked("%s_gmode_protection", "auto"); %%> /><%% tran("share.auto"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_gmode_protection" value="off" <%% nvram_checked("%s_gmode_protection", "off"); %%> /><%% tran("share.disable"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.auto + ")");
@@ -308,12 +308,12 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label5"); %%></div>
-									<input class="spaceradio" type="radio" name="wl_frameburst" value="on" <%% nvram_checked("wl_frameburst", "on"); %%> /><%% tran("share.enable"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_frameburst" value="off" <%% nvram_checked("wl_frameburst", "off"); %%> /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" name="%s_frameburst" value="on" <%% nvram_checked("%s_frameburst", "on"); %%> /><%% tran("share.enable"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_frameburst" value="off" <%% nvram_checked("%s_frameburst", "off"); %%> /><%% tran("share.disable"); %%>
 								</div><br />
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label6"); %%></div>
-									<input class="num" name="wl_bcn" size="6" maxlength="5" onblur="valid_range(this,10,65535,wl_adv.label6)" value="<%% nvram_selget("wl_bcn"); %%>" />&nbsp;
+									<input class="num" name="%s_bcn" size="6" maxlength="5" onblur="valid_range(this,10,65535,wl_adv.label6)" value="<%% nvram_selget("%s_bcn"); %%>" />&nbsp;
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": 100ms, " + share.range + ": 10 - 65535)");
@@ -322,7 +322,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label7"); %%></div>
-									<input class="num" name="wl_dtim" size="6" maxlength="3" onblur="valid_range(this,1,255,wl_adv.label7)" value="<%% nvram_selget("wl_dtim"); %%>" />&nbsp;
+									<input class="num" name="%s_dtim" size="6" maxlength="3" onblur="valid_range(this,1,255,wl_adv.label7)" value="<%% nvram_selget("%s_dtim"); %%>" />&nbsp;
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": ");
@@ -335,7 +335,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label8"); %%></div>
-									<input class="num" name="wl_frag" size="6" maxlength="4" onblur="valid_range(this,256,2346,wl_adv.label8)" value="<%% nvram_selget("wl_frag"); %%>" />&nbsp;
+									<input class="num" name="%s_frag" size="6" maxlength="4" onblur="valid_range(this,256,2346,wl_adv.label8)" value="<%% nvram_selget("%s_frag"); %%>" />&nbsp;
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": 2346, " + share.range + ": 256 - 2346)");
@@ -344,7 +344,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label9"); %%></div>
-									<input class="num" name="wl_rts" size="6" maxlength="4" onblur="valid_range(this,0,2347,wl_adv.label9)" value="<%% nvram_selget("wl_rts"); %%>" />&nbsp;
+									<input class="num" name="%s_rts" size="6" maxlength="4" onblur="valid_range(this,0,2347,wl_adv.label9)" value="<%% nvram_selget("%s_rts"); %%>" />&nbsp;
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": 2347, " + share.range + ": 0 - 2347)");
@@ -353,7 +353,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label10"); %%></div>
-									<input class="num" name="wl_maxassoc" size="6" maxlength="4" onblur="valid_range(this,1,256,wl_adv.label10)" value="<%% nvram_selget("wl_maxassoc"); %%>" />&nbsp;
+									<input class="num" name="%s_maxassoc" size="6" maxlength="4" onblur="valid_range(this,1,256,wl_adv.label10)" value="<%% nvram_selget("%s_maxassoc"); %%>" />&nbsp;
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": 128, " + share.range + ": 1 - 256)");
@@ -362,8 +362,8 @@ addEvent(window, "unload", function() {
 							 	</div><br />
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label11"); %%></div>
-									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="1" <%% nvram_checked("wl_ap_isolate", "1"); %%> /><%% tran("share.enable"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="0" <%% nvram_checked("wl_ap_isolate", "0"); %%> /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" name="%s_ap_isolate" value="1" <%% nvram_checked("%s_ap_isolate", "1"); %%> /><%% tran("share.enable"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_ap_isolate" value="0" <%% nvram_checked("%s_ap_isolate", "0"); %%> /><%% tran("share.disable"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.disable + ")");
@@ -406,16 +406,16 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label14"); %%></div>
-									<select name="wl_plcphdr">
+									<select name="%s_plcphdr">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"long\" <%% nvram_selected_js("wl_plcphdr", "long"); %%>>" + wl_adv.lng + "</option>");
-										document.write("<option value=\"short\" <%% nvram_selected_js("wl_plcphdr", "short"); %%>>" + wl_adv.shrt + "</option>");
+										document.write("<option value=\"long\" <%% nvram_selected_js("%s_plcphdr", "long"); %%>>" + wl_adv.lng + "</option>");
+										document.write("<option value=\"short\" <%% nvram_selected_js("%s_plcphdr", "short"); %%>>" + wl_adv.shrt + "</option>");
 										//]]>
 										</script>
 										<script type="text/javascript">
 									//<![CDATA[
-									document.write("<option value=\"auto\" <%% nvram_selected_js("wl_plcphdr", "auto"); %%>>" + share.auto + "</option>");
+									document.write("<option value=\"auto\" <%% nvram_selected_js("%s_plcphdr", "auto"); %%>>" + share.auto + "</option>");
 									//]]>
 									</script>
 									</select>
@@ -427,16 +427,16 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label20"); %%></div>
-									<select name="wl_shortslot">
+									<select name="%s_shortslot">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"long\" <%% nvram_selected_js("wl_shortslot", "long"); %%>>" + wl_adv.lng + "</option>");
-										document.write("<option value=\"short\" <%% nvram_selected_js("wl_shortslot", "short"); %%>>" + wl_adv.shrt + "</option>");
+										document.write("<option value=\"long\" <%% nvram_selected_js("%s_shortslot", "long"); %%>>" + wl_adv.lng + "</option>");
+										document.write("<option value=\"short\" <%% nvram_selected_js("%s_shortslot", "short"); %%>>" + wl_adv.shrt + "</option>");
 										//]]>
 										</script>
 										<script type="text/javascript">
 									//<![CDATA[
-									document.write("<option value=\"auto\" <%% nvram_selected_js("wl_shortslot", "auto"); %%>>" + share.auto + "</option>");
+									document.write("<option value=\"auto\" <%% nvram_selected_js("%s_shortslot", "auto"); %%>>" + share.auto + "</option>");
 									//]]>
 									</script>
 									</select>
@@ -458,12 +458,12 @@ addEvent(window, "unload", function() {
 								<%% ifndef("AFTERBURNER", "<!--"); %%>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label16"); %%></div>
-									<select name="wl_afterburner">
+									<select name="%s_afterburner">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"off\" <%% nvram_selected_js("wl_afterburner", "off"); %%>>" + share.disable + "</option>");
-										document.write("<option value=\"on\" <%% nvram_selected_js("wl_afterburner", "on"); %%>>" + share.enable + "</option>");
-										document.write("<option value=\"auto\" <%% nvram_selected_js("wl_afterburner", "auto"); %%>>" + share.auto + "</option>");
+										document.write("<option value=\"off\" <%% nvram_selected_js("%s_afterburner", "off"); %%>>" + share.disable + "</option>");
+										document.write("<option value=\"on\" <%% nvram_selected_js("%s_afterburner", "on"); %%>>" + share.enable + "</option>");
+										document.write("<option value=\"auto\" <%% nvram_selected_js("%s_afterburner", "auto"); %%>>" + share.auto + "</option>");
 										//]]>
 										</script>
 									</select>
@@ -476,12 +476,12 @@ addEvent(window, "unload", function() {
 								<%% ifndef("AFTERBURNER", "-->"); %%>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label22"); %%></div>
-									<select name="wl_btc_mode">
+									<select name="%s_btc_mode">
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"0\" <%% nvram_selected_js("wl_btc_mode", "0"); %%>>" + share.disable + "</option>");
-										document.write("<option value=\"1\" <%% nvram_selected_js("wl_btc_mode", "1"); %%>>" + share.enable + "</option>");
-										document.write("<option value=\"2\" <%% nvram_selected_js("wl_btc_mode", "2"); %%>>" + share.preempt + "</option>");
+										document.write("<option value=\"0\" <%% nvram_selected_js("%s_btc_mode", "0"); %%>>" + share.disable + "</option>");
+										document.write("<option value=\"1\" <%% nvram_selected_js("%s_btc_mode", "1"); %%>>" + share.enable + "</option>");
+										document.write("<option value=\"2\" <%% nvram_selected_js("%s_btc_mode", "2"); %%>>" + share.preempt + "</option>");
 										//]]>
 										</script>
 									</select>
