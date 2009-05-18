@@ -560,7 +560,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	if( nvram_match( "wl0_mode", "infra" ) )
 	    strcat( authmode, "WPANONE" );
 	else
-	    strcat( authmode, "WPAPSK2" );
+	    strcat( authmode, "WPA2PSK" );
 	strcat( radius_server, "0.0.0.0" );
 	strcat( radius_port, "1812" );
 	strcat( radius_key, "ralink" );
@@ -578,7 +578,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    fprintf( fp, "WPAPSK=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
 	else
 	    fprintf( fp, "WPAPSK1=%s\n", nvram_safe_get( "wl0_wpa_psk" ) );
-	strcat( authmode, "WPAPSKWPAPSK2" );
+	strcat( authmode, "WPAPSKWPA2PSK" );
 	strcat( radius_server, "0.0.0.0" );
 	strcat( radius_port, "1812" );
 	strcat( radius_key, "ralink" );
@@ -764,7 +764,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	    strcat( x80211, ";0" );
 	    fprintf( fp, "WPAPSK%d=%s\n", count,
 		     nvram_nget( "%s_wpa_psk", var ) );
-	    strcat( authmode, ";WPAPSK2" );
+	    strcat( authmode, ";WPA2PSK" );
 	    if( nvram_nmatch( "tkip", "%s_crypto", var ) )
 		strcat( encryptype, ";TKIP" );
 	    if( nvram_nmatch( "aes", "%s_crypto", var ) )
@@ -991,7 +991,7 @@ void configure_wifi( void )	// madwifi implementation for atheros based
 	     nvram_match( "wl0_frameburst", "on" ) ? "0" : "1" );
     fprintf( fp, "PktAggregate=0\n" );
     fprintf( fp, "TurboRate=0\n" );
-    fprintf( fp, "wmm=%s\n", nvram_match( "wl0_wme", "on" ) ? "1" : "0" );
+    fprintf( fp, "WmmCapable=%s\n", nvram_match( "wl0_wme", "on" ) ? "1" : "0" );
     fprintf( fp, "APAifsn=3;7;1;1\n" );
     fprintf( fp, "APCwmin=4;4;3;2\n" );
     fprintf( fp, "APCwmax=6;10;4;3\n" );
