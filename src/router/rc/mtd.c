@@ -460,7 +460,8 @@ int mtd_write( const char *path, const char *mtd )
 	 * Netgear: Write len and checksum at the end of mtd1 
 	 */ 
 	int sector_start;
-	 
+	char *tmp;
+		 
 	if ( getRouterBrand(  ) == ROUTER_NETGEAR_WGR614L
 		|| getRouterBrand(  ) == ROUTER_NETGEAR_WNR834B 
 		|| getRouterBrand(  ) == ROUTER_NETGEAR_WNR834BV2
@@ -522,7 +523,6 @@ int mtd_write( const char *path, const char *mtd )
 		goto fail;
 	}
 	
-	char *tmp;	
 	tmp = buf + ( ( NETGEAR_4M_KERNEL_LEN_ADDR - NETGEAR_4M_KERNEL_FLASH_ADDR ) % mtd_info.erasesize );
 	memcpy( tmp, imageInfo, sizeof( imageInfo ) );	
 
