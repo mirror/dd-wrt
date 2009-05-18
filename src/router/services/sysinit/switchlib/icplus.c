@@ -247,7 +247,7 @@ typedef enum
 #define IP_IS_LAN_PORT(port) ((port) <  IP_WAN_PORT)
 #define IP_IS_WAN_PORT(port) ((port) == IP_WAN_PORT)
 
-#define IP_LAN_PORT_VLAN          0
+#define IP_LAN_PORT_VLAN          1
 #define IP_WAN_PORT_VLAN          2
 
 #define ENET_UNIT_DEFAULT 0
@@ -564,7 +564,7 @@ void vlan_init( int portmask )
     setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phyReg );
 
     eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
-    eval( "vconfig", "add", "eth0", "0" );
+    eval( "vconfig", "add", "eth0", "1" );
     eval( "vconfig", "add", "eth0", "2" );
     struct ifreq ifr;
     int s;
