@@ -65,7 +65,7 @@ static unsigned long calculate_checksum (int action, char *s, int size);
 #define NETGEAR_4M_KERNEL_FLASH_ADDR       0xBC020000
 #define NETGEAR_4M_KERNEL_LEN_ADDR         (NETGEAR_4M_FLASH_BASE + NETGEAR_4M_FLASH_SIZE - 0x50000 - 8)
 #define NETGEAR_4M_KERNEL_CHKSUM_ADDR      (NETGEAR_4M_KERNEL_LEN_ADDR + 4)
-#define WGR614_LZMA_LOADER_SIZE        0x0919 //loader+400.lzma = 2329 bytes, please change if size changes!
+#define WGR614_LZMA_LOADER_SIZE            0x0919 //loader+400.lzma = 2329 bytes, please change if size changes!
 /* end */
 
 /* 
@@ -459,6 +459,8 @@ int mtd_write( const char *path, const char *mtd )
 	/* 
 	 * Netgear: Write len and checksum at the end of mtd1 
 	 */ 
+	int sector_start;
+	 
 	if ( getRouterBrand(  ) == ROUTER_NETGEAR_WGR614L
 		|| getRouterBrand(  ) == ROUTER_NETGEAR_WNR834B 
 		|| getRouterBrand(  ) == ROUTER_NETGEAR_WNR834BV2
@@ -480,7 +482,7 @@ int mtd_write( const char *path, const char *mtd )
 	memcpy( &imageInfo[0], (char *)&trx.len, 4 );
 	memcpy( &imageInfo[4], (char *)&cal_chksum, 4 );
 	
-	int sector_start = ( ( NETGEAR_4M_KERNEL_LEN_ADDR - NETGEAR_4M_KERNEL_FLASH_ADDR ) / mtd_info.erasesize ) * mtd_info.erasesize;
+	sector_start = ( ( NETGEAR_4M_KERNEL_LEN_ADDR - NETGEAR_4M_KERNEL_FLASH_ADDR ) / mtd_info.erasesize ) * mtd_info.erasesize;
 	
 	if( lseek( mtd_fd, sector_start, SEEK_SET) < 0 )
 	{
