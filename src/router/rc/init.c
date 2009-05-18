@@ -727,7 +727,7 @@ int main( int argc, char **argv )
 		}
 		else
 #endif
-		    start_service( "nas" );
+		start_service( "nas" );
 		start_service( "guest_nas" );
 #endif
 

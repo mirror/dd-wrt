@@ -767,12 +767,9 @@ static void handle_wireless( void )
 
     handle = stop_service_nofree( "radio_timer", handle );
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+    handle = stop_service_nofree( "nas", handle );
     eval( "wlconf", nvram_safe_get( "wl0_ifname" ), "down" );
     eval( "wlconf", nvram_safe_get( "wl1_ifname" ), "down" );
-#endif
-
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-    handle = stop_service_nofree( "nas", handle );
 #endif
 #ifdef HAVE_MADWIFI
     handle = stop_service_nofree( "stabridge", handle );
@@ -829,12 +826,9 @@ static void handle_wireless_2( void )
 
     handle = stop_service_nofree( "radio_timer", handle );
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+    handle = stop_service_nofree( "nas", handle );
     eval( "wlconf", nvram_safe_get( "wl0_ifname" ), "down" );
     eval( "wlconf", nvram_safe_get( "wl1_ifname" ), "down" );
-#endif
-
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-    handle = stop_service_nofree( "nas", handle );
 #endif
 #ifdef HAVE_MADWIFI
     handle = stop_service_nofree( "stabridge", handle );
