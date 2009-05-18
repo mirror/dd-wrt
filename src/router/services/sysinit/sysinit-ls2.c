@@ -164,6 +164,8 @@ void start_sysinit( void )
 	eval( "vconfig", "add", "eth0", "2" );
 #else
 	vlan_init( 0xff );	// 4 lan + 1 wan
+	system2( "echo 7 >/proc/sys/dev/wifi0/ledpin" );
+	system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
 #endif
     struct ifreq ifr;
     int s;
