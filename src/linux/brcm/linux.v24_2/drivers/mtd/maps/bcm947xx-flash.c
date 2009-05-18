@@ -438,13 +438,15 @@ init_mtd_partitions(struct mtd_info *mtd, size_t size)
 	if ( (boardnum == 8 || boardnum == 01)
 	  && nvram_match ("boardtype", "0x0472")
 	  && nvram_match ("cardbus", "1") ) {
-		board_data_size = 0x10000;  //Netgear WNR834B, Netgear WNR834Bv2
+		board_data_size = 4 * 0x10000;  //Netgear WNR834B, Netgear WNR834Bv2
+		jffs_exclude_size = 0x10000;    //checksum is @ 0x003AFFF8		
 	}
 
 	if ( boardnum == 01
 	  && nvram_match ("boardtype", "0x0472")
 	  && nvram_match ("boardrev", "0x23") ) {
-		board_data_size = 0x10000;  //Netgear WNDR-3300
+		board_data_size = 4 * 0x10000;  //Netgear WNDR-3300
+		jffs_exclude_size = 0x10000;    //checksum is @ 0x003AFFF8		
 	}	
 	
 	if ( (boardnum == 83258 || boardnum == 01)  //or 001 or 0x01
