@@ -447,7 +447,6 @@ static int enable_dhcprelay( char *ifname )
 static int wlconf_up( char *name )
 {
 
-    char tmp[100];
     int phytype, gmode, val, ret;
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
@@ -503,9 +502,11 @@ static int wlconf_up( char *name )
     }
     // adjust txpwr and txant
     val = atoi( nvram_nget( "wl%d_txpwr", instance ) );
-    if( val < 0 || val > TXPWR_MAX )
+    if( val < 1 || val > TXPWR_MAX )
 	val = TXPWR_DEFAULT;
-    eval( "wl", "-i", name, "txpwr1", "-m", "-o", nvram_nget( "wl%d_txpwr", instance ) );
+    char pwr[8];
+	sprintf( pwr, "%d", val );
+    eval( "wl", "-i", name, "txpwr1", "-m", "-o", pwr );
     /*
      * Set txant 
      */
@@ -2279,8 +2280,12 @@ void stop_lan( void )
     ifconfig( "wl0.2", 0, NULL, NULL );
     br_del_interface( lan_ifname, "wl0.3" );
     ifconfig( "wl0.3", 0, NULL, NULL );
-    br_del_interface( lan_ifname, "wl0.4" );
-    ifconfig( "wl0.4", 0, NULL, NULL );
+    br_del_interface( lan_ifname, "wl1.1" );
+    ifconfig( "wl1.1", 0, NULL, NULL );
+    br_del_interface( lan_ifname, "wl1.2" );
+    ifconfig( "wl1.2", 0, NULL, NULL );
+    br_del_interface( lan_ifname, "wl1.3" );
+    ifconfig( "wl1.3", 0, NULL, NULL );
 #endif
     /*
      * Bring down bridged interfaces 
