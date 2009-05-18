@@ -25,13 +25,14 @@ write_to_nvram( int day, int month, int year, unsigned long rcvd,
     char tq[32];
     char temp[64] = "";
     char sbuff[256] = "";
-    char buffer[2048] = "";
+    char *buffer;
     int i = 1, d = 1;
     unsigned int days = daysformonth( month, year );
     unsigned long old_rcvd;
     unsigned long old_sent;
     char *tdata;
-
+    buffer = malloc(2048);
+    memset(buffer,0,2048);
     sprintf( tq, "traff-%02u-%u", month, year );
     tdata = nvram_safe_get( tq );
 
@@ -70,7 +71,7 @@ write_to_nvram( int day, int month, int year, unsigned long rcvd,
     }
 	strtrim_right (buffer, ' ');
     nvram_set( tq, buffer );
-
+    free(buffer);
     return;
 }
 
