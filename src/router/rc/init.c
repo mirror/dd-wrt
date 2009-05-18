@@ -684,7 +684,9 @@ int main( int argc, char **argv )
 		start_service_f( "resetbutton" );
 #endif
 		start_service( "setup_vlans" );
-
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+		start_service( "wlconf" );
+#endif
 #ifdef HAVE_VLANTAGGING
 		start_service( "bridging" );
 #endif
@@ -717,7 +719,6 @@ int main( int argc, char **argv )
 #endif
 		
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-		start_service( "wlconf" );
 #ifdef HAVE_RADIOOFF
 		if( nvram_match( "radiooff_button", "1" )
 		    && nvram_match( "radiooff_boot_off", "1" ) )
