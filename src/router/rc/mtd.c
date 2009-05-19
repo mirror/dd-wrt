@@ -304,8 +304,8 @@ int mtd_write( const char *path, const char *mtd )
     if( mtd_info.size < trx.len )
     {
 	fprintf( stderr, "Image too big for partition: %s\n", mtd );
-	close( mtd_fd );
-	return 0;
+	perror( mtd );
+	goto fail;
     }
     // #endif
 
