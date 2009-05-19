@@ -1134,7 +1134,7 @@ void save_wireless_advanced( webs_t wp )
     copytonv2( wp, prefix, set_prefix, "plcphdr" );
     copytonv2( wp, prefix, set_prefix, "shortslot" );
     copytonv2( wp, prefix, set_prefix, "afterburner" );
-    copytonv2( wp, prefix, set_prefix, "btcmode" );
+    copytonv2( wp, prefix, set_prefix, "btc_mode" );
 //    copytonv2( wp, prefix, set_prefix, "web_filter" );
 //    copytonv2( wp, prefix, set_prefix, "wme" );
 //    copytonv2( wp, prefix, set_prefix, "wme_no_ack" );
