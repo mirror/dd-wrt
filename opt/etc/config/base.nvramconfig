@@ -273,6 +273,8 @@
  "wl_wme_txp_vo" "WME TXP VO" "WMETXPARAM" "FALSE" "0"
  "wl_maxassoc" "MAX Assoc Clients" "RANGE" "1" "256" "FALSE" "0"
  "wl_btc_mode" "BT Coexistence" "CHOICE" "3" "0" "1" "2" "FALSE" "0"
+ "wl0_btc_mode" "BT Coexistence" "CHOICE" "3" "0" "1" "2" "FALSE" "0"
+ "wl1_btc_mode" "BT Coexistence" "CHOICE" "3" "0" "1" "2" "FALSE" "0"
  "enable_game" "enable game" "NULL" "FALSE" "0"
  "default_uplevel" "default up qos level" "NULL" "FALSE" "0"
  "default_downlevel" "default down qos level" "NULL" "FALSE" "0"
