@@ -178,7 +178,7 @@ function to_apply(F) {
 }
 
 function setWMM(val) {
-	setElementsActive("wl_wme_no_ack", "wl_wme_txp_vo4", val == "on");
+	setElementsActive("%s_wme_no_ack", "wl_wme_txp_vo4", val == "on");
 }
 
 var update;
@@ -533,8 +533,8 @@ addEvent(window, "unload", function() {
 								<legend><%% tran("wl_adv.legend2"); %%></legend>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label18"); %%></div>
-									<input class="spaceradio" type="radio" name="wl_wme" value="on" <%% nvram_checked("wl_wme", "on"); %%>  onclick="show_layer_ext(this, 'idwl_wme', true);setWMM(this.value)" /><%% tran("share.enable"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_wme" value="off" <%% nvram_checked("wl_wme", "off"); %%>  onclick="show_layer_ext(this, 'idwl_wme', false);setWMM(this.value)" /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" name="%s_wme" value="on" <%% nvram_checked("%s_wme", "on"); %%>  onclick="show_layer_ext(this, 'idwl_wme', true);setWMM(this.value)" /><%% tran("share.enable"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_wme" value="off" <%% nvram_checked("%s_wme", "off"); %%>  onclick="show_layer_ext(this, 'idwl_wme', false);setWMM(this.value)" /><%% tran("share.disable"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.enable + ")");
@@ -544,8 +544,8 @@ addEvent(window, "unload", function() {
 								<div id="idwl_wme">
 									<div class="setting">
 										<div class="label"><%% tran("wl_adv.label19"); %%></div>
-										<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="on" <%% nvram_checked("wl_wme_no_ack", "on"); %%> /><%% tran("share.enable"); %%>&nbsp;
-										<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="off" <%% nvram_checked("wl_wme_no_ack", "off"); %%> /><%% tran("share.disable"); %%>
+										<input class="spaceradio" type="radio" name="%s_wme_no_ack" value="on" <%% nvram_checked("%s_wme_no_ack", "on"); %%> /><%% tran("share.enable"); %%>&nbsp;
+										<input class="spaceradio" type="radio" name="%s_wme_no_ack" value="off" <%% nvram_checked("%s_wme_no_ack", "off"); %%> /><%% tran("share.disable"); %%>
 										<span class="default"><script type="text/javascript">
 										//<![CDATA[
 										document.write("(" + share.deflt + ": " + share.disable + ")");
