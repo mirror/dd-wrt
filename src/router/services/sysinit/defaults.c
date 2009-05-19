@@ -165,13 +165,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_BUFFALO
     {"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
 #elif HAVE_GGEW
-#ifdef HAVE_NS5
+#if defined(HAVE_NS5) || defined(HAVE_EOC5610)
     {"ath0_regdomain", "GERMANY_BFWA", 0},	/* LAN IP address */
-#elif HAVE_EOC5610
-    {"ath0_regdomain", "GERMANY_BFWA", 0},	/* LAN IP address */
-#elif HAVE_NS2
-    {"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
-#elif HAVE_EOC2610
+#elif defined(HAVE_NS2) || defined(HAVE_EOC2610)
     {"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
 #endif
     {"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
@@ -872,10 +868,12 @@ struct nvram_tuple srouter_defaults[] = {
     {"wl1_plcphdr", "long", 0},
     
 #ifdef HAVE_GGEW
-    {"wl_net_mode", "b-only", 0},	/* Wireless mode
-					 * (mixed|g-only|b-only|disable) */
-    {"wl0_net_mode", "b-only", 0},	/* Wireless mode
-					 * (mixed|g-only|b-only|disable) */
+#if defined(HAVE_NS5) || defined(HAVE_EOC5610)
+    {"ath0_net_mode", "a-only", 0},
+#elif defined(HAVE_EOC2610) || defined(HAVE_NS2)
+    {"ath0_net_mode", "mixed", 0},
+#else
+    {"wl0_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
 #elif HAVE_NEWMEDIA
     {"wl_net_mode", "disabled", 0},	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
