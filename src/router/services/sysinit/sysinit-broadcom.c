@@ -632,20 +632,21 @@ void start_sysinit( void )
 	    }
 
 	    if( nvram_get( "pci/1/1/macaddr" ) == NULL )
+	    {
+		nvram_set( "pci/1/1/macaddr", nvram_safe_get( "et0macaddr" ) );   
 		need_reboot = 1;
-
-	    nvram_set( "pci/1/1/macaddr", nvram_safe_get( "et0macaddr" ) );
-
+		}
+		//params taken from firmware ver. 2.1.13 multi-region
 	    struct nvram_tuple wnr834bv2_pci_1_1_params[] = {
-		{"stbcpo", "0", 0},
 		{"pa2gw1a0", "0", 0},
+		{"stbcpo", "0", 0},
 		{"pa2gw1a1", "0", 0},
 		{"ag0", "2", 0},
 		{"ag1", "2", 0},
 		{"ag2", "2", 0},
 		{"ccdpo", "0", 0},
-		{"txpid2ga0", "71", 0},
-		{"txpid2ga1", "79", 0},
+		{"txpid2ga0", "55", 0},
+		{"txpid2ga1", "78", 0},
 		{"txpt2g", "0x38", 0},
 		{"pa2gw0a0", "0", 0},
 		{"pa2gw0a1", "0", 0},
@@ -662,7 +663,7 @@ void start_sysinit( void )
 		{"maxp2ga0", "0", 0},
 		{"maxp2ga1", "0", 0},
 		{"boardtype", "0x46d", 0},
-		{"boardflags2", "0x0013", 0},
+		{"boardflags2", "3", 0},
 		{"ofdm2gpo", "0", 0},
 		{"ledbh0", "0x8", 0},
 		{"ledbh1", "-1", 0},
