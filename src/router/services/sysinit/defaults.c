@@ -874,6 +874,7 @@ struct nvram_tuple srouter_defaults[] = {
     {"ath0_net_mode", "mixed", 0},
 #else
     {"wl0_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
+#endif
 #elif HAVE_NEWMEDIA
     {"wl_net_mode", "disabled", 0},	/* Wireless mode
 					 * (mixed|g-only|b-only|disable) */
