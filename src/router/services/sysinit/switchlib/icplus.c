@@ -587,5 +587,6 @@ void vlan_init( int portmask )
 	ioctl( s, SIOCSIFHWADDR, &ifr );
 	close( s );
     }
-
+    eval("ifconfig","vlan1","promisc");
+    eval("ifconfig","vlan2","promisc");
 }
