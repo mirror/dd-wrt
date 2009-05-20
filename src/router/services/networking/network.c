@@ -901,13 +901,13 @@ void start_lan( void )
     if( getSTA(  ) || getWET(  ) || CANBRIDGE() )
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "vlan1 vlan2 ath0" );
+	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
 	PORTSETUPWAN( "" );
     }
     else
     {
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "vlan1 vlan2 ath0" );
+	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
 	PORTSETUPWAN( "vlan2" );
     }
     strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
@@ -1093,7 +1093,7 @@ void start_lan( void )
 	PORTSETUPWAN( "" );
 #else
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "vlan1 vlan2 ath0" );
+	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
 	PORTSETUPWAN( "" );
 #endif
     }
@@ -1106,11 +1106,11 @@ void start_lan( void )
 #else
 	nvram_set( "lan_ifname", "br0" );
 #ifdef HAVE_BWRG1000
-	nvram_set( "lan_ifnames", "vlan1 vlan2 ath0" );
+	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
 	PORTSETUPWAN( "vlan2" );
 #else
-	nvram_set( "lan_ifnames", "vlan1 vlan2 ath0" );
-	PORTSETUPWAN( "vlan1" );
+	nvram_set( "lan_ifnames", "vlan0 vlan2 ath0" );
+	PORTSETUPWAN( "vlan0" );
 #endif
 #endif
     }
