@@ -67,7 +67,10 @@ struct special {
 
 static struct special special[] = { 
 	{ "devices", &usbdevfs_devices_fops,  },
-	{ "drivers", &usbdevfs_drivers_fops,  }
+	{ "drivers", &usbdevfs_drivers_fops,  },
+#ifdef CONFIG_USB_DEVPATH
+	{ "devpath", &usbdevfs_devpath_fops,  },
+#endif
 };
 
 #define NRSPECIAL (sizeof(special)/sizeof(special[0]))

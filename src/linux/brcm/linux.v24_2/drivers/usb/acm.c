@@ -1,10 +1,11 @@
 /*
- * acm.c  Version 0.21
+ * acm.c  Version 0.23
  *
  * Copyright (c) 1999 Armin Fuerst	<fuerst@in.tum.de>
  * Copyright (c) 1999 Pavel Machek	<pavel@suse.cz>
  * Copyright (c) 1999 Johannes Erdfelt	<johannes@erdfelt.com>
  * Copyright (c) 2000 Vojtech Pavlik	<vojtech@suse.cz>
+ * Copyright (c) 2004 Jiri Engelthaler	<engy@centrum.cz>
  *
  * USB Abstract Control Model driver for USB modems and ISDN adapters
  *
@@ -24,6 +25,10 @@
  *	v0.19 - fixed CLOCAL handling (thanks to Richard Shih-Ping Chan)
  *	v0.20 - switched to probing on interface (rather than device) class
  *	v0.21 - revert to probing on device for devices with multiple configs
+ *	v0.22 - added max_packet_size variable for wMaxPacketSize
+ *	        workaround needed by Qualcomm CDMA modem. Default value is 1024.
+ *              Thanks to David Peroutka for discovering this solution.
+ *	v0.23 - Siemens MC75 modem workaround
  */
 
 /*
@@ -61,9 +66,16 @@
 /*
  * Version Information
  */
-#define DRIVER_VERSION "v0.21"
-#define DRIVER_AUTHOR "Armin Fuerst, Pavel Machek, Johannes Erdfelt, Vojtech Pavlik"
-#define DRIVER_DESC "USB Abstract Control Model driver for USB modems and ISDN adapters"
+#define DRIVER_VERSION "v0.23"
+#define DRIVER_AUTHOR "Armin Fuerst, Pavel Machek, Johannes Erdfelt, Vojtech Pavlik, Jiri Engelthaler"
+#define DRIVER_DESC "USB Abstract Control Model driver for USB modems and ISDN adapters (patched)"
+
+/* 
+ * QualComm workaround
+ */
+ 
+static int known_max_packet_size = 1024;
+static int maxpacketsize = -1;
 
 /*
  * CMSPAR, some architectures can't have space and mark parity.
@@ -123,6 +135,17 @@
 #define ACM_CTRL_FRAMING	0x10
 #define ACM_CTRL_PARITY		0x20
 #define ACM_CTRL_OVERRUN	0x40
+
+/* 
+ * Qualcomm ids 
+ */
+ 
+#define QUALCOMM_VENDOR_ID   0x05c6
+#define QUALCOMM_PRODUCT_ID  0x3196	// GTRAN GPC-6420
+#define CMOTECH_VENDOR_ID    0x16D8
+#define CMOTECH_PRODUCT_ID   0x5533
+#define SIEMENS_VENDOR_ID    0x0681
+#define SIEMENS_PRODUCT_ID   0x0034	// MC75
 
 /*
  * Line speed and caracter encoding.
@@ -512,6 +535,9 @@ static void *acm_probe(struct usb_device *dev, unsigned int ifnum,
 	struct usb_endpoint_descriptor *epctrl, *epread, *epwrite;
 	int readsize, ctrlsize, minor, i, j;
 	unsigned char *buf;
+#ifdef CONFIG_USB_DEVPATH
+	char devfsname[16];
+#endif
 
 	for (i = 0; i < dev->descriptor.bNumConfigurations; i++) {
 
@@ -556,8 +582,11 @@ static void *acm_probe(struct usb_device *dev, unsigned int ifnum,
 				epwrite = ifdata->endpoint + 0;
 			}
 
-			usb_set_configuration(dev, cfacm->bConfigurationValue);
-
+			if(dev->descriptor.idVendor  != SIEMENS_VENDOR_ID ||
+			   dev->descriptor.idProduct != SIEMENS_PRODUCT_ID) {
+				usb_set_configuration(dev, cfacm->bConfigurationValue);
+			}
+			
 			for (minor = 0; minor < ACM_TTY_MINORS && acm_table[minor]; minor++);
 			if (acm_table[minor]) {
 				err("no more free acm devices");
@@ -570,9 +599,34 @@ static void *acm_probe(struct usb_device *dev, unsigned int ifnum,
 			}
 			memset(acm, 0, sizeof(struct acm));
 
-			ctrlsize = epctrl->wMaxPacketSize;
-			readsize = epread->wMaxPacketSize;
-			acm->writesize = epwrite->wMaxPacketSize;
+			/* Qualcomm workaround. Some Quallcom devices (surely Gtran GPC-6420 CDMA
+			 * modem) reports bad wMaxPacketSize (64). That causes max transfer rate
+			 * about 256 kbps.  This code forces better wMaxPacketSize value
+			 */
+			
+			if ((dev->descriptor.idVendor  == QUALCOMM_VENDOR_ID &&
+			     dev->descriptor.idProduct == QUALCOMM_PRODUCT_ID) ||
+			    (dev->descriptor.idVendor  == CMOTECH_VENDOR_ID &&
+			     dev->descriptor.idProduct == CMOTECH_PRODUCT_ID) ||
+			    (dev->descriptor.idVendor  == SIEMENS_VENDOR_ID &&
+			     dev->descriptor.idProduct == SIEMENS_PRODUCT_ID)
+			   ) {
+				ctrlsize = readsize = acm->writesize = known_max_packet_size;
+				printk("forcing new wMaxPacketSize for modem device: %d\n", ctrlsize);
+			} 
+			else {
+				if (maxpacketsize > 0)
+				{
+					ctrlsize = readsize = acm->writesize = maxpacketsize;
+					printk("forcing new wMaxPacketSize for modem device: %d\n", ctrlsize);
+				}
+				else {
+					ctrlsize = epctrl->wMaxPacketSize;
+					readsize = epread->wMaxPacketSize;
+					acm->writesize = epwrite->wMaxPacketSize;
+				}
+			}
+			
 			acm->iface = cfacm->interface + j;
 			acm->minor = minor;
 			acm->dev = dev;
@@ -591,11 +645,21 @@ static void *acm_probe(struct usb_device *dev, unsigned int ifnum,
 
 			FILL_BULK_URB(&acm->readurb, dev, usb_rcvbulkpipe(dev, epread->bEndpointAddress),
 				      buf += ctrlsize, readsize, acm_read_bulk, acm);
-			acm->readurb.transfer_flags |= USB_NO_FSBR;
+/*			if (!(dev->descriptor.idVendor  == QUALCOMM_VENDOR_ID &&
+			      dev->descriptor.idProduct == QUALCOMM_PRODUCT_ID) &&
+			    !(dev->descriptor.idVendor  == CMOTECH_VENDOR_ID &&
+			      dev->descriptor.idProduct == CMOTECH_PRODUCT_ID)
+			   )*/
+				acm->readurb.transfer_flags |= USB_NO_FSBR;
 
 			FILL_BULK_URB(&acm->writeurb, dev, usb_sndbulkpipe(dev, epwrite->bEndpointAddress),
 				      buf += readsize, acm->writesize, acm_write_bulk, acm);
-			acm->writeurb.transfer_flags |= USB_NO_FSBR;
+/*			if (!(dev->descriptor.idVendor  == QUALCOMM_VENDOR_ID &&
+			      dev->descriptor.idProduct == QUALCOMM_PRODUCT_ID) &&
+			    !(dev->descriptor.idVendor  == CMOTECH_VENDOR_ID &&
+			      dev->descriptor.idProduct == CMOTECH_PRODUCT_ID)
+			   )*/
+				acm->writeurb.transfer_flags |= USB_NO_FSBR;
 
 			printk(KERN_INFO "ttyACM%d: USB ACM device\n", minor);
 
@@ -609,6 +673,10 @@ static void *acm_probe(struct usb_device *dev, unsigned int ifnum,
 			usb_driver_claim_interface(&acm_driver, acm->iface + 1, acm);
 
 			tty_register_devfs(&acm_tty_driver, 0, minor);
+#ifdef CONFIG_USB_DEVPATH
+			sprintf(devfsname, acm_tty_driver.name, minor);
+			usb_register_devpath(dev, 0, devfsname);
+#endif
 			return acm_table[minor] = acm;
 		}
 	}
@@ -636,13 +704,17 @@ static void acm_disconnect(struct usb_device *dev, void *ptr)
 	usb_driver_release_interface(&acm_driver, acm->iface + 0);
 	usb_driver_release_interface(&acm_driver, acm->iface + 1);
 
+#ifdef CONFIG_USB_DEVPATH
+	usb_deregister_devpath(dev);
+#endif
+
 	if (!acm->used) {
 		tty_unregister_devfs(&acm_tty_driver, acm->minor);
 		acm_table[acm->minor] = NULL;
 		kfree(acm);
 		return;
 	}
-
+	
 	if (acm->tty)
 		tty_hangup(acm->tty);
 }
@@ -741,3 +813,5 @@ MODULE_AUTHOR( DRIVER_AUTHOR );
 MODULE_DESCRIPTION( DRIVER_DESC );
 MODULE_LICENSE("GPL");
 
+MODULE_PARM(maxpacketsize, "i");
+MODULE_PARM_DESC(maxpacketsize, "Force MaxPacketSize");

@@ -1839,16 +1839,17 @@ int usb_get_descriptor(struct usb_device *dev, unsigned char type, unsigned char
 	memset(buf,0xaa,size);	// Make sure we parse really received data
 
 	while (i--) {
-		if ((result = usb_control_msg(dev, usb_rcvctrlpipe(dev, 0),
+		result = usb_control_msg(dev, usb_rcvctrlpipe(dev, 0),
 			USB_REQ_GET_DESCRIPTOR, USB_DIR_IN,
-			(type << 8) + index, 0, buf, size, HZ * GET_TIMEOUT)) > 0 ||
-		     result == -EPIPE)
-			break;	/* retry if the returned length was 0; flaky device */
+			(type << 8) + index, 0, buf, size, HZ * GET_TIMEOUT);
+		
+		if (result == -EPIPE)
+			break;
 
 		/* WAR60307: Retry if last two bytes of descriptor did not
 		 * make it to memory.
 		 */
-		if ((type == USB_DT_DEVICE) && (result == 18)) {
+/*		if ((type == USB_DT_DEVICE) && (result == 18)) {
 			if (b[17] == 0xaa) {
 				err("Looks like a Device descriptor where numConfigurations was not read, retrying (%d)", i);
 				continue;
@@ -1857,7 +1858,7 @@ int usb_get_descriptor(struct usb_device *dev, unsigned char type, unsigned char
 				err("Looks like a Device descriptor with 0 configurations, retrying (%d)", i);
 				continue;
 			}
-		}
+		}*/
 
 		if (result > 0)
 			break;
@@ -2464,6 +2465,9 @@ void usb_excl_unlock(struct usb_device *dev, unsigned int type)
 static int __init usb_init(void)
 {
 	init_MUTEX(&usb_bus_list_lock);
+#ifdef CONFIG_USB_DEVPATH
+	init_MUTEX(&usb_devpath_list_lock);
+#endif
 	usb_major_init();
 	usbdevfs_init();
 	usb_hub_init();

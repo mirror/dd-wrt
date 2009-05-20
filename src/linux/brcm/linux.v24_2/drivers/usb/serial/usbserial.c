@@ -332,7 +332,7 @@ static void generic_shutdown		(struct usb_serial *serial);
 static __u16	vendor	= 0x05f9;
 static __u16	product	= 0xffff;
 
-static struct usb_device_id generic_device_ids[2]; /* Initially all zeroes. */
+static struct usb_device_id generic_device_ids[10]; /* Initially all zeroes. */
 
 /* All of the device info needed for the Generic Serial Converter */
 static struct usb_serial_device_type generic_device = {
@@ -1429,6 +1429,9 @@ static void * usb_serial_probe(struct usb_device *dev, unsigned int ifnum,
 	int max_endpoints;
 	const struct usb_device_id *id_pattern = NULL;
 	unsigned long flags;
+#ifdef CONFIG_USB_DEVPATH
+	char devfsname[16];
+#endif
 
 	/* loop through our list of known serial converters, and see if this
 	   device matches. */
@@ -1557,7 +1560,9 @@ static void * usb_serial_probe(struct usb_device *dev, unsigned int ifnum,
 			err("No free urbs available");
 			goto probe_error;
 		}
-		buffer_size = endpoint->wMaxPacketSize;
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+		buffer_size = MIN(2048,endpoint->wMaxPacketSize);
+//		buffer_size = endpoint->wMaxPacketSize;
 		port->bulk_in_endpointAddress = endpoint->bEndpointAddress;
 		port->bulk_in_buffer = kmalloc (buffer_size, GFP_KERNEL);
 		if (!port->bulk_in_buffer) {
@@ -1657,6 +1662,10 @@ static void * usb_serial_probe(struct usb_device *dev, unsigned int ifnum,
 		tty_register_devfs (&serial_tty_driver, 0, serial->port[i].number);
 		info("%s converter now attached to ttyUSB%d (or usb/tts/%d for devfs)", 
 		     type->name, serial->port[i].number, serial->port[i].number);
+#ifdef CONFIG_USB_DEVPATH
+                sprintf(devfsname, serial_tty_driver.name, serial->port[i].number);
+                usb_register_devpath(dev, ifnum+i*10, devfsname);
+#endif
 	}
 
 	return serial; /* success */
@@ -1750,6 +1759,9 @@ static void usb_serial_disconnect(struct usb_device *dev, void *ptr)
 
 		for (i = 0; i < serial->num_ports; ++i) {
 			tty_unregister_devfs (&serial_tty_driver, serial->port[i].number);
+#ifdef CONFIG_USB_DEVPATH
+			usb_deregister_devpath(dev);
+#endif
 			info("%s converter now disconnected from ttyUSB%d", serial->type->name, serial->port[i].number);
 		}
 
@@ -1831,6 +1843,34 @@ static int __init usb_serial_init(void)
 	generic_device_ids[0].idVendor = vendor;
 	generic_device_ids[0].idProduct = product;
 	generic_device_ids[0].match_flags = USB_DEVICE_ID_MATCH_VENDOR | USB_DEVICE_ID_MATCH_PRODUCT;
+	/* Option 3G/UMTS 'Colt' */
+	generic_device_ids[1].idVendor = 0x0af0;
+	generic_device_ids[1].idProduct = 0x5000;
+	generic_device_ids[1].match_flags = USB_DEVICE_ID_MATCH_VENDOR | USB_DEVICE_ID_MATCH_PRODUCT;
+	/* Option 3G/UMTS 'Fusion' */
+	generic_device_ids[2].idVendor = 0x0af0;
+	generic_device_ids[2].idProduct = 0x6000;
+	generic_device_ids[2].match_flags = USB_DEVICE_ID_MATCH_VENDOR | USB_DEVICE_ID_MATCH_PRODUCT;
+	/* Option 3G/UMTS 'Fusion2' */
+	generic_device_ids[3].idVendor = 0x0af0;
+	generic_device_ids[3].idProduct = 0x6300;
+	generic_device_ids[3].match_flags = USB_DEVICE_ID_MATCH_VENDOR | USB_DEVICE_ID_MATCH_PRODUCT;
+	/* Audiovox Aircard */
+	generic_device_ids[4].idVendor = 0x0f3d;
+	generic_device_ids[4].idProduct = 0x0112;
+	generic_device_ids[4].match_flags = USB_DEVICE_ID_MATCH_VENDOR | USB_DEVICE_ID_MATCH_PRODUCT;
+	/* Huawei E600 */
+	generic_device_ids[6].idVendor = 0x12d1;
+	generic_device_ids[6].idProduct = 0x1001;
+	generic_device_ids[6].match_flags = USB_DEVICE_ID_MATCH_VENDOR | USB_DEVICE_ID_MATCH_PRODUCT;
+	/* Merlin XU870 */
+	generic_device_ids[7].idVendor = 0x1410;
+	generic_device_ids[7].idProduct = 0x1430;
+	generic_device_ids[7].match_flags = USB_DEVICE_ID_MATCH_VENDOR | USB_DEVICE_ID_MATCH_PRODUCT;
+	/* Sierra Wireless AirCard 875 */
+//	generic_device_ids[8].idVendor = 0x1199;
+//	generic_device_ids[8].idProduct = 0x6820;
+//	generic_device_ids[8].match_flags = USB_DEVICE_ID_MATCH_VENDOR | USB_DEVICE_ID_MATCH_PRODUCT;
 	/* register our generic driver with ourselves */
 	usb_serial_register (&generic_device);
 #endif
