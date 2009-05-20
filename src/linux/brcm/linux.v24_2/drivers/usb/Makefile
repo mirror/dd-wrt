@@ -11,6 +11,9 @@ O_TARGET	:= usbdrv.o
 # Objects that export symbols.
 
 export-objs		:= hcd.o usb.o ov511.o pwc-uncompress.o
+ifeq ($(CONFIG_USB_DEVPATH),y)
+	export-objs	+= devpath.o
+endif
 
 # Multipart objects.
 
@@ -24,6 +27,9 @@ auerswald-objs		:= auerbuf.o auerchain.o auerchar.o auermain.o
 
 ifeq ($(CONFIG_USB_DEVICEFS),y)
 	usbcore-objs	+= devio.o inode.o drivers.o devices.o
+ifeq ($(CONFIG_USB_DEVPATH),y)
+	usbcore-objs	+= devpath.o
+endif
 endif
 
 ifeq ($(CONFIG_USB_HIDDEV),y)

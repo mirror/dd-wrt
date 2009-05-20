@@ -128,6 +128,7 @@ static void storage_disconnect(struct usb_device *dev, void *ptr);
 		    initFunction, flags) \
 { USB_DEVICE_VER(id_vendor, id_product, bcdDeviceMin,bcdDeviceMax) }
 
+
 static struct usb_device_id storage_usb_ids [] = {
 
 #	include "unusual_devs.h"
@@ -614,6 +615,10 @@ static void * storage_probe(struct usb_device *dev, unsigned int ifnum,
 			altsetting->bInterfaceProtocol :
 			unusual_dev->useTransport;
 	flags = unusual_dev->flags;
+	if (flags & US_FL_IGNORE_DEVICE) {
+		printk(KERN_INFO "device ignored\n");
+		return NULL;
+	}
 
 	/*
 	 * Find the endpoints we need
