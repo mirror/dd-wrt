@@ -319,7 +319,7 @@ ipPhyInfo_t ipPhyInfo[] = {
      TRUE,
      ENET_UNIT_DEFAULT,
      0x00,
-     IP_WAN_PORT_VLAN		/* Send to all ports */
+     IP_LAN_PORT_VLAN		/* Send to all ports */
      },
 
 };
@@ -475,7 +475,7 @@ void vlan_init( int portmask )
 	if( ( ( 1 << phyUnit ) & portmask ) )
 	{
 	    setPhy( IP_GLOBAL_PHY29_ADDR,IP_GLOBAL_PHY29_24_REG +( ( phyUnit == 5 ) ? ( phyUnit + 1 ) : phyUnit ),IP_VLAN_TABLE_SETTING( phyUnit ) );
-	    fprintf(stderr,"write register %X, addr %X with %X\n",IP_GLOBAL_PHY29_ADDR,IP_GLOBAL_PHY29_24_REG +( ( phyUnit == 5 ) ? ( phyUnit + 1 ) : phyUnit ),IP_VLAN_TABLE_SETTING( phyUnit ) );
+	    fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY29_ADDR,IP_GLOBAL_PHY29_24_REG +( ( phyUnit == 5 ) ? ( phyUnit + 1 ) : phyUnit ),IP_VLAN_TABLE_SETTING( phyUnit ) );
 	    if( IP_IS_ENET_PORT( phyUnit ) )
 	    {
 		if( IP_IS_WAN_PORT( phyUnit ) )
@@ -499,13 +499,17 @@ void vlan_init( int portmask )
 	    }
 	}
     }
-    phy9Reg = TAG_VLAN_ENABLE;
+    phy9Reg = 0;//getPhy(IP_GLOBAL_PHY30_ADDR,IP_GLOBAL_PHY30_9_REG);
+    phy9Reg = phy9Reg | TAG_VLAN_ENABLE;
     phy9Reg = phy9Reg & ~VID_INDX_SEL_M;
+    phy9Reg = phy9Reg | 1; //1 vlan group used for lan
+    phy9Reg = phy9Reg | 1<<3; //enable smart mac
+    phy9Reg = phy9Reg | 1<<12; //port 0 is a wan port (required for smart mac)
     
-    fprintf(stderr,"write register %X, addr %X with %X\n",IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG,phy23Reg);
-    fprintf(stderr,"write register %X, addr %X with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG,phy1Reg);
-    fprintf(stderr,"write register %X, addr %X with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG,phy2Reg);
-    fprintf(stderr,"write register %X, addr %X with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG,phy9Reg);
+    fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG,phy23Reg);
+    fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG,phy1Reg);
+    fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG,phy2Reg);
+    fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG,phy9Reg);
     setPhy( IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG,phy23Reg );
     setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG, phy1Reg );
     setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG, phy2Reg );
