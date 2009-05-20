@@ -4380,11 +4380,11 @@ void ej_show_wireless_single( webs_t wp, char *prefix )
 	    websWrite( wp,
 		       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n" );
 	    websWrite( wp, "<select name=\"%s_nctrlsb\" >\n", prefix );
-	    websWrite( wp, "<option value=\"upper\" %s>upper</option>\n",
+	    websWrite( wp, "<option value=\"upper\" %s>lower</option>\n",
 		       nvram_nmatch( "upper", "%s_nctrlsb",
 				     prefix ) ? "selected=\\\"selected\\\"" :
 		       "" );
-	    websWrite( wp, "<option value=\"lower\" %s>lower</option>\n",
+	    websWrite( wp, "<option value=\"lower\" %s>upper</option>\n",
 		       nvram_nmatch( "lower", "%s_nctrlsb",
 				     prefix ) ? "selected=\\\"selected\\\"" :
 			   "" );
@@ -5724,8 +5724,9 @@ void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
 {
     channel_info_t ci;
     char name[32];
-
-    sprintf( name, "%s_ifname", nvram_safe_get( "wifi_display" ) );
+    
+	char *prefix = nvram_safe_get( "wifi_display" );
+    sprintf( name, "%s_ifname", prefix );
     char *ifname = nvram_safe_get ( name );
     
     memset( &ci, 0, sizeof( ci ) );
@@ -5736,6 +5737,16 @@ void ej_get_curchannel( webs_t wp, int argc, char_t ** argv )
     }
     else if( ci.hw_channel > 0 )
     {
+	if( has_mimo( prefix )
+	    && ( nvram_nmatch( "n-only", "%s_net_mode", prefix )
+		 || nvram_nmatch( "mixed", "%s_net_mode", prefix )
+		 || nvram_nmatch( "na-only", "%s_net_mode", prefix ) ) 
+		&& ( nvram_nmatch( "40", "%s_nbw", prefix ) )
+		&& ( nvram_nmatch( "ap", "%s_mode", prefix ) || nvram_nmatch( "wdsap", "%s_mode", prefix )
+		|| nvram_nmatch( "infra", "%s_mode", prefix ) ) )
+		{
+			websWrite( wp, "%d + ", nvram_nmatch( "upper", "%s_nctrlsb", prefix ) ? ci.hw_channel + 2 : ci.hw_channel - 2);	
+		}
 	websWrite( wp, "%d", ci.hw_channel );
     }
     else
