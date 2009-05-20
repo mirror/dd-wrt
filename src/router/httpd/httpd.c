@@ -611,25 +611,30 @@ static int check_connect_type( void )
 {
     struct wl_assoc_mac *wlmac = NULL;
     int count_wl = 0;
-    int i;
+    int i, j, ret = 0;
+    char temp[32];
+    int c = get_wl_instances(  );
 
-    if( nvram_invmatch( "web_wl_filter", "1" ) )
-	return 0;
+	for( j = 0; j < c; j++ )
+	{
+	sprintf( temp, "wl%d_web_filter", j );  
+    if( nvram_invmatch( temp, "1" ) )
+		continue;
 
-    wlmac = get_wl_assoc_mac( &count_wl );
+    wlmac = get_wl_assoc_mac( j, &count_wl );
 
     for( i = 0; i < count_wl; i++ )
     {
 	if( !strcmp( wlmac[i].mac, nvram_safe_get( "http_client_mac" ) ) )
 	{
 	    cprintf( "Can't accept wireless access\n" );
-	    free( wlmac );
-	    return -1;
+	    ret = -1;
 	}
     }
     free( wlmac );
+	}
 
-    return 0;
+    return ret;
 }
 
 /*static void addEnv(const char *name_before_underline,
@@ -982,7 +987,7 @@ static void handle_request( void )
 	if( check_connect_type(  ) < 0 )
 	{
 	    send_error( 401, "Bad Request", ( char * )0,
-			"Can't use wireless interface to access web." );
+			"Can't use wireless interface to access GUI." );
 //          free(line);
 	    return;
 	}
@@ -1104,7 +1109,7 @@ static void handle_request( void )
 		if( check_connect_type(  ) < 0 )
 		{
 		    send_error( 401, "Bad Request", ( char * )0,
-				"Can't use wireless interface to access web." );
+				"Can't use wireless interface to access GUI." );
 //                          free(line);
 		    return;
 		}
