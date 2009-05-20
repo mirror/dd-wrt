@@ -1836,7 +1836,7 @@ int usb_get_descriptor(struct usb_device *dev, unsigned char type, unsigned char
 	int result;
 	volatile unsigned char *b = (unsigned char *)buf;
 	
-	memset(buf,0xaa,size);	// Make sure we parse really received data
+	memset(buf,0,size);	// Make sure we parse really received data
 
 	while (i--) {
 		result = usb_control_msg(dev, usb_rcvctrlpipe(dev, 0),
