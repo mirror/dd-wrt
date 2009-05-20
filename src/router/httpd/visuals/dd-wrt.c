@@ -2933,7 +2933,7 @@ static void show_channel( webs_t wp, char *dev, char *prefix, int type )
 			showit = 0;
 			if( nvram_nmatch( "upper", "%s_nctrlsb", prefix ) )
 			{
-			if( chanlist[i] >= 3 && chanlist[i] <= 13 )
+			if( chanlist[i] >= 5 && chanlist[i] <= 13 )
 			{
 				showit = 1;
 			}
