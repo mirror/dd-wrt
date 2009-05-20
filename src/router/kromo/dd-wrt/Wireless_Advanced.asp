@@ -186,7 +186,7 @@ var update;
 addEvent(window, "load", function() {
 	setRadioTable();
 	setWMM("<%% nvram_get("%s_wme"); %%>");
-	show_layer_ext(document.wireless.wl_wme, 'idwl_wme', <%% nvram_else_match("%s_wme", "on", "1", "0"); %%> == 1);
+	show_layer_ext(document.wireless.%s_wme, 'idwl_wme', <%% nvram_else_match("%s_wme", "on", "1", "0"); %%> == 1);
 	show_layer_ext(document.wireless.radio%d_timer_enable, 'radio', <%% nvram_else_match("radio%d_timer_enable", "1", "1", "0"); %%> == 1);
 	initWlTimer('<%% nvram_get("radio%d_on_time"); %%>');
 	show_layer_ext(document.wireless.%s_nmcsidx, 'id%s_nmcsidx', <%% nvram_else_match("%s_phytype", "n", "1", "0"); %%> == 1);
@@ -493,8 +493,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label17"); %%></div>
-									<input class="spaceradio" type="radio" name="web_wl_filter" value="0" <%% nvram_checked("web_wl_filter", "0"); %%> /><%% tran("share.enable"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="web_wl_filter" value="1" <%% nvram_checked("web_wl_filter", "1"); %%> /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" name="%s_web_filter" value="0" <%% nvram_checked("%s_web_filter", "0"); %%> /><%% tran("share.enable"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_web_filter" value="1" <%% nvram_checked("%s_web_filter", "1"); %%> /><%% tran("share.disable"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.enable + ")");
