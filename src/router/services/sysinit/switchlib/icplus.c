@@ -247,7 +247,7 @@ typedef enum
 #define IP_IS_LAN_PORT(port) ((port) <  IP_WAN_PORT)
 #define IP_IS_WAN_PORT(port) ((port) == IP_WAN_PORT)
 
-#define IP_LAN_PORT_VLAN          1
+#define IP_LAN_PORT_VLAN          0
 #define IP_WAN_PORT_VLAN          2
 
 #define ENET_UNIT_DEFAULT 0
@@ -396,7 +396,7 @@ void vlan_init( int portmask )
 	ipPhyInfo[i].VLANTableSetting = IP_LAN_PORT_VLAN;
     }
     ipPhyInfo[i++].VLANTableSetting = IP_WAN_PORT_VLAN;
-    ipPhyInfo[i].VLANTableSetting = IP_WAN_PORT_VLAN;
+    ipPhyInfo[i].VLANTableSetting = IP_LAN_PORT_VLAN;
     ipPhyInfo[i].isEnetPort = FALSE;
     ipPhyInfo[i].isPhyAlive = TRUE;
     ipPhyInfo[i++].phyAddr = 0x0;
@@ -484,14 +484,14 @@ void vlan_init( int portmask )
 		}
 		else
 		{
-		    phy1Reg |= ( ( 1 << phyUnit ) <<IP_VLAN1_OUTPUT_PORT_MASK_S );
+		    phy1Reg |= ( ( 1 << phyUnit ) <<IP_VLAN0_OUTPUT_PORT_MASK_S );
 		}
 		phy23Reg = phy23Reg | ( ( 1 << phyUnit ) << IP_PORTX_REMOVE_TAG_S );
 		phy23Reg = phy23Reg & ~( ( 1 << phyUnit ) << IP_PORTX_ADD_TAG_S );
 	    }
 	    else
 	    {
-		phy1Reg |= ( ( 1 << phyUnit ) <<IP_VLAN1_OUTPUT_PORT_MASK_S );
+		phy1Reg |= ( ( 1 << phyUnit ) <<IP_VLAN0_OUTPUT_PORT_MASK_S );
 		phy2Reg |= ( ( 1 << phyUnit ) <<IP_VLAN2_OUTPUT_PORT_MASK_S );
 		phy23Reg = phy23Reg | ( 1 << IP_PORT5_ADD_TAG_S );
 		phy23Reg = phy23Reg & ~( 1 << IP_PORT5_REMOVE_TAG_S );
@@ -528,7 +528,7 @@ void vlan_init( int portmask )
 //		echo "echo \"WRITE 30 2 0030\"  > ".$mii_dev."\n";	/* Port 5,4 = VLAN 2 */
 //		echo "echo \"WRITE 30 9 1089\"  > ".$mii_dev."\n";
     eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
-    eval( "vconfig", "add", "eth0", "1" );
+    eval( "vconfig", "add", "eth0", "0" );
     eval( "vconfig", "add", "eth0", "2" );
     struct ifreq ifr;
     int s;
@@ -551,6 +551,6 @@ void vlan_init( int portmask )
 	ioctl( s, SIOCSIFHWADDR, &ifr );
 	close( s );
     }
-    eval("ifconfig","vlan1","promisc");
+    eval("ifconfig","vlan0","promisc");
     eval("ifconfig","vlan2","promisc");
 }
