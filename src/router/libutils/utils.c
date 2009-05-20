@@ -2704,7 +2704,7 @@ int led_control( int type, int act )
 	    break;
 	case ROUTER_WRT54G:
 	case ROUTER_WRT54G_V8:
-	    power_gpio = 0x01;
+	    power_gpio = 0x001;
 	    dmz_gpio = 0x107;
 	    connected_gpio = 0x103;	// ses orange
 	    ses_gpio = 0x102;	// ses white
@@ -2725,7 +2725,8 @@ int led_control( int type, int act )
 	    connected_gpio = 0x103;
 	    power_gpio = 0x001;
 	    ses2_gpio = 0x103;	// ses orange
-	    // usb_gpio = 0x04; 
+	    sec0_gpio = 0x109;	    
+	    usb_gpio = 0x10b; 
 	    break;
 	case ROUTER_WRT600N:
 	    power_gpio = 0x102;
