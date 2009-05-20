@@ -466,103 +466,63 @@ void vlan_init( int portmask )
      * setPhy(29,28,2); setPhy(29,30,0); setPhy(29,23,0x07c2);
      * setPhy(30,1,0x002f); setPhy(30,2,0x0030); setPhy(30,9,0x1089);
      */
-
+    unsigned int phy1Reg=0;
+    unsigned int phy2Reg=0;
+    unsigned int phy23Reg=0;
+    unsigned int phy9Reg=0;
     for( phyUnit = 0; phyUnit < numports; phyUnit++ )
     {
 	if( ( ( 1 << phyUnit ) & portmask ) )
 	{
-	    setPhy( IP_GLOBAL_PHY29_ADDR,
-		    IP_GLOBAL_PHY29_24_REG +
-		    ( ( phyUnit == 5 ) ? ( phyUnit + 1 ) : phyUnit ),
-		    IP_VLAN_TABLE_SETTING( phyUnit ) );
+	    setPhy( IP_GLOBAL_PHY29_ADDR,IP_GLOBAL_PHY29_24_REG +( ( phyUnit == 5 ) ? ( phyUnit + 1 ) : phyUnit ),IP_VLAN_TABLE_SETTING( phyUnit ) );
+	    fprintf(stderr,"write register %X, addr %X with %X\n",IP_GLOBAL_PHY29_ADDR,IP_GLOBAL_PHY29_24_REG +( ( phyUnit == 5 ) ? ( phyUnit + 1 ) : phyUnit ),IP_VLAN_TABLE_SETTING( phyUnit ) );
 	    if( IP_IS_ENET_PORT( phyUnit ) )
 	    {
 		if( IP_IS_WAN_PORT( phyUnit ) )
 		{
-
-		    phyReg =
-			getPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG );
-		    phyReg =
-			phyReg & ~( ( 1 << phyUnit ) <<
-				    IP_VLAN0_OUTPUT_PORT_MASK_S );
-		    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG,
-			    phyReg );
-
-		    phyReg =
-			getPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG );
-		    phyReg =
-			phyReg | ( ( 1 << phyUnit ) <<
-				   IP_VLAN2_OUTPUT_PORT_MASK_S );
-		    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG,
-			    phyReg );
-
+		    phy2Reg |= ( ( 1 << phyUnit ) <<IP_VLAN2_OUTPUT_PORT_MASK_S );
 		}
 		else
 		{
-
-		    phyReg =
-			getPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG );
-		    phyReg =
-			phyReg | ( ( 1 << phyUnit ) <<
-				   IP_VLAN0_OUTPUT_PORT_MASK_S );
-		    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG,
-			    phyReg );
-
-		    phyReg =
-			getPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG );
-		    phyReg =
-			phyReg & ~( ( 1 << phyUnit ) <<
-				    IP_VLAN2_OUTPUT_PORT_MASK_S );
-		    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG,
-			    phyReg );
-
+		    phy1Reg |= ( ( 1 << phyUnit ) <<IP_VLAN1_OUTPUT_PORT_MASK_S );
 		}
-		phyReg =
-		    getPhy( IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG );
-		phyReg =
-		    phyReg | ( ( 1 << phyUnit ) << IP_PORTX_REMOVE_TAG_S );
-		phyReg = phyReg & ~( ( 1 << phyUnit ) << IP_PORTX_ADD_TAG_S );
-		setPhy( IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG,
-			phyReg );
-
+		phy23Reg = phy23Reg | ( ( 1 << phyUnit ) << IP_PORTX_REMOVE_TAG_S );
+		phy23Reg = phy23Reg & ~( ( 1 << phyUnit ) << IP_PORTX_ADD_TAG_S );
 	    }
 	    else
 	    {
-		phyReg =
-		    getPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG );
-		phyReg =
-		    phyReg | ( ( 1 << phyUnit ) <<
-			       IP_VLAN0_OUTPUT_PORT_MASK_S );
-		setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG, phyReg );
+		phy1Reg |= ( ( 1 << phyUnit ) <<IP_VLAN1_OUTPUT_PORT_MASK_S );
+		phy2Reg |= ( ( 1 << phyUnit ) <<IP_VLAN2_OUTPUT_PORT_MASK_S );
+		phy23Reg = phy23Reg | ( 1 << IP_PORT5_ADD_TAG_S );
+		phy23Reg = phy23Reg & ~( 1 << IP_PORT5_REMOVE_TAG_S );
 
-		phyReg =
-		    getPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG );
-		phyReg =
-		    phyReg | ( ( 1 << phyUnit ) <<
-			       IP_VLAN2_OUTPUT_PORT_MASK_S );
-		setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG, phyReg );
-
-		phyReg =
-		    getPhy( IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG );
-		phyReg = phyReg | ( 1 << IP_PORT5_ADD_TAG_S );
-		phyReg = phyReg & ~( 1 << IP_PORT5_REMOVE_TAG_S );
-		setPhy( IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG,
-			phyReg );
 	    }
-
-	    // phyReg = getPhy (IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG);
-	    // phyReg = phyReg | ((1 << phyUnit) <<
-	    // IP_VLAN0_OUTPUT_PORT_MASK_S);
-	    // phyReg = phyReg | ((1 << phyUnit) <<
-	    // IP_VLAN1_OUTPUT_PORT_MASK_S);
-	    // setPhy (IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG, phyReg);
 	}
     }
-    phyReg = getPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG );
-    phyReg = phyReg | TAG_VLAN_ENABLE;
-    phyReg = phyReg & ~VID_INDX_SEL_M;
-    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phyReg );
-
+    phy9Reg = TAG_VLAN_ENABLE;
+    phy9Reg = phy9Reg & ~VID_INDX_SEL_M;
+    
+    fprintf(stderr,"write register %X, addr %X with %X\n",IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG,phy23Reg);
+    fprintf(stderr,"write register %X, addr %X with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG,phy1Reg);
+    fprintf(stderr,"write register %X, addr %X with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG,phy2Reg);
+    fprintf(stderr,"write register %X, addr %X with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG,phy9Reg);
+    setPhy( IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG,phy23Reg );
+    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG, phy1Reg );
+    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG, phy2Reg );
+    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phy9Reg );
+//
+//		echo "echo \"WRITE 29 23 07c2\" > ".$mii_dev."\n";
+//
+//		echo "echo \"WRITE 29 24 0\"    > ".$mii_dev."\n";	/* PORT0 Default VLAN ID */
+//		echo "echo \"WRITE 29 25 0\"    > ".$mii_dev."\n";	/* PORT1 Default VLAN ID */
+//		echo "echo \"WRITE 29 26 0\"    > ".$mii_dev."\n";	/* PORT2 Default VLAN ID */
+//		echo "echo \"WRITE 29 27 0\"    > ".$mii_dev."\n";	/* PORT3 Default VLAN ID */
+//		echo "echo \"WRITE 29 28 2\"    > ".$mii_dev."\n";	/* PORT4 Default VLAN ID */
+//		echo "echo \"WRITE 29 30 0\"    > ".$mii_dev."\n";	/* PORT5 Default VLAN ID (CPU) */
+//		echo "echo \"WRITE 29 23 07c2\" > ".$mii_dev."\n";
+//		echo "echo \"WRITE 30 1 002f\"  > ".$mii_dev."\n";	/* Port 5,3,2,1,0 = VLAN 0 */
+//		echo "echo \"WRITE 30 2 0030\"  > ".$mii_dev."\n";	/* Port 5,4 = VLAN 2 */
+//		echo "echo \"WRITE 30 9 1089\"  > ".$mii_dev."\n";
     eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
     eval( "vconfig", "add", "eth0", "1" );
     eval( "vconfig", "add", "eth0", "2" );
