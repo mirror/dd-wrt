@@ -963,21 +963,19 @@ unsigned long get_register_value( unsigned short id, unsigned short num )
     return ( ( stats.val_in << 16 ) | stats.val_out );
 }
 
-struct wl_assoc_mac *get_wl_assoc_mac( int *c )
+struct wl_assoc_mac *get_wl_assoc_mac( int instance, int *c )
 {
     FILE *fp;
     struct wl_assoc_mac *wlmac = NULL;
     int count;
     char line[80];
     char list[2][20];
+    char checkif[12];
+    char assoccmd[32];
 
     wlmac = NULL;
     count = *c = 0;
 
-    char assoccmd[4][32] = {
-	"wl assoclist", "wl -i wl0.1 assoclist", "wl -i wl0.2 assoclist",
-	"wl -i wl0.3 assoclist"
-    };
     int ifcnt = 4;
     int i;
     int gotit = 0;
@@ -986,15 +984,16 @@ struct wl_assoc_mac *get_wl_assoc_mac( int *c )
 
     for( i = 0; i < ifcnt; i++ )
     {
-	if( i )
-	{
-	    char checkif[12];
-
-	    sprintf( checkif, "wl0.%d", i );
+		if ( i == 0 )
+			strcpy( checkif, get_wl_instance_name( instance ) );
+		else
+	    	sprintf( checkif, "wl%d.%d", instance, i );
 	    if( !ifexists( checkif ) )
 		break;
-	}
-	if( ( fp = popen( assoccmd[i], "r" ) ) )
+		
+		sprintf( assoccmd, "wl -i %s assoclist", checkif );
+
+	if( ( fp = popen( assoccmd, "r" ) ) )
 	{
 	    gotit = 1;
 	    while( fgets( line, sizeof( line ), fp ) != NULL )
