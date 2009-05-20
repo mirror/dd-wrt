@@ -2282,14 +2282,6 @@ int usb_new_device(struct usb_device *dev)
 		dev->devnum = -1;
 		return 1;
 	}
-// added delay - wait for data
-        int wcnt;
-        for(wcnt=0; wcnt<20 && dev->descriptor.bNumConfigurations==0; wcnt++)
-        {
-            wait_ms(50);
-            // err("ewait(%d)=%d", wcnt+1, dev->descriptor.bNumConfigurations);
-        }
-//
 	dev->epmaxpacketin [0] = dev->descriptor.bMaxPacketSize0;
 	dev->epmaxpacketout[0] = dev->descriptor.bMaxPacketSize0;
 
