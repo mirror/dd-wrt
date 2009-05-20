@@ -225,6 +225,8 @@ struct usb_busmap {
 #define USB_MAXALTSETTING	128  /* Hard limit */
 #define USB_MAXINTERFACES	32
 #define USB_MAXENDPOINTS	32
+#define USB_CTRL_GET_TIMEOUT    5000
+#define USB_CTRL_SET_TIMEOUT    5000
 
 /* All standard descriptors have these 2 fields in common */
 struct usb_descriptor_header {
@@ -360,6 +362,30 @@ struct usb_device;
 	match_flags: USB_DEVICE_ID_MATCH_DEV_INFO, bDeviceClass: (cl), bDeviceSubClass: (sc), bDeviceProtocol: (pr)
 #define USB_INTERFACE_INFO(cl,sc,pr) \
 	match_flags: USB_DEVICE_ID_MATCH_INT_INFO, bInterfaceClass: (cl), bInterfaceSubClass: (sc), bInterfaceProtocol: (pr)
+
+
+/**
+ * USB_DEVICE_AND_INTERFACE_INFO - macro used to describe a specific usb device
+ * 		with a class of usb interfaces
+ * @vend: the 16 bit USB Vendor ID
+ * @prod: the 16 bit USB Product ID
+ * @cl: bInterfaceClass value
+ * @sc: bInterfaceSubClass value
+ * @pr: bInterfaceProtocol value
+ *
+ * This macro is used to create a struct usb_device_id that matches a
+ * specific device with a specific class of interfaces.
+ *
+ * This is especially useful when explicitly matching devices that have
+ * vendor specific bDeviceClass values, but standards-compliant interfaces.
+ */
+
+#define USB_DEVICE_AND_INTERFACE_INFO(vend,prod,cl,sc,pr) \
+	.match_flags = USB_DEVICE_ID_MATCH_INT_INFO \
+		| USB_DEVICE_ID_MATCH_DEVICE, \
+	.idVendor = (vend), .idProduct = (prod), \
+	.bInterfaceClass = (cl), \
+	.bInterfaceSubClass = (sc), .bInterfaceProtocol = (pr)
 
 struct usb_device_id {
 	/* This bitmask is used to determine which of the following fields
@@ -906,6 +932,8 @@ extern struct usb_device *usb_alloc_dev(struct usb_device *parent, struct usb_bu
 extern void usb_free_dev(struct usb_device *);
 extern void usb_inc_dev_use(struct usb_device *);
 #define usb_dec_dev_use usb_free_dev
+extern void usb_register_devpath(struct usb_device *, char, char *);
+extern void usb_deregister_devpath(struct usb_device *);
 
 extern int usb_control_msg(struct usb_device *dev, unsigned int pipe, __u8 request, __u8 requesttype, __u16 value, __u16 index, void *data, __u16 size, int timeout);
 
@@ -1114,6 +1142,7 @@ void usb_show_string(struct usb_device *dev, char *id, int index);
 extern struct list_head usb_driver_list;
 extern struct list_head usb_bus_list;
 extern struct semaphore usb_bus_list_lock;
+extern struct semaphore usb_devpath_list_lock;
 
 /*
  * USB device fs stuff
