@@ -834,6 +834,9 @@ static void *usblp_probe(struct usb_device *dev, unsigned int ifnum,
 	struct usblp *usblp = 0;
 	int protocol;
 	char name[6];
+#ifdef CONFIG_USB_DEVPATH
+	char devfsname[16];
+#endif
 
 	/* Malloc and start initializing usblp structure so we can use it
 	 * directly. */
@@ -928,6 +931,10 @@ static void *usblp_probe(struct usb_device *dev, unsigned int ifnum,
 				      USBLP_MINOR_BASE + usblp->minor,
 				      S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP |
 				      S_IWGRP, &usblp_fops, NULL);
+#ifdef CONFIG_USB_DEVPATH
+	sprintf(devfsname, "usb/lp%d", usblp->minor);
+	usb_register_devpath(dev, 0, devfsname);
+#endif
 
 	info("usblp%d: USB %sdirectional printer dev %d "
 		"if %d alt %d proto %d vid 0x%4.4X pid 0x%4.4X",
@@ -1133,6 +1140,9 @@ static void usblp_disconnect(struct usb_device *dev, void *ptr)
 
 	if (!usblp->used)
 		usblp_cleanup (usblp);
+#ifdef CONFIG_USB_DEVPATH
+	usb_deregister_devpath(dev);
+#endif
 	up (&usblp_sem);
 }
 

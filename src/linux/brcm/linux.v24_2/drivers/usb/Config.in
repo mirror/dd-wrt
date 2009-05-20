@@ -15,6 +15,11 @@ if [ "$CONFIG_USB" = "y" -o  "$CONFIG_USB" = "m" ]; then
    else
       define_bool CONFIG_USB_BANDWIDTH n
    fi
+   if [ "$CONFIG_USB_DEVICEFS" = "y" ]; then
+      bool '  Add support for /proc/bus/usb/devpath' CONFIG_USB_DEVPATH
+   else
+      define_bool CONFIG_USB_DEVPATH n
+   fi
 
    source drivers/usb/host/Config.in
 

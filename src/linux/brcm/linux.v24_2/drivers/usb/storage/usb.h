@@ -104,6 +104,8 @@ struct us_unusual_dev {
 #define US_FL_FIX_INQUIRY     0x00000040 /* INQUIRY response needs fixing */
 #define US_FL_FIX_CAPACITY    0x00000080 /* READ_CAPACITY response too big */
 
+#define US_FL_IGNORE_DEVICE   0x00000800 /* allow access to only LUN 0	    */
+
 #define USB_STOR_STRING_LEN 32
 
 typedef int (*trans_cmnd)(Scsi_Cmnd*, struct us_data*);
