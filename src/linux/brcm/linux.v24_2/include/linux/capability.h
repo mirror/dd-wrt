@@ -99,10 +99,6 @@ typedef __u32 kernel_cap_t;
 
 #define CAP_FSETID           4
 
-/* Used to decide between falling back on the old suser() or fsuser(). */
-
-#define CAP_FS_MASK          0x1f
-
 /* Overrides the restriction that the real or effective user ID of a
    process sending a signal must match the real or effective user ID
    of the process receiving the signal. */
@@ -300,6 +296,16 @@ extern kernel_cap_t cap_bset;
 #define cap_t(x) (x)
 
 #endif
+
+/* Used to decide between falling back on the old suser() or fsuser(). */
+
+#define CAP_FS_MASK	(CAP_TO_MASK(CAP_CHOWN)			\
+			| CAP_TO_MASK(CAP_DAC_OVERRIDE)		\
+			| CAP_TO_MASK(CAP_DAC_READ_SEARCH)	\
+			| CAP_TO_MASK(CAP_FOWNER)		\
+			| CAP_TO_MASK(CAP_FSETID)		\
+			| CAP_TO_MASK(CAP_LINUX_IMMUTABLE)	\
+			| CAP_TO_MASK(CAP_MKNOD))
 
 #define CAP_EMPTY_SET       to_cap_t(0)
 #define CAP_FULL_SET        to_cap_t(~0)

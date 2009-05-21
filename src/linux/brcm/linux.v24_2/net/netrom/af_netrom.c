@@ -1042,7 +1042,11 @@ static int nr_sendmsg(struct socket *sock, struct msghdr *msg, int len, struct s
 
 	SOCK_DEBUG(sk, "NET/ROM: sendto: Addresses built.\n");
 
-	/* Build a packet */
+	/* Build a packet - the conventional user limit is 236 bytes. We can
+	   do ludicrously large NetROM frames but must not overflow */
+	if (len > 65536)
+		return -EMSGSIZE;
+
 	SOCK_DEBUG(sk, "NET/ROM: sendto: building packet.\n");
 	size = len + AX25_BPQ_HEADER_LEN + AX25_MAX_HEADER_LEN + NR_NETWORK_LEN + NR_TRANSPORT_LEN;
 

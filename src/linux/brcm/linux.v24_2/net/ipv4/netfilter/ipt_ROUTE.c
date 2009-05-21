@@ -391,6 +391,7 @@ static struct ipt_target ipt_route_reg
 
 static int __init init(void)
 {
+		DEBUGP(KERN_ERR "registering ipt_ROUTE\n");
 	/* Set up fake conntrack (stolen from raw.patch):
 	    - to never be deleted, not in any hashes */
 	atomic_set(&route_tee_track.ct_general.use, 1);
@@ -406,7 +407,10 @@ static int __init init(void)
 		(1 << IP_NAT_MANIP_SRC) | (1 << IP_NAT_MANIP_DST);
 
 	if (ipt_register_target(&ipt_route_reg))
+		{
+		DEBUGP(KERN_ERR "error while registering target ROUTE\n");
 		return -EINVAL;
+		}
 
 	return 0;
 }
