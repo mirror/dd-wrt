@@ -14,6 +14,7 @@ char *protocol;
  
 } l7filters;
 
+//Added ,  (in extra), dazhihui, .
 
 l7filters filters_list[] =
 {
@@ -77,6 +78,8 @@ l7filters filters_list[] =
 					// (Half-Life 2 mod) -
 					// http://www.valvesoftware.com
     {
+    "dazhihui","l7"},
+    {
     "dhcp", "l7"},		// DHCP - Dynamic Host Configuration Protocol 
 				// - RFC 1541
     {
@@ -110,13 +113,15 @@ l7filters filters_list[] =
     "gkrellm", "l7"},		// Gkrellm - a system monitor -
 				// http://gkrellm.net
     {
-    "gnucleuslan", "p2p"},	// GnucleusLAN - LAN-only P2P filesharing
+    "gnucleuslan", "l7"},	// GnucleusLAN - LAN-only P2P filesharing
     {
     "gnutella", "p2p"},		// Gnutella - P2P filesharing
     {
     "goboogy", "l7"},		// GoBoogy - a Korean P2P protocol
     {
     "gopher", "l7"},		// Gopher - A precursor to HTTP - RFC 1436
+    {
+    "gtalk", "l7"},
     {
     "guildwars", "l7"},		// Guild Wars - online game - http://guildwars.com
     {
@@ -128,7 +133,7 @@ l7filters filters_list[] =
     "hddtemp", "l7"},		// hddtemp - Hard drive temperature
 				// reporting
     {
-    "hotline", "p2p"},		// Hotline - An old P2P filesharing protocol
+    "hotline", "l7"},		// Hotline - An old P2P filesharing protocol
     {
     "html", "l7"},		// (X)HTML - (Extensible) Hypertext Markup
 				// Language - http://w3.org
@@ -164,7 +169,7 @@ l7filters filters_list[] =
     "imap", "l7"},		// IMAP - Internet Message Access Protocol (A 
 				// common e-mail protocol)
     {
-    "imesh", "p2p"},		// iMesh - the native protocol of iMesh, a
+    "imesh", "l7"},		// iMesh - the native protocol of iMesh, a
 				// P2P application - http://imesh.com
     {
     "ipp", "l7"},		// IP printing - a new standard for UNIX
@@ -178,7 +183,7 @@ l7filters filters_list[] =
     "jpeg", "l7"},		// JPEG - Joint Picture Expert Group image
 				// format.
     {
-    "kugoo", "p2p"},		// KuGoo - a Chinese P2P program -
+    "kugoo", "l7"},		// KuGoo - a Chinese P2P program -
 				// http://www.kugoo.com
     {
     "live365", "l7"},		// live365 - An Internet radio site -
@@ -204,7 +209,7 @@ l7filters filters_list[] =
     "mute", "p2p"},		// MUTE - P2P filesharing -
 				// http://mute-net.sourceforge.net
     {
-    "napster", "p2p"},		// Napster - P2P filesharing
+    "napster", "l7"},		// Napster - P2P filesharing
     {
     "nbns", "l7"},		// NBNS - NetBIOS name service
     {
@@ -225,7 +230,7 @@ l7filters filters_list[] =
     "ogg", "l7"},		// Ogg - Ogg Vorbis music format (not any ogg 
 				// file, just vorbis)
     {
-    "openft", "p2p"},		// OpenFT - P2P filesharing (implemented in
+    "openft", "l7"},		// OpenFT - P2P filesharing (implemented in
 				// giFT library)
     {
     "pcanywhere", "l7"},	// pcAnywhere - Symantec remote access
@@ -237,7 +242,7 @@ l7filters filters_list[] =
     "perl", "l7"},		// Perl - A scripting language by Larry
 				// Wall.
     {
-    "poco", "p2p"},		// POCO and PP365 - Chinese P2P filesharing - 
+    "poco", "l7"},		// POCO and PP365 - Chinese P2P filesharing - 
 				// http://pp365.com http://poco.cn
     {
     "png", "l7"},		// PNG - Portable Network Graphics, a popular 
@@ -287,6 +292,8 @@ l7filters filters_list[] =
     "rtsp", "l7"},		// RTSP - Real Time Streaming Protocol -
 				// http://www.rtsp.org - RFC 2326
     {
+    "runesofmagic", "l7"},    
+    {
     "shoutcast", "l7"},		// Shoutcast and Icecast - streaming audio
     {
     "sip", "l7"},		// SIP - Session Initiation Protocol -
@@ -316,7 +323,7 @@ l7filters filters_list[] =
     "socks", "l7"},		// SOCKS Version 5 - Firewall traversal
 				// protocol - RFC 1928
     {
-    "soribada", "p2p"},		// Soribada - A Korean P2P filesharing
+    "soribada", "l7"},		// Soribada - A Korean P2P filesharing
 				// program/protocol -
 				// http://www.soribada.com
     {
@@ -350,14 +357,16 @@ l7filters filters_list[] =
     {
     "telnet", "l7"},		// Telnet - Insecure remote login - RFC 854
     {
-    "tesla", "p2p"},		// Tesla Advanced Communication - P2P
+    "tesla", "l7"},		// Tesla Advanced Communication - P2P
 				// filesharing (?)
     {
     "tftp", "l7"},		// TFTP - Trivial File Transfer Protocol -
 				// used for bootstrapping - RFC 1350
     {
-    "thecircle", "p2p"},	// The Circle - P2P application -
+    "thecircle", "l7"},	// The Circle - P2P application -
 				// http://thecircle.org.au
+    {"tonghuashun","l7"},
+    
     {
     "tor", "l7"},		// Tor - The Onion Router - used for
 				// anonymization - http://tor.eff.org
@@ -379,6 +388,9 @@ l7filters filters_list[] =
     "whois", "l7"},		// Whois - query/response system, usually
 				// used for domain name info - RFC 3912
     {
+    "winmx", "p2p"},		// Whois - query/response system, usually
+
+    {
     "worldofwarcraft", "l7"},	// World of Warcraft - popular network game - 
 				// http://blizzard.com/
     {
@@ -387,7 +399,9 @@ l7filters filters_list[] =
     {
     "xboxlive", "l7"},		// XBox Live - Console gaming
     {
-    "xunlei", "p2p"},		// Xunlei - Chinese P2P filesharing -
+    "xdcc", "p2p"},		// XBox Live - Console gaming
+    {
+    "xunlei", "l7"},		// Xunlei - Chinese P2P filesharing -
 				// http://xunlei.com
     {
     "yahoo", "l7"},		// Yahoo messenger - an instant messenger
@@ -400,5 +414,3 @@ l7filters filters_list[] =
     {
 0, 0} 
 };
-
-
