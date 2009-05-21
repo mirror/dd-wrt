@@ -683,6 +683,22 @@ radius_setparams(VALUE_PAIR *vp, char *msg, REQUEST_INFO *req_info,
 	    }
 #endif /* CHAPMS */
 	}
+#ifdef HAVE_AQOS
+	else if (vp->vendorcode == VENDOR_WISPR)
+	{
+	    switch (vp->attribute) {	    
+	    case PW_WISPR_BANDWIDTH_MAX_DOWN:
+		bandwidthdown=vp->lvalue;
+		fprintf(stderr,"set bandwidth down value to %d\n",bandwidthdown);
+	    break;
+	    case PW_WISPR_BANDWIDTH_MAX_UP:
+		bandwidthup=vp->lvalue;
+		fprintf(stderr,"set bandwidth up value to %d\n",bandwidthup);
+	    break;
+	    }
+	
+	}
+#endif
 	vp = vp->next;
     }
 

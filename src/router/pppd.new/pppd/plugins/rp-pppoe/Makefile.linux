@@ -28,6 +28,13 @@ VERSION=3.3
 CFLAGS=$(COPTS) -I../../../include/linux
 #CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
 
+include $(TOP)/.config
+
+ifeq ($(CONFIG_AQOS),y)
+CFLAGS += -DHAVE_AQOS 
+LDFLAGS = -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram 
+endif
+
 all: rp-pppoe.so pppoe-discovery
 
 pppoe-discovery: libplugin.a pppoe-discovery.o
@@ -37,7 +44,7 @@ pppoe-discovery.o: pppoe-discovery.c
 	$(CC) $(CFLAGS) '-DVERSION="$(VERSION)"' -c -o pppoe-discovery.o pppoe-discovery.c
 
 rp-pppoe.so: libplugin.a plugin.o
-	$(CC) -o rp-pppoe.so -shared plugin.o libplugin.a
+	$(CC) $(LDFLAGS) -o rp-pppoe.so -shared plugin.o libplugin.a
 
 install: all
 	$(INSTALL) -d -m 755 $(LIBDIR)

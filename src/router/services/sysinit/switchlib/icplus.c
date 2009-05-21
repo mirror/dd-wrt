@@ -504,7 +504,7 @@ void vlan_init( int portmask )
     phy9Reg = phy9Reg & ~VID_INDX_SEL_M;
     phy9Reg = phy9Reg | 1; //1 vlan group used for lan
     phy9Reg = phy9Reg | 1<<3; //enable smart mac
-    phy9Reg = phy9Reg | 1<<12; //port 0 is a wan port (required for smart mac)
+    phy9Reg = phy9Reg | 1<<12; //port 4 is a wan port (required for smart mac)
     
     fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG,phy23Reg);
     fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG,phy1Reg);

@@ -328,6 +328,10 @@ extern int	child_wait;	/* # seconds to wait for children at end */
 extern bool	ms_ignore_domain; /* Ignore any MS domain prefix */
 #endif
 
+#ifdef HAVE_AQOS
+extern int bandwidthup;
+extern int bandwidthdown;
+#endif
 #ifdef MAXOCTETS
 extern unsigned int maxoctets;	     /* Maximum octetes per session (in bytes) */
 extern int       maxoctets_dir;      /* Direction :
