@@ -371,8 +371,7 @@ static void exit_notify(void)
 	
 	if(current->exit_signal != SIGCHLD &&
 	    ( current->parent_exec_id != t->self_exec_id  ||
-	      current->self_exec_id != current->parent_exec_id) 
-	    && !capable(CAP_KILL))
+	      current->self_exec_id != current->parent_exec_id))
 		current->exit_signal = SIGCHLD;
 
 

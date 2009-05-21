@@ -905,6 +905,10 @@ static int x25_sendmsg(struct socket *sock, struct msghdr *msg, int len, struct 
 		sx25.sx25_addr   = sk->protinfo.x25->dest_addr;
 	}
 
+	/* Sanity check the packet size */
+	if (len > 65535)
+		return -EMSGSIZE;
+
 	SOCK_DEBUG(sk, "x25_sendmsg: sendto: Addresses built.\n");
 
 	/* Build a packet */
