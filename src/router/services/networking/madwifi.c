@@ -1406,21 +1406,21 @@ static void configure_single( int count )
 	}
 	sysprintf( "iwpriv %s bgscan 0", var );
 #ifdef HAVE_MAKSAT
-	sysprintf( "iwconfig %s essid \"%s\"", var,
+	sysprintf( "iwconfig %s essid -- \"%s\"", var,
 		   nvram_default_get( ssid, "maksat_vap" ) );
 #elif defined(HAVE_TRIMAX)
-	sysprintf( "iwconfig %s essid \"%s\"", var,
+	sysprintf( "iwconfig %s essid -- \"%s\"", var,
 		   nvram_default_get( ssid, "trimax_vap" ) );
 #elif defined(HAVE_TMK)
-	sysprintf( "iwconfig %s essid \"%s\"", var,
+	sysprintf( "iwconfig %s essid -- \"%s\"", var,
 		   nvram_default_get( ssid, "KMT_vap" ) );
 #else
 #ifdef HAVE_REGISTER
 	if( !isregistered(  ) )
-	    sysprintf( "iwconfig %s essid need_activation", var );
+	    sysprintf( "iwconfig %s essid -- need_activation", var );
 	else
 #endif
-	    sysprintf( "iwconfig %s essid \"%s\"", var,
+	    sysprintf( "iwconfig %s essid -- \"%s\"", var,
 		       nvram_default_get( ssid, "dd-wrt_vap" ) );
 #endif
 	cprintf( "set broadcast flag vif %s\n", var );	// hide ssid
@@ -1475,21 +1475,21 @@ static void configure_single( int count )
 
     cprintf( "set ssid\n" );
 #ifdef HAVE_MAKSAT
-    sysprintf( "iwconfig %s essid \"%s\"", dev,
+    sysprintf( "iwconfig %s essid -- \"%s\"", dev,
 	       nvram_default_get( ssid, "maksat" ) );
 #elif defined(HAVE_TRIMAX)
-    sysprintf( "iwconfig %s essid \"%s\"", dev,
+    sysprintf( "iwconfig %s essid -- \"%s\"", dev,
 	       nvram_default_get( ssid, "trimax" ) );
 #elif defined(HAVE_TMK)
-    sysprintf( "iwconfig %s essid \"%s\"", dev,
+    sysprintf( "iwconfig %s essid -- \"%s\"", dev,
 	       nvram_default_get( ssid, "KMT" ) );
 #else
 #ifdef HAVE_REGISTER
     if( !isregistered(  ) )
-	sysprintf( "iwconfig %s essid need_activation", dev );
+	sysprintf( "iwconfig %s essid -- need_activation", dev );
     else
 #endif
-	sysprintf( "iwconfig %s essid \"%s\"", dev,
+	sysprintf( "iwconfig %s essid -- \"%s\"", dev,
 		   nvram_default_get( ssid, "dd-wrt" ) );
 #endif
     cprintf( "set broadcast flag\n" );	// hide ssid
@@ -1513,16 +1513,16 @@ static void configure_single( int count )
     {
 	cprintf( "set ssid\n" );
 #ifdef HAVE_MAKSAT
-	sysprintf( "iwconfig %s essid \"%s\"", dev,
+	sysprintf( "iwconfig %s essid -- \"%s\"", dev,
 		   nvram_default_get( ssid, "maksat" ) );
 #elif defined(HAVE_TRIMAX)
-	sysprintf( "iwconfig %s essid \"%s\"", dev,
+	sysprintf( "iwconfig %s essid -- \"%s\"", dev,
 		   nvram_default_get( ssid, "trimax" ) );
 #elif defined(HAVE_TMK)
-	sysprintf( "iwconfig %s essid \"%s\"", dev,
+	sysprintf( "iwconfig %s essid -- \"%s\"", dev,
 		   nvram_default_get( ssid, "KMT" ) );
 #else
-	sysprintf( "iwconfig %s essid \"%s\"", dev,
+	sysprintf( "iwconfig %s essid -- \"%s\"", dev,
 		   nvram_default_get( ssid, "dd-wrt" ) );
 #endif
     }
