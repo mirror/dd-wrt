@@ -288,10 +288,15 @@ typedef struct pw_auth_hdr
 #define PW_OCTETS_DIRECTION_OUT	2
 #define PW_OCTETS_DIRECTION_MAX	3
 
+#define PW_WISPR_BANDWIDTH_MIN_UP 5     
+#define PW_WISPR_BANDWIDTH_MIN_DOWN 6     
+#define PW_WISPR_BANDWIDTH_MAX_UP 7     
+#define PW_WISPR_BANDWIDTH_MAX_DOWN 8     
 
 /* Vendor codes */
 #define VENDOR_NONE     (-1)
 #define VENDOR_MICROSOFT	311
+#define VENDOR_WISPR 		14122
 
 /* Server data structures */
 

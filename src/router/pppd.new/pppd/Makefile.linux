@@ -60,6 +60,10 @@ HAVE_MULTILINK=y
 endif
 endif
 
+ifeq ($(CONFIG_AQOS),y)
+CFLAGS += -DHAVE_AQOS 
+endif
+
 # Uncomment the next line to enable the TDB database (enabled by default.)
 # If you enable multilink, then TDB is automatically enabled also.
 # Linux distributions: Please leave TDB ENABLED in your builds.
