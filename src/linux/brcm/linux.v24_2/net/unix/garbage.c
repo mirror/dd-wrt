@@ -77,6 +77,7 @@
 #include <linux/file.h>
 #include <linux/proc_fs.h>
 #include <linux/tcp.h>
+#include <linux/wait.h>
 
 #include <net/sock.h>
 #include <net/af_unix.h>
@@ -88,6 +89,8 @@
 #define GC_ORPHAN	((unix_socket *)(-3))
 
 static unix_socket *gc_current=GC_HEAD;	/* stack of objects to mark */
+
+static DECLARE_WAIT_QUEUE_HEAD(unix_gc_wait);
 
 atomic_t unix_tot_inflight = ATOMIC_INIT(0);
 
@@ -163,6 +166,13 @@ extern inline void maybe_unmark_and_push(unix_socket *x)
 }
 
 
+static int gc_in_progress;
+
+void wait_for_unix_gc(void)
+{
+	wait_event(unix_gc_wait, gc_in_progress == 0);
+}
+
 /* The external entry point: unix_gc() */
 
 void unix_gc(void)
@@ -179,6 +189,11 @@ void unix_gc(void)
 
 	if (down_trylock(&unix_gc_sem))
 		return;
+
+	if (gc_in_progress)
+		goto out;
+
+	gc_in_progress = 1;
 
 	read_lock(&unix_table_lock);
 
@@ -306,5 +321,8 @@ void unix_gc(void)
 	 */
 
 	__skb_queue_purge(&hitlist);
+	gc_in_progress = 0;
+	wake_up(&unix_gc_wait);
+ out:
 	up(&unix_gc_sem);
 }

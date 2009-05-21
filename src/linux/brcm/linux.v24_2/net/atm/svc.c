@@ -318,6 +318,10 @@ static int svc_listen(struct socket *sock,int backlog)
 		error = -EINVAL;
 		goto out;
 	}
+	if (test_bit(ATM_VF_LISTEN, &vcc->flags)) {
+		error = -EADDRINUSE;
+		goto out;
+	}
 	vcc->reply = WAITING;
 	add_wait_queue(&vcc->sleep,&wait);
 	sigd_enq(vcc,as_listen,NULL,NULL,&vcc->local);

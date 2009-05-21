@@ -767,11 +767,6 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 		goto bad_fork_cleanup_namespace;
 	p->semundo = NULL;
 	
-	/* Our parent execution domain becomes current domain
-	   These must match for thread signalling to apply */
-	   
-	p->parent_exec_id = p->self_exec_id;
-
 	/* ok, now we should be set up.. */
 	p->swappable = 1;
 	p->exit_signal = clone_flags & CSIGNAL;
@@ -806,6 +801,7 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 	p->p_pptr = current->p_pptr;
 	if (!(clone_flags & CLONE_PARENT)) {
 		p->p_opptr = current;
+		p->parent_exec_id = p->self_exec_id;
 		if (!(p->ptrace & PT_PTRACED))
 			p->p_pptr = current;
 	}
