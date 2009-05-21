@@ -1757,7 +1757,7 @@ void start_nvram( void )
 		( qos_mac, "%31s %31s %31s %31s |", data, level, level2,
 		  type ) < 4 )
 		break;
-	    if( strcmp( type, "hostapd" ) )
+	    if( strcmp( type, "hostapd" ) && strcmp( type, "pppd" ))
 	    {
 		if( strlen( newqos ) > 0 )
 		    sprintf( newqos, "%s %s %s %s %s |", newqos, data, level,

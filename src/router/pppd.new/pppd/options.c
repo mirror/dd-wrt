@@ -133,6 +133,11 @@ int maxoctets_timeout = 1;   /* default 1 second */
 #endif
 
 
+#ifdef HAVE_AQOS
+int bandwidthup=0;
+int bandwidthdown=0;
+#endif
+
 extern option_t auth_options[];
 extern struct stat devstat;
 
