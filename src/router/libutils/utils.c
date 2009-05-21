@@ -47,6 +47,27 @@ struct mii_ioctl_data
     unsigned short val_out;
 };
 
+#ifdef HAVE_FONERA
+static void inline getBoardMAC( char *mac )
+{
+    // 102
+    int i;
+    char op[32];
+    unsigned char data[256];
+    FILE *in;
+
+    sprintf( op, "/dev/mtdblock/%d", getMTD( "board_config" ) );
+    in = fopen( op, "rb" );
+    if( in == NULL )
+	return;
+    fread( data, 256, 1, in );
+    fclose( in );
+    sprintf( mac, "%02X:%02X:%02X:%02X:%02X:%02X", data[102] & 0xff,
+	     data[103] & 0xff, data[104] & 0xff, data[105] & 0xff,
+	     data[106] & 0xff, data[107] & 0xff );
+}
+#endif
+
 int count_processes( char *pidName )
 {
     FILE *fp;
@@ -661,6 +682,13 @@ int internal_getRouterBrand(  )
     return ROUTER_BOARD_MAGICBOX;
 #elif HAVE_GWMF54G2
     setRouter( "Planex GW-MF54G2" );
+    char mac[32];
+    getBoardMAC(mac);
+    if (!strncmp(mac,"00:19:3B",8))
+	{
+	fprintf(stderr,"unsupported board\n");
+	sys_reboot(  );
+	}
     return ROUTER_BOARD_FONERA;
 #elif HAVE_WRT54GV7
     setRouter( "Linksys WRT54G v7" );
@@ -708,6 +736,13 @@ int internal_getRouterBrand(  )
 #elif HAVE_FONERA
     struct mii_ioctl_data *data;
     struct ifreq iwr;
+    char mac[32];
+    getBoardMAC(mac);
+    if (!strncmp(mac,"00:19:3B",8))
+	{
+	fprintf(stderr,"unsupported board\n");
+	sys_reboot(  );
+	}
     int s = socket( AF_INET, SOCK_DGRAM, 0 );
 
     if( s < 0 )
