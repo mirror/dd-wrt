@@ -684,7 +684,7 @@ int internal_getRouterBrand(  )
     setRouter( "Planex GW-MF54G2" );
     char mac[32];
     getBoardMAC(mac);
-    if (!strncmp(mac,"00:19:3B",8))
+    if (!strncmp(mac,"00:19:3B",8) || !strncmp(mac,"00:02:6F",8) || !strncmp(mac,"00:15:6D",8))
 	{
 	fprintf(stderr,"unsupported board\n");
 	sys_reboot(  );
@@ -738,7 +738,7 @@ int internal_getRouterBrand(  )
     struct ifreq iwr;
     char mac[32];
     getBoardMAC(mac);
-    if (!strncmp(mac,"00:19:3B",8))
+    if (!strncmp(mac,"00:19:3B",8) || !strncmp(mac,"00:02:6F",8) || !strncmp(mac,"00:15:6D",8))
 	{
 	fprintf(stderr,"unsupported board\n");
 	sys_reboot(  );
