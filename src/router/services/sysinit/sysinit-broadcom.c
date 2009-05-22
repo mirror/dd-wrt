@@ -139,7 +139,10 @@ static void loadWlModule( void )	// set wled params, get boardflags,
     if( check_hw_type(  ) == BCM4702_CHIP )
 	nvram_unset( "wl0_abenable" );
     else
+    {
 	nvram_set( "wl0_abenable", "1" );
+	nvram_set( "wl1_abenable", "1" );
+	}
 
     switch ( brand )
     {
