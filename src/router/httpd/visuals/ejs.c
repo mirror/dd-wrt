@@ -702,7 +702,7 @@ void ej_ifndef( webs_t wp, int argc, char_t ** argv )
 	return;
 #endif
     // HAVE_AFTERBURNER
-    if( !strcmp( name, "AFTERBURNER" ) )
+    if( !strncmp( name, "AFTERBURNER", 11 ) )
     {
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 	return;
@@ -710,10 +710,15 @@ void ej_ifndef( webs_t wp, int argc, char_t ** argv )
 	int afterburner = 0;
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_SMLEN];
-	char *name = nvram_safe_get( "wl0_ifname" );
+	char *ifname;
+	name = name + 11;
+	if( !strncmp( name, "_wl0", 4 ) )
+		ifname = nvram_safe_get( "wl0_ifname" );
+	else  // "_wl1"
+		ifname = nvram_safe_get( "wl1_ifname" );
 	char *next;
 
-	if( wl_iovar_get( name, "cap", ( void * )caps, WLC_IOCTL_SMLEN ) ==
+	if( wl_iovar_get( ifname, "cap", ( void * )caps, WLC_IOCTL_SMLEN ) ==
 	    0 )
 	{
 	    foreach( cap, caps, next )
