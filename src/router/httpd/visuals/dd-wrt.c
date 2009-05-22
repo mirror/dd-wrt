@@ -1527,11 +1527,11 @@ void ej_show_dhcpd_settings( webs_t wp, int argc, char_t ** argv )
 {
     int i;
 
-    if( nvram_match( "wl0_mode", "wet" ) )	// dhcpd settings disabled in 
+    if( nvram_match( "wl0_mode", "wet" ) || nvram_match( "wl0_mode", "apstawet" ))	// dhcpd settings disabled in 
 	// client bridge mode, so we
 	// wont display it
 	return;
-    if( nvram_match( "wl0_mode", "apstawet" ) )	// dhcpd settings disabled in 
+    if( nvram_match( "wl1_mode", "wet" ) || nvram_match( "wl1_mode", "apstawet" ) )	// dhcpd settings disabled in 
 	// client bridge mode, so we
 	// wont display it
 	return;
@@ -7869,11 +7869,18 @@ void ej_show_rflowif( webs_t wp, int argc, char_t ** argv )
 		   "", var );
     }
 
-    websWrite( wp, "<option value=\"%s\" %s >WLAN</option>\n",
-	       nvram_safe_get( "wl0_ifname" ), nvram_match( "rflow_if",
+    int cnt = get_wl_instances(  );
+    int c;
+
+    for( c = 0; c < cnt; c++ )
+    {
+    sprintf( var, "wl%d_ifname", c );
+    websWrite( wp, "<option value=\"%s\" %s >WLAN%d</option>\n",
+	       nvram_safe_get( var ), nvram_match( "rflow_if",
 							    nvram_safe_get
-							    ( "wl0_ifname" ) )
-	       ? "selected=\"selected\"" : "" );
+							    ( var ) )
+	       ? "selected=\"selected\"" : "", c);
+	}
 
     char *wanif = nvram_safe_get( "wan_ifname" );
 
