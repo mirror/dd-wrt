@@ -208,6 +208,8 @@ void ej_nvram_status_get( webs_t wp, int argc, char_t ** argv )
     {
     if( nvram_match( "wl0_mode", "wet" )
 	|| nvram_match( "wl0_mode", "apstawet" )
+	|| nvram_match( "wl1_mode", "wet" )
+	|| nvram_match( "wl1_mode", "apstawet" )
 	|| !strcmp( wan_proto, "disabled" ) )
     {
 	websWrite( wp, "%s", live_translate( "share.disabled" ) );
