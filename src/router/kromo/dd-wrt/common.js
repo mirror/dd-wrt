@@ -1016,10 +1016,10 @@ function getTimeOut(clk, rest_default, flags) {
 
 	var wait_time = 60;								// 60 seconds without rest to factory default ==> need to be tested
 	var scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
-	var coef = 1.5;
+	var coef = 2.0;
 
     if (clk == 125 || clk == 240) {	                            // old 125 MHz cpus need some more.... 
-		coef = 2.0;												// also 5354 @ 240 MHz needs more
+		coef = 2.5;												// also 5354 @ 240 MHz needs more
 	}
 	
 	if (rest_default == 1) {	// if restore default is ask (in upgrade process or restore default process) then timeout is doubled

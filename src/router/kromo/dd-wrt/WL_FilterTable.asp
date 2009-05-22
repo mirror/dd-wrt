@@ -22,7 +22,7 @@ function to_apply(F) {
 			<input type="hidden" name="change_action" />
 			<input type="hidden" name="submit_type" />
 			<input type="hidden" name="ifname" value="%s" />
-			<input type="hidden" name="wl_mac_list" />
+			<input type="hidden" name="%s_mac_list" />
 			<div id="main">
 				<div id="contentsInfo">
 					<h2><%% tran("wl_filter.h2"); %%></h2>
@@ -31,7 +31,7 @@ function to_apply(F) {
 							<td align="left"><%% tran("wl_filter.h3"); %%></td>
 							<td align="right"><script type="text/javascript">
 							//<![CDATA[
-							document.write("<input class=\"button\" type=\"button\" name=\"table_button\" value=\"" + sbutton.wl_client_mac + "\" onclick=\"openWindow('WL_ActiveTable.asp', 650, 450);\" />");
+							document.write("<input class=\"button\" type=\"button\" name=\"table_button\" value=\"" + sbutton.wl_client_mac + "\" onclick=\"openWindow('WL_ActiveTable-%s.asp', 650, 450);\" />");
 							//]]>
 							</script></td>
 						</tr>
