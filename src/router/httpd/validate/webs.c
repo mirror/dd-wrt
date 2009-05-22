@@ -949,7 +949,7 @@ void add_active_mac( webs_t wp )
 			 cur == buf ? "" : " ",
 			 wl_client_macs[atoi( index )].hwaddr );
     }
-    if( !strcmp( iface "wl0" ) )
+    if( !strcmp( iface, "wl0" ) )
     {
     	nvram_set( "wl_active_mac", buf );
     	nvram_set( "wl0_active_mac", buf );
