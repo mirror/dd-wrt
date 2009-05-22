@@ -190,6 +190,8 @@
  "wl_macmode1"  "MAC Restrict Mode"  "MACMODE"  "FALSE" "0"
  "wl_radio"  "Radio Enable"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"   //from 11.9
  "wl_mac_list"  "Filter MAC Address" "WLHWADDRS"  "FALSE" "0"
+ "wl0_mac_list"  "Filter MAC Address" "WLHWADDRS"  "FALSE" "0"
+ "wl1_mac_list"  "Filter MAC Address" "WLHWADDRS"  "FALSE" "0"
  "wl_channel"  "802.11g Channel"  "RANGE"  "0" "14"  "FALSE" "3" 
  "wl_nmcsidx" "MCS Index" "CHOICE" "19" "-2" "-1" "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15" "32" "FALSE" "0"
  "wl_rate"  "802.11g Rate"  "CHOICE" "13"  "0"  "1000000"  "2000000"  "5500000"  "6000000"  "9000000"  "11000000"  "12000000"  "18000000"  "24000000"  "36000000"  "48000000"  "54000000"  "FALSE" "0"
