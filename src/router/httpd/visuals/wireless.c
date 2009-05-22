@@ -41,7 +41,7 @@
 #include <wlutils.h>
 
 #define ASSOCLIST_TMP	"/tmp/.wl_assoclist"
-#define ASSOCLIST_CMD	"wl assoclist"
+#define ASSOCLIST_CMD	"assoclist"
 
 #define LEASES_NAME_IP	"/tmp/.leases_name_ip"
 
@@ -397,8 +397,11 @@ void ej_wireless_active_table( webs_t wp, int argc, char_t ** argv )
     char list[2][20];
     char line[80];
     int dhcp_table_count;
+    char *type, *ifname;
+    
+    ejArgs( argc, argv, "%s %s", &type, &ifname );
 
-    if( !strcmp( argv[0], "online" ) )
+    if( !strcmp( type, "online" ) )
     {
 	for( i = 0; i < MAX_LEASES; i++ )
 	{			// init value
@@ -410,10 +413,21 @@ void ej_wireless_active_table( webs_t wp, int argc, char_t ** argv )
 	}
 
 	nv_count = 0;		// init mac list
+	
+	char *iface;
+	if( !strcmp( ifname, "wl0" ) )
+		iface = get_wl_instance_name( 0 );
+	else if ( !strcmp( ifname, "wl1" ) )
+		iface = get_wl_instance_name( 1 );
+	else
+		iface = nvram_safe_get( "wl0_ifname" );
+			
 #ifdef HAVE_MADWIFI
 	char *maclist = nvram_safe_get( "ath0_maclist" );
 #else
-	char *maclist = nvram_safe_get( "wl0_maclist" );
+	char var[32];
+	sprintf( var, "%s_maclist", ifname );
+	char *maclist = nvram_safe_get( var );
 #endif
 	foreach( word, maclist, next )
 	{
@@ -423,7 +437,7 @@ void ej_wireless_active_table( webs_t wp, int argc, char_t ** argv )
 	    wl_client_macs[nv_count].check = 1;	// checked
 	    nv_count++;
 	}
-	sysprintf( "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP );
+	sysprintf( "wl -i %s %s > %s", iface, ASSOCLIST_CMD, ASSOCLIST_TMP );
 
 	if( ( fp = fopen( ASSOCLIST_TMP, "r" ) ) )
 	{
@@ -461,7 +475,7 @@ void ej_wireless_active_table( webs_t wp, int argc, char_t ** argv )
 	    }
 	    fclose( fp );
 	}
-	if( !strcmp( argv[0], "online" ) )
+	if( !strcmp( type, "online" ) )
 	{
 	    dhcp_table_count = dhcp_lease_table_init(  );	// init dhcp
 								// lease
@@ -472,12 +486,12 @@ void ej_wireless_active_table( webs_t wp, int argc, char_t ** argv )
 	save_hostname_ip(  );
     }
 
-    if( !strcmp( argv[0], "offline" ) )
+    if( !strcmp( type, "offline" ) )
     {
 	get_hostname_ip( "offline", OLD_NAME_IP );
     }
 
-    if( !strcmp( argv[0], "online" ) )
+    if( !strcmp( type, "online" ) )
     {
 	for( i = 0; i < nv_count; i++ )
 	{
@@ -492,7 +506,7 @@ void ej_wireless_active_table( webs_t wp, int argc, char_t ** argv )
  </tr>\n", wl_client_macs[i].hostname, wl_client_macs[i].ipaddr, wl_client_macs[i].hwaddr, flag++, i, wl_client_macs[i].check ? "checked=\"checked\"" : "" );
 	}
     }
-    else if( !strcmp( argv[0], "offline" ) )
+    else if( !strcmp( type, "offline" ) )
     {
 	for( i = 0; i < nv_count; i++ )
 	{
@@ -720,7 +734,7 @@ void ej_get_wl_active_mac( webs_t wp, int argc, char_t ** argv )
     FILE *fp;
     int count = 0;
 
-    sysprintf( "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP );
+    sysprintf( "wl %s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP );
 
     if( ( fp = fopen( ASSOCLIST_TMP, "r" ) ) )
     {

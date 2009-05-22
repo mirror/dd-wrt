@@ -84,7 +84,8 @@ void initWeb( struct Webenvironment *env )
 
 struct onload onloads[] = {
     // { "Filters", filter_onload },
-    {"WL_ActiveTable", wl_active_onload},
+    {"WL_ActiveTable-wl0", wl_active_onload},
+    {"WL_ActiveTable-wl1", wl_active_onload},
     {"MACClone", macclone_onload},
     {"FilterSummary", filtersummary_onload},
     {"Ping", ping_onload},
@@ -2017,6 +2018,8 @@ void ej_show_wanipinfo( webs_t wp, int argc, char_t ** argv )	// Eko
 
     if( nvram_match( "wl0_mode", "wet" )
 	|| nvram_match( "wl0_mode", "apstawet" )
+	|| nvram_match( "wl1_mode", "wet" )
+	|| nvram_match( "wl1_mode", "apstawet" )
 	|| nvram_match( "wan_proto", "disabled" ) )
     {
 	websWrite( wp, ": %s", live_translate( "share.disabled" ) );

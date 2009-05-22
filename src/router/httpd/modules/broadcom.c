@@ -650,9 +650,58 @@ void do_filtertable( struct mime_handler *handler, char *path, webs_t stream,
 
     fread( webfile, len, 1, web );
     webfile[len] = 0;
-    sprintf( temp, webfile, ifname, ifname, ifname, ifname );
+    sprintf( temp, webfile, ifname, ifname, ifname, ifname, ifname, ifname );
     free( webfile );
     fclose( web );
+    do_ej_buffer( temp, stream );
+}
+
+void do_activetable( struct mime_handler *handler, char *path, webs_t stream,
+	     char *query )
+{
+    char *temp2 = &path[indexof( path, '-' ) + 1];
+    char ifname[16];
+
+    strcpy( ifname, temp2 );
+    ifname[indexof( ifname, '.' )] = 0;
+    FILE *web = getWebsFile( "WL_ActiveTable.asp" );
+    unsigned int len = getWebsFileLen( "WL_ActiveTable.asp" );
+    char *webfile = ( char * )malloc( len + 1 );
+
+    fread( webfile, len, 1, web );
+    webfile[len] = 0;
+    fclose( web );
+
+    char temp[32768];
+
+    memset( temp, 0, 32768 );
+    int ai = 0;
+    int i = 0;
+    int weblen = strlen( webfile );
+
+    for( i = 0; i < weblen; i++ )
+    {
+	if( webfile[i] == '%' )
+	{
+	    i++;
+	    switch ( webfile[i] )
+	    {
+		case '%':
+		    temp[ai++] = '%';
+		    break;
+		case 's':
+		    strcpy( &temp[ai], ifname );
+		    ai += strlen( ifname );
+		    break;
+		default:
+		    temp[ai++] = webfile[i];
+		    break;
+	    }
+	}
+	else
+	    temp[ai++] = webfile[i];
+    }
+    free( webfile );
     do_ej_buffer( temp, stream );
 }
 
@@ -883,7 +932,8 @@ static struct gozila_action gozila_actions[] = {
     {"WL_WPATable", "security", "", 1, REFRESH, "set_security"},
     {"WL_WPATable", "save", "wireless_2", 1, REFRESH, "security_save"},
     {"WL_WPATable", "keysize", "wireless_2", 1, REFRESH, "security_save"},
-    {"WL_ActiveTable", "add_mac", "", 1, REFRESH, "add_active_mac"},
+    {"WL_ActiveTable-wl0", "add_mac", "", 1, REFRESH, "add_active_mac"},
+    {"WL_ActiveTable-wl1", "add_mac", "", 1, REFRESH, "add_active_mac"},
     /*
      * Siafu addition 
      */
@@ -1087,6 +1137,8 @@ gozila_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     if( !strncmp( path, "WL_FilterTable", 14 ) )
 	do_filtertable( NULL, path, wp, NULL );	// refresh
     // #ifdef HAVE_MADWIFI
+    else if( !strncmp( path, "WL_ActiveTable", 14 ) )
+	do_activetable( NULL, path, wp, NULL );	// refresh
     else if( !strncmp( path, "Wireless_WDS", 12 ) )
 	do_wds( NULL, path, wp, NULL );	// refresh
     // #endif
@@ -1395,6 +1447,8 @@ apply_cgi( webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	cprintf( "refresh to %s\n", path );
 	if( !strncmp( path, "WL_FilterTable", 14 ) )
 	    do_filtertable( NULL, path, wp, NULL );	// refresh
+	else if( !strncmp( path, "WL_ActiveTable", 14 ) )
+	    do_activetable( NULL, path, wp, NULL );	// refresh	
 	else if( !strncmp( path, "Wireless_WDS", 12 ) )
 	    do_wds( NULL, path, wp, NULL );	// refresh
 	else if( !strncmp( path, "Wireless_Advanced", 17 ) )
@@ -2134,6 +2188,7 @@ struct mime_handler mime_handlers[] = {
     // #endif
     // #ifdef HAVE_MADWIFI
     {"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1},
+    {"WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, 1},   
     {"Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, 1},
     // #endif
     {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1},
