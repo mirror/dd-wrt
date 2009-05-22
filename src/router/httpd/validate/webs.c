@@ -955,7 +955,7 @@ void add_active_mac( webs_t wp )
     	nvram_set( "wl0_active_mac", buf );
 	}
     else
-    	nvram_set( "wl1_active_mac", buf )
+    	nvram_set( "wl1_active_mac", buf );
 }
 
 void removeLineBreak( char *startup )
