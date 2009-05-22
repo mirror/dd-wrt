@@ -1418,13 +1418,11 @@ void validate_wl_hwaddrs( webs_t wp, char *value, struct variable *v )
 	char mlist[32];
 	sprintf( mlist, "%s_maclist", ifname );
 	nvram_set( mlist, buf );
+	char acmac[32];
+	sprintf( acmac, "%s_active_mac", ifname );
+	nvram_set( acmac, "" );	
 	if( !strcmp( ifname, "wl0" ) )
-	{
-	nvram_set( "wl_active_mac", "" );
-	nvram_set( "wl0_active_mac", "" );
-	}
-	else
-	nvram_set( "wl1_active_mac", "" );
+		nvram_set( "wl_active_mac", "" );
     }
     free(buf);
 }
