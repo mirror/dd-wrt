@@ -913,6 +913,8 @@ void add_active_mac( webs_t wp )
 {
     char buf[1000] = "", *cur = buf;
     int i, count = 0;
+    
+    char *iface = websGetVar( wp, "iface", NULL );
 
     nvram_set( "wl_active_add_mac", "1" );
 
@@ -947,8 +949,13 @@ void add_active_mac( webs_t wp )
 			 cur == buf ? "" : " ",
 			 wl_client_macs[atoi( index )].hwaddr );
     }
-    nvram_set( "wl_active_mac", buf );
-    nvram_set( "wl0_active_mac", buf );
+    if( !strcmp( iface "wl0" ) )
+    {
+    	nvram_set( "wl_active_mac", buf );
+    	nvram_set( "wl0_active_mac", buf );
+	}
+    else
+    	nvram_set( "wl1_active_mac", buf )
 }
 
 void removeLineBreak( char *startup )
