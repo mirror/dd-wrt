@@ -1,4 +1,4 @@
-<% do_pagehead("wl_active.titl"); %>
+<%% do_pagehead("wl_active.titl"); %%>
 		<script type="text/javascript">
 		//<![CDATA[
 
@@ -37,7 +37,7 @@ function valid_value(F)
 
 addEvent(window, "load", function() {
 	
-	<% onload("WL_ActiveTable", "setTimeout('opener.window.location.reload();',500);"); %>
+	<%% onload("WL_ActiveTable-%s", "setTimeout('opener.window.location.reload();',500);"); %%>
 	window.focus();
 
 });
@@ -48,40 +48,41 @@ addEvent(window, "load", function() {
 
 	<body>
 		<form action="apply.cgi" method="post">
-			<input type="hidden" name="submit_button" value="WL_ActiveTable" />
+			<input type="hidden" name="submit_button" value="WL_ActiveTable-%s" />
 			<input type="hidden" name="action" value="Apply" />
 			<input type="hidden" name="change_action" value="gozila_cgi" />
 			<input type="hidden" name="submit_type" />
+			<input type="hidden" name="ifname" value="%s" />
 			<input type="hidden" name="commit" value="1" />
 			
-			<h2><% tran("wl_active.h2"); %></h2>
+			<h2><%% tran("wl_active.h2"); %%></h2>
 			<table>
 				<tbody>
 					<tr>
-						<td><strong><% tran("wl_active.active"); %></strong></td>
+						<td><strong><%% tran("wl_active.active"); %%></strong></td>
 						<td colspan="3">&nbsp;</td>
 					</tr>
 					<tr>
-						<th><% tran("dhcp.tclient"); %></th>
-						<th><% tran("share.ip"); %></th>
-						<th><% tran("share.mac"); %></th>
-						<th><% tran("wl_active.h3"); %></th>
+						<th><%% tran("dhcp.tclient"); %%></th>
+						<th><%% tran("share.ip"); %%></th>
+						<th><%% tran("share.mac"); %%></th>
+						<th><%% tran("wl_active.h3"); %%></th>
 					</tr>
-					<% wireless_active_table("online"); %>
+					<%% wireless_active_table("online", "%s"); %%>
 					<tr>
 						<td colspan="4">&nbsp;</td>
 					</tr>
 					<tr>
-						<td><strong><% tran("wl_active.inactive"); %></strong></td>
+						<td><strong><%% tran("wl_active.inactive"); %%></strong></td>
 						<td colspan="3">&nbsp;</td>
 					</tr>
 					<tr>
-						<th><% tran("dhcp.tclient"); %></th>
-						<th><% tran("share.ip"); %></th>
-						<th><% tran("share.mac"); %></th>
-						<th><% tran("wl_active.h3"); %></th>
+						<th><%% tran("dhcp.tclient"); %%></th>
+						<th><%% tran("share.ip"); %%></th>
+						<th><%% tran("share.mac"); %%></th>
+						<th><%% tran("wl_active.h3"); %%></th>
 					</tr>
-					<% wireless_active_table("offline"); %>
+					<%% wireless_active_table("offline", "%s"); %%>
 					<tr>
 						<td colspan="4">&nbsp;</td>
 					</tr>
