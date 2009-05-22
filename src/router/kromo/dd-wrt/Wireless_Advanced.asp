@@ -455,7 +455,7 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script></span>
 								</div>
-								<%% ifndef("AFTERBURNER", "<!--"); %%>
+								<%% ifndef("AFTERBURNER_%s", "<!--"); %%>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label16"); %%></div>
 									<select name="%s_afterburner">
@@ -473,7 +473,7 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script></span>
 								</div>
-								<%% ifndef("AFTERBURNER", "-->"); %%>
+								<%% ifndef("AFTERBURNER_%s", "-->"); %%>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label22"); %%></div>
 									<select name="%s_btc_mode">
