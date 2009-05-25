@@ -1,0 +1,10 @@
+all: mklicense readlicense checkLicense
+
+mklicense: mklicense.c Makefile
+	gcc -g mklicense.c -o mklicense
+
+readlicense: readlicense.c  Makefile
+	gcc -g readlicense.c -o readlicense
+
+checkLicense: checkLicense.c  Makefile
+	gcc -g checkLicense.c -o checkLicense

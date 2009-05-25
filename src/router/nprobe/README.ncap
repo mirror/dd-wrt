@@ -1,0 +1,21 @@
+
+Compiling the probe with nCap
+-----------------------------
+
+nCap is a Linux technology that allow packet capture to be dramatically accelerated. Applications such as nProbe can very well take advantage of it in order to increase the number of processed packets. However it is worth to remark that the probe performance is influenced by both the number of incoming packets per second and the kind of traffic (i.e. the number of flows that are created based on the incoming traffic).
+
+In order nProbe to take advance of nCap three conditions need to be met:
+- the Linux kernel where nProbe runs need to be nCap-aware.
+- the NIC where nProbe is activated is supported by nCap (at the moment of writing only Intel GE cards are supported).
+- nProbe needs to be compiled against an nCap-aware libpcap.
+
+The first two points are outside the scope of this note, as they are related to nCap. For the third point you need to make sure that:
+- nProbe is compiled with the pcap headers coming from the nCap-enabled library (i.e. the standard pcap headers should not be used).
+- nProbe is linked against the nCap-aware libpcap your eceived with your copy of nCap.
+
+Finally make sure that you have installed your nCap license on your box. Shall you have doubt about nProbe using or not nCap, have a look at /var/log/messages to see logs from pcap/nCap.
+
+---
+Luca Deri <deri@ntop.org> - June 2005
+
+
