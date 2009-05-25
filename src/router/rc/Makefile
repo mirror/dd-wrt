@@ -479,6 +479,10 @@ ifeq ($(CONFIG_MAKSAT),y)
 CFLAGS += -DHAVE_MAKSAT
 endif
 
+ifeq ($(CONFIG_TMK),y)
+CFLAGS += -DHAVE_TMK
+endif
+
 ifeq ($(CONFIG_MILKFISH),y)
 CFLAGS += -DHAVE_MILKFISH
 endif
