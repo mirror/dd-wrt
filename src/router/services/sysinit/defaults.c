@@ -1105,7 +1105,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif  HAVE_DDLAN
     {"router_name", "WDSL-Modem XXX", 0},
 #elif  HAVE_TMK
-    {"router_name", "KMT-WRT", 0},
+    {"router_name", "KMT-WAS", 0},
 #else
     {"router_name", MODEL_NAME, 0},	/* Router name string */
 #endif

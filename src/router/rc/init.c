@@ -541,6 +541,11 @@ int main( int argc, char **argv )
 
 #ifndef HAVE_MAKSAT
 #ifndef HAVE_ERC
+#ifdef HAVE_TMK
+	fprintf( fp,
+		 "KMT-WAS %s (c) 2009 KMT GMBH\nRelease: "
+		 BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION );
+#else
 #ifdef DIST
     if( strlen( DIST ) > 0 )
 	fprintf( fp,
@@ -554,6 +559,7 @@ int main( int argc, char **argv )
     fprintf( fp,
 	     "DD-WRT v24-sp2 custom (c) 2009 NewMedia-NET GmbH\nRelease: "
 	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION );
+#endif
 #endif
 #endif
 #endif
