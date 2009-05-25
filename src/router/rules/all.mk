@@ -184,7 +184,7 @@ include rules/libutils.mk
 include rules/zlib.mk
 include rules/pound.mk
 include rules/radvd.mk
-
+include rules/nprobe.mk
 # Generic rules
 #
 
