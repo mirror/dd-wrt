@@ -1,0 +1,8 @@
+This directory contains support files needed to build the package named
+'nprobe-<version>-sparc-Solaris-2.<X>.pkg' for the Solaris 2.X Operating System.
+
+To build this package, you'll need a version of the software nProbe properly
+compiled and installed under its own installation directory (refer to the
+--prefix option of configure script distributed with nProbe sources).
+Then, you can run the 'make' command which will automatically start the build
+of the package.

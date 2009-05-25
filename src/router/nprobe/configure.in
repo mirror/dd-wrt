@@ -1,0 +1,472 @@
+dnl>
+dnl> Copyright (c) 2002-06 Luca Deri <deri@ntop.org>
+dnl>
+
+
+dnl>
+dnl> standard Autoconf prolog
+dnl>
+AC_INIT([nprobe],[4.1])
+AC_PREREQ(2.52)
+AC_REVISION([1.0])
+
+
+
+dnl> acconfig.h is deprecated 
+AH_TEMPLATE([ HAVE_UINT64_T ],)
+AH_TEMPLATE([ HAVE_U_INT64_T ],)
+AH_TEMPLATE([ HAVE_U_INT32_T ],)
+AH_TEMPLATE([ HAVE_U_INT16_T ],)
+AH_TEMPLATE([ HAVE_U_INT8_T ],)
+AH_TEMPLATE([ HAVE_INT64_T ],)
+AH_TEMPLATE([ HAVE_INT32_T ],)
+AH_TEMPLATE([ HAVE_INT16_T ],)
+AH_TEMPLATE([ HAVE_INT8_T ],)
+AH_TEMPLATE([ u_int],)
+AH_TEMPLATE([ HAVE_ZLIB ], [ Define if you have zlib ])
+AH_TEMPLATE([ DEBUG ], [ Define if you want a debugging version.])
+
+echo
+echo "Welcome to $PACKAGE_NAME, Version $PACKAGE_VERSION"
+echo "[Copyright (c) 2002-06 Luca Deri <deri@ntop.org>]"
+echo
+
+
+dnl>
+dnl> canonicalize the host, target, and build system types
+dnl>
+AC_CANONICAL_SYSTEM
+AC_PROG_LIBTOOL
+
+dnl>
+dnl> perform program name transformation
+dnl>
+AC_ARG_PROGRAM
+
+
+AC_ARG_WITH(zlib-lib,
+              [  --with-zlib-lib=DIR           or libz located in DIR],
+              ZLIB_LIB="$withval",
+              ZLIB_LIB=)
+
+AC_ARG_WITH(zlib-include,
+              [  --with-zlib-include=DIR       or zlib.h located in DIR],
+              ZLIB_INCLUDE="$withval",
+              ZLIB_INCLUDE=)
+
+AC_ARG_WITH(only-ipv4, 
+              [  --with-only-ipv4	        Disable IPv6 support (if available)], [
+	          if test $withval != no
+	          then
+		        CFLAGS="-DIPV4_ONLY $CFLAGS"
+	          fi
+              ],)
+
+AC_ARG_WITH(static-nprobe, 
+              [  --with-static-nprobe          Build static nprobe (make nprobes)], 
+              CFLAGS="-DMAKE_STATIC_PLUGINS",)
+
+dnl> AM_DISABLE_SHARED
+dnl> AM_ENABLE_SHARED
+AM_PROG_LIBTOOL
+
+dnl> set default loader
+CCLD=$CC
+
+AM_PROG_CC_STDC
+dnl> AC_PROG_CPP
+AC_SET_MAKE
+AC_PROG_INSTALL
+
+dnl>
+dnl> you can also check for debugging and optimization
+dnl>
+AC_CHECK_DEBUGGING
+AC_CHECK_OPTIMIZE
+
+dnl>
+dnl> set reasonable defaults here
+dnl>
+DEFS="-DHAVE_CONFIG_H"
+CFLAGS="-g $CFLAGS"
+INCS=""
+
+dnl Test endianness
+AC_TRY_RUN([
+
+int main()
+{
+        short s = 1;
+        short* ptr = &s;
+        unsigned char c = *((char*)ptr);
+        return c;       
+}
+
+]
+, [ AC_DEFINE(NPROBE_BIG_ENDIAN, 1, [build for big endian]) ]
+, [ AC_DEFINE(NPROBE_LITTLE_ENDIAN, 1, [build for little endian]) ]
+, [ AC_DEFINE(NPROBE_BIG_ENDIAN, 1, [build for big endian]) ]
+)
+
+dnl>
+dnl> force configure to use current directory
+dnl>
+AC_CONFIG_AUX_DIR(.)
+
+AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
+
+dnl>
+dnl> make NPROBEDIR the default for the installation
+dnl>
+AC_PREFIX_DEFAULT(${NPROBEDIR:-/usr/local})
+
+
+dnl>
+dnl> generate the config header
+dnl>
+umask 002
+AM_CONFIG_HEADER(config.h)
+
+DYN_FLAGS=
+MORESOURCES=
+MOREOBJECTS=
+SO_VERSION_PATCH=
+dnl>MAKE_SHARED_LIBRARY_PARM=""
+MAKE_SHARED_LIBRARY_PARM=" -bundle -flat_namespace -undefined suppress"
+
+case "$host:$CC" in
+    *-ibm-aix4.1.*:gcc )
+
+dnl>    on my RS/6000 system I was really unable to link using gcc, so I switched
+dnl>    to native AIX XL C Compiler. I don't know how to link with gcc.
+dnl>
+dnl>    Moreover I needed a local copy of the libgcc.a because the
+dnl>    linker refused to create a binary from the installed archive.
+dnl>    Again, I don't know why.
+dnl>
+        GCCLIB=`gcc -print-libgcc-file-name`
+        cp $GCCLIB .
+        LIBS="-L. -lgcc ${LIBS}"
+
+dnl>    To link against the getmsg system call you must import the /lib/pse.exp
+        CCLD="cc -bI:/lib/pse.exp"
+        ;;
+
+    *-ibm-aix4.*:cc* )
+
+        echo "Oh no!  *cough* AIX *cough* without GCC!  Me poor!"
+
+        # To link against the getmsg system call you must import the /lib/pse.exp
+dnl>        CFLAGS=
+dnl>        LDFLAGS="-bI:/lib/pse.exp $LDFLAGS"
+        ;;
+
+    *-sun-solaris* )
+        AC_DEFINE(NEED_INET_ATON, 1, [inet_aton])
+       CORELIBS="${CORELIBS} -lrt -lnsl"
+        ;;
+
+    *openbsd* )
+        SO_VERSION_PATCH=.0.0
+        ;;
+
+    *freebsd* )
+        CORELIBS="-pthread ${CORELIBS}"
+        ;;
+
+    *darwin* )
+        CFLAGS="-no-cpp-precomp -DDARWIN $CFLAGS"
+	DYN_FLAGS="-bundle -flat_namespace -undefined suppress $DYN_FLAGS"
+        ;;
+esac
+
+dnl>
+dnl> checks for system header files
+dnl>
+
+AC_CHECK_TOOL(MYSQL, mysql_config)
+if test "x$ac_cv_prog_ac_ct_MYSQL" = "xmysql_config"; then
+  MYSQLLIBS="`mysql_config --libs_r`|grep Usage"
+  if test ".$MYSQLLIBS" != "."; then
+    LIBS="${LIBS} -lwrap `mysql_config --libs`"
+  else
+    LIBS="${LIBS} -lwrap `mysql_config --libs_r`"
+  fi
+  INCS="${INCS} `mysql_config --cflags`"
+  AC_DEFINE_UNQUOTED(HAVE_MYSQL, 1, [use mysql])
+else
+   echo "MySQL not found. Database support disabled";
+fi
+
+AC_HEADER_STDC
+dnl> AC_HEADER_TIME
+
+
+AC_CHECK_HEADERS(dlfcn.h dl.h)
+AC_CHECK_HEADERS([dirent.h])
+if test ".${ac_cv_header_dlfcn_h}" != ".yes"; then
+    echo "Unable to find dlfcn.h"
+    echo ""
+    echo "You cannot use dlopen load plugins. "
+    echo "Build nprobe without plugin support or with dynamic plugins."
+fi
+
+dnl> MANDATORY general purpose headers
+AC_HAVE_HEADERS(pwd.h stdio.h errno.h stdlib.h unistd.h string.h signal.h fcntl.h dnl
+                sys/types.h sys/time.h sys/wait.h sys/stat.h sys/ioctl sys/un.h)
+
+dnl> OPTIONAL general purpose headers
+AC_CHECK_HEADERS(sys/select.h sys/ldr.h sys/sockio.h)
+AC_CHECK_HEADERS(zlib.h)
+if test ".${ac_cv_header_zlib_h}" != ".yes"; then
+    echo "Unable to find the file zlib.h"
+    echo
+    echo "*************************************************"
+    echo "Please specify the zlib directory with --with-zlib-include option."
+    echo "nprobe will be compiled without flow compression"
+    echo "*************************************************"
+    echo
+else
+AC_CHECK_LIB([z], [zlibVersion])
+
+if test ".${ZLIB_ROOT}" != "." &&
+   test ! -d ${ZLIB_ROOT}; then
+    echo "Unable to find the zlib."
+    echo
+    echo "*************************************************"
+    echo "Please specify the zlib directory with --with-zlib-lib option."
+    echo "nprobe will be compiled without flow compression"
+    echo "*************************************************"
+    echo
+fi 
+fi
+
+AC_CHECK_HEADERS(sched.h sys/sched.h semaphore.h pthread.h)
+AC_CHECK_LIB(pthread, pthread_create)
+AC_CHECK_LIB([c], [dlopen], , [AC_CHECK_LIB([dl], [dlopen])])
+
+
+dnl> MANDATORY universal headers for network programming code
+AC_HAVE_HEADERS(sys/socket.h netdb.h netinet/in.h arpa/inet.h net/if.h)
+AC_HAVE_HEADERS(netinet/in_systm.h netinet/ip.h netinet/ip_icmp.h netinet/udp.h netinet/tcp.h)
+
+dnl> OPTIONAL headers for network programming headers
+AC_CHECK_HEADERS(netinet/if_ether.h arpa/nameser.h net/ethernet.h ethertype.h if.h net/bpf.h)
+
+dnl> OPTIONAL syslog headers
+AC_CHECK_HEADERS(sys/syslog.h, [ac_sys_syslog_h="yes"], [ac_sys_syslog_h="no"])
+AC_CHECK_HEADERS(syslog.h, [ac_syslog_h="yes"], [ac_syslog_h="no"])
+
+AC_CHECK_TYPEDEF(u_int64_t, sys/types.h)
+AC_CHECK_TYPEDEF(uint64_t, sys/types.h)
+AC_CHECK_TYPEDEF(u_int32_t, sys/types.h)
+AC_CHECK_TYPEDEF(u_int16_t, sys/types.h)
+AC_CHECK_TYPEDEF(u_int8_t, sys/types.h)
+AC_CHECK_TYPEDEF(int64_t, sys/types.h)
+AC_CHECK_TYPEDEF(int32_t, sys/types.h)
+AC_CHECK_TYPEDEF(int16_t, sys/types.h)
+AC_CHECK_TYPEDEF(int8_t, sys/types.h)
+
+dnl>
+dnl> Test ether_header has ea
+dnl>
+AC_MSG_CHECKING([if ether_header uses ether_addr structs])
+AC_TRY_COMPILE([
+#       include <sys/types.h>
+#       if __STDC__
+        /* osf3 has REALLY good prototyes */
+        struct mbuf;
+        struct rtentry;
+#       endif
+#       include <sys/socket.h>
+#       include <net/if.h>
+#       include <netinet/in.h>
+#       include <netinet/if_ether.h>],
+    [u_int i =
+         sizeof(((struct ether_header *)0)->ether_dhost.ether_addr_octet)],
+    [AC_MSG_RESULT(yes)
+     AC_DEFINE_UNQUOTED(ETHER_HEADER_HAS_EA, 
+                        1, 
+                        [ether_header uses ether_addr structs])],
+    [AC_MSG_RESULT(no)])
+
+
+dnl> Networking libraries
+dnl>
+AC_CHECK_LIB(socket, accept)
+AC_CHECK_LIB(resolv, inet_aton)
+
+dnl> SCTP - RFC 3286
+dnl>
+AC_MSG_CHECKING([sctp])
+AC_TRY_LINK([
+        #include "confdefs.h"
+        #include <netinet/in.h>
+        #include <netinet/sctp.h>
+        #include <sys/socket.h>],
+        [socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);],
+        AC_DEFINE_UNQUOTED(HAVE_SCTP, 1, [SCTP is supported])
+AC_MSG_RESULT(yes)
+ac_has_sctp=yes,
+AC_MSG_RESULT(no)
+ac_has_sctp=no)
+
+dnl> Pattern matching
+dnl>
+AC_CHECK_LIB(pcre, pcre_compile)
+
+
+dnl>
+dnl> Packet Capture Library by Lawrence Berkeley National Laboratory - Network Research Group
+dnl>
+
+dnl> order as follow
+dnl> 1. user defined libpcap development tree
+dnl> 2. standard installation in /usr/lib and /usr/include respectively
+dnl> 3. default package installation in /usr/local/lib and /usr/local/include respectively
+dnl> 4. libpcap-0.4 development tree under the same nprobe's root directory or in a subdir
+
+AC_MSG_CHECKING([for LBL Packet Capture Library (required package)])
+
+dnl>
+dnl> user defined directory passed as option at configuration time
+dnl>
+if test ".${PCAP_ROOT}" != .; then
+  if test -d $PCAP_ROOT &&
+     test -r $PCAP_ROOT/libpcap.a &&
+     test -r $PCAP_ROOT/pcap.h; then
+       PCAP_ROOT=`cd ${PCAP_ROOT} && pwd`
+       CORELIBS="${CORELIBS} -L$PCAP_ROOT -lpcap"
+       INCS="${INCS} -I$PCAP_ROOT"
+       AC_MSG_RESULT([found in $PCAP_ROOT])
+  else
+    AC_MSG_RESULT([not found in ${PCAP_ROOT}])
+    AC_MSG_RESULT([             *** FATAL ERROR ***             ])
+    AC_MSG_RESULT([ It looks that you don't have some files needed to use the pcap library.])
+    AC_MSG_RESULT([ Please check the source tree, compile and, optionally, install the software.])
+    AC_MSG_RESULT([ When finished please re-run this program.])
+    AC_MSG_RESULT([ You can download the latest source tarball at http://www.tcpdump.org])
+    AC_MSG_ERROR([ The LBL Packet Capture Library development tree seems corrupted or incomplete!])
+  fi
+elif test -d /usr/local &&
+     test -r /usr/local/lib/libpcap.a &&
+     test -r /usr/local/include/pcap.h; then
+       PCAP_ROOT="/usr/local"
+       CORELIBS="${CORELIBS} -L$PCAP_ROOT/lib -lpcap"
+       INCS="${INCS} -I$PCAP_ROOT/include"
+       AC_MSG_RESULT([found in $PCAP_ROOT])
+dnl>
+dnl> installation used by most packagers
+dnl>
+elif test -r /usr/lib/libpcap.a &&
+     test -r /usr/include/pcap.h; then
+       PCAP_ROOT="standard installation"
+       CORELIBS="${CORELIBS} -lpcap"
+       AC_MSG_RESULT([found in $PCAP_ROOT])
+dnl>
+dnl> installation used by OSX
+dnl>
+elif test -r /usr/lib/libpcap.A.dylib &&
+     test -r /usr/include/pcap.h; then
+       PCAP_ROOT="standard OSX installation"
+       CORELIBS="${CORELIBS} -lpcap"
+       AC_MSG_RESULT([found in $PCAP_ROOT])
+dnl>
+dnl> unusual and more complex installation used by some packagers
+dnl> (e.g. Red Hat Linux)
+dnl>
+elif test -r /usr/lib/libpcap.a &&
+     test -r /usr/include/pcap/pcap.h; then
+       PCAP_ROOT="semi-standard installation"
+       CORELIBS="${CORELIBS} -lpcap"
+       INCS="${INCS} -I/usr/include/pcap"
+       AC_MSG_RESULT([found in $PCAP_ROOT])
+else
+     AC_CHECK_LIB(pcap, pcap_lookupdev)
+     if test "$ac_tr_lib" != "HAVE_LIBPCAP"; then
+       AC_MSG_RESULT([not found!])
+       AC_MSG_RESULT([             *** FATAL ERROR ***             ])
+       AC_MSG_RESULT([ It looks that you don't have the libpcap distribution installed.])
+       AC_MSG_RESULT([ Download, compile and, optionally, install it.])
+       AC_MSG_RESULT([ When finished please re-run this program.])
+       AC_MSG_RESULT([ You can download the latest source tarball at http://www.tcpdump.org/])
+       AC_MSG_ERROR([ The LBL Packet Capture Library, libpcap, was not found! ])
+     else
+	if test -r /usr/include/pcap/pcap.h; then
+	       INCS="${INCS} -I/usr/include/pcap"
+	       PCAP_ROOT="standard installation"
+	else
+       AC_MSG_RESULT([             *** FATAL ERROR ***             ])
+       AC_MSG_RESULT([ It looks that you don't have the libpcap distribution installed.])
+       AC_MSG_RESULT([ Download, compile and, optionally, install it.])
+       AC_MSG_RESULT([ When finished please re-run this program.])
+       AC_MSG_RESULT([ You can download the latest source tarball at http://www.tcpdump.org/])
+       AC_MSG_ERROR([ The LBL Packet Capture Library, libpcap, was not found! ])
+	fi
+     fi
+fi
+
+AC_CHECK_LIB([pcap], [pcap_next_ex], AC_DEFINE_UNQUOTED(HAVE_PCAP_NEXT_EX, 1, [pcap has pcap_next_ex]))
+
+PLUGINS=plugins
+AC_DEFINE_UNQUOTED(ENABLE_PLUGINS, 1, [ Enable plugin support ])
+
+AC_SUBST(VERSION)
+AC_SUBST(INCS)
+AC_SUBST(LIBS)
+AC_SUBST(CFLAGS)
+AC_SUBST(LDFLAGS)
+AC_SUBST(DYN_FLAGS)
+AC_SUBST(CCLD)
+AC_SUBST(LIBTOOL_DEPS)
+AC_SUBST(PLUGINS)
+AC_SUBST(CORELIBS)
+AC_SUBST(MOREOBJECTS)
+AC_SUBST(SO_VERSION_PATCH)
+AC_SUBST(MAKE_SHARED_LIBRARY_PARM)
+AC_SUBST(MORESOURCES)
+AC_SUBST(MORELIBS)
+
+
+AC_CONFIG_FILES([Makefile])
+
+dnl> Use plugins/Makefile if you enable plugins
+if test ".${ac_disable_plugins}" != ".yes"; then
+    AC_CONFIG_FILES([plugins/Makefile])
+fi
+
+AC_OUTPUT()
+
+dnl>
+dnl> versioning
+dnl>
+echo "creating version.c"
+/bin/rm -f version.c
+echo $PACKAGE_VERSION | sed -e 's/.*/char * version   = "&";/' > version.c
+./config.guess | sed -e 's/.*/char * osName    = "&";/' >> version.c
+date +"%D %r" | sed -e 's/.*/char * buildDate = "&";/' >> version.c
+
+if test ".${HAS_WARNING}" = ".yes"; then
+    echo "*"
+    echo "*>>>>  A WARNING message was generated - please review the"
+    echo "*>>>>  output before continuing to make nprobe!"
+fi
+
+echo "
+
+This is your $PACKAGE $VERSION configuration:
+
+Host System Type  : ${host}
+Compiler (cflags) : ${CC} ${CFLAGS} ${DEFS}
+Include path      : ${INCS}
+System Libs       : ${LDFLAGS} ${LIBS}
+Core Libs         : ${CORELIBS}
+Additional Libs   : ${MORELIBS}
+LBL pcap in       : ${PCAP_ROOT}
+Install path      : ${prefix}
+
+Now type 'make' or 'gmake' (GNU make) on *BSD and Solaris
+systems to build $PACKAGE $VERSION.
+"
+
+exit 0
