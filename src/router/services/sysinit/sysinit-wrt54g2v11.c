@@ -34,7 +34,9 @@
 #include <sys/mount.h>
 #include <sys/reboot.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 #include <sys/sysmacros.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
@@ -140,15 +142,40 @@ void start_sysinit( void )
 	insmod( "ath_ahb" );
     }
 
+    eval( "ifconfig", "eth0", "up" );	// wan
     system("swconfig dev eth0 set reset 1");
-    system("swconfig dev eth0 set enable_vlan 1");
-    system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
-    system("swconfig dev eth0 vlan 2 set ports \"0t 5\"");
+    system("swconfig dev eth0 set vlan 1");
+    system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
+    system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
     system("swconfig dev eth0 set apply");
     eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
     eval( "vconfig", "add", "eth0", "1" );
     eval( "vconfig", "add", "eth0", "2" );
-    
+
+    struct ifreq ifr;
+    int s;
+
+    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
+    {
+	char eabuf[32];
+
+	strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
+	ioctl( s, SIOCGIFHWADDR, &ifr );
+	char macaddr[32];
+
+	strcpy( macaddr,
+		ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.sa_data,
+			    eabuf ) );
+	nvram_set( "et0macaddr", macaddr );
+        MAC_ADD (macaddr);
+	ether_atoe( macaddr, ( unsigned char * )ifr.ifr_hwaddr.sa_data );
+	strncpy( ifr.ifr_name, "vlan2", IFNAMSIZ );
+	ioctl( s, SIOCSIFHWADDR, &ifr );
+	close( s );
+    }
+    eval("gpio","enable","1");
+    system2( "echo 0 >/proc/sys/dev/wifi0/ledpin" );
+    system2( "echo 1 >/proc/sys/dev/wifi0/softled" );
     /*
      * Set a sane date 
      */

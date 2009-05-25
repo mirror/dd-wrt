@@ -47,6 +47,9 @@ endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 endif
+ifeq ($(CONFIG_ALLNETWRT),y)
+CFLAGS += -DHAVE_ALLNETWRT
+endif
 
 ifeq ($(CONFIG_SILENCE),y)
   CFLAGS += -DHAVE_SILENCE
