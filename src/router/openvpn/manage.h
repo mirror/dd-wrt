@@ -154,6 +154,7 @@ struct management_callback
   int (*kill_by_cn) (void *arg, const char *common_name);
   int (*kill_by_addr) (void *arg, const in_addr_t addr, const int port);
   void (*delete_event) (void *arg, event_t event);
+  int (*n_clients) (void *arg);
 #ifdef MANAGEMENT_DEF_AUTH
   bool (*kill_by_cid) (void *arg, const unsigned long cid);
   bool (*client_auth) (void *arg,
@@ -306,7 +307,7 @@ struct management *management_init (void);
 #ifdef MANAGEMENT_PF
 # define MF_CLIENT_PF         (1<<7)
 #endif
-# define MF_LISTEN_UNIX       (1<<8)
+# define MF_UNIX_SOCK       (1<<8)
 
 bool management_open (struct management *man,
 		      const char *addr,
@@ -354,7 +355,8 @@ void management_notify_client_needing_auth (struct management *management,
 					    const struct env_set *es);
 
 void management_connection_established (struct management *management,
-					struct man_def_auth_context *mdac);
+					struct man_def_auth_context *mdac,
+					const struct env_set *es);
 
 void management_notify_client_close (struct management *management,
 				     struct man_def_auth_context *mdac,
