@@ -463,7 +463,7 @@ void setRouter( char *name )
 #elif HAVE_TMK
     if( name )
 	nvram_set( "DD_BOARD2", name );
-    nvram_set( NVROUTER, "KMT-WRT" );
+    nvram_set( NVROUTER, "KMT-WAS" );
 #else
     if( name )
 	nvram_set( NVROUTER, name );
