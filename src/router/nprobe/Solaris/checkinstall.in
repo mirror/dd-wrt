@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# Copyright (c) 2003 Rocco Carbone <rocco@ntop.org>
+#
+
+expected_release=@OSVERS@
+expected_platform=sparc
+#
+release=`uname -r`
+platform=`uname -p`
+
+major=`echo $release | sed -e 's/\([0-9]*\).\([0-9]*\)/\1/'`
+major=`expr $major - 3`
+minor=`echo $release | sed -e 's/\([0-9]*\).\([0-9]*\)/\2/'`
+
+release=$major.$minor
+
+#
+if [ ${platform} != ${expected_platform} ]; then
+    echo "\n\n\n\tThis package must be installed on a ${expected_platform} architecture\n"
+    echo "\tAborting installation.\n\n\n"
+    exit 1
+fi
+
+#
+# expected_release is "2.6" for Solaris 2.6 and "8" for Solaris 2.8
+#
+if [ ${release} != ${expected_release} ]; then
+  if [ ${minor} != ${expected_release} ]; then
+      echo "\n\n\n\tThis package must be installed on a ${expected_release} machine\n"
+      echo "\tAborting installation.\n\n\n"
+      exit 1
+  fi
+fi
+
+exit 0
+

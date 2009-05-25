@@ -1,0 +1,79 @@
+
+Extending nProbe by means of plugins
+------------------------------------
+The nProbe core is responsible for handling the netflow protocol as well as interacting from the capture devices. The core handles the various protocol versions, as well shields the rest of the application from the network interface type and speed.
+
+As modern network monitoring applications require a comprehansive range of measurements that standard probes cannot provide, nProbe has been designed for openess by means of network plugins that allow developers to create their own measurements and export them via custome types using the standard NetFlow v9 protocol (NFv5 cannot be used as it allows only Cisco-defined fields to be emitted). Plugins are loaded at runtime from the plugins/ directory and can modified/coded independently of the core nProbe. This allows companies to implements proprietary-plugins without the need to integrate them into the application core.
+
+Plugin structure
+----------------
+Plugins are implemented by shared libraries that are loaded at application startup. They have an entry point "PluginInfo* xxxPluginEntryFctn(void)" that return a pointer to a PluginInfo memory area that contains all the plugin information. The PluginInfo datatype contains information about the plugin itselft (name, version, human friendly description, author information) as well as a set of function pointers that allow the application core to jump into the plugin as needed. The functions are the following:
+
+- void xxxPlugin_init(int argc, char *argv[])
+Calles when the plugin is first initialized at boot. The whole command-line arguments are passed to the plugin for handling options.
+
+- void xxxPlugin_packet(u_char new_bucket, void *pluginData,
+                        HashBucket* bkt,
+                        u_short proto, u_char isFragment,
+                        u_short numPkts, u_char tos,
+                        u_short vlanId, struct ether_header *ehdr,
+                        IpAddress *src, u_short sport,
+                        IpAddress *dst, u_short dport,
+                        u_int len, u_int8_t flags, u_int8_t icmpType,
+                        u_short numMplsLabels,
+                        u_char mplsLabels[MAX_NUM_MPLS_LABELS][MPLS_LABEL_LEN],
+                        char *fingerprint,
+                        const struct pcap_pkthdr *h, const u_char *p,
+                        u_char *payload, int payloadLen)
+This is called whenver there's a packet for the plugins that need to be handled. The function parameters are:
+- new_bucket: 1 if the plugin is called for the first time since the hash flow bucket has been created. This tells the plugin to allocate memory if needed
+- pluginData: pointer to plugin-private data that is stored into the hash flow bucket. If this is a new bucket, this is a NULL pointer.
+- bkt: the hash flow bucket containing flow information
+- proto: the protocol id (see /etc/protocols) of the received packet
+- isFragment: set to 1 if this packet was fragmented
+- numPkts: the total number of packet fragments (1 if the packet was not fragmented)
+- tos: the TCP type of service of the received packet
+- vlanId: the VLAN id of the received packet
+- ehdr: the ethernet header of the received packet
+- src/dst: IP source/destination of the received packet
+- sport/dport: source/destination TCP ports of the received packet
+- len: whole packet length (from ethernet onwards)
+- stamp: precise packet timestamp
+- flags: TCP packet flags
+- icmpType: ICMP type (0 for non ICMP packets) of the received packet
+- numMplsLabels: size of the MPLS label stack
+- mplsLabels: MPLS label stack
+- fingerprint: TCP fingeprint (see http://ettercap.sourceforge.net/)
+- h: the pcap packet heder information as received from libpcap
+- p: the pointer to the packet (from ethernet onwards)
+- payload: pointer to the packet application payload (e.g. HTTP)
+- payloadLen: length of the packet payload
+
+- void xxxPlugin_delete(HashBucket* bkt, void *pluginData)
+This function is called whenever a flow has been emitted. You need to put here the code for deallocating plugin-private data allocated before. The function parameters are:
+- bkt: the hash flow bucket containing flow information
+- pluginData: pointer to plugin-private data that is stored into the hash flow bucket.
+
+- V9TemplateId* rtpPlugin_get_template(char* template_name)
+This function is called at startup in order to find out whether the plugin is able to handle the specified template whose name (e.g. "BYTES")  has been passed as parameter.
+
+- int xxxPlugin_export(void *pluginData, V9TemplateId *theTemplate,
+		       int direction,
+		       HashBucket *bkt, char *outBuffer,
+		       u_int* outBufferBegin, u_int* outBufferMax)
+This function is called whevener a flow needs to be exported. The function parameters are:
+- pluginData: pointer to plugin-private data that is stored into the hash flow bucket.
+- theTemplate: the flow template that needs to be exported.
+- direction: the export direction (0 = flow src -> flow dst, 1 = flow dst -> flow src)
+- bkt: the hash flow bucket containing flow information
+- outBuffer: the output buffer where the plugin will emit the flow information for the specified template.
+- outBufferBegin: the index inside the outBuffer buffer, where the flow information for the specified template will be stored.
+- outBufferMax: the length of the outBuffer buffer (outBufferBegin <= outBufferMax). This parameter is used to check whether there'sspace into the outBuffer for storing the flow information.
+
+- V9TemplateId* xxxPlugin_conf()
+This function is called at startup in order to find out what templates are supported by the specified plugin. Please note that the output parameter contains an array with all the supported templates. The last array element contains a 0/NULL in all the fields, in order to inform the probe that this was the last array element.
+
+
+
+----
+Luca Deri <deri@ntop.org> - June 2005

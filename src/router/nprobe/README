@@ -1,0 +1,34 @@
+Introduction
+============
+
+nprobe is a software NetFlow v5/v9 and nFlow probe that allows to turn a PC into a NetFlow probe. It has been designed to be compact, easy to embed, an memory/CPU savvy.
+
+
+NetFlow v5
+==========
+This is the default flow export format.
+
+
+NetFlow v9
+==========
+In order to enable NetFlowV9 it is necessary to use the -T flag that defines the template format. For instance:
+'nprobe -T "%PKTS %BYTES %TOS %IP_SRC_ADDR %IP_DST_ADDR"  -n 127.0.0.1:2055'. For the list of all supported
+fields type "nprobe -h". You can visualize the generated flows using a recent version of Ethereal (www.ethereal.com).
+
+
+nFlow v1
+========
+In order to enable nFlowV1 it is necessary to specify -T (as for NetFlowV9) and -N <key>
+where key is the key used to calculate the MD5 summary.
+
+
+NOTE for nprobe 2.0 Users
+=========================
+This version of nProbe has been re-engineered significantly.
+* The hash where flows are stored is now dynamic, however you should set -w to a reasonable value for your network.
+* Expired flows are checked while processing packets: no packets to process, no expired flows.
+* The -s flag has now a different meaning.
+
+=======================================
+
+(C) 2002-03 - Luca Deri <deri@ntop.org>

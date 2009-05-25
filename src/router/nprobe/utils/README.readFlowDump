@@ -1,0 +1,69 @@
+
+
+This program is used to store flow files into an SQL database. It can be used incombination with tools such as flow-tools to receive flows from a remote collector and periodically save them into a SQL database.
+
+By default the program saves flows into a SQL database named netflow in the following table that needs to be created prior to start the application.
+
+-----------
+
+MySQL
+
+CREATE TABLE `flows` (
+  `probeId` smallint(6) NOT NULL default '0',
+  `ipSrc` varchar(17) NOT NULL default '',
+  `ipDst` varchar(17) NOT NULL default '',
+  `pktSent` int(11) NOT NULL default '0',
+  `bytesSent` int(11) NOT NULL default '0',
+  `startTime` int(20) default NULL,
+  `endTime` int(11) default NULL,
+  `srcPort` smallint(6) NOT NULL default '0',
+  `dstPort` smallint(6) NOT NULL default '0',
+  `tcpFlags` smallint(6) NOT NULL default '0',
+  `proto` smallint(6) NOT NULL default '0',
+  `tos` smallint(6) NOT NULL default '0'
+  KEY `ipSrc` (`ipSrc`),
+  KEY `ipDst` (`ipDst`)
+) TYPE=MyISAM;    
+
+-----------
+
+Postgres
+
+CREATE TABLE flows ( 
+  probeId	integer NOT NULL default '0',
+  ipSrc		inet NOT NULL default '0.0.0.0', 
+  ipDst		inet NOT NULL default '0.0.0.0', 
+  pktSent	bigint NOT NULL default '0', 
+  bytesSent	bigint NOT NULL default '0', 
+  startTime	integer NOT NULL default '0', 
+  endTime	integer NOT NULL default '0', 
+  srcPort	integer NOT NULL default '0', 
+  dstPort	integer NOT NULL default '0', 
+  tcpFlags	integer NOT NULL default '0', 
+  proto		integer NOT NULL default '0', 
+  tos		integer NOT NULL default '0',
+
+  CONSTRAINT C1 CHECK( pktSent >= 0 ),
+  CONSTRAINT C2 CHECK( bytesSent >= 0 ),
+  CONSTRAINT C3 CHECK( srcPort >= 0 AND srcPort <= 65535),
+  CONSTRAINT C4 CHECK( dstPort >= 0 AND dstPort <= 65535)
+);
+
+Each file has the following record format: <flow length [4 digits]><flow data>.
+
+The application has been designed to either insert 
+- a single file into the DB
+or
+- specify a directory containing flow files with the .nf suffix that are
+  processed then deleted after their processing.
+
+In the latter case this application can be periodically started from the
+/etc/crontab as follows:
+
+*/5 * * * * root perl /usr/local/bin/readFlowDump.pl -r rrd_directory directory > /dev/null 2>&1
+
+Note that -r will insert flows into RRD files.
+
+
+----
+(C) 2003-04 Luca Deri <deri@ntop.org>
