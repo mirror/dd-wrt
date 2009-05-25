@@ -7,6 +7,8 @@
 
 ; OpenVPN install script for Windows, using NSIS
 
+SetCompressor lzma
+
 !include "MUI.nsh"
 
 !include "defs.nsi"
@@ -14,6 +16,10 @@
 !include "xguidefs.nsi"
 !include "setpath.nsi"
 !include "GetWindowsVersion.nsi"
+
+!ifdef EXTRACT_FILES
+!include "MultiFileExtract.nsi"
+!endif
 
 !define GEN ".."
 !define BIN "${GEN}\bin"
@@ -72,8 +78,6 @@
   ;General
 
   OutFile "${GEN}\${PRODUCT_UNIX_NAME}-${VERSION}${OUTFILE_LABEL}-install.exe"
-
-  SetCompressor bzip2
 
   ShowInstDetails show
   ShowUninstDetails show
@@ -230,6 +234,7 @@ Function .onInit
 # Delete previous start menu
   RMDir /r $SMPROGRAMS\${PRODUCT_NAME}
 
+!ifdef CHECK_WINDOWS_VERSION
 # Check windows version
   Call GetWindowsVersion
   Pop $1
@@ -259,9 +264,13 @@ vista64bummer:
 
 init32bits:
 
+!endif
+
 FunctionEnd
 
+!ifndef SF_SELECTED
 !define SF_SELECTED 1
+!endif
 
 ;--------------------
 ;Pre-install section
@@ -526,6 +535,17 @@ Section -post
   !ifdef SAMPCONF_DH
     File "${GEN}\conf\${SAMPCONF_DH}"
   !endif
+  !endif
+
+  ; Try to extract files if present
+  !ifdef EXTRACT_FILES
+    Push "$INSTDIR"
+    Call MultiFileExtract
+    Pop $R0
+    IntCmp $R0 0 +3 +1 +1
+    DetailPrint "MultiFileExtract Failed status=$R0"
+    goto +2
+    DetailPrint "MultiFileExtract Succeeded"
   !endif
 
   ;
