@@ -795,6 +795,8 @@ setenv_settings (struct env_set *es, const struct options *o)
   setenv_int (es, "verb", o->verbosity);
   setenv_int (es, "daemon", o->daemon);
   setenv_int (es, "daemon_log_redirect", o->log);
+  setenv_unsigned (es, "daemon_start_time", time(NULL));
+  setenv_int (es, "daemon_pid", openvpn_getpid());
 
 #ifdef ENABLE_CONNECTION
   if (o->connection_list)
@@ -1583,12 +1585,8 @@ options_postprocess_verify_ce (const struct options *options, const struct conne
        || options->management_log_history_cache != defaults.management_log_history_cache))
     msg (M_USAGE, "--management is not specified, however one or more options which modify the behavior of --management were specified");
 
-  if ((options->management_flags & (MF_LISTEN_UNIX|MF_CONNECT_AS_CLIENT))
-      == (MF_LISTEN_UNIX|MF_CONNECT_AS_CLIENT))
-    msg (M_USAGE, "--management-client does not support unix domain sockets");
-
   if ((options->management_client_user || options->management_client_group)
-      && !(options->management_flags & MF_LISTEN_UNIX))
+      && !(options->management_flags & MF_UNIX_SOCK))
     msg (M_USAGE, "--management-client-(user|group) can only be used on unix domain sockets");
 #endif
 
@@ -2671,7 +2669,7 @@ auth_retry_print (void)
 static void
 usage (void)
 {
-  FILE *fp = msg_fp();
+  FILE *fp = msg_fp(0);
 
 #ifdef ENABLE_SMALL
 
@@ -3056,7 +3054,10 @@ read_config_file (struct options *options,
   ++level;
   if (level <= max_recursive_levels)
     {
-      fp = fopen (file, "r");
+      if (streq (file, "stdin"))
+	fp = stdin;
+      else
+	fp = fopen (file, "r");
       if (fp)
 	{
 	  line_num = 0;
@@ -3073,7 +3074,8 @@ read_config_file (struct options *options,
 		  add_option (options, p, file, line_num, level, msglevel, permission_mask, option_types_found, es);
 		}
 	    }
-	  fclose (fp);
+	  if (fp != stdin)
+	    fclose (fp);
 	}
       else
 	{
@@ -3385,7 +3387,7 @@ add_option (struct options *options,
       if (streq (p[2], "unix"))
 	{
 #if UNIX_SOCK_SUPPORT
-	  options->management_flags |= MF_LISTEN_UNIX;
+	  options->management_flags |= MF_UNIX_SOCK;
 #else
 	  msg (msglevel, "MANAGEMENT: this platform does not support unix domain sockets");
 	  goto err;
@@ -3856,6 +3858,11 @@ add_option (struct options *options,
     {
       VERIFY_PERMISSION (OPT_P_MESSAGES);
       options->mute = positive_atoi (p[1]);
+    }
+  else if (streq (p[0], "errors-to-stderr"))
+    {
+      VERIFY_PERMISSION (OPT_P_MESSAGES);
+      errors_to_stderr();
     }
   else if (streq (p[0], "status") && p[1])
     {
@@ -4511,6 +4518,12 @@ add_option (struct options *options,
       options->server_bridge_netmask = netmask;
       options->server_bridge_pool_start = pool_start;
       options->server_bridge_pool_end = pool_end;
+    }
+  else if (streq (p[0], "server-bridge") && p[1] && streq (p[1], "nogw"))
+    {
+      VERIFY_PERMISSION (OPT_P_GENERAL);
+      options->server_bridge_proxy_dhcp = true;
+      options->server_flags |= SF_NO_PUSH_ROUTE_GATEWAY;
     }
   else if (streq (p[0], "server-bridge") && !p[1])
     {
