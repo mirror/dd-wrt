@@ -708,6 +708,9 @@ int internal_getRouterBrand(  )
 #elif HAVE_DIR400
     setRouter( "D-Link DIR-400" );
     return ROUTER_BOARD_FONERA2200;
+#elif HAVE_WRT54G2
+    setRouter( "Linksys WRT54G2 v1.1" );
+    return ROUTER_BOARD_FONERA;
 #elif HAVE_DIR300
     setRouter( "D-Link DIR-300" );
     return ROUTER_BOARD_FONERA;
@@ -2672,7 +2675,7 @@ int led_control( int type, int act )
  * LED_SES, LED_SES2, LED_WLAN act: LED_ON, LED_OFF, LED_FLASH 
  */
 {
-#if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5))  && (!defined(HAVE_DIR300) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
+#if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5) )  && (!defined(HAVE_DIR300) && !defined(HAVE_WRT54G2) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
     return 0;
 #else
     int use_gpio = 0x0ff;
@@ -2833,6 +2836,13 @@ int led_control( int type, int act )
 	    diag_gpio = 0x003;
 	    bridge_gpio = 0x004;
 	    ses_gpio = 0x001;
+	    break;
+#endif
+#ifdef HAVE_WRT54G2
+	case ROUTER_BOARD_FONERA:
+	    bridge_gpio = 0x004;
+	    ses_gpio = 0x104;
+	    diag_gpio = 0x103;
 	    break;
 #endif
 #ifdef HAVE_BWRG1000

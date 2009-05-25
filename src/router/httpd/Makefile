@@ -121,6 +121,9 @@ endif
 ifeq ($(CONFIG_OLSRD),y)
 CFLAGS += -DHAVE_OLSRD
 endif
+ifeq ($(CONFIG_WRT54G2),y)
+CFLAGS += -DHAVE_WRT54G2
+endif
 ifeq ($(CONFIG_GWMF54G2),y)
 CFLAGS += -DHAVE_GWMF54G2
 endif
