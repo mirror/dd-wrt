@@ -1,4 +1,5 @@
 obj-$(CONFIG_NVRAM) += nvram
+obj-$(CONFIG_WIRELESS_TOOLS) += wireless-tools
 obj-$(CONFIG_SHARED) += libutils
 obj-$(CONFIG_SHARED) += shared
 obj-$(CONFIG_LIBNET) += libnet
@@ -42,7 +43,6 @@ obj-$(CONFIG_MADWIFI) += madwifi
 obj-$(CONFIG_MADWIFI_MIMO) += madwifi_mimo
 obj-$(CONFIG_ETC) += etc
 #obj-$(CONFIG_VLAN) += vlan
-obj-$(CONFIG_WIRELESS_TOOLS) += wireless-tools
 obj-$(CONFIG_IPROUTE2) += iproute2
 obj-$(CONFIG_EBTABLES) += ebtables
 obj-$(CONFIG_PPTPD) += pptpd
@@ -169,6 +169,8 @@ obj-$(CONFIG_ASTERISK) += asterisk
 obj-$(CONFIG_ZAPTEL) += zaptel
 obj-$(CONFIG_WAVESAT) += wavesat
 obj-$(CONFIG_POUND) += pound
+obj-$(CONFIG_SWCONFIG) += swconfig
+obj-$(CONFIG_NPROBE) += nprobe
 
 obj-y+=anchorfree
 obj-y+=ttraff
