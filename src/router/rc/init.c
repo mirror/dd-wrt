@@ -543,7 +543,7 @@ int main( int argc, char **argv )
 #ifndef HAVE_ERC
 #ifdef HAVE_TMK
 	fprintf( fp,
-		 "KMT-WAS %s (c) 2009 KMT GMBH\nRelease: "
+		 "KMT-WAS %s (c) 2009 KMT GmbH\nRelease: "
 		 BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION );
 #else
 #ifdef DIST
