@@ -1,0 +1,8 @@
+@SW@ @VERSION@ was packaged for @OS@ @OSVERS@ (@ARCH@) on @DATE@.
+
+nProbe is a NetFlow v5/v9 software probe.
+
+The latest information about nProbe can be found at http://www.ntop.org
+
+See COPYING files for more licence information.
+

@@ -1,0 +1,250 @@
+/* config.h.in.  Generated from configure.in by autoheader.  */
+
+/* Define if you want a debugging version. */
+#undef  DEBUG 
+
+/* */
+#undef  HAVE_INT16_T 
+
+/* */
+#undef  HAVE_INT32_T 
+
+/* */
+#undef  HAVE_INT64_T 
+
+/* */
+#undef  HAVE_INT8_T 
+
+/* */
+#undef  HAVE_UINT64_T 
+
+/* */
+#undef  HAVE_U_INT16_T 
+
+/* */
+#undef  HAVE_U_INT32_T 
+
+/* */
+#undef  HAVE_U_INT64_T 
+
+/* */
+#undef  HAVE_U_INT8_T 
+
+/* Define if you have zlib */
+#undef  HAVE_ZLIB 
+
+/* */
+#undef  u_int
+
+/* Enable plugin support */
+#undef ENABLE_PLUGINS
+
+/* ether_header uses ether_addr structs */
+#undef ETHER_HEADER_HAS_EA
+
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+#undef HAVE_ARPA_INET_H
+
+/* Define to 1 if you have the <arpa/nameser.h> header file. */
+#undef HAVE_ARPA_NAMESER_H
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#undef HAVE_DIRENT_H
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the <dl.h> header file. */
+#undef HAVE_DL_H
+
+/* Define to 1 if you have the <errno.h> header file. */
+#undef HAVE_ERRNO_H
+
+/* Define to 1 if you have the <ethertype.h> header file. */
+#undef HAVE_ETHERTYPE_H
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define to 1 if you have the <if.h> header file. */
+#undef HAVE_IF_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `c' library (-lc). */
+#undef HAVE_LIBC
+
+/* Define to 1 if you have the `dl' library (-ldl). */
+#undef HAVE_LIBDL
+
+/* Define to 1 if you have the `pcap' library (-lpcap). */
+#undef HAVE_LIBPCAP
+
+/* Define to 1 if you have the `pcre' library (-lpcre). */
+#undef HAVE_LIBPCRE
+
+/* Define to 1 if you have the `pthread' library (-lpthread). */
+#undef HAVE_LIBPTHREAD
+
+/* Define to 1 if you have the `resolv' library (-lresolv). */
+#undef HAVE_LIBRESOLV
+
+/* Define to 1 if you have the `socket' library (-lsocket). */
+#undef HAVE_LIBSOCKET
+
+/* Define to 1 if you have the `z' library (-lz). */
+#undef HAVE_LIBZ
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* use mysql */
+#undef HAVE_MYSQL
+
+/* Define to 1 if you have the <netdb.h> header file. */
+#undef HAVE_NETDB_H
+
+/* Define to 1 if you have the <netinet/if_ether.h> header file. */
+#undef HAVE_NETINET_IF_ETHER_H
+
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#undef HAVE_NETINET_IN_H
+
+/* Define to 1 if you have the <netinet/in_systm.h> header file. */
+#undef HAVE_NETINET_IN_SYSTM_H
+
+/* Define to 1 if you have the <netinet/ip.h> header file. */
+#undef HAVE_NETINET_IP_H
+
+/* Define to 1 if you have the <netinet/ip_icmp.h> header file. */
+#undef HAVE_NETINET_IP_ICMP_H
+
+/* Define to 1 if you have the <netinet/tcp.h> header file. */
+#undef HAVE_NETINET_TCP_H
+
+/* Define to 1 if you have the <netinet/udp.h> header file. */
+#undef HAVE_NETINET_UDP_H
+
+/* Define to 1 if you have the <net/bpf.h> header file. */
+#undef HAVE_NET_BPF_H
+
+/* Define to 1 if you have the <net/ethernet.h> header file. */
+#undef HAVE_NET_ETHERNET_H
+
+/* Define to 1 if you have the <net/if.h> header file. */
+#undef HAVE_NET_IF_H
+
+/* pcap has pcap_next_ex */
+#undef HAVE_PCAP_NEXT_EX
+
+/* Define to 1 if you have the <pthread.h> header file. */
+#undef HAVE_PTHREAD_H
+
+/* Define to 1 if you have the <pwd.h> header file. */
+#undef HAVE_PWD_H
+
+/* Define to 1 if you have the <sched.h> header file. */
+#undef HAVE_SCHED_H
+
+/* SCTP is supported */
+#undef HAVE_SCTP
+
+/* Define to 1 if you have the <semaphore.h> header file. */
+#undef HAVE_SEMAPHORE_H
+
+/* Define to 1 if you have the <signal.h> header file. */
+#undef HAVE_SIGNAL_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <syslog.h> header file. */
+#undef HAVE_SYSLOG_H
+
+/* Define to 1 if you have the <sys/ioctl> header file. */
+#undef HAVE_SYS_IOCTL
+
+/* Define to 1 if you have the <sys/ldr.h> header file. */
+#undef HAVE_SYS_LDR_H
+
+/* Define to 1 if you have the <sys/sched.h> header file. */
+#undef HAVE_SYS_SCHED_H
+
+/* Define to 1 if you have the <sys/select.h> header file. */
+#undef HAVE_SYS_SELECT_H
+
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#undef HAVE_SYS_SOCKET_H
+
+/* Define to 1 if you have the <sys/sockio.h> header file. */
+#undef HAVE_SYS_SOCKIO_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/syslog.h> header file. */
+#undef HAVE_SYS_SYSLOG_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/un.h> header file. */
+#undef HAVE_SYS_UN_H
+
+/* Define to 1 if you have the <sys/wait.h> header file. */
+#undef HAVE_SYS_WAIT_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#undef HAVE_ZLIB_H
+
+/* inet_aton */
+#undef NEED_INET_ATON
+
+/* build for big endian */
+#undef NPROBE_BIG_ENDIAN
+
+/* build for little endian */
+#undef NPROBE_LITTLE_ENDIAN
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION
