@@ -853,8 +853,8 @@ management.clock_support="No Soportado";
 management.mmc_legend="Soporte Tarjetas MMC/SD";
 management.mmc_srv="Dispositivo MMC";
 
-management.samba_legend="Automontado Samba FS";
-management.samba_srv="Sist Archivos SMB";
+management.samba_legend="Automontado CIFS";
+management.samba_srv="Common Internet File System";
 management.samba_share="Compartir";
 management.samba_stscript="Script Inicio";
 
