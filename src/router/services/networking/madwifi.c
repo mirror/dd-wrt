@@ -1281,8 +1281,8 @@ static void configure_single( int count )
 #else
 
 #if defined(HAVE_PICO2) || defined(HAVE_PICO2HP) || defined(HAVE_PICO5)
-    int rx = atoi( nvram_default_get( txantenna, "1" ) ); 
-    int tx = atoi( nvram_default_get( txantenna, "1" ) );
+    int rx = 1; 
+    int tx = 1;
     int diva = 0;//atoi( nvram_default_get( diversity, "0" ) );
 #if defined(HAVE_EOC5610)
     int rx = atoi( nvram_default_get( txantenna, "1" ) ); 
