@@ -861,8 +861,8 @@ management.clock_support="Nem támogatott";
 management.mmc_legend="MMC/SD kártya támogatás";
 management.mmc_srv="MMC eszköz";
 
-management.samba_legend="Samba FS Automount";
-management.samba_srv="SMB Fájlrendszer";
+management.samba_legend="CIFS Automount";
+management.samba_srv="Common Internet File System";
 management.samba_share="Megosztás";
 management.samba_stscript="Startscript";
 
