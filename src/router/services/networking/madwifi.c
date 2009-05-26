@@ -1284,7 +1284,7 @@ static void configure_single( int count )
     int rx = 1; 
     int tx = 1;
     int diva = 0;//atoi( nvram_default_get( diversity, "0" ) );
-#if defined(HAVE_EOC5610)
+#elif defined(HAVE_EOC5610)
     int rx = atoi( nvram_default_get( txantenna, "1" ) ); 
     int tx = atoi( nvram_default_get( txantenna, "1" ) );
     int diva = 0;//atoi( nvram_default_get( diversity, "0" ) );
