@@ -946,8 +946,8 @@ management.mmc_srv="MMC Device";
 management.mmc_gpiosel="selecteer GPIO pins";
 management.mmc_gpiopins="GPIO pins";
 
-management.samba_legend="Samba FS Automount";
-management.samba_srv="SMB Bestandssysteem";
+management.samba_legend="CIFS Automount";
+management.samba_srv="Common Internet File System";
 management.samba_share="Delen";
 management.samba_stscript="Startscript";
 
