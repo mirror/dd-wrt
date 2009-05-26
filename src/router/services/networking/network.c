@@ -1107,7 +1107,7 @@ void start_lan( void )
     {
 #if defined(HAVE_NS2) || defined(HAVE_BS2) || defined(HAVE_LC2) || defined(HAVE_BS2HP) || defined(HAVE_MS2) || defined(HAVE_PICO2) || defined(HAVE_PICO2HP)
 	nvram_set( "lan_ifname", "br0" );
-	nvram_set( "lan_ifnames", "eth0 vlan2 ath0" );
+	nvram_set( "lan_ifnames", "eth0 ath0" );
 	PORTSETUPWAN( "" );
 #else
 	nvram_set( "lan_ifname", "br0" );
