@@ -58,7 +58,7 @@ $TC class add dev imq$5 parent 1:2 classid 1:40 htb rate 1kbit ceil $1kbit burst
 $TC qdisc add dev imq$5 parent 1:100 handle 100: sfq perturb 10
 $TC qdisc add dev imq$5 parent 1:10 handle 10: sfq perturb 10
 $TC qdisc add dev imq$5 parent 1:20 handle 20: red bandwidth $((8*${1}/10))kbit limit 1000000 min 5000 max 100000 avpkt 1000 burst 50 ecn
-$TC qdisc add dev imq$5 parent 1:30 handle 30: red bandwidth $((7*${2}/10))kbit limit  500000 min 2500 max  50000 avpkt  500 burst 25 ecn
+$TC qdisc add dev imq$5 parent 1:30 handle 30: red bandwidth $((7*${1}/10))kbit limit  500000 min 2500 max  50000 avpkt  500 burst 25 ecn
 $TC qdisc add dev imq$5 parent 1:40 handle 40: red limit 250000 min 1250 max 25000 avpkt 250 burst 10 ecn
 $TC filter add dev imq$5 parent 1:0 protocol ip prio 5 u32 \
    match ip protocol 6 0xff \
