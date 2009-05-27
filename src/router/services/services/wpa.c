@@ -121,16 +121,8 @@ void start_nas_notify( char *ifname )
 
 void start_radius( char *prefix )
 {
-    char psk[64];
 
     // wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
-    char ifname[32];
-
-    strcpy( ifname, prefix );
-    if( !strcmp( ifname, "wl0" ) )
-	strcpy( ifname, nvram_safe_get( "wl0_ifname" ) );
-    if( !strcmp( ifname, "wl1" ) )
-	strcpy( ifname, nvram_safe_get( "wl1_ifname" ) );
 
     if( nvram_nmatch( "1", "%s_radauth", prefix )
 	&& nvram_nmatch( "ap", "%s_mode", prefix ) )
@@ -138,6 +130,7 @@ void start_radius( char *prefix )
 	char *server = nvram_nget( "%s_radius_ipaddr", prefix );
 	char *port = nvram_nget( "%s_radius_port", prefix );
 	char *share = nvram_nget( "%s_radius_key", prefix );
+	char *ifname = nvram_nget( "%s_ifname", prefix );
 	char type[32];
 
 	sprintf( type, "%s_radmactype", prefix );
@@ -153,8 +146,7 @@ void start_radius( char *prefix )
 	    pragma = "";
 	sleep( 1 );		// some delay is usefull
 	sysprintf( "wrt-radauth %s %s %s %s %s %s %s %s &", pragma, ifname,
-		   server, port, share, nvram_nget( "%s_radius_override",
-						    prefix ),
+		   server, port, share, nvram_nget( "%s_radius_override", prefix ),
 		   nvram_nget( "%s_radmacpassword", prefix ),
 		   nvram_nget( "%s_max_unauth_users", prefix ) );
     }
@@ -363,8 +355,8 @@ extern void setupSupplicant( char *prefix );
 void start_nas( void )
 {
     unlink( "/tmp/.nas" );
+    
     int cnt = get_wl_instances(  );
-
     int c;
 
     for( c = 0; c < cnt; c++ )
@@ -432,6 +424,12 @@ void start_nas_single( char *type, char *prefix )
     0}, *mode =
     {
     0};
+
+    if( !strcmp( prefix, "wl0" ) )    
+    	led_control( LED_SEC0, LED_OFF );
+	if( !strcmp( prefix, "wl1" ) )
+		led_control( LED_SEC1, LED_OFF );
+    
     if( nvram_nmatch( "disabled", "%s_net_mode", prefix ) )
 	return;
     if( !strcmp( prefix, "wl0" ) )
@@ -483,19 +481,12 @@ void start_nas_single( char *type, char *prefix )
 	sec_mode = getSecMode( prefix );
 	auth_mode = getAuthMode( prefix );
 
+	if( strcmp( sec_mode, "0") )
+	{
 	if( !strcmp( prefix, "wl0" ) )
-	{
-		if( !strcmp( sec_mode, "0") )
-			led_control( LED_SEC0, LED_OFF );
-		else
-			led_control( LED_SEC0, LED_ON );
-	}
+		led_control( LED_SEC0, LED_ON );
 	if( !strcmp( prefix, "wl1" ) )
-	{
-		if( !strcmp( sec_mode, "0") )
-			led_control( LED_SEC1, LED_OFF );
-		else
-			led_control( LED_SEC1, LED_ON );
+		led_control( LED_SEC1, LED_ON );
 	}
 
 	if( auth_mode == NULL )
@@ -757,7 +748,10 @@ void stop_nas( void )
     int ret = 0;
 
     unlink( "/tmp/.nas" );
-
+    
+    led_control( LED_SEC0, LED_OFF );
+	led_control( LED_SEC1, LED_OFF );
+	
     if( pidof( "nas" ) > 0 )
 	dd_syslog( LOG_INFO, "NAS : NAS daemon successfully stopped\n" );
 
