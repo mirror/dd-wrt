@@ -382,7 +382,7 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		
 		/* Write fake Netgear checksum to the flash */		
 		uint boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
-		if ( (boardnum == 83258 || boardnum == 01)  //or 001 or 0x01
+		if ( (boardnum == 83258 || boardnum == 1 || boardnum == 0123)  //or 01 or 001 or 0x01
 	  	&& (nvram_match("boardtype", "0x048e") || nvram_match("boardtype", "0x48E"))
 	  	&& (nvram_match("boardrev", "0x11") || nvram_match("boardrev", "0x10"))
 	  	&& (nvram_match("boardflags", "0x750") || nvram_match("boardflags", "0x0750"))
