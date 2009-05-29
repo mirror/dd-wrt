@@ -1736,7 +1736,7 @@ int internal_getRouterBrand(  )
 	}
     }
 
-    if( ( boardnum == 83258 || boardnum == 01 )	//or 001 or 0x01
+    if( ( boardnum == 83258 || boardnum == 1 || boardnum == 0123)	//or 01 or 001 or 0x01
 	&& ( nvram_match( "boardtype", "0x048e" )
 	     || nvram_match( "boardtype", "0x48E" ) )
 	&& ( nvram_match( "boardrev", "0x11" )
