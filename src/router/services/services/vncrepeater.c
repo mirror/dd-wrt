@@ -34,46 +34,47 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 
-void start_vncrepeater( void )
+void start_vncrepeater(void)
 {
-    if( !nvram_match( "vncr_enable", "1" ) )
+	if (!nvram_match("vncr_enable", "1"))
+		return;
+	eval("iptables", "-D", "INPUT", "-p", "tcp", "-i",
+	     nvram_safe_get("wan_iface"), "--dport", "5900", "-j", "ACCEPT");
+	eval("iptables", "-I", "INPUT", "-p", "tcp", "-i",
+	     nvram_safe_get("wan_iface"), "--dport", "5900", "-j", "ACCEPT");
+
+	FILE *fp = fopen("/tmp/vncrepeater.ini", "wb");
+	fprintf(fp, "[general]\n");
+	fprintf(fp, "viewerport=5900\n");
+	fprintf(fp, "serverport=5500\n");
+	fprintf(fp, "ownipaddress=0.0.0.0\n");
+	fprintf(fp, "maxsessions=100\n");
+	fprintf(fp, "runasuser=root\n");
+	fprintf(fp, "allowedmodes=3\n");
+	fprintf(fp, "logginglevel=1\n");
+	fprintf(fp, "[mode1]\n");
+	fprintf(fp, "allowedmode1serverport=0\n");
+	fprintf(fp, "requirelistedserver=0\n");
+	fprintf(fp, "srvListAllow0=0.0.0.0\n");
+	fprintf(fp, "[mode2]\n");
+	fprintf(fp, "requirelistedid=0\n");
+	fprintf(fp, "[eventinterface]\n");
+	fprintf(fp, "useeventinterface=false\n");
+	fclose(fp);
+
+	system("repeater /tmp/vncrepeater.ini&");
+	syslog(LOG_INFO, "VNCRepeater : repeater successfully started\n");
+
 	return;
-    eval("iptables","-D","INPUT","-p","tcp","-i",nvram_safe_get("wan_iface"),"--dport","5900","-j","ACCEPT");
-    eval("iptables","-I","INPUT","-p","tcp","-i",nvram_safe_get("wan_iface"),"--dport","5900","-j","ACCEPT");
-
-    FILE *fp = fopen("/tmp/vncrepeater.ini","wb");
-    fprintf(fp,"[general]\n");
-    fprintf(fp,"viewerport=5900\n");
-    fprintf(fp,"serverport=5500\n");
-    fprintf(fp,"ownipaddress=0.0.0.0\n");
-    fprintf(fp,"maxsessions=100\n");
-    fprintf(fp,"runasuser=root\n");
-    fprintf(fp,"allowedmodes=3\n");
-    fprintf(fp,"logginglevel=1\n");
-    fprintf(fp,"[mode1]\n");
-    fprintf(fp,"allowedmode1serverport=0\n");
-    fprintf(fp,"requirelistedserver=0\n");             
-    fprintf(fp,"srvListAllow0=0.0.0.0\n");
-    fprintf(fp,"[mode2]\n");
-    fprintf(fp,"requirelistedid=0\n"); 
-    fprintf(fp,"[eventinterface]\n");
-    fprintf(fp,"useeventinterface=false\n");
-    fclose(fp);
-
-
-    system( "repeater /tmp/vncrepeater.ini&" );
-    syslog( LOG_INFO, "VNCRepeater : repeater successfully started\n" );
-
-    return;
 }
 
-void stop_vncrepeater( void )
+void stop_vncrepeater(void)
 {
 
-    if( pidof( "repeater" ) > 0 )
-    {
-	syslog( LOG_INFO, "VNCRepeater : repeater successfully stopped\n" );
-	killall( "vncrepeater", SIGTERM );
-    }
+	if (pidof("repeater") > 0) {
+		syslog(LOG_INFO,
+		       "VNCRepeater : repeater successfully stopped\n");
+		killall("vncrepeater", SIGTERM);
+	}
 }
 #endif

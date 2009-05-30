@@ -44,7 +44,9 @@
 #endif
 
 #else
-struct sysfs_class { const char *name; };
+struct sysfs_class {
+	const char *name;
+};
 
 static inline struct sysfs_class *sysfs_open_class(const char *name)
 {
@@ -65,15 +67,15 @@ static inline unsigned long __tv_to_jiffies(const struct timeval *tv)
 
 	jif = 1000000ULL * tv->tv_sec + tv->tv_usec;
 
-	return (HZ*jif)/1000000;
+	return (HZ * jif) / 1000000;
 }
 
 static inline void __jiffies_to_tv(struct timeval *tv, unsigned long jiffies)
 {
 	unsigned long long tvusec;
 
-	tvusec = (1000000ULL*jiffies)/HZ;
-	tv->tv_sec = tvusec/1000000;
+	tvusec = (1000000ULL * jiffies) / HZ;
+	tv->tv_sec = tvusec / 1000000;
 	tv->tv_usec = tvusec - 1000000 * tv->tv_sec;
 }
 #endif

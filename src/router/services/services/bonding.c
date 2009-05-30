@@ -26,97 +26,89 @@
 #include <utils.h>
 #include <syslog.h>
 #include <services.h>
-void stop_bonding( void )
+void stop_bonding(void)
 {
-    int i;
+	int i;
 
-    for( i = 0; i < 10; i++ )
-    {
-	char bond[32];
+	for (i = 0; i < 10; i++) {
+		char bond[32];
 
-	sprintf( bond, "bond%d", i );
-	if( ifexists( bond ) )
-	{
-	    char *br = getRealBridge( bond );
+		sprintf(bond, "bond%d", i);
+		if (ifexists(bond)) {
+			char *br = getRealBridge(bond);
 
-	    if( br )
-		br_del_interface( br, bond );
-	    eval( "ifconfig", bond, "down" );
+			if (br)
+				br_del_interface(br, bond);
+			eval("ifconfig", bond, "down");
+		}
 	}
-    }
-    rmmod( "bonding" );
+	rmmod("bonding");
 }
 
-void start_bonding( void )
+void start_bonding(void)
 {
-    char mode[64];
-    char count[64];
+	char mode[64];
+	char count[64];
 
-    stop_bonding(  );
+	stop_bonding();
 
-    sprintf( mode, "mode=%s",
-	     nvram_default_get( "bonding_type", "balance-rr" ) );
-    sprintf( count, "max_bonds=%s",
-	     nvram_default_get( "bonding_number", "1" ) );
-    eval( "insmod", "bonding", "miimon=100", "downdelay=200", "updelay=200",
-	  mode, count );
+	sprintf(mode, "mode=%s",
+		nvram_default_get("bonding_type", "balance-rr"));
+	sprintf(count, "max_bonds=%s",
+		nvram_default_get("bonding_number", "1"));
+	eval("insmod", "bonding", "miimon=100", "downdelay=200", "updelay=200",
+	     mode, count);
 
-    static char word[256];
-    char *next, *wordlist;
+	static char word[256];
+	char *next, *wordlist;
 
-    wordlist = nvram_safe_get( "bondings" );
-    foreach( word, wordlist, next )
-    {
-	char *port = word;
-	char *tag = strsep( &port, ">" );
+	wordlist = nvram_safe_get("bondings");
+	foreach(word, wordlist, next) {
+		char *port = word;
+		char *tag = strsep(&port, ">");
 
-	if( !tag || !port )
-	{
-	    break;
+		if (!tag || !port) {
+			break;
+		}
+		if (!strncmp(port, "ath", 3)
+		    && nvram_nmatch("wdsap", "%s_mode", port)) {
+			sysprintf("ifconfig %s down", port);
+			sysprintf("iwpriv %s wdssep 0", port);
+			sysprintf("ifconfig %s up", port);
+		}
+		eval("ifconfig", tag, "0.0.0.0", "up");
+		eval("ifenslave", tag, port);
 	}
-	if( !strncmp( port, "ath", 3 )
-	    && nvram_nmatch( "wdsap", "%s_mode", port ) )
-	{
-	    sysprintf( "ifconfig %s down", port );
-	    sysprintf( "iwpriv %s wdssep 0", port );
-	    sysprintf( "ifconfig %s up", port );
+	int c = atoi(nvram_safe_get("bonding_number"));
+	int i;
+
+	for (i = 0; i < c; i++) {
+		sprintf(word, "bond%d", i);
+		char *br = getRealBridge(word);
+
+		if (br)
+			br_add_interface(br, word);
+
 	}
-	eval( "ifconfig", tag, "0.0.0.0", "up" );
-	eval( "ifenslave", tag, port );
-    }
-    int c = atoi( nvram_safe_get( "bonding_number" ) );
-    int i;
-
-    for( i = 0; i < c; i++ )
-    {
-	sprintf( word, "bond%d", i );
-	char *br = getRealBridge( word );
-
-	if( br )
-	    br_add_interface( br, word );
-
-    }
 }
 
-int isBond( char *ifname )
+int isBond(char *ifname)
 {
-    static char word[256];
-    char *next, *wordlist;
+	static char word[256];
+	char *next, *wordlist;
 
-    wordlist = nvram_safe_get( "bondings" );
-    foreach( word, wordlist, next )
-    {
-	char *port = word;
-	char *tag = strsep( &port, ">" );
+	wordlist = nvram_safe_get("bondings");
+	foreach(word, wordlist, next) {
+		char *port = word;
+		char *tag = strsep(&port, ">");
 
-	if( !tag || !port )
-	{
-	    break;
+		if (!tag || !port) {
+			break;
+		}
+		if (!strcmp(port, ifname))
+			return 1;
 	}
-	if( !strcmp( port, ifname ) )
-	    return 1;
-    }
-    return 0;
+	return 0;
 }
 
 #endif

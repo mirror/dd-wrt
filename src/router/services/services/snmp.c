@@ -35,59 +35,59 @@
 
 #define SNMP_CONF_FILE	"/var/snmp/snmpd.conf"
 
-void start_snmp( void )
+void start_snmp(void)
 {
-    int ret = 0;
-    pid_t pid;
+	int ret = 0;
+	pid_t pid;
 
-    char *snmpd_argv[] = { "snmpd", "-c", SNMP_CONF_FILE, NULL };
-    FILE *fp = NULL;
+	char *snmpd_argv[] = { "snmpd", "-c", SNMP_CONF_FILE, NULL };
+	FILE *fp = NULL;
 
-    stop_snmp(  );
+	stop_snmp();
 
-    if( !nvram_invmatch( "snmpd_enable", "0" ) )
+	if (!nvram_invmatch("snmpd_enable", "0"))
+		return;
+
+	fp = fopen(SNMP_CONF_FILE, "w");
+	if (NULL == fp)
+		return;
+
+	if (strlen(nvram_safe_get("snmpd_syslocation")) > 0)
+		fprintf(fp, "syslocation %s\n",
+			nvram_safe_get("snmpd_syslocation"));
+	if (strlen(nvram_safe_get("snmpd_syscontact")) > 0)
+		fprintf(fp, "syscontact %s\n",
+			nvram_safe_get("snmpd_syscontact"));
+	if (strlen(nvram_safe_get("snmpd_sysname")) > 0)
+		fprintf(fp, "sysname %s\n", nvram_safe_get("snmpd_sysname"));
+	if (strlen(nvram_safe_get("snmpd_rocommunity")) > 0)
+		fprintf(fp, "rocommunity %s\n",
+			nvram_safe_get("snmpd_rocommunity"));
+	if (strlen(nvram_safe_get("snmpd_rwcommunity")) > 0)
+		fprintf(fp, "rwcommunity %s\n",
+			nvram_safe_get("snmpd_rwcommunity"));
+	fprintf(fp, "sysservices 9\n");
+	fprintf(fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n");
+
+	fclose(fp);
+	ret = _evalpid(snmpd_argv, NULL, 0, &pid);
+
+	cprintf("done\n");
+	dd_syslog(LOG_INFO, "snmpd : SNMP daemon successfully started\n");
+
 	return;
-
-    fp = fopen( SNMP_CONF_FILE, "w" );
-    if( NULL == fp )
-	return;
-
-    if( strlen( nvram_safe_get( "snmpd_syslocation" ) ) > 0 )
-	fprintf( fp, "syslocation %s\n",
-		 nvram_safe_get( "snmpd_syslocation" ) );
-    if( strlen( nvram_safe_get( "snmpd_syscontact" ) ) > 0 )
-	fprintf( fp, "syscontact %s\n",
-		 nvram_safe_get( "snmpd_syscontact" ) );
-    if( strlen( nvram_safe_get( "snmpd_sysname" ) ) > 0 )
-	fprintf( fp, "sysname %s\n", nvram_safe_get( "snmpd_sysname" ) );
-    if( strlen( nvram_safe_get( "snmpd_rocommunity" ) ) > 0 )
-	fprintf( fp, "rocommunity %s\n",
-		 nvram_safe_get( "snmpd_rocommunity" ) );
-    if( strlen( nvram_safe_get( "snmpd_rwcommunity" ) ) > 0 )
-	fprintf( fp, "rwcommunity %s\n",
-		 nvram_safe_get( "snmpd_rwcommunity" ) );
-    fprintf( fp, "sysservices 9\n" );
-    fprintf( fp, "pass_persist .1.3.6.1.4.1.2021.255 /etc/wl_snmpd.sh\n" );
-
-    fclose( fp );
-    ret = _evalpid( snmpd_argv, NULL, 0, &pid );
-
-    cprintf( "done\n" );
-    dd_syslog( LOG_INFO, "snmpd : SNMP daemon successfully started\n" );
-
-    return;
 }
 
-void stop_snmp( void )
+void stop_snmp(void)
 {
-    int ret = 0;
+	int ret = 0;
 
-    cprintf( "done\n" );
-    if( pidof( "snmpd" ) > 0 )
-    {
-	dd_syslog( LOG_INFO, "snmpd : SNMP daemon successfully stopped\n" );
-	ret = killall( "snmpd", SIGKILL );
-    }
-    return;
+	cprintf("done\n");
+	if (pidof("snmpd") > 0) {
+		dd_syslog(LOG_INFO,
+			  "snmpd : SNMP daemon successfully stopped\n");
+		ret = killall("snmpd", SIGKILL);
+	}
+	return;
 }
 #endif
