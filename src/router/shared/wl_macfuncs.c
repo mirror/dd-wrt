@@ -22,7 +22,7 @@
 
 #include <string.h>
 #include <memory.h>
-int getsocket( void );
+int getsocket(void);
 #ifdef HAVE_MADWIFI
 #include <sys/types.h>
 #include <sys/file.h>
@@ -37,101 +37,98 @@ int getsocket( void );
 #include "net80211/ieee80211_ioctl.h"
 #include <stdio.h>
 
-
-static int set80211param( char *iface, int op, int arg )
+static int set80211param(char *iface, int op, int arg)
 {
-    struct iwreq iwr;
+	struct iwreq iwr;
 
-    memset( &iwr, 0, sizeof( iwr ) );
-    strncpy( iwr.ifr_name, iface, IFNAMSIZ );
-    iwr.u.mode = op;
-    memcpy( iwr.u.name + sizeof( __u32 ), &arg, sizeof( arg ) );
+	memset(&iwr, 0, sizeof(iwr));
+	strncpy(iwr.ifr_name, iface, IFNAMSIZ);
+	iwr.u.mode = op;
+	memcpy(iwr.u.name + sizeof(__u32), &arg, sizeof(arg));
 
-    if( ioctl( getsocket(  ), IEEE80211_IOCTL_SETPARAM, &iwr ) < 0 )
-    {
-	perror( "ioctl[IEEE80211_IOCTL_SETPARAM]" );
-	return -1;
-    }
-    return 0;
+	if (ioctl(getsocket(), IEEE80211_IOCTL_SETPARAM, &iwr) < 0) {
+		perror("ioctl[IEEE80211_IOCTL_SETPARAM]");
+		return -1;
+	}
+	return 0;
 }
 
-struct maclist
-{
-    uint count;			/* number of MAC addresses */
-    struct ether_addr ea[1];	/* variable length array of MAC addresses */
+struct maclist {
+	uint count;		/* number of MAC addresses */
+	struct ether_addr ea[1];	/* variable length array of MAC addresses */
 };
 
-void security_disable( char *iface )
+void security_disable(char *iface)
 {
 #ifdef DEBUG
-    printf( "Security Disable\n" );
+	printf("Security Disable\n");
 #endif
-    set80211param( iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_FLUSH );
-    set80211param( iface, IEEE80211_PARAM_MACCMD,
-		   IEEE80211_MACCMD_POLICY_OPEN );
+	set80211param(iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_FLUSH);
+	set80211param(iface, IEEE80211_PARAM_MACCMD,
+		      IEEE80211_MACCMD_POLICY_OPEN);
 
 }
-static const char *ieee80211_ntoa( const unsigned char
-				   mac[IEEE80211_ADDR_LEN] )
+
+static const char *ieee80211_ntoa(const unsigned char mac[IEEE80211_ADDR_LEN])
 {
-    static char a[18];
-    int i;
+	static char a[18];
+	int i;
 
-    i = snprintf( a, sizeof( a ), "%02x:%02x:%02x:%02x:%02x:%02x",
-		  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
-    return ( i < 17 ? NULL : a );
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x",
+		     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	return (i < 17 ? NULL : a);
 }
 
-void set_maclist( char *iface, char *buf )
+void set_maclist(char *iface, char *buf)
 {
-    struct sockaddr sa;
-    struct maclist *maclist = ( struct maclist * )buf;
+	struct sockaddr sa;
+	struct maclist *maclist = (struct maclist *)buf;
 
-    if( maclist->count == 0 )
-	security_disable( iface );
-    uint i;
+	if (maclist->count == 0)
+		security_disable(iface);
+	uint i;
 
-    for( i = 0; i < maclist->count; i++ )
-    {
-	memcpy( sa.sa_data, &maclist->ea[i], IEEE80211_ADDR_LEN );
-//	fprintf( stderr, "maclist add %s\n",
-//		 ieee80211_ntoa( ( unsigned char * )&maclist->ea[i] ) );
-	do80211priv( iface, IEEE80211_IOCTL_ADDMAC, &sa, sizeof( sa ) );
-    }
+	for (i = 0; i < maclist->count; i++) {
+		memcpy(sa.sa_data, &maclist->ea[i], IEEE80211_ADDR_LEN);
+//      fprintf( stderr, "maclist add %s\n",
+//               ieee80211_ntoa( ( unsigned char * )&maclist->ea[i] ) );
+		do80211priv(iface, IEEE80211_IOCTL_ADDMAC, &sa, sizeof(sa));
+	}
 }
-void security_deny( char *iface )
+
+void security_deny(char *iface)
 {
 #ifdef DEBUG
-    printf( "Policy Deny\n" );
+	printf("Policy Deny\n");
 #endif
-    // fprintf(stderr,"maclist deny\n");
-    set80211param( iface, IEEE80211_PARAM_MACCMD,
-		   IEEE80211_MACCMD_POLICY_ALLOW );
+	// fprintf(stderr,"maclist deny\n");
+	set80211param(iface, IEEE80211_PARAM_MACCMD,
+		      IEEE80211_MACCMD_POLICY_ALLOW);
 }
 
-void security_allow( char *iface )
+void security_allow(char *iface)
 {
 #ifdef DEBUG
-    printf( "Policy Deny\n" );
+	printf("Policy Deny\n");
 #endif
-    // fprintf(stderr,"maclist allow\n");
-    set80211param( iface, IEEE80211_PARAM_MACCMD,
-		   IEEE80211_MACCMD_POLICY_DENY );
+	// fprintf(stderr,"maclist allow\n");
+	set80211param(iface, IEEE80211_PARAM_MACCMD,
+		      IEEE80211_MACCMD_POLICY_DENY);
 }
 
-void kick_mac( char *iface, char *mac )
+void kick_mac(char *iface, char *mac)
 {
 #ifdef DEBUG
-    printf( "KickMac: %s\n", mac );
+	printf("KickMac: %s\n", mac);
 #endif
-    struct ieee80211req_mlme mlme;
+	struct ieee80211req_mlme mlme;
 
-    mlme.im_op = IEEE80211_MLME_DISASSOC;
-    // mlme.im_reason = IEEE80211_REASON_UNSPECIFIED;
-    mlme.im_reason = IEEE80211_REASON_NOT_AUTHED;
-    memcpy( mlme.im_macaddr, mac, 6 );
+	mlme.im_op = IEEE80211_MLME_DISASSOC;
+	// mlme.im_reason = IEEE80211_REASON_UNSPECIFIED;
+	mlme.im_reason = IEEE80211_REASON_NOT_AUTHED;
+	memcpy(mlme.im_macaddr, mac, 6);
 
-    do80211priv( iface, IEEE80211_IOCTL_SETMLME, &mlme, sizeof( mlme ) );
+	do80211priv(iface, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
 }
 #elif HAVE_RT2880
 #include <sys/types.h>
@@ -142,62 +139,58 @@ void kick_mac( char *iface, char *mac )
 #include <bcmnvram.h>
 #include <stdio.h>
 
-
-
-struct maclist
-{
-    uint count;			/* number of MAC addresses */
-    struct ether_addr ea[1];	/* variable length array of MAC addresses */
+struct maclist {
+	uint count;		/* number of MAC addresses */
+	struct ether_addr ea[1];	/* variable length array of MAC addresses */
 };
 
-void security_disable( char *iface )
+void security_disable(char *iface)
 {
-	sysprintf("iwpriv %s set ACLClearAll=1",iface);
-	sysprintf("iwpriv %s set AccessPolicy=0",iface);
+	sysprintf("iwpriv %s set ACLClearAll=1", iface);
+	sysprintf("iwpriv %s set AccessPolicy=0", iface);
 
 }
-static const char *ieee80211_ntoa( const unsigned char
-				   mac[6] )
-{
-    static char a[18];
-    int i;
 
-    i = snprintf( a, sizeof( a ), "%02x:%02x:%02x:%02x:%02x:%02x",
-		  mac[0], mac[1], mac[2], mac[3], mac[4], mac[5] );
-    return ( i < 17 ? NULL : a );
+static const char *ieee80211_ntoa(const unsigned char mac[6])
+{
+	static char a[18];
+	int i;
+
+	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x",
+		     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	return (i < 17 ? NULL : a);
 }
 
-void set_maclist( char *iface, char *buf )
+void set_maclist(char *iface, char *buf)
 {
-    struct maclist *maclist = ( struct maclist * )buf;
+	struct maclist *maclist = (struct maclist *)buf;
 
-    if( maclist->count == 0 )
-	security_disable( iface );
-    uint i;
+	if (maclist->count == 0)
+		security_disable(iface);
+	uint i;
 
-    for( i = 0; i < maclist->count; i++ )
-    {
-	sysprintf("iwpriv %s set ACLAddEntry=%s",iface,ieee80211_ntoa( ( unsigned char * )&maclist->ea[i] ));
-    }
-}
-void security_deny( char *iface )
-{
-
-    sysprintf("iwpriv %s set AccessPolicy=2",iface);
+	for (i = 0; i < maclist->count; i++) {
+		sysprintf("iwpriv %s set ACLAddEntry=%s", iface,
+			  ieee80211_ntoa((unsigned char *)&maclist->ea[i]));
+	}
 }
 
-void security_allow( char *iface )
-{
-    sysprintf("iwpriv %s set AccessPolicy=1",iface);
-}
-
-void kick_mac( char *iface, char *mac )
+void security_deny(char *iface)
 {
 
-sysprintf("iwpriv %s set DisConnectSta=%s",iface,ieee80211_ntoa( mac ));
+	sysprintf("iwpriv %s set AccessPolicy=2", iface);
 }
 
+void security_allow(char *iface)
+{
+	sysprintf("iwpriv %s set AccessPolicy=1", iface);
+}
 
+void kick_mac(char *iface, char *mac)
+{
+
+	sysprintf("iwpriv %s set DisConnectSta=%s", iface, ieee80211_ntoa(mac));
+}
 
 #else
 
@@ -205,44 +198,44 @@ sysprintf("iwpriv %s set DisConnectSta=%s",iface,ieee80211_ntoa( mac ));
 #include <wlioctl.h>
 
 #include <bcmnvram.h>
-void set_maclist( char *iface, char *buf )
+void set_maclist(char *iface, char *buf)
 {
-    wl_ioctl( iface, WLC_SET_MACLIST, buf, WLC_IOCTL_MAXLEN );
+	wl_ioctl(iface, WLC_SET_MACLIST, buf, WLC_IOCTL_MAXLEN);
 }
 
-void security_disable( char *iface )
+void security_disable(char *iface)
 {
-    int val;
+	int val;
 
-    val = WLC_MACMODE_DISABLED;
-    wl_ioctl( iface, WLC_SET_MACMODE, &val, sizeof( val ) );
+	val = WLC_MACMODE_DISABLED;
+	wl_ioctl(iface, WLC_SET_MACMODE, &val, sizeof(val));
 }
 
-void security_deny( char *iface )
+void security_deny(char *iface)
 {
-    int val;
+	int val;
 
-    val = WLC_MACMODE_DENY;
-    wl_ioctl( iface, WLC_SET_MACMODE, &val, sizeof( val ) );
+	val = WLC_MACMODE_DENY;
+	wl_ioctl(iface, WLC_SET_MACMODE, &val, sizeof(val));
 }
 
-void security_allow( char *iface )
+void security_allow(char *iface)
 {
-    int val;
+	int val;
 
-    val = WLC_MACMODE_ALLOW;
-    wl_ioctl( iface, WLC_SET_MACMODE, &val, sizeof( val ) );
+	val = WLC_MACMODE_ALLOW;
+	wl_ioctl(iface, WLC_SET_MACMODE, &val, sizeof(val));
 }
 
-void kick_mac( char *iface, char *mac )
+void kick_mac(char *iface, char *mac)
 {
-    scb_val_t scb_val;
+	scb_val_t scb_val;
 
-    scb_val.val = ( uint32 ) DOT11_RC_NOT_AUTH;
-    memcpy( &scb_val.ea, mac, ETHER_ADDR_LEN );
-    wl_ioctl( iface, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val, sizeof( scb_val ) );	/* Kick 
+	scb_val.val = (uint32) DOT11_RC_NOT_AUTH;
+	memcpy(&scb_val.ea, mac, ETHER_ADDR_LEN);
+	wl_ioctl(iface, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val, sizeof(scb_val));	/* Kick 
 											 * station 
 											 * off 
-																				 */
+											 */
 }
 #endif
