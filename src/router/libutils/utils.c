@@ -39,376 +39,344 @@
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 
-struct mii_ioctl_data
-{
-    unsigned short phy_id;
-    unsigned short reg_num;
-    unsigned short val_in;
-    unsigned short val_out;
+struct mii_ioctl_data {
+	unsigned short phy_id;
+	unsigned short reg_num;
+	unsigned short val_in;
+	unsigned short val_out;
 };
 
 #ifdef HAVE_FONERA
-static void inline getBoardMAC( char *mac )
+static void inline getBoardMAC(char *mac)
 {
-    // 102
-    int i;
-    char op[32];
-    unsigned char data[256];
-    FILE *in;
+	// 102
+	int i;
+	char op[32];
+	unsigned char data[256];
+	FILE *in;
 
-    sprintf( op, "/dev/mtdblock/%d", getMTD( "board_config" ) );
-    in = fopen( op, "rb" );
-    if( in == NULL )
-	return;
-    fread( data, 256, 1, in );
-    fclose( in );
-    sprintf( mac, "%02X:%02X:%02X:%02X:%02X:%02X", data[102] & 0xff,
-	     data[103] & 0xff, data[104] & 0xff, data[105] & 0xff,
-	     data[106] & 0xff, data[107] & 0xff );
+	sprintf(op, "/dev/mtdblock/%d", getMTD("board_config"));
+	in = fopen(op, "rb");
+	if (in == NULL)
+		return;
+	fread(data, 256, 1, in);
+	fclose(in);
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", data[102] & 0xff,
+		data[103] & 0xff, data[104] & 0xff, data[105] & 0xff,
+		data[106] & 0xff, data[107] & 0xff);
 }
 #endif
 
-int count_processes( char *pidName )
+int count_processes(char *pidName)
 {
-    FILE *fp;
-    char line[254];
-    char safename[64];
+	FILE *fp;
+	char line[254];
+	char safename[64];
 
-    sprintf( safename, " %s ", pidName );
-    char zombie[64];
+	sprintf(safename, " %s ", pidName);
+	char zombie[64];
 
-    sprintf( zombie, "Z   [%s]", pidName );	// do not count zombies
-    int i = 0;
+	sprintf(zombie, "Z   [%s]", pidName);	// do not count zombies
+	int i = 0;
 
-    cprintf( "Search for %s\n", pidName );
-    if( ( fp = popen( "ps", "r" ) ) )
-    {
-	while( fgets( line, sizeof( line ), fp ) != NULL )
-	{
-	    if( strstr( line, safename ) && !strstr( line, zombie ) )
-	    {
-		i++;
-	    }
+	cprintf("Search for %s\n", pidName);
+	if ((fp = popen("ps", "r"))) {
+		while (fgets(line, sizeof(line), fp) != NULL) {
+			if (strstr(line, safename) && !strstr(line, zombie)) {
+				i++;
+			}
+		}
+		pclose(fp);
 	}
-	pclose( fp );
-    }
-    cprintf( "Search done... %d\n", i );
+	cprintf("Search done... %d\n", i);
 
-    return i;
+	return i;
 }
 
 /*
  * This function returns the number of days for the given month in the given
  * year 
  */
-unsigned int daysformonth( unsigned int month, unsigned int year )
+unsigned int daysformonth(unsigned int month, unsigned int year)
 {
-    return ( 30 + ( ( ( month & 9 ) == 8 ) || ( ( month & 9 ) == 1 ) ) -
-	     ( month ==
-	       2 ) - ( !( ( ( year % 4 ) == 0 )
-			  && ( ( ( year % 100 ) != 0 )
-			       || ( ( year % 400 ) == 0 ) ) )
-		       && ( month == 2 ) ) );
+	return (30 + (((month & 9) == 8) || ((month & 9) == 1)) -
+		(month == 2) - (!(((year % 4) == 0)
+				  && (((year % 100) != 0)
+				      || ((year % 400) == 0)))
+				&& (month == 2)));
 }
 
 #ifdef HAVE_AQOS
 
-static char *get_wshaper_dev( void )
+static char *get_wshaper_dev(void)
 {
-    if( nvram_match( "wshaper_dev", "WAN" ) )
-	return get_wan_face(  );
-    else
-	return "br0";
+	if (nvram_match("wshaper_dev", "WAN"))
+		return get_wan_face();
+	else
+		return "br0";
 }
 
-void add_userip( char *ip, int idx, char *upstream, char *downstream )
+void add_userip(char *ip, int idx, char *upstream, char *downstream)
 {
-    int base = 120 + idx;
-    char up[32];
-    char down[32];
-    char ups[32];
-    char downs[32];
+	int base = 120 + idx;
+	char up[32];
+	char down[32];
+	char ups[32];
+	char downs[32];
 
-    if( nvram_match( "qos_type", "1" ) )
-    {
-	sprintf( up, "1:%d", base );
-	sprintf( down, "1:%d", base + 1 );
-	sprintf( ups, "%skbit", upstream );
-	sprintf( downs, "%skbit", downstream );
-	sysprintf
-	    ( "tc class add dev %s parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
-	      "imq0", base, upstream, upstream );
-	sysprintf
-	    ( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-	      "imq0", base );
-	sysprintf
-	    ( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match ip src %s flowid 1:%d",
-	      "imq0", ip, base );
+	if (nvram_match("qos_type", "1")) {
+		sprintf(up, "1:%d", base);
+		sprintf(down, "1:%d", base + 1);
+		sprintf(ups, "%skbit", upstream);
+		sprintf(downs, "%skbit", downstream);
+		sysprintf
+		    ("tc class add dev %s parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
+		     "imq0", base, upstream, upstream);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
+		     "imq0", base);
+		sysprintf
+		    ("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match ip src %s flowid 1:%d",
+		     "imq0", ip, base);
 
-	sysprintf
-	    ( "tc class add dev imq0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
-	      base + 1, downstream, downstream );
-	sysprintf
-	    ( "tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
-	      base + 1, base + 1 );
-	sysprintf
-	    ( "tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match ip dst %s flowid 1:%d",
-	      ip, base + 1 );
+		sysprintf
+		    ("tc class add dev imq0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
+		     base + 1, downstream, downstream);
+		sysprintf
+		    ("tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
+		     base + 1, base + 1);
+		sysprintf
+		    ("tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match ip dst %s flowid 1:%d",
+		     ip, base + 1);
 
-    }
-    else
-    {
-	sprintf( up, "1:%d", base );
-	sprintf( down, "1:%d", base + 1 );
-	sprintf( ups, "%skbit", upstream );
-	sprintf( downs, "%skbit", downstream );
-	sysprintf
-	    ( "tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
-	      "imq0", base, upstream, upstream );
-	sysprintf
-	    ( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-	      "imq0", base );
-	sysprintf
-	    ( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match ip src %s flowid 1:%d",
-	      "imq0", ip, base );
+	} else {
+		sprintf(up, "1:%d", base);
+		sprintf(down, "1:%d", base + 1);
+		sprintf(ups, "%skbit", upstream);
+		sprintf(downs, "%skbit", downstream);
+		sysprintf
+		    ("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
+		     "imq0", base, upstream, upstream);
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
+		     "imq0", base);
+		sysprintf
+		    ("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match ip src %s flowid 1:%d",
+		     "imq0", ip, base);
 
-	sysprintf
-	    ( "tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
-	      base + 1, downstream, downstream );
-	sysprintf
-	    ( "tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
-	      base + 1, base + 1 );
-	sysprintf
-	    ( "tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match ip dst %s flowid 1:%d",
-	      ip, base + 1 );
-    }
+		sysprintf
+		    ("tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
+		     base + 1, downstream, downstream);
+		sysprintf
+		    ("tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
+		     base + 1, base + 1);
+		sysprintf
+		    ("tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match ip dst %s flowid 1:%d",
+		     ip, base + 1);
+	}
 }
 
-void add_usermac( char *mac, int idx, char *upstream, char *downstream )
+void add_usermac(char *mac, int idx, char *upstream, char *downstream)
 {
-    unsigned char octet[6];
+	unsigned char octet[6];
 
-    ether_atoe( mac, octet );
-    int base = 120 + idx;
-    char up[32];
-    char down[32];
-    char ups[32];
-    char downs[32];
-    char oct2[32];
-    char oct4[32];
-    char doct2[32];
-    char doct4[32];
+	ether_atoe(mac, octet);
+	int base = 120 + idx;
+	char up[32];
+	char down[32];
+	char ups[32];
+	char downs[32];
+	char oct2[32];
+	char oct4[32];
+	char doct2[32];
+	char doct4[32];
 
-    sprintf( up, "1:%d", base );
-    sprintf( down, "1:%d", base + 1 );
-    sprintf( ups, "%skbit", upstream );
-    sprintf( downs, "%skbit", downstream );
+	sprintf(up, "1:%d", base);
+	sprintf(down, "1:%d", base + 1);
+	sprintf(ups, "%skbit", upstream);
+	sprintf(downs, "%skbit", downstream);
 
-    sprintf( oct2, "%02X%02X", octet[4], octet[5] );
-    sprintf( oct4, "%02X%02X%02X%02X", octet[0], octet[1], octet[2],
-	     octet[3] );
+	sprintf(oct2, "%02X%02X", octet[4], octet[5]);
+	sprintf(oct4, "%02X%02X%02X%02X", octet[0], octet[1], octet[2],
+		octet[3]);
 
-    sprintf( doct4, "%02X%02X%02X%02X", octet[2], octet[3], octet[4],
-	     octet[5] );
-    sprintf( doct2, "%02X%02X", octet[0], octet[1] );
+	sprintf(doct4, "%02X%02X%02X%02X", octet[2], octet[3], octet[4],
+		octet[5]);
+	sprintf(doct2, "%02X%02X", octet[0], octet[1]);
 
-    if( nvram_match( "qos_type", "1" ) )
-    {
-	// up
-	sysprintf( "tc class add dev %s parent 1:1 classid 1:%d htb rate %skbit ceil %skbit", "imq0", base, upstream, upstream );	// 
-	sysprintf
-	    ( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-	      "imq0", base );
-	sysprintf
-	    ( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",
-	      "imq0", oct2, oct4, base );
+	if (nvram_match("qos_type", "1")) {
+		// up
+		sysprintf("tc class add dev %s parent 1:1 classid 1:%d htb rate %skbit ceil %skbit", "imq0", base, upstream, upstream);	// 
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
+		     "imq0", base);
+		sysprintf
+		    ("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",
+		     "imq0", oct2, oct4, base);
 
-	// down
-	if( strcmp( get_wshaper_dev(  ), "br0" ) )
-	{
-	    /*
-	     * use separate root class, since no other class is created for br0
-	     * if qos is wan based 
-	     */
-	    sysprintf
-		( "tc class add dev br0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",
-		  base + 1, downstream, downstream );
-	    sysprintf
-		( "tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
-		  base + 1, base + 1 );
-	    sysprintf
-		( "tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-		  doct4, doct2, base + 1 );
+		// down
+		if (strcmp(get_wshaper_dev(), "br0")) {
+			/*
+			 * use separate root class, since no other class is created for br0
+			 * if qos is wan based 
+			 */
+			sysprintf
+			    ("tc class add dev br0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",
+			     base + 1, downstream, downstream);
+			sysprintf
+			    ("tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
+			     base + 1, base + 1);
+			sysprintf
+			    ("tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+			     doct4, doct2, base + 1);
+		} else {
+			/*
+			 * use root class of br0 interface which was created by the wshaper 
+			 */
+			// br0 -> imq0 changed, in lan-briding, we need to use IMQ
+			sysprintf
+			    ("tc class add dev imq0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
+			     base + 1, downstream, downstream);
+			sysprintf
+			    ("tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
+			     base + 1, base + 1);
+			sysprintf
+			    ("tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+			     doct4, doct2, base + 1);
+		}
+
+	} else {
+		// up
+		sysprintf("tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit", "imq0", base, upstream, upstream);	// 
+		sysprintf
+		    ("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
+		     "imq0", base);
+		sysprintf
+		    ("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",
+		     "imq0", oct2, oct4, base);
+
+		// down
+		if (strcmp(get_wshaper_dev(), "br0")) {
+			/*
+			 * use separate root class, since no other class is created for br0
+			 * if qos is wan based 
+			 */
+			sysprintf
+			    ("tc class add dev br0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",
+			     base + 1, downstream, downstream);
+			sysprintf
+			    ("tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
+			     base + 1, base + 1);
+			sysprintf
+			    ("tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+			     doct4, doct2, base + 1);
+		} else {
+			/*
+			 * use root class of br0 interface which was created by the wshaper 
+			 */
+			// br0 -> imq0 changed, in lan-briding, we need to use IMQ
+			sysprintf
+			    ("tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
+			     base + 1, downstream, downstream);
+			sysprintf
+			    ("tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
+			     base + 1, base + 1);
+			sysprintf
+			    ("tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+			     doct4, doct2, base + 1);
+		}
 	}
-	else
-	{
-	    /*
-	     * use root class of br0 interface which was created by the wshaper 
-	     */
-	    // br0 -> imq0 changed, in lan-briding, we need to use IMQ
-	    sysprintf
-		( "tc class add dev imq0 parent 1:1 classid 1:%d htb rate %skbit ceil %skbit",
-		  base + 1, downstream, downstream );
-	    sysprintf
-		( "tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
-		  base + 1, base + 1 );
-	    sysprintf
-		( "tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-		  doct4, doct2, base + 1 );
-	}
+	/*
+	 * mac downstream matching can only be made directly on the connected
+	 * interface 
+	 */
+	char iflist[256];
 
-    }
-    else
-    {
-	// up
-	sysprintf( "tc class add dev %s parent 1:2 classid 1:%d htb rate %skbit ceil %skbit", "imq0", base, upstream, upstream );	// 
-	sysprintf
-	    ( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-	      "imq0", base );
-	sysprintf
-	    ( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u16 0x%s 0xFFFF at -4 match u32 0x%s 0xFFFFFFFF at -8 flowid 1:%d",
-	      "imq0", oct2, oct4, base );
+	getIfList(iflist, NULL);
+	static char word[256];
+	char *next, *wordlist;
 
-	// down
-	if( strcmp( get_wshaper_dev(  ), "br0" ) )
-	{
-	    /*
-	     * use separate root class, since no other class is created for br0
-	     * if qos is wan based 
-	     */
-	    sysprintf
-		( "tc class add dev br0 parent 1: classid 1:%d htb rate %skbit ceil %skbit",
-		  base + 1, downstream, downstream );
-	    sysprintf
-		( "tc qdisc add dev br0 parent 1:%d sfq quantum 1514b perturb 15",
-		  base + 1, base + 1 );
-	    sysprintf
-		( "tc filter add dev br0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-		  doct4, doct2, base + 1 );
+	foreach(word, iflist, next) {
+		if (nvram_nmatch("0", "%s_bridged", word)) {
+			sysprintf
+			    ("tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",
+			     word, base + 1, downstream, downstream);
+			sysprintf
+			    ("tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
+			     word, base + 1, base + 1);
+			sysprintf
+			    ("tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
+			     word, doct4, doct2, base + 1);
+		}
 	}
-	else
-	{
-	    /*
-	     * use root class of br0 interface which was created by the wshaper 
-	     */
-	    // br0 -> imq0 changed, in lan-briding, we need to use IMQ
-	    sysprintf
-		( "tc class add dev imq0 parent 1:2 classid 1:%d htb rate %skbit ceil %skbit",
-		  base + 1, downstream, downstream );
-	    sysprintf
-		( "tc qdisc add dev imq0 parent 1:%d sfq quantum 1514b perturb 15",
-		  base + 1, base + 1 );
-	    sysprintf
-		( "tc filter add dev imq0 protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-		  doct4, doct2, base + 1 );
-	}
-    }
-    /*
-     * mac downstream matching can only be made directly on the connected
-     * interface 
-     */
-    char iflist[256];
-
-    getIfList( iflist, NULL );
-    static char word[256];
-    char *next, *wordlist;
-
-    foreach( word, iflist, next )
-    {
-	if( nvram_nmatch( "0", "%s_bridged", word ) )
-	{
-	    sysprintf
-		( "tc class add dev %s parent 1: classid 1:%d htb rate %skbit ceil %skbit",
-		  word, base + 1, downstream, downstream );
-	    sysprintf
-		( "tc qdisc add dev %s parent 1:%d sfq quantum 1514b perturb 15",
-		  word, base + 1, base + 1 );
-	    sysprintf
-		( "tc filter add dev %s protocol ip parent 1:0 prio 1 u32 match u16 0x0800 0xFFFF at -2 match u32 0x%s 0xFFFFFFFF at -12 match u16 0x%s 0xFFFF at -14 flowid 1:%d",
-		  word, doct4, doct2, base + 1 );
-	}
-    }
 
 }
 
 #endif
-int buf_to_file( char *path, char *buf )
+int buf_to_file(char *path, char *buf)
 {
-    FILE *fp;
+	FILE *fp;
 
-    if( ( fp = fopen( path, "w" ) ) )
-    {
-	fprintf( fp, "%s", buf );
-	fclose( fp );
-	return 1;
-    }
+	if ((fp = fopen(path, "w"))) {
+		fprintf(fp, "%s", buf);
+		fclose(fp);
+		return 1;
+	}
 
-    return 0;
+	return 0;
 }
 
-int check_action( void )
+int check_action(void)
 {
-    char buf[80] = "";
+	char buf[80] = "";
 
-    if( file_to_buf( ACTION_FILE, buf, sizeof( buf ) ) )
-    {
-	if( !strcmp( buf, "ACT_TFTP_UPGRADE" ) )
-	{
-	    fprintf( stderr, "Upgrading from tftp now ...\n" );
-	    return ACT_TFTP_UPGRADE;
-	}
+	if (file_to_buf(ACTION_FILE, buf, sizeof(buf))) {
+		if (!strcmp(buf, "ACT_TFTP_UPGRADE")) {
+			fprintf(stderr, "Upgrading from tftp now ...\n");
+			return ACT_TFTP_UPGRADE;
+		}
 #ifdef HAVE_HTTPS
-	else if( !strcmp( buf, "ACT_WEBS_UPGRADE" ) )
-	{
-	    fprintf( stderr, "Upgrading from web (https) now ...\n" );
-	    return ACT_WEBS_UPGRADE;
-	}
+		else if (!strcmp(buf, "ACT_WEBS_UPGRADE")) {
+			fprintf(stderr, "Upgrading from web (https) now ...\n");
+			return ACT_WEBS_UPGRADE;
+		}
 #endif
-	else if( !strcmp( buf, "ACT_WEB_UPGRADE" ) )
-	{
-	    fprintf( stderr, "Upgrading from web (http) now ...\n" );
-	    return ACT_WEB_UPGRADE;
+		else if (!strcmp(buf, "ACT_WEB_UPGRADE")) {
+			fprintf(stderr, "Upgrading from web (http) now ...\n");
+			return ACT_WEB_UPGRADE;
+		} else if (!strcmp(buf, "ACT_SW_RESTORE")) {
+			fprintf(stderr,
+				"Receiving restore command from web ...\n");
+			return ACT_SW_RESTORE;
+		} else if (!strcmp(buf, "ACT_HW_RESTORE")) {
+			fprintf(stderr,
+				"Receiving restore command from resetbutton ...\n");
+			return ACT_HW_RESTORE;
+		} else if (!strcmp(buf, "ACT_NVRAM_COMMIT")) {
+			fprintf(stderr, "Committing nvram now ...\n");
+			return ACT_NVRAM_COMMIT;
+		} else if (!strcmp(buf, "ACT_ERASE_NVRAM")) {
+			fprintf(stderr, "Erasing nvram now ...\n");
+			return ACT_ERASE_NVRAM;
+		}
 	}
-	else if( !strcmp( buf, "ACT_SW_RESTORE" ) )
-	{
-	    fprintf( stderr, "Receiving restore command from web ...\n" );
-	    return ACT_SW_RESTORE;
-	}
-	else if( !strcmp( buf, "ACT_HW_RESTORE" ) )
-	{
-	    fprintf( stderr,
-		     "Receiving restore command from resetbutton ...\n" );
-	    return ACT_HW_RESTORE;
-	}
-	else if( !strcmp( buf, "ACT_NVRAM_COMMIT" ) )
-	{
-	    fprintf( stderr, "Committing nvram now ...\n" );
-	    return ACT_NVRAM_COMMIT;
-	}
-	else if( !strcmp( buf, "ACT_ERASE_NVRAM" ) )
-	{
-	    fprintf( stderr, "Erasing nvram now ...\n" );
-	    return ACT_ERASE_NVRAM;
-	}
-    }
-    // fprintf(stderr, "Waiting for upgrading....\n");
-    return ACT_IDLE;
+	// fprintf(stderr, "Waiting for upgrading....\n");
+	return ACT_IDLE;
 }
 
-int check_vlan_support( void )
+int check_vlan_support(void)
 {
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880)
-    return 0;
+	return 0;
 #else
 
-    int brand = getRouterBrand(  );
+	int brand = getRouterBrand();
 
-    switch ( brand )
-    {
+	switch (brand) {
 #ifndef HAVE_BUFFALO
 	case ROUTER_ASUS_WL500GD:
-	    return 1;
-	    break;
+		return 1;
+		break;
 #endif
 	case ROUTER_BUFFALO_WLAG54C:
 	case ROUTER_BUFFALO_WLA2G54C:
@@ -425,2194 +393,1962 @@ int check_vlan_support( void )
 	case ROUTER_ASUS_WL500G:
 	case ROUTER_BELKIN_F5D7230_V2000:
 #endif
-	    return 0;
-	    break;
-    }
+		return 0;
+		break;
+	}
 
-    uint boardflags = strtoul( nvram_safe_get( "boardflags" ), NULL, 0 );
+	uint boardflags = strtoul(nvram_safe_get("boardflags"), NULL, 0);
 
-    if( boardflags & BFL_ENETVLAN )
-	return 1;
+	if (boardflags & BFL_ENETVLAN)
+		return 1;
 
-    if( nvram_match( "boardtype", "bcm94710dev" )
-	|| nvram_match( "boardtype", "0x0101" ) || ( boardflags & 0x0100 ) )
-	return 1;
-    else
-	return 0;
+	if (nvram_match("boardtype", "bcm94710dev")
+	    || nvram_match("boardtype", "0x0101") || (boardflags & 0x0100))
+		return 1;
+	else
+		return 0;
 #endif
 }
 
-void setRouter( char *name )
+void setRouter(char *name)
 {
 #ifdef HAVE_POWERNOC_WORT54G
-    nvram_set( NVROUTER, "WORT54G" );
+	nvram_set(NVROUTER, "WORT54G");
 #elif HAVE_POWERNOC_WOAP54G
-    nvram_set( NVROUTER, "WOAP54G" );
+	nvram_set(NVROUTER, "WOAP54G");
 #elif HAVE_ERC
-    nvram_set( NVROUTER, "ServiceGate v1.0" );
+	nvram_set(NVROUTER, "ServiceGate v1.0");
 #elif HAVE_OMNI
-    nvram_set( NVROUTER, "Omni Wifi Router" );
+	nvram_set(NVROUTER, "Omni Wifi Router");
 #elif HAVE_ALFA_BRANDING
-    nvram_set( NVROUTER, "WLAN base-station" );
-    if( name )
-	nvram_set( "DD_BOARD2", name );
+	nvram_set(NVROUTER, "WLAN base-station");
+	if (name)
+		nvram_set("DD_BOARD2", name);
 #elif HAVE_MAKSAT
-    if( name )
-	nvram_set( "DD_BOARD2", name );
-    nvram_set( NVROUTER, "MAKSAT" );
+	if (name)
+		nvram_set("DD_BOARD2", name);
+	nvram_set(NVROUTER, "MAKSAT");
 #elif HAVE_TMK
-    if( name )
-	nvram_set( "DD_BOARD2", name );
-    nvram_set( NVROUTER, "KMT-WAS" );
+	if (name)
+		nvram_set("DD_BOARD2", name);
+	nvram_set(NVROUTER, "KMT-WAS");
 #else
-    if( name )
-	nvram_set( NVROUTER, name );
+	if (name)
+		nvram_set(NVROUTER, name);
 #endif
 }
 
-char *getRouter(  )
+char *getRouter()
 {
-    char *n = nvram_get( NVROUTER );
+	char *n = nvram_get(NVROUTER);
 
-    return n != NULL ? n : "Unknown Model";
+	return n != NULL ? n : "Unknown Model";
 }
 
-int internal_getRouterBrand(  )
+int internal_getRouterBrand()
 {
 #if defined(HAVE_ALLNETWRT) && !defined(HAVE_ECB9750)
-    uint boardnum = strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
+	uint boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
-    if( boardnum == 8 &&
-	nvram_match( "boardtype", "0x048e" )
-	&& nvram_match( "boardrev", "0x11" ) )
-    {
-	cprintf( "router is ALLNET01\n" );
-	setRouter( "ALLNET EUROWRT 54" );
-	return ROUTER_ALLNET01;
-    }
-    eval( "event", "3", "1", "15" );
-    return 0;
+	if (boardnum == 8 && nvram_match("boardtype", "0x048e")
+	    && nvram_match("boardrev", "0x11")) {
+		cprintf("router is ALLNET01\n");
+		setRouter("ALLNET EUROWRT 54");
+		return ROUTER_ALLNET01;
+	}
+	eval("event", "3", "1", "15");
+	return 0;
 #elif defined(HAVE_ALLNETWRT) && defined(HAVE_EOC5610)
-    setRouter( "Allnet Outdoor A/B/G CPE" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Allnet Outdoor A/B/G CPE");
+	return ROUTER_BOARD_LS2;
 #else
 #ifdef HAVE_NP28G
-    setRouter( "Compex NP28G" );
-    return ROUTER_BOARD_NP28G;
+	setRouter("Compex NP28G");
+	return ROUTER_BOARD_NP28G;
 #elif HAVE_WP54G
-    setRouter( "Compex WP54G" );
-    return ROUTER_BOARD_WP54G;
+	setRouter("Compex WP54G");
+	return ROUTER_BOARD_WP54G;
 #elif HAVE_ADM5120
-    setRouter( "Tonze AP-120" );
-    return ROUTER_BOARD_ADM5120;
+	setRouter("Tonze AP-120");
+	return ROUTER_BOARD_ADM5120;
 #elif HAVE_RB500
-    setRouter( "Mikrotik RB500" );
-    return ROUTER_BOARD_500;
+	setRouter("Mikrotik RB500");
+	return ROUTER_BOARD_500;
 #elif HAVE_GEMTEK
-    setRouter( "SuperGerry" );
-    return ROUTER_SUPERGERRY;
+	setRouter("SuperGerry");
+	return ROUTER_SUPERGERRY;
 #elif HAVE_TONZE
-    setRouter( "Tonze AP-425" );
-    return ROUTER_BOARD_GATEWORX;
-#elif HAVE_NOP8670
-    setRouter( "Senao NOP-8670" );
-    return ROUTER_BOARD_GATEWORX;
-#elif HAVE_WRT300NV2
-    setRouter( "Linksys WRT300N v2" );
-    return ROUTER_BOARD_GATEWORX;
-#elif HAVE_WG302V1
-    setRouter( "Netgear WG302v1" );
-    return ROUTER_BOARD_GATEWORX;
-#elif HAVE_WG302
-    setRouter( "Netgear WG302v2" );
-    return ROUTER_BOARD_GATEWORX;
-#elif HAVE_GATEWORX
-    char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 
-												 */
-    FILE *file = fopen( filename, "r" );
-
-    if( file )			// new detection scheme
-    {
-	fseek( file, 32, SEEK_SET );
-	char gwid[7];
-
-	gwid[6] = 0;
-	int ret = fread( gwid, 6, 1, file );
-
-	if( ret < 1 )
-	{
-	    fclose( file );
-	    goto old_way;
-	}
-	fclose( file );
-	if( !strncmp( gwid, "GW2347", 6 ) )
-	{
-	    setRouter( "Avila GW2347" );
-	    return ROUTER_BOARD_GATEWORX_SWAP;
-	}
-	if( !strncmp( gwid, "GW2357", 6 ) )
-	{
-	    setRouter( "Avila GW2357" );
-	    return ROUTER_BOARD_GATEWORX_SWAP;
-	}
-	if( !strncmp( gwid, "GW2353", 6 ) )
-	{
-	    setRouter( "Avila GW2343" );
-	    return ROUTER_BOARD_GATEWORX;
-	}
-	if( !strncmp( gwid, "GW2348", 6 ) )
-	{
-	    setRouter( "Avila GW2348-4/2" );
-	    return ROUTER_BOARD_GATEWORX;
-	}
-	if( !strncmp( gwid, "GW2358", 6 ) )
-	{
-	    setRouter( "Cambria GW2358-4" );
-	    return ROUTER_BOARD_GATEWORX;
-	}
-	if( !strncmp( gwid, "GW2350", 6 ) )
-	{
-	    setRouter( "Cambria GW2350" );
-	    return ROUTER_BOARD_GATEWORX;
-	}
-	if( !strncmp( gwid, "GW2355", 6 ) )
-	{
-	    setRouter( "Avila GW2355" );
-	    return ROUTER_BOARD_GATEWORX_GW2345;
-	}
-	if( !strncmp( gwid, "GW2345", 6 ) )
-	{
-	    setRouter( "Avila GW2345" );
-	    return ROUTER_BOARD_GATEWORX_GW2345;
-	}
-    }
-  old_way:;
-    struct mii_ioctl_data *data;
-    struct ifreq iwr;
-    int s = socket( AF_INET, SOCK_DGRAM, 0 );
-
-    if( s < 0 )
-    {
-	fprintf( stderr, "socket(SOCK_DRAGM)\n" );
-	setRouter( "Avila Gateworks" );
+	setRouter("Tonze AP-425");
 	return ROUTER_BOARD_GATEWORX;
-    }
-    ( void )strncpy( iwr.ifr_name, "ixp0", sizeof( "ixp0" ) );
-    data = ( struct mii_ioctl_data * )&iwr.ifr_data;
-    data->phy_id = 1;
+#elif HAVE_NOP8670
+	setRouter("Senao NOP-8670");
+	return ROUTER_BOARD_GATEWORX;
+#elif HAVE_WRT300NV2
+	setRouter("Linksys WRT300N v2");
+	return ROUTER_BOARD_GATEWORX;
+#elif HAVE_WG302V1
+	setRouter("Netgear WG302v1");
+	return ROUTER_BOARD_GATEWORX;
+#elif HAVE_WG302
+	setRouter("Netgear WG302v2");
+	return ROUTER_BOARD_GATEWORX;
+#elif HAVE_GATEWORX
+	char *filename = "/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0051/eeprom";	/* bank2=0x100 
+												 */
+	FILE *file = fopen(filename, "r");
+
+	if (file)		// new detection scheme
+	{
+		fseek(file, 32, SEEK_SET);
+		char gwid[7];
+
+		gwid[6] = 0;
+		int ret = fread(gwid, 6, 1, file);
+
+		if (ret < 1) {
+			fclose(file);
+			goto old_way;
+		}
+		fclose(file);
+		if (!strncmp(gwid, "GW2347", 6)) {
+			setRouter("Avila GW2347");
+			return ROUTER_BOARD_GATEWORX_SWAP;
+		}
+		if (!strncmp(gwid, "GW2357", 6)) {
+			setRouter("Avila GW2357");
+			return ROUTER_BOARD_GATEWORX_SWAP;
+		}
+		if (!strncmp(gwid, "GW2353", 6)) {
+			setRouter("Avila GW2343");
+			return ROUTER_BOARD_GATEWORX;
+		}
+		if (!strncmp(gwid, "GW2348", 6)) {
+			setRouter("Avila GW2348-4/2");
+			return ROUTER_BOARD_GATEWORX;
+		}
+		if (!strncmp(gwid, "GW2358", 6)) {
+			setRouter("Cambria GW2358-4");
+			return ROUTER_BOARD_GATEWORX;
+		}
+		if (!strncmp(gwid, "GW2350", 6)) {
+			setRouter("Cambria GW2350");
+			return ROUTER_BOARD_GATEWORX;
+		}
+		if (!strncmp(gwid, "GW2355", 6)) {
+			setRouter("Avila GW2355");
+			return ROUTER_BOARD_GATEWORX_GW2345;
+		}
+		if (!strncmp(gwid, "GW2345", 6)) {
+			setRouter("Avila GW2345");
+			return ROUTER_BOARD_GATEWORX_GW2345;
+		}
+	}
+      old_way:;
+	struct mii_ioctl_data *data;
+	struct ifreq iwr;
+	int s = socket(AF_INET, SOCK_DGRAM, 0);
+
+	if (s < 0) {
+		fprintf(stderr, "socket(SOCK_DRAGM)\n");
+		setRouter("Avila Gateworks");
+		return ROUTER_BOARD_GATEWORX;
+	}
+	(void)strncpy(iwr.ifr_name, "ixp0", sizeof("ixp0"));
+	data = (struct mii_ioctl_data *)&iwr.ifr_data;
+	data->phy_id = 1;
 #define IX_ETH_ACC_MII_PHY_ID1_REG  0x2	/* PHY identifier 1 Register */
 #define IX_ETH_ACC_MII_PHY_ID2_REG  0x3	/* PHY identifier 2 Register */
-    data->reg_num = IX_ETH_ACC_MII_PHY_ID1_REG;
-    ioctl( s, SIOCGMIIREG, &iwr );
-    data->phy_id = 1;
-    data->reg_num = IX_ETH_ACC_MII_PHY_ID1_REG;
-    ioctl( s, SIOCGMIIREG, &iwr );
-    int reg1 = data->val_out;
+	data->reg_num = IX_ETH_ACC_MII_PHY_ID1_REG;
+	ioctl(s, SIOCGMIIREG, &iwr);
+	data->phy_id = 1;
+	data->reg_num = IX_ETH_ACC_MII_PHY_ID1_REG;
+	ioctl(s, SIOCGMIIREG, &iwr);
+	int reg1 = data->val_out;
 
-    data->phy_id = 1;
-    data->reg_num = IX_ETH_ACC_MII_PHY_ID2_REG;
-    ioctl( s, SIOCGMIIREG, &iwr );
-    int reg2 = data->val_out;
+	data->phy_id = 1;
+	data->reg_num = IX_ETH_ACC_MII_PHY_ID2_REG;
+	ioctl(s, SIOCGMIIREG, &iwr);
+	int reg2 = data->val_out;
 
-    close( s );
-    fprintf( stderr, "phy id %X:%X\n", reg1, reg2 );
-    if( reg1 == 0x2000 && reg2 == 0x5c90 )
-    {
-	setRouter( "Avila GW2347" );
-	return ROUTER_BOARD_GATEWORX_SWAP;
-    }
-    else if( reg1 == 0x13 && reg2 == 0x7a11 )
-    {
+	close(s);
+	fprintf(stderr, "phy id %X:%X\n", reg1, reg2);
+	if (reg1 == 0x2000 && reg2 == 0x5c90) {
+		setRouter("Avila GW2347");
+		return ROUTER_BOARD_GATEWORX_SWAP;
+	} else if (reg1 == 0x13 && reg2 == 0x7a11) {
 #if HAVE_ALFA_BRANDING
-	setRouter( "WLAN base-station" );
+		setRouter("WLAN base-station");
 #else
-	setRouter( "Avila GW2348-4/2" );
+		setRouter("Avila GW2348-4/2");
 #endif
-	return ROUTER_BOARD_GATEWORX;
-    }
-    else if( reg1 == 0x143 && reg2 == 0xbc31 )	// broadcom phy
-    {
-	setRouter( "ADI Engineering Pronghorn Metro" );
-	return ROUTER_BOARD_GATEWORX;
-    }
-    else if( reg1 == 0x22 && reg2 == 0x1450 )	// kendin switch 
-    {
-	setRouter( "Avila GW2345" );
-	return ROUTER_BOARD_GATEWORX_GW2345;
-    }
-    else if( reg1 == 0x0 && reg2 == 0x8201 )	// realtek 
-    {
-	setRouter( "Compex WP188" );
-	return ROUTER_BOARD_GATEWORX;
-    }
-    else
-    {
-	setRouter( "Unknown" );
-	return ROUTER_BOARD_GATEWORX;
-    }
+		return ROUTER_BOARD_GATEWORX;
+	} else if (reg1 == 0x143 && reg2 == 0xbc31)	// broadcom phy
+	{
+		setRouter("ADI Engineering Pronghorn Metro");
+		return ROUTER_BOARD_GATEWORX;
+	} else if (reg1 == 0x22 && reg2 == 0x1450)	// kendin switch 
+	{
+		setRouter("Avila GW2345");
+		return ROUTER_BOARD_GATEWORX_GW2345;
+	} else if (reg1 == 0x0 && reg2 == 0x8201)	// realtek 
+	{
+		setRouter("Compex WP188");
+		return ROUTER_BOARD_GATEWORX;
+	} else {
+		setRouter("Unknown");
+		return ROUTER_BOARD_GATEWORX;
+	}
 #elif HAVE_RT2880
 #ifdef HAVE_ECB9750
-#ifdef HAVE_ALLNETWRT    
-    setRouter( "Allnet 802.11n Router" );
+#ifdef HAVE_ALLNETWRT
+	setRouter("Allnet 802.11n Router");
 #else
-    setRouter( "Senao ECB-9750" );
+	setRouter("Senao ECB-9750");
 #endif
-    return ROUTER_BOARD_ECB9750;
+	return ROUTER_BOARD_ECB9750;
 #elif HAVE_ALLNET11N
-    setRouter( "Allnet 802.11n Router" );
-    return ROUTER_BOARD_WHRG300N;
+	setRouter("Allnet 802.11n Router");
+	return ROUTER_BOARD_WHRG300N;
 #elif HAVE_ESR6650
-    setRouter( "Senao ESR6650" );
-    return ROUTER_BOARD_ESR6650;
+	setRouter("Senao ESR6650");
+	return ROUTER_BOARD_ESR6650;
 #elif HAVE_WHRG300N
-    setRouter( "Buffalo WHR-G300N" );
-    return ROUTER_BOARD_WHRG300N;
+	setRouter("Buffalo WHR-G300N");
+	return ROUTER_BOARD_WHRG300N;
 #else
-    setRouter( "Generic RT2880" );
-    return ROUTER_BOARD_RT2880;
+	setRouter("Generic RT2880");
+	return ROUTER_BOARD_RT2880;
 #endif
 #elif HAVE_X86
-    setRouter( "Generic X86" );
-    return ROUTER_BOARD_X86;
+	setRouter("Generic X86");
+	return ROUTER_BOARD_X86;
 #elif HAVE_XSCALE
-    setRouter( "NewMedia Dual A/B/G" );
-    return ROUTER_BOARD_XSCALE;
+	setRouter("NewMedia Dual A/B/G");
+	return ROUTER_BOARD_XSCALE;
 #elif HAVE_MAGICBOX
-    setRouter( "OpenRB PowerPC Board" );
-    return ROUTER_BOARD_MAGICBOX;
+	setRouter("OpenRB PowerPC Board");
+	return ROUTER_BOARD_MAGICBOX;
 #elif HAVE_GWMF54G2
-    setRouter( "Planex GW-MF54G2" );
-    char mac[32];
-    getBoardMAC(mac);
-    if (!strncmp(mac,"00:19:3B",8) || !strncmp(mac,"00:02:6F",8) || !strncmp(mac,"00:15:6D",8))
-	{
-	fprintf(stderr,"unsupported board\n");
-	sys_reboot(  );
+	setRouter("Planex GW-MF54G2");
+	char mac[32];
+	getBoardMAC(mac);
+	if (!strncmp(mac, "00:19:3B", 8) || !strncmp(mac, "00:02:6F", 8)
+	    || !strncmp(mac, "00:15:6D", 8)) {
+		fprintf(stderr, "unsupported board\n");
+		sys_reboot();
 	}
-    return ROUTER_BOARD_FONERA;
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_WRT54GV7
-    setRouter( "Linksys WRT54G v7" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("Linksys WRT54G v7");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_WRK54G
-    setRouter( "Linksys WRK54G v3" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("Linksys WRK54G v3");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_WGT624
-    setRouter( "Netgear WGT624 v4" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("Netgear WGT624 v4");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_MR3202A
-    setRouter( "MR3202A" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("MR3202A");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_AR430W
-    setRouter( "Airlink-101 AR430W" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("Airlink-101 AR430W");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_DIR400
-    setRouter( "D-Link DIR-400" );
-    return ROUTER_BOARD_FONERA2200;
+	setRouter("D-Link DIR-400");
+	return ROUTER_BOARD_FONERA2200;
 #elif HAVE_WRT54G2
-    setRouter( "Linksys WRT54G2 v1.1" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("Linksys WRT54G2 v1.1");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_DIR300
-    setRouter( "D-Link DIR-300" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("D-Link DIR-300");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_CNC
-    setRouter( "WiFi4You Outdoor AP" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("WiFi4You Outdoor AP");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_WBD500
-    setRouter( "Wiligear WBD-500" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("Wiligear WBD-500");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_EOC1650
-    setRouter( "Senao EOC-1650" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("Senao EOC-1650");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_EOC2610
 #ifdef HAVE_TRIMAX
-    setRouter( "TMAX-1200" );
+	setRouter("TMAX-1200");
 #else
-    setRouter( "Senao EOC-2610" );
+	setRouter("Senao EOC-2610");
 #endif
-    return ROUTER_BOARD_FONERA;
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_ECB3500
-    setRouter( "Senao ECB-3500" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("Senao ECB-3500");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_EAP3660
-    setRouter( "Senao EAP-3660" );
-    return ROUTER_BOARD_FONERA;
+	setRouter("Senao EAP-3660");
+	return ROUTER_BOARD_FONERA;
 #elif HAVE_FONERA
-    struct mii_ioctl_data *data;
-    struct ifreq iwr;
-    char mac[32];
-    getBoardMAC(mac);
-    if (!strncmp(mac,"00:19:3B",8) || !strncmp(mac,"00:02:6F",8) || !strncmp(mac,"00:15:6D",8))
-	{
-	fprintf(stderr,"unsupported board\n");
-	sys_reboot(  );
+	struct mii_ioctl_data *data;
+	struct ifreq iwr;
+	char mac[32];
+	getBoardMAC(mac);
+	if (!strncmp(mac, "00:19:3B", 8) || !strncmp(mac, "00:02:6F", 8)
+	    || !strncmp(mac, "00:15:6D", 8)) {
+		fprintf(stderr, "unsupported board\n");
+		sys_reboot();
 	}
-    int s = socket( AF_INET, SOCK_DGRAM, 0 );
+	int s = socket(AF_INET, SOCK_DGRAM, 0);
 
-    if( s < 0 )
-    {
-	fprintf( stderr, "socket(SOCK_DRAGM)\n" );
-	setRouter( "Fonera 2100/2200" );
-	return ROUTER_BOARD_FONERA;
-    }
-    ( void )strncpy( iwr.ifr_name, "eth0", sizeof( "eth0" ) );
-    data = ( struct mii_ioctl_data * )&iwr.ifr_data;
-    data->phy_id = 0x10;
-    data->reg_num = 0x2;
-    ioctl( s, SIOCGMIIREG, &iwr );
-    data->phy_id = 0x10;
-    data->reg_num = 0x2;
-    ioctl( s, SIOCGMIIREG, &iwr );
-    if( data->val_out == 0x0141 )
-    {
+	if (s < 0) {
+		fprintf(stderr, "socket(SOCK_DRAGM)\n");
+		setRouter("Fonera 2100/2200");
+		return ROUTER_BOARD_FONERA;
+	}
+	(void)strncpy(iwr.ifr_name, "eth0", sizeof("eth0"));
+	data = (struct mii_ioctl_data *)&iwr.ifr_data;
 	data->phy_id = 0x10;
-	data->reg_num = 0x3;
-	ioctl( s, SIOCGMIIREG, &iwr );
-	close( s );
-	if( ( data->val_out & 0xfc00 ) != 0x0c00 )	// marvell phy
-	{
-	    setRouter( "Fonera 2100/2200" );
-	    return ROUTER_BOARD_FONERA;
+	data->reg_num = 0x2;
+	ioctl(s, SIOCGMIIREG, &iwr);
+	data->phy_id = 0x10;
+	data->reg_num = 0x2;
+	ioctl(s, SIOCGMIIREG, &iwr);
+	if (data->val_out == 0x0141) {
+		data->phy_id = 0x10;
+		data->reg_num = 0x3;
+		ioctl(s, SIOCGMIIREG, &iwr);
+		close(s);
+		if ((data->val_out & 0xfc00) != 0x0c00)	// marvell phy
+		{
+			setRouter("Fonera 2100/2200");
+			return ROUTER_BOARD_FONERA;
+		} else {
+			setRouter("Fonera 2201");
+			return ROUTER_BOARD_FONERA2200;
+		}
+	} else {
+		setRouter("Fonera 2100/2200");
+		return ROUTER_BOARD_FONERA;
 	}
-	else
-	{
-	    setRouter( "Fonera 2201" );
-	    return ROUTER_BOARD_FONERA2200;
-	}
-    }
-    else
-    {
-	setRouter( "Fonera 2100/2200" );
-	return ROUTER_BOARD_FONERA;
-    }
 #elif HAVE_MERAKI
-    setRouter( "Meraki Mini" );
-    return ROUTER_BOARD_MERAKI;
+	setRouter("Meraki Mini");
+	return ROUTER_BOARD_MERAKI;
 #elif defined(HAVE_CORENET) && defined(HAVE_NS2)
-    setRouter( "CORENET UNS2" );
-    return ROUTER_BOARD_LS2;
+	setRouter("CORENET UNS2");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_BWRG1000
-    setRouter( "Bountiful BWRG-1000" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Bountiful BWRG-1000");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_NS2
-    setRouter( "Ubiquiti Nanostation 2" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Nanostation 2");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_EOC5610
-    setRouter( "Senao EOC-5610" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Senao EOC-5610");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_NS5
-    setRouter( "Ubiquiti Nanostation 5" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Nanostation 5");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_NS3
-    setRouter( "Ubiquiti Nanostation 3" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Nanostation 3");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_BS5
-    setRouter( "Ubiquiti Bullet 5" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Bullet 5");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_BS2
-    setRouter( "Ubiquiti Bullet 2" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Bullet 2");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_PICO2
-    setRouter( "Ubiquiti PicoStation 2" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti PicoStation 2");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_PICO2HP
-    setRouter( "Ubiquiti PicoStation 2 HP" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti PicoStation 2 HP");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_PICO5
-    setRouter( "Ubiquiti PicoStation 5" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti PicoStation 5");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_MS2
-    setRouter( "Ubiquiti MiniStation" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti MiniStation");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_BS2HP
-    setRouter( "Ubiquiti Bullet 2 HP" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Bullet 2 HP");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_LC2
-    setRouter( "Ubiquiti Nanostation Loco 2" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Nanostation Loco 2");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_LC5
-    setRouter( "Ubiquiti Nanostation Loco 5" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Nanostation Loco 5");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_PS2
-    setRouter( "Ubiquiti Powerstation 2" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Powerstation 2");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_PS5
-    setRouter( "Ubiquiti Powerstation 5" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Powerstation 5");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_LS2
-    setRouter( "Ubiquiti Litestation 2" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Litestation 2");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_LS5
-    setRouter( "Ubiquiti Litestation 5" );
-    return ROUTER_BOARD_LS2;
+	setRouter("Ubiquiti Litestation 5");
+	return ROUTER_BOARD_LS2;
 #elif HAVE_WHRAG108
-    setRouter( "Buffalo WHR-HP-AG108" );
-    return ROUTER_BOARD_WHRAG108;
+	setRouter("Buffalo WHR-HP-AG108");
+	return ROUTER_BOARD_WHRAG108;
 #elif HAVE_PB42
-    setRouter( "Atheros PB42" );
-    return ROUTER_BOARD_PB42;
+	setRouter("Atheros PB42");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_RS
-    setRouter( "Ubiquiti RouterStation" );
-    return ROUTER_BOARD_PB42;
+	setRouter("Ubiquiti RouterStation");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_LSX
-    setRouter( "Ubiquiti LSX" );
-    return ROUTER_BOARD_PB42;
+	setRouter("Ubiquiti LSX");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_DANUBE
-    setRouter( "Infineon Danube" );
-    return ROUTER_BOARD_DANUBE;
+	setRouter("Infineon Danube");
+	return ROUTER_BOARD_DANUBE;
 #elif HAVE_STORM
-    setRouter( "Wiligear WBD-111" );
-    return ROUTER_BOARD_STORM;
+	setRouter("Wiligear WBD-111");
+	return ROUTER_BOARD_STORM;
 #elif HAVE_TW6600
-    setRouter( "AW-6660" );
-    return ROUTER_BOARD_TW6600;
+	setRouter("AW-6660");
+	return ROUTER_BOARD_TW6600;
 #elif HAVE_ALPHA
-    setRouter( "Alfa Networks AP48" );
-    return ROUTER_BOARD_CA8;
+	setRouter("Alfa Networks AP48");
+	return ROUTER_BOARD_CA8;
 #elif HAVE_USR5453
-    setRouter( "US Robotics USR5453" );
-    return ROUTER_BOARD_CA8;
+	setRouter("US Robotics USR5453");
+	return ROUTER_BOARD_CA8;
 #elif HAVE_RDAT81
-    setRouter( "Wistron RDAT-81" );
-    return ROUTER_BOARD_RDAT81;
+	setRouter("Wistron RDAT-81");
+	return ROUTER_BOARD_RDAT81;
 #elif HAVE_RCAA01
-    setRouter( "Airlive WLA-9000AP" );
-    return ROUTER_BOARD_RCAA01;
+	setRouter("Airlive WLA-9000AP");
+	return ROUTER_BOARD_RCAA01;
 #elif HAVE_CA8PRO
-    setRouter( "Wistron CA8-4 PRO" );
-    return ROUTER_BOARD_CA8PRO;
+	setRouter("Wistron CA8-4 PRO");
+	return ROUTER_BOARD_CA8PRO;
 #elif HAVE_CA8
 #ifdef HAVE_WHA5500CPE
-    setRouter( "Airlive WHA-5500CPE" );
+	setRouter("Airlive WHA-5500CPE");
 #elif HAVE_AIRMAX5
-    setRouter( "Airlive AirMax 5" );
+	setRouter("Airlive AirMax 5");
 #else
-    setRouter( "Airlive WLA-5000AP" );
+	setRouter("Airlive WLA-5000AP");
 #endif
-    return ROUTER_BOARD_CA8;
+	return ROUTER_BOARD_CA8;
 #else
 
-    uint boardnum = strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
+	uint boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
-    if( boardnum == 42 && nvram_match( "boardtype", "bcm94710ap" ) )
-    {
-	cprintf( "router is buffalo\n" );
-	setRouter( "Buffalo WBR-G54 / WLA-G54" );
-	return ROUTER_BUFFALO_WBR54G;
-    }
+	if (boardnum == 42 && nvram_match("boardtype", "bcm94710ap")) {
+		cprintf("router is buffalo\n");
+		setRouter("Buffalo WBR-G54 / WLA-G54");
+		return ROUTER_BUFFALO_WBR54G;
+	}
 #ifndef HAVE_BUFFALO
-    if( nvram_match( "boardnum", "mn700" ) &&
-	nvram_match( "boardtype", "bcm94710ap" ) )
-    {
-	cprintf( "router is Microsoft MN-700\n" );
-	setRouter( "Microsoft MN-700" );
-	return ROUTER_MICROSOFT_MN700;
-    }
+	if (nvram_match("boardnum", "mn700") &&
+	    nvram_match("boardtype", "bcm94710ap")) {
+		cprintf("router is Microsoft MN-700\n");
+		setRouter("Microsoft MN-700");
+		return ROUTER_MICROSOFT_MN700;
+	}
 
-    if( nvram_match( "boardnum", "asusX" ) &&
-	nvram_match( "boardtype", "bcm94710dev" ) )
-    {
-	cprintf( "router is Asus WL300g / WL500g\n" );
-	setRouter( "Asus WL-300g / WL-500g" );
-	return ROUTER_ASUS_WL500G;
-    }
+	if (nvram_match("boardnum", "asusX") &&
+	    nvram_match("boardtype", "bcm94710dev")) {
+		cprintf("router is Asus WL300g / WL500g\n");
+		setRouter("Asus WL-300g / WL-500g");
+		return ROUTER_ASUS_WL500G;
+	}
 
-    if( boardnum == 44 && nvram_match( "boardtype", "bcm94710ap" ) )
-    {
-	cprintf( "router is Dell TrueMobile 2300\n" );
-	setRouter( "Dell TrueMobile 2300" );
-	return ROUTER_DELL_TRUEMOBILE_2300;
-    }
+	if (boardnum == 44 && nvram_match("boardtype", "bcm94710ap")) {
+		cprintf("router is Dell TrueMobile 2300\n");
+		setRouter("Dell TrueMobile 2300");
+		return ROUTER_DELL_TRUEMOBILE_2300;
+	}
 #endif
 
-    if( boardnum == 100 && nvram_match( "boardtype", "bcm94710dev" ) )
-    {
-	cprintf( "router is buffalo\n" );
-	setRouter( "Buffalo WLA-G54C" );
-	return ROUTER_BUFFALO_WLAG54C;
-    }
-
+	if (boardnum == 100 && nvram_match("boardtype", "bcm94710dev")) {
+		cprintf("router is buffalo\n");
+		setRouter("Buffalo WLA-G54C");
+		return ROUTER_BUFFALO_WLAG54C;
+	}
 #ifndef HAVE_BUFFALO
-    if( boardnum == 45 && nvram_match( "boardtype", "bcm95365r" ) )
-    {
-	cprintf( "router is Asus WL-500GD\n" );
-	setRouter( "Asus WL-500g Deluxe" );
-	return ROUTER_ASUS_WL500GD;
-    }
-
-    if( boardnum == 45 && nvram_match( "boardtype", "0x0472" )
-	&& nvram_match( "boardrev", "0x23" ) && nvram_match( "parkid", "1" ) )
-    {
-	cprintf( "router is Asus WL-500W\n" );
-	setRouter( "Asus WL-500W" );
-	return ROUTER_ASUS_WL500W;
-    }
-
-    if( boardnum == 45 && nvram_match( "boardtype", "0x467" ) )
-    {
-	char *hwver0 = nvram_safe_get( "hardware_version" );
-
-	if( startswith( hwver0, "WL320G" ) )
-	{
-	    cprintf( "router is Asus WL-320gE/gP\n" );
-	    setRouter( "Asus WL-320gE/gP" );
-	    return ROUTER_ASUS_WL550GE;
+	if (boardnum == 45 && nvram_match("boardtype", "bcm95365r")) {
+		cprintf("router is Asus WL-500GD\n");
+		setRouter("Asus WL-500g Deluxe");
+		return ROUTER_ASUS_WL500GD;
 	}
-	else
-	{
-	    cprintf( "router is Asus WL-550gE\n" );
-	    setRouter( "Asus WL-550gE" );
-	    return ROUTER_ASUS_WL550GE;
+
+	if (boardnum == 45 && nvram_match("boardtype", "0x0472")
+	    && nvram_match("boardrev", "0x23") && nvram_match("parkid", "1")) {
+		cprintf("router is Asus WL-500W\n");
+		setRouter("Asus WL-500W");
+		return ROUTER_ASUS_WL500W;
 	}
-    }
+
+	if (boardnum == 45 && nvram_match("boardtype", "0x467")) {
+		char *hwver0 = nvram_safe_get("hardware_version");
+
+		if (startswith(hwver0, "WL320G")) {
+			cprintf("router is Asus WL-320gE/gP\n");
+			setRouter("Asus WL-320gE/gP");
+			return ROUTER_ASUS_WL550GE;
+		} else {
+			cprintf("router is Asus WL-550gE\n");
+			setRouter("Asus WL-550gE");
+			return ROUTER_ASUS_WL550GE;
+		}
+	}
 #endif
-    if( nvram_match( "boardnum", "00" ) &&
-	nvram_match( "boardtype", "0x0101" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is Buffalo wbr2\n" );
-	setRouter( "Buffalo WBR2-G54 / WBR2-G54S" );
-	return ROUTER_BUFFALO_WBR2G54S;
-    }
-
-    if( boardnum == 2 &&
-	nvram_match( "boardtype", "0x0101" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is buffalo wla2-g54c\n" );
-	setRouter( "Buffalo WLA2-G54C / WLI3-TX1-G54" );
-	return ROUTER_BUFFALO_WLA2G54C;
-    }
-    if( boardnum == 0 && nvram_match( "melco_id", "29090" )
-	&& nvram_match( "boardflags", "0x0010" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is Buffalo WLAH-G54\n" );
-	setRouter( "Buffalo WLAH-G54" );
-	return ROUTER_BUFFALO_WLAH_G54;
-
-    }
-    if( boardnum == 0 && nvram_match( "melco_id", "31070" )
-	&& nvram_match( "boardflags", "0x2288" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is Buffalo WAPM-HP-AM54G54\n" );
-	setRouter( "Buffalo WAPM-HP-AM54G54" );
-	return ROUTER_BUFFALO_WAPM_HP_AM54G54;
-    }
-    if( nvram_match( "boardnum", "00" ) && nvram_match( "boardrev", "0x11" )
-	&& nvram_match( "boardtype", "0x048e" )
-	&& nvram_match( "melco_id", "32093" ) )
-    {
-	cprintf( "router is Buffalo WHR-G125\n" );
-	setRouter( "Buffalo WHR-G125" );
-	return ROUTER_BUFFALO_WHRG54S;
-    }
-
-    if( nvram_match( "boardnum", "00" ) && nvram_match( "boardrev", "0x10" )
-	&& nvram_match( "boardtype", "0x048e" )
-	&& nvram_match( "melco_id", "32139" ) )
-    {
-	cprintf( "router is Buffalo WCA-G\n" );
-	setRouter( "Buffalo WCA-G" );
-	return ROUTER_BUFFALO_WCAG;	//vlan1 is lan, vlan0 is unused, implementation not done. will me made after return to germany
-    }
-
-    if( nvram_match( "boardnum", "00" ) && nvram_match( "boardrev", "0x11" )
-	&& nvram_match( "boardtype", "0x048e" )
-	&& nvram_match( "melco_id", "32064" ) )
-    {
-	cprintf( "router is Buffalo WHR-HP-G125\n" );
-	setRouter( "Buffalo WHR-HP-G125" );
-	return ROUTER_BUFFALO_WHRG54S;
-    }
-
-    if( nvram_match( "boardnum", "00" ) &&
-	nvram_match( "boardrev", "0x13" )
-	&& nvram_match( "boardtype", "0x467" ) )
-    {
-	if( nvram_match( "boardflags", "0x1658" )
-	    || nvram_match( "boardflags", "0x2658" )
-	    || nvram_match( "boardflags", "0x3658" ) )
-	{
-	    cprintf( "router is Buffalo WLI-TX4-G54HP\n" );
-	    setRouter( "Buffalo WLI-TX4-G54HP" );
-	    return ROUTER_BUFFALO_WLI_TX4_G54HP;
+	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x0101")
+	    && nvram_match("boardrev", "0x10")) {
+		cprintf("router is Buffalo wbr2\n");
+		setRouter("Buffalo WBR2-G54 / WBR2-G54S");
+		return ROUTER_BUFFALO_WBR2G54S;
 	}
-	if( !nvram_match( "buffalo_hp", "1" )
-	    && nvram_match( "boardflags", "0x2758" ) )
-	{
-	    cprintf( "router is Buffalo WHR-G54S\n" );
-	    setRouter( "Buffalo WHR-G54S" );
-	    return ROUTER_BUFFALO_WHRG54S;
+
+	if (boardnum == 2 && nvram_match("boardtype", "0x0101")
+	    && nvram_match("boardrev", "0x10")) {
+		cprintf("router is buffalo wla2-g54c\n");
+		setRouter("Buffalo WLA2-G54C / WLI3-TX1-G54");
+		return ROUTER_BUFFALO_WLA2G54C;
 	}
-	if( nvram_match( "buffalo_hp", "1" )
-	    || nvram_match( "boardflags", "0x1758" ) )
-	{
+	if (boardnum == 0 && nvram_match("melco_id", "29090")
+	    && nvram_match("boardflags", "0x0010")
+	    && nvram_match("boardrev", "0x10")) {
+		cprintf("router is Buffalo WLAH-G54\n");
+		setRouter("Buffalo WLAH-G54");
+		return ROUTER_BUFFALO_WLAH_G54;
+
+	}
+	if (boardnum == 0 && nvram_match("melco_id", "31070")
+	    && nvram_match("boardflags", "0x2288")
+	    && nvram_match("boardrev", "0x10")) {
+		cprintf("router is Buffalo WAPM-HP-AM54G54\n");
+		setRouter("Buffalo WAPM-HP-AM54G54");
+		return ROUTER_BUFFALO_WAPM_HP_AM54G54;
+	}
+	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
+	    && nvram_match("boardtype", "0x048e")
+	    && nvram_match("melco_id", "32093")) {
+		cprintf("router is Buffalo WHR-G125\n");
+		setRouter("Buffalo WHR-G125");
+		return ROUTER_BUFFALO_WHRG54S;
+	}
+
+	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
+	    && nvram_match("boardtype", "0x048e")
+	    && nvram_match("melco_id", "32139")) {
+		cprintf("router is Buffalo WCA-G\n");
+		setRouter("Buffalo WCA-G");
+		return ROUTER_BUFFALO_WCAG;	//vlan1 is lan, vlan0 is unused, implementation not done. will me made after return to germany
+	}
+
+	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x11")
+	    && nvram_match("boardtype", "0x048e")
+	    && nvram_match("melco_id", "32064")) {
+		cprintf("router is Buffalo WHR-HP-G125\n");
+		setRouter("Buffalo WHR-HP-G125");
+		return ROUTER_BUFFALO_WHRG54S;
+	}
+
+	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x13")
+	    && nvram_match("boardtype", "0x467")) {
+		if (nvram_match("boardflags", "0x1658")
+		    || nvram_match("boardflags", "0x2658")
+		    || nvram_match("boardflags", "0x3658")) {
+			cprintf("router is Buffalo WLI-TX4-G54HP\n");
+			setRouter("Buffalo WLI-TX4-G54HP");
+			return ROUTER_BUFFALO_WLI_TX4_G54HP;
+		}
+		if (!nvram_match("buffalo_hp", "1")
+		    && nvram_match("boardflags", "0x2758")) {
+			cprintf("router is Buffalo WHR-G54S\n");
+			setRouter("Buffalo WHR-G54S");
+			return ROUTER_BUFFALO_WHRG54S;
+		}
+		if (nvram_match("buffalo_hp", "1")
+		    || nvram_match("boardflags", "0x1758")) {
 #ifndef HAVE_BUFFALO
-	    cprintf( "router is Buffalo WHR-HP-G54\n" );
-	    setRouter( "Buffalo WHR-HP-G54" );
+			cprintf("router is Buffalo WHR-HP-G54\n");
+			setRouter("Buffalo WHR-HP-G54");
 #else
-	    cprintf( "router is Buffalo WHR-HP-G54DD\n" );
+			cprintf("router is Buffalo WHR-HP-G54DD\n");
 #ifdef BUFFALO_JP
-	    setRouter( "Buffalo AS-A100" );
+			setRouter("Buffalo AS-A100");
 #else
-	    setRouter( "Buffalo WHR-HP-G54DD" );
+			setRouter("Buffalo WHR-HP-G54DD");
 #endif
 #endif
-	    return ROUTER_BUFFALO_WHRG54S;
+			return ROUTER_BUFFALO_WHRG54S;
+		}
 	}
-    }
 
-    if( nvram_match( "boardnum", "00" ) &&
-	nvram_match( "boardrev", "0x10" )
-	&& nvram_match( "boardtype", "0x470" ) )
-    {
-	cprintf( "router is Buffalo WHR-AM54G54\n" );
-	setRouter( "Buffalo WHR-AM54G54" );
-	return ROUTER_BUFFALO_WHRAM54G54;
-    }
+	if (nvram_match("boardnum", "00") && nvram_match("boardrev", "0x10")
+	    && nvram_match("boardtype", "0x470")) {
+		cprintf("router is Buffalo WHR-AM54G54\n");
+		setRouter("Buffalo WHR-AM54G54");
+		return ROUTER_BUFFALO_WHRAM54G54;
+	}
 
-    if( boardnum == 42 && nvram_match( "boardtype", "0x042f" ) )
-    {
-	uint melco_id = strtoul( nvram_safe_get( "melco_id" ), NULL, 0 );
+	if (boardnum == 42 && nvram_match("boardtype", "0x042f")) {
+		uint melco_id = strtoul(nvram_safe_get("melco_id"), NULL, 0);
 
-	if( nvram_match( "product_name", "WZR-RS-G54" ) || melco_id == 30083 )
-	{
-	    cprintf( "router is Buffalo WZR-RS-G54\n" );
-	    setRouter( "Buffalo WZR-RS-G54" );
-	    return ROUTER_BUFFALO_WZRRSG54;
+		if (nvram_match("product_name", "WZR-RS-G54")
+		    || melco_id == 30083) {
+			cprintf("router is Buffalo WZR-RS-G54\n");
+			setRouter("Buffalo WZR-RS-G54");
+			return ROUTER_BUFFALO_WZRRSG54;
+		}
+		if (nvram_match("product_name", "WZR-HP-G54")
+		    || melco_id == 30026) {
+			cprintf("router is Buffalo WZR-HP-G54\n");
+			setRouter("Buffalo WZR-HP-G54");
+			return ROUTER_BUFFALO_WZRRSG54;
+		}
+		if (nvram_match("product_name", "WZR-G54") || melco_id == 30061) {
+			cprintf("router is Buffalo WZR-G54\n");
+			setRouter("Buffalo WZR-G54");
+			return ROUTER_BUFFALO_WZRRSG54;
+		}
+		if (nvram_match("melco_id", "290441dd")) {
+			cprintf("router is Buffalo WHR2-A54G54\n");
+			setRouter("Buffalo WHR2-A54G54");
+			return ROUTER_BUFFALO_WZRRSG54;
+		}
+		if (nvram_match("product_name", "WHR3-AG54")
+		    || nvram_match("product_name", "WHR3-B11")
+		    || melco_id == 29130) {
+			cprintf("router is Buffalo WHR3-AG54\n");
+			setRouter("Buffalo WHR3-AG54");
+			return ROUTER_BUFFALO_WZRRSG54;
+		}
+		if (nvram_match("product_name", "WVR-G54-NF")
+		    || melco_id == 28100) {
+			cprintf("router is Buffalo WVR-G54-NF\n");
+			setRouter("Buffalo WVR-G54-NF");
+			return ROUTER_BUFFALO_WZRRSG54;
+		}
+		if (nvram_match("product_name", "WZR-G108") || melco_id == 31095
+		    || melco_id == 30153) {
+			cprintf("router is Buffalo WZR-G108\n");
+			setRouter("Buffalo WZR-G108");
+			return ROUTER_BRCM4702_GENERIC;
+		}
+		if (melco_id > 0)	// e.g. 29115
+		{
+			cprintf("router is Buffalo WZR series\n");
+			setRouter("Buffalo WZR series");
+			return ROUTER_BUFFALO_WZRRSG54;
+		}
 	}
-	if( nvram_match( "product_name", "WZR-HP-G54" ) || melco_id == 30026 )
-	{
-	    cprintf( "router is Buffalo WZR-HP-G54\n" );
-	    setRouter( "Buffalo WZR-HP-G54" );
-	    return ROUTER_BUFFALO_WZRRSG54;
-	}
-	if( nvram_match( "product_name", "WZR-G54" ) || melco_id == 30061 )
-	{
-	    cprintf( "router is Buffalo WZR-G54\n" );
-	    setRouter( "Buffalo WZR-G54" );
-	    return ROUTER_BUFFALO_WZRRSG54;
-	}
-	if( nvram_match( "melco_id", "290441dd" ) )
-	{
-	    cprintf( "router is Buffalo WHR2-A54G54\n" );
-	    setRouter( "Buffalo WHR2-A54G54" );
-	    return ROUTER_BUFFALO_WZRRSG54;
-	}
-	if( nvram_match( "product_name", "WHR3-AG54" )
-	    || nvram_match( "product_name", "WHR3-B11" )
-	    || melco_id == 29130 )
-	{
-	    cprintf( "router is Buffalo WHR3-AG54\n" );
-	    setRouter( "Buffalo WHR3-AG54" );
-	    return ROUTER_BUFFALO_WZRRSG54;
-	}
-	if( nvram_match( "product_name", "WVR-G54-NF" ) || melco_id == 28100 )
-	{
-	    cprintf( "router is Buffalo WVR-G54-NF\n" );
-	    setRouter( "Buffalo WVR-G54-NF" );
-	    return ROUTER_BUFFALO_WZRRSG54;
-	}
-	if( nvram_match( "product_name", "WZR-G108" ) || melco_id == 31095
-	    || melco_id == 30153 )
-	{
-	    cprintf( "router is Buffalo WZR-G108\n" );
-	    setRouter( "Buffalo WZR-G108" );
-	    return ROUTER_BRCM4702_GENERIC;
-	}
-	if( melco_id > 0 )	// e.g. 29115
-	{
-	    cprintf( "router is Buffalo WZR series\n" );
-	    setRouter( "Buffalo WZR series" );
-	    return ROUTER_BUFFALO_WZRRSG54;
-	}
-    }
-
 #ifndef HAVE_BUFFALO
-    if( boardnum == 42 &&
-	nvram_match( "boardtype", "0x042f" )
-	&& nvram_match( "boardrev", "0x10" ) )
-	// nvram_match ("boardflags","0x0018"))
-    {
-	cprintf( "router is Linksys WRTSL54GS\n" );
-	setRouter( "Linksys WRTSL54GS" );
-	return ROUTER_WRTSL54GS;
-    }
-
-    if( boardnum == 42 && nvram_match( "boardtype", "0x0101" )
-	&& nvram_match( "boardrev", "0x10" )
-	&& nvram_match( "boot_ver", "v3.6" ) )
-    {
-	cprintf( "router is Linksys WRT54G3G\n" );
-	setRouter( "Linksys WRT54G3G" );
-	return ROUTER_WRT54G3G;
-    }
-
-    if( nvram_match( "boardtype", "0x042f" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	char *hwver = nvram_safe_get( "hardware_version" );
-
-	if( boardnum == 45 || startswith( hwver, "WL500gp" ) || startswith( hwver, "WL500gH" ) )
+	if (boardnum == 42 && nvram_match("boardtype", "0x042f")
+	    && nvram_match("boardrev", "0x10"))
+		// nvram_match ("boardflags","0x0018"))
 	{
-	    cprintf( "router is Asus WL-500g Premium\n" );
-	    setRouter( "Asus WL-500g Premium" );
-	    return ROUTER_ASUS_WL500G_PRE;
+		cprintf("router is Linksys WRTSL54GS\n");
+		setRouter("Linksys WRTSL54GS");
+		return ROUTER_WRTSL54GS;
 	}
-    }
 
-    char *et0 = nvram_safe_get( "et0macaddr" );
+	if (boardnum == 42 && nvram_match("boardtype", "0x0101")
+	    && nvram_match("boardrev", "0x10")
+	    && nvram_match("boot_ver", "v3.6")) {
+		cprintf("router is Linksys WRT54G3G\n");
+		setRouter("Linksys WRT54G3G");
+		return ROUTER_WRT54G3G;
+	}
 
-    if( boardnum == 100 && nvram_match( "boardtype", "bcm94710r4" ) )
-    {
-	if( startswith( et0, "00:11:50" ) )
-	{
-	    cprintf( "router is Belkin F5D7130 / F5D7330\n" );
-	    setRouter( "Belkin F5D7130 / F5D7330" );
-	    return ROUTER_RT210W;
-	}
-	if( startswith( et0, "00:30:BD" ) || startswith( et0, "00:30:bd" ) )
-	{
-	    cprintf( "router is Belkin F5D7230 v1000\n" );
-	    setRouter( "Belkin F5D7230-4 v1000" );
-	    return ROUTER_RT210W;
-	}
-	if( startswith( et0, "00:01:E3" ) ||
-	    startswith( et0, "00:01:e3" ) || startswith( et0, "00:90:96" ) )
-	{
-	    cprintf( "router is Siemens\n" );
-	    setRouter( "Siemens SE505 v1" );
-	    return ROUTER_RT210W;
-	}
-	else
-	{
-	    cprintf( "router is Askey generic\n" );
-	    setRouter( "RT210W generic" );
-	    return ROUTER_RT210W;
-	}
-    }
+	if (nvram_match("boardtype", "0x042f")
+	    && nvram_match("boardrev", "0x10")) {
+		char *hwver = nvram_safe_get("hardware_version");
 
-    if( nvram_match( "boardtype", "bcm94710r4" )
-	&& nvram_match( "boardnum", "" ) )
-    {
-	cprintf( "router is Askey board RT2100W\n" );
-	setRouter( "Askey board RT2100W-D65)" );
-	return ROUTER_BRCM4702_GENERIC;
-    }
-
-    if( boardnum == 0 && nvram_match( "boardtype", "0x0100" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is Askey board RT2205(6)D-D56\n" );
-	if( startswith( et0, "00:11:50" ) ||
-	    startswith( et0, "00:30:BD" ) || startswith( et0, "00:30:bd" ) )
-	{
-	    setRouter( "Askey board RT2205(6)D-D56" );
+		if (boardnum == 45 || startswith(hwver, "WL500gp")
+		    || startswith(hwver, "WL500gH")) {
+			cprintf("router is Asus WL-500g Premium\n");
+			setRouter("Asus WL-500g Premium");
+			return ROUTER_ASUS_WL500G_PRE;
+		}
 	}
-	else
-	{
-	    setRouter( "Belkin board F5D8230" );
-	}
-	return ROUTER_ASKEY_RT220XD;
-    }
 
-    if( nvram_match( "boardtype", "0x0101" ) )
-    {
-	if( startswith( et0, "00:11:50" ) ||
-	    startswith( et0, "00:30:BD" ) || startswith( et0, "00:30:bd" ) )
-	{
-	    if( nvram_match( "Belkin_ver", "2000" ) )
-	    {
-		cprintf( "router is Belkin F5D7230-4 v2000\n" );
-		setRouter( "Belkin F5D7230-4 v2000" );
-		return ROUTER_BELKIN_F5D7230_V2000;
-	    }
-	    else
-	    {
-		cprintf( "router is Belkin F5D7230-4 v1444\n" );
-		setRouter( "Belkin F5D7230-4 v1444" );
-		return ROUTER_RT480W;
-	    }
-	}
-	if( startswith( et0, "00:01:E3" ) ||
-	    startswith( et0, "00:01:e3" ) || startswith( et0, "00:90:96" ) )
-	{
-	    cprintf( "router is Siemens / Askey\n" );
-	    setRouter( "Siemens SE505 v2" );
-	    return ROUTER_RT480W;
-	}
-    }
-    if( boardnum == 1 && nvram_match( "boardtype", "0x456" )
-	&& nvram_match( "test_led_gpio", "2" ) )
-    {
-	cprintf( "router is Belkin F5D7230-4 v3000\n" );
-	setRouter( "Belkin F5D7230-4 v3000" );
-	return ROUTER_BELKIN_F5D7230_V3000;
-    }
+	char *et0 = nvram_safe_get("et0macaddr");
 
-    if( nvram_match( "boardtype", "0x456" )
-	&& nvram_match( "hw_model", "F5D7231-4" ) )
-    {
-	cprintf( "router is Belkin F5D7231-4 v1212UK\n" );
-	setRouter( "Belkin F5D7231-4 v1212UK" );
-	return ROUTER_BELKIN_F5D7231;
-    }
-
-    if( boardnum == 8 && nvram_match( "boardtype", "0x0467" ) )	// fccid:
-	// K7SF5D7231B
-    {
-	cprintf( "router is Belkin F5D7231-4 v2000\n" );
-	setRouter( "Belkin F5D7231-4 v2000" );
-	return ROUTER_BELKIN_F5D7231_V2000;
-    }
-
-    if( nvram_match( "boardtype", "0x467" ) )
-    {
-	if( startswith( et0, "00:11:50" ) ||
-	    startswith( et0, "00:30:BD" ) || startswith( et0, "00:30:bd" ) )
-	{
-	    cprintf( "router is Belkin F5D7231-4 v2000\n" );
-	    setRouter( "Belkin F5D7231-4 v2000" );
-	    return ROUTER_BELKIN_F5D7231;
+	if (boardnum == 100 && nvram_match("boardtype", "bcm94710r4")) {
+		if (startswith(et0, "00:11:50")) {
+			cprintf("router is Belkin F5D7130 / F5D7330\n");
+			setRouter("Belkin F5D7130 / F5D7330");
+			return ROUTER_RT210W;
+		}
+		if (startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd")) {
+			cprintf("router is Belkin F5D7230 v1000\n");
+			setRouter("Belkin F5D7230-4 v1000");
+			return ROUTER_RT210W;
+		}
+		if (startswith(et0, "00:01:E3") ||
+		    startswith(et0, "00:01:e3") || startswith(et0, "00:90:96"))
+		{
+			cprintf("router is Siemens\n");
+			setRouter("Siemens SE505 v1");
+			return ROUTER_RT210W;
+		} else {
+			cprintf("router is Askey generic\n");
+			setRouter("RT210W generic");
+			return ROUTER_RT210W;
+		}
 	}
-    }
+
+	if (nvram_match("boardtype", "bcm94710r4")
+	    && nvram_match("boardnum", "")) {
+		cprintf("router is Askey board RT2100W\n");
+		setRouter("Askey board RT2100W-D65)");
+		return ROUTER_BRCM4702_GENERIC;
+	}
+
+	if (boardnum == 0 && nvram_match("boardtype", "0x0100")
+	    && nvram_match("boardrev", "0x10")) {
+		cprintf("router is Askey board RT2205(6)D-D56\n");
+		if (startswith(et0, "00:11:50") ||
+		    startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd"))
+		{
+			setRouter("Askey board RT2205(6)D-D56");
+		} else {
+			setRouter("Belkin board F5D8230");
+		}
+		return ROUTER_ASKEY_RT220XD;
+	}
+
+	if (nvram_match("boardtype", "0x0101")) {
+		if (startswith(et0, "00:11:50") ||
+		    startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd"))
+		{
+			if (nvram_match("Belkin_ver", "2000")) {
+				cprintf("router is Belkin F5D7230-4 v2000\n");
+				setRouter("Belkin F5D7230-4 v2000");
+				return ROUTER_BELKIN_F5D7230_V2000;
+			} else {
+				cprintf("router is Belkin F5D7230-4 v1444\n");
+				setRouter("Belkin F5D7230-4 v1444");
+				return ROUTER_RT480W;
+			}
+		}
+		if (startswith(et0, "00:01:E3") ||
+		    startswith(et0, "00:01:e3") || startswith(et0, "00:90:96"))
+		{
+			cprintf("router is Siemens / Askey\n");
+			setRouter("Siemens SE505 v2");
+			return ROUTER_RT480W;
+		}
+	}
+	if (boardnum == 1 && nvram_match("boardtype", "0x456")
+	    && nvram_match("test_led_gpio", "2")) {
+		cprintf("router is Belkin F5D7230-4 v3000\n");
+		setRouter("Belkin F5D7230-4 v3000");
+		return ROUTER_BELKIN_F5D7230_V3000;
+	}
+
+	if (nvram_match("boardtype", "0x456")
+	    && nvram_match("hw_model", "F5D7231-4")) {
+		cprintf("router is Belkin F5D7231-4 v1212UK\n");
+		setRouter("Belkin F5D7231-4 v1212UK");
+		return ROUTER_BELKIN_F5D7231;
+	}
+
+	if (boardnum == 8 && nvram_match("boardtype", "0x0467"))	// fccid:
+		// K7SF5D7231B
+	{
+		cprintf("router is Belkin F5D7231-4 v2000\n");
+		setRouter("Belkin F5D7231-4 v2000");
+		return ROUTER_BELKIN_F5D7231_V2000;
+	}
+
+	if (nvram_match("boardtype", "0x467")) {
+		if (startswith(et0, "00:11:50") ||
+		    startswith(et0, "00:30:BD") || startswith(et0, "00:30:bd"))
+		{
+			cprintf("router is Belkin F5D7231-4 v2000\n");
+			setRouter("Belkin F5D7231-4 v2000");
+			return ROUTER_BELKIN_F5D7231;
+		}
+	}
 #endif
-    if( boardnum == 2 && nvram_match( "boardtype", "bcm94710dev" ) && nvram_match( "melco_id", "29016" ) )	// Buffalo 
-	// WLI2-TX1-G54)
-    {
-	cprintf( "router is Buffalo WLI2-TX1-G54\n" );
-	setRouter( "Buffalo WLI2-TX1-G54" );
-	return ROUTER_BUFFALO_WLI2_TX1_G54;
-    }
+	if (boardnum == 2 && nvram_match("boardtype", "bcm94710dev") && nvram_match("melco_id", "29016"))	// Buffalo 
+		// WLI2-TX1-G54)
+	{
+		cprintf("router is Buffalo WLI2-TX1-G54\n");
+		setRouter("Buffalo WLI2-TX1-G54");
+		return ROUTER_BUFFALO_WLI2_TX1_G54;
+	}
 #ifndef HAVE_BUFFALO
 
-    char *gemtek = nvram_safe_get( "GemtekPmonVer" );
-    uint gemteknum = strtoul( gemtek, NULL, 0 );
+	char *gemtek = nvram_safe_get("GemtekPmonVer");
+	uint gemteknum = strtoul(gemtek, NULL, 0);
 
-    if( boardnum == 2 && gemteknum == 10 &&
-	( startswith( et0, "00:0C:E5" ) ||
-	  startswith( et0, "00:0c:e5" ) ||
-	  startswith( et0, "00:0C:10" ) ||
-	  startswith( et0, "00:0c:10" ) ||
-	  startswith( et0, "00:0C:11" ) || startswith( et0, "00:0c:11" ) ) )
-    {
-	cprintf( "router Motorola WE800G v1\n" );
-	setRouter( "Motorola WE800G v1" );
-	return ROUTER_MOTOROLA_WE800G;
-    }
-
-    if( boardnum == 2
-	&& ( startswith( gemtek, "RC" ) || gemteknum == 1
-	     || gemteknum == 10 ) )
-    {
-	cprintf( "router is Linksys wap54g v1.x\n" );
-	setRouter( "Linksys WAP54G v1.x" );
-	return ROUTER_WAP54G_V1;
-    }
-
-    if( boardnum == 2 && gemteknum == 1 )
-    {
-	cprintf( "router is Sitecom wl-105b\n" );
-	setRouter( "Sitecom WL-105(b)" );
-	return ROUTER_SITECOM_WL105B;
-    }
-
-    if( boardnum == 2 && gemteknum == 7
-	&& nvram_match( "boardtype", "bcm94710dev" ) )
-    {
-	cprintf( "router is Sitecom wl-111\n" );
-	setRouter( "Sitecom WL-111" );
-	return ROUTER_SITECOM_WL111;
-    }
-
-    if( gemteknum == 9 )	// Must be Motorola wr850g v1 or we800g v1 or 
-	// Linksys wrt55ag v1
-    {
-	if( startswith( et0, "00:0C:E5" ) ||
-	    startswith( et0, "00:0c:e5" ) ||
-	    startswith( et0, "00:0C:10" ) ||
-	    startswith( et0, "00:0c:10" ) ||
-	    startswith( et0, "00:0C:11" ) ||
-	    startswith( et0, "00:0c:11" ) ||
-	    startswith( et0, "00:11:22" ) ||
-	    startswith( et0, "00:0C:90" ) || startswith( et0, "00:0c:90" ) )
-	{
-	    if( !strlen( nvram_safe_get( "phyid_num" ) ) )
-	    {
-		insmod( "switch-core" );	// get phy type
-		insmod( "switch-robo" );
-		rmmod( "switch-robo" );
-		rmmod( "switch-core" );
-		nvram_set( "boardnum", "2" );
-		nvram_set( "boardtype", "bcm94710dev" );
-	    }
-	    if( nvram_match( "phyid_num", "0x00000000" ) )
-	    {
-		cprintf( "router Motorola WE800G v1\n" );
-		setRouter( "Motorola WE800G v1" );
+	if (boardnum == 2 && gemteknum == 10 &&
+	    (startswith(et0, "00:0C:E5") ||
+	     startswith(et0, "00:0c:e5") ||
+	     startswith(et0, "00:0C:10") ||
+	     startswith(et0, "00:0c:10") ||
+	     startswith(et0, "00:0C:11") || startswith(et0, "00:0c:11"))) {
+		cprintf("router Motorola WE800G v1\n");
+		setRouter("Motorola WE800G v1");
 		return ROUTER_MOTOROLA_WE800G;
-	    }
-	    else		// phyid_num == 0xffffffff
-	    {
-		cprintf( "router Motorola WR850G v1\n" );
-		setRouter( "Motorola WR850G v1" );
-		return ROUTER_MOTOROLA_V1;
-	    }
 	}
-	else
-	{
-	    cprintf( "router is linksys WRT55AG\n" );
-	    setRouter( "Linksys WRT55AG v1" );
-	    return ROUTER_LINKSYS_WRT55AG;
-	}
-    }
-#endif
-    if( boardnum == 0 && nvram_match( "boardtype", "0x478" )
-	&& nvram_match( "cardbus", "0" ) && nvram_match( "boardrev", "0x10" )
-	&& nvram_match( "boardflags", "0x110" )
-	&& nvram_match( "melco_id", "32027" ) )
-    {
-	setRouter( "Buffalo WZR-G144NH" );
-	return ROUTER_BUFFALO_WZRG144NH;
-    }
 
-    if( boardnum == 20060330 && nvram_match( "boardtype", "0x0472" ) )
-    {
-	setRouter( "Buffalo WZR-G300N" );
-	return ROUTER_BUFFALO_WZRG300N;
-    }
+	if (boardnum == 2
+	    && (startswith(gemtek, "RC") || gemteknum == 1
+		|| gemteknum == 10)) {
+		cprintf("router is Linksys wap54g v1.x\n");
+		setRouter("Linksys WAP54G v1.x");
+		return ROUTER_WAP54G_V1;
+	}
+
+	if (boardnum == 2 && gemteknum == 1) {
+		cprintf("router is Sitecom wl-105b\n");
+		setRouter("Sitecom WL-105(b)");
+		return ROUTER_SITECOM_WL105B;
+	}
+
+	if (boardnum == 2 && gemteknum == 7
+	    && nvram_match("boardtype", "bcm94710dev")) {
+		cprintf("router is Sitecom wl-111\n");
+		setRouter("Sitecom WL-111");
+		return ROUTER_SITECOM_WL111;
+	}
+
+	if (gemteknum == 9)	// Must be Motorola wr850g v1 or we800g v1 or 
+		// Linksys wrt55ag v1
+	{
+		if (startswith(et0, "00:0C:E5") ||
+		    startswith(et0, "00:0c:e5") ||
+		    startswith(et0, "00:0C:10") ||
+		    startswith(et0, "00:0c:10") ||
+		    startswith(et0, "00:0C:11") ||
+		    startswith(et0, "00:0c:11") ||
+		    startswith(et0, "00:11:22") ||
+		    startswith(et0, "00:0C:90") || startswith(et0, "00:0c:90"))
+		{
+			if (!strlen(nvram_safe_get("phyid_num"))) {
+				insmod("switch-core");	// get phy type
+				insmod("switch-robo");
+				rmmod("switch-robo");
+				rmmod("switch-core");
+				nvram_set("boardnum", "2");
+				nvram_set("boardtype", "bcm94710dev");
+			}
+			if (nvram_match("phyid_num", "0x00000000")) {
+				cprintf("router Motorola WE800G v1\n");
+				setRouter("Motorola WE800G v1");
+				return ROUTER_MOTOROLA_WE800G;
+			} else	// phyid_num == 0xffffffff
+			{
+				cprintf("router Motorola WR850G v1\n");
+				setRouter("Motorola WR850G v1");
+				return ROUTER_MOTOROLA_V1;
+			}
+		} else {
+			cprintf("router is linksys WRT55AG\n");
+			setRouter("Linksys WRT55AG v1");
+			return ROUTER_LINKSYS_WRT55AG;
+		}
+	}
+#endif
+	if (boardnum == 0 && nvram_match("boardtype", "0x478")
+	    && nvram_match("cardbus", "0") && nvram_match("boardrev", "0x10")
+	    && nvram_match("boardflags", "0x110")
+	    && nvram_match("melco_id", "32027")) {
+		setRouter("Buffalo WZR-G144NH");
+		return ROUTER_BUFFALO_WZRG144NH;
+	}
+
+	if (boardnum == 20060330 && nvram_match("boardtype", "0x0472")) {
+		setRouter("Buffalo WZR-G300N");
+		return ROUTER_BUFFALO_WZRG300N;
+	}
 #ifndef HAVE_BUFFALO
 
-    if( boardnum == 8 &&
-	nvram_match( "boardtype", "0x0472" )
-	&& nvram_match( "cardbus", "1" ) )
-    {
-	cprintf( "router is Netgear WNR834B\n" );
-	setRouter( "Netgear WNR834B" );
-	return ROUTER_NETGEAR_WNR834B;
-    }
-
-    if( boardnum == 1 &&
-	nvram_match( "boardtype", "0x0472" )
-	&& nvram_match( "boardrev", "0x23" ) )
-    {
-	if( nvram_match( "cardbus", "1" ) )
-	{
-	    cprintf( "router is Netgear WNR834B v2\n" );
-	    setRouter( "Netgear WNR834B v2" );
-	    return ROUTER_NETGEAR_WNR834BV2;
+	if (boardnum == 8 && nvram_match("boardtype", "0x0472")
+	    && nvram_match("cardbus", "1")) {
+		cprintf("router is Netgear WNR834B\n");
+		setRouter("Netgear WNR834B");
+		return ROUTER_NETGEAR_WNR834B;
 	}
-	else
-	{
-	    cprintf( "router is Netgear WNDR-3300\n" );
-	    setRouter( "Netgear WNDR3300" );
-	    return ROUTER_NETGEAR_WNDR3300;
+
+	if (boardnum == 1 && nvram_match("boardtype", "0x0472")
+	    && nvram_match("boardrev", "0x23")) {
+		if (nvram_match("cardbus", "1")) {
+			cprintf("router is Netgear WNR834B v2\n");
+			setRouter("Netgear WNR834B v2");
+			return ROUTER_NETGEAR_WNR834BV2;
+		} else {
+			cprintf("router is Netgear WNDR-3300\n");
+			setRouter("Netgear WNDR3300");
+			return ROUTER_NETGEAR_WNDR3300;
+		}
 	}
-    }
 
-    if( boardnum == 42 )	// Get Linksys N models
-    {
-	if( nvram_match( "boot_hw_model", "WRT300N" )
-	    && nvram_match( "boot_hw_ver", "1.1" ) )
+	if (boardnum == 42)	// Get Linksys N models
 	{
-	    setRouter( "Linksys WRT300N v1.1" );
-	    return ROUTER_WRT300NV11;
+		if (nvram_match("boot_hw_model", "WRT300N")
+		    && nvram_match("boot_hw_ver", "1.1")) {
+			setRouter("Linksys WRT300N v1.1");
+			return ROUTER_WRT300NV11;
+		} else if (nvram_match("boot_hw_model", "WRT150N")
+			   && nvram_match("boot_hw_ver", "1")) {
+			setRouter("Linksys WRT150N v1");
+			return ROUTER_WRT150N;
+		} else if (nvram_match("boot_hw_model", "WRT150N")
+			   && nvram_match("boot_hw_ver", "1.1")) {
+			setRouter("Linksys WRT150N v1.1");
+			// return ROUTER_WRT150NV11;
+			return ROUTER_WRT150N;
+		} else if (nvram_match("boot_hw_model", "WRT150N")
+			   && nvram_match("boot_hw_ver", "1.2")) {
+			setRouter("Linksys WRT150N v1.2");
+			// return ROUTER_WRT150NV12;
+			return ROUTER_WRT150N;
+		} else if (nvram_match("boot_hw_model", "WRT160N")
+			   && nvram_match("boot_hw_ver", "1.0")) {
+			setRouter("Linksys WRT160N");
+			return ROUTER_WRT160N;
+		} else if (nvram_match("boot_hw_model", "WRT310N")
+			   && nvram_match("boot_hw_ver", "1.0")) {
+			setRouter("Linksys WRT310N");
+			return ROUTER_WRT310N;
+		}
 	}
-	else if( nvram_match( "boot_hw_model", "WRT150N" )
-		 && nvram_match( "boot_hw_ver", "1" ) )
-	{
-	    setRouter( "Linksys WRT150N v1" );
-	    return ROUTER_WRT150N;
+
+	if (boardnum == 42 && nvram_match("boardtype", "0x0472")
+	    && nvram_match("cardbus", "1")) {
+		setRouter("Linksys WRT300N v1");
+		return ROUTER_WRT300N;
 	}
-	else if( nvram_match( "boot_hw_model", "WRT150N" )
-		 && nvram_match( "boot_hw_ver", "1.1" ) )
-	{
-	    setRouter( "Linksys WRT150N v1.1" );
-	    // return ROUTER_WRT150NV11;
-	    return ROUTER_WRT150N;
+
+	if (boardnum == 42 &&
+	    nvram_match("boardtype", "0x478") && nvram_match("cardbus", "1")) {
+		cprintf("router is Linksys WRT350N\n");
+		setRouter("Linksys WRT350N");
+		return ROUTER_WRT350N;
 	}
-	else if( nvram_match( "boot_hw_model", "WRT150N" )
-		 && nvram_match( "boot_hw_ver", "1.2" ) )
-	{
-	    setRouter( "Linksys WRT150N v1.2" );
-	    // return ROUTER_WRT150NV12;
-	    return ROUTER_WRT150N;
+
+	if (nvram_match("boardnum", "20070615") &&
+	    nvram_match("boardtype", "0x478") && nvram_match("cardbus", "0")
+	    && nvram_match("switch_type", "BCM5395")) {
+		cprintf("router is Linksys WRT600N v1.1\n");
+		setRouter("Linksys WRT600N v1.1");
+		return ROUTER_WRT600N;
 	}
-	else if( nvram_match( "boot_hw_model", "WRT160N" )
-		 && nvram_match( "boot_hw_ver", "1.0" ) )
-	{
-	    setRouter( "Linksys WRT160N" );
-	    return ROUTER_WRT160N;
+
+	if (nvram_match("boardnum", "20070615") &&
+	    nvram_match("boardtype", "0x478") && nvram_match("cardbus", "0")) {
+		cprintf("router is Linksys WRT600N\n");
+		setRouter("Linksys WRT600N");
+		return ROUTER_WRT600N;
 	}
-	else if( nvram_match( "boot_hw_model", "WRT310N" )
-		 && nvram_match( "boot_hw_ver", "1.0" ) )
-	{
-	    setRouter( "Linksys WRT310N" );
-	    return ROUTER_WRT310N;
+
+	if (nvram_match("boardtype", "0x478")
+	    && nvram_match("boot_hw_model", "WRT610N")) {
+		cprintf("router is Linksys WRT610N\n");
+		setRouter("Linksys WRT610N");
+		return ROUTER_WRT610N;
 	}
-    }
 
-    if( boardnum == 42 &&
-	nvram_match( "boardtype", "0x0472" )
-	&& nvram_match( "cardbus", "1" ) )
-    {
-	setRouter( "Linksys WRT300N v1" );
-	return ROUTER_WRT300N;
-    }
-
-    if( boardnum == 42 &&
-	nvram_match( "boardtype", "0x478" ) && nvram_match( "cardbus", "1" ) )
-    {
-	cprintf( "router is Linksys WRT350N\n" );
-	setRouter( "Linksys WRT350N" );
-	return ROUTER_WRT350N;
-    }
-
-    if( nvram_match( "boardnum", "20070615" ) &&
-	nvram_match( "boardtype", "0x478" ) && nvram_match( "cardbus", "0" )
-	&& nvram_match( "switch_type", "BCM5395" ) )
-    {
-	cprintf( "router is Linksys WRT600N v1.1\n" );
-	setRouter( "Linksys WRT600N v1.1" );
-	return ROUTER_WRT600N;
-    }
-
-    if( nvram_match( "boardnum", "20070615" ) &&
-	nvram_match( "boardtype", "0x478" ) && nvram_match( "cardbus", "0" ) )
-    {
-	cprintf( "router is Linksys WRT600N\n" );
-	setRouter( "Linksys WRT600N" );
-	return ROUTER_WRT600N;
-    }
-
-    if( nvram_match( "boardtype", "0x478" )
-	&& nvram_match( "boot_hw_model", "WRT610N" ) )
-    {
-	cprintf( "router is Linksys WRT610N\n" );
-	setRouter( "Linksys WRT610N" );
-	return ROUTER_WRT610N;
-    }
-
-    if( boardnum == 42 && nvram_match( "boardtype", "bcm94710dev" ) )
-    {
-	cprintf( "router is Linksys WRT54G v1.x\n" );
-	setRouter( "Linksys WRT54G v1.x" );
-	return ROUTER_WRT54G1X;
-    }
-
-    if( ( boardnum == 1 || boardnum == 0 )
-	&& nvram_match( "boardtype", "0x0446" ) )
-    {
-	cprintf( "router is U.S. Robotics USR5430\n" );
-	setRouter( "U.S.Robotics USR5430" );
-	return ROUTER_USR_5430;
-    }
-
-    if( boardnum == 1 && nvram_match( "boardtype", "0x456" )
-	&& nvram_match( "test_led_gpio", "0" ) )
-    {
-	cprintf( "router is Netgear WG602 v3\n" );
-	setRouter( "Netgear WG602 v3" );
-	return ROUTER_NETGEAR_WG602_V3;
-    }
-
-    if( boardnum == 10496 && nvram_match( "boardtype", "0x456" ) )
-    {
-	cprintf( "router is U.S. Robotics USR5461\n" );
-	setRouter( "U.S.Robotics USR5461" );
-	return ROUTER_USR_5461;
-    }
-
-    if( boardnum == 10500 && nvram_match( "boardtype", "0x456" ) )
-    {
-	cprintf( "router is U.S. Robotics USR5432\n" );
-	setRouter( "U.S.Robotics USR5432" );
-	return ROUTER_USR_5461;	// should work in the same way
-    }
-
-    if( boardnum == 10506 && nvram_match( "boardtype", "0x456" ) )
-    {
-	cprintf( "router is U.S. Robotics USR5451\n" );
-	setRouter( "U.S.Robotics USR5451" );
-	return ROUTER_USR_5461;	// should work in the same way
-    }
-
-    if( boardnum == 10512 && nvram_match( "boardtype", "0x456" ) )
-    {
-	cprintf( "router is U.S. Robotics USR5441\n" );
-	setRouter( "U.S.Robotics USR5441" );
-	return ROUTER_USR_5461;	// should work in the same way
-    }
-
-    if( boardnum == 1024 && nvram_match( "boardtype", "0x0446" ) )
-    {
-	char *cfe = nvram_safe_get( "cfe_version" );
-
-	if( strstr( cfe, "iewsonic" ) )
-	{
-	    cprintf( "router is Viewsonic WAPBR-100\n" );
-	    setRouter( "Viewsonic WAPBR-100" );
-	    return ROUTER_VIEWSONIC_WAPBR_100;
+	if (boardnum == 42 && nvram_match("boardtype", "bcm94710dev")) {
+		cprintf("router is Linksys WRT54G v1.x\n");
+		setRouter("Linksys WRT54G v1.x");
+		return ROUTER_WRT54G1X;
 	}
-	else
-	{
-	    cprintf( "router is Linksys WAP54G v2\n" );
-	    setRouter( "Linksys WAP54G v2" );
-	    return ROUTER_WAP54G_V2;
-	}
-    }
 
-    if( nvram_invmatch( "CFEver", "" ) )
-    {
-	char *cfe = nvram_safe_get( "CFEver" );
-
-	if( !strncmp( cfe, "MotoWR", 6 ) )
-	{
-	    cprintf( "router is motorola\n" );
-	    setRouter( "Motorola WR850G v2/v3" );
-	    return ROUTER_MOTOROLA;
+	if ((boardnum == 1 || boardnum == 0)
+	    && nvram_match("boardtype", "0x0446")) {
+		cprintf("router is U.S. Robotics USR5430\n");
+		setRouter("U.S.Robotics USR5430");
+		return ROUTER_USR_5430;
 	}
-    }
 
-    if( boardnum == 44 &&
-	( nvram_match( "boardtype", "0x0101" )
-	  || nvram_match( "boardtype", "0x0101\r" ) ) )
-    {
-	char *cfe = nvram_safe_get( "CFEver" );
+	if (boardnum == 1 && nvram_match("boardtype", "0x456")
+	    && nvram_match("test_led_gpio", "0")) {
+		cprintf("router is Netgear WG602 v3\n");
+		setRouter("Netgear WG602 v3");
+		return ROUTER_NETGEAR_WG602_V3;
+	}
 
-	if( !strncmp( cfe, "GW_WR110G", 9 ) )
-	{
-	    cprintf( "router is Sparklan WX-6615GT\n" );
-	    setRouter( "Sparklan WX-6615GT" );
-	    return ROUTER_DELL_TRUEMOBILE_2300_V2;
+	if (boardnum == 10496 && nvram_match("boardtype", "0x456")) {
+		cprintf("router is U.S. Robotics USR5461\n");
+		setRouter("U.S.Robotics USR5461");
+		return ROUTER_USR_5461;
 	}
-	else
-	{
-	    cprintf( "router is Dell TrueMobile 2300 v2\n" );
-	    setRouter( "Dell TrueMobile 2300 v2" );
-	    return ROUTER_DELL_TRUEMOBILE_2300_V2;
+
+	if (boardnum == 10500 && nvram_match("boardtype", "0x456")) {
+		cprintf("router is U.S. Robotics USR5432\n");
+		setRouter("U.S.Robotics USR5432");
+		return ROUTER_USR_5461;	// should work in the same way
 	}
-    }
+
+	if (boardnum == 10506 && nvram_match("boardtype", "0x456")) {
+		cprintf("router is U.S. Robotics USR5451\n");
+		setRouter("U.S.Robotics USR5451");
+		return ROUTER_USR_5461;	// should work in the same way
+	}
+
+	if (boardnum == 10512 && nvram_match("boardtype", "0x456")) {
+		cprintf("router is U.S. Robotics USR5441\n");
+		setRouter("U.S.Robotics USR5441");
+		return ROUTER_USR_5461;	// should work in the same way
+	}
+
+	if (boardnum == 1024 && nvram_match("boardtype", "0x0446")) {
+		char *cfe = nvram_safe_get("cfe_version");
+
+		if (strstr(cfe, "iewsonic")) {
+			cprintf("router is Viewsonic WAPBR-100\n");
+			setRouter("Viewsonic WAPBR-100");
+			return ROUTER_VIEWSONIC_WAPBR_100;
+		} else {
+			cprintf("router is Linksys WAP54G v2\n");
+			setRouter("Linksys WAP54G v2");
+			return ROUTER_WAP54G_V2;
+		}
+	}
+
+	if (nvram_invmatch("CFEver", "")) {
+		char *cfe = nvram_safe_get("CFEver");
+
+		if (!strncmp(cfe, "MotoWR", 6)) {
+			cprintf("router is motorola\n");
+			setRouter("Motorola WR850G v2/v3");
+			return ROUTER_MOTOROLA;
+		}
+	}
+
+	if (boardnum == 44 && (nvram_match("boardtype", "0x0101")
+			       || nvram_match("boardtype", "0x0101\r"))) {
+		char *cfe = nvram_safe_get("CFEver");
+
+		if (!strncmp(cfe, "GW_WR110G", 9)) {
+			cprintf("router is Sparklan WX-6615GT\n");
+			setRouter("Sparklan WX-6615GT");
+			return ROUTER_DELL_TRUEMOBILE_2300_V2;
+		} else {
+			cprintf("router is Dell TrueMobile 2300 v2\n");
+			setRouter("Dell TrueMobile 2300 v2");
+			return ROUTER_DELL_TRUEMOBILE_2300_V2;
+		}
+	}
 #endif
-    if( nvram_match( "boardtype", "bcm94710ap" ) )
-    {
-	cprintf( "router is Buffalo old 4710\n" );
-	setRouter( "Buffalo WBR-B11" );
-	return ROUTER_BUFFALO_WBR54G;
-    }
+	if (nvram_match("boardtype", "bcm94710ap")) {
+		cprintf("router is Buffalo old 4710\n");
+		setRouter("Buffalo WBR-B11");
+		return ROUTER_BUFFALO_WBR54G;
+	}
 #ifndef HAVE_BUFFALO
-    if( nvram_match( "boardtype", "0x048e" ) &&
-	nvram_match( "boardrev", "0x35" ) &&
-	nvram_match( "sdram_init", "0x000b" ) )
-    {
-	cprintf( "router is D-Link DIR-320\n" );
-	setRouter( "D-Link DIR-320" );
-	// apply some fixes
-	if( nvram_get( "vlan2ports" ) != NULL )
-	{
-	    nvram_unset( "vlan2ports" );
-	    nvram_unset( "vlan2hwname" );
+	if (nvram_match("boardtype", "0x048e") &&
+	    nvram_match("boardrev", "0x35") &&
+	    nvram_match("sdram_init", "0x000b")) {
+		cprintf("router is D-Link DIR-320\n");
+		setRouter("D-Link DIR-320");
+		// apply some fixes
+		if (nvram_get("vlan2ports") != NULL) {
+			nvram_unset("vlan2ports");
+			nvram_unset("vlan2hwname");
+		}
+		return ROUTER_DLINK_DIR320;
 	}
-	return ROUTER_DLINK_DIR320;
-    }
-    if( nvram_match( "model_name", "DIR-330" ) &&
-	nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is D-Link DIR-330\n" );
-	setRouter( "D-Link DIR-330" );
-	nvram_set( "wan_ifnames", "eth0" );	// quirk
-	nvram_set( "wan_ifname", "eth0" );
-	if( nvram_match( "et0macaddr", "00:90:4c:4e:00:0c" ) )
-	{
-	    FILE *in = fopen( "/dev/mtdblock/1", "rb" );
+	if (nvram_match("model_name", "DIR-330") &&
+	    nvram_match("boardrev", "0x10")) {
+		cprintf("router is D-Link DIR-330\n");
+		setRouter("D-Link DIR-330");
+		nvram_set("wan_ifnames", "eth0");	// quirk
+		nvram_set("wan_ifname", "eth0");
+		if (nvram_match("et0macaddr", "00:90:4c:4e:00:0c")) {
+			FILE *in = fopen("/dev/mtdblock/1", "rb");
 
-	    fseek( in, 0x7a0022, SEEK_SET );
-	    char mac[32];
+			fseek(in, 0x7a0022, SEEK_SET);
+			char mac[32];
 
-	    fread( mac, 32, 1, in );
-	    fclose( in );
-	    mac[17] = 0;
-	    if( sv_valid_hwaddr( mac ) )
-	    {
-		nvram_set( "et0macaddr", mac );
-		fprintf( stderr, "restore D-Link MAC\n" );
-		nvram_commit(  );
-		sys_reboot(  );
-	    }
+			fread(mac, 32, 1, in);
+			fclose(in);
+			mac[17] = 0;
+			if (sv_valid_hwaddr(mac)) {
+				nvram_set("et0macaddr", mac);
+				fprintf(stderr, "restore D-Link MAC\n");
+				nvram_commit();
+				sys_reboot();
+			}
+		}
+		/*
+		 * if (nvram_get("vlan2ports")!=NULL) { nvram_unset("vlan2ports");
+		 * nvram_unset("vlan2hwname"); }
+		 */
+		return ROUTER_DLINK_DIR330;
 	}
-	/*
-	 * if (nvram_get("vlan2ports")!=NULL) { nvram_unset("vlan2ports");
-	 * nvram_unset("vlan2hwname"); }
-	 */
-	return ROUTER_DLINK_DIR330;
-    }
-    if( boardnum == 42 &&
-	nvram_match( "boardtype", "0x048e" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is wrt54gv8/gsv7/g2v1\n" );
-	setRouter( "Linksys WRT54Gv8 / GSv7 / G2v1" );
-	return ROUTER_WRT54G_V8;
-    }
+	if (boardnum == 42 && nvram_match("boardtype", "0x048e")
+	    && nvram_match("boardrev", "0x10")) {
+		cprintf("router is wrt54gv8/gsv7/g2v1\n");
+		setRouter("Linksys WRT54Gv8 / GSv7 / G2v1");
+		return ROUTER_WRT54G_V8;
+	}
 
-    if( boardnum == 8 &&
-	nvram_match( "boardtype", "0x048e" )
-	&& nvram_match( "boardrev", "0x11" ) )
-    {
-	cprintf( "router is ALLNET01\n" );
-	setRouter( "ALLNET EUROWRT 54" );
-	return ROUTER_ALLNET01;
-    }
+	if (boardnum == 8 && nvram_match("boardtype", "0x048e")
+	    && nvram_match("boardrev", "0x11")) {
+		cprintf("router is ALLNET01\n");
+		setRouter("ALLNET EUROWRT 54");
+		return ROUTER_ALLNET01;
+	}
 
-    if( boardnum == 01 &&
-	nvram_match( "boardtype", "0x048e" )
-	&& nvram_match( "boardrev", "0x11" )
-	&& ( nvram_match( "boardflags", "0x650" )
-	     || nvram_match( "boardflags", "0x0458" ) ) )
-    {
-	cprintf( "router is Netgear WG602 v4\n" );
-	setRouter( "Netgear WG602 v4" );
-	return ROUTER_NETGEAR_WG602_V4;
-    }
+	if (boardnum == 01 && nvram_match("boardtype", "0x048e")
+	    && nvram_match("boardrev", "0x11")
+	    && (nvram_match("boardflags", "0x650")
+		|| nvram_match("boardflags", "0x0458"))) {
+		cprintf("router is Netgear WG602 v4\n");
+		setRouter("Netgear WG602 v4");
+		return ROUTER_NETGEAR_WG602_V4;
+	}
 
-    if( boardnum == 1 &&
-	nvram_match( "boardtype", "0x048e" )
-	&& nvram_match( "boardrev", "0x35" )
-	&& nvram_match( "parefldovoltage", "0x28" ) )
-    {
-	cprintf( "router is netcore nw618\n" );
-	setRouter( "NetCore NW618" );
+	if (boardnum == 1 && nvram_match("boardtype", "0x048e")
+	    && nvram_match("boardrev", "0x35")
+	    && nvram_match("parefldovoltage", "0x28")) {
+		cprintf("router is netcore nw618\n");
+		setRouter("NetCore NW618");
+		return ROUTER_WRT54G;
+	}
+
+	if (boardnum == 42 && nvram_match("boardtype", "0x048E")
+	    && nvram_match("boardrev", "0x10")) {
+		cprintf("router is Linksys WRH54G\n");
+		setRouter("Linksys WRH54G");
+		return ROUTER_LINKSYS_WRH54G;
+	}
+
+	if (nvram_match("boardnum", "00") && nvram_match("boardtype", "0x048E")
+	    && nvram_match("boardrev", "0x10")) {
+		cprintf("router is Linksys WRT54G v8.1\n");
+		setRouter("Linksys WRT54G v8.1");
+		return ROUTER_WRT54G_V81;
+	}
+
+	if (boardnum == 45 && nvram_match("boardtype", "0x456")) {
+		cprintf("router is Asus WL-520G\n");
+		setRouter("Asus WL-520G");
+		return ROUTER_ASUS_WL520G;
+	}
+
+	if (nvram_match("boardtype", "0x48E")
+	    && nvram_match("boardrev", "0x10")) {
+		char *hwver = nvram_safe_get("hardware_version");
+
+		if (boardnum == 45 && startswith(hwver, "WL500GPV2")) {
+			cprintf("router is Asus WL-500G Premium V2\n");
+			setRouter("Asus WL-500G Premium V2");
+			return ROUTER_ASUS_WL500G_PRE_V2;
+		} else if (boardnum == 45 && startswith(hwver, "WL330GE")) {
+			cprintf("router is Asus WL-330GE\n");
+			setRouter("Asus WL-330GE");
+			return ROUTER_ASUS_330GE;
+		} else if (boardnum == 45 || startswith(hwver, "WL500GU")
+			   || startswith(hwver, "WL500GC")) {
+			cprintf("router is Asus WL-520GU/GC\n");
+			setRouter("Asus WL-520GU/GC");
+			return ROUTER_ASUS_WL520GUGC;
+		}
+	}
+
+	if ((boardnum == 83258 || boardnum == 1 || boardnum == 0123)	//or 01 or 001 or 0x01
+	    && (nvram_match("boardtype", "0x048e")
+		|| nvram_match("boardtype", "0x48E"))
+	    && (nvram_match("boardrev", "0x11")
+		|| nvram_match("boardrev", "0x10"))
+	    && (nvram_match("boardflags", "0x750")
+		|| nvram_match("boardflags", "0x0750"))) {
+		if (nvram_match("sdram_init", "0x000A"))	//16 MB ram
+		{
+			cprintf("router is Netgear WGR614v8/L/WW\n");
+			setRouter("Netgear WGR614v8/L/WW");
+			return ROUTER_NETGEAR_WGR614L;
+		} else if (nvram_match("sdram_init", "0x0002"))	//8 MB ram
+		{
+			cprintf("router is Netgear WGR614v9\n");
+			setRouter("Netgear WGR614v9");
+			return ROUTER_NETGEAR_WGR614L;
+		}
+	}
+
+	if (boardnum == 56 && nvram_match("boardtype", "0x456")
+	    && nvram_match("boardrev", "0x10")) {
+		cprintf("router is wtr54gs\n");
+		setRouter("Linksys WTR54GS");
+		return ROUTER_LINKSYS_WTR54GS;
+	}
+
+	if (nvram_match("boardnum", "WAP54GV3_8M_0614")
+	    && (nvram_match("boardtype", "0x0467")
+		|| nvram_match("boardtype", "0x467"))
+	    && nvram_match("WAPver", "3")) {
+		cprintf("router is WAP54G v3.x\n");
+		setRouter("Linksys WAP54G v3.x");
+		return ROUTER_WAP54G_V3;
+	}
+
+	setRouter("Linksys WRT54G/GL/GS");
+	cprintf("router is wrt54g\n");
 	return ROUTER_WRT54G;
-    }
-
-    if( boardnum == 42 &&
-	nvram_match( "boardtype", "0x048E" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is Linksys WRH54G\n" );
-	setRouter( "Linksys WRH54G" );
-	return ROUTER_LINKSYS_WRH54G;
-    }
-
-    if( nvram_match( "boardnum", "00" ) &&
-	nvram_match( "boardtype", "0x048E" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is Linksys WRT54G v8.1\n" );
-	setRouter( "Linksys WRT54G v8.1" );
-	return ROUTER_WRT54G_V81;
-    }
-
-    if( boardnum == 45 && nvram_match( "boardtype", "0x456" ) )
-    {
-	cprintf( "router is Asus WL-520G\n" );
-	setRouter( "Asus WL-520G" );
-	return ROUTER_ASUS_WL520G;
-    }
-
-    if( nvram_match( "boardtype", "0x48E" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	char *hwver = nvram_safe_get( "hardware_version" );
-
-	if( boardnum == 45 && startswith( hwver, "WL500GPV2" ) )
-	{
-	    cprintf( "router is Asus WL-500G Premium V2\n" );
-	    setRouter( "Asus WL-500G Premium V2" );
-	    return ROUTER_ASUS_WL500G_PRE_V2;
-	}
-	else if( boardnum == 45 && startswith( hwver, "WL330GE" ) )
-	{
-	    cprintf( "router is Asus WL-330GE\n" );
-	    setRouter( "Asus WL-330GE" );
-	    return ROUTER_ASUS_330GE;
-	}
-	else if( boardnum == 45 || startswith( hwver, "WL500GU" ) || startswith( hwver, "WL500GC" ) )
-	{
-	    cprintf( "router is Asus WL-520GU/GC\n" );
-	    setRouter( "Asus WL-520GU/GC" );
-	    return ROUTER_ASUS_WL520GUGC;
-	}
-    }
-
-    if( ( boardnum == 83258 || boardnum == 1 || boardnum == 0123)	//or 01 or 001 or 0x01
-	&& ( nvram_match( "boardtype", "0x048e" )
-	     || nvram_match( "boardtype", "0x48E" ) )
-	&& ( nvram_match( "boardrev", "0x11" )
-	     || nvram_match( "boardrev", "0x10" ) )
-	&& ( nvram_match( "boardflags", "0x750" )
-	     || nvram_match( "boardflags", "0x0750" ) ) )
-    {
-	if( nvram_match( "sdram_init", "0x000A" ) )	//16 MB ram
-	{
-	    cprintf( "router is Netgear WGR614v8/L/WW\n" );
-	    setRouter( "Netgear WGR614v8/L/WW" );
-	    return ROUTER_NETGEAR_WGR614L;
-	}
-	else if( nvram_match( "sdram_init", "0x0002" ) )	//8 MB ram
-	{
-	    cprintf( "router is Netgear WGR614v9\n" );
-	    setRouter( "Netgear WGR614v9" );
-	    return ROUTER_NETGEAR_WGR614L;
-	}
-    }
-
-    if( boardnum == 56 &&
-	nvram_match( "boardtype", "0x456" )
-	&& nvram_match( "boardrev", "0x10" ) )
-    {
-	cprintf( "router is wtr54gs\n" );
-	setRouter( "Linksys WTR54GS" );
-	return ROUTER_LINKSYS_WTR54GS;
-    }
-
-    if( nvram_match( "boardnum", "WAP54GV3_8M_0614" )
-	&& ( nvram_match( "boardtype", "0x0467" )
-	     || nvram_match( "boardtype", "0x467" ) )
-	&& nvram_match( "WAPver", "3" ) )
-    {
-	cprintf( "router is WAP54G v3.x\n" );
-	setRouter( "Linksys WAP54G v3.x" );
-	return ROUTER_WAP54G_V3;
-    }
-
-    setRouter( "Linksys WRT54G/GL/GS" );
-    cprintf( "router is wrt54g\n" );
-    return ROUTER_WRT54G;
 #else
-    eval( "event", "3", "1", "15" );
-    return 0;
+	eval("event", "3", "1", "15");
+	return 0;
 #endif
 #endif
 #endif
 }
+
 static int router_type = -1;
-int getRouterBrand(  )
+int getRouterBrand()
 {
-    if( router_type == -1 )
-	router_type = internal_getRouterBrand(  );
-    return router_type;
+	if (router_type == -1)
+		router_type = internal_getRouterBrand();
+	return router_type;
 }
 
-int get_ppp_pid( char *file )
+int get_ppp_pid(char *file)
 {
-    char buf[80];
-    int pid = -1;
+	char buf[80];
+	int pid = -1;
 
-    if( file_to_buf( file, buf, sizeof( buf ) ) )
-    {
-	char tmp[80], tmp1[80];
+	if (file_to_buf(file, buf, sizeof(buf))) {
+		char tmp[80], tmp1[80];
 
-	snprintf( tmp, sizeof( tmp ), "/var/run/%s.pid", buf );
-	file_to_buf( tmp, tmp1, sizeof( tmp1 ) );
-	pid = atoi( tmp1 );
-    }
-    return pid;
-}
-
-int check_wan_link( int num )
-{
-    int wan_link = 0;
-
-    if( nvram_match( "wan_proto", "pptp" )
-	|| nvram_match( "wan_proto", "l2tp" )
-	|| nvram_match( "wan_proto", "pppoe" )
-	|| nvram_match( "wan_proto", "3g" )
-	|| nvram_match( "wan_proto", "heartbeat" ) )
-    {
-	FILE *fp;
-	char filename[80];
-	char *name;
-
-	if( num == 0 )
-	    strcpy( filename, "/tmp/ppp/link" );
-	if( ( fp = fopen( filename, "r" ) ) )
-	{
-	    int pid = -1;
-
-	    fclose( fp );
-	    if( nvram_match( "wan_proto", "heartbeat" ) )
-	    {
-		char buf[20];
-
-		file_to_buf( "/tmp/ppp/link", buf, sizeof( buf ) );
-		pid = atoi( buf );
-	    }
-	    else
-		pid = get_ppp_pid( filename );
-
-	    name = find_name_by_proc( pid );
-	    if( !strncmp( name, "pppoecd", 7 ) ||	// for PPPoE
-		!strncmp( name, "pppd", 4 ) ||	// for PPTP
-		!strncmp( name, "bpalogin", 8 ) )	// for HeartBeat
-		wan_link = 1;	// connect
-	    else
-	    {
-		printf( "The %s had been died, remove %s\n",
-			nvram_safe_get( "wan_proto" ), filename );
-		wan_link = 0;	// For some reason, the pppoed had been died, 
-		// by link file still exist.
-		unlink( filename );
-	    }
+		snprintf(tmp, sizeof(tmp), "/var/run/%s.pid", buf);
+		file_to_buf(tmp, tmp1, sizeof(tmp1));
+		pid = atoi(tmp1);
 	}
-    }
-    else
-    {
-	if( nvram_invmatch( "wan_ipaddr", "0.0.0.0" ) )
-	    wan_link = 1;
-    }
+	return pid;
+}
 
-    return wan_link;
+int check_wan_link(int num)
+{
+	int wan_link = 0;
+
+	if (nvram_match("wan_proto", "pptp")
+	    || nvram_match("wan_proto", "l2tp")
+	    || nvram_match("wan_proto", "pppoe")
+	    || nvram_match("wan_proto", "3g")
+	    || nvram_match("wan_proto", "heartbeat")) {
+		FILE *fp;
+		char filename[80];
+		char *name;
+
+		if (num == 0)
+			strcpy(filename, "/tmp/ppp/link");
+		if ((fp = fopen(filename, "r"))) {
+			int pid = -1;
+
+			fclose(fp);
+			if (nvram_match("wan_proto", "heartbeat")) {
+				char buf[20];
+
+				file_to_buf("/tmp/ppp/link", buf, sizeof(buf));
+				pid = atoi(buf);
+			} else
+				pid = get_ppp_pid(filename);
+
+			name = find_name_by_proc(pid);
+			if (!strncmp(name, "pppoecd", 7) ||	// for PPPoE
+			    !strncmp(name, "pppd", 4) ||	// for PPTP
+			    !strncmp(name, "bpalogin", 8))	// for HeartBeat
+				wan_link = 1;	// connect
+			else {
+				printf("The %s had been died, remove %s\n",
+				       nvram_safe_get("wan_proto"), filename);
+				wan_link = 0;	// For some reason, the pppoed had been died, 
+				// by link file still exist.
+				unlink(filename);
+			}
+		}
+	} else {
+		if (nvram_invmatch("wan_ipaddr", "0.0.0.0"))
+			wan_link = 1;
+	}
+
+	return wan_link;
 }
 
 /*
  * Find process name by pid from /proc directory 
  */
-char *find_name_by_proc( int pid )
+char *find_name_by_proc(int pid)
 {
-    FILE *fp;
-    char line[254];
-    char filename[80];
-    static char name[80];
+	FILE *fp;
+	char line[254];
+	char filename[80];
+	static char name[80];
 
-    snprintf( filename, sizeof( filename ), "/proc/%d/status", pid );
+	snprintf(filename, sizeof(filename), "/proc/%d/status", pid);
 
-    if( ( fp = fopen( filename, "r" ) ) )
-    {
-	fgets( line, sizeof( line ), fp );
-	/*
-	 * Buffer should contain a string like "Name: binary_name" 
-	 */
-	sscanf( line, "%*s %s", name );
-	fclose( fp );
-	return name;
-    }
+	if ((fp = fopen(filename, "r"))) {
+		fgets(line, sizeof(line), fp);
+		/*
+		 * Buffer should contain a string like "Name: binary_name" 
+		 */
+		sscanf(line, "%*s %s", name);
+		fclose(fp);
+		return name;
+	}
 
-    return "";
+	return "";
 }
 
-int diag_led_4702( int type, int act )
+int diag_led_4702(int type, int act)
 {
 
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_FONERA) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880)
-    return 0;
+	return 0;
 #else
-    if( act == START_LED )
-    {
-	switch ( type )
-	{
-	    case DMZ:
-		system2( "echo 1 > /proc/sys/diag" );
-		break;
+	if (act == START_LED) {
+		switch (type) {
+		case DMZ:
+			system2("echo 1 > /proc/sys/diag");
+			break;
+		}
+	} else {
+		switch (type) {
+		case DMZ:
+			system2("echo 0 > /proc/sys/diag");
+			break;
+		}
 	}
-    }
-    else
-    {
-	switch ( type )
-	{
-	    case DMZ:
-		system2( "echo 0 > /proc/sys/diag" );
-		break;
-	}
-    }
-    return 0;
+	return 0;
 #endif
 }
 
-int C_led_4702( int i )
+int C_led_4702(int i)
 {
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880)
-    return 0;
+	return 0;
 #else
-    FILE *fp;
-    char string[10];
-    int flg;
+	FILE *fp;
+	char string[10];
+	int flg;
 
-    memset( string, 0, 10 );
-    /*
-     * get diag before set 
-     */
-    if( ( fp = fopen( "/proc/sys/diag", "r" ) ) )
-    {
-	fgets( string, sizeof( string ), fp );
-	fclose( fp );
-    }
-    else
-	perror( "/proc/sys/diag" );
+	memset(string, 0, 10);
+	/*
+	 * get diag before set 
+	 */
+	if ((fp = fopen("/proc/sys/diag", "r"))) {
+		fgets(string, sizeof(string), fp);
+		fclose(fp);
+	} else
+		perror("/proc/sys/diag");
 
-    if( i )
-	flg = atoi( string ) | 0x10;
-    else
-	flg = atoi( string ) & 0xef;
+	if (i)
+		flg = atoi(string) | 0x10;
+	else
+		flg = atoi(string) & 0xef;
 
-    memset( string, 0, 10 );
-    sprintf( string, "%d", flg );
-    if( ( fp = fopen( "/proc/sys/diag", "w" ) ) )
-    {
-	fputs( string, fp );
-	fclose( fp );
-    }
-    else
-	perror( "/proc/sys/diag" );
+	memset(string, 0, 10);
+	sprintf(string, "%d", flg);
+	if ((fp = fopen("/proc/sys/diag", "w"))) {
+		fputs(string, fp);
+		fclose(fp);
+	} else
+		perror("/proc/sys/diag");
 
-    return 0;
+	return 0;
 #endif
 }
 
-unsigned int read_gpio( char *device )
+unsigned int read_gpio(char *device)
 {
-    FILE *fp;
-    unsigned int val;
+	FILE *fp;
+	unsigned int val;
 
-    if( ( fp = fopen( device, "r" ) ) )
-    {
-	fread( &val, 4, 1, fp );
-	fclose( fp );
-	// fprintf(stderr, "----- gpio %s = [%X]\n",device,val); 
-	return val;
-    }
-    else
-    {
-	perror( device );
-	return 0;
-    }
+	if ((fp = fopen(device, "r"))) {
+		fread(&val, 4, 1, fp);
+		fclose(fp);
+		// fprintf(stderr, "----- gpio %s = [%X]\n",device,val); 
+		return val;
+	} else {
+		perror(device);
+		return 0;
+	}
 }
 
-unsigned int write_gpio( char *device, unsigned int val )
+unsigned int write_gpio(char *device, unsigned int val)
 {
-    FILE *fp;
+	FILE *fp;
 
-    if( ( fp = fopen( device, "w" ) ) )
-    {
-	fwrite( &val, 4, 1, fp );
-	fclose( fp );
-	// fprintf(stderr, "----- set gpio %s = [%X]\n",device,val); 
-	return 1;
-    }
-    else
-    {
-	perror( device );
-	return 0;
-    }
+	if ((fp = fopen(device, "w"))) {
+		fwrite(&val, 4, 1, fp);
+		fclose(fp);
+		// fprintf(stderr, "----- set gpio %s = [%X]\n",device,val); 
+		return 1;
+	} else {
+		perror(device);
+		return 0;
+	}
 }
 
 static char hw_error = 0;
-int diag_led_4704( int type, int act )
+int diag_led_4704(int type, int act)
 {
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA) || defined(HAVE_MERAKI)|| defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880)
-    return 0;
+	return 0;
 #else
-    unsigned int control, in, outen, out;
+	unsigned int control, in, outen, out;
 
 #ifdef BCM94712AGR
-    /*
-     * The router will crash, if we load the code into broadcom demo board. 
-     */
-    return 1;
+	/*
+	 * The router will crash, if we load the code into broadcom demo board. 
+	 */
+	return 1;
 #endif
-    // int brand;
-    control = read_gpio( "/dev/gpio/control" );
-    in = read_gpio( "/dev/gpio/in" );
-    out = read_gpio( "/dev/gpio/out" );
-    outen = read_gpio( "/dev/gpio/outen" );
+	// int brand;
+	control = read_gpio("/dev/gpio/control");
+	in = read_gpio("/dev/gpio/in");
+	out = read_gpio("/dev/gpio/out");
+	outen = read_gpio("/dev/gpio/outen");
 
-    write_gpio( "/dev/gpio/outen", ( outen & 0x7c ) | 0x83 );
-    switch ( type )
-    {
+	write_gpio("/dev/gpio/outen", (outen & 0x7c) | 0x83);
+	switch (type) {
 	case DIAG:		// GPIO 1
-	    if( hw_error )
-	    {
-		write_gpio( "/dev/gpio/out", ( out & 0x7c ) | 0x00 );
-		return 1;
-	    }
+		if (hw_error) {
+			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x00);
+			return 1;
+		}
 
-	    if( act == STOP_LED )
-	    {			// stop blinking
-		write_gpio( "/dev/gpio/out", ( out & 0x7c ) | 0x83 );
-		// cprintf("tallest:=====( DIAG STOP_LED !!)=====\n");
-	    }
-	    else if( act == START_LED )
-	    {			// start blinking
-		write_gpio( "/dev/gpio/out", ( out & 0x7c ) | 0x81 );
-		// cprintf("tallest:=====( DIAG START_LED !!)=====\n");
-	    }
-	    else if( act == MALFUNCTION_LED )
-	    {			// start blinking
-		write_gpio( "/dev/gpio/out", ( out & 0x7c ) | 0x00 );
-		hw_error = 1;
-		// cprintf("tallest:=====( DIAG MALFUNCTION_LED !!)=====\n");
-	    }
-	    break;
+		if (act == STOP_LED) {	// stop blinking
+			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x83);
+			// cprintf("tallest:=====( DIAG STOP_LED !!)=====\n");
+		} else if (act == START_LED) {	// start blinking
+			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x81);
+			// cprintf("tallest:=====( DIAG START_LED !!)=====\n");
+		} else if (act == MALFUNCTION_LED) {	// start blinking
+			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x00);
+			hw_error = 1;
+			// cprintf("tallest:=====( DIAG MALFUNCTION_LED !!)=====\n");
+		}
+		break;
 
-    }
-    return 1;
+	}
+	return 1;
 #endif
 }
 
-int diag_led_4712( int type, int act )
+int diag_led_4712(int type, int act)
 {
-    unsigned int control, in, outen, out, ctr_mask, out_mask;
+	unsigned int control, in, outen, out, ctr_mask, out_mask;
 
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880)
-    return 0;
+	return 0;
 #else
 
 #ifdef BCM94712AGR
-    /*
-     * The router will crash, if we load the code into broadcom demo board. 
-     */
-    return 1;
+	/*
+	 * The router will crash, if we load the code into broadcom demo board. 
+	 */
+	return 1;
 #endif
-    control = read_gpio( "/dev/gpio/control" );
-    in = read_gpio( "/dev/gpio/in" );
-    out = read_gpio( "/dev/gpio/out" );
-    outen = read_gpio( "/dev/gpio/outen" );
+	control = read_gpio("/dev/gpio/control");
+	in = read_gpio("/dev/gpio/in");
+	out = read_gpio("/dev/gpio/out");
+	outen = read_gpio("/dev/gpio/outen");
 
-    ctr_mask = ~( 1 << type );
-    out_mask = ( 1 << type );
+	ctr_mask = ~(1 << type);
+	out_mask = (1 << type);
 
-    write_gpio( "/dev/gpio/control", control & ctr_mask );
-    write_gpio( "/dev/gpio/outen", outen | out_mask );
+	write_gpio("/dev/gpio/control", control & ctr_mask);
+	write_gpio("/dev/gpio/outen", outen | out_mask);
 
-    if( act == STOP_LED )
-    {				// stop blinking
-	// cprintf("%s: Stop GPIO %d\n", __FUNCTION__, type);
-	write_gpio( "/dev/gpio/out", out | out_mask );
-    }
-    else if( act == START_LED )
-    {				// start blinking
-	// cprintf("%s: Start GPIO %d\n", __FUNCTION__, type);
-	write_gpio( "/dev/gpio/out", out & ctr_mask );
-    }
-
-    return 1;
-#endif
-}
-
-int C_led_4712( int i )
-{
-    if( i == 1 )
-	return diag_led( DIAG, START_LED );
-    else
-	return diag_led( DIAG, STOP_LED );
-}
-
-int C_led( int i )
-{
-    // show_hw_type(check_hw_type());
-    int brand = getRouterBrand(  );
-
-    if( brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG )
-	return C_led_4702( i );
-    else if( brand == ROUTER_WRT54G )
-	return C_led_4712( i );
-    else
-	return 0;
-}
-
-int diag_led( int type, int act )
-{
-    int brand = getRouterBrand(  );
-
-    if( brand == ROUTER_WRT54G || brand == ROUTER_WRT54G3G
-	|| brand == ROUTER_WRT300NV11 )
-	return diag_led_4712( type, act );
-    else if( brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG )
-	return diag_led_4702( type, act );
-    else if( ( brand == ROUTER_WRTSL54GS
-	       || brand == ROUTER_WRT310N || brand == ROUTER_WRT350N
-	       || brand == ROUTER_BUFFALO_WZRG144NH ) && type == DIAG )
-	return diag_led_4704( type, act );
-    else
-    {
-	if( type == DMZ )
-	{
-	    if( act == START_LED )
-		return led_control( LED_DMZ, LED_ON );
-	    if( act == STOP_LED )
-		return led_control( LED_DMZ, LED_OFF );
-	    return 1;
+	if (act == STOP_LED) {	// stop blinking
+		// cprintf("%s: Stop GPIO %d\n", __FUNCTION__, type);
+		write_gpio("/dev/gpio/out", out | out_mask);
+	} else if (act == START_LED) {	// start blinking
+		// cprintf("%s: Start GPIO %d\n", __FUNCTION__, type);
+		write_gpio("/dev/gpio/out", out & ctr_mask);
 	}
-    }
-    return 0;
+
+	return 1;
+#endif
+}
+
+int C_led_4712(int i)
+{
+	if (i == 1)
+		return diag_led(DIAG, START_LED);
+	else
+		return diag_led(DIAG, STOP_LED);
+}
+
+int C_led(int i)
+{
+	// show_hw_type(check_hw_type());
+	int brand = getRouterBrand();
+
+	if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
+		return C_led_4702(i);
+	else if (brand == ROUTER_WRT54G)
+		return C_led_4712(i);
+	else
+		return 0;
+}
+
+int diag_led(int type, int act)
+{
+	int brand = getRouterBrand();
+
+	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G3G
+	    || brand == ROUTER_WRT300NV11)
+		return diag_led_4712(type, act);
+	else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
+		return diag_led_4702(type, act);
+	else if ((brand == ROUTER_WRTSL54GS
+		  || brand == ROUTER_WRT310N || brand == ROUTER_WRT350N
+		  || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
+		return diag_led_4704(type, act);
+	else {
+		if (type == DMZ) {
+			if (act == START_LED)
+				return led_control(LED_DMZ, LED_ON);
+			if (act == STOP_LED)
+				return led_control(LED_DMZ, LED_OFF);
+			return 1;
+		}
+	}
+	return 0;
 }
 
 #ifdef HAVE_MADWIFI
 static char *stalist[] = {
-    "ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"
+	"ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"
 };
 
-char *getWifi( char *ifname )
+char *getWifi(char *ifname)
 {
-    if( !strcmp( ifname, "ath0" ) )
-	return "wifi0";
-    if( !strcmp( ifname, "ath1" ) )
-	return "wifi1";
-    if( !strcmp( ifname, "ath2" ) )
-	return "wifi2";
-    if( !strcmp( ifname, "ath3" ) )
-	return "wifi3";
-    return NULL;
+	if (!strcmp(ifname, "ath0"))
+		return "wifi0";
+	if (!strcmp(ifname, "ath1"))
+		return "wifi1";
+	if (!strcmp(ifname, "ath2"))
+		return "wifi2";
+	if (!strcmp(ifname, "ath3"))
+		return "wifi3";
+	return NULL;
 }
 
-char *getWDSSTA( void )
+char *getWDSSTA(void)
 {
 
-    int c = getifcount( "wifi" );
-    int i;
+	int c = getifcount("wifi");
+	int i;
 
-    for( i = 0; i < c; i++ )
-    {
-	char mode[32];
-	char netmode[32];
+	for (i = 0; i < c; i++) {
+		char mode[32];
+		char netmode[32];
 
-	sprintf( mode, "ath%d_mode", i );
-	sprintf( netmode, "ath%d_net_mode", i );
-	if( nvram_match( mode, "wdssta" )
-	    && !nvram_match( netmode, "disabled" ) )
-	{
-	    return stalist[i];
+		sprintf(mode, "ath%d_mode", i);
+		sprintf(netmode, "ath%d_net_mode", i);
+		if (nvram_match(mode, "wdssta")
+		    && !nvram_match(netmode, "disabled")) {
+			return stalist[i];
+		}
+
 	}
-
-    }
-    return NULL;
+	return NULL;
 }
 
-char *getSTA( void )
+char *getSTA(void)
 {
 
 #ifdef HAVE_WAVESAT
-    if( nvram_match( "ofdm_mode", "sta" ) )
-	return "ofdm";
+	if (nvram_match("ofdm_mode", "sta"))
+		return "ofdm";
 #endif
-    int c = getifcount( "wifi" );
-    int i;
+	int c = getifcount("wifi");
+	int i;
 
-    for( i = 0; i < c; i++ )
-    {
-	char mode[32];
-	char netmode[32];
+	for (i = 0; i < c; i++) {
+		char mode[32];
+		char netmode[32];
 
-	sprintf( mode, "ath%d_mode", i );
-	sprintf( netmode, "ath%d_net_mode", i );
-	if( nvram_match( mode, "sta" )
-	    && !nvram_match( netmode, "disabled" ) )
-	{
-	    return stalist[i];
+		sprintf(mode, "ath%d_mode", i);
+		sprintf(netmode, "ath%d_net_mode", i);
+		if (nvram_match(mode, "sta")
+		    && !nvram_match(netmode, "disabled")) {
+			return stalist[i];
+		}
+
 	}
-
-    }
-    return NULL;
+	return NULL;
 }
 
-char *getWET( void )
+char *getWET(void)
 {
 #ifdef HAVE_WAVESAT
-    if( nvram_match( "ofdm_mode", "bridge" ) )
-	return "ofdm";
+	if (nvram_match("ofdm_mode", "bridge"))
+		return "ofdm";
 #endif
-    int c = getifcount( "wifi" );
-    int i;
+	int c = getifcount("wifi");
+	int i;
 
-    for( i = 0; i < c; i++ )
-    {
-	char mode[32];
-	char netmode[32];
+	for (i = 0; i < c; i++) {
+		char mode[32];
+		char netmode[32];
 
-	sprintf( mode, "ath%d_mode", i );
-	sprintf( netmode, "ath%d_net_mode", i );
-	if( nvram_match( mode, "wet" )
-	    && !nvram_match( netmode, "disabled" ) )
-	{
-	    return stalist[i];
+		sprintf(mode, "ath%d_mode", i);
+		sprintf(netmode, "ath%d_net_mode", i);
+		if (nvram_match(mode, "wet")
+		    && !nvram_match(netmode, "disabled")) {
+			return stalist[i];
+		}
+
 	}
-
-    }
-    return NULL;
+	return NULL;
 }
 
 #elif HAVE_RT2880
 
-char *getSTA(  )
+char *getSTA()
 {
-    int c = get_wl_instances(  );
-    int i;
+	int c = get_wl_instances();
+	int i;
 
-    for( i = 0; i < c; i++ )
-    {
-	if( nvram_nmatch( "sta", "wl%d_mode", i ) )
-	{
-	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
-		return "ra0";
+	for (i = 0; i < c; i++) {
+		if (nvram_nmatch("sta", "wl%d_mode", i)) {
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
+				return "ra0";
+		}
+
+		if (nvram_nmatch("apsta", "wl%d_mode", i)) {
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
+				return "apcli0";
+		}
+
 	}
-
-	if( nvram_nmatch( "apsta", "wl%d_mode", i ) )
-	{
-	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
-		return "apcli0";
-	}
-
-    }
-    return NULL;
+	return NULL;
 }
 
-char *getWET(  )
+char *getWET()
 {
-    int c = get_wl_instances(  );
-    int i;
+	int c = get_wl_instances();
+	int i;
 
-    for( i = 0; i < c; i++ )
-    {
-	if( !nvram_nmatch( "disabled", "wl%d_net_mode", i )
-	    && nvram_nmatch( "wet", "wl%d_mode", i ) )
-	    return "ra0";
+	for (i = 0; i < c; i++) {
+		if (!nvram_nmatch("disabled", "wl%d_net_mode", i)
+		    && nvram_nmatch("wet", "wl%d_mode", i))
+			return "ra0";
 
-	if( !nvram_nmatch( "disabled", "wl%d_net_mode", i )
-	    && nvram_nmatch( "apstawet", "wl%d_mode", i ) )
-	    return "apcli0";
+		if (!nvram_nmatch("disabled", "wl%d_net_mode", i)
+		    && nvram_nmatch("apstawet", "wl%d_mode", i))
+			return "apcli0";
 
-    }
-    return NULL;
+	}
+	return NULL;
 }
 
 #else
-char *getSTA(  )
+char *getSTA()
 {
-    int c = get_wl_instances(  );
-    int i;
+	int c = get_wl_instances();
+	int i;
 
-    for( i = 0; i < c; i++ )
-    {
-	if( nvram_nmatch( "sta", "wl%d_mode", i )
-	    || nvram_nmatch( "apsta", "wl%d_mode", i ) )
-	{
-	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
-		return get_wl_instance_name( i );
-	    // else
-	    // return nvram_nget ("wl%d_ifname", i);
+	for (i = 0; i < c; i++) {
+		if (nvram_nmatch("sta", "wl%d_mode", i)
+		    || nvram_nmatch("apsta", "wl%d_mode", i)) {
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
+				return get_wl_instance_name(i);
+			// else
+			// return nvram_nget ("wl%d_ifname", i);
+		}
+
 	}
-
-    }
-    return NULL;
+	return NULL;
 }
 
-char *getWET(  )
+char *getWET()
 {
-    int c = get_wl_instances(  );
-    int i;
+	int c = get_wl_instances();
+	int i;
 
-    for( i = 0; i < c; i++ )
-    {
-	if( nvram_nmatch( "wet", "wl%d_mode", i )
-	    || nvram_nmatch( "apstawet", "wl%d_mode", i ) )
-	{
-	    if( !nvram_nmatch( "disabled", "wl%d_net_mode", i ) )
-		return get_wl_instance_name( i );
-	    // else
-	    // return nvram_nget ("wl%d_ifname", i);
+	for (i = 0; i < c; i++) {
+		if (nvram_nmatch("wet", "wl%d_mode", i)
+		    || nvram_nmatch("apstawet", "wl%d_mode", i)) {
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
+				return get_wl_instance_name(i);
+			// else
+			// return nvram_nget ("wl%d_ifname", i);
+
+		}
 
 	}
-
-    }
-    return NULL;
+	return NULL;
 }
 
 #endif
 // note - broadcast addr returned in ipaddr
-void get_broadcast( char *ipaddr, char *netmask )
+void get_broadcast(char *ipaddr, char *netmask)
 {
-    int ip2[4], mask2[4];
-    unsigned char ip[4], mask[4];
+	int ip2[4], mask2[4];
+	unsigned char ip[4], mask[4];
 
-    if( !ipaddr || !netmask )
-	return;
+	if (!ipaddr || !netmask)
+		return;
 
-    sscanf( ipaddr, "%d.%d.%d.%d", &ip2[0], &ip2[1], &ip2[2], &ip2[3] );
-    sscanf( netmask, "%d.%d.%d.%d", &mask2[0], &mask2[1], &mask2[2],
-	    &mask2[3] );
-    int i = 0;
+	sscanf(ipaddr, "%d.%d.%d.%d", &ip2[0], &ip2[1], &ip2[2], &ip2[3]);
+	sscanf(netmask, "%d.%d.%d.%d", &mask2[0], &mask2[1], &mask2[2],
+	       &mask2[3]);
+	int i = 0;
 
-    for( i = 0; i < 4; i++ )
-    {
-	ip[i] = ip2[i];
-	mask[i] = mask2[i];
-	// ip[i] = (ip[i] & mask[i]) | !mask[i];
-	ip[i] = ( ip[i] & mask[i] ) | ( 0xff & ~mask[i] );
-    }
+	for (i = 0; i < 4; i++) {
+		ip[i] = ip2[i];
+		mask[i] = mask2[i];
+		// ip[i] = (ip[i] & mask[i]) | !mask[i];
+		ip[i] = (ip[i] & mask[i]) | (0xff & ~mask[i]);
+	}
 
-    sprintf( ipaddr, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3] );
+	sprintf(ipaddr, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 #ifdef WDS_DEBUG
-    fprintf( fp, "get_broadcast return %s\n", value );
+	fprintf(fp, "get_broadcast return %s\n", value);
 #endif
 
 }
 
-char *get_wan_face( void )
+char *get_wan_face(void)
 {
-    static char localwanface[IFNAMSIZ];
+	static char localwanface[IFNAMSIZ];
 
-    /*
-     * if (nvram_match ("pptpd_client_enable", "1")) { strncpy (localwanface, 
-     * "ppp0", IFNAMSIZ); return localwanface; }
-     */
-    if( nvram_match( "wan_proto", "pptp" )
-	|| nvram_match( "wan_proto", "l2tp" )
-	|| nvram_match( "wan_proto", "3g" )
-	|| nvram_match( "wan_proto", "pppoe" ) )
-    {
-	if( nvram_match( "pppd_pppifname", "" ) )
-	    strncpy( localwanface, "ppp0", IFNAMSIZ );
-	else
-	    strncpy( localwanface, nvram_safe_get( "pppd_pppifname" ),
-		     IFNAMSIZ );
-    }
+	/*
+	 * if (nvram_match ("pptpd_client_enable", "1")) { strncpy (localwanface, 
+	 * "ppp0", IFNAMSIZ); return localwanface; }
+	 */
+	if (nvram_match("wan_proto", "pptp")
+	    || nvram_match("wan_proto", "l2tp")
+	    || nvram_match("wan_proto", "3g")
+	    || nvram_match("wan_proto", "pppoe")) {
+		if (nvram_match("pppd_pppifname", ""))
+			strncpy(localwanface, "ppp0", IFNAMSIZ);
+		else
+			strncpy(localwanface, nvram_safe_get("pppd_pppifname"),
+				IFNAMSIZ);
+	}
 #ifndef HAVE_MADWIFI
-    else if( getSTA(  ) )
-    {
-	strcpy( localwanface, getSTA(  ) );
-    }
+	else if (getSTA()) {
+		strcpy(localwanface, getSTA());
+	}
 #else
-    else if( getSTA(  ) )
-    {
-	if( nvram_match( "wifi_bonding", "1" ) )
-	    strcpy( localwanface, "bond0" );
-	else
-	    strcpy( localwanface, getSTA(  ) );
-    }
+	else if (getSTA()) {
+		if (nvram_match("wifi_bonding", "1"))
+			strcpy(localwanface, "bond0");
+		else
+			strcpy(localwanface, getSTA());
+	}
 #endif
-    else
-	strncpy( localwanface, nvram_safe_get( "wan_ifname" ), IFNAMSIZ );
+	else
+		strncpy(localwanface, nvram_safe_get("wan_ifname"), IFNAMSIZ);
 
-    return localwanface;
+	return localwanface;
 }
-static int _pidof( const char *name, pid_t ** pids )
-{
-    const char *p;
-    char *e;
-    DIR *dir;
-    struct dirent *de;
-    pid_t i;
-    int count;
-    char buf[256];
 
-    count = 0;
-    *pids = NULL;
-    if( ( p = strchr( name, '/' ) ) != NULL )
-	name = p + 1;
-    if( ( dir = opendir( "/proc" ) ) != NULL )
-    {
-	while( ( de = readdir( dir ) ) != NULL )
-	{
-	    i = strtol( de->d_name, &e, 10 );
-	    if( *e != 0 )
-		continue;
-	    if( strcmp( name, psname( i, buf, sizeof( buf ) ) ) == 0 )
-	    {
-		if( ( *pids =
-		      realloc( *pids,
-			       sizeof( pid_t ) * ( count + 1 ) ) ) == NULL )
-		{
-		    return -1;
+static int _pidof(const char *name, pid_t ** pids)
+{
+	const char *p;
+	char *e;
+	DIR *dir;
+	struct dirent *de;
+	pid_t i;
+	int count;
+	char buf[256];
+
+	count = 0;
+	*pids = NULL;
+	if ((p = strchr(name, '/')) != NULL)
+		name = p + 1;
+	if ((dir = opendir("/proc")) != NULL) {
+		while ((de = readdir(dir)) != NULL) {
+			i = strtol(de->d_name, &e, 10);
+			if (*e != 0)
+				continue;
+			if (strcmp(name, psname(i, buf, sizeof(buf))) == 0) {
+				if ((*pids =
+				     realloc(*pids,
+					     sizeof(pid_t) * (count + 1))) ==
+				    NULL) {
+					return -1;
+				}
+				(*pids)[count++] = i;
+			}
 		}
-		( *pids )[count++] = i;
-	    }
 	}
-    }
-    closedir( dir );
-    return count;
+	closedir(dir);
+	return count;
 }
 
-int pidof( const char *name )
+int pidof(const char *name)
 {
-    pid_t *pids;
-    pid_t p;
+	pid_t *pids;
+	pid_t p;
 
-    if( _pidof( name, &pids ) > 0 )
-    {
-	p = *pids;
-	free( pids );
-	return p;
-    }
-    return -1;
-}
-
-int killall( const char *name, int sig )
-{
-    pid_t *pids;
-    int i;
-    int r;
-
-    if( ( i = _pidof( name, &pids ) ) > 0 )
-    {
-	r = 0;
-	do
-	{
-	    r |= kill( pids[--i], sig );
+	if (_pidof(name, &pids) > 0) {
+		p = *pids;
+		free(pids);
+		return p;
 	}
-	while( i > 0 );
-	free( pids );
-	return r;
-    }
-    return -2;
+	return -1;
 }
 
-void set_ip_forward( char c )
+int killall(const char *name, int sig)
 {
-    FILE *fp;
+	pid_t *pids;
+	int i;
+	int r;
 
-    if( ( fp = fopen( "/proc/sys/net/ipv4/ip_forward", "r+" ) ) )
-    {
-	fputc( c, fp );
-	fclose( fp );
-    }
-    else
-    {
-	perror( "/proc/sys/net/ipv4/ip_forward" );
-    }
-}
-int ifexists( const char *ifname )
-{
-    return getifcount( ifname ) > 0 ? 1 : 0;
-}
-
-int getifcount( const char *ifprefix )
-{
-    /*
-     * char devcall[128];
-     * 
-     * sprintf (devcall, "cat /proc/net/dev|grep \"%s\"|wc -l", ifprefix);
-     * FILE *in = popen (devcall, "rb"); if (in == NULL) return 0; int count;
-     * fscanf (in, "%d", &count); pclose (in); return count;
-     */
-    char *iflist = malloc( 256 );
-
-    memset( iflist, 0, 256 );
-    int c = getIfList( iflist, ifprefix );
-
-    free( iflist );
-    return c;
+	if ((i = _pidof(name, &pids)) > 0) {
+		r = 0;
+		do {
+			r |= kill(pids[--i], sig);
+		}
+		while (i > 0);
+		free(pids);
+		return r;
+	}
+	return -2;
 }
 
-static void skipline( FILE * in )
+void set_ip_forward(char c)
 {
-    while( 1 )
-    {
-	int c = getc( in );
+	FILE *fp;
 
-	if( c == EOF )
-	    return;
-	if( c == 0x0 )
-	    return;
-	if( c == 0xa )
-	    return;
-    }
+	if ((fp = fopen("/proc/sys/net/ipv4/ip_forward", "r+"))) {
+		fputc(c, fp);
+		fclose(fp);
+	} else {
+		perror("/proc/sys/net/ipv4/ip_forward");
+	}
+}
+
+int ifexists(const char *ifname)
+{
+	return getifcount(ifname) > 0 ? 1 : 0;
+}
+
+int getifcount(const char *ifprefix)
+{
+	/*
+	 * char devcall[128];
+	 * 
+	 * sprintf (devcall, "cat /proc/net/dev|grep \"%s\"|wc -l", ifprefix);
+	 * FILE *in = popen (devcall, "rb"); if (in == NULL) return 0; int count;
+	 * fscanf (in, "%d", &count); pclose (in); return count;
+	 */
+	char *iflist = malloc(256);
+
+	memset(iflist, 0, 256);
+	int c = getIfList(iflist, ifprefix);
+
+	free(iflist);
+	return c;
+}
+
+static void skipline(FILE * in)
+{
+	while (1) {
+		int c = getc(in);
+
+		if (c == EOF)
+			return;
+		if (c == 0x0)
+			return;
+		if (c == 0xa)
+			return;
+	}
 }
 
 /*
  * strips trailing char(s) c from string
  */
-void strtrim_right( char *p, int c )
+void strtrim_right(char *p, int c)
 {
-    char *end;
-    int len;
+	char *end;
+	int len;
 
-    len = strlen( p );
-    while( *p && len )
-    {
-	end = p + len - 1;
-	if( c == *end )
-	    *end = 0;
-	else
-	    break;
-	len = strlen( p );
-    }
-    return;
+	len = strlen(p);
+	while (*p && len) {
+		end = p + len - 1;
+		if (c == *end)
+			*end = 0;
+		else
+			break;
+		len = strlen(p);
+	}
+	return;
 }
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
-int getIfList( char *buffer, const char *ifprefix )
+int getIfList(char *buffer, const char *ifprefix)
 {
-    FILE *in = fopen( "/proc/net/dev", "rb" );
-    char ifname[32];
+	FILE *in = fopen("/proc/net/dev", "rb");
+	char ifname[32];
 
-    // skip the first 2 lines
-    skipline( in );
-    skipline( in );
-    int ifcount = 0;
-    int count = 0;
+	// skip the first 2 lines
+	skipline(in);
+	skipline(in);
+	int ifcount = 0;
+	int count = 0;
 
-    while( 1 )
-    {
-	int c = getc( in );
+	while (1) {
+		int c = getc(in);
 
-	if( c == EOF )
-	{
-	    if( count )
-		buffer[strlen( buffer ) - 1] = 0;	// fixup last space
-	    fclose( in );
-	    return count;
-	}
-	if( c == 0 )
-	{
-	    if( count )
-		buffer[strlen( buffer ) - 1] = 0;	// fixup last space
-	    fclose( in );
-	    return count;
-	}
-	if( c == 0x20 )
-	    continue;
-	if( c == ':' || ifcount == 30 )
-	{
-	    ifname[ifcount++] = 0;
-	    int skip = 0;
-
-	    if( ifprefix )
-	    {
-		if( strncmp( ifname, ifprefix, strlen( ifprefix ) ) )
-		{
-		    skip = 1;
+		if (c == EOF) {
+			if (count)
+				buffer[strlen(buffer) - 1] = 0;	// fixup last space
+			fclose(in);
+			return count;
 		}
-	    }
-	    else
-	    {
-		if( !strncmp( ifname, "wifi", 4 ) )
-		    skip = 1;
-		if( !strncmp( ifname, "ifb", 3 ) )
-		    skip = 1;
-		if( !strncmp( ifname, "imq", 3 ) )
-		    skip = 1;
-		if( !strncmp( ifname, "etherip", 7 ) )
-		    skip = 1;
-		if( !strncmp( ifname, "lo", 2 ) )
-		    skip = 1;
-		if( !strncmp( ifname, "teql", 4 ) )
-		    skip = 1;
-		if( !strncmp( ifname, "gre", 3 ) )
-		    skip = 1;
-		if( !strncmp( ifname, "ppp", 3 ) )
-		    skip = 1;
-		if( !strncmp( ifname, "tun", 3 ) )
-		    skip = 1;
-		if( !strncmp( ifname, "tap", 3 ) )
-		    skip = 1;
-	    }
-	    if( !skip )
-	    {
-		strcat( buffer, ifname );
-		strcat( buffer, " " );
-		count++;
-	    }
-	    skip = 0;
-	    ifcount = 0;
-	    memset( ifname, 0, 32 );
-	    skipline( in );
-	    continue;
+		if (c == 0) {
+			if (count)
+				buffer[strlen(buffer) - 1] = 0;	// fixup last space
+			fclose(in);
+			return count;
+		}
+		if (c == 0x20)
+			continue;
+		if (c == ':' || ifcount == 30) {
+			ifname[ifcount++] = 0;
+			int skip = 0;
+
+			if (ifprefix) {
+				if (strncmp(ifname, ifprefix, strlen(ifprefix))) {
+					skip = 1;
+				}
+			} else {
+				if (!strncmp(ifname, "wifi", 4))
+					skip = 1;
+				if (!strncmp(ifname, "ifb", 3))
+					skip = 1;
+				if (!strncmp(ifname, "imq", 3))
+					skip = 1;
+				if (!strncmp(ifname, "etherip", 7))
+					skip = 1;
+				if (!strncmp(ifname, "lo", 2))
+					skip = 1;
+				if (!strncmp(ifname, "teql", 4))
+					skip = 1;
+				if (!strncmp(ifname, "gre", 3))
+					skip = 1;
+				if (!strncmp(ifname, "ppp", 3))
+					skip = 1;
+				if (!strncmp(ifname, "tun", 3))
+					skip = 1;
+				if (!strncmp(ifname, "tap", 3))
+					skip = 1;
+			}
+			if (!skip) {
+				strcat(buffer, ifname);
+				strcat(buffer, " ");
+				count++;
+			}
+			skip = 0;
+			ifcount = 0;
+			memset(ifname, 0, 32);
+			skipline(in);
+			continue;
+		}
+		if (ifcount < 30)
+			ifname[ifcount++] = c;
 	}
-	if( ifcount < 30 )
-	    ifname[ifcount++] = c;
-    }
 }
 
 /*
@@ -2620,546 +2356,537 @@ int getIfList( char *buffer, const char *ifprefix )
  * legal_hwaddr("00:11:22:33:44:5"); return false;
  * legal_hwaddr("00:11:22:33:44:HH"); return false; 
  */
-int sv_valid_hwaddr( char *value )
+int sv_valid_hwaddr(char *value)
 {
-    unsigned int hwaddr[6];
-    int tag = TRUE;
-    int i, count;
+	unsigned int hwaddr[6];
+	int tag = TRUE;
+	int i, count;
 
-    /*
-     * Check for bad, multicast, broadcast, or null address 
-     */
-    for( i = 0, count = 0; *( value + i ); i++ )
-    {
-	if( *( value + i ) == ':' )
-	{
-	    if( ( i + 1 ) % 3 != 0 )
-	    {
+	/*
+	 * Check for bad, multicast, broadcast, or null address 
+	 */
+	for (i = 0, count = 0; *(value + i); i++) {
+		if (*(value + i) == ':') {
+			if ((i + 1) % 3 != 0) {
+				tag = FALSE;
+				break;
+			}
+			count++;
+		} else if (ishexit(*(value + i)))	/* one of 0 1 2 3 4 5 6 7 8 9 
+							 * a b c d e f A B C D E F */
+			continue;
+		else {
+			tag = FALSE;
+			break;
+		}
+	}
+
+	if (!tag || i != 17 || count != 5)	/* must have 17's characters and 5's
+						 * ':' */
 		tag = FALSE;
-		break;
-	    }
-	    count++;
-	}
-	else if( ishexit( *( value + i ) ) )	/* one of 0 1 2 3 4 5 6 7 8 9 
-						 * a b c d e f A B C D E F */
-	    continue;
-	else
-	{
-	    tag = FALSE;
-	    break;
-	}
-    }
-
-    if( !tag || i != 17 || count != 5 )	/* must have 17's characters and 5's
-					 * ':' */
-	tag = FALSE;
-    else if( sscanf( value, "%x:%x:%x:%x:%x:%x",
-		     &hwaddr[0], &hwaddr[1], &hwaddr[2],
-		     &hwaddr[3], &hwaddr[4], &hwaddr[5] ) != 6 )
-    {
-	tag = FALSE;
-    }
-    else
-	tag = TRUE;
+	else if (sscanf(value, "%x:%x:%x:%x:%x:%x",
+			&hwaddr[0], &hwaddr[1], &hwaddr[2],
+			&hwaddr[3], &hwaddr[4], &hwaddr[5]) != 6) {
+		tag = FALSE;
+	} else
+		tag = TRUE;
 #ifdef WDS_DEBUG
-    if( tag == FALSE )
-	fprintf( fp, "failed valid_hwaddr\n" );
+	if (tag == FALSE)
+		fprintf(fp, "failed valid_hwaddr\n");
 #endif
 
-    return tag;
+	return tag;
 }
 
-int led_control( int type, int act )
+int led_control(int type, int act)
 /*
  * type: LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
  * LED_SES, LED_SES2, LED_WLAN act: LED_ON, LED_OFF, LED_FLASH 
  */
 {
 #if (defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_LS5) )  && (!defined(HAVE_DIR300) && !defined(HAVE_WRT54G2) && !defined(HAVE_DIR400) && !defined(HAVE_BWRG1000))
-    return 0;
+	return 0;
 #else
-    int use_gpio = 0x0ff;
-    int gpio_value;
-    int enable;
-    int disable;
+	int use_gpio = 0x0ff;
+	int gpio_value;
+	int enable;
+	int disable;
 
-    int power_gpio = 0x0ff;
-    int diag_gpio = 0x0ff;
-    int dmz_gpio = 0x0ff;
-    int connected_gpio = 0x0ff;
-    int bridge_gpio = 0x0ff;
-    int vpn_gpio = 0x0ff;
-    int ses_gpio = 0x0ff;	// use for SES1 (Linksys), AOSS (Buffalo)
-    int ses2_gpio = 0x0ff;
-    int wlan_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
-    int usb_gpio = 0x0ff;
-    int sec0_gpio = 0x0ff;	// security leds, wrt600n
-    int sec1_gpio = 0x0ff;
-    int v1func = 0;
+	int power_gpio = 0x0ff;
+	int diag_gpio = 0x0ff;
+	int dmz_gpio = 0x0ff;
+	int connected_gpio = 0x0ff;
+	int bridge_gpio = 0x0ff;
+	int vpn_gpio = 0x0ff;
+	int ses_gpio = 0x0ff;	// use for SES1 (Linksys), AOSS (Buffalo)
+	int ses2_gpio = 0x0ff;
+	int wlan_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
+	int usb_gpio = 0x0ff;
+	int sec0_gpio = 0x0ff;	// security leds, wrt600n
+	int sec1_gpio = 0x0ff;
+	int v1func = 0;
 
-    switch ( getRouterBrand(  ) )	// gpio definitions here: 0xYZ,
-	// Y=0:normal, Y=1:inverted, Z:gpio
-	// number (f=disabled)
-    {
+	switch (getRouterBrand())	// gpio definitions here: 0xYZ,
+		// Y=0:normal, Y=1:inverted, Z:gpio
+		// number (f=disabled)
+	{
 #ifndef HAVE_BUFFALO
 	case ROUTER_ALLNET01:
-	    connected_gpio = 0x100;
-	    break;
+		connected_gpio = 0x100;
+		break;
 	case ROUTER_BOARD_WP54G:
-	    diag_gpio = 0x102;
-	    connected_gpio = 0x107;
-	    break;
+		diag_gpio = 0x102;
+		connected_gpio = 0x107;
+		break;
 	case ROUTER_BOARD_NP28G:
-	    diag_gpio = 0x102;
-	    connected_gpio = 0x106;
-	    break;
+		diag_gpio = 0x102;
+		connected_gpio = 0x106;
+		break;
 	case ROUTER_BOARD_GATEWORX:
 #ifdef HAVE_WG302V1
-	    diag_gpio = 0x104;
-	    wlan_gpio = 0x105;
+		diag_gpio = 0x104;
+		wlan_gpio = 0x105;
 #elif HAVE_WG302
-	    diag_gpio = 0x102;
-	    wlan_gpio = 0x104;
+		diag_gpio = 0x102;
+		wlan_gpio = 0x104;
 #else
-	if (nvram_match("DD_BOARD","Cambria GW2350") || nvram_match("DD_BOARD2","Cambria GW2350"))
-	    connected_gpio = 0x105;
-	else if (nvram_match("DD_BOARD","Cambria GW2358-4") || nvram_match("DD_BOARD2","Cambria GW2358-4"))
-	    connected_gpio = 0x118;
-	else
-	    connected_gpio = 0x003;
+		if (nvram_match("DD_BOARD", "Cambria GW2350")
+		    || nvram_match("DD_BOARD2", "Cambria GW2350"))
+			connected_gpio = 0x105;
+		else if (nvram_match("DD_BOARD", "Cambria GW2358-4")
+			 || nvram_match("DD_BOARD2", "Cambria GW2358-4"))
+			connected_gpio = 0x118;
+		else
+			connected_gpio = 0x003;
 #endif
-	    break;
+		break;
 	case ROUTER_BOARD_GATEWORX_SWAP:
-	    connected_gpio = 0x004;
-	    break;
+		connected_gpio = 0x004;
+		break;
 	case ROUTER_BOARD_STORM:
-	    connected_gpio = 0x005;
-	    diag_gpio = 0x003;
-	    break;
+		connected_gpio = 0x005;
+		diag_gpio = 0x003;
+		break;
 	case ROUTER_LINKSYS_WRH54G:
-	    diag_gpio = 0x101;	// power led blink / off to indicate factory
-	    // defaults
-	    break;
+		diag_gpio = 0x101;	// power led blink / off to indicate factory
+		// defaults
+		break;
 	case ROUTER_WRT54G:
 	case ROUTER_WRT54G_V8:
-	    power_gpio = 0x001;
-	    dmz_gpio = 0x107;
-	    connected_gpio = 0x103;	// ses orange
-	    ses_gpio = 0x102;	// ses white
-	    ses2_gpio = 0x103;	// ses orange
-	    break;
+		power_gpio = 0x001;
+		dmz_gpio = 0x107;
+		connected_gpio = 0x103;	// ses orange
+		ses_gpio = 0x102;	// ses white
+		ses2_gpio = 0x103;	// ses orange
+		break;
 	case ROUTER_WRT54G_V81:
-	    power_gpio = 0x101;
-	    dmz_gpio = 0x102;
-	    connected_gpio = 0x104;	// ses orange
-	    ses_gpio = 0x103;	// ses white
-	    ses2_gpio = 0x104;	// ses orange
-	    break;
+		power_gpio = 0x101;
+		dmz_gpio = 0x102;
+		connected_gpio = 0x104;	// ses orange
+		ses_gpio = 0x103;	// ses white
+		ses2_gpio = 0x104;	// ses orange
+		break;
 	case ROUTER_WRT54G1X:
-	    connected_gpio = 0x103;
-	    v1func = 1;
-	    break;
+		connected_gpio = 0x103;
+		v1func = 1;
+		break;
 	case ROUTER_WRT350N:
-	    connected_gpio = 0x103;
-	    power_gpio = 0x001;
-	    ses2_gpio = 0x103;	// ses orange
-	    sec0_gpio = 0x109;	    
-	    usb_gpio = 0x10b; 
-	    break;
+		connected_gpio = 0x103;
+		power_gpio = 0x001;
+		ses2_gpio = 0x103;	// ses orange
+		sec0_gpio = 0x109;
+		usb_gpio = 0x10b;
+		break;
 	case ROUTER_WRT600N:
-	    power_gpio = 0x102;
-	    diag_gpio = 0x002;
-	    usb_gpio = 0x103;
-	    sec0_gpio = 0x109;
-	    sec1_gpio = 0x10b;
-	    break;
+		power_gpio = 0x102;
+		diag_gpio = 0x002;
+		usb_gpio = 0x103;
+		sec0_gpio = 0x109;
+		sec1_gpio = 0x10b;
+		break;
 	case ROUTER_LINKSYS_WRT55AG:
-	    connected_gpio = 0x103;
-	    break;
+		connected_gpio = 0x103;
+		break;
 	case ROUTER_DLINK_DIR330:
-	    diag_gpio = 0x106;
-	    connected_gpio = 0x104;
-	    break;
+		diag_gpio = 0x106;
+		connected_gpio = 0x104;
+		break;
 #endif
 	case ROUTER_BOARD_WHRG300N:
-	    diag_gpio = 0x107;
-	    connected_gpio = 0x109;
-	    ses_gpio = 0x10e;
-	    break;
+		diag_gpio = 0x107;
+		connected_gpio = 0x109;
+		ses_gpio = 0x10e;
+		break;
 	case ROUTER_BUFFALO_WBR54G:
-	    diag_gpio = 0x107;
-	    break;
+		diag_gpio = 0x107;
+		break;
 	case ROUTER_BUFFALO_WBR2G54S:
-	    diag_gpio = 0x001;
-	    ses_gpio = 0x006;
-	    break;
+		diag_gpio = 0x001;
+		ses_gpio = 0x006;
+		break;
 	case ROUTER_BUFFALO_WLA2G54C:
-	    diag_gpio = 0x104;
-	    ses_gpio = 0x103;
-	    break;
+		diag_gpio = 0x104;
+		ses_gpio = 0x103;
+		break;
 	case ROUTER_BUFFALO_WLAH_G54:
-	    diag_gpio = 0x107;
-	    ses_gpio = 0x106;
-	    break;
+		diag_gpio = 0x107;
+		ses_gpio = 0x106;
+		break;
 	case ROUTER_BUFFALO_WAPM_HP_AM54G54:
-	    diag_gpio = 0x107;
-	    ses_gpio = 0x101;
-	    break;
+		diag_gpio = 0x107;
+		ses_gpio = 0x101;
+		break;
 	case ROUTER_BOARD_WHRAG108:
-	    diag_gpio = 0x107;
-	    bridge_gpio = 0x104;
-	    ses_gpio = 0x100;
-	    break;
+		diag_gpio = 0x107;
+		bridge_gpio = 0x104;
+		ses_gpio = 0x100;
+		break;
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
-	    diag_gpio = 0x107;
-	    bridge_gpio = 0x101;
-	    ses_gpio = 0x106;
-	    break;
+		diag_gpio = 0x107;
+		bridge_gpio = 0x101;
+		ses_gpio = 0x106;
+		break;
 	case ROUTER_BUFFALO_WZRRSG54:
-	    diag_gpio = 0x107;
-	    vpn_gpio = 0x101;
-	    ses_gpio = 0x106;
-	    break;
+		diag_gpio = 0x107;
+		vpn_gpio = 0x101;
+		ses_gpio = 0x106;
+		break;
 	case ROUTER_BUFFALO_WZRG300N:
-	    diag_gpio = 0x107;
-	    bridge_gpio = 0x101;
-	    break;
+		diag_gpio = 0x107;
+		bridge_gpio = 0x101;
+		break;
 	case ROUTER_BUFFALO_WZRG144NH:
-	    diag_gpio = 0x103;
-	    bridge_gpio = 0x101;
-	    ses_gpio = 0x102;
-	    break;
+		diag_gpio = 0x103;
+		bridge_gpio = 0x101;
+		ses_gpio = 0x102;
+		break;
 #ifndef HAVE_BUFFALO
 #ifdef HAVE_DIR300
 	case ROUTER_BOARD_FONERA:
-	    diag_gpio = 0x003;
-	    bridge_gpio = 0x004;
-	    ses_gpio = 0x001;
-	    break;
+		diag_gpio = 0x003;
+		bridge_gpio = 0x004;
+		ses_gpio = 0x001;
+		break;
 #endif
 #ifdef HAVE_WRT54G2
 	case ROUTER_BOARD_FONERA:
-	    bridge_gpio = 0x004;
-	    ses_gpio = 0x104;
-	    diag_gpio = 0x103;
-	    break;
+		bridge_gpio = 0x004;
+		ses_gpio = 0x104;
+		diag_gpio = 0x103;
+		break;
 #endif
 #ifdef HAVE_BWRG1000
 	case ROUTER_BOARD_LS2:
-	    diag_gpio = 0x007;
-	    break;
+		diag_gpio = 0x007;
+		break;
 #endif
 #ifdef HAVE_DIR400
 	case ROUTER_BOARD_FONERA2200:
-	    diag_gpio = 0x003;
-	    bridge_gpio = 0x004;
-	    ses_gpio = 0x001;
-	    break;
+		diag_gpio = 0x003;
+		bridge_gpio = 0x004;
+		ses_gpio = 0x001;
+		break;
 #endif
 #ifdef HAVE_WRK54G
 	case ROUTER_BOARD_FONERA:
-	    diag_gpio = 0x107;
-	    dmz_gpio = 0x005;
-	    break;
+		diag_gpio = 0x107;
+		dmz_gpio = 0x005;
+		break;
 #endif
 	case ROUTER_BOARD_TW6600:
-	    diag_gpio = 0x107;
-	    bridge_gpio = 0x104;
-	    ses_gpio = 0x100;
-	    break;
+		diag_gpio = 0x107;
+		bridge_gpio = 0x104;
+		ses_gpio = 0x100;
+		break;
 	case ROUTER_MOTOROLA:
-	    power_gpio = 0x001;
-	    diag_gpio = 0x101;	// power led blink / off to indicate factory
-	    // defaults
-	    break;
+		power_gpio = 0x001;
+		diag_gpio = 0x101;	// power led blink / off to indicate factory
+		// defaults
+		break;
 	case ROUTER_RT210W:
-	    power_gpio = 0x105;
-	    diag_gpio = 0x005;	// power led blink / off to indicate factory
-	    // defaults
-	    connected_gpio = 0x100;
-	    wlan_gpio = 0x103;
-	    break;
+		power_gpio = 0x105;
+		diag_gpio = 0x005;	// power led blink / off to indicate factory
+		// defaults
+		connected_gpio = 0x100;
+		wlan_gpio = 0x103;
+		break;
 	case ROUTER_RT480W:
 	case ROUTER_BELKIN_F5D7230_V2000:
 	case ROUTER_BELKIN_F5D7231:
-	    power_gpio = 0x105;
-	    diag_gpio = 0x005;	// power led blink / off to indicate factory
-	    // defaults
-	    connected_gpio = 0x100;
-	    break;
+		power_gpio = 0x105;
+		diag_gpio = 0x005;	// power led blink / off to indicate factory
+		// defaults
+		connected_gpio = 0x100;
+		break;
 	case ROUTER_MICROSOFT_MN700:
-	    power_gpio = 0x006;
-	    diag_gpio = 0x106;	// power led blink / off to indicate factory
-	    // defaults
-	    break;
+		power_gpio = 0x006;
+		diag_gpio = 0x106;	// power led blink / off to indicate factory
+		// defaults
+		break;
 	case ROUTER_ASUS_WL500GD:
 	case ROUTER_ASUS_WL520GUGC:
-	    diag_gpio = 0x000;	// power led blink / off to indicate factory
-	    // defaults
-	    break;
+		diag_gpio = 0x000;	// power led blink / off to indicate factory
+		// defaults
+		break;
 	case ROUTER_ASUS_WL500G_PRE:
-	    power_gpio = 0x101;
-	    diag_gpio = 0x001;	// power led blink / off to indicate factory
-	    // defaults
-	    break;
+		power_gpio = 0x101;
+		diag_gpio = 0x001;	// power led blink / off to indicate factory
+		// defaults
+		break;
 	case ROUTER_ASUS_WL550GE:
-	    power_gpio = 0x102;
-	    diag_gpio = 0x002;	// power led blink / off to indicate factory
-	    // defaults
-	    break;
+		power_gpio = 0x102;
+		diag_gpio = 0x002;	// power led blink / off to indicate factory
+		// defaults
+		break;
 	case ROUTER_WRT54G3G:
 	case ROUTER_WRTSL54GS:
-	    power_gpio = 0x001;
-	    dmz_gpio = 0x100;
-	    connected_gpio = 0x107;	// ses orange
-	    ses_gpio = 0x105;	// ses white
-	    ses2_gpio = 0x107;	// ses orange 
-	    break;
+		power_gpio = 0x001;
+		dmz_gpio = 0x100;
+		connected_gpio = 0x107;	// ses orange
+		ses_gpio = 0x105;	// ses white
+		ses2_gpio = 0x107;	// ses orange 
+		break;
 	case ROUTER_MOTOROLA_WE800G:
 	case ROUTER_MOTOROLA_V1:
-	    diag_gpio = 0x103;
-	    wlan_gpio = 0x101;
-	    bridge_gpio = 0x105;
-	    break;
+		diag_gpio = 0x103;
+		wlan_gpio = 0x101;
+		bridge_gpio = 0x105;
+		break;
 	case ROUTER_DELL_TRUEMOBILE_2300:
 	case ROUTER_DELL_TRUEMOBILE_2300_V2:
-	    power_gpio = 0x107;
-	    diag_gpio = 0x007;	// power led blink / off to indicate factory
-	    // defaults
-	    wlan_gpio = 0x106;
-	    break;
+		power_gpio = 0x107;
+		diag_gpio = 0x007;	// power led blink / off to indicate factory
+		// defaults
+		wlan_gpio = 0x106;
+		break;
 	case ROUTER_NETGEAR_WNR834B:
-	    power_gpio = 0x104;
-	    diag_gpio = 0x105;
-	    wlan_gpio = 0x106;
-	    break;
+		power_gpio = 0x104;
+		diag_gpio = 0x105;
+		wlan_gpio = 0x106;
+		break;
 	case ROUTER_SITECOM_WL105B:
-	    power_gpio = 0x003;
-	    diag_gpio = 0x103;	// power led blink / off to indicate factory
-	    // defaults
-	    wlan_gpio = 0x104;
-	    break;
+		power_gpio = 0x003;
+		diag_gpio = 0x103;	// power led blink / off to indicate factory
+		// defaults
+		wlan_gpio = 0x104;
+		break;
 	case ROUTER_WRT150N:
 	case ROUTER_WRT300N:
-	    power_gpio = 0x001;
-	    diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
-	    break;
+		power_gpio = 0x001;
+		diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
+		break;
 	case ROUTER_WRT300NV11:
-	    ses_gpio = 0x105;
-	    // diag_gpio = 0x11; //power led blink / off to indicate fac.def.
-	    break;
+		ses_gpio = 0x105;
+		// diag_gpio = 0x11; //power led blink / off to indicate fac.def.
+		break;
 	case ROUTER_WRT310N:
-	    connected_gpio = 0x103;
-	    power_gpio = 0x001;
-	    diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
-	    ses2_gpio = 0x103;	// ses orange
+		connected_gpio = 0x103;
+		power_gpio = 0x001;
+		diag_gpio = 0x101;	// power led blink / off to indicate fac.def.
+		ses2_gpio = 0x103;	// ses orange
 	case ROUTER_WRT160N:
-	    power_gpio = 0x001;
-	    diag_gpio = 0x101;	// power led blink / off to indicate fac.def. 
-	    // 
-	    connected_gpio = 0x103;	// ses orange
-	    ses_gpio = 0x105;	// ses blue
-	    break;
+		power_gpio = 0x001;
+		diag_gpio = 0x101;	// power led blink / off to indicate fac.def. 
+		// 
+		connected_gpio = 0x103;	// ses orange
+		ses_gpio = 0x105;	// ses blue
+		break;
 	case ROUTER_ASUS_WL500G:
-	    power_gpio = 0x100;
-	    diag_gpio = 0x000;	// power led blink /off to indicate factory
-	    // defaults
-	    break;
+		power_gpio = 0x100;
+		diag_gpio = 0x000;	// power led blink /off to indicate factory
+		// defaults
+		break;
 	case ROUTER_ASUS_WL500W:
-	    power_gpio = 0x105;
-	    diag_gpio = 0x005;	// power led blink /off to indicate factory
-	    // defaults
-	    break;
+		power_gpio = 0x105;
+		diag_gpio = 0x005;	// power led blink /off to indicate factory
+		// defaults
+		break;
 	case ROUTER_LINKSYS_WTR54GS:
-	    diag_gpio = 0x001;
-	    break;
+		diag_gpio = 0x001;
+		break;
 	case ROUTER_WAP54G_V1:
-	    diag_gpio = 0x103;
-	    wlan_gpio = 0x104;	// LINK led
-	    break;
+		diag_gpio = 0x103;
+		wlan_gpio = 0x104;	// LINK led
+		break;
 	case ROUTER_WAP54G_V3:
-	    ses_gpio = 0x10c;
-	    connected_gpio = 0x006;
-	    break;
+		ses_gpio = 0x10c;
+		connected_gpio = 0x006;
+		break;
 	case ROUTER_NETGEAR_WNR834BV2:
-	    power_gpio = 0x002;
-	    diag_gpio = 0x003;	// power led amber 
-	    connected_gpio = 0x007;	// WAN led green 
-	    break;
+		power_gpio = 0x002;
+		diag_gpio = 0x003;	// power led amber 
+		connected_gpio = 0x007;	// WAN led green 
+		break;
 	case ROUTER_NETGEAR_WNDR3300:
-	    power_gpio = 0x005;
-	    diag_gpio = 0x105;	// power led blink /off to indicate factory defaults
-	    connected_gpio = 0x007;	// WAN led green 
-	    break;
+		power_gpio = 0x005;
+		diag_gpio = 0x105;	// power led blink /off to indicate factory defaults
+		connected_gpio = 0x007;	// WAN led green 
+		break;
 	case ROUTER_ASKEY_RT220XD:
-	    wlan_gpio = 0x100;
-	    dmz_gpio = 0x101;	// not soldered 
-	    break;
+		wlan_gpio = 0x100;
+		dmz_gpio = 0x101;	// not soldered 
+		break;
 	case ROUTER_WRT610N:
-	    power_gpio = 0x001;
-	    connected_gpio = 0x103;	// ses amber
-	    ses_gpio = 0x109;	// ses blue
-	    usb_gpio = 0x100;
-	    break;
+		power_gpio = 0x001;
+		connected_gpio = 0x103;	// ses amber
+		ses_gpio = 0x109;	// ses blue
+		usb_gpio = 0x100;
+		break;
 	case ROUTER_USR_5461:
-	    usb_gpio = 0x001;
-	    break;
+		usb_gpio = 0x001;
+		break;
 	case ROUTER_NETGEAR_WGR614L:
-	    // power_gpio = 0x107;       // don't use - resets router
-	    diag_gpio = 0x006;
-	    connected_gpio = 0x104;
-	    break;
+		// power_gpio = 0x107;       // don't use - resets router
+		diag_gpio = 0x006;
+		connected_gpio = 0x104;
+		break;
 	case ROUTER_NETGEAR_WG602_V4:
-	    power_gpio = 0x101;	// trick: make lan led green for 100Mbps
-	    break;
+		power_gpio = 0x101;	// trick: make lan led green for 100Mbps
+		break;
 	case ROUTER_BELKIN_F5D7231_V2000:
-	    connected_gpio = 0x104;
-	    diag_gpio = 0x001;	// power led blink /off to indicate factory defaults
-	    break;
+		connected_gpio = 0x104;
+		diag_gpio = 0x001;	// power led blink /off to indicate factory defaults
+		break;
 
 #endif
-    }
-    if( type == LED_DIAG && v1func == 1 )
-    {
-	if( act == LED_ON )
-	    C_led( 1 );
-	else
-	    C_led( 0 );
-    }
+	}
+	if (type == LED_DIAG && v1func == 1) {
+		if (act == LED_ON)
+			C_led(1);
+		else
+			C_led(0);
+	}
 
-    switch ( type )
-    {
+	switch (type) {
 	case LED_POWER:
-	    use_gpio = power_gpio;
-	    break;
+		use_gpio = power_gpio;
+		break;
 	case LED_DIAG:
-	    use_gpio = diag_gpio;
-	    break;
+		use_gpio = diag_gpio;
+		break;
 	case LED_DMZ:
-	    use_gpio = dmz_gpio;
-	    break;
+		use_gpio = dmz_gpio;
+		break;
 	case LED_CONNECTED:
-	    use_gpio = connected_gpio;
-	    break;
+		use_gpio = connected_gpio;
+		break;
 	case LED_BRIDGE:
-	    use_gpio = bridge_gpio;
-	    break;
+		use_gpio = bridge_gpio;
+		break;
 	case LED_VPN:
-	    use_gpio = vpn_gpio;
-	    break;
+		use_gpio = vpn_gpio;
+		break;
 	case LED_SES:
-	    use_gpio = ses_gpio;
-	    break;
+		use_gpio = ses_gpio;
+		break;
 	case LED_SES2:
-	    use_gpio = ses2_gpio;
-	    break;
+		use_gpio = ses2_gpio;
+		break;
 	case LED_WLAN:
-	    use_gpio = wlan_gpio;
-	    break;
+		use_gpio = wlan_gpio;
+		break;
 	case LED_USB:
-	    use_gpio = usb_gpio;
-	    break;
+		use_gpio = usb_gpio;
+		break;
 	case LED_SEC0:
-	    use_gpio = sec0_gpio;
-	    break;
+		use_gpio = sec0_gpio;
+		break;
 	case LED_SEC1:
-	    use_gpio = sec1_gpio;
-	    break;
-    }
-    if( ( use_gpio & 0x0ff ) != 0x0ff )
-    {
-	gpio_value = use_gpio & 0x0ff;
-	enable = ( use_gpio & 0x100 ) == 0 ? 1 : 0;
-	disable = ( use_gpio & 0x100 ) == 0 ? 0 : 1;
-	switch ( act )
-	{
-	    case LED_ON:
-		set_gpio( gpio_value, enable );
-		break;
-	    case LED_OFF:
-		set_gpio( gpio_value, disable );
-		break;
-	    case LED_FLASH:	// will lit the led for 1 sec.
-		set_gpio( gpio_value, enable );
-		sleep( 1 );
-		set_gpio( gpio_value, disable );
+		use_gpio = sec1_gpio;
 		break;
 	}
-    }
-    return 1;
+	if ((use_gpio & 0x0ff) != 0x0ff) {
+		gpio_value = use_gpio & 0x0ff;
+		enable = (use_gpio & 0x100) == 0 ? 1 : 0;
+		disable = (use_gpio & 0x100) == 0 ? 0 : 1;
+		switch (act) {
+		case LED_ON:
+			set_gpio(gpio_value, enable);
+			break;
+		case LED_OFF:
+			set_gpio(gpio_value, disable);
+			break;
+		case LED_FLASH:	// will lit the led for 1 sec.
+			set_gpio(gpio_value, enable);
+			sleep(1);
+			set_gpio(gpio_value, disable);
+			break;
+		}
+	}
+	return 1;
 
 #endif
 }
 
-int file_to_buf( char *path, char *buf, int len )
+int file_to_buf(char *path, char *buf, int len)
 {
-    FILE *fp;
+	FILE *fp;
 
-    memset( buf, 0, len );
+	memset(buf, 0, len);
 
-    if( ( fp = fopen( path, "r" ) ) )
-    {
-	fgets( buf, len, fp );
-	fclose( fp );
-	return 1;
-    }
+	if ((fp = fopen(path, "r"))) {
+		fgets(buf, len, fp);
+		fclose(fp);
+		return 1;
+	}
 
-    return 0;
+	return 0;
 }
 
-int ishexit( char c )
+int ishexit(char c)
 {
 
-    if( strchr( "01234567890abcdefABCDEF", c ) != ( char * )0 )
-	return 1;
+	if (strchr("01234567890abcdefABCDEF", c) != (char *)0)
+		return 1;
 
-    return 0;
+	return 0;
 }
 
-int getMTD( char *name )
+int getMTD(char *name)
 {
-    char buf[128];
-    int device;
+	char buf[128];
+	int device;
 
-    sprintf( buf, "cat /proc/mtd|grep \"%s\"", name );
-    FILE *fp = popen( buf, "rb" );
+	sprintf(buf, "cat /proc/mtd|grep \"%s\"", name);
+	FILE *fp = popen(buf, "rb");
 
-    fscanf( fp, "%s", &buf[0] );
-    device = buf[3] - '0';
-    pclose( fp );
-    return device;
+	fscanf(fp, "%s", &buf[0]);
+	device = buf[3] - '0';
+	pclose(fp);
+	return device;
 }
 
-int insmod( char *module )
+int insmod(char *module)
 {
-    return eval( "insmod", module );
+	return eval("insmod", module);
 }
 
-void rmmod( char *module )
+void rmmod(char *module)
 {
-    eval( "rmmod", module );
+	eval("rmmod", module);
 }
 
 #include "revision.h"
 
-char *getSoftwareRevision( void )
+char *getSoftwareRevision(void)
 {
-    return "" SVN_REVISION "";
+	return "" SVN_REVISION "";
 }
 
 #ifdef HAVE_OLED
-void initlcd(  )
+void initlcd()
 {
 
 }
 
-void lcdmessage( char *message )
+void lcdmessage(char *message)
 {
-    eval( "oled-print", "DD-WRT v24 sp2", "build:" SVN_REVISION,
-	  "3G/UMTS Router", message );
+	eval("oled-print", "DD-WRT v24 sp2", "build:" SVN_REVISION,
+	     "3G/UMTS Router", message);
 }
-void lcdmessaged( char *dual, char *message )
+
+void lcdmessaged(char *dual, char *message)
 {
 
 }
@@ -3170,228 +2897,225 @@ void lcdmessaged( char *dual, char *message )
 
 static int fd;
 
-void SetEnvironment(  )
+void SetEnvironment()
 {
-    system( "stty ispeed 2400 < /dev/tts/1" );
-    system( "stty raw < /dev/tts/1" );
+	system("stty ispeed 2400 < /dev/tts/1");
+	system("stty raw < /dev/tts/1");
 }
 
 int Cmd = 254;			/* EZIO Command */
 int cls = 1;			/* Clear screen */
-void Cls(  )
+void Cls()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &cls, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &cls, 1);
 }
 
 int init = 0x28;
-void Init(  )
+void Init()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &init, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &init, 1);
 }
 
 int stopsend = 0x37;
-void StopSend(  )
+void StopSend()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &init, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &init, 1);
 }
 
 int home = 2;			/* Home cursor */
-void Home(  )
+void Home()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &home, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &home, 1);
 }
 
 int readkey = 6;		/* Read key */
-void ReadKey(  )
+void ReadKey()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &readkey, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &readkey, 1);
 }
 
 int blank = 8;			/* Blank display */
-void Blank(  )
+void Blank()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &blank, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &blank, 1);
 }
 
 int hide = 12;			/* Hide cursor & display blanked characters */
-void Hide(  )
+void Hide()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &hide, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &hide, 1);
 }
 
 int turn = 13;			/* Turn On (blinking block cursor) */
-void TurnOn(  )
+void TurnOn()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &turn, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &turn, 1);
 }
 
 int show = 14;			/* Show underline cursor */
-void Show(  )
+void Show()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &show, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &show, 1);
 }
 
 int movel = 16;			/* Move cursor 1 character left */
-void MoveL(  )
+void MoveL()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &movel, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &movel, 1);
 }
 
 int mover = 20;			/* Move cursor 1 character right */
-void MoveR(  )
+void MoveR()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &mover, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &mover, 1);
 }
 
 int scl = 24;			/* Scroll cursor 1 character left */
-void ScrollL(  )
+void ScrollL()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &scl, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &scl, 1);
 }
 
 int scr = 28;			/* Scroll cursor 1 character right */
-void ScrollR(  )
+void ScrollR()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &scr, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &scr, 1);
 }
 
 int setdis = 64;		/* Command */
-void SetDis(  )
+void SetDis()
 {
-    write( fd, &Cmd, 1 );
-    write( fd, &setdis, 1 );
+	write(fd, &Cmd, 1);
+	write(fd, &setdis, 1);
 
 }
 
 int a, b;
-void ShowMessage( char *str1, char *str2 )
+void ShowMessage(char *str1, char *str2)
 {
-    char nul[] = "                                       ";
+	char nul[] = "                                       ";
 
-    a = strlen( str1 );
-    b = 40 - a;
-    write( fd, str1, a );
-    write( fd, nul, b );
-    write( fd, str2, strlen( str2 ) );
+	a = strlen(str1);
+	b = 40 - a;
+	write(fd, str1, a);
+	write(fd, nul, b);
+	write(fd, str2, strlen(str2));
 }
 
-void initlcd(  )
+void initlcd()
 {
 
-    fd = open( "/dev/tts/1", O_RDWR );
+	fd = open("/dev/tts/1", O_RDWR);
 
 				  /** Open Serial port (COM2) */
-    if( fd > 0 )
-    {
-	close( fd );
-	SetEnvironment(  );	/* Set RAW mode */
-	fd = open( "/dev/tts/1", O_RDWR );
-	Init(  );		/* Initialize EZIO twice */
-	Init(  );
+	if (fd > 0) {
+		close(fd);
+		SetEnvironment();	/* Set RAW mode */
+		fd = open("/dev/tts/1", O_RDWR);
+		Init();		/* Initialize EZIO twice */
+		Init();
 
-	Cls(  );		/* Clear screen */
-    }
-    close( fd );
+		Cls();		/* Clear screen */
+	}
+	close(fd);
 }
 
-void lcdmessage( char *message )
+void lcdmessage(char *message)
 {
 
-    fd = open( "/dev/tts/1", O_RDWR );
+	fd = open("/dev/tts/1", O_RDWR);
 				   /** Open Serial port (COM2) */
 
-    if( fd > 0 )
-    {
-	Init(  );		/* Initialize EZIO twice */
-	Init(  );
-	SetDis(  );
-	Cls(  );
-	Home(  );
-	ShowMessage( "State", message );
-	close( fd );
-    }
+	if (fd > 0) {
+		Init();		/* Initialize EZIO twice */
+		Init();
+		SetDis();
+		Cls();
+		Home();
+		ShowMessage("State", message);
+		close(fd);
+	}
 }
-void lcdmessaged( char *dual, char *message )
+
+void lcdmessaged(char *dual, char *message)
 {
 
-    fd = open( "/dev/tts/1", O_RDWR );
+	fd = open("/dev/tts/1", O_RDWR);
 
 				  /** Open Serial port (COM2) */
 
-    if( fd > 0 )
-    {
-	Init(  );		/* Initialize EZIO twice */
-	Init(  );
-	SetDis(  );
-	Cls(  );		/* Clear screen */
-	Home(  );
-	ShowMessage( dual, message );
-	close( fd );
-    }
+	if (fd > 0) {
+		Init();		/* Initialize EZIO twice */
+		Init();
+		SetDis();
+		Cls();		/* Clear screen */
+		Home();
+		ShowMessage(dual, message);
+		close(fd);
+	}
 }
 
 #endif
-static int i64c( int i )
+static int i64c(int i)
 {
-    i &= 0x3f;
-    if( i == 0 )
-	return '.';
-    if( i == 1 )
-	return '/';
-    if( i < 12 )
-	return ( '0' - 2 + i );
-    if( i < 38 )
-	return ( 'A' - 12 + i );
-    return ( 'a' - 38 + i );
+	i &= 0x3f;
+	if (i == 0)
+		return '.';
+	if (i == 1)
+		return '/';
+	if (i < 12)
+		return ('0' - 2 + i);
+	if (i < 38)
+		return ('A' - 12 + i);
+	return ('a' - 38 + i);
 }
 
-int crypt_make_salt( char *p, int cnt, int x )
+int crypt_make_salt(char *p, int cnt, int x)
 {
-    x += getpid(  ) + time( NULL );
-    do
-    {
-	/*
-	 * x = (x*1664525 + 1013904223) % 2^32 generator is lame (low-order
-	 * bit is not "random", etc...), but for our purposes it is good
-	 * enough 
-	 */
-	x = x * 1664525 + 1013904223;
-	/*
-	 * BTW, Park and Miller's "minimal standard generator" is x = x*16807 
-	 * % ((2^31)-1) It has no problem with visibly alternating lowest bit
-	 * but is also weak in cryptographic sense + needs div, which needs
-	 * more code (and slower) on many CPUs 
-	 */
-	*p++ = i64c( x >> 16 );
-	*p++ = i64c( x >> 22 );
-    }
-    while( --cnt );
-    *p = '\0';
-    return x;
+	x += getpid() + time(NULL);
+	do {
+		/*
+		 * x = (x*1664525 + 1013904223) % 2^32 generator is lame (low-order
+		 * bit is not "random", etc...), but for our purposes it is good
+		 * enough 
+		 */
+		x = x * 1664525 + 1013904223;
+		/*
+		 * BTW, Park and Miller's "minimal standard generator" is x = x*16807 
+		 * % ((2^31)-1) It has no problem with visibly alternating lowest bit
+		 * but is also weak in cryptographic sense + needs div, which needs
+		 * more code (and slower) on many CPUs 
+		 */
+		*p++ = i64c(x >> 16);
+		*p++ = i64c(x >> 22);
+	}
+	while (--cnt);
+	*p = '\0';
+	return x;
 }
 
 #define MD5_OUT_BUFSIZE 36
 
-char *zencrypt( char *passwd )
+char *zencrypt(char *passwd)
 {
-    char salt[sizeof( "$N$XXXXXXXX" )];	/* "$N$XXXXXXXX" or "XX" */
-    static char passout[MD5_OUT_BUFSIZE];
+	char salt[sizeof("$N$XXXXXXXX")];	/* "$N$XXXXXXXX" or "XX" */
+	static char passout[MD5_OUT_BUFSIZE];
 
-    strcpy( salt, "$1$" );
-    crypt_make_salt( salt + 3, 4, 0 );
-    return md5_crypt( passout, ( unsigned char * )passwd,
-		      ( unsigned char * )salt );
+	strcpy(salt, "$1$");
+	crypt_make_salt(salt + 3, 4, 0);
+	return md5_crypt(passout, (unsigned char *)passwd,
+			 (unsigned char *)salt);
 }
