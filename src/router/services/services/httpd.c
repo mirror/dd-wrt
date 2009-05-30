@@ -27,63 +27,57 @@
 #include <signal.h>
 #include <unistd.h>
 
-void start_httpd( void )
+void start_httpd(void)
 {
-    int ret = 0;
+	int ret = 0;
 
-    if( nvram_invmatch( "http_enable", "0" )
-	&& !is_exist( "/var/run/httpd.pid" ) )
-    {
-	chdir( "/www" );
-	cprintf( "[HTTPD Starting on /www]\n" );
-	if( nvram_invmatch( "http_lanport", "" ) )
-	{
-	    char *lan_port = nvram_safe_get( "http_lanport" );
+	if (nvram_invmatch("http_enable", "0")
+	    && !is_exist("/var/run/httpd.pid")) {
+		chdir("/www");
+		cprintf("[HTTPD Starting on /www]\n");
+		if (nvram_invmatch("http_lanport", "")) {
+			char *lan_port = nvram_safe_get("http_lanport");
 
-	    ret = eval( "httpd", "-p", lan_port );
+			ret = eval("httpd", "-p", lan_port);
+		} else {
+			ret = eval("httpd");
+			dd_syslog(LOG_INFO,
+				  "httpd : http daemon successfully started\n");
+		}
+		chdir("/");
 	}
-	else
-	{
-	    ret = eval( "httpd" );
-	    dd_syslog( LOG_INFO,
-		       "httpd : http daemon successfully started\n" );
-	}
-	chdir( "/" );
-    }
 #ifdef HAVE_HTTPS
-    if( nvram_invmatch( "https_enable", "0" )
-	&& !is_exist( "/var/run/httpsd.pid" ) )
-    {
+	if (nvram_invmatch("https_enable", "0")
+	    && !is_exist("/var/run/httpsd.pid")) {
 
-	// Generate a new certificate
-	// if(!is_exist("/tmp/cert.pem") || !is_exist("/tmp/key.pem"))
-	// eval("gencert.sh", BUILD_SECS); 
+		// Generate a new certificate
+		// if(!is_exist("/tmp/cert.pem") || !is_exist("/tmp/key.pem"))
+		// eval("gencert.sh", BUILD_SECS); 
 
-	chdir( "/www" );
-	ret = eval( "httpd", "-S" );
-	syslog( LOG_INFO, "httpd : https daemon successfully started\n" );
-	chdir( "/" );
-    }
+		chdir("/www");
+		ret = eval("httpd", "-S");
+		syslog(LOG_INFO, "httpd : https daemon successfully started\n");
+		chdir("/");
+	}
 #endif
 
-    cprintf( "done\n" );
-    return;
+	cprintf("done\n");
+	return;
 }
 
-void stop_httpd( void )
+void stop_httpd(void)
 {
-    int ret = 0;
+	int ret = 0;
 
-    if( pidof( "httpd" ) > 0 )
-    {
-	syslog( LOG_INFO, "httpd : http daemon successfully stopped\n" );
-	ret = killall( "httpd", SIGTERM );
+	if (pidof("httpd") > 0) {
+		syslog(LOG_INFO, "httpd : http daemon successfully stopped\n");
+		ret = killall("httpd", SIGTERM);
 
-	cprintf( "done\n" );
-    }
-    unlink( "/var/run/httpd.pid" );
+		cprintf("done\n");
+	}
+	unlink("/var/run/httpd.pid");
 #ifdef HAVE_HTTPS
-    unlink( "/var/run/httpsd.pid" );
+	unlink("/var/run/httpsd.pid");
 #endif
-    return;
+	return;
 }

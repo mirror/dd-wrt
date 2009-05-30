@@ -19,5 +19,5 @@
  *
  * $Id:
  */
-void start_snmp (void);
-void stop_snmp (void);
+void start_snmp(void);
+void stop_snmp(void);

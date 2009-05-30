@@ -28,46 +28,45 @@
 #include <signal.h>
 #include <services.h>
 
-void start_telnetd( void )
+void start_telnetd(void)
 {
-    int ret = 0;
-    pid_t pid;
+	int ret = 0;
+	pid_t pid;
 
-    char *telnetd_argv[] = { "telnetd", NULL };
+	char *telnetd_argv[] = { "telnetd", NULL };
 #ifdef HAVE_REGISTER
-    char *telnetd_argv_reg[] = { "telnetd", "-l", "/sbin/regshell", NULL };
+	char *telnetd_argv_reg[] = { "telnetd", "-l", "/sbin/regshell", NULL };
 #endif
-    stop_telnetd(  );
+	stop_telnetd();
 
-    if( !nvram_invmatch( "telnetd_enable", "0" ) )
+	if (!nvram_invmatch("telnetd_enable", "0"))
+		return;
+
+#ifdef HAVE_REGISTER
+	if (isregistered_real())
+#endif
+		ret = _evalpid(telnetd_argv, NULL, 0, &pid);
+#ifdef HAVE_REGISTER
+	else
+		return;
+	// ret = _evalpid (telnetd_argv_reg, NULL, 0, &pid);
+#endif
+	dd_syslog(LOG_INFO, "telnetd : telnet daemon successfully started\n");
+
+	cprintf("done\n");
 	return;
-
-#ifdef HAVE_REGISTER
-    if( isregistered_real(  ) )
-#endif
-	ret = _evalpid( telnetd_argv, NULL, 0, &pid );
-#ifdef HAVE_REGISTER
-    else
-	return;
-    // ret = _evalpid (telnetd_argv_reg, NULL, 0, &pid);
-#endif
-    dd_syslog( LOG_INFO, "telnetd : telnet daemon successfully started\n" );
-
-    cprintf( "done\n" );
-    return;
 }
 
-void stop_telnetd( void )
+void stop_telnetd(void)
 {
-    int ret = 0;
+	int ret = 0;
 
-    if( pidof( "telnetd" ) > 0 )
-    {
-	dd_syslog( LOG_INFO,
-		   "telnetd : telnet daemon successfully stopped\n" );
-	ret = killall( "telnetd", SIGTERM );
-    }
-    cprintf( "done\n" );
-    return;
+	if (pidof("telnetd") > 0) {
+		dd_syslog(LOG_INFO,
+			  "telnetd : telnet daemon successfully stopped\n");
+		ret = killall("telnetd", SIGTERM);
+	}
+	cprintf("done\n");
+	return;
 }
 #endif

@@ -30,37 +30,36 @@
 /*
  * Sputnik APD Service Handling 
  */
-void start_sputnik( void )
+void start_sputnik(void)
 {
-    int ret;
+	int ret;
 
-    // Only start if enabled
-    if( !nvram_invmatch( "apd_enable", "0" ) )
+	// Only start if enabled
+	if (!nvram_invmatch("apd_enable", "0"))
+		return;
+	insmod("ipt_mark");
+	insmod("ipt_mac");
+	insmod("xt_mark");
+	insmod("xt_mac");
+
+	ret = eval("sputnik");
+	dd_syslog(LOG_INFO, "sputnik : sputnik daemon successfully started\n");
+	cprintf("done\n");
 	return;
-    insmod( "ipt_mark" );
-    insmod( "ipt_mac" );
-    insmod( "xt_mark" );
-    insmod( "xt_mac" );
-
-    ret = eval( "sputnik" );
-    dd_syslog( LOG_INFO, "sputnik : sputnik daemon successfully started\n" );
-    cprintf( "done\n" );
-    return;
 }
 
-void stop_sputnik( void )
+void stop_sputnik(void)
 {
-    int ret = 0;
+	int ret = 0;
 
-    if( pidof( "sputnik" ) > 0 )
-    {
-	dd_syslog( LOG_INFO,
-		   "sputnik : sputnik daemon successfully stopped\n" );
-	ret = killall( "sputnik", SIGTERM );
+	if (pidof("sputnik") > 0) {
+		dd_syslog(LOG_INFO,
+			  "sputnik : sputnik daemon successfully stopped\n");
+		ret = killall("sputnik", SIGTERM);
 
-	cprintf( "done\n" );
-    }
-    return;
+		cprintf("done\n");
+	}
+	return;
 }
 
 /*

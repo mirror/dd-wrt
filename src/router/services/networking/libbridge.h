@@ -22,14 +22,12 @@
 #include <net/if.h>
 #include <linux/if_bridge.h>
 
-struct bridge_id
-{
+struct bridge_id {
 	unsigned char prio[2];
 	unsigned char addr[6];
 };
 
-struct bridge_info
-{
+struct bridge_info {
 	struct bridge_id designated_root;
 	struct bridge_id bridge_id;
 	unsigned root_path_cost;
@@ -50,16 +48,14 @@ struct bridge_info
 	struct timeval gc_timer_value;
 };
 
-struct fdb_entry
-{
+struct fdb_entry {
 	u_int8_t mac_addr[6];
 	u_int16_t port_no;
 	unsigned char is_local;
 	struct timeval ageing_timer_value;
 };
 
-struct port_info
-{
+struct port_info {
 	unsigned port_no;
 	struct bridge_id designated_root;
 	struct bridge_id designated_bridge;
@@ -91,10 +87,9 @@ extern int br_set_bridge_max_age(const char *br, struct timeval *tv);
 extern int br_set_ageing_time(const char *br, struct timeval *tv);
 extern int br_set_stp_state(const char *br, int stp_state);
 extern int br_set_bridge_priority(const char *br, int bridge_priority);
-extern int br_set_port_priority(const char *br, const char *p, 
+extern int br_set_port_priority(const char *br, const char *p,
 				int port_priority);
-extern int br_set_path_cost(const char *br, const char *p, 
-			    int path_cost);
-extern int br_read_fdb(const char *br, struct fdb_entry *fdbs, 
+extern int br_set_path_cost(const char *br, const char *p, int path_cost);
+extern int br_read_fdb(const char *br, struct fdb_entry *fdbs,
 		       unsigned long skip, int num);
 #endif

@@ -27,23 +27,22 @@
 #include <syslog.h>
 #include <signal.h>
 
-void stop_nstxd( void )
+void stop_nstxd(void)
 {
-    if( pidof( "nstxd" ) > 0 )
-    {
-	dd_syslog( LOG_INFO, "nstxd : nstx daemon successfully stopped\n" );
-	killall( "nstxd", SIGTERM );
-    }
+	if (pidof("nstxd") > 0) {
+		dd_syslog(LOG_INFO,
+			  "nstxd : nstx daemon successfully stopped\n");
+		killall("nstxd", SIGTERM);
+	}
 }
 
-void start_nstxd( void )
+void start_nstxd(void)
 {
-    if( nvram_match( "nstxd_enable", "1" ) )
-    {
-	stop_nstxd(  );
-	eval( "nstxd" );
-	dd_syslog( LOG_INFO, "nstxd daemon successfully started\n" );
-    }
+	if (nvram_match("nstxd_enable", "1")) {
+		stop_nstxd();
+		eval("nstxd");
+		dd_syslog(LOG_INFO, "nstxd daemon successfully started\n");
+	}
 }
 
 #endif

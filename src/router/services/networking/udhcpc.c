@@ -43,25 +43,24 @@
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-static int expires( unsigned int in )
+static int expires(unsigned int in)
 {
-    struct sysinfo info;
-    FILE *fp;
+	struct sysinfo info;
+	FILE *fp;
 
-    sysinfo( &info );
+	sysinfo(&info);
 
-    /*
-     * Save uptime ranther than system time, because the system time may
-     * change 
-     */
-    if( !( fp = fopen( "/tmp/udhcpc.expires", "w" ) ) )
-    {
-	perror( "/tmp/udhcpd.expires" );
-	return errno;
-    }
-    fprintf( fp, "%d", ( unsigned int )info.uptime + in );
-    fclose( fp );
-    return 0;
+	/*
+	 * Save uptime ranther than system time, because the system time may
+	 * change 
+	 */
+	if (!(fp = fopen("/tmp/udhcpc.expires", "w"))) {
+		perror("/tmp/udhcpd.expires");
+		return errno;
+	}
+	fprintf(fp, "%d", (unsigned int)info.uptime + in);
+	fclose(fp);
+	return 0;
 }
 
 /*
@@ -69,103 +68,90 @@ static int expires( unsigned int in )
  * leases is lost. The script should put the interface in an up, but
  * deconfigured state.
  */
-static int deconfig( void )
+static int deconfig(void)
 {
-    char *wan_ifname = safe_getenv( "interface" );
+	char *wan_ifname = safe_getenv("interface");
 
-    eval("ifconfig",wan_ifname, "0.0.0.0", "up" );
-    expires( 0 );
+	eval("ifconfig", wan_ifname, "0.0.0.0", "up");
+	expires(0);
 
-    nvram_set( "wan_ipaddr", "0.0.0.0" );
-    nvram_set( "wan_netmask", "0.0.0.0" );
-    nvram_set( "wan_gateway", "0.0.0.0" );
-    nvram_set( "wan_get_dns", "" );
-    // nvram_set("wan_wins","0.0.0.0"); // Don't care for linksys spec
-    nvram_set( "wan_lease", "0" );
+	nvram_set("wan_ipaddr", "0.0.0.0");
+	nvram_set("wan_netmask", "0.0.0.0");
+	nvram_set("wan_gateway", "0.0.0.0");
+	nvram_set("wan_get_dns", "");
+	// nvram_set("wan_wins","0.0.0.0"); // Don't care for linksys spec
+	nvram_set("wan_lease", "0");
 
-    unlink( "/tmp/get_lease_time" );
-    unlink( "/tmp/lease_time" );
+	unlink("/tmp/get_lease_time");
+	unlink("/tmp/lease_time");
 
-    cprintf( "done\n" );
-    return 0;
+	cprintf("done\n");
+	return 0;
 }
 
 // ==================================================================
-static int update_value( void )
+static int update_value(void)
 {
 
-    char *value;
-    int changed = 0;
+	char *value;
+	int changed = 0;
 
-    if( ( value = getenv( "ip" ) ) )
-    {
-	chomp( value );
-	if( nvram_invmatch( "wan_ipaddr", value ) )
-	{
-	    nvram_set( "wan_ipaddr", value );
-	    changed++;
+	if ((value = getenv("ip"))) {
+		chomp(value);
+		if (nvram_invmatch("wan_ipaddr", value)) {
+			nvram_set("wan_ipaddr", value);
+			changed++;
+		}
 	}
-    }
-    if( ( value = getenv( "subnet" ) ) )
-    {
-	chomp( value );
-	if( nvram_invmatch( "wan_netmask", value ) )
-	{
-	    nvram_set( "wan_netmask", value );
-	    changed++;
+	if ((value = getenv("subnet"))) {
+		chomp(value);
+		if (nvram_invmatch("wan_netmask", value)) {
+			nvram_set("wan_netmask", value);
+			changed++;
+		}
 	}
-    }
-    if( ( value = getenv( "router" ) ) )
-    {
-	chomp( value );
-	if( nvram_invmatch( "wan_gateway", value ) )
-	{
-	    nvram_set( "wan_gateway", value );
-	    changed++;
+	if ((value = getenv("router"))) {
+		chomp(value);
+		if (nvram_invmatch("wan_gateway", value)) {
+			nvram_set("wan_gateway", value);
+			changed++;
+		}
 	}
-    }
-    if( ( value = getenv( "dns" ) ) )
-    {
-	chomp( value );
-	if( nvram_invmatch( "wan_get_dns", value ) )
-	{
-	    nvram_set( "wan_get_dns", value );
-	    changed++;
+	if ((value = getenv("dns"))) {
+		chomp(value);
+		if (nvram_invmatch("wan_get_dns", value)) {
+			nvram_set("wan_get_dns", value);
+			changed++;
+		}
 	}
-    }
-    /*
-     * if ((value = getenv("wins"))) nvram_set("wan_wins", value); if ((value 
-     * = getenv("hostname"))) sethostname(value, strlen(value) + 1); 
-     */
-    if( ( value = getenv( "domain" ) ) )
-    {
-	chomp( value );
-	if( nvram_invmatch( "wan_get_domain", value ) )
-	{
-	    nvram_set( "wan_get_domain", value );
-	    changed++;
+	/*
+	 * if ((value = getenv("wins"))) nvram_set("wan_wins", value); if ((value 
+	 * = getenv("hostname"))) sethostname(value, strlen(value) + 1); 
+	 */
+	if ((value = getenv("domain"))) {
+		chomp(value);
+		if (nvram_invmatch("wan_get_domain", value)) {
+			nvram_set("wan_get_domain", value);
+			changed++;
+		}
 	}
-    }
-    if( ( value = getenv( "lease" ) ) )
-    {
-	chomp( value );
-	if( nvram_invmatch( "wan_lease", value ) )
-	{
-	    nvram_set( "wan_lease", value );
-	    changed++;
+	if ((value = getenv("lease"))) {
+		chomp(value);
+		if (nvram_invmatch("wan_lease", value)) {
+			nvram_set("wan_lease", value);
+			changed++;
+		}
+		expires(atoi(value));
 	}
-	expires( atoi( value ) );
-    }
 
-    if( changed )
-    {
-	set_host_domain_name(  );
+	if (changed) {
+		set_host_domain_name();
 #ifdef HAVE_UDHCPD
-	stop_udhcpd(  );
-	start_udhcpd(  );
+		stop_udhcpd();
+		start_udhcpd();
 #endif
-    }
-    return 0;
+	}
+	return 0;
 }
 
 // =================================================================
@@ -177,216 +163,206 @@ static int update_value( void )
  * other relavent parameters (default gateway, dns server, etc).
  */
 #ifdef HAVE_HEARTBEAT
-extern void start_heartbeat_boot( void );
+extern void start_heartbeat_boot(void);
 #endif
-static int bound( void )
+static int bound(void)
 {
-    nvram_unset( "dhcpc_done" );
-    char *wan_ifname = safe_getenv( "interface" );
-    char *value;
-    char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
-    int changed = 0;
+	nvram_unset("dhcpc_done");
+	char *wan_ifname = safe_getenv("interface");
+	char *value;
+	char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
+	int changed = 0;
 
-    if( ( value = getenv( "ip" ) ) )
-    {
-	chomp( value );
-	if( nvram_match( "wan_proto", "pptp" )
-	    && nvram_match( "pptp_use_dhcp", "1" ) )
-	    strcpy( temp_wan_ipaddr, value );
-	else
-	{
-	    if( nvram_invmatch( "wan_ipaddr", value ) )
-		changed = 1;
+	if ((value = getenv("ip"))) {
+		chomp(value);
+		if (nvram_match("wan_proto", "pptp")
+		    && nvram_match("pptp_use_dhcp", "1"))
+			strcpy(temp_wan_ipaddr, value);
+		else {
+			if (nvram_invmatch("wan_ipaddr", value))
+				changed = 1;
+		}
+		nvram_set("wan_ipaddr", value);
 	}
-	nvram_set( "wan_ipaddr", value );
-    }
-    if( ( value = getenv( "subnet" ) ) )
-    {
-	chomp( value );
-	if( nvram_match( "wan_proto", "pptp" )
-	    && nvram_match( "pptp_use_dhcp", "1" ) )
-	    strcpy( temp_wan_netmask, value );
-	else
-	{
-	    if( nvram_invmatch( "wan_netmask", value ) )
-		changed = 1;
-	    nvram_set( "wan_netmask", value );
+	if ((value = getenv("subnet"))) {
+		chomp(value);
+		if (nvram_match("wan_proto", "pptp")
+		    && nvram_match("pptp_use_dhcp", "1"))
+			strcpy(temp_wan_netmask, value);
+		else {
+			if (nvram_invmatch("wan_netmask", value))
+				changed = 1;
+			nvram_set("wan_netmask", value);
+		}
 	}
-    }
-    if( ( value = getenv( "router" ) ) )
-    {
-	chomp( value );
-	if( nvram_invmatch( "wan_gateway", value ) )
-	    changed = 1;
-	nvram_set( "wan_gateway", value );
-    }
-    if( ( value = getenv( "dns" ) ) )
-    {
-	chomp( value );
-	// if (nvram_invmatch("wan_get_dns",value))
-	// changed=1; 
-	nvram_set( "wan_get_dns", value );
-    }
-    /*
-     * Don't care for linksys spec if ((value = getenv("wins")))
-     * nvram_set("wan_wins", value); if ((value = getenv("hostname")))
-     * sethostname(value, strlen(value) + 1); 
-     */
-    if( ( value = getenv( "domain" ) ) )
-    {
-	chomp( value );
-	if( nvram_invmatch( "wan_get_domain", value ) )
-	    changed = 1;
-	nvram_set( "wan_get_domain", value );	// HeartBeat need to use
-    }
-    if( ( value = getenv( "lease" ) ) )
-    {
-	chomp( value );
-	nvram_set( "wan_lease", value );
-	expires( atoi( value ) );
-    }
-    if( !changed )
-    {
-	cprintf( "interface hasnt changed, do nothing\n" );
-	return 0;
-    }
-    stop_firewall(  );
-    cprintf( "configure to IF[%s] , IP[%s], MASK[%s]\n", wan_ifname,
-	     nvram_safe_get( "wan_ipaddr" ),
-	     nvram_safe_get( "wan_netmask" ) );
+	if ((value = getenv("router"))) {
+		chomp(value);
+		if (nvram_invmatch("wan_gateway", value))
+			changed = 1;
+		nvram_set("wan_gateway", value);
+	}
+	if ((value = getenv("dns"))) {
+		chomp(value);
+		// if (nvram_invmatch("wan_get_dns",value))
+		// changed=1; 
+		nvram_set("wan_get_dns", value);
+	}
+	/*
+	 * Don't care for linksys spec if ((value = getenv("wins")))
+	 * nvram_set("wan_wins", value); if ((value = getenv("hostname")))
+	 * sethostname(value, strlen(value) + 1); 
+	 */
+	if ((value = getenv("domain"))) {
+		chomp(value);
+		if (nvram_invmatch("wan_get_domain", value))
+			changed = 1;
+		nvram_set("wan_get_domain", value);	// HeartBeat need to use
+	}
+	if ((value = getenv("lease"))) {
+		chomp(value);
+		nvram_set("wan_lease", value);
+		expires(atoi(value));
+	}
+	if (!changed) {
+		cprintf("interface hasnt changed, do nothing\n");
+		return 0;
+	}
+	stop_firewall();
+	cprintf("configure to IF[%s] , IP[%s], MASK[%s]\n", wan_ifname,
+		nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 
-    if( nvram_match( "wan_proto", "pptp" )
-	&& nvram_match( "pptp_use_dhcp", "1" ) )
-	eval("ifconfig",wan_ifname,temp_wan_ipaddr,"netmask",temp_wan_netmask,"up");
-    else
-	eval("ifconfig",wan_ifname, nvram_safe_get( "wan_ipaddr" ),"netmask",nvram_safe_get( "wan_netmask" ) ,"up");
+	if (nvram_match("wan_proto", "pptp")
+	    && nvram_match("pptp_use_dhcp", "1"))
+		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask",
+		     temp_wan_netmask, "up");
+	else
+		eval("ifconfig", wan_ifname, nvram_safe_get("wan_ipaddr"),
+		     "netmask", nvram_safe_get("wan_netmask"), "up");
 
-    /*
-     * We only want to exec bellow functions after dhcp get ip if the
-     * wan_proto is heartbeat 
-     */
+	/*
+	 * We only want to exec bellow functions after dhcp get ip if the
+	 * wan_proto is heartbeat 
+	 */
 #ifdef HAVE_HEARTBEAT
-    if( nvram_match( "wan_proto", "heartbeat" ) )
-    {
-	int i = 0;
+	if (nvram_match("wan_proto", "heartbeat")) {
+		int i = 0;
 
-	/*
-	 * Delete all default routes 
-	 */
-	while( route_del( wan_ifname, 0, NULL, NULL, NULL ) == 0
-	       || i++ < 10 );
+		/*
+		 * Delete all default routes 
+		 */
+		while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0
+		       || i++ < 10) ;
 
-	/*
-	 * Set default route to gateway if specified 
-	 */
-	route_add( wan_ifname, 0, "0.0.0.0", nvram_safe_get( "wan_gateway" ),
-		   "0.0.0.0" );
+		/*
+		 * Set default route to gateway if specified 
+		 */
+		route_add(wan_ifname, 0, "0.0.0.0",
+			  nvram_safe_get("wan_gateway"), "0.0.0.0");
 
-	/*
-	 * save dns to resolv.conf 
-	 */
-	dns_to_resolv(  );
-	stop_udhcpd(  );
-	start_udhcpd(  );
-	start_firewall(  );
-	stop_wland(  );
-	start_wshaper(  );
-	start_wland(  );
-	start_heartbeat_boot(  );
-    }
+		/*
+		 * save dns to resolv.conf 
+		 */
+		dns_to_resolv();
+		stop_udhcpd();
+		start_udhcpd();
+		start_firewall();
+		stop_wland();
+		start_wshaper();
+		start_wland();
+		start_heartbeat_boot();
+	}
 #else
-    if( 0 )
-    {
-	// nothing
-    }
+	if (0) {
+		// nothing
+	}
 #endif
 #ifdef HAVE_PPTP
-    else if( nvram_match( "wan_proto", "pptp" )
-	     && nvram_match( "pptp_use_dhcp", "1" ) )
-    {
-	char pptpip[64];
-	struct dns_lists *dns_list = NULL;
+	else if (nvram_match("wan_proto", "pptp")
+		 && nvram_match("pptp_use_dhcp", "1")) {
+		char pptpip[64];
+		struct dns_lists *dns_list = NULL;
 
-	dns_to_resolv(  );
+		dns_to_resolv();
 
-	dns_list = get_dns_list(  );
-	int i = 0;
+		dns_list = get_dns_list();
+		int i = 0;
 
-	if( dns_list )
-	{
-	    for( i = 0; i < dns_list->num_servers; i++ )
-		route_add( wan_ifname, 0, dns_list->dns_server[i],
-			   nvram_safe_get( "wan_gateway" ),
-			   "255.255.255.255" );
-	    free( dns_list );
-	}
-	route_add( wan_ifname, 0, "0.0.0.0", nvram_safe_get( "wan_gateway" ),
-		   "0.0.0.0" );
+		if (dns_list) {
+			for (i = 0; i < dns_list->num_servers; i++)
+				route_add(wan_ifname, 0,
+					  dns_list->dns_server[i],
+					  nvram_safe_get("wan_gateway"),
+					  "255.255.255.255");
+			free(dns_list);
+		}
+		route_add(wan_ifname, 0, "0.0.0.0",
+			  nvram_safe_get("wan_gateway"), "0.0.0.0");
 
-	nvram_set( "wan_gateway_buf", nvram_get( "wan_gateway" ) );
+		nvram_set("wan_gateway_buf", nvram_get("wan_gateway"));
 
-	getIPFromName( nvram_safe_get( "pptp_server_name" ), pptpip );
-	nvram_set( "pptp_server_ip", pptpip );
+		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip);
+		nvram_set("pptp_server_ip", pptpip);
 
-	/*
-	 * Delete all default routes 
-	 */
+		/*
+		 * Delete all default routes 
+		 */
 //      while( route_del( wan_ifname, 0, NULL, NULL, NULL ) == 0
 //             || i++ < 10 );
 
-	// Add the route to the PPTP server on the wan interface for pptp
-	// client to reach it
-	if( nvram_match( "wan_gateway", "0.0.0.0" )
-	    || nvram_match( "wan_netmask", "0.0.0.0" ) )
-	    route_add( wan_ifname, 0, nvram_safe_get( "pptp_server_ip" ),
-		       nvram_safe_get( "wan_gateway" ), "255.255.255.255" );
-	else
-	    route_add( wan_ifname, 0, nvram_safe_get( "pptp_server_ip" ),
-		       nvram_safe_get( "wan_gateway" ),
-		       nvram_safe_get( "wan_netmask" ) );
+		// Add the route to the PPTP server on the wan interface for pptp
+		// client to reach it
+		if (nvram_match("wan_gateway", "0.0.0.0")
+		    || nvram_match("wan_netmask", "0.0.0.0"))
+			route_add(wan_ifname, 0,
+				  nvram_safe_get("pptp_server_ip"),
+				  nvram_safe_get("wan_gateway"),
+				  "255.255.255.255");
+		else
+			route_add(wan_ifname, 0,
+				  nvram_safe_get("pptp_server_ip"),
+				  nvram_safe_get("wan_gateway"),
+				  nvram_safe_get("wan_netmask"));
 
-    }
+	}
 #endif
 #ifdef HAVE_L2TP
-    else if( nvram_match( "wan_proto", "l2tp" ) )
-    {
-	int i = 0;
+	else if (nvram_match("wan_proto", "l2tp")) {
+		int i = 0;
 
-	/*
-	 * Delete all default routes 
-	 */
-	while( route_del( wan_ifname, 0, NULL, NULL, NULL ) == 0
-	       || i++ < 10 );
+		/*
+		 * Delete all default routes 
+		 */
+		while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0
+		       || i++ < 10) ;
 
-	/*
-	 * Set default route to gateway if specified 
-	 */
-	route_add( wan_ifname, 0, "0.0.0.0", nvram_safe_get( "wan_gateway" ),
-		   "0.0.0.0" );
+		/*
+		 * Set default route to gateway if specified 
+		 */
+		route_add(wan_ifname, 0, "0.0.0.0",
+			  nvram_safe_get("wan_gateway"), "0.0.0.0");
 
-	/*
-	 * Backup the default gateway. It should be used if L2TP connection
-	 * is broken 
-	 */
-	nvram_set( "wan_gateway_buf", nvram_get( "wan_gateway" ) );
+		/*
+		 * Backup the default gateway. It should be used if L2TP connection
+		 * is broken 
+		 */
+		nvram_set("wan_gateway_buf", nvram_get("wan_gateway"));
 
-	/*
-	 * clear dns from the resolv.conf 
-	 */
-	nvram_set( "wan_get_dns", "" );
-	dns_to_resolv(  );
-	start_firewall(  );
-	start_l2tp_boot(  );
-    }
+		/*
+		 * clear dns from the resolv.conf 
+		 */
+		nvram_set("wan_get_dns", "");
+		dns_to_resolv();
+		start_firewall();
+		start_l2tp_boot();
+	}
 #endif
-    else
-    {
-	cprintf( "start wan done\n" );
-	start_wan_done( wan_ifname );
-    }
-    nvram_set( "dhcpc_done", "1" );
-    cprintf( "done\n" );
-    return 0;
+	else {
+		cprintf("start wan done\n");
+		start_wan_done(wan_ifname);
+	}
+	nvram_set("dhcpc_done", "1");
+	cprintf("done\n");
+	return 0;
 }
 
 /*
@@ -396,71 +372,72 @@ static int bound( void )
  * will not change, however, the other DHCP paramaters, such as the
  * default gateway, subnet mask, and dns server may change.
  */
-static int renew( void )
+static int renew(void)
 {
-    bound(  );
+	bound();
 
-    cprintf( "done\n" );
-    return 0;
+	cprintf("done\n");
+	return 0;
 }
 
-int udhcpc_main( int argc, char **argv )
+int udhcpc_main(int argc, char **argv)
 {
-    if( check_action(  ) != ACT_IDLE )
-	return -1;
+	if (check_action() != ACT_IDLE)
+		return -1;
 
-    if( !argv[1] )
-	return EINVAL;
-    else if( strstr( argv[1], "deconfig" ) )
-	return deconfig(  );
-    else if( strstr( argv[1], "bound" ) )
-	return bound(  );
-    else if( strstr( argv[1], "renew" ) )
-	return renew(  );
-    else if( strstr( argv[1], "update" ) )
-	return update_value(  );
-    else
-	return EINVAL;
+	if (!argv[1])
+		return EINVAL;
+	else if (strstr(argv[1], "deconfig"))
+		return deconfig();
+	else if (strstr(argv[1], "bound"))
+		return bound();
+	else if (strstr(argv[1], "renew"))
+		return renew();
+	else if (strstr(argv[1], "update"))
+		return update_value();
+	else
+		return EINVAL;
 }
 
 static int bound_tv(void)
 {
-char *ifname = safe_getenv( "interface" );
-char *ip = safe_getenv( "ip" );
-char *net = safe_getenv( "subnet" );
-char *cidr = safe_getenv( "cidrroute" );
-if (ip && net && ifname)
-    {
-    char bcast[32];
-    strcpy(bcast,ip);
-    get_broadcast(bcast,net);
-    eval("ifconfig",ifname,ip,"netmask",net,"broadcast",bcast,"multi");
-    }
-if (cidr && ifname)
-    {
-    char *callbuffer=malloc(strlen(cidr)+128);
-    sprintf(callbuffer,"export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",cidr,ifname);
-    system(callbuffer);
-    free(callbuffer);
-    }
-return 0;
+	char *ifname = safe_getenv("interface");
+	char *ip = safe_getenv("ip");
+	char *net = safe_getenv("subnet");
+	char *cidr = safe_getenv("cidrroute");
+	if (ip && net && ifname) {
+		char bcast[32];
+		strcpy(bcast, ip);
+		get_broadcast(bcast, net);
+		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast,
+		     "multi");
+	}
+	if (cidr && ifname) {
+		char *callbuffer = malloc(strlen(cidr) + 128);
+		sprintf(callbuffer,
+			"export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh",
+			cidr, ifname);
+		system(callbuffer);
+		free(callbuffer);
+	}
+	return 0;
 }
 
-int udhcpc_tv_main( int argc, char **argv )
+int udhcpc_tv_main(int argc, char **argv)
 {
-    if( check_action(  ) != ACT_IDLE )
-	return -1;
+	if (check_action() != ACT_IDLE)
+		return -1;
 
-    if( !argv[1] )
-	return EINVAL;
-    else if( strstr( argv[1], "deconfig" ) )
-	return 0;
-    else if( strstr( argv[1], "bound" ) )
-	return bound_tv(  );
-    else if( strstr( argv[1], "renew" ) )
-	return bound_tv(  );
-    else if( strstr( argv[1], "update" ) )
-	return bound_tv(  );
-    else
-	return EINVAL;
+	if (!argv[1])
+		return EINVAL;
+	else if (strstr(argv[1], "deconfig"))
+		return 0;
+	else if (strstr(argv[1], "bound"))
+		return bound_tv();
+	else if (strstr(argv[1], "renew"))
+		return bound_tv();
+	else if (strstr(argv[1], "update"))
+		return bound_tv();
+	else
+		return EINVAL;
 }
