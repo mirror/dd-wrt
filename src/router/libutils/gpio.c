@@ -20,44 +20,44 @@
 
 #if  defined(HAVE_AR531X) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_ADM5120)
 
-void set_gpio( int gpio, int value )
+void set_gpio(int gpio, int value)
 {
-    FILE *in;
-    char buf[64];
+	FILE *in;
+	char buf[64];
 
-    sprintf( buf, "/proc/gpio/%d_dir", gpio );
-    in = fopen( buf, "wb" );
-    if( in == NULL )
-	return;
-    fprintf( in, "1" );
-    fclose( in );
-    sprintf( buf, "/proc/gpio/%d_out", gpio );
-    in = fopen( buf, "wb" );
-    if( in == NULL )
-	return;
-    fprintf( in, "%d", value );
-    fclose( in );
+	sprintf(buf, "/proc/gpio/%d_dir", gpio);
+	in = fopen(buf, "wb");
+	if (in == NULL)
+		return;
+	fprintf(in, "1");
+	fclose(in);
+	sprintf(buf, "/proc/gpio/%d_out", gpio);
+	in = fopen(buf, "wb");
+	if (in == NULL)
+		return;
+	fprintf(in, "%d", value);
+	fclose(in);
 }
 
-int get_gpio( int gpio )
+int get_gpio(int gpio)
 {
-    FILE *in;
-    int ret;
-    char buf[64];
+	FILE *in;
+	int ret;
+	char buf[64];
 
-    sprintf( buf, "/proc/gpio/%d_dir", gpio );
-    in = fopen( buf, "wb" );
-    if( in == NULL )
-	return 0;
-    fprintf( in, "0" );
-    fclose( in );
-    sprintf( buf, "/proc/gpio/%d_in", gpio );
-    in = fopen( buf, "rb" );
-    if( in == NULL )
-	return 0;
-    fscanf( in, "%d", &ret );
-    fclose( in );
-    return ret;
+	sprintf(buf, "/proc/gpio/%d_dir", gpio);
+	in = fopen(buf, "wb");
+	if (in == NULL)
+		return 0;
+	fprintf(in, "0");
+	fclose(in);
+	sprintf(buf, "/proc/gpio/%d_in", gpio);
+	in = fopen(buf, "rb");
+	if (in == NULL)
+		return 0;
+	fscanf(in, "%d", &ret);
+	fclose(in);
+	return ret;
 }
 
 #elif HAVE_XSCALE
@@ -72,114 +72,108 @@ int get_gpio( int gpio )
 #define IXP4XX_GPIO_OUT 		0x1
 #define IXP4XX_GPIO_IN  		0x2
 
-struct gpio_bit
-{
-    unsigned char bit;
-    unsigned char state;
+struct gpio_bit {
+	unsigned char bit;
+	unsigned char state;
 };
 
 char *filename = "/dev/gpio";
 
-void set_gpio( int gpio, int value )
+void set_gpio(int gpio, int value)
 {
-    int file;
-    struct gpio_bit _bit;
+	int file;
+	struct gpio_bit _bit;
 
-    /*
-     * open device 
-     */
-    if( ( file = open( filename, O_RDWR ) ) == -1 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * open device 
 	 */
-	fprintf( stderr, "Error: could not open %s (%d)\n", filename, errno );
-	return;
-    }
+	if ((file = open(filename, O_RDWR)) == -1) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: could not open %s (%d)\n", filename,
+			errno);
+		return;
+	}
 
-    /*
-     * Config bit as output 
-     */
-    _bit.bit = gpio;
-    _bit.state = IXP4XX_GPIO_OUT;
-    if( ioctl( file, GPIO_SET_CONFIG, ( long )&_bit ) < 0 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * Config bit as output 
 	 */
-	fprintf( stderr, "Error: ioctl failed: %s (%d)\n", strerror( errno ),
-		 errno );
-	return;
-    }
+	_bit.bit = gpio;
+	_bit.state = IXP4XX_GPIO_OUT;
+	if (ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
+			strerror(errno), errno);
+		return;
+	}
 
-    /*
-     * Write data 
-     */
-    _bit.bit = gpio;
-    _bit.state = value;
-    if( ioctl( file, GPIO_SET_BIT, ( unsigned long )&_bit ) < 0 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * Write data 
 	 */
-	fprintf( stderr, "Error: ioctl failed: %s (%d)\n", strerror( errno ),
-		 errno );
-	return;
-    }
+	_bit.bit = gpio;
+	_bit.state = value;
+	if (ioctl(file, GPIO_SET_BIT, (unsigned long)&_bit) < 0) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
+			strerror(errno), errno);
+		return;
+	}
 
-    close( file );
+	close(file);
 
 }
 
-int get_gpio( int gpio )
+int get_gpio(int gpio)
 {
-    int file;
-    struct gpio_bit _bit;
+	int file;
+	struct gpio_bit _bit;
 
-    /*
-     * open device 
-     */
-    if( ( file = open( filename, O_RDONLY ) ) == -1 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * open device 
 	 */
-	fprintf( stderr, "Error: ioctl failed: %s (%d)\n", strerror( errno ),
-		 errno );
-	return 1;
-    }
+	if ((file = open(filename, O_RDONLY)) == -1) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
+			strerror(errno), errno);
+		return 1;
+	}
 
-    /*
-     * Config pin as input 
-     */
-    _bit.bit = gpio;
-    _bit.state = IXP4XX_GPIO_IN;
-    if( ioctl( file, GPIO_SET_CONFIG, ( long )&_bit ) < 0 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * Config pin as input 
 	 */
-	fprintf( stderr, "Error: ioctl failed: %s (%d)\n", strerror( errno ),
-		 errno );
-	return 1;
-    }
+	_bit.bit = gpio;
+	_bit.state = IXP4XX_GPIO_IN;
+	if (ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
+			strerror(errno), errno);
+		return 1;
+	}
 
-    /*
-     * Read data 
-     */
-    _bit.bit = gpio;
-    if( ioctl( file, GPIO_GET_BIT, ( long )&_bit ) < 0 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * Read data 
 	 */
-	fprintf( stderr, "Error: ioctl failed: %s (%d)\n", strerror( errno ),
-		 errno );
-	return 1;
-    }
+	_bit.bit = gpio;
+	if (ioctl(file, GPIO_GET_BIT, (long)&_bit) < 0) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
+			strerror(errno), errno);
+		return 1;
+	}
 
-    close( file );
-    return _bit.state;
+	close(file);
+	return _bit.state;
 }
 
 #elif HAVE_STORM
@@ -201,113 +195,108 @@ int get_gpio( int gpio )
 #define IXP4XX_GPIO_OUT 		0x1
 #define IXP4XX_GPIO_IN  		0x2
 
-struct gpio_bit
-{
-    unsigned char bit;
-    unsigned char state;
+struct gpio_bit {
+	unsigned char bit;
+	unsigned char state;
 };
 
 char *filename = "/dev/gpio";
 
-void set_gpio( int gpio, int value )
+void set_gpio(int gpio, int value)
 {
-    int file;
-    struct gpio_bit _bit;
+	int file;
+	struct gpio_bit _bit;
 
-    /*
-     * open device 
-     */
-    if( ( file = open( filename, O_RDWR ) ) == -1 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * open device 
 	 */
-	fprintf( stderr, "Error: could not open %s (%d)\n", filename, errno );
-	return;
-    }
+	if ((file = open(filename, O_RDWR)) == -1) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: could not open %s (%d)\n", filename,
+			errno);
+		return;
+	}
 
-    /*
-     * Config bit as output 
-     */
-    _bit.bit = gpio;
-    _bit.state = IXP4XX_GPIO_OUT;
-    if( ioctl( file, GPIO_SET_CONFIG, ( long )&_bit ) < 0 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * Config bit as output 
 	 */
-	fprintf( stderr, "Error: ioctl failed: %s (%d)\n", strerror( errno ),
-		 errno );
-	return;
-    }
+	_bit.bit = gpio;
+	_bit.state = IXP4XX_GPIO_OUT;
+	if (ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
+			strerror(errno), errno);
+		return;
+	}
 
-    /*
-     * Write data 
-     */
-    _bit.bit = gpio;
-    _bit.state = value;
-    if( ioctl( file, GPIO_SET_BIT, ( unsigned long )&_bit ) < 0 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * Write data 
 	 */
-	fprintf( stderr, "Error: ioctl failed: %s (%d)\n", strerror( errno ),
-		 errno );
-	return;
-    }
+	_bit.bit = gpio;
+	_bit.state = value;
+	if (ioctl(file, GPIO_SET_BIT, (unsigned long)&_bit) < 0) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
+			strerror(errno), errno);
+		return;
+	}
 
-    close( file );
+	close(file);
 
 }
 
-int get_gpio( int gpio )
+int get_gpio(int gpio)
 {
-    int file;
-    struct gpio_bit _bit;
+	int file;
+	struct gpio_bit _bit;
 
-    /*
-     * open device 
-     */
-    if( ( file = open( filename, O_RDONLY ) ) == -1 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * open device 
 	 */
-	fprintf( stderr, "Error: could not open %s (%d)\n", filename, errno );
-	return 1;
-    }
+	if ((file = open(filename, O_RDONLY)) == -1) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: could not open %s (%d)\n", filename,
+			errno);
+		return 1;
+	}
 
-    /*
-     * Config pin as input 
-     */
-    _bit.bit = gpio;
-    _bit.state = IXP4XX_GPIO_IN;
-    if( ioctl( file, GPIO_SET_CONFIG, ( long )&_bit ) < 0 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * Config pin as input 
 	 */
-	fprintf( stderr, "Error: ioctl failed: %s (%d)\n", strerror( errno ),
-		 errno );
-	return 1;
-    }
+	_bit.bit = gpio;
+	_bit.state = IXP4XX_GPIO_IN;
+	if (ioctl(file, GPIO_SET_CONFIG, (long)&_bit) < 0) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
+			strerror(errno), errno);
+		return 1;
+	}
 
-    /*
-     * Read data 
-     */
-    _bit.bit = gpio;
-    if( ioctl( file, GPIO_GET_BIT, ( long )&_bit ) < 0 )
-    {
 	/*
-	 * ERROR HANDLING; you can check errno to see what went wrong 
+	 * Read data 
 	 */
-	fprintf( stderr, "Error: ioctl failed: %s (%d)\n", strerror( errno ),
-		 errno );
-	return 1;
-    }
+	_bit.bit = gpio;
+	if (ioctl(file, GPIO_GET_BIT, (long)&_bit) < 0) {
+		/*
+		 * ERROR HANDLING; you can check errno to see what went wrong 
+		 */
+		fprintf(stderr, "Error: ioctl failed: %s (%d)\n",
+			strerror(errno), errno);
+		return 1;
+	}
 
-    close( file );
-    return _bit.state;
+	close(file);
+	return _bit.state;
 }
 
 #elif HAVE_RT2880
@@ -331,15 +320,14 @@ int get_gpio( int gpio )
 #define	RALINK_GPIO_WRITE_BIT		0x05
 #define	RALINK_GPIO_READ_BYTE		0x06
 #define	RALINK_GPIO_WRITE_BYTE		0x07
-#define	RALINK_GPIO_READ_INT		0x02 //same as read
-#define	RALINK_GPIO_WRITE_INT		0x03 //same as write
-#define	RALINK_GPIO_SET_INT		0x21 //same as set
-#define	RALINK_GPIO_CLEAR_INT		0x31 //same as clear
+#define	RALINK_GPIO_READ_INT		0x02	//same as read
+#define	RALINK_GPIO_WRITE_INT		0x03	//same as write
+#define	RALINK_GPIO_SET_INT		0x21	//same as set
+#define	RALINK_GPIO_CLEAR_INT		0x31	//same as clear
 #define RALINK_GPIO_ENABLE_INTP		0x08
 #define RALINK_GPIO_DISABLE_INTP	0x09
 #define RALINK_GPIO_REG_IRQ		0x0A
 #define RALINK_GPIO_LED_SET		0x41
-
 
 int gpio_set_dir_in(int gpio)
 {
@@ -431,62 +419,57 @@ int gpio_write_bit(int idx, int value)
 	return 0;
 }
 
-
-void set_gpio( int pin, int value )
+void set_gpio(int pin, int value)
 {
-gpio_set_dir_out(pin);
-gpio_write_bit(pin,value);
+	gpio_set_dir_out(pin);
+	gpio_write_bit(pin, value);
 }
 
-int get_gpio( int pin)
+int get_gpio(int pin)
 {
-int value;
-gpio_set_dir_in(pin);
-gpio_read_bit(pin,&value);
-return value;
+	int value;
+	gpio_set_dir_in(pin);
+	gpio_read_bit(pin, &value);
+	return value;
 }
-
 
 #else
 
-void set_gpio( int pin, int value )
+void set_gpio(int pin, int value)
 {
-    int gpioouten = open( "/dev/gpio/outen", O_RDWR );
-    int gpioout = open( "/dev/gpio/out", O_RDWR );
-    unsigned int gpio;
+	int gpioouten = open("/dev/gpio/outen", O_RDWR);
+	int gpioout = open("/dev/gpio/out", O_RDWR);
+	unsigned int gpio;
 
-    read( gpioouten, &gpio, sizeof( gpio ) );
-    gpio |= 1 << pin;
-    write( gpioouten, &gpio, sizeof( gpio ) );
+	read(gpioouten, &gpio, sizeof(gpio));
+	gpio |= 1 << pin;
+	write(gpioouten, &gpio, sizeof(gpio));
 
-    read( gpioout, &gpio, sizeof( gpio ) );
-    if( value )
-    {
-	gpio |= ( 1 << pin );
-    }
-    else
-    {
-	gpio &= ~( 1 << pin );
-    }
-    write( gpioout, &gpio, sizeof( gpio ) );
-    close( gpioout );
-    close( gpioouten );
+	read(gpioout, &gpio, sizeof(gpio));
+	if (value) {
+		gpio |= (1 << pin);
+	} else {
+		gpio &= ~(1 << pin);
+	}
+	write(gpioout, &gpio, sizeof(gpio));
+	close(gpioout);
+	close(gpioouten);
 }
 
-int get_gpio( int pin )
+int get_gpio(int pin)
 {
-    unsigned int gpio;
-    int gpioouten = open( "/dev/gpio/outen", O_RDWR );
-    int gpioin = open( "/dev/gpio/in", O_RDWR );
+	unsigned int gpio;
+	int gpioouten = open("/dev/gpio/outen", O_RDWR);
+	int gpioin = open("/dev/gpio/in", O_RDWR);
 
-    read( gpioouten, &gpio, sizeof( gpio ) );
-    gpio &= ~( 1 << pin );
-    write( gpioouten, &gpio, sizeof( gpio ) );
-    read( gpioin, &gpio, sizeof( gpio ) );
-    gpio = ( gpio & ( 1 << pin ) ) ? 1 : 0;
-    close( gpioin );
-    close( gpioouten );
-    return gpio;
+	read(gpioouten, &gpio, sizeof(gpio));
+	gpio &= ~(1 << pin);
+	write(gpioouten, &gpio, sizeof(gpio));
+	read(gpioin, &gpio, sizeof(gpio));
+	gpio = (gpio & (1 << pin)) ? 1 : 0;
+	close(gpioin);
+	close(gpioouten);
+	return gpio;
 }
 
 #endif
