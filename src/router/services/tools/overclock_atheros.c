@@ -142,6 +142,18 @@ void start_overclock(void)	// hidden feature. must be called with
 	fseek(in, 0x23, SEEK_SET);
 	int dir300mul = getc(in);
 
+	fseek(in, 0x47, SEEK_SET);
+	int dir300div2 = getc(in);
+
+	fseek(in, 0x53, SEEK_SET);
+	int dir300mul2 = getc(in);
+
+	fseek(in, 0x93, SEEK_SET);
+	int dir300div3 = getc(in);
+
+	fseek(in, 0x9f, SEEK_SET);
+	int dir300mul3 = getc(in);
+
 	fseek(in, 0xdb, SEEK_SET);
 	int isalfa1 = getc(in);
 	int isalfa = 0;
@@ -149,6 +161,8 @@ void start_overclock(void)	// hidden feature. must be called with
 		isalfa = 1;
 
 	int dir300 = 0;
+	int dir3002 = 0;
+	int dir3003 = 0;
 
 	if (dir300div == 0x3 && dir300mul == 0x5c) {
 		dir300 = 1;
@@ -162,15 +176,50 @@ void start_overclock(void)	// hidden feature. must be called with
 		mul = dir300mul;
 	}
 
+	if (dir300div2 == 0x3 && dir300mul2 == 0x5c) {
+		dir3002 = 1;
+		div = dir300div2;
+		mul = dir300mul2;
+	}
+	if (dir300div2 == 0x1
+	    && (dir300mul2 == 0x28 || dir300mul2 == 0x2c
+		|| dir300mul2 == 0x30)) {
+		dir3002 = 1;
+		div = dir300div2;
+		mul = dir300mul2;
+	}
+
+	if (dir300div3 == 0x3 && dir300mul3 == 0x5c) {
+		dir3003 = 1;
+		div = dir300div3;
+		mul = dir300mul3;
+	}
+	if (dir300div3 == 0x1
+	    && (dir300mul3 == 0x28 || dir300mul3 == 0x2c
+		|| dir300mul3 == 0x30)) {
+		dir3003 = 1;
+		div = dir300div3;
+		mul = dir300mul3;
+	}
+
 	if (div == 0x3 && mul == 0x5c) {
-		fprintf(stderr, "ap51/ap61 (ar2315 or ar2317) found\n");
+		fprintf(stderr,
+			"ap51/ap61/ap65 (ar2315/ar2316/ar2317/ar2318) found\n");
 		if (dir300)
 			fseek(in, 0x17, SEEK_SET);
+		else if (dir3002)
+			fseek(in, 0x47, SEEK_SET);
+		else if (dir3003)
+			fseek(in, 0x93, SEEK_SET);
 		else
 			fseek(in, 0x1e3, SEEK_SET);
 		putc(0x1, in);
 		if (dir300)
 			fseek(in, 0x23, SEEK_SET);
+		else if (dir3002)
+			fseek(in, 0x53, SEEK_SET);
+		else if (dir3003)
+			fseek(in, 0x9f, SEEK_SET);
 		else
 			fseek(in, 0x1ef, SEEK_SET);
 		if (clk == 200) {
@@ -209,7 +258,8 @@ void start_overclock(void)	// hidden feature. must be called with
 		fclose(in);
 		eval("mtd", "-f", "write", "/tmp/boot", "RedBoot");
 	} else if (div == 0x1 && (mul == 0x28 || mul == 0x2c || mul == 0x30)) {
-		fprintf(stderr, "ap51/ap61 (ar2315 or ar2317) found\n");
+		fprintf(stderr,
+			"ap51/ap61/ap65 (ar2315/ar2316/ar2317/ar2318) found\n");
 		if (clk == 200 && mul == 0x28) {
 			fprintf(stderr, "board already clocked to 200mhz\n");
 			fclose(in);
@@ -227,6 +277,10 @@ void start_overclock(void)	// hidden feature. must be called with
 		}
 		if (dir300)
 			fseek(in, 0x17, SEEK_SET);
+		else if (dir3002)
+			fseek(in, 0x47, SEEK_SET);
+		else if (dir3003)
+			fseek(in, 0x93, SEEK_SET);
 		else
 			fseek(in, 0x1e3, SEEK_SET);
 		if (clk == 184)
@@ -236,6 +290,10 @@ void start_overclock(void)	// hidden feature. must be called with
 			putc(0x1, in);
 		if (dir300)
 			fseek(in, 0x23, SEEK_SET);
+		else if (dir3002)
+			fseek(in, 0x57, SEEK_SET);
+		else if (dir3003)
+			fseek(in, 0x9f, SEEK_SET);
 		else
 			fseek(in, 0x1ef, SEEK_SET);
 		if (clk == 184) {
