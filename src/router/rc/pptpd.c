@@ -19,27 +19,22 @@
 #include <code_pattern.h>
 #include <rc.h>
 
-int pptpd_main( int argc, char **argv )
+int pptpd_main(int argc, char **argv)
 {
 
-    if( !argv[1] )
-    {
-	fprintf( stderr, "usage: poptop [start|stop|restart]\n" );
-	return EINVAL;
-    }
-    else if( strstr( argv[1], "start" ) )
-	start_service( "pptpd" );
-    else if( strstr( argv[1], "stop" ) )
-	stop_service( "pptpd" );
-    else if( strstr( argv[1], "restart" ) )
-    {
-	startstop( "pptpd" );
+	if (!argv[1]) {
+		fprintf(stderr, "usage: poptop [start|stop|restart]\n");
+		return EINVAL;
+	} else if (strstr(argv[1], "start"))
+		start_service("pptpd");
+	else if (strstr(argv[1], "stop"))
+		stop_service("pptpd");
+	else if (strstr(argv[1], "restart")) {
+		startstop("pptpd");
+		return 0;
+	} else {
+		fprintf(stderr, "usage: poptop [start|stop|restart]\n");
+		return EINVAL;
+	}
 	return 0;
-    }
-    else
-    {
-	fprintf( stderr, "usage: poptop [start|stop|restart]\n" );
-	return EINVAL;
-    }
-return 0;
 }

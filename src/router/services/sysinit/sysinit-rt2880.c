@@ -55,35 +55,35 @@
 
 #define sys_reboot() eval("sync"); eval("event","3","1","15")
 
-void start_sysinit( void )
+void start_sysinit(void)
 {
-    char buf[PATH_MAX];
-    struct utsname name;
-    struct stat tmp_stat;
-    time_t tm = 0;
+	char buf[PATH_MAX];
+	struct utsname name;
+	struct stat tmp_stat;
+	time_t tm = 0;
 
-    cprintf( "sysinit() proc\n" );
-    /*
-     * /proc 
-     */
-    mount( "proc", "/proc", "proc", MS_MGC_VAL, NULL );
-    mount( "sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL );
-    cprintf( "sysinit() tmp\n" );
+	cprintf("sysinit() proc\n");
+	/*
+	 * /proc 
+	 */
+	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
+	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
+	cprintf("sysinit() tmp\n");
 
-    /*
-     * /tmp 
-     */
-    mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
-    // fix for linux kernel 2.6
-    mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
-    eval( "mkdir", "/tmp/www" );
-    eval( "mknod", "/dev/nvram", "c", "229", "0" );
-    eval( "mknod", "/dev/ppp", "c", "108", "0" );
-    eval( "mknod", "-m", "0660", "/dev/mmc", "b", "126", "0" );
-    eval( "mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1" );
-    eval( "mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2" );
-    eval( "mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3" );
-    eval( "mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4" );
+	/*
+	 * /tmp 
+	 */
+	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
+	// fix for linux kernel 2.6
+	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+	eval("mkdir", "/tmp/www");
+	eval("mknod", "/dev/nvram", "c", "229", "0");
+	eval("mknod", "/dev/ppp", "c", "108", "0");
+	eval("mknod", "-m", "0660", "/dev/mmc", "b", "126", "0");
+	eval("mknod", "-m", "0660", "/dev/mmc0", "b", "126", "1");
+	eval("mknod", "-m", "0660", "/dev/mmc1", "b", "126", "2");
+	eval("mknod", "-m", "0660", "/dev/mmc2", "b", "126", "3");
+	eval("mknod", "-m", "0660", "/dev/mmc3", "b", "126", "4");
 
 /*    eval( "mkdir", "/dev/mtd" );
     eval( "mknod", "/dev/mtd/0", "c", "90", "0" );
@@ -97,68 +97,68 @@ void start_sysinit( void )
     eval( "mknod", "/dev/mtd/4", "c", "90", "8" );
     eval( "mknod", "/dev/mtd/4ro", "c", "90", "9" );
 */
-    eval( "mknod", "/dev/gpio", "c", "252", "0" );
+	eval("mknod", "/dev/gpio", "c", "252", "0");
 
-    cprintf( "sysinit() var\n" );
+	cprintf("sysinit() var\n");
 
-    /*
-     * /var 
-     */
-    mkdir( "/tmp/var", 0777 );
-    mkdir( "/var/lock", 0777 );
-    mkdir( "/var/log", 0777 );
-    mkdir( "/var/run", 0777 );
-    mkdir( "/var/tmp", 0777 );
-    cprintf( "sysinit() setup console\n" );
-    /*
-     * Setup console 
-     */
+	/*
+	 * /var 
+	 */
+	mkdir("/tmp/var", 0777);
+	mkdir("/var/lock", 0777);
+	mkdir("/var/log", 0777);
+	mkdir("/var/run", 0777);
+	mkdir("/var/tmp", 0777);
+	cprintf("sysinit() setup console\n");
+	/*
+	 * Setup console 
+	 */
 
-    cprintf( "sysinit() klogctl\n" );
-    klogctl( 8, NULL, atoi( nvram_safe_get( "console_loglevel" ) ) );
-    cprintf( "sysinit() get router\n" );
+	cprintf("sysinit() klogctl\n");
+	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
+	cprintf("sysinit() get router\n");
 
-    /*
-     * Modules 
-     */
-    uname( &name );
-    /*
-     * load some netfilter stuff 
-     */
+	/*
+	 * Modules 
+	 */
+	uname(&name);
+	/*
+	 * load some netfilter stuff 
+	 */
 
 //    eval( "watchdog" );
-    /*
-     * Set a sane date 
-     */
+	/*
+	 * Set a sane date 
+	 */
 
-    stime( &tm );
-    nvram_set( "wl0_ifname", "ra0" );
+	stime(&tm);
+	nvram_set("wl0_ifname", "ra0");
 
-    insmod( "rt2860v2_ap" );
+	insmod("rt2860v2_ap");
 
-    /* switch config */
-    if( getRouterBrand(  ) != ROUTER_BOARD_ECB9750 )	// lets load
-    {
-	eval( "ifconfig", "eth2", "up" );
-	eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
-	eval( "vconfig", "add", "eth2", "1" );	//LAN 
-	eval( "vconfig", "add", "eth2", "2" );	//WAN
-	sysprintf( "switch reg w 14 405555" );
-	sysprintf( "switch reg w 50 2001" );
-	sysprintf( "switch reg w 98 7f3f" );
-	sysprintf( "switch reg w e4 3f" );
+	/* switch config */
+	if (getRouterBrand() != ROUTER_BOARD_ECB9750)	// lets load
+	{
+		eval("ifconfig", "eth2", "up");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth2", "1");	//LAN 
+		eval("vconfig", "add", "eth2", "2");	//WAN
+		sysprintf("switch reg w 14 405555");
+		sysprintf("switch reg w 50 2001");
+		sysprintf("switch reg w 98 7f3f");
+		sysprintf("switch reg w e4 3f");
 #ifdef HAVE_ALLNET11N
-	sysprintf( "switch reg w 40 1002" );
-	sysprintf( "switch reg w 44 1001" );
-	sysprintf( "switch reg w 48 1001" );
-	sysprintf( "switch reg w 70 ffff417e" );
+		sysprintf("switch reg w 40 1002");
+		sysprintf("switch reg w 44 1001");
+		sysprintf("switch reg w 48 1001");
+		sysprintf("switch reg w 70 ffff417e");
 #else
-	sysprintf( "switch reg w 40 1001" );
-	sysprintf( "switch reg w 44 1001" );
-	sysprintf( "switch reg w 48 1002" );
-	sysprintf( "switch reg w 70 ffff506f" );
+		sysprintf("switch reg w 40 1001");
+		sysprintf("switch reg w 44 1001");
+		sysprintf("switch reg w 48 1002");
+		sysprintf("switch reg w 70 ffff506f");
 #endif
-    }
+	}
 
 /*
 
@@ -187,71 +187,67 @@ void start_sysinit( void )
 
 
 */
-    return;
+	return;
 }
 
-int check_cfe_nv( void )
+int check_cfe_nv(void)
 {
-    nvram_set( "portprio_support", "0" );
-    return 0;
+	nvram_set("portprio_support", "0");
+	return 0;
 }
 
-int check_pmon_nv( void )
+int check_pmon_nv(void)
 {
-    return 0;
+	return 0;
 }
 
-void start_overclocking( void )
+void start_overclocking(void)
 {
 }
-char *enable_dtag_vlan( int enable )
+
+char *enable_dtag_vlan(int enable)
 {
-    if( getRouterBrand(  ) != ROUTER_BOARD_ECB9750 )
-    {
-	if( enable )
-	{
-	    sysprintf( "switch reg w 14 405555" );
-	    sysprintf( "switch reg w 50 7001" );
-	    sysprintf( "switch reg w 98 7f2f" );
-	    sysprintf( "switch reg w e4 2f" );
+	if (getRouterBrand() != ROUTER_BOARD_ECB9750) {
+		if (enable) {
+			sysprintf("switch reg w 14 405555");
+			sysprintf("switch reg w 50 7001");
+			sysprintf("switch reg w 98 7f2f");
+			sysprintf("switch reg w e4 2f");
 #ifdef HAVE_ALLNET11N
-	    sysprintf( "switch reg w 40 1007" );
-	    sysprintf( "switch reg w 44 1001" );
-	    sysprintf( "switch reg w 48 1001" );
-	    sysprintf( "switch reg w 70 ffff417e" );
+			sysprintf("switch reg w 40 1007");
+			sysprintf("switch reg w 44 1001");
+			sysprintf("switch reg w 48 1001");
+			sysprintf("switch reg w 70 ffff417e");
 #else
-	    sysprintf( "switch reg w 40 1001" );
-	    sysprintf( "switch reg w 44 1001" );
-	    sysprintf( "switch reg w 48 1007" );
-	    sysprintf( "switch reg w 70 ffff506f" );
+			sysprintf("switch reg w 40 1001");
+			sysprintf("switch reg w 44 1001");
+			sysprintf("switch reg w 48 1007");
+			sysprintf("switch reg w 70 ffff506f");
 #endif
-	    // now we got vlan7, how do we trunk now. lets find out
-	    return "eth2";
-	}
-	else
-	{
-	    sysprintf( "switch reg w 14 405555" );
-	    sysprintf( "switch reg w 50 2001" );
-	    sysprintf( "switch reg w 98 7f3f" );
-	    sysprintf( "switch reg w e4 3f" );
+			// now we got vlan7, how do we trunk now. lets find out
+			return "eth2";
+		} else {
+			sysprintf("switch reg w 14 405555");
+			sysprintf("switch reg w 50 2001");
+			sysprintf("switch reg w 98 7f3f");
+			sysprintf("switch reg w e4 3f");
 #ifdef HAVE_ALLNET11N
-	sysprintf( "switch reg w 40 1002" );
-	sysprintf( "switch reg w 44 1001" );
-	sysprintf( "switch reg w 48 1001" );
-	sysprintf( "switch reg w 70 ffff417e" );
+			sysprintf("switch reg w 40 1002");
+			sysprintf("switch reg w 44 1001");
+			sysprintf("switch reg w 48 1001");
+			sysprintf("switch reg w 70 ffff417e");
 #else
-	sysprintf( "switch reg w 40 1001" );
-	sysprintf( "switch reg w 44 1001" );
-	sysprintf( "switch reg w 48 1002" );
-	sysprintf( "switch reg w 70 ffff506f" );
+			sysprintf("switch reg w 40 1001");
+			sysprintf("switch reg w 44 1001");
+			sysprintf("switch reg w 48 1002");
+			sysprintf("switch reg w 70 ffff506f");
 #endif
-	    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
-	    eval( "vconfig", "add", "eth2", "2" );	//WAN
-	    return "eth2";
+			eval("vconfig", "set_name_type",
+			     "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "add", "eth2", "2");	//WAN
+			return "eth2";
+		}
+	} else {
+		return "eth2";
 	}
-    }
-    else
-    {
-	return "eth2";
-    }
 }

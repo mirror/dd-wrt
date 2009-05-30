@@ -5,8 +5,7 @@
 #include "typedefs.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #define CRC8_INIT_VALUE  0xff	/* Initial CRC8 checksum value */
@@ -19,11 +18,11 @@ extern "C"
 #define CRC32_INIT_VALUE 0xffffffff	/* Initial CRC32 checksum value */
 #define CRC32_GOOD_VALUE 0xdebb20e3	/* Good final CRC32 checksum value */
 
-    uint32 crc32( void *, uint, uint32 );
+	uint32 crc32(void *, uint, uint32);
 
-    /*
-     * macros for common usage 
-     */
+	/*
+	 * macros for common usage 
+	 */
 
 #define APPEND_CRC8(pbytes, nbytes)                           \
 do {                                                          \
@@ -53,5 +52,4 @@ do {                                                                   \
 #ifdef __cplusplus
 }
 #endif
-
 #endif				/* _RTS_CRC_H_ */

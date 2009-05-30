@@ -21,229 +21,233 @@
 #define start_service(a) eval("startservice",a);
 #define stop_service(a) eval("stopservice",a);
 
-int main( int argc, char **argv )
+int main(int argc, char **argv)
 {
 
-    long radiotime0;		// 4 byte int number (24 bits from gui + 1
+	long radiotime0;	// 4 byte int number (24 bits from gui + 1
 
-    // bit for midnight)
-    long radiotime1;		// 4 byte int number (24 bits from gui + 1
+	// bit for midnight)
+	long radiotime1;	// 4 byte int number (24 bits from gui + 1
 
-    // bit for midnight)
+	// bit for midnight)
 
-    int firsttime, needchange;
+	int firsttime, needchange;
 
-    needchange = 1;
-    firsttime = 1;
+	needchange = 1;
+	firsttime = 1;
 
-    struct tm *currtime;
-    long tloc;
+	struct tm *currtime;
+	long tloc;
 
-    do
-    {
-	time( &tloc );		// get time in seconds since epoch
-	currtime = localtime( &tloc );	// convert seconds to date structure
+	do {
+		time(&tloc);	// get time in seconds since epoch
+		currtime = localtime(&tloc);	// convert seconds to date structure
 
-	if( currtime->tm_year > 100 )	// ntp time must be set
-	{
-
-	    radiotime0 = strtol( nvram_get( "radio0_on_time" ), NULL, 2 );	// convert 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // binary 
-	    // string 
-	    // to 
-	    // long 
-	    // int
-	    radiotime0 += ( ( radiotime0 & 1 ) << 24 );	// duplicate 23-24h
-	    // bit to the start
-	    // to take care of
-	    // midnight
-	    radiotime0 = ( radiotime0 >> ( 24 - currtime->tm_hour - 1 ) ) & 3;	// get 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // pattern 
-	    // only 
-	    // (last 
-	    // two 
-	    // bits)
-	    radiotime1 = strtol( nvram_get( "radio1_on_time" ), NULL, 2 );	// convert 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // binary 
-	    // string 
-	    // to 
-	    // long 
-	    // int
-	    radiotime1 += ( ( radiotime1 & 1 ) << 24 );	// duplicate 23-24h
-	    // bit to the start
-	    // to take care of
-	    // midnight
-	    radiotime1 = ( radiotime1 >> ( 24 - currtime->tm_hour - 1 ) ) & 3;	// get 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // 
-	    // pattern 
-	    // only 
-	    // (last 
-	    // two 
-	    // bits)
-
-	    if( currtime->tm_min != 0 )
-		needchange = 1;	// prevet to be executed more than once when
-	    // min == 0
-
-	    if( firsttime )	// first time change
-	    {
-		switch ( radiotime0 )
+		if (currtime->tm_year > 100)	// ntp time must be set
 		{
-		    case 3:	// 11
-			radiotime0 = 1;	// 01
-			break;
-		    case 0:	// 00
-			radiotime0 = 2;	// 10
-			break;
-		}
-		switch ( radiotime1 )
-		{
-		    case 3:	// 11
-			radiotime1 = 1;	// 01
-			break;
-		    case 0:	// 00
-			radiotime1 = 2;	// 10
-			break;
-		}
-	    }
 
-	    if( nvram_match( "radio0_timer_enable", "0" ) )
-		radiotime0 = 0;
-	    if( nvram_match( "radio1_timer_enable", "0" ) )
-		radiotime1 = 0;
+			radiotime0 = strtol(nvram_get("radio0_on_time"), NULL, 2);	// convert 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// binary 
+			// string 
+			// to 
+			// long 
+			// int
+			radiotime0 += ((radiotime0 & 1) << 24);	// duplicate 23-24h
+			// bit to the start
+			// to take care of
+			// midnight
+			radiotime0 = (radiotime0 >> (24 - currtime->tm_hour - 1)) & 3;	// get 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// pattern 
+			// only 
+			// (last 
+			// two 
+			// bits)
+			radiotime1 = strtol(nvram_get("radio1_on_time"), NULL, 2);	// convert 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// binary 
+			// string 
+			// to 
+			// long 
+			// int
+			radiotime1 += ((radiotime1 & 1) << 24);	// duplicate 23-24h
+			// bit to the start
+			// to take care of
+			// midnight
+			radiotime1 = (radiotime1 >> (24 - currtime->tm_hour - 1)) & 3;	// get 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// 
+			// pattern 
+			// only 
+			// (last 
+			// two 
+			// bits)
 
-	    if( ( ( needchange ) && currtime->tm_min == 0 ) || ( firsttime ) )	// change 
-		// 
-		// 
-		// 
-		// 
-		// 
-		// 
-		// 
-		// when 
-		// min 
-		// = 
-		// 0 
-		// or 
-		// firstime
-	    {
-		switch ( radiotime0 )
-		{
-		    case 0:
-			break;	// do nothing, radio0 timer disabled
+			if (currtime->tm_min != 0)
+				needchange = 1;	// prevet to be executed more than once when
+			// min == 0
 
-		    case 1:	// 01 - turn radio on
-			syslog( LOG_DEBUG, "Turning radio 0 on\n" );
+			if (firsttime)	// first time change
+			{
+				switch (radiotime0) {
+				case 3:	// 11
+					radiotime0 = 1;	// 01
+					break;
+				case 0:	// 00
+					radiotime0 = 2;	// 10
+					break;
+				}
+				switch (radiotime1) {
+				case 3:	// 11
+					radiotime1 = 1;	// 01
+					break;
+				case 0:	// 00
+					radiotime1 = 2;	// 10
+					break;
+				}
+			}
+
+			if (nvram_match("radio0_timer_enable", "0"))
+				radiotime0 = 0;
+			if (nvram_match("radio1_timer_enable", "0"))
+				radiotime1 = 0;
+
+			if (((needchange) && currtime->tm_min == 0) || (firsttime))	// change 
+				// 
+				// 
+				// 
+				// 
+				// 
+				// 
+				// 
+				// when 
+				// min 
+				// = 
+				// 0 
+				// or 
+				// firstime
+			{
+				switch (radiotime0) {
+				case 0:
+					break;	// do nothing, radio0 timer disabled
+
+				case 1:	// 01 - turn radio on
+					syslog(LOG_DEBUG,
+					       "Turning radio 0 on\n");
 #ifdef HAVE_MADWIFI
-			eval( "ifconfig", "ath0", "up" );
+					eval("ifconfig", "ath0", "up");
 #elif HAVE_RT2880
-			eval("iwpriv","ra0","set","RadioOn=1");
+					eval("iwpriv", "ra0", "set",
+					     "RadioOn=1");
 #else
-			if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
-			{
-			    stop_service( "nas" );
-			}
-			eval( "wl", "-i", get_wl_instance_name( 0 ), "radio",
-			      "on" );
-			eval( "startservice", "nas" );
-			start_service( "guest_nas" );
+					if (pidof("nas") > 0
+					    || pidof("wrt-radauth") > 0) {
+						stop_service("nas");
+					}
+					eval("wl", "-i",
+					     get_wl_instance_name(0), "radio",
+					     "on");
+					eval("startservice", "nas");
+					start_service("guest_nas");
 #endif
-			break;
+					break;
 
-		    case 2:	// 10 - turn radio off
-			syslog( LOG_DEBUG, "Turning radio 0 off\n" );
+				case 2:	// 10 - turn radio off
+					syslog(LOG_DEBUG,
+					       "Turning radio 0 off\n");
 #ifdef HAVE_MADWIFI
-			eval( "ifconfig", "ath0", "down" );
+					eval("ifconfig", "ath0", "down");
 #elif HAVE_RT2880
-			eval("iwpriv","ra0","set","RadioOn=0");
+					eval("iwpriv", "ra0", "set",
+					     "RadioOn=0");
 #else
-			if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
-			{
-			    stop_service( "nas" );
-			}
-			eval( "wl", "-i", get_wl_instance_name( 0 ), "radio",
-			      "off" );
+					if (pidof("nas") > 0
+					    || pidof("wrt-radauth") > 0) {
+						stop_service("nas");
+					}
+					eval("wl", "-i",
+					     get_wl_instance_name(0), "radio",
+					     "off");
 #endif
-			break;
-		}
-		switch ( radiotime1 )
+					break;
+				}
+				switch (radiotime1) {
+				case 0:
+					break;	// do nothing, radio1 timer disabled
+
+				case 1:	// 01 - turn radio on
+					syslog(LOG_DEBUG,
+					       "Turning radio 1 on\n");
+					if (pidof("nas") > 0
+					    || pidof("wrt-radauth") > 0) {
+						stop_service("nas");
+					}
+					eval("wl", "-i",
+					     get_wl_instance_name(1), "radio",
+					     "on");
+					eval("startservice", "nas");
+					start_service("guest_nas");
+					break;
+
+				case 2:	// 10 - turn radio off
+					syslog(LOG_DEBUG,
+					       "Turning radio 1 off\n");
+					if (pidof("nas") > 0
+					    || pidof("wrt-radauth") > 0) {
+						stop_service("nas");
+					}
+					eval("wl", "-i",
+					     get_wl_instance_name(1), "radio",
+					     "off");
+					break;
+				}
+				needchange = 0;
+				firsttime = 0;
+			}
+
+		} else		// if yr < 100 (=2000) wait 5 min and try
+			// again (if ntp time is maybe set now)
 		{
-		    case 0:
-			break;	// do nothing, radio1 timer disabled
-
-		    case 1:	// 01 - turn radio on
-			syslog( LOG_DEBUG, "Turning radio 1 on\n" );
-			if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
-			{
-			    stop_service( "nas" );
-			}
-			eval( "wl", "-i", get_wl_instance_name( 1 ), "radio",
-			      "on" );
-			eval( "startservice", "nas" );
-			start_service( "guest_nas" );
-			break;
-
-		    case 2:	// 10 - turn radio off
-			syslog( LOG_DEBUG, "Turning radio 1 off\n" );
-			if( pidof( "nas" ) > 0 || pidof( "wrt-radauth" ) > 0 )
-			{
-			    stop_service( "nas" );
-			}
-			eval( "wl", "-i", get_wl_instance_name( 1 ), "radio",
-			      "off" );
-			break;
+			sleep(242);
 		}
-		needchange = 0;
-		firsttime = 0;
-	    }
+
+		sleep(58);	// loop every 58 s to be sure to catch min == 
+		// 
+		// 
+		// 
+		// 
+		// 
+		// 
+		// 
+		// 0
 
 	}
-	else			// if yr < 100 (=2000) wait 5 min and try
-	    // again (if ntp time is maybe set now)
-	{
-	    sleep( 242 );
-	}
+	while (1);
 
-	sleep( 58 );		// loop every 58 s to be sure to catch min == 
-	// 
-	// 
-	// 
-	// 
-	// 
-	// 
-	// 
-	// 0
-
-    }
-    while( 1 );
-
-    return 0;
+	return 0;
 
 }

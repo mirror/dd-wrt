@@ -37,31 +37,28 @@
 #include <nvports.h>
 #include <bcmdevs.h>
 
-void setup_switch( void )
+void setup_switch(void)
 {
-    int portid, max_port = BCM_NUM_PORTS;
-    PORT_ATTRIBS port_attribs;
+	int portid, max_port = BCM_NUM_PORTS;
+	PORT_ATTRIBS port_attribs;
 
-    return;
-
-    if( ( bcm_api_init(  ) ) < 0 )
-    {
-	if( bcm_is_robo(  ) )
-	{
-	    fprintf( stderr, "No Robo device found\n" );
-	}
 	return;
-    }
-    printf( "Initializing Ethernet switch "
-	    "controller (%d ports)\n", max_port );
-    for( portid = 1; portid <= max_port; portid++ )
-    {
-	/* 
-	 * get nvram attributes associated with port and set switch regs 
-	 */
-	port_attribs = nvGetSwitchPortAttribs( portid );
-	bcm_set_port_attributes( &port_attribs, portid );
-    }
-    bcm_api_deinit(  );
+
+	if ((bcm_api_init()) < 0) {
+		if (bcm_is_robo()) {
+			fprintf(stderr, "No Robo device found\n");
+		}
+		return;
+	}
+	printf("Initializing Ethernet switch "
+	       "controller (%d ports)\n", max_port);
+	for (portid = 1; portid <= max_port; portid++) {
+		/* 
+		 * get nvram attributes associated with port and set switch regs 
+		 */
+		port_attribs = nvGetSwitchPortAttribs(portid);
+		bcm_set_port_attributes(&port_attribs, portid);
+	}
+	bcm_api_deinit();
 
 }

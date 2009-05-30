@@ -230,17 +230,15 @@
 #define IP_GLOBAL_PHY30_ADDR    30
 #define IP_GLOBAL_PHY31_ADDR    31
 
-typedef enum
-{
-    PHY_SRCPORT_INFO,
-    PHY_PORTINFO_SIZE,
+typedef enum {
+	PHY_SRCPORT_INFO,
+	PHY_PORTINFO_SIZE,
 } PHY_CAP_TYPE;
 
-typedef enum
-{
-    PHY_SRCPORT_NONE,
-    PHY_SRCPORT_VLANTAG,
-    PHY_SRCPORT_TRAILER,
+typedef enum {
+	PHY_SRCPORT_NONE,
+	PHY_SRCPORT_VLANTAG,
+	PHY_SRCPORT_TRAILER,
 } PHY_SRCPORT_TYPE;
 
 #define IP_WAN_PORT          4
@@ -255,14 +253,13 @@ typedef enum
 /*
  * Track per-PHY port information.
  */
-typedef struct
-{
-    int isEnetPort;		/* normal enet port */
-    int isPhyAlive;		/* last known state of link */
-    int ethUnit;		/* MAC associated with this phy port */
-    unsigned int phyAddr;	/* PHY registers associated with this phy
+typedef struct {
+	int isEnetPort;		/* normal enet port */
+	int isPhyAlive;		/* last known state of link */
+	int ethUnit;		/* MAC associated with this phy port */
+	unsigned int phyAddr;	/* PHY registers associated with this phy
 				 * port */
-    unsigned int VLANTableSetting;	/* Value to be written to VLAN table */
+	unsigned int VLANTableSetting;	/* Value to be written to VLAN table */
 } ipPhyInfo_t;
 
 #define TRUE 1
@@ -272,55 +269,55 @@ typedef struct
  * Per-PHY information, indexed by PHY unit number.
  */
 ipPhyInfo_t ipPhyInfo[] = {
-    /*
-     * On AP30/AR5312, all PHYs are associated with MAC0.
-     * AP30/AR5312's MAC1 isn't used for anything.
-     * CONFIG_VENETDEV==1 (router) configuration:
-     *    Ports 0,1,2, and 3 are "LAN ports"
-     *    Port 4 is a WAN port
-     *    Port 5 connects to MAC0 in the AR5312
-     * CONFIG_VENETDEV==0 (bridge) configuration:
-     *    Ports 0,1,2,3,4 are "LAN ports"
-     *    Port 5 connects to the MAC0 in the AR5312
-     */
-    {TRUE,			/* phy port 0 -- LAN port 0 */
-     FALSE,
-     ENET_UNIT_DEFAULT,
-     IP_PHY0_ADDR,
-     IP_LAN_PORT_VLAN},
+	/*
+	 * On AP30/AR5312, all PHYs are associated with MAC0.
+	 * AP30/AR5312's MAC1 isn't used for anything.
+	 * CONFIG_VENETDEV==1 (router) configuration:
+	 *    Ports 0,1,2, and 3 are "LAN ports"
+	 *    Port 4 is a WAN port
+	 *    Port 5 connects to MAC0 in the AR5312
+	 * CONFIG_VENETDEV==0 (bridge) configuration:
+	 *    Ports 0,1,2,3,4 are "LAN ports"
+	 *    Port 5 connects to the MAC0 in the AR5312
+	 */
+	{TRUE,			/* phy port 0 -- LAN port 0 */
+	 FALSE,
+	 ENET_UNIT_DEFAULT,
+	 IP_PHY0_ADDR,
+	 IP_LAN_PORT_VLAN},
 
-    {TRUE,			/* phy port 1 -- LAN port 1 */
-     FALSE,
-     ENET_UNIT_DEFAULT,
-     IP_PHY1_ADDR,
-     IP_LAN_PORT_VLAN},
+	{TRUE,			/* phy port 1 -- LAN port 1 */
+	 FALSE,
+	 ENET_UNIT_DEFAULT,
+	 IP_PHY1_ADDR,
+	 IP_LAN_PORT_VLAN},
 
-    {TRUE,			/* phy port 2 -- LAN port 2 */
-     FALSE,
-     ENET_UNIT_DEFAULT,
-     IP_PHY2_ADDR,
-     IP_LAN_PORT_VLAN},
+	{TRUE,			/* phy port 2 -- LAN port 2 */
+	 FALSE,
+	 ENET_UNIT_DEFAULT,
+	 IP_PHY2_ADDR,
+	 IP_LAN_PORT_VLAN},
 
-    {TRUE,			/* phy port 3 -- LAN port 3 */
-     FALSE,
-     ENET_UNIT_DEFAULT,
-     IP_PHY3_ADDR,
-     IP_LAN_PORT_VLAN},
+	{TRUE,			/* phy port 3 -- LAN port 3 */
+	 FALSE,
+	 ENET_UNIT_DEFAULT,
+	 IP_PHY3_ADDR,
+	 IP_LAN_PORT_VLAN},
 
-    {TRUE,			/* phy port 4 -- WAN port or LAN port 4 */
-     FALSE,
-     ENET_UNIT_DEFAULT,
-     IP_PHY4_ADDR,
-     IP_WAN_PORT_VLAN		/* Send to all ports */
-     },
+	{TRUE,			/* phy port 4 -- WAN port or LAN port 4 */
+	 FALSE,
+	 ENET_UNIT_DEFAULT,
+	 IP_PHY4_ADDR,
+	 IP_WAN_PORT_VLAN	/* Send to all ports */
+	 },
 
-    {FALSE,			/* phy port 5 -- CPU port (no RJ45 connector) 
+	{FALSE,			/* phy port 5 -- CPU port (no RJ45 connector) 
 				 */
-     TRUE,
-     ENET_UNIT_DEFAULT,
-     0x00,
-     IP_LAN_PORT_VLAN		/* Send to all ports */
-     },
+	 TRUE,
+	 ENET_UNIT_DEFAULT,
+	 0x00,
+	 IP_LAN_PORT_VLAN	/* Send to all ports */
+	 },
 
 };
 
@@ -344,213 +341,221 @@ ipPhyInfo_t ipPhyInfo[] = {
 #define IP_PHYADDR(phyUnit) (ipPhyInfo[phyUnit].phyAddr)
 #define IP_VLAN_TABLE_SETTING(phyUnit) (ipPhyInfo[phyUnit].VLANTableSetting)
 
-void setPhy( int addr, int reg, int value )
+void setPhy(int addr, int reg, int value)
 {
-    struct mii_ioctl_data *data;
-    struct ifreq iwr;
-    int s = socket( AF_INET, SOCK_DGRAM, 0 );
+	struct mii_ioctl_data *data;
+	struct ifreq iwr;
+	int s = socket(AF_INET, SOCK_DGRAM, 0);
 
-    if( s < 0 )
-    {
-	return;
-    }
-    ( void )strncpy( iwr.ifr_name, "eth0", sizeof( "eth0" ) );
-    data = ( struct mii_ioctl_data * )&iwr.ifr_data;
-    data->phy_id = addr;
-    data->reg_num = reg;
-    data->val_in = value;
-    ioctl( s, SIOCSMIIREG, &iwr );
-    close( s );
+	if (s < 0) {
+		return;
+	}
+	(void)strncpy(iwr.ifr_name, "eth0", sizeof("eth0"));
+	data = (struct mii_ioctl_data *)&iwr.ifr_data;
+	data->phy_id = addr;
+	data->reg_num = reg;
+	data->val_in = value;
+	ioctl(s, SIOCSMIIREG, &iwr);
+	close(s);
 }
 
-int getPhy( int addr, int reg )
+int getPhy(int addr, int reg)
 {
-    struct mii_ioctl_data *data;
-    struct ifreq iwr;
-    int s = socket( AF_INET, SOCK_DGRAM, 0 );
+	struct mii_ioctl_data *data;
+	struct ifreq iwr;
+	int s = socket(AF_INET, SOCK_DGRAM, 0);
 
-    if( s < 0 )
-    {
-	return -1;
-    }
-    ( void )strncpy( iwr.ifr_name, "eth0", sizeof( "eth0" ) );
-    data = ( struct mii_ioctl_data * )&iwr.ifr_data;
-    data->phy_id = addr;
-    data->reg_num = reg;
-    ioctl( s, SIOCGMIIREG, &iwr );
-    close( s );
-    return data->val_out;
+	if (s < 0) {
+		return -1;
+	}
+	(void)strncpy(iwr.ifr_name, "eth0", sizeof("eth0"));
+	data = (struct mii_ioctl_data *)&iwr.ifr_data;
+	data->phy_id = addr;
+	data->reg_num = reg;
+	ioctl(s, SIOCGMIIREG, &iwr);
+	close(s);
+	return data->val_out;
 }
 
-void vlan_init( int portmask )
+void vlan_init(int portmask)
 {
-    int phyUnit;
-    unsigned int phyBase;
-    unsigned int phyReg;
-    unsigned int phyAddr;
-    int i;
-    int numports = 5;
+	int phyUnit;
+	unsigned int phyBase;
+	unsigned int phyReg;
+	unsigned int phyAddr;
+	int i;
+	int numports = 5;
 
-    for( i = 0; i < numports - 1; i++ )	// last one will be wan port
-    {
+	for (i = 0; i < numports - 1; i++)	// last one will be wan port
+	{
+		ipPhyInfo[i].VLANTableSetting = IP_LAN_PORT_VLAN;
+	}
+	ipPhyInfo[i++].VLANTableSetting = IP_WAN_PORT_VLAN;
 	ipPhyInfo[i].VLANTableSetting = IP_LAN_PORT_VLAN;
-    }
-    ipPhyInfo[i++].VLANTableSetting = IP_WAN_PORT_VLAN;
-    ipPhyInfo[i].VLANTableSetting = IP_LAN_PORT_VLAN;
-    ipPhyInfo[i].isEnetPort = FALSE;
-    ipPhyInfo[i].isPhyAlive = TRUE;
-    ipPhyInfo[i++].phyAddr = 0x0;
+	ipPhyInfo[i].isEnetPort = FALSE;
+	ipPhyInfo[i].isPhyAlive = TRUE;
+	ipPhyInfo[i++].phyAddr = 0x0;
 
-    numports = i;
-    fprintf( stderr, "Reset ICPLUS Phy\n" );
-    for( phyUnit = 0; phyUnit < numports; phyUnit++ )
-    {
-	if( ( ( 1 << phyUnit ) & portmask ) )
-	{
-	    phyAddr = IP_PHYADDR( phyUnit );
-	    setPhy( phyAddr, IP_PHY_CONTROL, IP_CTRL_SOFTWARE_RESET );
+	numports = i;
+	fprintf(stderr, "Reset ICPLUS Phy\n");
+	for (phyUnit = 0; phyUnit < numports; phyUnit++) {
+		if (((1 << phyUnit) & portmask)) {
+			phyAddr = IP_PHYADDR(phyUnit);
+			setPhy(phyAddr, IP_PHY_CONTROL, IP_CTRL_SOFTWARE_RESET);
+		}
 	}
-    }
-    sleep( 1 );
-    fprintf( stderr, "Start Autonegotiation\n" );
-    for( phyUnit = 0; phyUnit < numports; phyUnit++ )
-    {
+	sleep(1);
+	fprintf(stderr, "Start Autonegotiation\n");
+	for (phyUnit = 0; phyUnit < numports; phyUnit++) {
 
-	if( ( ( 1 << phyUnit ) & portmask ) )
-	{
-	    phyAddr = IP_PHYADDR( phyUnit );
+		if (((1 << phyUnit) & portmask)) {
+			phyAddr = IP_PHYADDR(phyUnit);
 
-	    setPhy( phyAddr, IP_AUTONEG_ADVERT, IP_ADVERTISE_ALL );
-	    setPhy( phyAddr, IP_PHY_CONTROL,
-		    IP_CTRL_AUTONEGOTIATION_ENABLE |
-		    IP_CTRL_START_AUTONEGOTIATION );
+			setPhy(phyAddr, IP_AUTONEG_ADVERT, IP_ADVERTISE_ALL);
+			setPhy(phyAddr, IP_PHY_CONTROL,
+			       IP_CTRL_AUTONEGOTIATION_ENABLE |
+			       IP_CTRL_START_AUTONEGOTIATION);
+		}
 	}
-    }
-    int timeout = 5;
+	int timeout = 5;
 
-    for( phyUnit = 0; ( phyUnit < numports ); phyUnit++ )
-    {
-	if( ( ( 1 << phyUnit ) & portmask ) )
-	{
-	    for( ;; )
-	    {
-		phyAddr = IP_PHYADDR( phyUnit );
+	for (phyUnit = 0; (phyUnit < numports); phyUnit++) {
+		if (((1 << phyUnit) & portmask)) {
+			for (;;) {
+				phyAddr = IP_PHYADDR(phyUnit);
 
-		int phyHwStatus = getPhy( phyAddr, IP_PHY_STATUS );
+				int phyHwStatus =
+				    getPhy(phyAddr, IP_PHY_STATUS);
 
-		if( IP_AUTONEG_DONE( phyHwStatus ) )
-		{
-		    fprintf( stderr, "Port %d, Neg Success\n", phyUnit );
-		    break;
+				if (IP_AUTONEG_DONE(phyHwStatus)) {
+					fprintf(stderr,
+						"Port %d, Neg Success\n",
+						phyUnit);
+					break;
+				}
+				if (timeout == 0) {
+					fprintf(stderr,
+						"Port %d, Negogiation timeout\n",
+						phyUnit);
+					break;
+				}
+				if (--timeout == 0) {
+					fprintf(stderr,
+						"Port %d, Negogiation timeout\n",
+						phyUnit);
+					break;
+				}
+				usleep(150);
+			}
 		}
-		if( timeout == 0 )
-		{
-		    fprintf( stderr, "Port %d, Negogiation timeout\n",
-			     phyUnit );
-		    break;
-		}
-		if( --timeout == 0 )
-		{
-		    fprintf( stderr, "Port %d, Negogiation timeout\n",
-			     phyUnit );
-		    break;
-		}
-		usleep( 150 );
-	    }
 	}
-    }
 
-    fprintf( stderr, "Setup VLANS\n" );
-    /*
-     * setPhy(29,24,0); setPhy(29,25,0); setPhy(29,26,0); setPhy(29,27,0);
-     * setPhy(29,28,2); setPhy(29,30,0); setPhy(29,23,0x07c2);
-     * setPhy(30,1,0x002f); setPhy(30,2,0x0030); setPhy(30,9,0x1089);
-     */
-    unsigned int phy1Reg=0;
-    unsigned int phy2Reg=0;
-    unsigned int phy23Reg=0;
-    unsigned int phy9Reg=0;
-    for( phyUnit = 0; phyUnit < numports; phyUnit++ )
-    {
-	if( ( ( 1 << phyUnit ) & portmask ) )
-	{
-	    setPhy( IP_GLOBAL_PHY29_ADDR,IP_GLOBAL_PHY29_24_REG +( ( phyUnit == 5 ) ? ( phyUnit + 1 ) : phyUnit ),IP_VLAN_TABLE_SETTING( phyUnit ) );
-	    fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY29_ADDR,IP_GLOBAL_PHY29_24_REG +( ( phyUnit == 5 ) ? ( phyUnit + 1 ) : phyUnit ),IP_VLAN_TABLE_SETTING( phyUnit ) );
-	    if( IP_IS_ENET_PORT( phyUnit ) )
-	    {
-		if( IP_IS_WAN_PORT( phyUnit ) )
-		{
-		    phy2Reg |= ( ( 1 << phyUnit ) <<IP_VLAN2_OUTPUT_PORT_MASK_S );
-		}
-		else
-		{
-		    phy1Reg |= ( ( 1 << phyUnit ) <<IP_VLAN0_OUTPUT_PORT_MASK_S );
-		}
-		phy23Reg = phy23Reg | ( ( 1 << phyUnit ) << IP_PORTX_REMOVE_TAG_S );
-		phy23Reg = phy23Reg & ~( ( 1 << phyUnit ) << IP_PORTX_ADD_TAG_S );
-	    }
-	    else
-	    {
-		phy1Reg |= ( ( 1 << phyUnit ) <<IP_VLAN0_OUTPUT_PORT_MASK_S );
-		phy2Reg |= ( ( 1 << phyUnit ) <<IP_VLAN2_OUTPUT_PORT_MASK_S );
-		phy23Reg = phy23Reg | ( 1 << IP_PORT5_ADD_TAG_S );
-		phy23Reg = phy23Reg & ~( 1 << IP_PORT5_REMOVE_TAG_S );
+	fprintf(stderr, "Setup VLANS\n");
+	/*
+	 * setPhy(29,24,0); setPhy(29,25,0); setPhy(29,26,0); setPhy(29,27,0);
+	 * setPhy(29,28,2); setPhy(29,30,0); setPhy(29,23,0x07c2);
+	 * setPhy(30,1,0x002f); setPhy(30,2,0x0030); setPhy(30,9,0x1089);
+	 */
+	unsigned int phy1Reg = 0;
+	unsigned int phy2Reg = 0;
+	unsigned int phy23Reg = 0;
+	unsigned int phy9Reg = 0;
+	for (phyUnit = 0; phyUnit < numports; phyUnit++) {
+		if (((1 << phyUnit) & portmask)) {
+			setPhy(IP_GLOBAL_PHY29_ADDR,
+			       IP_GLOBAL_PHY29_24_REG +
+			       ((phyUnit == 5) ? (phyUnit + 1) : phyUnit),
+			       IP_VLAN_TABLE_SETTING(phyUnit));
+			fprintf(stderr, "write register %d, addr %d with %X\n",
+				IP_GLOBAL_PHY29_ADDR,
+				IP_GLOBAL_PHY29_24_REG +
+				((phyUnit == 5) ? (phyUnit + 1) : phyUnit),
+				IP_VLAN_TABLE_SETTING(phyUnit));
+			if (IP_IS_ENET_PORT(phyUnit)) {
+				if (IP_IS_WAN_PORT(phyUnit)) {
+					phy2Reg |=
+					    ((1 << phyUnit) <<
+					     IP_VLAN2_OUTPUT_PORT_MASK_S);
+				} else {
+					phy1Reg |=
+					    ((1 << phyUnit) <<
+					     IP_VLAN0_OUTPUT_PORT_MASK_S);
+				}
+				phy23Reg =
+				    phy23Reg | ((1 << phyUnit) <<
+						IP_PORTX_REMOVE_TAG_S);
+				phy23Reg =
+				    phy23Reg & ~((1 << phyUnit) <<
+						 IP_PORTX_ADD_TAG_S);
+			} else {
+				phy1Reg |=
+				    ((1 << phyUnit) <<
+				     IP_VLAN0_OUTPUT_PORT_MASK_S);
+				phy2Reg |=
+				    ((1 << phyUnit) <<
+				     IP_VLAN2_OUTPUT_PORT_MASK_S);
+				phy23Reg = phy23Reg | (1 << IP_PORT5_ADD_TAG_S);
+				phy23Reg =
+				    phy23Reg & ~(1 << IP_PORT5_REMOVE_TAG_S);
 
-	    }
+			}
+		}
 	}
-    }
-    phy9Reg = 0;//getPhy(IP_GLOBAL_PHY30_ADDR,IP_GLOBAL_PHY30_9_REG);
-    phy9Reg = phy9Reg | TAG_VLAN_ENABLE;
-    phy9Reg = phy9Reg & ~VID_INDX_SEL_M;
-    phy9Reg = phy9Reg | 1; //1 vlan group used for lan
-    phy9Reg = phy9Reg | 1<<3; //enable smart mac
-    phy9Reg = phy9Reg | 1<<12; //port 4 is a wan port (required for smart mac)
-    
-    fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG,phy23Reg);
-    fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG,phy1Reg);
-    fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG,phy2Reg);
-    fprintf(stderr,"write register %d, addr %d with %X\n",IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG,phy9Reg);
-    setPhy( IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG,phy23Reg );
-    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG, phy1Reg );
-    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG, phy2Reg );
-    setPhy( IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phy9Reg );
+	phy9Reg = 0;		//getPhy(IP_GLOBAL_PHY30_ADDR,IP_GLOBAL_PHY30_9_REG);
+	phy9Reg = phy9Reg | TAG_VLAN_ENABLE;
+	phy9Reg = phy9Reg & ~VID_INDX_SEL_M;
+	phy9Reg = phy9Reg | 1;	//1 vlan group used for lan
+	phy9Reg = phy9Reg | 1 << 3;	//enable smart mac
+	phy9Reg = phy9Reg | 1 << 12;	//port 4 is a wan port (required for smart mac)
+
+	fprintf(stderr, "write register %d, addr %d with %X\n",
+		IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG, phy23Reg);
+	fprintf(stderr, "write register %d, addr %d with %X\n",
+		IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG, phy1Reg);
+	fprintf(stderr, "write register %d, addr %d with %X\n",
+		IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG, phy2Reg);
+	fprintf(stderr, "write register %d, addr %d with %X\n",
+		IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phy9Reg);
+	setPhy(IP_GLOBAL_PHY29_ADDR, IP_GLOBAL_PHY29_23_REG, phy23Reg);
+	setPhy(IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_1_REG, phy1Reg);
+	setPhy(IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_2_REG, phy2Reg);
+	setPhy(IP_GLOBAL_PHY30_ADDR, IP_GLOBAL_PHY30_9_REG, phy9Reg);
 //
-//		echo "echo \"WRITE 29 23 07c2\" > ".$mii_dev."\n";
+//              echo "echo \"WRITE 29 23 07c2\" > ".$mii_dev."\n";
 //
-//		echo "echo \"WRITE 29 24 0\"    > ".$mii_dev."\n";	/* PORT0 Default VLAN ID */
-//		echo "echo \"WRITE 29 25 0\"    > ".$mii_dev."\n";	/* PORT1 Default VLAN ID */
-//		echo "echo \"WRITE 29 26 0\"    > ".$mii_dev."\n";	/* PORT2 Default VLAN ID */
-//		echo "echo \"WRITE 29 27 0\"    > ".$mii_dev."\n";	/* PORT3 Default VLAN ID */
-//		echo "echo \"WRITE 29 28 2\"    > ".$mii_dev."\n";	/* PORT4 Default VLAN ID */
-//		echo "echo \"WRITE 29 30 0\"    > ".$mii_dev."\n";	/* PORT5 Default VLAN ID (CPU) */
-//		echo "echo \"WRITE 29 23 07c2\" > ".$mii_dev."\n";
-//		echo "echo \"WRITE 30 1 002f\"  > ".$mii_dev."\n";	/* Port 5,3,2,1,0 = VLAN 0 */
-//		echo "echo \"WRITE 30 2 0030\"  > ".$mii_dev."\n";	/* Port 5,4 = VLAN 2 */
-//		echo "echo \"WRITE 30 9 1089\"  > ".$mii_dev."\n";
-    eval( "vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD" );
-    eval( "vconfig", "add", "eth0", "0" );
-    eval( "vconfig", "add", "eth0", "2" );
-    struct ifreq ifr;
-    int s;
+//              echo "echo \"WRITE 29 24 0\"    > ".$mii_dev."\n";      /* PORT0 Default VLAN ID */
+//              echo "echo \"WRITE 29 25 0\"    > ".$mii_dev."\n";      /* PORT1 Default VLAN ID */
+//              echo "echo \"WRITE 29 26 0\"    > ".$mii_dev."\n";      /* PORT2 Default VLAN ID */
+//              echo "echo \"WRITE 29 27 0\"    > ".$mii_dev."\n";      /* PORT3 Default VLAN ID */
+//              echo "echo \"WRITE 29 28 2\"    > ".$mii_dev."\n";      /* PORT4 Default VLAN ID */
+//              echo "echo \"WRITE 29 30 0\"    > ".$mii_dev."\n";      /* PORT5 Default VLAN ID (CPU) */
+//              echo "echo \"WRITE 29 23 07c2\" > ".$mii_dev."\n";
+//              echo "echo \"WRITE 30 1 002f\"  > ".$mii_dev."\n";      /* Port 5,3,2,1,0 = VLAN 0 */
+//              echo "echo \"WRITE 30 2 0030\"  > ".$mii_dev."\n";      /* Port 5,4 = VLAN 2 */
+//              echo "echo \"WRITE 30 9 1089\"  > ".$mii_dev."\n";
+	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("vconfig", "add", "eth0", "0");
+	eval("vconfig", "add", "eth0", "2");
+	struct ifreq ifr;
+	int s;
 
-    if( ( s = socket( AF_INET, SOCK_RAW, IPPROTO_RAW ) ) )
-    {
-	char eabuf[32];
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
 
-	strncpy( ifr.ifr_name, "eth0", IFNAMSIZ );
-	ioctl( s, SIOCGIFHWADDR, &ifr );
-	char macaddr[32];
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		char macaddr[32];
 
-	strcpy( macaddr,
-		ether_etoa( ( unsigned char * )ifr.ifr_hwaddr.sa_data,
-			    eabuf ) );
-	nvram_set( "et0macaddr", macaddr );
-	// MAC_ADD (macaddr);
-	ether_atoe( macaddr, ( unsigned char * )ifr.ifr_hwaddr.sa_data );
-	strncpy( ifr.ifr_name, "vlan2", IFNAMSIZ );
-	ioctl( s, SIOCSIFHWADDR, &ifr );
-	close( s );
-    }
-    eval("ifconfig","vlan0","promisc");
-    eval("ifconfig","vlan2","promisc");
+		strcpy(macaddr,
+		       ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data,
+				  eabuf));
+		nvram_set("et0macaddr", macaddr);
+		// MAC_ADD (macaddr);
+		ether_atoe(macaddr, (unsigned char *)ifr.ifr_hwaddr.sa_data);
+		strncpy(ifr.ifr_name, "vlan2", IFNAMSIZ);
+		ioctl(s, SIOCSIFHWADDR, &ifr);
+		close(s);
+	}
+	eval("ifconfig", "vlan0", "promisc");
+	eval("ifconfig", "vlan2", "promisc");
 }

@@ -27,54 +27,52 @@
 #include <syslog.h>
 #include <signal.h>
 
-void stop_upnp( void );
+void stop_upnp(void);
 
-void start_upnp( void )
+void start_upnp(void)
 {
-    if (nvram_match( "wan_proto","disabled"))
-	return;
-    char *wan_ifname = get_wan_face(  );
-    int ret;
+	if (nvram_match("wan_proto", "disabled"))
+		return;
+	char *wan_ifname = get_wan_face();
+	int ret;
 
-    if( nvram_match( "upnp_enable", "0" ) )
-    {
-	stop_upnp(  );
-	return;
-    }
-    /*
-     * Make sure its not running first 
-     */
-    ret = killall( "upnp", SIGUSR1 );
-    if( ret != 0 )
-    {
+	if (nvram_match("upnp_enable", "0")) {
+		stop_upnp();
+		return;
+	}
+	/*
+	 * Make sure its not running first 
+	 */
+	ret = killall("upnp", SIGUSR1);
+	if (ret != 0) {
 /*	ret = eval( "upnp", "-D",
 		    "-L", nvram_safe_get( "lan_ifname" ),
 		    "-W", wan_ifname,
 		    "-S", "0",
 		    "-I", nvram_safe_get( "upnp_ssdp_interval" ),
 		    "-A", nvram_safe_get( "upnp_max_age" ) );*/
-	ret = eval( "upnp", "-D","-W", wan_ifname);
-	dd_syslog( LOG_INFO, "upnp : upnp daemon successfully started\n" );
-    }
+		ret = eval("upnp", "-D", "-W", wan_ifname);
+		dd_syslog(LOG_INFO,
+			  "upnp : upnp daemon successfully started\n");
+	}
 
-    cprintf( "done\n" );
-    return;
+	cprintf("done\n");
+	return;
 }
 
-void stop_upnp( void )
+void stop_upnp(void)
 {
-    if( pidof( "upnp" ) > 0 )
-    {
-	dd_syslog( LOG_INFO, "upnp : upnp daemon successfully stopped\n" );
-	killall( "upnp", SIGUSR1 );
-	killall( "upnp", SIGTERM );
-	cprintf( "done\n" );
-    }
-    return;
+	if (pidof("upnp") > 0) {
+		dd_syslog(LOG_INFO,
+			  "upnp : upnp daemon successfully stopped\n");
+		killall("upnp", SIGUSR1);
+		killall("upnp", SIGTERM);
+		cprintf("done\n");
+	}
+	return;
 }
 
-int
-reinit_upnp(void)
+int reinit_upnp(void)
 {
 	int ret = eval("killall", "-USR1", "upnp");
 
