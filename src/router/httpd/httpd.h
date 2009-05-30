@@ -36,23 +36,23 @@ extern BIO *bio_err;
 //typedef FILE *webs_t;
 
 typedef struct {
-FILE *fp;
-int userid;
+	FILE *fp;
+	int userid;
 } webs;
 
 typedef webs *webs_t;
 
-extern char *wfgets (char *buf, int len, webs_t fp);
-extern int wfprintf (webs_t fp, char *fmt, ...);
-extern size_t wfwrite (char *buf, int size, int n, webs_t fp);
-extern size_t wfread (char *buf, int size, int n, webs_t fp);
-extern int wfclose (webs_t fp);
+extern char *wfgets(char *buf, int len, webs_t fp);
+extern int wfprintf(webs_t fp, char *fmt, ...);
+extern size_t wfwrite(char *buf, int size, int n, webs_t fp);
+extern size_t wfread(char *buf, int size, int n, webs_t fp);
+extern int wfclose(webs_t fp);
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
 
-extern int wfflush (webs_t fp);
-extern int wfputc (char c, webs_t fp);
-extern int wfputs (char *buf, webs_t fp);
+extern int wfflush(webs_t fp);
+extern int wfputc(char c, webs_t fp);
+extern int wfputs(char *buf, webs_t fp);
 #endif
 #endif
 #ifdef HAVE_HTTPS
@@ -62,24 +62,28 @@ extern int do_ssl;
 #define AUTH_MAX 64
 
 extern char auth_realm[AUTH_MAX];
-extern void send_authenticate (char *realm);
+extern void send_authenticate(char *realm);
 
 /* Generic MIME type handler */
-struct mime_handler
-{
-  char *pattern;
-  char *mime_type;
-  char *extra_header;
-  void (*input) (char *path, webs_t stream, int len, char *boundary);
-  void (*output) (struct mime_handler *handler,char *path, webs_t stream, char *query);
-  int (*auth) (webs_t wp, char *userid, char *passwd, char *realm ,char *authorisation, int (*auth_check)(char *userid,char *passwd,char *dirname,char *authorisation));
-  unsigned char send_headers;
+struct mime_handler {
+	char *pattern;
+	char *mime_type;
+	char *extra_header;
+	void (*input) (char *path, webs_t stream, int len, char *boundary);
+	void (*output) (struct mime_handler * handler, char *path,
+			webs_t stream, char *query);
+	int (*auth) (webs_t wp, char *userid, char *passwd, char *realm,
+		     char *authorisation, int (*auth_check) (char *userid,
+							     char *passwd,
+							     char *dirname,
+							     char
+							     *authorisation));
+	unsigned char send_headers;
 };
-typedef struct
-{
-  char *path;			/* Web page URL path */
-  unsigned int offset;		/* Web page data */
-  unsigned int size;		/* Size of web page in bytes */
+typedef struct {
+	char *path;		/* Web page URL path */
+	unsigned int offset;	/* Web page data */
+	unsigned int size;	/* Size of web page in bytes */
 } websRomPageIndexType;
 
 //extern void setLength(long len);
@@ -87,14 +91,16 @@ typedef struct
 extern struct mime_handler mime_handlers[];
 
 /* CGI helper functions */
-extern void init_cgi (char *query);
-extern char *get_cgi (char *name);
-extern void set_cgi (char *name, char *value);
-extern int count_cgi ();
+extern void init_cgi(char *query);
+extern char *get_cgi(char *name);
+extern void set_cgi(char *name, char *value);
+extern int count_cgi();
 
 /* Regular file handler */
-extern void do_file (struct mime_handler *handler,char *path, webs_t stream, char *query);
-extern void do_file_attach (struct mime_handler *handler,char *path, webs_t stream, char *query, char *attachment);
+extern void do_file(struct mime_handler *handler, char *path, webs_t stream,
+		    char *query);
+extern void do_file_attach(struct mime_handler *handler, char *path,
+			   webs_t stream, char *query, char *attachment);
 
 /* GoAhead 2.1 compatibility */
 //typedef FILE * webs_t;
@@ -117,31 +123,28 @@ typedef char char_t;
 
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
-char *websGetVar (webs_t wp, char *var, char *d);
+char *websGetVar(webs_t wp, char *var, char *d);
 #endif
 #endif
 
-
-
-struct Webenvironment
-{
-  void (*Pdo_ej_buffer) (char *buffer, webs_t stream);
-  int (*Phttpd_filter_name) (char *old_name, char *new_name, size_t size,
-			     int type);
-  char *(*PwebsGetVar) (webs_t wp, char *var, char *d);
-  int (*PwebsWrite) (webs_t wp, char *fmt, ...);
-  struct wl_client_mac *Pwl_client_macs;
-  void (*Pdo_ej) (struct mime_handler *handler,char *path, webs_t stream, char *query);	// jimmy, https, 8/4/2003
-  int (*PejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
-  FILE *(*PgetWebsFile) (char *path);
-  int (*Pwfflush) (webs_t fp);
-  int (*Pwfputc) (char c, webs_t fp);
-  int (*Pwfputs) (char *buf, webs_t fp);
-  char *(*PGOZILA_GET)(webs_t wp,char *name);
-  char *(*Plive_translate) (char *tran);
-  websRomPageIndexType *PwebsRomPageIndex;
+struct Webenvironment {
+	void (*Pdo_ej_buffer) (char *buffer, webs_t stream);
+	int (*Phttpd_filter_name) (char *old_name, char *new_name, size_t size,
+				   int type);
+	char *(*PwebsGetVar) (webs_t wp, char *var, char *d);
+	int (*PwebsWrite) (webs_t wp, char *fmt, ...);
+	struct wl_client_mac *Pwl_client_macs;
+	void (*Pdo_ej) (struct mime_handler * handler, char *path, webs_t stream, char *query);	// jimmy, https, 8/4/2003
+	int (*PejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
+	FILE *(*PgetWebsFile) (char *path);
+	int (*Pwfflush) (webs_t fp);
+	int (*Pwfputc) (char c, webs_t fp);
+	int (*Pwfputs) (char *buf, webs_t fp);
+	char *(*PGOZILA_GET) (webs_t wp, char *name);
+	char *(*Plive_translate) (char *tran);
+	websRomPageIndexType *PwebsRomPageIndex;
 #ifdef HAVE_HTTPS
-  int Pdo_ssl;
+	int Pdo_ssl;
 #endif
 };
 
@@ -151,31 +154,32 @@ struct Webenvironment
 #define websWriteDataNonBlock websWriteData
 #define a_assert(a)
 
-
 /* GoAhead 2.1 Embedded JavaScript compatibility */
-extern int getWebsFileLen (char *path);
+extern int getWebsFileLen(char *path);
 
-extern char *zencrypt (char *passwd);
+extern char *zencrypt(char *passwd);
 
-extern void do_filtertable (struct mime_handler *handler,char *path, webs_t stream, char *query);
-extern void do_wds (struct mime_handler *handler,char *path, webs_t stream, char *query);
-extern void do_wireless_adv (struct mime_handler *handler,char *path, webs_t stream, char *query);
+extern void do_filtertable(struct mime_handler *handler, char *path,
+			   webs_t stream, char *query);
+extern void do_wds(struct mime_handler *handler, char *path, webs_t stream,
+		   char *query);
+extern void do_wireless_adv(struct mime_handler *handler, char *path,
+			    webs_t stream, char *query);
 #ifndef VISUALSOURCE
 #ifndef VALIDSOURCE
-extern FILE *getWebsFile (char *path);
-extern int ejArgs (int argc, char_t ** argv, char_t * fmt, ...);
-extern void do_ej (struct mime_handler *handler,char *path, webs_t stream, char *query);
-extern void do_ej_buffer (char *buffer, webs_t stream);
-extern int websWrite( webs_t wp, char *fmt, ... );
+extern FILE *getWebsFile(char *path);
+extern int ejArgs(int argc, char_t ** argv, char_t * fmt, ...);
+extern void do_ej(struct mime_handler *handler, char *path, webs_t stream,
+		  char *query);
+extern void do_ej_buffer(char *buffer, webs_t stream);
+extern int websWrite(webs_t wp, char *fmt, ...);
 #endif
 #endif
-int do_auth(webs_t wp, char *userid, char *passwd, char *realm ,char *authorisation, int (*auth_check)(char *userid,char *passwd,char *dirname,char *authorisation));
-void Initnvramtab (void);
-void *call_ej (char *name, void *handle, webs_t wp, int argc, char_t ** argv);
+int do_auth(webs_t wp, char *userid, char *passwd, char *realm,
+	    char *authorisation, int (*auth_check) (char *userid, char *passwd,
+						    char *dirname,
+						    char *authorisation));
+void Initnvramtab(void);
+void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv);
 
-
-
-
-
-
-#endif /* _httpd_h_ */
+#endif				/* _httpd_h_ */
