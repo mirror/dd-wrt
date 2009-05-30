@@ -357,7 +357,7 @@
 
 #define ROUTER_BOARD_DANUBE 0x610f
 
-#define ROUTER_BOARD_STORM 0x6201 // value 1 is a fake to enable reset button code. real gpio is 60
+#define ROUTER_BOARD_STORM 0x6201	// value 1 is a fake to enable reset button code. real gpio is 60
 
 #define ROUTER_BOARD_ADM5120 0x630f
 
@@ -389,179 +389,164 @@
 
 #define NVROUTER "DD_BOARD"
 
-static inline int startswith( char *source, char *cmp )
+static inline int startswith(char *source, char *cmp)
 {
-    return !strncmp( source, cmp, strlen( cmp ) );
+	return !strncmp(source, cmp, strlen(cmp));
 }
 
-extern char *getBridge( char *ifname );
-extern char *getRealBridge( char *ifname );
-extern char *getSTA( void );
-extern char *getWET( void );
-extern int contains( const char *string, char value );
-extern int getcpurev( void );
-extern int cpu_plltype( void );
-extern int check_vlan_support( void );
+extern char *getBridge(char *ifname);
+extern char *getRealBridge(char *ifname);
+extern char *getSTA(void);
+extern char *getWET(void);
+extern int contains(const char *string, char value);
+extern int getcpurev(void);
+extern int cpu_plltype(void);
+extern int check_vlan_support(void);
 
-extern int startswith( char *source, char *cmp );
-extern int count_occurences( char *source, int cmp );
-extern int pos_nthoccurence( char *source, int cmp, int which );
-extern char *substring( int start, int stop, const char *src, char *dst );
-extern void strtrim_right( char *p, int c );
-extern unsigned int daysformonth( unsigned int month, unsigned int year );
-extern int weekday( int month, int day, int year );
-extern int getRouterBrand( void );
-extern char  *getRouter( void );
-extern int diag_led( int type, int act );
-extern int C_led( int i );
-extern int get_single_ip( char *ipaddr, int which );
-extern char *get_mac_from_ip( char *ip );
-extern struct dns_lists *get_dns_list( void );
-extern int dns_to_resolv( void );
-extern char *get_wan_face( void );
+extern int startswith(char *source, char *cmp);
+extern int count_occurences(char *source, int cmp);
+extern int pos_nthoccurence(char *source, int cmp, int which);
+extern char *substring(int start, int stop, const char *src, char *dst);
+extern void strtrim_right(char *p, int c);
+extern unsigned int daysformonth(unsigned int month, unsigned int year);
+extern int weekday(int month, int day, int year);
+extern int getRouterBrand(void);
+extern char *getRouter(void);
+extern int diag_led(int type, int act);
+extern int C_led(int i);
+extern int get_single_ip(char *ipaddr, int which);
+extern char *get_mac_from_ip(char *ip);
+extern struct dns_lists *get_dns_list(void);
+extern int dns_to_resolv(void);
+extern char *get_wan_face(void);
 
-extern int check_wan_link( int num );
+extern int check_wan_link(int num);
 extern char *get_complete_ip(char *from, char *to);
-extern char *get_complete_lan_ip( char *ip );
-extern int get_int_len( int num );
-extern int file_to_buf( char *path, char *buf, int len );
-extern int buf_to_file( char *path, char *buf );
-extern pid_t *find_pid_by_name( char *pidName );
-extern int find_pid_by_ps( char *pidName );
-extern int *find_all_pid_by_ps( char *pidName );
-extern char *find_name_by_proc( int pid );
-extern int get_ppp_pid( char *file );
-extern long convert_ver( char *ver );
-extern int check_flash( void );
-extern int check_action( void );
-extern int check_now_boot( void );
-extern int check_hw_type( void );
-extern int is_exist( char *filename );
-extern void set_ip_forward( char c );
-struct mtu_lists *get_mtu( char *proto );
-extern void set_host_domain_name( void );
+extern char *get_complete_lan_ip(char *ip);
+extern int get_int_len(int num);
+extern int file_to_buf(char *path, char *buf, int len);
+extern int buf_to_file(char *path, char *buf);
+extern pid_t *find_pid_by_name(char *pidName);
+extern int find_pid_by_ps(char *pidName);
+extern int *find_all_pid_by_ps(char *pidName);
+extern char *find_name_by_proc(int pid);
+extern int get_ppp_pid(char *file);
+extern long convert_ver(char *ver);
+extern int check_flash(void);
+extern int check_action(void);
+extern int check_now_boot(void);
+extern int check_hw_type(void);
+extern int is_exist(char *filename);
+extern void set_ip_forward(char c);
+struct mtu_lists *get_mtu(char *proto);
+extern void set_host_domain_name(void);
 
-extern void encode( char *buf, int len );
-extern void decode( char *buf, int len );
-extern char *zencrypt( char *passwd );
+extern void encode(char *buf, int len);
+extern void decode(char *buf, int len);
+extern char *zencrypt(char *passwd);
 
-extern void getLANMac( char *newmac );
-extern void getWirelessMac( char *newmac );
-extern void getWANMac( char *newmac );
+extern void getLANMac(char *newmac);
+extern void getWirelessMac(char *newmac);
+extern void getWANMac(char *newmac);
 
-extern int led_control( int type, int act );
-enum
-{ LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
-    LED_SES, LED_SES2, LED_WLAN, LED_USB, LED_SEC0, LED_SEC1
+extern int led_control(int type, int act);
+enum { LED_POWER, LED_DIAG, LED_DMZ, LED_CONNECTED, LED_BRIDGE, LED_VPN,
+	LED_SES, LED_SES2, LED_WLAN, LED_USB, LED_SEC0, LED_SEC1
 };
-enum
-{ LED_ON, LED_OFF, LED_FLASH };
+enum { LED_ON, LED_OFF, LED_FLASH };
 
 #ifdef CDEBUG
-extern int mcoreleft( void );
-extern int coreleft( void );
-static void cdebug( char *function )
+extern int mcoreleft(void);
+extern int coreleft(void);
+static void cdebug(char *function)
 {
-    // FILE *in = fopen ("/tmp/console.log", "a");
-    fprintf( stderr, "free ram in %s = %d (malloc %d)\n", function,
-	     coreleft(  ), mcoreleft(  ) );
-    // fclose (in);
+	// FILE *in = fopen ("/tmp/console.log", "a");
+	fprintf(stderr, "free ram in %s = %d (malloc %d)\n", function,
+		coreleft(), mcoreleft());
+	// fclose (in);
 }
 
 #else
 #define cdebug(a)
 #endif
-extern int first_time( void );
+extern int first_time(void);
 
-extern int set_register_value( unsigned short port_addr,
-			       unsigned short option_content );
-extern unsigned long get_register_value( unsigned short id,
-					 unsigned short num );
+extern int set_register_value(unsigned short port_addr,
+			      unsigned short option_content);
+extern unsigned long get_register_value(unsigned short id, unsigned short num);
 // extern int sys_netdev_ioctl(int family, int socket, char *if_name, int
 // cmd, struct ifreq *ifr);
 
-int ct_openlog( const char *ident, int option, int facility, char *log_name );
-void ct_syslog( int level, int enable, const char *fmt, ... );
-void ct_logger( int level, const char *fmt, ... );
-struct wl_assoc_mac *get_wl_assoc_mac( int instance, int *c );
+int ct_openlog(const char *ident, int option, int facility, char *log_name);
+void ct_syslog(int level, int enable, const char *fmt, ...);
+void ct_logger(int level, const char *fmt, ...);
+struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c);
 
-extern struct detect_wans *detect_protocol( char *wan_face, char *lan_face,
-					    char *type );
+extern struct detect_wans *detect_protocol(char *wan_face, char *lan_face,
+					   char *type);
 
-enum
-{ WL = 0,
-    DIAG = 1,
-    // SES_LED1 = 2,
-    // SES_LED2 = 3,
-    SES_BUTTON = 4,
-    DMZ = 7
+enum { WL = 0,
+	DIAG = 1,
+	// SES_LED1 = 2,
+	// SES_LED2 = 3,
+	SES_BUTTON = 4,
+	DMZ = 7
 };
 
-enum
-{ START_LED, STOP_LED, MALFUNCTION_LED };
+enum { START_LED, STOP_LED, MALFUNCTION_LED };
 
-typedef enum
-{ ACT_IDLE,
-    ACT_TFTP_UPGRADE,
-    ACT_WEB_UPGRADE,
+typedef enum { ACT_IDLE,
+	ACT_TFTP_UPGRADE,
+	ACT_WEB_UPGRADE,
 #ifdef HAVE_HTTPS
-    ACT_WEBS_UPGRADE,
+	ACT_WEBS_UPGRADE,
 #endif
-    ACT_SW_RESTORE,
-    ACT_HW_RESTORE,
-    ACT_ERASE_NVRAM,
-    ACT_NVRAM_COMMIT,
-    ACT_UNKNOWN
+	ACT_SW_RESTORE,
+	ACT_HW_RESTORE,
+	ACT_ERASE_NVRAM,
+	ACT_NVRAM_COMMIT,
+	ACT_UNKNOWN
 } ACTION;
 
-enum
-{ UNKNOWN_BOOT = -1, PMON_BOOT, CFE_BOOT };
+enum { UNKNOWN_BOOT = -1, PMON_BOOT, CFE_BOOT };
 
-
-enum
-{ BCM4702_CHIP, BCM4712_CHIP, BCM5325E_CHIP, BCM5350_CHIP, BCM5365_CHIP,
-    BCM4704_BCM5325F_CHIP,
-    BCM5352E_CHIP, BCM4712_BCM5325E_CHIP, BCM4704_BCM5325F_EWC_CHIP,
-    BCM4705_BCM5397_EWC_CHIP, BCM5354G_CHIP, BCM4705L_BCM5325E_EWC_CHIP,
-    BCM4705G_BCM5395S_EWC_CHIP,
-    NO_DEFINE_CHIP
+enum { BCM4702_CHIP, BCM4712_CHIP, BCM5325E_CHIP, BCM5350_CHIP, BCM5365_CHIP,
+	BCM4704_BCM5325F_CHIP,
+	BCM5352E_CHIP, BCM4712_BCM5325E_CHIP, BCM4704_BCM5325F_EWC_CHIP,
+	BCM4705_BCM5397_EWC_CHIP, BCM5354G_CHIP, BCM4705L_BCM5325E_EWC_CHIP,
+	BCM4705G_BCM5395S_EWC_CHIP,
+	NO_DEFINE_CHIP
 };
 
-enum
-{ FIRST, SECOND };
+enum { FIRST, SECOND };
 
-enum
-{ SYSLOG_LOG = 1, SYSLOG_DEBUG, CONSOLE_ONLY, LOG_CONSOLE, DEBUG_CONSOLE };
+enum { SYSLOG_LOG = 1, SYSLOG_DEBUG, CONSOLE_ONLY, LOG_CONSOLE, DEBUG_CONSOLE };
 
 #define ACTION(cmd)	buf_to_file(ACTION_FILE, cmd)
 
-struct dns_lists
-{
-    int num_servers;
-    char dns_server[4][16];
+struct dns_lists {
+	int num_servers;
+	char dns_server[4][16];
 };
 
 #define NOT_USING	0
 #define USING		1
 
-struct wl_assoc_mac
-{
-    char mac[18];
+struct wl_assoc_mac {
+	char mac[18];
 };
 
-struct mtu_lists
-{
-    char *proto;		/* protocol */
-    char *min;			/* min mtu */
-    char *max;			/* max mtu */
+struct mtu_lists {
+	char *proto;		/* protocol */
+	char *min;		/* min mtu */
+	char *max;		/* max mtu */
 };
 
-struct detect_wans
-{
-    int proto;
-    int count;
-    char *name;
-    char desc[1024];
+struct detect_wans {
+	int proto;
+	int count;
+	char *name;
+	char desc[1024];
 };
 
 #define	PROTO_DHCP	0
@@ -620,14 +605,14 @@ struct detect_wans
 	printf("\n\n"); \
 }
 
-void set_gpio( int gpio, int value );
+void set_gpio(int gpio, int value);
 
-int get_gpio( int gpio );
+int get_gpio(int gpio);
 
 #ifdef HAVE_OLED
-void lcdmessage( char *message );
-void initlcd( void );
-void lcdmessaged( char *dual, char *message );
+void lcdmessage(char *message);
+void initlcd(void);
+void lcdmessaged(char *dual, char *message);
 #else
 #define initlcd()
 #define lcdmessage(a)
@@ -635,43 +620,40 @@ void lcdmessaged( char *dual, char *message );
 #endif
 
 #ifdef HAVE_AQOS
-extern void add_usermac( char *mac, int idx, char *upstream,
-			 char *downstream );
-extern void add_userip( char *ip, int idx, char *upstream, char *downstream );
+extern void add_usermac(char *mac, int idx, char *upstream, char *downstream);
+extern void add_userip(char *ip, int idx, char *upstream, char *downstream);
 #endif
 
-void getHostName( char *buf, char *ip );
-int ishexit( char c );
-int haswifi( void );
-int sv_valid_hwaddr( char *value );
-int sv_valid_ipaddr( char *value );
-int sv_valid_range( char *value, int low, int high );
-int sv_valid_statics( char *value );
-void get_network( char *ipaddr, char *netmask );
-void get_broadcast( char *ipaddr, char *netmask );
-int route_manip( int cmd, char *name, int metric, char *dst, char *gateway,
-		 char *genmask );
-int route_add( char *name, int metric, char *dst, char *gateway,
-	       char *genmask );
-int route_del( char *name, int metric, char *dst, char *gateway,
-	       char *genmask );
-extern char *psname( int pid, char *buffer, int maxlen );
-extern int pidof( const char *name );
-extern int killall( const char *name, int sig );
-extern int getifcount( const char *ifprefix );
-extern int getIfList( char *buffer, const char *ifprefix );
-extern void getIfLists( char *eths, int size );
-extern int ifexists( const char *ifname );
-extern void getinterfacelist( const char *ifprefix, char *buffer );
-extern int count_processes( char *pidName );
+void getHostName(char *buf, char *ip);
+int ishexit(char c);
+int haswifi(void);
+int sv_valid_hwaddr(char *value);
+int sv_valid_ipaddr(char *value);
+int sv_valid_range(char *value, int low, int high);
+int sv_valid_statics(char *value);
+void get_network(char *ipaddr, char *netmask);
+void get_broadcast(char *ipaddr, char *netmask);
+int route_manip(int cmd, char *name, int metric, char *dst, char *gateway,
+		char *genmask);
+int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
+int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
+extern char *psname(int pid, char *buffer, int maxlen);
+extern int pidof(const char *name);
+extern int killall(const char *name, int sig);
+extern int getifcount(const char *ifprefix);
+extern int getIfList(char *buffer, const char *ifprefix);
+extern void getIfLists(char *eths, int size);
+extern int ifexists(const char *ifname);
+extern void getinterfacelist(const char *ifprefix, char *buffer);
+extern int count_processes(char *pidName);
 
-int isGrep( char *string, char *cmp );
-int softkill( char *name );
+int isGrep(char *string, char *cmp);
+int softkill(char *name);
 
-int getmask( char *netmask );
-int doMultiCast( void );
-int getMTD( char *name );
-void getIPFromName( char *name, char *ip );
+int getmask(char *netmask);
+int doMultiCast(void);
+int getMTD(char *name);
+void getIPFromName(char *name, char *ip);
 
 #define DEFAULT_USER "bJ/GddyoJuiU2"
 #define DEFAULT_PASS "bJz7PcC1rCRJQ"
@@ -684,33 +666,34 @@ void getIPFromName( char *name, char *ip );
 #define MAX_LEASES 254
 #endif
 
-struct wl_client_mac
-{
-    char hostname[32];
-    char ipaddr[20];
-    char hwaddr[20];
-    int status;			// 0:offline 1:online
-    int check;
+struct wl_client_mac {
+	char hostname[32];
+	char ipaddr[20];
+	char hwaddr[20];
+	int status;		// 0:offline 1:online
+	int check;
 };
 
-extern int dd_timer_delete( timer_t timer);
-extern int dd_timer_create( clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
-		  struct sigevent *evp,	/* user event handler */
-		  timer_t * pTimer	/* ptr to return value */
-     );
+extern int dd_timer_delete(timer_t timer);
+extern int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
+			   struct sigevent *evp,	/* user event handler */
+			   timer_t * pTimer	/* ptr to return value */
+    );
 
-int endswith( char *str, char *cmp );
+int endswith(char *str, char *cmp);
 
-int isListed( char *listname, char *value );
-void addList( char *listname, char *value );
-int searchfor( FILE * fp, char *str, int scansize );
-int insmod( char *module );
-void rmmod( char *module );
+int isListed(char *listname, char *value);
+void addList(char *listname, char *value);
+int searchfor(FILE * fp, char *str, int scansize);
+int insmod(char *module);
+void rmmod(char *module);
 
-int do80211priv( const char *ifname, int op, void *data, size_t len );
-int getsocket( void );
+int do80211priv(const char *ifname, int op, void *data, size_t len);
+int getsocket(void);
 int isEMP(char *ifname);
 char *get3GControlDevice(void);
+char *getIsoName(const char *country);
+
 #ifdef HAVE_RT2880
 char *getRADev(char *prefix);
 #endif

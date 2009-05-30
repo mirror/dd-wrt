@@ -15,15 +15,14 @@
 #ifndef _bcmcvar_h
 #define _bcmcvar_h
 
-struct variable
-{
-    char *name;
-    char *validatename;
-    char *validate2name;
-    // void (*validate) (webs_t wp, char *value, struct variable * v);
-    // void (*validate2) (webs_t wp);
-    char **argv;
-    unsigned char nullok;
+struct variable {
+	char *name;
+	char *validatename;
+	char *validate2name;
+	// void (*validate) (webs_t wp, char *value, struct variable * v);
+	// void (*validate2) (webs_t wp);
+	char **argv;
+	unsigned char nullok;
 };
 
 #define POST_BUF_SIZE	10000
@@ -39,6 +38,6 @@ struct variable
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
-int variables_arraysize( void );
+int variables_arraysize(void);
 
-#endif /* _bcmcvar_h */
+#endif				/* _bcmcvar_h */

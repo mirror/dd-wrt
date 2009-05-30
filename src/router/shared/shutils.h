@@ -24,14 +24,14 @@
  * @param       fd      file descriptor
  * @return      contents of file or NULL if an error occurred
  */
-extern char *fd2str( int fd );
+extern char *fd2str(int fd);
 
 /*
  * Reads file and returns contents
  * @param       path    path to file
  * @return      contents of file or NULL if an error occurred
  */
-extern char *file2str( const char *path );
+extern char *file2str(const char *path);
 
 /*
  * Waits for a file descriptor to become available for reading or unblocked signal
@@ -39,7 +39,7 @@ extern char *file2str( const char *path );
  * @param       timeout seconds to wait before timing out or 0 for no timeout
  * @return      1 if descriptor changed status or 0 if timed out or -1 on error
  */
-extern int waitfor( int fd, int timeout );
+extern int waitfor(int fd, int timeout);
 
 /*
  * Concatenates NULL-terminated list of arguments into a single
@@ -51,9 +51,9 @@ extern int waitfor( int fd, int timeout );
  * @return      return value of executed command or errno
  */
 
-int _evalpid( char *const argv[], char *path, int timeout, int *ppid );
+int _evalpid(char *const argv[], char *path, int timeout, int *ppid);
 
-extern int _eval( char *const argv[] );
+extern int _eval(char *const argv[]);
 
 /*
  * Concatenates NULL-terminated list of arguments into a single
@@ -61,14 +61,14 @@ extern int _eval( char *const argv[] );
  * @param       argv    argument list
  * @return      stdout of executed command or NULL if an error occurred
  */
-extern char *_backtick( char *const argv[] );
+extern char *_backtick(char *const argv[]);
 
 /*
  * Kills process whose PID is stored in plaintext in pidfile
  * @param       pidfile PID file
  * @return      0 on success and errno on failure
  */
-extern int kill_pidfile( char *pidfile );
+extern int kill_pidfile(char *pidfile);
 
 /*
  * fread() with automatic retry on syscall interrupt
@@ -78,7 +78,7 @@ extern int kill_pidfile( char *pidfile );
  * @param       stream  file stream
  * @return      number of items successfully read
  */
-extern int safe_fread( void *ptr, size_t size, size_t nmemb, FILE * stream );
+extern int safe_fread(void *ptr, size_t size, size_t nmemb, FILE * stream);
 
 /*
  * fwrite() with automatic retry on syscall interrupt
@@ -88,8 +88,8 @@ extern int safe_fread( void *ptr, size_t size, size_t nmemb, FILE * stream );
  * @param       stream  file stream
  * @return      number of items successfully written
  */
-extern int safe_fwrite( const void *ptr, size_t size, size_t nmemb,
-			FILE * stream );
+extern int safe_fwrite(const void *ptr, size_t size, size_t nmemb,
+		       FILE * stream);
 
 /*
  * Convert Ethernet address string representation to binary data
@@ -97,9 +97,9 @@ extern int safe_fwrite( const void *ptr, size_t size, size_t nmemb,
  * @param       e       binary data
  * @return      TRUE if conversion was successful and FALSE otherwise
  */
-extern int ether_atoe( const char *a, unsigned char *e );
+extern int ether_atoe(const char *a, unsigned char *e);
 
-int indexof( char *str, char c );
+int indexof(char *str, char c);
 
 /*
  * Convert Ethernet address binary data to string representation
@@ -107,17 +107,17 @@ int indexof( char *str, char c );
  * @param       a       string in xx:xx:xx:xx:xx:xx notation
  * @return      a
  */
-extern char *ether_etoa( const unsigned char *e, char *a );
+extern char *ether_etoa(const unsigned char *e, char *a);
 
-extern int nvifname_to_osifname( const char *nvifname, char *osifname_buf,
-				 int osifname_buf_len );
-extern int osifname_to_nvifname( const char *osifname, char *nvifname_buf,
-				 int nvifname_buf_len );
+extern int nvifname_to_osifname(const char *nvifname, char *osifname_buf,
+				int osifname_buf_len);
+extern int osifname_to_nvifname(const char *osifname, char *nvifname_buf,
+				int nvifname_buf_len);
 
-extern int system2( char *command );
-extern int sysprintf( const char *fmt, ... );
+extern int system2(char *command);
+extern int sysprintf(const char *fmt, ...);
 
-extern int get_ifname_unit( const char *ifname, int *unit, int *subunit );
+extern int get_ifname_unit(const char *ifname, int *unit, int *subunit);
 
 /*
  * Concatenate two strings together into a caller supplied buffer
@@ -126,7 +126,7 @@ extern int get_ifname_unit( const char *ifname, int *unit, int *subunit );
  * @param       buf     buffer large enough to hold both strings
  * @return      buf
  */
-char *strcat_r( const char *s1, const char *s2, char *buf );
+char *strcat_r(const char *s1, const char *s2, char *buf);
 
 /*
  * Check for a blank character; that is, a space or a tab 
@@ -207,8 +207,6 @@ char *strcat_r( const char *s1, const char *s2, char *buf );
 #define dprintf(fmt, args...)
 #endif
 
-
-
 #ifdef HAVE_MICRO
 #define FORK(a) a;
 #else
@@ -226,7 +224,7 @@ char *strcat_r( const char *s1, const char *s2, char *buf );
 	default: \
 	break; \
     } \
-}			
+}
 #endif
 
 #ifdef vxworks
@@ -240,16 +238,15 @@ char *strcat_r( const char *s1, const char *s2, char *buf );
 #define ether_atoe(a, e) bcm_ether_atoe((a), (e))
 #define ether_etoa(e, a) bcm_ether_ntoa((e), (a))
 
-
 /*
  * These declarations are not available where you would expect them 
  */
-extern int vsnprintf( char *, size_t, const char *, va_list );
-extern int snprintf( char *str, size_t count, const char *fmt, ... );
-extern char *strdup( const char * );
-extern char *strsep( char **stringp, char *delim );
-extern int strcasecmp( const char *s1, const char *s2 );
-extern int strncasecmp( const char *s1, const char *s2, size_t n );
+extern int vsnprintf(char *, size_t, const char *, va_list);
+extern int snprintf(char *str, size_t count, const char *fmt, ...);
+extern char *strdup(const char *);
+extern char *strsep(char **stringp, char *delim);
+extern int strcasecmp(const char *s1, const char *s2);
+extern int strncasecmp(const char *s1, const char *s2, size_t n);
 
 /*
  * Neither are socket() and connect() 
@@ -262,4 +259,4 @@ extern int strncasecmp( const char *s1, const char *s2, size_t n );
 #endif
 #endif
 
-#endif /* _shutils_h_ */
+#endif				/* _shutils_h_ */
