@@ -43,144 +43,142 @@
 #include <shutils.h>
 #include <utils.h>
 
-void start_sysinit( void )
+void start_sysinit(void)
 {
-    char buf[PATH_MAX];
-    struct utsname name;
-    struct stat tmp_stat;
-    time_t tm = 0;
+	char buf[PATH_MAX];
+	struct utsname name;
+	struct stat tmp_stat;
+	time_t tm = 0;
 
-    unlink( "/etc/nvram/.lock" );
-    cprintf( "sysinit() proc\n" );
-    /*
-     * /proc 
-     */
-    mount( "proc", "/proc", "proc", MS_MGC_VAL, NULL );
-    mount( "sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL );
-    cprintf( "sysinit() tmp\n" );
+	unlink("/etc/nvram/.lock");
+	cprintf("sysinit() proc\n");
+	/*
+	 * /proc 
+	 */
+	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
+	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
+	cprintf("sysinit() tmp\n");
 
-    /*
-     * /tmp 
-     */
-    mount( "ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL );
-    // fix for linux kernel 2.6
-    mount( "devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL );
-    eval( "mkdir", "/tmp/www" );
-    eval( "mknod", "/dev/ppp", "c", "108", "0" );
+	/*
+	 * /tmp 
+	 */
+	mount("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
+	// fix for linux kernel 2.6
+	mount("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+	eval("mkdir", "/tmp/www");
+	eval("mknod", "/dev/ppp", "c", "108", "0");
 
-    unlink( "/tmp/nvram/.lock" );
-    eval( "mkdir", "/tmp/nvram" );
-    eval( "/bin/tar", "-xzf", "/dev/mtdblock4", "-C", "/" );
-    // eval ("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
-    cprintf( "sysinit() var\n" );
+	unlink("/tmp/nvram/.lock");
+	eval("mkdir", "/tmp/nvram");
+	eval("/bin/tar", "-xzf", "/dev/mtdblock4", "-C", "/");
+	// eval ("/bin/tar", "-xzf", "/dev/mtdblock/2", "-C", "/");
+	cprintf("sysinit() var\n");
 
-    /*
-     * /var 
-     */
-    mkdir( "/tmp/var", 0777 );
-    mkdir( "/var/lock", 0777 );
-    mkdir( "/var/log", 0777 );
-    mkdir( "/var/run", 0777 );
-    mkdir( "/var/tmp", 0777 );
-    cprintf( "sysinit() setup console\n" );
-    if (!nvram_match("disable_watchdog","1"))
-    eval( "watchdog" );
-    /*
-     * Setup console 
-     */
+	/*
+	 * /var 
+	 */
+	mkdir("/tmp/var", 0777);
+	mkdir("/var/lock", 0777);
+	mkdir("/var/log", 0777);
+	mkdir("/var/run", 0777);
+	mkdir("/var/tmp", 0777);
+	cprintf("sysinit() setup console\n");
+	if (!nvram_match("disable_watchdog", "1"))
+		eval("watchdog");
+	/*
+	 * Setup console 
+	 */
 
-    cprintf( "sysinit() klogctl\n" );
-    klogctl( 8, NULL, atoi( nvram_safe_get( "console_loglevel" ) ) );
-    cprintf( "sysinit() get router\n" );
+	cprintf("sysinit() klogctl\n");
+	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
+	cprintf("sysinit() get router\n");
 
-    int brand = getRouterBrand(  );
+	int brand = getRouterBrand();
 
-    /*
-     * test -e /lib/modules/$KERNELVER/extra/profdrvdd.ko && insmod
-     * /lib/modules/$KERNELVER/extra/profdrvdd.ko test -e
-     * /lib/modules/$KERNELVER/extra/atmapi.ko && insmod
-     * /lib/modules/$KERNELVER/extra/atmapi.ko test -e
-     * /lib/modules/$KERNELVER/extra/atmbonding.ko && insmod
-     * /lib/modules/$KERNELVER/extra/atmbonding.ko test -e
-     * /lib/modules/$KERNELVER/extra/atmbondingeth.ko && insmod
-     * /lib/modules/$KERNELVER/extra/atmbondingeth.ko test -e
-     * /lib/modules/$KERNELVER/extra/adsldd.ko && insmod
-     * /lib/modules/$KERNELVER/extra/adsldd.ko test -e
-     * /lib/modules/$KERNELVER/extra/blaa_dd.ko && insmod
-     * /lib/modules/$KERNELVER/extra/blaa_dd.ko test -e
-     * /lib/modules/$KERNELVER/kernel/net/atm/br2684.ko && insmod
-     * /lib/modules/$KERNELVER/kernel/net/atm/br2684.ko test -e
-     * /lib/modules/$KERNELVER/extra/bcmprocfs.ko && insmod
-     * /lib/modules/$KERNELVER/extra/bcmprocfs.ko test -e
-     * /lib/modules/$KERNELVER/extra/bcm_enet.ko && insmod
-     * /lib/modules/$KERNELVER/extra/bcm_enet.ko test -e
-     * /lib/modules/$KERNELVER/extra/bcm_usb.ko && insmod
-     * /lib/modules/$KERNELVER/extra/bcm_usb.ko test -e
-     * /lib/modules/$KERNELVER/extra/wl.ko && insmod
-     * /lib/modules/$KERNELVER/extra/wl.ko test -e
-     * /lib/modules/$KERNELVER/extra/dspdd.ko && insmod
-     * /lib/modules/$KERNELVER/extra/dspdd.ko test -e
-     * /lib/modules/$KERNELVER/extra/endpointdd.ko && insmod
-     * /lib/modules/$KERNELVER/extra/endpointdd.ko 
-     */
-    insmod( "atmapi" );
-    insmod( "adsldd" );
-    insmod( "blaa_dd" );
-    insmod( "bcmprocfs" );
-    insmod( "bcm_enet" );
+	/*
+	 * test -e /lib/modules/$KERNELVER/extra/profdrvdd.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/profdrvdd.ko test -e
+	 * /lib/modules/$KERNELVER/extra/atmapi.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/atmapi.ko test -e
+	 * /lib/modules/$KERNELVER/extra/atmbonding.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/atmbonding.ko test -e
+	 * /lib/modules/$KERNELVER/extra/atmbondingeth.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/atmbondingeth.ko test -e
+	 * /lib/modules/$KERNELVER/extra/adsldd.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/adsldd.ko test -e
+	 * /lib/modules/$KERNELVER/extra/blaa_dd.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/blaa_dd.ko test -e
+	 * /lib/modules/$KERNELVER/kernel/net/atm/br2684.ko && insmod
+	 * /lib/modules/$KERNELVER/kernel/net/atm/br2684.ko test -e
+	 * /lib/modules/$KERNELVER/extra/bcmprocfs.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/bcmprocfs.ko test -e
+	 * /lib/modules/$KERNELVER/extra/bcm_enet.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/bcm_enet.ko test -e
+	 * /lib/modules/$KERNELVER/extra/bcm_usb.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/bcm_usb.ko test -e
+	 * /lib/modules/$KERNELVER/extra/wl.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/wl.ko test -e
+	 * /lib/modules/$KERNELVER/extra/dspdd.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/dspdd.ko test -e
+	 * /lib/modules/$KERNELVER/extra/endpointdd.ko && insmod
+	 * /lib/modules/$KERNELVER/extra/endpointdd.ko 
+	 */
+	insmod("atmapi");
+	insmod("adsldd");
+	insmod("blaa_dd");
+	insmod("bcmprocfs");
+	insmod("bcm_enet");
 
-    /*
-     * Modules 
-     */
-    uname( &name );
-    /*
-     * network drivers 
-     */
-    insmod( "ath_hal" );
-    if( nvram_get( "rate_control" ) != NULL )
-    {
-	char rate[64];
+	/*
+	 * Modules 
+	 */
+	uname(&name);
+	/*
+	 * network drivers 
+	 */
+	insmod("ath_hal");
+	if (nvram_get("rate_control") != NULL) {
+		char rate[64];
 
-	sprintf( rate, "ratectl=%s", nvram_safe_get( "rate_control" ) );
-	eval( "insmod", "ath_pci", rate );
-    }
-    else
-    {
-	insmod( "ath_pci" );
-    }
+		sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
+		eval("insmod", "ath_pci", rate);
+	} else {
+		insmod("ath_pci");
+	}
 
-    /*
-     * eval ("ifconfig", "wifi0", "up"); eval ("ifconfig", "wifi1", "up");
-     * eval ("ifconfig", "wifi2", "up"); eval ("ifconfig", "wifi3", "up");
-     * eval ("ifconfig", "wifi4", "up"); eval ("ifconfig", "wifi5", "up"); 
-     */
+	/*
+	 * eval ("ifconfig", "wifi0", "up"); eval ("ifconfig", "wifi1", "up");
+	 * eval ("ifconfig", "wifi2", "up"); eval ("ifconfig", "wifi3", "up");
+	 * eval ("ifconfig", "wifi4", "up"); eval ("ifconfig", "wifi5", "up"); 
+	 */
 
-    // insmod("ipv6");
+	// insmod("ipv6");
 
-    /*
-     * Set a sane date 
-     */
-    stime( &tm );
+	/*
+	 * Set a sane date 
+	 */
+	stime(&tm);
 
-    return;
-    cprintf( "done\n" );
+	return;
+	cprintf("done\n");
 }
 
-int check_cfe_nv( void )
+int check_cfe_nv(void)
 {
-    nvram_set( "portprio_support", "0" );
-    return 0;
+	nvram_set("portprio_support", "0");
+	return 0;
 }
 
-int check_pmon_nv( void )
+int check_pmon_nv(void)
 {
-    return 0;
+	return 0;
 }
 
-void start_overclocking( void )
+void start_overclocking(void)
 {
 }
-void enable_dtag_vlan( int enable )
+
+void enable_dtag_vlan(int enable)
 {
 
 }

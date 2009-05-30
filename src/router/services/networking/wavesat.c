@@ -53,61 +53,54 @@
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-extern int br_add_interface( const char *br, const char *dev );
+extern int br_add_interface(const char *br, const char *dev);
 
-void configure_wimax( void )
+void configure_wimax(void)
 {
-    char *mode = "0";
-    char *dev = "ofdm";
+	char *mode = "0";
+	char *dev = "ofdm";
 
-    if( nvram_match( "ofdm_duplex", "TDD" ) )
-	mode = "0";
-    if( nvram_match( "ofdm_duplex", "H-FDD" ) )
-	mode = "1";
-    if( nvram_match( "ofdm_mode", "disabled" ) )
-	return;
-    char width[32];
+	if (nvram_match("ofdm_duplex", "TDD"))
+		mode = "0";
+	if (nvram_match("ofdm_duplex", "H-FDD"))
+		mode = "1";
+	if (nvram_match("ofdm_mode", "disabled"))
+		return;
+	char width[32];
 
-    sprintf( width, "%smhz", nvram_safe_get( "ofdm_width" ) );
-    eval( "/sub/lm_scripts/go_ss", width, "0", mode );
-    if( !nvram_match( "ofdm_mode", "sta" ) )
-    {
-	char bridged[32];
+	sprintf(width, "%smhz", nvram_safe_get("ofdm_width"));
+	eval("/sub/lm_scripts/go_ss", width, "0", mode);
+	if (!nvram_match("ofdm_mode", "sta")) {
+		char bridged[32];
 
-	sprintf( bridged, "%s_bridged", dev );
-	if( nvram_default_match( bridged, "1", "1" ) )
-	{
-	    eval( "ifconfig", dev, "0.0.0.0", "up" );
-	    br_add_interface( getBridge( dev ), dev );
-	    eval( "ifconfig", dev, "0.0.0.0", "up" );
+		sprintf(bridged, "%s_bridged", dev);
+		if (nvram_default_match(bridged, "1", "1")) {
+			eval("ifconfig", dev, "0.0.0.0", "up");
+			br_add_interface(getBridge(dev), dev);
+			eval("ifconfig", dev, "0.0.0.0", "up");
+		} else {
+			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev),
+			     "netmask", nvram_nget("%s_netmask", dev), "up");
+		}
+	} else {
+		char bridged[32];
+
+		sprintf(bridged, "%s_bridged", dev);
+		if (nvram_default_match(bridged, "0", "1")) {
+			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev),
+			     "netmask", nvram_nget("%s_netmask", dev), "up");
+		}
 	}
-	else
-	{
-	    eval( "ifconfig", dev, nvram_nget( "%s_ipaddr", dev ), "netmask",
-		  nvram_nget( "%s_netmask", dev ), "up" );
-	}
-    }
-    else
-    {
-	char bridged[32];
-
-	sprintf( bridged, "%s_bridged", dev );
-	if( nvram_default_match( bridged, "0", "1" ) )
-	{
-	    eval( "ifconfig", dev, nvram_nget( "%s_ipaddr", dev ), "netmask",
-		  nvram_nget( "%s_netmask", dev ), "up" );
-	}
-    }
 }
-void deconfigure_wimax( void )
-{
-    char *dev = "ofdm";
 
-    if( ifexists( dev ) )
-    {
-	br_del_interface( "br0", dev );
-	eval( "ifconfig", dev, "down" );
-    }
-    eval( "/sub/common/ssmodunload" );
+void deconfigure_wimax(void)
+{
+	char *dev = "ofdm";
+
+	if (ifexists(dev)) {
+		br_del_interface("br0", dev);
+		eval("ifconfig", dev, "down");
+	}
+	eval("/sub/common/ssmodunload");
 }
 #endif

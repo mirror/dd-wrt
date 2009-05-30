@@ -605,30 +605,27 @@
 #define IW_EVENT_CAPA_SET(event_capa, cmd) (event_capa[IW_EVENT_CAPA_INDEX(cmd)] |= IW_EVENT_CAPA_MASK(cmd))
 #define IW_EVENT_CAPA_SET_KERNEL(event_capa) {event_capa[0] |= IW_EVENT_CAPA_K_0; event_capa[1] |= IW_EVENT_CAPA_K_1; }
 
-
 /****************************** TYPES ******************************/
 
 /* --------------------------- SUBTYPES --------------------------- */
 /*
  *	Generic format for most parameters that fit in an int
  */
-struct iw_param
-{
-  __s32 value;			/* The value of the parameter itself */
-  __u8 fixed;			/* Hardware should not use auto select */
-  __u8 disabled;		/* Disable the feature */
-  __u16 flags;			/* Various specifc flags (if any) */
+struct iw_param {
+	__s32 value;		/* The value of the parameter itself */
+	__u8 fixed;		/* Hardware should not use auto select */
+	__u8 disabled;		/* Disable the feature */
+	__u16 flags;		/* Various specifc flags (if any) */
 };
 
 /*
  *	For all data larger than 16 octets, we need to use a
  *	pointer to memory allocated in user space.
  */
-struct iw_point
-{
-  caddr_t pointer;		/* Pointer to the data  (in user space) */
-  __u16 length;			/* number of fields or size in bytes */
-  __u16 flags;			/* Optional params */
+struct iw_point {
+	caddr_t pointer;	/* Pointer to the data  (in user space) */
+	__u16 length;		/* number of fields or size in bytes */
+	__u16 flags;		/* Optional params */
 };
 
 /*
@@ -639,24 +636,22 @@ struct iw_point
  *	of 10 to get 'm' lower than 10^9, with 'm'= f / (10^'e')...
  *	The power of 10 is in 'e', the result of the division is in 'm'.
  */
-struct iw_freq
-{
-  __s32 m;			/* Mantissa */
-  __s16 e;			/* Exponent */
-  __u8 i;			/* List index (when in range struct) */
-  __u8 flags;			/* Flags (fixed/auto) */
+struct iw_freq {
+	__s32 m;		/* Mantissa */
+	__s16 e;		/* Exponent */
+	__u8 i;			/* List index (when in range struct) */
+	__u8 flags;		/* Flags (fixed/auto) */
 };
 
 /*
  *	Quality of the link
  */
-struct iw_quality
-{
-  __u8 qual;			/* link quality (%retries, SNR,
+struct iw_quality {
+	__u8 qual;		/* link quality (%retries, SNR,
 				   %missed beacons or better...) */
-  __u8 level;			/* signal level (dBm) */
-  __u8 noise;			/* noise level (dBm) */
-  __u8 updated;			/* Flags to know if updated */
+	__u8 level;		/* signal level (dBm) */
+	__u8 noise;		/* noise level (dBm) */
+	__u8 updated;		/* Flags to know if updated */
 };
 
 /*
@@ -666,33 +661,30 @@ struct iw_quality
  *	is already pretty exhaustive, and you should use that first.
  *	This is only additional stats...
  */
-struct iw_discarded
-{
-  __u32 nwid;			/* Rx : Wrong nwid/essid */
-  __u32 code;			/* Rx : Unable to code/decode (WEP) */
-  __u32 fragment;		/* Rx : Can't perform MAC reassembly */
-  __u32 retries;		/* Tx : Max MAC retries num reached */
-  __u32 misc;			/* Others cases */
+struct iw_discarded {
+	__u32 nwid;		/* Rx : Wrong nwid/essid */
+	__u32 code;		/* Rx : Unable to code/decode (WEP) */
+	__u32 fragment;		/* Rx : Can't perform MAC reassembly */
+	__u32 retries;		/* Tx : Max MAC retries num reached */
+	__u32 misc;		/* Others cases */
 };
 
 /*
  *	Packet/Time period missed in the wireless adapter due to
  *	"wireless" specific problems...
  */
-struct iw_missed
-{
-  __u32 beacon;			/* Missed beacons/superframe */
+struct iw_missed {
+	__u32 beacon;		/* Missed beacons/superframe */
 };
 
 /*
  *	Quality range (for spy threshold)
  */
-struct iw_thrspy
-{
-  struct sockaddr addr;		/* Source address (hw/mac) */
-  struct iw_quality qual;	/* Quality of the link */
-  struct iw_quality low;	/* Low threshold */
-  struct iw_quality high;	/* High threshold */
+struct iw_thrspy {
+	struct sockaddr addr;	/* Source address (hw/mac) */
+	struct iw_quality qual;	/* Quality of the link */
+	struct iw_quality low;	/* Low threshold */
+	struct iw_quality high;	/* High threshold */
 };
 
 /*
@@ -706,40 +698,39 @@ struct iw_thrspy
  *	Especially, scan results are required to include an entry for the
  *	current BSS if the driver is in Managed mode and associated with an AP.
  */
-struct iw_scan_req
-{
-  __u8 scan_type;		/* IW_SCAN_TYPE_{ACTIVE,PASSIVE} */
-  __u8 essid_len;
-  __u8 num_channels;		/* num entries in channel_list;
+struct iw_scan_req {
+	__u8 scan_type;		/* IW_SCAN_TYPE_{ACTIVE,PASSIVE} */
+	__u8 essid_len;
+	__u8 num_channels;	/* num entries in channel_list;
 				 * 0 = scan all allowed channels */
-  __u8 flags;			/* reserved as padding; use zero, this may
+	__u8 flags;		/* reserved as padding; use zero, this may
 				 * be used in the future for adding flags
 				 * to request different scan behavior */
-  struct sockaddr bssid;	/* ff:ff:ff:ff:ff:ff for broadcast BSSID or
+	struct sockaddr bssid;	/* ff:ff:ff:ff:ff:ff for broadcast BSSID or
 				 * individual address of a specific BSS */
 
-  /*
-   * Use this ESSID if IW_SCAN_THIS_ESSID flag is used instead of using
-   * the current ESSID. This allows scan requests for specific ESSID
-   * without having to change the current ESSID and potentially breaking
-   * the current association.
-   */
-  __u8 essid[IW_ESSID_MAX_SIZE];
+	/*
+	 * Use this ESSID if IW_SCAN_THIS_ESSID flag is used instead of using
+	 * the current ESSID. This allows scan requests for specific ESSID
+	 * without having to change the current ESSID and potentially breaking
+	 * the current association.
+	 */
+	__u8 essid[IW_ESSID_MAX_SIZE];
 
-  /*
-   * Optional parameters for changing the default scanning behavior.
-   * These are based on the MLME-SCAN.request from IEEE Std 802.11.
-   * TU is 1.024 ms. If these are set to 0, driver is expected to use
-   * reasonable default values. min_channel_time defines the time that
-   * will be used to wait for the first reply on each channel. If no
-   * replies are received, next channel will be scanned after this. If
-   * replies are received, total time waited on the channel is defined by
-   * max_channel_time.
-   */
-  __u32 min_channel_time;	/* in TU */
-  __u32 max_channel_time;	/* in TU */
+	/*
+	 * Optional parameters for changing the default scanning behavior.
+	 * These are based on the MLME-SCAN.request from IEEE Std 802.11.
+	 * TU is 1.024 ms. If these are set to 0, driver is expected to use
+	 * reasonable default values. min_channel_time defines the time that
+	 * will be used to wait for the first reply on each channel. If no
+	 * replies are received, next channel will be scanned after this. If
+	 * replies are received, total time waited on the channel is defined by
+	 * max_channel_time.
+	 */
+	__u32 min_channel_time;	/* in TU */
+	__u32 max_channel_time;	/* in TU */
 
-  struct iw_freq channel_list[IW_MAX_FREQUENCIES];
+	struct iw_freq channel_list[IW_MAX_FREQUENCIES];
 };
 
 /* ------------------------- WPA SUPPORT ------------------------- */
@@ -768,25 +759,23 @@ struct iw_scan_req
  *	RX_SEQ_VALID for SIOCGIWENCODEEXT are optional, but can be useful for
  *	debugging/testing.
  */
-struct iw_encode_ext
-{
-  __u32 ext_flags;		/* IW_ENCODE_EXT_* */
-  __u8 tx_seq[IW_ENCODE_SEQ_MAX_SIZE];	/* LSB first */
-  __u8 rx_seq[IW_ENCODE_SEQ_MAX_SIZE];	/* LSB first */
-  struct sockaddr addr;		/* ff:ff:ff:ff:ff:ff for broadcast/multicast
+struct iw_encode_ext {
+	__u32 ext_flags;	/* IW_ENCODE_EXT_* */
+	__u8 tx_seq[IW_ENCODE_SEQ_MAX_SIZE];	/* LSB first */
+	__u8 rx_seq[IW_ENCODE_SEQ_MAX_SIZE];	/* LSB first */
+	struct sockaddr addr;	/* ff:ff:ff:ff:ff:ff for broadcast/multicast
 				 * (group) keys or unicast address for
 				 * individual keys */
-  __u16 alg;			/* IW_ENCODE_ALG_* */
-  __u16 key_len;
-  __u8 key[0];
+	__u16 alg;		/* IW_ENCODE_ALG_* */
+	__u16 key_len;
+	__u8 key[0];
 };
 
 /* SIOCSIWMLME data */
-struct iw_mlme
-{
-  __u16 cmd;			/* IW_MLME_* */
-  __u16 reason_code;
-  struct sockaddr addr;
+struct iw_mlme {
+	__u16 cmd;		/* IW_MLME_* */
+	__u16 reason_code;
+	struct sockaddr addr;
 };
 
 /* SIOCSIWPMKSA data */
@@ -796,44 +785,40 @@ struct iw_mlme
 
 #define IW_PMKID_LEN	16
 
-struct iw_pmksa
-{
-  __u32 cmd;			/* IW_PMKSA_* */
-  struct sockaddr bssid;
-  __u8 pmkid[IW_PMKID_LEN];
+struct iw_pmksa {
+	__u32 cmd;		/* IW_PMKSA_* */
+	struct sockaddr bssid;
+	__u8 pmkid[IW_PMKID_LEN];
 };
 
 /* IWEVMICHAELMICFAILURE data */
-struct iw_michaelmicfailure
-{
-  __u32 flags;
-  struct sockaddr src_addr;
-  __u8 tsc[IW_ENCODE_SEQ_MAX_SIZE];	/* LSB first */
+struct iw_michaelmicfailure {
+	__u32 flags;
+	struct sockaddr src_addr;
+	__u8 tsc[IW_ENCODE_SEQ_MAX_SIZE];	/* LSB first */
 };
 
 /* IWEVPMKIDCAND data */
 #define IW_PMKID_CAND_PREAUTH	0x00000001	/* RNS pre-authentication enabled */
-struct iw_pmkid_cand
-{
-  __u32 flags;			/* IW_PMKID_CAND_* */
-  __u32 index;			/* the smaller the index, the higher the
+struct iw_pmkid_cand {
+	__u32 flags;		/* IW_PMKID_CAND_* */
+	__u32 index;		/* the smaller the index, the higher the
 				 * priority */
-  struct sockaddr bssid;
+	struct sockaddr bssid;
 };
 
 /* ------------------------ WIRELESS STATS ------------------------ */
 /*
  * Wireless statistics (used for /proc/net/wireless)
  */
-struct iw_statistics
-{
-  __u16 status;			/* Status
+struct iw_statistics {
+	__u16 status;		/* Status
 				 * - device dependent for now */
 
-  struct iw_quality qual;	/* Quality of the link
+	struct iw_quality qual;	/* Quality of the link
 				 * (instant/mean/max) */
-  struct iw_discarded discard;	/* Packet discarded counts */
-  struct iw_missed miss;	/* Packet missed counts */
+	struct iw_discarded discard;	/* Packet discarded counts */
+	struct iw_missed miss;	/* Packet missed counts */
 };
 
 /* ------------------------ IOCTL REQUEST ------------------------ */
@@ -847,36 +832,35 @@ struct iw_statistics
  * You should check this when increasing the structures defined
  * above in this file...
  */
-union iwreq_data
-{
-  /* Config - generic */
-  char name[IFNAMSIZ];
-  /* Name : used to verify the presence of  wireless extensions.
-   * Name of the protocol/provider... */
+union iwreq_data {
+	/* Config - generic */
+	char name[IFNAMSIZ];
+	/* Name : used to verify the presence of  wireless extensions.
+	 * Name of the protocol/provider... */
 
-  struct iw_point essid;	/* Extended network name */
-  struct iw_param nwid;		/* network id (or domain - the cell) */
-  struct iw_freq freq;		/* frequency or channel :
+	struct iw_point essid;	/* Extended network name */
+	struct iw_param nwid;	/* network id (or domain - the cell) */
+	struct iw_freq freq;	/* frequency or channel :
 				 * 0-1000 = channel
 				 * > 1000 = frequency in Hz */
 
-  struct iw_param sens;		/* signal level threshold */
-  struct iw_param bitrate;	/* default bit rate */
-  struct iw_param txpower;	/* default transmit power */
-  struct iw_param rts;		/* RTS threshold threshold */
-  struct iw_param frag;		/* Fragmentation threshold */
-  __u32 mode;			/* Operation mode */
-  struct iw_param retry;	/* Retry limits & lifetime */
+	struct iw_param sens;	/* signal level threshold */
+	struct iw_param bitrate;	/* default bit rate */
+	struct iw_param txpower;	/* default transmit power */
+	struct iw_param rts;	/* RTS threshold threshold */
+	struct iw_param frag;	/* Fragmentation threshold */
+	__u32 mode;		/* Operation mode */
+	struct iw_param retry;	/* Retry limits & lifetime */
 
-  struct iw_point encoding;	/* Encoding stuff : tokens */
-  struct iw_param power;	/* PM duration/timeout */
-  struct iw_quality qual;	/* Quality part of statistics */
+	struct iw_point encoding;	/* Encoding stuff : tokens */
+	struct iw_param power;	/* PM duration/timeout */
+	struct iw_quality qual;	/* Quality part of statistics */
 
-  struct sockaddr ap_addr;	/* Access point address */
-  struct sockaddr addr;		/* Destination address (hw/mac) */
+	struct sockaddr ap_addr;	/* Access point address */
+	struct sockaddr addr;	/* Destination address (hw/mac) */
 
-  struct iw_param param;	/* Other small parameters */
-  struct iw_point data;		/* Other large parameters */
+	struct iw_param param;	/* Other small parameters */
+	struct iw_point data;	/* Other large parameters */
 };
 
 /*
@@ -885,15 +869,13 @@ union iwreq_data
  * convenience...
  * Do I need to remind you about structure size (32 octets) ?
  */
-struct iwreq
-{
-  union
-  {
-    char ifrn_name[IFNAMSIZ];	/* if name, e.g. "eth0" */
-  } ifr_ifrn;
+struct iwreq {
+	union {
+		char ifrn_name[IFNAMSIZ];	/* if name, e.g. "eth0" */
+	} ifr_ifrn;
 
-  /* Data part (defined just above) */
-  union iwreq_data u;
+	/* Data part (defined just above) */
+	union iwreq_data u;
 };
 
 /* -------------------------- IOCTL DATA -------------------------- */
@@ -906,114 +888,112 @@ struct iwreq
  *	Range of parameters
  */
 
-struct iw_range
-{
-  /* Informative stuff (to choose between different interface) */
-  __u32 throughput;		/* To give an idea... */
-  /* In theory this value should be the maximum benchmarked
-   * TCP/IP throughput, because with most of these devices the
-   * bit rate is meaningless (overhead an co) to estimate how
-   * fast the connection will go and pick the fastest one.
-   * I suggest people to play with Netperf or any benchmark...
-   */
+struct iw_range {
+	/* Informative stuff (to choose between different interface) */
+	__u32 throughput;	/* To give an idea... */
+	/* In theory this value should be the maximum benchmarked
+	 * TCP/IP throughput, because with most of these devices the
+	 * bit rate is meaningless (overhead an co) to estimate how
+	 * fast the connection will go and pick the fastest one.
+	 * I suggest people to play with Netperf or any benchmark...
+	 */
 
-  /* NWID (or domain id) */
-  __u32 min_nwid;		/* Minimal NWID we are able to set */
-  __u32 max_nwid;		/* Maximal NWID we are able to set */
+	/* NWID (or domain id) */
+	__u32 min_nwid;		/* Minimal NWID we are able to set */
+	__u32 max_nwid;		/* Maximal NWID we are able to set */
 
-  /* Old Frequency (backward compat - moved lower ) */
-  __u16 old_num_channels;
-  __u8 old_num_frequency;
+	/* Old Frequency (backward compat - moved lower ) */
+	__u16 old_num_channels;
+	__u8 old_num_frequency;
 
-  /* Wireless event capability bitmasks */
-  __u32 event_capa[6];
+	/* Wireless event capability bitmasks */
+	__u32 event_capa[6];
 
-  /* signal level threshold range */
-  __s32 sensitivity;
+	/* signal level threshold range */
+	__s32 sensitivity;
 
-  /* Quality of link & SNR stuff */
-  /* Quality range (link, level, noise)
-   * If the quality is absolute, it will be in the range [0 ; max_qual],
-   * if the quality is dBm, it will be in the range [max_qual ; 0].
-   * Don't forget that we use 8 bit arithmetics... */
-  struct iw_quality max_qual;	/* Quality of the link */
-  /* This should contain the average/typical values of the quality
-   * indicator. This should be the threshold between a "good" and
-   * a "bad" link (example : monitor going from green to orange).
-   * Currently, user space apps like quality monitors don't have any
-   * way to calibrate the measurement. With this, they can split
-   * the range between 0 and max_qual in different quality level
-   * (using a geometric subdivision centered on the average).
-   * I expect that people doing the user space apps will feedback
-   * us on which value we need to put in each driver... */
-  struct iw_quality avg_qual;	/* Quality of the link */
+	/* Quality of link & SNR stuff */
+	/* Quality range (link, level, noise)
+	 * If the quality is absolute, it will be in the range [0 ; max_qual],
+	 * if the quality is dBm, it will be in the range [max_qual ; 0].
+	 * Don't forget that we use 8 bit arithmetics... */
+	struct iw_quality max_qual;	/* Quality of the link */
+	/* This should contain the average/typical values of the quality
+	 * indicator. This should be the threshold between a "good" and
+	 * a "bad" link (example : monitor going from green to orange).
+	 * Currently, user space apps like quality monitors don't have any
+	 * way to calibrate the measurement. With this, they can split
+	 * the range between 0 and max_qual in different quality level
+	 * (using a geometric subdivision centered on the average).
+	 * I expect that people doing the user space apps will feedback
+	 * us on which value we need to put in each driver... */
+	struct iw_quality avg_qual;	/* Quality of the link */
 
-  /* Rates */
-  __u8 num_bitrates;		/* Number of entries in the list */
-  __s32 bitrate[IW_MAX_BITRATES];	/* list, in bps */
+	/* Rates */
+	__u8 num_bitrates;	/* Number of entries in the list */
+	__s32 bitrate[IW_MAX_BITRATES];	/* list, in bps */
 
-  /* RTS threshold */
-  __s32 min_rts;		/* Minimal RTS threshold */
-  __s32 max_rts;		/* Maximal RTS threshold */
+	/* RTS threshold */
+	__s32 min_rts;		/* Minimal RTS threshold */
+	__s32 max_rts;		/* Maximal RTS threshold */
 
-  /* Frag threshold */
-  __s32 min_frag;		/* Minimal frag threshold */
-  __s32 max_frag;		/* Maximal frag threshold */
+	/* Frag threshold */
+	__s32 min_frag;		/* Minimal frag threshold */
+	__s32 max_frag;		/* Maximal frag threshold */
 
-  /* Power Management duration & timeout */
-  __s32 min_pmp;		/* Minimal PM period */
-  __s32 max_pmp;		/* Maximal PM period */
-  __s32 min_pmt;		/* Minimal PM timeout */
-  __s32 max_pmt;		/* Maximal PM timeout */
-  __u16 pmp_flags;		/* How to decode max/min PM period */
-  __u16 pmt_flags;		/* How to decode max/min PM timeout */
-  __u16 pm_capa;		/* What PM options are supported */
+	/* Power Management duration & timeout */
+	__s32 min_pmp;		/* Minimal PM period */
+	__s32 max_pmp;		/* Maximal PM period */
+	__s32 min_pmt;		/* Minimal PM timeout */
+	__s32 max_pmt;		/* Maximal PM timeout */
+	__u16 pmp_flags;	/* How to decode max/min PM period */
+	__u16 pmt_flags;	/* How to decode max/min PM timeout */
+	__u16 pm_capa;		/* What PM options are supported */
 
-  /* Encoder stuff */
-  __u16 encoding_size[IW_MAX_ENCODING_SIZES];	/* Different token sizes */
-  __u8 num_encoding_sizes;	/* Number of entry in the list */
-  __u8 max_encoding_tokens;	/* Max number of tokens */
-  /* For drivers that need a "login/passwd" form */
-  __u8 encoding_login_index;	/* token index for login token */
+	/* Encoder stuff */
+	__u16 encoding_size[IW_MAX_ENCODING_SIZES];	/* Different token sizes */
+	__u8 num_encoding_sizes;	/* Number of entry in the list */
+	__u8 max_encoding_tokens;	/* Max number of tokens */
+	/* For drivers that need a "login/passwd" form */
+	__u8 encoding_login_index;	/* token index for login token */
 
-  /* Transmit power */
-  __u16 txpower_capa;		/* What options are supported */
-  __u8 num_txpower;		/* Number of entries in the list */
-  __s32 txpower[IW_MAX_TXPOWER];	/* list, in bps */
+	/* Transmit power */
+	__u16 txpower_capa;	/* What options are supported */
+	__u8 num_txpower;	/* Number of entries in the list */
+	__s32 txpower[IW_MAX_TXPOWER];	/* list, in bps */
 
-  /* Wireless Extension version info */
-  __u8 we_version_compiled;	/* Must be WIRELESS_EXT */
-  __u8 we_version_source;	/* Last update of source */
+	/* Wireless Extension version info */
+	__u8 we_version_compiled;	/* Must be WIRELESS_EXT */
+	__u8 we_version_source;	/* Last update of source */
 
-  /* Retry limits and lifetime */
-  __u16 retry_capa;		/* What retry options are supported */
-  __u16 retry_flags;		/* How to decode max/min retry limit */
-  __u16 r_time_flags;		/* How to decode max/min retry life */
-  __s32 min_retry;		/* Minimal number of retries */
-  __s32 max_retry;		/* Maximal number of retries */
-  __s32 min_r_time;		/* Minimal retry lifetime */
-  __s32 max_r_time;		/* Maximal retry lifetime */
+	/* Retry limits and lifetime */
+	__u16 retry_capa;	/* What retry options are supported */
+	__u16 retry_flags;	/* How to decode max/min retry limit */
+	__u16 r_time_flags;	/* How to decode max/min retry life */
+	__s32 min_retry;	/* Minimal number of retries */
+	__s32 max_retry;	/* Maximal number of retries */
+	__s32 min_r_time;	/* Minimal retry lifetime */
+	__s32 max_r_time;	/* Maximal retry lifetime */
 
-  /* Frequency */
-  __u16 num_channels;		/* Number of channels [0; num - 1] */
-  __u8 num_frequency;		/* Number of entry in the list */
-  struct iw_freq freq[IW_MAX_FREQUENCIES];	/* list */
-  /* Note : this frequency list doesn't need to fit channel numbers,
-   * because each entry contain its channel index */
+	/* Frequency */
+	__u16 num_channels;	/* Number of channels [0; num - 1] */
+	__u8 num_frequency;	/* Number of entry in the list */
+	struct iw_freq freq[IW_MAX_FREQUENCIES];	/* list */
+	/* Note : this frequency list doesn't need to fit channel numbers,
+	 * because each entry contain its channel index */
 
-  __u32 enc_capa;		/* IW_ENC_CAPA_* bit field */
+	__u32 enc_capa;		/* IW_ENC_CAPA_* bit field */
 };
 
 /*
  * Private ioctl interface information
  */
 
-struct iw_priv_args
-{
-  __u32 cmd;			/* Number of the ioctl to issue */
-  __u16 set_args;		/* Type and number of args */
-  __u16 get_args;		/* Type and number of args */
-  char name[IFNAMSIZ];		/* Name of the extension */
+struct iw_priv_args {
+	__u32 cmd;		/* Number of the ioctl to issue */
+	__u16 set_args;		/* Type and number of args */
+	__u16 get_args;		/* Type and number of args */
+	char name[IFNAMSIZ];	/* Name of the extension */
 };
 
 /* ----------------------- WIRELESS EVENTS ----------------------- */
@@ -1026,11 +1006,10 @@ struct iw_priv_args
 /*
  * A Wireless Event. Contains basically the same data as the ioctl...
  */
-struct iw_event
-{
-  __u32 len;			/* Real lenght of this stuff */
-  __u32 cmd;			/* Wireless IOCTL */
-  union iwreq_data u;		/* IOCTL fixed payload */
+struct iw_event {
+	__u32 len;		/* Real lenght of this stuff */
+	__u32 cmd;		/* Wireless IOCTL */
+	union iwreq_data u;	/* IOCTL fixed payload */
 };
 
 /* Size of the Event prefix (including padding and alignement junk) */
@@ -1047,4 +1026,4 @@ struct iw_event
 /* Note : in the case of iw_point, the extra data will come at the
  * end of the event */
 
-#endif /* _LINUX_WIRELESS_H */
+#endif				/* _LINUX_WIRELESS_H */

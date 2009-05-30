@@ -28,14 +28,13 @@
 #include <utils.h>
 #include <wlutils.h>
 
-int getmask_main( int argc, char **argv )
+int getmask_main(int argc, char **argv)
 {
-    if( argc != 2 )
-    {
-	fprintf( stderr, "%s <netmask>\n", argv[0] );
-	exit( 1 );
-    }
-    fprintf( stdout, "%d", getmask( argv[1] ) );
+	if (argc != 2) {
+		fprintf(stderr, "%s <netmask>\n", argv[0]);
+		exit(1);
+	}
+	fprintf(stdout, "%d", getmask(argv[1]));
 
-    return 0;
+	return 0;
 }

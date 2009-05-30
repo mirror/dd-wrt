@@ -35,31 +35,31 @@
 
 #define WOL_INTERVAL 15
 
-void stop_wol( void )
+void stop_wol(void)
 {
-    int ret;
+	int ret;
 
-    ret = killall( "wol", SIGKILL );
+	ret = killall("wol", SIGKILL);
 
-    cprintf( "done\n" );
+	cprintf("done\n");
 
 }
 
-void start_wol( void )
+void start_wol(void)
 {
-    int ret;
-    pid_t pid;
-    char *wol_argv[] = { "wol",
-	NULL
-    };
+	int ret;
+	pid_t pid;
+	char *wol_argv[] = { "wol",
+		NULL
+	};
 
-    stop_wol(  );
+	stop_wol();
 
-    if( nvram_match( "wol_enable", "0" ) )
-	return;
+	if (nvram_match("wol_enable", "0"))
+		return;
 
-    ret = _evalpid( wol_argv, NULL, 0, &pid );
+	ret = _evalpid(wol_argv, NULL, 0, &pid);
 
 }
 
-#endif /* HAVE_WOL */
+#endif				/* HAVE_WOL */

@@ -35,20 +35,20 @@
  * Only used if sysfs is not available.
  */
 static int old_foreach_port(const char *brname,
-			    int (*iterator)(const char *br, const char *port, 
-					    void *arg),
-			    void *arg)
+			    int (*iterator) (const char *br, const char *port,
+					     void *arg), void *arg)
 {
 	int i, err, count;
 	struct ifreq ifr;
 	char ifname[IFNAMSIZ];
 	int ifindices[MAX_PORTS];
 	unsigned long args[4] = { BRCTL_GET_PORT_LIST,
-				  (unsigned long)ifindices, MAX_PORTS, 0 };
+		(unsigned long)ifindices, MAX_PORTS, 0
+	};
 
 	memset(ifindices, 0, sizeof(ifindices));
 	strncpy(ifr.ifr_name, brname, IFNAMSIZ);
-	ifr.ifr_data = (char *) &args;
+	ifr.ifr_data = (char *)&args;
 
 	err = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
 	if (err < 0) {
@@ -80,8 +80,8 @@ static int old_foreach_port(const char *brname,
  * Iterate over all ports in bridge (using sysfs).
  */
 static int br_foreach_port(const char *brname,
-		    int (*iterator)(const char *br, const char *port, void *arg),
-		    void *arg)
+			   int (*iterator) (const char *br, const char *port,
+					    void *arg), void *arg)
 {
 #ifdef HAVE_LIBSYSFS
 	struct sysfs_class_device *dev;
@@ -91,12 +91,11 @@ static int br_foreach_port(const char *brname,
 	char path[SYSFS_PATH_MAX];
 
 	if (!br_class_net ||
-	    !(dev = sysfs_get_class_device(br_class_net, (char *) brname)))
+	    !(dev = sysfs_get_class_device(br_class_net, (char *)brname)))
 		goto old;
 
-	snprintf(path, sizeof(path), "%s/%s", 
+	snprintf(path, sizeof(path), "%s/%s",
 		 dev->path, SYSFS_BRIDGE_PORT_SUBDIR);
-
 
 	dir = opendir(path);
 	if (!dir) {
@@ -109,7 +108,7 @@ static int br_foreach_port(const char *brname,
 	err = 0;
 	while ((dirent = readdir(dir)) != NULL) {
 		if (0 == strcmp(dirent->d_name, "."))
-			 continue;
+			continue;
 		if (0 == strcmp(dirent->d_name, ".."))
 			continue;
 		++err;
@@ -120,217 +119,209 @@ static int br_foreach_port(const char *brname,
 
 	return err;
 
- old:
+old:
 #endif
 	return old_foreach_port(brname, iterator, arg);
-	
+
 }
 
-
-int br_add_bridge( const char *brname )
+int br_add_bridge(const char *brname)
 {
-    int ret;
+	int ret;
 
-    dd_syslog( LOG_INFO, "bridge added successfully\n" );
-    char ipaddr[32];
+	dd_syslog(LOG_INFO, "bridge added successfully\n");
+	char ipaddr[32];
 
-    sprintf( ipaddr, "%s_ipaddr", brname );
-    char netmask[32];
+	sprintf(ipaddr, "%s_ipaddr", brname);
+	char netmask[32];
 
-    sprintf( netmask, "%s_netmask", brname );
+	sprintf(netmask, "%s_netmask", brname);
 #ifdef SIOCBRADDBR
-    ret = ioctl( br_socket_fd, SIOCBRADDBR, brname );
-    if( ret < 0 )
+	ret = ioctl(br_socket_fd, SIOCBRADDBR, brname);
+	if (ret < 0)
 #endif
-    {
-	char _br[IFNAMSIZ];
-	unsigned long arg[3] = { BRCTL_ADD_BRIDGE, ( unsigned long )_br };
+	{
+		char _br[IFNAMSIZ];
+		unsigned long arg[3] = { BRCTL_ADD_BRIDGE, (unsigned long)_br };
 
-	strncpy( _br, brname, IFNAMSIZ );
-	ret = ioctl( br_socket_fd, SIOCSIFBR, arg );
-    }
+		strncpy(_br, brname, IFNAMSIZ);
+		ret = ioctl(br_socket_fd, SIOCSIFBR, arg);
+	}
 
-    if( nvram_get( ipaddr ) && nvram_get( netmask )
-	&& !nvram_match( ipaddr, "0.0.0.0" )
-	&& !nvram_match( netmask, "0.0.0.0" ) )
-    {
-	eval( "ifconfig", brname, nvram_safe_get( ipaddr ), "netmask",
-	      nvram_safe_get( netmask ), "mtu", getBridgeMTU( brname ),
-	      "up" );
-    }
-    else
-	eval( "ifconfig", brname, "mtu", getBridgeMTU( brname ) );
+	if (nvram_get(ipaddr) && nvram_get(netmask)
+	    && !nvram_match(ipaddr, "0.0.0.0")
+	    && !nvram_match(netmask, "0.0.0.0")) {
+		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask",
+		     nvram_safe_get(netmask), "mtu", getBridgeMTU(brname),
+		     "up");
+	} else
+		eval("ifconfig", brname, "mtu", getBridgeMTU(brname));
 
-
-    return ret < 0 ? errno : 0;
+	return ret < 0 ? errno : 0;
 }
 
-int br_del_bridge( const char *brname )
+int br_del_bridge(const char *brname)
 {
-    int ret;
-    if( !ifexists( brname ) )
-	return -1;
+	int ret;
+	if (!ifexists(brname))
+		return -1;
 
 #ifdef SIOCBRDELBR
-    ret = ioctl( br_socket_fd, SIOCBRDELBR, brname );
-    if( ret < 0 )
+	ret = ioctl(br_socket_fd, SIOCBRDELBR, brname);
+	if (ret < 0)
 #endif
-    {
-	char _br[IFNAMSIZ];
-	unsigned long arg[3] = { BRCTL_DEL_BRIDGE, ( unsigned long )_br };
+	{
+		char _br[IFNAMSIZ];
+		unsigned long arg[3] = { BRCTL_DEL_BRIDGE, (unsigned long)_br };
 
-	strncpy( _br, brname, IFNAMSIZ );
-	ret = ioctl( br_socket_fd, SIOCSIFBR, arg );
-    }
-    dd_syslog( LOG_INFO, "bridge deleted successfully\n" );
-    return ret < 0 ? errno : 0;
+		strncpy(_br, brname, IFNAMSIZ);
+		ret = ioctl(br_socket_fd, SIOCSIFBR, arg);
+	}
+	dd_syslog(LOG_INFO, "bridge deleted successfully\n");
+	return ret < 0 ? errno : 0;
 }
 
-int br_add_interface( const char *bridge, const char *dev )
+int br_add_interface(const char *bridge, const char *dev)
 {
 
-    if( !ifexists( dev ) )
-	return -1;
-    char ipaddr[32];
+	if (!ifexists(dev))
+		return -1;
+	char ipaddr[32];
 
-    sprintf( ipaddr, "%s_ipaddr", dev );
-    char netmask[32];
+	sprintf(ipaddr, "%s_ipaddr", dev);
+	char netmask[32];
 
-    sprintf( netmask, "%s_netmask", dev );
+	sprintf(netmask, "%s_netmask", dev);
 
-    if( nvram_get( ipaddr ) && nvram_get( netmask )
-	&& !nvram_match( ipaddr, "0.0.0.0" )
-	&& !nvram_match( netmask, "0.0.0.0" ) )
-    {
-	eval( "ifconfig", dev, nvram_safe_get( ipaddr ), "netmask",
-	      nvram_safe_get( netmask ), "mtu", getBridgeMTU( bridge ) );
-    }
-    else
-	eval( "ifconfig", dev, "mtu", getBridgeMTU( bridge ) );
+	if (nvram_get(ipaddr) && nvram_get(netmask)
+	    && !nvram_match(ipaddr, "0.0.0.0")
+	    && !nvram_match(netmask, "0.0.0.0")) {
+		eval("ifconfig", dev, nvram_safe_get(ipaddr), "netmask",
+		     nvram_safe_get(netmask), "mtu", getBridgeMTU(bridge));
+	} else
+		eval("ifconfig", dev, "mtu", getBridgeMTU(bridge));
 
-    eval( "ifconfig", dev, "down");  //fixup for some ethernet drivers
-    eval( "ifconfig", dev, "up");
+	eval("ifconfig", dev, "down");	//fixup for some ethernet drivers
+	eval("ifconfig", dev, "up");
 
-    dd_syslog( LOG_INFO, "interface added successfully\n" );
+	dd_syslog(LOG_INFO, "interface added successfully\n");
 
-    struct ifreq ifr;
-    int err;
-    int ifindex = if_nametoindex( dev );
+	struct ifreq ifr;
+	int err;
+	int ifindex = if_nametoindex(dev);
 
-    if( ifindex == 0 )
-	return ENODEV;
+	if (ifindex == 0)
+		return ENODEV;
 
-    strncpy( ifr.ifr_name, bridge, IFNAMSIZ );
+	strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
 #ifdef SIOCBRADDIF
-    ifr.ifr_ifindex = ifindex;
-    err = ioctl( br_socket_fd, SIOCBRADDIF, &ifr );
-    if( err < 0 )
+	ifr.ifr_ifindex = ifindex;
+	err = ioctl(br_socket_fd, SIOCBRADDIF, &ifr);
+	if (err < 0)
 #endif
-    {
-	unsigned long args[4] = { BRCTL_ADD_IF, ifindex, 0, 0 };
+	{
+		unsigned long args[4] = { BRCTL_ADD_IF, ifindex, 0, 0 };
 
-	ifr.ifr_data = ( char * )args;
-	err = ioctl( br_socket_fd, SIOCDEVPRIVATE, &ifr );
-    }
-    eval( "ifconfig", dev, "promisc" );
-    return err < 0 ? errno : 0;
+		ifr.ifr_data = (char *)args;
+		err = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
+	}
+	eval("ifconfig", dev, "promisc");
+	return err < 0 ? errno : 0;
 }
 
-int br_del_interface( const char *bridge, const char *dev )
+int br_del_interface(const char *bridge, const char *dev)
 {
-    if( !ifexists( dev ) )
-	return -1;
-    dd_syslog( LOG_INFO, "interface deleted successfully\n" );
-    struct ifreq ifr;
-    int err;
-    int ifindex = if_nametoindex( dev );
+	if (!ifexists(dev))
+		return -1;
+	dd_syslog(LOG_INFO, "interface deleted successfully\n");
+	struct ifreq ifr;
+	int err;
+	int ifindex = if_nametoindex(dev);
 
-    if( ifindex == 0 )
-	return ENODEV;
+	if (ifindex == 0)
+		return ENODEV;
 
-    strncpy( ifr.ifr_name, bridge, IFNAMSIZ );
+	strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
 #ifdef SIOCBRDELIF
-    ifr.ifr_ifindex = ifindex;
-    err = ioctl( br_socket_fd, SIOCBRDELIF, &ifr );
-    if( err < 0 )
+	ifr.ifr_ifindex = ifindex;
+	err = ioctl(br_socket_fd, SIOCBRDELIF, &ifr);
+	if (err < 0)
 #endif
-    {
-	unsigned long args[4] = { BRCTL_DEL_IF, ifindex, 0, 0 };
+	{
+		unsigned long args[4] = { BRCTL_DEL_IF, ifindex, 0, 0 };
 
-	ifr.ifr_data = ( char * )args;
-	err = ioctl( br_socket_fd, SIOCDEVPRIVATE, &ifr );
-    }
+		ifr.ifr_data = (char *)args;
+		err = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
+	}
 
-    return err < 0 ? errno : 0;
+	return err < 0 ? errno : 0;
 }
 
 static int
-br_set( const char *bridge, const char *name,
-	unsigned long value, unsigned long oldcode )
+br_set(const char *bridge, const char *name,
+       unsigned long value, unsigned long oldcode)
 {
-    int ret = -1;
+	int ret = -1;
 
 #ifdef HAVE_LIBSYSFS
-    struct sysfs_class_device *dev;
+	struct sysfs_class_device *dev;
 
-    dev = sysfs_get_class_device( br_class_net, bridge );
-    if( dev )
-    {
-	struct sysfs_attribute *attr;
-	char buf[32];
-	char path[SYSFS_PATH_MAX];
+	dev = sysfs_get_class_device(br_class_net, bridge);
+	if (dev) {
+		struct sysfs_attribute *attr;
+		char buf[32];
+		char path[SYSFS_PATH_MAX];
 
-	snprintf( buf, sizeof( buf ), "%ld\n", value );
-	snprintf( path, SYSFS_PATH_MAX, "%s/bridge/%s", dev->path, name );
+		snprintf(buf, sizeof(buf), "%ld\n", value);
+		snprintf(path, SYSFS_PATH_MAX, "%s/bridge/%s", dev->path, name);
 
-	attr = sysfs_open_attribute( path );
-	if( attr )
-	{
-	    ret = sysfs_write_attribute( attr, buf, strlen( buf ) );
-	    sysfs_close_attribute( attr );
-	}
-	sysfs_close_class_device( dev );
-    }
-    else
+		attr = sysfs_open_attribute(path);
+		if (attr) {
+			ret = sysfs_write_attribute(attr, buf, strlen(buf));
+			sysfs_close_attribute(attr);
+		}
+		sysfs_close_class_device(dev);
+	} else
 #endif
-    {
-	struct ifreq ifr;
-	unsigned long args[4] = { oldcode, value, 0, 0 };
+	{
+		struct ifreq ifr;
+		unsigned long args[4] = { oldcode, value, 0, 0 };
 
-	strncpy( ifr.ifr_name, bridge, IFNAMSIZ );
-	ifr.ifr_data = ( char * )&args;
-	ret = ioctl( br_socket_fd, SIOCDEVPRIVATE, &ifr );
-    }
+		strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
+		ifr.ifr_data = (char *)&args;
+		ret = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
+	}
 
-    return ret < 0 ? errno : 0;
+	return ret < 0 ? errno : 0;
 }
 
-int br_set_bridge_forward_delay( const char *br, int sec )
+int br_set_bridge_forward_delay(const char *br, int sec)
 {
-    if( !ifexists( br ) )
-	return -1;
-    struct timeval tv;
+	if (!ifexists(br))
+		return -1;
+	struct timeval tv;
 
-    tv.tv_sec = sec;
-    tv.tv_usec = 0;
+	tv.tv_sec = sec;
+	tv.tv_usec = 0;
 
-    return br_set( br, "forward_delay", __tv_to_jiffies( &tv ),
-		   BRCTL_SET_BRIDGE_FORWARD_DELAY );
+	return br_set(br, "forward_delay", __tv_to_jiffies(&tv),
+		      BRCTL_SET_BRIDGE_FORWARD_DELAY);
 }
 
-int br_set_stp_state( const char *br, int stp_state )
+int br_set_stp_state(const char *br, int stp_state)
 {
-    if( !ifexists( br ) )
-	return -1;
-    return br_set( br, "stp_state", stp_state, BRCTL_SET_BRIDGE_STP_STATE );
+	if (!ifexists(br))
+		return -1;
+	return br_set(br, "stp_state", stp_state, BRCTL_SET_BRIDGE_STP_STATE);
 }
 
-int br_set_bridge_prio( const char *br, char *prio )
+int br_set_bridge_prio(const char *br, char *prio)
 {
-    if( !ifexists( br ) )
-	return -1;
-    return br_set( br, "priority", atoi( prio ), BRCTL_SET_BRIDGE_PRIORITY );
+	if (!ifexists(br))
+		return -1;
+	return br_set(br, "priority", atoi(prio), BRCTL_SET_BRIDGE_PRIORITY);
 }
+
 /*
  * Convert device name to an index in the list of ports in bridge.
  *
@@ -343,7 +334,8 @@ static int get_portno(const char *brname, const char *ifname)
 	int ifindex = if_nametoindex(ifname);
 	int ifindices[MAX_PORTS];
 	unsigned long args[4] = { BRCTL_GET_PORT_LIST,
-				  (unsigned long)ifindices, MAX_PORTS, 0 };
+		(unsigned long)ifindices, MAX_PORTS, 0
+	};
 	struct ifreq ifr;
 
 	if (ifindex <= 0)
@@ -351,10 +343,10 @@ static int get_portno(const char *brname, const char *ifname)
 
 	memset(ifindices, 0, sizeof(ifindices));
 	strncpy(ifr.ifr_name, brname, IFNAMSIZ);
-	ifr.ifr_data = (char *) &args;
+	ifr.ifr_data = (char *)&args;
 
 	if (ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr) < 0) {
-		dprintf("get_portno: get ports of %s failed: %s\n", 
+		dprintf("get_portno: get ports of %s failed: %s\n",
 			brname, strerror(errno));
 		goto error;
 	}
@@ -365,12 +357,12 @@ static int get_portno(const char *brname, const char *ifname)
 	}
 
 	dprintf("%s is not a in bridge %s\n", ifname, brname);
- error:
+error:
 	return -1;
 }
 
-static int port_set(const char *bridge, const char *ifname, 
-		    const char *name, unsigned long value, 
+static int port_set(const char *bridge, const char *ifname,
+		    const char *name, unsigned long value,
 		    unsigned long oldcode)
 {
 	int ret = -1;
@@ -402,9 +394,9 @@ static int port_set(const char *bridge, const char *ifname,
 		else {
 			struct ifreq ifr;
 			unsigned long args[4] = { oldcode, index, value, 0 };
-			
+
 			strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
-			ifr.ifr_data = (char *) &args;
+			ifr.ifr_data = (char *)&args;
 			ret = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
 		}
 	}
@@ -412,33 +404,31 @@ static int port_set(const char *bridge, const char *ifname,
 	return ret < 0 ? errno : 0;
 }
 
-
-int br_set_port_prio( const char *bridge, char *port, char *prio )
+int br_set_port_prio(const char *bridge, char *port, char *prio)
 {
-    if( !ifexists( bridge ) )
-	return -1;
-    return port_set( bridge, port, "priority", atoi( prio ),
-		     BRCTL_SET_PORT_PRIORITY );
+	if (!ifexists(bridge))
+		return -1;
+	return port_set(bridge, port, "priority", atoi(prio),
+			BRCTL_SET_PORT_PRIORITY);
 }
 
 static void br_dump_bridge_id(const unsigned char *x)
 {
-	fprintf(stdout,"%.2x%.2x.%.2x%.2x%.2x%.2x%.2x%.2x", x[0], x[1], x[2], x[3],
-	       x[4], x[5], x[6], x[7]);
+	fprintf(stdout, "%.2x%.2x.%.2x%.2x%.2x%.2x%.2x%.2x", x[0], x[1], x[2],
+		x[3], x[4], x[5], x[6], x[7]);
 }
-
 
 static int first;
 
 static int dump_interface(const char *b, const char *p, void *arg)
 {
 
-	if (first) 
+	if (first)
 		first = 0;
 	else
-		fprintf(stdout,"\n\t\t\t\t\t\t\t");
+		fprintf(stdout, "\n\t\t\t\t\t\t\t");
 
-	fprintf(stdout,"%s", p);
+	fprintf(stdout, "%s", p);
 
 	return 0;
 }
@@ -450,11 +440,10 @@ static void br_dump_interface_list(const char *br)
 	first = 1;
 	err = br_foreach_port(br, dump_interface, NULL);
 	if (err < 0)
-		fprintf(stdout," can't get port info: %s\n", strerror(-err));
+		fprintf(stdout, " can't get port info: %s\n", strerror(-err));
 	else
-		fprintf(stdout,"\n");
+		fprintf(stdout, "\n");
 }
-
 
 /* get information via ioctl */
 static int old_get_bridge_info(const char *bridge, struct bridge_info *info)
@@ -462,15 +451,15 @@ static int old_get_bridge_info(const char *bridge, struct bridge_info *info)
 	struct ifreq ifr;
 	struct __bridge_info i;
 	unsigned long args[4] = { BRCTL_GET_BRIDGE_INFO,
-				  (unsigned long) &i, 0, 0 };
+		(unsigned long)&i, 0, 0
+	};
 
 	memset(info, 0, sizeof(*info));
 	strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
-	ifr.ifr_data = (char *) &args;
+	ifr.ifr_data = (char *)&args;
 
 	if (ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr) < 0) {
-		dprintf("%s: can't get info %s\n",
-			bridge, strerror(errno));
+		dprintf("%s: can't get info %s\n", bridge, strerror(errno));
 		return errno;
 	}
 
@@ -490,7 +479,7 @@ static int old_get_bridge_info(const char *bridge, struct bridge_info *info)
 	__jiffies_to_tv(&info->ageing_time, i.ageing_time);
 	__jiffies_to_tv(&info->hello_timer_value, i.hello_timer_value);
 	__jiffies_to_tv(&info->tcn_timer_value, i.tcn_timer_value);
-	__jiffies_to_tv(&info->topology_change_timer_value, 
+	__jiffies_to_tv(&info->topology_change_timer_value,
 			i.topology_change_timer_value);
 	__jiffies_to_tv(&info->gc_timer_value, i.gc_timer_value);
 
@@ -507,7 +496,7 @@ static int br_get_bridge_info(const char *bridge, struct bridge_info *info)
 	struct sysfs_class_device *dev;
 	char path[SYSFS_PATH_MAX];
 
-	if (!br_class_net) 
+	if (!br_class_net)
 		goto fallback;
 
 	dev = sysfs_get_class_device(br_class_net, bridge);
@@ -536,15 +525,16 @@ static int br_get_bridge_info(const char *bridge, struct bridge_info *info)
 	fetch_tv(dev, BRIDGEATTR("ageing_time"), &info->ageing_time);
 	fetch_tv(dev, BRIDGEATTR("hello_timer"), &info->hello_timer_value);
 	fetch_tv(dev, BRIDGEATTR("tcn_timer"), &info->tcn_timer_value);
-	fetch_tv(dev, BRIDGEATTR("topology_change_timer"), 
+	fetch_tv(dev, BRIDGEATTR("topology_change_timer"),
 		 &info->topology_change_timer_value);;
 	fetch_tv(dev, BRIDGEATTR("gc_timer"), &info->gc_timer_value);
 
 	info->root_port = fetch_int(dev, BRIDGEATTR("root_port"));
 	info->stp_enabled = fetch_int(dev, BRIDGEATTR("stp_state"));
 	info->topology_change = fetch_int(dev, BRIDGEATTR("topology_change"));
-	info->topology_change_detected = fetch_int(dev, 
-						   BRIDGEATTR("topology_change_detected"));
+	info->topology_change_detected = fetch_int(dev,
+						   BRIDGEATTR
+						   ("topology_change_detected"));
 	sysfs_close_class_device(dev);
 
 	return 0;
@@ -554,23 +544,20 @@ fallback:
 	return old_get_bridge_info(bridge, info);
 }
 
-
-
 static int show_bridge(const char *name, void *arg)
 {
 	struct bridge_info info;
 
-	fprintf(stdout,"%s\t\t", name);
+	fprintf(stdout, "%s\t\t", name);
 	fflush(stdout);
 
 	if (br_get_bridge_info(name, &info)) {
-		fprintf(stderr, "can't get info %s\n",
-				strerror(errno));
+		fprintf(stderr, "can't get info %s\n", strerror(errno));
 		return 1;
 	}
 
 	br_dump_bridge_id((unsigned char *)&info.bridge_id);
-	fprintf(stdout,"\t%s\t\t", info.stp_enabled?"yes":"no");
+	fprintf(stdout, "\t%s\t\t", info.stp_enabled ? "yes" : "no");
 
 	br_dump_interface_list(name);
 	return 0;
@@ -578,7 +565,7 @@ static int show_bridge(const char *name, void *arg)
 
 #ifdef HAVE_LIBSYSFS
 /* If /sys/class/net/XXX/bridge exists then it must be a bridge */
-static int isbridge(const struct sysfs_class_device *dev) 
+static int isbridge(const struct sysfs_class_device *dev)
 {
 	char path[SYSFS_PATH_MAX];
 
@@ -589,7 +576,7 @@ static int isbridge(const struct sysfs_class_device *dev)
 /*
  * New interface uses sysfs to find bridges
  */
-static int new_foreach_bridge(int (*iterator)(const char *name, void *),
+static int new_foreach_bridge(int (*iterator) (const char *name, void *),
 			      void *arg)
 {
 	struct sysfs_class_device *dev;
@@ -622,33 +609,32 @@ static int new_foreach_bridge(int (*iterator)(const char *name, void *),
 /*
  * Old interface uses ioctl
  */
-static int old_foreach_bridge(int (*iterator)(const char *, void *), 
+static int old_foreach_bridge(int (*iterator) (const char *, void *),
 			      void *iarg)
 {
-	int i, ret=0, num;
+	int i, ret = 0, num;
 	char ifname[IFNAMSIZ];
 	int ifindices[MAX_BRIDGES];
-	unsigned long args[3] = { BRCTL_GET_BRIDGES, 
-				 (unsigned long)ifindices, MAX_BRIDGES };
+	unsigned long args[3] = { BRCTL_GET_BRIDGES,
+		(unsigned long)ifindices, MAX_BRIDGES
+	};
 
 	num = ioctl(br_socket_fd, SIOCGIFBR, args);
 	if (num < 0) {
-		dprintf("Get bridge indices failed: %s\n",
-			strerror(errno));
+		dprintf("Get bridge indices failed: %s\n", strerror(errno));
 		return -errno;
 	}
 
 	for (i = 0; i < num; i++) {
 		if (!if_indextoname(ifindices[i], ifname)) {
-			dprintf("get find name for ifindex %d\n",
-				ifindices[i]);
+			dprintf("get find name for ifindex %d\n", ifindices[i]);
 			return -errno;
 		}
 
 		++ret;
-		if(iterator(ifname, iarg)) 
+		if (iterator(ifname, iarg))
 			break;
-		
+
 	}
 
 	return ret;
@@ -659,8 +645,7 @@ static int old_foreach_bridge(int (*iterator)(const char *, void *),
  * Go over all bridges and call iterator function.
  * if iterator returns non-zero then stop.
  */
-static int br_foreach_bridge(int (*iterator)(const char *, void *), 
-		     void *arg)
+static int br_foreach_bridge(int (*iterator) (const char *, void *), void *arg)
 {
 	int ret;
 #ifdef HAVE_LIBSYSFS
@@ -673,10 +658,9 @@ static int br_foreach_bridge(int (*iterator)(const char *, void *),
 	return ret;
 }
 
-
 int br_cmd_show(void)
 {
-	fprintf(stdout,"bridge name\tbridge id\t\tSTP enabled\tinterfaces\n");
+	fprintf(stdout, "bridge name\tbridge id\t\tSTP enabled\tinterfaces\n");
 	br_foreach_bridge(show_bridge, NULL);
 	return 0;
 }
