@@ -72,111 +72,106 @@ static struct servent serv;
 static char *serv_aliases[MAXALIASES];
 static int serv_stayopen;
 
-void setservent( int f )
+void setservent(int f)
 {
-    if( servf == NULL )
-	servf = fopen( _PATH_SERVICES, "r" );
-    else
-	rewind( servf );
-    serv_stayopen |= f;
+	if (servf == NULL)
+		servf = fopen(_PATH_SERVICES, "r");
+	else
+		rewind(servf);
+	serv_stayopen |= f;
 }
 
-void endservent( void )
+void endservent(void)
 {
-    if( servf )
-    {
-	fclose( servf );
-	servf = NULL;
-    }
-    serv_stayopen = 0;
-}
-
-struct servent *getservent( void )
-{
-    char *p;
-    register char *cp, **q;
-
-    if( servf == NULL && ( servf = fopen( _PATH_SERVICES, "r" ) ) == NULL )
-	return ( NULL );
-  again:
-    if( ( p = fgets( line, BUFSIZ, servf ) ) == NULL )
-	return ( NULL );
-    if( *p == '#' )
-	goto again;
-    cp = strpbrk( p, "#\n" );
-    if( cp == NULL )
-	goto again;
-    *cp = '\0';
-    serv.s_name = p;
-    p = strpbrk( p, " \t" );
-    if( p == NULL )
-	goto again;
-    *p++ = '\0';
-    while( *p == ' ' || *p == '\t' )
-	p++;
-    cp = strpbrk( p, ",/" );
-    if( cp == NULL )
-	goto again;
-    *cp++ = '\0';
-    serv.s_port = htons( ( u_short ) atoi( p ) );
-    serv.s_proto = cp;
-    q = serv.s_aliases = serv_aliases;
-    cp = strpbrk( cp, " \t" );
-    if( cp != NULL )
-	*cp++ = '\0';
-    while( cp && *cp )
-    {
-	if( *cp == ' ' || *cp == '\t' )
-	{
-	    cp++;
-	    continue;
+	if (servf) {
+		fclose(servf);
+		servf = NULL;
 	}
-	if( q < &serv_aliases[MAXALIASES - 1] )
-	    *q++ = cp;
-	cp = strpbrk( cp, " \t" );
-	if( cp != NULL )
-	    *cp++ = '\0';
-    }
-    *q = NULL;
-    return ( &serv );
+	serv_stayopen = 0;
 }
 
-struct servent *getservbyname( const char *name, const char *proto )
+struct servent *getservent(void)
 {
-    register struct servent *p;
-    register char **cp;
+	char *p;
+	register char *cp, **q;
 
-    setservent( serv_stayopen );
-    while( ( p = getservent(  ) ) != NULL )
-    {
-	if( strcmp( name, p->s_name ) == 0 )
-	    goto gotname;
-	for( cp = p->s_aliases; *cp; cp++ )
-	    if( strcmp( name, *cp ) == 0 )
-		goto gotname;
-	continue;
-      gotname:
-	if( proto == 0 || strcmp( p->s_proto, proto ) == 0 )
-	    break;
-    }
-    if( !serv_stayopen )
-	endservent(  );
-    return ( p );
+	if (servf == NULL && (servf = fopen(_PATH_SERVICES, "r")) == NULL)
+		return (NULL);
+again:
+	if ((p = fgets(line, BUFSIZ, servf)) == NULL)
+		return (NULL);
+	if (*p == '#')
+		goto again;
+	cp = strpbrk(p, "#\n");
+	if (cp == NULL)
+		goto again;
+	*cp = '\0';
+	serv.s_name = p;
+	p = strpbrk(p, " \t");
+	if (p == NULL)
+		goto again;
+	*p++ = '\0';
+	while (*p == ' ' || *p == '\t')
+		p++;
+	cp = strpbrk(p, ",/");
+	if (cp == NULL)
+		goto again;
+	*cp++ = '\0';
+	serv.s_port = htons((u_short) atoi(p));
+	serv.s_proto = cp;
+	q = serv.s_aliases = serv_aliases;
+	cp = strpbrk(cp, " \t");
+	if (cp != NULL)
+		*cp++ = '\0';
+	while (cp && *cp) {
+		if (*cp == ' ' || *cp == '\t') {
+			cp++;
+			continue;
+		}
+		if (q < &serv_aliases[MAXALIASES - 1])
+			*q++ = cp;
+		cp = strpbrk(cp, " \t");
+		if (cp != NULL)
+			*cp++ = '\0';
+	}
+	*q = NULL;
+	return (&serv);
 }
 
-struct servent *my_getservbyport( int port, const char *proto )
+struct servent *getservbyname(const char *name, const char *proto)
 {
-    register struct servent *p;
+	register struct servent *p;
+	register char **cp;
 
-    setservent( serv_stayopen );
-    while( ( p = getservent(  ) ) != NULL )
-    {
-	if( p->s_port != port )
-	    continue;
-	if( proto == 0 || strcmp( p->s_proto, proto ) == 0 )
-	    break;
-    }
-    if( !serv_stayopen )
-	endservent(  );
-    return ( p );
+	setservent(serv_stayopen);
+	while ((p = getservent()) != NULL) {
+		if (strcmp(name, p->s_name) == 0)
+			goto gotname;
+		for (cp = p->s_aliases; *cp; cp++)
+			if (strcmp(name, *cp) == 0)
+				goto gotname;
+		continue;
+	      gotname:
+		if (proto == 0 || strcmp(p->s_proto, proto) == 0)
+			break;
+	}
+	if (!serv_stayopen)
+		endservent();
+	return (p);
+}
+
+struct servent *my_getservbyport(int port, const char *proto)
+{
+	register struct servent *p;
+
+	setservent(serv_stayopen);
+	while ((p = getservent()) != NULL) {
+		if (p->s_port != port)
+			continue;
+		if (proto == 0 || strcmp(p->s_proto, proto) == 0)
+			break;
+	}
+	if (!serv_stayopen)
+		endservent();
+	return (p);
 }

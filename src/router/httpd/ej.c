@@ -9,7 +9,6 @@
 #include <shutils.h>
 #include "httpd.h"
 
-
 //#define CDEBUG 1
 #ifdef CDEBUG
 #include <utils.h>
@@ -18,469 +17,310 @@
 #ifndef CDEBUG
 #define cdebug(a)
 #endif
-static char *get_arg (char *args, char **next);
+static char *get_arg(char *args, char **next);
 //static void call(char *func, FILE *stream);
-static void *call (void *handle, char *func, webs_t stream);
+static void *call(void *handle, char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
 
 #define LOG(a)			//fprintf(stderr,"%s\n",a);
 
-
-char *
-uqstrchr (char *buf, char find)
+char *uqstrchr(char *buf, char find)
 {
-  int q = 0;
-  while (*buf)
-    {
-      if (*buf == '"')
-	q ^= 1;
-      else if ((*buf == find) && (!q))
-	return buf;
-      ++buf;
-    }
-  return NULL;
+	int q = 0;
+	while (*buf) {
+		if (*buf == '"')
+			q ^= 1;
+		else if ((*buf == find) && (!q))
+			return buf;
+		++buf;
+	}
+	return NULL;
 }
 
 /* Look for unquoted character within a string */
-static char *
-unqstrstr (char *haystack, char *needle)
+static char *unqstrstr(char *haystack, char *needle)
 {
-  char *cur;
-  int q;
-  int needlelen = strlen (needle);
-  int haylen = strlen (haystack);
-  for (cur = haystack, q = 0;
-       cur < &haystack[haylen] && !(!q && !strncmp (needle, cur, needlelen));
-       cur++)
-    {
-      if (*cur == '"')
-	q ? q-- : q++;
-    }
-  return (cur < &haystack[haylen]) ? cur : NULL;
+	char *cur;
+	int q;
+	int needlelen = strlen(needle);
+	int haylen = strlen(haystack);
+	for (cur = haystack, q = 0;
+	     cur < &haystack[haylen] && !(!q
+					  && !strncmp(needle, cur, needlelen));
+	     cur++) {
+		if (*cur == '"')
+			q ? q-- : q++;
+	}
+	return (cur < &haystack[haylen]) ? cur : NULL;
 }
 
-static char *
-get_arg (char *args, char **next)
+static char *get_arg(char *args, char **next)
 {
-  char *arg, *end;
+	char *arg, *end;
 
-  /* Parse out arg, ... */
-  if (!(end = uqstrchr (args, ',')))
-    {
-      end = args + strlen (args);
-      *next = NULL;
-    }
-  else
-    *next = end + 1;
+	/* Parse out arg, ... */
+	if (!(end = uqstrchr(args, ','))) {
+		end = args + strlen(args);
+		*next = NULL;
+	} else
+		*next = end + 1;
 
-  /* Skip whitespace and quotation marks on either end of arg */
-  for (arg = args; isspace ((int) *arg) || *arg == '"'; arg++);
-  for (*end-- = '\0'; isspace ((int) *end) || *end == '"'; end--)
-    *end = '\0';
+	/* Skip whitespace and quotation marks on either end of arg */
+	for (arg = args; isspace((int)*arg) || *arg == '"'; arg++) ;
+	for (*end-- = '\0'; isspace((int)*end) || *end == '"'; end--)
+		*end = '\0';
 
-  return arg;
-}
-static void *
-call (void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2003
-{
-  char *args, *end, *next;
-  int argc;
-  char *argv[16];
-
-  /* Parse out ( args ) */
-  if (!(args = strchr (func, '(')))
-    return handle;
-  if (!(end = uqstrchr (func, ')')))
-    return handle;
-  *args++ = *end = '\0';
-
-  /* Set up argv list */
-  for (argc = 0; argc < 16 && args; argc++, args = next)
-    {
-      if (!(argv[argc] = get_arg (args, &next)))
-	break;
-    }
-
-  /* Call handler */
-  return call_ej (func, handle, stream, argc, argv);
+	return arg;
 }
 
-
-void
-do_ej_file (FILE *fp,int filelen, webs_t stream)	// jimmy, https, 8/4/2003
+static void *call(void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2003
 {
-  void *handle = NULL;
-  int c;
-  char *pattern, *asp = NULL, *func = NULL, *end = NULL;
-  int len = 0;
-  int filecount = 0;
- 
-  pattern = (char *) malloc (PATTERN_BUFFER + 1);
-  while (((c = getc(fp)) != EOF) && filecount<filelen)
-    {
-      filecount++;
-      /* Add to pattern space */
-      pattern[len++] = c;
-      pattern[len] = '\0';
-      if (len == (PATTERN_BUFFER - 1))
-	goto release;
+	char *args, *end, *next;
+	int argc;
+	char *argv[16];
 
+	/* Parse out ( args ) */
+	if (!(args = strchr(func, '(')))
+		return handle;
+	if (!(end = uqstrchr(func, ')')))
+		return handle;
+	*args++ = *end = '\0';
 
-      /* Look for <% ... */
+	/* Set up argv list */
+	for (argc = 0; argc < 16 && args; argc++, args = next) {
+		if (!(argv[argc] = get_arg(args, &next)))
+			break;
+	}
+
+	/* Call handler */
+	return call_ej(func, handle, stream, argc, argv);
+}
+
+static int decompress(webs_t stream, char *pattern, int len)
+{
+
+	if (!strncmp(pattern, "{i}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<input type=");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{c}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<input class=");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{d}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<input id=");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{e}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<div class=");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{n}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<div id=");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{j}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<a href=\"");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{o}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<option value=");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{s}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<select name=");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{u}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<span class=");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{z}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<input name=");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{x}", len)) {
+		if (len == 3) {
+			websWrite(stream, "document.write(\"");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{y}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<document.");
+			len = 0;
+		}
+		return 1;
+	}
+	if (!strncmp(pattern, "{m}", len)) {
+		if (len == 3) {
+			websWrite(stream, "<script type=\"text/javascript\">");
+			len = 0;
+		}
+		return 1;
+	}
+	return 0;
+}
+
+void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
+{
+	void *handle = NULL;
+	int c;
+	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
+	int len = 0;
+	int filecount = 0;
+
+	pattern = (char *)malloc(PATTERN_BUFFER + 1);
+	while (((c = getc(fp)) != EOF) && filecount < filelen) {
+		filecount++;
+		/* Add to pattern space */
+		pattern[len++] = c;
+		pattern[len] = '\0';
+		if (len == (PATTERN_BUFFER - 1))
+			goto release;
+
+		/* Look for <% ... */
 //      LOG("look start");
 
-      if (!asp && pattern[0] == '{')
-	{
+		if (!asp && pattern[0] == '{') {
+			if (decompress(stream, pattern, len))
+				continue;
+		}
+		if (!asp && !strncmp(pattern, "<%", len)) {
+			if (len == 2)
+				asp = pattern + 2;
+			continue;
+		}
 
-	  if (!strncmp (pattern, "{i}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<input type=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{c}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<input class=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{d}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<input id=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{e}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<div class=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{n}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<div id=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{j}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<a href=\"");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{o}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<option value=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{s}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<select name=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{u}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<span class=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{z}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<input name=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{x}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "document.write(\"");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{y}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<document.");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{m}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<script type=\"text/javascript\">");
-		  len = 0;
-		}
-	      continue;
-	    }
-	}
-      if (!asp && !strncmp (pattern, "<%", len))
-	{
-	  if (len == 2)
-	    asp = pattern + 2;
-	  continue;
-	}
-
-      /* Look for ... %> */
+		/* Look for ... %> */
 //      LOG("look end");
-      if (asp)
-	{
-	  if (unqstrstr (asp, "%>"))
-	    {
-	      for (func = asp; func < &pattern[len]; func = end)
-		{
-		  /* Skip initial whitespace */
-		  for (; isspace ((int) *func); func++);
-		  if (!(end = uqstrchr (func, ';')))
-		    break;
-		  *end++ = '\0';
+		if (asp) {
+			if (unqstrstr(asp, "%>")) {
+				for (func = asp; func < &pattern[len];
+				     func = end) {
+					/* Skip initial whitespace */
+					for (; isspace((int)*func); func++) ;
+					if (!(end = uqstrchr(func, ';')))
+						break;
+					*end++ = '\0';
 
-		  /* Call function */
-		  handle = call (handle, func, stream);
+					/* Call function */
+					handle = call(handle, func, stream);
+				}
+				asp = NULL;
+				len = 0;
+			}
+			continue;
 		}
-	      asp = NULL;
-	      len = 0;
-	    }
-	  continue;
-	}
 
-    release:
-      /* Release pattern space */
-      //fputs(pattern, stream);
-      wfputs (pattern, stream);	//jimmy, https, 8/4/2003
-      len = 0;
-    }
-  free (pattern);
-  if (handle)
-    dlclose (handle);
+	      release:
+		/* Release pattern space */
+		//fputs(pattern, stream);
+		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
+		len = 0;
+	}
+	free(pattern);
+	if (handle)
+		dlclose(handle);
 }
 
-
-void
-do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
+void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 {
-  void *handle = NULL;
-  int c;
-  char *pattern, *asp = NULL, *func = NULL, *end = NULL;
-  int len = 0;
-  char *filebuffer;
-  int filecount = 0;
+	void *handle = NULL;
+	int c;
+	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
+	int len = 0;
+	char *filebuffer;
+	int filecount = 0;
 
-  if (buffer == NULL)
-    return;
-  filebuffer = buffer;
-  pattern = (char *) malloc (PATTERN_BUFFER + 1);
-  while ((c = filebuffer[filecount++]) != 0)
-    {
+	if (buffer == NULL)
+		return;
+	filebuffer = buffer;
+	pattern = (char *)malloc(PATTERN_BUFFER + 1);
+	while ((c = filebuffer[filecount++]) != 0) {
 
-      /* Add to pattern space */
-      pattern[len++] = c;
-      pattern[len] = '\0';
-      if (len == (PATTERN_BUFFER - 1))
-	goto release;
+		/* Add to pattern space */
+		pattern[len++] = c;
+		pattern[len] = '\0';
+		if (len == (PATTERN_BUFFER - 1))
+			goto release;
 
-
-      /* Look for <% ... */
+		/* Look for <% ... */
 //      LOG("look start");
 
-      if (!asp && pattern[0] == '{')
-	{
+		if (!asp && pattern[0] == '{') {
 
-	  if (!strncmp (pattern, "{i}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<input type=");
-		  len = 0;
+			if (decompress(stream, pattern, len))
+				continue;
 		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{c}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<input class=");
-		  len = 0;
+		if (!asp && !strncmp(pattern, "<%", len)) {
+			if (len == 2)
+				asp = pattern + 2;
+			continue;
 		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{d}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<input id=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{e}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<div class=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{n}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<div id=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{j}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<a href=\"");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{o}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<option value=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{s}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<select name=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{u}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<span class=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{z}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<input name=");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{x}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "document.write(\"");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{y}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<document.");
-		  len = 0;
-		}
-	      continue;
-	    }
-	  if (!strncmp (pattern, "{m}", len))
-	    {
-	      if (len == 3)
-		{
-		  websWrite (stream, "<script type=\"text/javascript\">");
-		  len = 0;
-		}
-	      continue;
-	    }
-	}
-      if (!asp && !strncmp (pattern, "<%", len))
-	{
-	  if (len == 2)
-	    asp = pattern + 2;
-	  continue;
-	}
 
-      /* Look for ... %> */
+		/* Look for ... %> */
 //      LOG("look end");
-      if (asp)
-	{
-	  if (unqstrstr (asp, "%>"))
-	    {
-	      for (func = asp; func < &pattern[len]; func = end)
-		{
-		  /* Skip initial whitespace */
-		  for (; isspace ((int) *func); func++);
-		  if (!(end = uqstrchr (func, ';')))
-		    break;
-		  *end++ = '\0';
+		if (asp) {
+			if (unqstrstr(asp, "%>")) {
+				for (func = asp; func < &pattern[len];
+				     func = end) {
+					/* Skip initial whitespace */
+					for (; isspace((int)*func); func++) ;
+					if (!(end = uqstrchr(func, ';')))
+						break;
+					*end++ = '\0';
 
-		  /* Call function */
-		  handle = call (handle, func, stream);
+					/* Call function */
+					handle = call(handle, func, stream);
+				}
+				asp = NULL;
+				len = 0;
+			}
+			continue;
 		}
-	      asp = NULL;
-	      len = 0;
-	    }
-	  continue;
+
+	      release:
+		/* Release pattern space */
+		//fputs(pattern, stream);
+		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
+		len = 0;
 	}
-
-    release:
-      /* Release pattern space */
-      //fputs(pattern, stream);
-      wfputs (pattern, stream);	//jimmy, https, 8/4/2003
-      len = 0;
-    }
-  free (pattern);
-  if (handle)
-    dlclose (handle);
+	free(pattern);
+	if (handle)
+		dlclose(handle);
 }
-
 
 #ifdef HAVE_VFS
 #include <vfs.h>
@@ -492,7 +332,6 @@ do_ej_buffer (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 
 /*
 #include <LzmaDecode.h>
-
 
 #define LZMA_LC 2
 #define LZMA_LP 0
@@ -514,32 +353,28 @@ LzmaDecode(lzma_workspace, LZMA_WORKSPACE_SIZE, LZMA_LC, LZMA_LP, LZMA_PB, web->
 return buf;
 }
 */
-FILE *
-getWebsFile (char *path)
+FILE *getWebsFile(char *path)
 {
-  cprintf ("opening %s\n", path);
-  int i = 0;
-  while (websRomPageIndex[i].path != NULL)
-    {
-      if (!strcmp (websRomPageIndex[i].path, path))
-	{
-	  FILE *web = fopen ("/etc/www", "rb");
-	  fseek (web, websRomPageIndex[i].offset, 0);
-	  cprintf ("found %s\n", path);
-	  return web;
+	cprintf("opening %s\n", path);
+	int i = 0;
+	while (websRomPageIndex[i].path != NULL) {
+		if (!strcmp(websRomPageIndex[i].path, path)) {
+			FILE *web = fopen("/etc/www", "rb");
+			fseek(web, websRomPageIndex[i].offset, 0);
+			cprintf("found %s\n", path);
+			return web;
+		}
+		i++;
 	}
-      i++;
-    }
-  cprintf ("not found %s\n", path);
+	cprintf("not found %s\n", path);
 
-  return NULL;
+	return NULL;
 }
 
-int
-getWebsFileLen (char *path)
+int getWebsFileLen(char *path)
 {
-  int len = 0;
-  int i = 0;
+	int len = 0;
+	int i = 0;
 /*char tmpfile[64];
 sprintf(tmpfile,"/tmp/%s",path);
 //fprintf(stderr,"read %s\n",path);
@@ -551,95 +386,81 @@ if (web!=NULL)
     fclose(web);
     return len;
     }*/
-  while (websRomPageIndex[i].path != NULL)
-    {
-      if (!strcmp (websRomPageIndex[i].path, path))
-	{
-	  len = websRomPageIndex[i].size;
-	  break;
+	while (websRomPageIndex[i].path != NULL) {
+		if (!strcmp(websRomPageIndex[i].path, path)) {
+			len = websRomPageIndex[i].size;
+			break;
+		}
+		i++;
 	}
-      i++;
-    }
-  return len;
+	return len;
 }
 
-
-void
-do_ej (struct mime_handler *handler,char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
+void do_ej(struct mime_handler *handler, char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
 {
 //fprintf(stderr,"load page %s\n",path);
 //open file and read into memory
-  FILE *fp = NULL;
+	FILE *fp = NULL;
 #ifdef HAVE_VFS
-  entry *e;
+	entry *e;
 #endif
-  int len;
-  int i;
+	int len;
+	int i;
 #ifdef DEBUGLOG
-  if (log == NULL)
-    log = fopen ("/tmp/log.tmp", "wb");
+	if (log == NULL)
+		log = fopen("/tmp/log.tmp", "wb");
 #endif
 
-      i = 0;
-      len = 0;
-      while (websRomPageIndex[i].path != NULL)
-	{
-	  if (!strcmp (websRomPageIndex[i].path, path))
-	    {
-	      fp = fopen ("/etc/www", "rb");
-	      fseek (fp, websRomPageIndex[i].offset, SEEK_SET);
-	      len = websRomPageIndex[i].size;
-	      break;
-	    }
-	  i++;
+	i = 0;
+	len = 0;
+	while (websRomPageIndex[i].path != NULL) {
+		if (!strcmp(websRomPageIndex[i].path, path)) {
+			fp = fopen("/etc/www", "rb");
+			fseek(fp, websRomPageIndex[i].offset, SEEK_SET);
+			len = websRomPageIndex[i].size;
+			break;
+		}
+		i++;
 	}
-      if (fp == NULL)
-	{
-	  fp = fopen (path, "rb");
-	  if (fp == NULL)
-	    return;
-	  fseek (fp, 0, SEEK_END);
-	  len = ftell (fp);
-	  rewind (fp);
-	  do_ej_file(fp,len,stream);
+	if (fp == NULL) {
+		fp = fopen(path, "rb");
+		if (fp == NULL)
+			return;
+		fseek(fp, 0, SEEK_END);
+		len = ftell(fp);
+		rewind(fp);
+		do_ej_file(fp, len, stream);
+	} else {
+		do_ej_file(fp, len, stream);
 	}
-      else
-	{
-	  do_ej_file(fp,len,stream);
-	}
-fclose (fp);
-
-
+	fclose(fp);
 
 }
 
-int
-ejArgs (int argc, char **argv, char *fmt, ...)
+int ejArgs(int argc, char **argv, char *fmt, ...)
 {
-  va_list ap;
-  int arg;
-  char *c;
+	va_list ap;
+	int arg;
+	char *c;
 
-  if (!argv)
-    return 0;
+	if (!argv)
+		return 0;
 
-  va_start (ap, fmt);
-  for (arg = 0, c = fmt; c && *c && arg < argc;)
-    {
-      if (*c++ != '%')
-	continue;
-      switch (*c)
-	{
-	case 'd':
-	  *(va_arg (ap, int *)) = atoi (argv[arg]);
-	  break;
-	case 's':
-	  *(va_arg (ap, char **)) = argv[arg];
-	  break;
+	va_start(ap, fmt);
+	for (arg = 0, c = fmt; c && *c && arg < argc;) {
+		if (*c++ != '%')
+			continue;
+		switch (*c) {
+		case 'd':
+			*(va_arg(ap, int *)) = atoi(argv[arg]);
+			break;
+		case 's':
+			*(va_arg(ap, char **)) = argv[arg];
+			break;
+		}
+		arg++;
 	}
-      arg++;
-    }
-  va_end (ap);
+	va_end(ap);
 
-  return arg;
+	return arg;
 }
