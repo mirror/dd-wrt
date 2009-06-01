@@ -873,7 +873,7 @@ parseBytesUnits(const char *unit)
     if (!strncasecmp(unit, B_GBYTES_STR, strlen(B_GBYTES_STR)))
         return 1 << 30;
 
-    debugs(3, 1, "parseBytesUnits: unknown bytes unit '" << unit << "'");
+    debugs(3, DBG_CRITICAL, "WARNING: Unknown bytes unit '" << unit << "'");
 
     return 0;
 }
@@ -1483,8 +1483,7 @@ parse_cachedir(_SquidConfig::_cacheSwap * swap)
     for (i = 0; i < swap->n_configured; i++) {
         assert (swap->swapDirs[i].getRaw());
 
-        if ((strcasecmp(path_str, dynamic_cast<SwapDir *>(swap->swapDirs[i].getRaw())->path)
-            ) == 0) {
+        if ((strcasecmp(path_str, dynamic_cast<SwapDir *>(swap->swapDirs[i].getRaw())->path)) == 0) {
             /* this is specific to on-fs Stores. The right
              * way to handle this is probably to have a mapping 
              * from paths to stores, and have on-fs stores
@@ -1509,7 +1508,13 @@ parse_cachedir(_SquidConfig::_cacheSwap * swap)
     }
 
     /* new cache_dir */
-    assert(swap->n_configured < 63);	/* 7 bits, signed */
+    if(swap->n_configured > 63) {
+        /* 7 bits, signed */
+        debugs(3, DBG_CRITICAL, "WARNING: There is a fixed maximum of 63 cache_dir entries Squid can handle.");
+        debugs(3, DBG_CRITICAL, "WARNING: '" << path_str << "' is one to many.");
+        self_destruct();
+        return;
+    }
 
     allocate_new_swapdir(swap);
 
@@ -3362,6 +3367,7 @@ free_logformat(logformat ** definitions)
     while (*definitions) {
         logformat *format = *definitions;
         *definitions = format->next;
+        safe_free(format->name);
         accessLogFreeLogFormat(&format->format);
         xfree(format);
     }

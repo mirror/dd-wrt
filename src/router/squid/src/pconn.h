@@ -46,12 +46,14 @@ class PconnPool
 
 public:
     PconnPool(const char *);
+    ~PconnPool();
 
     void moduleInit();
     void push(int fd, const char *host, u_short port, const char *domain, struct IN_ADDR *client_address);
     int pop(const char *host, u_short port, const char *domain, struct IN_ADDR *client_address, bool retriable);
     void count(int uses);
     void dumpHist(StoreEntry *e);
+    void dumpHash(StoreEntry *e);
     void unlinkList(IdleConnList *list) const;
 
 private:
