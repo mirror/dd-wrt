@@ -742,6 +742,7 @@ idx_pptp.wan_ip="WAN-IP-Adresse";
 idx_pptp.gateway="Gateway (PPTP-Server)";
 idx_pptp.encrypt="PPTP-Verschlüsselung";
 idx_pptp.reorder="Keine Packet Neuanordung";
+idx_pptp.addopt="Zusätzliche PPTP-Optionen";
 
 
 
