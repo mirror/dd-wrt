@@ -164,10 +164,7 @@ int main(int argc, char **argv)
 					eval("iwpriv", "ra0", "set",
 					     "RadioOn=1");
 #else
-					if (pidof("nas") > 0
-					    || pidof("wrt-radauth") > 0) {
-						stop_service("nas");
-					}
+					stop_service("nas");
 					eval("wl", "-i",
 					     get_wl_instance_name(0), "radio",
 					     "on");
@@ -185,13 +182,12 @@ int main(int argc, char **argv)
 					eval("iwpriv", "ra0", "set",
 					     "RadioOn=0");
 #else
-					if (pidof("nas") > 0
-					    || pidof("wrt-radauth") > 0) {
-						stop_service("nas");
-					}
+					stop_service("nas");
 					eval("wl", "-i",
 					     get_wl_instance_name(0), "radio",
 					     "off");
+					eval("startservice", "nas");
+					start_service("guest_nas");
 #endif
 					break;
 				}
@@ -202,27 +198,37 @@ int main(int argc, char **argv)
 				case 1:	// 01 - turn radio on
 					syslog(LOG_DEBUG,
 					       "Turning radio 1 on\n");
-					if (pidof("nas") > 0
-					    || pidof("wrt-radauth") > 0) {
-						stop_service("nas");
-					}
+#ifdef HAVE_MADWIFI
+					eval("ifconfig", "ath1", "up");
+#elif HAVE_RT2880
+					eval("iwpriv", "ra1", "set",
+					     "RadioOn=1");
+#else
+					stop_service("nas");
 					eval("wl", "-i",
 					     get_wl_instance_name(1), "radio",
 					     "on");
 					eval("startservice", "nas");
 					start_service("guest_nas");
+#endif
 					break;
 
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG,
 					       "Turning radio 1 off\n");
-					if (pidof("nas") > 0
-					    || pidof("wrt-radauth") > 0) {
-						stop_service("nas");
-					}
+#ifdef HAVE_MADWIFI
+					eval("ifconfig", "ath1", "down");
+#elif HAVE_RT2880
+					eval("iwpriv", "ra1", "set",
+					     "RadioOn=0");
+#else
+					stop_service("nas");
 					eval("wl", "-i",
 					     get_wl_instance_name(1), "radio",
 					     "off");
+					eval("startservice", "nas");
+					start_service("guest_nas");
+#endif
 					break;
 				}
 				needchange = 0;
