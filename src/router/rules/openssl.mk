@@ -25,3 +25,24 @@ endif
 openssl-clean:
 	$(MAKE) -C openssl clean
 
+
+OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
+					no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5
+ifeq ($(CONFIG_XSCALE),y)
+OPENSSL_OPTIONS:= no-ec no-err no-hw no-threads zlib-dynamic \
+					no-sse2 no-perlasm --with-cryptodev
+else
+OPENSSL_OPTIONS:= no-ec no-err no-hw no-threads zlib-dynamic \
+					no-engines no-sse2 no-perlasm
+endif
+
+openssl-configure:
+	cd openssl && ./Configure linux-openwrt \
+			--prefix=/usr \
+			--openssldir=/etc/ssl \
+			$(COPTS) \
+			$(TARGET_LDFLAGS) -ldl \
+			-DOPENSSL_SMALL_FOOTPRINT \
+			$(OPENSSL_NO_CIPHERS) \
+			$(OPENSSL_OPTIONS) \
+	
