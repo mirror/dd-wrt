@@ -96,6 +96,7 @@ install:
 			( echo installing $$l; \
 			  if [ "$(PLATFORM)" != "Cygwin" ]; then \
 				case "$(CFLAGS)" in \
+				*OPENSSL_NO_HW*)	continue;;	\
 				*DSO_DLFCN*)	sfx="so";;	\
 				*DSO_DL*)	sfx="sl";;	\
 				*)		sfx="bad";;	\

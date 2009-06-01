@@ -11,11 +11,11 @@ SHLIB_VERSION_NUMBER=0.9.8
 SHLIB_VERSION_HISTORY=
 SHLIB_MAJOR=0
 SHLIB_MINOR=9.8
-SHLIB_EXT=
-PLATFORM=dist
-OPTIONS= no-camellia no-capieng no-cms no-gmp no-jpake no-krb5 no-mdc2 no-montasm no-rc5 no-rfc3779 no-seed no-shared no-zlib no-zlib-dynamic
-CONFIGURE_ARGS=dist
-SHLIB_TARGET=
+SHLIB_EXT=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
+PLATFORM=linux-openwrt
+OPTIONS=--prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -DHAVE_AR531X -ldl -DOPENSSL_SMALL_FOOTPRINT enable-zlib-dynamic no-aes192 no-ans1 no-camellia no-capieng no-cms no-ec no-ecdh no-ecdsa no-engines no-err no-gmp no-hw no-idea no-jpake no-krb5 no-md2 no-mdc2 no-montasm no-perlasm no-rc5 no-rfc3779 no-ripemd no-rmd160 no-seed no-sha0 no-shared no-smime no-sse2 no-threads
+CONFIGURE_ARGS=linux-openwrt --prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -DHAVE_AR531X -ldl -DOPENSSL_SMALL_FOOTPRINT no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5 no-ec no-err no-hw no-threads zlib-dynamic no-engines no-sse2 no-perlasm
+SHLIB_TARGET=linux-shared
 
 # HERE indicates where this Makefile lives.  This can be used to indicate
 # where sub-Makefiles are expected to be.  Currently has very limited usage,
@@ -26,10 +26,10 @@ HERE=.
 # for, say, /usr/ and yet have everything installed to /tmp/somedir/usr/.
 # Normally it is left empty.
 INSTALL_PREFIX=
-INSTALLTOP=/usr/local/ssl
+INSTALLTOP=/usr
 
 # Do not edit this manually. Use Configure --openssldir=DIR do change this!
-OPENSSLDIR=/usr/local/ssl
+OPENSSLDIR=/etc/ssl
 
 # NO_IDEA - Define to build without the IDEA algorithm
 # NO_RC4  - Define to build without the RC4 algorithm
@@ -59,11 +59,11 @@ OPENSSLDIR=/usr/local/ssl
 # equal 4.
 # PKCS1_CHECK - pkcs1 tests.
 
-CC= cc
-CFLAG= -O
-DEPFLAG= -DOPENSSL_NO_CAMELLIA -DOPENSSL_NO_CAPIENG -DOPENSSL_NO_CMS -DOPENSSL_NO_GMP -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_SEED
+CC= mips-linux-uclibc-gcc
+CFLAG= -DZLIB_SHARED -DZLIB -DDSO_DLFCN -DHAVE_DLFCN_H -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -DHAVE_AR531X -DOPENSSL_SMALL_FOOTPRINT -DOPENSSL_NO_ERR -DOPENSSL_NO_HW -DTERMIO $(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall
+DEPFLAG= -DOPENSSL_NO_AES192 -DOPENSSL_NO_ANS1 -DOPENSSL_NO_CAMELLIA -DOPENSSL_NO_CAPIENG -DOPENSSL_NO_CMS -DOPENSSL_NO_EC -DOPENSSL_NO_ECDH -DOPENSSL_NO_ECDSA -DOPENSSL_NO_ENGINES -DOPENSSL_NO_GMP -DOPENSSL_NO_IDEA -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MD2 -DOPENSSL_NO_MDC2 -DOPENSSL_NO_PERLASM -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_RIPEMD -DOPENSSL_NO_RMD160 -DOPENSSL_NO_SEED -DOPENSSL_NO_SHA0 -DOPENSSL_NO_SMIME
 PEX_LIBS= 
-EX_LIBS= 
+EX_LIBS= -ldl -ldl
 EXE_EXT= 
 ARFLAGS= 
 AR=ar $(ARFLAGS) r
@@ -133,15 +133,15 @@ FIPSCANLIB=
 
 BASEADDR=0xFB00000
 
-DIRS=   crypto ssl engines apps test tools
+DIRS=   crypto ssl apps
 SHLIBDIRS= crypto ssl
 
 # dirs in crypto to build
 SDIRS=  \
 	objects \
-	md2 md4 md5 sha hmac ripemd \
-	des aes rc2 rc4 idea bf cast \
-	bn ec rsa dsa ecdsa dh ecdh dso engine \
+	md4 md5 sha hmac \
+	des aes rc2 rc4 bf cast \
+	bn rsa dsa dh dso engine \
 	buffer bio stack lhash rand err \
 	evp asn1 pem x509 x509v3 conf txt_db pkcs7 pkcs12 comp ocsp ui krb5 \
 	store pqueue
@@ -169,7 +169,7 @@ SHARED_CRYPTO=libcrypto$(SHLIB_EXT)
 SHARED_SSL=libssl$(SHLIB_EXT)
 SHARED_FIPS=
 SHARED_LIBS=
-SHARED_LIBS_LINK_EXTS=
+SHARED_LIBS_LINK_EXTS=.so.$(SHLIB_MAJOR) .so
 SHARED_LDFLAGS=
 
 GENERAL=        Makefile
@@ -335,15 +335,15 @@ build_crypto:
 		dir=crypto; target=all; $(BUILD_ONE_CMD)
 build_fips:
 	@dir=fips; target=all; [ -z "$(FIPSCANLIB)" ] || $(BUILD_ONE_CMD)
-build_ssl:
+build_ssl: build_crypto
 	@dir=ssl; target=all; $(BUILD_ONE_CMD)
-build_engines:
+build_engines: build_crypto
 	@dir=engines; target=all; $(BUILD_ONE_CMD)
-build_apps:
+build_apps: build_libs
 	@dir=apps; target=all; $(BUILD_ONE_CMD)
-build_tests:
+build_tests: build_libs
 	@dir=test; target=all; $(BUILD_ONE_CMD)
-build_tools:
+build_tools: build_libs
 	@dir=tools; target=all; $(BUILD_ONE_CMD)
 
 all_testapps: build_libs build_testapps
@@ -359,7 +359,7 @@ libcrypto$(SHLIB_EXT): libcrypto.a $(SHARED_FIPS)
 			$(AR) libcrypto.a fips/fipscanister.o ; \
 		else \
 			if [ "$(FIPSCANLIB)" = "libcrypto" ]; then \
-				FIPSLD_CC=$(CC); CC=fips/fipsld; \
+				FIPSLD_CC="$(CC)"; CC=fips/fipsld; \
 				export CC FIPSLD_CC; \
 			fi; \
 			$(MAKE) -e SHLIBDIRS='crypto' build-shared; \
@@ -382,7 +382,7 @@ libssl$(SHLIB_EXT): libcrypto$(SHLIB_EXT) libssl.a
 fips/fipscanister.o:	build_fips
 libfips$(SHLIB_EXT):		fips/fipscanister.o
 	@if [ "$(SHLIB_TARGET)" != "" ]; then \
-		FIPSLD_CC=$(CC); CC=fips/fipsld; export CC FIPSLD_CC; \
+		FIPSLD_CC="$(CC)"; CC=fips/fipsld; export CC FIPSLD_CC; \
 		$(MAKE) -f Makefile.shared -e $(BUILDENV) \
 			CC=$${CC} LIBNAME=fips THIS=$@ \
 			LIBEXTRAS=fips/fipscanister.o \
@@ -504,7 +504,7 @@ files:
 
 links:
 	@$(PERL) $(TOP)/util/mkdir-p.pl include/openssl
-	@$(PERL) $(TOP)/util/mklink.pl include/openssl $(EXHEADER)
+	@$(PERL) $(TOP)/util/mklink.pl include/openssl $(HEADER) $(EXHEADER)
 	@set -e; target=links; $(RECURSIVE_BUILD_CMD)
 	@if [ -z "$(FIPSCANLIB)" ]; then \
 		set -e; target=links; dir=fips ; $(BUILD_CMD) ; \
@@ -613,7 +613,7 @@ dist:
 dist_pem_h:
 	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
 
-install: all install_docs install_sw
+install: all install_sw
 
 install_sw:
 	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \

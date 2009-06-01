@@ -129,7 +129,9 @@ FUNCTION functions[] = {
 #ifndef OPENSSL_NO_ENGINE
 	{FUNC_TYPE_GENERAL,"engine",engine_main},
 #endif
+#ifndef OPENSSL_NO_OCSP
 	{FUNC_TYPE_GENERAL,"ocsp",ocsp_main},
+#endif
 	{FUNC_TYPE_GENERAL,"prime",prime_main},
 #ifndef OPENSSL_NO_MD2
 	{FUNC_TYPE_MD,"md2",dgst_main},
