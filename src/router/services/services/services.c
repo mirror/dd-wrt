@@ -364,13 +364,8 @@ void start_cron(void)
 		FILE *fp;
 
 		fp = fopen("/tmp/cron.d/cron_jobs", "w");
-		char *cron_job = nvram_safe_get("cron_jobs");
-
-		do {
-			if (cron_job[i] != 0x0D)	// strip dos CRs
-				fprintf(fp, "%c", cron_job[i]);
-		}
-		while (cron_job[++i]);
+		
+		fwritenvram("cron_jobs", fp);
 
 		fprintf(fp, "\n");	// extra new line at the end
 
@@ -718,7 +713,7 @@ static void create_pptp_config(char *servername, char *username)
 	fprintf(fp, "noauth\n");
 
 	if (nvram_invmatch("pptp_extraoptions", ""))
-		fprintf(fp, "%s\n", nvram_safe_get("pptp_extraoptions"));
+		fwritenvram("pptp_extraoptions", fp);
 
 	fclose(fp);
 
