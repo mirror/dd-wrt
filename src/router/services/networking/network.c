@@ -587,12 +587,12 @@ int isClient(void)
 
 void start_wlconf(void)
 {
-    int cnt = get_wl_instances();
-    int c;
-    
-    for(c = 0; c < cnt; c++) {
-	if (!nvram_nmatch("disabled", "wl%d_net_mode", c ))
-		wlconf_up(get_wl_instance_name(c));
+	int cnt = get_wl_instances();
+	int c;
+
+	for (c = 0; c < cnt; c++) {
+		if (!nvram_nmatch("disabled", "wl%d_net_mode", c))
+			wlconf_up(get_wl_instance_name(c));
 	}
 }
 
@@ -1567,8 +1567,8 @@ void start_lan(void)
 					if (nvram_match("lan_dhcp", "1")) {
 						wl_iovar_set(name,
 							     "wet_host_mac",
-							     ifr.ifr_hwaddr.
-							     sa_data,
+							     ifr.
+							     ifr_hwaddr.sa_data,
 							     ETHER_ADDR_LEN);
 					}
 					/* Enable WET DHCP relay if requested */
@@ -2057,9 +2057,9 @@ void start_lan(void)
 		     nvram_safe_get("lan_gateway"), "dev", "br0");
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-    for(c = 0; c < cnt; c++) {
-	eval("wl", "-i", get_wl_instance_name(c), "vlan_mode", "0");
-    }
+	for (c = 0; c < cnt; c++) {
+		eval("wl", "-i", get_wl_instance_name(c), "vlan_mode", "0");
+	}
 #endif
 	/*
 	 * Bring up local host interface 
@@ -2071,11 +2071,11 @@ void start_lan(void)
 	 */
 	start_set_routes();
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-    for(c = 0; c < cnt; c++) {
-	eval("wl", "-i", get_wl_instance_name(c), "radio",
-	      nvram_nmatch("disabled", "wl%d_net_mode",
-			    c) ? "off" : "on");
-    }
+	for (c = 0; c < cnt; c++) {
+		eval("wl", "-i", get_wl_instance_name(c), "radio",
+		     nvram_nmatch("disabled", "wl%d_net_mode",
+				  c) ? "off" : "on");
+	}
 #endif
 	/*
 	 * Disable wireless will cause diag led blink, so we want to stop it. 
