@@ -185,7 +185,7 @@ DOC_START
 	If you want to use a digest authenticator, set this line to
 	something like
 
-	auth_param digest program @DEFAULT_PREFIX@/bin/digest_auth_pw @DEFAULT_PREFIX@/etc/digpass
+	auth_param digest program @DEFAULT_PREFIX@/bin/digest_pw_auth @DEFAULT_PREFIX@/etc/digpass
 
 	"children" numberofchildren
 	The number of authenticator processes to spawn (no default).
@@ -405,8 +405,8 @@ DOC_START
 	  %USER_CERTCHAIN SSL User certificate chain in PEM format
 	  %USER_CERT_xx	SSL User certificate subject attribute xx
 	  %USER_CA_xx	SSL User certificate issuer attribute xx
-	  %{Header}	HTTP request header
-	  %{Hdr:member}	HTTP request header list member
+	  %{Header}	HTTP request header "Header"
+	  %{Hdr:member}	HTTP request header "Hdr" list member "member"
 	  %{Hdr:;member}
 	  		HTTP request header list member using ; as
 	  		list separator. ; can be any non-alphanumeric
@@ -2895,8 +2895,9 @@ DOC_START
 	when requested by a HTTP/1.0 client. This option
 	enables Squid to ignore such expiry times until
 	HTTP/1.1 is fully implemented.
-	WARNING: This may eventually cause some varying
-	objects not intended for caching to get cached.
+
+	WARNING: If turned on this may eventually cause some
+	varying objects not intended for caching to get cached.
 DOC_END
 
 NAME: extension_methods
@@ -3215,7 +3216,7 @@ DOC_START
 	By default, Squid will immediately close client connections when
 	read(2) returns "no more data to read."
 
-	Change this option to 'off' and Squid will keep open connections
+	Change this option to 'on' and Squid will keep open connections
 	until a read(2) or write(2) on the socket returns an error.
 	This may show some benefits for reverse proxies. But if not
 	it is recommended to leave OFF.
