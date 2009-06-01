@@ -123,6 +123,13 @@ void set_vifsmac(char *base)	// corrects hwaddr and bssid assignment
 
 void start_vifsmac(void)
 {
-	set_vifsmac("wl0");
+	int cnt = get_wl_instances();
+    int c;
+    char name[32];
+    
+    for(c = 0; c < cnt; c++) {
+	sprintf(name, "wl%d", c);
+    set_vifsmac(name);
+	}
 }
 #endif
