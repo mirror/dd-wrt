@@ -1050,8 +1050,7 @@ static void handle_request(void)
 				} else {
 					if (handler->send_headers)
 						send_headers(200, "Ok",
-							     handler->
-							     extra_header,
+							     handler->extra_header,
 							     handler->mime_type,
 							     0, NULL);
 				}

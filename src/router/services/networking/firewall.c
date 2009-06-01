@@ -2642,9 +2642,9 @@ void app_savefile(char *port, int direction, int protocol, int app_prio)
 	} else if (protocol == UDP) {
 		char *argv[] =
 		    { "iptables", "-I", "PREROUTING", "-t", "mangle", "-i",
-		 interface,
+			interface,
 			"-p", "udp", position, port, "-j", "DSCP",
-			    "--set-dscp-class",
+			"--set-dscp-class",
 			dscp_class_map[app_prio], NULL
 		};
 		pid_t pid;
@@ -2725,9 +2725,9 @@ void app_udp_settable(void)
 				if (udp_item->single_port) {
 					for (j = 0; udp_item->single_port[j];
 					     j++) {
-						app_savefile(udp_item->
-							     single_port[j], 0,
-							     UDP, 3);
+						app_savefile
+						    (udp_item->single_port[j],
+						     0, UDP, 3);
 
 					}
 				}
@@ -2735,9 +2735,9 @@ void app_udp_settable(void)
 				if (udp_item->range_port) {
 					for (j = 0; udp_item->range_port[j];
 					     j++) {
-						app_savefile(udp_item->
-							     range_port[j], 0,
-							     UDP, 3);
+						app_savefile
+						    (udp_item->range_port[j], 0,
+						     UDP, 3);
 
 					}
 
