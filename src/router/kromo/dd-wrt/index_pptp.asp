@@ -41,3 +41,13 @@
 	<input class="spaceradio" type="radio" name="pptp_reorder" value="1" <% nvram_checked("pptp_reorder","1"); %> /><% tran("share.enable"); %>&nbsp;
 	<input class="spaceradio" type="radio" name="pptp_reorder" value="0" <% nvram_checked("pptp_reorder","0"); %> /><% tran("share.disable"); %>
 </div>
+<div class="setting">
+	<div class="label"><% tran("idx_pptp.addopt"); %></div>
+		<textarea cols="60" rows="3" id="pptp_extraoptions" name="pptp_extraoptions"></textarea>
+		<script type="text/javascript">
+		//<![CDATA[
+		var pptp_extraoptions = fix_cr( '<% nvram_get("pptp_extraoptions"); %>' );
+		document.getElementById("pptp_extraoptions").value = pptp_extraoptions;
+		//]]>
+		</script>
+</div>
