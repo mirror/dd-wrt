@@ -1,8 +1,7 @@
-
 dnl  Configuration input file for Squid
 dnl
 dnl
-AC_INIT(Squid Web Proxy, 3.0.STABLE12, http://www.squid-cache.org/bugs/, squid)
+AC_INIT(Squid Web Proxy, 3.0.STABLE15, http://www.squid-cache.org/bugs/, squid)
 AC_PREREQ(2.52)
 AM_CONFIG_HEADER(include/autoconf.h)
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -1884,6 +1883,7 @@ AC_CHECK_HEADERS( \
 	ipl.h \
 	libc.h \
 	limits.h \
+	machine/byte_swap.h \
 	malloc.h \
 	math.h \
 	memory.h \
@@ -1940,8 +1940,6 @@ AC_CHECK_HEADERS( \
 	stdint.h \
 	inttypes.h \
 	grp.h \
-	nss_common.h \
-	nss.h \
 	db.h \
 	db_185.h \
 	sys/capability.h
@@ -1965,14 +1963,17 @@ dnl *BSD dont include the depenencies for all their net/ and netinet/ files
 dnl We must include a few basic type headers for them to work.
 AC_CHECK_HEADERS( \
 	net/if.h \
-	net/pfvar.h \
 	netinet/if_ether.h\
+	netinet/in.h \
 	netinet/ip.h\
 	netinet/ip_compat.h\
+	netinet/ip_fil_compat.h\
 	netinet/ip_fil.h\
 	netinet/ip_icmp.h\
-	netinet/ip_nat.h\
 	netinet/ipl.h \
+	netinet/ip_nat.h\
+	net/pf/pfvar.h \
+	net/pfvar.h \
 	sys/mount.h\
 	resolv.h,,,SQUID_BSDNET_INCLUDES)
 
@@ -2841,7 +2842,7 @@ dnl PF support requires a header file.
 if test "$PF_TRANSPARENT" ; then
     AC_MSG_CHECKING(if PF header file is installed)
     # hold on to your hats...
-    if test "$ac_cv_header_net_pfvar_h" = "yes"; then
+    if test "$ac_cv_header_net_pfvar_h" = "yes" || test "$ac_cv_header_net_pf_pfvar_h" = "yes"; then
         PF_TRANSPARENT="yes"
         AC_DEFINE(PF_TRANSPARENT, 1)
     else

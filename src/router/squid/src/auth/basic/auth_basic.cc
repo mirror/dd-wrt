@@ -143,9 +143,8 @@ int
 AuthBasicUserRequest::authenticated() const
 {
     BasicUser const *basic_auth = dynamic_cast<BasicUser const *>(user());
-    assert (basic_auth != NULL);
 
-    if (basic_auth->authenticated())
+    if (basic_auth && basic_auth->authenticated())
         return 1;
 
     return 0;
@@ -334,7 +333,7 @@ AuthBasicConfig::parse(AuthConfig * scheme, int n_configured, char *param_str)
 
         parse_wordlist(&authenticate);
 
-        requirePathnameExists("authparam basic program", authenticate->key);
+        requirePathnameExists("auth_param basic program", authenticate->key);
     } else if (strcasecmp(param_str, "children") == 0) {
         parse_int(&authenticateChildren);
     } else if (strcasecmp(param_str, "concurrency") == 0) {
