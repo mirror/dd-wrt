@@ -1,4 +1,4 @@
-:
+#!/usr/bin/perl
 eval 'exec perl -S $0 ${1+"$@"}'
     if $running_under_some_shell;
 ##
@@ -36,6 +36,8 @@ my $usage="Usage: Configure [no-<cipher> ...] [enable-<cipher> ...] [experimenta
 #		(Default: KRB5_DIR/include)
 # --with-krb5-flavor  Declare what flavor of Kerberos 5 is used.  Currently
 #		supported values are "MIT" and "Heimdal".  A value is required.
+# --with-cryptodev Force support for cryptodev (ie., ocf-linux)
+# --with-cryptodev-digests Force support for cryptodev digests (generally slow)
 #
 # --test-sanity Make a number of sanity checks on the data in this file.
 #               This is a debugging tool for OpenSSL developers.
@@ -364,6 +366,8 @@ my %table=(
 "linux-alpha+bwx-gcc","gcc:-O3 -DL_ENDIAN -DTERMIO::-D_REENTRANT::-ldl:SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_RISC1 DES_UNROLL:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
 "linux-alpha-ccc","ccc:-fast -readonly_strings -DL_ENDIAN -DTERMIO::-D_REENTRANT:::SIXTY_FOUR_BIT_LONG RC4_CHUNK DES_INT DES_PTR DES_RISC1 DES_UNROLL:${no_asm}",
 "linux-alpha+bwx-ccc","ccc:-fast -readonly_strings -DL_ENDIAN -DTERMIO::-D_REENTRANT:::SIXTY_FOUR_BIT_LONG RC4_CHAR RC4_CHUNK DES_INT DES_PTR DES_RISC1 DES_UNROLL:${no_asm}",
+# OpenWrt targets
+"linux-openwrt","gcc:-DTERMIO \$(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall::-D_REENTRANT::-ldl:BN_LLONG RC4_CHAR RC4_CHUNK DES_INT DES_UNROLL BF_PTR:${no_asm}:dlfcn:linux-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
 
 #### *BSD [do see comment about ${BSDthreads} above!]
 "BSD-generic32","gcc:-DTERMIOS -O3 -fomit-frame-pointer -Wall::${BSDthreads}:::BN_LLONG RC2_CHAR RC4_INDEX DES_INT DES_UNROLL:${no_asm}:dlfcn:bsd-gcc-shared:-fPIC::.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR)",
@@ -545,6 +549,9 @@ my %table=(
 ##### Compaq Non-Stop Kernel (Tandem)
 "tandem-c89","c89:-Ww -D__TANDEM -D_XOPEN_SOURCE -D_XOPEN_SOURCE_EXTENDED=1 -D_TANDEM_SOURCE -DB_ENDIAN::(unknown):::THIRTY_TWO_BIT:::",
 
+# uClinux
+"uClinux-dist","$ENV{'CC'}:\$(CFLAGS)::-D_REENTRANT::\$(LDFLAGS) \$(LDLIBS):BN_LLONG::::::::::::\$(LIBSSL_dlfcn):linux-shared:-fPIC:-shared:.so.\$(SHLIB_MAJOR).\$(SHLIB_MINOR):$ENV{'RANLIB'}",
+
 );
 
 my @MK1MF_Builds=qw(VC-WIN64I VC-WIN64A
@@ -599,6 +606,8 @@ my $montasm=1;   # but "no-montasm" is default
 my $no_asm=0;
 my $no_dso=0;
 my $no_gmp=0;
+my $have_cryptodev=0;
+my $use_cryptodev_digests=0;
 my @skip=();
 my $Makefile="Makefile";
 my $des_locl="crypto/des/des_locl.h";
@@ -746,6 +755,14 @@ PROCESS_ARGS:
 		elsif (/^--test-sanity$/)
 			{
 			exit(&test_sanity());
+			}
+		elsif (/^--with-cryptodev$/)
+			{
+				$have_cryptodev = 1;
+			}
+		elsif (/^--with-cryptodev-digests$/)
+			{
+				$use_cryptodev_digests = 1;
 			}
 		elsif (/^reconfigure/ || /^reconf/)
 			{
@@ -1035,6 +1052,7 @@ foreach (sort (keys %disabled))
 			print " OPENSSL_NO_$ALGO";
 		
 			if (/^err$/)	{ $flags .= "-DOPENSSL_NO_ERR "; }
+			elsif (/^hw$/)	{ $flags .= "-DOPENSSL_NO_HW "; }
 			elsif (/^asm$/)	{ $no_asm = 1; }
 			}
 		else
@@ -1157,6 +1175,16 @@ if (!$no_krb5)
 	$withargs{"krb5-include"} = "-I".$withargs{"krb5-dir"}."/include"
 		if $withargs{"krb5-include"} eq "" &&
 		   $withargs{"krb5-dir"} ne "";
+	}
+
+# enable the linux cryptodev (ocf-linux) support
+if ($have_cryptodev)
+	{
+	if ($use_cryptodev_digests)
+		{
+		$cflags = "-DUSE_CRYPTODEV_DIGESTS $cflags";
+		}
+	$cflags = "-DHAVE_CRYPTODEV $cflags";
 	}
 
 # The DSO code currently always implements all functions so that no
@@ -1847,6 +1875,11 @@ END
 EOF
 	close(OUT);
   }
+  
+# ugly hack to disable engines
+if($target eq "mingwx") {
+	system("sed -e s/^LIB/XLIB/g -i engines/Makefile");
+}
   
 print <<EOF;
 
