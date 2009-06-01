@@ -356,7 +356,8 @@ void start_nas(void)
 	for (c = 0; c < cnt; c++) {
 		if (nvram_nmatch("disabled", "wl%d_net_mode", c))
 			continue;
-		wl_ioctl(get_wl_instance_name(c), WLC_GET_RADIO, &radiostate, sizeof(int));
+		wl_ioctl(get_wl_instance_name(c), WLC_GET_RADIO, &radiostate,
+			 sizeof(int));
 		if (radiostate != 0)
 			continue;
 		char wlname[32];
@@ -573,15 +574,15 @@ void start_nas_single(char *type, char *prefix)
 					    ("0", "%s_bridged", iface)) {
 						char *argv[] =
 						    { "nas", "-P", pidfile,
-						 "-H", "34954", "-i",
+							"-H", "34954", "-i",
 							iface, mode,
 							"-m",
 							auth_mode, "-r", key,
-							    "-s",
+							"-s",
 							nvram_safe_get(ssid),
-							    "-w",
+							"-w",
 							sec_mode, "-g",
-							    nvram_safe_get
+							nvram_safe_get
 							    (rekey), "-h",
 							nvram_safe_get(radius), "-p", nvram_safe_get(port),	// "-t", 
 							// //radius 
@@ -593,15 +594,15 @@ void start_nas_single(char *type, char *prefix)
 					} else {
 						char *argv[] =
 						    { "nas", "-P", pidfile,
-						 "-H", "34954", "-l",
+							"-H", "34954", "-l",
 							getBridge(iface), "-i",
-							    iface, mode, "-m",
+							iface, mode, "-m",
 							auth_mode, "-r", key,
-							    "-s",
+							"-s",
 							nvram_safe_get(ssid),
-							    "-w",
+							"-w",
 							sec_mode, "-g",
-							    nvram_safe_get
+							nvram_safe_get
 							    (rekey), "-h",
 							nvram_safe_get(radius), "-p", nvram_safe_get(port),	// "-t", 
 							// //radius 
@@ -624,7 +625,8 @@ void start_nas_single(char *type, char *prefix)
 					fclose(conf);
 					char *argv[] =
 					    { "nas", conffile, pidfile, "lan",
-					 NULL };
+						NULL
+					};
 					_evalpid(argv, NULL, 0, &pid);
 #endif
 				} else if (!strcmp(auth_mode, "32")) {
@@ -638,18 +640,18 @@ void start_nas_single(char *type, char *prefix)
 					    ("0", "%s_bridged", iface)) {
 						char *argv[] =
 						    { "nas", "-P", pidfile,
-						 "-H", "34954", "-i",
+							"-H", "34954", "-i",
 							iface, mode,
 							"-m",
 							auth_mode, "-r", key,
-							    "-s",
+							"-s",
 							nvram_safe_get(ssid),
-							    "-w",
+							"-w",
 							sec_mode, "-I",
-							    nvram_safe_get
+							nvram_safe_get
 							    (index), "-k",
 							nvram_safe_get(wepkey),
-							    "-h",
+							"-h",
 							nvram_safe_get(radius), "-p", nvram_safe_get(port),	// "-t", 
 							// //radius 
 							// rekey 
@@ -660,18 +662,18 @@ void start_nas_single(char *type, char *prefix)
 					} else {
 						char *argv[] =
 						    { "nas", "-P", pidfile,
-						 "-H", "34954", "-l",
+							"-H", "34954", "-l",
 							getBridge(iface), "-i",
-							    iface, mode, "-m",
+							iface, mode, "-m",
 							auth_mode, "-r", key,
-							    "-s",
+							"-s",
 							nvram_safe_get(ssid),
-							    "-w",
+							"-w",
 							sec_mode, "-I",
-							    nvram_safe_get
+							nvram_safe_get
 							    (index), "-k",
 							nvram_safe_get(wepkey),
-							    "-h",
+							"-h",
 							nvram_safe_get(radius), "-p", nvram_safe_get(port),	// "-t", 
 							// //radius 
 							// rekey 
@@ -696,7 +698,8 @@ void start_nas_single(char *type, char *prefix)
 					fclose(conf);
 					char *argv[] =
 					    { "nas", conffile, pidfile, "lan",
-					 NULL };
+						NULL
+					};
 					_evalpid(argv, NULL, 0, &pid);
 #endif
 				} else {
@@ -705,31 +708,31 @@ void start_nas_single(char *type, char *prefix)
 					    ("0", "%s_bridged", iface)) {
 						char *argv[] =
 						    { "nas", "-P", pidfile,
-						 "-H", "34954", "-i",
+							"-H", "34954", "-i",
 							iface, mode,
 							"-m",
 							auth_mode, "-k", key,
-							    "-s",
+							"-s",
 							nvram_safe_get(ssid),
-							    "-w",
+							"-w",
 							sec_mode, "-g",
 							nvram_safe_get(rekey),
-							    NULL
+							NULL
 						};
 						_evalpid(argv, NULL, 0, &pid);
 					} else {
 						char *argv[] =
 						    { "nas", "-P", pidfile,
-						 "-H", "34954", "-l",
+							"-H", "34954", "-l",
 							getBridge(iface), "-i",
-							    iface, mode, "-m",
+							iface, mode, "-m",
 							auth_mode, "-k", key,
-							    "-s",
+							"-s",
 							nvram_safe_get(ssid),
-							    "-w",
+							"-w",
 							sec_mode, "-g",
 							nvram_safe_get(rekey),
-							    NULL
+							NULL
 						};
 						_evalpid(argv, NULL, 0, &pid);
 					}
@@ -744,7 +747,8 @@ void start_nas_single(char *type, char *prefix)
 					fclose(conf);
 					char *argv[] =
 					    { "nas", conffile, pidfile, "lan",
-					 NULL };
+						NULL
+					};
 					_evalpid(argv, NULL, 0, &pid);
 #endif
 				}

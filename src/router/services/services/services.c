@@ -230,7 +230,7 @@ void start_ntpc(void)
 	if (strlen(servers)) {
 		char *nas_argv[] =
 		    { "ntpclient", "-h", servers, "-i", "5", "-l", "-s", "-c",
-	     "2",
+			"2",
 			NULL
 		};
 		pid_t pid;
@@ -364,7 +364,7 @@ void start_cron(void)
 		FILE *fp;
 
 		fp = fopen("/tmp/cron.d/cron_jobs", "w");
-		
+
 		fwritenvram("cron_jobs", fp);
 
 		fprintf(fp, "\n");	// extra new line at the end

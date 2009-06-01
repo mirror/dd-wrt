@@ -138,8 +138,8 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 		nvram_set("wl0gpio0", "135");
 		break;
 	case ROUTER_BUFFALO_WZRRSG54:
-		nvram_unset( "wl0_abenable" );
-		nvram_unset( "wl1_abenable" );
+		nvram_unset("wl0_abenable");
+		nvram_unset("wl1_abenable");
 		break;
 	case ROUTER_ASUS_WL550GE:
 		nvram_set("wl0gpio1", "0");
