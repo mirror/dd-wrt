@@ -102,91 +102,78 @@ static int decompress(webs_t stream, char *pattern, int len)
 	if (!strncmp(pattern, "{i}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<input type=");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{c}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<input class=");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{d}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<input id=");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{e}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<div class=");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{n}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<div id=");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{j}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<a href=\"");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{o}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<option value=");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{s}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<select name=");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{u}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<span class=");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{z}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<input name=");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{x}", len)) {
 		if (len == 3) {
 			websWrite(stream, "document.write(\"");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{y}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<document.");
-			len = 0;
 		}
 		return 1;
 	}
 	if (!strncmp(pattern, "{m}", len)) {
 		if (len == 3) {
 			websWrite(stream, "<script type=\"text/javascript\">");
-			len = 0;
 		}
 		return 1;
 	}
@@ -196,7 +183,7 @@ static int decompress(webs_t stream, char *pattern, int len)
 void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 {
 	void *handle = NULL;
-	int c;
+	int c, ret;
 	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
 	int len = 0;
 	int filecount = 0;
@@ -214,7 +201,12 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 //      LOG("look start");
 
 		if (!asp && pattern[0] == '{') {
-			if (decompress(stream, pattern, len))
+			ret = decompress(stream, pattern, len);
+			if (ret && len == 3 ) {
+				len = 0;
+				continue;
+			}
+			if (ret)
 				continue;
 		}
 		if (!asp && !strncmp(pattern, "<%", len)) {
@@ -258,7 +250,7 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 {
 	void *handle = NULL;
-	int c;
+	int c, ret;
 	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
 	int len = 0;
 	char *filebuffer;
@@ -280,8 +272,12 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 //      LOG("look start");
 
 		if (!asp && pattern[0] == '{') {
-
-			if (decompress(stream, pattern, len))
+			ret = decompress(stream, pattern, len);
+			if (ret && len == 3 ) {
+				len = 0;
+				continue;
+			}
+			if (ret)
 				continue;
 		}
 		if (!asp && !strncmp(pattern, "<%", len)) {
