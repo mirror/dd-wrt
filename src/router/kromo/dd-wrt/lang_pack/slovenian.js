@@ -536,7 +536,7 @@ dmz.host="DMZ gostiteljev IP naslov";
 
 //help container
 
-hdmz.right2="Omogoèanje te opcije bo izpostavilo gostitelja medmre¾ju. Vsa vrata bodo dostopna z medmre¾ja.";
+hdmz.right2="Omogoèanje te mo¾nosti bo izpostavilo gostitelja medmre¾ju. Vsa vrata bodo dostopna z medmre¾ja.";
 
 
 // ** Factory_Defaults.asp **//
@@ -841,6 +841,7 @@ idx_pptp.wan_ip="WAN IP naslov";
 idx_pptp.gateway="Prehod (PPTP stre¾nik)";
 idx_pptp.encrypt="PPTP ¹ifrirnje";
 idx_pptp.reorder="Onemogoèi prerazporejanje paketov";
+idx_pptp.addopt="Dodatne PPTP mo¾nosti";
 
 
 // ** index_static.asp **//
