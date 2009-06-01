@@ -1154,8 +1154,7 @@ void start_restore_defaults(void)
 			nvram_set("vlan1ports", "0 5");
 		}
 
-	} else if (brand == ROUTER_BUFFALO_WZRG144NH)
-	{
+	} else if (brand == ROUTER_BUFFALO_WZRG144NH) {
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
 			nvram_set("vlan1ports", "4 8");
 			nvram_set("vlan2ports", "0 1 2 3 8*");

@@ -542,10 +542,10 @@ int main(int argc, char **argv)
 #endif
 
 	fclose(fp);
-	
+
 	int cnt = get_wl_instances();
-    int c;
-    
+	int c;
+
 	/* 
 	 * Loop forever 
 	 */
@@ -578,17 +578,17 @@ int main(int argc, char **argv)
 			cprintf("RESTART\n");
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-    for (c = 0; c < cnt; c++) {
-		eval("wlconf", get_wl_instance_name(c), "down");
-		char *next;
-		char var[80];
-		char *vifs = nvram_nget("wl%d_vifs", c);
+			for (c = 0; c < cnt; c++) {
+				eval("wlconf", get_wl_instance_name(c), "down");
+				char *next;
+				char var[80];
+				char *vifs = nvram_nget("wl%d_vifs", c);
 
-			if (vifs != NULL)
-				foreach(var, vifs, next) {
-				eval("ifconfig", var, "down");
-				}
-	}
+				if (vifs != NULL)
+					foreach(var, vifs, next) {
+					eval("ifconfig", var, "down");
+					}
+			}
 #endif
 
 			/* 
@@ -706,21 +706,20 @@ int main(int argc, char **argv)
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 #ifdef HAVE_RADIOOFF
-		if (nvram_match("radiooff_button", "1")
-		    && nvram_match("radiooff_boot_off", "1" ))
-		{
-		    for (c = 0; c < cnt; c++) {
-		    eval("wl", "-i", get_wl_instance_name(c), "radio",
-			  "off");
-		  	}
-			led_control( LED_SEC0, LED_OFF );
-			led_control( LED_SEC1, LED_OFF );
-		}
-		else
+			if (nvram_match("radiooff_button", "1")
+			    && nvram_match("radiooff_boot_off", "1")) {
+				for (c = 0; c < cnt; c++) {
+					eval("wl", "-i",
+					     get_wl_instance_name(c), "radio",
+					     "off");
+				}
+				led_control(LED_SEC0, LED_OFF);
+				led_control(LED_SEC1, LED_OFF);
+			} else
 #endif
 			{
-			start_service("nas");
-			start_service("guest_nas");
+				start_service("nas");
+				start_service("guest_nas");
 			}
 #endif
 

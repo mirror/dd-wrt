@@ -202,7 +202,7 @@ void do_ej_file(FILE * fp, int filelen, webs_t stream)	// jimmy, https, 8/4/2003
 
 		if (!asp && pattern[0] == '{') {
 			ret = decompress(stream, pattern, len);
-			if (ret && len == 3 ) {
+			if (ret && len == 3) {
 				len = 0;
 				continue;
 			}
@@ -273,7 +273,7 @@ void do_ej_buffer(char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 
 		if (!asp && pattern[0] == '{') {
 			ret = decompress(stream, pattern, len);
-			if (ret && len == 3 ) {
+			if (ret && len == 3) {
 				len = 0;
 				continue;
 			}
