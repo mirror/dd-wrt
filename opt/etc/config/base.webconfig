@@ -131,7 +131,7 @@
 			<input class="spaceradio" type="radio" value="0" name="cron_enable" <% nvram_checked("cron_enable","0"); %> onclick="show_layer_ext(this, 'idcron', false)" /><% tran("share.disable"); %>
 		</div>
 		<div class="setting" id="idcron">
-				<div class="label"><script type="text/javascript">Capture(management.cron_jobs)</script></div>
+				<div class="label"><% tran("management.cron_jobs"); %></div>
 					<textarea cols="60" rows="4" id="cron_jobs" name="cron_jobs"></textarea>
 					<script type="text/javascript">
 					//<![CDATA[
