@@ -131,7 +131,7 @@ FIPSCANLIB=
 
 BASEADDR=
 
-DIRS=   crypto fips ssl engines apps test tools
+DIRS=   crypto fips ssl apps
 SHLIBDIRS= crypto ssl fips
 
 # dirs in crypto to build
@@ -333,15 +333,15 @@ build_crypto:
 		dir=crypto; target=all; $(BUILD_ONE_CMD)
 build_fips:
 	@dir=fips; target=all; [ -z "$(FIPSCANLIB)" ] || $(BUILD_ONE_CMD)
-build_ssl:
+build_ssl: build_crypto
 	@dir=ssl; target=all; $(BUILD_ONE_CMD)
-build_engines:
+build_engines: build_crypto
 	@dir=engines; target=all; $(BUILD_ONE_CMD)
-build_apps:
+build_apps: build_libs
 	@dir=apps; target=all; $(BUILD_ONE_CMD)
-build_tests:
+build_tests: build_libs
 	@dir=test; target=all; $(BUILD_ONE_CMD)
-build_tools:
+build_tools: build_libs
 	@dir=tools; target=all; $(BUILD_ONE_CMD)
 
 all_testapps: build_libs build_testapps
@@ -357,7 +357,7 @@ libcrypto$(SHLIB_EXT): libcrypto.a $(SHARED_FIPS)
 			$(AR) libcrypto.a fips/fipscanister.o ; \
 		else \
 			if [ "$(FIPSCANLIB)" = "libcrypto" ]; then \
-				FIPSLD_CC=$(CC); CC=fips/fipsld; \
+				FIPSLD_CC="$(CC)"; CC=fips/fipsld; \
 				export CC FIPSLD_CC; \
 			fi; \
 			$(MAKE) -e SHLIBDIRS='crypto' build-shared; \
@@ -380,7 +380,7 @@ libssl$(SHLIB_EXT): libcrypto$(SHLIB_EXT) libssl.a
 fips/fipscanister.o:	build_fips
 libfips$(SHLIB_EXT):		fips/fipscanister.o
 	@if [ "$(SHLIB_TARGET)" != "" ]; then \
-		FIPSLD_CC=$(CC); CC=fips/fipsld; export CC FIPSLD_CC; \
+		FIPSLD_CC="$(CC)"; CC=fips/fipsld; export CC FIPSLD_CC; \
 		$(MAKE) -f Makefile.shared -e $(BUILDENV) \
 			CC=$${CC} LIBNAME=fips THIS=$@ \
 			LIBEXTRAS=fips/fipscanister.o \
@@ -502,7 +502,7 @@ files:
 
 links:
 	@$(PERL) $(TOP)/util/mkdir-p.pl include/openssl
-	@$(PERL) $(TOP)/util/mklink.pl include/openssl $(EXHEADER)
+	@$(PERL) $(TOP)/util/mklink.pl include/openssl $(HEADER) $(EXHEADER)
 	@set -e; target=links; $(RECURSIVE_BUILD_CMD)
 	@if [ -z "$(FIPSCANLIB)" ]; then \
 		set -e; target=links; dir=fips ; $(BUILD_CMD) ; \
@@ -611,7 +611,7 @@ dist:
 dist_pem_h:
 	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
 
-install: all install_docs install_sw
+install: all install_sw
 
 install_sw:
 	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
