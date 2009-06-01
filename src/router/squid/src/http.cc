@@ -1167,6 +1167,7 @@ HttpStateData::processReplyBody()
 
             comm_remove_close_handler(fd, httpStateFree, this);
             fwd->unregister(fd);
+
 #if LINUX_TPROXY
 
             if (orig_request->flags.tproxy)
@@ -1174,14 +1175,7 @@ HttpStateData::processReplyBody()
 
 #endif
 
-            if (_peer) {
-                if (_peer->options.originserver)
-                    fwd->pconnPush(fd, _peer->name, orig_request->port, orig_request->host, client_addr);
-                else
-                    fwd->pconnPush(fd, _peer->name, _peer->http_port, NULL, client_addr);
-            } else {
-                fwd->pconnPush(fd, request->host, request->port, NULL, client_addr);
-            }
+            fwd->pconnPush(fd, _peer, request, orig_request->host, client_addr);
 
             fd = -1;
 
@@ -1590,11 +1584,12 @@ copyOneHeaderFromClientsideRequestToUpstreamRequest(const HttpHeaderEntry *e, St
         break;
 
     case HDR_MAX_FORWARDS:
-        if (orig_request->method == METHOD_TRACE) {
-            const int hops = e->getInt();
+        /* pass only on TRACE or OPTIONS requests */
+        if (orig_request->method == METHOD_TRACE || orig_request->method == METHOD_OPTIONS) {
+            const int64_t hops = e->getInt64();
 
             if (hops > 0)
-                hdr_out->putInt(HDR_MAX_FORWARDS, hops - 1);
+                hdr_out->putInt64(HDR_MAX_FORWARDS, hops - 1);
         }
 
         break;

@@ -84,6 +84,7 @@ static const HttpHeaderFieldAttrs HeadersAttrs[] =
         {"Cache-Control", HDR_CACHE_CONTROL, ftPCc},
         {"Connection", HDR_CONNECTION, ftStr},
         {"Content-Base", HDR_CONTENT_BASE, ftStr},
+    {"Content-Disposition", HDR_CONTENT_DISPOSITION, ftStr},  /* for now */
         {"Content-Encoding", HDR_CONTENT_ENCODING, ftStr},
         {"Content-Language", HDR_CONTENT_LANGUAGE, ftStr},
         {"Content-Length", HDR_CONTENT_LENGTH, ftInt64},
@@ -105,7 +106,7 @@ static const HttpHeaderFieldAttrs HeadersAttrs[] =
         {"Last-Modified", HDR_LAST_MODIFIED, ftDate_1123},
         {"Link", HDR_LINK, ftStr},
         {"Location", HDR_LOCATION, ftStr},
-        {"Max-Forwards", HDR_MAX_FORWARDS, ftInt},
+        {"Max-Forwards", HDR_MAX_FORWARDS, ftInt64},
         {"Mime-Version", HDR_MIME_VERSION, ftStr},	/* for now */
         {"Pragma", HDR_PRAGMA, ftStr},
         {"Proxy-Authenticate", HDR_PROXY_AUTHENTICATE, ftStr},
