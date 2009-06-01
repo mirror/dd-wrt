@@ -587,11 +587,13 @@ int isClient(void)
 
 void start_wlconf(void)
 {
-	if (nvram_invmatch("wl0_net_mode", "disabled"))
-		wlconf_up(nvram_safe_get("wl0_ifname"));
-
-	if (nvram_invmatch("wl1_net_mode", "disabled"))
-		wlconf_up(nvram_safe_get("wl1_ifname"));
+    int cnt = get_wl_instances();
+    int c;
+    
+    for(c = 0; c < cnt; c++) {
+	if (!nvram_nmatch("disabled", "wl%d_net_mode", c ))
+		wlconf_up(get_wl_instance_name(c));
+	}
 }
 
 // #ifdef HAVE_PORTSETUP
@@ -2055,7 +2057,9 @@ void start_lan(void)
 		     nvram_safe_get("lan_gateway"), "dev", "br0");
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	eval("wl", "vlan_mode", "0");
+    for(c = 0; c < cnt; c++) {
+	eval("wl", "-i", get_wl_instance_name(c), "vlan_mode", "0");
+    }
 #endif
 	/*
 	 * Bring up local host interface 
@@ -2067,14 +2071,11 @@ void start_lan(void)
 	 */
 	start_set_routes();
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	int cc = get_wl_instances();
-	int ii;
-
-	for (ii = 0; ii < cc; ii++) {
-		eval("wl", "-i", get_wl_instance_name(ii), "radio",
-		     nvram_nmatch("disabled", "wl%d_net_mode",
-				  ii) ? "off" : "on");
-	}
+    for(c = 0; c < cnt; c++) {
+	eval("wl", "-i", get_wl_instance_name(c), "radio",
+	      nvram_nmatch("disabled", "wl%d_net_mode",
+			    c) ? "off" : "on");
+    }
 #endif
 	/*
 	 * Disable wireless will cause diag led blink, so we want to stop it. 
