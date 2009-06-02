@@ -136,11 +136,6 @@ static int __inline ismtikoui(const unsigned char *frm)
 	return frm[1] > 3 && LE_READ_4(frm + 2) == MTIK_OUI;
 }
 
-static __inline int istdmaoui(const unsigned char *frm)
-{
-	return frm[1] > 3
-	    && LE_READ_4(frm + 2) == ((TDMA_OUI_TYPE << 24) | TDMA_OUI);
-}
 
 static void fillenc(char *encinfo, unsigned char *vp, int ielen)
 {
@@ -156,8 +151,6 @@ static void fillenc(char *encinfo, unsigned char *vp, int ielen)
 				strcat(encinfo, "ATH ");
 			else if (ismtikoui(vp))
 				strcat(encinfo, "MTIK ");
-			else if (istdmaoui(vp))
-				strcat(encinfo, "TDMA ");
 			break;
 		case IEEE80211_ELEMID_RSN:
 			strcat(encinfo, "WPA2 ");
