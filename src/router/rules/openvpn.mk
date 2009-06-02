@@ -2,7 +2,7 @@ openvpn-configure: openssl
 	cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections"
 	make -C lzo clean
 	make -j 4 -C lzo
-	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --enable-password-save --enable-management --enable-lzo --enable-small --enable-server --enable-multihome CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs  -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --enable-password-save --enable-management --enable-lzo --enable-small --enable-server --enable-multihome CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections -ldl"
 
 openvpn: openssl
 #ifeq ($(CONFIG_NEWMEDIA),y)
