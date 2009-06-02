@@ -2224,6 +2224,13 @@ struct mime_handler mime_handlers[] = {
 	{"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL,
 	 0},
 	{"**.pdf", "application/pdf", NULL, NULL, do_file, NULL, 0},
+	{"**.mp4", "video/mp4", NULL, NULL, do_file, NULL, 0},	
+	{"**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, 0},	
+	{"**.mpg", "video/mpeg", NULL, NULL, do_file, NULL, 0},	
+	{"**.avi", "video/x-msvideo", NULL, NULL, do_file, NULL, 0},	
+	{"**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, 0},	
+	{"**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, 0},
+	{"**.flv", "video/x-flv", NULL, NULL, do_file, NULL, 0},	
 #ifdef HAVE_SKYTRON
 	{"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
 	 do_auth2, 1},
