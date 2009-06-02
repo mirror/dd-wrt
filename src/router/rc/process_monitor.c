@@ -86,6 +86,14 @@ int main(int argc, char **argv)
 
 		gettimeofday(&then, NULL);
 
+		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
+		    && nvram_match("cron_enable", "1")) {
+			eval("stopservice", "cron");
+			sleep(1);
+			dd_syslog(LOG_DEBUG, "Restarting cron\n");
+			eval("startservice_f", "cron");
+
+		}
 #ifdef HAVE_SNMP
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
 		    && nvram_match("snmpd_enable", "1")) {

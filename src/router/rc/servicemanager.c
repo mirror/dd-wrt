@@ -115,7 +115,7 @@ int start_service_fork(char *name)
 	else
 		fprintf(stderr, "function %s not found \n", service);
 	dlclose(handle);
-	cprintf("start_sevice done()\n");
+	cprintf("start_service done()\n");
 	return 0;
 }
 
