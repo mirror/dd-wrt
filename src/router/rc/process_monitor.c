@@ -61,11 +61,11 @@ int main(int argc, char **argv)
 		/* 
 		 * init ntp timer 
 		 */
-#if defined(HAVE_SNMP) || defined(HAVE_WIFIDOG)
+
 		struct timeval now;
 
 		gettimeofday(&now, NULL);
-#endif
+
 		if (do_ntp() != 0) {
 			dd_syslog(LOG_ERR,
 				  "Last update failed, we need to re-update after %d seconds\n",
