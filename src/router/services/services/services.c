@@ -312,6 +312,7 @@ void start_cron(void)
 {
 	int ret = 0;
 	struct stat buf;
+	FILE *fp;
 
 	if (nvram_match("cron_enable", "0"))
 		return;
@@ -327,9 +328,11 @@ void start_cron(void)
 
 	buf_to_file("/tmp/cron.d/check_ps",
 		    "*/2 * * * * root /sbin/check_ps\n");
-	if (nvram_match("reconnect_enable", "1"))	// pppoe reconnect
-	{
-		FILE *fp;
+	/*
+	 * pppoe reconnect 
+	 */
+	unlink("/tmp/cron.d/pppoe_reconnect");	 
+	if (nvram_match("reconnect_enable", "1")) {
 
 		fp = fopen("/tmp/cron.d/pppoe_reconnect", "w");
 		fprintf(fp, "%s %s * * * root /usr/bin/killall pppd\n",
@@ -343,7 +346,6 @@ void start_cron(void)
 	unlink("/tmp/cron.d/check_schedules");
 	if (nvram_match("schedule_enable", "1")
 	    && nvram_match("schedule_hour_time", "2")) {
-		FILE *fp;
 
 		fp = fopen("/tmp/cron.d/check_schedules", "w");
 		fprintf(fp, "%s %s * * %s root /sbin/reboot\n",
@@ -354,21 +356,15 @@ void start_cron(void)
 	}
 
 	/*
-	 * Additional options 
+	 * Additional cron jobs 
 	 */
-	int i = 0;
-
 	unlink("/tmp/cron.d/cron_jobs");
 
 	if (nvram_invmatch("cron_jobs", "")) {
-		FILE *fp;
 
 		fp = fopen("/tmp/cron.d/cron_jobs", "w");
-
 		fwritenvram("cron_jobs", fp);
-
 		fprintf(fp, "\n");	// extra new line at the end
-
 		fclose(fp);
 	}
 
