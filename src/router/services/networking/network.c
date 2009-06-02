@@ -3561,6 +3561,7 @@ void start_set_routes(void)
 			route_add(ifname, atoi(metric) + 1, ipaddr, gateway,
 				  netmask);
 	}
+	system("sh /tmp/tvrouting");
 }
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
