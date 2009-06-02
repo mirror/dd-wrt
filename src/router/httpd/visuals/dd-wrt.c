@@ -6994,6 +6994,7 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	char state[12] = "";
 	char dum1[32];
 	int dum2;
+	char *lanip = nvram_get("lan_ipaddr");
 
 	fp = fopen("/proc/net/ip_conntrack", "rb");
 	if (fp == NULL)
@@ -7029,7 +7030,10 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		// event, 15, 15, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",
 		// buf != "unknown" ? buf : live_translate ("share.unknown") ,
 		// srcip);
-		websWrite(wp, "<td align=\"right\">%s</td>", srcip);
+		if (!strcmp(srcip, lanip))
+			websWrite(wp, "<td align=\"right\">%s</td>", srcip);
+		else
+			websWrite(wp, "<td align=\"right\"><a title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", srcip, srcip);
 
 		// dst
 		search_hit("dst=", line, dstip);
@@ -7038,7 +7042,11 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		// event, 15, 15, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",
 		// buf != "unknown" ? buf : live_translate ("share.unknown") ,
 		// dstip);
-		websWrite(wp, "<td align=\"right\">%s</td>", dstip);
+		if (!strcmp(dstip, lanip))
+			websWrite(wp, "<td align=\"right\">%s</td>", dstip);
+		else
+			websWrite(wp, "<td align=\"right\"><a title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", dstip, dstip);
+
 
 		// service
 		search_hit("dport=", line, dstport);
