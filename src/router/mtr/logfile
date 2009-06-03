@@ -1,0 +1,222 @@
+c: 0
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 0 maxTTL = 30
+c: 00 2eaa8c0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 1 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 2 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 3 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 4 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 5 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 6 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 7 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 8 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 9 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 10 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 1, batch_at = 11 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 1, batch_at = 12 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 1, batch_at = 13 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 1, batch_at = 14 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 1, batch_at = 15 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 1, batch_at = 16 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 1, batch_at = 17 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 2, batch_at = 18 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 3, batch_at = 19 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 19 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 4, batch_at = 20 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 19 0, 20 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 5, batch_at = 21 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 19 0, 20 0, 21 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 6, batch_at = 22 maxTTL = 30
+c: 2eaa8c0
+host[batch_at].addr = 2eaa8c0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 0 maxTTL = 30
+c: 10ca8c00 2eaa8c0, 
+host[batch_at].addr = 10ca8c0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 1 maxTTL = 30
+c: 715c3a3e0 2eaa8c0, 1 10ca8c0, 
+host[batch_at].addr = 715c3a3e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 2 maxTTL = 30
+c: 4d583a3e0 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 
+host[batch_at].addr = 4d583a3e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 3 maxTTL = 30
+c: 2813a3e0 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 
+host[batch_at].addr = 2813a3e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 4 maxTTL = 30
+c: b100d63e0 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 
+host[batch_at].addr = b100d63e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 5 maxTTL = 30
+c: e6c21ed50 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 
+host[batch_at].addr = e6c21ed5, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 6 maxTTL = 30
+c: 2ec051500 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 
+host[batch_at].addr = 2ec05150, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 7 maxTTL = 30
+c: 2605fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 
+host[batch_at].addr = 2605fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 8 maxTTL = 30
+c: 5502fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 
+host[batch_at].addr = 5502fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 9 maxTTL = 30
+c: 5705fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 
+host[batch_at].addr = 5705fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 10 maxTTL = 30
+c: 2602fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 
+host[batch_at].addr = 2602fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 11 maxTTL = 30
+c: 2205fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 
+host[batch_at].addr = 2205fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 12 maxTTL = 30
+c: c404fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 
+host[batch_at].addr = c404fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 13 maxTTL = 30
+c: 771dfa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 
+host[batch_at].addr = 771dfa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 14 maxTTL = 30
+c: 2242bdd10 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 
+host[batch_at].addr = 2242bdd1, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 15 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 16 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 1, batch_at = 17 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 2, batch_at = 18 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 3, batch_at = 19 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 19 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 4, batch_at = 20 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 19 0, 20 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 5, batch_at = 21 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 19 0, 20 0, 21 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 6, batch_at = 22 maxTTL = 30
+c: 2eaa8c0
+host[batch_at].addr = 2eaa8c0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 0 maxTTL = 30
+c: 10ca8c00 2eaa8c0, 
+host[batch_at].addr = 10ca8c0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 1 maxTTL = 30
+c: 715c3a3e0 2eaa8c0, 1 10ca8c0, 
+host[batch_at].addr = 715c3a3e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 2 maxTTL = 30
+c: 4d583a3e0 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 
+host[batch_at].addr = 4d583a3e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 3 maxTTL = 30
+c: 2813a3e0 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 
+host[batch_at].addr = 2813a3e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 4 maxTTL = 30
+c: b100d63e0 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 
+host[batch_at].addr = b100d63e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 5 maxTTL = 30
+c: e6c21ed50 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 
+host[batch_at].addr = e6c21ed5, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 6 maxTTL = 30
+c: 2ec051500 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 
+host[batch_at].addr = 2ec05150, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 7 maxTTL = 30
+c: 2605fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 
+host[batch_at].addr = 2605fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 8 maxTTL = 30
+c: 5502fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 
+host[batch_at].addr = 5502fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 9 maxTTL = 30
+c: 5705fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 
+host[batch_at].addr = 5705fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 10 maxTTL = 30
+c: 2602fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 
+host[batch_at].addr = 2602fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 11 maxTTL = 30
+c: 2205fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 
+host[batch_at].addr = 2205fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 12 maxTTL = 30
+c: c404fa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 
+host[batch_at].addr = c404fa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 13 maxTTL = 30
+c: 771dfa810 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 
+host[batch_at].addr = 771dfa81, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 14 maxTTL = 30
+c: 2242bdd10 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 
+host[batch_at].addr = 2242bdd1, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 15 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 16 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 1, batch_at = 17 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 2, batch_at = 18 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 3, batch_at = 19 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 19 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 4, batch_at = 20 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 19 0, 20 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 5, batch_at = 21 maxTTL = 30
+c: 00 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 4 2813a3e, 5 b100d63e, 6 e6c21ed5, 7 2ec05150, 8 2605fa81, 9 5502fa81, 10 5705fa81, 11 2602fa81, 12 2205fa81, 13 c404fa81, 14 771dfa81, 15 2242bdd1, 16 0, 17 0, 18 0, 19 0, 20 0, 21 0, 
+host[batch_at].addr = 0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 6, batch_at = 22 maxTTL = 30
+c: 2eaa8c0
+host[batch_at].addr = 2eaa8c0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 0 maxTTL = 30
+c: 10ca8c00 2eaa8c0, 
+host[batch_at].addr = 10ca8c0, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 1 maxTTL = 30
+c: 715c3a3e0 2eaa8c0, 1 10ca8c0, 
+host[batch_at].addr = 715c3a3e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 2 maxTTL = 30
+c: 4d583a3e0 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 
+host[batch_at].addr = 4d583a3e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 3 maxTTL = 30
+c: 2813a3e0 2eaa8c0, 1 10ca8c0, 2 715c3a3e, 3 4d583a3e, 
+host[batch_at].addr = 2813a3e, remoteaddress.sin_addr.s_addr=81034586
+n_unknown = 0, batch_at = 4 maxTTL = 30

@@ -1,0 +1,87 @@
+WHAT IS MTR?
+
+  mtr combines the functionality of the 'traceroute' and 'ping' programs 
+  in a single network diagnostic tool.
+
+  As mtr starts, it investigates the network connection between the host
+  mtr runs on and a user-specified destination host.  After it
+  determines the address of each network hop between the machines, 
+  it sends a sequence ICMP ECHO requests to each one to determine the 
+  quality of the link to each machine.  As it does this, it prints
+  running statistics about each machine.
+
+  mtr is distributed under the GNU General Public License. 
+  See the COPYING file for details.  
+
+INSTALLING
+
+  Slightly more hints are in the file INSTALL. If this doesn't work
+  you could try reading that too.... 
+
+  Compiling mtr should be as simple as:
+
+	make
+
+  It should first call the "configure" script and then run "make" again
+  with the makefile that "configure" just generated. 
+
+  After compiling, install:
+
+	make install
+
+  Note that mtr must be suid-root because it requires access to raw IP 
+  sockets.  See SECURITY for security information.
+
+  Older versions used to require a non-existant path to GTK for a
+  correct build of a non-gtk version while GTK was installed. This is
+  no longer neccesary. ./configure --WITHOUT_GTK should now work. 
+  If it doesn't, try "make WITHOUT_X11=YES" as the make step. 
+
+  On Solaris (and possibly other systems) the "gtk" library may be
+  installed in a directory where the dynamic linker refuses to look when
+  a binary is setuid. Roman Shterenzon reports that adding 
+        -Wl,-rpath=/usr/lib
+  to the commandline will work if you are using gnu LD. He tells me that
+  you're out of luck when you use the sun LD. That's not quite true, as
+  you can move the gtk libraries to /usr/lib instead of leaving them in
+  /usr/local/lib.  (when the ld tells you that /usr/local/lib is untrusted
+  and /usr/lib is trusted, and you trust hte gtk libs enough to want them
+  in a setuid program, then there is something to say for moving them
+  to the "trusted" directory.)
+
+  On Solaris, linking usually fails to find "wattr" or something like that.
+  Somehow, I can't seem to be able to automate "configure" finding the right
+  libs on Solaris. So, the solution is that you cut-and-paste the line
+  doing the linking into a terminal window, and add "-lcurses" by hand. 
+  Then it will link. Help on how to catch this in autoconf appreciated.
+
+  On Mac OS X the nameserver8_compat.h needs to be included. I put the 
+  include inside an "#if 0" section in the file "dns.c". If someone 
+  knows how to make this automatic using autoconf / the configure script, 
+  please tell me.... 
+
+
+WHERE CAN I GET THE LATEST VERSION OR MORE INFORMATION?
+
+  See the mtr web page at 
+         http://www.BitWizard.nl/mtr/ 
+
+  Subscribe to the mtr mailing list.  All mtr related announcements
+  are posted to the mtr mailing list.  To subscribe, send email to
+  the 'mtr-subscribe' with the hostname part set to 'BitWizard.nl'.
+  The body or subject of the message doesn't matter. To send an
+  Email to the list, mail to the username part set to 'mtr'. To
+  prevent SPAM to this list, please don't put the full name on 
+  the internet. 
+
+  Bug reports and feature requests should be submitted the mailing
+  list.
+
+  Patches can be submitted by Email to me, or submitted to the 
+  mailing list. Please use unified diffs. Usually the diff is sort of
+  messy, so please check that the diff is clean and doesn't contain too
+  much of your local stuff (for example, I don't want/need the "configure"
+  script that /your/ automake made for you). 
+
+-- REW
+
