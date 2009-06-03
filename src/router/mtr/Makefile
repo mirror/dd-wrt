@@ -101,10 +101,10 @@ AUTOMAKE = ${SHELL} /home/seg/DEV/xscale/src/router/mtr/missing --run automake-1
 AWK = gawk
 CC = armeb-linux-uclibc-gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF -Wall -Wno-pointer-sign
+CFLAGS = -Os -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb  -I/home/seg/DEV/xscale/src/router/ncurses/include -L/home/seg/DEV/xscale/src/router/ncurses/lib -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF -lncurses -Wall -Wno-pointer-sign
 CPP = armeb-linux-uclibc-gcc -E
 CPPFLAGS = 
-CURSES_OBJ = 
+CURSES_OBJ = curses.o
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps

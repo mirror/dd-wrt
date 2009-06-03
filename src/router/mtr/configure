@@ -5646,7 +5646,7 @@ echo "${ECHO_T}$ac_header_preproc" >&6; }
 
 # So?  What about this header?
 case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no: )
+  no:yes: )
     { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
 echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
     { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
@@ -6208,7 +6208,7 @@ else
 echo "$as_me: WARNING: Building without curses display support" >&2;}
 
 cat >>confdefs.h <<\_ACEOF
-#define NO_CURSES 1
+#undef NO_CURSES
 _ACEOF
 
 	CURSES_OBJ=

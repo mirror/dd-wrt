@@ -10,7 +10,7 @@
 #undef HAVE_CURSESX_H
 
 /* Define to 1 if you have the <curses.h> header file. */
-#undef HAVE_CURSES_H
+#define HAVE_CURSES_H 1
 
 /* Define to 1 if you have the declaration of `errno', and to 0 if you don't.
    */
@@ -29,7 +29,7 @@
 #undef HAVE_LIBBIND
 
 /* Define to 1 if you have the `curses' library (-lcurses). */
-#undef HAVE_LIBCURSES
+#define HAVE_LIBCURSES 1
 
 /* Define to 1 if you have the `cursesX' library (-lcursesX). */
 #undef HAVE_LIBCURSESX
@@ -38,7 +38,7 @@
 #undef HAVE_LIBM
 
 /* Define to 1 if you have the `ncurses' library (-lncurses). */
-#undef HAVE_LIBNCURSES
+#define HAVE_LIBNCURSES 1
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
