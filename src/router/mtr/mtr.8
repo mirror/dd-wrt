@@ -1,0 +1,284 @@
+.TH MTR 8 "March 4, 1999" "mtr" "mtr"
+
+
+.SH NAME
+mtr \- a network diagnostic tool
+
+
+.SH SYNOPSIS
+.B mtr 
+[\c
+.B \-hvrctglspniu46\c
+]
+[\c
+.B \-\-help\c
+]
+[\c
+.B \-\-version\c
+]
+[\c
+.B \-\-report\c
+]
+[\c
+.B \-\-report-wide\c
+]
+[\c
+.B \-\-report\-cycles\ COUNT\c
+]
+[\c
+.B \-\-curses\c
+]
+[\c
+.B \-\-split\c
+]
+[\c
+.B \-\-raw\c
+]
+[\c
+.B \-\-no-dns\c
+]
+[\c
+.B \-\-gtk\c
+]
+[\c
+.B \-\-address\ IP.ADD.RE.SS\c
+]
+[\c
+.B \-\-interval\ SECONDS\c
+]
+[\c
+.B \-\-psize\ BYTES | -s BYTES\c
+]
+.B HOSTNAME [PACKETSIZE]
+
+
+.SH DESCRIPTION
+
+.B mtr 
+combines the functionality of the 
+.B traceroute
+and 
+.B ping
+programs in a single network diagnostic tool.
+
+.PP
+As 
+.B mtr 
+starts, it investigates the network connection between the host 
+.B mtr
+runs on and 
+.BR HOSTNAME . 
+by sending packets with purposly low TTLs. It continues to send
+packets with low TTL, noting the response time of the intervening
+routers.  This allows 
+.B mtr 
+to print the response percentage and response times of the internet
+route to 
+.BR HOSTNAME . 
+A sudden increase in packetloss or response time is often an indication
+of a bad (or simply overloaded) link. 
+
+.SH OPTIONS
+
+.TP
+.B \-h
+.TP
+.B \-\-help
+.br
+Print the summary of command line argument options.
+
+.TP
+.B \-v
+.TP
+.B \-\-version
+.br
+Print the installed version of mtr.  
+
+.TP
+.B \-r
+.TP
+.B \-\-report
+.br
+This option puts 
+.B mtr
+into 
+.B report
+mode.  When in this mode,
+.B mtr
+will run for the number of cycles specified by the 
+.B \-c
+option, and then print statistics and exit.  
+.TP
+\c
+This mode is useful for generating statistics about network quality.  
+Note that each running instance of 
+.B mtr
+generates a significant amount of network traffic.  Using 
+.B mtr
+to measure the quality of your network may result in decreased
+network performance.  
+
+.TP
+.B \-w
+.TP
+.B \-\-report-wide
+.br
+This option puts 
+.B mtr
+into 
+.B wide report
+mode.  When in this mode,
+.B mtr
+will not cut hostnames in the report. 
+
+.TP
+.B \-c\ COUNT
+.TP
+.B \-\-report\-cycles\ COUNT
+Use this option to set the number of pings sent to determine
+both the machines on the network and the reliability of 
+those machines.  Each cycle lasts one second.
+
+.TP
+.B \-s\ BYTES
+.TP
+.B \-\-psize\ BYTES
+.TP
+.B PACKETSIZE
+These options or a trailing PACKETSIZE on the commandline sets 
+the packet size used for probing.
+It is in bytes inclusive IP and ICMP headers
+
+If set to a negative number, every iteration will use a different, random
+packetsize upto that number. 
+.TP
+.B \-t
+.TP
+.B \-\-curses
+.br
+Use this option to force 
+.B mtr 
+to use the curses based terminal
+interface (if available).
+
+.TP
+.B \-n
+.TP
+.B \-\-no-dns
+.br
+Use this option to force 
+.B mtr 
+to display numeric IP numbers and not try to resolve the
+host names. 
+
+.TP
+.B \-o\ fields\ order
+.TP
+.B \-\-order\ fields\ order
+.br
+Use this option to specify the fields and their order when loading mtr.
+.br
+Example:
+-o "LSD NBAW"
+
+.TP
+.B \-g
+.TP
+.B \-\-gtk
+.br
+Use this option to force
+.B mtr 
+to use the GTK+ based X11 window interface (if available).  
+GTK+ must have been available on the system when 
+.B mtr 
+was built for this to work.  See the GTK+ web page at 
+.B http://www.gimp.org/gtk/
+for more information about GTK+.
+
+.TP
+.B \-p
+.TP
+.B \-\-split
+.br
+Use this option to set
+.B mtr 
+to spit out a format that is suitable for a split-user interface.
+
+.TP
+.B \-l
+.TP
+.B \-\-raw
+.br
+Use this option to tell 
+.B mtr 
+to use the raw output format. This format is better suited for
+archival of the measurement results. It could be parsed to 
+be presented into any of the other display methods. 
+
+.TP
+.B \-a\ IP.ADD.RE.SS
+.TP
+.B \-\-address\ IP.ADD.RE.SS
+.br
+Use this option to bind outgoing packets' socket to specific interface,
+so that any packet will be sent through this interface. NOTE that this
+option doesn't apply to DNS requests (which could be and could not be 
+what you want).
+
+.TP
+.B \-i\ SECONDS
+.TP
+.B \-\-interval\ SECONDS
+.br
+Use this option to specify the positive number of seconds between ICMP
+ECHO requests.  The default value for this parameter is one second.
+
+.TP
+.B \-u
+.br
+Use UDP datagrams instead of ICMP ECHO.
+
+.TP
+.B \-4
+.br
+Use IPv4 only.
+
+.TP
+.B \-6
+.br
+Use IPv6 only.
+
+.SH BUGS
+
+Some modern routers give a lower priority to ICMP ECHO packets than 
+to other network traffic.  Consequently, the reliability of these
+routers reported by 
+.B mtr
+will be significantly lower than the actual reliability of 
+these routers.  
+
+
+.SH CONTACT INFORMATION
+
+.PP
+For the latest version, see the mtr web page at 
+.BR http://www.bitwizard.nl/mtr/ .
+
+.PP
+Subscribe to the mtr mailing list.  All mtr related announcements
+are posted to the mtr mailing list.  To subscribe, send email to
+.B majordomo@lists.xmission.com
+with 
+.B subscribe\ mtr
+in the body of the message.  To send a message to the mailing list, mail to 
+.BR mtr@lists.xmission.com .
+
+.PP
+Bug reports and feature requests should be sent to the mtr
+mailing list.
+
+
+.SH "SEE ALSO"
+
+traceroute(8),
+ping(8).
