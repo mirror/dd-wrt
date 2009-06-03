@@ -945,8 +945,8 @@ int net_preopen(void)
   set_fd_flags(recvsock4);
 #ifdef ENABLE_IPV6
   recvsock6 = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
-#endif
   set_fd_flags(recvsock6);
+#endif
 
   return 0;
 }
