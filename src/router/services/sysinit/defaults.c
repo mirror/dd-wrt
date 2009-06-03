@@ -2135,6 +2135,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"dns_dnsmasq", "1", 0},
 	{"auth_dnsmasq", "1", 0},
 #ifdef HAVE_GGEW
+	{"ral", "217.113.177.185 172.16.0.0/28", 0},
 	{"pptp_use_dhcp", "1", 0},	/* pptp will use dhcp to obtain ip address, netmask and gateway */
 	{"pptp_server_name", "proxy2.wlan.ggew-net.de", 0},
 #else
@@ -2212,9 +2213,6 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"newhttp_username", "", 0},
 	{"newhttp_passwd", "bJxJZz5DYRGxI", 0},
-#endif
-#ifdef HAVE_GGEW
-	{"ral", "217.113.177.185 172.16.0.0/28", 0},
 #endif
 #endif
 #ifdef HAVE_34TELECOM
