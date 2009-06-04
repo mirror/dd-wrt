@@ -3,7 +3,7 @@ mtr-configure:
 
 
 
-mtr:
+mtr: ncurses
 	$(MAKE) -j 4 -C mtr
 
 mtr-clean:
