@@ -37,7 +37,7 @@ if [[ "${cidrroute}" ]]; then
         gw=${gw#.}
         # And add the next route finally
         ip route replace ${pref} via ${gw} dev ${interface} 2>/dev/null
-        echo "route replace ${pref} via ${gw} dev ${interface}" >> /tmp/tvrouting
+        echo "ip route replace ${pref} via ${gw} dev ${interface}" >> /tmp/tvrouting
      done
 fi
 
