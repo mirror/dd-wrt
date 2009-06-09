@@ -482,11 +482,11 @@ addEvent(window, "unload", function() {
 								<legend><% tran("share.option"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("ddns.forceupd"); %></div>
-									<input type="text" size="4" class="num" name="ddns_force" value="<% nvram_get("ddns_force"); %>" />
+									<input type="text" size="4" class="num" name="ddns_force" onblur="valid_range(this,1,60,ddns.forceupd)" value="<% nvram_get("ddns_force"); %>" />
 									<span class="default">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("(" + share.deflt + ": 10 " + share.days_genetive + ")");
+									document.write("(" + share.deflt + ": 10 " + share.days_genetive + ", " + share.range + ": 1 - 60)");
 									//]]>
 									</script></span>
 								</div>
