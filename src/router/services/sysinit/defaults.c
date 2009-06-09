@@ -63,7 +63,11 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_ERC
 	{"router_style", "erc-machinery", 0},
 #elif HAVE_MAKSAT
+#ifdef HAVE_MAKSAT_BLANK
+	{"router_style", "orange", 0},
+#else
 	{"router_style", "maksat", 0},
+#endif
 #elif HAVE_ALFA_BRANDING
 	{"router_style", "xirian", 0},
 #else
@@ -602,7 +606,11 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_NEWMEDIA  && !defined(HAVE_NS5) && !defined(HAVE_NS2) && !defined(HAVE_EOC5610)
 	{"wl_ssid", "changeme", 0},	/* Service set ID (network name) */
 #elif HAVE_MAKSAT
+#ifdef HAVE_MAKSAT_BLANK
+	{"wl_ssid", "default", 0},	/* Service set ID (network name) */
+#else
 	{"wl_ssid", "maksat", 0},	/* Service set ID (network name) */
+#endif
 #elif HAVE_TMK
 	{"wl_ssid", "KMT", 0},	/* Service set ID (network name) */
 #elif HAVE_34TELECOM
@@ -613,7 +621,11 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_MAKSAT
 	{"show_hidden", "1", 0},
 	{"ath_regulatory", "0", 0},
+#ifdef HAVE_MAKSAT_BLANK
+	{"ath0_ssid", "default", 0},	/* Service set ID (network name) */
+#else
 	{"ath0_ssid", "maksat", 0},	/* Service set ID (network name) */
+#endif
 #else
 	{"ath_regulatory", "1", 0},
 #ifdef HAVE_BUFFALO
@@ -1103,7 +1115,11 @@ struct nvram_tuple srouter_defaults[] = {
 #elif  HAVE_34TELECOM
 	{"router_name", "MiuraBasic", 0},
 #elif  HAVE_MAKSAT
+#ifdef HAVE_MAKSAT_BLANK
+	{"router_name", "default", 0},
+#else
 	{"router_name", "MAKSAT", 0},
+#endif
 #elif  HAVE_TRIMAX
 	{"router_name", "TRIMAX", 0},
 #elif  HAVE_DDLAN
