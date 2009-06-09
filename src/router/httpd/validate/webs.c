@@ -1714,7 +1714,11 @@ void add_vifs_single(char *prefix, int device)
 	nvram_set(v2, "0");
 	sprintf(v2, "%s_ssid", v);
 #ifdef HAVE_MAKSAT
+#ifdef HAVE_MAKSAT_BLANK
+	nvram_set(v2, "default_vap");
+#else
 	nvram_set(v2, "maksat_vap");
+#endif
 #elif defined(HAVE_TRIMAX)
 	nvram_set(v2, "trimax_vap");
 #elif defined(HAVE_TMK)

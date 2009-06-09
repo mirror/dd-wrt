@@ -1318,8 +1318,13 @@ static void configure_single(int count)
 		}
 		sysprintf("iwpriv %s bgscan 0", var);
 #ifdef HAVE_MAKSAT
+#ifdef HAVE_MAKSAT_BLANK
+		sysprintf("iwconfig %s essid -- \"%s\"", var,
+			  nvram_default_get(ssid, "default_vap"));
+#else
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
 			  nvram_default_get(ssid, "maksat_vap"));
+#endif
 #elif defined(HAVE_TRIMAX)
 		sysprintf("iwconfig %s essid -- \"%s\"", var,
 			  nvram_default_get(ssid, "trimax_vap"));
@@ -1387,8 +1392,13 @@ static void configure_single(int count)
 
 	cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT
+#ifdef HAVE_MAKSAT_BLANK
+	sysprintf("iwconfig %s essid -- \"%s\"", dev,
+		  nvram_default_get(ssid, "default"));
+#else
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
 		  nvram_default_get(ssid, "maksat"));
+#endif
 #elif defined(HAVE_TRIMAX)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev,
 		  nvram_default_get(ssid, "trimax"));
@@ -1422,8 +1432,13 @@ static void configure_single(int count)
 	    || strcmp(apm, "wet") == 0 || strcmp(apm, "wdssta") == 0) {
 		cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT
+#ifdef HAVE_MAKSAT_BLANK
+		sysprintf("iwconfig %s essid -- \"%s\"", dev,
+			  nvram_default_get(ssid, "default"));
+#else
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "maksat"));
+#endif
 #elif defined(HAVE_TRIMAX)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev,
 			  nvram_default_get(ssid, "trimax"));
