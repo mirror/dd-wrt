@@ -427,7 +427,11 @@ void setRouter(char *name)
 #elif HAVE_MAKSAT
 	if (name)
 		nvram_set("DD_BOARD2", name);
+#ifdef HAVE_MAKSAT_BLANK
+	nvram_set(NVROUTER, "default");
+#else
 	nvram_set(NVROUTER, "MAKSAT");
+#endif
 #elif HAVE_TMK
 	if (name)
 		nvram_set("DD_BOARD2", name);

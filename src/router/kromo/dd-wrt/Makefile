@@ -281,9 +281,11 @@ ifeq ($(CONFIG_NOLOGO),y)
 endif
 
 ifeq ($(CONFIG_MAKSAT_CORAL_ELEGANT),y)
+ ifneq ($(CONFIG_MAKSAT_BLANK),y)
 	mkdir $(INSTALLDIR)/www/style/maksat_coral_elegant
 	cp maksat/style-coral.css $(INSTALLDIR)/www/style/maksat_coral_elegant/style.css
 	cp maksat/common-coral.css $(INSTALLDIR)/www/style
+ endif
 endif
 ifeq ($(CONFIG_TRIMAX),y)
 	cp -f trimax/logo.png $(INSTALLDIR)/www/style/logo.png
@@ -294,6 +296,19 @@ ifeq ($(CONFIG_CNC),y)
 	cp -f cnc/logo.png $(INSTALLDIR)/www/images/logo.png
 endif
 ifeq ($(CONFIG_MAKSAT),y)
+ ifeq ($(CONFIG_MAKSAT_BLANK),y)
+	cp -f maksat/blank/maksat_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
+	cp -f maksat/blank/logo.png $(INSTALLDIR)/www/style/logo.png
+	cp -f maksat/blank/logo.png $(INSTALLDIR)/www/images/logo.png
+	cp -f maksat/SuperChannel.asp $(INSTALLDIR)/www
+	cp -f maksat/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f maksat/blank/About.htm $(INSTALLDIR)/www/About.htm
+	cp -f maksat/help/HManagement.asp $(INSTALLDIR)/www/help/HManagement.asp
+	cp -f maksat/help/HServices.asp $(INSTALLDIR)/www/help/HServices.asp
+	cp -f maksat/help/HUpgrade.asp $(INSTALLDIR)/www/help/HUpgrade.asp
+	cp -f maksat/help/HStatus.asp $(INSTALLDIR)/www/help/HStatus.asp
+	cp -f maksat/help/index.asp $(INSTALLDIR)/www/help/index.asp
+ else
 	cp -f maksat/SuperChannel.asp $(INSTALLDIR)/www
 	cp -f maksat/logo.png $(INSTALLDIR)/www/style/logo.png
 	cp -f maksat/logo.png $(INSTALLDIR)/www/images/logo.png
@@ -310,6 +325,7 @@ ifeq ($(CONFIG_MAKSAT),y)
 	cp maksat/images/* $(INSTALLDIR)/www/images
 	mkdir $(INSTALLDIR)/www/style/maksat
 	cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
+ endif
 endif
 ifeq ($(CONFIG_TMK),y)
 	#cp -f kmt/SuperChannel.asp $(INSTALLDIR)/www
@@ -347,12 +363,14 @@ ifeq ($(CONFIG_ERC),y)
 endif
 
 ifeq ($(CONFIG_MAKSAT_CORAL),y)
+ ifneq ($(CONFIG_MAKSAT_BLANK),y)
 	cp -f maksat/logo-coral.png $(INSTALLDIR)/www/style/logo-coral.png
 	cp -f maksat/logo-coral.png $(INSTALLDIR)/www/images/logo-coral.png
 	cp maksat_coral/images/* $(INSTALLDIR)/www/images
 	cp -f maksat/logo-coral.png $(INSTALLDIR)/www/images/logo-coral.png
 	mkdir $(INSTALLDIR)/www/style/maksat_coral
 	cp maksat_coral/maksat_coral/* $(INSTALLDIR)/www/style/maksat_coral
+ endif
 endif
 
 
