@@ -1483,8 +1483,14 @@ int internal_getRouterBrand()
 	}
 	if (boardnum == 42 && nvram_match("boardtype", "0x048e")
 	    && nvram_match("boardrev", "0x10")) {
-		cprintf("router is wrt54gv8/gsv7/g2v1\n");
-		setRouter("Linksys WRT54Gv8 / GSv7 / G2v1");
+		if (nvram_match("boardflags", "0x20750")) {
+		cprintf("router is wrt54g2v1/v1.3/gs2v1\n");
+		setRouter("Linksys WRT54G2v1 / G2v1.3 / GS2v1");
+		}
+		else {
+		cprintf("router is wrt54gv8/gsv7\n");
+		setRouter("Linksys WRT54Gv8 / GSv7");			
+		}
 		return ROUTER_WRT54G_V8;
 	}
 
