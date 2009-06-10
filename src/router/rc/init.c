@@ -642,8 +642,7 @@ int main(int argc, char **argv)
 			if (isregistered_real())
 #endif
 			{
-				start_service("create_rc_shutdown");
-				system("/tmp/.rc_shutdown");
+				start_service("run_rc_shutdown");
 			}
 			if (state == STOP) {
 				state = IDLE;
@@ -725,14 +724,12 @@ int main(int argc, char **argv)
 
 			start_service_f("radio_timer");
 
-			cprintf("create rc file\n");
+			cprintf("run rc file\n");
 #ifdef HAVE_REGISTER
 			if (isregistered_real())
 #endif
 			{
-				start_service_f("create_rc_startup");
-				chmod("/tmp/.rc_startup", 0700);
-				system("/tmp/.rc_startup");
+				start_service_f("run_rc_startup");
 				system("/etc/init.d/rcS");	// start openwrt
 				// startup script
 				// (siPath impl)
