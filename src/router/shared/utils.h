@@ -29,7 +29,9 @@
 // Linksys WRT54Gv8.2, WRT54GSv7.2 (BCM5354 cpu, fccid: Linksys
 // Q87-WRT54GV82, Q87-WRT54GSV72)
 // Linksys WRT54Gv7.2 (EMEA only - same hardware as v8)
-// Linksys WRT54G2 V1 (BCM5354 cpu, fccid: Linksys Q87-WRT54G2V1)
+// Linksys WRT54G2v1 (BCM5354 cpu, fccid: Linksys Q87-WRT54G2V1)
+// Linksys WRT54G2v1.3 (BCM5354 cpu, fccid: Linksys Q87-WRT54G2V13)
+// Linksys WRT54GS2v1 (BCM5354 cpu, fccid: Linksys Q87-WRT54G2V1)
 #define ROUTER_WRT54G_V8 0x0216
 
 // Linksys WRT54G v1.0 and v1.1, Alnet ALL0277 (BCM4702 cpu, fccid: v1:
