@@ -165,15 +165,17 @@ void start_wanup(void)
 	return;
 }
 
-void start_create_rc_startup(void)
+void start_run_rc_startup(void)
 {
 	create_rc_file(RC_STARTUP);
+	system("/tmp/.rc_startup");
 	return;
 }
 
-void start_create_rc_shutdown(void)
+void start_run_rc_shutdown(void)
 {
 	create_rc_file(RC_SHUTDOWN);
+	system("/tmp/.rc_shutdown");
 	return;
 }
 
