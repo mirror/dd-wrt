@@ -237,7 +237,8 @@ void g_syslog (const gchar *log_domain, GLogLevelFlags log_level,
 	       const gchar *message, gpointer user_data) {
 
     int priority;
-
+    if (message==NULL || log_domain==NULL9
+	return;
     switch (log_level & G_LOG_LEVEL_MASK) {
 	case G_LOG_LEVEL_ERROR:	    priority = LOG_ERR;	    break;
 	case G_LOG_LEVEL_CRITICAL:  priority = LOG_CRIT;    break;
@@ -248,9 +249,18 @@ void g_syslog (const gchar *log_domain, GLogLevelFlags log_level,
 	default:		    priority = LOG_DEBUG;   break;
 				
     }
-
-    syslog( priority | LOG_DAEMON, message );
-
+    int msize = strlen(tempmessage);
+    gchar *tempmessage = (gchar*)malloc(msize+1);
+    int i,c=0;
+    /* temp hack, filter % (%% too unfortunatly)*/
+    for (i=0;i<msize;i++) {
+	    if (message[i]!='%') {
+		tempmessage[c++]=message[i];
+	    }
+    }
+    tempmessage[c++]=0;
+    syslog( priority | LOG_DAEMON, tempmessage );
+    free(tempmessage);
     if (log_level & G_LOG_FLAG_FATAL)
 	exit_signal = -1;
 }
