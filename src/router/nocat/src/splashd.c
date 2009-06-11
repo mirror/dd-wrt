@@ -237,8 +237,6 @@ void g_syslog (const gchar *log_domain, GLogLevelFlags log_level,
 	       const gchar *message, gpointer user_data) {
 
     int priority;
-    if (message==NULL || log_domain==NULL9
-	return;
     switch (log_level & G_LOG_LEVEL_MASK) {
 	case G_LOG_LEVEL_ERROR:	    priority = LOG_ERR;	    break;
 	case G_LOG_LEVEL_CRITICAL:  priority = LOG_CRIT;    break;
@@ -249,7 +247,7 @@ void g_syslog (const gchar *log_domain, GLogLevelFlags log_level,
 	default:		    priority = LOG_DEBUG;   break;
 				
     }
-    int msize = strlen(tempmessage);
+    int msize = strlen(message);
     gchar *tempmessage = (gchar*)malloc(msize+1);
     int i,c=0;
     /* temp hack, filter % (%% too unfortunatly)*/
