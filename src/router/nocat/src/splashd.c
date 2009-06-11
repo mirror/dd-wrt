@@ -247,18 +247,7 @@ void g_syslog (const gchar *log_domain, GLogLevelFlags log_level,
 	default:		    priority = LOG_DEBUG;   break;
 				
     }
-    int msize = strlen(message);
-    gchar *tempmessage = (gchar*)malloc(msize+1);
-    int i,c=0;
-    /* temp hack, filter % (%% too unfortunatly)*/
-    for (i=0;i<msize;i++) {
-	    if (message[i]!='%') {
-		tempmessage[c++]=message[i];
-	    }
-    }
-    tempmessage[c++]=0;
-    syslog( priority | LOG_DAEMON, tempmessage );
-    free(tempmessage);
+    syslog( priority | LOG_DAEMON, "%s", message );
     if (log_level & G_LOG_FLAG_FATAL)
 	exit_signal = -1;
 }
