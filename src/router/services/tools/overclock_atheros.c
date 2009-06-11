@@ -154,16 +154,16 @@ void start_overclock(void)	// hidden feature. must be called with
 	fseek(in, 0x9f, SEEK_SET);
 	int dir300mul3 = getc(in);
 
-	fseek(in, 0x5bf, SEEK_SET);
+	fseek(in, 0x5e3, SEEK_SET);
 	int dir300div4 = getc(in);
 
-	fseek(in, 0x5cb, SEEK_SET);
+	fseek(in, 0x5ef, SEEK_SET);
 	int dir300mul4 = getc(in);
 
-	fseek(in, 0x73f, SEEK_SET);
+	fseek(in, 0x75f, SEEK_SET);
 	int dir300div5 = getc(in);
 
-	fseek(in, 0x74b, SEEK_SET);
+	fseek(in, 0x76b, SEEK_SET);
 	int dir300mul5 = getc(in);
 
 	fseek(in, 0xdb, SEEK_SET);
@@ -252,9 +252,9 @@ void start_overclock(void)	// hidden feature. must be called with
 		else if (dir3003)
 			fseek(in, 0x93, SEEK_SET);
 		else if (dir3004)
-			fseek(in, 0x5bf, SEEK_SET);
+			fseek(in, 0x5e3, SEEK_SET);
 		else if (dir3005)
-			fseek(in, 0x73f, SEEK_SET);
+			fseek(in, 0x75f, SEEK_SET);
 		else
 			fseek(in, 0x1e3, SEEK_SET);
 		putc(0x1, in);
@@ -265,9 +265,9 @@ void start_overclock(void)	// hidden feature. must be called with
 		else if (dir3003)
 			fseek(in, 0x9f, SEEK_SET);
 		else if (dir3004)
-			fseek(in, 0x5cb, SEEK_SET);
+			fseek(in, 0x5ef, SEEK_SET);
 		else if (dir3005)
-			fseek(in, 0x74b, SEEK_SET);
+			fseek(in, 0x76b, SEEK_SET);
 		else
 			fseek(in, 0x1ef, SEEK_SET);
 		if (clk == 200) {
@@ -330,9 +330,9 @@ void start_overclock(void)	// hidden feature. must be called with
 		else if (dir3003)
 			fseek(in, 0x93, SEEK_SET);
 		else if (dir3004)
-			fseek(in, 0x5bf, SEEK_SET);
+			fseek(in, 0x5e3, SEEK_SET);
 		else if (dir3005)
-			fseek(in, 0x73f, SEEK_SET);
+			fseek(in, 0x75f, SEEK_SET);
 		else
 			fseek(in, 0x1e3, SEEK_SET);
 		if (clk == 184)
@@ -347,9 +347,9 @@ void start_overclock(void)	// hidden feature. must be called with
 		else if (dir3003)
 			fseek(in, 0x9f, SEEK_SET);
 		else if (dir3004)
-			fseek(in, 0x5cb, SEEK_SET);
+			fseek(in, 0x5ef, SEEK_SET);
 		else if (dir3005)
-			fseek(in, 0x54b, SEEK_SET);
+			fseek(in, 0x76b, SEEK_SET);
 		else
 			fseek(in, 0x1ef, SEEK_SET);
 		if (clk == 184) {
