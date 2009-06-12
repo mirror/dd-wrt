@@ -627,7 +627,7 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 		if ((res & 0x3) == 0x2) {
 			break;
 		}
-		delay_us(200000);
+		delay_us(20);
 		spiflash_sendcmd(STM_OP_WR_ENABLE, 0);
 	} while (1);
 	spiflash_sendcmd(STM_OP_SECTOR_ERASE, offset);
