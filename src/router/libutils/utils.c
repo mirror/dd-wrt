@@ -392,6 +392,7 @@ int check_vlan_support(void)
 	case ROUTER_BRCM4702_GENERIC:
 	case ROUTER_ASUS_WL500G:
 	case ROUTER_BELKIN_F5D7230_V2000:
+	case ROUTER_ASKEY_RT220XD:
 #endif
 		return 0;
 		break;
