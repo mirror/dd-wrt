@@ -1109,8 +1109,18 @@ void start_sysinit(void)
 	switch (brand) {
 	case ROUTER_BELKIN_F5D7231:
 		if (nvram_match("boardflags", "0x388")
-		    || nvram_match("boardflags", "0x0388"))
+		    || nvram_match("boardflags", "0x0388")) {
 			nvram_set("boardflags", "0x0f58");
+			need_reboot = 1;
+			}
+		break;
+		
+	case ROUTER_ASKEY_RT220XD:
+		if (nvram_match("boardflags", "0x388")
+		    || nvram_match("boardflags", "0x0388")) {
+			nvram_set("boardflags", "0x0208");
+			need_reboot = 1;
+			}
 		break;
 
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
